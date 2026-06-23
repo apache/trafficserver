@@ -57,7 +57,7 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 Metrics::IdType
 Metrics::Storage::create(std::string_view name, const MetricType type)
 {
-  std::lock_guard lock(_mutex);
+  ts::scoped_lock lock(_mutex);
   auto            it = _lookups.find(name);
 
   if (it != _lookups.end()) {
@@ -81,7 +81,7 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
 Metrics::IdType
 Metrics::Storage::lookup(const std::string_view name) const
 {
-  std::lock_guard lock(_mutex);
+  ts::scoped_lock lock(_mutex);
   auto            it = _lookups.find(name);
 
   if (it != _lookups.end()) {
@@ -94,6 +94,7 @@ Metrics::Storage::lookup(const std::string_view name) const
 Metrics::AtomicType *
 Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics::MetricType *out_type) const
 {
+  ts::scoped_lock lock(_mutex);
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
@@ -140,6 +141,7 @@ Metrics::Storage::lookup(const std::string_view name, Metrics::IdType *out_id, M
 std::string_view
 Metrics::Storage::name(Metrics::IdType id) const
 {
+  ts::scoped_lock lock(_mutex);
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
@@ -164,7 +166,7 @@ Metrics::SpanType
 Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdType *id)
 {
   release_assert(size <= MAX_SIZE);
-  std::lock_guard lock(_mutex);
+  ts::scoped_lock lock(_mutex);
 
   if (_cur_off + size > MAX_SIZE) {
     addBlob();
@@ -187,6 +189,7 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
 bool
 Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
 {
+  ts::scoped_lock lock(_mutex);
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
@@ -195,8 +198,7 @@ Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
     return false;
   }
 
-  std::string    &cur = std::get<0>(std::get<0>(*blob)[offset]);
-  std::lock_guard lock(_mutex);
+  std::string &cur = std::get<0>(std::get<0>(*blob)[offset]);
 
   if (cur.length() > 0) {
     _lookups.erase(cur);
