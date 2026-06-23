@@ -2426,12 +2426,11 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     /////////////////////////////////////////////
 
     /**
-     * Fix for INKqa09141. The is_token function fails for '@' character.
-     * Header names starting with '@' signs are valid headers. Hence we
-     * have to add one more check to see if the first parameter is '@'
-     * character then, the header name is valid.
+     * RFC 9110 Section 5.1: Header field names must consist only of
+     * tchar characters. The '@' character is not a valid tchar, so
+     * header names containing '@' should be rejected as invalid.
      **/
-    if ((!ParseRules::is_token(*parsed)) && (*parsed != '@')) {
+    if (!ParseRules::is_token(*parsed)) {
       continue; // toss away garbage line
     }
 
