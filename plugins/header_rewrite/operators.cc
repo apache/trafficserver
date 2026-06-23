@@ -1707,6 +1707,7 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+  op->set_config_location(filename, lineno);
 
   try {
     op->initialize(p);
@@ -1739,6 +1740,7 @@ OperatorIf::make_condition(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  cond->set_config_location(filename, lineno);
 
   try {
     cond->initialize(p);

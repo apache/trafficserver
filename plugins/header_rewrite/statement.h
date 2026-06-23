@@ -167,6 +167,31 @@ public:
 
   ResourceIDs get_resource_ids() const;
 
+  void
+  set_config_location(const char *filename, int lineno)
+  {
+    _config_filename = filename ? filename : "";
+    _config_lineno   = lineno;
+  }
+
+  bool
+  has_config_location() const
+  {
+    return !_config_filename.empty();
+  }
+
+  const std::string &
+  get_config_filename() const
+  {
+    return _config_filename;
+  }
+
+  int
+  get_config_lineno() const
+  {
+    return _config_lineno;
+  }
+
   virtual void
   initialize(Parser &)
   {
@@ -271,7 +296,9 @@ protected:
 private:
   ResourceIDs               _rsrc = RSRC_NONE;
   std::vector<TSHttpHookID> _allowed_hooks;
-  bool                      _initialized = false;
+  std::string               _config_filename;
+  int                       _config_lineno = 0;
+  bool                      _initialized   = false;
 };
 
 union PrivateSlotData {

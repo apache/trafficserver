@@ -65,6 +65,7 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  c->set_config_location(filename, lineno);
   c->initialize(p);
   if (!c->is_hook_valid(_hook)) {
     delete c;
@@ -92,6 +93,7 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 
   if (nullptr != op) {
     Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+    op->set_config_location(filename, lineno);
     op->initialize(p);
     if (!op->is_hook_valid(_hook)) {
       delete op;
