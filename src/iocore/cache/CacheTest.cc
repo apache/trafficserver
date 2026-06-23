@@ -684,3 +684,73 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
     }
   }
 }
+
+// Verifies the tiered LRU seen filter engages at the documented fill level. With
+// proxy.config.cache.ram_cache.use_seen_filter = N (> 1) the filter must turn on once the cache
+// is (N - 1)/N full (N = 2 -> 50%). An integer-division bug (1 / N == 0) made it turn on only at
+// 100% full, so a scan could pollute a half-full cache.
+REGRESSION_TEST(ram_cache_lru_seen_filter)(RegressionTest *t, int level, int *pstatus)
+{
+  if (REGRESSION_TEST_NIGHTLY > level) {
+    *pstatus = REGRESSION_TEST_PASSED;
+    return;
+  }
+  if (cacheProcessor.IsCacheEnabled() != CacheInitState::INITIALIZED) {
+    rprintf(t, "cache not initialized");
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  int const saved_filter                 = cache_config_ram_cache_use_seen_filter;
+  cache_config_ram_cache_use_seen_filter = 2; // engage once the cache is 50% full
+
+  CacheKey  key;
+  StripeSM *stripe     = theCache->key_to_stripe(&key, "example.com"sv);
+  int64_t   cache_size = 1LL << 21; // 2 MB
+  RamCache *cache      = new_RamCacheLRU();
+  cache->init(cache_size, stripe);
+
+  std::vector<Ptr<IOBufferData>> keep;
+  auto                           put = [&](uint64_t n) {
+    CryptoHash hash;
+    hash.u64[0]     = (n << 32) + n;
+    hash.u64[1]     = (n << 32) + n;
+    IOBufferData *d = THREAD_ALLOC(ioDataAllocator, this_thread());
+    d->alloc(BUFFER_SIZE_INDEX_16K);
+    memset(d->data(), 0, d->block_size());
+    keep.push_back(make_ptr(d));
+    cache->put(&hash, d, d->block_size());
+  };
+  auto resident = [&](uint64_t n) -> bool {
+    CryptoHash hash;
+    hash.u64[0] = (n << 32) + n;
+    hash.u64[1] = (n << 32) + n;
+    Ptr<IOBufferData> got;
+    return cache->get(&hash, &got);
+  };
+
+  // Fill to ~60% (above the 50% threshold). Put each key twice so it is admitted even once the
+  // filter is active (the first Put records "seen", the second admits).
+  int const obj    = BUFFER_SIZE_FOR_INDEX(BUFFER_SIZE_INDEX_16K);
+  int const fill_n = static_cast<int>((cache_size * 6 / 10) / obj);
+  for (int i = 0; i < fill_n; i++) {
+    put(1000 + i);
+    put(1000 + i);
+  }
+
+  // Above the threshold, single-Put (unseen) keys must be filtered, not admitted. Use a batch to
+  // be robust against the occasional seen-filter hash collision.
+  int admitted = 0;
+  for (int i = 0; i < 20; i++) {
+    put(900000 + i);
+    if (resident(900000 + i)) {
+      admitted++;
+    }
+  }
+
+  rprintf(t, "RamCache LRU seen filter: %d/20 single-seen keys admitted at ~60%% full (expect ~0)\n", admitted);
+
+  cache_config_ram_cache_use_seen_filter = saved_filter;
+  keep.clear();
+  *pstatus = (admitted <= 2) ? REGRESSION_TEST_PASSED : REGRESSION_TEST_FAILED;
+}
