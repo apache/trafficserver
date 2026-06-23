@@ -300,6 +300,8 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void log_error(const Resources &res, const char *message) const;
+
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   UrlType       _type;
   std::string   _query_param; // Optional: specific query parameter name for QUERY sub-key
