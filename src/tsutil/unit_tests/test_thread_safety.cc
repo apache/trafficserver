@@ -10,8 +10,8 @@
   The chain demonstrated here is:
     * ts::mutex / ts::shared_mutex are capabilities         (TsMutex.h,
                                                             TsSharedMutex.h),
-    * ts::scoped_lock / ts::scoped_writer_lock /
-      ts::scoped_reader_lock supply the held capability for
+    * ts::lock_guard / ts::write_guard /
+      ts::read_guard supply the held capability for
       the duration of a scope                              (TsMutex.h,
                                                             TsSharedMutex.h),
     * the data members below are annotated as protected by that capability.
@@ -53,7 +53,7 @@ public:
   void
   put(const std::string &key, int value)
   {
-    ts::scoped_writer_lock lock(_mutex);
+    ts::write_guard lock(_mutex);
     _map[key] = value; // write under exclusive lock
     bump_locked();     // calls a TS_REQUIRES helper while the lock is held
   }
@@ -61,15 +61,15 @@ public:
   int
   get(const std::string &key)
   {
-    ts::scoped_reader_lock lock(_mutex);
-    auto                   it = _map.find(key); // read under shared lock
+    ts::read_guard lock(_mutex);
+    auto           it = _map.find(key); // read under shared lock
     return it == _map.end() ? -1 : it->second;
   }
 
   int
   writes() const
   {
-    ts::scoped_reader_lock lock(_mutex);
+    ts::read_guard lock(_mutex);
     return _writes;
   }
 
@@ -87,14 +87,14 @@ private:
 };
 
 // The plain-mutex counterpart: ts::mutex guarded data taken through
-// ts::scoped_lock.
+// ts::lock_guard.
 class ProtectedCounter
 {
 public:
   void
   add(int n)
   {
-    ts::scoped_lock lock(_mutex);
+    ts::lock_guard lock(_mutex);
     _sum += n;     // write under exclusive lock
     bump_locked(); // calls a TS_REQUIRES helper while the lock is held
   }
@@ -102,14 +102,14 @@ public:
   int
   sum() const
   {
-    ts::scoped_lock lock(_mutex);
+    ts::lock_guard lock(_mutex);
     return _sum;
   }
 
   int
   adds() const
   {
-    ts::scoped_lock lock(_mutex);
+    ts::lock_guard lock(_mutex);
     return _adds;
   }
 

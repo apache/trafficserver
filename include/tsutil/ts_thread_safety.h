@@ -17,8 +17,8 @@
   movability let the held state escape a single scope -- which makes it impossible
   to track statically, and ATS does not need that flexibility. Annotated code
   therefore takes its locks through ATS-owned annotated types -- @c ts::mutex with
-  @c ts::scoped_lock, or @c ts::shared_mutex with @c ts::scoped_writer_lock /
-  @c ts::scoped_reader_lock -- whose simple acquire-in-constructor /
+  @c ts::lock_guard, or @c ts::shared_mutex with @c ts::write_guard /
+  @c ts::read_guard -- whose simple acquire-in-constructor /
   release-in-destructor contract the analysis can follow.
 
   @section license License

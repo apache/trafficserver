@@ -4,7 +4,7 @@
   scoped lock guard.
 
   These are the plain-mutex counterparts to ts::shared_mutex and its
-  reader/writer guards (TsSharedMutex.h): use ts::mutex with ts::scoped_lock
+  reader/writer guards (TsSharedMutex.h): use ts::mutex with ts::lock_guard
   wherever you would otherwise use std::mutex with std::lock_guard, but want the
   data it protects checked by -Wthread-safety. The runtime behavior is exactly
   that of std::mutex; the annotations are compile-time only (see
@@ -84,14 +84,14 @@ private:
 // -Wthread-safety (see tsutil/ts_thread_safety.h for why the std wrappers are
 // not tracked).
 //
-class TS_SCOPED_CAPABILITY scoped_lock
+class TS_SCOPED_CAPABILITY lock_guard
 {
 public:
-  explicit scoped_lock(mutex &m) TS_ACQUIRE(m) : _m(m) { _m.lock(); }
-  ~scoped_lock() TS_RELEASE() { _m.unlock(); }
+  explicit lock_guard(mutex &m) TS_ACQUIRE(m) : _m(m) { _m.lock(); }
+  ~lock_guard() TS_RELEASE() { _m.unlock(); }
 
-  scoped_lock(scoped_lock const &)            = delete;
-  scoped_lock &operator=(scoped_lock const &) = delete;
+  lock_guard(lock_guard const &)            = delete;
+  lock_guard &operator=(lock_guard const &) = delete;
 
 private:
   mutex &_m;

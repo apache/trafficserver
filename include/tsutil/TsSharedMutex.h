@@ -189,28 +189,28 @@ private:
 // for -Wthread-safety: the analysis does not reliably track the std wrappers
 // (see tsutil/ts_thread_safety.h).
 //
-class TS_SCOPED_CAPABILITY scoped_writer_lock
+class TS_SCOPED_CAPABILITY write_guard
 {
 public:
-  explicit scoped_writer_lock(shared_mutex &m) TS_ACQUIRE(m) : _m(m) { _m.lock(); }
-  ~scoped_writer_lock() TS_RELEASE() { _m.unlock(); }
+  explicit write_guard(shared_mutex &m) TS_ACQUIRE(m) : _m(m) { _m.lock(); }
+  ~write_guard() TS_RELEASE() { _m.unlock(); }
 
-  scoped_writer_lock(scoped_writer_lock const &)            = delete;
-  scoped_writer_lock &operator=(scoped_writer_lock const &) = delete;
+  write_guard(write_guard const &)            = delete;
+  write_guard &operator=(write_guard const &) = delete;
 
 private:
   shared_mutex &_m;
 };
 
-class TS_SCOPED_CAPABILITY scoped_reader_lock
+class TS_SCOPED_CAPABILITY read_guard
 {
 public:
-  explicit scoped_reader_lock(shared_mutex &m) TS_ACQUIRE_SHARED(m) : _m(m) { _m.lock_shared(); }
+  explicit read_guard(shared_mutex &m) TS_ACQUIRE_SHARED(m) : _m(m) { _m.lock_shared(); }
   // A scoped-capability destructor uses the plain release form even for a shared acquire.
-  ~scoped_reader_lock() TS_RELEASE() { _m.unlock_shared(); }
+  ~read_guard() TS_RELEASE() { _m.unlock_shared(); }
 
-  scoped_reader_lock(scoped_reader_lock const &)            = delete;
-  scoped_reader_lock &operator=(scoped_reader_lock const &) = delete;
+  read_guard(read_guard const &)            = delete;
+  read_guard &operator=(read_guard const &) = delete;
 
 private:
   shared_mutex &_m;

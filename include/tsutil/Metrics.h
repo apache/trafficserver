@@ -338,7 +338,7 @@ private:
     std::pair<int16_t, int16_t>
     current() const
     {
-      ts::scoped_lock lock(_mutex);
+      ts::lock_guard lock(_mutex);
       return {_cur_blob, _cur_off};
     }
 
@@ -347,7 +347,7 @@ private:
     {
       auto [blob, entry] = _splitID(id);
 
-      ts::scoped_lock lock(_mutex);
+      ts::lock_guard lock(_mutex);
       return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
     }
   };

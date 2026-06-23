@@ -78,8 +78,8 @@ SSLOriginSessionCache::insert_session(const std::string &lookup_key, SSL_SESSION
     new SSLOriginSession(lookup_key, curve, group_name, std::shared_ptr<SSL_SESSION>{sess_ptr, SSLSessDeleter}));
   auto new_node = ssl_orig_session.release();
 
-  ts::scoped_writer_lock lock(mutex);
-  auto                   entry = orig_sess_map.find(lookup_key);
+  ts::write_guard lock(mutex);
+  auto            entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
     Dbg(dbg_ctl_ssl_origin_session_cache, "found duplicate key: %s, replacing %p with %p", lookup_key.c_str(),
@@ -101,8 +101,8 @@ SSLOriginSessionCache::get_session(const std::string &lookup_key, ssl_curve_id *
 {
   Dbg(dbg_ctl_ssl_origin_session_cache, "get session: %s", lookup_key.c_str());
 
-  ts::scoped_reader_lock lock(mutex);
-  auto                   entry = orig_sess_map.find(lookup_key);
+  ts::read_guard lock(mutex);
+  auto           entry = orig_sess_map.find(lookup_key);
   if (entry == orig_sess_map.end()) {
     return nullptr;
   }
@@ -131,8 +131,8 @@ void
 SSLOriginSessionCache::remove_session(const std::string &lookup_key)
 {
   // We can't bail on contention here because this session MUST be removed.
-  ts::scoped_writer_lock lock(mutex);
-  auto                   entry = orig_sess_map.find(lookup_key);
+  ts::write_guard lock(mutex);
+  auto            entry = orig_sess_map.find(lookup_key);
   if (entry != orig_sess_map.end()) {
     auto node = entry->second;
     Dbg(dbg_ctl_ssl_origin_session_cache, "remove session: %s, session ptr: %p", lookup_key.c_str(), node->shared_sess.get());
