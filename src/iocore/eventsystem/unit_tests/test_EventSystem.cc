@@ -21,6 +21,8 @@
   limitations under the License.
  */
 
+#include "inkevent_test_fixtures.h"
+
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/reporters/catch_reporter_event_listener.hpp>
 #include <catch2/reporters/catch_reporter_registrars.hpp>
@@ -28,10 +30,9 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/ink_atomic.h"
-#include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 
-#include "iocore/utils/diags.i"
+using inkevent_test::EventProcessorListener;
 
 #define TEST_TIME_SECOND 60
 #define TEST_THREADS     2
@@ -82,24 +83,6 @@ TEST_CASE("EventSystem", "[iocore]")
     sleep(1);
   }
 }
-
-struct EventProcessorListener : Catch::EventListenerBase {
-  using EventListenerBase::EventListenerBase;
-
-  void
-  testRunStarting(Catch::TestRunInfo const & /* testRunInfo ATS_UNUSED */) override
-  {
-    Layout::create();
-    init_diags("", nullptr);
-    RecProcessInit();
-
-    ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
-    eventProcessor.start(TEST_THREADS, 1048576); // Hardcoded stacksize at 1MB
-
-    EThread *main_thread = new EThread;
-    main_thread->set_specific();
-  }
-};
 
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 
