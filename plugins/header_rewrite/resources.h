@@ -112,6 +112,7 @@ public:
   TransactionState state; // Without cripts, txnp / ssnp goes here
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
+  TSHttpHookID hook        = TS_HTTP_LAST_HOOK;
 
   struct LifetimeExtension {
     std::string  subject_storage;

@@ -36,6 +36,40 @@
 
 static const sockaddr *getClientAddr(TSHttpTxn txnp, int txn_private_slot);
 
+static const char *
+get_hook_name(TSHttpHookID hook)
+{
+  if (hook == TS_REMAP_PSEUDO_HOOK) {
+    return "REMAP_PSEUDO_HOOK";
+  }
+
+  if (hook == TS_HTTP_LAST_HOOK) {
+    return "UNKNOWN_HOOK";
+  }
+
+  if (const char *name = TSHttpHookNameLookup(hook); name != nullptr) {
+    return name;
+  }
+
+  return "UNKNOWN_HOOK";
+}
+
+static const char *
+get_url_type_name(ConditionUrl::UrlType type)
+{
+  switch (type) {
+  case ConditionUrl::CLIENT:
+    return "CLIENT-URL";
+  case ConditionUrl::FROM:
+    return "FROM-URL";
+  case ConditionUrl::TO:
+    return "TO-URL";
+  case ConditionUrl::URL:
+  default:
+    return "URL";
+  }
+}
+
 #if TS_HAS_CRIPTS
 #include "cripts/Certs.hpp"
 #endif
@@ -276,6 +310,18 @@ ConditionUrl::set_qualifier(const std::string &q)
 }
 
 void
+ConditionUrl::log_error(const Resources &res, const char *message) const
+{
+  if (has_config_location()) {
+    TSError("[%s] %s at hook=%s: %%{%s%s%s} in %s:%d", PLUGIN_NAME, message, get_hook_name(res.hook), get_url_type_name(_type),
+            _qualifier.empty() ? "" : ":", _qualifier.c_str(), get_config_filename().c_str(), get_config_lineno());
+  } else {
+    TSError("[%s] %s at hook=%s: %%{%s%s%s}", PLUGIN_NAME, message, get_hook_name(res.hook), get_url_type_name(_type),
+            _qualifier.empty() ? "" : ":", _qualifier.c_str());
+  }
+}
+
+void
 ConditionUrl::append_value(std::string &s, const Resources &res)
 {
   TSMLoc    url  = nullptr;
@@ -285,7 +331,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
     // CLIENT always uses the pristine URL
     Dbg(pi_dbg_ctl, "   Using the pristine url");
     if (TSHttpTxnPristineUrlGet(res.state.txnp, &bufp, &url) != TS_SUCCESS) {
-      TSError("[%s] Error getting the pristine URL", PLUGIN_NAME);
+      log_error(res, "Error getting the pristine URL");
       return;
     }
   } else if (res._rri != nullptr) {
@@ -301,7 +347,7 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       Dbg(pi_dbg_ctl, "   Using the to url");
       url = res._rri->mapToUrl;
     } else {
-      TSError("[%s] Invalid option value", PLUGIN_NAME);
+      log_error(res, "Invalid URL option value");
       return;
     }
   } else {
@@ -309,11 +355,11 @@ ConditionUrl::append_value(std::string &s, const Resources &res)
       bufp           = res.bufp;
       TSMLoc hdr_loc = res.hdr_loc;
       if (TSHttpHdrUrlGet(bufp, hdr_loc, &url) != TS_SUCCESS) {
-        TSError("[%s] Error getting the URL", PLUGIN_NAME);
+        log_error(res, "Error getting the URL");
         return;
       }
     } else {
-      TSError("[%s] Rule not supported at this hook", PLUGIN_NAME);
+      log_error(res, "Rule not supported");
       return;
     }
   }

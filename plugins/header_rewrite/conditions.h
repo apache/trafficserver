@@ -286,6 +286,8 @@ protected:
   bool eval(const Resources &res) override;
 
 private:
+  void log_error(const Resources &res, const char *message) const;
+
   UrlQualifiers _url_qual = URL_QUAL_NONE;
   UrlType       _type;
 };
