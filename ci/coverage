@@ -16,93 +16,111 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-LCOV=${LCOV:-lcov}
-GENHTML=${GENHTML:-genhtml}
+# Build ATS with gcov instrumentation, run the unit tests (and optionally
+# autests), and produce a coverage report with gcovr.
+#
+# Usage:
+#   ci/coverage [extra cmake args...]
+#
+# Environment overrides:
+#   BUILDDIR   build tree                 (default: $SRCROOT/build-coverage)
+#   PREFIX     install prefix             (default: /tmp/ts-coverage)
+#   NPROCS     build parallelism          (default: nproc)
+#   GCOVR      gcovr command              (default: gcovr, falls back to uvx gcovr)
+#   AUTEST     run autests too if set to a -f/--filter basename glob,
+#              e.g. AUTEST='tls_*' or AUTEST=all for the whole suite
+#
+# Requires: cmake, ninja or make, gcc/gcov, and gcovr (pip install gcovr).
 
-TMPDIR=${TMPDIR:-/tmp}
-BUILDID="org.apache.trafficserver.$$"
+set -e
 
-SRCROOT=${SRCROOT:-$(cd $(dirname $0)/.. && pwd)} # where the source lives
-OBJROOT=${OBJROOT:-"$TMPDIR/$BUILDID/obj"} # where we are building
-DSTROOT=${DSTROOT:-"$TMPDIR/$BUILDID/dst"} # where we are installing
+SRCROOT=${SRCROOT:-$(cd "$(dirname "$0")"/.. && pwd)}
+BUILDDIR=${BUILDDIR:-$SRCROOT/build-coverage}
+PREFIX=${PREFIX:-/tmp/ts-coverage}
+NPROCS=${NPROCS:-$(nproc 2>/dev/null || echo 4)}
 
-# Force low make parallelization so that the build can complete in a VM with
-# only a small amount of memory.
-NPROCS=${NPROCS:-2}
+GCOVR=${GCOVR:-gcovr}
+if ! command -v "${GCOVR%% *}" >/dev/null 2>&1; then
+  if command -v uvx >/dev/null 2>&1; then
+    GCOVR="uvx gcovr"
+  else
+    echo "gcovr not found; install it with 'pip install gcovr'" >&2
+    exit 1
+  fi
+fi
 
-mkdir -p $SRCROOT
-mkdir -p $OBJROOT
-mkdir -p $DSTROOT
-
-autogen() {
-  (
-    cd "$SRCROOT"
-    [ configure -nt configure.ac -a Makefile.in -nt Makefile.am ] || autoreconf -fi
-  )
-}
+# --coverage instruments compile and link. Atomic profile updates keep the
+# counters sane in ATS's heavily threaded runtime, and absolute paths in the
+# notes files let gcovr resolve sources from any working directory.
+COVERAGE_FLAGS="-g -O0 --coverage -fprofile-update=atomic -fprofile-abs-path"
 
 configure() {
-  (
-    cd $OBJROOT
-    $SRCROOT/configure \
-      --prefix=$DSTROOT \
-      --enable-debug \
-      --enable-coverage \
-      --enable-werror \
-      --enable-example-plugins \
-      --enable-test-tools \
-      --enable-experimental-plugins \
-      CC="$CC" \
-      CXX="$CXX" \
-      "$@"
-  )
+  # Enabling autest pulls in Python3/uv/nc and the proxy-verifier toolchain at
+  # configure time, so only ask for it when AUTEST actually selects a run.
+  local autest_args=()
+  if [ -n "$AUTEST" ]; then
+    autest_args=(-DENABLE_AUTEST=ON)
+  fi
+
+  cmake -S "$SRCROOT" -B "$BUILDDIR" \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+    -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF \
+    -DBUILD_TESTING=ON \
+    "${autest_args[@]}" \
+    -DBUILD_EXPERIMENTAL_PLUGINS=ON \
+    -DENABLE_EXAMPLE=ON \
+    -DCMAKE_CXX_FLAGS_DEBUG="$COVERAGE_FLAGS" \
+    -DCMAKE_C_FLAGS_DEBUG="$COVERAGE_FLAGS" \
+    "$@"
 }
 
 build() {
-  ( cd $OBJROOT && $MAKE -j $NPROCS )
-  ( cd $OBJROOT && $MAKE install )
+  cmake --build "$BUILDDIR" -j "$NPROCS"
+  cmake --install "$BUILDDIR"
 }
 
-regress() {
-  ( cd $OBJROOT && $MAKE check ) && \
-  $DSTROOT/bin/traffic_server -k -K -R 1
+run_tests() {
+  # Reset counters so the report reflects exactly this run.
+  find "$BUILDDIR" -name '*.gcda' -delete
+
+  ctest --test-dir "$BUILDDIR" -j "$NPROCS"
+
+  if [ -n "$AUTEST" ]; then
+    local filter_args=()
+    if [ "$AUTEST" != all ]; then
+      # Quote the pattern: the parallel runner fnmatches it against each test's
+      # basename (e.g. 'tls_*'), so it must reach autest verbatim rather than be
+      # glob-expanded by the shell first.
+      filter_args=(-f "$AUTEST")
+    fi
+    # Match ctest's parallelism: -j routes autest.sh through autest-parallel.py,
+    # which already aims --sandbox at a per-build-tree path under /tmp, so
+    # concurrent coverage runs in separate build trees don't trample each other.
+    (cd "$BUILDDIR/tests" && ./autest.sh -j "$NPROCS" "${filter_args[@]}")
+  fi
 }
 
-CC=${CC:-gcc}
-CXX=${CXX:-g++}
-MAKE=${MAKE:-make}
-export CC CXX MAKE
+report() {
+  cd "$SRCROOT"
+  # no_working_dir_found: vendored/generated objects whose recorded cwd is
+  # gone. merge-use-line-min: sources compiled into both a library and a
+  # unit-test binary produce slightly different function records.
+  # suspicious_hits: hot-path counters legitimately reach billions of hits
+  # over a full test run, tripping gcovr's corruption heuristic (gcc #68080).
+  $GCOVR -r . "$BUILDDIR" -j "$NPROCS" \
+    --gcov-ignore-errors=no_working_dir_found \
+    --gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file \
+    --merge-mode-functions=merge-use-line-min \
+    --exclude 'lib/' --exclude '.*/unit_tests/' --exclude 'build.*/' \
+    --print-summary \
+    --html-details coverage.html \
+    --json coverage.json \
+    --xml coverage.xml
+  echo "Reports written: coverage.html coverage.json coverage.xml"
+}
 
-case $VERBOSE in
-  Y*) set -x ;;
-  y*) set -x ;;
-  1) set -x ;;
-  *) set +x ;;
-esac
-
-autogen || exit 1
-configure "$@" || exit 1
-build || exit 1
-
-$LCOV --quiet --capture --initial --directory $OBJROOT --output-file initial.info
-
-regress
-
-$LCOV --quiet --capture --directory $OBJROOT --output-file tests.info
-
-# The --add-tracefile option refuses to create an output file with
-# --output-file (contrary to documentation). Capture the combined
-# coverage from stdout instead.
-$LCOV \
-  --add-tracefile initial.info \
-  --add-tracefile tests.info \
-> combined.info
-
-# genhtml will puke because it can't find the original TSConfig files.
-# We don't need to bother generation anything for /usr/include.
-$LCOV --remove combined.info \
-  'TsConfigSyntax.*' \
-  'TsConfigGrammar.*' \
-  '/usr/include/*' > coverage.info
-
-$GENHTML --output-directory coverage.html coverage.info
+configure "$@"
+build
+run_tests
+report
