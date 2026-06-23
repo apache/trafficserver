@@ -128,6 +128,7 @@ public:
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
   void        *geo_handle  = nullptr;
+  TSHttpHookID hook        = TS_HTTP_LAST_HOOK;
 
   struct LifetimeExtension {
     std::string                                        subject_storage;
