@@ -2129,6 +2129,11 @@ HttpSM::state_send_server_request_header(int event, void *data)
           }
         }
       }
+      // The request body tunnel setup can synchronously abort the chain, which
+      // cleans up server_entry before returning here.
+      if (server_entry == nullptr) {
+        break;
+      }
       // Any other events to these read response
       if (server_entry->vc_type == HTTP_SERVER_VC) {
         server_entry->vc_read_handler = &HttpSM::state_read_server_response_header;
