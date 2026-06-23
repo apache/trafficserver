@@ -27,6 +27,7 @@
 #include <pthread.h>
 #include "tsutil/Strerror.h"
 #include "tsutil/Assert.h"
+#include "tsutil/ts_thread_safety.h"
 
 #ifdef X
 #error "X preprocessor symbol defined"
@@ -48,7 +49,7 @@ namespace ts
 {
 // A class with the same interface as std::shared_mutex, but which is not prone to writer starvation.
 //
-class shared_mutex
+class TS_CAPABILITY("shared_mutex") shared_mutex
 {
 public:
   shared_mutex() {}
@@ -58,8 +59,13 @@ public:
   shared_mutex(shared_mutex const &)            = delete;
   shared_mutex &operator=(shared_mutex const &) = delete;
 
+  // The lock/unlock methods are the trusted implementation of this capability:
+  // their bodies drive the raw pthread_rwlock_t, which some libc headers (e.g.
+  // FreeBSD's <pthread.h>) annotate as a capability in its own right. Exempt the
+  // bodies from analysis so only the capability contract on each signature is
+  // checked; the actual data-race checking happens at the call sites.
   void
-  lock()
+  lock() TS_ACQUIRE() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     int error = pthread_rwlock_wrlock(&_lock);
     if (error != 0) {
@@ -69,7 +75,7 @@ public:
   }
 
   bool
-  try_lock()
+  try_lock() TS_TRY_ACQUIRE(true) TS_NO_THREAD_SAFETY_ANALYSIS
   {
     int error = pthread_rwlock_trywrlock(&_lock);
     if (EBUSY == error) {
@@ -84,7 +90,7 @@ public:
   }
 
   void
-  unlock()
+  unlock() TS_RELEASE() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     X(debug_assert(_exclusive);)
     X(_exclusive = false;)
@@ -93,7 +99,7 @@ public:
   }
 
   void
-  lock_shared()
+  lock_shared() TS_ACQUIRE_SHARED() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     int error = pthread_rwlock_rdlock(&_lock);
     if (error != 0) {
@@ -105,7 +111,7 @@ public:
   }
 
   bool
-  try_lock_shared()
+  try_lock_shared() TS_TRY_ACQUIRE_SHARED(true) TS_NO_THREAD_SAFETY_ANALYSIS
   {
     int error = pthread_rwlock_tryrdlock(&_lock);
     if (EBUSY == error) {
@@ -121,7 +127,7 @@ public:
   }
 
   void
-  unlock_shared()
+  unlock_shared() TS_RELEASE_SHARED() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     X(debug_assert(_shared > 0);)
     X(--_shared;)
@@ -148,7 +154,7 @@ public:
 
 private:
   void
-  _unlock()
+  _unlock() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     int error = pthread_rwlock_unlock(&_lock);
     if (error != 0) {
@@ -176,6 +182,38 @@ private:
   //
   X(std::atomic<bool> _exclusive{false};)
   X(std::atomic<int> _shared{0};)
+};
+
+// RAII guards for ts::shared_mutex that carry Clang thread-safety capability
+// state. Prefer these over std::unique_lock / std::shared_lock in code annotated
+// for -Wthread-safety: the analysis does not reliably track the std wrappers
+// (see tsutil/ts_thread_safety.h).
+//
+class TS_SCOPED_CAPABILITY scoped_writer_lock
+{
+public:
+  explicit scoped_writer_lock(shared_mutex &m) TS_ACQUIRE(m) : _m(m) { _m.lock(); }
+  ~scoped_writer_lock() TS_RELEASE() { _m.unlock(); }
+
+  scoped_writer_lock(scoped_writer_lock const &)            = delete;
+  scoped_writer_lock &operator=(scoped_writer_lock const &) = delete;
+
+private:
+  shared_mutex &_m;
+};
+
+class TS_SCOPED_CAPABILITY scoped_reader_lock
+{
+public:
+  explicit scoped_reader_lock(shared_mutex &m) TS_ACQUIRE_SHARED(m) : _m(m) { _m.lock_shared(); }
+  // A scoped-capability destructor uses the plain release form even for a shared acquire.
+  ~scoped_reader_lock() TS_RELEASE() { _m.unlock_shared(); }
+
+  scoped_reader_lock(scoped_reader_lock const &)            = delete;
+  scoped_reader_lock &operator=(scoped_reader_lock const &) = delete;
+
+private:
+  shared_mutex &_m;
 };
 
 } // end namespace ts
