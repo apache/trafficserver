@@ -679,8 +679,34 @@ REGRESSION_TEST(ram_cache)(RegressionTest *t, int level, int *pstatus)
   for (int s = 20; s <= 24; s += 4) {
     int64_t cache_size = 1LL << s;
     *pstatus           = REGRESSION_TEST_PASSED;
-    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size)) {
+    if (!test_RamCache(t, new_RamCacheLRU(), "LRU", cache_size) || !test_RamCache(t, new_RamCacheCLFUS(), "CLFUS", cache_size) ||
+        !test_RamCache(t, new_RamCacheS3FIFO(), "S3-FIFO", cache_size)) {
       *pstatus = REGRESSION_TEST_FAILED;
     }
+  }
+
+  // Exercise the S3-FIFO tunables with valid non-default values: the policy must still pass the
+  // hit-rate floor and the size invariant, proving the records -> init() config plumbing is wired
+  // and that a non-default queue split, ghost bound, and promotion threshold remain correct.
+  // (Out-of-range values are rejected by the records.yaml RECC_INT validation, not here.)
+  {
+    int const     saved_main    = cache_config_ram_cache_s3fifo_main_percent;
+    int const     saved_gsize   = cache_config_ram_cache_s3fifo_ghost_size_percent;
+    int const     saved_gmem    = cache_config_ram_cache_s3fifo_ghost_mem_percent;
+    int const     saved_promote = cache_config_ram_cache_s3fifo_promote_threshold;
+    int64_t const cache_size    = 1LL << 24;
+
+    cache_config_ram_cache_s3fifo_main_percent       = 80; // valid, non-default
+    cache_config_ram_cache_s3fifo_ghost_size_percent = 50;
+    cache_config_ram_cache_s3fifo_ghost_mem_percent  = 15;
+    cache_config_ram_cache_s3fifo_promote_threshold  = 1;
+    if (!test_RamCache(t, new_RamCacheS3FIFO(), "S3-FIFO tuned", cache_size)) {
+      *pstatus = REGRESSION_TEST_FAILED;
+    }
+
+    cache_config_ram_cache_s3fifo_main_percent       = saved_main;
+    cache_config_ram_cache_s3fifo_ghost_size_percent = saved_gsize;
+    cache_config_ram_cache_s3fifo_ghost_mem_percent  = saved_gmem;
+    cache_config_ram_cache_s3fifo_promote_threshold  = saved_promote;
   }
 }

@@ -134,6 +134,7 @@ public:
   ProxyAllocator openDirEntryAllocator;
   ProxyAllocator ramCacheCLFUSEntryAllocator;
   ProxyAllocator ramCacheLRUEntryAllocator;
+  ProxyAllocator ramCacheS3FIFOEntryAllocator;
   ProxyAllocator evacuationBlockAllocator;
   ProxyAllocator ioDataAllocator;
   ProxyAllocator ioAllocator;
