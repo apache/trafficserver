@@ -95,6 +95,7 @@ https://github.com/jbeder/yaml-cpp
 ~~
 
 fastlz: an ANSI C/C90 implementation of Lempel-Ziv 77 algorithm (LZ77) of lossless data compression.
+Copyright (C) 2005-2020 Ariya Hidayat (MIT License)
 https://github.com/ariya/FastLZ
 
 ~~
