@@ -90,6 +90,7 @@ struct SSLConfigParams : public ConfigInfo {
   int           alpn_protocols_array_size = 0;
 
   char *server_cert_compression_algorithms;
+  bool  server_cert_compression_cache = true;
   char *client_cert_compression_algorithms;
 
   char *server_tls13_cipher_suites;
