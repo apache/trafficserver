@@ -293,7 +293,7 @@ HttpSM::~HttpSM()
     Error("Exception in ~HttpSM during m_remap->release");
   }
 
-  // coverity[exn_spec_violation] - cancel_pending_action() only sets boolean flags
+  // coverity[exn_spec_violation] - cancel_pending_action() cancels pending cache work and clears tracked pointers
   cache_sm.cancel_pending_action();
 
   mutex.clear();
