@@ -33,7 +33,10 @@ class OptionType(Enum):
     NONE = 0
     DEFAULT_DIRECTIVES = 1
     FORCE_SWR = 2
-    FORCE_SIE = 2
+    FORCE_SIE = 3
+
+
+assert len({option.value for option in OptionType.__members__.values()}) == len(OptionType.__members__)
 
 
 class TestStaleResponse:
