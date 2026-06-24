@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include <cstddef>
+#include <cstring>
 #include "iocore/dns/DNSEventIO.h"
 #include "iocore/dns/DNSProcessor.h"
 
@@ -98,6 +100,31 @@ struct DNSConnection {
     unsigned short length_read   = 0;
     unsigned short total_length  = 0;
     unsigned short done_reading  = 0;
+    size_t
+    length_prefix_bytes_remaining() const
+    {
+      return sizeof(length_buf) - length_read;
+    }
+
+    bool
+    length_prefix_is_complete() const
+    {
+      return length_read == sizeof(length_buf);
+    }
+
+    size_t
+    append_length_prefix_bytes(void const *bytes, size_t nbytes)
+    {
+      size_t const remaining = length_prefix_bytes_remaining();
+      size_t const consumed  = nbytes < remaining ? nbytes : remaining;
+      memcpy(length_buf + length_read, bytes, consumed);
+      length_read += consumed;
+      if (length_prefix_is_complete()) {
+        total_length = (static_cast<unsigned short>(length_buf[0]) << 8) | length_buf[1];
+      }
+      return consumed;
+    }
+
     void
     reset()
     {

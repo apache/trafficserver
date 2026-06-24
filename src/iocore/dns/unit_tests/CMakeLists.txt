@@ -21,3 +21,10 @@ add_executable(test_HostEnt test_HostEnt.cc ../HostEnt.cc)
 target_include_directories(test_HostEnt PRIVATE "${PROJECT_SOURCE_DIR}/include")
 target_link_libraries(test_HostEnt PRIVATE Catch2::Catch2WithMain ts::tscore ts::tsutil ts::inkevent)
 add_catch2_test(NAME test_dns_HostEnt COMMAND $<TARGET_FILE:test_HostEnt>)
+
+add_executable(test_DNSTCPData test_DNSTCPData.cc)
+target_include_directories(
+  test_DNSTCPData PRIVATE "${PROJECT_SOURCE_DIR}/include" "${PROJECT_SOURCE_DIR}/src/iocore/dns"
+)
+target_link_libraries(test_DNSTCPData PRIVATE Catch2::Catch2WithMain ts::tscore ts::tsutil ts::inkevent)
+add_catch2_test(NAME test_dns_DNSTCPData COMMAND $<TARGET_FILE:test_DNSTCPData>)

@@ -876,21 +876,19 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
         }
         if (dnsc->tcp_data.total_length == 0) {
           // Read the 2-byte length prefix incrementally
-          res = dnsc->sock.recv(dnsc->tcp_data.length_buf + dnsc->tcp_data.length_read,
-                                sizeof(dnsc->tcp_data.length_buf) - dnsc->tcp_data.length_read, 0);
+          unsigned char length_buf[sizeof(dnsc->tcp_data.length_buf)];
+
+          res = dnsc->sock.recv(length_buf, dnsc->tcp_data.length_prefix_bytes_remaining(), 0);
           if (res == -EAGAIN) {
             break;
           }
           if (res <= 0) {
             goto Lerror;
           }
-          dnsc->tcp_data.length_read += res;
-          if (dnsc->tcp_data.length_read < sizeof(dnsc->tcp_data.length_buf)) {
+          dnsc->tcp_data.append_length_prefix_bytes(length_buf, res);
+          if (!dnsc->tcp_data.length_prefix_is_complete()) {
             continue;
           }
-          uint16_t net_length;
-          memcpy(&net_length, dnsc->tcp_data.length_buf, sizeof(net_length));
-          dnsc->tcp_data.total_length = ntohs(net_length);
           if (dnsc->tcp_data.total_length == 0) {
             goto Lerror;
           }
