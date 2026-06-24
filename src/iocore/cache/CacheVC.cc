@@ -425,14 +425,6 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
           uint64_t o = dir_offset(&dir);
           stripe->ram_cache->put(read_key, buf.get(), doc->len, http_copy_hdr, o);
         }
-        if (!doc_len) {
-          // keep a pointer to it. In case the state machine decides to
-          // update this document, we don't have to read it back in memory
-          // again
-          stripe->first_fragment_key    = *read_key;
-          stripe->first_fragment_offset = dir_offset(&dir);
-          stripe->first_fragment_data   = buf;
-        }
       } // end VIO::READ check
       // If it could be compressed, unmarshal after
       if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
@@ -470,17 +462,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return EVENT_RETURN;
   }
 
-  // 2. check last open read cache
-  if (load_from_last_open_read_call()) {
-    Dbg(dbg_ctl_cache_ram, "last open read hit");
-    f.doc_from_ram_cache = true;
-    io.aio_result        = io.aiocb.aio_nbytes;
-
-    POP_HANDLER;
-    return EVENT_RETURN;
-  }
-
-  // 3. check aggregation buffer
+  // 2. check aggregation buffer
   if (load_from_aggregation_buffer()) {
     Dbg(dbg_ctl_cache_ram, "aggregation buffer hit");
     f.doc_from_ram_cache = true;
@@ -490,7 +472,7 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
     return EVENT_RETURN;
   }
 
-  // 4. read from Disk (AIO) due to all memory cache miss
+  // 3. read from Disk (AIO) due to all memory cache miss
   Dbg(dbg_ctl_cache_ram, "all memory cache miss");
 
   ts::Metrics::Counter::increment(cache_rsb.all_mem_misses);
@@ -524,18 +506,6 @@ CacheVC::load_from_ram_cache()
   int     ram_hit_state = this->stripe->ram_cache->get(read_key, &this->buf, static_cast<uint64_t>(o));
   f.compressed_in_ram   = (ram_hit_state > RAM_HIT_COMPRESS_NONE) ? 1 : 0;
   return ram_hit_state >= RAM_HIT_COMPRESS_NONE;
-}
-
-bool
-CacheVC::load_from_last_open_read_call()
-{
-  if (*this->read_key == this->stripe->first_fragment_key && dir_offset(&this->dir) == this->stripe->first_fragment_offset) {
-    this->buf = this->stripe->first_fragment_data;
-    ts::Metrics::Counter::increment(cache_rsb.last_open_read_hits);
-    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.last_open_read_hits);
-    return true;
-  }
-  return false;
 }
 
 bool

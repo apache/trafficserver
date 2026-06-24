@@ -130,12 +130,7 @@ a configuration with only one cache volume: :literal:`0`.
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.misses integer
    :type: counter
 
-   Accumulates the number of misses to the LRU RAM cache for this volume.  Note that this count includes hits to the other memory caches, including the last open read and aggregation buffer caches, so it may not represent the total number of cache accesses that go to disk.
-
-.. ts:stat:: global proxy.process.cache.volume_0.last_open_read.hits integer
-   :type: counter
-
-   Accumulates the number of hits to the last open read cache for this volume.  This cache stores the most recent read operation for each open cache volume.
+   Accumulates the number of misses to the LRU RAM cache for this volume.  Note that this count includes hits to the other memory caches, including the aggregation buffer caches, so it may not represent the total number of cache accesses that go to disk.
 
 .. ts:stat:: global proxy.process.cache.volume_0.aggregation_buffer.hits integer
    :type: counter
@@ -145,7 +140,7 @@ a configuration with only one cache volume: :literal:`0`.
 .. ts:stat:: global proxy.process.cache.volume_0.all_memory_caches.misses integer
    :type: counter
 
-   Accumulates the number of misses to all memory caches (LRU RAM cache, last open read cache, and aggregation buffer) for this volume.  This represents the total number of cache accesses that go to disk for this volume.
+   Accumulates the number of misses to all memory caches (LRU RAM cache and aggregation buffer) for this volume.  This represents the total number of cache accesses that go to disk for this volume.
 
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.total_bytes integer
    :type: gauge
