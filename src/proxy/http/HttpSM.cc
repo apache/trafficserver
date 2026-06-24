@@ -3830,6 +3830,8 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     server_response_body_bytes = c->bytes_written;
   }
 
+  // The cache write VC is closed now, so any prepared write lock is gone.
+  t_state.cache_info.write_lock_state = HttpTransact::CACHE_WL_INIT;
   Metrics::Gauge::decrement(http_rsb.current_cache_connections);
   return 0;
 }
