@@ -74,8 +74,8 @@ port number in the URL, zero is returned.
 
 .. note::
 
-   :func:`TSUrlHostGet` should only be called after the :data:`TS_HTTP_POST_REMAP_HOOK`.
-   In the :data:`TS_HTTP_READ_REQUEST_HDR_HOOK` phase, use :func:`TSHttpHdrHostGet` instead.
+   :func:`TSUrlHostGet` should only be called after the ``TS_HTTP_POST_REMAP_HOOK``.
+   In the ``TS_HTTP_READ_REQUEST_HDR_HOOK`` phase, use :func:`TSHttpHdrHostGet` instead.
 
 Return Values
 =============
