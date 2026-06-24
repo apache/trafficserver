@@ -88,19 +88,13 @@ tell_diags_regression_testing_is_on()
 
 //////////////////////////////////////////////////////////////////////////////
 //
-//      Diags::Diags(char *bdt, char *bat)
+//      Diags::Diags(prefix_string, bdt, bat, _diags_log, dl_perm, ol_perm)
 //
-//      This is the constructor for the Diags class.  The constructor takes
-//      two strings called the "base debug tags" (bdt) and the
-//      "base action tags" (bat).  These represent debug/action overrides,
-//      to override the records.yaml values.  They current come from
-//      command-line options.
-//
-//      If bdt is not nullptr, and not "", it overrides records.yaml settings.
-//      If bat is not nullptr, and not "", it overrides records.yaml settings.
-//
-//      When the constructor is done, records.yaml callbacks will be set,
-//      the initial values read, and the Diags instance will be ready to use.
+//      Constructor for the Diags class.  bdt and bat are the "base debug
+//      tags" and "base action tags" — command-line overrides for the
+//      records.yaml tag settings.  Non-null, non-empty values are stored
+//      for later use by activate_taglist(); activated tag tables are left
+//      empty until an external reconfigure call populates them.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -223,6 +217,7 @@ Diags::~Diags()
 //              void print(...)
 //              void log_va(...)
 //              void log(...)
+//              void error_va(...)
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -320,8 +315,9 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 //
 //      This routine inquires if a particular <tag> in the tag table of
 //      type <mode> is activated, returning true if it is, false if it
-//      isn't.  If <tag> is nullptr, true is returned.  The call uses a lock
-//      to get atomic access to the tag tables.
+//      isn't.  If <tag> is nullptr, true is returned.  The active regex
+//      pointer is snapshotted under tag_table_lock; regex execution runs
+//      outside the lock.
 //
 //////////////////////////////////////////////////////////////////////////////
 
@@ -349,17 +345,6 @@ Diags::tag_activated(const char *tag, DiagsTagType mode) const
 
   return regex ? regex->exec(tag, RE_ANCHORED) : false;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-//
-//      void Diags::activate_taglist(char * taglist, DiagsTagType mode)
-//
-//      This routine adds all tags in the vertical-bar-separated taglist
-//      to the tag table of type <mode>.  Each addition is done under a lock.
-//      If an individual tag is already set, that tag is ignored.  If
-//      <taglist> is nullptr, this routine exits immediately.
-//
-//////////////////////////////////////////////////////////////////////////////
 
 void
 Diags::activate_taglist(const char *taglist, DiagsTagType mode)
@@ -433,6 +418,9 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
     va_list ap2;
 
     va_copy(ap2, ap);
+    // No re-entry guard: if two threads emit a terminal-level message
+    // concurrently, or if cleanup_func itself emits one, cleanup_func may
+    // be invoked more than once. The callback must tolerate this.
     if (cleanup_func) {
       cleanup_func();
     }
@@ -447,12 +435,6 @@ Diags::error_va(DiagsLevel level, const SourceLocation *loc, const char *format_
   }
 }
 
-/*
- * Sets up and error handles the given BaseLogFile object to work
- * with this instance of Diags.
- *
- * Returns true on success, false otherwise
- */
 bool
 Diags::setup_diagslog(BaseLogFile *blf)
 {
@@ -483,19 +465,6 @@ Diags::config_roll_outputlog(RollingEnabledValues re, int ri, int rs)
   outputlog_rolling_size     = rs;
 }
 
-/*
- * Update diags_log to use the underlying file on disk.
- *
- * This function will replace the current BaseLogFile object with a new one, as
- * each BaseLogFile object logically represents one file on disk. It can be
- * used when we want to re-open the log file if the initial one was moved.
- *
- * Note that, however, cross process race conditions may still exist,
- * especially with the metafile, and further work with flock() for fcntl() may
- * still need to be done.
- *
- * Returns true if the log was reseated, false otherwise.
- */
 bool
 Diags::reseat_diagslog()
 {
@@ -714,12 +683,6 @@ Diags::should_roll_outputlog()
   return ret_val;
 }
 
-/*
- * Sets up a BaseLogFile for the specified file. Then it binds the specified standard steam
- * to the aforementioned BaseLogFile.
- *
- * Returns true on successful binding and setup, false otherwise
- */
 bool
 Diags::set_std_output(StdStream stream, const char *file)
 {
@@ -750,7 +713,7 @@ Diags::set_std_output(StdStream stream, const char *file)
     log_log_error("[Warning]: %s is currently not bound to anything\n", target_stream);
     delete new_log;
     lock();
-    *current = nullptr;
+    *current = nullptr; // old_log is not freed here
     unlock();
     return false;
   }
@@ -759,7 +722,7 @@ Diags::set_std_output(StdStream stream, const char *file)
     log_log_error("[Warning]: %s is currently not bound to anything\n", target_stream);
     delete new_log;
     lock();
-    *current = nullptr;
+    *current = nullptr; // old_log is not freed here
     unlock();
     return false;
   }
