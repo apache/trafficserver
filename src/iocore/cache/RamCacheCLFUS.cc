@@ -39,11 +39,14 @@
 
 // #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
 
-constexpr float    required_compression = 0.9f;
-constexpr float    required_shrink      = 0.8f;
+constexpr double   required_compression = 0.9;
+constexpr double   required_shrink      = 0.8;
 constexpr uint32_t history_hysteria     = 10;
 constexpr uint32_t entry_overhead       = 256; // per-entry overhead to consider when computing cache value/size
-constexpr uint32_t lzma_base_memlimit   = 64 * 1024 * 1024;
+
+#ifdef HAVE_LZMA_H
+constexpr uint32_t lzma_base_memlimit = 64 * 1024 * 1024;
+#endif
 
 constexpr uint32_t average_value_over = 100;
 constexpr uint32_t requeue_limit      = 100;
