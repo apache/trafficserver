@@ -79,9 +79,9 @@ public:
   void                         remove_session(const std::string &lookup_key);
 
 private:
-  void remove_oldest_session(const std::unique_lock<ts::shared_mutex> &lock);
+  void remove_oldest_session() TS_REQUIRES(mutex);
 
-  mutable ts::shared_mutex                  mutex;
-  CountQueue<SSLOriginSession>              orig_sess_que;
-  std::map<std::string, SSLOriginSession *> orig_sess_map;
+  mutable ts::shared_mutex                                mutex;
+  CountQueue<SSLOriginSession> orig_sess_que              TS_GUARDED_BY(mutex);
+  std::map<std::string, SSLOriginSession *> orig_sess_map TS_GUARDED_BY(mutex);
 };
