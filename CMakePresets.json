@@ -125,6 +125,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+        "ENABLE_THREAD_SAFETY_ANALYSIS": "ON",
+        "THREAD_SAFETY_ANALYSIS_AS_ERROR": "ON",
         "ENABLE_CCACHE": "ON",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
         "ENABLE_WASM_WAMR": "OFF",
