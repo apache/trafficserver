@@ -64,6 +64,8 @@ if(BUILD_TESTING)
             lshpack
             configmanager
   )
+  # For the ls-hpack decoder parity tests.
+  target_include_directories(test_proxy_hdrs PRIVATE ${CMAKE_SOURCE_DIR}/lib)
   add_catch2_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
   add_executable(test_proxy_hdrs_xpack unit_tests/test_XPACK.cc)
