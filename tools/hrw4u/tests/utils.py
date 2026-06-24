@@ -40,12 +40,14 @@ __all__: Final[list[str]] = [
     "collect_output_test_files",
     "collect_ast_test_files",
     "collect_failing_inputs",
+    "collect_reverse_failing_inputs",
     "collect_sandbox_deny_test_files",
     "collect_sandbox_allow_test_files",
     "collect_sandbox_warn_test_files",
     "run_output_test",
     "run_ast_test",
     "run_failing_test",
+    "run_reverse_failing_test",
     "run_sandbox_deny_test",
     "run_sandbox_allow_test",
     "run_sandbox_warn_test",
@@ -124,6 +126,17 @@ def collect_ast_test_files(group: str) -> Iterator[pytest.param]:
 def collect_failing_inputs(group: str) -> Iterator[pytest.param]:
     base_dir = Path("tests/data") / group
     for input_file in base_dir.glob("*.fail.input.txt"):
+        test_id = input_file.stem
+        yield pytest.param(input_file, id=test_id)
+
+
+def collect_reverse_failing_inputs(group: str) -> Iterator[pytest.param]:
+    # Reverse-fail fixtures use *.reverse.fail.hrw.txt (u4wrh input that must error)
+    # paired with *.reverse.fail.error.txt (expected error phrase). Forward-fail
+    # fixtures use *.fail.input.txt for the hrw4u compiler, which is why the glob
+    # here excludes them.
+    base_dir = Path("tests/data") / group
+    for input_file in base_dir.glob("*.reverse.fail.hrw.txt"):
         test_id = input_file.stem
         yield pytest.param(input_file, id=test_id)
 
@@ -371,6 +384,35 @@ def run_reverse_test(input_file: Path, output_file: Path, debug: bool = False) -
     actual_hrw4u = "\n".join(visitor.visit(tree)).strip()
     expected_hrw4u = input_file.read_text().strip()
     assert actual_hrw4u == expected_hrw4u, f"Reverse conversion mismatch for {output_file}"
+
+
+def run_reverse_failing_test(input_file: Path) -> None:
+    hrw_text = input_file.read_text()
+    lexer = u4wrhLexer(InputStream(hrw_text))
+    stream = CommonTokenStream(lexer)
+    parser = u4wrhParser(stream)
+    tree = parser.program()
+
+    error_file = input_file.with_name(input_file.name.replace(".reverse.fail.hrw.txt", ".reverse.fail.error.txt"))
+    if not error_file.exists():
+        raise RuntimeError(f"Missing expected error file: {error_file}")
+
+    expected_error_content = error_file.read_text().strip()
+
+    error_collector = ErrorCollector()
+    visitor = HRWInverseVisitor(filename=str(input_file), error_collector=error_collector)
+    visitor.visit(tree)
+
+    assert error_collector.has_errors(), f"Expected reverse errors but none were raised for {input_file}"
+
+    actual_summary = error_collector.get_error_summary()
+    for line in expected_error_content.splitlines():
+        line = line.strip()
+        if line:
+            assert line in actual_summary, (
+                f"Expected phrase not found in error summary for {input_file}:\n"
+                f"  Missing: {line!r}\n"
+                f"Actual summary:\n{actual_summary}")
 
 
 def create_output_test(group: str):

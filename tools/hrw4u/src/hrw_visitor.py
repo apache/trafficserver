@@ -371,8 +371,11 @@ class HRWInverseVisitor(u4wrhVisitor, BaseHRWVisitor):
                 args = self._reconstruct_redirect_args(args)
                 self.debug(f"reconstructed redirect: {args}")
 
-            stmt = self.symbol_resolver.op_to_hrw4u(cmd, args, self._section_label, op_state)
-            self.emit(stmt + ";")
+            stmt = None
+            with self.trap(ctx):
+                stmt = self.symbol_resolver.op_to_hrw4u(cmd, args, self._section_label, op_state)
+            if stmt is not None:
+                self.emit(stmt + ";")
 
             return None
 
