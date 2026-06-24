@@ -986,6 +986,78 @@ TEST_CASE("esi parser test")
     REQUIRE(node_list.size() == 6);
   }
 
+  SECTION("chunk boundary: <esi: prefix exact at chunk end")
+  {
+    // avail == ESI_TAG_PREFIX_LEN (5) at end of first chunk — exercises the
+    // avail >= esi_len complete-match branch with nothing left in the buffer.
+    DocNodeList node_list;
+    REQUIRE(parser.parseChunk("pre<esi:", node_list) == true);
+    REQUIRE(parser.parseChunk("include src=url/>", node_list) == true);
+    REQUIRE(parser.completeParse(node_list) == true);
+    REQUIRE(node_list.size() == 2);
+    auto it = node_list.begin();
+    REQUIRE(it->type == DocNode::TYPE_PRE);
+    REQUIRE(it->data_len == 3);
+    REQUIRE(strncmp(it->data, "pre", 3) == 0);
+    ++it;
+    REQUIRE(it->type == DocNode::TYPE_INCLUDE);
+    REQUIRE(it->attr_list.size() == 1);
+    check_node_attr(it->attr_list.front(), "src", "url");
+  }
+
+  SECTION("chunk boundary: <!--esi prefix exact at chunk end")
+  {
+    // avail == hlen (7) at end of first chunk — exercises the avail <= hlen
+    // partial-match branch; the trailing whitespace arrives in the next chunk.
+    DocNodeList node_list;
+    REQUIRE(parser.parseChunk("pre<!--esi", node_list) == true);
+    REQUIRE(parser.parseChunk(" <esi:comment text=blah/>-->", node_list) == true);
+    REQUIRE(parser.completeParse(node_list) == true);
+    REQUIRE(node_list.size() == 2);
+    auto it = node_list.begin();
+    REQUIRE(it->type == DocNode::TYPE_PRE);
+    REQUIRE(it->data_len == 3);
+    REQUIRE(strncmp(it->data, "pre", 3) == 0);
+    ++it;
+    REQUIRE(it->type == DocNode::TYPE_HTML_COMMENT);
+    REQUIRE(it->data_len == static_cast<int>(strlen("<esi:comment text=blah/>")));
+    REQUIRE(strncmp(it->data, "<esi:comment text=blah/>", it->data_len) == 0);
+  }
+
+  SECTION("<!--esi without trailing whitespace is not a tag")
+  {
+    // <!--esi_ has no whitespace after the prefix — must be treated as PRE
+    // and scanning must continue to find the real <esi: tag that follows.
+    DocNodeList node_list;
+    REQUIRE(parser.parse(node_list, "<!--esi_nospace<esi:include src=url/>") == true);
+    REQUIRE(node_list.size() == 2);
+    auto it = node_list.begin();
+    REQUIRE(it->type == DocNode::TYPE_PRE);
+    REQUIRE(it->data_len == static_cast<int>(strlen("<!--esi_nospace")));
+    REQUIRE(strncmp(it->data, "<!--esi_nospace", it->data_len) == 0);
+    ++it;
+    REQUIRE(it->type == DocNode::TYPE_INCLUDE);
+    REQUIRE(it->attr_list.size() == 1);
+    check_node_attr(it->attr_list.front(), "src", "url");
+  }
+
+  SECTION("multiple false '<' anchors before valid tag")
+  {
+    // Exercises the memchr loop iterating past several non-tag '<' bytes
+    // before landing on a real <esi: tag.  All skipped content becomes PRE.
+    DocNodeList node_list;
+    REQUIRE(parser.parse(node_list, "< <a> <!--esi_bad <esi:include src=url/>") == true);
+    REQUIRE(node_list.size() == 2);
+    auto it = node_list.begin();
+    REQUIRE(it->type == DocNode::TYPE_PRE);
+    REQUIRE(it->data_len == static_cast<int>(strlen("< <a> <!--esi_bad ")));
+    REQUIRE(strncmp(it->data, "< <a> <!--esi_bad ", it->data_len) == 0);
+    ++it;
+    REQUIRE(it->type == DocNode::TYPE_INCLUDE);
+    REQUIRE(it->attr_list.size() == 1);
+    check_node_attr(it->attr_list.front(), "src", "url");
+  }
+
   SECTION("No handler attr")
   {
     string input_data = "<esi:special-include />";
