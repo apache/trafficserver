@@ -108,6 +108,7 @@ struct Http2StatsBlock {
   Metrics::Counter::AtomicType *insufficient_avg_window_update;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_in;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_out;
+  Metrics::Counter::AtomicType *max_active_streams_exceeded_in;
   Metrics::Counter::AtomicType *data_frames_in;
   Metrics::Counter::AtomicType *headers_frames_in;
   Metrics::Counter::AtomicType *priority_frames_in;
@@ -401,6 +402,7 @@ public:
   static uint32_t               max_concurrent_streams_in;
   static uint32_t               min_concurrent_streams_in;
   static uint32_t               max_active_streams_in;
+  static uint32_t               max_active_streams_policy_in;
   static bool                   throttling;
   static uint32_t               stream_priority_enabled;
   static uint32_t               initial_window_size_in;

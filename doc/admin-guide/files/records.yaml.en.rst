@@ -4491,14 +4491,43 @@ HTTP/2 Configuration
    This is used when :ts:cv:`proxy.config.http2.max_active_streams_out` is set
    larger than ``0``.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_in INT 0
+.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_in INT 200000
    :reloadable:
 
-   Limits the maximum number of connection wide active streams.
-   When connection wide active streams are larger than this value,
+   Limits the maximum number of process-wide active inbound streams.
+   When the process-wide active stream count reaches this value,
    SETTINGS_MAX_CONCURRENT_STREAMS will be reduced to
    :ts:cv:`proxy.config.http2.min_concurrent_streams_in`.
-   To disable, set to zero (``0``).
+   To disable, set to zero (``0``). The default bounds worst-case
+   buffered response memory while staying well above any realistic
+   legitimate stream count; size it to your available memory budget.
+
+   See :ts:cv:`proxy.config.http2.max_active_streams_policy_in` to switch
+   from this advisory behavior to hard refusal of new streams once the
+   limit is reached.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_policy_in INT 0
+   :reloadable:
+
+   Selects how :ts:cv:`proxy.config.http2.max_active_streams_in` is
+   enforced for inbound HTTP/2 streams.
+
+   ===== ===================================================================
+   Value Description
+   ===== ===================================================================
+   ``0`` When the limit is reached, the advertised
+         ``SETTINGS_MAX_CONCURRENT_STREAMS`` is reduced to
+         :ts:cv:`proxy.config.http2.min_concurrent_streams_in` for new
+         connections. Already-admitted streams are not refused.
+   ``1`` New inbound streams are refused with ``REFUSED_STREAM`` once the
+         global active-stream count reaches the limit. The advertised
+         ``SETTINGS_MAX_CONCURRENT_STREAMS`` is left unchanged and
+         :ts:cv:`proxy.config.http2.min_concurrent_streams_in` is not
+         applied.
+   ===== ===================================================================
+
+   Has no effect when :ts:cv:`proxy.config.http2.max_active_streams_in`
+   is ``0``.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_active_streams_out INT 0
    :reloadable:
