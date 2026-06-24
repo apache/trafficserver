@@ -80,3 +80,5 @@ tools/http_load/**
 **/clang-tidy.conf
 build*/**
 cmake-build*/**
+cmake/FindLZ4.cmake
+cmake/FindZSTD.cmake

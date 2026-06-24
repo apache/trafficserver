@@ -24,6 +24,7 @@
 // Clocked Least Frequently Used by Size (CLFUS) replacement policy
 // See https://cwiki.apache.org/confluence/display/TS/RamCache
 
+#include "RamCacheCLFUS.h"
 #include "P_RamCache.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
@@ -31,10 +32,66 @@
 #include "iocore/eventsystem/Tasks.h"
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
+#include "tscore/Throttler.h"
+
+#include <chrono>
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
 #endif
+#ifdef HAVE_LZ4_H
+#include <lz4.h>
+#endif
+#ifdef HAVE_ZSTD_H
+#include <zstd.h>
+#include <memory>
+constexpr int CLFUS_ZSTD_LEVEL = 3;
+
+namespace
+{
+
+// One-shot ZSTD_compress/ZSTD_decompress allocate and free a context on every
+// call, so reuse a per-thread context instead. May return nullptr if zstd
+// fails to allocate one; that failure is sticky for the life of the thread, so
+// warn when it happens. The compression level is a sticky parameter set once
+// here; no explicit ZSTD_CCtx_reset() is needed because ZSTD_compress2()
+// starts a new session on every call (resets are only for interrupting the
+// streaming API or changing sticky parameters).
+ZSTD_CCtx *
+zstd_cctx()
+{
+  thread_local std::unique_ptr<ZSTD_CCtx, size_t (*)(ZSTD_CCtx *)> ctx = [] {
+    std::unique_ptr<ZSTD_CCtx, size_t (*)(ZSTD_CCtx *)> c{ZSTD_createCCtx(), ZSTD_freeCCtx};
+    if (c && ZSTD_isError(ZSTD_CCtx_setParameter(c.get(), ZSTD_c_compressionLevel, CLFUS_ZSTD_LEVEL))) {
+      c.reset();
+    }
+    if (!c) {
+      Warning("unable to allocate zstd compression context; RAM cache entries will not be compressed on this thread");
+    }
+    return c;
+  }();
+  return ctx.get();
+}
+
+ZSTD_DCtx *
+zstd_dctx()
+{
+  thread_local std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> ctx = [] {
+    std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> c{ZSTD_createDCtx(), ZSTD_freeDCtx};
+    if (!c) {
+      Warning("unable to allocate zstd decompression context; compressed RAM cache entries will miss on this thread");
+    }
+    return c;
+  }();
+  return ctx.get();
+}
+
+} // end anonymous namespace
+#endif
+
+// The compression type is stored in the 3-bit RamCacheCLFUSEntry
+// flag_bits.compressed field; a new codec value must still fit.
+static_assert(CACHE_COMPRESSION_ZSTD < (1 << 3));
 
 #define REQUIRED_COMPRESSION 0.9 // must get to this size or declared incompressible
 #define REQUIRED_SHRINK      0.8 // must get to this size or keep original buffer (with padding)
@@ -61,67 +118,6 @@ DbgCtl dbg_ctl_ram_cache_compare{"ram_cache_compare"};
 } // end anonymous namespace
 
 #endif
-
-struct RamCacheCLFUSEntry {
-  CryptoHash key;
-  uint64_t   auxkey;
-  uint64_t   hits;
-  uint32_t   size; // memory used including padding in buffer
-  uint32_t   len;  // actual data length
-  uint32_t   compressed_len;
-  union {
-    struct {
-      uint32_t compressed     : 3; // compression type
-      uint32_t incompressible : 1;
-      uint32_t lru            : 1;
-      uint32_t copy           : 1; // copy-in-copy-out
-    } flag_bits;
-    uint32_t flags;
-  };
-  LINK(RamCacheCLFUSEntry, lru_link);
-  LINK(RamCacheCLFUSEntry, hash_link);
-  Ptr<IOBufferData> data;
-};
-
-class RamCacheCLFUS : public RamCache
-{
-public:
-  RamCacheCLFUS() {}
-
-  // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
-  int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
-  int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
-  int64_t size() const override;
-
-  void init(int64_t max_bytes, StripeSM *stripe) override;
-
-  void compress_entries(EThread *thread, int do_at_most = INT_MAX);
-
-  // TODO move it to private.
-  StripeSM *stripe = nullptr; // for stats
-private:
-  int64_t _max_bytes = 0;
-  int64_t _bytes     = 0;
-  int64_t _objects   = 0;
-
-  double  _average_value                        = 0;
-  int64_t _history                              = 0;
-  int     _ibuckets                             = 0;
-  int     _nbuckets                             = 0;
-  DList(RamCacheCLFUSEntry, hash_link) *_bucket = nullptr;
-  Que(RamCacheCLFUSEntry, lru_link) _lru[2];
-  uint16_t           *_seen        = nullptr;
-  int                 _ncompressed = 0;
-  RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
-
-  void                _resize_hashtable();
-  void                _victimize(RamCacheCLFUSEntry *e);
-  void                _move_compressed(RamCacheCLFUSEntry *e);
-  RamCacheCLFUSEntry *_destroy(RamCacheCLFUSEntry *e);
-  void                _requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
-  void                _tick(); // move CLOCK on history
-};
 
 int64_t
 RamCacheCLFUS::size() const
@@ -157,13 +153,21 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
     Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
   case CACHE_COMPRESSION_NONE:
   case CACHE_COMPRESSION_FASTLZ:
-    break;
   case CACHE_COMPRESSION_LIBZ:
-    Warning("libz not available for RAM cache compression");
     break;
   case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H
     Warning("lzma not available for RAM cache compression");
+#endif
+    break;
+  case CACHE_COMPRESSION_LZ4:
+#ifndef HAVE_LZ4_H
+    Warning("lz4 not available for RAM cache compression");
+#endif
+    break;
+  case CACHE_COMPRESSION_ZSTD:
+#ifndef HAVE_ZSTD_H
+    Warning("zstd not available for RAM cache compression");
 #endif
     break;
   }
@@ -178,6 +182,21 @@ ClassAllocator<RamCacheCLFUSEntry, false> ramCacheCLFUSEntryAllocator("RamCacheC
 static const int bucket_sizes[] = {127,      251,      509,       1021,      2039,      4093,       8191,      16381,   32749,
                                    65521,    131071,   262139,    524287,    1048573,   2097143,    4194301,   8388593, 16777213,
                                    33554393, 67108859, 134217689, 268435399, 536870909, 1073741789, 2147483647};
+
+RamCacheCLFUS::~RamCacheCLFUS()
+{
+  // Entries are pool-allocated without running their destructor, so release the
+  // data reference explicitly before returning each one to the allocator, then
+  // free the hash table and the seen filter.
+  for (auto &lru : this->_lru) {
+    while (RamCacheCLFUSEntry *e = lru.dequeue()) {
+      e->data = nullptr;
+      THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
+    }
+  }
+  ats_free(this->_bucket);
+  ats_free(this->_seen);
+}
 
 void
 RamCacheCLFUS::_resize_hashtable()
@@ -299,6 +318,34 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             break;
           }
 #endif
+#ifdef HAVE_LZ4_H
+          case CACHE_COMPRESSION_LZ4: {
+            int l = static_cast<int>(e->len);
+            if (l != LZ4_decompress_safe(e->data->data(), b, e->compressed_len, l)) {
+              goto Lfailed;
+            }
+            ram_hit_state = RAM_HIT_COMPRESS_LZ4;
+            break;
+          }
+#endif
+#ifdef HAVE_ZSTD_H
+          case CACHE_COMPRESSION_ZSTD: {
+            size_t     l    = static_cast<size_t>(e->len);
+            ZSTD_DCtx *dctx = zstd_dctx();
+            if (dctx == nullptr) {
+              // This thread can't decompress, but the entry itself is fine:
+              // miss instead of evicting it.
+              ats_free(b);
+              goto Lerror;
+            }
+            size_t ll = ZSTD_decompressDCtx(dctx, b, l, e->data->data(), e->compressed_len);
+            if (ZSTD_isError(ll) || l != ll) {
+              goto Lfailed;
+            }
+            ram_hit_state = RAM_HIT_COMPRESS_ZSTD;
+            break;
+          }
+#endif
           }
           IOBufferData *data = new_xmalloc_IOBufferData(b, e->len);
           data->_mem_type    = DEFAULT_ALLOC;
@@ -343,6 +390,20 @@ Lerror:
   return 0;
 Lfailed:
   ats_free(b);
+  {
+    // A failure here is data corruption or a codec error, not an ordinary
+    // miss; make it visible beyond the debug-gated trace below.
+    static Throttler decompress_failure_throttler(std::chrono::seconds(60));
+
+    uint64_t suppressed = 0;
+    if (!decompress_failure_throttler.is_throttled(suppressed)) {
+      Warning("RAM cache decompression failed: type %d len %u compressed_len %u key %X; entry dropped"
+              " (%" PRIu64 " similar failures suppressed)",
+              static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), suppressed);
+    }
+    ts::Metrics::Counter::increment(cache_rsb.ram_cache_decompress_failures);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_decompress_failures);
+  }
   this->_destroy(e);
   DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
   goto Lerror;
@@ -463,7 +524,17 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         break;
 #ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA:
-        l = e->len;
+        l = static_cast<uint32_t>(lzma_stream_buffer_bound(e->len));
+        break;
+#endif
+#ifdef HAVE_LZ4_H
+      case CACHE_COMPRESSION_LZ4:
+        l = static_cast<uint32_t>(LZ4_compressBound(e->len));
+        break;
+#endif
+#ifdef HAVE_ZSTD_H
+      case CACHE_COMPRESSION_ZSTD:
+        l = static_cast<uint32_t>(ZSTD_compressBound(e->len));
         break;
 #endif
       }
@@ -502,6 +573,31 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
           failed = true;
         }
         l = static_cast<int>(pos);
+        break;
+      }
+#endif
+#ifdef HAVE_LZ4_H
+      case CACHE_COMPRESSION_LZ4: {
+        int ll = l;
+        if ((l = LZ4_compress_default(edata->data(), b, elen, ll)) == 0) {
+          failed = true;
+        }
+        break;
+      }
+#endif
+#ifdef HAVE_ZSTD_H
+      case CACHE_COMPRESSION_ZSTD: {
+        ZSTD_CCtx *cctx = zstd_cctx();
+        if (cctx == nullptr) {
+          failed = true;
+          break;
+        }
+        size_t zret = ZSTD_compress2(cctx, b, l, edata->data(), elen);
+        if (ZSTD_isError(zret)) {
+          failed = true;
+        } else {
+          l = static_cast<uint32_t>(zret);
+        }
         break;
       }
 #endif

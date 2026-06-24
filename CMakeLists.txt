@@ -398,12 +398,17 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(zstd CONFIG QUIET)
-if(zstd_FOUND)
+# 1.4.0 stabilized the advanced one-shot API (ZSTD_compress2 et al.) used by
+# the RAM cache.
+find_package(ZSTD 1.4.0)
+if(ZSTD_FOUND)
 
   # Provide a compatibility target name if the upstream package does not export it
   # Our code links against `zstd::zstd`; upstream zstd usually exports
   # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
+  # Normally this will be dead code if we use the packaged FindZSTD.cmake; but
+  # if CMAKE_FIND_PACKAGE_PREFER_CONFIG=1 and zstd-config.cmake is found, this
+  # may be useful.
   if(NOT TARGET zstd::zstd)
     if(TARGET zstd::libzstd_shared)
       set(_zstd_target zstd::libzstd_shared)
@@ -420,9 +425,16 @@ if(zstd_FOUND)
     else()
       set(HAVE_ZSTD_H FALSE)
     endif()
+  else()
+    set(HAVE_ZSTD_H TRUE)
   endif()
 else()
   set(HAVE_ZSTD_H FALSE)
+endif()
+
+find_package(LZ4)
+if(LZ4_FOUND)
+  set(HAVE_LZ4_H TRUE)
 endif()
 
 # ncurses is used in traffic_top
