@@ -1755,6 +1755,8 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
         c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
         c->alive = false;
+        // The cache write VC is closed now, so any prepared write lock is gone.
+        sm->t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
         Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       } else if (c->self_producer) {
         chain_abort_cache_write(c->self_producer);
