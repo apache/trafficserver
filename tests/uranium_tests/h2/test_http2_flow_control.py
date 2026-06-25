@@ -16,6 +16,7 @@
 """Cover flow-control cases that require configuration-only or bespoke clients."""
 
 from pathlib import Path
+import re
 import sys
 
 import pytest
@@ -45,6 +46,33 @@ def invalid_flow_control_policy_configure_ats(ats_factory: ATSFactory, *, _case:
 
 
 DYNAMIC_WINDOW_SETTINGS_CAP_REPLAY = TEST_DIRECTORY / "replay" / "http2_settings_ack_stall.replay.yaml"
+
+
+def test_closed_stream_flow_control(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Discarded DATA must replenish the connection window for later requests.
+
+    :param ats_factory: Factory for isolated Traffic Server instances.
+    :param services: Factory owning the HTTP-bin origin.
+    """
+    server = services.httpbin("closed-stream-origin")
+    ats = ats_factory.create("closed-stream-ats", enable_tls=True, enable_cache=False)
+    ats.add_default_ssl_files()
+    ats.records.update({
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http2",
+    })
+    ats.remap_config.add_line(f"map / http://127.0.0.1:{server.port}")
+    server.start()
+    ats.start()
+    result = ats.run(sys.executable, TEST_DIRECTORY / "clients" / "h2_closed_stream_window_drain.py", str(ats.https_port))
+    assert result.returncode == 0, result.output
+    assert "closed-stream DATA sent=131070" in result.stdout
+    assert "stream 3 :status 200" in result.stdout
+    wait_for_file_lines(ats.traffic_out, "Send RST_STREAM frame: Error Code: 5", 1)
+    wait_for_file_lines(ats.traffic_out, "Discarded DATA payload_length=16384", 1)
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
+    assert not re.search(r"ERROR:|FATAL:|Unrecognized configuration value", diagnostics), diagnostics
 
 
 def dynamic_window_settings_cap_configure_server(services: ServiceFactory) -> VerifierServer:
