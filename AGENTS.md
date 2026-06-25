@@ -123,12 +123,15 @@ regularly).
 using the Proxy Verifier format. This is simpler, more maintainable, and
 parseable by tools.
 
-**Python conventions for test and helper scripts:**
-- Launch Python helpers with `{sys.executable}` rather than a hardcoded `python3`,
-  so the test runs under the same interpreter the harness uses.
-- Prefer f-strings over `str.format()` when building command lines, config lines,
-  and `Testers` expressions.
-- Add type annotations to helper functions.
+If `ATSReplayTest` is not a good fit (say, the test needs a custom client), then
+organize the test around a test class with member functions that configure any
+servers, the ATS process, and the client. See
+`tests/gold_tests/ats_probe/ats_probe.test.py` for an example of a test organized
+around a test class.
+
+In autests, launch Python helpers with `{sys.executable}` rather than a
+hardcoded `python3`, so the test runs under the same interpreter the harness
+uses.
 
 **For complete details on writing autests, see:**
 - `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to autest
@@ -314,6 +317,7 @@ SMDebug(dbg_ctl, "Processing request for URL: %s", url);
 - snake_case for variables and functions: `server_entry`, `handle_api_return()`
 - UPPER_CASE for macros and constants: `HTTP_SM_SET_DEFAULT_HANDLER`
 - Private member variables have the `m_` prefix.
+- Booleans variables and functions returning booleans are named as predicates: not `modified` but `was_modified`
 
 **Doxygen Comments:**
 
@@ -364,6 +368,9 @@ MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
 ### Python Code Style (for tests and tools)
 - Python 3.11+ with proper type annotations
 - 4-space indentation, never TABs
+- Type annotations on all function signatures
+- Prefer f-strings over `str.format()` when building command lines, config lines,
+  and `Testers` expressions.
 
 ### Memory Management
 - Custom allocators supported (jemalloc, mimalloc)
