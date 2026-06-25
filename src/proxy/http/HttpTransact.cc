@@ -7613,10 +7613,13 @@ HttpTransact::what_is_document_freshness(State *s, HTTPHdr *client_request, HTTP
 
   response_date = cached_obj_response->get_date();
   fresh_limit   = calculate_document_freshness_limit(s, cached_obj_response, response_date, &heuristic);
+  s->cache_info.freshness_limit = fresh_limit;  // save for logging
   ink_assert(fresh_limit >= 0);
 
   current_age = HttpTransactCache::calculate_document_age(s->request_sent_time, s->response_received_time, cached_obj_response,
                                                           response_date, s->current.now);
+                                                      
+  s->cache_info.current_age = current_age;
 
   // First check overflow status
   // Second if current_age is under the max, use the smaller value

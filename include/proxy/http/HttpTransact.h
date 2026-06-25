@@ -490,6 +490,8 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
+    int              freshness_limit      = -1;  // seconds; -1 = not yet set
+    ink_time_t       current_age          = -1;              // seconds; -1 = not yet set
     HTTPInfo        *stale_fallback       = nullptr; // Saved stale object for action 6 fallback during retry
     CacheWriteLock_t write_lock_state     = CacheWriteLock_t::INIT;
     int              lookup_count         = 0;

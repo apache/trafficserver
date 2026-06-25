@@ -756,6 +756,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("chm", field);
 
+  field = new LogField("cache_freshness_limit", "cfl", LogField::sINT, &LogAccess::marshal_cache_freshness_limit, 
+                      &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cfl", field);
+
+  field = new LogField("cache_current_age", "cca", LogField::sINT, &LogAccess::marshal_cache_current_age,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cca", field);
+
   field = new LogField("proxy_response_all_header_fields", "psah", LogField::STRING,
                        &LogAccess::marshal_proxy_resp_all_header_fields, &LogUtils::unmarshalMimeHdr);
   global_field_list.add(field, false);
