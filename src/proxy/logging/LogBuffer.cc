@@ -72,7 +72,8 @@ char *
 LogBufferHeader::fmt_fieldlist()
 {
   char *addr = nullptr;
-  if (fmt_fieldlist_offset) {
+  // Range-check the untrusted on-disk offset: OOB pointer arithmetic is UB even unread.
+  if (fmt_fieldlist_offset && fmt_fieldlist_offset < byte_count) {
     addr = reinterpret_cast<char *>(this) + fmt_fieldlist_offset;
   }
   return addr;
@@ -92,10 +93,8 @@ char *
 LogBufferHeader::fmt_fieldtypes()
 {
   char *addr = nullptr;
-  // The field-type schema is v3+. A v2 segment has no fmt_fieldtypes_offset on
-  // disk, so a version-sized read leaves those bytes uninitialized; gate on the
-  // version too rather than trusting the caller to have zeroed them.
-  if (version >= LOG_SEGMENT_VERSION_FIELDTYPES && fmt_fieldtypes_offset) {
+  // v3+ only (v2 leaves these bytes uninitialized); range-check the untrusted offset.
+  if (version >= LOG_SEGMENT_VERSION_FIELDTYPES && fmt_fieldtypes_offset && fmt_fieldtypes_offset < byte_count) {
     addr = reinterpret_cast<char *>(this) + fmt_fieldtypes_offset;
   }
   return addr;
