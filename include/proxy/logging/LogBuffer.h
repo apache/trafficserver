@@ -30,12 +30,17 @@
 #include "proxy/logging/LogLimits.h"
 #include "proxy/logging/LogAccess.h"
 
+#include <cstddef>
+
 class LogObject;
 class LogConfig;
 class LogBufferIterator;
 
-#define LOG_SEGMENT_COOKIE  0xaceface
-#define LOG_SEGMENT_VERSION 2
+#define LOG_SEGMENT_COOKIE 0xaceface
+
+#define LOG_SEGMENT_VERSION               3 ///< Current default version.
+#define LOG_SEGMENT_VERSION_MIN_SUPPORTED 2 ///< Oldest version this build can still read.
+#define LOG_SEGMENT_VERSION_FIELDTYPES    3 ///< First version that carries the field-type schema (self-describing).
 
 #if defined(__linux__)
 #define LB_DEFAULT_ALIGN 512
@@ -54,6 +59,35 @@ struct LogEntryHeader {
   int64_t  timestamp;      // the seconds portion of the timestamp
   int32_t  timestamp_usec; // the microseconds portion of the timestamp
   uint32_t entry_len;
+};
+
+/*-------------------------------------------------------------------------
+  LogFieldTypeSchema
+
+  Self-describing field-type table for v3 segments, written once per segment at
+  LogBufferHeader::fmt_fieldtypes_offset (alongside fmt_fieldlist). It lets a
+  generic reader decode every field from the file alone, dispatching on the
+  LogField::Type codes with no embedded ATS symbol->type table.
+
+  On-wire layout:
+
+    uint16_t field_count;             // == number of symbols in fmt_fieldlist
+    uint8_t  type_code[field_count];  // LogField::Type, in fieldlist order
+
+  No independent schema version: the segment's LOG_SEGMENT_VERSION governs this
+  layout. All integers are host byte order, like the rest of LogBufferHeader;
+  the blob is padded with the header to 8-byte alignment.
+  -------------------------------------------------------------------------*/
+
+struct LogFieldTypeSchema {
+  uint16_t field_count;
+  // Immediately followed by uint8_t type_code[field_count].
+
+  const uint8_t *
+  type_codes() const
+  {
+    return reinterpret_cast<const uint8_t *>(this) + sizeof(LogFieldTypeSchema);
+  }
 };
 
 /*-------------------------------------------------------------------------
@@ -87,13 +121,51 @@ struct LogBufferHeader {
   uint32_t data_offset;          // offset to start of data entry
   // section
 
+  // NEW in v3: offset to the LogFieldTypeSchema blob, or 0 if absent. Appended
+  // after data_offset so the layout through data_offset is byte-identical to
+  // v2; v2 readers ignore it and v3 readers tolerate v2 segments lacking it.
+  uint32_t fmt_fieldtypes_offset;
+
   // some helper functions to return the header strings
 
   char *fmt_fieldlist();
   char *fmt_printf();
+  char *fmt_fieldtypes(); // v3 field-type schema blob; nullptr for v2 segments
   char *src_hostname();
   char *log_filename();
 };
+
+/** Whether this build can read a segment of the given @a version.
+
+    The single source of truth for the supported range: readers accept the
+    inclusive range [LOG_SEGMENT_VERSION_MIN_SUPPORTED, LOG_SEGMENT_VERSION] so
+    a new build keeps decoding logs written by an older one.
+*/
+inline bool
+log_segment_version_supported(unsigned version)
+{
+  return LOG_SEGMENT_VERSION_MIN_SUPPORTED <= version && version <= LOG_SEGMENT_VERSION;
+}
+
+/** On-disk size of LogBufferHeader for a given segment version.
+
+    Raw readers that read the header by size (rather than via the data_offset
+    field) must size the read to the version on disk: v3 appended
+    fmt_fieldtypes_offset after data_offset, so a v2 segment's header is
+    shorter. Reading a v2 segment with the (larger) v3 struct size would
+    consume bytes belonging to the data section.
+
+    @return the header size in bytes, or 0 if @a version is unsupported.
+*/
+inline size_t
+log_buffer_header_size(unsigned version)
+{
+  if (!log_segment_version_supported(version)) {
+    return 0;
+  }
+  // v2 stops at data_offset; v3 and later include fmt_fieldtypes_offset.
+  return version >= LOG_SEGMENT_VERSION_FIELDTYPES ? sizeof(LogBufferHeader) : offsetof(LogBufferHeader, fmt_fieldtypes_offset);
+}
 
 union LB_State {
   LB_State() : ival(0) {}
@@ -193,6 +265,7 @@ public:
   static size_t max_entry_bytes();
   static int to_ascii(LogEntryHeader *entry, LogFormatType type, char *buf, int max_len, const char *symbol_str, char *printf_str,
                       unsigned buffer_version, const char *alt_format = nullptr, LogEscapeType escape_type = LOG_ESCAPE_NONE);
+
   static int resolve_custom_entry(LogFieldList *fieldlist, char *printf_str, char *read_from, char *write_to, int write_to_len,
                                   long timestamp, long timestamp_us, unsigned buffer_version, LogFieldList *alt_fieldlist = nullptr,
                                   char *alt_printf_str = nullptr, LogEscapeType escape_type = LOG_ESCAPE_NONE);
@@ -239,6 +312,7 @@ private:
   // private functions
   size_t   _add_buffer_header(const LogConfig *cfg);
   unsigned add_header_str(const char *str, char *buf_ptr, unsigned buf_len);
+  unsigned add_field_type_schema(const LogFieldList *fieldlist, char *buf_ptr, unsigned buf_len);
   void     freeLogBuffer();
 
   // -- member functions that are not allowed --
@@ -296,6 +370,7 @@ public:
 
 private:
   char    *m_next;
+  char    *m_buffer_end; // one past the last readable byte of the segment
   unsigned m_iter_entry_count;
   unsigned m_buffer_entry_count;
 
@@ -311,21 +386,30 @@ private:
   -------------------------------------------------------------------------*/
 
 inline LogBufferIterator::LogBufferIterator(LogBufferHeader *header)
-  : m_next(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
+  : m_next(nullptr), m_buffer_end(nullptr), m_iter_entry_count(0), m_buffer_entry_count(0)
 {
   ink_assert(header);
 
-  switch (header->version) {
-  case LOG_SEGMENT_VERSION:
-    m_next               = (char *)header + header->data_offset;
-    m_buffer_entry_count = header->entry_count;
-    break;
-
-  default:
+  // Entry iteration is identical across v2/v3 (v3 only appended a header field
+  // after data_offset). Accept the whole supported range.
+  if (log_segment_version_supported(header->version)) {
+    // Bound the data section against byte_count so a corrupt/hostile data_offset
+    // (a .blog read by logcat/logstats may be untrusted) can't make next()
+    // dereference outside the buffer. data_offset sits past the header, and must
+    // be 8-byte aligned so the int64 reads in each entry are well-aligned.
+    size_t header_size = log_buffer_header_size(header->version);
+    if (header->data_offset >= header_size && header->data_offset <= header->byte_count &&
+        header->data_offset % INK_MIN_ALIGN == 0) {
+      m_next               = reinterpret_cast<char *>(header) + header->data_offset;
+      m_buffer_end         = reinterpret_cast<char *>(header) + header->byte_count;
+      m_buffer_entry_count = header->entry_count;
+    }
+    // else: bad data_offset -- leave m_next null (next() yields nothing). The
+    // file readers report it; the iterator stays silent to avoid log spam.
+  } else {
     Note("Invalid LogBuffer version %d in LogBufferIterator; "
-         "current version is %d",
-         header->version, LOG_SEGMENT_VERSION);
-    break;
+         "supported versions are %d-%d",
+         header->version, LOG_SEGMENT_VERSION_MIN_SUPPORTED, LOG_SEGMENT_VERSION);
   }
 }
 
