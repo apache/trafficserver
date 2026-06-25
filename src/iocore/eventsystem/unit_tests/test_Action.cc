@@ -25,7 +25,7 @@
 
 #include <catch2/generators/catch_generators.hpp>
 
-#include <cstdint>
+#include <atomic>
 
 using inkevent_test::CountingContinuation;
 using inkevent_test::EventProcessorListener;
