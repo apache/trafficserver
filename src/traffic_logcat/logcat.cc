@@ -47,7 +47,9 @@
 
 #include "LogEntryJson.h"
 
+#include <cctype>
 #include <cinttypes>
+#include <string>
 
 namespace
 {
@@ -317,8 +319,24 @@ print_logbuffer_header(LogBufferHeader *header, int out_fd)
   dprintf(out_fd, "  %-22s%" PRIu64 "\n", "log_object_signature:", header->log_object_signature);
   dprintf(out_fd, "  %-22s%u\n", "data_offset:", header->data_offset);
 
+  // Escape non-printable bytes (the compiled printf format uses 0xff field
+  // markers); raw bytes corrupt the text dump and truncate UTF-8 consumers.
   auto print_str = [&](const char *label, const char *value) {
-    dprintf(out_fd, "  %-22s%s\n", label, value != nullptr ? value : "(none)");
+    if (value == nullptr) {
+      dprintf(out_fd, "  %-22s%s\n", label, "(none)");
+      return;
+    }
+    std::string escaped;
+    for (const unsigned char *p = reinterpret_cast<const unsigned char *>(value); *p != '\0'; ++p) {
+      if (std::isprint(*p) != 0) {
+        escaped.push_back(static_cast<char>(*p));
+      } else {
+        char hex[5];
+        snprintf(hex, sizeof(hex), "\\x%02x", *p);
+        escaped.append(hex);
+      }
+    }
+    dprintf(out_fd, "  %-22s%s\n", label, escaped.c_str());
   };
   print_str("format_name:", bounded_header_str(header, header->fmt_name_offset));
   print_str("fieldlist:", bounded_header_str(header, header->fmt_fieldlist_offset));
