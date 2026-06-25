@@ -39,6 +39,7 @@
 
 #include "tsutil/DenseThreadId.h"
 #include "tsutil/Assert.h"
+#include "tsutil/ts_thread_safety.h"
 
 #include <array>
 #include <atomic>
@@ -68,129 +69,54 @@ using Token = size_t;
 
 /**
    ts::bravo::shared_lock
+
+   Reader guard for shared_mutex_impl, carrying the BRAVO Token. A rigid scoped
+   capability: it acquires the shared lock in its constructor and releases it in
+   its destructor, with no copy, move, defer or release. That rigidity is what
+   lets the analysis track it -- the deferred and movable forms of
+   std::shared_lock let the held state escape a single scope and cannot be
+   modelled -- and BRAVO readers need only this scoped form.
  */
-template <class Mutex> class shared_lock
+template <class Mutex> class TS_SCOPED_CAPABILITY shared_lock
 {
 public:
   using mutex_type = Mutex;
 
-  shared_lock() noexcept = default;
-  shared_lock(Mutex &m) : _mutex(&m) { lock(); }
-  shared_lock(Mutex &m, std::try_to_lock_t) : _mutex(&m) { try_lock(); }
-  shared_lock(Mutex &m, std::defer_lock_t) noexcept : _mutex(&m) {}
-
-  ~shared_lock()
-  {
-    if (_owns) {
-      _mutex->unlock_shared(_token);
-    }
-  };
+  explicit shared_lock(Mutex &m) TS_ACQUIRE_SHARED(m) : _mutex(&m) { _mutex->lock_shared(_token); }
+  ~shared_lock() TS_RELEASE() { _mutex->unlock_shared(_token); }
 
   ////
-  // Not Copyable
+  // Neither copyable nor movable: the held shared lock must not escape this scope.
   //
   shared_lock(shared_lock const &)            = delete;
   shared_lock &operator=(shared_lock const &) = delete;
-
-  ////
-  // Moveable
-  //
-  shared_lock(shared_lock &&s) : _mutex(s._mutex), _token(s._token), _owns(s._owns)
-  {
-    s._mutex = nullptr;
-    s._token = 0;
-    s._owns  = false;
-  };
-
-  shared_lock &
-  operator=(shared_lock &&s)
-  {
-    if (_owns) {
-      _mutex->unlock_shared(_token);
-    }
-    _mutex = s._mutex;
-    _token = s._token;
-    _owns  = s._owns;
-
-    s._mutex = nullptr;
-    s._token = 0;
-    s._owns  = false;
-  };
-
-  ////
-  // Shared locking
-  //
-  void
-  lock()
-  {
-    _mutex->lock_shared(_token);
-    _owns = true;
-  }
-
-  bool
-  try_lock()
-  {
-    _owns = _mutex->try_lock_shared(_token);
-    return _owns;
-  }
-
-  // not implemented yet
-  bool try_lock_for()   = delete;
-  bool try_lock_until() = delete;
-
-  void
-  unlock()
-  {
-    _mutex->unlock_shared(_token);
-    _owns = false;
-  }
-
-  ////
-  // Modifiers
-  //
-  void
-  swap(shared_lock &s)
-  {
-    std::swap(_mutex, s._mutex);
-    std::swap(_token, s._token);
-    std::swap(_owns, s._owns);
-  }
-
-  mutex_type *
-  release()
-  {
-    mutex_type *m = _mutex;
-    _mutex        = nullptr;
-    _token        = 0;
-    _owns         = false;
-    return m;
-  }
+  shared_lock(shared_lock &&)                 = delete;
+  shared_lock &operator=(shared_lock &&)      = delete;
 
   ////
   // Observers
   //
   mutex_type *
-  mutex()
+  mutex() const
   {
     return _mutex;
   }
 
   Token
-  token()
+  token() const
   {
     return _token;
   }
 
   bool
-  owns_lock()
+  owns_lock() const
   {
-    return _owns;
+    return _mutex != nullptr;
   }
 
 private:
   mutex_type *_mutex = nullptr;
   Token       _token = 0;
-  bool        _owns  = false;
 };
 
 /**
@@ -201,7 +127,8 @@ private:
 
    Set the SLOT_SIZE larger than DenseThreadId::num_possible_values to go fast-path.
  */
-template <typename T = std::shared_mutex, size_t SLOT_SIZE = 256, int SLOWDOWN_GUARD = 7> class shared_mutex_impl
+template <typename T = std::shared_mutex, size_t SLOT_SIZE = 256, int SLOWDOWN_GUARD = 7>
+class TS_CAPABILITY("shared_mutex") shared_mutex_impl
 {
 public:
   shared_mutex_impl()  = default;
@@ -219,15 +146,22 @@ public:
   ////
   // Exclusive locking
   //
+  // These lock/unlock methods are the trusted implementation of this capability:
+  // their bodies drive the underlying lock (T, by default std::shared_mutex,
+  // which libc++ annotates as a capability) across method boundaries and along
+  // the BRAVO fast/slow-path branches -- patterns the analysis cannot follow.
+  // Exempt the bodies so only the capability contract on each signature is
+  // checked; the data-race checking happens at the call sites.
+  //
   void
-  lock()
+  lock() TS_ACQUIRE() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     _mutex.underlying.lock();
     _revoke();
   }
 
   bool
-  try_lock()
+  try_lock() TS_TRY_ACQUIRE(true) TS_NO_THREAD_SAFETY_ANALYSIS
   {
     bool r = _mutex.underlying.try_lock();
     if (!r) {
@@ -240,16 +174,16 @@ public:
   }
 
   void
-  unlock()
+  unlock() TS_RELEASE() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     _mutex.underlying.unlock();
   }
 
   ////
-  // Shared locking
+  // Shared locking (bodies exempted for the same reason as the exclusive ones above)
   //
   void
-  lock_shared(Token &token)
+  lock_shared(Token &token) TS_ACQUIRE_SHARED() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
 
@@ -277,7 +211,7 @@ public:
   }
 
   bool
-  try_lock_shared(Token &token)
+  try_lock_shared(Token &token) TS_TRY_ACQUIRE_SHARED(true) TS_NO_THREAD_SAFETY_ANALYSIS
   {
     debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
 
@@ -313,7 +247,7 @@ public:
   }
 
   void
-  unlock_shared(const Token token)
+  unlock_shared(const Token token) TS_RELEASE_SHARED() TS_NO_THREAD_SAFETY_ANALYSIS
   {
     if (token == 0) {
       _mutex.underlying.unlock_shared();
