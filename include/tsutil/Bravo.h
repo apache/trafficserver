@@ -187,6 +187,9 @@ public:
   {
     debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
 
+    // Clear up front so a slow-path acquisition never leaves a stale fast-path slot for unlock_shared().
+    token = 0;
+
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
       size_t index  = DenseThreadId::self() % SLOT_SIZE;
@@ -214,6 +217,9 @@ public:
   try_lock_shared(Token &token) TS_TRY_ACQUIRE_SHARED(true) TS_NO_THREAD_SAFETY_ANALYSIS
   {
     debug_assert(SLOT_SIZE >= DenseThreadId::num_possible_values());
+
+    // Clear up front so a slow-path acquisition never leaves a stale fast-path slot for unlock_shared().
+    token = 0;
 
     // Fast path
     if (_mutex.read_bias.load(std::memory_order_acquire)) {
