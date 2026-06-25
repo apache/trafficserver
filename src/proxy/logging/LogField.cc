@@ -261,7 +261,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_type > Type::INVALID && m_type < Type::N_TYPES);
   ink_assert(m_marshal_func != (MarshalFunc) nullptr);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
@@ -287,7 +287,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, MarshalFunc 
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_type > Type::INVALID && m_type < Type::N_TYPES);
   ink_assert(m_marshal_func != (MarshalFunc) nullptr);
   ink_assert(m_alias_map);
 
@@ -316,7 +316,7 @@ LogField::LogField(const char *name, const char *symbol, Type type, CustomMarsha
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_type > Type::INVALID && m_type < Type::N_TYPES);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
@@ -365,7 +365,7 @@ LogField::milestones_from_m_name(TSMilestonesType *ms1, TSMilestonesType *ms2)
 LogField::LogField(const char *field, Container container)
   : m_name(ats_strdup(field)),
     m_symbol(ats_strdup(container_names[container])),
-    m_type(LogField::STRING),
+    m_type(LogField::Type::STRING),
     m_container(container),
     m_marshal_func(nullptr),
     m_unmarshal_func(nullptr),
@@ -380,7 +380,7 @@ LogField::LogField(const char *field, Container container)
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_type > Type::INVALID && m_type < Type::N_TYPES);
 
   m_time_field = (strcmp(m_symbol, "cqts") == 0 || strcmp(m_symbol, "cqth") == 0 || strcmp(m_symbol, "cqtq") == 0 ||
                   strcmp(m_symbol, "cqtn") == 0 || strcmp(m_symbol, "cqtd") == 0 || strcmp(m_symbol, "cqtt") == 0);
@@ -402,7 +402,7 @@ LogField::LogField(const char *field, Container container)
 
   case ICFG:
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    m_type           = LogField::sINT;
+    m_type           = LogField::Type::sINT;
     break;
 
   case RECORD:
@@ -415,7 +415,7 @@ LogField::LogField(const char *field, Container container)
       Note("Invalid milestone name in LogField ctor: %s", m_name);
     }
     m_unmarshal_func = &(LogAccess::unmarshal_int_to_str);
-    m_type           = LogField::sINT;
+    m_type           = LogField::Type::sINT;
     break;
 
   case MSDMS: {
@@ -424,7 +424,7 @@ LogField::LogField(const char *field, Container container)
       Note("Invalid milestone range in LogField ctor: %s", m_name);
     }
     m_unmarshal_func = &(LogAccess::unmarshal_milestone_diff);
-    m_type           = LogField::sINT;
+    m_type           = LogField::Type::sINT;
     break;
   }
 
@@ -437,7 +437,7 @@ LogField::LogField(const char *symbol, std::vector<HeaderField> header_fields, s
                    std::optional<std::string> fallback_default)
   : m_name(ats_strdup(symbol)),
     m_symbol(ats_strdup(symbol)),
-    m_type(LogField::STRING),
+    m_type(LogField::Type::STRING),
     m_container(NO_CONTAINER),
     m_marshal_func(nullptr),
     m_unmarshal_func(&(LogAccess::unmarshal_str)),
@@ -455,7 +455,7 @@ LogField::LogField(const char *symbol, std::vector<HeaderField> header_fields, s
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_type > Type::INVALID && m_type < Type::N_TYPES);
   ink_assert(!m_fallback_header_fields.empty());
   ink_assert(!(m_fallback_field && m_fallback_default.has_value()));
 }
@@ -484,7 +484,7 @@ LogField::LogField(const LogField &rhs)
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);
-  ink_assert(m_type >= 0 && m_type < N_TYPES);
+  ink_assert(m_type > Type::INVALID && m_type < Type::N_TYPES);
 }
 
 /*-------------------------------------------------------------------------
@@ -763,14 +763,15 @@ LogField::unmarshal(char **buf, char *dest, int len, LogEscapeType escape_type)
 void
 LogField::display(FILE *fd)
 {
-  static const char *names[LogField::N_TYPES] = {"sINT", "dINT", "STR", "IP"};
+  // Indexed by LogField::Type; index 0 is the reserved INVALID slot.
+  static const char *names[static_cast<int>(LogField::Type::N_TYPES)] = {"INVALID", "sINT", "dINT", "STR", "IP"};
 
   if (is_field_fallback()) {
-    fprintf(fd, "    %30s %10s %5s\n", m_name, "fallback", names[m_type]);
+    fprintf(fd, "    %30s %10s %5s\n", m_name, "fallback", names[static_cast<int>(m_type)]);
     return;
   }
 
-  fprintf(fd, "    %30s %10s %5s\n", m_name, m_symbol, names[m_type]);
+  fprintf(fd, "    %30s %10s %5s\n", m_name, m_symbol, names[static_cast<int>(m_type)]);
 }
 
 /*-------------------------------------------------------------------------
@@ -1019,7 +1020,7 @@ LogFieldList::add(LogField *field, bool copy)
     m_field_list.enqueue(field);
   }
 
-  if (field->type() == LogField::sINT) {
+  if (field->type() == LogField::Type::sINT) {
     m_marshal_len += INK_MIN_ALIGN;
   }
 }
@@ -1029,7 +1030,7 @@ LogFieldList::remove(LogField *field)
 {
   ink_assert(field != nullptr);
 
-  if (field->type() == LogField::sINT) {
+  if (field->type() == LogField::Type::sINT) {
     m_marshal_len -= INK_MIN_ALIGN;
   }
   m_field_list.remove(field);
@@ -1074,7 +1075,7 @@ LogFieldList::marshal_len(LogAccess *lad)
 {
   int bytes = 0;
   for (LogField *f = first(); f; f = next(f)) {
-    if (f->type() != LogField::sINT) {
+    if (f->type() != LogField::Type::sINT) {
       const int len = f->marshal_len(lad);
       ink_release_assert(len >= INK_MIN_ALIGN);
       bytes += len;

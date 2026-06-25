@@ -68,6 +68,10 @@ if(BUILD_TESTING)
   add_executable(test_LogAccess unit-tests/test_LogAccess.cc)
   target_link_libraries(test_LogAccess ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
   add_catch2_test(NAME test_LogAccess COMMAND test_LogAccess)
+
+  add_executable(test_LogBuffer unit-tests/test_LogBuffer.cc)
+  target_link_libraries(test_LogBuffer ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_LogBuffer COMMAND test_LogBuffer)
 endif()
 
 clang_tidy_check(logging)

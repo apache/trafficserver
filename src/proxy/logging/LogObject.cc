@@ -102,10 +102,11 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb, bool /* auto_created ATS_UNUSED */, int rolling_max_count,
-                     int rolling_min_count, bool reopen_after_rolling, int pipe_buffer_size, bool fast)
+                     int rolling_min_count, bool reopen_after_rolling, int pipe_buffer_size, bool fast, unsigned binary_log_version)
   : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
+    m_binary_log_version(binary_log_version),
     m_flush_threads(flush_threads),
     m_rolling_interval_sec(rolling_interval_sec),
     m_rolling_offset_hr(rolling_offset_hr),

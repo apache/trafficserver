@@ -9053,6 +9053,19 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
     }
   }
 
+  // TSLogType mirrors LogField::Type's values and is static_cast to it below.
+  // apidefs.h.in can't reference LogField::Type, so pin the alignment here (the
+  // only TU that sees both) -- a reorder then fails to compile.
+  static_assert(static_cast<int>(TS_LOG_TYPE_INT) == static_cast<int>(LogField::Type::sINT));
+  static_assert(static_cast<int>(TS_LOG_TYPE_STRING) == static_cast<int>(LogField::Type::STRING));
+  static_assert(static_cast<int>(TS_LOG_TYPE_ADDR) == static_cast<int>(LogField::Type::IP));
+
+  // Reject anything outside the public set before the cast, so a bad plugin
+  // value can't become an INVALID/out-of-range LogField::Type and trip the ctor.
+  if (type != TS_LOG_TYPE_INT && type != TS_LOG_TYPE_STRING && type != TS_LOG_TYPE_ADDR) {
+    return TS_ERROR;
+  }
+
   LogField *field = new LogField(
     name.data(), symbol.data(), static_cast<LogField::Type>(type),
     [marshal_cb](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); }, unmarshal_cb);

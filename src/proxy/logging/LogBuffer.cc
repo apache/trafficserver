@@ -72,7 +72,8 @@ char *
 LogBufferHeader::fmt_fieldlist()
 {
   char *addr = nullptr;
-  if (fmt_fieldlist_offset) {
+  // Range-check the untrusted on-disk offset: OOB pointer arithmetic is UB even unread.
+  if (fmt_fieldlist_offset && fmt_fieldlist_offset < byte_count) {
     addr = reinterpret_cast<char *>(this) + fmt_fieldlist_offset;
   }
   return addr;
@@ -84,6 +85,17 @@ LogBufferHeader::fmt_printf()
   char *addr = nullptr;
   if (fmt_printf_offset) {
     addr = reinterpret_cast<char *>(this) + fmt_printf_offset;
+  }
+  return addr;
+}
+
+char *
+LogBufferHeader::fmt_fieldtypes()
+{
+  char *addr = nullptr;
+  // v3+ only (v2 leaves these bytes uninitialized); range-check the untrusted offset.
+  if (version >= LOG_SEGMENT_VERSION_FIELDTYPES && fmt_fieldtypes_offset && fmt_fieldtypes_offset < byte_count) {
+    addr = reinterpret_cast<char *>(this) + fmt_fieldtypes_offset;
   }
   return addr;
 }
@@ -384,6 +396,61 @@ LogBuffer::add_header_str(const char *str, char *buf_ptr, unsigned buf_len)
   return len;
 }
 
+/*-------------------------------------------------------------------------
+  LogBuffer::add_field_type_schema
+
+  Write the v3 LogFieldTypeSchema blob (field_count, then one LogField::Type
+  code per field, in field-list order) at buf_ptr. Returns bytes written, or 0
+  if the field list is empty or the blob would not fit (caller then leaves
+  fmt_fieldtypes_offset at 0).
+  -------------------------------------------------------------------------*/
+// No tail padding, so type codes start right after the uint16_t field_count.
+static_assert(sizeof(LogFieldTypeSchema) == sizeof(uint16_t), "LogFieldTypeSchema wire layout must not gain padding");
+
+// LogField::Type is serialized directly as the wire code; pin the values so a
+// reorder fails to compile rather than corrupting every v3 log.
+static_assert(static_cast<uint8_t>(LogField::Type::INVALID) == 0 && static_cast<uint8_t>(LogField::Type::sINT) == 1 &&
+                static_cast<uint8_t>(LogField::Type::dINT) == 2 && static_cast<uint8_t>(LogField::Type::STRING) == 3 &&
+                static_cast<uint8_t>(LogField::Type::IP) == 4 && static_cast<uint8_t>(LogField::Type::N_TYPES) == 5,
+              "LogField::Type values are the v3 .blog wire codes and must not change");
+
+unsigned
+LogBuffer::add_field_type_schema(const LogFieldList *fieldlist, char *buf_ptr, unsigned buf_len)
+{
+  if (fieldlist == nullptr) {
+    return 0;
+  }
+
+  unsigned field_count = 0;
+  for (LogField *f = fieldlist->first(); f != nullptr; f = fieldlist->next(f)) {
+    ++field_count;
+  }
+  if (field_count == 0) {
+    return 0;
+  }
+
+  // field_count is published as a uint16_t; refuse to emit a truncated schema.
+  if (field_count > UINT16_MAX) {
+    return 0;
+  }
+
+  unsigned blob_len = sizeof(LogFieldTypeSchema) + field_count; // one uint8_t code per field
+  if (blob_len > buf_len) {
+    return 0;
+  }
+
+  LogFieldTypeSchema *schema = reinterpret_cast<LogFieldTypeSchema *>(buf_ptr);
+  schema->field_count        = static_cast<uint16_t>(field_count);
+
+  uint8_t *codes = reinterpret_cast<uint8_t *>(buf_ptr) + sizeof(LogFieldTypeSchema);
+  unsigned i     = 0;
+  for (LogField *f = fieldlist->first(); f != nullptr; f = fieldlist->next(f)) {
+    codes[i++] = static_cast<uint8_t>(f->type());
+  }
+
+  return blob_len;
+}
+
 size_t
 LogBuffer::_add_buffer_header(const LogConfig *cfg)
 {
@@ -392,10 +459,18 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
   //
   // initialize the header
   //
-  LogFormat *fmt                 = m_owner->m_format.get();
+  LogFormat *fmt = m_owner->m_format.get();
+
+  // Per-LogObject on-disk version (logging.yaml "binary_log_version"); v2 emits
+  // the pre-v3 layout. Clamp defensively against bad config.
+  unsigned version = m_owner->get_binary_log_version();
+  if (!log_segment_version_supported(version)) {
+    version = LOG_SEGMENT_VERSION;
+  }
+
   m_header                       = reinterpret_cast<LogBufferHeader *>(m_buffer);
   m_header->cookie               = LOG_SEGMENT_COOKIE;
-  m_header->version              = LOG_SEGMENT_VERSION;
+  m_header->version              = version;
   m_header->format_type          = fmt->type();
   m_header->entry_count          = 0;
   m_header->low_timestamp        = LogUtils::timestamp();
@@ -412,13 +487,16 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
   // size of the buffer header.
   //
 
-  header_len = sizeof(LogBufferHeader); // at least ...
+  // Size the header to the version: a v2 segment omits the trailing
+  // fmt_fieldtypes_offset word, else version-sized reads misframe it.
+  header_len = log_buffer_header_size(version);
 
-  m_header->fmt_name_offset      = 0;
-  m_header->fmt_fieldlist_offset = 0;
-  m_header->fmt_printf_offset    = 0;
-  m_header->src_hostname_offset  = 0;
-  m_header->log_filename_offset  = 0;
+  m_header->fmt_name_offset       = 0;
+  m_header->fmt_fieldlist_offset  = 0;
+  m_header->fmt_printf_offset     = 0;
+  m_header->src_hostname_offset   = 0;
+  m_header->log_filename_offset   = 0;
+  m_header->fmt_fieldtypes_offset = 0;
 
   if (fmt->name()) {
     m_header->fmt_name_offset  = header_len;
@@ -439,6 +517,18 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
   if (m_owner->get_base_filename()) {
     m_header->log_filename_offset  = header_len;
     header_len                    += add_header_str(m_owner->get_base_filename(), &m_buffer[header_len], m_size - header_len);
+  }
+  // v3: publish the per-field types (paired with fmt_fieldlist) so a generic
+  // reader needs no ATS symbol->type table. Skipped for v2 and text logs. The
+  // schema leads with a uint16, so align its offset off the NUL-terminated
+  // header strings before writing.
+  if (version >= LOG_SEGMENT_VERSION_FIELDTYPES && fmt->fieldlist()) {
+    size_t schema_off = INK_ALIGN(header_len, alignof(LogFieldTypeSchema));
+    if (unsigned schema_len = add_field_type_schema(&fmt->field_list(), &m_buffer[schema_off], m_size - schema_off);
+        schema_len > 0) {
+      m_header->fmt_fieldtypes_offset = schema_off;
+      header_len                      = schema_off + schema_len;
+    }
   }
   // update the rest of the header fields; make sure the header_len is
   // correctly aligned, so that the first record will start on a legal
@@ -772,16 +862,28 @@ LogBufferList::get()
 LogEntryHeader *
 LogBufferIterator::next()
 {
-  LogEntryHeader *ret_val = nullptr;
-  LogEntryHeader *entry   = reinterpret_cast<LogEntryHeader *>(m_next);
-
-  if (entry) {
-    if (m_iter_entry_count < m_buffer_entry_count) {
-      m_next += entry->entry_len;
-      ++m_iter_entry_count;
-      ret_val = entry;
-    }
+  if (m_next == nullptr || m_iter_entry_count >= m_buffer_entry_count) {
+    return nullptr;
   }
 
-  return ret_val;
+  // The entry header must fit before we read entry_len. (m_next <= m_buffer_end
+  // holds: the ctor bounds the start and we only advance by validated lengths.)
+  if (static_cast<size_t>(m_buffer_end - m_next) < sizeof(LogEntryHeader)) {
+    return nullptr;
+  }
+
+  LogEntryHeader *entry = reinterpret_cast<LogEntryHeader *>(m_next);
+
+  // entry_len must cover its header (forward progress), stay in the segment,
+  // and be 8-byte aligned so the next entry's int64 reads stay aligned; guards
+  // a hostile entry_len in an untrusted .blog.
+  if (entry->entry_len < sizeof(LogEntryHeader) || entry->entry_len > static_cast<size_t>(m_buffer_end - m_next) ||
+      entry->entry_len % INK_MIN_ALIGN != 0) {
+    return nullptr;
+  }
+
+  m_next += entry->entry_len;
+  ++m_iter_entry_count;
+
+  return entry;
 }
