@@ -49,3 +49,8 @@ sni:
 
 # test glob in the middle, this will be an exact match
 - fqdn: "cat.*.com"
+
+# test session ticket overrides
+- fqdn: tickets.com
+  ssl_ticket_enabled: 1
+  ssl_ticket_number: 3
