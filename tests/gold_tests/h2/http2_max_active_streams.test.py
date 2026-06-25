@@ -68,7 +68,7 @@ class Http2MaxActiveStreamsTest:
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
                 r'stream 7: RST_STREAM error_code=7',
                 'stream 7 must also be refused with REFUSED_STREAM, proving HPACK decode happened on stream 5.')
-            ts.Disk.diags_log.Content = Testers.ContainsExpression(
+            ts.Disk.traffic_out.Content += Testers.ContainsExpression(
                 r'HTTP/2 stream error code=0x07.*active streams cap reached',
                 'ATS should log the cap-reached stream error under enforce policy.')
         else:
