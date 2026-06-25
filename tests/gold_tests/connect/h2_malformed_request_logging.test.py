@@ -121,7 +121,7 @@ logging:
       format: malformed_h2_request
       mode: ascii
 """.split('\n'))
-        self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
+        self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'recv headers malformed request',
             'ATS should reject malformed requests at the HTTP/2 layer.',
         )

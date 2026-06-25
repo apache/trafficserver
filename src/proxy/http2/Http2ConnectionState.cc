@@ -1494,8 +1494,8 @@ Http2ConnectionState::rcv_frame(const Http2Frame *frame)
       // The Http2ClientSession will shutdown because connection_state.is_state_closed() will be true
     } else if (error.cls == Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM) {
       if (error.msg) {
-        Error("HTTP/2 stream error code=0x%02x client_ip=%s session_id=%" PRId64 " stream_id=%u %s", static_cast<int>(error.code),
-              client_ip, session->get_connection_id(), stream_id, error.msg);
+        Http2StreamDebug(session, stream_id, "HTTP/2 stream error code=0x%02x client_ip=%s %s", static_cast<int>(error.code),
+                         client_ip, error.msg);
       }
       this->send_rst_stream_frame(stream_id, error.code);
 
