@@ -1743,6 +1743,10 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 {
   int retval = super::populate(con, c, arg);
   if (retval != EVENT_DONE) {
+    // arg is the migrated SSL this VC would adopt below; release it since we won't.
+    if (arg != nullptr) {
+      SSL_free(static_cast<SSL *>(arg));
+    }
     return retval;
   }
   // Add in the SSL data

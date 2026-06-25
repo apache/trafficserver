@@ -1240,6 +1240,8 @@ stapling_refresh_response(certinfo *cinf, TS_OCSP_RESPONSE **prsp)
     goto err;
   }
   if (!TS_OCSP_request_add0_id(req, id)) {
+    // add0 only takes ownership of id on success.
+    TS_OCSP_CERTID_free(id);
     goto err;
   }
 
@@ -1424,6 +1426,11 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     Error("ssl_callback_ocsp_stapling: failed to get certificate status for %s", cinf->certname);
     return SSL_TLSEXT_ERR_NOACK;
   } else {
+#ifdef OPENSSL_IS_BORINGSSL
+    // SSL_set_ocsp_response copies the response, so hand it the cached buffer directly.
+    int set_ok = SSL_set_ocsp_response(ssl, cinf->resp_der, cinf->resp_derlen);
+    ink_mutex_release(&cinf->stapling_mutex);
+#else
     unsigned char *p = static_cast<unsigned char *>(OPENSSL_malloc(cinf->resp_derlen));
     if (p == nullptr) {
       ink_mutex_release(&cinf->stapling_mutex);
@@ -1432,7 +1439,15 @@ ssl_callback_ocsp_stapling(SSL *ssl, void *)
     }
     memcpy(p, cinf->resp_der, cinf->resp_derlen);
     ink_mutex_release(&cinf->stapling_mutex);
-    SSL_set_tlsext_status_ocsp_resp(ssl, p, cinf->resp_derlen);
+    // Takes ownership of p and frees it on success; on failure it does not.
+    int set_ok = SSL_set_tlsext_status_ocsp_resp(ssl, p, cinf->resp_derlen);
+    if (set_ok == 0) {
+      OPENSSL_free(p);
+    }
+#endif
+    if (set_ok == 0) {
+      return SSL_TLSEXT_ERR_NOACK;
+    }
     Dbg(dbg_ctl_ssl_ocsp, "ssl_callback_ocsp_stapling: successfully got certificate status for %s", cinf->certname);
     Dbg(dbg_ctl_ssl_ocsp, "is_prefetched:%d uri:%s", cinf->is_prefetched, cinf->uri);
     return SSL_TLSEXT_ERR_OK;
