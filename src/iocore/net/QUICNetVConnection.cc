@@ -37,6 +37,7 @@
 
 #include <netinet/in.h>
 #include <quiche.h>
+#include <cstring>
 
 namespace
 {
@@ -390,8 +391,28 @@ QUICNetVConnection::stream_manager()
 }
 
 void
-QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr /* error ATS_UNUSED */)
+QUICNetVConnection::close_quic_connection(QUICConnectionErrorUPtr error)
 {
+  if (this->_quiche_con == nullptr || quiche_conn_is_closed(this->_quiche_con) || quiche_conn_is_draining(this->_quiche_con)) {
+    return;
+  }
+
+  const bool     is_app_error = error != nullptr && error->cls == QUICErrorClass::APPLICATION;
+  const uint64_t code         = error == nullptr ? static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR) : error->code;
+  const uint8_t *reason       = nullptr;
+  size_t         reason_len   = 0;
+
+  if (error != nullptr && error->msg != nullptr) {
+    reason     = reinterpret_cast<const uint8_t *>(error->msg);
+    reason_len = strlen(error->msg);
+  }
+
+  if (quiche_conn_close(this->_quiche_con, is_app_error, code, reason, reason_len) != 0) {
+    QUICConDebug("failed to close QUIC connection with code %" PRIu64, code);
+    return;
+  }
+
+  this->_schedule_packet_write_ready(false);
 }
 
 void
@@ -498,6 +519,12 @@ QUICNetVConnection::negotiated_application_name() const
   quiche_conn_application_proto(this->_quiche_con, &name, &name_len);
 
   return std::string_view(reinterpret_cast<const char *>(name), name_len);
+}
+
+void
+QUICNetVConnection::on_stream_updated()
+{
+  this->_schedule_packet_write_ready(false);
 }
 
 bool
@@ -652,7 +679,7 @@ QUICNetVConnection::_handle_read_ready()
       [[maybe_unused]] QUICConnectionError err;
       stream = this->_stream_manager->create_stream(s, err);
     }
-    stream->receive_data(this->_quiche_con);
+    stream->receive_data(*this);
   }
   quiche_stream_iter_free(readable);
 }
@@ -669,7 +696,7 @@ QUICNetVConnection::_handle_write_ready()
         [[maybe_unused]] QUICConnectionError err;
         stream = this->_stream_manager->create_stream(s, err);
       }
-      stream->send_data(this->_quiche_con);
+      stream->send_data(*this);
     }
     quiche_stream_iter_free(writable);
   }
@@ -690,7 +717,6 @@ QUICNetVConnection::_handle_write_ready()
   while (written + max_udp_payload_size <= quantum) {
     res = quiche_conn_send(this->_quiche_con, reinterpret_cast<uint8_t *>(udp_payload->end()) + written, max_udp_payload_size,
                            &send_info);
-
 #ifdef HAVE_SO_TXTIME
     if (written == 0) {
       memcpy(&send_at_hint, &send_info.at, sizeof(struct timespec));
@@ -763,6 +789,31 @@ QUICConnection *
 QUICNetVConnection::get_quic_connection()
 {
   return static_cast<QUICConnection *>(this);
+}
+
+int64_t
+QUICNetVConnection::read_stream(QUICStreamId stream_id, uint8_t *buf, size_t len, bool &fin, QUICStreamIO::ErrorCode &error_code)
+{
+  return quiche_conn_stream_recv(this->_quiche_con, stream_id, buf, len, &fin, &error_code);
+}
+
+bool
+QUICNetVConnection::stream_read_finished(QUICStreamId stream_id)
+{
+  return quiche_conn_stream_finished(this->_quiche_con, stream_id);
+}
+
+int64_t
+QUICNetVConnection::stream_write_capacity(QUICStreamId stream_id)
+{
+  return quiche_conn_stream_capacity(this->_quiche_con, stream_id);
+}
+
+int64_t
+QUICNetVConnection::write_stream(QUICStreamId stream_id, const uint8_t *buf, size_t len, bool fin,
+                                 QUICStreamIO::ErrorCode &error_code)
+{
+  return quiche_conn_stream_send(this->_quiche_con, stream_id, const_cast<uint8_t *>(buf), len, fin, &error_code);
 }
 
 void

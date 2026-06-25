@@ -56,6 +56,9 @@ public:
   void           remove_transaction(HQTransaction *trans);
   HQTransaction *get_transaction(QUICStreamId);
 
+protected:
+  void _close_transactions();
+
 private:
   // this should be unordered map?
   Queue<HQTransaction> _transaction_list;

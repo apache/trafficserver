@@ -39,6 +39,8 @@ HQSession::HQSession(NetVConnection *vc) : ProxySession(vc)
 
 HQSession::~HQSession()
 {
+  this->_close_transactions();
+
   // Transactions should be deleted first before HQSession gets deleted.
   ink_assert(this->_transaction_list.head == nullptr);
 }
@@ -57,6 +59,17 @@ HQSession::remove_transaction(HQTransaction *trans)
   this->_transaction_list.remove(trans);
 
   return;
+}
+
+void
+HQSession::_close_transactions()
+{
+  while (this->_transaction_list.head != nullptr) {
+    auto *transaction = this->_transaction_list.head;
+
+    transaction->do_io_close();
+    delete transaction;
+  }
 }
 
 const char *
@@ -162,9 +175,11 @@ HQSession::main_event_handler(int event, void *edata)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     this->do_io_close();
-    for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
+    for (HQTransaction *t = this->_transaction_list.head; t != nullptr;) {
+      HQTransaction *next = static_cast<HQTransaction *>(t->link.next);
       SCOPED_MUTEX_LOCK(lock, t->mutex, this_ethread());
       t->handleEvent(event, edata);
+      t = next;
     }
     break;
   }
@@ -186,6 +201,7 @@ Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
 
 Http3Session::~Http3Session()
 {
+  this->_close_transactions();
   this->_vc = nullptr;
   delete this->_local_qpack;
   delete this->_remote_qpack;

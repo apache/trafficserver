@@ -28,7 +28,6 @@
 #include "proxy/http3/Http3FrameHandler.h"
 
 class HQTransaction;
-
 class Http3HeaderVIOAdaptor : public Continuation, public Http3FrameHandler
 {
 public:
