@@ -112,7 +112,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
       }
-      if (na->server.sock.is_ok() && !na->action_->cancelled) {
+      if (na->action_->server.load(std::memory_order_acquire) != nullptr && na->server.sock.is_ok() && !na->action_->cancelled) {
         if (!blockable) {
           na->action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
         } else {
@@ -387,7 +387,7 @@ NetAccept::do_blocking_accept(EThread *t)
       case -1:
         [[fallthrough]];
       default:
-        if (!action_->cancelled) {
+        if (action_->server.load(std::memory_order_acquire) != nullptr && !action_->cancelled) {
           SCOPED_MUTEX_LOCK(lock, action_->mutex ? action_->mutex : t->mutex, t);
           action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
           Warning("accept thread received fatal error: errno = %d", errno);
@@ -580,7 +580,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
         check_transient_accept_error(res);
         goto Ldone;
       }
-      if (!action_->cancelled) {
+      if (action_->server.load(std::memory_order_acquire) != nullptr && !action_->cancelled) {
         action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
       }
       goto Lerror;
