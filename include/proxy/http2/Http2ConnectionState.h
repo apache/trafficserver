@@ -130,6 +130,7 @@ public:
   void         release_stream();
   void         cleanup_streams();
   void         restart_receiving(Http2Stream *stream);
+  void         credit_discarded_data(uint32_t payload_length);
 
   /** Update all streams for the peer's newly dictated stream window size. */
   void update_initial_peer_rwnd(Http2WindowSize new_size);
