@@ -76,9 +76,11 @@ constexpr std::size_t CONTROL_SIZE = sizeof(CacheShmControl);
 // and the '-' separating the prefix from the per-object suffix can never be
 // mis-typed. Any stray framing carried over from an older config (e.g. a
 // literal "/ats-") is trimmed first, so migration can never yield an invalid
-// embedded-slash name like "//ats--". An embedded '/' or '-' in the middle is
-// preserved; only the framing characters are trimmed. Both the running server
-// and traffic_ctl normalize through here so they agree on the same names.
+// embedded-slash name like "//ats--". An embedded '-' in the middle is preserved;
+// an embedded '/' is stripped, since POSIX shm names permit only the leading '/'
+// (a mistyped "foo/bar" would otherwise build a name shm_open rejects with EINVAL).
+// Both the running server and traffic_ctl normalize through here so they agree on
+// the same names.
 inline std::string
 normalize_name_prefix(std::string_view configured)
 {
@@ -90,7 +92,14 @@ normalize_name_prefix(std::string_view configured)
   std::string_view middle    = (last_kept == std::string_view::npos || last_kept < begin) ?
                                  std::string_view{} :
                                  configured.substr(begin, last_kept - begin + 1);
-  return "/" + std::string(middle) + "-";
+  std::string      word{"/"};
+  for (char c : middle) {
+    if (c != '/') { // POSIX shm names allow only the leading '/'.
+      word += c;
+    }
+  }
+  word += "-";
+  return word;
 }
 
 // Name of the "<prefix>control" segment. Derived in one place so the cache

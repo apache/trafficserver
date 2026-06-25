@@ -196,9 +196,14 @@ TEST_CASE("CacheShm normalizes the configured name prefix", "[cache][shm]")
   CHECK(normalize_name_prefix("ats-") == "/ats-");
   CHECK(normalize_name_prefix("//ats--") == "/ats-");
 
-  // An embedded '/' or '-' in the middle is preserved -- only the framing is
-  // trimmed.
+  // An embedded '-' in the middle is preserved -- only the framing is trimmed.
   CHECK(normalize_name_prefix("ats-v2") == "/ats-v2-");
+
+  // An embedded '/' is stripped: POSIX shm names permit only the leading '/', so a
+  // mistyped middle word must not build a name shm_open would reject with EINVAL.
+  CHECK(normalize_name_prefix("foo/bar") == "/foobar-");
+  CHECK(normalize_name_prefix("/ats/v2/") == "/atsv2-");
+  CHECK(normalize_name_prefix("a/b/c") == "/abc-");
 }
 
 TEST_CASE("CacheShm process liveness check backs the concurrent-attach guard", "[cache][shm]")
