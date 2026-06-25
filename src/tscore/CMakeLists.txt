@@ -123,7 +123,10 @@ endif()
 
 add_dependencies(tscore ParseRules)
 target_include_directories(tscore PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
+if((TS_HAS_128BIT_CAS
+    AND TS_HAS_128BIT_ATOMIC
+    AND (TS_NEEDS_MCX16_FOR_CAS OR TS_NEEDS_MCX16_FOR_128BIT_ATOMIC))
+)
   target_compile_options(tscore PUBLIC "-mcx16")
 endif()
 
@@ -161,6 +164,7 @@ if(BUILD_TESTING)
     unit_tests/test_ink_base64.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
+    unit_tests/test_ink_queue.cc
     unit_tests/test_ink_string.cc
     unit_tests/test_ink_sys_control.cc
     unit_tests/test_layout.cc
