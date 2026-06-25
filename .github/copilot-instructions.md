@@ -75,6 +75,8 @@ void function() {
 - Functions/variables: `snake_case` → `handle_request()`, `server_port`, `cache_key`
 - Constants/macros: `UPPER_CASE` → `HTTP_STATUS_OK`, `MAX_BUFFER_SIZE`
 - Member variables: `snake_case` with no prefix → `connection_count`, `buffer_size`
+- Private member variables: `snake_case` with `m_` prefix → `m_was_modified`
+- Booleans variables are predicates: not `modified` but `was_modified`
 
 **C++20 Patterns (Use These):**
 ```cpp
@@ -153,6 +155,7 @@ for (auto &conn : connections) {
 - Python 3.11+ with type hints
 - 4-space indentation (never tabs)
 - Type annotations on all function signatures
+- Use f'...' strings rather than .format() strings for new Python code.
 
 ### License Headers
 
@@ -358,7 +361,9 @@ plugins/my_plugin/
 **When adding new functionality:**
 1. Check if unit tests exist in same directory (Catch2)
 2. Add integration tests in `tests/gold_tests/` (autest)
-3. Prefer `Test.ATSReplayTest()` with `replay.yaml` format (Proxy Verifier)
+3. Prefer `Test.ATSReplayTest()` with `replay.yaml` format (Proxy Verifier). If
+   `ATSReplayTest` doesn't fit, prefer organizing the test around a test class with
+   separate functions for configuring the servers, ATS, client, etc.
 4. Test both success and error paths
 
 ## Configuration
