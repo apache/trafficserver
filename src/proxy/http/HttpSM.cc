@@ -2617,6 +2617,11 @@ HttpSM::state_cache_open_read(int event, void *data)
       Metrics::Counter::increment(http_rsb.cache_compat_key_reads);
     }
 
+    // Record the cache open-read completion before state handling can advance
+    // into cache serving and stamp later transaction milestones.
+    ATS_PROBE1(milestone_cache_open_read_end, sm_id);
+    milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = ink_get_hrtime();
+
     ink_assert(t_state.cache_info.object_read != nullptr);
     call_transact_and_set_next_state(HttpTransact::HandleCacheOpenRead);
     break;
@@ -2643,6 +2648,11 @@ HttpSM::state_cache_open_read(int event, void *data)
       t_state.cache_lookup_result = HttpTransact::CACHE_LOOKUP_MISS;
     }
 
+    // Record the final cache open-read completion after any compatibility-key
+    // retry has been ruled out.
+    ATS_PROBE1(milestone_cache_open_read_end, sm_id);
+    milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = ink_get_hrtime();
+
     ink_assert(t_state.transact_return_point == nullptr);
     t_state.transact_return_point = HttpTransact::HandleCacheOpenRead;
     setup_cache_lookup_complete_api();
@@ -2652,9 +2662,6 @@ HttpSM::state_cache_open_read(int event, void *data)
     ink_release_assert(!"Unknown event");
     break;
   }
-
-  ATS_PROBE1(milestone_cache_open_read_end, sm_id);
-  milestones[TS_MILESTONE_CACHE_OPEN_READ_END] = ink_get_hrtime();
 
   return 0;
 }
