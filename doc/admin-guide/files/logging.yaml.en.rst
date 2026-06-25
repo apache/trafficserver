@@ -289,6 +289,15 @@ filename               string      The name of the logfile relative to the defau
 format                 string      a string with a valid named format specification.
 header                 string      If present, emitted as the first line of each
                                    new log file.
+binary_log_version     number      For ``binary`` logs only: the on-disk segment
+                                   format version, ``2`` or ``3`` (default
+                                   ``3``). Version 3 is self-describing (embeds a
+                                   per-field type schema so a generic reader can
+                                   decode the file without an ATS symbol table);
+                                   use ``2`` to emit the legacy layout for
+                                   downstream parsers that do not yet understand
+                                   version 3. Ignored for ``ascii`` and
+                                   ``ascii_pipe``.
 rolling_enabled        *see below* Determines the type of log rolling to use (or
                                    whether to disable rolling). Overrides
                                    :ts:cv:`proxy.config.log.rolling_enabled`.
@@ -389,3 +398,28 @@ matched the REFRESH_HIT filter we created.
      format: summaryfmt
      filters:
      - refreshhitfilter
+
+The following is an example of a binary log. Binary logs are written in the
+self-describing version 3 format by default, so ``traffic_logcat`` and
+``traffic_logstats`` (and any reader built from the
+:ref:`v3 format specification <binary-log-v3-format>`) can decode the
+``minimal.blog`` file without an embedded copy of the field table:
+
+.. code:: yaml
+
+   logs:
+   - mode: binary
+     filename: minimal
+     format: minimalfmt
+
+To keep emitting the older version 2 layout for a downstream parser that does
+not yet understand version 3, pin the object with ``binary_log_version``. This
+key only applies to ``binary`` logs and defaults to ``3``:
+
+.. code:: yaml
+
+   logs:
+   - mode: binary
+     filename: minimal_legacy
+     format: minimalfmt
+     binary_log_version: 2
