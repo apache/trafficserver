@@ -85,7 +85,9 @@ public:
     auto           ibb = this->_adapter->read(buf_len);
     IOBufferReader reader;
     reader.block = ibb;
-    return reader.read(buf, buf_len);
+    auto nread   = reader.read(buf, buf_len);
+    this->_adapter->consume(nread);
+    return nread;
   }
 };
 

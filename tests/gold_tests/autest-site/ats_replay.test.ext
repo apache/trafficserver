@@ -35,6 +35,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     name = ats_config.get('name', 'ts')
     process_config = ats_config.get('process_config', {})
     ts = obj.MakeATSProcess(name, **process_config)
+    if 'startup_timeout' in ats_config:
+        ts.StartupTimeout = ats_config['startup_timeout']
 
     # Configure records_config if specified.
     records_config = ats_config.get('records_config', {})
@@ -273,6 +275,7 @@ def ATSReplayTest(obj, replay_file: str):
     ats_config = autest_config['ats']
     process_config = ats_config.get('process_config', {})
     enable_tls = process_config.get('enable_tls', False)
+    enable_quic = process_config.get('enable_quic', False)
     metric_checks = ats_config.get('metric_checks', [])
     log_validation = ats_config.get('log_validation', None)
 
@@ -286,8 +289,9 @@ def ATSReplayTest(obj, replay_file: str):
     name = client_config.get('name', 'client')
     process_config = client_config.get('process_config', {})
     https_ports = [ts.Variables.ssl_port] if enable_tls else None
+    http3_ports = [ts.Variables.ssl_port] if enable_quic else None
     client = tr.AddVerifierClientProcess(
-        name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
+        name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, http3_ports=http3_ports, **process_config)
 
     # Set expected return code if specified. A list of codes is wrapped in
     # Any() so that any of the listed values is accepted.

@@ -27,6 +27,8 @@
 #include "proxy/hdrs/HTTP.h"
 #include "tscore/ink_inet.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string_view>
 

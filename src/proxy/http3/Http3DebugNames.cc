@@ -48,6 +48,8 @@ Http3DebugNames::frame_type(Http3FrameType type)
     return "X_RESERVED_3";
   case Http3FrameType::X_RESERVED_4:
     return "X_RESERVED_4";
+  case Http3FrameType::RESERVED:
+    return "RESERVED";
   case Http3FrameType::UNKNOWN:
   default:
     return "UNKNOWN";

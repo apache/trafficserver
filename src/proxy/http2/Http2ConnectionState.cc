@@ -2275,6 +2275,7 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   uint8_t         flags       = 0x00;
   IOBufferReader *resp_reader = stream->get_data_reader_for_send();
+  bool            last_write_vio_payload{false};
 
   SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
 
@@ -2307,6 +2308,16 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     } else {
       payload_length = resp_reader->read_avail();
     }
+    const int64_t remaining_write = stream->write_vio_ntodo();
+    if (remaining_write != INT64_MAX) {
+      if (remaining_write > 0) {
+        last_write_vio_payload = payload_length >= static_cast<size_t>(remaining_write);
+        payload_length         = std::min(payload_length, static_cast<size_t>(remaining_write));
+      } else {
+        last_write_vio_payload = true;
+        payload_length         = 0;
+      }
+    }
   } else {
     payload_length = 0;
   }
@@ -2334,7 +2345,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
     return Http2SendDataFrameResult::NO_PAYLOAD;
   }
 
-  if (stream->is_write_vio_done() && !resp_reader->is_read_avail_more_than(payload_length) && !stream->expect_send_trailer()) {
+  if (stream->is_write_vio_done() && (last_write_vio_payload || !resp_reader->is_read_avail_more_than(payload_length)) &&
+      !stream->expect_send_trailer()) {
     Http2StreamDebug(this->session, stream->get_id(), "End of Data Frame");
     flags |= HTTP2_FLAGS_DATA_END_STREAM;
   }
@@ -2456,6 +2468,7 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     flags          |= HTTP2_FLAGS_HEADERS_END_HEADERS;
     if (stream->is_outbound_connection()) { // Will be sending a request_header
       int method = send_hdr->method_get_wksidx();
+      stream->set_sent_request_method(method);
 
       // Set END_STREAM on request headers for POST, etc. methods combined with
       // an explicit length 0. Some origins RST on request headers with
