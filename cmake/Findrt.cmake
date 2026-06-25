@@ -15,31 +15,19 @@
 #
 #######################
 
-add_executable(
-  traffic_ctl
-  traffic_ctl.cc
-  CacheShmCommand.cc
-  ConvertConfigCommand.cc
-  CtrlCommands.cc
-  CtrlPrinters.cc
-  FileConfigCommand.cc
-  PrintUtils.cc
-  SSLMultiCertCommand.cc
-  ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
-)
+# librt provides shm_open()/shm_unlink() on older glibc (e.g. CentOS 7 / glibc 2.17).
+# glibc >= 2.34 folds them into libc and macOS has them in libc, so the library is
+# absent there; the imported target is then an empty no-op.
 
-target_include_directories(traffic_ctl PRIVATE ${CMAKE_SOURCE_DIR}/src/iocore/cache)
+find_library(rt_LIBRARY rt)
 
-target_link_libraries(
-  traffic_ctl
-  ts::tscore
-  ts::config
-  libswoc::libswoc
-  yaml-cpp::yaml-cpp
-  ts::tsutil
-  rt::rt
-)
+mark_as_advanced(rt_FOUND rt_LIBRARY)
 
-install(TARGETS traffic_ctl)
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(rt REQUIRED_VARS rt_LIBRARY)
 
-clang_tidy_check(traffic_ctl)
+# Always provide the target; only carry a link dependency when librt exists.
+add_library(rt::rt INTERFACE IMPORTED)
+if(rt_FOUND)
+  target_link_libraries(rt::rt INTERFACE ${rt_LIBRARY})
+endif()

@@ -676,6 +676,9 @@ check_struct_has_member("struct mptcp_info" mptcpi_subflows "linux/mptcp.h" HAVE
 # find resolv library if available
 find_package(resolv)
 
+# find rt library if available (shm_open/shm_unlink live there on older glibc)
+find_package(rt)
+
 if(ENABLE_DOCS OR ENABLE_AUTEST)
   find_package(Python3 REQUIRED)
   find_program(UV uv REQUIRED)
