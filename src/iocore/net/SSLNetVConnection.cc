@@ -1108,7 +1108,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
         }
         ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
         ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-        DbgPrint(dbg_ctl_ssl, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());
+        auto default_ctx = lookup->defaultContext();
+        DbgPrint(dbg_ctl_ssl, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
       }
 
       // Escape if this is marked to be a tunnel.
@@ -1130,7 +1131,7 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
-      this->_make_ssl_connection(lookup->defaultContext());
+      this->_make_ssl_connection(lookup->defaultContext().get());
     }
 
     if (this->ssl == nullptr) {
@@ -2005,8 +2006,8 @@ SSLNetVConnection::_lookupContextByIP()
         return nullptr;
       }
       ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-      DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1,
-               lookup->defaultContext());
+      auto default_ctx = lookup->defaultContext();
+      DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
     }
   } else if (0 == safe_getsockname(this->get_socket(), &ip.sa, &namelen)) {
     cc = lookup->find(ip);
