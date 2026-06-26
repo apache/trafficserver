@@ -16,7 +16,8 @@
 
 Test.Summary = '''
 Comprehensive test suite for cache volume features:
-- Per-volume RAM cache configuration (ram_cache_size, ram_cache_cutoff)
+- Per-volume RAM cache configuration (ram_cache, ram_cache_size, ram_cache_cutoff)
+- Per-volume settings take effect on the first start after a cache clear
 - @volume= directive in remap.config for volume selection
 - Integration between both features
 '''
