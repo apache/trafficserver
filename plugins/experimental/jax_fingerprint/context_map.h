@@ -33,7 +33,6 @@
 
 #include <array>
 #include <cstddef>
-#include <cstdint>
 #include <string_view>
 #include <utility>
 
@@ -61,7 +60,7 @@ public:
 
   ~ContextMap()
   {
-    for (std::uint8_t i = 0; i < _size; ++i) {
+    for (std::size_t i = 0; i < _size; ++i) {
       delete _slots[i].second;
     }
   }
@@ -75,7 +74,7 @@ public:
   void
   set(std::string_view method_name, JAxContext *ctx)
   {
-    for (std::uint8_t i = 0; i < _size; ++i) {
+    for (std::size_t i = 0; i < _size; ++i) {
       if (_slots[i].first == method_name) {
         delete _slots[i].second;
         _slots[i].second = ctx;
@@ -94,7 +93,7 @@ public:
   JAxContext *
   get(std::string_view method_name) const
   {
-    for (std::uint8_t i = 0; i < _size; ++i) {
+    for (std::size_t i = 0; i < _size; ++i) {
       if (_slots[i].first == method_name) {
         return _slots[i].second;
       }
@@ -109,7 +108,7 @@ public:
   void
   remove(std::string_view method_name)
   {
-    for (std::uint8_t i = 0; i < _size; ++i) {
+    for (std::size_t i = 0; i < _size; ++i) {
       if (_slots[i].first == method_name) {
         delete _slots[i].second;
         --_size;
@@ -134,5 +133,5 @@ public:
 
 private:
   std::array<std::pair<std::string_view, JAxContext *>, MAX_METHODS> _slots{};
-  std::uint8_t                                                       _size{0};
+  std::size_t                                                        _size{0};
 };
