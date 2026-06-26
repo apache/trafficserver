@@ -783,6 +783,15 @@ TransactionLogData::get_client_ssl_reused() const
   return false;
 }
 
+int
+TransactionLogData::get_client_ssl_resumption_type() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_ssl_resumption_type();
+  }
+  return 0;
+}
+
 bool
 TransactionLogData::get_is_internal() const
 {
