@@ -21,7 +21,8 @@ import os
 
 Test.Summary = '''
 Write a v3 binary log and read it back with traffic_logcat (ASCII + JSON),
-and prove the per-LogObject binary_log_version:2 writer is still readable.
+prove the per-LogObject binary_log_version:2 writer is still readable, and
+prove a log with no binary_log_version defaults to the v2 format.
 '''
 
 # chi resolves to the client address; a Unix-domain-socket curl changes it.
@@ -55,7 +56,8 @@ class BinaryLogV3Test:
         self.__configure_decode_test_runs()
 
     def __configure_traffic_server(self):
-        ''' Configure ATS with the ASCII, v2, and v3 binary log objects.
+        ''' Configure ATS with the ASCII, v2, v3, and unversioned (default)
+        binary log objects.
 
         Return:
             The traffic_server process.
@@ -90,6 +92,9 @@ class BinaryLogV3Test:
                   format: custom_fmt
                   mode: binary
                   binary_log_version: 3
+                - filename: default
+                  format: custom_fmt
+                  mode: binary
                 - filename: ascii
                   format: custom_fmt
                   mode: ascii
@@ -98,6 +103,7 @@ class BinaryLogV3Test:
         logdir = ts.Variables.LOGDIR
         self.v2_blog = os.path.join(logdir, 'v2.blog')
         self.v3_blog = os.path.join(logdir, 'v3.blog')
+        self.default_blog = os.path.join(logdir, 'default.blog')
         self.ascii_log = os.path.join(logdir, 'ascii.log')
         return ts
 
@@ -162,6 +168,23 @@ class BinaryLogV3Test:
         stdout += Testers.ContainsExpression(r'version:\s+2', 'The header reports segment version 2.')
         stdout += Testers.ContainsExpression(r'fieldlist:\s+chi,cqu,pssc,sshv', 'The header lists the format field symbols.')
         stdout += Testers.ExcludesExpression(r'field_type_schema', 'A v2 segment has no field-type schema.')
+
+        # A binary log with no binary_log_version decodes to the same ASCII,
+        # confirming the default writer produces a valid log.
+        tr = Test.AddTestRun('Decode the default (unversioned) binary log to ASCII')
+        tr.Processes.Default.Command = f'{logcat} {self.default_blog}'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = 'gold/binary_log_v3_ascii.gold'
+
+        # With no binary_log_version configured, the writer defaults to v2 (for
+        # 10.2.x downstream compatibility): the header reports version 2 and
+        # carries no field-type schema, exactly like an explicit v2 log.
+        tr = Test.AddTestRun('Print the default (unversioned) binary log header')
+        tr.Processes.Default.Command = f'{logcat} -H {self.default_blog}'
+        tr.Processes.Default.ReturnCode = 0
+        stdout = tr.Processes.Default.Streams.stdout
+        stdout += Testers.ContainsExpression(r'version:\s+2', 'The default writer version is 2.')
+        stdout += Testers.ExcludesExpression(r'field_type_schema', 'The default (v2) segment has no field-type schema.')
 
 
 #

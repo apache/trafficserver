@@ -291,7 +291,7 @@ header                 string      If present, emitted as the first line of each
                                    new log file.
 binary_log_version     number      For ``binary`` logs only: the on-disk segment
                                    format version, ``2`` or ``3`` (default
-                                   ``3``). Version 3 is self-describing (embeds a
+                                   ``2``). Version 3 is self-describing (embeds a
                                    per-field type schema so a generic reader can
                                    decode the file without an ATS symbol table);
                                    use ``2`` to emit the legacy layout for
@@ -399,11 +399,8 @@ matched the REFRESH_HIT filter we created.
      filters:
      - refreshhitfilter
 
-The following is an example of a binary log. Binary logs are written in the
-self-describing version 3 format by default, so ``traffic_logcat`` and
-``traffic_logstats`` (and any reader built from the
-:ref:`v3 format specification <binary-log-v3-format>`) can decode the
-``minimal.blog`` file without an embedded copy of the field table:
+The following is an example of a binary log. Binary logs default to the
+version 2 layout for compatibility with parsers built for earlier releases:
 
 .. code:: yaml
 
@@ -412,14 +409,17 @@ self-describing version 3 format by default, so ``traffic_logcat`` and
      filename: minimal
      format: minimalfmt
 
-To keep emitting the older version 2 layout for a downstream parser that does
-not yet understand version 3, pin the object with ``binary_log_version``. This
-key only applies to ``binary`` logs and defaults to ``3``:
+To emit the self-describing version 3 format instead, set
+``binary_log_version`` to ``3``. Version 3 lets ``traffic_logcat`` and
+``traffic_logstats`` (and any reader built from the
+:ref:`v3 format specification <binary-log-v3-format>`) decode the
+``minimal.blog`` file without an embedded copy of the field table. This key
+only applies to ``binary`` logs and defaults to ``2``:
 
 .. code:: yaml
 
    logs:
    - mode: binary
-     filename: minimal_legacy
+     filename: minimal_v3
      format: minimalfmt
-     binary_log_version: 2
+     binary_log_version: 3

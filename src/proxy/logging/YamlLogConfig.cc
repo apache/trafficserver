@@ -233,18 +233,18 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     }
   }
 
-  // On-disk binary segment version (default: current). 2 emits the pre-v3
-  // layout for parsers that don't yet understand v3; binary logs only.
-  int binary_log_version = LOG_SEGMENT_VERSION;
+  // On-disk binary segment version (default: v2 for downstream compatibility).
+  // 3 emits the self-describing layout; binary logs only.
+  int binary_log_version = LOG_SEGMENT_VERSION_DEFAULT;
   if (node["binary_log_version"]) {
     binary_log_version = node["binary_log_version"].as<int>();
     if (!log_segment_version_supported(binary_log_version)) {
       Warning("Invalid binary_log_version '%d' (supported %d-%d); using %d", binary_log_version, LOG_SEGMENT_VERSION_MIN_SUPPORTED,
-              LOG_SEGMENT_VERSION, LOG_SEGMENT_VERSION);
-      binary_log_version = LOG_SEGMENT_VERSION;
+              LOG_SEGMENT_VERSION, LOG_SEGMENT_VERSION_DEFAULT);
+      binary_log_version = LOG_SEGMENT_VERSION_DEFAULT;
     } else if (file_type != LOG_FILE_BINARY) {
       Warning("binary_log_version only applies to binary logs; ignoring for this object");
-      binary_log_version = LOG_SEGMENT_VERSION;
+      binary_log_version = LOG_SEGMENT_VERSION_DEFAULT;
     }
   }
 

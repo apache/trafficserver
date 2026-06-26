@@ -465,7 +465,7 @@ LogBuffer::_add_buffer_header(const LogConfig *cfg)
   // the pre-v3 layout. Clamp defensively against bad config.
   unsigned version = m_owner->get_binary_log_version();
   if (!log_segment_version_supported(version)) {
-    version = LOG_SEGMENT_VERSION;
+    version = LOG_SEGMENT_VERSION_DEFAULT;
   }
 
   m_header                       = reinterpret_cast<LogBufferHeader *>(m_buffer);

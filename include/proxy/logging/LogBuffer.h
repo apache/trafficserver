@@ -38,7 +38,8 @@ class LogBufferIterator;
 
 #define LOG_SEGMENT_COOKIE 0xaceface
 
-#define LOG_SEGMENT_VERSION               3 ///< Current default version.
+#define LOG_SEGMENT_VERSION               3 ///< Latest version this build writes and understands.
+#define LOG_SEGMENT_VERSION_DEFAULT       2 ///< Default writer version (v2 for 10.2.x compat); v3 opt-in via logging.yaml.
 #define LOG_SEGMENT_VERSION_MIN_SUPPORTED 2 ///< Oldest version this build can still read.
 #define LOG_SEGMENT_VERSION_FIELDTYPES    3 ///< First version that carries the field-type schema (self-describing).
 

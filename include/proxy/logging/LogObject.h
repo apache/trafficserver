@@ -97,7 +97,7 @@ public:
             const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec = 0,
             int rolling_offset_hr = 0, int rolling_size_mb = 0, bool auto_created = false, int rolling_max_count = 0,
             int rolling_min_count = 0, bool reopen_after_rolling = false, int pipe_buffer_size = 0, bool m_fast = false,
-            unsigned binary_log_version = LOG_SEGMENT_VERSION);
+            unsigned binary_log_version = LOG_SEGMENT_VERSION_DEFAULT);
   ~LogObject() override;
 
   void add_filter(LogFilter *filter, bool copy = true);
@@ -221,8 +221,9 @@ public:
   }
 
   // On-disk binary segment version (logging.yaml "binary_log_version"); 2 emits
-  // the pre-v3 layout. Binary logs only; defaults to the current version. Set at
-  // construction (before the first buffer header is stamped), not afterward.
+  // the pre-v3 layout. Binary logs only; defaults to v2 for downstream
+  // compatibility. Set at construction (before the first buffer header is
+  // stamped), not afterward.
   inline unsigned
   get_binary_log_version() const
   {
@@ -269,9 +270,9 @@ private:
   // could not be used because of
   // name conflicts
 
-  unsigned int m_flags;                                    // diverse object flags (see above)
-  uint64_t     m_signature;                                // INK_MD5 signature for object
-  unsigned     m_binary_log_version = LOG_SEGMENT_VERSION; // on-disk binary segment version (logging.yaml "binary_log_version")
+  unsigned int m_flags;                                            // diverse object flags (see above)
+  uint64_t     m_signature;                                        // INK_MD5 signature for object
+  unsigned     m_binary_log_version = LOG_SEGMENT_VERSION_DEFAULT; // on-disk binary segment version (logging.yaml)
 
   Log::RollingEnabledValues m_rolling_enabled;
   int                       m_flush_threads;        // number of flush threads
