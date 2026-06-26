@@ -748,7 +748,10 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     }
 
     p += len;
-    header.name_set(name_str, name_str_len);
+    bool name_stored = header.name_set(name_str, name_str_len);
+    if (!name_stored) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
   }
 
   // Decode header field value
@@ -761,7 +764,10 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
   }
 
   p += len;
-  header.value_set(value_str, value_str_len);
+  bool value_stored = header.value_set(value_str, value_str_len);
+  if (!value_stored) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   // Incremental Indexing adds header to header table as new entry
   if (isIncremental) {

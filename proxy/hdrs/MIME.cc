@@ -1470,7 +1470,12 @@ mime_field_create_named(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int le
 {
   MIMEField *field       = mime_field_create(heap, mh);
   int field_name_wks_idx = hdrtoken_tokenize(name, length);
-  mime_field_name_set(heap, mh, field, field_name_wks_idx, name, length, true);
+  if (!mime_field_name_set(heap, mh, field, field_name_wks_idx, name, length, true)) {
+    // The name exceeds the uint16_t field-length limit and was rejected. Tear
+    // the detached field back down so callers do not get a half-formed field.
+    mime_field_destroy(mh, field);
+    return nullptr;
+  }
   return field;
 }
 
@@ -1763,11 +1768,19 @@ MIMEField::name_get() const
   return {m_ptr_name, m_len_name};
 }
 
-void
+bool
 mime_field_name_set(HdrHeap *heap, MIMEHdrImpl * /* mh ATS_UNUSED */, MIMEField *field, int16_t name_wks_idx_or_neg1,
                     const char *name, int length, bool must_copy_string)
 {
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
+
+  // A name longer than UINT16_MAX cannot be stored in the uint16_t m_len_name.
+  // Reject it without mutating the field so the caller never observes a name
+  // whose stored length disagrees with its data.
+  if (length < 0 || length > static_cast<int>(UINT16_MAX)) {
+    Warning("mime_field_name_set: rejecting oversized name of length %d (max %u)", length, UINT16_MAX);
+    return false;
+  }
 
   field->m_wks_idx = name_wks_idx_or_neg1;
   mime_str_u16_set(heap, name, length, &(field->m_ptr_name), &(field->m_len_name), must_copy_string);
@@ -1775,6 +1788,8 @@ mime_field_name_set(HdrHeap *heap, MIMEHdrImpl * /* mh ATS_UNUSED */, MIMEField 
   if ((name_wks_idx_or_neg1 == MIME_WKSIDX_CACHE_CONTROL) || (name_wks_idx_or_neg1 == MIME_WKSIDX_PRAGMA)) {
     field->m_flags |= MIME_FIELD_SLOT_FLAGS_COOKED;
   }
+
+  return true;
 }
 
 int
@@ -2136,9 +2151,21 @@ mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *fie
   }
 }
 
-void
+bool
 mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool must_copy_string)
 {
+  // Cap the value length at UINT16_MAX as a deliberate, uniform header
+  // field-size limit matching the name field (m_len_name is uint16_t). The
+  // value storage (m_len_value is uint32_t : 24) could physically hold more,
+  // but we reject longer values to keep a single consistent limit on both the
+  // name and value of a header field.
+  if (length < 0 || length > static_cast<int>(UINT16_MAX)) {
+    Warning("mime_field_value_set: rejecting oversized value of length %d (max %u)", length, UINT16_MAX);
+    // Reject without mutating the field: a live field keeps its current value
+    // and cooked state, so a rejected set is a clean no-op.
+    return false;
+  }
+
   heap->free_string(field->m_ptr_value, field->m_len_value);
 
   if (must_copy_string && value) {
@@ -2154,6 +2181,8 @@ mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const cha
   if (field->is_live() && field->is_cooked()) {
     mh->recompute_cooked_stuff(field);
   }
+
+  return true;
 }
 
 void
@@ -2188,7 +2217,7 @@ mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time
   mime_field_value_set(heap, mh, field, buf, len, true);
 }
 
-void
+bool
 mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
                           int name_length, const char *value, int value_length, int n_v_raw_printable, int n_v_raw_length,
                           bool must_copy_strings)
@@ -2197,9 +2226,21 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
 
   ink_assert(field->m_readiness == MIME_FIELD_SLOT_READINESS_DETACHED);
 
+  // m_len_name is uint16_t, so a name longer than UINT16_MAX would truncate its
+  // stored length; m_len_value is uint32_t : 24 and could hold more, but the value
+  // is capped at the same UINT16_MAX for a single uniform limit. Reject oversized
+  // strings up front, before either branch mutates the field, so a rejected set is
+  // an all-or-nothing no-op rather than a half-stored (name xor value) field.
+  if (name_length < 0 || name_length > static_cast<int>(UINT16_MAX) || value_length < 0 ||
+      value_length > static_cast<int>(UINT16_MAX)) {
+    Warning("mime_field_name_value_set: rejecting oversized name=%d value=%d (max %u)", name_length, value_length, UINT16_MAX);
+    return false;
+  }
+
   if (must_copy_strings) {
-    mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, true);
-    mime_field_value_set(heap, mh, field, value, value_length, true);
+    bool name_stored  = mime_field_name_set(heap, mh, field, name_wks_idx_or_neg1, name, name_length, true);
+    bool value_stored = mime_field_value_set(heap, mh, field, value, value_length, true);
+    return name_stored && value_stored;
   } else {
     field->m_wks_idx   = name_wks_idx_or_neg1;
     field->m_ptr_name  = name;
@@ -2221,6 +2262,7 @@ mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int1
       mh->recompute_cooked_stuff(field);
     }
   }
+  return true;
 }
 
 void
@@ -2600,6 +2642,14 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       return PARSE_RESULT_ERROR;
     }
 
+    // m_len_name is uint16_t, so a name longer than UINT16_MAX would truncate
+    // its stored length; m_len_value is uint32_t : 24 and could hold more, but the
+    // value is capped at the same UINT16_MAX for a uniform limit. Reject the
+    // message rather than keep a field whose length and data disagree.
+    if (field_name.size() > UINT16_MAX || field_value.size() > UINT16_MAX) {
+      return PARSE_RESULT_ERROR;
+    }
+
     //    int total_line_length = (int)(field_line_last - field_line_first + 1);
 
     //////////////////////////////////////////////////////////////////////
@@ -2883,7 +2933,14 @@ mime_field_print(MIMEField *field, char *buf_start, int buf_length, int *buf_ind
 const char *
 mime_str_u16_set(HdrHeap *heap, const char *s_str, int s_len, const char **d_str, uint16_t *d_len, bool must_copy)
 {
-  ink_assert(s_len >= 0 && s_len < UINT16_MAX);
+  // The out-length (*d_len) is uint16_t. A length greater than UINT16_MAX
+  // would be silently truncated by the assignment below, leaving the stored
+  // length out of sync with the data. Reject the value without mutating
+  // *d_str/*d_len so any existing stored string is preserved intact.
+  if (s_len < 0 || s_len > static_cast<int>(UINT16_MAX)) {
+    Warning("mime_str_u16_set: rejecting oversized field of length %d (max %u)", s_len, UINT16_MAX);
+    return nullptr;
+  }
   // INKqa08287 - keep track of free string space.
   //  INVARIANT: passed in result pointers must be to
   //    either NULL or be valid ptr for a string already

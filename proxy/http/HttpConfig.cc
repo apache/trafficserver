@@ -25,6 +25,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/Filenames.h"
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include "HttpConfig.h"
 #include "HTTP.h"
@@ -1486,6 +1487,16 @@ HttpConfig::reconfigure()
 
   params->http_request_line_max_size = m_master.http_request_line_max_size;
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
+
+  // A header field name and value are each stored with a uint16_t length, so a
+  // single field cannot exceed UINT16_MAX octets. Clamp the configured
+  // per-field limit to that ceiling: a larger value can never be honored and an
+  // oversized field is rejected at parse time regardless.
+  if (params->http_hdr_field_max_size > UINT16_MAX) {
+    Note("proxy.config.http.header_field_max_size %" PRId64 " exceeds the %d-octet storage limit; clamping to %d",
+         static_cast<int64_t>(params->http_hdr_field_max_size), UINT16_MAX, UINT16_MAX);
+    params->http_hdr_field_max_size = UINT16_MAX;
+  }
 
   if (params->oride.outbound_conntrack.max > 0 && params->oride.outbound_conntrack.max < params->oride.outbound_conntrack.min) {
     Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",

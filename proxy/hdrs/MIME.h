@@ -169,10 +169,10 @@ struct MIMEField {
   time_t value_get_date() const;
   int value_get_comma_list(StrList *list) const;
 
-  void name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
+  bool name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length);
   bool name_is_valid(uint32_t invalid_char_bits = is_control_BIT) const;
 
-  void value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
+  bool value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length);
   void value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, int32_t value);
   void value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, uint32_t value);
   void value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, int64_t value);
@@ -728,7 +728,7 @@ MIMEField *mime_hdr_prepare_for_value_set(HdrHeap *heap, MIMEHdrImpl *mh, const 
 
 void mime_field_destroy(MIMEHdrImpl *mh, MIMEField *field);
 
-void mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
+bool mime_field_name_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
                          int length, bool must_copy_string);
 
 int32_t mime_field_value_get_int(const MIMEField *field);
@@ -747,12 +747,12 @@ void mime_field_value_extend_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField
 void mime_field_value_insert_comma_val(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int idx, const char *new_piece_str,
                                        int new_piece_len);
 
-void mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool must_copy_string);
+bool mime_field_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, const char *value, int length, bool must_copy_string);
 void mime_field_value_set_int(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int32_t value);
 void mime_field_value_set_uint(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, uint32_t value);
 void mime_field_value_set_int64(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int64_t value);
 void mime_field_value_set_date(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, time_t value);
-void mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
+bool mime_field_name_value_set(HdrHeap *heap, MIMEHdrImpl *mh, MIMEField *field, int16_t name_wks_idx_or_neg1, const char *name,
                                int name_length, const char *value, int value_length, int n_v_raw_printable, int n_v_raw_length,
                                bool must_copy_strings);
 
@@ -818,17 +818,17 @@ MIMEField::name_get(int *length) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline void
+inline bool
 MIMEField::name_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *name, int length)
 {
   const char *name_wks;
 
   if (hdrtoken_is_wks(name)) {
     int16_t name_wks_idx = hdrtoken_wks_to_index(name);
-    mime_field_name_set(heap, mh, this, name_wks_idx, name, length, true);
+    return mime_field_name_set(heap, mh, this, name_wks_idx, name, length, true);
   } else {
     int field_name_wks_idx = hdrtoken_tokenize(name, length, &name_wks);
-    mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, true);
+    return mime_field_name_set(heap, mh, this, field_name_wks_idx, (field_name_wks_idx == -1 ? name : name_wks), length, true);
   }
 }
 
@@ -893,10 +893,10 @@ MIMEField::value_get_comma_list(StrList *list) const
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-inline void
+inline bool
 MIMEField::value_set(HdrHeap *heap, MIMEHdrImpl *mh, const char *value, int length)
 {
-  mime_field_value_set(heap, mh, this, value, length, true);
+  return mime_field_value_set(heap, mh, this, value, length, true);
 }
 
 inline void
