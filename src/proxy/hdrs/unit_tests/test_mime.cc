@@ -27,7 +27,28 @@
 
 #include "catch.hpp"
 #include "tscore/ink_platform.h"
+#include "tscore/Diags.h"
+#include "tscore/BaseLogFile.h"
 #include "proxy/hdrs/MIME.h"
+#include "proxy/hdrs/HdrHeap.h"
+
+using namespace std::literals;
+
+namespace
+{
+// Build a filler string of `n` copies of `c`. The length is laundered through a
+// volatile so GCC at -O3 cannot constant-fold it into the inlined
+// hdrtoken_wks_to_index() lookup performed by the field setters. With a known
+// constant size GCC emits a -Warray-bounds false positive (a [-1] subscript it
+// cannot rule out through the hdrtoken_is_wks() guard, which does prevent the
+// access at run time). clang does not warn; the volatile keeps both happy.
+std::string
+mime_filler(std::size_t n, char c)
+{
+  volatile std::size_t len = n;
+  return std::string(len, c);
+}
+} // namespace
 
 TEST_CASE("Mime", "[proxy][mime]")
 {
@@ -288,4 +309,309 @@ TEST_CASE("MimeParseUintOverflow", "[proxy][mimeparseuint]")
 
   const char *end = buf + strlen(buf);
   CHECK(mime_parse_uint(buf, end) == val);
+}
+
+// m_len_name is uint16_t (m_len_value is uint32_t : 24 and could hold more, but
+// is capped at UINT16_MAX for a uniform limit). A name of 65536+n bytes used to
+// wrap to length n while the byte pointer still spanned the full input, so the
+// stored length no longer matched the data. mime_str_u16_set() and the no-copy
+// branch of mime_field_name_value_set() now reject oversized strings.
+TEST_CASE("MimeOversizedNameValueRejected", "[proxy][mime]")
+{
+  // Storing oversized strings calls Warning(), which dereferences diags(). Make
+  // sure diags is initialized so these calls do not crash under the test binary.
+  [[maybe_unused]] static bool diags_initialized = []() {
+    if (diags() == nullptr) {
+      DiagsPtr::set(new Diags("test_mime", nullptr, nullptr, new BaseLogFile("stderr")));
+    }
+    return true;
+  }();
+
+  // 70000 bytes > UINT16_MAX (65535). On unpatched code, length wraps to 4464.
+  std::string const big     = mime_filler(70000, 'a');
+  int const         big_len = static_cast<int>(big.length());
+
+  SECTION("mime_str_u16_set rejects oversized input and clears length")
+  {
+    HdrHeap    *heap  = new_HdrHeap();
+    const char *d_str = nullptr;
+    uint16_t    d_len = 0;
+
+    const char *ret = mime_str_u16_set(heap, big.data(), big_len, &d_str, &d_len, true);
+
+    REQUIRE(ret == nullptr);
+    REQUIRE(d_str == nullptr);
+    REQUIRE(d_len == 0);
+
+    heap->destroy();
+  }
+
+  SECTION("mime_str_u16_set rejects oversized input on no-copy path too")
+  {
+    HdrHeap    *heap  = new_HdrHeap();
+    const char *d_str = nullptr;
+    uint16_t    d_len = 0;
+
+    const char *ret = mime_str_u16_set(heap, big.data(), big_len, &d_str, &d_len, false);
+
+    REQUIRE(ret == nullptr);
+    REQUIRE(d_str == nullptr);
+    REQUIRE(d_len == 0);
+
+    heap->destroy();
+  }
+
+  SECTION("MIMEHdr::name_set with oversized name preserves the existing name")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    bool const stored = field->name_set(hdr.m_heap, hdr.m_mime, big.data(), big_len);
+
+    // A rejected rename is a no-op: the prior name is left intact.
+    REQUIRE(stored == false);
+    REQUIRE(field->name_get() == "X-Test"sv);
+
+    hdr.destroy();
+  }
+
+  SECTION("MIMEHdr value_set with oversized value leaves stored value empty")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    field->value_set(hdr.m_heap, hdr.m_mime, big.data(), big_len);
+
+    auto value = field->value_get();
+    REQUIRE(value.length() == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("mime_field_name_value_set no-copy branch rejects oversized name")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = mime_field_create(hdr.m_heap, hdr.m_mime);
+    REQUIRE(field != nullptr);
+
+    int const raw_len = big_len + 4;
+    mime_field_name_value_set(hdr.m_heap, hdr.m_mime, field, -1, big.data(), big_len, "v", 1, 1, raw_len, false);
+
+    REQUIRE(field->m_len_name == 0);
+    REQUIRE(field->m_len_value == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("mime_field_name_value_set no-copy branch rejects oversized value")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = mime_field_create(hdr.m_heap, hdr.m_mime);
+    REQUIRE(field != nullptr);
+
+    int const raw_len = big_len + 4;
+    mime_field_name_value_set(hdr.m_heap, hdr.m_mime, field, -1, "X-Test", 6, big.data(), big_len, 1, raw_len, false);
+
+    REQUIRE(field->m_len_name == 0);
+    REQUIRE(field->m_len_value == 0);
+
+    hdr.destroy();
+  }
+}
+
+// These tests verify that the setters return bool (true = stored, false =
+// rejected as oversized with the field left empty).
+//
+// The header field-size limit is a uniform UINT16_MAX (65535) cap on both the
+// name and the value: UINT16_MAX is the largest accepted length and 65536 and
+// above are rejected. (m_len_name is uint16_t; m_len_value is uint32_t : 24 and
+// could hold more, but the same cap is applied for consistency.)
+TEST_CASE("MimeSetterBoolReturn", "[proxy][mime]")
+{
+  // Rejecting oversized strings calls Warning(), which dereferences diags().
+  // Initialize diags so these calls do not crash under the test binary.
+  [[maybe_unused]] static bool diags_initialized = []() {
+    if (diags() == nullptr) {
+      DiagsPtr::set(new Diags("test_mime", nullptr, nullptr, new BaseLogFile("stderr")));
+    }
+    return true;
+  }();
+
+  SECTION("value_set with normal length returns true and stores the value")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const value = mime_filler(100, 'v');
+
+    bool const stored = field->value_set(hdr.m_heap, hdr.m_mime, value.data(), static_cast<int>(value.length()));
+
+    REQUIRE(stored == true);
+    REQUIRE(field->value_get().length() == 100);
+
+    hdr.destroy();
+  }
+
+  SECTION("value_set at the largest accepted length (UINT16_MAX) returns true")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const value = mime_filler(UINT16_MAX, 'v'); // 65535
+
+    bool const stored = field->value_set(hdr.m_heap, hdr.m_mime, value.data(), static_cast<int>(value.length()));
+
+    REQUIRE(stored == true);
+    REQUIRE(field->value_get().length() == UINT16_MAX);
+
+    hdr.destroy();
+  }
+
+  SECTION("value_set at UINT16_MAX+1 returns false and leaves the value empty")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const value = mime_filler(UINT16_MAX + 1, 'v'); // 65536
+
+    bool const stored = field->value_set(hdr.m_heap, hdr.m_mime, value.data(), static_cast<int>(value.length()));
+
+    REQUIRE(stored == false);
+    REQUIRE(field->value_get().length() == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("value_set above UINT16_MAX returns false and leaves the value empty")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const value = mime_filler(UINT16_MAX + 5, 'v'); // 65540
+
+    bool const stored = field->value_set(hdr.m_heap, hdr.m_mime, value.data(), static_cast<int>(value.length()));
+
+    REQUIRE(stored == false);
+    REQUIRE(field->value_get().length() == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("oversized value_set is a no-op that preserves the existing value")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const original = mime_filler(100, 'v');
+    REQUIRE(field->value_set(hdr.m_heap, hdr.m_mime, original.data(), static_cast<int>(original.length())) == true);
+    REQUIRE(field->value_get().length() == 100);
+
+    std::string const oversized = mime_filler(UINT16_MAX + 5, 'V'); // 65540
+    bool const        stored    = field->value_set(hdr.m_heap, hdr.m_mime, oversized.data(), static_cast<int>(oversized.length()));
+
+    // The rejected set must not disturb the previously stored value.
+    REQUIRE(stored == false);
+    REQUIRE(field->value_get() == std::string_view{original});
+
+    hdr.destroy();
+  }
+
+  SECTION("name_set with normal length returns true and stores the name")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const name = mime_filler(100, 'n');
+
+    bool const stored = field->name_set(hdr.m_heap, hdr.m_mime, name.data(), static_cast<int>(name.length()));
+
+    REQUIRE(stored == true);
+    REQUIRE(field->name_get().length() == 100);
+
+    hdr.destroy();
+  }
+
+  SECTION("name_set at the largest accepted length (UINT16_MAX) returns true")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const name = mime_filler(UINT16_MAX, 'n'); // 65535
+
+    bool const stored = field->name_set(hdr.m_heap, hdr.m_mime, name.data(), static_cast<int>(name.length()));
+
+    REQUIRE(stored == true);
+    REQUIRE(field->name_get().length() == UINT16_MAX);
+
+    hdr.destroy();
+  }
+
+  SECTION("name_set at UINT16_MAX+1 returns false and preserves the existing name")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const name = mime_filler(UINT16_MAX + 1, 'n'); // 65536
+
+    bool const stored = field->name_set(hdr.m_heap, hdr.m_mime, name.data(), static_cast<int>(name.length()));
+
+    // The rejected rename must leave the prior name intact.
+    REQUIRE(stored == false);
+    REQUIRE(field->name_get() == "X-Test"sv);
+
+    hdr.destroy();
+  }
+
+  SECTION("name_set above UINT16_MAX returns false and preserves the existing name")
+  {
+    MIMEHdr hdr;
+    hdr.create(nullptr);
+
+    MIMEField *field = hdr.field_create("X-Test", 6);
+    REQUIRE(field != nullptr);
+
+    std::string const name = mime_filler(UINT16_MAX + 5, 'n'); // 65540
+
+    bool const stored = field->name_set(hdr.m_heap, hdr.m_mime, name.data(), static_cast<int>(name.length()));
+
+    // The rejected rename must leave the prior name intact.
+    REQUIRE(stored == false);
+    REQUIRE(field->name_get() == "X-Test"sv);
+
+    hdr.destroy();
+  }
 }

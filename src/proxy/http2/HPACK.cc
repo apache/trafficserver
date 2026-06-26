@@ -634,9 +634,12 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
       }
     }
 
-    p += len;
-    header.name_set(name_str, name_str_len);
+    p                += len;
+    bool name_stored  = header.name_set(name_str, name_str_len);
     indexing_table.arena.str_free(name_str);
+    if (!name_stored) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
   }
 
   // Decode header field value
@@ -648,9 +651,12 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  p += len;
-  header.value_set(value_str, value_str_len);
+  p                 += len;
+  bool value_stored  = header.value_set(value_str, value_str_len);
   indexing_table.arena.str_free(value_str);
+  if (!value_stored) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   // Incremental Indexing adds header to header table as new entry
   if (isIncremental) {

@@ -143,6 +143,35 @@ TEST_CASE("HTTPHdr destroy clears cached request URL", "[proxy][hdrtest]")
   REQUIRE_FALSE(req_hdr.m_target_cached);
 }
 
+// A single header field whose name or value exceeds the uniform UINT16_MAX
+// field-size limit must be rejected by the parser. m_len_name is uint16_t, so an
+// oversized name would truncate its stored length; m_len_value is uint32_t : 24
+// and could hold more, but the value is capped at the same limit. The caller
+// (HttpSM) turns the parse error into a 400.
+TEST_CASE("HdrTestOversizedFieldRejected", "[proxy][hdrtest]")
+{
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  req_hdr.create(HTTP_TYPE_REQUEST, HTTP_1_1, heap);
+
+  // 70000-byte value: name+value stays under the default max_hdr_field_size
+  // (131070) but the value alone exceeds UINT16_MAX (65535).
+  std::string    msg = "GET /index.html HTTP/1.0\r\nX-Big: " + std::string(70000, 'a') + "\r\n\r\n";
+  swoc::TextView tv{msg};
+
+  auto start = tv.data();
+  auto ret   = req_hdr.parse_req(&parser, &start, tv.data_end(), true);
+
+  REQUIRE(ret == PARSE_RESULT_ERROR);
+
+  req_hdr.destroy();
+  http_parser_clear(&parser);
+}
+
 TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
 {
   constexpr swoc::TextView const message = "GET /index.html HTTP/1.0\r\n";

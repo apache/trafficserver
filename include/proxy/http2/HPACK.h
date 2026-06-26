@@ -71,16 +71,16 @@ class MIMEFieldWrapper
 {
 public:
   MIMEFieldWrapper(MIMEField *f, HdrHeap *hh, MIMEHdrImpl *impl) : _field(f), _heap(hh), _mh(impl) {}
-  void
+  bool
   name_set(const char *name, int name_len)
   {
-    _field->name_set(_heap, _mh, name, name_len);
+    return _field->name_set(_heap, _mh, name, name_len);
   }
 
-  void
+  bool
   value_set(const char *value, int value_len)
   {
-    _field->value_set(_heap, _mh, value, value_len);
+    return _field->value_set(_heap, _mh, value, value_len);
   }
 
   const char *

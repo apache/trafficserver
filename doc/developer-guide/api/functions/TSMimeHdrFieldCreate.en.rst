@@ -48,3 +48,9 @@ For both functions a reference to the new field is returned via :arg:`out`.
 The field created is not in a header even though it is in the same buffer. It can be added to a
 header with :func:`TSMimeHdrFieldAppend`. The field also has no value, only a name. If a value is
 needed it must be added explicitly with a function such as :func:`TSMimeHdrFieldValueIntSet`.
+
+A header field name is stored with a 16-bit length, so :func:`TSMimeHdrFieldCreateNamed` limits
+:arg:`name` to ``65535`` (``UINT16_MAX``) bytes. A longer :arg:`name` is rejected: no field is
+created, :arg:`out` is set to ``nullptr``, and the function returns :enumerator:`TS_ERROR`.
+
+These functions return :enumerator:`TS_SUCCESS` on success and :enumerator:`TS_ERROR` on failure.

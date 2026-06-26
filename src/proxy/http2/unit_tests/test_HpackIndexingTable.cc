@@ -25,11 +25,14 @@
  */
 
 #include <memory>
+#include <string_view>
+#include <vector>
 
 #include "catch.hpp"
 
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http2/HPACK.h"
+#include "proxy/hdrs/XPACK.h"
 
 static constexpr int      DYNAMIC_TABLE_SIZE_FOR_REGRESSION_TEST = 256;
 static constexpr int      BUFSIZE_FOR_REGRESSION_TEST            = 128;
@@ -634,5 +637,142 @@ TEST_CASE("HPACK high level APIs", "[hpack]")
                                               MAX_TABLE_SIZE, MAX_FIELD_SIZE);
       CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
+  }
+}
+
+namespace
+{
+// Build a single literal-with-incremental-indexing header field (RFC 7541 6.2.1)
+// with a non-Huffman, new (index 0) name and value. The name and value lengths
+// are written using HPACK integer encoding (7-bit prefix, high bit reserved for
+// the Huffman flag, which is left clear here).
+std::vector<uint8_t>
+build_literal_incremental_field(std::string_view name, std::string_view value)
+{
+  std::vector<uint8_t> block;
+
+  // Pattern '01' in the top two bits selects "Literal Header Field with
+  // Incremental Indexing", and a 6-bit index of 0 means a new name follows.
+  block.push_back(0x40);
+
+  uint8_t prefix[16];
+
+  // Header field name: length prefix (n = 7) followed by the raw octets.
+  prefix[0]                    = 0x00; // clear the Huffman flag in the prefix octet
+  const int64_t name_len_bytes = xpack_encode_integer(prefix, prefix + sizeof(prefix), name.length(), 7);
+  block.insert(block.end(), prefix, prefix + name_len_bytes);
+  block.insert(block.end(), name.begin(), name.end());
+
+  // Header field value: length prefix (n = 7) followed by the raw octets.
+  prefix[0]                     = 0x00; // clear the Huffman flag in the prefix octet
+  const int64_t value_len_bytes = xpack_encode_integer(prefix, prefix + sizeof(prefix), value.length(), 7);
+  block.insert(block.end(), prefix, prefix + value_len_bytes);
+  block.insert(block.end(), value.begin(), value.end());
+
+  return block;
+}
+
+// Build a single literal-with-incremental-indexing header field (RFC 7541 6.2.1)
+// using an INDEXED name (the name is taken from the static/dynamic table at the
+// given index) and a new, non-Huffman value. The 6-bit prefix carries the table
+// index. Used to exercise the oversized-value path when the name does not come
+// from the wire.
+std::vector<uint8_t>
+build_literal_incremental_field_indexed_name(uint32_t name_index, std::string_view value)
+{
+  std::vector<uint8_t> block;
+
+  uint8_t prefix[16];
+
+  // Pattern '01' in the top two bits selects "Literal Header Field with
+  // Incremental Indexing". The remaining 6 bits encode the name's table index.
+  prefix[0]                    = 0x40;
+  const int64_t name_idx_bytes = xpack_encode_integer(prefix, prefix + sizeof(prefix), name_index, 6);
+  block.insert(block.end(), prefix, prefix + name_idx_bytes);
+
+  // Header field value: length prefix (n = 7) followed by the raw octets.
+  prefix[0]                     = 0x00; // clear the Huffman flag in the prefix octet
+  const int64_t value_len_bytes = xpack_encode_integer(prefix, prefix + sizeof(prefix), value.length(), 7);
+  block.insert(block.end(), prefix, prefix + value_len_bytes);
+  block.insert(block.end(), value.begin(), value.end());
+
+  return block;
+}
+} // namespace
+
+// The header field-size limit caps both the name and the value at UINT16_MAX
+// (65535) octets. An HPACK-decoded literal header field whose name or value is
+// longer than UINT16_MAX cannot be stored under that cap, so the decoder rejects
+// such a field with HPACK_ERROR_COMPRESSION_ERROR (a connection error) BEFORE
+// inserting anything into the dynamic indexing table.
+TEST_CASE("HPACK oversized literal field is rejected", "[hpack]")
+{
+  // Use a generous header-size and per-field budget so the failure is
+  // attributable to the uint16_t field-length limit, not to the max_header_size
+  // or header_field_max_size decoder limits.
+  constexpr uint32_t LARGE_MAX_HEADER_SIZE = 1 * 1024 * 1024;
+  constexpr size_t   OVERSIZED_LEN         = 70000; // > UINT16_MAX (65535)
+
+  SECTION("oversized value")
+  {
+    HpackIndexingTable indexing_table(4096);
+    REQUIRE(indexing_table.size() == 0);
+
+    std::string          value(OVERSIZED_LEN, 'A');
+    std::vector<uint8_t> block = build_literal_incremental_field("x-big-value", value);
+
+    std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+    headers->create(HTTP_TYPE_REQUEST);
+
+    int64_t len = hpack_decode_header_block(indexing_table, headers.get(), block.data(), block.size(), LARGE_MAX_HEADER_SIZE,
+                                            MAX_TABLE_SIZE, LARGE_MAX_HEADER_SIZE);
+
+    CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
+
+    // The unstorable field must not have been inserted into the dynamic table.
+    CHECK(indexing_table.size() == 0);
+  }
+
+  SECTION("oversized name")
+  {
+    HpackIndexingTable indexing_table(4096);
+    REQUIRE(indexing_table.size() == 0);
+
+    std::string          name(OVERSIZED_LEN, 'a');
+    std::vector<uint8_t> block = build_literal_incremental_field(name, "small-value");
+
+    std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+    headers->create(HTTP_TYPE_REQUEST);
+
+    int64_t len = hpack_decode_header_block(indexing_table, headers.get(), block.data(), block.size(), LARGE_MAX_HEADER_SIZE,
+                                            MAX_TABLE_SIZE, LARGE_MAX_HEADER_SIZE);
+
+    CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
+
+    // The unstorable field must not have been inserted into the dynamic table.
+    CHECK(indexing_table.size() == 0);
+  }
+
+  SECTION("indexed name with oversized value")
+  {
+    HpackIndexingTable indexing_table(4096);
+    REQUIRE(indexing_table.size() == 0);
+
+    // Static-table index 4 is ":path", so only the value comes from the wire.
+    constexpr uint32_t STATIC_INDEX_PATH = 4;
+
+    std::string          value(OVERSIZED_LEN, 'A');
+    std::vector<uint8_t> block = build_literal_incremental_field_indexed_name(STATIC_INDEX_PATH, value);
+
+    std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
+    headers->create(HTTP_TYPE_REQUEST);
+
+    int64_t len = hpack_decode_header_block(indexing_table, headers.get(), block.data(), block.size(), LARGE_MAX_HEADER_SIZE,
+                                            MAX_TABLE_SIZE, LARGE_MAX_HEADER_SIZE);
+
+    CHECK(len == HPACK_ERROR_COMPRESSION_ERROR);
+
+    // The unstorable field must not have been inserted into the dynamic table.
+    CHECK(indexing_table.size() == 0);
   }
 }

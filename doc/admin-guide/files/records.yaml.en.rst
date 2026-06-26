@@ -1408,6 +1408,13 @@ uds-group
    in a request with the sum of their name and value that exceed this size will cause the
    entire request to be treated as invalid and rejected by the proxy.
 
+   A header field name and value are each stored with a 16-bit length, so each is
+   limited to 65535 bytes (the maximum a 16-bit length can hold) regardless of this
+   setting. A value greater than 65535 in records.yaml fails validation and the
+   default is used; a value set at runtime via :program:`traffic_ctl` is clamped to
+   65535. Either way an individual field name or value that exceeds the limit is
+   rejected rather than truncated.
+
 .. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 32768
    :overridable:
    :reloadable:
