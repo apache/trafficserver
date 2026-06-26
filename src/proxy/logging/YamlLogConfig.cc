@@ -132,6 +132,7 @@ std::set<std::string> valid_log_object_keys = {"filename",
                                                "rolling_max_count",
                                                "rolling_allow_empty",
                                                "pipe_buffer_size",
+                                               "binary_log_version",
                                                "fast"};
 
 LogObject *
@@ -232,11 +233,27 @@ YamlLogConfig::decodeLogObject(const YAML::Node &node)
     }
   }
 
+  // On-disk binary segment version (default: v2 for downstream compatibility).
+  // 3 emits the self-describing layout; binary logs only.
+  int binary_log_version = LOG_SEGMENT_VERSION_DEFAULT;
+  if (node["binary_log_version"]) {
+    binary_log_version = node["binary_log_version"].as<int>();
+    if (!log_segment_version_supported(binary_log_version)) {
+      Warning("Invalid binary_log_version '%d' (supported %d-%d); using %d", binary_log_version, LOG_SEGMENT_VERSION_MIN_SUPPORTED,
+              LOG_SEGMENT_VERSION, LOG_SEGMENT_VERSION_DEFAULT);
+      binary_log_version = LOG_SEGMENT_VERSION_DEFAULT;
+    } else if (file_type != LOG_FILE_BINARY) {
+      Warning("binary_log_version only applies to binary logs; ignoring for this object");
+      binary_log_version = LOG_SEGMENT_VERSION_DEFAULT;
+    }
+  }
+
   auto logObject = new LogObject(cfg, fmt, cfg->logfile_dir, filename.c_str(), file_type, header.c_str(),
                                  static_cast<Log::RollingEnabledValues>(obj_rolling_enabled), cfg->preproc_threads,
                                  obj_rolling_interval_sec, obj_rolling_offset_hr, obj_rolling_size_mb, /* auto_created */ false,
                                  /* rolling_max_count */ obj_rolling_max_count, /* rolling_min_count */ obj_rolling_min_count,
-                                 /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size, fast);
+                                 /* reopen_after_rolling */ obj_rolling_allow_empty > 0, pipe_buffer_size, fast,
+                                 static_cast<unsigned>(binary_log_version));
 
   // Generate LogDeletingInfo entry for later use
   std::string ext;
