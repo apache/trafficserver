@@ -565,8 +565,8 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssr", field);
 
-  field = new LogField("client_req_ssl_resumption_type", "cqssrt", LogField::Type::sINT, &LogAccess::marshal_client_ssl_resumption_type,
-                       &LogAccess::unmarshal_int_to_str);
+  field = new LogField("client_req_ssl_resumption_type", "cqssrt", LogField::Type::sINT,
+                       &LogAccess::marshal_client_ssl_resumption_type, &LogAccess::unmarshal_int_to_str);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssrt", field);
 
