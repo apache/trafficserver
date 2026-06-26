@@ -281,7 +281,8 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_pac
     QUICConnectionId new_cid;
 
     QUICCertConfig::scoped_config server_cert;
-    SSL                          *ssl = SSL_new(server_cert->defaultContext());
+    auto                          default_ctx = server_cert->defaultContext();
+    SSL                          *ssl         = SSL_new(default_ctx.get());
 
     quiche_conn *quiche_con = quiche_conn_new_with_tls(
       new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(), &udp_packet->to.sa,

@@ -134,8 +134,8 @@ struct SSLCertLookup : public ConfigInfo {
   std::unique_ptr<SSLContextStorage> ssl_storage;
   std::unique_ptr<SSLContextStorage> ec_storage;
 
-  shared_SSL_CTX ssl_default;
-  bool           is_valid = true;
+  mutable shared_SSL_CTX ssl_default;
+  bool                   is_valid = true;
 
   int insert(const char *name, SSLCertContext const &cc);
   int insert(const IpEndpoint &address, SSLCertContext const &cc);
@@ -154,10 +154,18 @@ struct SSLCertLookup : public ConfigInfo {
   SSLCertContext *find(const std::string &name, SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
 
   // Return the last-resort default TLS context if there is no name or address match.
-  SSL_CTX *
+  shared_SSL_CTX
   defaultContext() const
   {
-    return ssl_default.get();
+    std::lock_guard<std::mutex> lock(default_ctx_mutex);
+    return ssl_default;
+  }
+
+  void
+  setDefaultContext(shared_SSL_CTX ctx) const
+  {
+    std::lock_guard<std::mutex> lock(default_ctx_mutex);
+    ssl_default = std::move(ctx);
   }
 
   unsigned        count(SSLCertContextType ctxType = SSLCertContextType::GENERIC) const;
@@ -170,6 +178,8 @@ struct SSLCertLookup : public ConfigInfo {
   ~SSLCertLookup() override;
 
 private:
+  mutable std::mutex default_ctx_mutex;
+
   // Map cert_secret name to lookup keys
   std::unordered_map<std::string, std::vector<std::string>> cert_secret_registry;
 };

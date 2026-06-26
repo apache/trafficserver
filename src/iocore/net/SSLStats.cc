@@ -273,12 +273,13 @@ SSLInitializeStatistics()
   // Acquire the loaded SSL certificate configuration to enumerate ciphers and groups.
   // This must be called AFTER SSLCertificateConfig::startup().
   SSLCertificateConfig::scoped_config lookup;
-  if (!lookup || !lookup->ssl_default) {
+  auto                                default_ctx = lookup ? lookup->defaultContext() : nullptr;
+  if (!default_ctx) {
     Dbg(dbg_ctl_ssl, "No SSL configuration, skipping cipher/group statistics initialization");
     return;
   }
 
-  SSL_CTX *ctx                  = lookup->ssl_default.get();
+  SSL_CTX *ctx                  = default_ctx.get();
   SSL     *ssl                  = SSL_new(ctx);
   STACK_OF(SSL_CIPHER) *ciphers = SSL_get_ciphers(ssl);
 
