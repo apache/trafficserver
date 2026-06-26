@@ -139,6 +139,7 @@ public:
   bool get_client_tcp_reused() const;
   bool get_client_connection_is_ssl() const;
   bool get_client_ssl_reused() const;
+  int  get_client_ssl_resumption_type() const;
   bool get_is_internal() const;
   bool get_server_connection_is_ssl() const;
   bool get_server_ssl_reused() const;

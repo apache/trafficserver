@@ -2287,6 +2287,15 @@ LogAccess::marshal_client_req_ssl_reused(char *buf)
 }
 
 int
+LogAccess::marshal_client_ssl_resumption_type(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_data->get_client_ssl_resumption_type());
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
 LogAccess::marshal_client_req_is_internal(char *buf)
 {
   if (buf) {
