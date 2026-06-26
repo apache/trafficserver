@@ -140,28 +140,23 @@ class TestStaleResponse:
 
     def verify_plugin_log(self) -> None:
         """Verify the contents of the stale_response plugin log."""
-        tr = Test.AddTestRun("Verify stale_response plugin log")
-        name = f'log_waiter_{TestStaleResponse._ts_counter}'
-        log_waiter = tr.Processes.Process(name)
-        log_waiter.Command = 'sleep 30'
+        swr_log_pattern = "stale-while-revalidate:.*stale.jpeg"
+        sie_log_pattern = "stale-if-error:.*error.jpeg"
+
+        def expect_log_entry(pattern: str, description: str, still_running_after: bool = False) -> None:
+            tr = Test.AddAwaitFileContainsTestRun(f"Await {description}", self._ts.Disk.stale_responses_log.AbsPath, pattern)
+            tr.StillRunningBefore = self._ts
+            if still_running_after:
+                tr.StillRunningAfter = self._ts
+            self._ts.Disk.stale_responses_log.Content += Testers.ContainsExpression(pattern, f"Verify {description}")
+
         if self._option_type == OptionType.FORCE_SWR:
-            log_waiter.Ready = When.FileContains(self._ts.Disk.stale_responses_log.Name, "stale-while-revalidate:")
-            self._ts.Disk.stale_responses_log.Content += Testers.ContainsExpression(
-                "stale-while-revalidate:.*stale.jpeg", "Verify stale-while-revalidate directive is logged")
+            expect_log_entry(swr_log_pattern, "stale-while-revalidate directive is logged")
         elif self._option_type == OptionType.FORCE_SIE:
-            log_waiter.Ready = When.FileContains(self._ts.Disk.stale_responses_log.Name, "stale-if-error:")
-            self._ts.Disk.stale_responses_log.Content += Testers.ContainsExpression(
-                "stale-if-error:.*error.jpeg", "Verify stale-if-error directive is logged")
+            expect_log_entry(sie_log_pattern, "stale-if-error directive is logged")
         else:
-            log_waiter.Ready = When.FileContains(self._ts.Disk.stale_responses_log.Name, "stale-if-error:")
-            self._ts.Disk.stale_responses_log.Content += Testers.ContainsExpression(
-                "stale-while-revalidate:.*stale.jpeg", "Verify stale-while-revalidate directive is logged")
-            self._ts.Disk.stale_responses_log.Content += Testers.ContainsExpression(
-                "stale-if-error:.*error.jpeg", "Verify stale-if-error directive is logged")
-        p = tr.Processes.Default
-        p.Command = 'echo "Waiting upon the stale response log."'
-        p.StartBefore(log_waiter)
-        p.StillRunningAfter = self._ts
+            expect_log_entry(swr_log_pattern, "stale-while-revalidate directive is logged", still_running_after=True)
+            expect_log_entry(sie_log_pattern, "stale-if-error directive is logged")
 
 
 TestStaleResponse(OptionType.NONE, is_global=True)
