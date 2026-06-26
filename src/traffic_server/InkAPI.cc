@@ -2888,7 +2888,9 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   }
 }
 
-void
+// Returns false when the value exceeds the uint16_t field-length limit and was
+// rejected by mime_field_value_set, so callers can surface TS_ERROR.
+bool
 TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value, int length)
 {
   MIMEFieldSDKHandle *handle = (MIMEFieldSDKHandle *)field_obj;
@@ -2900,9 +2902,9 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
 
   if (idx >= 0) {
     mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx, value, length);
-  } else {
-    mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
+    return true;
   }
+  return mime_field_value_set(heap, handle->mh, handle->field_ptr, value, length, true);
 }
 
 void
@@ -3144,10 +3146,16 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
   }
 
   MIMEHdrImpl *mh       = _hdr_mloc_to_mime_hdr_impl(mh_mloc);
-  HdrHeap *heap         = (HdrHeap *)(((HdrHeapSDKHandle *)bufp)->m_heap);
+  HdrHeap *heap         = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
   MIMEFieldSDKHandle *h = sdk_alloc_field_handle(bufp, mh);
   h->field_ptr          = mime_field_create_named(heap, mh, name, name_len);
-  *locp                 = reinterpret_cast<TSMLoc>(h);
+  if (h->field_ptr == nullptr) {
+    // The name exceeds the uint16_t field-length limit; nothing was created.
+    sdk_free_field_handle(bufp, h);
+    *locp = nullptr;
+    return TS_ERROR;
+  }
+  *locp = reinterpret_cast<TSMLoc>(h);
   return TS_SUCCESS;
 }
 
@@ -3368,12 +3376,14 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
     mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
   }
 
-  handle->field_ptr->name_set(heap, handle->mh, name, length);
+  bool const stored = handle->field_ptr->name_set(heap, handle->mh, name, length);
 
   if (attached) {
     mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, nullptr);
   }
-  return TS_SUCCESS;
+  // A rejected oversized name leaves the field's prior name intact; report the
+  // failure so the plugin knows the set did not take effect.
+  return stored ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -3523,8 +3533,7 @@ TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
     length = strlen(value);
   }
 
-  TSMimeFieldValueSet(bufp, field, idx, value, length);
-  return TS_SUCCESS;
+  return TSMimeFieldValueSet(bufp, field, idx, value, length) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode

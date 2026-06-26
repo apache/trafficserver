@@ -1,0 +1,90 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# This replay file only defines the origin (verifier server) side. The raw HPACK
+# client (clients/oversized_field_h2_client.py) drives the actual HTTP/2 traffic,
+# because Proxy Verifier (like curl/nghttp) refuses to send a header set larger
+# than ~60000 bytes and so cannot exercise the oversized-header path.
+#
+# These transactions exist so that, if ATS were to (incorrectly) forward an
+# oversized-header request to the origin, the verifier server would match a
+# request for /h2-oversized-* and log the unique marker in its response body.
+# The test asserts the server log EXCLUDES those markers, proving the origin
+# received no request.
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: "GET"
+      url: /h2-oversized-value
+      version: "1.1"
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, h2-oversized-value]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "26"]
+      content:
+        encoding: plain
+        data: "ORIGIN_SAW_OVERSIZED_VALUE"
+
+  - client-request:
+      method: "GET"
+      url: /h2-oversized-name
+      version: "1.1"
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, h2-oversized-name]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "25"]
+      content:
+        encoding: plain
+        data: "ORIGIN_SAW_OVERSIZED_NAME"
+
+  # Normal, under-limit request. Regression guard: a small header must NOT be
+  # over-rejected. The origin must receive it and return 200.
+  - client-request:
+      method: "GET"
+      url: /h2-normal
+      version: "1.1"
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, h2-normal]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "17"]
+      content:
+        encoding: plain
+        data: "ORIGIN_SAW_NORMAL"
