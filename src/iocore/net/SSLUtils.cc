@@ -1742,6 +1742,18 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       if (!ctx) {
         retval = false;
       } else {
+        // Address and default-context lookups are owned by the same policy, but
+        // are not part of the certificate CN/SAN name sets below.
+        for (unsigned i = 0; i < lookup->count(loadingctx.ctx_type); ++i) {
+          SSLCertContext *cc = lookup->get(i, loadingctx.ctx_type);
+          if (cc && cc->ctx_type == loadingctx.ctx_type && cc->userconfig.get() == policy_iter->get()) {
+            cc->setCtx(ctx);
+          }
+        }
+        if ((*policy_iter)->addr && strcmp((*policy_iter)->addr, "*") == 0) {
+          lookup->setDefaultContext(ctx);
+          this->_set_handshake_callbacks(ctx.get());
+        }
         for (auto const &name : common_names) {
           SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
           if (cc && cc->userconfig.get() == policy_iter->get()) {
@@ -1796,8 +1808,8 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
     if (strcmp(sslMultCertSettings->addr, "*") == 0) {
       Dbg(dbg_ctl_ssl_load, "Addr is '*'; setting %p to default", ctx.get());
       if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
-        inserted            = true;
-        lookup->ssl_default = ctx;
+        inserted = true;
+        lookup->setDefaultContext(ctx);
         this->_set_handshake_callbacks(ctx.get());
       }
     } else {
@@ -1899,7 +1911,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
   // We *must* have a default context even if it can't possibly work. The default context is used to
   // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
   // context.
-  if (lookup->ssl_default == nullptr) {
+  if (lookup->defaultContext() == nullptr) {
     shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
     sslMultiCertSettings->addr = ats_strdup("*");
     if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
