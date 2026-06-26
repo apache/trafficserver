@@ -3003,6 +3003,89 @@ RAM Cache
    Compression runs on task threads. To use more cores for RAM cache
    compression, increase :ts:cv:`proxy.config.task_threads`.
 
+.. _admin-cache-shm-fast-restart:
+
+Shared Memory Fast Restart
+==========================
+
+|TS| can optionally keep the cache directory -- the in-memory index that maps
+cached objects to their location on disk -- in POSIX shared memory so that it
+survives a process restart. On a normal start the directory is read from disk
+and, for a large cache, rebuilt in memory before the cache comes online. When
+this feature is enabled and the previous instance shut down cleanly, the new
+instance attaches the existing shared memory segments and skips that work,
+bringing the cache online much faster.
+
+The shared memory directory is only an optimization for restart time; the
+on-disk cache always remains the source of truth. A new instance discards the
+segments and falls back to reading the directory from disk whenever they cannot
+be trusted, including when:
+
+- the previous instance did not shut down cleanly (for example, it crashed),
+- the on-disk storage layout described by :file:`storage.yaml` changed,
+- the |TS| binary's directory structures changed (an ABI mismatch, such as
+  after an upgrade), or
+- the shared memory schema version changed.
+
+Segments left over from a crash can be inspected or removed with
+``traffic_ctl cache shm status`` and ``traffic_ctl cache shm clear``, which act
+directly on the shared memory objects whether or not |TS| is running.
+
+.. note::
+
+   This is an experimental feature, disabled by default. All of its settings
+   take effect only on a restart of |TS|.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.enabled INT 0
+
+   Enables the shared memory cache directory described above. When ``0`` (the
+   default), the cache directory is always read from disk on start.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.name_prefix STRING ats
+
+   The word used to name the POSIX shared memory objects, which on Linux appear
+   under ``/dev/shm``. Set only the middle word (default ``ats``); |TS| frames it
+   as ``/<word>-`` so the leading ``/`` that POSIX requires and the trailing
+   ``-`` separator cannot be mis-typed. With the default the control segment is
+   named ``/ats-control`` and each per-stripe directory segment ``/ats-s<N>``
+   (for example ``/ats-s0``). Any stray framing characters are trimmed, so a
+   value carried over from an older release (such as ``/ats-``) still resolves to
+   the same names. Give each |TS| instance sharing a host a distinct word so
+   their segments do not collide.
+
+   Renaming this value does not remove segments created under the old prefix:
+   |TS| only manages segments under the *current* prefix, so the old ``/dev/shm``
+   objects linger until cleared manually with ``traffic_ctl cache shm clear
+   --prefix <old-word>`` (or a host reboot).
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.use_hugepages INT 0
+
+   When enabled (``1``), |TS| attempts to back the shared memory directory with
+   huge pages to reduce TLB pressure. This requires the shared memory to be
+   eligible for huge pages (for example, ``/dev/shm`` mounted with huge page
+   support on Linux). When it is not, |TS| logs a debug message under the
+   ``cache_shm`` tag and transparently falls back to ordinary pages, so
+   enabling this is always safe.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.purge_stale_on_start INT 0
+
+   When enabled (``1``) and :ts:cv:`proxy.config.cache.shm.enabled` is ``0``,
+   |TS| removes any leftover shared memory segments for
+   :ts:cv:`proxy.config.cache.shm.name_prefix` at startup (the ``<prefix>control``
+   segment and the per-stripe segments it lists). This guards against two
+   hazards of running with the feature disabled after it had been enabled:
+
+   - the leftover segments keep consuming memory (for example ``/dev/shm`` on
+     Linux) even though the disabled instance never reads them, and
+   - a later run with the feature re-enabled would otherwise fast-attach a
+     directory that went stale while |TS| ran disabled and wrote only to disk.
+
+   The purge is skipped if a live process still owns the segments (a concurrent
+   instance using the same prefix), and it never blocks startup. It has no
+   effect when the feature is enabled, when no ``<prefix>control`` segment
+   exists, or when set to ``0`` (the default). ``traffic_ctl cache shm clear``
+   performs the same cleanup on demand.
+
 .. _admin-heuristic-expiration:
 
 Heuristic Expiration

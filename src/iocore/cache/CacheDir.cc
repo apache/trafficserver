@@ -27,6 +27,7 @@
 #include "P_CacheInternal.h"
 #include "PreservationTable.h"
 #include "Stripe.h"
+#include "CacheShm.h"
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
@@ -946,6 +947,11 @@ sync_cache_dir_on_shutdown()
   for (auto &thr : threads) {
     thr.join();
   }
+
+  // All writers are now stopped (every stripe's mutex was held and released by the
+  // shutdown threads above), so the directory is final -- only now is it safe to
+  // mark the shm control segment clean.
+  CacheShm::mark_clean_shutdown();
 
   Dbg(dbg_ctl_cache_dir_sync, "shutdown sync done");
 }

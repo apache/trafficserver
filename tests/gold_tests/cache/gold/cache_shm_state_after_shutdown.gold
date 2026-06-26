@@ -1,0 +1,13 @@
+Control segment:    ``
+  segment size:     ``
+  magic:            `` [valid]
+  schema_version:   `` [valid]
+  abi_hash:         0x``
+  storage_sig:      0x``
+  clean_shutdown:   1 (clean)
+  owner_pid:        0 (none -- not currently attached)
+  stripe_count:     2
+
+Stripes:
+  [0] ``  present
+  [1] ``  present

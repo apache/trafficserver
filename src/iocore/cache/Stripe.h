@@ -148,9 +148,10 @@ protected:
   off_t                data_blocks{};
   AggregateWriteBuffer _write_buffer;
 
-  void _clear_init(std::uint32_t hw_sector_size);
-  void _init_dir();
-  bool flush_aggregate_write_buffer(int fd);
+  void               _clear_init(std::uint32_t hw_sector_size);
+  void               _init_dir();
+  bool               _shm_directory_is_valid() const;
+  [[nodiscard]] bool flush_aggregate_write_buffer(int fd);
 
 private:
   void _init_hash_text(CacheDisk const *disk, off_t blocks, off_t dir_skip);
