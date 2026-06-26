@@ -28,6 +28,7 @@
 #include <limits.h>
 
 #include <string>
+#include <string_view>
 
 class JAxContext
 {
@@ -36,7 +37,7 @@ public:
   ~JAxContext();
 
   const std::string &get_fingerprint() const;
-  void               set_fingerprint(const std::string &fingerprint);
+  void               set_fingerprint(std::string_view fingerprint);
 
   const char *get_addr() const;
   const char *get_method_name() const;
