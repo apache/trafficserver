@@ -27,9 +27,15 @@
 #include "header.h"
 #include "log.h"
 
+#ifdef ENABLE_JAX_METHOD_JA4
 #include "ja4/method.h"
+#endif
+#ifdef ENABLE_JAX_METHOD_JA4H
 #include "ja4h/method.h"
+#endif
+#ifdef ENABLE_JAX_METHOD_JA3
 #include "ja3/method.h"
+#endif
 
 #include <ts/apidefs.h>
 #include <ts/ts.h>
@@ -48,6 +54,21 @@
 #include <version>
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
+
+namespace
+{
+constexpr Method const *METHODS[] = {
+#ifdef ENABLE_JAX_METHOD_JA4
+  &ja4::method,
+#endif
+#ifdef ENABLE_JAX_METHOD_JA4H
+  &ja4h::method,
+#endif
+#ifdef ENABLE_JAX_METHOD_JA3
+  &ja3::method,
+#endif
+};
+} // namespace
 
 static bool
 read_config_option(int argc, char const *argv[], PluginConfig &config)
@@ -71,18 +92,20 @@ read_config_option(int argc, char const *argv[], PluginConfig &config)
     case '?':
       Dbg(dbg_ctl, "Unrecognized command argument.");
       break;
-    case 'M':
-      if (strcmp("JA4", optarg) == 0) {
-        config.method = ja4::method;
-      } else if (strcmp("JA4H", optarg) == 0) {
-        config.method = ja4h::method;
-      } else if (strcmp("JA3", optarg) == 0) {
-        config.method = ja3::method;
-      } else {
+    case 'M': {
+      bool found = false;
+      for (auto const *m : METHODS) {
+        if (m->name == optarg) {
+          config.method = *m;
+          found         = true;
+          break;
+        }
+      }
+      if (!found) {
         Dbg(dbg_ctl, "Unexpected method: %s", optarg);
         return false;
       }
-      break;
+    } break;
     case 'm':
       if (strcmp("overwrite", optarg) == 0) {
         config.mode = Mode::OVERWRITE;
