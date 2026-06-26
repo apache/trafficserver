@@ -180,7 +180,7 @@ template <class T> class RateLimiter
   using self_type = RateLimiter;
 
 public:
-  RateLimiter()                           = default;
+  RateLimiter() { _metrics.fill(TS_ERROR); }
   RateLimiter(self_type &&)               = delete;
   self_type &operator=(const self_type &) = delete;
   self_type &operator=(self_type &&)      = delete;
