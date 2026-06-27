@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSHttpTxnNextHopNamedStrategyGet
-********************************
+TSRemapNextHopStrategyGet
+*************************
 
 Synopsis
 ========
@@ -28,20 +28,20 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void const* TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
+.. function:: TSStrategy TSRemapNextHopStrategyGet()
 
 Description
 ===========
 
-Gets a pointer to the specified :arg:`name` NextHopSelectionStrategy.
-This may be nullptr indicating that no strategy exists with the given name.
+Gets a pointer to the current remap rule being loaded.
+This may be nullptr indicating that parent.config is in use.
 
-This function uses the transaction :arg:`txnp` to get access to the
-NextHopStrategyFactory associated with the current configuration.
+This function may ONLY be called during TSRemapNewInstance.
+The resulting strategy pointer is valid for all subsequent transactions.
 
 .. note::
 
-   This returned pointer must not be freed and the contents must not
+   This strategy pointer must not be freed and the contents must not
    be changed.
    Strategy pointers held by plugins will become invalid when ATS
    configs are reloaded and should be reset with :func:`TSRemapNewInstance`
@@ -49,4 +49,4 @@ NextHopStrategyFactory associated with the current configuration.
 See Also
 ========
 
-:func:`TSHttpTxnNextHopStrategySet`
+:func:`TSRemapNextHopStrategySet`

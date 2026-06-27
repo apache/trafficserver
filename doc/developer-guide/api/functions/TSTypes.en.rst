@@ -335,6 +335,8 @@ more widely. Those are described on this page.
 .. type:: TSFetchSM
 .. type:: TSFetchEvent
 
+.. type:: TSStrategy
+
 .. type:: TSHttpPriority
 
    The abstract type of the various HTTP priority implementations.

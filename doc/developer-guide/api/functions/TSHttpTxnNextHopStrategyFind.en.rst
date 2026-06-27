@@ -18,8 +18,8 @@
 
 .. default-domain:: cpp
 
-TSHttpTxnNextHopStrategyGet
-***************************
+TSHttpTxnNextHopStrategyFind
+****************************
 
 Synopsis
 ========
@@ -28,17 +28,20 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSStrategy TSHttpTxnNextHopStrategyGet(TSHttpTxn txnp)
+.. function:: TSStrategy TSHttpTxnNextHopStrategyFind(TSHttpTxn txnp, const char *name)
 
 Description
 ===========
 
-Gets a pointer to the current transaction :arg:`txnp` NextHopSelectionStrategy.
-This may be nullptr indicating that parent.config is in use.
+Gets a pointer to the specified :arg:`name` NextHopSelectionStrategy.
+This may be nullptr indicating that no strategy exists with the given name.
+
+This function uses the transaction :arg:`txnp` to get access to the
+NextHopStrategyFactory associated with the current configuration.
 
 .. note::
 
-   This strategy pointer must not be freed and the contents must not
+   This returned pointer must not be freed and the contents must not
    be changed.
    Strategy pointers held by plugins will become invalid when ATS
    configs are reloaded and should be reset with :func:`TSRemapNewInstance`
