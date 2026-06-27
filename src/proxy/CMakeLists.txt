@@ -37,6 +37,7 @@ add_library(
   Transform.cc
   FetchSM.cc
   PluginHttpConnect.cc
+  VirtualHost.cc
 )
 add_library(ts::proxy ALIAS proxy)
 
