@@ -761,6 +761,10 @@ public:
     char   *internal_msg_buffer_type                = nullptr; // out
     int64_t internal_msg_buffer_size                = 0;       // out
     int64_t internal_msg_buffer_fast_allocator_size = -1;
+    // Hook that was firing when a plugin called TSHttpTxnErrorBodySet().
+    // Used to scope the SERVER_READ/TRANSFORM_READ internal-body divert to
+    // plugin-driven response replacement only.
+    TSHttpHookID internal_msg_buffer_set_on = TS_HTTP_LAST_HOOK;
 
     int  scheme                    = -1;     // out
     int  next_hop_scheme           = scheme; // out
@@ -934,7 +938,8 @@ public:
         }
         internal_msg_buffer = nullptr;
       }
-      internal_msg_buffer_size = 0;
+      internal_msg_buffer_size   = 0;
+      internal_msg_buffer_set_on = TS_HTTP_LAST_HOOK;
     }
 
     ProxyProtocol pp_info;

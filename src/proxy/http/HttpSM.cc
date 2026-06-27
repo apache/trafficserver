@@ -1689,9 +1689,35 @@ HttpSM::handle_api_return()
 
   switch (t_state.next_action) {
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
-    HttpTunnelProducer *p = setup_transfer_from_transform();
-    perform_transform_cache_write_action();
-    tunnel.tunnel_run(p);
+    // Bypass transform streaming when a plugin replaced the response body.
+    if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set && t_state.hdr_info.server_response.valid()) {
+      SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform for internal transfer");
+      t_state.api_info.cache_untransformed = true;
+      if (tunnel.is_tunnel_active()) {
+        tunnel.kill_tunnel();
+      }
+      // Drop transform VC table state because this path no longer drives transform reads.
+      if (transform_info.entry != nullptr) {
+        vc_table.cleanup_entry(transform_info.entry);
+        transform_info.entry = nullptr;
+      }
+      transform_info.vc = nullptr;
+      // Some downstream paths still read client_response; seed it from transform_response when missing.
+      if (t_state.hdr_info.client_response.valid() == 0 && t_state.hdr_info.transform_response.valid()) {
+        t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
+        t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);
+      }
+      // Internal transfer doesn't use the server session.
+      if (server_entry != nullptr && server_entry->in_tunnel == false) {
+        release_server_session();
+      }
+      // Serve the plugin-provided body through the internal tunnel handler.
+      setup_internal_transfer(&HttpSM::tunnel_handler);
+    } else {
+      HttpTunnelProducer *p = setup_transfer_from_transform();
+      perform_transform_cache_write_action();
+      tunnel.tunnel_run(p);
+    }
     break;
   }
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
@@ -1724,6 +1750,16 @@ HttpSM::handle_api_return()
       }
 
       setup_blind_tunnel(true, initial_data);
+    } else if (t_state.internal_msg_buffer && !t_state.api_server_request_body_set && t_state.hdr_info.server_response.valid() &&
+               plugin_tunnel == nullptr &&
+               (t_state.internal_msg_buffer_set_on == TS_HTTP_READ_RESPONSE_HDR_HOOK ||
+                t_state.internal_msg_buffer_set_on == TS_HTTP_SEND_RESPONSE_HDR_HOOK)) {
+      // Plugin replaced the origin response body via TSHttpTxnErrorBodySet(); divert to internal transfer.
+      SMDbg(dbg_ctl_http, "plugin set internal body, using internal transfer instead of server tunnel");
+      if (server_entry != nullptr && server_entry->in_tunnel == false) {
+        release_server_session();
+      }
+      setup_internal_transfer(&HttpSM::tunnel_handler);
     } else {
       HttpTunnelProducer *p = setup_server_transfer();
       perform_cache_write_action();
@@ -7671,12 +7707,18 @@ HttpSM::setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header
 inline void
 HttpSM::transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info)
 {
+  if (info->entry == nullptr) {
+    return;
+  }
   APIHook *t_hook = api_hooks.get(hook);
   if (t_hook && info->vc == nullptr) {
     do {
-      VConnection *t_vcon = t_hook->m_cont;
-      t_vcon->do_io_close();
-      t_hook = t_hook->m_link.next;
+      APIHook *next = t_hook->m_link.next;
+      // Some transform hooks can already be detached by the time kill_this() runs.
+      if (auto *t_vcon = static_cast<VConnection *>(t_hook->m_cont); t_vcon != nullptr) {
+        t_vcon->do_io_close();
+      }
+      t_hook = next;
     } while (t_hook != nullptr);
   }
 }
@@ -7757,7 +7799,11 @@ HttpSM::kill_this()
     //   In that case, we need to manually close all the
     //   transforms to prevent memory leaks (INKqa06147)
     if (hooks_set) {
-      transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
+      bool bypassed_response_transform =
+        t_state.api_info.cache_untransformed && t_state.internal_msg_buffer && !t_state.api_server_request_body_set;
+      if (!bypassed_response_transform) {
+        transform_cleanup(TS_HTTP_RESPONSE_TRANSFORM_HOOK, &transform_info);
+      }
       transform_cleanup(TS_HTTP_REQUEST_TRANSFORM_HOOK, &post_transform_info);
       plugin_agents_cleanup();
     }
@@ -8334,6 +8380,21 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::SERVER_READ: {
     t_state.source = HttpTransact::Source_t::HTTP_ORIGIN_SERVER;
+
+    if (transform_info.vc && t_state.internal_msg_buffer && !t_state.api_server_request_body_set &&
+        t_state.hdr_info.server_response.valid()) {
+      SMDbg(dbg_ctl_http, "plugin set internal body, bypassing response transform");
+      t_state.api_info.cache_untransformed = true;
+      if (transform_info.entry != nullptr) {
+        vc_table.cleanup_entry(transform_info.entry);
+        transform_info.entry = nullptr;
+      }
+      transform_info.vc = nullptr;
+      if (t_state.hdr_info.client_response.valid() == 0 && t_state.hdr_info.transform_response.valid()) {
+        t_state.hdr_info.client_response.create(HTTPType::RESPONSE);
+        t_state.hdr_info.client_response.copy(&t_state.hdr_info.transform_response);
+      }
+    }
 
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
