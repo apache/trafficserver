@@ -35,15 +35,61 @@ const char *EsiProcessor::INCLUDE_DATA_ID_ATTR = reinterpret_cast<const char *>(
 
 namespace
 {
-DbgCtl dbg_ctl{"plugin_esi_procesor"};
-}
+DbgCtl dbg_ctl{"plugin_esi_processor"};
+
+// Wraps an inner HttpDataFetcher with the include-URL validator so
+// special-include handlers — which talk to the fetcher directly via
+// the reference they were constructed with — can't reach TSFetchUrl
+// with an unvalidated URL. Other virtuals delegate straight through.
+class ValidatingFetcher : public HttpDataFetcher
+{
+public:
+  ValidatingFetcher(HttpDataFetcher &inner, const IncludeUrlValidator &validator) : _inner(inner), _validator(validator) {}
+
+  bool
+  addFetchRequest(const std::string &url, FetchedDataProcessor *callback_obj = nullptr) override
+  {
+    auto reason = _validator.validate(url);
+    if (reason != IncludeUrlValidator::OK) {
+      std::string const safe = IncludeUrlValidator::redactUserInfo(url);
+      TSError("[%s] Rejecting include URL [%s]: %s (via special-include handler)", __FUNCTION__, safe.c_str(),
+              IncludeUrlValidator::reasonString(reason));
+      Stats::increment(Stats::N_SPCL_INCLUDE_ERRS);
+      return false;
+    }
+    return _inner.addFetchRequest(url, callback_obj);
+  }
+
+  DataStatus
+  getRequestStatus(const std::string &url) const override
+  {
+    return _inner.getRequestStatus(url);
+  }
+
+  int
+  getNumPendingRequests() const override
+  {
+    return _inner.getNumPendingRequests();
+  }
+
+  bool
+  getContent(const std::string &url, const char *&content, int &content_len) const override
+  {
+    return _inner.getContent(url, content, content_len);
+  }
+
+private:
+  HttpDataFetcher           &_inner;
+  const IncludeUrlValidator &_validator;
+};
+} // namespace
 
 // This can only be used in member functions of EsiProcessor.
 //
 #define DBG(FMT, ...) Dbg(dbg_ctl, FMT " contp=%p", ##__VA_ARGS__, _cont_addr)
 
 EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables &variables, const HandlerManager &handler_mgr,
-                           unsigned max_doc_size)
+                           unsigned max_doc_size, const IncludeUrlValidator *url_validator)
   : _curr_state(STOPPED),
     _parser(max_doc_size),
     _n_prescanned_nodes(0),
@@ -56,8 +102,12 @@ EsiProcessor::EsiProcessor(void *cont_addr, HttpDataFetcher &fetcher, Variables 
     _expression(variables),
     _n_try_blocks_processed(0),
     _handler_manager(handler_mgr),
+    _url_validator(url_validator),
     _cont_addr(cont_addr)
 {
+  if (_url_validator) {
+    _handler_fetcher = std::make_unique<ValidatingFetcher>(_fetcher, *_url_validator);
+  }
 }
 
 bool
@@ -703,13 +753,31 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
       }
       const string &expanded_url = _expression.expand(raw_url);
       if (!expanded_url.size()) {
-        TSError("[%s] Couldn't expand raw URL [%.*s]", __FUNCTION__, int(raw_url.size()), raw_url.data());
+        // Redact any user:pass@ before logging so credentials in the include
+        // template don't leak into diags.log, matching the rejection path below.
+        std::string const safe_raw = IncludeUrlValidator::redactUserInfo(raw_url);
+        TSError("[%s] Couldn't expand raw URL [%s]", __FUNCTION__, safe_raw.c_str());
         Stats::increment(Stats::N_INCLUDE_ERRS);
         continue;
       }
 
+      if (_url_validator) {
+        auto reason = _url_validator->validate(expanded_url);
+        if (reason != IncludeUrlValidator::OK) {
+          // Redact any user:pass@ before logging so credentials in the
+          // include template or its expansion don't leak into diags.log.
+          std::string const safe_expanded = IncludeUrlValidator::redactUserInfo(expanded_url);
+          std::string const safe_raw      = IncludeUrlValidator::redactUserInfo(raw_url);
+          TSError("[%s] Rejecting include URL [%s] (raw [%s]): %s", __FUNCTION__, safe_expanded.c_str(), safe_raw.c_str(),
+                  IncludeUrlValidator::reasonString(reason));
+          Stats::increment(Stats::N_INCLUDE_ERRS);
+          continue;
+        }
+      }
+
       if (!_fetcher.addFetchRequest(expanded_url)) {
-        TSError("[%s] Couldn't add fetch request for URL [%.*s]", __FUNCTION__, int(raw_url.size()), raw_url.data());
+        std::string const safe_expanded = IncludeUrlValidator::redactUserInfo(expanded_url);
+        TSError("[%s] Couldn't add fetch request for URL [%s]", __FUNCTION__, safe_expanded.c_str());
         Stats::increment(Stats::N_INCLUDE_ERRS);
         continue;
       }
@@ -723,7 +791,11 @@ EsiProcessor::_preprocess(DocNodeList &node_list, int &n_prescanned_nodes)
       SpecialIncludeHandler            *handler;
       IncludeHandlerMap::const_iterator map_iter = _include_handlers.find(handler_id);
       if (map_iter == _include_handlers.end()) {
-        handler = _handler_manager.getHandler(_esi_vars, _expression, _fetcher, handler_id);
+        // Hand the validating wrapper to special-include handlers when a
+        // validator is configured; otherwise fall back to the raw
+        // fetcher (preserves behavior when SSRF guards are off).
+        HttpDataFetcher &handler_fetcher = _handler_fetcher ? *_handler_fetcher : _fetcher;
+        handler                          = _handler_manager.getHandler(_esi_vars, _expression, handler_fetcher, handler_id);
         if (!handler) {
           TSError("[%s] Couldn't create handler with id [%s]", __FUNCTION__, handler_id.c_str());
           Stats::increment(Stats::N_SPCL_INCLUDE_ERRS);

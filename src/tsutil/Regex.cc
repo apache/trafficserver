@@ -218,6 +218,74 @@ RegexMatches::operator[](size_t index) const
 }
 
 //----------------------------------------------------------------------------
+struct RegexMatchContext::_MatchContext {
+  static pcre2_match_context *
+  get(_MatchContextPtr const &p)
+  {
+    return static_cast<pcre2_match_context *>(p._ptr);
+  }
+  static void
+  set(_MatchContextPtr &p, pcre2_match_context *ptr)
+  {
+    p._ptr = ptr;
+  }
+};
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext()
+{
+  auto ctx = pcre2_match_context_create(nullptr);
+  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
+  _MatchContext::set(_match_context, ctx);
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext(RegexMatchContext const &other)
+{
+  auto ptr = _MatchContext::get(other._match_context);
+  if (nullptr != ptr) {
+    pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
+    _MatchContext::set(_match_context, ctx);
+  }
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext &
+RegexMatchContext::operator=(RegexMatchContext const &other)
+{
+  if (&other != this) {
+    auto ptr = _MatchContext::get(other._match_context);
+    if (nullptr != ptr) {
+      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
+      _MatchContext::set(_match_context, ctx);
+    } else {
+      _MatchContext::set(_match_context, nullptr);
+    }
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext::~RegexMatchContext()
+{
+  auto ptr = _MatchContext::get(_match_context);
+  if (ptr != nullptr) {
+    pcre2_match_context_free(ptr);
+  }
+}
+
+//----------------------------------------------------------------------------
+void
+RegexMatchContext::set_match_limit(uint32_t limit)
+{
+  auto ptr = _MatchContext::get(_match_context);
+  debug_assert_message(ptr, "Failed to get the match context");
+  if (ptr != nullptr) {
+    pcre2_set_match_limit(ptr, limit);
+  }
+}
+
+//----------------------------------------------------------------------------
 struct Regex::_Code {
   static pcre2_code *
   get(_CodePtr const &p)
@@ -331,6 +399,52 @@ Regex::exec(std::string_view subject, RegexMatches &matches) const
   }
 
   return count;
+}
+
+//----------------------------------------------------------------------------
+int32_t
+Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, RegexMatchContext const *const matchContext) const
+{
+  auto code = _Code::get(_code);
+
+  // check if there is a compiled regex
+  if (code == nullptr) {
+    return PCRE2_ERROR_NULL;
+  }
+
+  // Use the provided match context or fall back to the thread-global one.
+  pcre2_match_context *match_context;
+  if (nullptr == matchContext) {
+    match_context = RegexContext::get_instance()->get_match_context();
+  } else {
+    match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
+  }
+
+  bool const     full_match  = (flags & RE_FULL_MATCH) != 0;
+  uint32_t const pcre2_flags = flags & ~RE_FULL_MATCH;
+
+  int rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, pcre2_flags,
+                       RegexMatches::_MatchData::get(matches._match_data), match_context);
+
+  matches._size = rc;
+
+  // match was successful
+  if (rc >= 0) {
+    matches._subject = subject;
+
+    // match but the output vector was too small, adjust the size of the matches
+    if (rc == 0) {
+      matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
+    }
+
+    // Enforce full-subject consumption when requested (post-match length check, see RE_FULL_MATCH).
+    if (full_match && matches[0].size() != subject.size()) {
+      matches._size = PCRE2_ERROR_NOMATCH;
+      rc            = PCRE2_ERROR_NOMATCH;
+    }
+  }
+
+  return rc;
 }
 
 //----------------------------------------------------------------------------
