@@ -60,8 +60,8 @@ enum class ConfigSource {
   FileAndRpc  ///< Handler can also process YAML content supplied via RPC
 };
 
-/// Handler signature for config reload - receives ConfigContext
-/// Handler can check ctx.supplied_yaml() for rpc-supplied content
+/// Handler signature for config reload - receives ConfigContext by value.
+/// Handler can check ctx.supplied_yaml() for rpc-supplied content.
 using ConfigReloadHandler = std::function<void(ConfigContext)>;
 
 ///
@@ -104,19 +104,13 @@ public:
     std::string              filename_record;  ///< Record containing filename (e.g., "proxy.config.cache.ip_allow.filename")
     ConfigType               type;             ///< YAML or LEGACY - we set that based on the filename extension.
     ConfigSource             source{ConfigSource::FileOnly}; ///< What content sources this handler supports
-    ConfigReloadHandler      handler;                        ///< Handler function (empty = static file/not reloadable)
+    ConfigReloadHandler      handler;                        ///< Reload handler (empty for static / non-reloadable entries)
     std::vector<std::string> trigger_records;                ///< Records that trigger reload
     bool                     is_required{false};             ///< Whether the file must exist on disk
+    std::string              plugin_name;                    ///< Plugin that registered this entry (empty for core).
 
     /// Resolve the actual filename (reads from record, falls back to default)
     std::string resolve_filename() const;
-
-    /// Whether this entry has a reload handler (false for static/non-reloadable files).
-    bool
-    has_handler() const
-    {
-      return static_cast<bool>(handler);
-    }
   };
 
   ///
@@ -143,13 +137,21 @@ public:
                        ConfigReloadHandler handler, ConfigSource source, std::initializer_list<const char *> trigger_records = {},
                        bool is_required = false);
 
+  /// @brief Register a plugin-owned config file (TSCfgRegister entry point).
+  ///
+  /// @a plugin_name must be non-empty; it is recorded on the Entry and used
+  /// for diagnostics, log attribution, and traffic_ctl status output.
+  void register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
+                              const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
+                              std::initializer_list<const char *> trigger_records = {}, bool is_required = false);
+
   /// @brief Register a record-only config handler (no file).
   ///
   /// Convenience method for modules that have no config file but need their
   /// reload handler to participate in the config tracking system (tracing,
   /// status reporting, traffic_ctl config reload).
   ///
-  /// This is NOT for arbitrary record-change callbacks — use RecRegisterConfigUpdateCb
+  /// This is NOT for arbitrary record-change callbacks - use RecRegisterConfigUpdateCb
   /// for that. This is for config modules like SSLTicketKeyConfig that are reloaded
   /// via record changes and need visibility in the reload infrastructure.
   ///
@@ -164,7 +166,7 @@ public:
 
   /// @brief Register a non-reloadable config file (startup files).
   ///
-  /// Static files are registered for informational purposes only — no reload
+  /// Static files are registered for informational purposes only - no reload
   /// handler and no trigger records. This allows the registry to serve as the
   /// single source of truth for all known configuration files, so that RPC
   /// endpoints can gather and expose this information.
@@ -202,7 +204,8 @@ public:
   ///
   ///
   /// @param key              The registered config key (must already exist)
-  /// @param filename_record  Record holding the filename (e.g., "proxy.config.cache.ip_categories.filename")
+  /// @param filename_record  Record holding the filename (e.g., "proxy.config.cache.ip_categories.filename"),
+  ///                         or nullptr / empty to use @a default_filename verbatim
   /// @param default_filename Default filename when record value is empty (e.g., "ip_categories.yaml")
   /// @param is_required      Whether the file is required to exist
   /// @return 0 on success, -1 if key not found
@@ -311,8 +314,15 @@ private:
   void setup_triggers(Entry &entry);
 
   /// Internal: wire a record callback to fire on_record_change for a config key.
-  /// Does NOT modify trigger_records — callers decide whether to store the record.
+  /// Does NOT modify trigger_records - callers decide whether to store the record.
   int wire_record_callback(const char *record_name, const std::string &config_key);
+
+  /// Internal: split the rpc-passed YAML into _reload directives and remaining
+  /// content, and apply both slices onto @p ctx (via the friend relationship
+  /// with ConfigContext). On invalid _reload (non-map), the directives are
+  /// dropped with a warning. @p passed_config is mutated (the "_reload" key
+  /// is stripped).
+  static void apply_passed_config(ConfigContext &ctx, YAML::Node &passed_config, std::string_view key);
 
   /// Hash for lookup.
   struct StringHash {

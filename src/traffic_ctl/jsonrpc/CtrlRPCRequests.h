@@ -75,9 +75,10 @@ struct ConfigReloadResponse {
     std::vector<LogEntry>   logs;
     std::vector<ReloadInfo> sub_tasks;
     struct Meta { // internal info.
-      int64_t created_time_ms{0};
-      int64_t last_updated_time_ms{0};
-      bool    is_main_task{false};
+      int64_t     created_time_ms{0};
+      int64_t     last_updated_time_ms{0};
+      bool        is_main_task{false};
+      std::string plugin_name; ///< Plugin name for plugin-owned entries (empty for core).
     } meta;
   };
 

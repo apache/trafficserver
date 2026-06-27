@@ -90,6 +90,9 @@
 #include "proxy/http/HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
 #include "mgmt/config/FileManager.h"
+#include "mgmt/config/ConfigRegistry.h"
+#include "mgmt/config/ConfigContext.h"
+#include "mgmt/config/ConfigContextDiags.h"
 
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include <swoc/bwf_base.h>
@@ -3297,6 +3300,349 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_f
   sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_name) == TS_SUCCESS);
 
   global_config_cbs->insert(reinterpret_cast<INKContInternal *>(contp), plugin_name, plugin_file_name);
+}
+
+////////////////////////////////////////////////////////////////////
+//
+// Config Registry - plugin config reload registration
+//
+////////////////////////////////////////////////////////////////////
+
+namespace
+{
+// Handle behind the opaque TSCfgLoadCtx. The wrapper lambda new's one per
+// handler invocation; TSCfgLoadCtx{Complete,Fail} delete it. Caches the
+// strings/nodes the getters need to return as stable pointers.
+struct PluginConfigContext {
+  ConfigContext     ctx;
+  std::string       filename;
+  std::string       reload_token;
+  YAML::Node        supplied_yaml;
+  YAML::Node        reload_directives;
+  std::atomic<bool> consumed{false};
+};
+
+DbgCtl dbg_ctl_plugin_config{"config.reload"};
+
+/// Verify we're inside TSPluginInit() after a successful TSPluginRegister().
+/// Returns the active plugin name on success, nullptr on failure (after logging).
+const char *
+validate_plugin_init(const char *api_fn)
+{
+  if (!plugin_reg_current) {
+    Error("[unknown-plugin] %s must be called from TSPluginInit()", api_fn);
+    return nullptr;
+  }
+  if (!plugin_reg_current->plugin_registered || plugin_reg_current->plugin_name == nullptr) {
+    Error("[%s] %s must be called after TSPluginRegister() with a non-null plugin_name",
+          plugin_reg_current->plugin_path ? plugin_reg_current->plugin_path : "?", api_fn);
+    return nullptr;
+  }
+  return plugin_reg_current->plugin_name;
+}
+} // anonymous namespace
+
+TSReturnCode
+TSCfgRegister(const TSCfgRegistrationInfo *info)
+{
+  const char *plugin_name = validate_plugin_init("TSCfgRegister");
+  if (!plugin_name) {
+    return TS_ERROR;
+  }
+
+  if (info == nullptr) {
+    Error("[%s] TSCfgRegister: info is null", plugin_name);
+    return TS_ERROR;
+  }
+  if (info->key.empty() || info->config_path.empty() || info->handler == nullptr) {
+    Error("[%s] TSCfgRegister: missing required fields (key/config_path/handler)", plugin_name);
+    return TS_ERROR;
+  }
+
+  std::string key_str{info->key};
+  std::string config_path_str{info->config_path};
+  std::string filename_record_str{info->filename_record};
+
+  config::ConfigSource cfg_source =
+    (info->source == TS_CFG_SOURCE_FILE_AND_RPC) ? config::ConfigSource::FileAndRpc : config::ConfigSource::FileOnly;
+
+  auto cb    = info->handler;
+  auto udata = info->data;
+
+  // Lambda captures only the function pointer + opaque user data. Plugin name
+  // and key live on the Entry; the wrapper looks them up via the ctx that the
+  // framework attaches them to (set_plugin_name in ConfigRegistry).
+  config::ConfigReloadHandler wrapper = [cb, udata](ConfigContext ctx) {
+    auto *handle              = new PluginConfigContext{};
+    handle->reload_token      = ctx.get_reload_token();
+    handle->supplied_yaml     = ctx.supplied_yaml();
+    handle->reload_directives = ctx.reload_directives();
+    auto const &key           = ctx.get_description();
+    if (auto const *entry = config::ConfigRegistry::Get_Instance().find(key); entry != nullptr) {
+      handle->filename = entry->resolve_filename();
+    }
+    handle->ctx = std::move(ctx);
+
+    Dbg(dbg_ctl_plugin_config, "Invoking plugin config handler for '%s'", key.c_str());
+    cb(reinterpret_cast<TSCfgLoadCtx>(handle), udata);
+    // Past this point @p handle may be deleted (synchronous completion). Deferred
+    // completion is detected upstream via ctx.is_terminal(). If the plugin never
+    // completes, the handle leaks but core's progress timeout still unblocks.
+  };
+
+  // Duplicate-key handling lives in ConfigRegistry::do_register and emits a
+  // Warning identifying both owners; callers can probe with TSCfgIsRegistered.
+  config::ConfigRegistry::Get_Instance().register_plugin_config(key_str, plugin_name, config_path_str, filename_record_str,
+                                                                std::move(wrapper), cfg_source, {}, info->is_required);
+
+  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgRegister: registered '%s' (file: %s)", plugin_name, key_str.c_str(),
+      config_path_str.c_str());
+  return TS_SUCCESS;
+}
+
+bool
+TSCfgIsRegistered(std::string_view key)
+{
+  if (key.empty()) {
+    return false;
+  }
+  return config::ConfigRegistry::Get_Instance().contains(std::string{key});
+}
+
+TSReturnCode
+TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name)
+{
+  const char *plugin_name = validate_plugin_init("TSCfgAttachReloadTrigger");
+  if (!plugin_name) {
+    return TS_ERROR;
+  }
+  if (key.empty() || record_name.empty()) {
+    Error("[%s] TSCfgAttachReloadTrigger: key and record_name required", plugin_name);
+    return TS_ERROR;
+  }
+
+  std::string key_str{key};
+  std::string record_str{record_name};
+  if (config::ConfigRegistry::Get_Instance().attach(key_str, record_str.c_str()) != 0) {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: attach failed (key='%s', record='%s')", plugin_name, key_str.c_str(),
+        record_str.c_str());
+    return TS_ERROR;
+  }
+
+  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: attached record '%s' to config '%s'", plugin_name, record_str.c_str(),
+      key_str.c_str());
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
+{
+  const char *plugin_name = validate_plugin_init("TSCfgAddFileDependency");
+  if (!plugin_name) {
+    return TS_ERROR;
+  }
+  if (info == nullptr) {
+    Error("[%s] TSCfgAddFileDependency: info is null", plugin_name);
+    return TS_ERROR;
+  }
+  if (info->key.empty() || info->config_path.empty()) {
+    Error("[%s] TSCfgAddFileDependency: missing required fields (key/config_path)", plugin_name);
+    return TS_ERROR;
+  }
+
+  auto       &registry            = config::ConfigRegistry::Get_Instance();
+  std::string key_str             = std::string{info->key};
+  std::string path_str            = std::string{info->config_path};
+  std::string filename_record_str = std::string{info->filename_record};
+  std::string dep_key_str         = std::string{info->dep_key};
+  bool const  has_dep_key         = !dep_key_str.empty();
+
+  // filename_record_str may be empty; add_file_dependency / resolve_config_filename treat empty as "no record".
+  const char *filename_record_arg = filename_record_str.empty() ? nullptr : filename_record_str.c_str();
+
+  int rc = has_dep_key ?
+             registry.add_file_and_node_dependency(key_str, dep_key_str, filename_record_arg, path_str.c_str(), info->is_required) :
+             registry.add_file_dependency(key_str, filename_record_arg, path_str.c_str(), info->is_required);
+
+  if (rc != 0) {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: registration failed (key='%s', dep_key='%s', file='%s')", plugin_name,
+        key_str.c_str(), dep_key_str.c_str(), path_str.c_str());
+    return TS_ERROR;
+  }
+
+  if (has_dep_key) {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: added file '%s' (dep_key '%s') to config '%s'", plugin_name,
+        path_str.c_str(), dep_key_str.c_str(), key_str.c_str());
+  } else {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: added file '%s' to config '%s'", plugin_name, path_str.c_str(),
+        key_str.c_str());
+  }
+  return TS_SUCCESS;
+}
+
+namespace
+{
+/// Check that a handle is alive (not yet consumed by Complete/Fail). On a
+/// post-finalize call we log + assert in debug; the call becomes a no-op
+/// in release. Cross-thread post-delete access still slips past us - that
+/// is plugin-side UB.
+bool
+plugin_ctx_alive(PluginConfigContext *pctx, const char *api_fn)
+{
+  if (pctx == nullptr) {
+    return false;
+  }
+  if (pctx->consumed.load(std::memory_order_acquire)) {
+    Warning("%s called on finalized TSCfgLoadCtx (reload_token=%s); ignoring", api_fn, pctx->reload_token.c_str());
+    ink_assert(!"TSCfgLoadCtx used after Complete/Fail");
+    return false;
+  }
+  return true;
+}
+
+void
+finalize_plugin_ctx(PluginConfigContext *pctx, std::string_view msg, bool complete)
+{
+  if (pctx == nullptr) {
+    return;
+  }
+  if (pctx->consumed.exchange(true)) {
+    Warning("Plugin double-finalized TSCfgLoadCtx (reload_token=%s); ignoring second call", pctx->reload_token.c_str());
+    ink_assert(!"TSCfgLoadCtx finalized more than once");
+    return;
+  }
+
+  if (complete) {
+    if (!msg.empty()) {
+      CfgLoadComplete(pctx->ctx, "%.*s", static_cast<int>(msg.size()), msg.data());
+    } else {
+      pctx->ctx.complete();
+    }
+  } else {
+    if (!msg.empty()) {
+      CfgLoadFail(pctx->ctx, "%.*s", static_cast<int>(msg.size()), msg.data());
+    } else {
+      pctx->ctx.fail();
+    }
+  }
+
+  delete pctx;
+}
+} // anonymous namespace
+
+void
+TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxInProgress")) {
+    return;
+  }
+
+  if (!msg.empty()) {
+    CfgLoadInProgress(pctx->ctx, "%.*s", static_cast<int>(msg.size()), msg.data());
+  } else {
+    pctx->ctx.in_progress();
+  }
+}
+
+void
+TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg)
+{
+  finalize_plugin_ctx(reinterpret_cast<PluginConfigContext *>(ctx), msg, /*complete=*/true);
+}
+
+void
+TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg)
+{
+  finalize_plugin_ctx(reinterpret_cast<PluginConfigContext *>(ctx), msg, /*complete=*/false);
+}
+
+void
+TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxAddLog") || msg.empty()) {
+    return;
+  }
+
+  DiagsLevel diags_level = DL_Note;
+  switch (level) {
+  case TS_CFG_LOG_WARNING:
+    diags_level = DL_Warning;
+    break;
+  case TS_CFG_LOG_ERROR:
+    diags_level = DL_Error;
+    break;
+  case TS_CFG_LOG_NOTE:
+  default:
+    diags_level = DL_Note;
+    break;
+  }
+
+  CfgLoadLog(pctx->ctx, diags_level, "%.*s", static_cast<int>(msg.size()), msg.data());
+}
+
+TSCfgLoadCtx
+TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxAddSubtask")) {
+    return nullptr;
+  }
+
+  ConfigContext child_ctx = pctx->ctx.add_dependent_ctx(description);
+  if (!child_ctx) {
+    return nullptr;
+  }
+
+  auto *child_handle              = new PluginConfigContext{};
+  child_handle->filename          = pctx->filename;
+  child_handle->reload_token      = pctx->reload_token;
+  child_handle->supplied_yaml     = child_ctx.supplied_yaml();
+  child_handle->reload_directives = child_ctx.reload_directives();
+  child_handle->ctx               = std::move(child_ctx);
+
+  return reinterpret_cast<TSCfgLoadCtx>(child_handle);
+}
+
+std::string_view
+TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetFilename")) {
+    return {};
+  }
+  return pctx->filename;
+}
+
+std::string_view
+TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetReloadToken")) {
+    return {};
+  }
+  return pctx->reload_token;
+}
+
+TSYaml
+TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetSuppliedYaml") || !pctx->supplied_yaml.IsDefined()) {
+    return nullptr;
+  }
+  return reinterpret_cast<TSYaml>(&pctx->supplied_yaml);
+}
+
+TSYaml
+TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx)
+{
+  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
+  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetReloadDirectives") || !pctx->reload_directives.IsDefined()) {
+    return nullptr;
+  }
+  return reinterpret_cast<TSYaml>(&pctx->reload_directives);
 }
 
 TSReturnCode

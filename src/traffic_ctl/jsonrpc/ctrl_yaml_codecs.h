@@ -121,6 +121,9 @@ template <> struct convert<ConfigReloadResponse> {
         info.meta.created_time_ms      = helper::try_extract<int64_t>(meta, "created_time_ms");
         info.meta.last_updated_time_ms = helper::try_extract<int64_t>(meta, "last_updated_time_ms");
         info.meta.is_main_task         = helper::try_extract<bool>(meta, "main_task");
+        if (meta["plugin_name"]) {
+          info.meta.plugin_name = helper::try_extract<std::string>(meta, "plugin_name");
+        }
       }
       return info;
     };
