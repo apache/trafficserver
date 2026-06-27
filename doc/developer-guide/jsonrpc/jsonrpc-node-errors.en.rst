@@ -49,7 +49,8 @@ different set of errors in the following format:
       "jsonrpc": "2.0"
    }
 
-In some cases the data field could be populated:
+In some cases the data field could be populated. Each entry in the ``data`` array contains a
+``code``, a ``severity``, and a ``message``:
 
 .. code-block:: json
 
@@ -61,12 +62,34 @@ In some cases the data field could be populated:
          "data":[
             {
                "code": 2,
+               "severity": 5,
                "message":"Denied privileged API access for uid=XXX gid=XXX"
             }
          ]
       },
       "id":"5e273ec0-3e3b-4a81-90ec-aeee3d38073f"
    }
+
+The ``severity`` field is an integer that corresponds to the ``swoc::Errata::Severity`` levels.
+It is always present in the response. If the handler does not set an explicit severity for an
+annotation, the server defaults to ``0`` (Diag).
+
+====  ===========
+Code  Severity
+====  ===========
+0     Diag
+1     Debug
+2     Status
+3     Note
+4     Warn
+5     Error
+6     Fatal
+7     Alert
+8     Emergency
+====  ===========
+
+The ``severity`` field is used by :program:`traffic_ctl` to determine the exit code via the
+``--error-level`` option. See :ref:`traffic_ctl_jsonrpc` for details.
 
 
 .. _jsonrpc-node-errors-standard-errors:
@@ -128,6 +151,7 @@ Under this error, the `data` field could be populated with the following errors,
    "data":[
       {
          "code":2,
+         "severity": 5,
          "message":"Denied privileged API access for uid=XXX gid=XXX"
       }
    ]

@@ -67,7 +67,7 @@ BasePrinter::write_output(shared::rpc::JSONRPCResponse const &response)
   }
 
   if (response.is_error()) {
-    App_Exit_Status_Code = CTRL_EX_ERROR; // Set the exit code to error, so we can return it later.
+    App_Exit_Status_Code = appExitCodeFromResponse(response);
 
     // If an error is present, then as per the specs we can ignore the jsonrpc.result field,
     // so we print the error and we are done here!
