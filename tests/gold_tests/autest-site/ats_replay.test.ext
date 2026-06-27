@@ -23,6 +23,15 @@ import re
 import yaml
 
 
+def _contains_expression(contains_entry: dict, default_description: str):
+    '''Create a ContainsExpression tester from a log validation entry.'''
+    expression = contains_entry['expression']
+    description = contains_entry.get('description', default_description)
+    reflags = re.S | re.M if contains_entry.get('multiline', False) else 0
+
+    return Testers.ContainsExpression(expression, description, reflags=reflags)
+
+
 def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Optional['Process'] = None):
     '''Configure ATS per the configuration in the replay file.
 
@@ -134,8 +143,7 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
         traffic_out = log_validation.get('traffic_out', {})
         for contains_entry in traffic_out.get('contains', []):
             expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify traffic_out contains: {expression}')
-            ts.Disk.traffic_out.Content += Testers.ContainsExpression(expression, description)
+            ts.Disk.traffic_out.Content += _contains_expression(contains_entry, f'Verify traffic_out contains: {expression}')
         for excludes_entry in traffic_out.get('excludes', []):
             expression = excludes_entry['expression']
             description = excludes_entry.get('description', f'Verify traffic_out excludes: {expression}')
@@ -149,8 +157,7 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
         diags_log = log_validation.get('diags_log', {})
         for contains_entry in diags_log.get('contains', []):
             expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify diags_log contains: {expression}')
-            ts.Disk.diags_log.Content += Testers.ContainsExpression(expression, description)
+            ts.Disk.diags_log.Content += _contains_expression(contains_entry, f'Verify diags_log contains: {expression}')
         for excludes_entry in diags_log.get('excludes', []):
             expression = excludes_entry['expression']
             description = excludes_entry.get('description', f'Verify diags_log excludes: {expression}')
@@ -164,8 +171,7 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
         error_log = log_validation.get('error_log', {})
         for contains_entry in error_log.get('contains', []):
             expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify error_log contains: {expression}')
-            ts.Disk.error_log.Content += Testers.ContainsExpression(expression, description)
+            ts.Disk.error_log.Content += _contains_expression(contains_entry, f'Verify error_log contains: {expression}')
         for excludes_entry in error_log.get('excludes', []):
             expression = excludes_entry['expression']
             description = excludes_entry.get('description', f'Verify error_log excludes: {expression}')
@@ -260,8 +266,7 @@ def ATSReplayTest(obj, replay_file: str):
     if server_log_validation:
         for contains_entry in server_log_validation.get('contains', []):
             expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify server output contains: {expression}')
-            server.Streams.All += Testers.ContainsExpression(expression, description)
+            server.Streams.All += _contains_expression(contains_entry, f'Verify server output contains: {expression}')
         for excludes_entry in server_log_validation.get('excludes', []):
             expression = excludes_entry['expression']
             description = excludes_entry.get('description', f'Verify server output excludes: {expression}')
@@ -273,6 +278,7 @@ def ATSReplayTest(obj, replay_file: str):
     ats_config = autest_config['ats']
     process_config = ats_config.get('process_config', {})
     enable_tls = process_config.get('enable_tls', False)
+    enable_quic = process_config.get('enable_quic', False)
     metric_checks = ats_config.get('metric_checks', [])
     log_validation = ats_config.get('log_validation', None)
 
@@ -284,10 +290,12 @@ def ATSReplayTest(obj, replay_file: str):
         raise ValueError(f"Replay file {replay_file} does not contain 'autest.client' section")
     client_config = autest_config['client']
     name = client_config.get('name', 'client')
-    process_config = client_config.get('process_config', {})
-    https_ports = [ts.Variables.ssl_port] if enable_tls else None
+    process_config = client_config.get('process_config', {}).copy()
+    http_ports = process_config.pop('http_ports', [ts.Variables.port])
+    https_ports = process_config.pop('https_ports', [ts.Variables.ssl_port] if enable_tls else None)
+    http3_ports = process_config.pop('http3_ports', [ts.Variables.ssl_port] if enable_quic else None)
     client = tr.AddVerifierClientProcess(
-        name, replay_file, http_ports=[ts.Variables.port], https_ports=https_ports, **process_config)
+        name, replay_file, http_ports=http_ports, https_ports=https_ports, http3_ports=http3_ports, **process_config)
 
     # Set expected return code if specified. A list of codes is wrapped in
     # Any() so that any of the listed values is accepted.
@@ -300,8 +308,7 @@ def ATSReplayTest(obj, replay_file: str):
     if client_log_validation:
         for contains_entry in client_log_validation.get('contains', []):
             expression = contains_entry['expression']
-            description = contains_entry.get('description', f'Verify client output contains: {expression}')
-            client.Streams.All += Testers.ContainsExpression(expression, description)
+            client.Streams.All += _contains_expression(contains_entry, f'Verify client output contains: {expression}')
         for excludes_entry in client_log_validation.get('excludes', []):
             expression = excludes_entry['expression']
             description = excludes_entry.get('description', f'Verify client output excludes: {expression}')
