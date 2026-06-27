@@ -75,10 +75,14 @@ enum TunnelChunkingAction_t {
 };
 
 struct ChunkedHandler {
+  // Grants the unit test fixture access to the private read_size() parser.
+  friend class TestableChunkedHandler;
+
   enum ChunkedState {
     CHUNK_READ_CHUNK = 0,
     CHUNK_READ_SIZE_START,
     CHUNK_READ_SIZE,
+    CHUNK_READ_EXTENSION,
     CHUNK_READ_SIZE_CRLF,
     CHUNK_READ_TRAILER_BLANK,
     CHUNK_READ_TRAILER_CR,
@@ -132,6 +136,13 @@ struct ChunkedHandler {
   int  num_digits  = 0;
   int  num_cr      = 0;
   bool prev_is_cr  = false;
+
+  // Chunk extension parsing state. The parser tracks whether it is inside a
+  // quoted-string extension value (RFC 9110 Section 5.6.4) and whether the
+  // previous octet began a quoted-pair escape, so it can find the closing DQUOTE
+  // and reject a CR or LF appearing inside the quoted-string.
+  bool in_quoted_string = false;
+  bool in_escape        = false;
 
   /// @name Output data.
   //@{
