@@ -41,6 +41,8 @@ NetHandler     *get_NetHandler(EThread *t);
 PollCont       *get_PollCont(EThread *t);
 PollDescriptor *get_PollDescriptor(EThread *t);
 
+void exec_thr_late_init();
+
 using NetContHandler = int (NetHandler::*)(int, void *);
 using uint32         = unsigned int;
 

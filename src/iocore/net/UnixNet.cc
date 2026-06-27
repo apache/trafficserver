@@ -27,6 +27,10 @@
 #include "iocore/net/AsyncSignalEventIO.h"
 #include "tscore/ink_hrtime.h"
 
+#if defined(__linux__)
+#include <sched.h>
+#endif
+
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"
 #endif
@@ -48,6 +52,7 @@ namespace
 DbgCtl dbg_ctl_inactivity_cop{"inactivity_cop"};
 DbgCtl dbg_ctl_inactivity_cop_check{"inactivity_cop_check"};
 DbgCtl dbg_ctl_inactivity_cop_verbose{"inactivity_cop_verbose"};
+DbgCtl dbg_ctl_iocore_net{"iocore_net"};
 
 } // end anonymous namespace
 
@@ -199,4 +204,61 @@ initialize_thread_for_net(EThread *thread)
   ep->start(pd, thread->evpipe[0], EVENTIO_READ);
 #endif
   thread->ep = ep;
+}
+
+// Late-initialization continuation for ET_NET threads.  Runs on each
+// thread after all initialization FDs (eventfds, cache disks, DNS
+// sockets, log files, plugin FDs) are in place but BEFORE
+// start_HttpProxyServer() schedules accept_per_thread.
+//
+// On Linux, when per-thread listen is enabled (exec_thread.listen=1,
+// SO_REUSEPORT) and server session sharing uses per-thread pools,
+// this calls unshare(CLONE_FILES) to give each thread its own private
+// kernel FD table, eliminating spinlock contention on accept4/close.
+// The subsequent do_listen() in accept_per_thread creates the
+// per-thread listen socket directly in the private table.
+//
+// The underlying kernel objects (struct file) are shared, so
+// cross-thread eventfd signalling and shared cache-disk FDs keep
+// working.
+//
+// NOT safe with global/hybrid session sharing pools because
+// migrateToCurrentThread() transfers socket FDs by number — after
+// unshare those FDs do not exist in the target thread's private table.
+
+namespace
+{
+struct ExecThrLateCont : public Continuation {
+  int
+  mainEvent(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
+  {
+#if defined(__linux__)
+    int listen_per_thread = RecGetRecordInt("proxy.config.exec_thread.listen").value_or(0);
+    if (listen_per_thread == 1) {
+      auto pool = RecGetRecordStringAlloc("proxy.config.http.server_session_sharing.pool");
+      if (pool && *pool != "thread") {
+        Dbg(dbg_ctl_iocore_net, "ET_NET thread %d: skipping unshare (session pool=%s)", this_ethread()->id, pool->c_str());
+      } else if (unshare(CLONE_FILES) < 0) {
+        Dbg(dbg_ctl_iocore_net, "ET_NET thread %d: unshare(CLONE_FILES) failed: %s", this_ethread()->id, strerror(errno));
+      } else {
+        Dbg(dbg_ctl_iocore_net, "ET_NET thread %d: FD table unshared", this_ethread()->id);
+      }
+    }
+#endif
+    delete this;
+    return EVENT_DONE;
+  }
+
+  ExecThrLateCont() : Continuation(nullptr) { SET_HANDLER(&ExecThrLateCont::mainEvent); }
+};
+} // end anonymous namespace
+
+void
+exec_thr_late_init()
+{
+  int n = eventProcessor.thread_group[ET_NET]._count;
+  for (int i = 0; i < n; i++) {
+    eventProcessor.thread_group[ET_NET]._thread[i]->schedule_imm(new ExecThrLateCont());
+  }
+  Dbg(dbg_ctl_iocore_net, "Scheduled exec_thr_late_init() on %d ET_NET threads", n);
 }
