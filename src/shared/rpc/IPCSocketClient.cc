@@ -89,13 +89,28 @@ IPCSocketClient::connect(std::chrono::milliseconds wait_ms, int attempts)
 std::int64_t
 IPCSocketClient::_safe_write(int fd, const char *buffer, int len)
 {
+  constexpr int WRITE_READY_TIMEOUT_MS = 1000;
+
   std::int64_t written{0};
   while (written < len) {
     const ssize_t ret = ::write(fd, buffer + written, len - written);
     if (ret == -1) {
-      if (errno == EAGAIN || errno == EINTR) {
+      if (errno == EINTR) {
         continue;
       }
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        auto const ready = write_ready(fd, WRITE_READY_TIMEOUT_MS);
+        if (ready == 1) {
+          continue;
+        }
+        if (ready == 0) {
+          errno = ETIMEDOUT;
+        }
+      }
+      return -1;
+    }
+    if (ret == 0) {
+      errno = EIO;
       return -1;
     }
     written += ret;
