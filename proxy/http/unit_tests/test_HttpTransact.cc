@@ -24,6 +24,7 @@
 #include <string_view>
 #include "tscore/Diags.h"
 #include "HttpTransact.h"
+#include "RemapProcessor.h"
 
 #include "catch.hpp"
 
@@ -32,6 +33,15 @@ TEST_CASE("HttpTransact", "[http]")
   url_init();
   mime_init();
   http_init();
+
+  SECTION("RemapProcessor tolerates a missing remap table")
+  {
+    HttpTransact::State state;
+    RemapProcessor processor;
+
+    CHECK_FALSE(processor.setup_for_remap(&state, nullptr));
+    CHECK_FALSE(processor.finish_remap(&state, nullptr));
+  }
 
   SECTION("HttpTransact::merge_response_header_with_cached_header")
   {
