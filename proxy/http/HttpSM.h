@@ -33,6 +33,7 @@
 
 #include <string_view>
 #include <optional>
+#include <memory>
 
 #include "tscore/ink_platform.h"
 #include "P_EventSystem.h"
@@ -329,7 +330,7 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  UrlRewrite *m_remap = nullptr;
+  std::shared_ptr<UrlRewrite> m_remap;
 
   // _postbuf api
   int64_t postbuf_reader_avail();

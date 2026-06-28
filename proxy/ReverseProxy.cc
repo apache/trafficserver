@@ -29,9 +29,11 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
+#include "tscore/TSSystemState.h"
 #include <dlfcn.h>
 #include "P_EventSystem.h"
 #include "P_Cache.h"
+#include "P_Freer.h"
 #include "ProxyConfig.h"
 #include "ReverseProxy.h"
 #include "tscore/MatcherUtils.h"
@@ -42,10 +44,46 @@
 #include "UrlRewrite.h"
 #include "UrlMapping.h"
 
+namespace
+{
+// Steers UrlRewriteDeleter to inline-delete; see shutdown_url_rewrite().
+std::atomic<bool> rewrite_table_shutdown{false};
+
+// Defer teardown to ET_TASK; UrlRewrite destruction can be slow.
+struct UrlRewriteDeleter {
+  void
+  operator()(UrlRewrite *p) const noexcept
+  {
+    if (!p) {
+      return;
+    }
+    if (rewrite_table_shutdown.load(std::memory_order_acquire) || TSSystemState::is_event_system_shut_down()) {
+      // Leak; plugin teardown is unsafe post-shutdown.
+      return;
+    }
+    // new_Deleter allocates; fall back to inline delete so we don't escape noexcept.
+    try {
+      new_Deleter(p, 0);
+    } catch (...) {
+      delete p;
+    }
+  }
+};
+
+} // end anonymous namespace
+
 // Global Ptrs
 static Ptr<ProxyMutex> reconfig_mutex;
-UrlRewrite *rewrite_table                             = nullptr;
+AtomicSharedPtr<UrlRewrite> rewrite_table;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
+
+void
+shutdown_url_rewrite()
+{
+  // Drain before flag: this ref destructs normally; later drops leak.
+  rewrite_table.exchange(nullptr);
+  rewrite_table_shutdown.store(true, std::memory_order_release);
+}
 
 // Tokens for the Callback function
 #define FILE_CHANGED 0
@@ -61,12 +99,12 @@ thread_local PluginThreadContext *pluginThreadContext = nullptr;
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table == nullptr);
-  reconfig_mutex = new_ProxyMutex();
-  rewrite_table  = new UrlRewrite();
+  ink_assert(rewrite_table.load(std::memory_order_acquire) == nullptr);
+  reconfig_mutex     = new_ProxyMutex();
+  auto initial_table = std::make_unique<UrlRewrite>();
 
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table->load()) {
+  if (!initial_table->load()) {
     Fatal("%s failed to load", ts::filename::REMAP);
   }
   Note("%s finished loading", ts::filename::REMAP);
@@ -76,8 +114,8 @@ init_reverse_proxy()
   REC_RegisterConfigUpdateFunc("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
   REC_RegisterConfigUpdateFunc("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
 
-  // Hold at least one lease, until we reload the configuration
-  rewrite_table->acquire();
+  // Publish: shared_ptr semantics replace the prior bespoke acquire()/release() refcount on UrlRewrite.
+  rewrite_table.store(std::shared_ptr<UrlRewrite>(initial_table.release(), UrlRewriteDeleter{}), std::memory_order_release);
 
   return 0;
 }
@@ -130,24 +168,18 @@ urlRewriteVerify()
 bool
 reloadUrlRewrite()
 {
-  UrlRewrite *newTable, *oldTable;
-
   Note("%s loading ...", ts::filename::REMAP);
   Debug("url_rewrite", "%s updated, reloading...", ts::filename::REMAP);
-  newTable = new UrlRewrite();
+
+  auto newTable = std::make_unique<UrlRewrite>();
   if (newTable->load()) {
     static const char *msg_format = "%s finished loading";
 
-    // Hold at least one lease, until we reload the configuration
-    newTable->acquire();
-
-    // Swap configurations
-    oldTable = ink_atomic_swap(&rewrite_table, newTable);
-
-    ink_assert(oldTable != nullptr);
-
-    // Release the old one
-    oldTable->release();
+    // Atomic publish: an old reader's shared_ptr keeps the prior table alive until its last
+    // ref is dropped; new readers see the new table. The prior race between load() and
+    // acquire() on the bespoke refcount cannot revive a table whose refcount was driven to
+    // zero, because there is no separate refcount.
+    rewrite_table.exchange(std::shared_ptr<UrlRewrite>(newTable.release(), UrlRewriteDeleter{}), std::memory_order_acq_rel);
 
     Debug("url_rewrite", msg_format, ts::filename::REMAP);
     Note(msg_format, ts::filename::REMAP);
@@ -155,7 +187,7 @@ reloadUrlRewrite()
   } else {
     static const char *msg_format = "%s failed to load";
 
-    delete newTable;
+    // newTable is a unique_ptr; falling out of scope deletes it.
     Debug("url_rewrite", msg_format, ts::filename::REMAP);
     Error(msg_format, ts::filename::REMAP);
     return false;
@@ -169,7 +201,9 @@ url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNU
 
   switch (my_token) {
   case REVERSE_CHANGED:
-    rewrite_table->SetReverseFlag(data.rec_int);
+    if (auto table = rewrite_table.load(std::memory_order_acquire); table != nullptr) {
+      table->SetReverseFlag(data.rec_int);
+    }
     break;
 
   case TSNAME_CHANGED:
