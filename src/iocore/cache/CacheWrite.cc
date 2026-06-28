@@ -27,6 +27,7 @@
 #include "P_CacheInternal.h"
 #include "iocore/cache/Cache.h"
 #include "tscore/InkErrno.h"
+#include "ts/ats_probe.h"
 #include "tsutil/DbgCtl.h"
 
 namespace
@@ -277,6 +278,8 @@ CacheVC::openWriteCloseDir(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED *
       ink_assert(!is_io_in_progress());
       VC_SCHED_LOCK_RETRY();
     }
+    ATS_PROBE6(cache_rww_writer_close, stripe->fd, reinterpret_cast<intptr_t>(this), first_key.slice64(0), closed,
+               static_cast<int>(f.readers), total_len);
     stripe->close_write(this);
     if (closed < 0 && fragment) {
       stripe->directory.remove(&earliest_key, stripe, &earliest_dir);
@@ -585,6 +588,8 @@ Lagain:
     vio.get_reader()->consume(avail);
     vio.ndone += avail;
     total_len += avail;
+    ATS_PROBE6(cache_rww_writer_produce, stripe->fd, reinterpret_cast<intptr_t>(this), first_key.slice64(0), total_len, avail,
+               od ? od->num_writers : 0);
   }
   length = static_cast<uint64_t>(towrite);
   if (length > frag_size && (length < frag_size + frag_size / 4)) {

@@ -35,6 +35,7 @@
 #include "proxy/http/HttpTunnel.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
+#include "ts/ats_probe.h"
 
 // inkcache
 #include "../../iocore/cache/P_CacheInternal.h"
@@ -810,6 +811,7 @@ HttpTunnel::add_consumer(VConnection *vc, VConnection *producer, HttpConsumerHan
   // Register the consumer with the producer
   p->consumer_list.push(c);
   p->num_consumers++;
+  ATS_PROBE5(tunnel_add_consumer, sm->sm_id, static_cast<int>(vc_type), static_cast<int>(p->vc_type), p->num_consumers, skip_bytes);
 
   return c;
 }
@@ -1242,6 +1244,8 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
   auto const [bytes_consumed, done]                     = p->chunked_handler.process_chunked_content();
   p->bytes_consumed                                    += bytes_consumed;
   body_bytes_to_copy                                    = bytes_consumed;
+  ATS_PROBE4(tunnel_chunk_decoded, sm->sm_id, event, static_cast<int64_t>(bytes_consumed),
+             static_cast<int>(p->chunked_handler.state));
 
   // If we couldn't understand the encoding, return
   //   an error
@@ -1289,6 +1293,8 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   bool                sm_callback = false;
 
   Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  ATS_PROBE6(tunnel_producer_handler, sm->sm_id, event, static_cast<int>(p->vc_type), p->read_vio ? p->read_vio->ndone : 0,
+             p->bytes_consumed, p->ntodo);
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->do_chunking) {
@@ -1447,6 +1453,8 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
     uint64_t            backlog = (flow_state.enabled_p && p->is_source()) ? p->backlog(flow_state.high_water) : 0;
     HttpTunnelProducer *srcp    = p->flow_control_source;
 
+    ATS_PROBE5(tunnel_flow_control, sm->sm_id, static_cast<int>(c->vc_type), backlog, flow_state.high_water,
+               p->is_throttled() ? 1 : 0);
     if (backlog >= flow_state.high_water) {
       if (dbg_ctl_http_tunnel.on()) {
         Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] Throttle   %p %" PRId64 " / %" PRId64, sm->sm_id, p, backlog, p->backlog());
@@ -1510,6 +1518,8 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   HttpTunnelProducer *p = c->producer;
 
   Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
+  ATS_PROBE5(tunnel_consumer_handler, sm->sm_id, event, static_cast<int>(c->vc_type), c->write_vio ? c->write_vio->ndone : 0,
+             c->write_vio ? c->write_vio->nbytes : 0);
 
   ink_assert(c->alive == true);
 
