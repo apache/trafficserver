@@ -79,6 +79,7 @@ extern "C" int plock(int);
 #include "RecordsConfig.h"
 #include "records/I_RecProcess.h"
 #include "Transform.h"
+#include "ReverseProxy.h"
 #include "ProcessManager.h"
 #include "ProxyConfig.h"
 #include "HttpProxyServerMain.h"
@@ -248,6 +249,9 @@ struct AutoStopCont : public Continuation {
     }
 
     pmgmt->stop();
+
+    shutdown_url_rewrite();
+
     TSSystemState::shut_down_event_system();
     delete this;
     return EVENT_CONT;

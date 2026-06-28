@@ -23,17 +23,18 @@
 
 #include "RemapHitCount.h"
 #include "UrlRewrite.h"
-
-extern UrlRewrite *rewrite_table;
+#include "ReverseProxy.h"
 
 struct ShowRemapCount : public ShowCont {
   ShowRemapCount(Continuation *c, HTTPHdr *h) : ShowCont(c, h) { SET_HANDLER(&ShowRemapCount::showHandler); }
   int
   showHandler(int event, Event *e)
   {
-    auto table = rewrite_table->acquire();
-    CHECK_SHOW(show(rewrite_table->PrintRemapHits().c_str()));
-    table->release();
+    // Snapshot the table; the shared_ptr keeps it alive across the show() call even if a
+    // concurrent reload swaps the global.  A null table means shutdown is in progress.
+    if (auto table = rewrite_table.load(std::memory_order_acquire); table != nullptr) {
+      CHECK_SHOW(show(table->PrintRemapHits().c_str()));
+    }
     return completeJson(event, e);
   }
 };
