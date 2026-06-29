@@ -1067,12 +1067,12 @@ Log::init_fields()
   field = new LogField("proxy_protocol_src_ip", "pps", LogField::Type::IP, &LogAccess::marshal_proxy_protocol_src_ip,
                        &LogAccess::unmarshal_ip_to_str);
   global_field_list.add(field, false);
-  field_symbol_hash.emplace("ppsip", field);
+  field_symbol_hash.emplace("pps", field);
 
   field = new LogField("proxy_protocol_dst_ip", "ppd", LogField::Type::IP, &LogAccess::marshal_proxy_protocol_dst_ip,
                        &LogAccess::unmarshal_ip_to_str);
   global_field_list.add(field, false);
-  field_symbol_hash.emplace("ppdip", field);
+  field_symbol_hash.emplace("ppd", field);
 
   field = new LogField("proxy_protocol_authority", "ppa", LogField::Type::STRING, &LogAccess::marshal_proxy_protocol_authority,
                        &LogAccess::unmarshal_str);
