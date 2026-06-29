@@ -190,22 +190,34 @@ normalize_uri_helper(const char *uri, const char *expected_normal)
 bool
 remove_dot_helper(const char *path, const char *expected_path)
 {
-  fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
   size_t path_ct = strlen(path);
-  path_ct++;
-  int new_ct;
-  char path_buffer[path_ct];
-  memset(path_buffer, 0, path_ct);
 
-  new_ct = remove_dot_segments(path, path_ct, path_buffer, path_ct);
-
-  if (new_ct < 0) {
-    return false;
-  } else if (strcmp(expected_path, path_buffer) == 0) {
-    return true;
+  if (path_ct > 120) {
+    fprintf(stderr, "Removing Dot Segments from Path: %.120s... (%zu bytes)\n", path, path_ct);
   } else {
-    return false;
+    fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
   }
+
+  /* remove_dot_segments requires the output buffer to be strictly larger than
+   * the path (room for the NUL terminator), so size it at path_ct + 1.  Heap
+   * allocated rather than a stack VLA so a large path can't exhaust the stack. */
+  size_t requested_ct = path_ct + 1;
+  int new_ct;
+  char *path_buffer = static_cast<char *>(malloc(requested_ct));
+  memset(path_buffer, 0, requested_ct);
+
+  new_ct = remove_dot_segments(path, path_ct, path_buffer, requested_ct);
+
+  bool result;
+  if (new_ct < 0) {
+    result = false;
+  } else if (strcmp(expected_path, path_buffer) == 0) {
+    result = true;
+  } else {
+    result = false;
+  }
+  free(path_buffer);
+  return result;
 }
 
 bool
@@ -467,6 +479,23 @@ TEST_CASE("3", "[RemoveDotSegmentsTest]")
   SECTION("Test Empty Path Segment") { REQUIRE(remove_dot_helper("", "")); }
 
   SECTION("Test mixed operations") { REQUIRE(remove_dot_helper("/foo/bar/././something/../foobar", "/foo/bar/foobar")); }
+
+  SECTION("Large path normalization scenario")
+  {
+    std::string large_path = "/" + std::string(70000, 'a');
+    REQUIRE(remove_dot_helper(large_path.c_str(), large_path.c_str()));
+  }
+
+  SECTION("500 plus dot-segment normalization scenario")
+  {
+    std::string many_segments;
+    many_segments.reserve(4 * 512 + 4);
+    for (int i = 0; i < 512; ++i) {
+      many_segments += "/../";
+    }
+    many_segments += "bar";
+    REQUIRE(remove_dot_helper(many_segments.c_str(), "/bar"));
+  }
   fprintf(stderr, "\n");
 }
 
