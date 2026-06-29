@@ -55,6 +55,8 @@ esi_libesicore_la_SOURCES = \
 	esi/lib/EsiParser.h \
 	esi/lib/EsiProcessor.cc \
 	esi/lib/EsiProcessor.h \
+	esi/lib/IncludeUrlValidator.cc \
+	esi/lib/IncludeUrlValidator.h \
 	esi/lib/Expression.cc \
 	esi/lib/Expression.h \
 	esi/lib/HandlerManager.h \
@@ -121,7 +123,7 @@ esi_parser_test_SOURCES = esi/test/parser_test.cc
 
 esi_processor_test_CPPFLAGS = $(ESI_CPPFLAGS)
 esi_processor_test_CXXFLAGS = $(ESI_CXXFLAGS)
-esi_processor_test_LDADD = esi/libtest.la -lz
+esi_processor_test_LDADD = esi/libtest.la $(abs_top_builddir)/src/tscore/libtscore.la -lz
 esi_processor_test_SOURCES = esi/test/processor_test.cc
 
 esi_utils_test_CPPFLAGS = $(ESI_CPPFLAGS)

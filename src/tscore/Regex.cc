@@ -116,8 +116,30 @@ Regex::exec(std::string_view const &str, int *ovector, int ovecsize) const
 {
   int rv;
 
-  rv = pcre_exec(regex, regex_extra, str.data(), int(str.size()), 0, 0, ovector, ovecsize);
+  if (_match_limit > 0) {
+    // Apply the match limit via a transient pcre_extra so the studied data
+    // (including any JIT block) is reused but ownership/lifetime is unchanged.
+    // A shallow copy is safe: the referenced study data outlives this call and
+    // the copy is never freed.
+    pcre_extra local_extra;
+    if (regex_extra != nullptr) {
+      local_extra = *regex_extra;
+    } else {
+      memset(&local_extra, 0, sizeof(local_extra));
+    }
+    local_extra.flags |= PCRE_EXTRA_MATCH_LIMIT;
+    local_extra.match_limit = _match_limit;
+    rv                      = pcre_exec(regex, &local_extra, str.data(), int(str.size()), 0, 0, ovector, ovecsize);
+  } else {
+    rv = pcre_exec(regex, regex_extra, str.data(), int(str.size()), 0, 0, ovector, ovecsize);
+  }
   return rv > 0;
+}
+
+void
+Regex::set_match_limit(uint32_t limit)
+{
+  _match_limit = limit;
 }
 
 Regex::~Regex()

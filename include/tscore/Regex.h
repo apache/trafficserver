@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <cstdint>
 
 #include "tscore/ink_config.h"
 
@@ -90,12 +91,24 @@ public:
    */
   bool exec(std::string_view const &str, int *ovector, int ovecsize) const;
 
+  /** Cap the PCRE match effort (backtracking) for subsequent @c exec calls.
+   *
+   * @param limit Maximum number of internal match-function calls; @c 0 (the
+   *   default) leaves PCRE's compiled-in limit in effect.
+   *
+   * Guards against catastrophic backtracking on an attacker-influenced subject
+   * or an operator-supplied pattern: an @c exec that exceeds @a limit returns
+   * no match (PCRE_ERROR_MATCHLIMIT), i.e. fails closed.
+   */
+  void set_match_limit(uint32_t limit);
+
   /// @return The number of groups captured in the last call to @c exec.
   int get_capture_count();
 
 private:
   pcre *regex             = nullptr;
   pcre_extra *regex_extra = nullptr;
+  uint32_t _match_limit   = 0; ///< 0 = use PCRE's default (no explicit cap).
 };
 
 /** Deterministic Finite state Automata container.
