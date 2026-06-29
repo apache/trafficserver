@@ -22,22 +22,25 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Remove Dot Algorithm outlined in RFC3986 section 5.2.4
  * Function writes normalizes path and writes to ret_buffer */
 int
 remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct)
 {
-  /* Ensure buffer is at least the size of the path */
-  if (buff_ct < path_ct) {
+  /* Validate pointers and ensure buffer has room for the path plus NUL terminator */
+  if (path == NULL || ret_buffer == NULL || path_ct < 0 || buff_ct <= path_ct) {
     PluginDebug("Path buffer not large enough");
     return -1;
   }
 
-  /* Create an input buffer that we can change */
-  char inBuff[path_ct + 1];
-  memset(inBuff, 0, path_ct + 1);
-  strcpy(inBuff, path);
+  /* Create an input buffer that we can change.  Heap-allocated rather than a
+   * stack VLA so an attacker-sized path cannot exhaust the stack. */
+  size_t inBuff_size = (size_t)path_ct + 1;
+  char *inBuff       = TSmalloc(inBuff_size);
+  memset(inBuff, 0, inBuff_size);
+  memcpy(inBuff, path, path_ct);
 
   const char *path_end = inBuff + path_ct;
   char *seg_start      = inBuff;
@@ -108,20 +111,19 @@ remove_dot_segments(const char *path, int path_ct, char *ret_buffer, int buff_ct
       }
 
       /* Write subsequent characters to buffer */
-      while (*seg_start != '/') {
+      while (*seg_start != '/' && *seg_start != '\0') {
         *write_buffer = *seg_start;
         write_buffer++;
-        if (*seg_start == 0) {
-          break;
-        }
         seg_start++;
       }
     }
     seg_start = seg_end;
   }
 
+  *write_buffer = '\0';
   PluginDebug("Normalized Path: %s", ret_buffer);
-  return strlen(ret_buffer);
+  TSfree(inBuff);
+  return (int)(write_buffer - ret_buffer);
 }
 
 /* Function percent decodes uri_ct characters of the string uri and writes it to the decoded_uri
@@ -212,19 +214,25 @@ decode_failure:
 int
 normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct)
 {
+  /* Validate inputs before any pointer arithmetic or dereferences.  The output
+   * buffer must hold uri_ct + 2 bytes: the URI itself plus a possible trailing
+   * '/' added when the authority has an empty path, plus the NUL terminator.
+   * The overflow-safe form of normal_ct < uri_ct + 2 is normal_ct - 1 <= uri_ct. */
+  if (uri == NULL || normal_uri == NULL || uri_ct < 0 || normal_ct < 2 || normal_ct - 1 <= uri_ct) {
+    PluginDebug("Buffer to Normalize URI not large enough.");
+    return -1;
+  }
+
   PluginDebug("Normalizing URI: %s", uri);
 
   /* Buffer provided must be large enough to store the uri plus one additional char */
   const char *uri_end  = uri + uri_ct;
   const char *buff_end = normal_uri + normal_ct;
 
-  if ((normal_uri == NULL) || (normal_uri && normal_ct < uri_ct + 1)) {
-    PluginDebug("Buffer to Normalize URI not large enough.");
-    return -1;
-  }
-
-  /* Initialize a path buffer to pass to path normalization function later on */
-  char path_buffer[normal_ct];
+  /* Initialize a path buffer to pass to path normalization function later on.
+   * Heap-allocated rather than a stack VLA so an attacker-sized uri cannot
+   * exhaust the stack. */
+  char *path_buffer = TSmalloc((size_t)normal_ct);
   memset(path_buffer, 0, normal_ct);
 
   /* Comp variables store starting/ending indexes for each uri component as uri is parsed.
@@ -374,9 +382,11 @@ normalize_uri(const char *uri, int uri_ct, char *normal_uri, int normal_ct)
   }
 
   PluginDebug("Normalized URI:  %s", normal_uri);
+  TSfree(path_buffer);
   return 0;
 
 normalize_failure:
   PluginDebug("URI Normalization Failure. URI does not fit http or https schemes.");
+  TSfree(path_buffer);
   return -1;
 }
