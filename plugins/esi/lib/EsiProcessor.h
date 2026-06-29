@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <map>
 #include "lib/ComponentBase.h"
@@ -30,6 +31,7 @@
 #include "lib/DocNode.h"
 #include "EsiParser.h"
 #include "HttpDataFetcher.h"
+#include "IncludeUrlValidator.h"
 #include "Variables.h"
 #include "Expression.h"
 #include "SpecialIncludeHandler.h"
@@ -47,7 +49,8 @@ public:
 
   EsiProcessor(const char *debug_tag, const char *parser_debug_tag, const char *expression_debug_tag,
                EsiLib::ComponentBase::Debug debug_func, EsiLib::ComponentBase::Error error_func, HttpDataFetcher &fetcher,
-               EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr);
+               EsiLib::Variables &variables, const EsiLib::HandlerManager &handler_mgr,
+               const EsiLib::IncludeUrlValidator *url_validator = nullptr);
 
   /** Initializes the processor with the context of the request to be processed */
   bool start();
@@ -168,6 +171,11 @@ private:
   int _n_try_blocks_processed;
 
   const EsiLib::HandlerManager &_handler_manager;
+  const EsiLib::IncludeUrlValidator *_url_validator;
+  // Wraps _fetcher with the validator and is passed to special-include
+  // handlers so they cannot reach TSFetchUrl with an unvalidated URL.
+  // nullptr when no validator is configured.
+  std::unique_ptr<HttpDataFetcher> _handler_fetcher;
 
   static const char *INCLUDE_DATA_ID_ATTR;
 

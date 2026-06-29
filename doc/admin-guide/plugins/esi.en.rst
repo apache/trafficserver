@@ -88,6 +88,41 @@ Enabling ESI
   till that include is fetched.
 - ``--max-inclusion-depth <max-depth>`` controls the maximum depth of recursive ESI inclusion allowed (between 0 and 9).
   Default is 3.
+- ``--include-host-allow <regex>`` restricts which hostnames may appear in ``<esi:include src=...>`` after variable
+  expansion. The post-expansion hostname (everything between ``://`` and the next ``/``, ``:``, ``?``, or ``#``, with any
+  ``user@`` prefix and IPv6 brackets stripped) must fully match the PCRE-syntax regex (case-insensitive). If unset,
+  scheme/private-host checks still apply but any non-private host is permitted. One exception applies regardless of this
+  setting (and regardless of ``--allow-private-include-hosts``): a host containing a ``%`` character is always rejected
+  as ``private-host``. This blocks IPv6 zone IDs (e.g. ``[fe80::1%25eth0]``, which select a network interface and are
+  only meaningful for link-local addresses) and percent-encoding tricks in the host. Rejected includes increment
+  ``esi.n_include_errs`` and the offending URL is logged with any ``user:password@`` portion redacted to ``***@``.
+  Because this is a security control, a regex that fails to compile causes plugin initialization to fail (the plugin
+  refuses to load with no allowlist rather than silently fail open).
+
+  .. important::
+
+     The private-host denylist does **not** perform DNS resolution. It only classifies hosts that are IP literals
+     (e.g. ``10.0.0.1``, ``[fe80::1]``) or localhost-style names (``localhost``, ``*.localhost``). An ordinary DNS
+     hostname such as ``internal.example.com`` is treated as a non-private host and is permitted when no allowlist is
+     set, *even if it resolves to a private or link-local address*. This means the built-in denylist alone does not
+     protect against SSRF via DNS — including DNS rebinding, where a name resolves to a public address at validation
+     time and a private one when the include is fetched. To constrain ``esi:include`` targets to hosts you trust, you
+     must configure ``--include-host-allow`` with an explicit allowlist; do not rely on the private-host denylist for
+     hostname-based SSRF protection.
+- ``--allow-private-include-hosts`` disables the default denylist that rejects ``esi:include`` URLs whose host parses to
+  a non-globally-routable or otherwise reserved IP address. The intent is to fail closed: anything that is not ordinary
+  public address space is treated as private. For IPv4 this covers the unspecified/"this network" block
+  (``0.0.0.0/8``), loopback (``127.0.0.0/8``), link-local (``169.254.0.0/16``, including the cloud metadata address
+  ``169.254.169.254``), RFC 1918 (``10.0.0.0/8``, ``172.16.0.0/12``, ``192.168.0.0/16``), CGNAT (``100.64.0.0/10``),
+  IETF protocol assignments (``192.0.0.0/24``), the TEST-NET ranges (``192.0.2.0/24``, ``198.51.100.0/24``,
+  ``203.0.113.0/24``), benchmarking (``198.18.0.0/15``), multicast (``224.0.0.0/4``), reserved (``240.0.0.0/4``), and the
+  broadcast address (``255.255.255.255``). For IPv6 it covers the unspecified address (``::``), loopback (``::1``),
+  link-local (``fe80::/10``), unique-local (``fc00::/7``), and multicast (``ff00::/8``); IPv4-mapped (``::ffff:0:0/96``)
+  and NAT64-encoded (``64:ff9b::/96``) addresses are unwrapped and re-checked against the IPv4 rules above, and any
+  address carrying a zone id is treated as private. The hostname ``localhost`` (and ``*.localhost``) is also rejected.
+  Non-canonical numeric IPv4 forms (decimal, octal, hex, or shortcut notations such as ``2130706433`` or ``0x7f000001``)
+  are rejected outright. Enable this flag only if you intentionally use ESI to assemble responses from internal-IP
+  backends. Schemes other than ``http`` and ``https`` are always rejected regardless of this flag.
 
 3. ``HTTP_COOKIE`` variable support is turned off by default. It can be turned on with ``-f <handler_config>`` or
    ``-handler <handler_config>``. For example:
