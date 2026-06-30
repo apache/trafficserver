@@ -75,7 +75,7 @@ port number in the URL, zero is returned.
 
    :func:`TSUrlHostGet` operates on a URL object obtained from
    :func:`TSHttpHdrUrlGet`. In early hooks such as
-   :c:macro:`TS_HTTP_READ_REQUEST_HDR_HOOK`, the URL object may not yet be fully
+   ``TS_HTTP_READ_REQUEST_HDR_HOOK``, the URL object may not yet be fully
    parsed, and :func:`TSUrlHostGet` may return ``NULL`` even when a ``Host``
    header is present. For reliable host retrieval at any hook stage, use
    :func:`TSHttpHdrHostGet` instead, which checks both the URL and the
