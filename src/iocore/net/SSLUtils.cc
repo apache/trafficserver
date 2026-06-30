@@ -854,45 +854,59 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
 }
 
 static bool
+load_rsa_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
+{
+  ink_assert(keyPath && keyPath[0] != '\0');
+  int const result{SSL_CTX_use_RSAPrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM)};
+  if (1 != result) {
+    char err_buf[256]{};
+    ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+    Error("failed to load RSA key %s: %s", keyPath, err_buf);
+  }
+  return 1 == result;
+}
+
+static bool
+load_rsa_pkey_from_secret_data(SSL_CTX *ctx, const char *keyPath, const char *secret_data, int secret_data_len)
+{
+  scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
+
+  pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
+  void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
+  EVP_PKEY        *pkey        = PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u);
+  if (nullptr == pkey) {
+    Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
+        secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+    return false;
+  }
+  if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
+    Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %s",
+        (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+    EVP_PKEY_free(pkey);
+    return false;
+  }
+  return true;
+}
+
+static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data, int secret_data_len)
 {
-  EVP_PKEY *pkey = nullptr;
-#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
-  ENGINE *e = ENGINE_get_default_RSA();
-  if (e != nullptr) {
-    pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
-    if (pkey) {
-      if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-        Dbg(dbg_ctl_ssl_load, "failed to load server private key from engine");
-        EVP_PKEY_free(pkey);
-        return false;
-      }
-    }
+  bool result{false};
+  if (keyPath && keyPath[0] != '\0') {
+    result = load_rsa_pkey_from_file(ctx, keyPath);
   }
-#else
-  void *e = nullptr;
-#endif
-  if (pkey == nullptr) {
-    scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
 
-    pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
-    void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
-    pkey                         = PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u);
-    if (nullptr == pkey) {
-      Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
-          secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
-      return false;
-    }
-    if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-      Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %s",
-          (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
-      EVP_PKEY_free(pkey);
-      return false;
-    }
-    if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-      Dbg(dbg_ctl_ssl_load, "server private key does not match the certificate public key");
-      return false;
-    }
+  if (!result) {
+    result = load_rsa_pkey_from_secret_data(ctx, keyPath, secret_data, secret_data_len);
+  }
+
+  if (!result) {
+    return false;
+  }
+
+  if (!SSL_CTX_check_private_key(ctx)) {
+    Dbg(dbg_ctl_ssl_load, "server private key does not match the certificate public key");
+    return false;
   }
 
   return true;
