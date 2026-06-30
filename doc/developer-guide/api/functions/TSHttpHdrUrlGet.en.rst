@@ -44,7 +44,7 @@ also valid only if this function return ``TS_SUCCESS``.
 .. note::
 
    Not all URL components may be available at every hook stage. In early hooks
-   such as :c:macro:`TS_HTTP_READ_REQUEST_HDR_HOOK`, the URL object may not yet be
+   such as ``TS_HTTP_READ_REQUEST_HDR_HOOK``, the URL object may not yet be
    fully parsed. In particular, the host component retrieved via
    :func:`TSUrlHostGet` may be ``NULL`` even when a ``Host`` header is present.
    For reliable host retrieval across all hook stages, use
