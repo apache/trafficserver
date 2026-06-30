@@ -289,6 +289,29 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
  *   2. A HEADERS frame without the END_HEADERS flag set MUST be followed by a
  *      CONTINUATION frame
  */
+namespace
+{
+// An interim (1xx) response received on an outbound
+// (origin) HTTP/2 connection is not the final response. Detect it after the
+// header block is decoded so the caller can discard it and wait for the final
+// response, instead of merging it with the final response headers (which would
+// produce a duplicate :status pseudo-header that fails validation).
+bool
+is_outbound_interim_response(Http2Stream *stream)
+{
+  if (!stream->is_outbound_connection() || stream->trailing_header_is_possible()) {
+    return false;
+  }
+  const MIMEField *status_field = stream->get_receive_header()->field_find(PSEUDO_HEADER_STATUS);
+  if (status_field == nullptr) {
+    return false;
+  }
+  // An HTTP/2 :status is always exactly three ASCII digits; 1xx is informational.
+  auto value{status_field->value_get()};
+  return value.length() == 3 && value[0] == '1';
+}
+} // namespace
+
 Http2Error
 Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
 {
@@ -508,6 +531,15 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
+    }
+
+    // Discard an interim (1xx) response from the
+    // origin and wait for the final response on this stream.
+    if (is_outbound_interim_response(stream)) {
+      Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
+      stream->reset_receive_headers();
+      this->session->interrupt_reading_frames();
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
 
     // Set up the State Machine
@@ -1057,6 +1089,15 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "continuation half close remote");
     case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
       break;
+    case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
+      // On an outbound (origin) connection the response is
+      // received while the stream is half-closed (local); its header block may legitimately
+      // span CONTINUATION frames. The per-minute CONTINUATION flood limit still applies below.
+      if (!stream->is_outbound_connection()) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "continuation bad state");
+      }
+      break;
     default:
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "continuation bad state");
@@ -1123,6 +1164,15 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
+    }
+
+    // Discard an interim (1xx) response from the
+    // origin and wait for the final response on this stream.
+    if (is_outbound_interim_response(stream)) {
+      Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
+      stream->reset_receive_headers();
+      this->session->interrupt_reading_frames();
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
 
     // Set up the State Machine
