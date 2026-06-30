@@ -29,16 +29,17 @@
 #include <tscore/ink_config.h>
 #endif
 
-#ifdef OPENSSL_IS_OPENSSL3
-#include <openssl/evp.h>
-#include <openssl/decoder.h>
-#include <openssl/params.h>
-#include <openssl/ssl.h>
-#else
 #include <openssl/bio.h>
-#include <openssl/bn.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
+
+#ifdef OPENSSL_IS_OPENSSL3
+#include <openssl/decoder.h>
+#include <openssl/params.h>
+#else
+#include <openssl/bn.h>
 #endif
 
 #ifdef OPENSSL_IS_OPENSSL3
@@ -188,3 +189,34 @@ set_ctx_dh(SSL_CTX *ctx, dh_key_t *pkey)
 }
 
 #endif // OPENSSL_IS_OPENSSL3
+
+bool
+use_rsa_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
+{
+  ink_assert(keyPath && keyPath[0] != '\0');
+  int const result{SSL_CTX_use_RSAPrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM)};
+  if (1 != result) {
+    char err_buf[256]{};
+    ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
+    Error("failed to load RSA key %s: %s", keyPath, err_buf);
+  }
+  return 1 == result;
+}
+
+bool
+use_rsa_pkey_from_secret_data(SSL_CTX *ctx, const char *secret_data, int secret_data_len)
+{
+  scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
+
+  pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
+  void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
+  EVP_PKEY        *pkey        = PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u);
+  if (nullptr == pkey) {
+    return false;
+  }
+  if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
+    EVP_PKEY_free(pkey);
+    return false;
+  }
+  return true;
+}

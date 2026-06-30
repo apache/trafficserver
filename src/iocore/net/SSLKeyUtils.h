@@ -40,3 +40,6 @@ dh_key_t *load_dhparams_file(char const *dhparams_file);
 
 // Takes ownership of pkey.
 bool set_ctx_dh(SSL_CTX *ctx, dh_key_t *pkey);
+
+bool use_rsa_pkey_from_file(SSL_CTX *ctx, const char *keyPath);
+bool use_rsa_pkey_from_secret_data(SSL_CTX *ctx, const char *secret_data, int secret_data_len);
