@@ -14,11 +14,12 @@
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-  Unless required by applicable law or agreed to in writing, software
-  distributed under the License is distributed on an "AS IS" BASIS,
-  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  See the License for the specific language governing permissions and
-  limitations under the License.
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
  */
 
 /*
@@ -97,7 +98,7 @@ static void
 handle_client_lookup(TSHttpTxn txnp, TSCont contp)
 {
   TSMBuffer bufp;
-  TSMLoc    hdr_loc, url_loc;
+  TSMLoc    hdr_loc;
   int       host_length;
 
   in_addr_t clientip = 0;
@@ -130,16 +131,9 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
     goto done;
   }
 
-  if (TSHttpHdrUrlGet(bufp, hdr_loc, &url_loc) != TS_SUCCESS) {
-    TSError("[%s] Couldn't retrieve request url", PLUGIN_NAME);
-    TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
-    goto done;
-  }
-
-  host = TSUrlHostGet(bufp, url_loc, &host_length);
+  host = TSHttpHdrHostGet(bufp, hdr_loc, &host_length);
   if (!host) {
     TSError("[%s] Couldn't retrieve request hostname", PLUGIN_NAME);
-    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
@@ -148,7 +142,6 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
    *   Check to see if the client is already headed to the redirect site.
    */
   if (strncmp(host, url_redirect, host_length) == 0) {
-    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
     goto done;
   }
@@ -159,7 +152,6 @@ handle_client_lookup(TSHttpTxn txnp, TSCont contp)
 
     update_redirected_method_stats(bufp, hdr_loc);
 
-    TSHandleMLocRelease(bufp, hdr_loc, url_loc);
     TSHandleMLocRelease(bufp, TS_NULL_MLOC, hdr_loc);
 
     /*
