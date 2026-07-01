@@ -244,3 +244,12 @@ def test_cli_help_lists_error_format_flag() -> None:
     assert "--error-format" in result.stdout
     for choice in ("plain", "json", "markdown"):
         assert choice in result.stdout
+
+
+def test_cli_version_flag() -> None:
+    """--version must print `hrw4u <version>` to stdout and exit 0."""
+    result = run_hrw4u(["--version"])
+
+    assert result.returncode == 0
+    assert result.stdout.startswith("hrw4u ")
+    assert result.stdout.strip() != "hrw4u"
