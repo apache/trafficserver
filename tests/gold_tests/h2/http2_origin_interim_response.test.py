@@ -83,6 +83,8 @@ for mode in MODES:
     tr.MakeCurlCommand(f'-v -s -H "Host: ats.test" http://127.0.0.1:{ts.Variables.port}/{mode}', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.StillRunningAfter = ts
+    for m in MODES:
+        tr.StillRunningAfter = origins[m]
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(
         'HTTP/.* 200', f'mode={mode}: client must receive the final 200, not a 502')
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(

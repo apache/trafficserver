@@ -310,6 +310,18 @@ is_outbound_interim_response(Http2Stream *stream)
   auto value{status_field->value_get()};
   return value.length() == 3 && value[0] == '1';
 }
+
+// Discard a decoded interim (1xx) response along with its encoded header block so the
+// following final response is decoded into a clean buffer. Freeing header_blocks here
+// avoids leaking it when the next HEADERS frame allocates a new buffer.
+void
+discard_interim_response(Http2Stream *stream)
+{
+  stream->reset_receive_headers();
+  ats_free(stream->header_blocks);
+  stream->header_blocks        = nullptr;
+  stream->header_blocks_length = 0;
+}
 } // namespace
 
 Http2Error
@@ -537,7 +549,7 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     // origin and wait for the final response on this stream.
     if (is_outbound_interim_response(stream)) {
       Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
-      stream->reset_receive_headers();
+      discard_interim_response(stream);
       this->session->interrupt_reading_frames();
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
@@ -1170,7 +1182,7 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     // origin and wait for the final response on this stream.
     if (is_outbound_interim_response(stream)) {
       Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
-      stream->reset_receive_headers();
+      discard_interim_response(stream);
       this->session->interrupt_reading_frames();
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }

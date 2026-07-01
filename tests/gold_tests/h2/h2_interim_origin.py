@@ -80,7 +80,6 @@ def send_response(sock, mode, sid):
 
 def handle(sock, mode):
     sock.sendall(frame(0x4, 0x0, 0, b""))  # server SETTINGS
-    sock.sendall(frame(0x4, 0x1, 0, b""))  # SETTINGS ACK
     preface = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
     buf = b""
     preface_done = False
@@ -99,8 +98,11 @@ def handle(sock, mode):
             if len(buf) < 9 + ln:
                 break
             ftype = buf[3]
+            flags = buf[4]
             sid = int.from_bytes(buf[5:9], "big") & 0x7FFFFFFF
             buf = buf[9 + ln:]
+            if ftype == 0x4 and not (flags & 0x1):  # client SETTINGS -> ACK it
+                sock.sendall(frame(0x4, 0x1, 0, b""))
             if ftype == 0x1:  # a request HEADERS -> respond on the same stream
                 send_response(sock, mode, sid)
 
