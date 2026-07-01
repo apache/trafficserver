@@ -71,14 +71,39 @@ iequals(const StringView lhs, const StringView rhs)
                     [](const char a, const char b) { return tolower(a) == tolower(b); });
 }
 
-void
+bool
 PrefetchConfig::setFetchOverflow(const char *optarg)
 {
-  if (StringView("64") == optarg) {
+  if (nullptr == optarg) {
+    return false;
+  }
+  if (StringView("32") == optarg) {
+    _fetchOverflow = EvalPolicy::Overflow32;
+  } else if (StringView("64") == optarg) {
     _fetchOverflow = EvalPolicy::Overflow64;
   } else if (iequals("bignum", optarg)) {
     _fetchOverflow = EvalPolicy::Bignum;
+  } else {
+    return false;
   }
+  return true;
+}
+
+/**
+ * @brief Whether @a optarg is a non-empty string of decimal digits (a valid unsigned integer option).
+ */
+static bool
+isUnsignedInt(const char *optarg)
+{
+  if (nullptr == optarg || '\0' == *optarg) {
+    return false;
+  }
+  for (const char *p = optarg; '\0' != *p; ++p) {
+    if (*p < '0' || *p > '9') {
+      return false;
+    }
+  }
+  return true;
 }
 
 /**
@@ -147,7 +172,12 @@ PrefetchConfig::init(int argc, char *argv[])
       break;
 
     case 'c': /* --fetch-count */
-      setFetchCount(optarg);
+      if (isUnsignedInt(optarg)) {
+        setFetchCount(optarg);
+      } else {
+        PrefetchError("invalid --fetch-count '%s': expected a non-negative integer", optarg ? optarg : "");
+        status = false;
+      }
       break;
 
     case 'e': /* --fetch-path-pattern */ {
@@ -156,7 +186,10 @@ PrefetchConfig::init(int argc, char *argv[])
         if (pattern->init(optarg)) {
           _nextPaths.add(std::move(pattern));
         } else {
-          PrefetchError("failed to initialize next object pattern");
+          /* An unusable fetch-path-pattern is a configuration error; fail instance creation so ATS
+           * refuses to load the remap rule rather than silently running with prefetch disabled. */
+          PrefetchError("failed to initialize fetch-path-pattern '%s'", optarg ? optarg : "");
+          status = false;
         }
       }
     } break;
@@ -166,11 +199,19 @@ PrefetchConfig::init(int argc, char *argv[])
     } break;
 
     case 'x': /* --fetch-max */
-      setFetchMax(optarg);
+      if (isUnsignedInt(optarg)) {
+        setFetchMax(optarg);
+      } else {
+        PrefetchError("invalid --fetch-max '%s': expected a non-negative integer", optarg ? optarg : "");
+        status = false;
+      }
       break;
 
     case 'o': /* --fetch-overflow */
-      setFetchOverflow(optarg);
+      if (!setFetchOverflow(optarg)) {
+        PrefetchError("invalid --fetch-overflow '%s': expected 32, 64, or bignum", optarg ? optarg : "");
+        status = false;
+      }
       break;
 
     case 'r': /* --replace-host */

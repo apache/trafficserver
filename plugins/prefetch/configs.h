@@ -142,7 +142,7 @@ public:
     return _fetchMax;
   }
 
-  void setFetchOverflow(const char *optarg);
+  bool setFetchOverflow(const char *optarg);
 
   EvalPolicy
   getFetchOverflow() const
