@@ -289,4 +289,18 @@ TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
   UnAddr from_string(long_path);
   REQUIRE(from_string._path[TS_UNIX_SIZE - 1] == '\0');
   REQUIRE(strlen(from_string._path) == TS_UNIX_SIZE - 1);
+
+  // A kernel sockaddr_un may carry a full, unterminated sun_path; assign() and the copy
+  // paths must still yield a terminated _path.
+  IpEndpoint raw;
+  raw.sa.sa_family = AF_UNIX;
+  memset(raw.sun.sun_path, 'z', TS_UNIX_SIZE); // deliberately no terminator
+  UnAddr from_sockaddr(&raw.sa);
+  REQUIRE(from_sockaddr._path[TS_UNIX_SIZE - 1] == '\0');
+  REQUIRE(strlen(from_sockaddr._path) == TS_UNIX_SIZE - 1);
+  UnAddr copied(from_sockaddr);
+  REQUIRE(copied._path[TS_UNIX_SIZE - 1] == '\0');
+  UnAddr assigned;
+  assigned = from_sockaddr;
+  REQUIRE(assigned._path[TS_UNIX_SIZE - 1] == '\0');
 }

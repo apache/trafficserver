@@ -1610,8 +1610,13 @@ struct UnAddr {
 
   UnAddr() { _path[0] = 0; }
 
-  UnAddr(self const &addr) { strncpy(_path, addr._path, TS_UNIX_SIZE); }
-  // strncpy writes no terminator when it truncates.
+  // strncpy writes no terminator when it truncates, so every path that fills _path
+  // terminates it explicitly.
+  UnAddr(self const &addr)
+  {
+    strncpy(_path, addr._path, TS_UNIX_SIZE - 1);
+    _path[TS_UNIX_SIZE - 1] = '\0';
+  }
   explicit UnAddr(const char *path)
   {
     strncpy(_path, path, TS_UNIX_SIZE - 1);
@@ -1648,7 +1653,8 @@ struct UnAddr {
   operator=(self const &addr)
   {
     if (this != &addr) {
-      strncpy(_path, addr._path, TS_UNIX_SIZE);
+      strncpy(_path, addr._path, TS_UNIX_SIZE - 1);
+      _path[TS_UNIX_SIZE - 1] = '\0';
     }
     return *this;
   }
@@ -1660,7 +1666,9 @@ inline UnAddr &
 UnAddr::assign(sockaddr const *addr)
 {
   if (addr) {
-    strncpy(_path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE);
+    // A kernel sockaddr_un may carry a full, unterminated sun_path.
+    strncpy(_path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE - 1);
+    _path[TS_UNIX_SIZE - 1] = '\0';
   }
   return *this;
 }
