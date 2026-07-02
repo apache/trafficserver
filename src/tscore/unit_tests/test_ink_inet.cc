@@ -280,4 +280,13 @@ TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
 #if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
   REQUIRE(ep.sun.sun_len == SUN_LEN(&ep.sun));
 #endif
+
+  // An over-long path must still yield a null terminated _path.
+  std::string long_path(TS_UNIX_SIZE + 10, 'y');
+  UnAddr      from_cstr(long_path.c_str());
+  REQUIRE(from_cstr._path[TS_UNIX_SIZE - 1] == '\0');
+  REQUIRE(strlen(from_cstr._path) == TS_UNIX_SIZE - 1);
+  UnAddr from_string(long_path);
+  REQUIRE(from_string._path[TS_UNIX_SIZE - 1] == '\0');
+  REQUIRE(strlen(from_string._path) == TS_UNIX_SIZE - 1);
 }

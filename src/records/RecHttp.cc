@@ -368,10 +368,16 @@ HttpProxyPort::processOptions(const char *opts)
 
   for (auto item : values) {
     if (item[0] == '/') {
-      m_family    = AF_UNIX;
-      m_unix_path = UnAddr(item);
-      af_set_p    = true;
-      zret        = true;
+      if (size_t len = strlen(item); len >= TS_UNIX_SIZE) {
+        // A longer path would be silently truncated and the listener bound to the wrong
+        // filesystem path.
+        Warning("Unix path '%s' in port configuration '%s' is too long (%zu bytes, max %zu)", item, opts, len, TS_UNIX_SIZE - 1);
+      } else {
+        m_family    = AF_UNIX;
+        m_unix_path = UnAddr(item);
+        af_set_p    = true;
+        zret        = true;
+      }
     } else if (isdigit(item[0])) { // leading digit -> port value
       char *ptr;
       int   port = strtoul(item, &ptr, 10);
