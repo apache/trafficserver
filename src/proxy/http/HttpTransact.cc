@@ -540,28 +540,6 @@ update_cache_control_information_from_config(HttpTransact::State *s)
   }
 }
 
-bool
-HttpTransact::is_server_negative_cached(State *s)
-{
-  if (s->dns_info.active && s->dns_info.active->last_fail_time() != TS_TIME_ZERO &&
-      s->dns_info.active->last_fail_time() + s->txn_conf->down_server_timeout > ts_clock::from_time_t(s->client_request_time)) {
-    return true;
-  } else {
-    // Make sure some nasty clock skew has not happened
-    //  Use the server timeout to set an upperbound as to how far in the
-    //   future we should tolerate bogus last failure times.  This sets
-    //   the upper bound to the time that we would ever consider a server
-    //   down to 2*down_server_timeout
-    if (s->dns_info.active &&
-        ts_clock::from_time_t(s->client_request_time) + s->txn_conf->down_server_timeout < s->dns_info.active->last_fail_time()) {
-      s->dns_info.active->mark_up();
-      ink_assert(!"extreme clock skew");
-      return true;
-    }
-    return false;
-  }
-}
-
 /**
   ATS has two configuration options controlling how many times it retries a connection attempt against origin servers.
 
