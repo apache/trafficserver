@@ -147,7 +147,7 @@ def main():
         except Exception as e:
             sys.stderr.write(f"tls error: {e}\n")
             continue
-        threading.Thread(target=lambda: handle(tls, args.mode), daemon=True).start()
+        threading.Thread(target=handle, args=(tls, args.mode), daemon=True).start()
     return 0
 
 
