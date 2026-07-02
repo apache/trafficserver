@@ -1030,9 +1030,7 @@ public:
   static void handle_transform_ready(State *s);
   static void handle_transform_cache_write(State *s);
   static void handle_response_from_parent(State *s);
-  static void handle_response_from_parent_plugin(State *s);
   static void handle_response_from_server(State *s);
-  static void delete_server_rr_entry(State *s, int max_retries);
   static void retry_server_connection_not_open(State *s, unsigned max_retries);
   static void error_log_connection_failure(State *s, ServerState_t conn_state);
   static void handle_server_connection_not_open(State *s);
@@ -1084,7 +1082,6 @@ public:
   static void initialize_state_variables_from_request(State *s, HTTPHdr *obsolete_incoming_request);
 
   static void initialize_state_variables_from_response(State *s, HTTPHdr *incoming_response);
-  static bool is_server_negative_cached(State *s);
   static bool is_cache_response_returnable(State *s);
   static bool is_stale_cache_response_returnable(State *s);
   static bool need_to_revalidate(State *s);
