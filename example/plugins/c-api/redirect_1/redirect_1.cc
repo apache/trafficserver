@@ -175,7 +175,8 @@ handle_response(TSHttpTxn txnp)
 {
   TSMBuffer   bufp;
   TSMLoc      hdr_loc, newfield_loc;
-  char const *errormsg_body = "All requests from this IP address are redirected.\n";
+  char const *errormsg_body = "All requests from this IP address are redirected.
+";
   char       *tmp_body;
 
   if (TSHttpTxnClientRespGet(txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
