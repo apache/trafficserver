@@ -39,6 +39,7 @@ public:
 
   virtual int64_t    write(QUICOffset offset, const uint8_t *data, uint64_t data_length, bool fin) = 0;
   Ptr<IOBufferBlock> read(size_t len);
+  void               consume(size_t len);
   virtual bool       is_eos()     = 0;
   virtual uint64_t   unread_len() = 0;
   virtual uint64_t   read_len()   = 0;
@@ -60,6 +61,7 @@ public:
   virtual void notify_eos() = 0;
 
 protected:
-  virtual Ptr<IOBufferBlock> _read(size_t len) = 0;
+  virtual Ptr<IOBufferBlock> _read(size_t len)    = 0;
+  virtual void               _consume(size_t len) = 0;
   QUICStream                &_stream;
 };

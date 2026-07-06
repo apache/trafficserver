@@ -91,6 +91,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     name = ats_config.get('name', 'ts')
     process_config = ats_config.get('process_config', {})
     ts = obj.MakeATSProcess(name, **process_config)
+    if 'startup_timeout' in ats_config:
+        ts.StartupTimeout = ats_config['startup_timeout']
 
     # Cripts are compiled with clang at TS startup (during remap load), which is
     # slow and scales with the number of cripts.

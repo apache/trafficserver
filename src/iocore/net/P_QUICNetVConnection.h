@@ -129,6 +129,7 @@ public:
   bool                    is_at_anti_amplification_limit() const override;
   bool                    is_address_validation_completed() const override;
   bool                    is_handshake_completed() const override;
+  void                    on_stream_updated() override;
 
   // QUICSupport
   QUICConnection *get_quic_connection() override;

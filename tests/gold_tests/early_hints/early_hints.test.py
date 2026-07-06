@@ -28,6 +28,7 @@ class Protocol(Enum):
     HTTP = auto()
     HTTPS = auto()
     HTTP2 = auto()
+    HTTP3 = auto()
 
     @classmethod
     def to_string(cls, protocol):
@@ -37,6 +38,8 @@ class Protocol(Enum):
             return 'HTTPS'
         elif protocol == cls.HTTP2:
             return 'HTTP2'
+        elif protocol == cls.HTTP3:
+            return 'HTTP3'
         else:
             return None
 
@@ -87,7 +90,7 @@ class TestEarlyHints:
 
         :param tr: The TestRun for the traffic server.
         '''
-        ts = Test.MakeATSProcess(f'ts_{self._protocol_str}', enable_tls=True)
+        ts = Test.MakeATSProcess(f'ts_{self._protocol_str}', enable_tls=True, enable_quic=self._protocol == Protocol.HTTP3)
         self._ts = ts
         ts.Disk.remap_config.AddLine(f'map / http://backend.server.com:{self._server.Variables.http_port}')
         ts.addDefaultSSLFiles()
@@ -137,6 +140,10 @@ ssl_multicert:
             protocol_arg = '-k --http2'
             scheme = 'https'
             ts_port = self._ts.Variables.ssl_port
+        elif self._protocol == Protocol.HTTP3:
+            protocol_arg = '-k --http3-only'
+            scheme = 'https'
+            ts_port = self._ts.Variables.ssl_port
         tr.MakeCurlCommand(
             f'-v {protocol_arg} '
             f'--resolve "server.com:{ts_port}:127.0.0.1" '
@@ -164,3 +171,5 @@ TestEarlyHints(Protocol.HTTP)
 if not Condition.CurlUsingUnixDomainSocket():
     TestEarlyHints(Protocol.HTTPS)
     TestEarlyHints(Protocol.HTTP2)
+    if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3') and Condition.HasCurlOption('--http3-only'):
+        TestEarlyHints(Protocol.HTTP3)

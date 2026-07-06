@@ -56,7 +56,7 @@ public:
 
 private:
   void read_single_message_from_net(UDPNetHandler *nh, UDPConnection *uc);
-  void read_multiple_messages_from_net(UDPNetHandler *nh, UDPConnection *xuc);
+  bool read_multiple_messages_from_net(UDPNetHandler *nh, UDPConnection *xuc);
 };
 
 extern UDPNetProcessorInternal udpNetInternal;

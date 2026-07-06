@@ -1,0 +1,268 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not
+#  use this file except in compliance with the License.  You may
+#  obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - request_base: &request_base
+      version: "1.1"
+  - empty_response: &empty_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+      content:
+        size: 0
+  - generated_100_response: &generated_100_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+      content:
+        size: 100
+  - generated_300k_response: &generated_300k_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+sessions:
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /go-get-empty
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-get-empty ]
+        - [ X-H3-Test-Case, go-get-empty ]
+
+    server-response:
+      <<: *empty_response
+
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /go-get-small
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-get-small ]
+        - [ X-H3-Test-Case, go-get-small ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: HEAD
+      url: /go-head-no-body
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-head-no-body ]
+        - [ X-H3-Test-Case, go-head-no-body ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /go-204-no-body
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-204-no-body ]
+        - [ X-H3-Test-Case, go-204-no-body ]
+
+    server-response:
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ X-H3-Status, no-content ]
+
+  - client-request:
+      <<: *request_base
+      method: POST
+      url: /go-post-small
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+        - [ uuid, go-post-small ]
+        - [ X-H3-Test-Case, go-post-small ]
+      content:
+        size: 100
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: PUT
+      url: /go-put-small
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+        - [ uuid, go-put-small ]
+        - [ X-H3-Test-Case, go-put-small ]
+      content:
+        size: 100
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: DELETE
+      url: /go-delete-empty
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-delete-empty ]
+        - [ X-H3-Test-Case, go-delete-empty ]
+
+    server-response:
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ X-H3-Status, delete-no-content ]
+
+  - client-request:
+      <<: *request_base
+      method: OPTIONS
+      url: /go-options-small
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-options-small ]
+        - [ X-H3-Test-Case, go-options-small ]
+
+    server-response:
+      <<: *generated_100_response
+
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /go-get-concurrent-large
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-get-concurrent-large ]
+        - [ X-H3-Test-Case, go-get-concurrent-large ]
+
+    server-response:
+      <<: *generated_300k_response
+
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /go-get-concurrent-small
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-get-concurrent-small ]
+        - [ X-H3-Test-Case, go-get-concurrent-small ]
+
+    server-response:
+      <<: *generated_100_response
+
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /go-get-large
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ uuid, go-get-large ]
+        - [ X-H3-Test-Case, go-get-large ]
+
+    server-response:
+      <<: *generated_300k_response
+
+  - client-request:
+      <<: *request_base
+      method: POST
+      url: /go-post-large
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, go-post-large ]
+        - [ X-H3-Test-Case, go-post-large ]
+      content:
+        size: 300000
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_300k_response
+
+  - client-request:
+      <<: *request_base
+      method: PUT
+      url: /go-put-large
+      headers:
+        fields:
+        - [ X-H3-Go-Client, quic-go ]
+        - [ X-H3-Reused-Header, stable-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, go-put-large ]
+        - [ X-H3-Test-Case, go-put-large ]
+      content:
+        size: 300000
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_300k_response
