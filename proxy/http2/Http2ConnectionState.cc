@@ -407,6 +407,17 @@ rcv_headers_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
 
     // Set up the State Machine
     if (!empty_request) {
+      // Hard-enforce the global active-streams cap on inbound client streams.
+      if (Http2::max_active_streams_policy_in == 1 && Http2::max_active_streams_in > 0) {
+        int64_t current_streams = 0;
+        RecGetRawStatSum(http2_rsb, HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, &current_streams);
+        if (current_streams >= Http2::max_active_streams_in) {
+          HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_ACTIVE_STREAMS_EXCEEDED_IN, this_ethread());
+          return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                            "active streams cap reached");
+        }
+      }
+
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
       stream->mark_milestone(Http2StreamMilestone::START_TXN);
       stream->cancel_active_timeout();
@@ -997,6 +1008,17 @@ rcv_continuation_frame(Http2ConnectionState &cstate, const Http2Frame &frame)
     }
 
     // Set up the State Machine
+    // Hard-enforce the global active-streams cap on inbound client streams.
+    if (!stream->has_trailing_header() && Http2::max_active_streams_policy_in == 1 && Http2::max_active_streams_in > 0) {
+      int64_t current_streams = 0;
+      RecGetRawStatSum(http2_rsb, HTTP2_STAT_CURRENT_CLIENT_STREAM_COUNT, &current_streams);
+      if (current_streams >= Http2::max_active_streams_in) {
+        HTTP2_INCREMENT_THREAD_DYN_STAT(HTTP2_STAT_MAX_ACTIVE_STREAMS_EXCEEDED_IN, this_ethread());
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                          "active streams cap reached");
+      }
+    }
+
     SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
     stream->mark_milestone(Http2StreamMilestone::START_TXN);
     // This should be fine, need to verify whether we need to replace this with the
@@ -2216,6 +2238,12 @@ Http2ConnectionState::_adjust_concurrent_stream()
 {
   if (Http2::max_active_streams_in == 0) {
     // Throttling down is disabled.
+    return Http2::max_concurrent_streams_in;
+  }
+
+  if (Http2::max_active_streams_policy_in == 1) {
+    // Under hard-enforcement the advertised value is left untouched; new streams
+    // are refused at creation instead of throttling down concurrency.
     return Http2::max_concurrent_streams_in;
   }
 

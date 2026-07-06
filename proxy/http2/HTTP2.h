@@ -109,6 +109,7 @@ enum {
   HTTP2_STAT_INSUFFICIENT_AVG_WINDOW_UPDATE,
   HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN,
   HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT,
+  HTTP2_STAT_MAX_ACTIVE_STREAMS_EXCEEDED_IN,
 
   HTTP2_N_STATS // Terminal counter, NOT A STAT INDEX.
 };
@@ -386,6 +387,7 @@ public:
   static uint32_t max_concurrent_streams_in;
   static uint32_t min_concurrent_streams_in;
   static uint32_t max_active_streams_in;
+  static uint32_t max_active_streams_policy_in;
   static bool throttling;
   static uint32_t stream_priority_enabled;
   static uint32_t initial_window_size;

@@ -92,6 +92,7 @@ static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN_NAME =
   "proxy.process.http2.max_concurrent_streams_exceeded_in";
 static const char *const HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME =
   "proxy.process.http2.max_concurrent_streams_exceeded_out";
+static const char *const HTTP2_STAT_MAX_ACTIVE_STREAMS_EXCEEDED_IN_NAME = "proxy.process.http2.max_active_streams_exceeded_in";
 
 union byte_pointer {
   byte_pointer(void *p) : ptr(p) {}
@@ -802,7 +803,8 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 // Initialize this subsystem with librecords configs (for now)
 uint32_t Http2::max_concurrent_streams_in          = 100;
 uint32_t Http2::min_concurrent_streams_in          = 10;
-uint32_t Http2::max_active_streams_in              = 0;
+uint32_t Http2::max_active_streams_in              = 200000;
+uint32_t Http2::max_active_streams_policy_in       = 0;
 bool Http2::throttling                             = false;
 uint32_t Http2::stream_priority_enabled            = 0;
 uint32_t Http2::initial_window_size                = 65535;
@@ -839,6 +841,7 @@ Http2::init()
   REC_EstablishStaticConfigInt32U(max_concurrent_streams_in, "proxy.config.http2.max_concurrent_streams_in");
   REC_EstablishStaticConfigInt32U(min_concurrent_streams_in, "proxy.config.http2.min_concurrent_streams_in");
   REC_EstablishStaticConfigInt32U(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
+  REC_EstablishStaticConfigInt32U(max_active_streams_policy_in, "proxy.config.http2.max_active_streams_policy_in");
   REC_EstablishStaticConfigInt32U(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
   REC_EstablishStaticConfigInt32U(initial_window_size, "proxy.config.http2.initial_window_size_in");
   REC_EstablishStaticConfigInt32U(max_frame_size, "proxy.config.http2.max_frame_size");
@@ -937,6 +940,8 @@ Http2::init()
                      static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_IN), RecRawStatSyncSum);
   RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT_NAME, RECD_INT, RECP_PERSISTENT,
                      static_cast<int>(HTTP2_STAT_MAX_CONCURRENT_STREAMS_EXCEEDED_OUT), RecRawStatSyncSum);
+  RecRegisterRawStat(http2_rsb, RECT_PROCESS, HTTP2_STAT_MAX_ACTIVE_STREAMS_EXCEEDED_IN_NAME, RECD_INT, RECP_PERSISTENT,
+                     static_cast<int>(HTTP2_STAT_MAX_ACTIVE_STREAMS_EXCEEDED_IN), RecRawStatSyncSum);
 
   http2_init();
 }
