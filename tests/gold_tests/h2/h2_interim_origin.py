@@ -108,8 +108,8 @@ def handle(sock, mode):
 
 
 def make_cert():
-    cert = tempfile.NamedTemporaryFile(suffix=".crt", delete=False).name
-    key = tempfile.NamedTemporaryFile(suffix=".key", delete=False).name
+    cert = tempfile.NamedTemporaryFile(dir=".", suffix=".crt", delete=False).name
+    key = tempfile.NamedTemporaryFile(dir=".", suffix=".key", delete=False).name
     subprocess.run(
         [
             "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", key, "-out", cert, "-days", "3", "-subj",
