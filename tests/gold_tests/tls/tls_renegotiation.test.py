@@ -61,13 +61,7 @@ class TestRenegotiationRefused:
 
         ts.addSSLfile("ssl/server.pem")
         ts.addSSLfile("ssl/server.key")
-        ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split("\n"))
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',

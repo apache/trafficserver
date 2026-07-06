@@ -1,6 +1,6 @@
 '''
 Existing cert/SNI reload tests reload while the server is idle. This one drives
-continuous concurrent TLS handshakes and reloads ssl_multicert.yaml on top of
+continuous concurrent TLS handshakes and reloads ssl_multicert.config on top of
 them, stressing the SSL/BIO ownership boundary of the layered TLS VConnection.
 The swapped-in certificate must take effect, every handshake must succeed, and
 ATS must not crash.
@@ -51,13 +51,7 @@ class TestTlsReloadUnderLoad:
         ts.addSSLfile("ssl/signed-bar.key")
         ts.addSSLfile("ssl/signed2-bar.pem")
 
-        ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: signed-bar.pem
-    ssl_key_name: signed-bar.key
-""".split("\n"))
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=signed-bar.pem ssl_key_name=signed-bar.key')
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
@@ -69,7 +63,7 @@ ssl_multicert:
 
         # The reload must actually have run (otherwise the test would be vacuous).
         ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            "ssl_multicert.yaml finished loading", "the cert configuration must reload while load is in flight")
+            "ssl_multicert.config finished loading", "the cert configuration must reload while load is in flight")
         # The reload-under-load must not crash or trip an assertion / sanitizer.
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
             "received signal|failed assertion", "ATS must not crash reloading certs under load")

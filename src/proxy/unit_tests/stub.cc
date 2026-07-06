@@ -22,3 +22,5 @@
  */
 
 #include "proxy/IPAllow.h"
+
+uint8_t IpAllow::subjects[IpAllow::Subject::MAX_SUBJECTS];
