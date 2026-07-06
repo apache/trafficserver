@@ -1687,6 +1687,7 @@ HttpSM::handle_api_return()
     break;
   }
 
+  ATS_PROBE2(http_transfer_setup, sm_id, static_cast<int>(t_state.next_action));
   switch (t_state.next_action) {
   case HttpTransact::StateMachineAction_t::TRANSFORM_READ: {
     HttpTunnelProducer *p = setup_transfer_from_transform();
@@ -3395,6 +3396,7 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   // If we had a ground fill, check update our status
   if (background_fill == BackgroundFill_t::STARTED) {
     background_fill = p->read_success ? BackgroundFill_t::COMPLETED : BackgroundFill_t::ABORTED;
+    ATS_PROBE3(http_bg_fill_finish, sm_id, event, static_cast<int>(background_fill));
     Metrics::Gauge::decrement(http_rsb.background_fill_current_count);
   }
   // We handled the event.  Now either shutdown the connection or
@@ -3639,6 +3641,9 @@ HttpSM::tunnel_handler_ua(int event, HttpTunnelConsumer *c)
       SMDbg(dbg_ctl_http, "Initiating background fill");
       // check whether to finish the reading.
       background_fill = p->read_success ? BackgroundFill_t::COMPLETED : BackgroundFill_t::STARTED;
+      ATS_PROBE6(http_bg_fill_start, sm_id, event, c->producer->num_consumers, static_cast<int>(background_fill),
+                 c->bytes_written - client_response_hdr_bytes,
+                 static_cast<int>(t_state.txn_conf->background_fill_threshold * 1000));
 
       // There is another consumer (cache write) so
       //  detach the user agent
@@ -6138,6 +6143,7 @@ HttpSM::set_ua_abort(HttpTransact::AbortState_t ua_abort, int event)
     t_state.client_info.state = HttpTransact::PARSE_ERROR;
     break;
   }
+  ATS_PROBE4(http_ua_abort, sm_id, event, static_cast<int>(ua_abort), static_cast<int>(t_state.client_info.state));
 }
 
 // void HttpSM::release_server_session()
@@ -6392,6 +6398,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   default:
     ink_release_assert(0);
   }
+  ATS_PROBE3(http_server_setup_error, sm_id, event, static_cast<int>(t_state.current.state));
 
   if (event == VC_EVENT_INACTIVITY_TIMEOUT || event == VC_EVENT_ERROR || event == VC_EVENT_EOS) {
     // Clean up the vc_table entry so any events in play to the timed out server vio

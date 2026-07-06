@@ -27,6 +27,7 @@
 #include "proxy/http2/HTTP2.h"
 #include "proxy/http2/Http2ConnectionState.h"
 #include "proxy/http2/Http2ClientSession.h"
+#include "ts/ats_probe.h"
 #include "proxy/http2/Http2ServerSession.h"
 #include "proxy/http2/Http2Stream.h"
 #include "proxy/http2/Http2Frame.h"
@@ -693,6 +694,7 @@ Http2ConnectionState::rcv_rst_stream_frame(const Http2Frame &frame)
 
   if (stream != nullptr) {
     Http2StreamDebug(this->session, stream_id, "Parsed RST_STREAM frame: Error Code: %u", rst_stream.error_code);
+    ATS_PROBE3(http2_rst_stream_rcvd, this->session->get_connection_id(), stream_id, rst_stream.error_code);
     stream->set_rx_error_code({ProxyErrorClass::TXN, static_cast<uint32_t>(rst_stream.error_code)});
     stream->initiating_close();
   }
@@ -960,6 +962,8 @@ Http2ConnectionState::rcv_window_update_frame(const Http2Frame &frame)
     if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, error, "Erroneous client window update");
     }
+    ATS_PROBE4(http2_window_update_rcvd, this->session->get_connection_id(), HTTP2_CONNECTION_CONTROL_STREAM, size,
+               this->get_peer_rwnd());
     this->restart_streams();
   } else {
     // Stream level window update
@@ -993,6 +997,7 @@ Http2ConnectionState::rcv_window_update_frame(const Http2Frame &frame)
     if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, error, "Bad stream rwnd");
     }
+    ATS_PROBE4(http2_window_update_rcvd, this->session->get_connection_id(), stream_id, size, stream->get_peer_rwnd());
 
     ssize_t wnd = std::min(this->get_peer_rwnd(), stream->get_peer_rwnd());
     if (wnd > 0) {
@@ -2298,6 +2303,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
       }
       Http2StreamDebug(this->session, stream->get_id(), "No window session_wnd=%zd stream_wnd=%zd peer_initial_window=%u",
                        get_peer_rwnd(), stream->get_peer_rwnd(), this->peer_settings.get(HTTP2_SETTINGS_INITIAL_WINDOW_SIZE));
+      ATS_PROBE5(http2_send_window_blocked, this->session->get_connection_id(), stream->get_id(), this->get_peer_rwnd(),
+                 stream->get_peer_rwnd(), resp_reader->read_avail());
       this->session->flush();
       return Http2SendDataFrameResult::NO_WINDOW;
     }
@@ -2316,6 +2323,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
   // hold off on processing the payload until the write buffer is drained.
   if (payload_length > 0 && this->session->is_write_high_water()) {
     Http2StreamDebug(this->session, stream->get_id(), "Not write avail, payload_length=%zu", payload_length);
+    ATS_PROBE4(http2_write_buffer_blocked, this->session->get_connection_id(), stream->get_id(), payload_length,
+               this->get_peer_rwnd());
     this->session->flush();
     return Http2SendDataFrameResult::NOT_WRITE_AVAIL;
   }
@@ -2349,6 +2358,8 @@ Http2ConnectionState::send_a_data_frame(Http2Stream *stream, size_t &payload_len
 
   Http2DataFrame data(stream->get_id(), flags, resp_reader, payload_length);
   this->session->xmit(data, stream->is_tunneling() || flags & HTTP2_FLAGS_DATA_END_STREAM);
+  ATS_PROBE6(http2_data_frame_sent, this->session->get_connection_id(), stream->get_id(), payload_length, this->get_peer_rwnd(),
+             stream->get_peer_rwnd(), (flags & HTTP2_FLAGS_DATA_END_STREAM) ? 1 : 0);
 
   if (flags & HTTP2_FLAGS_DATA_END_STREAM) {
     Http2StreamDebug(session, stream->get_id(), "END_STREAM");
@@ -2638,6 +2649,7 @@ void
 Http2ConnectionState::send_rst_stream_frame(Http2StreamId id, Http2ErrorCode ec)
 {
   Http2StreamDebug(session, id, "Send RST_STREAM frame: Error Code: %u", static_cast<uint32_t>(ec));
+  ATS_PROBE3(http2_rst_stream_sent, this->session->get_connection_id(), id, static_cast<uint32_t>(ec));
 
   if (ec != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Metrics::Counter::increment(http2_rsb.stream_errors_count);
