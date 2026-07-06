@@ -27,6 +27,7 @@
 #include "P_UnixNetVConnection.h"
 #include "iocore/net/ConnectionTracker.h"
 #include "iocore/net/NetHandler.h"
+#include "ts/ats_probe.h"
 #include "iocore/eventsystem/UnixSocket.h"
 #include "tscore/InkErrno.h"
 #include "tscore/ink_atomic.h"
@@ -248,6 +249,7 @@ UnixNetVConnection::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader 
 void
 UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
 {
+  ATS_PROBE4(net_do_io_close, this->get_fd(), alerrno, read.vio.ndone, write.vio.ndone);
   // The vio continuations will be cleared in ::clear called from ::free_thread
   read.enabled    = 0;
   write.enabled   = 0;
@@ -340,6 +342,7 @@ UnixNetVConnection::reenable(VIO *vio)
     return;
   }
   set_enabled(vio);
+  ATS_PROBE3(net_reenable, this->get_fd(), (vio == &write.vio) ? 1 : 0, vio->ndone);
   if (!thread) {
     return;
   }
@@ -579,6 +582,7 @@ UnixNetVConnection::net_read_io(NetHandler *nh)
     }
 #endif
     s->vio.ndone += r;
+    ATS_PROBE4(net_sock_read, this->get_fd(), r, s->vio.ndone, s->vio.nbytes);
     this->netActivity();
   } else {
     r = 0;
@@ -712,6 +716,7 @@ UnixNetVConnection::net_write_io(NetHandler *nh)
     Metrics::Counter::increment(net_rsb.write_bytes, total_written);
     Metrics::Counter::increment(net_rsb.write_bytes_count);
     s->vio.ndone += total_written;
+    ATS_PROBE4(net_sock_write, this->get_fd(), total_written, s->vio.ndone, s->vio.nbytes);
     this->netActivity();
   }
 

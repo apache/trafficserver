@@ -27,6 +27,7 @@
 #include "SSLStats.h"
 #include "P_Net.h"
 #include "P_SSLUtils.h"
+#include "ts/ats_probe.h"
 #include "P_SSLNextProtocolSet.h"
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
@@ -653,6 +654,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     ink_assert(bytes >= 0);
   } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
   ssl_read_errno = errno;
+  ATS_PROBE4(net_ssl_read, this->get_fd(), bytes, s->vio.ndone, ret);
 
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
@@ -864,6 +866,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     } break;
     }
   }
+  ATS_PROBE5(net_ssl_write, this->get_fd(), total_written, write.vio.ndone + total_written, num_really_written,
+             static_cast<int>(err));
   return num_really_written;
 }
 
