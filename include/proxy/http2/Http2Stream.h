@@ -163,6 +163,7 @@ public:
   void             increment_data_length(uint64_t length);
   bool             payload_length_is_valid() const;
   bool             is_write_vio_done() const;
+  int64_t          write_vio_ntodo() const;
   void             update_sent_count(unsigned num_bytes);
   Http2StreamId    get_id() const;
   Http2StreamState get_state() const;
@@ -174,6 +175,7 @@ public:
   void             set_receive_headers(HTTPHdr &h2_headers);
   void             reset_receive_headers();
   void             reset_send_headers();
+  void             set_sent_request_method(int method);
   MIOBuffer       *read_vio_writer() const;
   int64_t          read_vio_read_avail();
   bool             is_read_enabled() const;
@@ -214,6 +216,7 @@ private:
   Http2StreamId    _id         = -1;
   Http2StreamState _state      = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
   int64_t          _http_sm_id = -1;
+  int              _sent_request_method{-1};
 
   HTTPHdr _receive_header;
 #if TS_USE_MALLOC_ALLOCATOR
@@ -314,6 +317,12 @@ Http2Stream::is_write_vio_done() const
   return this->write_vio.ntodo() == 0;
 }
 
+inline int64_t
+Http2Stream::write_vio_ntodo() const
+{
+  return this->write_vio.ntodo();
+}
+
 inline void
 Http2Stream::update_sent_count(unsigned num_bytes)
 {
@@ -389,6 +398,12 @@ Http2Stream::reset_send_headers()
   this->_send_header.create(HTTPType::RESPONSE);
 }
 
+inline void
+Http2Stream::set_sent_request_method(int method)
+{
+  _sent_request_method = method;
+}
+
 // Check entire DATA payload length if content-length: header exists
 inline void
 Http2Stream::increment_data_length(uint64_t length)
@@ -405,9 +420,9 @@ Http2Stream::payload_length_is_valid() const
 
   // Skip Content-Length check on [RFC 7230] 3.3.2 conditions
   bool is_payload_precluded =
-    this->is_outbound_connection() && (_send_header.method_get_wksidx() == HTTP_WKSIDX_HEAD ||
-                                       (_send_header.method_get_wksidx() == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
-                                        _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
+    this->is_outbound_connection() &&
+    (_sent_request_method == HTTP_WKSIDX_HEAD || (_sent_request_method == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
+                                                  _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
 
   if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
     Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,

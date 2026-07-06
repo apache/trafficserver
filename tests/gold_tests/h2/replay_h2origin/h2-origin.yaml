@@ -477,3 +477,126 @@ sessions:
           content:
             encoding: plain
             size: 3200
+
+      #
+      # Test 8: HEAD response with a non-zero Content-Length and no body.
+      #
+      - all: { headers: { fields: [[ uuid, 15 ]]}}
+
+        client-request:
+          version: '2'
+          scheme: https
+          method: HEAD
+          url: /some/head
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-request:
+          protocol:
+            stack: http2
+            tls:
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+          version: '2'
+          scheme: https
+          method: HEAD
+          url: /some/head
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        server-response:
+          version: '2'
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 100 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-response:
+          version: '2'
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 100 ]
+          content:
+            encoding: plain
+            size: 0
+
+      #
+      # Test 9: large PUT body with a large response.
+      #
+      - all: { headers: { fields: [[ uuid, 16 ]]}}
+
+        client-request:
+          version: '2'
+          scheme: https
+          method: PUT
+          url: /some/large-put
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 300000 ]
+          content:
+            encoding: plain
+            size: 300000
+
+        proxy-request:
+          protocol:
+            stack: http2
+            tls:
+              version: TLSv1.2
+              sni: data.brian.example.com
+              proxy-verify-mode: 1
+              proxy-provided-cert: false
+          version: '2'
+          scheme: https
+          method: PUT
+          url: /some/large-put
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, data.brian.example.com ]
+              - [ Content-Length, 300000 ]
+          content:
+            encoding: plain
+            size: 300000
+
+        server-response:
+          version: '2'
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 300000 ]
+          content:
+            encoding: plain
+            size: 300000
+
+        proxy-response:
+          version: '2'
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 300000 ]
+          content:
+            encoding: plain
+            size: 300000
