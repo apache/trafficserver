@@ -923,6 +923,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
     return -1;
   }
   pos                        += ret;
+  remain_len                 -= ret;
   uint16_t largest_reference  = tmp;
 
   uint64_t delta_base_index;
@@ -939,7 +940,8 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
   } else {
     base_index = largest_reference + delta_base_index;
   }
-  pos += ret;
+  pos        += ret;
+  remain_len -= ret;
 
   uint32_t decoded_header_list_size = 0;
 
@@ -969,7 +971,8 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
       break;
     }
 
-    pos += ret;
+    pos        += ret;
+    remain_len -= ret;
   }
 
   return ret;
