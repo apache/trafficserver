@@ -33,6 +33,7 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "proxy/ControlBase.h"
 #include "tscore/Result.h"
+#include "mgmt/config/ConfigContext.h"
 
 struct RequestData;
 
@@ -127,4 +128,4 @@ bool host_rule_in_CacheControlTable();
 bool ip_rule_in_CacheControlTable();
 
 void initCacheControl();
-void reloadCacheControl();
+void reloadCacheControl(ConfigContext ctx);

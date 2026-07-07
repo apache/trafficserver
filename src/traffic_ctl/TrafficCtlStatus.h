@@ -24,5 +24,6 @@ constexpr int CTRL_EX_OK = 0;
 // EXIT_FAILURE can also be used.
 constexpr int CTRL_EX_ERROR         = 2;
 constexpr int CTRL_EX_UNIMPLEMENTED = 3;
+constexpr int CTRL_EX_TEMPFAIL = 75; ///< Temporary failure — operation in progress, retry later (EX_TEMPFAIL from sysexits.h).
 
 extern int App_Exit_Status_Code; //!< Global variable to store the exit status code of the application.
