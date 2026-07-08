@@ -348,6 +348,31 @@ getPristineUrlQuery(TSHttpTxn txnp)
   return pristineQuery;
 }
 
+/**
+ * @brief Whether a single query parameter is the configured "<key>=..." parameter.
+ */
+static bool
+isQueryKeyParam(const String &param, const String &key)
+{
+  return param.size() > key.size() && param.compare(0, key.size(), key) == 0 && param[key.size()] == '=';
+}
+
+/**
+ * @brief Whether the query string contains the configured "<key>=..." parameter.
+ */
+static bool
+hasQueryKeyParam(const String &query, const String &key)
+{
+  std::istringstream qs(query);
+  String             param;
+  while (getline(qs, param, '&')) {
+    if (isQueryKeyParam(param, key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static constexpr StringView CmcdHeader{"Cmcd-Request"};
 static constexpr StringView CmcdNorFieldPrefix{"nor="};
 static constexpr StringView CmcdNrrFieldPrefix{"nrr="};
@@ -590,9 +615,9 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
       const String currentQuery  = getPristineUrlQuery(txnp);
       bool         hasValidQuery = false;
 
-      // If there is a --fetch-query defined in the config, and that string is found in the querystring, assume it is
-      // valid, and prefer the --fetch-query over the --fetch-path-pattern(s).
-      if (!config.getQueryKeyName().empty() && currentQuery.find(config.getQueryKeyName()) != String::npos) {
+      // If there is a --fetch-query defined in the config, and that parameter is present in the querystring, assume it
+      // is valid, and prefer the --fetch-query over the --fetch-path-pattern(s).
+      if (!config.getQueryKeyName().empty() && hasQueryKeyParam(currentQuery, config.getQueryKeyName())) {
         PrefetchDebug("Setting hasValidQuery to true");
         hasValidQuery = true;
       }
@@ -663,7 +688,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           String             param;
 
           while (getline(cStringStream, param, '&')) {
-            if (param.find(config.getQueryKeyName()) != 0) {
+            if (!isQueryKeyParam(param, config.getQueryKeyName())) {
               continue;
             }
             if (config.getFetchCount() < done++) {
@@ -851,8 +876,8 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             PrefetchDebug("failed to get path to (pre)match");
           }
 
-          String queryKey = config.getQueryKeyName();
-          if (!queryKey.empty()) {
+          const String &queryKey = config.getQueryKeyName();
+          if (!handleFetch && !queryKey.empty() && hasQueryKeyParam(getPristineUrlQuery(txnp), queryKey)) {
             PrefetchDebug("handling for query-key: %s", queryKey.c_str());
             handleFetch = true;
           }
