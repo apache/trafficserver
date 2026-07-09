@@ -1984,6 +1984,16 @@ SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCer
         std::lock_guard<std::mutex> lock(_loader_mutex);
         errata.note(ERRATA_ERROR, "Failed to load certificate '{}' at item {}",
                     sslMultiCertSettings->cert ? sslMultiCertSettings->cert : "(unnamed)", item_num);
+        // Guard required: SSLCertificateConfig::startup() (which calls _load_items()) always
+        // runs before SSLInitializeStatistics() in the normal startup path (see
+        // SSLNetProcessor::start()), so this counter is nullptr during the initial cert
+        // load. Other counters are only incremented from paths that execute after stats init.
+        if (ssl_rsb.ssl_multicert_load_failures) {
+          Metrics::Counter::increment(ssl_rsb.ssl_multicert_load_failures);
+        }
+      } else {
+        std::lock_guard<std::mutex> lock(_loader_mutex);
+        ++lookup->user_cert_count;
       }
     } else {
       std::lock_guard<std::mutex> lock(_loader_mutex);

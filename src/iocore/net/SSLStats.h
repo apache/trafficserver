@@ -128,6 +128,9 @@ struct SSLStatsBlock {
   Metrics::Gauge::AtomicType *user_agent_session_miss    = nullptr;
   Metrics::Gauge::AtomicType *user_agent_session_timeout = nullptr;
   Metrics::Gauge::AtomicType *user_agent_sessions        = nullptr;
+
+  Metrics::Counter::AtomicType *ssl_multicert_load_failures =
+    nullptr; ///< Incremented per cert that fails to load during ssl_multicert reload.
 };
 
 extern SSLStatsBlock                                                   ssl_rsb;

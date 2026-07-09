@@ -4177,6 +4177,52 @@ SSL Termination
    :file:`ssl_multicert.yaml` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.partial_reload INT 0
+   :reloadable:
+
+   When set to ``1``, a live ``traffic_ctl config reload`` that encounters one or more
+   certificate load failures will still commit the partial ``SSLCertLookup``
+   (containing all certificates that did load cleanly) instead of discarding the entire
+   new configuration and keeping the old one.
+
+   By default (``0``), the reload is strict and all-or-nothing: any failure causes the
+   entire new configuration to be rejected and the previous configuration to remain active.
+
+   When the knob is on, any skipped certificate still produces an ``ERROR`` entry in
+   :file:`diags.log` and increments the
+   ``proxy.process.ssl.ssl_multicert_load_failures`` metric, so degraded state
+   is never silent.  The metric is also incremented in strict mode (``0``) and can
+   be used as an alert signal in both configurations.  Note that the counter only
+   covers live reloads via :program:`traffic_ctl`; failures during the initial
+   startup load are not counted because the statistics subsystem is not yet
+   initialized at that point.
+
+   This knob takes effect on the next ``traffic_ctl config reload`` without requiring
+   a process restart.
+
+   .. note::
+
+      This knob is independent of :ts:cv:`proxy.config.ssl.server.multicert.exit_on_load_fail`.
+      That option governs startup behavior only.  ``partial_reload`` governs live reloads
+      via :program:`traffic_ctl`.
+
+   .. note::
+
+      When a partial reload is committed, any hostname whose certificate failed to load
+      will immediately fall back to the bare TLS bootstrap context (no certificate) rather
+      than continuing to serve its previously-loaded certificate.  Strict mode (``0``) is
+      safer in this regard, all hostnames continue serving their old certificates until
+      a fully-successful reload, but at the cost of blocking all certificate updates
+      whenever any single certificate fails.  Enabling ``partial_reload`` trades per-hostname
+      reliability for reduced blast radius across the certificate set.
+
+   .. note::
+
+      This knob applies only to TLS server certificate loading (``SSLCertificateConfig``).
+      The QUIC/HTTP3 certificate loader (``QUICCertConfig``) is not yet covered and continues
+      to use strict all-or-nothing semantics regardless of this setting.  Deployments without
+      a ``dest_ip: "*"`` wildcard entry (SNI-only configurations) are fully supported.
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.concurrency INT 1
 
    Controls how many threads are used to load SSL certificates from :file:`ssl_multicert.yaml`
