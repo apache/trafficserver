@@ -1,0 +1,144 @@
+ATS (Apache Traffic Server) JAx Fingerprint Plugin
+
+User-facing documentation lives in
+`doc/admin-guide/plugins/jax_fingerprint.en.rst`. This README covers the
+developer side: how the plugin is organised, and what it takes to add a new
+fingerprinting method.
+
+
+Plugin layout
+-------------
+
+```
+jax_fingerprint/
+  plugin.cc / plugin.h     Plugin entry points, hook handlers, method dispatch.
+  context.cc / .h          JAxContext: per-connection (or per-txn) fingerprint state.
+  context_map.h            Inline fixed-size table that multiplexes JAxContexts
+                           by method name on a single user-arg slot.
+  userarg.cc / userarg.h   Shared user-arg slot reservation and accessors.
+  header.cc / .h           Set/append/remove the fingerprint and via headers.
+  log.cc / .h              Optional log file output for fingerprints.
+  method.h                 Abstract Method struct (name, type, callbacks).
+                           Unaware of any concrete method.
+  config.h                 PluginConfig, parsing helpers.
+  common/                  Shared utilities (hash stringification, etc.).
+  ja3/  ja4/  ja4h/        One subdirectory per fingerprinting method.
+```
+
+Each method subdirectory follows the conventions described below.
+
+
+Adding a new method
+-------------------
+
+Suppose you want to add a method called `mymethod`. The steps are:
+
+  1. Create a directory `mymethod/` under this plugin.
+
+  2. Drop in the source files (see *File naming* below for what each name
+     means to the build):
+
+       mymethod/method.h         Declares `extern struct Method method;` in
+                                 your namespace (e.g. `namespace mymethod`).
+       mymethod/method.cc        Defines `Method method = { "MYMETHOD", ... }`
+                                 and the on_client_hello / on_request callback.
+                                 This is the file allowed to use TS APIs
+                                 (TSVConn, TSClientHello, ...).
+       mymethod/mymethod.cc/.h   Pure algorithm. No TS API.
+       mymethod/datasource.cc/.h Abstract data source the algorithm consumes
+                                 (mirror ja4/datasource.h).
+       mymethod/test.cc          Catch2 unit tests for the algorithm.
+
+  3. Register the method in plugin.cc. The dispatcher is a `constexpr` table
+     gated by `ENABLE_JAX_METHOD_*` macros. Add two entries:
+
+       #ifdef ENABLE_JAX_METHOD_MYMETHOD
+       #include "mymethod/method.h"
+       #endif
+
+       ...
+
+       constexpr Method const *METHODS[] = {
+       ...
+       #ifdef ENABLE_JAX_METHOD_MYMETHOD
+         &mymethod::method,
+       #endif
+       };
+
+  4. Enable the method at build time:
+
+       cmake -B build -DENABLE_JAX_METHODS="ja3;ja4;ja4h;mymethod"
+
+     CMake automatically picks up `mymethod/*.cc`, defines
+     `ENABLE_JAX_METHOD_MYMETHOD`, and bumps `JAX_FINGERPRINT_MAX_METHODS` to
+     match the list length.
+
+  5. Use the method:
+
+       jax_fingerprint.so --method MYMETHOD --header x-my-fingerprint
+
+
+File naming
+-----------
+
+The top-level CMakeLists.txt globs `*.cc` from each enabled method directory
+and applies these filters:
+
+  test.cc        Built only into the test_jax binary (Catch2 unit tests).
+
+  method.cc      Built only into jax_fingerprint.so. This is the one file
+                 in each method directory that is allowed to call TS APIs
+                 (TSVConn, TSClientHello, ...). Keep all TS glue here.
+
+  every other    Built into BOTH jax_fingerprint.so and test_jax. Keep these
+  .cc            files free of TS API calls so the unit-test binary, which
+                 does not link the TS plugin SDK, still builds.
+
+If you genuinely need to spread TS-API code across more than `method.cc` in
+a method directory, you have to extend the exclusion regex in
+CMakeLists.txt. There is one such historical exception today --
+`ja4/tls_client_hello_summary.cc` -- and the regex carves it out by name.
+Prefer not to add new files in that category: split the algorithm so the
+TS-facing piece stays in `method.cc` and the pure-data piece is its own
+file. If a future case really does justify extending the regex, name the
+file something that documents the constraint (for instance `*_ts.cc`) and
+update the regex accordingly.
+
+The method directory name (lower case) maps to the macro
+`ENABLE_JAX_METHOD_<UPPER>` (so `mymethod` -> `ENABLE_JAX_METHOD_MYMETHOD`).
+`Method::name` should be the user-visible spelling (e.g. "MYMETHOD"),
+matched against `--method` on the command line.
+
+`Method::name` must reference a string with static storage duration (a
+string literal is the natural fit). ContextMap stores `std::string_view`
+slot keys that alias `Method::name`; if `name` ever pointed at temporary
+storage, the keys would dangle.
+
+
+Build-time configuration
+------------------------
+
+  ENABLE_JAX_METHODS              Semicolon-separated list of methods to
+                                  compile in. Default: "ja3;ja4;ja4h".
+                                  Empty list or unknown directory name causes
+                                  a FATAL_ERROR at configure time.
+
+  JAX_FINGERPRINT_MAX_METHODS     Auto-derived from the length of
+                                  ENABLE_JAX_METHODS, passed to the plugin as
+                                  a compile definition. Bounds the inline
+                                  ContextMap slot array. The header has a
+                                  fallback `#define JAX_FINGERPRINT_MAX_METHODS 8`
+                                  so it is also valid standalone (e.g. for
+                                  IDE indexing).
+
+
+Unit tests vs. AuTest
+---------------------
+
+  * Catch2 unit tests (`test_jax`) live in each `*/test.cc` and cover pure
+    algorithm logic. Built when BUILD_TESTING is on; run via ctest or the
+    test_jax binary directly.
+
+  * End-to-end AuTests live under `tests/gold_tests/pluginTest/jax_fingerprint/`
+    and exercise the plugin via Proxy Verifier replay yamls. They require a
+    full install (traffic_server, traffic_layout, the plugin .so).
