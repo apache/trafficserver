@@ -112,7 +112,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
       if (res == -EAGAIN || res == -ECONNABORTED || res == -EPIPE) {
         goto Ldone;
       }
-      if (na->action_->server.load(std::memory_order_acquire) != nullptr && na->server.sock.is_ok() && !na->action_->cancelled) {
+      if (na->action_->server.load(std::memory_order_acquire) != nullptr && !na->action_->cancelled) {
         if (!blockable) {
           na->action_->continuation->handleEvent(EVENT_ERROR, reinterpret_cast<void *>(res));
         } else {
