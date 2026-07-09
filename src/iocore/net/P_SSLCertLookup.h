@@ -136,7 +136,8 @@ struct SSLCertLookup : public ConfigInfo {
   std::unique_ptr<SSLContextStorage> ssl_storage;
   std::unique_ptr<SSLContextStorage> ec_storage;
 
-  bool is_valid = true;
+  bool     is_valid        = true;
+  unsigned user_cert_count = 0; ///< Count of user-specified certs committed by the last load(), excluding the bootstrap context.
 
   int insert(const char *name, SSLCertContext const &cc);
   int insert(const IpEndpoint &address, SSLCertContext const &cc);
