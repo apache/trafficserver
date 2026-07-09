@@ -289,19 +289,27 @@ The following filter wipes the values of a set of sensitive parameters:
    filters:
    - name: queryparamescaper_cquuc
      action: WIPE_FIELD_VALUE
-     condition: cquuc CASE_INSENSITIVE_CONTAIN password,secret,access_token,session_redirect,email
+     condition: cquuc CASE_INSENSITIVE_CONTAIN password,secret,access_token,session_redirect,cardNumber,code,query,search-query,prefix,keywords,email,handle
 
 Given that filter attached to a log using the ``%<cquuc>`` format, the following
-request URLs are logged as shown:
+request URLs are logged as shown. Note that ``cquuc`` is the client request's
+*canonical* URL, so the logged value includes the scheme and host:
 
-======================================================================================= =======================================================================================
-Requested URL                                                                           Logged value
-======================================================================================= =======================================================================================
-``/test-1?name=value&email=123@gmail.com``                                              ``/test-1?name=value&email=XXXXXXXXXXXXX``
-``/test-2?email=123@gmail.com&name=password``                                           ``/test-2?email=XXXXXXXXXXXXX&name=password``
-``/test-3?trivial=password&name1=val1&email=123@gmail.com``                             ``/test-3?trivial=password&name1=val1&email=XXXXXXXXXXXXX``
-``/test-4?trivial=password&email=&name=handle&session_redirect=wiped_string``           ``/test-4?trivial=password&email=&name=handle&session_redirect=XXXXXXXXXXXX``
-======================================================================================= =======================================================================================
+.. list-table::
+   :header-rows: 1
+
+   * - Requested URL
+     - Logged value
+   * - ``http://example.com/test-1?name=value&email=123@gmail.com``
+     - ``http://example.com/test-1?name=value&email=XXXXXXXXXXXXX``
+   * - ``http://example.com/test-2?email=123@gmail.com&name=password``
+     - ``http://example.com/test-2?email=XXXXXXXXXXXXX&name=password``
+   * - ``http://example.com/test-3?trivial=password&name1=val1&email=123@gmail.com``
+     - ``http://example.com/test-3?trivial=password&name1=val1&email=XXXXXXXXXXXXX``
+   * - ``http://example.com/test-4?trivial=password&email=&name=handle&session_redirect=wiped_string``
+     - ``http://example.com/test-4?trivial=password&email=&name=handle&session_redirect=XXXXXXXXXXXX``
+   * - ``http://example.com/test-5?trivial=password&email=123@gmail.com&email=456@gmail.com&session_redirect=wiped_string&email=789@gmail.com&name=value``
+     - ``http://example.com/test-5?trivial=password&email=XXXXXXXXXXXXX&email=XXXXXXXXXXXXX&session_redirect=XXXXXXXXXXXX&email=XXXXXXXXXXXXX&name=value``
 
 Note the behavior demonstrated above:
 
@@ -311,6 +319,8 @@ Note the behavior demonstrated above:
   same reason, while ``email`` is wiped.
 - An empty value (``email=`` in ``test-4``) matches but produces an empty wipe,
   since there is nothing to mask.
+- In ``test-5`` every occurrence of the repeated ``email`` parameter is wiped, not
+  just the first.
 
 
 .. _admin-custom-logs-logs:
