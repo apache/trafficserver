@@ -4135,6 +4135,14 @@ HttpTransact::handle_response_from_server(State *s)
 void
 HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 {
+  // No origin server was selected (e.g. a host marked DOWN whose Range request
+  // falls back to a cache hit), so there is no connection to log. Bail out
+  // before dereferencing a null current.server.
+  if (s->current.server == nullptr) {
+    TxnDbg(dbg_ctl_http_trans, "no current server; skipping connection failure log");
+    return;
+  }
+
   ip_port_text_buffer addrbuf;
   TxnDbg(dbg_ctl_http_trans, "[%d] failed to connect [%d] to %s", s->current.retry_attempts.get(), conn_state,
          ats_ip_nptop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
