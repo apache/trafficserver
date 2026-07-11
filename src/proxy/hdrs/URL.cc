@@ -1173,12 +1173,18 @@ bool
 url_is_mostly_compliant(const char *start, const char *end)
 {
   for (const char *i = start; i < end; ++i) {
-    if (isspace(*i)) {
-      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
-    if (!isprint(*i)) {
-      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
+    // Mode 2 accepts exactly the printable, non-space ASCII range 0x21..0x7E.
+    // Equivalent to the previous isspace()/isprint() pair but locale-independent
+    // and without a libc call per byte -- this runs on every request target
+    // under the default strict_uri_parsing=2. Reclassify only on the cold reject
+    // path to keep the original diagnostics.
+    unsigned char const c = static_cast<unsigned char>(*i);
+    if (static_cast<unsigned>(c - 0x21u) > 0x5Du) {
+      if (isspace(c)) {
+        Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", c);
+      } else {
+        Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", c);
+      }
       return false;
     }
   }
