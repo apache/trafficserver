@@ -100,6 +100,32 @@ constexpr std::string_view REQ_REALISTIC =
   "Connection: keep-alive\r\n"
   "\r\n";
 
+// A 2026 Chrome navigation request. Unlike REQ_REALISTIC (all classic WKS
+// names), this carries the modern client-hint / fetch-metadata headers
+// (sec-ch-ua*, sec-fetch-*, priority, upgrade-insecure-requests) that are NOT
+// well-known strings, so it exercises the non-WKS name paths (tokenize miss,
+// name validation, duplicate filter) the way real traffic does.
+constexpr std::string_view REQ_MODERN =
+  "GET /app/feed?tab=home HTTP/1.1\r\n"
+  "Host: www.example.com\r\n"
+  "Connection: keep-alive\r\n"
+  "sec-ch-ua: \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\", \"Not-A.Brand\";v=\"99\"\r\n"
+  "sec-ch-ua-mobile: ?0\r\n"
+  "sec-ch-ua-platform: \"Windows\"\r\n"
+  "upgrade-insecure-requests: 1\r\n"
+  "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+  "Chrome/126.0.0.0 Safari/537.36\r\n"
+  "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8\r\n"
+  "Sec-Fetch-Site: same-origin\r\n"
+  "Sec-Fetch-Mode: navigate\r\n"
+  "Sec-Fetch-User: ?1\r\n"
+  "Sec-Fetch-Dest: document\r\n"
+  "Accept-Encoding: gzip, deflate, br, zstd\r\n"
+  "Accept-Language: en-US,en;q=0.9\r\n"
+  "Cookie: session=8f14e45fceea167a5a36dedd4bea2543; theme=dark; region=us-west-2; ab_bucket=37\r\n"
+  "Priority: u=0, i\r\n"
+  "\r\n";
+
 constexpr std::string_view REQ_CLASSIC = "GET http://www.news.com:80/ HTTP/1.0\r\n"
                                          "Proxy-Connection: Keep-Alive\r\n"
                                          "User-Agent: Mozilla/4.04 [en] (X11; I; Linux 2.0.33 i586)\r\n"
@@ -285,6 +311,7 @@ build_corpus(const std::vector<std::filesystem::path> &files, const std::vector<
 
   // Realistic.
   add("req_realistic", REQ_REALISTIC, false);
+  add("req_modern", REQ_MODERN, false);
   add("req_classic", REQ_CLASSIC, false);
   add("resp_realistic", RESP_REALISTIC, true);
   add("resp_304", RESP_304, true);
@@ -609,11 +636,16 @@ TEST_CASE("hdr parse: request", "[bench][request]")
   }
 
   const auto &realistic = find_case("req_realistic");
+  const auto &modern    = find_case("req_modern");
   const auto &many      = find_case("adv_many_fields");
 
   BENCHMARK("request: realistic (zero-copy)")
   {
     return drive_request(realistic.data).second;
+  };
+  BENCHMARK("request: modern browser (zero-copy)")
+  {
+    return drive_request(modern.data).second;
   };
   BENCHMARK("request: realistic (copy)")
   {
