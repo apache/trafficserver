@@ -26,7 +26,7 @@
 #include <type_traits>
 #include <chrono>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "swoc/TextView.h"
 #include "ts/ts.h"
