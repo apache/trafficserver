@@ -455,11 +455,22 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
   if (stream->trailing_header_is_possible()) {
     // Don't leak the header_blocks from the initial, non-trailing headers.
     ats_free(stream->header_blocks);
+    stream->header_blocks = nullptr;
   }
-  stream->header_blocks = static_cast<uint8_t *>(ats_malloc(header_block_fragment_length));
-  frame.reader()->memcpy(stream->header_blocks, header_block_fragment_length, header_block_fragment_offset);
 
-  if (frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS) {
+  // In-place decode avoids the per-request malloc+memcpy+free; needs one contiguous block.
+  bool const     end_headers   = frame.header().flags & HTTP2_FLAGS_HEADERS_END_HEADERS;
+  uint8_t const *inplace_block = nullptr;
+
+  if (end_headers && frame.reader()->block_read_avail() >=
+                       static_cast<int64_t>(header_block_fragment_offset) + static_cast<int64_t>(header_block_fragment_length)) {
+    inplace_block = reinterpret_cast<uint8_t const *>(frame.reader()->start()) + header_block_fragment_offset;
+  } else {
+    stream->header_blocks = static_cast<uint8_t *>(ats_malloc(header_block_fragment_length));
+    frame.reader()->memcpy(stream->header_blocks, header_block_fragment_length, header_block_fragment_offset);
+  }
+
+  if (end_headers) {
     // NOTE: If there are END_HEADERS flag, decode stored Header Blocks.
     if (!stream->change_state(HTTP2_FRAME_TYPE_HEADERS, frame.header().flags)) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
@@ -478,8 +489,13 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     } else {
       stream->mark_milestone(Http2StreamMilestone::START_DECODE_HEADERS);
     }
-    Http2ErrorCode result = stream->decode_header_blocks(
-      *this->local_hpack_handle, this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE), _header_field_max_size);
+    Http2ErrorCode result = inplace_block ?
+                              stream->decode_header_blocks(*this->local_hpack_handle,
+                                                           this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
+                                                           _header_field_max_size, inplace_block, header_block_fragment_length) :
+                              stream->decode_header_blocks(*this->local_hpack_handle,
+                                                           this->acknowledged_local_settings.get(HTTP2_SETTINGS_HEADER_TABLE_SIZE),
+                                                           _header_field_max_size);
 
     // If this was an outbound connection and the state was already closed, just clear the
     // headers after processing.  We just processed the header blocks to keep the dynamic table in
@@ -2514,9 +2530,10 @@ Http2ConnectionState::send_headers_frame(Http2Stream *stream)
     http2_convert_header_from_1_1_to_2(send_hdr);
   }
 
-  uint32_t        buf_len = send_hdr->length_get() * 2; // Make it double just in case
-  ts::LocalBuffer local_buffer(buf_len);
-  uint8_t        *buf = local_buffer.data();
+  uint32_t buf_len = send_hdr->length_get() * 2; // Make it double just in case
+  static_assert(HdrHeap::DEFAULT_SIZE * 2 <= 8192, "keep HEADERS encode stack buffer within the event-thread stack budget");
+  ts::LocalBuffer<uint8_t, HdrHeap::DEFAULT_SIZE * 2> local_buffer(buf_len);
+  uint8_t                                            *buf = local_buffer.data();
 
   stream->mark_milestone(Http2StreamMilestone::START_ENCODE_HEADERS);
   Http2ErrorCode result = http2_encode_header_blocks(send_hdr, buf, buf_len, &header_blocks_size, *(this->peer_hpack_handle),

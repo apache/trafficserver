@@ -175,6 +175,7 @@ struct StrHeapDesc {
 class HdrHeap
 {
 public:
+  // Also sizes HTTP/2's on-stack HEADERS encode buffer (2*this).
   static constexpr int DEFAULT_SIZE = 2048;
 
   void init();
