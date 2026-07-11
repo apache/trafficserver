@@ -327,13 +327,28 @@ hdrtoken_ascii_toupper(unsigned char c)
   return static_cast<unsigned char>(c - (is_lower << 5));
 }
 
+// FNV-1a 32-bit over ASCII-case-folded field-name bytes. Both hdrtoken_hash and
+// the single-pass field-name scan fold their bytes through hdrtoken_hash_step so
+// the seed and per-byte step live in one place. The fold matches toupper() under
+// the C locale for all byte values, so the well-known-string table's hash values
+// and collision pattern are identical to the previous ATSHash32FNV1a +
+// ATSHash::nocase implementation, but locale-independent and call-free.
+static constexpr uint32_t HDRTOKEN_HASH_SEED = 0x811c9dc5u; // FNV-1a 32-bit offset basis
+
+static inline uint32_t
+hdrtoken_hash_step(uint32_t hval, unsigned char c)
+{
+  return (hval ^ hdrtoken_ascii_toupper(c)) * 0x01000193u; // fold byte, xor in, multiply by the FNV-1a prime
+}
+
 inline uint32_t
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
-  ATSHash32FNV1a fnv;
-  fnv.update(string, length, ATSHash::nocase());
-  fnv.final();
-  return fnv.get();
+  uint32_t hval = HDRTOKEN_HASH_SEED;
+  for (unsigned int i = 0; i < length; ++i) {
+    hval = hdrtoken_hash_step(hval, string[i]);
+  }
+  return hval;
 }
 
 /*-------------------------------------------------------------------------
