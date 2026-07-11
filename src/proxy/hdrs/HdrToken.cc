@@ -316,6 +316,17 @@ hash_to_slot(uint32_t hash)
   return ((hash >> 15) ^ hash) & TINY_MASK(15);
 }
 
+// Branchless ASCII upper-fold: 'a'..'z' -> 'A'..'Z', every other byte (including
+// 0x80-0xFF) unchanged. Matches libc toupper() under the C locale for all 256
+// byte values but is locale-independent, which is the correct behavior for
+// case-insensitive matching of ASCII HTTP tokens.
+static inline unsigned char
+hdrtoken_ascii_toupper(unsigned char c)
+{
+  unsigned char const is_lower = static_cast<unsigned char>((static_cast<unsigned>(c) - 'a') < 26u);
+  return static_cast<unsigned char>(c - (is_lower << 5));
+}
+
 inline uint32_t
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
@@ -552,11 +563,25 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 
   bucket = &(hdrtoken_hash_table[slot]);
   if ((bucket->wks != nullptr) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
-    wks_idx = hdrtoken_wks_to_index(bucket->wks);
-    if (wks_string_out) {
-      *wks_string_out = bucket->wks;
+    // hash + length narrow to a single WKS candidate, but a 32-bit hash collision
+    // of equal length would otherwise mis-intern an arbitrary name (giving it the
+    // WKS's presence bits / slot accelerators). Confirm with an exact
+    // ASCII-case-insensitive byte comparison before accepting the WKS.
+    bool matches = true;
+    for (int i = 0; i < string_len; ++i) {
+      if (hdrtoken_ascii_toupper(static_cast<unsigned char>(string[i])) !=
+          hdrtoken_ascii_toupper(static_cast<unsigned char>(bucket->wks[i]))) {
+        matches = false;
+        break;
+      }
     }
-    return wks_idx;
+    if (matches) {
+      wks_idx = hdrtoken_wks_to_index(bucket->wks);
+      if (wks_string_out) {
+        *wks_string_out = bucket->wks;
+      }
+      return wks_idx;
+    }
   }
 
   Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
