@@ -558,7 +558,7 @@ hdrtoken_method_tokenize(const char *string, int string_len)
   -------------------------------------------------------------------------*/
 
 int
-hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out, uint32_t *hash_out)
 {
   int                 wks_idx;
   HdrTokenHashBucket *bucket;
@@ -570,10 +570,21 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
     if (wks_string_out) {
       *wks_string_out = string;
     }
+    // Keep hash_out total: an interned name is matched by its WKS index, not by
+    // hash, so none is computed here. A caller that needs a name hash for an
+    // already-interned string must call hdrtoken_hash() directly.
+    if (hash_out) {
+      *hash_out = 0;
+    }
     return wks_idx;
   }
 
   uint32_t hash = hdrtoken_hash(reinterpret_cast<const unsigned char *>(string), static_cast<unsigned int>(string_len));
+  // Hand the caller the name hash it can reuse (e.g. a parse-local duplicate
+  // filter) so it need not recompute it.
+  if (hash_out) {
+    *hash_out = hash;
+  }
   uint32_t slot = hash_to_slot(hash);
 
   bucket = &(hdrtoken_hash_table[slot]);

@@ -69,6 +69,54 @@ TEST_CASE("Mime", "[proxy][mime]")
   hdr.destroy();
 }
 
+TEST_CASE("MimeParserReuseAcrossHeaders", "[proxy][mimeparser]")
+{
+  // A parser reused on a different header without an intervening clear must
+  // still detect duplicates of fields already present in that header. The
+  // dup-skip Bloom is keyed to the header it was seeded from; without that, a
+  // stale seed latch would skip reseeding and a wire duplicate of a pre-existing
+  // custom field would be attached as an independent head rather than joining
+  // the dup chain.
+  MIMEParser parser;
+  mime_parser_init(&parser);
+
+  // First header: parse a non-WKS field so the parser seeds its dup state.
+  MIMEHdr hdrA;
+  hdrA.create(nullptr);
+  {
+    std::string_view text  = "X-Foo: 1\r\n\r\n"sv;
+    const char      *start = text.data();
+    REQUIRE(hdrA.parse(&parser, &start, text.data() + text.size(), true, false, false) == ParseResult::DONE);
+  }
+
+  // Second header (different mh) already carries a live non-WKS field; reuse the
+  // same parser WITHOUT clearing it and parse a duplicate of that field.
+  MIMEHdr hdrB;
+  hdrB.create(nullptr);
+  MIMEField *pre = hdrB.field_create("X-Baz"sv);
+  pre->value_set(hdrB.m_heap, hdrB.m_mime, "a"sv);
+  hdrB.field_attach(pre);
+  {
+    std::string_view text  = "X-Baz: b\r\n\r\n"sv;
+    const char      *start = text.data();
+    REQUIRE(hdrB.parse(&parser, &start, text.data() + text.size(), true, false, false) == ParseResult::DONE);
+  }
+
+  // The wire field must have joined the pre-existing field's dup chain: exactly
+  // two X-Baz values reachable from the head.
+  MIMEField *head = hdrB.field_find("X-Baz"sv);
+  REQUIRE(head != nullptr);
+  int count = 0;
+  for (MIMEField *f = head; f != nullptr; f = f->m_next_dup) {
+    ++count;
+  }
+  CHECK(count == 2);
+
+  mime_parser_clear(&parser);
+  hdrA.destroy();
+  hdrB.destroy();
+}
+
 TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")
 {
   MIMEHdr hdr;

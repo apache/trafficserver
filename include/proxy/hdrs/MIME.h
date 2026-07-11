@@ -494,6 +494,16 @@ struct MIMEParser {
   int32_t     m_field;
   int         m_field_flags;
   int         m_value;
+
+  // Parse-local duplicate filter for non-well-known field names. A Bloom of
+  // name hashes lets field attach skip its O(n) duplicate search when a name is
+  // provably new (bit clear => no earlier field can share it). Seeded lazily
+  // from the fields already in the header the first time the parser touches it,
+  // so it stays correct when parsing into a non-empty header and when a parser
+  // is reused on a different header without an intervening clear. m_dup_seed_mh
+  // records which header the Bloom currently reflects.
+  uint64_t     m_dup_bloom;
+  MIMEHdrImpl *m_dup_seed_mh;
 };
 
 /***********************************************************************

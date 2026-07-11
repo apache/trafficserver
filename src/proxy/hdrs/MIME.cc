@@ -2368,6 +2368,26 @@ _mime_parser_init(MIMEParser *parser)
   parser->m_field       = 0;
   parser->m_field_flags = 0;
   parser->m_value       = -1;
+  parser->m_dup_bloom   = 0;
+  parser->m_dup_seed_mh = nullptr;
+}
+
+// Seed the parser's non-WKS duplicate Bloom from any fields already in the
+// header. A no-op for the common fresh-header parse; keeps the skip-the-search
+// optimization correct if parsing appends to a header that already has fields.
+static void
+mime_parser_seed_dup_bloom(MIMEParser *parser, MIMEHdrImpl *mh)
+{
+  for (MIMEFieldBlockImpl *fblock = &mh->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    for (uint32_t i = 0; i < fblock->m_freetop; ++i) {
+      MIMEField *f = &fblock->m_field_slots[i];
+      if (f->is_live() && f->m_wks_idx < 0) {
+        uint32_t h = 0;
+        hdrtoken_tokenize(f->m_ptr_name, f->m_len_name, nullptr, &h);
+        parser->m_dup_bloom |= (static_cast<uint64_t>(1) << (h & 63));
+      }
+    }
+  }
 }
 //////////////////////////////////////////////////////
 // init     first time structure setup              //
@@ -2487,7 +2507,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // tokenize the name //
     ///////////////////////
 
-    int field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size());
+    uint32_t field_name_hash    = 0;
+    int      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size(), nullptr, &field_name_hash);
 
     if (field_name_wks_idx < 0) {
       for (auto i : field_name) {
@@ -2511,7 +2532,29 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
-    mime_hdr_field_attach(mh, field, 1, nullptr);
+
+    // For a non-WKS name, consult the parse-local Bloom: if its hash bit is
+    // clear no earlier field can share the name, so skip attach's O(n) duplicate
+    // search (check_for_dups=0 takes the same no-dup path a null find would).
+    // WKS names keep the search on: on the wire the name is not an interned
+    // pointer, so find() does not take the presence-bit fast path.
+    int check_for_dups = 1;
+    if (field_name_wks_idx < 0) {
+      // Seed (or reseed) the Bloom the first time this parser touches a given
+      // header. Keying on the header pointer keeps a reused parser correct when
+      // it is pointed at a different header without an intervening clear.
+      if (parser->m_dup_seed_mh != mh) {
+        parser->m_dup_bloom = 0;
+        mime_parser_seed_dup_bloom(parser, mh);
+        parser->m_dup_seed_mh = mh;
+      }
+      uint64_t const bit = static_cast<uint64_t>(1) << (field_name_hash & 63);
+      if ((parser->m_dup_bloom & bit) == 0) {
+        check_for_dups = 0;
+      }
+      parser->m_dup_bloom |= bit;
+    }
+    mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
   }
 }
 
