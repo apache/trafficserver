@@ -491,9 +491,6 @@ MIMEScanner::clear()
 
 struct MIMEParser {
   MIMEScanner m_scanner;
-  int32_t     m_field;
-  int         m_field_flags;
-  int         m_value;
 
   // Parse-local duplicate filter for non-well-known field names. A Bloom of
   // name hashes lets field attach skip its O(n) duplicate search when a name is
@@ -501,8 +498,9 @@ struct MIMEParser {
   // from the fields already in the header the first time the parser touches it,
   // so it stays correct when parsing into a non-empty header and when a parser
   // is reused on a different header without an intervening clear. m_dup_seed_mh
-  // records which header the Bloom currently reflects.
-  uint64_t     m_dup_bloom;
+  // records which header the Bloom currently reflects. 128 bits (two words) to
+  // keep the false-positive rate low; the low 7 hash bits pick word and bit.
+  uint64_t     m_dup_bloom[2];
   MIMEHdrImpl *m_dup_seed_mh;
 };
 

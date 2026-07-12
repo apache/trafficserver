@@ -2365,11 +2365,9 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
 void
 _mime_parser_init(MIMEParser *parser)
 {
-  parser->m_field       = 0;
-  parser->m_field_flags = 0;
-  parser->m_value       = -1;
-  parser->m_dup_bloom   = 0;
-  parser->m_dup_seed_mh = nullptr;
+  parser->m_dup_bloom[0] = 0;
+  parser->m_dup_bloom[1] = 0;
+  parser->m_dup_seed_mh  = nullptr;
 }
 
 // Seed the parser's non-WKS duplicate Bloom from any fields already in the
@@ -2384,7 +2382,7 @@ mime_parser_seed_dup_bloom(MIMEParser *parser, MIMEHdrImpl *mh)
       if (f->is_live() && f->m_wks_idx < 0) {
         uint32_t h = 0;
         hdrtoken_tokenize(f->m_ptr_name, f->m_len_name, nullptr, &h);
-        parser->m_dup_bloom |= (static_cast<uint64_t>(1) << (h & 63));
+        parser->m_dup_bloom[(h >> 6) & 1] |= (static_cast<uint64_t>(1) << (h & 63));
       }
     }
   }
@@ -2568,15 +2566,17 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       // header. Keying on the header pointer keeps a reused parser correct when
       // it is pointed at a different header without an intervening clear.
       if (parser->m_dup_seed_mh != mh) {
-        parser->m_dup_bloom = 0;
+        parser->m_dup_bloom[0] = 0;
+        parser->m_dup_bloom[1] = 0;
         mime_parser_seed_dup_bloom(parser, mh);
         parser->m_dup_seed_mh = mh;
       }
-      uint64_t const bit = static_cast<uint64_t>(1) << (field_name_hash & 63);
-      if ((parser->m_dup_bloom & bit) == 0) {
+      unsigned const word = (field_name_hash >> 6) & 1;
+      uint64_t const bit  = static_cast<uint64_t>(1) << (field_name_hash & 63);
+      if ((parser->m_dup_bloom[word] & bit) == 0) {
         check_for_dups = 0;
       }
-      parser->m_dup_bloom |= bit;
+      parser->m_dup_bloom[word] |= bit;
     }
     mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
   }
