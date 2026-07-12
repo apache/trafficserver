@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include <set>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -118,6 +119,77 @@ TEST_CASE("MimeParserReuseAcrossHeaders", "[proxy][mimeparser]")
   CHECK(count == 2);
 
   mime_parser_clear(&parser);
+  hdrA.destroy();
+  hdrB.destroy();
+}
+
+TEST_CASE("MimeParserTailAppendEquivalence", "[proxy][mimeparser]")
+{
+  // The O(1) adjacent-duplicate tail append must produce the same field/dup
+  // structure as attach's full duplicate search. Build the same field sequence
+  // two ways -- via the parser (which takes the tail-append path) and via
+  // explicit create+attach (the reference full-attach path) -- and compare the
+  // dup chain of every name.
+  struct Field {
+    const char *name;
+    const char *value;
+  };
+  auto scenario = GENERATE(from_range(std::vector<std::vector<Field>>{
+    {{"X-A", "1"}, {"X-A", "2"}, {"X-A", "3"}}, // consecutive custom dups
+    {{"X-A", "1"}, {"X-B", "2"}, {"X-A", "3"}}, // interleaved
+    {{"X-A", "1"}, {"X-A", "2"}, {"X-B", "3"}, {"X-B", "4"}}, // two adjacent runs
+    {{"Set-Cookie", "a"}, {"Set-Cookie", "b"}, {"Set-Cookie", "c"}, {"Set-Cookie", "d"}}, // well-known dups
+    {{"X-A", "1"}, {"X-B", "2"}, {"X-C", "3"}}, // no dups
+  }));
+
+  // Parser-built header (tail-append path).
+  std::string raw;
+  for (auto const &f : scenario) {
+    raw += f.name;
+    raw += ": ";
+    raw += f.value;
+    raw += "\r\n";
+  }
+  raw += "\r\n";
+  MIMEParser parser;
+  mime_parser_init(&parser);
+  MIMEHdr hdrA;
+  hdrA.create(nullptr);
+  {
+    const char *start = raw.data();
+    REQUIRE(hdrA.parse(&parser, &start, raw.data() + raw.size(), true, false, false) == ParseResult::DONE);
+  }
+  mime_parser_clear(&parser);
+
+  // Reference header via explicit create+attach (attach's full path, no tail append).
+  MIMEHdr hdrB;
+  hdrB.create(nullptr);
+  for (auto const &f : scenario) {
+    MIMEField *fld = hdrB.field_create(std::string_view{f.name});
+    fld->value_set(hdrB.m_heap, hdrB.m_mime, std::string_view{f.value});
+    hdrB.field_attach(fld);
+  }
+
+  auto collect = [](MIMEHdr &h, std::string_view n) {
+    std::vector<std::string> vals;
+    for (MIMEField *fld = h.field_find(n); fld != nullptr; fld = fld->m_next_dup) {
+      auto v = fld->value_get();
+      vals.emplace_back(v.data(), v.size());
+    }
+    return vals;
+  };
+
+  std::set<std::string> names;
+  for (auto const &f : scenario) {
+    names.insert(f.name);
+  }
+  for (auto const &name : names) {
+    std::vector<std::string> va = collect(hdrA, name);
+    std::vector<std::string> vb = collect(hdrB, name);
+    CAPTURE(name, va.size(), vb.size());
+    CHECK(va == vb);
+  }
+
   hdrA.destroy();
   hdrB.destroy();
 }

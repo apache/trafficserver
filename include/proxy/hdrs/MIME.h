@@ -502,6 +502,13 @@ struct MIMEParser {
   // keep the false-positive rate low; the low 7 hash bits pick word and bit.
   uint64_t     m_dup_bloom[2];
   MIMEHdrImpl *m_dup_seed_mh;
+
+  // Most-recently attached field, used to splice a duplicate of the
+  // immediately-preceding field directly onto its dup chain's tail in O(1),
+  // skipping attach's O(n) duplicate search. Persists across CONT re-entry;
+  // reset per parse. The tail-append predicate is self-validating, so a stale
+  // value can never cause incorrect linkage (it just falls back to attach).
+  MIMEField *m_last_attached;
 };
 
 /***********************************************************************

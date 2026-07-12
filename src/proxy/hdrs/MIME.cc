@@ -2365,9 +2365,10 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
 void
 _mime_parser_init(MIMEParser *parser)
 {
-  parser->m_dup_bloom[0] = 0;
-  parser->m_dup_bloom[1] = 0;
-  parser->m_dup_seed_mh  = nullptr;
+  parser->m_dup_bloom[0]  = 0;
+  parser->m_dup_bloom[1]  = 0;
+  parser->m_dup_seed_mh   = nullptr;
+  parser->m_last_attached = nullptr;
 }
 
 // Seed the parser's non-WKS duplicate Bloom from any fields already in the
@@ -2585,7 +2586,60 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
         check_for_dups = 0;
       }
     }
-    mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+
+    // O(1) tail append for a duplicate of the immediately-preceding attached
+    // field (e.g. consecutive Set-Cookie). mime_field_create always hands out
+    // the highest slot, so a duplicate of the last-attached field belongs at
+    // its dup chain's tail. When that field is still its chain tail
+    // (m_next_dup == nullptr), is live, is in this header, and shares this
+    // field's name, splice directly instead of running attach's O(n) duplicate
+    // search. Under the "one chain per name, in slot order" invariant such a
+    // field is necessarily that name's chain tail, so the splice is correct
+    // regardless of how m_last_attached was set -- it stays safe across CONT
+    // re-entry and parser reuse (a mismatch just falls back to attach).
+    bool             fast_tail_append = false;
+    MIMEField *const last             = parser->m_last_attached;
+
+    if (last != nullptr && last->is_live() && last->m_next_dup == nullptr) {
+      bool name_matches;
+
+      if (field_name_wks_idx >= 0) {
+        name_matches = (last->m_wks_idx == field_name_wks_idx);
+      } else {
+        name_matches =
+          (last->m_wks_idx < 0) &&
+          ts::iequals(std::string_view{last->m_ptr_name, static_cast<std::string_view::size_type>(last->m_len_name)}, field_name);
+      }
+
+      if (name_matches) {
+        bool in_mh = false;
+
+        for (MIMEFieldBlockImpl *fb = &mh->m_first_fblock; fb != nullptr; fb = fb->m_next) {
+          if (fb->contains(last)) {
+            in_mh = true;
+            break;
+          }
+        }
+
+        if (in_mh) {
+          field->m_readiness = MIME_FIELD_SLOT_READINESS_LIVE;
+          field->m_flags     = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
+          field->m_next_dup  = nullptr;
+          last->m_next_dup   = field;
+          // Presence bit and slot accelerator were set by the chain head; a tail
+          // dup leaves them untouched, matching attach's patch-after-prev branch.
+          if (field->m_ptr_value && field->is_cooked()) {
+            mh->recompute_cooked_stuff(field);
+          }
+          fast_tail_append = true;
+        }
+      }
+    }
+
+    if (!fast_tail_append) {
+      mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+    }
+    parser->m_last_attached = field;
   }
 }
 
