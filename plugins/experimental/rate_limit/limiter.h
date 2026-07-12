@@ -327,6 +327,25 @@ public:
     return item;
   }
 
+  // Remove a still-queued element (e.g. a connection that closed before it was resumed).
+  // Returns true if it was found in the queue, so the caller can tell a queued element
+  // (which never reserved a slot) from one that was already resumed.
+  bool
+  remove(T elem)
+  {
+    std::lock_guard<std::mutex> lock(_queue_lock);
+
+    for (auto it = _queue.begin(); it != _queue.end(); ++it) {
+      if (std::get<0>(*it) == elem) {
+        _queue.erase(it);
+        --_size;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   void
   incrementMetric(uint metric)
   {

@@ -171,7 +171,12 @@ sni_limit_cont(TSCont contp, TSEvent event, void *edata)
 
     if (limiter) {
       TSUserArgSet(vc, gVCIdx, nullptr);
-      limiter->free();
+      // A connection that is still queued never reserved a slot, so only release one if it
+      // is not in the queue (either it reserved at CLIENT_HELLO or the sweep resumed it into
+      // a reserved slot). Dropping it from the queue also avoids a stale entry.
+      if (!limiter->remove(vc)) {
+        limiter->free();
+      }
       limiter->selector()->release(); // Release the selector, such that it can be deleted later
     }
     TSVConnReenable(vc);
