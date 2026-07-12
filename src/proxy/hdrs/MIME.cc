@@ -2651,7 +2651,20 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create_for_name(heap, mh, field_name);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
-    mime_hdr_field_attach(mh, field, 1, nullptr);
+    // A clear presence bit guarantees no duplicate exists. Skip the lookup.
+    // Names without a presence bit still need the normal duplicate check.
+    //
+    // mime_hdr_field_attach() uses field->name_get(), which returns an interned
+    // string for well-known names. mime_hdr_field_find() would then check the
+    // same presence bit and return nullptr.
+    int check_for_dups = 1;
+    if (field_name_wks_idx >= 0) {
+      uint64_t const mask = hdrtoken_index_to_mask(field_name_wks_idx);
+      if (mask != 0 && (mh->m_presence_bits & mask) == 0) {
+        check_for_dups = 0;
+      }
+    }
+    mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
   }
 }
 
