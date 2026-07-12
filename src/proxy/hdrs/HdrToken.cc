@@ -332,7 +332,8 @@ hdrtoken_hash_step(uint32_t hval, unsigned char c)
 }
 
 // The one hash function, shared by compile-time table construction and hdrtoken_tokenize(), so the
-// two can never disagree.
+// two can never disagree. hdrtoken_field_name_scan() folds the same steps inline because it
+// discovers the length as it scans; a parity unit test pins it to this function.
 constexpr uint32_t
 hdrtoken_hash(std::string_view s)
 {
@@ -694,21 +695,14 @@ hdrtoken_method_tokenize(const char *string, int string_len)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// WKS lookup for a name whose FNV-1a hash the caller has already computed
+// (e.g. fused into the field-name scan). Matches by slot, hash, and length like
+// hdrtoken_tokenize, but skips the interned-pointer test, so it is only valid
+// for a non-interned `string`.
 int
-hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+hdrtoken_tokenize_prehashed(const char *string, int string_len, uint32_t hash, const char **wks_string_out)
 {
   ink_assert(string != nullptr);
-
-  if (hdrtoken_is_wks(string)) {
-    int const wks_idx = hdrtoken_wks_to_index(string);
-
-    if (wks_string_out) {
-      *wks_string_out = string;
-    }
-    return wks_idx;
-  }
-
-  uint32_t const hash = hdrtoken_hash(std::string_view{string, static_cast<size_t>(string_len)});
 
   HdrTokenHashBucket const &bucket = hdrtoken_hash_table[hash_to_slot(hash)];
 
@@ -726,6 +720,59 @@ hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_ou
 
   Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
   return -1;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+// Single-pass field-name scan for the MIME parser. Scans up to `maxlen` bytes
+// of `string` for the ':' delimiter while, in the same pass, accumulating the
+// FNV-1a name hash (identical to hdrtoken_hash) and tracking whether every byte
+// before ':' is a valid HTTP field-name char. Returns the index of ':' (i.e.
+// the field-name length) or -1 if no ':' appears within `maxlen`. `*hash_out`
+// and `*all_valid_out` describe the bytes scanned before ':' (or all `maxlen`
+// bytes when ':' is absent); both are required.
+int
+hdrtoken_field_name_scan(const char *string, int maxlen, uint32_t *hash_out, bool *all_valid_out)
+{
+  uint32_t hval      = HDRTOKEN_HASH_SEED; // same FNV-1a name hash as hdrtoken_hash
+  bool     all_valid = true;
+  int      i         = 0;
+
+  for (; i < maxlen; ++i) {
+    unsigned char const uc = static_cast<unsigned char>(string[i]);
+    if (uc == ':') {
+      break;
+    }
+    hval       = hdrtoken_hash_step(hval, hdrtoken_ascii_toupper(uc));
+    all_valid &= (ParseRules::is_http_field_name(static_cast<char>(uc)) != 0);
+  }
+
+  *hash_out      = hval;
+  *all_valid_out = all_valid;
+  return (i < maxlen) ? i : -1;
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+{
+  ink_assert(string != nullptr);
+
+  if (hdrtoken_is_wks(string)) {
+    int const wks_idx = hdrtoken_wks_to_index(string);
+
+    if (wks_string_out) {
+      *wks_string_out = string;
+    }
+    return wks_idx;
+  }
+
+  uint32_t const hash = hdrtoken_hash(std::string_view{string, static_cast<size_t>(string_len)});
+
+  return hdrtoken_tokenize_prehashed(string, string_len, hash, wks_string_out);
 }
 
 /*-------------------------------------------------------------------------
