@@ -26,6 +26,7 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
 #include <cstdio>
+#include <cstring>
 #include "tscore/Allocator.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HdrToken.h"
@@ -572,12 +573,19 @@ hdrtoken_tokenize_prehashed(const char *string, int string_len, uint32_t hash, c
     // of equal length would otherwise mis-intern an arbitrary name (giving it the
     // WKS's presence bits / slot accelerators). Confirm with an exact
     // ASCII-case-insensitive byte comparison before accepting the WKS.
-    bool matches = true;
-    for (int i = 0; i < string_len; ++i) {
-      if (hdrtoken_ascii_toupper(static_cast<unsigned char>(string[i])) !=
-          hdrtoken_ascii_toupper(static_cast<unsigned char>(bucket->wks[i]))) {
-        matches = false;
-        break;
+    // Browsers send canonical-case field names that match the WKS bytes
+    // exactly, so try a fast exact compare first; memcmp-equal implies
+    // fold-equal. The per-byte fold still runs on a miss to catch case
+    // variants (e.g. "HOST", "host").
+    bool matches = (memcmp(string, bucket->wks, string_len) == 0);
+    if (!matches) {
+      matches = true;
+      for (int i = 0; i < string_len; ++i) {
+        if (hdrtoken_ascii_toupper(static_cast<unsigned char>(string[i])) !=
+            hdrtoken_ascii_toupper(static_cast<unsigned char>(bucket->wks[i]))) {
+          matches = false;
+          break;
+        }
       }
     }
     if (matches) {
