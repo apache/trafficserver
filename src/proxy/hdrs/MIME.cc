@@ -2558,8 +2558,10 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // For a non-WKS name, consult the parse-local Bloom: if its hash bit is
     // clear no earlier field can share the name, so skip attach's O(n) duplicate
     // search (check_for_dups=0 takes the same no-dup path a null find would).
-    // WKS names keep the search on: on the wire the name is not an interned
-    // pointer, so find() does not take the presence-bit fast path.
+    // For a WKS name the presence bit gives the same guarantee for free: a clear
+    // bit is exactly the first negative test mime_hdr_field_find performs for an
+    // interned name, so skipping the walk is byte-for-byte equivalent to a null
+    // find. Mask-zero WKS names (no presence bit) must keep the search on.
     int check_for_dups = 1;
     if (field_name_wks_idx < 0) {
       // Seed (or reseed) the Bloom the first time this parser touches a given
@@ -2577,6 +2579,11 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
         check_for_dups = 0;
       }
       parser->m_dup_bloom[word] |= bit;
+    } else {
+      uint64_t const mask = hdrtoken_index_to_mask(field_name_wks_idx);
+      if (mask != 0 && (mh->m_presence_bits & mask) == 0) {
+        check_for_dups = 0;
+      }
     }
     mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
   }
