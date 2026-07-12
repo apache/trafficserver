@@ -2595,7 +2595,21 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
-    mime_hdr_field_attach(mh, field, 1, nullptr);
+    // A well-known name whose presence bit is clear cannot already be in this
+    // header, so attach can skip its O(n) duplicate search: a clear bit is
+    // exactly the first negative test mime_hdr_field_find performs for an
+    // interned name, which makes check_for_dups=0 byte-for-byte equivalent to
+    // the null find attach would have reached. Mask-zero well-known names have no
+    // presence bit, and non-well-known names have none either, so both keep the
+    // search on.
+    int check_for_dups = 1;
+    if (field_name_wks_idx >= 0) {
+      uint64_t const mask = hdrtoken_index_to_mask(field_name_wks_idx);
+      if (mask != 0 && (mh->m_presence_bits & mask) == 0) {
+        check_for_dups = 0;
+      }
+    }
+    mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
   }
 }
 
