@@ -22,8 +22,11 @@
  */
 
 #include <cstdio>
+#include <cstring>
 
+#include <string>
 #include <string_view>
+#include <vector>
 
 using namespace std::literals;
 
@@ -31,6 +34,8 @@ using namespace std::literals;
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/generators/catch_generators_range.hpp>
 #include "tscore/ink_platform.h"
+#include "tscore/ParseRules.h"
+#include "proxy/hdrs/HdrToken.h"
 #include "proxy/hdrs/MIME.h"
 
 TEST_CASE("Mime", "[proxy][mime]")
@@ -115,6 +120,67 @@ TEST_CASE("MimeParserReuseAcrossHeaders", "[proxy][mimeparser]")
   mime_parser_clear(&parser);
   hdrA.destroy();
   hdrB.destroy();
+}
+
+TEST_CASE("HdrTokenFusedNameScanParity", "[proxy][hdrtoken]")
+{
+  // opt2 fused the colon scan, FNV hash, and field-name validation into
+  // hdrtoken_field_name_scan + hdrtoken_tokenize_prehashed. Verify the fused
+  // path agrees with references: the colon position, per-byte validity, and --
+  // via the prehashed lookup fed the fused hash -- the well-known index the
+  // standalone tokenizer returns (which is a proxy for hash parity).
+  struct Case {
+    const char *name;
+    const char *tail;
+  };
+  static const std::vector<Case> cases = {
+    {"Content-Length",    ": 5"    },
+    {"content-length",    ":5"     },
+    {"CONTENT-LENGTH",    ":5"     },
+    {"Host",              ": x"    },
+    {"hOsT",              ":x"     },
+    {"Set-Cookie",        ": a=b"  },
+    {"Cache-Control",     ":no"    },
+    {"Transfer-Encoding", ":chunk" },
+    {"@Ats-Internal",     ":z"     },
+    {"X-Custom-Header",   ": v"    },
+    {"sec-ch-ua",         ": \"x\""},
+    {"sec-fetch-mode",    ":cors"  },
+    {"priority",          ":u=1"   },
+    {"X-My-Header",       ":v"     },
+    {"a",                 ":b"     },
+  };
+
+  for (auto const &c : cases) {
+    std::string const buf      = std::string(c.name) + c.tail;
+    int const         name_len = static_cast<int>(strlen(c.name));
+    uint32_t          hash     = 0;
+    bool              valid    = false;
+    int const         colon    = hdrtoken_field_name_scan(buf.data(), static_cast<int>(buf.size()), &hash, &valid);
+    CAPTURE(c.name);
+    CHECK(colon == name_len);
+
+    bool ref_valid = true;
+    for (int i = 0; i < name_len; ++i) {
+      if (!ParseRules::is_http_field_name(c.name[i])) {
+        ref_valid = false;
+        break;
+      }
+    }
+    CHECK(valid == ref_valid);
+    CHECK(hdrtoken_tokenize_prehashed(c.name, name_len, hash) == hdrtoken_tokenize(c.name, name_len));
+  }
+
+  // Edge cases: no colon, empty name, and an invalid byte in the name.
+  uint32_t h = 0;
+  bool     v = false;
+  CHECK(hdrtoken_field_name_scan("NoColon", 7, &h, &v) < 0);
+  CHECK(hdrtoken_field_name_scan(":value", 6, &h, &v) == 0);
+  {
+    const char bad[] = {'X', '\x01', 'Y', ':', 'v'};
+    CHECK(hdrtoken_field_name_scan(bad, 5, &h, &v) == 3);
+    CHECK(v == false);
+  }
 }
 
 TEST_CASE("MimeGetHostPortValues", "[proxy][mimeport]")

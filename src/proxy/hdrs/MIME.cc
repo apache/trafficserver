@@ -2456,11 +2456,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     }
 
     // find name last
-    auto field_value = parsed; // need parsed as is later on.
-    auto field_name  = field_value.split_prefix_at(':');
-    if (field_name.empty()) {
+    //
+    // Fuse the colon scan, FNV-1a name hash, and per-byte field-name validation
+    // into one pass over the name bytes. hdrtoken_field_name_scan returns the
+    // colon index (the name length) and, for those bytes, the hash reused below
+    // by the WKS lookup and the duplicate Bloom, plus whether every byte is a
+    // valid HTTP field-name char.
+    auto     field_value = parsed; // need parsed as is later on.
+    uint32_t field_name_hash;
+    bool     name_all_valid;
+    int colon_idx = hdrtoken_field_name_scan(parsed.data(), static_cast<int>(parsed.size()), &field_name_hash, &name_all_valid);
+    if (colon_idx <= 0) {
+      // colon_idx < 0: no colon; colon_idx == 0: empty name. Both are garbage,
+      // matching the old empty-field_name toss.
       continue; // toss away garbage line
     }
+    auto field_name = parsed.prefix(colon_idx);
+    field_value.remove_prefix(colon_idx + 1);
 
     // RFC7230 section 3.2.4:
     // No whitespace is allowed between the header field-name and colon.  In
@@ -2472,12 +2484,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // A proxy MUST remove any such whitespace from a response message before
     // forwarding the message downstream.
     bool raw_print_field = true;
+    bool name_scan_stale = false;
     if (is_ws(field_name.back())) {
       if (!remove_ws_from_field_name) {
         return ParseResult::ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
       raw_print_field = false;
+      // The fused scan hashed and validated the untrimmed name; recompute below.
+      name_scan_stale = true;
     } else if (parsed.suffix(2) != "\r\n") {
       raw_print_field = false;
     }
@@ -2507,14 +2522,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // tokenize the name //
     ///////////////////////
 
-    uint32_t field_name_hash    = 0;
-    int      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size(), nullptr, &field_name_hash);
-
-    if (field_name_wks_idx < 0) {
-      for (auto i : field_name) {
-        if (!ParseRules::is_http_field_name(i)) {
-          return ParseResult::ERROR;
+    int field_name_wks_idx;
+    if (name_scan_stale) {
+      // BWS trimming shortened the name after the fused scan; redo the hash,
+      // WKS lookup, and byte validation over the trimmed name.
+      field_name_hash    = 0;
+      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size(), nullptr, &field_name_hash);
+      if (field_name_wks_idx < 0) {
+        for (auto i : field_name) {
+          if (!ParseRules::is_http_field_name(i)) {
+            return ParseResult::ERROR;
+          }
         }
+      }
+    } else {
+      field_name_wks_idx = hdrtoken_tokenize_prehashed(field_name.data(), static_cast<int>(field_name.size()), field_name_hash);
+      if ((field_name_wks_idx < 0) && !name_all_valid) {
+        return ParseResult::ERROR;
       }
     }
 
