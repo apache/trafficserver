@@ -134,6 +134,8 @@ TEST_CASE("RecHttp", "[librecords][RecHttp]")
     std::string path = "/" + std::string(TS_UNIX_SIZE - 1, 'x') + ":8080";
     HttpProxyPort::loadValue(ports, path.c_str());
     REQUIRE(ports.size() == 0);
+    // The reject itself, then loadValue's "No valid definition" for the dropped descriptor.
+    REQUIRE(cdiag->messages.size() == 2);
     REQUIRE(cdiag->messages[0].find("too long") != std::string::npos);
   }
 }
