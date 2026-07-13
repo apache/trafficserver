@@ -18,15 +18,24 @@ meta:
   version: "1.0"
 
 # This test proves that multi-parameter volume.config lines are parsed
-# correctly.  The generated volume.config lines are:
+# correctly AND that the per-volume settings actually take effect on the first
+# start after a cache clear (AuTest always starts ATS against a fresh cache).
+#  The generated volume.config lines are:
 #
-#   volume=1 scheme=http size=50% ram_cache_size=32M ram_cache_cutoff=8K
-#   volume=2 scheme=http size=50%
+#   volume=1 scheme=http size=50% ram_cache_size=32M ram_cache_cutoff=8K avg_obj_size=2000 fragment_size=1M
+#   volume=2 scheme=http size=50% ramcache=false
 #
 # All 5 key=value pairs on line 1 must be parsed from the single line.
 # If the inner loop's "tmp = line_end" advancement were broken (as claimed
 # in a PR review), only "volume=1" would be parsed, scheme and size would
-# be missing, and the volume would be rejected -- disabling the cache.
+# be missing, and the volume would be rejected -- disabling the cache, and the
+# per-volume settings are verified via the metric_checks below:
+#   - Volume 1 (ram_cache_size: 32M, single 128MB stripe) -> ram_cache total_bytes == 32MB
+#   - Volume 1 (avg_obj_size: 2000)                        -> direntries.total == 66424
+#   - Volume 2 (ramcache: false)                          -> ram_cache total_bytes == 0
+# These exercise two distinct downstream paths (the RAM cache sizing in
+# cacheInitialized() and the directory sizing in the StripeSM constructor). On a
+# build that ignores per-volume settings on first start, none of them match.
 autest:
   description: "Test cache volume features: per-volume RAM cache and @volume= directive"
 
@@ -57,10 +66,13 @@ autest:
         size: "50%"
         ram_cache_size: "32M"
         ram_cache_cutoff: "8K"
+        avg_obj_size: 2000
+        fragment_size: 1M
       # Volume 2 — simple line, no extra params
       - volume: 2
         scheme: "http"
         size: "50%"
+        ramcache: false
 
     log_validation:
       traffic_out:

@@ -70,6 +70,7 @@ void           register_cache_stats(CacheStatsBlock *rsb, const std::string &pre
 static void    cplist_update();
 static int     create_volume(int volume_number, off_t size_in_blocks, CacheType scheme, CacheVol *cp);
 static int     fillExclusiveDisks(CacheVol *cp);
+static void    cplist_apply_config_settings(CacheVol *cp, const ConfigVol *config_vol);
 
 static size_t DEFAULT_RAM_CACHE_MULTIPLIER = 10; // I.e. 10x 1MB per 1GB of disk.
 
@@ -1038,6 +1039,14 @@ cplist_reconfigure()
     }
   }
 
+  // Apply per-volume settings after all CacheVols exist; otherwise volumes created on the first
+  // start after a cache clear keep defaults and ignore the config until the next restart.
+  for (ConfigVol *config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
+    if (config_vol->cachep) {
+      cplist_apply_config_settings(config_vol->cachep, config_vol);
+    }
+  }
+
   ts::Metrics::Gauge::store(cache_rsb.stripes, gnstripes);
 
   return 0;
@@ -1154,6 +1163,17 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix)
   rsb->writer_lock_contention = ts::Metrics::Counter::createPtr(prefix + ".writer.lock_contention");
 }
 
+// Copy the per-volume tuning fields from the volume config onto the CacheVol.
+void
+cplist_apply_config_settings(CacheVol *cp, const ConfigVol *config_vol)
+{
+  cp->ramcache_enabled = config_vol->ramcache_enabled;
+  cp->avg_obj_size     = config_vol->avg_obj_size;
+  cp->fragment_size    = config_vol->fragment_size;
+  cp->ram_cache_size   = config_vol->ram_cache_size;
+  cp->ram_cache_cutoff = config_vol->ram_cache_cutoff;
+}
+
 void
 cplist_update()
 {
@@ -1165,12 +1185,7 @@ cplist_update()
     for (config_vol = config_volumes.cp_queue.head; config_vol; config_vol = config_vol->link.next) {
       if (config_vol->number == cp->vol_number) {
         if (cp->scheme == config_vol->scheme) {
-          cp->ramcache_enabled = config_vol->ramcache_enabled;
-          cp->avg_obj_size     = config_vol->avg_obj_size;
-          cp->fragment_size    = config_vol->fragment_size;
-          cp->ram_cache_size   = config_vol->ram_cache_size;
-          cp->ram_cache_cutoff = config_vol->ram_cache_cutoff;
-          config_vol->cachep   = cp;
+          config_vol->cachep = cp;
         } else {
           /* delete this volume from all the disks */
           int d_no;
