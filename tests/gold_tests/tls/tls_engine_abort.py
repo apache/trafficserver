@@ -13,10 +13,10 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Abort TLS handshakes while the async engine is mid-job.
+"""Abort TLS handshakes while the async_handshake plugin's job is mid-pause.
 
-The sample async engine pauses each handshake for two seconds. This client
-opens a TLS connection, lets ATS enter that async pause (so the handshake
+The async_handshake plugin pauses each handshake for two seconds (-delay-ms=2000).
+This client opens a TLS connection, lets ATS enter that async pause (so the handshake
 eventfd is registered on the poller with the SSLNetVConnection as its target),
 then closes the socket before the pause finishes. On that disconnect the
 SSLNetVConnection must deregister the eventfd before it is freed, otherwise the
@@ -43,7 +43,7 @@ for _ in range(iterations):
     try:
         tls = ctx.wrap_socket(raw, do_handshake_on_connect=False, server_hostname="example.com")
         # Drive the handshake far enough that ATS enters the async pause, then
-        # bail out quickly so the close lands inside the engine's 2s window.
+        # bail out quickly so the close lands inside the async job's 2s window.
         tls.settimeout(0.4)
         try:
             tls.do_handshake()

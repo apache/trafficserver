@@ -20,7 +20,7 @@ import os
 import sys
 
 Test.Summary = '''
-Abort TLS handshakes while the sample async engine is mid-job, to exercise the
+Abort TLS handshakes while an OpenSSL async job is mid-pause, to exercise the
 SSLNetVConnection teardown path. When a handshake returns SSL_ERROR_WANT_ASYNC
 an eventfd is registered on the poller with the connection as its target, and a
 connection torn down before the async job finishes must deregister that eventfd
@@ -29,15 +29,20 @@ server must survive the abort barrage with no sanitizer error and still serve a
 normal request.
 '''
 
+async_handshake = os.path.join(Test.Variables.AtsTestPluginsDir, 'async_handshake.so')
+
 Test.SkipUnless(
     Condition.HasOpenSSLVersion('1.1.1'),
     Condition.IsOpenSSL(),
+    Condition(lambda: os.path.isfile(async_handshake), async_handshake + " not found."),
 )
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-ts.Setup.Copy(os.path.join(Test.Variables.AtsTestPluginsDir, 'async_engine.so'), Test.RunDirectory)
+# A wide pause window (well beyond the abort client's 0.4s handshake attempt)
+# so the abort reliably lands while the async job is still in flight.
+Test.PrepareTestPlugin(async_handshake, ts, '-delay-ms=2000')
 
 server.addResponse(
     "sessionlog.json", {
@@ -63,36 +68,12 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.engine.conf_file': '{0}/ts/config/load_engine.cnf'.format(Test.RunDirectory),
         'proxy.config.ssl.async.handshake.enabled': 1,
         'proxy.config.diags.debug.enabled': 0,
         'proxy.config.diags.debug.tags': 'ssl'
     })
 
-ts.Disk.MakeConfigFile('load_engine.cnf').AddLines(
-    [
-        'openssl_conf = openssl_init',
-        '',
-        '[openssl_init]',
-        '',
-        'engines = engine_section',
-        '',
-        '[engine_section]',
-        '',
-        'async = async_section',
-        '',
-        '[async_section]',
-        '',
-        'dynamic_path = {0}/async_engine.so'.format(Test.RunDirectory),
-        '',
-        'engine_id = async-test',
-        '',
-        'default_algorithms = RSA',
-        '',
-        'init = 1',
-    ])
-
-# Fire a barrage of handshakes that abort while the engine is mid-job. Correct
+# Fire a barrage of handshakes that abort while the async job is mid-pause. Correct
 # teardown is validated by ATS surviving this with no crash and, under ASan, no
 # sanitizer error. Without deregistration the connection is freed while its
 # eventfd still has a live poller registration.
@@ -118,12 +99,13 @@ tr2.StillRunningAfter = server
 
 # The abort barrage must actually drive handshakes into the async pause,
 # otherwise the eventfd is never registered and the test proves nothing. The
-# sample engine's delay thread prints this to stderr (-> traffic.out) when it
-# signals the eventfd at the end of its async pause; that only happens if a
+# async_handshake plugin's wake thread prints this to stderr (-> traffic.out)
+# when it signals the eventfd at the end of its pause; that only happens if a
 # handshake entered the WANT_ASYNC path and armed the eventfd, so its presence
 # confirms the teardown path was exercised (and that the async job completed
 # after the abort -- exactly the use-after-free window this fix closes).
-ts.Disk.traffic_out.Content += Testers.ContainsExpression("Send signal to ", "Async engine engaged on at least one handshake")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    "sent async wake signal to", "Async job engaged on at least one handshake")
 
 # The server process must not have reported an AddressSanitizer error. ASan
 # writes to stderr, which the harness binds to traffic.out -- not diags.log --
