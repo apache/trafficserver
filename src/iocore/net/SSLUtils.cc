@@ -1742,6 +1742,27 @@ SSLMultiCertConfigLoader::update_ssl_ctx(const std::string &secret_name)
       if (!ctx) {
         retval = false;
       } else {
+        if ((*policy_iter)->addr) {
+          SSLCertContext *cc = nullptr;
+          if (strcmp((*policy_iter)->addr, "*") == 0) {
+            this->_set_handshake_callbacks(ctx.get());
+            cc = lookup->find("*", loadingctx.ctx_type);
+          } else {
+            IpEndpoint ep;
+            if (ats_ip_pton((*policy_iter)->addr, &ep) == 0) {
+              cc = lookup->find(ep, loadingctx.ctx_type);
+            } else {
+              Error("'%s' is not a valid IPv4 or IPv6 address", (const char *)(*policy_iter)->addr);
+              retval = false;
+            }
+          }
+          if (cc && cc->userconfig.get() == policy_iter->get()) {
+            cc->setCtx(ctx);
+            if (strcmp((*policy_iter)->addr, "*") == 0) {
+              lookup->setDefaultContext(ctx);
+            }
+          }
+        }
         for (auto const &name : common_names) {
           SSLCertContext *cc = lookup->find(name, loadingctx.ctx_type);
           if (cc && cc->userconfig.get() == policy_iter->get()) {
@@ -1796,8 +1817,8 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
     if (strcmp(sslMultCertSettings->addr, "*") == 0) {
       Dbg(dbg_ctl_ssl_load, "Addr is '*'; setting %p to default", ctx.get());
       if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
-        inserted            = true;
-        lookup->ssl_default = ctx;
+        inserted = true;
+        lookup->setDefaultContext(ctx);
         this->_set_handshake_callbacks(ctx.get());
       }
     } else {
@@ -1899,7 +1920,7 @@ SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
   // We *must* have a default context even if it can't possibly work. The default context is used to
   // bootstrap the SSL handshake so that we can subsequently do the SNI lookup to switch to the real
   // context.
-  if (lookup->ssl_default == nullptr) {
+  if (lookup->defaultContext() == nullptr) {
     shared_SSLMultiCertConfigParams sslMultiCertSettings(new SSLMultiCertConfigParams);
     sslMultiCertSettings->addr = ats_strdup("*");
     if (!this->_store_ssl_ctx(lookup, sslMultiCertSettings)) {
