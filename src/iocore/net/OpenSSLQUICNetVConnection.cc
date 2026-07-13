@@ -984,6 +984,18 @@ QUICNetVConnection::_get_tls_group() const
   }
 }
 
+std::string
+QUICNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(this->_ssl);
+}
+
+std::string
+QUICNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(this->_ssl);
+}
+
 int
 QUICNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
 {
