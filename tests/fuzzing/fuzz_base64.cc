@@ -35,6 +35,7 @@
 #include "ink_base64_scalar.h" // scalar reference (added to include path by CMake)
 
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
