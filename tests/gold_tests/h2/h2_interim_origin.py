@@ -73,6 +73,10 @@ def send_response(sock, mode, sid):
         half = len(blk) // 2
         sock.sendall(frame(0x1, 0x0, sid, blk[:half]))  # HEADERS, no END_HEADERS
         sock.sendall(frame(0x9, 0x4, sid, blk[half:]))  # CONTINUATION, END_HEADERS
+    elif mode == "endstream":
+        # RFC 9113 8.1 violation: an informational (1xx) response with END_STREAM.
+        sock.sendall(frame(0x1, 0x5, sid, interim_block("103")))  # HEADERS: END_HEADERS | END_STREAM
+        return
     # mode "none": no interim
     sock.sendall(frame(0x1, 0x4, sid, final_block()))  # final HEADERS, END_HEADERS
     sock.sendall(frame(0x0, 0x1, sid, BODY))  # DATA, END_STREAM
@@ -125,7 +129,7 @@ def parse_args():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("address")
     p.add_argument("port", type=int)
-    p.add_argument("--mode", default="single", choices=["single", "multi", "continue", "cont", "none"])
+    p.add_argument("--mode", default="single", choices=["single", "multi", "continue", "cont", "none", "endstream"])
     return p.parse_args()
 
 

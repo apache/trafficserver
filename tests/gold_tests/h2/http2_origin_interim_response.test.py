@@ -36,6 +36,9 @@ ORIGIN = os.path.join(Test.TestDirectory, 'h2_interim_origin.py')
 #   cont     : 103 split across HEADERS+CONTINUATION, then 200
 #   none     : 200 only                 (control)
 MODES = ['single', 'multi', 'continue', 'cont', 'none']
+# 1xx with END_STREAM is malformed (RFC 9113 8.1); ATS must reject it so the client
+# does not hang waiting for a final response that can never arrive.
+INTERIM_ONLY = ['endstream']
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 ts.addDefaultSSLFiles()
@@ -50,7 +53,7 @@ ssl_multicert:
 # Create an origin process per mode and build the remap table from their ports.
 origins = {}
 remap_lines = []
-for mode in MODES:
+for mode in MODES + INTERIM_ONLY:
     origin = Test.Processes.Process(f"origin-{mode}")
     port = get_port(origin, f"port_{mode}")
     origin.Command = f"{sys.executable} {ORIGIN} 127.0.0.1 {port} --mode {mode}"
@@ -76,16 +79,27 @@ first = True
 for mode in MODES:
     tr = Test.AddTestRun(f"h2 origin interim response: mode={mode}")
     if first:
-        for m in MODES:
+        for m in MODES + INTERIM_ONLY:
             tr.Processes.Default.StartBefore(origins[m])
         tr.Processes.Default.StartBefore(ts)
         first = False
     tr.MakeCurlCommand(f'-v -s -H "Host: ats.test" http://127.0.0.1:{ts.Variables.port}/{mode}', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.StillRunningAfter = ts
-    for m in MODES:
+    for m in MODES + INTERIM_ONLY:
         tr.StillRunningAfter = origins[m]
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(
         'HTTP/.* 200', f'mode={mode}: client must receive the final 200, not a 502')
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(
         'interim-origin-body', f'mode={mode}: client must receive the 200 response body')
+
+# 1xx + END_STREAM: ATS must reject the malformed interim response and fail the
+# transaction promptly (a 5xx), not silently drop it and leave the client hanging.
+tr = Test.AddTestRun("h2 origin interim response: mode=endstream (1xx with END_STREAM rejected)")
+tr.MakeCurlCommand(f'-v -s -H "Host: ats.test" http://127.0.0.1:{ts.Variables.port}/endstream', ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    'HTTP/.* 5[0-9][0-9]', 'endstream: client must get a 5xx error, not hang')
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+    'interim-origin-body', 'endstream: client must not receive a 200 body')

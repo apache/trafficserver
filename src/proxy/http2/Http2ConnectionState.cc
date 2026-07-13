@@ -548,6 +548,13 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     // Discard an interim (1xx) response from the
     // origin and wait for the final response on this stream.
     if (is_outbound_interim_response(stream)) {
+      // RFC 9113 8.1: a HEADERS frame with END_STREAM carrying an informational (1xx)
+      // status code is malformed. change_state() has already moved the stream toward
+      // closed, so the final response would have nowhere to go; reject as a stream error.
+      if (stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "1xx interim response must not set END_STREAM");
+      }
       Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
       discard_interim_response(stream);
       this->session->interrupt_reading_frames();
@@ -1181,6 +1188,13 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     // Discard an interim (1xx) response from the
     // origin and wait for the final response on this stream.
     if (is_outbound_interim_response(stream)) {
+      // RFC 9113 8.1: a HEADERS frame with END_STREAM carrying an informational (1xx)
+      // status code is malformed. change_state() has already moved the stream toward
+      // closed, so the final response would have nowhere to go; reject as a stream error.
+      if (stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "1xx interim response must not set END_STREAM");
+      }
       Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
       discard_interim_response(stream);
       this->session->interrupt_reading_frames();
