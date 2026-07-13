@@ -150,6 +150,7 @@ def main():
             tls = ctx.wrap_socket(conn, server_side=True)
         except Exception as e:
             sys.stderr.write(f"tls error: {e}\n")
+            conn.close()
             continue
         threading.Thread(target=handle, args=(tls, args.mode), daemon=True).start()
     return 0

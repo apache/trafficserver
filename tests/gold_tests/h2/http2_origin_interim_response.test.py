@@ -87,7 +87,7 @@ for mode in MODES:
     tr.Processes.Default.ReturnCode = 0
     tr.StillRunningAfter = ts
     for m in MODES + INTERIM_ONLY:
-        tr.StillRunningAfter = origins[m]
+        tr.StillRunningAfter += origins[m]
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(
         'HTTP/.* 200', f'mode={mode}: client must receive the final 200, not a 502')
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(
