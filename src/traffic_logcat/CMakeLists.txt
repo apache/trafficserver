@@ -15,8 +15,17 @@
 #
 #######################
 
-add_executable(traffic_logcat logcat.cc)
+add_executable(traffic_logcat logcat.cc LogEntryJson.cc)
 target_link_libraries(traffic_logcat PRIVATE ts::logging ts::tscore ts::diagsconfig ts::inkevent)
 install(TARGETS traffic_logcat)
+
+if(BUILD_TESTING)
+  add_executable(test_LogEntryJson unit-tests/test_LogEntryJson.cc LogEntryJson.cc)
+  target_include_directories(test_LogEntryJson PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  target_link_libraries(
+    test_LogEntryJson PRIVATE ts::logging ts::configmanager ts::inkevent records Catch2::Catch2WithMain
+  )
+  add_catch2_test(NAME test_LogEntryJson COMMAND test_LogEntryJson)
+endif()
 
 clang_tidy_check(traffic_logcat)
