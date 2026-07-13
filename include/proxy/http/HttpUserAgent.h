@@ -54,6 +54,8 @@ struct ClientConnectionInfo {
   char const *cipher_suite{"-"};
   char const *curve{"-"};
   std::string security_group{"-"};
+  std::string offered_signature_algorithms{"-"};
+  std::string negotiated_signature_algorithm{"-"};
 
   int alpn_id{SessionProtocolNameRegistry::INVALID};
 
@@ -100,6 +102,10 @@ public:
   char const *get_client_curve() const;
 
   char const *get_client_security_group() const;
+
+  char const *get_client_offered_signature_algorithms() const;
+
+  char const *get_client_negotiated_signature_algorithm() const;
 
   int get_client_alpn_id() const;
 
@@ -191,6 +197,19 @@ HttpUserAgent::set_txn(ProxyTransaction *txn, TransactionMilestones &milestones)
       m_conn_info.security_group = group;
     } else {
       m_conn_info.security_group = '-';
+    }
+
+    if (auto offered_signature_algorithms{tbs->get_tls_offered_signature_algorithms()}; !offered_signature_algorithms.empty()) {
+      m_conn_info.offered_signature_algorithms = offered_signature_algorithms;
+    } else {
+      m_conn_info.offered_signature_algorithms = '-';
+    }
+
+    if (auto negotiated_signature_algorithm{tbs->get_tls_negotiated_signature_algorithm()};
+        !negotiated_signature_algorithm.empty()) {
+      m_conn_info.negotiated_signature_algorithm = negotiated_signature_algorithm;
+    } else {
+      m_conn_info.negotiated_signature_algorithm = '-';
     }
 
     if (!m_conn_info.tcp_reused) {
@@ -310,6 +329,18 @@ inline char const *
 HttpUserAgent::get_client_security_group() const
 {
   return m_conn_info.security_group.c_str();
+}
+
+inline char const *
+HttpUserAgent::get_client_offered_signature_algorithms() const
+{
+  return m_conn_info.offered_signature_algorithms.c_str();
+}
+
+inline char const *
+HttpUserAgent::get_client_negotiated_signature_algorithm() const
+{
+  return m_conn_info.negotiated_signature_algorithm.c_str();
 }
 
 inline int
