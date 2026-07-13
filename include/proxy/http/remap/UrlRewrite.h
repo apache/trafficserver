@@ -25,6 +25,7 @@
 #pragma once
 
 #include "iocore/eventsystem/Freer.h"
+#include "mgmt/config/ConfigContext.h"
 #include "proxy/http/remap/UrlMapping.h"
 #include "proxy/http/remap/UrlMappingPathIndex.h"
 #include "proxy/http/HttpTransact.h"
@@ -77,14 +78,15 @@ public:
    *
    * @return @c true if the instance state is valid, @c false if not.
    */
-  bool load();
+  bool load(ConfigContext ctx = {});
 
   /** Build the internal url write tables.
    *
    * @param path Path to configuration file.
+   * @param ctx  ConfigContext for reload status tracking.
    * @return 0 on success, non-zero error code on failure.
    */
-  int BuildTable(const char *path);
+  int BuildTable(const char *path, ConfigContext ctx = {});
 
   mapping_type Remap_redirect(HTTPHdr *request_header, URL *redirect_url);
   bool         ReverseMap(HTTPHdr *response_header);

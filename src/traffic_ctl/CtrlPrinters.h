@@ -225,8 +225,21 @@ class ConfigReloadPrinter : public BasePrinter
 {
   void write_output(YAML::Node const &result) override;
 
+  DiagsLevel _min_level{DL_Undefined};
+
 public:
   ConfigReloadPrinter(BasePrinter::Options opt) : BasePrinter(opt) {}
+
+  void
+  set_min_level(DiagsLevel level)
+  {
+    _min_level = level;
+  }
+  DiagsLevel
+  min_level() const
+  {
+    return _min_level;
+  }
 
   void print_reload_report(const ConfigReloadResponse::ReloadInfo &info, bool full_report = false);
   void write_progress_line(const ConfigReloadResponse::ReloadInfo &info);

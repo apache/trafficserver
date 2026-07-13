@@ -227,7 +227,7 @@ Display the current value of a configuration record.
 
    - **Monitor** a reload in real-time: ``traffic_ctl config reload -t <token> -m``
    - **Query** the final status: ``traffic_ctl config status -t <token>``
-   - **Get detailed logs**: ``traffic_ctl config status -t <token> -l``
+   - **Get detailed logs**: ``traffic_ctl config status -t <token>``
 
    The timestamp of the last reconfiguration event (in seconds since epoch) is published in the
    ``proxy.process.proxy.reconfigure_time`` metric.
@@ -659,7 +659,8 @@ Display the current value of a configuration record.
    **Failed reload report:**
 
    When a reload has failed handlers, the output shows which handlers succeeded and which failed,
-   along with durations for each:
+   along with durations and per-handler log entries. Log entries carry severity tags when a
+   severity level was recorded:
 
    .. code-block:: bash
 
@@ -673,10 +674,17 @@ Display the current value of a configuration record.
 
         Tasks:
          ✔ ip_allow.yaml ·························· 18ms
-         ✗ logging.yaml ·························· 120ms  ✗ FAIL
          ✗ ssl_client_coordinator ················· 85ms  ✗ FAIL
-         ├─ ✔ sni.yaml ··························· 20ms
-         └─ ✗ ssl_multicert.config ··············· 65ms  ✗ FAIL
+         │  [Note]  SSL configs reloaded
+         ├─ ✔ SSLConfig ·························· 10ms
+         │     [Note]  SSLConfig loading ...
+         │     [Note]  SSLConfig reloaded
+         ├─ ✗ SNIConfig ·························· 12ms  ✗ FAIL
+         │     [Note]  sni.yaml loading ...
+         │     [Err]   sni.yaml failed to load: yaml-cpp error ...
+         └─ ✔ SSLCertificateConfig ·············· 13ms
+               [Note]  (ssl) ssl_multicert.yaml loading ...
+               [Note]  (ssl) ssl_multicert.yaml finished loading
          ...
 
    Supports the following options:
@@ -703,6 +711,78 @@ Display the current value of a configuration record.
 
          # Show last 5 reloads
          $ traffic_ctl config status -c 5
+
+   .. option:: --min-level <level>
+
+      Filter task log entries by minimum severity level. Only entries at or above the specified
+      level are displayed. State-transition messages carry implicit severity:
+      ``in_progress()`` and ``complete()`` produce ``[Note]`` entries, ``fail()`` produces
+      ``[Err]`` entries. Entries without a severity (``DL_Undefined``) — typically those logged
+      via the one-argument ``ctx.log(text)`` — are always shown regardless of this filter.
+
+      Valid levels (case-insensitive): ``debug``, ``note``, ``warning``, ``error``.
+
+      .. code-block:: bash
+
+         # Show only warnings and errors
+         $ traffic_ctl config status -t my-token --min-level warning
+
+         # Show only errors
+         $ traffic_ctl config status -t my-token --min-level error
+
+      **Example — all logs (no filter):**
+
+      .. code-block:: text
+
+         ✗ ssl_client_coordinator ·······················    2ms  ✗ FAIL
+         │  [Note]  SSL configs reloaded
+         ├─ ✔ SSLConfig ·································    1ms
+         │     [Note]  SSLConfig loading ...
+         │     [Note]  SSLConfig reloaded
+         ├─ ✗ SNIConfig ·································    1ms  ✗ FAIL
+         │     [Note]  sni.yaml loading ...
+         │     [Err]   sni.yaml failed to load
+         └─ ✔ SSLCertificateConfig ······················    0ms
+               [Note]  (ssl) ssl_multicert.yaml loading ...
+               [Warn]  Cannot open SSL certificate configuration "ssl_multicert.yaml" - No such file or directory
+               [Note]  (ssl) ssl_multicert.yaml finished loading
+
+      **Example — --min-level warning (note and debug entries filtered out):**
+
+      .. code-block:: text
+
+         ✗ ssl_client_coordinator ·······················    2ms  ✗ FAIL
+         ├─ ✗ SNIConfig ·································    1ms  ✗ FAIL
+         │     [Err]   sni.yaml failed to load
+         └─ ✔ SSLCertificateConfig ······················    0ms
+               [Warn]  Cannot open SSL certificate configuration "ssl_multicert.yaml" - No such file or directory
+
+      All entries from state transitions and ``CfgLoad*`` macros carry a severity tag
+      (e.g. ``[Dbg]``, ``[Note]``, ``[Warn]``, ``[Err]``). Entries without a tag are
+      "unleveled" (from the one-argument ``ctx.log(text)``) and always pass the filter.
+
+   .. tip::
+
+      For deeper investigation beyond what ``traffic_ctl config status`` shows, enable the
+      ``config.reload`` debug tag. This writes a full dump of every subtask and its log entries
+      (with severity tags) to ``diags.log`` after each reload completes.
+      See :ref:`config-reload-diags-log` in the developer guide for details and examples.
+
+      Enable at runtime without restarting:
+
+      .. code-block:: bash
+
+         $ traffic_ctl server debug enable --tags "config.reload"
+
+      Or persistently in ``records.yaml``:
+
+      .. code-block:: yaml
+
+         records:
+           diags:
+             debug:
+               enabled: 1
+               tags: config.reload
 
    **JSON output:**
 

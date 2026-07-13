@@ -171,6 +171,16 @@ public:
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
   }
 
+  /// A single log entry with optional severity.
+  /// Entries from log(level, text) carry the supplied DiagsLevel. State-change
+  /// convenience methods attach an implicit level: in_progress() and complete()
+  /// log at DL_Note, fail() logs at DL_Error. The one-argument log(text) form
+  /// stores DL_Undefined and is always displayed (never filtered by --min-level).
+  struct LogEntry {
+    DiagsLevel  level{DL_Undefined}; ///< DL_Undefined = always shown (filter bypass)
+    std::string text;
+  };
+
   struct Info {
     friend class ConfigReloadTask;
     /// Grant friendship to the specific YAML::convert specialization.
@@ -184,7 +194,7 @@ public:
   protected:
     int64_t                          created_time_ms{now_ms()};      ///< milliseconds since epoch
     int64_t                          last_updated_time_ms{now_ms()}; ///< last time this task was updated (ms)
-    std::vector<std::string>         logs;                           ///< log messages from handler
+    std::vector<LogEntry>            logs;                           ///< log messages from handler
     State                            state{State::CREATED};
     std::string                      token;
     std::string                      description;
@@ -214,6 +224,7 @@ public:
   [[nodiscard]] ConfigContext add_child(std::string_view description = "");
 
   self_type &log(std::string const &text);
+  self_type &log(DiagsLevel level, std::string const &text);
   void       set_completed();
   void       set_failed();
   void       set_in_progress();
@@ -297,7 +308,7 @@ public:
   /// Mark task as TIMEOUT with an optional reason logged
   void mark_as_bad_state(std::string_view reason = "");
 
-  [[nodiscard]] std::vector<std::string>
+  [[nodiscard]] std::vector<LogEntry>
   get_logs() const
   {
     std::shared_lock<std::shared_mutex> lock(_mutex);
@@ -356,8 +367,13 @@ private:
   void notify_parent();
   void set_state_and_notify(State state);
 
+  friend struct ConfigReloadProgress;
+  void        log_reload_summary(State final_state);
+  static void dump_subtask_tree(const std::vector<ConfigReloadTaskPtr> &tasks, int indent);
+
   mutable std::shared_mutex _mutex;
   bool                      _reload_progress_checker_started{false};
+  bool                      _summary_logged{false};
   Info                      _info;
   ConfigReloadTaskPtr       _parent; ///< parent task, if any
 

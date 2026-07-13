@@ -33,6 +33,7 @@
 #include "tscore/Filenames.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
+#include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "proxy/http/HttpConfig.h"
 namespace
@@ -125,16 +126,16 @@ initCacheControl()
 void
 reloadCacheControl(ConfigContext ctx)
 {
-  Note("%s loading ...", ts::filename::CACHE);
-  CC_table *newTable;
-
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::CACHE);
   Dbg(dbg_ctl_cache_control, "%s updated, reloading", ts::filename::CACHE);
+
   eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CALL);
-  newTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
+  CC_table *newTable =
+    new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags,
+                 ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE, ctx);
   ink_atomic_swap(&CacheControlTable, newTable);
 
-  Note("%s finished loading", ts::filename::CACHE);
-  ctx.complete("Finished loading");
+  CfgLoadComplete(ctx, "%s finished loading", ts::filename::CACHE);
 }
 
 void

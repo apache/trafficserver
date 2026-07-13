@@ -24,6 +24,7 @@
 #include "mgmt/config/ConfigReloadTrace.h"
 #include "mgmt/config/ConfigContext.h"
 #include "records/RecCore.h"
+#include "tsutil/ts_diag_levels.h"
 
 #include <algorithm>
 #include "tsutil/Metrics.h"
@@ -91,7 +92,15 @@ ConfigReloadTask &
 ConfigReloadTask::log(std::string const &text)
 {
   std::unique_lock<std::shared_mutex> lock(_mutex);
-  _info.logs.push_back(text);
+  _info.logs.push_back({DL_Undefined, text});
+  return *this;
+}
+
+ConfigReloadTask &
+ConfigReloadTask::log(DiagsLevel level, std::string const &text)
+{
+  std::unique_lock<std::shared_mutex> lock(_mutex);
+  _info.logs.push_back({level, text});
   return *this;
 }
 
@@ -163,7 +172,7 @@ ConfigReloadTask::mark_as_bad_state(std::string_view reason)
   _atomic_last_updated_ms.store(now_ms(), std::memory_order_release);
   if (!reason.empty()) {
     // Push directly to avoid deadlock (log() would try to acquire same mutex)
-    _info.logs.emplace_back(reason);
+    _info.logs.push_back({DL_Undefined, std::string{reason}});
   }
 }
 
@@ -287,6 +296,74 @@ ConfigReloadTask::aggregate_status()
   }
 }
 
+void
+ConfigReloadTask::log_reload_summary(State final_state)
+{
+  // Snapshot token and sub_tasks under the lock to avoid races with RPC readers
+  // that also consult _info via get_info()/get_state() on other threads.
+  std::string                      token;
+  std::vector<ConfigReloadTaskPtr> sub_tasks_snapshot;
+  {
+    std::unique_lock<std::shared_mutex> lock(_mutex);
+    if (!_info.main_task || !is_terminal(final_state) || _summary_logged) {
+      return;
+    }
+    _summary_logged    = true;
+    token              = _info.token;
+    sub_tasks_snapshot = _info.sub_tasks;
+  }
+
+  int success_count{0}, fail_count{0}, total{0};
+  for (const auto &sub : sub_tasks_snapshot) {
+    State st = sub->get_state();
+    if (st == State::SUCCESS) {
+      success_count++;
+    } else if (st == State::FAIL || st == State::TIMEOUT) {
+      fail_count++;
+    }
+    total++;
+  }
+
+  if (final_state == State::SUCCESS) {
+    Note("Config reload [%s] completed: %d/%d tasks succeeded", token.c_str(), success_count, total);
+  } else {
+    Warning("Config reload [%s] finished with failures: %d succeeded, %d failed (%d total) "
+            "— run: traffic_ctl config status -t %s",
+            token.c_str(), success_count, fail_count, total, token.c_str());
+  }
+
+  dump_subtask_tree(sub_tasks_snapshot, 2);
+}
+
+void
+ConfigReloadTask::dump_subtask_tree(const std::vector<ConfigReloadTaskPtr> &tasks, int indent)
+{
+  static constexpr int MAX_DEPTH = 10;
+  if (indent / 2 > MAX_DEPTH) {
+    return;
+  }
+  for (const auto &sub : tasks) {
+    auto sub_state = sub->get_state();
+    auto sub_info  = sub->get_info();
+    Dbg(dbg_ctl_config, "%*s[%.*s] %s", indent, "", static_cast<int>(state_to_string(sub_state).size()),
+        state_to_string(sub_state).data(), sub_info.description.c_str());
+    for (const auto &entry : sub_info.logs) {
+      if (entry.level != DL_Undefined) {
+        static constexpr const char *tags[] = {
+          "[Diag] ", "[Dbg] ", "[Stat] ", "[Note] ", "[Warn] ", "[Err] ", "[Fatal] ", "[Alert] ", "[Emrg] ",
+        };
+        int idx = std::min(std::max(static_cast<int>(entry.level), 0), static_cast<int>(DL_Emergency));
+        Dbg(dbg_ctl_config, "%*s  %s%s", indent, "", tags[idx], entry.text.c_str());
+      } else {
+        Dbg(dbg_ctl_config, "%*s  %s", indent, "", entry.text.c_str());
+      }
+    }
+    if (!sub_info.sub_tasks.empty()) {
+      dump_subtask_tree(sub_info.sub_tasks, indent + 2);
+    }
+  }
+}
+
 int64_t
 ConfigReloadTask::get_last_updated_time_ms() const
 {
@@ -336,6 +413,7 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
       // Confirmed terminal — safe to stop.
       Dbg(dbg_ctl_config, "Reload task %s confirmed %.*s after grace period, stopping progress check.",
           _reload->get_token().c_str(), static_cast<int>(state_str.size()), state_str.data());
+      _reload->log_reload_summary(current_state);
       return EVENT_DONE;
     }
     // First observation of terminal state — reschedule once more to confirm
