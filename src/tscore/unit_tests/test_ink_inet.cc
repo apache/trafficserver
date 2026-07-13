@@ -303,4 +303,13 @@ TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
   UnAddr assigned;
   assigned = from_sockaddr;
   REQUIRE(assigned._path[TS_UNIX_SIZE - 1] == '\0');
+
+  // Constructing from a null address must leave _path an empty, terminated string so the copy
+  // paths don't read uninitialized memory.
+  UnAddr from_null_sa{static_cast<sockaddr const *>(nullptr)};
+  REQUIRE(from_null_sa._path[0] == '\0');
+  UnAddr from_null_ep{static_cast<IpEndpoint const *>(nullptr)};
+  REQUIRE(from_null_ep._path[0] == '\0');
+  UnAddr copied_null(from_null_sa);
+  REQUIRE(copied_null._path[0] == '\0');
 }

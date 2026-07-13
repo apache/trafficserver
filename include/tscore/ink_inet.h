@@ -1609,7 +1609,7 @@ IpAddr::hash() const
 struct UnAddr {
   using self = UnAddr;
 
-  UnAddr() { _path[0] = 0; }
+  UnAddr() = default;
 
   UnAddr(self const &addr) { ink_strlcpy(_path, addr._path, TS_UNIX_SIZE); }
   explicit UnAddr(const char *path) { ink_strlcpy(_path, path, TS_UNIX_SIZE); }
@@ -1620,7 +1620,12 @@ struct UnAddr {
   /// Construct from @c IpEndpoint.
   explicit UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
   /// Construct from @c IpEndpoint.
-  explicit UnAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
+  explicit UnAddr(IpEndpoint const *addr)
+  {
+    if (addr) {
+      this->assign(&addr->sa);
+    }
+  }
   /// Assign sockaddr storage.
   self &assign(sockaddr const *addr);
 
@@ -1645,7 +1650,9 @@ struct UnAddr {
     return *this;
   }
 
-  char _path[TS_UNIX_SIZE];
+  // Default-initialized so a constructor whose assign() gets a null address (which leaves
+  // the buffer untouched) still yields a valid empty C string instead of uninitialized bytes.
+  char _path[TS_UNIX_SIZE]{};
 };
 
 inline UnAddr &
