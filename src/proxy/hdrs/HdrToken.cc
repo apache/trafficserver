@@ -25,6 +25,7 @@
 #include "tscore/HashFNV.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
+#include <array>
 #include <cstdio>
 #include <cstring>
 #include "tscore/Allocator.h"
@@ -54,7 +55,7 @@ DbgCtl dbg_ctl_hdr_token{"hdr_token"};
 
 */
 
-const char *const _hdrtoken_strs[] = {
+constexpr const char *const _hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
   "Approved", // NNTP
@@ -311,7 +312,7 @@ HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
 **/
 #define TINY_MASK(x) (((uint32_t)1 << (x)) - 1)
 
-inline uint32_t
+constexpr uint32_t
 hash_to_slot(uint32_t hash)
 {
   return ((hash >> 15) ^ hash) & TINY_MASK(15);
@@ -321,7 +322,7 @@ hash_to_slot(uint32_t hash)
 // 0x80-0xFF) unchanged. Matches libc toupper() under the C locale for all 256
 // byte values but is locale-independent, which is the correct behavior for
 // case-insensitive matching of ASCII HTTP tokens.
-static inline unsigned char
+static constexpr unsigned char
 hdrtoken_ascii_toupper(unsigned char c)
 {
   unsigned char const is_lower = static_cast<unsigned char>((static_cast<unsigned>(c) - 'a') < 26u);
@@ -336,13 +337,13 @@ hdrtoken_ascii_toupper(unsigned char c)
 // ATSHash::nocase implementation, but locale-independent and call-free.
 static constexpr uint32_t HDRTOKEN_HASH_SEED = 0x811c9dc5u; // FNV-1a 32-bit offset basis
 
-static inline uint32_t
+static constexpr uint32_t
 hdrtoken_hash_step(uint32_t hval, unsigned char c)
 {
   return (hval ^ hdrtoken_ascii_toupper(c)) * 0x01000193u; // fold byte, xor in, multiply by the FNV-1a prime
 }
 
-inline uint32_t
+constexpr uint32_t
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
   uint32_t hval = HDRTOKEN_HASH_SEED;
@@ -352,19 +353,56 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
   return hval;
 }
 
+// Compile-time slot of a NUL-terminated well-known string. Walking to the NUL
+// (rather than reinterpret_cast<const unsigned char *> + length, which a constant
+// expression cannot do) lets this share hdrtoken_hash_step with hdrtoken_hash, so
+// the slot it computes is exactly the one hdrtoken_hash_init assigns.
+static constexpr uint32_t
+hdrtoken_literal_slot(const char *s)
+{
+  uint32_t hval = HDRTOKEN_HASH_SEED;
+  for (; *s != '\0'; ++s) {
+    hval = hdrtoken_hash_step(hval, static_cast<unsigned char>(*s));
+  }
+  return hash_to_slot(hval);
+}
+
+// Every well-known string must map to a distinct hash slot, or hdrtoken_hash_init
+// would overwrite one bucket with another and silently lose a token. Enforce it at
+// build time so a colliding table -- from editing the string list or the hash --
+// is a compile error rather than a startup abort.
+static constexpr bool
+hdrtoken_wks_slots_unique()
+{
+  // hash_to_slot yields a 15-bit slot: mark each well-known string's slot, and a
+  // repeat is a collision. Kept within the core-language constexpr subset --
+  // std::sort/std::adjacent_find are only constexpr in libstdc++ 12+, and ATS
+  // still builds against older standard libraries.
+  std::array<bool, 1u << 15> seen{};
+  for (const char *const s : _hdrtoken_strs) {
+    uint32_t const slot = hdrtoken_literal_slot(s);
+    if (seen[slot]) {
+      return false;
+    }
+    seen[slot] = true;
+  }
+  return true;
+}
+static_assert(hdrtoken_wks_slots_unique(),
+              "two well-known strings hash to the same slot; hdrtoken_hash_init would drop one -- change the table or the hash");
+
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 void
 hdrtoken_hash_init()
 {
-  uint32_t i;
-  int      num_collisions;
-
   memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
-  num_collisions = 0;
 
-  for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
+  // Slot uniqueness across the well-known strings is guaranteed at build time by
+  // static_assert(hdrtoken_wks_slots_unique()), so no bucket is ever assigned
+  // twice below.
+  for (uint32_t i = 0; i < static_cast<uint32_t> SIZEOF(_hdrtoken_strs); i++) {
     // convert the common string to the well-known token
     unsigned const char *wks;
     int                  wks_idx =
@@ -374,17 +412,8 @@ hdrtoken_hash_init()
     uint32_t hash = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
     uint32_t slot = hash_to_slot(hash);
 
-    if (hdrtoken_hash_table[slot].wks) {
-      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n", slot, reinterpret_cast<const char *>(wks),
-             hdrtoken_hash_table[slot].wks);
-      ++num_collisions;
-    }
     hdrtoken_hash_table[slot].wks  = reinterpret_cast<const char *>(wks);
     hdrtoken_hash_table[slot].hash = hash;
-  }
-
-  if (num_collisions > 0) {
-    abort();
   }
 }
 
