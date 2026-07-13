@@ -119,7 +119,7 @@ TEST_CASE("tolower throughput", "[bench][tolower]")
     // optimizing compiler can shrink or DCE the inline body's stores past
     // the first element we observed.
 
-    std::string scalar_name = "scalar   " + std::to_string(sz) + "B";
+    std::string scalar_name = "scalar    " + std::to_string(sz) + "B";
     BENCHMARK(scalar_name.c_str())
     {
       tolower_scalar(output_scalar.data(), input.data(), sz);
@@ -127,7 +127,7 @@ TEST_CASE("tolower throughput", "[bench][tolower]")
       return output_scalar[0];
     };
 
-    std::string simd_name = "ts::atc  " + std::to_string(sz) + "B";
+    std::string simd_name = "ts::atcii " + std::to_string(sz) + "B";
     BENCHMARK(simd_name.c_str())
     {
       ts::ascii::tolower_copy(output_simd.data(), input.data(), sz);

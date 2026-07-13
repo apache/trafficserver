@@ -33,8 +33,8 @@ target_link_libraries(benchmark_ProxyAllocator PRIVATE Catch2::Catch2WithMain ts
 add_executable(benchmark_SharedMutex benchmark_SharedMutex.cc)
 target_link_libraries(benchmark_SharedMutex PRIVATE Catch2::Catch2 ts::tscore libswoc::libswoc)
 
-add_executable(benchmark_ascii_tolower benchmark_ascii_tolower.cc)
-target_link_libraries(benchmark_ascii_tolower PRIVATE Catch2::Catch2WithMain ts::tscore)
+add_executable(benchmark_Random benchmark_Random.cc)
+target_link_libraries(benchmark_Random PRIVATE Catch2::Catch2WithMain ts::tscore)
 
 add_executable(benchmark_HostDB benchmark_HostDB.cc)
 target_link_libraries(
@@ -51,3 +51,6 @@ target_link_libraries(
 add_executable(benchmark_HuffmanDecode benchmark_HuffmanDecode.cc)
 target_link_libraries(benchmark_HuffmanDecode PRIVATE Catch2::Catch2WithMain lshpack)
 target_include_directories(benchmark_HuffmanDecode PRIVATE ${CMAKE_SOURCE_DIR}/lib)
+
+add_executable(benchmark_ascii_tolower benchmark_ascii_tolower.cc)
+target_link_libraries(benchmark_ascii_tolower PRIVATE Catch2::Catch2WithMain ts::tscore)
