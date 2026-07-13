@@ -27,6 +27,9 @@ from an origin over HTTP/2, returning the final 200 to the client.
 '''
 Test.ContinueOnFail = True
 
+# The test origin generates a self-signed certificate with the openssl CLI.
+Test.SkipUnless(Condition.HasProgram("openssl", "openssl needs to be installed and in PATH for this test"))
+
 ORIGIN = os.path.join(Test.TestDirectory, 'h2_interim_origin.py')
 
 # Each mode is a distinct origin behavior, routed by request path.
