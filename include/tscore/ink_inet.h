@@ -1609,7 +1609,7 @@ IpAddr::hash() const
 struct UnAddr {
   using self = UnAddr;
 
-  UnAddr() = default;
+  UnAddr() { _path[0] = 0; }
 
   UnAddr(self const &addr) { ink_strlcpy(_path, addr._path, TS_UNIX_SIZE); }
   explicit UnAddr(const char *path) { ink_strlcpy(_path, path, TS_UNIX_SIZE); }
@@ -1620,7 +1620,7 @@ struct UnAddr {
   /// Construct from @c IpEndpoint.
   explicit UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
   /// Construct from @c IpEndpoint.
-  explicit UnAddr(IpEndpoint const *addr)
+  explicit UnAddr(IpEndpoint const *addr) : UnAddr()
   {
     if (addr) {
       this->assign(&addr->sa);
@@ -1650,9 +1650,7 @@ struct UnAddr {
     return *this;
   }
 
-  // Default-initialized so a constructor whose assign() gets a null address (which leaves
-  // the buffer untouched) still yields a valid empty C string instead of uninitialized bytes.
-  char _path[TS_UNIX_SIZE]{};
+  char _path[TS_UNIX_SIZE];
 };
 
 inline UnAddr &
@@ -1662,6 +1660,8 @@ UnAddr::assign(sockaddr const *addr)
     // A kernel sockaddr_un may carry a full, unterminated sun_path.
     strncpy(_path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE - 1);
     _path[TS_UNIX_SIZE - 1] = '\0';
+  } else {
+    _path[0] = '\0';
   }
   return *this;
 }
