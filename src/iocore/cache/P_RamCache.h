@@ -27,6 +27,9 @@
 
 #include "iocore/eventsystem/IOBuffer.h"
 #include "tscore/CryptoHash.h"
+#include "tscore/ink_memory.h"
+
+#include <cstring>
 
 class StripeSM;
 
@@ -41,6 +44,36 @@ public:
 
   virtual void init(int64_t max_bytes, StripeSM *stripe) = 0;
   virtual ~RamCache(){};
+
+protected:
+  // put(copy = true) is the caller's promise that it may mutate its buffer
+  // after the put, so buffers are never shared with callers in either
+  // direction for such entries: implementations store a private copy on put
+  // (copy_data_in) and hand out a private copy on get (copy_data_out).
+
+  // Exact-size private copy of the caller's buffer; block_size() on the
+  // result recovers len.
+  static Ptr<IOBufferData>
+  copy_data_in(IOBufferData *data, uint32_t len)
+  {
+    char *b = static_cast<char *>(ats_malloc(len));
+
+    memcpy(b, data->data(), len);
+    Ptr<IOBufferData> d = make_ptr(new_xmalloc_IOBufferData(b, len));
+
+    d->_mem_type = DEFAULT_ALLOC;
+    return d;
+  }
+
+  // Private copy of a stored buffer to hand to the caller.
+  static Ptr<IOBufferData>
+  copy_data_out(IOBufferData *data, uint32_t len)
+  {
+    Ptr<IOBufferData> d = make_ptr(new_IOBufferData(iobuffer_size_to_index(len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED));
+
+    memcpy(d->data(), data->data(), len);
+    return d;
+  }
 };
 
 RamCache *new_RamCacheLRU();

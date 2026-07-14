@@ -103,6 +103,7 @@ if(BUILD_TESTING)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
   add_cache_test(RamCacheCLFUS unit_tests/test_RamCacheCLFUS.cc)
+  add_cache_test(RamCacheCopy unit_tests/test_RamCacheCopy.cc)
   add_cache_test(RamCacheCompressEntries unit_tests/test_RamCacheCompressEntries.cc)
   add_cache_test(RamCacheSeenFilter unit_tests/test_RamCacheSeenFilter.cc)
   # Only the shutdown test attaches a live segment; the rest need no shm syscall.

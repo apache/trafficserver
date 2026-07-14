@@ -61,6 +61,7 @@ struct RamCacheS3FIFOEntry {
   uint32_t   size; // object bytes; resident entries account size + ENTRY_OVERHEAD against the budget
   uint8_t    seg;  // SEG_SMALL / SEG_MAIN / SEG_GHOST
   uint8_t    freq; // 0..FREQ_MAX
+  bool       copy; // copy-in-copy-out: buffers are never shared with callers
   LINK(RamCacheS3FIFOEntry, lru_link);
   LINK(RamCacheS3FIFOEntry, hash_link);
   Ptr<IOBufferData> data; // null for ghost entries
@@ -328,7 +329,13 @@ RamCacheS3FIFO::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxke
     if (e->freq < FREQ_MAX) {
       e->freq++;
     }
-    (*ret_data) = e->data;
+    if (e->copy) {
+      // For copy entries the stored buffer is an exact-size allocation, so
+      // e->size is the data length.
+      (*ret_data) = copy_data_out(e->data.get(), e->size);
+    } else {
+      (*ret_data) = e->data;
+    }
     ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
     ts::Metrics::Counter::increment(_stripe->cache_vol->vol_rsb.ram_cache_hits);
     return 1;
@@ -339,12 +346,12 @@ RamCacheS3FIFO::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxke
 }
 
 int
-RamCacheS3FIFO::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t len, bool, uint64_t auxkey)
+RamCacheS3FIFO::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, uint64_t auxkey)
 {
   if (!_max_bytes) {
     return 0;
   }
-  uint32_t size = data->block_size();
+  uint32_t size = copy ? len : data->block_size();
   uint32_t i    = key->slice32(3) % _nbuckets;
 
   // Walk the hash chain. A resident hit just counts the reference; a ghost hit is admitted fresh to
@@ -358,6 +365,23 @@ RamCacheS3FIFO::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32
         if (e->seg != SEG_GHOST) { // already resident: count the reference (matches LRU's bump)
           if (e->freq < FREQ_MAX) {
             e->freq++;
+          }
+          if (copy) {
+            // The entry may still be sharing a caller's buffer from a put
+            // made while copy semantics were not requested; refresh it with a
+            // private copy before the caller mutates its buffer.
+            int64_t delta = static_cast<int64_t>(len) - e->size;
+
+            e->data = copy_data_in(data, len);
+            e->copy = true;
+            e->size = len;
+            if (e->seg == SEG_SMALL) {
+              _s_bytes += delta;
+            } else {
+              _m_bytes += delta;
+            }
+            ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
+            ts::Metrics::Gauge::increment(_stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
           }
           return 1;
         }
@@ -396,7 +420,12 @@ RamCacheS3FIFO::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32
   ne->size                = size;
   ne->freq                = 0;
   ne->seg                 = ghost_hit ? SEG_MAIN : SEG_SMALL;
-  ne->data                = data;
+  ne->copy                = copy;
+  if (copy) {
+    ne->data = copy_data_in(data, len);
+  } else {
+    ne->data = data;
+  }
   _bucket[i].push(ne);
   _seg[ne->seg].enqueue(ne);
   if (ghost_hit) {
