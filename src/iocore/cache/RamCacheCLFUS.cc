@@ -24,6 +24,7 @@
 // Clocked Least Frequently Used by Size (CLFUS) replacement policy
 // See https://cwiki.apache.org/confluence/display/TS/RamCache
 
+#include "RamCacheCLFUS.h"
 #include "P_RamCache.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
@@ -63,27 +64,6 @@ DbgCtl dbg_ctl_ram_cache_compare{"ram_cache_compare"};
 
 #endif
 
-struct RamCacheCLFUSEntry {
-  CryptoHash key;
-  uint64_t   auxkey;
-  uint64_t   hits;
-  uint32_t   size; // memory used including padding in buffer
-  uint32_t   len;  // actual data length
-  uint32_t   compressed_len;
-  union {
-    struct {
-      uint32_t compressed     : 3; // compression type
-      uint32_t incompressible : 1;
-      uint32_t lru            : 1;
-      uint32_t copy           : 1; // copy-in-copy-out
-    } flag_bits;
-    uint32_t flags;
-  };
-  LINK(RamCacheCLFUSEntry, lru_link);
-  LINK(RamCacheCLFUSEntry, hash_link);
-  Ptr<IOBufferData> data;
-};
-
 constexpr uint64_t
 requeue_hits(const uint64_t hits)
 {
@@ -101,46 +81,6 @@ cache_value(const RamCacheCLFUSEntry *const e)
 {
   return cache_value_hits_size(e->hits, e->size);
 }
-
-class RamCacheCLFUS : public RamCache
-{
-public:
-  RamCacheCLFUS() {}
-
-  // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
-  int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
-  int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;
-  int     fixup(const CryptoHash *key, uint64_t old_auxkey, uint64_t new_auxkey) override;
-  int64_t size() const override;
-
-  void init(int64_t max_bytes, StripeSM *stripe) override;
-
-  void compress_entries(EThread *thread, int do_at_most = INT_MAX);
-
-  // TODO move it to private.
-  StripeSM *stripe = nullptr; // for stats
-private:
-  int64_t _max_bytes = 0;
-  int64_t _bytes     = 0;
-  int64_t _objects   = 0;
-
-  double  _average_value                        = 0;
-  int64_t _history                              = 0;
-  int     _ibuckets                             = 0;
-  int     _nbuckets                             = 0;
-  DList(RamCacheCLFUSEntry, hash_link) *_bucket = nullptr;
-  Que(RamCacheCLFUSEntry, lru_link) _lru[2];
-  uint16_t           *_seen        = nullptr;
-  int                 _ncompressed = 0;
-  RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
-
-  void                _resize_hashtable();
-  void                _victimize(RamCacheCLFUSEntry *e);
-  void                _move_compressed(RamCacheCLFUSEntry *e);
-  RamCacheCLFUSEntry *_destroy(RamCacheCLFUSEntry *e);
-  void                _requeue_victims(Que(RamCacheCLFUSEntry, lru_link) & victims);
-  void                _tick(); // move CLOCK on history
-};
 
 int64_t
 RamCacheCLFUS::size() const
@@ -475,6 +415,12 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       default:
         goto Lcontinue;
       case CACHE_COMPRESSION_FASTLZ:
+        if (e->len < 16) {
+          // fastlz cannot compress inputs this small; decide while the entry
+          // is still lock-protected rather than in the unlocked region below.
+          e->flag_bits.incompressible = 1;
+          goto Lcontinue;
+        }
         l = static_cast<uint32_t>(static_cast<double>(e->len) * 1.05 + 66);
         break;
       case CACHE_COMPRESSION_LIBZ:
@@ -495,11 +441,11 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       bool failed = false;
       switch (ctype) {
       default:
-        goto Lfailed;
+        // The bound switch above filtered unknown types; this is unreachable,
+        // but must not jump to Lfailed from this unlocked region.
+        failed = true;
+        break;
       case CACHE_COMPRESSION_FASTLZ:
-        if (e->len < 16) {
-          goto Lfailed;
-        }
         if ((l = fastlz_compress(edata->data(), elen, b)) <= 0) {
           failed = true;
         }
@@ -526,11 +472,10 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 #endif
       }
       MUTEX_TAKE_LOCK(stripe->mutex, thread);
-      // see if the entry is till around
+      // See if the entry is still around; it may have been freed while the
+      // lock was dropped, so this must be checked before anything writes to
+      // it (including the failure marking below).
       {
-        if (failed) {
-          goto Lfailed;
-        }
         uint32_t            i  = key.slice32(3) % this->_nbuckets;
         RamCacheCLFUSEntry *ee = this->_bucket[i].head;
         while (ee) {
@@ -540,10 +485,17 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
           ee = ee->hash_link.next;
         }
         if (!ee || ee != e) {
-          e = this->_compressed;
           ats_free(b);
+          e = this->_compressed;
+          if (!e) {
+            // The cursor was invalidated while the lock was dropped.
+            break;
+          }
           goto Lcontinue;
         }
+      }
+      if (failed) {
+        goto Lfailed;
       }
       if (l > required_compression * e->len) {
         e->flag_bits.incompressible = true;
