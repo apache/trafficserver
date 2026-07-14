@@ -76,7 +76,7 @@ class ClientPacketMarkTest:
         ts.Disk.records_config.update(
             {
                 'proxy.config.net.sock_packet_mark_in': seed_mark,
-                'proxy.config.net.sock_option_flag': 0x11,
+                'proxy.config.net.sock_option_flag_in': 0x11,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|client_packet_mark',
                 'proxy.config.url_remap.remap_required': 0,
