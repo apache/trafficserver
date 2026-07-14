@@ -78,6 +78,8 @@ class ClientPacketMarkTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|client_packet_mark',
                 'proxy.config.url_remap.remap_required': 0,
+                # Keep ATS running as the invoking user inside sudo (no privilege drop).
+                'proxy.config.admin.user_id': '#-1',
             })
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.Port}")
         Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'client_packet_mark.so'), ts)
