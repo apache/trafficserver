@@ -84,8 +84,9 @@ custom_get_ja3_prefixed(int unit, const unsigned char *&data, int len, std::stri
 {
   int cnt, tmp;
   bool first = true;
-  // Extract each entry and append to result string
-  for (cnt = 0; cnt < len; cnt += unit) {
+  // Extract each entry and append to result string. Require a full unit of
+  // bytes to remain before reading, so an odd/short body can't over-read.
+  for (cnt = 0; cnt + unit <= len; cnt += unit) {
     if (unit == 1) {
       tmp = *(data++);
     } else {
@@ -232,13 +233,13 @@ custom_get_ja3(SSL *s)
   // Get extensions
   int *o;
   std::string eclist, ecpflist;
-  if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1) {
+  if (SSL_client_hello_get0_ext(s, 0x0a, &p, &len) == 1 && len >= 2) {
     // Skip first 2 bytes since we already have length
     p += 2;
     len -= 2;
     custom_get_ja3_prefixed(2, p, len, eclist);
   }
-  if (SSL_client_hello_get0_ext(s, 0x0b, &p, &len) == 1) {
+  if (SSL_client_hello_get0_ext(s, 0x0b, &p, &len) == 1 && len >= 1) {
     // Skip first byte since we already have length
     ++p;
     --len;
