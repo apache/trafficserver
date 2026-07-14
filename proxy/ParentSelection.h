@@ -197,10 +197,11 @@ struct ParentResult {
   reset()
   {
     ink_zero(*this);
-    line_number           = -1;
-    result                = PARENT_UNDEFINED;
-    mapWrapped[0]         = false;
-    mapWrapped[1]         = false;
+    line_number = -1;
+    result      = PARENT_UNDEFINED;
+    for (uint32_t i = 0; i < MAX_GROUP_RINGS; ++i) {
+      mapWrapped[i] = false;
+    }
     do_not_cache_response = false;
   }
 
@@ -310,7 +311,7 @@ private:
   uint32_t start_parent;
   uint32_t last_group;
   bool wrap_around;
-  bool mapWrapped[2];
+  bool mapWrapped[MAX_GROUP_RINGS];
   // state for consistent hash.
   int last_lookup;
   ATSConsistentHashIter chashIter[MAX_GROUP_RINGS];
