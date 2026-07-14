@@ -232,9 +232,15 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
       // check if the host is retryable.  It's retryable if the retry window has elapsed
       // and the global host status is HOST_STATUS_UP
       if (pRec && !pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
-        Debug("parent_select", "Parent.failedAt = %u, retry = %u, xact_start = %u", static_cast<unsigned>(pRec->failedAt.load()),
+        time_t observed = pRec->failedAt.load();
+        Debug("parent_select", "Parent.failedAt = %u, retry = %u, xact_start = %u", static_cast<unsigned>(observed),
               static_cast<unsigned>(retry_time), static_cast<unsigned>(request_info->xact_start));
-        if ((pRec->failedAt.load() + retry_time) < request_info->xact_start) {
+        // Atomically push failedAt to (xact_start - retry_time) so that only one
+        // concurrent transaction with this xact_start takes the retry slot.
+        // Sequential retries with a later xact_start still pass the window check;
+        // losers fall through to other parents.
+        if ((observed + retry_time) < request_info->xact_start &&
+            pRec->failedAt.compare_exchange_strong(observed, request_info->xact_start - retry_time)) {
           parentRetry = true;
           // make sure that the proper state is recorded in the result structure
           result->last_parent = pRec->idx;
