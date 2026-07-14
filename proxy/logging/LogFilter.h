@@ -23,9 +23,12 @@
 
 #pragma once
 
+#include <limits>
+
 #include "tscore/ink_platform.h"
 #include "tscore/IpMap.h"
 #include "tscore/Ptr.h"
+#include "tscpp/util/LocalBuffer.h"
 #include "LogAccess.h"
 #include "LogField.h"
 #include "LogFormat.h"
@@ -418,9 +421,18 @@ findPatternFromParamName(const char *lookup_query_param, const char *pattern)
 static void
 updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos, char *buf_dest)
 {
-  int buf_dest_len = strlen(buf_dest);
-  char buf_dest_to_field[buf_dest_len + 1];
-  char *temp_text = buf_dest_to_field;
+  size_t const buf_dest_size = strlen(buf_dest);
+  if (buf_dest_size > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    return;
+  }
+
+  int buf_dest_len = static_cast<int>(buf_dest_size);
+  // Client-controlled URL fields can make this buffer large; use LocalBuffer so
+  // it stays on the stack in the common case but spills to the heap otherwise,
+  // instead of a stack VLA that could exhaust the thread stack.
+  ts::LocalBuffer<char, 8192> buf_dest_to_field(buf_dest_len + 1);
+  char *temp_text = buf_dest_to_field.data();
+
   memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
   temp_text += (pattern_str - buf_dest);
   const char *value_str = strchr(pattern_str, '=');
@@ -444,8 +456,8 @@ updatePatternForFieldValue(char **field, const char *pattern_str, int field_pos,
     return;
   }
 
-  buf_dest_to_field[buf_dest_len] = '\0';
-  strcpy(*field, buf_dest_to_field);
+  buf_dest_to_field.data()[buf_dest_len] = '\0';
+  strcpy(*field, buf_dest_to_field.data());
 }
 
 /*---------------------------------------------------------------------------
