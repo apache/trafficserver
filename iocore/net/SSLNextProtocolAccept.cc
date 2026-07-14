@@ -105,6 +105,11 @@ struct SSLNextProtocolTrampoline : public Continuation {
     }
 
     if (endpoint_cont) {
+      // Cancel any pre-session accept/handshake inactivity timer before the read
+      // VIO is handed off to the session acceptor, so a stale timeout can't fire
+      // at the acceptor while a deferred SSN_START hook is pending.
+      netvc->cancel_inactivity_timeout();
+
       // disable read io, send events to endpoint
       netvc->do_io_read(endpoint_cont, 0, nullptr);
 
