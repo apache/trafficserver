@@ -94,8 +94,8 @@ SieveLru::initialize(uint32_t num_buckets, uint32_t size)
 
   uint32_t cur_size = pow(2, 1 + _size - num_buckets);
 
-  _map.reserve(pow(2, size + 2));     // Allow for all the sieve LRUs, and extra room for the allow list
-  _buckets.reserve(_num_buckets + 2); // Two extra buckets, for the block list and allow list
+  _map.reserve(pow(2, size + 2));    // Allow for all the sieve LRUs, and extra room for the allow list
+  _buckets.resize(_num_buckets + 2); // Two extra buckets, for the block list and allow list
 
   // Create the other buckets, in smaller and smaller sizes (power of 2)
   for (uint32_t i = lastBucket(); i <= entryBucket(); ++i) {
