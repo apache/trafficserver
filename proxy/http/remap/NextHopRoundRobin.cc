@@ -148,8 +148,23 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void *ih, time_t now)
     } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
              // available.
       _now == 0 ? _now = time(nullptr) : _now = now;
-      if (((result->wrap_around) || (cur_host->failedAt + retry_time) < static_cast<unsigned>(_now)) &&
-          host_stat == TS_HOST_STATUS_UP) {
+      bool retryable                          = false;
+      if (host_stat == TS_HOST_STATUS_UP) {
+        if (result->wrap_around) {
+          // Wrap-around: force a retry of the host regardless of the timer.
+          retryable = true;
+        } else {
+          // Atomically push failedAt to (_now - retry_time) so only one
+          // concurrent transaction with this _now takes the retry slot;
+          // sequential retries with a later _now still pass the window check.
+          time_t observed = cur_host->failedAt.load();
+          if ((static_cast<unsigned>(observed) + retry_time) < static_cast<unsigned>(_now) &&
+              cur_host->failedAt.compare_exchange_strong(observed, _now - retry_time)) {
+            retryable = true;
+          }
+        }
+      }
+      if (retryable) {
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
