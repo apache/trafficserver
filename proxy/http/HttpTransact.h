@@ -780,6 +780,7 @@ public:
     bool api_req_cacheable                        = false;
     bool api_resp_cacheable                       = false;
     bool api_server_addr_set                      = false;
+    bool host_down_cache_fallback_attempted       = false;
     UpdateCachedObject_t api_update_cached_object = UPDATE_CACHED_OBJECT_NONE;
     StateMachineAction_t saved_update_next_action = SM_ACTION_UNDEFINED;
     CacheAction_t saved_update_cache_action       = CACHE_DO_UNDEFINED;
