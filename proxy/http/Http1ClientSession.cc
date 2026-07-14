@@ -206,6 +206,9 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   EThread *ethis         = this_ethread();
   Ptr<ProxyMutex> lmutex = this->mutex;
   MUTEX_TAKE_LOCK(lmutex, ethis);
+  if (has_session_hook(TS_HTTP_SSN_START_HOOK)) {
+    _vc->cancel_inactivity_timeout();
+  }
   do_api_callout(TS_HTTP_SSN_START_HOOK);
   MUTEX_UNTAKE_LOCK(lmutex, ethis);
   lmutex.clear();
@@ -416,6 +419,13 @@ Http1ClientSession::release(ProxyTransaction *trans)
 
     // Timeout events should be delivered to the session
     this->do_io_write(this, 0, nullptr);
+  } else {
+    // release() from start() before the first transaction: re-arm the accept
+    // timeout that was cancelled for the deferred SSN_START hook, so an idle
+    // pre-request connection is still reaped.
+    HttpConfigParams *params = HttpConfig::acquire();
+    set_inactivity_timeout(HRTIME_SECONDS(params->accept_no_activity_timeout));
+    HttpConfig::release(params);
   }
 
   h1trans->reset();

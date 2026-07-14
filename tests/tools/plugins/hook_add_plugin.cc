@@ -22,11 +22,13 @@
  */
 #include <ts/ts.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define PLUGIN_TAG "test"
 
-// Number of seconds to reschedule to a task thread and delay
+// Whether to reschedule the SSN_START reenable to a task thread, and by how many ms.
 int DelayStart = 0;
+int DelayMs    = 500;
 
 int
 transactionHandler(TSCont continuation, TSEvent event, void *d)
@@ -115,7 +117,7 @@ globalHandler(TSCont continuation, TSEvent event, void *data)
       TSHttpSsnReenable(session, TS_EVENT_HTTP_CONTINUE);
     } else {
       TSContDataSet(cont, session);
-      TSContScheduleOnPool(cont, 500, TS_THREAD_POOL_TASK);
+      TSContScheduleOnPool(cont, DelayMs, TS_THREAD_POOL_TASK);
     }
   }
 
@@ -136,10 +138,13 @@ TSPluginInit(int argc, const char **argv)
     return;
   }
 
-  if (argc >= 2) {
-    TSDebug(PLUGIN_TAG, "Argument %s", argv[1]);
-    if (strcmp(argv[1], "-delay") == 0) {
+  for (int i = 1; i < argc; ++i) {
+    TSDebug(PLUGIN_TAG, "Argument %s", argv[i]);
+    if (strcmp(argv[i], "-delay") == 0) {
       DelayStart = 1;
+    } else if (strncmp(argv[i], "-delay-ms=", 10) == 0) {
+      DelayStart = 1;
+      DelayMs    = atoi(argv[i] + 10);
     }
   }
   TSCont continuation = TSContCreate(globalHandler, TSMutexCreate());
