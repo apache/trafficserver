@@ -314,12 +314,11 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           }
           (*ret_data) = data;
         } else {
-          IOBufferData *data = e->data.get();
           if (e->flag_bits.copy) {
-            data = new_IOBufferData(iobuffer_size_to_index(e->len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-            ::memcpy(data->data(), e->data->data(), e->len);
+            (*ret_data) = copy_data_out(e->data.get(), e->len);
+          } else {
+            (*ret_data) = e->data;
           }
-          (*ret_data) = data;
         }
         ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
         ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
@@ -624,11 +623,8 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
         e->size = size;
         e->data = data;
       } else {
-        char *b = static_cast<char *>(ats_malloc(len));
-        memcpy(b, data->data(), len);
-        e->data            = new_xmalloc_IOBufferData(b, len);
-        e->data->_mem_type = DEFAULT_ALLOC;
-        e->size            = size;
+        e->data = copy_data_in(data, len);
+        e->size = size;
       }
       check_accounting(this);
       e->flag_bits.copy       = copy;
@@ -735,10 +731,7 @@ Linsert:
   if (!copy) {
     e->data = data;
   } else {
-    char *b = static_cast<char *>(ats_malloc(len));
-    memcpy(b, data->data(), len);
-    e->data            = new_xmalloc_IOBufferData(b, len);
-    e->data->_mem_type = DEFAULT_ALLOC;
+    e->data = copy_data_in(data, len);
   }
   e->flag_bits.copy  = copy;
   this->_bytes      += size + ENTRY_OVERHEAD;
