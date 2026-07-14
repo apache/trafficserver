@@ -93,7 +93,7 @@ class ClientPacketMarkTest:
             f'--verbose --ipv4 --header "X-Set-Mark: 0x{self.SET_MARK:08x}" http://localhost:{self._ts.Variables.port}/',
             ts=self._ts)
         tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+        tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             f"X-Client-Packet-Mark: 0x{self.SET_MARK:08x}", f"Observed client packet mark should be 0x{self.SET_MARK:08x}")
 
 
