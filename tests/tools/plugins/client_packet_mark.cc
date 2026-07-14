@@ -42,7 +42,7 @@ extern "C" {
 
 namespace
 {
-constexpr std::string_view PLUGIN_NAME = "client_packet_mark_mask";
+constexpr std::string_view PLUGIN_NAME = "client_packet_mark";
 constexpr std::string_view MARK_HEADER = "X-Set-Mark";
 constexpr std::string_view ECHO_HEADER = "X-Client-Packet-Mark";
 
@@ -109,7 +109,7 @@ handle_send_response(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
   TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
 
   if (mark.has_value()) {
-    Dbg(dbg_ctl, "Calling unmasked set: mark=0x%08x", *mark);
+    Dbg(dbg_ctl, "Setting client packet mark to 0x%08x", *mark);
     TSHttpTxnClientPacketMarkSet(txnp, static_cast<int>(*mark));
   }
 

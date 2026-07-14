@@ -18,9 +18,9 @@ import os
 import socket
 
 Test.Summary = '''
-Verify the TSHttpTxnClientPacketMarkSet overload replaces the entire client-side
-firewall mark with the supplied value, using a test plugin that reads the applied
-mark back off the client socket.
+Verify TSHttpTxnClientPacketMarkSet sets the client-side firewall mark to the
+supplied value, using a test plugin that reads the applied mark back off the
+client socket.
 '''
 
 
@@ -44,19 +44,19 @@ def _can_set_so_mark() -> bool:
 Test.SkipUnless(
     Condition.IsPlatform("linux"),
     Condition(_can_set_so_mark, "Setting SO_MARK requires Linux with CAP_NET_ADMIN", True),
-    Condition.PluginExists('client_packet_mark_mask.so'),
+    Condition.PluginExists('client_packet_mark.so'),
 )
 
 
 class ClientPacketMarkTest:
-    """Drive the unmasked overload through a test plugin and assert on the
+    """Drive TSHttpTxnClientPacketMarkSet through a test plugin and assert on the
     firewall mark read back off the client socket.
 
     The starting mark is seeded per process via
     proxy.config.net.sock_packet_mark_in, applied at accept time.
     """
 
-    # Value the plugin sets; the full mark is expected to become exactly this.
+    # Value the plugin sets; the mark is expected to become exactly this.
     SET_MARK = 0x0000000A
 
     def __init__(self):
@@ -76,17 +76,17 @@ class ClientPacketMarkTest:
             {
                 'proxy.config.net.sock_packet_mark_in': seed_mark,
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|client_packet_mark_mask',
+                'proxy.config.diags.debug.tags': 'http|client_packet_mark',
                 'proxy.config.url_remap.remap_required': 0,
             })
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.Port}")
-        Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'client_packet_mark_mask.so'), ts)
+        Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'client_packet_mark.so'), ts)
         return ts
 
     def run(self):
-        # Unmasked baseline: the two-argument overload replaces the entire mark
-        # with the supplied value, regardless of the seeded starting mark.
-        tr = Test.AddTestRun("Unmasked: 2-arg overload sets the full mark")
+        # The mark is set to the supplied value, regardless of the seeded
+        # starting mark.
+        tr = Test.AddTestRun("TSHttpTxnClientPacketMarkSet sets the mark")
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
         tr.MakeCurlCommand(
