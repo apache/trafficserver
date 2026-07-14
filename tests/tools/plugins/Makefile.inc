@@ -55,6 +55,9 @@ tools_plugins_missing_mangled_definition_la_LDFLAGS = \
 noinst_LTLIBRARIES += tools/plugins/missing_ts_plugin_init.la
 tools_plugins_missing_ts_plugin_init_la_SOURCES = tools/plugins/missing_ts_plugin_init.cc
 
+noinst_LTLIBRARIES += tools/plugins/redirect_rearm.la
+tools_plugins_redirect_rearm_la_SOURCES = tools/plugins/redirect_rearm.cc
+
 noinst_LTLIBRARIES += tools/plugins/ssl_client_verify_test.la
 tools_plugins_ssl_client_verify_test_la_SOURCES = tools/plugins/ssl_client_verify_test.cc
 
