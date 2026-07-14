@@ -45,7 +45,6 @@ def _can_set_so_mark() -> bool:
 Test.SkipUnless(
     Condition.IsPlatform("linux"),
     Condition(_can_set_so_mark, "Setting SO_MARK requires Linux with CAP_NET_ADMIN or CAP_NET_RAW", True),
-    Condition.PluginExists('client_packet_mark.so'),
 )
 
 
