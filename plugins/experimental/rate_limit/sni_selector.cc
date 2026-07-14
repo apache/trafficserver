@@ -22,6 +22,8 @@
 #include "sni_limiter.h"
 #include "sni_selector.h"
 
+extern int gVCIdx;
+
 ///////////////////////////////////////////////////////////////////////////////
 // This is the queue management continuation, which gets called periodically
 //
@@ -55,6 +57,9 @@ sni_queue_cont(TSCont cont, TSEvent event, void *edata)
 
         (void)contp;
         TSDebug(PLUGIN_NAME, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
+        // A queued VC never reserved an active slot, so clear its user arg to
+        // stop VCONN_CLOSE from calling release() and underflowing _active.
+        TSUserArgSet(vc, gVCIdx, nullptr);
         TSVConnReenableEx(vc, TS_EVENT_ERROR);
         limiter->incrementMetric(RATE_LIMITER_METRIC_EXPIRED);
       }
