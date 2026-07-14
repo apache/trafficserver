@@ -27,9 +27,10 @@ client socket.
 def _can_set_so_mark() -> bool:
     """Probe whether SO_MARK can actually be set on this host.
 
-    Setting SO_MARK is Linux-only and requires CAP_NET_ADMIN. On any host that
-    lacks the capability (or the platform), setsockopt raises, and the applied
-    value would be unobservable -- so the test is skipped rather than failed.
+    Setting SO_MARK is Linux-only and requires CAP_NET_ADMIN or CAP_NET_RAW.
+    On any host that lacks the capability (or the platform), setsockopt raises,
+    and the applied value would be unobservable -- so the test is skipped
+    rather than failed.
     """
     if not hasattr(socket, "SO_MARK"):
         return False
@@ -75,6 +76,7 @@ class ClientPacketMarkTest:
         ts.Disk.records_config.update(
             {
                 'proxy.config.net.sock_packet_mark_in': seed_mark,
+                'proxy.config.net.sock_option_flag': 0x11,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|client_packet_mark',
                 'proxy.config.url_remap.remap_required': 0,
