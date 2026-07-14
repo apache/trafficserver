@@ -78,7 +78,8 @@ DNSProcessor dnsProcessor;
 ClassAllocator<DNSEntry> dnsEntryAllocator("dnsEntryAllocator");
 // Users are expected to free these entries in short order!
 // We could page align this buffer to enable page flipping for recv...
-ClassAllocator<HostEnt> dnsBufAllocator("dnsBufAllocator", 2);
+// Destruct_on_free runs ~HostEnt() so the SRVHosts vector's heap is released.
+ClassAllocator<HostEnt, true> dnsBufAllocator("dnsBufAllocator", 2);
 
 //
 // Function Prototypes
