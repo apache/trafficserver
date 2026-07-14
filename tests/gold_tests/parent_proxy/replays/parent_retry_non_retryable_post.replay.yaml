@@ -1,0 +1,90 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A non-idempotent POST elicits a configured-retryable 502 from the parent.
+# The parent must not be marked down because POST is not retryable.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Parent must not be marked down for a non-retryable POST'
+
+  server:
+    name: 'parent-502'
+
+  client:
+    name: 'client'
+    # The non-retryable POST may not produce a clean response cycle (ATS may
+    # still attempt a body-less retry that proxy-verifier reports as a body
+    # underrun). The security-relevant assertion is on the ATS diags log.
+    return_code: [0, 1]
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|parent'
+      proxy.config.http.no_dns_just_forward_to_parent: 1
+      proxy.config.http.parent_proxy.fail_threshold: 1
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.url_remap.remap_required: 0
+
+    parent_config:
+      - 'dest_domain=. parent="127.0.0.1:{SERVER_HTTP_PORT}|1" go_direct=false parent_is_proxy=true parent_retry=unavailable_server_retry unavailable_server_retry_responses="502,503"'
+
+    log_validation:
+      diags_log:
+        excludes:
+          # Both messages are Note()s emitted by
+          # ParentSelectionStrategy::markParentDown; either appearing in
+          # diags.log indicates the markdown path ran.
+          - expression: 'Parent .* marked as down 127\.0\.0\.1:\d+'
+            description: 'markParentDown must not run for a non-retryable request'
+          - expression: 'http parent proxy 127\.0\.0\.1:\d+ marked down'
+            description: 'Parent must not cross the failure threshold'
+
+sessions:
+- transactions:
+  - client-request:
+      method: POST
+      version: "1.1"
+      url: http://example.com/unretryable
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Length, "5"]
+        - [Proxy-Connection, close]
+        - [uuid, post-502]
+      content:
+        encoding: plain
+        data: "hello"
+
+    server-response:
+      status: 502
+      reason: Bad Gateway
+      headers:
+        fields:
+        - [Content-Length, "0"]
+        - [Connection, close]
+
+    proxy-response:
+      status: 502
