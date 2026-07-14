@@ -75,13 +75,17 @@ get_uint_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view header)
 void
 set_echo_header(TSMBuffer bufp, TSMLoc hdr_loc, uint32_t value)
 {
+  // 0x + 8 hex digits for a uint32_t + NUL = 11 bytes; 16 is comfortably enough.
   char formatted[16];
-  int  len = snprintf(formatted, sizeof(formatted), "0x%08x", value);
+  std::snprintf(formatted, sizeof(formatted), "0x%08x", value);
 
   TSMLoc field_loc = TS_NULL_MLOC;
   if (TSMimeHdrFieldCreateNamed(bufp, hdr_loc, ECHO_HEADER.data(), static_cast<int>(ECHO_HEADER.length()), &field_loc) ==
       TS_SUCCESS) {
-    TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, formatted, len);
+    // -1 length lets the API strlen the null-terminated buffer, so we do not
+    // rely on snprintf's return value (which is the would-be length, not the
+    // truncated length) as a byte count.
+    TSMimeHdrFieldValueStringSet(bufp, hdr_loc, field_loc, -1, formatted, -1);
     TSMimeHdrFieldAppend(bufp, hdr_loc, field_loc);
     TSHandleMLocRelease(bufp, hdr_loc, field_loc);
   }
