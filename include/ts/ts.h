@@ -1602,12 +1602,18 @@ TSReturnCode           TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp);
 TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
 
 /** Change packet firewall mark for the server side connection
- *
-    @note The change takes effect immediately, if no OS connection has been
-    made, then this sets the mark that will be used IF an OS connection
-    is established
 
-    @return TS_SUCCESS if the (future?) server connection was modified
+    Sets the entire server-side packet firewall mark to @a mark; the whole mark is replaced. @a mark
+    is interpreted as a 32-bit unsigned bit pattern.
+
+    @note The firewall mark is only honored on platforms whose OS supports it, specifically Linux via
+    @c SO_MARK. On platforms without @c SO_MARK support the call still returns TS_SUCCESS, but setting
+    the mark has no effect at the OS layer (it is a safe no-op).
+
+    @note If a live server connection exists, the mark is applied to it immediately; the mark is also
+    recorded on the transaction so that any subsequent server connection for this transaction uses it.
+
+    @return TS_SUCCESS always, including when no server connection has been established yet.
 */
 TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
 
