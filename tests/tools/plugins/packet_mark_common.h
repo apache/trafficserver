@@ -1,10 +1,10 @@
 /** @file
 
-  Shared helpers for the packet-mark test plugins.
+  Shared helpers for the client_packet_mark and server_packet_mark test plugins.
 
-  The plugin reads a target mark out of a request header, applies it to a
-  connection via the tsapi under test, reads the applied mark back off the
-  relevant socket with getsockopt(SO_MARK), and echoes the observed value into a
+  Both plugins read a target mark out of a request header, apply it to a
+  connection via the tsapi under test, read the applied mark back off the
+  relevant socket with getsockopt(SO_MARK), and echo the observed value into a
   response header for the accompanying AuTest to assert on. Everything except
   the tsapi call and the fd getter is identical, so it lives here.
 
@@ -42,6 +42,10 @@ struct LogContext {
 
 void apply_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header);
 
+void apply_server_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header);
+
 void echo_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header);
+
+void echo_server_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header);
 
 } // namespace packet_mark

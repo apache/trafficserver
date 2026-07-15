@@ -1,6 +1,6 @@
 /** @file
 
-  Shared helpers for the packet-mark test plugins.
+  Shared helpers for the client_packet_mark and server_packet_mark test plugins.
 
   @section license License
 
@@ -118,9 +118,9 @@ namespace
   }
 
   // Parameterized on the exact tsapi function and kept private to this file,
-  // driven only by the named entry points below. The public API is split by
-  // client/server rather than taking the function as an argument so each plugin
-  // links against exactly the tsapi trio it exercises.
+  // driven only by the four named entry points below. See packet_mark_common.h
+  // for why the public API is split by client/server rather than taking the
+  // function as an argument.
   template <MarkSetter Setter>
   void
   apply_mark_from_header(const LogContext &log, TSHttpTxn txnp, std::string_view header)
@@ -179,9 +179,21 @@ apply_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header
 }
 
 void
+apply_server_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header)
+{
+  apply_mark_from_header<TSHttpTxnServerPacketMarkSet>(log, txnp, header);
+}
+
+void
 echo_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header)
 {
   echo_observed_mark<TSHttpTxnClientFdGet, TSHttpTxnClientRespGet>(log, txnp, echo_header);
+}
+
+void
+echo_server_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header)
+{
+  echo_observed_mark<TSHttpTxnServerFdGet, TSHttpTxnServerRespGet>(log, txnp, echo_header);
 }
 
 } // namespace packet_mark
