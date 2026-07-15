@@ -19,7 +19,12 @@ meta:
 
 sessions:
 - protocol:
-    stack: https
+  - name: http
+    version: 1
+  - name: tls
+    sni: example.com
+  - name: tcp
+  - name: ip
   transactions:
   - client-request:
       method: "GET"
@@ -41,7 +46,12 @@ sessions:
       status: 200
 
 - protocol:
-    stack: http2
+  - name: http
+    version: 2
+  - name: tls
+    sni: example.com
+  - name: tcp
+  - name: ip
   transactions:
   - client-request:
       headers:
