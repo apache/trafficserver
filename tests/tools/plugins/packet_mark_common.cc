@@ -52,23 +52,24 @@ namespace
   {
     // Values are parsed with strtoul (base 0), so "0x0000000A" and "10" are both
     // accepted. Returns std::nullopt if the header is absent, empty, or not a valid
-    // number -- a malformed value is a test-harness error, not a silent 0. */
+    // number -- a malformed value is a test-harness error, not a silent 0.
     TSMLoc field_loc{TSMimeHdrFieldFind(bufp, hdr_loc, header.data(), static_cast<int>(header.length()))};
     if (field_loc == TS_NULL_MLOC) {
       return std::nullopt;
     }
 
     int         value_len{0};
-    char const *value{TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &value_len)};
+    char const *value_str{TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, -1, &value_len)};
 
     std::optional<uint32_t> result{std::nullopt};
-    if (value != nullptr && value_len > 0) {
-      char *end{nullptr};
+    if (value_str != nullptr && value_len > 0) {
+      std::string value{value_str, static_cast<std::size_t>(value_len)};
+      char       *end{nullptr};
       errno = 0;
-      unsigned long const parsed{std::strtoul(value, &end, 0)};
+      unsigned long const parsed{std::strtoul(value.c_str(), &end, 0)};
       // Reject empty, partially-numeric, or out-of-range values: a malformed
       // header is a test-harness error, not a silent 0.
-      if (errno == 0 && end == value + value_len && parsed <= UINT32_MAX) {
+      if (errno == 0 && end == value.c_str() + value.size() && parsed <= UINT32_MAX) {
         result = static_cast<uint32_t>(parsed);
       }
     }
