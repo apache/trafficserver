@@ -156,6 +156,9 @@ if(BUILD_TESTING)
   if(SSLLIB_IS_AT_LEAST_OPENSSL3)
     target_sources(test_net PRIVATE unit_tests/test_SSLDHParams.cc)
   endif()
+  if(TS_USE_QUIC)
+    target_sources(test_net PRIVATE unit_tests/test_QUICTokenKeyConfig.cc)
+  endif()
   # Use link groups to solve circular dependency
   set(LINK_GROUP_LIBS
       ts::logging
