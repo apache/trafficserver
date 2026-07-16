@@ -112,9 +112,11 @@ class PacketMarkTest:
         # and ATS are started before the first case, independent of the order in
         # which cases are added.
         tr = Test.AddTestRun(description)
+        tr.Processes.Default.StartBefore(self._server)
+        tr.Processes.Default.StartBefore(self._ts)
         if not self._started:
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
+            tr.StillRunningAfter = self._server
+            tr.StillRunningAfter = self._ts
             self._started = True
         tr.MakeCurlCommand(
             f'--verbose --ipv4 --header "{set_header}: 0x{self.SET_MARK:08x}" http://localhost:{self._ts.Variables.port}/',
