@@ -982,7 +982,7 @@ allow-plain
 
 .. note::
 
-   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/via.html>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -1008,7 +1008,7 @@ allow-plain
 
 .. note::
 
-   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/via.html>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
