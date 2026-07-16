@@ -15,7 +15,7 @@
 #
 #######################
 
-add_autest_plugin(client_packet_mark client_packet_mark.cc)
+add_autest_plugin(client_packet_mark client_packet_mark.cc packet_mark_common.cc)
 add_autest_plugin(conf_remap_stripped conf_remap_stripped.cc)
 add_autest_plugin(continuations_verify continuations_verify.cc)
 add_autest_plugin(cont_schedule cont_schedule.cc)
