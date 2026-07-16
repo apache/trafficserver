@@ -511,6 +511,17 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
                         "recv data bad payload length");
     }
 
+    // Hard-enforce the global active-streams cap on inbound client streams.
+    if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible() && Http2::max_active_streams_policy_in == 1 &&
+        Http2::max_active_streams_in > 0) {
+      int64_t const current_streams = Metrics::Gauge::load(http2_rsb.current_client_stream_count);
+      if (current_streams >= Http2::max_active_streams_in) {
+        Metrics::Counter::increment(http2_rsb.max_active_streams_exceeded_in);
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                          "active streams cap reached");
+      }
+    }
+
     // Set up the State Machine
     if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible()) {
       SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
@@ -1128,6 +1139,17 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
     if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
+    }
+
+    // Hard-enforce the global active-streams cap on inbound client streams.
+    if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible() && Http2::max_active_streams_policy_in == 1 &&
+        Http2::max_active_streams_in > 0) {
+      int64_t const current_streams = Metrics::Gauge::load(http2_rsb.current_client_stream_count);
+      if (current_streams >= Http2::max_active_streams_in) {
+        Metrics::Counter::increment(http2_rsb.max_active_streams_exceeded_in);
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_REFUSED_STREAM,
+                          "active streams cap reached");
+      }
     }
 
     // Set up the State Machine
@@ -2880,6 +2902,12 @@ Http2ConnectionState::_adjust_concurrent_stream()
 
   if (max_active_streams == 0) {
     // Throttling down is disabled.
+    return max_concurrent_streams;
+  }
+
+  if (!this->session->is_outbound() && Http2::max_active_streams_policy_in == 1) {
+    // Under hard-enforcement the advertised value is left untouched; new streams
+    // are refused at creation instead of throttling down concurrency.
     return max_concurrent_streams;
   }
 
