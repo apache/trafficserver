@@ -85,7 +85,8 @@ class PacketMarkTest:
         server = Test.MakeOriginServer(f"server{self._num}")
         request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
         response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-        server.addResponse("sessionlog.json", request_header, response_header)
+        for _ in range(2):
+            server.addResponse("sessionlog.json", request_header, response_header)
         return server
 
     def _make_ats(self):
