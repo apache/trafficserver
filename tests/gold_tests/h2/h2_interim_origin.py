@@ -40,26 +40,26 @@ import threading
 BODY = b"interim-origin-body"
 
 
-def frame(ftype, flags, sid, payload):
+def frame(ftype: int, flags: int, sid: int, payload: bytes) -> bytes:
     return struct.pack(">I", len(payload))[1:] + bytes([ftype, flags]) + struct.pack(">I", sid) + payload
 
 
-def lit(name, value):
+def lit(name: str, value: str) -> bytes:
     # HPACK literal header field without indexing, new name, no Huffman.
     n = name.encode()
     v = value.encode()
     return b"\x00" + bytes([len(n)]) + n + bytes([len(v)]) + v
 
 
-def final_block():
+def final_block() -> bytes:
     return b"\x88" + lit("content-type", "text/plain")  # :status 200 (static idx 8)
 
 
-def interim_block(status):
+def interim_block(status: str) -> bytes:
     return lit(":status", status) + lit("link", "</style.css>; rel=preload; as=style")
 
 
-def send_response(sock, mode, sid):
+def send_response(sock: ssl.SSLSocket, mode: str, sid: int) -> None:
     if mode == "single":
         sock.sendall(frame(0x1, 0x4, sid, interim_block("103")))
     elif mode == "multi":
@@ -82,36 +82,39 @@ def send_response(sock, mode, sid):
     sock.sendall(frame(0x0, 0x1, sid, BODY))  # DATA, END_STREAM
 
 
-def handle(sock, mode):
-    sock.sendall(frame(0x4, 0x0, 0, b""))  # server SETTINGS
-    preface = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-    buf = b""
-    preface_done = False
-    while True:
-        data = sock.recv(65535)
-        if not data:
-            return
-        buf += data
-        if not preface_done:
-            if len(buf) < len(preface):
-                continue
-            buf = buf[len(preface):]
-            preface_done = True
-        while len(buf) >= 9:
-            ln = int.from_bytes(buf[0:3], "big")
-            if len(buf) < 9 + ln:
-                break
-            ftype = buf[3]
-            flags = buf[4]
-            sid = int.from_bytes(buf[5:9], "big") & 0x7FFFFFFF
-            buf = buf[9 + ln:]
-            if ftype == 0x4 and not (flags & 0x1):  # client SETTINGS -> ACK it
-                sock.sendall(frame(0x4, 0x1, 0, b""))
-            if ftype == 0x1:  # a request HEADERS -> respond on the same stream
-                send_response(sock, mode, sid)
+def handle(sock: ssl.SSLSocket, mode: str) -> None:
+    try:
+        sock.sendall(frame(0x4, 0x0, 0, b""))  # server SETTINGS
+        preface = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+        buf = b""
+        preface_done = False
+        while True:
+            data = sock.recv(65535)
+            if not data:  # client closed the connection
+                return
+            buf += data
+            if not preface_done:
+                if len(buf) < len(preface):
+                    continue
+                buf = buf[len(preface):]
+                preface_done = True
+            while len(buf) >= 9:
+                ln = int.from_bytes(buf[0:3], "big")
+                if len(buf) < 9 + ln:
+                    break
+                ftype = buf[3]
+                flags = buf[4]
+                sid = int.from_bytes(buf[5:9], "big") & 0x7FFFFFFF
+                buf = buf[9 + ln:]
+                if ftype == 0x4 and not (flags & 0x1):  # client SETTINGS -> ACK it
+                    sock.sendall(frame(0x4, 0x1, 0, b""))
+                if ftype == 0x1:  # a request HEADERS -> respond on the same stream
+                    send_response(sock, mode, sid)
+    finally:
+        sock.close()
 
 
-def make_cert():
+def make_cert() -> tuple[str, str]:
     cert = tempfile.NamedTemporaryFile(dir=".", suffix=".crt", delete=False).name
     key = tempfile.NamedTemporaryFile(dir=".", suffix=".key", delete=False).name
     subprocess.run(
@@ -125,7 +128,7 @@ def make_cert():
     return cert, key
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("address")
     p.add_argument("port", type=int)
@@ -133,7 +136,7 @@ def parse_args():
     return p.parse_args()
 
 
-def main():
+def main() -> int:
     args = parse_args()
     cert, key = make_cert()
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
