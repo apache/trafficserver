@@ -27,6 +27,7 @@
 #include "SSLStats.h"
 #include "P_Net.h"
 #include "P_SSLUtils.h"
+#include "ts/ats_probe.h"
 #include "P_SSLNextProtocolSet.h"
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
@@ -653,6 +654,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     ink_assert(bytes >= 0);
   } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
   ssl_read_errno = errno;
+  ATS_PROBE4(net_ssl_read, this->get_fd(), bytes, s->vio.ndone, ret);
 
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
@@ -864,6 +866,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     } break;
     }
   }
+  ATS_PROBE5(net_ssl_write, this->get_fd(), total_written, write.vio.ndone + total_written, num_really_written,
+             static_cast<int>(err));
   return num_really_written;
 }
 
@@ -1115,7 +1119,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
         }
         ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
         ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-        DbgPrint(dbg_ctl_ssl, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());
+        auto default_ctx = lookup->defaultContext();
+        DbgPrint(dbg_ctl_ssl, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
       }
 
       // Escape if this is marked to be a tunnel.
@@ -1137,7 +1142,7 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
-      this->_make_ssl_connection(lookup->defaultContext());
+      this->_make_ssl_connection(lookup->defaultContext().get());
     }
 
     if (this->ssl == nullptr) {
@@ -2016,8 +2021,8 @@ SSLNetVConnection::_lookupContextByIP()
         return nullptr;
       }
       ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-      DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1,
-               lookup->defaultContext());
+      auto default_ctx = lookup->defaultContext();
+      DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
     }
   } else if (0 == safe_getsockname(this->get_socket(), &ip.sa, &namelen)) {
     cc = lookup->find(ip);

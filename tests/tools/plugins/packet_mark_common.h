@@ -1,5 +1,13 @@
 /** @file
 
+  Shared helpers for the packet-mark test plugins.
+
+  The plugin reads a target mark out of a request header, applies it to a
+  connection via the tsapi under test, reads the applied mark back off the
+  relevant socket with getsockopt(SO_MARK), and echoes the observed value into a
+  response header for the accompanying AuTest to assert on. Everything except
+  the tsapi call and the fd getter is identical, so it lives here.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -17,33 +25,23 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
-
  */
 
 #pragma once
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/un.h>
-#include <limits.h>
+#include <ts/ts.h>
 
-#include <string>
 #include <string_view>
 
-class JAxContext
+namespace packet_mark
 {
-public:
-  JAxContext(const char *name, sockaddr const *s_sockaddr);
-  ~JAxContext();
-
-  const std::string &get_fingerprint() const;
-  void               set_fingerprint(std::string_view fingerprint);
-
-  const char *get_addr() const;
-  const char *get_method_name() const;
-
-private:
-  std::string _fingerprint;
-  char        _addr[PATH_MAX + 1];
-  const char *_method_name;
+struct LogContext {
+  std::string_view plugin_name;
+  const DbgCtl    &dbg_ctl;
 };
+
+void apply_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header);
+
+void echo_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header);
+
+} // namespace packet_mark

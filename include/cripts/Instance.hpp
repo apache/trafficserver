@@ -18,8 +18,11 @@
 #pragma once
 
 #include <array>
+#include <utility>
 #include <variant>
 #include <unordered_map>
+
+#include <fmt/format.h>
 
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -106,7 +109,7 @@ public:
   debug(fmt::format_string<T...> fmt, T &&...args) const
   {
     if (DebugOn()) {
-      auto str = fmt::vformat(fmt, fmt::make_format_args(args...));
+      auto str = fmt::format(fmt, std::forward<T>(args)...);
 
       Dbg(dbg_ctl_cript, "%s", str.c_str());
     }

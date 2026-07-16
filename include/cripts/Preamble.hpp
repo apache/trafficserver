@@ -27,7 +27,7 @@
 #include <climits>
 #include <iostream> // Useful for debugging
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include "ts/ts.h"
 #include "ts/remap.h"

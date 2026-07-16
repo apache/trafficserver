@@ -296,6 +296,16 @@ AuthWriteHeadRequest(AuthRequestContext *auth)
   // Next, we need to rewrite the client request URL to be a HEAD request.
   TSReleaseAssert(TSHttpHdrMethodSet(rq.buffer, rq.header, TS_HTTP_METHOD_HEAD, -1) == TS_SUCCESS);
 
+  // This sub-request is bodyless (HEAD + Content-Length: 0), but the copied
+  // client request may carry request-body framing (e.g. a chunked POST or
+  // Expect: 100-continue). Left in place it is self-contradictory: ATS sets up
+  // a request-body tunnel for a body that never arrives (stalling the probe
+  // until timeout), and proxy.config.http.reject_head_with_content rejects a
+  // HEAD that declares content. Strip the framing when forcing Content-Length: 0.
+  HttpRemoveMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_TRANSFER_ENCODING);
+  HttpRemoveMimeHeader(rq.buffer, rq.header, "Trailer");
+  HttpRemoveMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_EXPECT);
+
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
 
@@ -332,6 +342,13 @@ AuthWriteRangeRequest(AuthRequestContext *auth)
   if (TS_HTTP_METHOD_GET != auth->method) {
     TSReleaseAssert(TSHttpHdrMethodSet(rq.buffer, rq.header, TS_HTTP_METHOD_GET, -1) == TS_SUCCESS);
   }
+
+  // The body is dropped (Content-Length: 0), so strip any request-body framing
+  // (Transfer-Encoding/Trailer/Expect) copied from the client request to keep
+  // the sub-request well-formed.
+  HttpRemoveMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_TRANSFER_ENCODING);
+  HttpRemoveMimeHeader(rq.buffer, rq.header, "Trailer");
+  HttpRemoveMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_EXPECT);
 
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_RANGE, "bytes=0-0");
@@ -386,6 +403,14 @@ AuthWriteRedirectedRequest(AuthRequestContext *auth)
   TSHandleMLocRelease(rq.buffer, rq.header, murl);
 
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_HOST, hostbuf);
+
+  // The body is dropped (Content-Length: 0), so strip any request-body framing
+  // (Transfer-Encoding/Trailer/Expect) copied from the client request to keep
+  // the sub-request well-formed.
+  HttpRemoveMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_TRANSFER_ENCODING);
+  HttpRemoveMimeHeader(rq.buffer, rq.header, "Trailer");
+  HttpRemoveMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_EXPECT);
+
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CONTENT_LENGTH, 0u);
   HttpSetMimeHeader(rq.buffer, rq.header, TS_MIME_FIELD_CACHE_CONTROL, "no-cache");
 

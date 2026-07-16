@@ -86,10 +86,15 @@ ssl_multicert:
         # The refused renegotiation must not abort the process.
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
             "received signal|failed assertion", "ATS must refuse the renegotiation without crashing")
-        # ...and it must actually reach the renegotiation-detection path (otherwise
-        # a no-crash pass could mean the client never managed to renegotiate at all).
-        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "trying to renegotiate from the client", "ATS must detect the client-initiated renegotiation")
+        # ...and, on OpenSSL, it must actually reach ATS's renegotiation-detection
+        # path (otherwise a no-crash pass could mean the client never managed to
+        # renegotiate at all). BoringSSL rejects a peer-initiated renegotiation inside
+        # the library before ATS's info callback runs -- SSL_get_state() there only
+        # ever returns SSL_ST_INIT or SSL_ST_OK, never SSL_ST_RENEGOTIATE -- so the
+        # detection line is never logged. The no-crash check above still covers it.
+        if Condition.IsOpenSSL():
+            ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+                "trying to renegotiate from the client", "ATS must detect the client-initiated renegotiation")
         return ts
 
     def run(self) -> None:

@@ -71,6 +71,16 @@ scheme.
 :arg:`offset` within the marshal buffer :arg:`bufp`. If there is no explicit
 port number in the URL, zero is returned.
 
+.. note::
+
+   :func:`TSUrlHostGet` operates on a URL object obtained from
+   :func:`TSHttpHdrUrlGet`. In early hooks such as
+   ``TS_HTTP_READ_REQUEST_HDR_HOOK``, the URL object may not yet be fully
+   parsed, and :func:`TSUrlHostGet` may return ``NULL`` even when a ``Host``
+   header is present. For reliable host retrieval at any hook stage, use
+   :func:`TSHttpHdrHostGet` instead, which checks both the URL and the
+   ``Host`` header field.
+
 Return Values
 =============
 
@@ -90,6 +100,7 @@ See Also
 :manpage:`TSAPI(3ts)`,
 :manpage:`TSUrlCreate(3ts)`,
 :manpage:`TSHttpHdrUrlGet(3ts)`,
+:manpage:`TSHttpHdrHostGet(3ts)`,
 :manpage:`TSUrlHostSet(3ts)`,
 :manpage:`TSUrlStringGet(3ts)`,
 :manpage:`TSUrlPercentEncode(3ts)`
