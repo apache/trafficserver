@@ -79,6 +79,20 @@ TEST_CASE("XPACK_Integer", "[xpack]")
       REQUIRE(actual == i.raw_integer);
     }
   }
+
+  SECTION("Decoding overlong integer")
+  {
+    // A continuation run long enough to drive the 7-bit shift amount past 64 bits.
+    // The prefix is all-ones so the continuation is entered, then eleven 0x80 bytes
+    // keep it going while contributing nothing. This must be rejected rather than
+    // shifting by a count wider than the accumulator.
+    uint8_t encoded[] = {0x7f, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00};
+
+    uint64_t actual = 0;
+    int64_t  len    = xpack_decode_integer(actual, encoded, encoded + sizeof(encoded), 7);
+
+    REQUIRE(len == XPACK_ERROR_COMPRESSION_ERROR);
+  }
 }
 
 TEST_CASE("XPACK_String", "[xpack]")
