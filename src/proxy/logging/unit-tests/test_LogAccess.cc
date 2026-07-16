@@ -23,9 +23,10 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include "proxy/PreTransactionLogData.h"
+#include "proxy/NonHttpSmLogData.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/TransactionLogData.h"
+#include "tscore/ink_align.h"
 #include "tscore/ink_inet.h"
 
 #include <string_view>
@@ -101,8 +102,8 @@ set_socket_address(IpEndpoint &ep, std::string_view text)
 }
 
 void
-populate_pre_transaction_data(PreTransactionLogData &data, std::string_view method, std::string_view scheme,
-                              std::string_view authority, std::string_view path)
+populate_non_http_sm_data(NonHttpSmLogData &data, std::string_view method, std::string_view scheme, std::string_view authority,
+                          std::string_view path)
 {
   initialize_headers_once();
 
@@ -164,10 +165,10 @@ marshal_int_value(Marshal marshal)
 }
 } // namespace
 
-TEST_CASE("LogAccess pre-transaction CONNECT fields", "[LogAccess]")
+TEST_CASE("LogAccess non-HttpSM CONNECT fields", "[LogAccess]")
 {
-  PreTransactionLogData data;
-  populate_pre_transaction_data(data, "CONNECT", ""sv, "example.com:443", ""sv);
+  NonHttpSmLogData data;
+  populate_non_http_sm_data(data, "CONNECT", ""sv, "example.com:443", ""sv);
   TransactionLogData log_data(data);
   LogAccess          access(log_data);
 
@@ -187,8 +188,8 @@ TEST_CASE("LogAccess pre-transaction CONNECT fields", "[LogAccess]")
 
 TEST_CASE("LogAccess malformed CONNECT without authority falls back to path", "[LogAccess]")
 {
-  PreTransactionLogData data;
-  populate_pre_transaction_data(data, "CONNECT", "https"sv, ""sv, "/"sv);
+  NonHttpSmLogData data;
+  populate_non_http_sm_data(data, "CONNECT", "https"sv, ""sv, "/"sv);
   TransactionLogData log_data(data);
   LogAccess          access(log_data);
 
@@ -201,10 +202,10 @@ TEST_CASE("LogAccess malformed CONNECT without authority falls back to path", "[
   CHECK(marshal_int_value([&](char *buf) { return access.marshal_transfer_time_ms(buf); }) == 5);
 }
 
-TEST_CASE("LogAccess pre-transaction client host port is null-safe", "[LogAccess]")
+TEST_CASE("LogAccess non-HttpSM client host port is null-safe", "[LogAccess]")
 {
-  PreTransactionLogData data;
-  populate_pre_transaction_data(data, "GET", "https"sv, "example.com", "/client-port"sv);
+  NonHttpSmLogData data;
+  populate_non_http_sm_data(data, "GET", "https"sv, "example.com", "/client-port"sv);
   TransactionLogData log_data(data);
   LogAccess          access(log_data);
 
@@ -212,4 +213,25 @@ TEST_CASE("LogAccess pre-transaction client host port is null-safe", "[LogAccess
 
   CHECK(access.marshal_client_host_port(nullptr) == INK_MIN_ALIGN);
   CHECK(marshal_int_value([&](char *buf) { return access.marshal_client_host_port(buf); }) == 4321);
+}
+
+TEST_CASE("LogAccess unmarshal_http_version keeps the minor version", "[LogAccess]")
+{
+  auto render = [](int64_t major, int64_t minor) -> std::string {
+    char marshalled[2 * INK_MIN_ALIGN];
+    LogAccess::marshal_int(marshalled, major);
+    LogAccess::marshal_int(marshalled + INK_MIN_ALIGN, minor);
+
+    char  dest[64] = {};
+    char *src      = marshalled;
+    int   len      = LogAccess::unmarshal_http_version(&src, dest, sizeof(dest));
+    REQUIRE(len > 0);
+    return std::string(dest, len);
+  };
+
+  CHECK(render(1, 1) == "HTTP/1.1");
+  CHECK(render(1, 0) == "HTTP/1.0");
+  // known bug of `.0` suffix for HTTP/2 and HTTP/3
+  CHECK(render(2, 0) == "HTTP/2.0");
+  CHECK(render(3, 0) == "HTTP/3.0");
 }

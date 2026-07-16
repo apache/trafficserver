@@ -27,50 +27,73 @@ import simple_pb2
 import simple_pb2_grpc
 
 global_message_counter: int = 0
+MESSAGE_TIMEOUT_SECONDS = 60
 
 
 class Talker(simple_pb2_grpc.TalkerServicer):
     """A gRPC servicer."""
 
+    def __init__(self, num_expected_messages: int, done_event: asyncio.Event):
+        self._num_expected_messages = num_expected_messages
+        self._done_event = done_event
+
+    def _record_message(self) -> None:
+        global global_message_counter
+
+        global_message_counter += 1
+        if global_message_counter >= self._num_expected_messages:
+            asyncio.get_running_loop().call_soon(self._done_event.set)
+
     async def MakeRequest(self, request: simple_pb2.SimpleRequest, context: grpc.aio.ServicerContext):
         """An example gRPC method."""
-        global global_message_counter
-        global_message_counter += 1
+        self._record_message()
         print(f'Received request: {request.message}')
         response = simple_pb2.SimpleResponse(message=f"Echo: {request.message}")
         return response
 
     async def MakeAnotherRequest(self, request: simple_pb2.SimpleRequest, context: grpc.aio.ServicerContext):
         """An example gRPC method."""
-        global global_message_counter
-        global_message_counter += 1
+        self._record_message()
         print(f'Received another request: {request.message}')
         response = simple_pb2.SimpleResponse(message=f"Another echo: {request.message}")
         return response
 
 
-async def run_grpc_server(port: int, server_cert: str, server_key: str) -> int:
+async def run_grpc_server(port: int, server_cert: str, server_key: str, num_expected_messages: int) -> int:
     """Run the gRPC server.
 
     :param port: The port on which to listen.
     :param server_cert: The public TLS certificate to use.
     :param server_key: The private TLS key to use.
+    :param num_expected_messages: The number of messages expected from clients.
     :return: The exit code.
     """
     credentials = grpc.ssl_server_credentials([(server_key, server_cert)])
     server = grpc.aio.server(futures.ThreadPoolExecutor(max_workers=10))
-    simple_pb2_grpc.add_TalkerServicer_to_server(Talker(), server)
+    done_event = asyncio.Event()
+    simple_pb2_grpc.add_TalkerServicer_to_server(Talker(num_expected_messages, done_event), server)
     server_endpoint = f'127.0.0.1:{port}'
     server.add_secure_port(server_endpoint, credentials)
     print(f'Listening on: {server_endpoint}')
+    timed_out = False
     try:
         await server.start()
-        await server.wait_for_termination()
+        try:
+            await asyncio.wait_for(done_event.wait(), timeout=MESSAGE_TIMEOUT_SECONDS)
+        except asyncio.TimeoutError:
+            timed_out = True
+            print(f'Timed out waiting for {num_expected_messages} messages after {MESSAGE_TIMEOUT_SECONDS} seconds.')
     except asyncio.exceptions.CancelledError:
         print('Shutting down the server.')
     finally:
-        await server.stop(0)
-    return 0
+        await server.stop(5)
+
+    if not timed_out and global_message_counter == num_expected_messages:
+        print(f'Received {num_expected_messages} messages as expected.')
+        return 0
+    else:
+        print(f'Expected {num_expected_messages} messages, but received {global_message_counter}.')
+        return 1
 
 
 def parse_args() -> argparse.Namespace:
@@ -91,7 +114,7 @@ def main() -> int:
     """
     args = parse_args()
     try:
-        return asyncio.run(run_grpc_server(args.port, args.server_crt.read(), args.server_key.read()))
+        return asyncio.run(run_grpc_server(args.port, args.server_crt.read(), args.server_key.read(), args.num_expected_messages))
     except KeyboardInterrupt:
         pass
 

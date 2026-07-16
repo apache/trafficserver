@@ -18,20 +18,32 @@ meta:
   version: "1.0"
 
 # This test proves that multi-parameter storage.yaml volume entries are parsed
-# correctly. The generated storage.yaml contains:
+# correctly AND that the per-volume settings actually take effect on the first
+# start after a cache clear (AuTest always starts ATS against a fresh cache).
+# The generated storage.yaml contains:
 #
 #   cache:
 #     volumes:
 #       - id: 1
 #         scheme: http
-#         size: 50%
+#         size: 128M
 #         ram_cache_size: 32M
 #         ram_cache_cutoff: 8K
+#         avg_obj_size: 2000
+#         fragment_size: 1M
 #       - id: 2
 #         scheme: http
-#         size: 50%
+#         size: 128M
+#         ram_cache: false
 #
-# All volume parameters must be parsed correctly from the YAML format.
+# All volume parameters must be parsed correctly from the YAML format, and the
+# per-volume settings are verified via the metric_checks below:
+#   - Volume 1 (ram_cache_size: 32M, single 128MB stripe) -> ram_cache total_bytes == 32MB
+#   - Volume 1 (avg_obj_size: 2000)                        -> direntries.total == 66424
+#   - Volume 2 (ram_cache: false)                          -> ram_cache total_bytes == 0
+# These exercise two distinct downstream paths (the RAM cache sizing in
+# cacheInitialized() and the directory sizing in the StripeSM constructor). On a
+# build that ignores per-volume settings on first start, none of them match.
 autest:
   description: "Test cache volume features: per-volume RAM cache and @volume= directive"
 
@@ -60,18 +72,38 @@ autest:
         spans:
           - name: "disk-1"
             path: "storage"
-            size: "256M"
+            size: "512M"
         volumes:
-          # Volume 1 with all new parameters
+          # Volume 1 with all new parameters (one 128MB stripe for an exact RAM cache size).
           - id: 1
             scheme: "http"
-            size: "50%"
+            size: "128M"
             ram_cache_size: "32M"
             ram_cache_cutoff: "8K"
-          # Volume 2 — simple volume, no extra params
+            avg_obj_size: "2000"
+            fragment_size: "1M"
+          # Volume 2 — RAM cache explicitly disabled.
           - id: 2
             scheme: "http"
-            size: "50%"
+            size: "128M"
+            ram_cache: false
+
+    metric_checks:
+      # avg_obj_size=2000 on volume 1 sizes the directory with more entries than the default
+      # min_average_object_size (8000) would. This exercises the avg_obj_size -> StripeSM
+      # directory-sizing path, which is distinct from the RAM cache path below. The value is a
+      # deterministic function of stripe length (one 128MB stripe) and avg_obj_size; on a build
+      # that ignores the per-volume setting on first start the directory uses the default size.
+      - metric: "proxy.process.cache.volume_1.direntries.total"
+        value: 66424
+      # ram_cache_size=32M on volume 1 (single 128MB stripe) -> exactly 32 * 1024 * 1024 bytes.
+      # On first start after a cache clear this only holds if the per-volume setting is applied
+      # to the freshly created CacheVol rather than ignored until the next restart.
+      - metric: "proxy.process.cache.volume_1.ram_cache.total_bytes"
+        value: 33554432
+      # ramcache=false on volume 2 means no RAM cache is allocated for it.
+      - metric: "proxy.process.cache.volume_2.ram_cache.total_bytes"
+        value: 0
 
     log_validation:
       traffic_out:

@@ -27,10 +27,18 @@
 #include <vector>
 
 #include "ts/ts.h"
+#include "tsutil/Metrics.h"
 
 #include "resources.h"
 #include "parser.h"
 #include "lulu.h"
+
+// Counters for the number of header_rewrite operators executed and conditions evaluated; the
+// bare hook invocation count cannot tell a small ruleset from a large one. Created once via
+// init_hrw_work_stats(); both are null until then, so increments are guarded.
+extern ts::Metrics::Counter::AtomicType *hrw_stat_operators;
+extern ts::Metrics::Counter::AtomicType *hrw_stat_conditions;
+void                                     init_hrw_work_stats();
 
 namespace header_rewrite_ns
 {
@@ -144,13 +152,8 @@ public:
   Statement(const Statement &)      = delete;
   void operator=(const Statement &) = delete;
 
-  // Which hook are we adding this statement to?
-  bool set_hook(TSHttpHookID hook);
-  TSHttpHookID
-  get_hook() const
-  {
-    return _hook;
-  }
+  // Validate that this statement is allowed on the given hook. Used during parsing only.
+  bool is_hook_valid(TSHttpHookID hook) const;
 
   // Which hooks are this "statement" applicable for? Used during parsing only.
   void
@@ -163,6 +166,31 @@ public:
   void append(Statement *stmt);
 
   ResourceIDs get_resource_ids() const;
+
+  void
+  set_config_location(const char *filename, int lineno)
+  {
+    _config_filename = filename ? filename : "";
+    _config_lineno   = lineno;
+  }
+
+  bool
+  has_config_location() const
+  {
+    return !_config_filename.empty();
+  }
+
+  const std::string &
+  get_config_filename() const
+  {
+    return _config_filename;
+  }
+
+  int
+  get_config_lineno() const
+  {
+    return _config_lineno;
+  }
 
   virtual void
   initialize(Parser &)
@@ -267,9 +295,10 @@ protected:
 
 private:
   ResourceIDs               _rsrc = RSRC_NONE;
-  TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
-  bool                      _initialized = false;
+  std::string               _config_filename;
+  int                       _config_lineno = 0;
+  bool                      _initialized   = false;
 };
 
 union PrivateSlotData {

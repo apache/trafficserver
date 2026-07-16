@@ -368,6 +368,13 @@ HttpProxyPort::processOptions(const char *opts)
 
   for (auto item : values) {
     if (item[0] == '/') {
+      if (size_t len = strlen(item); len >= TS_UNIX_SIZE) {
+        // A longer path would be silently truncated and the listener bound to the wrong
+        // filesystem path. Reject the whole descriptor so a later token (e.g. a numeric
+        // port) can't silently turn this into an INET listener.
+        Warning("Unix path '%s' in port configuration '%s' is too long (%zu bytes, max %zu)", item, opts, len, TS_UNIX_SIZE - 1);
+        return false;
+      }
       m_family    = AF_UNIX;
       m_unix_path = UnAddr(item);
       af_set_p    = true;

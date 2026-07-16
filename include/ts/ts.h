@@ -1168,6 +1168,26 @@ TSReturnCode TSMutexLockTry(TSMutex mutexp);
 
 void TSMutexUnlock(TSMutex mutexp);
 
+/** Scoped lock guard for a @c TSMutex.
+
+    Locks @a mutexp on construction and unlocks it when the guard leaves scope.
+ */
+class [[nodiscard]] TSMutexLockGuard
+{
+public:
+  explicit TSMutexLockGuard(TSMutex mutexp) : m_mutex(mutexp) { TSMutexLock(m_mutex); }
+
+  TSMutexLockGuard(const TSMutexLockGuard &)            = delete;
+  TSMutexLockGuard &operator=(const TSMutexLockGuard &) = delete;
+  TSMutexLockGuard(TSMutexLockGuard &&)                 = delete;
+  TSMutexLockGuard &operator=(TSMutexLockGuard &&)      = delete;
+
+  ~TSMutexLockGuard() { TSMutexUnlock(m_mutex); }
+
+private:
+  TSMutex m_mutex = nullptr;
+};
+
 /* --------------------------------------------------------------------------
    cachekey */
 /**
@@ -1565,10 +1585,19 @@ TSReturnCode           TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp);
 /* TS-1008 END */
 
 /** Change packet firewall mark for the client side connection
- *
-    @note The change takes effect immediately
 
-    @return TS_SUCCESS if the client connection was modified
+    Sets the entire client-side packet firewall mark to @a mark; the whole mark is replaced. @a mark
+    is interpreted as a 32-bit unsigned bit pattern.
+
+    @note The firewall mark is only honored on platforms whose OS supports it, specifically Linux via
+    @c SO_MARK. On platforms without @c SO_MARK support the call still returns TS_SUCCESS when a
+    client connection is present, but setting the mark has no effect at the OS layer (it is a safe
+    no-op).
+
+    @note The change takes effect immediately on the live client connection
+
+    @return TS_SUCCESS if the client connection was modified, TS_ERROR if there is no client
+    connection to modify
 */
 TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
 

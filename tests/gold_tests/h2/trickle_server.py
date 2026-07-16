@@ -22,11 +22,10 @@ import logging
 import math
 import statistics
 import sys
+import threading
 import time
 from OpenSSL.SSL import Error as SSLError
 from OpenSSL.SSL import SysCallError as SSLSysCallError
-import threading
-
 import eventlet
 from eventlet.green.OpenSSL import SSL, crypto
 from h2.config import H2Configuration
@@ -85,6 +84,7 @@ class Http2ConnectionManager:
         self.listening_conn: H2Connection = H2Connection(config=listening_config)
         self.requests: Dict[int, RequestInfo] = {}
         self.completed_stream_ids: Set[int] = set()
+        self._sent_response = False
 
         # Delay times in ms between each data frame.
         self._data_delays: List[int] = []
@@ -137,13 +137,15 @@ class Http2ConnectionManager:
         # Clean up any responses we sent.
         for stream_id in responded_streams:
             del responses[stream_id]
+        if responded_streams:
+            self._sent_response = True
 
     def _receive_data(self, responses: Dict[int, ResponseInfo]) -> Optional[bytes]:
         """Receive data from the socket.
 
         :param responses: A dictionary of stream IDs to responses that have accumulated.
 
-        :return: The data received, or None if the connection for the socket has closed.
+        :return: The data received, or None if the socket closed or the response was sent.
         """
         data: Optional[bytes] = None
         while not data:
@@ -156,6 +158,8 @@ class Http2ConnectionManager:
             except TimeoutError:
                 # Take time to send any responses we've generated.
                 self._send_responses(responses)
+                if self._sent_response:
+                    return None
 
                 # Loop back around to receive more data.
                 logging.debug('Timeout, waiting again for more data.')
@@ -245,7 +249,7 @@ class Http2ConnectionManager:
         while True:
             data = self._receive_data(responses)
             if not data:
-                # Connection ended.
+                # Connection ended or the measured transaction completed.
                 break
 
             logging.debug(f'Giving {len(data)} bytes to the h2 connection')
@@ -260,6 +264,8 @@ class Http2ConnectionManager:
             except (SSLError, SSLSysCallError) as e:
                 logging.debug(f'Ignoring end-loop sock.sendall exception for now: {e}')
                 pass
+            if self._sent_response:
+                return
 
     def get_data_delays(self) -> List[int]:
         """Get the DATA frame timing list.
@@ -267,6 +273,10 @@ class Http2ConnectionManager:
         :return: The list of DATA frame timings.
         """
         return self._data_delays
+
+    def sent_response(self) -> bool:
+        """Return whether a response was sent on this connection."""
+        return self._sent_response
 
     def _process_request(self, request: RequestInfo) -> ResponseInfo:
         """Handle a request from a client.
@@ -356,7 +366,6 @@ def run_server(listen_port, https_pem, ca_pem) -> List[int]:
     listening_socket = eventlet.listen(('0.0.0.0', listen_port))
     listening_socket = SSL.Connection(context, listening_socket)
     logging.info(f"Serving HTTP/2 Proxy on 127.0.0.1:{listen_port} with pem '{https_pem}'")
-    pool = eventlet.GreenPool()
 
     manager = None
     while True:
@@ -365,7 +374,10 @@ def run_server(listen_port, https_pem, ca_pem) -> List[int]:
             manager = Http2ConnectionManager(new_connection_socket)
             manager.cert_file = https_pem
             manager.ca_file = ca_pem
-            pool.spawn_n(manager.run_forever)
+            manager.run_forever()
+            data_delays = manager.get_data_delays()
+            if data_delays or manager.sent_response():
+                return data_delays
         except KeyboardInterrupt as e:
             logging.debug("Handling KeyboardInterrupt")
             if manager is not None:

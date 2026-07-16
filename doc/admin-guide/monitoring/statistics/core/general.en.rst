@@ -81,5 +81,12 @@ General
 .. ts:stat:: global proxy.process.traffic_server.memory.rss integer
    :units: bytes
 
-   The resident set size (RSS) of the ``traffic_server`` process. This is
-   basically the amount of memory this process is consuming.
+   The current resident set size (RSS) of the ``traffic_server`` process. This
+   is basically the amount of memory this process is consuming. The value is
+   refreshed every 10 seconds and reflects current (not peak) usage, so it can
+   both rise and fall over the lifetime of the process.
+
+   This gauge is only published when the memory-limit feature is enabled (that
+   is, when :ts:cv:`proxy.config.memory.max_usage` is greater than 0); when the
+   feature is disabled the process does not sample RSS and the metric is not
+   reported.

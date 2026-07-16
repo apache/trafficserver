@@ -168,33 +168,37 @@ HttpHeader::removeKey(char const *const keystr, int const keylen)
 bool
 HttpHeader::valueForKey(char const *const keystr, int const keylen, char *const valstr, int *const vallen, int const index) const
 {
-  if (!isValid()) {
+  if (nullptr == valstr || nullptr == vallen) {
+    return false;
+  }
+  if (!isValid() || index < -1) {
     *vallen = 0;
     return false;
   }
 
   bool status = false;
 
+  int const valcap = *vallen;
+  *vallen          = 0;
+  if (valcap <= 0) {
+    return false;
+  }
+  valstr[0]             = '\0';
   TSMLoc const locfield = TSMimeHdrFieldFind(m_buffer, m_lochdr, keystr, keylen);
 
   if (nullptr != locfield) {
     int               getlen = 0;
     char const *const getstr = TSMimeHdrFieldValueStringGet(m_buffer, m_lochdr, locfield, index, &getlen);
-
-    int const valcap = *vallen;
-    if (nullptr != getstr && 0 < getlen && getlen < (valcap - 1)) {
+    if (nullptr != getstr && 0 < getlen && getlen < valcap) {
       char *const endp = stpncpy(valstr, getstr, getlen);
-
-      *vallen = endp - valstr;
-      status  = (*vallen < valcap);
-
-      if (status) {
-        *endp = '\0';
+      int const   len  = endp - valstr;
+      if (len < valcap) {
+        *endp   = '\0';
+        *vallen = len;
+        status  = true;
       }
     }
     TSHandleMLocRelease(m_buffer, m_lochdr, locfield);
-  } else {
-    *vallen = 0;
   }
 
   return status;

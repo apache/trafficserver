@@ -25,6 +25,10 @@
 CMAKE_FORMAT_VERSION="0.6.13"
 VERSION="0.6.13"
 
+function cmake_vendorlib_grep() {
+  grep -E "CMakeLists.txt|.cmake$" | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" || true
+}
+
 function main() {
   set -e # exit on error
 
@@ -48,16 +52,13 @@ function main() {
   # formatting files the user doesn't want formatted.
   tmp_dir=$(mktemp -d -t tracked-git-files.XXXXXXXXXX)
   files=${tmp_dir}/git_files.txt
-  files_filtered=${tmp_dir}/git_files_filtered.txt
-  git ls-tree -r HEAD --name-only ${DIR} | grep -E 'CMakeLists.txt|.cmake$' | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" > ${files}
+  git ls-tree -r HEAD --name-only ${DIR} | cmake_vendorlib_grep > ${files}
   # Add to the above any newly added staged files.
-  git diff --cached --name-only --diff-filter=A >> ${files}
-  # But probably not all the new staged files are CMakeLists.txt files:
-  grep -E 'CMakeLists.txt|.cmake$' ${files} > ${files_filtered}
+  git diff --cached --name-only --diff-filter=A | cmake_vendorlib_grep >> ${files}
   # Prepend the filenames with "./" to make the modified file output consistent
   # with the clang-format target output.
-  sed -i'.bak' 's:^:\./:' ${files_filtered}
-  rm -f ${files_filtered}.bak
+  sed -i'.bak' 's:^:\./:' ${files}
+  rm -f ${files}.bak
 
   # Efficiently retrieving modification timestamps in a platform
   # independent way is challenging. We use find's -newer argument, which
@@ -66,8 +67,8 @@ function main() {
   # after this we assume was modified by cmake-format.
   start_time_file=${tmp_dir}/format_start.$$
   touch ${start_time_file}
-  uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files_filtered})
-  find $(cat ${files_filtered}) -newer ${start_time_file}
+  uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format -i $(cat ${files})
+  find $(cat ${files}) -newer ${start_time_file}
 
   rm -rf ${tmp_dir}
 }

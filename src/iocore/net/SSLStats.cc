@@ -177,6 +177,7 @@ SSLInitializeStatistics()
 
   ssl_rsb.cert_compress_zlib                 = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zlib");
   ssl_rsb.cert_compress_zlib_failure         = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.zlib_failure");
+  ssl_rsb.cert_compress_cache_hit            = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.cache_hit");
   ssl_rsb.cert_decompress_zlib               = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zlib");
   ssl_rsb.cert_decompress_zlib_failure       = Metrics::Counter::createPtr("proxy.process.ssl.cert_decompress.zlib_failure");
   ssl_rsb.cert_compress_brotli               = Metrics::Counter::createPtr("proxy.process.ssl.cert_compress.brotli");
@@ -223,6 +224,10 @@ SSLInitializeStatistics()
   ssl_rsb.total_sslv3                        = Metrics::Counter::createPtr("proxy.process.ssl.ssl_total_sslv3");
   ssl_rsb.total_success_handshake_count_in   = Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_in");
   ssl_rsb.total_success_handshake_count_out  = Metrics::Counter::createPtr("proxy.process.ssl.total_success_handshake_count_out");
+  ssl_rsb.handshake_sign_rsa                 = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_rsa");
+  ssl_rsb.handshake_sign_ecdsa               = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_ecdsa");
+  ssl_rsb.handshake_sign_other               = Metrics::Counter::createPtr("proxy.process.ssl.handshake_sign_other");
+  ssl_rsb.connections_closed                 = Metrics::Counter::createPtr("proxy.process.ssl.connections_closed");
   ssl_rsb.total_ticket_keys_renewed          = Metrics::Counter::createPtr("proxy.process.ssl.total_ticket_keys_renewed");
   ssl_rsb.total_tickets_created              = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_created");
   ssl_rsb.total_tickets_not_found            = Metrics::Counter::createPtr("proxy.process.ssl.total_tickets_not_found");
@@ -253,6 +258,8 @@ SSLInitializeStatistics()
   ssl_rsb.user_agent_version_too_high       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_version_too_high");
   ssl_rsb.user_agent_version_too_low        = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_version_too_low");
   ssl_rsb.user_agent_wrong_version          = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_wrong_version");
+  ssl_rsb.tls_handshake_bytes_in_total      = Metrics::Counter::createPtr("proxy.process.ssl.total_handshake_bytes_read_in");
+  ssl_rsb.tls_handshake_bytes_out_total     = Metrics::Counter::createPtr("proxy.process.ssl.total_handshake_bytes_write_out");
 
 #if defined(OPENSSL_IS_BORINGSSL)
   size_t                    n = SSL_get_all_cipher_names(nullptr, 0);
@@ -271,12 +278,13 @@ SSLInitializeStatistics()
   // Acquire the loaded SSL certificate configuration to enumerate ciphers and groups.
   // This must be called AFTER SSLCertificateConfig::startup().
   SSLCertificateConfig::scoped_config lookup;
-  if (!lookup || !lookup->ssl_default) {
+  auto                                default_ctx = lookup ? lookup->defaultContext() : nullptr;
+  if (!default_ctx) {
     Dbg(dbg_ctl_ssl, "No SSL configuration, skipping cipher/group statistics initialization");
     return;
   }
 
-  SSL_CTX *ctx                  = lookup->ssl_default.get();
+  SSL_CTX *ctx                  = default_ctx.get();
   SSL     *ssl                  = SSL_new(ctx);
   STACK_OF(SSL_CIPHER) *ciphers = SSL_get_ciphers(ssl);
 

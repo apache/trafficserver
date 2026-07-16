@@ -34,6 +34,7 @@
 
 #include "tscore/ink_memory.h"
 #include "tscore/ink_apidefs.h"
+#include "tscore/ink_string.h"
 #include "swoc/bwf_fwd.h"
 
 #if !TS_HAS_IN6_IS_ADDR_UNSPECIFIED
@@ -1610,16 +1611,21 @@ struct UnAddr {
 
   UnAddr() { _path[0] = 0; }
 
-  UnAddr(self const &addr) { strncpy(_path, addr._path, TS_UNIX_SIZE); }
-  explicit UnAddr(const char *path) { strncpy(_path, path, TS_UNIX_SIZE - 1); }
-  explicit UnAddr(const std::string &path) { strncpy(_path, path.c_str(), TS_UNIX_SIZE); }
+  UnAddr(self const &addr) { ink_strlcpy(_path, addr._path, TS_UNIX_SIZE); }
+  explicit UnAddr(const char *path) { ink_strlcpy(_path, path, TS_UNIX_SIZE); }
+  explicit UnAddr(const std::string &path) { ink_strlcpy(_path, path.c_str(), TS_UNIX_SIZE); }
 
   explicit UnAddr(sockaddr const *addr) { this->assign(addr); }
   explicit UnAddr(sockaddr_un const *addr) { this->assign(ats_ip_sa_cast(addr)); }
   /// Construct from @c IpEndpoint.
   explicit UnAddr(IpEndpoint const &addr) { this->assign(&addr.sa); }
   /// Construct from @c IpEndpoint.
-  explicit UnAddr(IpEndpoint const *addr) { this->assign(&addr->sa); }
+  explicit UnAddr(IpEndpoint const *addr) : UnAddr()
+  {
+    if (addr) {
+      this->assign(&addr->sa);
+    }
+  }
   /// Assign sockaddr storage.
   self &assign(sockaddr const *addr);
 
@@ -1639,7 +1645,7 @@ struct UnAddr {
   operator=(self const &addr)
   {
     if (this != &addr) {
-      strncpy(_path, addr._path, TS_UNIX_SIZE);
+      ink_strlcpy(_path, addr._path, TS_UNIX_SIZE);
     }
     return *this;
   }
@@ -1651,7 +1657,11 @@ inline UnAddr &
 UnAddr::assign(sockaddr const *addr)
 {
   if (addr) {
-    strncpy(_path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE);
+    // A kernel sockaddr_un may carry a full, unterminated sun_path.
+    strncpy(_path, ats_unix_cast(addr)->sun_path, TS_UNIX_SIZE - 1);
+    _path[TS_UNIX_SIZE - 1] = '\0';
+  } else {
+    _path[0] = '\0';
   }
   return *this;
 }

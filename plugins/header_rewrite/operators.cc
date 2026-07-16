@@ -100,11 +100,18 @@ createRequestString(const std::string_view &value, char (&req_buf)[MAX_SIZE], in
 
   if (TSUrlCreate(url_buf, &url_loc) == TS_SUCCESS && TSUrlParse(url_buf, url_loc, &start, end) == TS_PARSE_DONE) {
     const char *host = TSUrlHostGet(url_buf, url_loc, &host_len);
-    const char *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
+    char       *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
 
-    *req_buf_size = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
+    int written = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
 
+    TSfree(url);
     TSMBufferDestroy(url_buf);
+
+    if (written < 0 || static_cast<unsigned int>(written) >= MAX_SIZE) {
+      Dbg(pi_dbg_ctl, "Request string does not fit in %u byte buffer, not sending truncated request", MAX_SIZE);
+      return TS_ERROR;
+    }
+    *req_buf_size = written;
 
     return TS_SUCCESS;
   } else {
@@ -198,19 +205,13 @@ OperatorSetStatus::initialize_hooks()
 bool
 OperatorSetStatus::exec(const Resources &res) const
 {
-  switch (get_hook()) {
-  case TS_HTTP_READ_RESPONSE_HDR_HOOK:
-  case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
-    if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
-      if (_reason && _reason_len > 0) {
-        TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
-      }
+  if (res.bufp && res.hdr_loc && TSHttpHdrTypeGet(res.bufp, res.hdr_loc) == TS_HTTP_TYPE_RESPONSE) {
+    TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
+    if (_reason && _reason_len > 0) {
+      TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
     }
-    break;
-  default:
+  } else {
     TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
-    break;
   }
 
   Dbg(pi_dbg_ctl, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
@@ -601,7 +602,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
-      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() hook=%d", int(get_hook()));
+      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() redirect to %s", value.c_str());
       // Set the new status code and reason.
       TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status, res.state.txnp, PLUGIN_NAME);
@@ -1713,6 +1714,7 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+  op->set_config_location(filename, lineno);
 
   try {
     op->initialize(p);
@@ -1745,6 +1747,7 @@ OperatorIf::make_condition(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  cond->set_config_location(filename, lineno);
 
   try {
     cond->initialize(p);

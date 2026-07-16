@@ -26,5 +26,8 @@
 #include <openssl/ssl.h>
 #include <openssl/bytestring.h>
 
+// RFC 8879 algorithm ID for brotli
+constexpr int CERT_COMPRESS_ALG_BROTLI = 2;
+
 int compression_func_brotli(SSL *ssl, CBB *out, const uint8_t *in, size_t in_len);
 int decompression_func_brotli(SSL *ssl, CRYPTO_BUFFER **out, size_t uncompressed_len, const uint8_t *in, size_t in_len);

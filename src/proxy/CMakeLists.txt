@@ -28,6 +28,7 @@ add_library(
   ParentSelectionStrategy.cc
   ParentSelection.cc
   Plugin.cc
+  PluginThreadContext.cc
   PluginVC.cc
   ProtocolProbeSessionAccept.cc
   ProxySession.cc

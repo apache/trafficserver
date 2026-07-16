@@ -837,6 +837,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // Event should be immediate or interval.
     if (!action.continuation) {
       // Nothing to do, give up.
+      bool cleanup_self = false;
       if (event == EVENT_INTERVAL) {
         // Timeout - clear all queries queued up for this FQDN because none of the other ones have sent an
         // actual DNS query. If the request rate is high enough this can cause a persistent queue where the
@@ -846,9 +847,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       } else {
         // "local" signal to give up, usually due this being one of those "other" queries.
         // That generally means @a this has already been removed from the queue, but just in case...
-        hostDB.pending_dns_for_hash(hash.hash).remove(this);
+        cleanup_self = hostDB.remove_from_pending_dns_for_hash(hash.hash, this);
       }
-      if (hostDB.remove_from_pending_dns_for_hash(hash.hash, this)) {
+      if (cleanup_self) {
         hostdb_cont_free(this);
       }
       return EVENT_DONE;
@@ -1706,13 +1707,19 @@ ResolveInfo::set_active(HostDBInfo *info)
 }
 
 bool
-ResolveInfo::select_next_rr()
+ResolveInfo::select_next_rr(ts_time now, ts_seconds fail_window)
 {
   if (active) {
     if (auto rr_info{this->record->rr_info()}; rr_info.count() > 1) {
-      unsigned limit = active - rr_info.data(), idx = (limit + 1) % rr_info.count();
-      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_up()) {}
-      active = &rr_info[idx];
+      const unsigned limit = active - rr_info.data();
+      size_t         idx   = (limit + 1) % rr_info.count();
+      for (; idx != limit; idx = (idx + 1) % rr_info.count()) {
+        if (!rr_info[idx].is_down(now, fail_window)) {
+          active = &rr_info[idx];
+          break;
+        }
+      }
+
       return idx != limit; // if the active record was actually changed.
     }
   }

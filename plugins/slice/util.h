@@ -33,4 +33,6 @@ void abort(TSCont const contp, Data *const data);
 
 bool request_block(TSCont contp, Data *const data);
 
+void schedule_prefetch(Data *const data);
+
 bool reader_avail_more_than(TSIOBufferReader const reader, int64_t bytes);

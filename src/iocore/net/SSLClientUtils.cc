@@ -255,7 +255,7 @@ SSLInitClientContext(const SSLConfigParams *params)
     for (const char *token = tok.getNext(); token; token = tok.getNext()) {
       algs.emplace_back(token);
     }
-    if (register_certificate_compression_preference(client_ctx, algs) != 1) {
+    if (register_certificate_compression_preference(client_ctx, algs, true) != 1) {
       SSLError("invalid client certificate compression algorithm list in %s", ts::filename::RECORDS);
       goto fail;
     }

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -334,11 +335,30 @@ public:
 
     using Component::Component;
 
+    // _state is deep-copied, but the segment `string_view`s (and Component::_owner) still
+    // reference the source URL. The copy's views dangle if the source URL's path is rewritten,
+    // and Flush()/operator= on the copy write back to the source URL via TSUrlPathSet.
+    Path(const self_type &o) : Component(o), _state(o._state ? std::make_unique<State>(*o._state) : nullptr) {}
+
+    self_type &
+    operator=(const self_type &o)
+    {
+      if (this != &o) {
+        auto new_state = o._state ? std::make_unique<State>(*o._state) : nullptr;
+        Component::operator=(o);
+        _state = std::move(new_state);
+      }
+      return *this;
+    }
+
+    Path(self_type &&)                 = default;
+    self_type &operator=(self_type &&) = default;
+
     void Reset() override;
 
     cripts::string_view GetSV() override;
     cripts::string      operator+=(cripts::string_view add);
-    self_type           operator=(cripts::string_view path);
+    self_type          &operator=(cripts::string_view path);
     String              operator[](Segments::size_type ix);
 
     void
@@ -346,8 +366,10 @@ public:
     {
       auto p = operator[](ix);
 
-      _size -= p.size();
-      p.operator=("");
+      if (_state && ix < _state->segments.size()) {
+        _state->size -= p.size();
+        p.operator=("");
+      }
     }
 
     void
@@ -368,7 +390,7 @@ public:
     void
     Flush()
     {
-      if (_modified) {
+      if (_state && _state->modified) {
         operator=(GetSV());
       }
     }
@@ -376,10 +398,23 @@ public:
   private:
     void _parser();
 
-    bool                      _modified = false;
-    Segments                  _segments; // Lazy loading on this
-    cripts::string            _storage;  // Used when recombining the segments into a full path
-    cripts::string::size_type _size = 0; // Mostly a guestimate for managing _storage
+    struct State {
+      bool                      modified = false;
+      Segments                  segments; // Ordered list of path segments
+      cripts::string            storage;  // Used when recombining the segments into a full path
+      cripts::string::size_type size = 0; // Mostly a guestimate for managing storage
+    };
+
+    State &
+    _ensure_state()
+    {
+      if (!_state) {
+        _state = std::make_unique<State>();
+      }
+      return *_state;
+    }
+
+    std::unique_ptr<State> _state; // Lazily allocated when path is parsed or modified
 
   }; // End class Url::Path
 
@@ -461,18 +496,37 @@ public:
 
     using Component::Component;
 
-    Query(cripts::string_view load)
+    Query(cripts::string_view load) : _state(std::make_unique<State>())
     {
-      _data       = load;
-      _size       = load.size();
-      _loaded     = true;
-      _standalone = true;
+      _data              = load;
+      _state->size       = load.size();
+      _loaded            = true;
+      _state->standalone = true;
     }
+
+    // _state is deep-copied, but the parameter `string_view`s (and Component::_owner) still
+    // reference the source URL. The copy's views dangle if the source URL's query is rewritten,
+    // and Flush()/operator= on the copy write back to the source URL via TSUrlHttpQuerySet.
+    Query(const self_type &o) : Component(o), _state(o._state ? std::make_unique<State>(*o._state) : nullptr) {}
+
+    self_type &
+    operator=(const self_type &o)
+    {
+      if (this != &o) {
+        auto new_state = o._state ? std::make_unique<State>(*o._state) : nullptr;
+        Component::operator=(o);
+        _state = std::move(new_state);
+      }
+      return *this;
+    }
+
+    Query(self_type &&)                = default;
+    self_type &operator=(self_type &&) = default;
 
     void Reset() override;
 
     cripts::string_view GetSV() override;
-    self_type           operator=(cripts::string_view query);
+    self_type          &operator=(cripts::string_view query);
     cripts::string      operator+=(cripts::string_view add);
     Parameter           operator[](cripts::string_view param);
     void                Erase(cripts::string_view param);
@@ -482,7 +536,9 @@ public:
     Erase()
     {
       operator=("");
-      _size = 0;
+      if (_state) {
+        _state->size = 0;
+      }
     }
 
     void
@@ -503,14 +559,14 @@ public:
       // Make sure the hash and vector are populated
       _parser();
 
-      std::ranges::sort(_ordered);
-      _modified = true;
+      std::ranges::sort(_state->ordered);
+      _state->modified = true;
     }
 
     void
     Flush()
     {
-      if (_modified) {
+      if (_state && _state->modified) {
         operator=(GetSV());
       }
     }
@@ -518,18 +574,32 @@ public:
   private:
     void _parser();
 
-    bool           _modified   = false;
-    bool           _standalone = false;  // This component is used outside of a URL owner, not common
-    OrderedParams  _ordered;             // Ordered vector of all parameters, can be sorted etc.
-    HashParams     _hashed;              // Unordered map to go from "name" to the query parameter
-    cripts::string _storage;             // Used when recombining the query params into a
-                                         // full query string
-    cripts::string::size_type _size = 0; // Mostly a guesttimate
+    struct State {
+      bool                      modified   = false;
+      bool                      standalone = false; // This component is used outside of a URL owner, not common
+      OrderedParams             ordered;            // Ordered vector of all parameters, can be sorted etc.
+      HashParams                hashed;             // Unordered map to go from "name" to the query parameter
+      cripts::string            storage;            // Used when recombining the query params into a full query string
+      cripts::string::size_type size = 0;           // Mostly a guesttimate
+    };
+
+    State &
+    _ensure_state()
+    {
+      if (!_state) {
+        _state = std::make_unique<State>();
+      }
+      return *_state;
+    }
+
+    std::unique_ptr<State> _state; // Lazily allocated when query is parsed or modified
 
   }; // End class Url::Query
 
 public:
   Url() : scheme(this), host(this), port(this), path(this), query(this) {}
+
+  virtual ~Url() = default;
 
   // Clear anything "cached" in the Url, this is rather draconian, but it's safe...
   virtual void

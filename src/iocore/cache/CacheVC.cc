@@ -111,9 +111,6 @@ next_in_map(Stripe *stripe, char *vol_map, off_t offset)
   return new_off + start_offset;
 }
 
-// Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory);
-
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
 // when we are asked about the highest interesting offset.
@@ -137,7 +134,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, &stripe->directory)) {
+      if (stripe->directory.bucket_loop_fix(e, s)) {
         break;
       }
       while (e) {
@@ -769,9 +766,17 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
       break;
     }
-    if (doc->data() - buf->data() > static_cast<int>(io.aiocb.aio_nbytes)) {
-      might_need_overlap_read = true;
-      goto Lskip;
+    {
+      size_t const doc_off = reinterpret_cast<char *>(doc) - buf->data();
+      // Bounds-check in unsigned domain: doc must lie within the
+      // buffer, with room for the Doc header, and doc->hlen must
+      // fit in the remaining bytes before doc->hdr() and
+      // HTTPInfo::unmarshal walk it.
+      if (io.aiocb.aio_nbytes < doc_off || (io.aiocb.aio_nbytes - doc_off) < sizeof(Doc) ||
+          (io.aiocb.aio_nbytes - doc_off - sizeof(Doc)) < doc->hlen) {
+        might_need_overlap_read = true;
+        goto Lskip;
+      }
     }
     {
       char *tmp = doc->hdr();

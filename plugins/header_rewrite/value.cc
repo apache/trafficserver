@@ -39,6 +39,9 @@ void
 Value::set_value(const std::string &val, Statement *owner)
 {
   _value = val;
+  if (owner && owner->has_config_location()) {
+    set_config_location(owner->get_config_filename().c_str(), owner->get_config_lineno());
+  }
 
   if (_value.find("%{") != std::string::npos) {
     HRWSimpleTokenizer tokenizer(_value);
@@ -54,6 +57,9 @@ Value::set_value(const std::string &val, Statement *owner)
           Parser parser;
 
           if (parser.parse_line(cond_token)) {
+            if (has_config_location()) {
+              tcond_val->set_config_location(get_config_filename().c_str(), get_config_lineno());
+            }
             tcond_val->initialize(parser);
             require_resources(tcond_val->get_resource_ids());
           } else {

@@ -27,6 +27,7 @@
 #include "CacheVC.h"
 #include "iocore/cache/HttpTransactCache.h"
 #include "tscore/InkErrno.h"
+#include "ts/ats_probe.h"
 
 #ifdef DEBUG
 #include "iocore/eventsystem/EThread.h"
@@ -292,6 +293,8 @@ CacheVC::openReadFromWriter(int event, Event *e)
     vector.insert(&alternate);
     alternate.object_key_get(&key);
     write_vc->f.readers = 1;
+    ATS_PROBE6(cache_rww_reader_attach, stripe->fd, first_key.slice64(0), reinterpret_cast<intptr_t>(this),
+               reinterpret_cast<intptr_t>(write_vc), cod->num_writers, write_vc->total_len);
     if (!(write_vc->f.update && write_vc->total_len == 0)) {
       key = write_vc->earliest_key;
       if (!write_vc->closed) {
@@ -499,6 +502,8 @@ CacheVC::openReadReadDone(int event, Event *e)
       }
       if (writer_lock_retry < cache_config_read_while_writer_max_retries) {
         DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead retrying: %" PRId64, this, first_key.slice32(1), vio.ndone);
+        ATS_PROBE6(cache_rww_reader_starve, stripe->fd, reinterpret_cast<intptr_t>(this), first_key.slice64(0), vio.ndone, doc_len,
+                   writer_lock_retry);
         VC_SCHED_WRITER_RETRY(); // wait for writer
       } else {
         DDbg(dbg_ctl_cache_read_agg, "%p: key: %X ReadRead retries exhausted, bailing..: %" PRId64, this, first_key.slice32(1),

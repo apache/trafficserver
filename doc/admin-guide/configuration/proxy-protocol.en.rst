@@ -49,10 +49,13 @@ configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
 
    .. important::
 
-       If the allowlist is configured, requests will only be accepted from these
-       IP addresses for all ports designated for Proxy Protocol in the
-       :ts:cv:`proxy.config.http.server_ports` configuration, regardless of whether
-       the connections have the Proxy Protocol header.
+       If the allowlist is configured, connections that begin with a Proxy
+       Protocol header preface will only be accepted from these IP addresses on
+       ports designated for Proxy Protocol in the
+       :ts:cv:`proxy.config.http.server_ports` configuration. Connections
+       without a Proxy Protocol header preface are not restricted by this
+       allowlist; use :file:`ip_allow.yaml` for general source-IP access
+       control.
 
 By default, |TS| uses client's IP address that is from the peer when it applies ACL. If you configure a port to
 enable PROXY protocol and want to apply ACL against the IP address delivered by PROXY protocol, you need to have ``PROXY`` in

@@ -135,8 +135,14 @@ endif()
 if(BUILD_TESTING)
   # libinknet_stub.cc is need because GNU ld is sensitive to the order of static libraries on the command line, and we have a cyclic dependency between inknet and proxy
   add_executable(
-    test_net libinknet_stub.cc NetVCTest.cc unit_tests/test_ProxyProtocol.cc unit_tests/test_SSLSNIConfig.cc
-             unit_tests/test_YamlSNIConfig.cc unit_tests/unit_test_main.cc
+    test_net
+    libinknet_stub.cc
+    NetVCTest.cc
+    unit_tests/test_ProxyProtocol.cc
+    unit_tests/test_SSLSNIConfig.cc
+    unit_tests/test_YamlSNIConfig.cc
+    unit_tests/unit_test_main.cc
+    unit_tests/benchmark_TLSCertCompression.cc
   )
   # Use link groups to solve circular dependency
   set(LINK_GROUP_LIBS

@@ -48,7 +48,7 @@ autest:
       proxy.config.http.connect.down.policy: 4
       proxy.config.http.connect_attempts_rr_retries: 0
       proxy.config.http.connect_attempts_max_retries: 0
-      proxy.config.http.connect_attempts_max_retries_down_server: 0
+      proxy.config.http.connect_attempts_max_retries_suspect_server: 0
       proxy.config.http.connect_attempts_timeout: 1
       proxy.config.http.down_server.cache_time: 5
 

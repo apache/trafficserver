@@ -83,7 +83,11 @@ def receive_requests(sock: socket.socket) -> None:
     end_of_second_request: bytes = b'12345'
     end_of_third_request: bytes = b'\r\n\r\n'
     while not received_third_request:
-        data = sock.recv(1024)
+        try:
+            data = sock.recv(1024)
+        except socket.timeout:
+            print("Timed out waiting for an unexpected third request.")
+            break
         if not data:
             print("Socket closed.")
             break
@@ -126,6 +130,7 @@ def receive_requests(sock: socket.socket) -> None:
                 print()
                 time.sleep(0.01)
                 sock.sendall(second_response_bytes)
+                sock.settimeout(1.0)
                 continue
 
             elif processing_third_request:

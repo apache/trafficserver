@@ -125,6 +125,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+        "ENABLE_THREAD_SAFETY_ANALYSIS": "ON",
+        "THREAD_SAFETY_ANALYSIS_AS_ERROR": "ON",
         "ENABLE_CCACHE": "ON",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
         "ENABLE_WASM_WAMR": "OFF",
@@ -194,13 +196,9 @@
       "name": "ci-fedora-cxx20",
       "displayName": "CI Fedora c++20",
       "description": "CI Pipeline config for Fedora Linux compiled with c++20",
-      "inherits": ["ci"],
+      "inherits": ["ci-fedora"],
       "cacheVariables": {
-        "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
-        "wamr_ROOT": "/opt",
-        "CMAKE_CXX_STANDARD": "20",
-        "ENABLE_CRIPTS": "ON"
+        "CMAKE_CXX_STANDARD": "20"
       }
     },
     {
@@ -450,4 +448,3 @@
     }
   ]
 }
-

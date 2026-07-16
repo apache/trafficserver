@@ -7574,6 +7574,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
     }
     break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().ssl_client_ca_cert_path = const_cast<char *>(value);
+    }
+    break;
   case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     if (value && length > 0) {
       s->t_state.my_txn_conf().ssl_client_alpn_protocols = const_cast<char *>(value);
@@ -7651,6 +7656,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     *value  = sm->t_state.txn_conf->server_session_sharing_match_str;
+    *length = *value ? strlen(*value) : 0;
+    break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
+    *value  = sm->t_state.txn_conf->ssl_client_ca_cert_path;
     *length = *value ? strlen(*value) : 0;
     break;
   default: {
@@ -9042,6 +9051,19 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
       // Symbol conflict.
       return TS_ERROR;
     }
+  }
+
+  // TSLogType mirrors LogField::Type's values and is static_cast to it below.
+  // apidefs.h.in can't reference LogField::Type, so pin the alignment here (the
+  // only TU that sees both) -- a reorder then fails to compile.
+  static_assert(static_cast<int>(TS_LOG_TYPE_INT) == static_cast<int>(LogField::Type::sINT));
+  static_assert(static_cast<int>(TS_LOG_TYPE_STRING) == static_cast<int>(LogField::Type::STRING));
+  static_assert(static_cast<int>(TS_LOG_TYPE_ADDR) == static_cast<int>(LogField::Type::IP));
+
+  // Reject anything outside the public set before the cast, so a bad plugin
+  // value can't become an INVALID/out-of-range LogField::Type and trip the ctor.
+  if (type != TS_LOG_TYPE_INT && type != TS_LOG_TYPE_STRING && type != TS_LOG_TYPE_ADDR) {
+    return TS_ERROR;
   }
 
   LogField *field = new LogField(

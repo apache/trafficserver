@@ -477,6 +477,7 @@ Lengths and Sizes
 .. _cqcl:
 .. _cqhl:
 .. _cqql:
+.. _cqqtl:
 .. _csscl:
 .. _csshl:
 .. _cssql:
@@ -487,6 +488,7 @@ Lengths and Sizes
 .. _pscl:
 .. _pshl:
 .. _psql:
+.. _psqtl:
 .. _sscl:
 .. _sshl:
 .. _ssql:
@@ -502,6 +504,10 @@ cqcl  Client Request         Client request content length, in bytes.
 cqhl  Client Request         Client request header length, in bytes.
 cqql  Client Request         Client request header and content length combined,
                              in bytes.
+cqqtl Client Request         Same as cqql_, but for the first transaction on a
+                             TLS connection, also includes TLS handshake bytes
+                             received from the client. Note that this metric
+                             may not always be 100% accurate.
 csscl Cached Origin Response Content body length from cached origin response.
 csshl Cached Origin Response Header length from cached origin response.
 cssql Cached Origin Response Content and header length from cached origin
@@ -517,6 +523,10 @@ pscl  Proxy Response         Content body length of the |TS| proxy response.
 pshl  Proxy Response         Header length of the |TS| response to client.
 psql  Proxy Response         Content body and header length combined of the
                              |TS| response to client.
+psqtl Proxy Response         Same as psql_, but for the first transaction on a
+                             TLS connection, also includes TLS handshake bytes
+                             sent to the client. Note that this metric may not
+                             always be 100% accurate.
 sscl  Origin Response        Content body length of the origin server response
                              to |TS|.
 sshl  Origin Response        Header length of the origin server response.
@@ -677,10 +687,14 @@ SSL / Encryption
 .. _cscert:
 .. _cqssl:
 .. _cqssr:
+.. _cqssrt:
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
 .. _cqssa:
+.. _cthbr:
+.. _cthbt:
+.. _cthb:
 .. _pqssl:
 .. _pscert:
 
@@ -698,9 +712,15 @@ cscert Client Request 1 if |TS| requested certificate from client during TLS
                       handshake. 0 otherwise.
 cqssl  Client Request SSL client request status indicates if this client
                       connection is over SSL.
-cqssr  Client Request SSL session ticket reused status; indicates if the current
-                      request hit the SSL session ticket and avoided a full SSL
-                      handshake.
+cqssr  Client Request SSL session resumption status; indicates whether the
+                      current request was resumed from a previous SSL session
+                      and avoided a full TLS handshake. Resumption may have
+                      been via a server side session cache or via a TLS session
+                      ticket, see cqssrt_ for the resumption type.
+cqssrt Client Request SSL resumption type; indicates the type of TLS session
+                      resumption used for this request. 0 for no resumption,
+                      1 for server session cache resumption, 2 for TLS session
+                      ticket resumption.
 cqssv  Client Request SSL version used to communicate with the client.
 cqssc  Client Request SSL Cipher used by |TS| to communicate with the client.
 cqssu  Client Request SSL Elliptic Curve used by |TS| to communicate with the
@@ -711,6 +731,17 @@ cqssg  Client Request SSL Group used by |TS| to communicate with the client.
                       OpenSSL 3.2 or later or a version of BoringSSL that
                       supports querying group names.
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
+cthbr  Client Request TLS handshake bytes received from the client. This is the
+                      number of bytes read from the client during the TLS
+                      handshake. Populated for all transactions on a TLS connection,
+                      including reused connections.
+cthbt  Client Request TLS handshake bytes sent to the client. This is the number
+                      of bytes written to the client during the TLS handshake.
+                      Populated for all transactions on a TLS connection,
+                      including reused connections.
+cthb   Client Request Total TLS handshake bytes (received + sent). This is the
+                      sum of cthbr_ and cthbt_. Populated for all transactions
+                      on a TLS connection, including reused connections.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.
 pqssr  Proxy Request  SSL session ticket reused status from |TS| to the origin;

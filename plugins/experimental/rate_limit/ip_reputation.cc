@@ -144,7 +144,7 @@ SieveLru::parseYaml(const YAML::Node &node)
 std::tuple<uint32_t, uint32_t>
 SieveLru::increment(KeyClass key)
 {
-  TSMutexLock(_lock);
+  TSMutexLockGuard lock(_lock);
   TSAssert(_initialized);
 
   auto map_it = _map.find(key);
@@ -166,7 +166,6 @@ SieveLru::increment(KeyClass key)
       lru->push_front({key, 1, entryBucket(), SystemClock::now()});
     }
     _map[key] = lru->begin();
-    TSMutexUnlock(_lock);
 
     return {entryBucket(), 1};
   } else {
@@ -213,7 +212,6 @@ SieveLru::increment(KeyClass key)
         lru->moveTop(lru.get(), map_item);
       }
     }
-    TSMutexUnlock(_lock);
 
     return {bucket, count};
   }
@@ -223,20 +221,16 @@ SieveLru::increment(KeyClass key)
 std::tuple<uint32_t, uint32_t>
 SieveLru::lookup(KeyClass key) const
 {
-  TSMutexLock(_lock);
+  TSMutexLockGuard lock(_lock);
   TSAssert(_initialized);
 
   auto map_it = _map.find(key);
 
   if (_map.end() == map_it) {
-    TSMutexUnlock(_lock);
-
     return {0, entryBucket()}; // Nothing found, return 0 hits and the entry bucket #
   } else {
     auto &[map_key, map_item]              = *map_it;
     auto &[list_key, count, bucket, added] = *map_item;
-
-    TSMutexUnlock(_lock);
 
     return {bucket, count};
   }
@@ -247,7 +241,7 @@ SieveLru::lookup(KeyClass key) const
 int32_t
 SieveLru::move_bucket(KeyClass key, uint32_t to_bucket)
 {
-  TSMutexLock(_lock);
+  TSMutexLockGuard lock(_lock);
   TSAssert(_initialized);
 
   auto map_it = _map.find(key);
@@ -289,7 +283,6 @@ SieveLru::move_bucket(KeyClass key, uint32_t to_bucket)
       added  = SystemClock::now();
     }
   }
-  TSMutexUnlock(_lock);
 
   return to_bucket; // Just as a convenience, return the destination bucket for this entry
 }
@@ -336,7 +329,7 @@ SieveBucket::memorySize() const
 size_t
 SieveLru::memoryUsed() const
 {
-  TSMutexLock(_lock);
+  TSMutexLockGuard lock(_lock);
   TSAssert(_initialized);
 
   size_t total = sizeof(SieveLru);
@@ -347,7 +340,6 @@ SieveLru::memoryUsed() const
 
   total += _map.size() * (sizeof(void *) + sizeof(SieveBucket::iterator));
   total += _map.bucket_count() * (sizeof(size_t) + sizeof(void *));
-  TSMutexUnlock(_lock);
 
   return total;
 }

@@ -497,6 +497,7 @@ LogConfig::register_stat_callbacks()
   log_rsb.event_log_access_aggr             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_aggr");
   log_rsb.event_log_access_full             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_full");
   log_rsb.event_log_access_fail             = Metrics::Counter::createPtr("proxy.process.log.event_log_access_fail");
+  log_rsb.marshalled_bytes                  = Metrics::Counter::createPtr("proxy.process.log.marshalled_bytes");
   log_rsb.num_sent_to_network               = Metrics::Counter::createPtr("proxy.process.log.num_sent_to_network");
   log_rsb.num_lost_before_sent_to_network   = Metrics::Counter::createPtr("proxy.process.log.num_lost_before_sent_to_network");
   log_rsb.num_received_from_network         = Metrics::Counter::createPtr("proxy.process.log.num_received_from_network");

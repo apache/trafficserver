@@ -123,8 +123,8 @@ public:
    * The caller retains ownership of @a data, which must outlive the
    * synchronous Log::access() call that marshals this entry.
    *
-   * @param[in] data Populated TransactionLogData for a completed or
-   *                 pre-transaction entry.
+   * @param[in] data Populated TransactionLogData for an HttpSM-backed or
+   *                 non-HttpSM entry.
    */
   explicit LogAccess(TransactionLogData &data);
 
@@ -156,11 +156,13 @@ public:
   int marshal_client_req_protocol_version(char *);   // STR
   int marshal_server_req_protocol_version(char *);   // STR
   int marshal_client_req_squid_len(char *);          // INT
+  int marshal_client_req_squid_len_tls(char *);      // INT
   int marshal_client_req_header_len(char *);         // INT
   int marshal_client_req_content_len(char *);        // INT
   int marshal_client_req_tcp_reused(char *);         // INT
   int marshal_client_req_is_ssl(char *);             // INT
   int marshal_client_req_ssl_reused(char *);         // INT
+  int marshal_client_ssl_resumption_type(char *);    // INT
   int marshal_client_req_is_internal(char *);        // INT
   int marshal_client_req_mptcp_state(char *);        // INT
   int marshal_client_security_protocol(char *);      // STR
@@ -173,6 +175,9 @@ public:
   int marshal_client_req_uuid(char *);               // STR
   int marshal_client_rx_error_code(char *);          // STR
   int marshal_client_tx_error_code(char *);          // STR
+  int marshal_client_tls_handshake_bytes_rx(char *); // INT
+  int marshal_client_tls_handshake_bytes_tx(char *); // INT
+  int marshal_client_tls_handshake_bytes(char *);    // INT
   int marshal_client_req_all_header_fields(char *);  // STR
 
   //
@@ -181,6 +186,7 @@ public:
   int marshal_proxy_resp_content_type(char *);      // STR
   int marshal_proxy_resp_reason_phrase(char *);     // STR
   int marshal_proxy_resp_squid_len(char *);         // INT
+  int marshal_proxy_resp_squid_len_tls(char *);     // INT
   int marshal_proxy_resp_content_len(char *);       // INT
   int marshal_proxy_resp_status_code(char *);       // INT
   int marshal_status_plugin_entry(char *);          // STR
@@ -311,10 +317,6 @@ public:
   //
   int marshal_milestone(TSMilestonesType ms, char *buf);
   int marshal_milestone_fmt_sec(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_squid(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_netscape(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_date(TSMilestonesType ms, char *buf);
-  int marshal_milestone_fmt_time(TSMilestonesType ms, char *buf);
   int marshal_milestone_fmt_ms(TSMilestonesType ms, char *buf);
   int marshal_milestone_diff(TSMilestonesType ms1, TSMilestonesType ms2, char *buf);
   int marshal_milestones_csv(char *buf);
@@ -323,7 +325,7 @@ public:
   void set_http_header_field(LogField::Container container, char *field, char *buf, int len);
 
   // Plugin
-  int marshal_custom_field(char *buf, const LogField::CustomMarshalFunc &plugin_marshal_func);
+  int marshal_custom_field(char *buf, LogField::Type type, const LogField::CustomMarshalFunc &plugin_marshal_func);
 
   //
   // unmarshalling routines
@@ -343,7 +345,6 @@ public:
   static int     unmarshal_int_to_time_str(char **buf, char *dest, int len);
   static int     unmarshal_int_to_netscape_str(char **buf, char *dest, int len);
   static int     unmarshal_http_version(char **buf, char *dest, int len);
-  static int     unmarshal_http_text(char **buf, char *dest, int len, LogSlice *slice, LogEscapeType escape_type);
   static int     unmarshal_http_status(char **buf, char *dest, int len);
   static int     unmarshal_ip(char **buf, IpEndpoint *dest);
   static int     unmarshal_ip_to_str(char **buf, char *dest, int len);
@@ -353,7 +354,6 @@ public:
   static int     unmarshal_cache_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   static int     unmarshal_cache_hit_miss(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
   static int     unmarshal_cache_write_code(char **buf, char *dest, int len, const Ptr<LogFieldAliasMap> &map);
-  static int     unmarshal_client_protocol_stack(char **buf, char *dest, int len, Ptr<LogFieldAliasMap> map);
 
   static int unmarshal_with_map(int64_t code, char *dest, int len, const Ptr<LogFieldAliasMap> &map, const char *msg = nullptr);
 

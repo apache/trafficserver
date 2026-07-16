@@ -123,6 +123,13 @@ regularly).
 using the Proxy Verifier format. This is simpler, more maintainable, and
 parseable by tools.
 
+**Python conventions for test and helper scripts:**
+- Launch Python helpers with `{sys.executable}` rather than a hardcoded `python3`,
+  so the test runs under the same interpreter the harness uses.
+- Prefer f-strings over `str.format()` when building command lines, config lines,
+  and `Testers` expressions.
+- Add type annotations to helper functions.
+
 **For complete details on writing autests, see:**
 - `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to autest
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier

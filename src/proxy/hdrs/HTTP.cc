@@ -693,7 +693,7 @@ http_hdr_url_set(HdrHeap *heap, HTTPHdrImpl *hh, URLImpl *url)
 void
 http_hdr_status_set(HTTPHdrImpl *hh, HTTPStatus status)
 {
-  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
+  ink_release_assert(hh->m_polarity == HTTPType::RESPONSE);
   hh->u.resp.m_status = static_cast<int16_t>(status);
 }
 
@@ -713,7 +713,7 @@ http_hdr_reason_get(HTTPHdrImpl *hh)
 void
 http_hdr_reason_set(HdrHeap *heap, HTTPHdrImpl *hh, std::string_view value, bool must_copy)
 {
-  ink_assert(hh->m_polarity == HTTPType::RESPONSE);
+  ink_release_assert(hh->m_polarity == HTTPType::RESPONSE);
   mime_str_u16_set(heap, value, &(hh->u.resp.m_ptr_reason), &(hh->u.resp.m_len_reason), must_copy);
 }
 

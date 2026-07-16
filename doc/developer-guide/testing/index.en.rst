@@ -26,3 +26,4 @@ Testing Traffic Server
    :maxdepth: 2
 
    autests.en
+   config-reload-ext.en

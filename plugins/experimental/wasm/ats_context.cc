@@ -496,9 +496,9 @@ Context::getConfiguration()
 WasmResult
 Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_ptr)
 {
-  Wasm    *wasm         = this->wasm();
-  Context *root_context = this->root_context();
-  TSMutexLock(wasm->mutex());
+  Wasm            *wasm         = this->wasm();
+  Context         *root_context = this->root_context();
+  TSMutexLockGuard lock(wasm->mutex());
   if (!wasm->existsTimerPeriod(root_context->id())) {
     Dbg(dbg_ctl, "[%s] no previous timer period set", __FUNCTION__);
     TSCont contp = root_context->scheduler_cont();
@@ -511,7 +511,6 @@ Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_
 
   wasm->setTimerPeriod(root_context->id(), period);
   *timer_token_ptr = 0;
-  TSMutexUnlock(wasm->mutex());
   return WasmResult::Ok;
 }
 

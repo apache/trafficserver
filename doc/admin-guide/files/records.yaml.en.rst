@@ -464,7 +464,7 @@ Thread Variables
    before :program:`traffic_server` drops privilege. If this variable
    is set to ``NULL``, no helper will be spawned.
 
-.. ts::vc:: CONFIG proxy.config.core_limit INT -1
+.. ts:cv:: CONFIG proxy.config.core_limit INT -1
 
    This option specifies the size limit for core files in the event
    that :program:`traffic_server` crashes. ``-1`` means there is
@@ -751,11 +751,6 @@ Management
       * Specify ``-DBIG_SECURITY_HOLE`` in ``CXXFLAGS`` during compilation.
 
       * Set the ``user_id=#-1`` and start trafficserver as root.
-
-.. ts:cv:: CONFIG proxy.config.admin.api.restricted INT 0
-
-   This is now deprecated, please refer to :ref:`admin-jsonrpc-configuration` to find
-   out about the new admin API mechanism.
 
 HTTP Engine
 ===========
@@ -1823,15 +1818,28 @@ Origin Server Connect Attempts
    The maximum number of connection retries |TS| can make when the origin server is not responding.
    Each retry attempt lasts for `proxy.config.http.connect_attempts_timeout`_ seconds.  Once the maximum number of retries is
    reached, the origin is marked down (as controlled by `proxy.config.http.connect.down.policy`_.  After this, the setting
-   `proxy.config.http.connect_attempts_max_retries_down_server`_ is used to limit the number of retry attempts to the known down origin.
+   `proxy.config.http.connect_attempts_max_retries_suspect_server`_ is used to limit the number of retry attempts when the origin is
+   in the SUSPECT state (recovering after `proxy.config.http.down_server.cache_time`_ has elapsed).
+
+.. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_suspect_server INT 1
+   :reloadable:
+   :overridable:
+
+   Maximum number of connection retries |TS| can make while an origin is in the SUSPECT state (the first request after
+   `proxy.config.http.down_server.cache_time`_ has elapsed on a previously-down origin). The total attempt budget for a SUSPECT
+   origin is therefore ``connect_attempts_max_retries_suspect_server + 1`` (the initial probe plus each retry). If any attempt
+   succeeds, the origin transitions back to UP; if all attempts fail, the origin returns to DOWN for another
+   `proxy.config.http.down_server.cache_time`_ seconds. Typically smaller than `proxy.config.http.connect_attempts_max_retries`_
+   so the recovering origin is not flooded.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_max_retries_down_server INT 1
    :reloadable:
    :overridable:
+   :deprecated:
 
-   Maximum number of connection attempts |TS| can make while an origin is marked down per request.  Typically this value is smaller than
-   `proxy.config.http.connect_attempts_max_retries`_ so an error is returned to the client faster and also to reduce the load on the down origin.
-   The timeout interval `proxy.config.http.connect_attempts_timeout`_ in seconds is used with this setting.
+   This setting is deprecated in favor of :ts:cv:`proxy.config.http.connect_attempts_max_retries_suspect_server`. If the
+   deprecated setting is set explicitly and the replacement is not, the deprecated value is mirrored forward and a warning is
+   logged. If both are set explicitly, the new setting wins and the deprecated value is ignored.
 
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_retry_backoff_base INT 0
    :reloadable:
@@ -1959,6 +1967,9 @@ Origin Server Connect Attempts
    :overridable:
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
+   During this window, if a stale cached response exists and its age is within the cached response's ``max-age`` plus
+   :ts:cv:`proxy.config.http.cache.max_stale_age`, |TS| serves the stale content directly
+   without attempting to contact the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
@@ -2179,10 +2190,13 @@ Proxy User Variables
 
 .. ts:cv:: CONFIG proxy.config.http.proxy_protocol_allowlist STRING ```<ip list>```
 
-   This defines a allowlist of server IPs that are trusted to provide
-   connections with Proxy Protocol information.  This is a comma delimited list
-   of IP addresses.  Addressed may be listed individually, in a range separated
-   by a dash or by using CIDR notation.
+   This defines an allowlist of server IPs that are trusted to provide
+   connections with Proxy Protocol information. This allowlist is enforced only
+   for connections that begin with a Proxy Protocol header preface; non-Proxy
+   Protocol traffic on flexible Proxy Protocol ports is not restricted by this
+   setting. Use :file:`ip_allow.yaml` for general source-IP access control. This
+   is a comma delimited list of IP addresses. Addresses may be listed
+   individually, in a range separated by a dash, or by using CIDR notation.
 
    ======================= ===========================================================
    Example                 Effect
@@ -2592,7 +2606,6 @@ Cache Control
    Setting this to ``0`` disables the feature.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.try_compat_key_read INT 0
-   :reloadable:
 
    When enabled (``1``), |TS| will try to lookup the cached object using the
    previous cache key generation algorithm, but will always write new objects
@@ -2764,7 +2777,7 @@ Cache Control
    a minimum time, and the actual sync may be delayed if the disks are larger than
    how fast we allow it to write to disk (see next options).
 
-.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_writes INT 2097152
+.. ts:cv:: CONFIG proxy.config.cache.dir.sync_max_write INT 2097152
    :units: bytes
 
    How much of a stripes cache directory we will write to disk in each write cycle.
@@ -2892,10 +2905,65 @@ RAM Cache
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.algorithm INT 1
 
-   Two distinct RAM caches are supported, the default (1) being the simpler
-   **LRU** (*Least Recently Used*) cache. As an alternative, the **CLFUS**
-   (*Clocked Least Frequently Used by Size*) is also available, by changing this
-   configuration to 0.
+   Three RAM cache eviction algorithms are supported, selected by this value:
+
+   ``1``
+       **LRU** (*Least Recently Used*), the default -- the simplest policy,
+       favoring recency. Pairs with
+       :ts:cv:`proxy.config.cache.ram_cache.use_seen_filter` for scan
+       resistance.
+
+   ``0``
+       **CLFUS** (*Clocked Least Frequently Used by Size*), which balances
+       recency, frequency, and object size. It is the only algorithm that
+       supports in-RAM compression
+       (:ts:cv:`proxy.config.cache.ram_cache.compress`).
+
+   ``2``
+       **S3-FIFO** (*Simple Scalable Static FIFO*): a small admission queue and
+       a main queue (both FIFO), plus a ghost queue of recently evicted keys,
+       which together filter one-hit-wonders. Scan-resistant and inexpensive
+       (no per-hit reordering); strong hit rates on CDN and key-value
+       workloads. Its eviction metadata (including the ghost) is accounted
+       within :ts:cv:`proxy.config.cache.ram_cache.size`. Experimental; it does
+       not use the seen filter or support in-RAM compression. Its queue split,
+       ghost bounds, and promotion threshold can be tuned with the
+       ``proxy.config.cache.ram_cache.s3fifo.*`` settings below; the defaults
+       follow the original paper and suit most workloads.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.main_percent INT 90
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). The target size of the main queue as a percentage of the resident
+   budget; the remainder is the small admission queue. The default ``90`` gives
+   the ~10% small / ~90% main split from the paper. Valid range is ``1`` to
+   ``99`` (an out-of-range value is rejected with a warning and the default is
+   used); a larger value grows the main queue at the expense of the admission
+   queue.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.ghost_size_percent INT 90
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). The ghost queue remembers the keys of recently evicted objects for
+   up to this percentage of :ts:cv:`proxy.config.cache.ram_cache.size` worth of
+   object bytes. Valid range is ``0`` to ``100``; ``0`` disables this bound.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.ghost_mem_percent INT 25
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). Caps the memory the ghost queue's per-key metadata may consume at
+   this percentage of :ts:cv:`proxy.config.cache.ram_cache.size`. This metadata
+   is counted against the configured RAM cache size, so total memory stays
+   within the budget regardless of object cardinality. Valid range is ``0`` to
+   ``100``; ``0`` disables the ghost queue.
+
+.. ts:cv:: CONFIG proxy.config.cache.ram_cache.s3fifo.promote_threshold INT 2
+
+   Only applies when :ts:cv:`proxy.config.cache.ram_cache.algorithm` is ``2``
+   (S3-FIFO). The number of times an object in the small admission queue must be
+   reused before it is promoted to the main queue instead of being demoted to
+   the ghost. The default ``2`` admits objects seen at least twice. Valid range
+   is ``1`` to ``3``; a higher value makes admission to the main queue stricter.
 
 .. ts:cv:: CONFIG proxy.config.cache.ram_cache.use_seen_filter INT 1
 
@@ -2965,13 +3033,11 @@ Dynamic Content & Content Negotiation
 =====================================
 
 .. ts:cv:: CONFIG proxy.config.http.cache.open_read_retry_time INT 10
-   :reloadable:
    :overridable:
 
     The number of milliseconds a cacheable request will wait before requesting the object from cache if an equivalent request is in flight.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.max_open_read_retries INT -1
-   :reloadable:
    :overridable:
 
     The number of times to attempt fetching an object from cache if there was an equivalent request in flight.
@@ -3071,7 +3137,6 @@ Customizable User Response Pages
     Maximum size of the error template response page.
 
 .. ts:cv:: CONFIG proxy.config.body_factory.response_suppression_mode INT 0
-   :reloadable:
    :overridable:
 
    Specifies when |TS| suppresses generated response pages:
@@ -3598,7 +3663,7 @@ Logging Configuration
 
    How often |TS| executes log related periodic tasks, in seconds
 
-.. ts:cv:: CONFIG proxy.config.log.proxy.config.log.throttling_interval_msec INT 60000
+.. ts:cv:: CONFIG proxy.config.log.throttling_interval_msec INT 60000
    :reloadable:
    :units: milliseconds
 
@@ -3776,7 +3841,7 @@ Diagnostic Logging Configuration
 
    For details about how log throttling works, see
    :ts:cv:`log.throttling_interval_msec
-   <proxy.config.log.proxy.config.log.throttling_interval_msec>`.
+   <proxy.config.log.throttling_interval_msec>`.
 
 .. ts:cv:: CONFIG proxy.config.diags.logfile.filename STRING diags.log
 
@@ -4312,6 +4377,24 @@ SSL Termination
 
       proxy.config.ssl.server.cert_compression.algorithms: zlib,brotli
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.cert_compression.cache INT 1
+   :reloadable:
+
+   Controls whether the compressed certificate is reused across
+   handshakes. With caching enabled (the default), the certificate is
+   compressed once and the result is reused. With caching disabled, the
+   certificate is recompressed on every handshake.
+
+   Has no effect on OpenSSL builds; OpenSSL always reuses the
+   compressed result.
+
+   ===== =================
+   Value Description
+   ===== =================
+   ``0`` Disables caching.
+   ``1`` Enables caching.
+   ===== =================
+
 .. ts:cv:: CONFIG proxy.config.ssl.client.cert_compression.algorithms STRING
    :reloadable:
 
@@ -4407,6 +4490,7 @@ Client-Related Configuration
 
 .. ts:cv:: CONFIG proxy.config.ssl.client.CA.cert.path STRING NULL
    :reloadable:
+   :overridable:
 
    Specifies the location of the certificate authority file against
    which the origin server will be verified.
@@ -5053,14 +5137,12 @@ removed in the future without prior notice.
 
    A size of hash table that stores connection information.
 
-.. ts:cv:: CONFIG proxy.config.quic.proxy.config.quic.num_alt_connection_ids INT 65521
-   :reloadable:
+.. ts:cv:: CONFIG proxy.config.quic.num_alt_connection_ids INT 8
 
    A number of alternate Connection IDs that |TS| provides to a peer. It has to
    be at least 8.
 
-.. ts:cv:: CONFIG proxy.config.quic.stateless_retry_enabled INT 0
-   :reloadable:
+.. ts:cv:: CONFIG proxy.config.quic.server.stateless_retry_enabled INT 0
 
    Enables Stateless Retry.
 
@@ -5075,19 +5157,16 @@ removed in the future without prior notice.
    Enables connection migration exercise on origin server connections.
 
 .. ts:cv:: CONFIG proxy.config.quic.server.supported_groups STRING "P-256:X25519:P-384:P-521"
-   :reloadable:
 
    Configures the list of supported groups provided by OpenSSL which will be
    used to determine the set of shared groups on QUIC origin server connections.
 
 .. ts:cv:: CONFIG proxy.config.quic.client.supported_groups STRING "P-256:X25519:P-384:P-521"
-   :reloadable:
 
    Configures the list of supported groups provided by OpenSSL which will be
    used to determine the set of shared groups on QUIC client connections.
 
 .. ts:cv:: CONFIG proxy.config.quic.client.session_file STRING ""
-   :reloadable:
 
    Only available for :program:`traffic_quic`.
    If specified, TLS session data will be stored to the file, and will be used
@@ -5137,61 +5216,61 @@ removed in the future without prior notice.
 
    This value will be advertised as ``initial_max_data`` Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_in INT 0
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_local_in INT 0
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_local``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_local_out INT 4096
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_local_out INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_local``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_in INT 4096
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_remote_in INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_remote``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_bidi_remote_out INT 0
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_bidi_remote_out INT 0
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_bidi_remote``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_in INT 4096
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_uni_in INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_uni``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_stream_data_uni_out INT 0
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_stream_data_uni_out INT 4096
    :reloadable:
 
    This value will be advertised as ``initial_max_stream_data_uni``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_in INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_bidi_in INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_bidi``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_bidi_out INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_bidi_out INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_bidi``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_in INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_uni_in INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_uni``
    Transport Parameter.
 
-.. ts:cv:: CONFIG proxy.config.quic.max_streams_uni_out INT 100
+.. ts:cv:: CONFIG proxy.config.quic.initial_max_streams_uni_out INT 100
    :reloadable:
 
    This value will be advertised as ``initial_max_streams_uni``
@@ -5425,7 +5504,6 @@ Sockets
    Note: If MPTCP is enabled, TCP_DEFER_ACCEPT is only supported on Linux kernels 5.19+.
 
 .. ts:cv:: CONFIG proxy.config.net.listen_backlog INT -1
-   :reloadable:
 
    This directive sets the maximum number of pending connections.
    If it is set to -1, |TS| will automatically set this

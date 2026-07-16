@@ -166,9 +166,12 @@ option(ENABLE_AUTEST_UDS "Setup autest with curl using UDS (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
+option(EXTERNAL_HWY "Use external highway (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
 option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
 option(ENABLE_VERIFY_PLUGINS "Enable plugin verification tests (default ON)" ON)
+option(ENABLE_THREAD_SAFETY_ANALYSIS "Enable Clang -Wthread-safety analysis (Clang only, default ON)" ON)
+option(THREAD_SAFETY_ANALYSIS_AS_ERROR "Treat thread-safety findings as errors; for CI gating (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -358,6 +361,35 @@ elseif(ENABLE_TSAN)
   add_link_options(-g -fsanitize=thread)
 endif()
 
+# Clang Thread Safety Analysis. The TS_* annotations (tsutil/ts_thread_safety.h)
+# compile to nothing on GCC, and the flag is Clang-only on purpose (GCC does not
+# know -Wthread-safety and would itself error if passed it), so this whole block
+# is a no-op for GCC builds.
+#
+# On Clang it is on by default but only a WARNING: -Wno-error=thread-safety keeps
+# it a warning even in builds that otherwise use -Werror, so an in-progress
+# annotation never blocks a developer's build. CI sets
+# THREAD_SAFETY_ANALYSIS_AS_ERROR=ON to promote findings to errors and gate
+# merges.
+#
+# Skip FreeBSD: its libc annotates the pthread primitives themselves, so
+# -Wthread-safety there flags ATS's existing hand-rolled mutex wrappers
+# (tscore/ink_mutex.h, ink_rwlock, ...) tree-wide, not just newly-annotated code.
+# Enabling it on FreeBSD needs those legacy wrappers made analysis-clean first.
+# Elsewhere the platform leaves the pthread primitives un-annotated, so only
+# annotated code is analyzed and this stays quiet until a real violation.
+if(ENABLE_THREAD_SAFETY_ANALYSIS
+   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"
+   AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD"
+)
+  add_compile_options(-Wthread-safety)
+  if(THREAD_SAFETY_ANALYSIS_AS_ERROR)
+    add_compile_options(-Werror=thread-safety)
+  else()
+    add_compile_options(-Wno-error=thread-safety)
+  endif()
+endif()
+
 if(ENABLE_PROBES)
   add_compile_options("-DENABLE_SYSTEMTAP_PROBES")
 endif()
@@ -413,6 +445,11 @@ endif()
 if(EXTERNAL_LIBSWOC)
   message(STATUS "Looking for external libswoc")
   find_package(libswoc REQUIRED)
+endif()
+
+if(EXTERNAL_HWY)
+  message(STATUS "Looking for external highway")
+  find_package(HWY "1.4.0" CONFIG REQUIRED)
 endif()
 
 include(Check128BitCas)

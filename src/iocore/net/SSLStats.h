@@ -39,6 +39,7 @@ using ts::Metrics;
 struct SSLStatsBlock {
   Metrics::Counter::AtomicType *cert_compress_zlib                             = nullptr;
   Metrics::Counter::AtomicType *cert_compress_zlib_failure                     = nullptr;
+  Metrics::Counter::AtomicType *cert_compress_cache_hit                        = nullptr;
   Metrics::Counter::AtomicType *cert_decompress_zlib                           = nullptr;
   Metrics::Counter::AtomicType *cert_decompress_zlib_failure                   = nullptr;
   Metrics::Counter::AtomicType *cert_compress_brotli                           = nullptr;
@@ -85,6 +86,10 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *total_sslv3                                    = nullptr;
   Metrics::Counter::AtomicType *total_success_handshake_count_in               = nullptr;
   Metrics::Counter::AtomicType *total_success_handshake_count_out              = nullptr;
+  Metrics::Counter::AtomicType *handshake_sign_rsa                             = nullptr;
+  Metrics::Counter::AtomicType *handshake_sign_ecdsa                           = nullptr;
+  Metrics::Counter::AtomicType *handshake_sign_other                           = nullptr;
+  Metrics::Counter::AtomicType *connections_closed                             = nullptr;
   Metrics::Counter::AtomicType *total_ticket_keys_renewed                      = nullptr;
   Metrics::Counter::AtomicType *total_tickets_created                          = nullptr;
   Metrics::Counter::AtomicType *total_tickets_not_found                        = nullptr;
@@ -110,6 +115,8 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *user_agent_version_too_high                    = nullptr;
   Metrics::Counter::AtomicType *user_agent_version_too_low                     = nullptr;
   Metrics::Counter::AtomicType *user_agent_wrong_version                       = nullptr;
+  Metrics::Counter::AtomicType *tls_handshake_bytes_in_total                   = nullptr;
+  Metrics::Counter::AtomicType *tls_handshake_bytes_out_total                  = nullptr;
 
   // Note: The following user_agent_session_* metrics are implemented as Gauge
   // types even though they semantically represent cumulative counters. This is

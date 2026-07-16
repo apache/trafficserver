@@ -108,6 +108,9 @@ void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const std::string_view name, const std::string_view value);
 
+// Remove every instance of an HTTP header.
+void HttpRemoveMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name);
+
 // Dump the given HTTP header to the debug log.
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 

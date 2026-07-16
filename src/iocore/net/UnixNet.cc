@@ -26,17 +26,18 @@
 #include "P_UnixNet.h"
 #include "iocore/net/AsyncSignalEventIO.h"
 #include "tscore/ink_hrtime.h"
+#include "ts/ats_probe.h"
 
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
-ink_hrtime last_throttle_warning;
-ink_hrtime last_shedding_warning;
-int        net_connections_throttle;
-bool       net_memory_throttle = false;
-int        fds_throttle;
-ink_hrtime last_transient_accept_error;
+ink_hrtime        last_throttle_warning;
+ink_hrtime        last_shedding_warning;
+int               net_connections_throttle;
+std::atomic<bool> net_memory_throttle = false;
+int               fds_throttle;
+ink_hrtime        last_transient_accept_error;
 
 NetHandler::Config                                     NetHandler::global_config;
 std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
@@ -135,6 +136,8 @@ public:
         }
         Dbg(dbg_ctl_inactivity_cop_verbose, "ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
             ink_hrtime_to_sec(now), ne->next_inactivity_timeout_at, ne->inactivity_timeout_in);
+        ATS_PROBE6(net_inactivity_timeout, ne->get_fd(), now, ne->next_inactivity_timeout_at, ne->inactivity_timeout_in,
+                   ne->is_default_inactivity_timeout() ? 1 : 0, ne->default_inactivity_timeout_in.load());
         ne->callback(VC_EVENT_INACTIVITY_TIMEOUT, e);
       } else if (ne->next_activity_timeout_at && ne->next_activity_timeout_at < now) {
         Dbg(dbg_ctl_inactivity_cop_verbose, "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,

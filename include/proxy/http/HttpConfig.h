@@ -706,11 +706,11 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt connect_attempts_max_retries             = 0;
-  MgmtInt connect_attempts_max_retries_down_server = 3;
-  MgmtInt connect_attempts_rr_retries              = 3;
-  MgmtInt connect_attempts_timeout                 = 30;
-  MgmtInt connect_attempts_retry_backoff_base      = 0;
+  MgmtInt connect_attempts_max_retries                = 0;
+  MgmtInt connect_attempts_max_retries_suspect_server = 1;
+  MgmtInt connect_attempts_rr_retries                 = 3;
+  MgmtInt connect_attempts_timeout                    = 30;
+  MgmtInt connect_attempts_retry_backoff_base         = 0;
 
   MgmtInt connect_down_policy = 2;
 
@@ -773,6 +773,7 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+  char *ssl_client_ca_cert_path         = nullptr;
   char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
@@ -1031,6 +1032,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.ssl_client_cert_filename);
   ats_free(oride.ssl_client_private_key_filename);
   ats_free(oride.ssl_client_ca_cert_filename);
+  ats_free(oride.ssl_client_ca_cert_path);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);

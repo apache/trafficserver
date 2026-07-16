@@ -102,10 +102,11 @@ LogBufferManager::preproc_buffers(LogBufferSink *sink)
 LogObject::LogObject(LogConfig *cfg, const LogFormat *format, const char *log_dir, const char *basename, LogFileFormat file_format,
                      const char *header, Log::RollingEnabledValues rolling_enabled, int flush_threads, int rolling_interval_sec,
                      int rolling_offset_hr, int rolling_size_mb, bool /* auto_created ATS_UNUSED */, int rolling_max_count,
-                     int rolling_min_count, bool reopen_after_rolling, int pipe_buffer_size, bool fast)
+                     int rolling_min_count, bool reopen_after_rolling, int pipe_buffer_size, bool fast, unsigned binary_log_version)
   : m_alt_filename(nullptr),
     m_flags(0),
     m_signature(0),
+    m_binary_log_version(binary_log_version),
     m_flush_threads(flush_threads),
     m_rolling_interval_sec(rolling_interval_sec),
     m_rolling_offset_hr(rolling_offset_hr),
@@ -677,6 +678,8 @@ LogObject::log(LogAccess *lad, std::string_view text_entry)
   } else if (lad) {
     bytes_used = m_format->m_field_list.marshal(lad, &(*buffer)[offset]);
     ink_assert(bytes_needed >= bytes_used);
+    // Count only entries that were successfully checked out and marshalled, not dropped ones.
+    Metrics::Counter::increment(log_rsb.marshalled_bytes, bytes_needed);
   } else if (!text_entry.empty()) {
     char *dst = &(*buffer)[offset];
     memcpy(dst, text_entry.data(), text_entry.size());

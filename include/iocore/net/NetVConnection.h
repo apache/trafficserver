@@ -505,6 +505,8 @@ public:
   void                 set_proxy_protocol_info(const ProxyProtocol &src);
   const ProxyProtocol &get_proxy_protocol_info() const;
 
+  bool has_proxy_protocol_preface(IOBufferReader *) const;
+  bool has_proxy_protocol_preface(const char *, int64_t) const;
   bool has_proxy_protocol(IOBufferReader *, int max_header_size);
   bool has_proxy_protocol(char *, int64_t *);
 

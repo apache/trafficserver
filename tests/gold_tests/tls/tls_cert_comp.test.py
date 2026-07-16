@@ -24,7 +24,7 @@ with cert compression enabled. The test verifies compression and
 decompression succeed by checking the ssl cert compression metrics.
 '''
 
-Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION'))
+Test.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION_CALLBACKS'))
 
 REPLAY_FILE = 'replay/tls_cert_compression.replay.yaml'
 
@@ -68,6 +68,7 @@ ssl_multicert:
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.cert_compression.algorithms': self._algorithm,
+                'proxy.config.ssl.server.cert_compression.cache': 0,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl_cert_compress',
             })

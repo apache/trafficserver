@@ -160,7 +160,8 @@
   X(HTTP_TRANSACTION_NO_ACTIVITY_TIMEOUT_OUT,       transaction_no_activity_timeout_out,        "proxy.config.http.transaction_no_activity_timeout_out",          INT,    GENERIC) \
   X(HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT,            transaction_active_timeout_out,             "proxy.config.http.transaction_active_timeout_out",               INT,    GENERIC) \
   X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES,              connect_attempts_max_retries,               "proxy.config.http.connect_attempts_max_retries",                 INT,    GENERIC) \
-  X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,  connect_attempts_max_retries_down_server,   "proxy.config.http.connect_attempts_max_retries_down_server",     INT,    GENERIC) \
+  X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,  connect_attempts_max_retries_suspect_server, "proxy.config.http.connect_attempts_max_retries_down_server",     INT,    GENERIC) \
+  X(HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_SUSPECT_SERVER, connect_attempts_max_retries_suspect_server, "proxy.config.http.connect_attempts_max_retries_suspect_server", INT,    GENERIC) \
   X(HTTP_CONNECT_ATTEMPTS_RR_RETRIES,               connect_attempts_rr_retries,                "proxy.config.http.connect_attempts_rr_retries",                  INT,    GENERIC) \
   X(HTTP_CONNECT_ATTEMPTS_TIMEOUT,                  connect_attempts_timeout,                   "proxy.config.http.connect_attempts_timeout",                     INT,    GENERIC) \
   X(HTTP_DOWN_SERVER_CACHE_TIME,                    down_server_timeout,                        "proxy.config.http.down_server.cache_time",                       INT,    HttpDownServerCacheTimeConv) \
@@ -250,6 +251,7 @@
   X(HTTP_CONNECT_ATTEMPTS_RETRY_BACKOFF_BASE,       connect_attempts_retry_backoff_base,        "proxy.config.http.connect_attempts_retry_backoff_base",          INT,    GENERIC) \
   X(HTTP_NEGATIVE_REVALIDATING_LIST,                negative_revalidating_list,                 "proxy.config.http.negative_revalidating_list",                   STRING, HttpStatusCodeList_Conv) \
   X(HTTP_CACHE_POST_METHOD,                         cache_post_method,                          "proxy.config.http.cache.post_method",                            INT,    GENERIC) \
-  X(HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS,      targeted_cache_control_headers,             "proxy.config.http.cache.targeted_cache_control_headers",         STRING, TargetedCacheControlHeaders_Conv)
+  X(HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS,      targeted_cache_control_headers,             "proxy.config.http.cache.targeted_cache_control_headers",         STRING, TargetedCacheControlHeaders_Conv) \
+  X(SSL_CLIENT_CA_CERT_PATH,                        ssl_client_ca_cert_path,                    "proxy.config.ssl.client.CA.cert.path",                           STRING, NONE)
 
 // clang-format on

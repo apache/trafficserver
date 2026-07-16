@@ -23,7 +23,7 @@
 
 #include "proxy/http/HttpSM.h"
 #include "proxy/Plugin.h"
-#include "proxy/PreTransactionLogData.h"
+#include "proxy/NonHttpSmLogData.h"
 #include "proxy/logging/LogAccess.h"
 #include "proxy/logging/TransactionLogData.h"
 #include "proxy/logging/Log.h"
@@ -343,7 +343,7 @@ get_pseudo_header_value(HTTPHdr const &hdr, std::string_view name)
 } // end anonymous namespace
 
 void
-ProxyTransaction::log_pre_transaction_access(HTTPHdr const *request, const char *protocol_str)
+ProxyTransaction::log_non_http_sm_access(HTTPHdr const *request, const char *protocol_str)
 {
   if (get_sm() != nullptr) {
     return;
@@ -358,7 +358,7 @@ ProxyTransaction::log_pre_transaction_access(HTTPHdr const *request, const char 
     return;
   }
 
-  PreTransactionLogData data;
+  NonHttpSmLogData data;
 
   data.owned_client_request.create(HTTPType::REQUEST, request->version_get());
   data.owned_client_request.copy(request);

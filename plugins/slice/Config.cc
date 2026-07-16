@@ -36,6 +36,7 @@ Config::~Config()
   if (nullptr != m_regex) {
     delete m_regex;
   }
+  prefetchCleanup();
 }
 
 int64_t
@@ -387,3 +388,36 @@ Config::sizeCacheRemove(std::string_view url)
     m_oscache->remove(url);
   }
 }
+
+std::pair<bool, BgBlockFetch *>
+Config::prefetchAcquire(const std::string &key)
+{
+  std::lock_guard<std::mutex> const guard(m_prefetch_mutex);
+  auto [it, inserted] = m_prefetch_active.insert(key);
+
+  if (!inserted) {
+    return {false, nullptr};
+  }
+
+  BgBlockFetch *bg = nullptr;
+
+  if (!m_prefetch_freelist.empty()) {
+    bg = m_prefetch_freelist.back();
+    m_prefetch_freelist.pop_back();
+  }
+
+  return {true, bg};
+}
+
+#if defined(UNITTEST)
+// Stubs for unit tests that don't link prefetch.cc
+void
+Config::prefetchRelease(BgBlockFetch *)
+{
+}
+
+void
+Config::prefetchCleanup()
+{
+}
+#endif

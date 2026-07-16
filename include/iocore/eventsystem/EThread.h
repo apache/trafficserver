@@ -47,7 +47,6 @@ using hwloc_obj_t = hwloc_obj *;
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-class DiskHandler;
 struct EventIO;
 
 class ServerSessionPool;
@@ -327,12 +326,6 @@ public:
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
-
-  /** Private Data for the Disk Processor. */
-  DiskHandler *diskHandler = nullptr;
-
-  /** Private Data for AIO. */
-  Que(Continuation, link) aio_ops;
 
   ProtectedQueue     EventQueueExternal;
   PriorityEventQueue EventQueue;

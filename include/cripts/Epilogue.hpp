@@ -459,7 +459,7 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
           }
         }
       }
-      if (context->state.enabled_hooks & cripts::Callbacks::DO_TXN_CLOSE) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_SEND_REQUEST) {
         CDebug("Entering do_send_request()");
         wrap_send_request(context, true, CaseArg);
       } else if (context->state.enabled_hooks & cripts::Callbacks::GLB_SEND_REQUEST) {

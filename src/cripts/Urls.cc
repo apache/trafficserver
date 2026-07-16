@@ -112,25 +112,27 @@ Url::Port::operator=(int port)
 cripts::string_view
 Url::Path::GetSV()
 {
-  if (_segments.size() > 0) {
+  if (_state && _state->segments.size() > 0) {
     std::ostringstream path;
 
-    std::ranges::copy(_segments, std::ostream_iterator<cripts::string_view>(path, "/"));
-    _storage.reserve(_size);
-    _storage = std::string_view(path.str());
-    if (_storage.size() > 0) {
-      _storage.pop_back(); // Removes the trailing /
+    std::ranges::copy(_state->segments, std::ostream_iterator<cripts::string_view>(path, "/"));
+    _state->storage.reserve(_state->size);
+    _state->storage = std::string_view(path.str());
+    if (_state->storage.size() > 0) {
+      _state->storage.pop_back(); // Removes the trailing /
     }
 
-    return {_storage};
+    return {_state->storage};
   } else if (_owner && _data.empty()) {
     const char *value = nullptr;
     int         len   = 0;
 
     _ensure_initialized(_owner);
-    value   = TSUrlPathGet(_owner->_bufp, _owner->_urlp, &len);
-    _data   = cripts::string_view(value, len);
-    _size   = len;
+    value = TSUrlPathGet(_owner->_bufp, _owner->_urlp, &len);
+    _data = cripts::string_view(value, len);
+    if (_state) {
+      _state->size = len;
+    }
     _loaded = true;
   }
 
@@ -144,14 +146,14 @@ Url::Path::operator[](Segments::size_type ix)
 
   _ensure_initialized(_owner);
   _parser(); // Make sure the segments are loaded
-  if (ix < _segments.size()) {
-    ret._initialize(_segments[ix], this, ix);
+  if (_state && ix < _state->segments.size()) {
+    ret._initialize(_state->segments[ix], this, ix);
   }
 
   return ret; // RVO
 }
 
-Url::Path
+Url::Path &
 Url::Path::operator=(cripts::string_view path)
 {
   _ensure_initialized(_owner);
@@ -183,10 +185,11 @@ Url::Path::String::operator=(const cripts::string_view str)
 {
   _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
-  _owner->_size          -= _owner->_segments[_ix].size();
-  _owner->_segments[_ix]  = str;
-  _owner->_size          += str.size();
-  _owner->_modified       = true;
+  CAssert(_owner->_state);              // Should have been allocated by operator[]/_parser()
+  _owner->_state->size          -= _owner->_state->segments[_ix].size();
+  _owner->_state->segments[_ix]  = str;
+  _owner->_state->size          += str.size();
+  _owner->_state->modified       = true;
 
   return *this;
 }
@@ -196,51 +199,53 @@ Url::Path::Reset()
 {
   Component::Reset();
 
-  _segments.clear();
-  _storage.clear();
-  _size     = 0;
-  _modified = false;
+  _state.reset();
 }
 
 void
 Url::Path::Push(cripts::string_view val)
 {
   _parser();
-  _modified = true;
-  _segments.push_back(val);
+  auto &s    = _ensure_state();
+  s.modified = true;
+  s.segments.push_back(val);
 }
 
 void
 Url::Path::Insert(Segments::size_type ix, cripts::string_view val)
 {
   _parser();
-  _modified = true;
-  _segments.insert(_segments.begin() + ix, val);
+  auto &s    = _ensure_state();
+  s.modified = true;
+  s.segments.insert(s.segments.begin() + ix, val);
 }
 
 void
 Url::Path::_parser()
 {
-  if (_segments.size() == 0) {
-    _segments = Split('/');
+  auto &s = _ensure_state();
+
+  if (s.segments.size() == 0) {
+    s.segments = Split('/');
   }
 }
 
 Url::Query::Parameter &
 Url::Query::Parameter::operator=(const cripts::string_view str)
 {
-  CAssert(!_owner->_standalone);
+  CAssert(!_owner->_state || !_owner->_state->standalone);
   _ensure_initialized(_owner->_owner);
   CAssert(!_owner->_owner->ReadOnly()); // This can not be a read-only URL
-  auto iter = _owner->_hashed.find(_name);
+  auto &s    = _owner->_ensure_state();
+  auto  iter = s.hashed.find(_name);
 
-  if (iter != _owner->_hashed.end()) {
+  if (iter != s.hashed.end()) {
     iter->second = str; // Can be an empty string here!
   } else {
-    _owner->_ordered.push_back(_name);
-    _owner->_hashed[_name] = str;
+    s.ordered.push_back(_name);
+    s.hashed[_name] = str;
   }
-  _owner->_modified = true;
+  s.modified = true;
 
   return *this;
 }
@@ -248,31 +253,31 @@ Url::Query::Parameter::operator=(const cripts::string_view str)
 cripts::string_view
 Url::Query::GetSV()
 {
-  if (!_standalone) {
+  if (!_state || !_state->standalone) {
     _ensure_initialized(_owner);
   }
-  if (_ordered.size() > 0) {
-    _storage.clear();
-    _storage.reserve(_size);
+  if (_state && _state->ordered.size() > 0) {
+    _state->storage.clear();
+    _state->storage.reserve(_state->size);
 
     // ToDo: This is wonky, has to be a better std:: iteration to do here
-    for (const auto key : _ordered) {
-      auto iter = _hashed.find(key);
+    for (const auto key : _state->ordered) {
+      auto iter = _state->hashed.find(key);
 
-      if (_storage.size() > 0) {
-        _storage += "&";
+      if (_state->storage.size() > 0) {
+        _state->storage += "&";
       }
 
-      if (iter != _hashed.end()) {
-        _storage += iter->first;
+      if (iter != _state->hashed.end()) {
+        _state->storage += iter->first;
         if (iter->second.size() > 0) {
-          _storage += '=';
-          _storage += iter->second;
+          _state->storage += '=';
+          _state->storage += iter->second;
         }
       }
     }
 
-    return {_storage};
+    return {_state->storage};
   }
 
   // This gets weird when we modify the query parameter components, and can possibly empty
@@ -282,19 +287,21 @@ Url::Query::GetSV()
     const char *value = nullptr;
     int         len   = 0;
 
-    value   = TSUrlHttpQueryGet(_owner->_bufp, _owner->_urlp, &len);
-    _data   = cripts::string_view(value, len);
-    _size   = len;
+    value = TSUrlHttpQueryGet(_owner->_bufp, _owner->_urlp, &len);
+    _data = cripts::string_view(value, len);
+    if (_state) {
+      _state->size = len;
+    }
     _loaded = true;
   }
 
   return _data;
 }
 
-Url::Query
+Url::Query &
 Url::Query::operator=(cripts::string_view query)
 {
-  CAssert(!_standalone);
+  CAssert(!_state || !_state->standalone);
   _ensure_initialized(_owner);
   CAssert(!_owner->ReadOnly()); // This can not be a read-only URL
   TSUrlHttpQuerySet(_owner->_bufp, _owner->_urlp, query.data(), query.size());
@@ -323,15 +330,15 @@ Url::Query::Parameter
 Url::Query::operator[](cripts::string_view param)
 {
   // Make sure the hash and vector are populated, but only if we have an owner
-  if (!_standalone) {
+  if (!_state || !_state->standalone) {
     _ensure_initialized(_owner);
   }
   _parser();
 
   Parameter ret;
-  auto      iter = _hashed.find(param);
+  auto      iter = _state->hashed.find(param);
 
-  if (iter != _hashed.end()) {
+  if (iter != _state->hashed.end()) {
     ret._initialize(iter->first, iter->second, this);
   } else {
     ret._initialize(param, "", this);
@@ -346,21 +353,25 @@ Url::Query::Erase(cripts::string_view param)
   // Make sure the hash and vector are populated
   _parser();
 
-  auto iter  = _hashed.find(param);
-  auto viter = std::ranges::find(_ordered, param);
+  auto &s     = *_state;
+  auto  iter  = s.hashed.find(param);
+  auto  viter = std::ranges::find(s.ordered, param);
 
-  if (iter != _hashed.end()) {
-    _size -= iter->second.size(); // Size of the erased value
-    _hashed.erase(iter);
+  if (iter != s.hashed.end()) {
+    s.size -= iter->second.size(); // Size of the erased value
+    s.hashed.erase(iter);
 
-    CAssert(viter != _ordered.end());
-    _size -= viter->size(); // Length of the erased key
-    _ordered.erase(viter);
+    CAssert(viter != s.ordered.end());
+    s.size -= viter->size(); // Length of the erased key
+    s.ordered.erase(viter);
 
-    if (_ordered.size() == 0) {
+    if (s.ordered.size() == 0) {
       Reset();
+      // After Reset() the state is gone; re-create it just so _modified can be tracked.
+      _ensure_state().modified = true;
+    } else {
+      s.modified = true;
     }
-    _modified = true; // Make sure to set this after we reset above ...
   }
 }
 
@@ -371,21 +382,23 @@ Url::Query::Erase(std::initializer_list<cripts::string_view> list, bool keep)
     // Make sure the hash and vector are populated
     _parser();
 
-    for (auto viter = _ordered.begin(); viter != _ordered.end();) {
-      if (list.end() == std::ranges::find(list, *viter)) {
-        auto iter = _hashed.find(*viter);
+    auto &s = *_state;
 
-        CAssert(iter != _hashed.end());
-        _size -= iter->second.size(); // Size of the erased value
-        _size -= viter->size();       // Length of the erased key
-        _hashed.erase(iter);
-        viter     = _ordered.erase(viter);
-        _modified = true;
+    for (auto viter = s.ordered.begin(); viter != s.ordered.end();) {
+      if (list.end() == std::ranges::find(list, *viter)) {
+        auto iter = s.hashed.find(*viter);
+
+        CAssert(iter != s.hashed.end());
+        s.size -= iter->second.size(); // Size of the erased value
+        s.size -= viter->size();       // Length of the erased key
+        s.hashed.erase(iter);
+        viter      = s.ordered.erase(viter);
+        s.modified = true;
       } else {
         ++viter;
       }
     }
-    if (_ordered.size() == 0) {
+    if (s.ordered.size() == 0) {
       Reset();
     }
   } else {
@@ -400,17 +413,15 @@ Url::Query::Reset()
 {
   Component::Reset();
 
-  _ordered.clear();
-  _hashed.clear();
-  _storage.clear();
-  _size     = 0;
-  _modified = false;
+  _state.reset();
 }
 
 void
 Url::Query::_parser()
 {
-  if (_ordered.size() == 0) {
+  auto &s = _ensure_state();
+
+  if (s.ordered.size() == 0) {
     for (const auto sv : Split('&')) {
       const auto          eq  = sv.find_first_of('=');
       cripts::string_view key = sv.substr(0, eq);
@@ -420,8 +431,8 @@ Url::Query::_parser()
         val = sv.substr(eq + 1);
       }
 
-      _ordered.push_back(key); // Keep the order
-      _hashed[key] = val;
+      s.ordered.push_back(key); // Keep the order
+      s.hashed[key] = val;
     }
   }
 }
@@ -447,17 +458,21 @@ Url::String()
 Pristine::URL &
 Pristine::URL::_get(cripts::Context *context)
 {
-  _ensure_initialized(&context->_urls.pristine);
-  return context->_urls.pristine;
+  auto &slot = context->_urls.pristine;
+
+  if (!slot) {
+    slot = std::make_unique<Pristine::URL>();
+    slot->set_context(context);
+  }
+  _ensure_initialized(slot.get());
+  return *slot;
 }
 
 void
 Pristine::URL::_initialize()
 {
-  Pristine::URL *url = &_context->_urls.pristine;
-
   TSAssert(_context->state.txnp);
-  if (TSHttpTxnPristineUrlGet(_context->state.txnp, &url->_bufp, &url->_urlp) != TS_SUCCESS) {
+  if (TSHttpTxnPristineUrlGet(_context->state.txnp, &_bufp, &_urlp) != TS_SUCCESS) {
     _context->state.error.Fail();
   } else {
     super_type::_initialize(); // Only if successful
@@ -519,8 +534,14 @@ Remap::From::URL::_initialize()
 Remap::From::URL &
 Remap::From::URL::_get(cripts::Context *context)
 {
-  _ensure_initialized(&context->_urls.remap.from);
-  return context->_urls.remap.from;
+  auto &slot = context->_urls.remap.from;
+
+  if (!slot) {
+    slot = std::make_unique<Remap::From::URL>();
+    slot->set_context(context);
+  }
+  _ensure_initialized(slot.get());
+  return *slot;
 }
 
 void
@@ -539,8 +560,14 @@ Remap::To::URL::_initialize()
 Remap::To::URL &
 Remap::To::URL::_get(cripts::Context *context)
 {
-  _ensure_initialized(&context->_urls.remap.to);
-  return context->_urls.remap.to;
+  auto &slot = context->_urls.remap.to;
+
+  if (!slot) {
+    slot = std::make_unique<Remap::To::URL>();
+    slot->set_context(context);
+  }
+  _ensure_initialized(slot.get());
+  return *slot;
 }
 
 Cache::URL &
@@ -623,19 +650,24 @@ Cache::URL::_update()
 Parent::URL &
 Parent::URL::_get(cripts::Context *context)
 {
-  _ensure_initialized(&context->_urls.parent);
-  return context->_urls.parent;
+  auto &slot = context->_urls.parent;
+
+  if (!slot) {
+    slot = std::make_unique<Parent::URL>();
+    slot->set_context(context);
+  }
+  _ensure_initialized(slot.get());
+  return *slot;
 }
 
 void
 Parent::URL::_initialize()
 {
-  Parent::URL     *url = &_context->_urls.parent;
   Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
-  if (TSUrlCreate(req.BufP(), &url->_urlp) == TS_SUCCESS) {
+  if (TSUrlCreate(req.BufP(), &_urlp) == TS_SUCCESS) {
     TSAssert(_context->state.txnp);
-    if (TSHttpTxnParentSelectionUrlGet(_context->state.txnp, req.BufP(), url->_urlp) != TS_SUCCESS) {
+    if (TSHttpTxnParentSelectionUrlGet(_context->state.txnp, req.BufP(), _urlp) != TS_SUCCESS) {
       _context->state.error.Fail();
       return;
     }

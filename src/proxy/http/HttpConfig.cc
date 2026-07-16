@@ -1043,8 +1043,8 @@ HttpConfig::startup()
   HttpEstablishStaticConfigFloat(c.oride.background_fill_threshold, "proxy.config.http.background_fill_completed_threshold");
 
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries, "proxy.config.http.connect_attempts_max_retries");
-  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries_down_server,
-                                    "proxy.config.http.connect_attempts_max_retries_down_server");
+  HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_max_retries_suspect_server,
+                                    "proxy.config.http.connect_attempts_max_retries_suspect_server");
   HttpEstablishStaticConfigLongLong(c.oride.connect_attempts_retry_backoff_base,
                                     "proxy.config.http.connect_attempts_retry_backoff_base");
 
@@ -1340,13 +1340,45 @@ HttpConfig::reconfigure()
   params->oride.background_fill_active_timeout      = m_master.oride.background_fill_active_timeout;
   params->oride.background_fill_threshold           = m_master.oride.background_fill_threshold;
 
-  params->oride.connect_attempts_max_retries             = m_master.oride.connect_attempts_max_retries;
-  params->oride.connect_attempts_max_retries_down_server = m_master.oride.connect_attempts_max_retries_down_server;
+  params->oride.connect_attempts_max_retries                = m_master.oride.connect_attempts_max_retries;
+  params->oride.connect_attempts_max_retries_suspect_server = m_master.oride.connect_attempts_max_retries_suspect_server;
+
+  // Deprecation handling for connect_attempts_max_retries_down_server: if the operator explicitly set the deprecated record
+  // but did not set the replacement, mirror the value forward so existing configs keep working. If both are set, the new
+  // record wins and the deprecated one is ignored. Always warn when the deprecated record is explicitly set. The deprecated
+  // record has no bound struct field; fetch its value on demand from RecCore.
+  {
+    RecSourceT old_src = REC_SOURCE_NULL;
+    RecSourceT new_src = REC_SOURCE_NULL;
+    RecGetRecordSource("proxy.config.http.connect_attempts_max_retries_down_server", &old_src);
+    RecGetRecordSource("proxy.config.http.connect_attempts_max_retries_suspect_server", &new_src);
+    const bool old_explicit = (old_src == REC_SOURCE_EXPLICIT || old_src == REC_SOURCE_ENV);
+    const bool new_explicit = (new_src == REC_SOURCE_EXPLICIT || new_src == REC_SOURCE_ENV);
+    if (old_explicit && !new_explicit) {
+      RecInt deprecated_val = RecGetRecordInt("proxy.config.http.connect_attempts_max_retries_down_server")
+                                .value_or(params->oride.connect_attempts_max_retries_suspect_server);
+      Warning("proxy.config.http.connect_attempts_max_retries_down_server is deprecated; "
+              "use proxy.config.http.connect_attempts_max_retries_suspect_server instead. "
+              "Using deprecated value %" PRIu64 " for now.",
+              deprecated_val);
+      params->oride.connect_attempts_max_retries_suspect_server = deprecated_val;
+    } else if (old_explicit && new_explicit) {
+      Warning("proxy.config.http.connect_attempts_max_retries_down_server is deprecated and is being ignored "
+              "in favor of proxy.config.http.connect_attempts_max_retries_suspect_server (%" PRIu64 ").",
+              m_master.oride.connect_attempts_max_retries_suspect_server);
+    }
+  }
+
   if (m_master.oride.connect_attempts_rr_retries > params->oride.connect_attempts_max_retries) {
     Warning("connect_attempts_rr_retries (%" PRIu64 ") is greater than "
             "connect_attempts_max_retries (%" PRIu64 "), this means requests "
             "will never redispatch to another server",
             m_master.oride.connect_attempts_rr_retries, params->oride.connect_attempts_max_retries);
+  }
+  if (m_master.oride.connect_attempts_rr_retries > 0 && params->oride.connect_attempts_max_retries_suspect_server == 0) {
+    Warning("connect_attempts_max_retries_suspect_server=0 with round-robin enabled leaves no retry budget for recovering "
+            "(SUSPECT) origins beyond the initial attempt; "
+            "setting proxy.config.http.connect_attempts_max_retries_suspect_server >= 1 is recommended");
   }
   params->oride.connect_attempts_retry_backoff_base = m_master.oride.connect_attempts_retry_backoff_base;
 

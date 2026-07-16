@@ -75,18 +75,22 @@ and reduces load on disks, especially during temporary traffic peaks.
 You can configure the RAM cache size to suit your needs, as described in
 :ref:`changing-the-size-of-the-ram-cache` below.
 
-The RAM cache supports two cache eviction algorithms, a regular *LRU*
-(Least Recently Used) and the more advanced *CLFUS* (Clocked Least
+The RAM cache supports three cache eviction algorithms: a regular *LRU*
+(Least Recently Used); the more advanced *CLFUS* (Clocked Least
 Frequently Used by Size; which balances recentness, frequency, and size
-to maximize hit rate, similar to a most frequently used algorithm).
-The default is to use *LRU*, and this is controlled via
+to maximize hit rate, similar to a most frequently used algorithm); and
+*S3-FIFO* (Simple Scalable Static FIFO), a FIFO-based policy whose small
+admission queue and ghost list filter one-hit-wonders, giving strong hit
+rates on CDN and key-value workloads at low cost. The default is to use
+*LRU*, and this is controlled via
 :ts:cv:`proxy.config.cache.ram_cache.algorithm`.
 
 Both the *LRU* and *CLFUS* RAM caches support a configuration to increase
 scan resistance. In a typical *LRU*, if you request all possible objects in
 sequence, you will effectively churn the cache on every request. The option
 :ts:cv:`proxy.config.cache.ram_cache.use_seen_filter` can be set to add some
-resistance against this problem.
+resistance against this problem. *S3-FIFO* is scan-resistant by design,
+through its admission queue, and does not use the seen filter.
 
 In addition, *CLFUS* also supports compressing in the RAM cache itself.
 This can be useful for content which is not compressed by itself (e.g.

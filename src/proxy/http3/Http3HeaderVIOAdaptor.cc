@@ -110,7 +110,7 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
                                               NON_TRAILER)) {
     Dbg(dbg_ctl_http3, "Header is invalid");
     if (this->_txn != nullptr) {
-      this->_txn->log_pre_transaction_access(&this->_header, "http/3");
+      this->_txn->log_non_http_sm_access(&this->_header, "http/3");
     }
     return -1;
   }
@@ -118,7 +118,7 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   if (res != 0) {
     Dbg(dbg_ctl_http3, "ParseResult::ERROR");
     if (this->_txn != nullptr) {
-      this->_txn->log_pre_transaction_access(&this->_header, "http/3");
+      this->_txn->log_non_http_sm_access(&this->_header, "http/3");
     }
     return -1;
   }
