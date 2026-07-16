@@ -98,7 +98,6 @@ class PacketMarkTest:
         # for these.
         ts.Disk.records_config.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.url_remap.remap_required': 0,
                 # Keep ATS running as the invoking user inside sudo (no privilege drop).
                 'proxy.config.admin.user_id': '#-1',
@@ -139,6 +138,8 @@ class ClientPacketMarkTest(PacketMarkTest):
             {
                 'proxy.config.net.sock_packet_mark_in': self.SEED_MARK,
                 'proxy.config.net.sock_option_flag_in': SOCK_OPT_FLAG_PACKET_MARK,
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|client_packet_mark',
             })
         Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, f'client_packet_mark.so'), ts)
 
@@ -165,6 +166,8 @@ class ServerPacketMarkTest(PacketMarkTest):
             {
                 'proxy.config.net.sock_packet_mark_out': self.SEED_MARK,
                 'proxy.config.net.sock_option_flag_out': SOCK_OPT_FLAG_PACKET_MARK,
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|server_packet_mark',
             })
         Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, f'server_packet_mark.so'), ts)
 
