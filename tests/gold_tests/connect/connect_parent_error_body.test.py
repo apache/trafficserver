@@ -51,6 +51,7 @@ class ConnectParentErrorBodyTest:
 
         self.ts.Disk.parent_config.AddLine(
             f'dest_domain=. parent="127.0.0.1:{self.parent.Variables.http_port}|1" go_direct=false parent_is_proxy=true')
+        self.ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
 
     def run(self):
         tr = Test.AddTestRun('CONNECT error response body from parent proxy')

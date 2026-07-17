@@ -69,6 +69,33 @@ Format
          - PUSH
          - DELETE
          - TRACE
+     - apply: out
+       ip_addrs:
+         - 0.0.0.0/8
+         - 127.0.0.0/8
+         - "::"
+         - ::1
+         - 10.0.0.0/8
+         - 172.16.0.0/12
+         - 192.168.0.0/16
+         - 169.254.0.0/16
+         - ::/96
+         - fc00::/7
+         - fe80::/10
+         - ::ffff:0:0/96
+       action: deny
+       methods: CONNECT
+
+.. important::
+
+   Upgrade note: newly generated default :file:`ip_allow.yaml` files deny outbound
+   ``CONNECT`` tunnels to unspecified, loopback, private, link-local,
+   IPv4-compatible IPv6, and IPv4-mapped IPv6 destination ranges. Existing custom files are not
+   rewritten, but forward proxy ``CONNECT`` requests and SNI ``tunnel_route`` targets
+   in these ranges require an explicit ``apply: out`` allow rule before the default
+   deny rule. Outbound :file:`ip_allow.yaml` policy also applies to ``forward_route``
+   and ``partial_blind_route`` upstream destinations, so configure explicit policy for
+   intentional local or private routes.
 
 Each rule is a mapping. The YAML data must have a top level key of "ip_allow" and its value must
 be a mapping or a sequence of mappings, each of those being one rule.
@@ -116,17 +143,17 @@ loopback address because the latter is matched first.
 
 A major difference in application between ``in`` and ``out`` rules is that by default,
 inbound connections are denied and therefore if there is no rule that matches, the connection is
-denied. Outbound rules allow by default, so the absence of rules in the default configuration
-enables all methods for all outbound connections.
+denied. Outbound rules allow by default if no rule matches. The default configuration includes
+explicit outbound rules that deny ``CONNECT`` tunnels to unspecified, loopback, private,
+link-local, and IPv4-mapped IPv6 destination addresses.
 
 .. note::
 
-   Be aware that ip_allow rules will not, and indeed cannot, be applied to TLS
-   connections which are tunneled via ``tunnel_route`` to the upstream target.
-   Such connections are not decrypted and thus are not processed by |TS|. This
-   applies as well to TLS connections which are forwarded via ``forward_route``
-   since, while those are decrypted, they are not processed by |TS|.  For
-   details, see :ref:`sni-routing` and :file:`sni.yaml`.
+   A ``tunnel_route`` in :file:`sni.yaml` synthesizes a ``CONNECT`` transaction, so outbound
+   ``ip_allow`` rules are applied to its destination address before |TS| opens the upstream
+   connection. ``forward_route`` and ``partial_blind_route`` upstream destinations are also
+   subject to outbound ``ip_allow`` policy. The data flowing through these routes is still not
+   interpreted as HTTP by |TS|. For details, see :ref:`sni-routing` and :file:`sni.yaml`.
 
 Examples
 ========
@@ -222,13 +249,32 @@ This will match the IP address for the target servers on the outbound connection
 method is ``GET`` or ``HEAD`` the connection will be allowed, otherwise the connection will be
 denied.
 
+The default configuration denies ``CONNECT`` tunnels to unspecified, loopback, private,
+link-local, and IPv4-mapped IPv6 destinations. To intentionally allow a private tunnel
+destination, add the more specific outbound rule before the default deny rule::
+
+   - apply: out
+     ip_addrs: 127.0.0.1
+     action: allow
+     methods: CONNECT
+
+Because the first matching IP range selects the rule, an allow rule with a method list denies other
+methods to the same destination. If the same destination also receives non-``CONNECT`` traffic, add
+those methods to the exception or use ``methods: ALL``.
+
 As a final example, here is the default configuration in compact form::
 
    ip_allow: [
      { apply: in, ip_addrs: 127.0.0.1, action: allow },
      { apply: in, ip_addrs: "::1", action: allow },
      { apply: in, ip_addrs: 0/0, action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] },
-     { apply: in, ip_addrs: "::/0", action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] }
+     { apply: in, ip_addrs: "::/0", action: deny, methods: [ PURGE, PUSH, DELETE, TRACE ] },
+     { apply: out,
+       ip_addrs: [ 0.0.0.0/8, 127.0.0.0/8, "::", "::1", 10.0.0.0/8, 172.16.0.0/12,
+                   192.168.0.0/16, 169.254.0.0/16, "::/96", "fc00::/7",
+                   "fe80::/10", "::ffff:0:0/96" ],
+       action: deny,
+       methods: [ CONNECT ] }
      ]
 
 .. note::

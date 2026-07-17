@@ -166,11 +166,20 @@ tunnel_route                           Inbound   Destination as an FQDN and port
                                                  This will forward all traffic to the specified destination without first terminating
                                                  the incoming TLS connection.
 
+                                                 The destination address is also subject to outbound :file:`ip_allow.yaml` policy. The
+                                                 default :file:`ip_allow.yaml` denies ``CONNECT`` tunnels to unspecified, loopback,
+                                                 private, link-local, and IPv4-mapped IPv6 destination addresses. To
+                                                 intentionally tunnel to one of those ranges, add an explicit outbound allow rule
+                                                 before the default deny rule.
+
 forward_route                          Inbound   Destination as an FQDN and port, separated by a colon ``:``.
 
                                                  This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                                                  decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
                                                  need to be HTTP.
+
+                                                 The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
+                                                 |TS| opens the connection.
 
 partial_blind_route                    Inbound   Destination as an FQDN and port, separated by a colon ``:``.
 
@@ -178,6 +187,9 @@ partial_blind_route                    Inbound   Destination as an FQDN and port
                                                  In addition partial_blind_route creates a new TLS connection to the specified origin.
                                                  It does not interpret the decrypted data before passing it to the origin TLS
                                                  connection, so the contents do not need to be HTTP.
+
+                                                 The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
+                                                 |TS| opens the connection.
 
 tunnel_alpn                            Inbound   List of ALPN Protocol Ids for Partial Blind Tunnel.
 

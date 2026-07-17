@@ -54,6 +54,7 @@ class ConnectTest:
         self.ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://127.0.0.1:{self.httpbin.Variables.Port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
 
         self.ts.Disk.logging_yaml.AddLines(
             '''
