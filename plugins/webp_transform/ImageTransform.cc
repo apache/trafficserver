@@ -19,6 +19,7 @@
 #include <sstream>
 #include <iostream>
 #include <string_view>
+#include <utility>
 
 #include "ts/ts.h"
 
@@ -58,40 +59,75 @@ bool config_convert_to_jpeg = false;
 
 Stat stat_convert_to_webp;
 Stat stat_convert_to_jpeg;
+
+bool
+has_signature_for(std::string_view data, ImageEncoding encoding)
+{
+  constexpr std::string_view png_signature{"\x89PNG\r\n\x1a\n", 8};
+
+  switch (encoding) {
+  case ImageEncoding::webp:
+    return data.size() >= 12 && data.substr(0, 4) == "RIFF" && data.substr(8, 4) == "WEBP";
+  case ImageEncoding::jpeg:
+    return data.size() >= 3 && static_cast<unsigned char>(data[0]) == 0xff && static_cast<unsigned char>(data[1]) == 0xd8 &&
+           static_cast<unsigned char>(data[2]) == 0xff;
+  case ImageEncoding::png:
+    return data.starts_with(png_signature);
+  case ImageEncoding::unknown:
+    return false;
+  }
+
+  return false;
+}
 } // namespace
 
 class ImageTransform : public TransformationPlugin
 {
 public:
-  ImageTransform(Transaction &transaction, ImageEncoding input_image_type, ImageEncoding transform_image_type)
+  ImageTransform(Transaction &transaction, std::string input_content_type, ImageEncoding input_image_type,
+                 ImageEncoding transform_image_type)
     : TransformationPlugin(transaction, TransformationPlugin::RESPONSE_TRANSFORMATION),
+      _input_content_type(std::move(input_content_type)),
       _input_image_type(input_image_type),
       _transform_image_type(transform_image_type)
   {
     TransformationPlugin::registerHook(HOOK_READ_RESPONSE_HEADERS);
+    TransformationPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
   }
 
   void
   handleReadResponseHeaders(Transaction &transaction) override
   {
+    transaction.getServerResponse().getHeaders()["Vary"] = "Accept"; // to have a separate cache entry
+
+    Dbg(webp_dbg_ctl, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
+    transaction.resume();
+  }
+
+  void
+  handleSendResponseHeaders(Transaction &transaction) override
+  {
+    if (_transform_image_type == _input_image_type) {
+      transaction.getClientResponse().getHeaders()["Content-Type"] = _input_content_type;
+      transaction.resume();
+      return;
+    }
+
     switch (_transform_image_type) {
     case ImageEncoding::webp:
-      transaction.getServerResponse().getHeaders()["Content-Type"] = "image/webp";
+      transaction.getClientResponse().getHeaders()["Content-Type"] = "image/webp";
       break;
     case ImageEncoding::jpeg:
-      transaction.getServerResponse().getHeaders()["Content-Type"] = "image/jpeg";
+      transaction.getClientResponse().getHeaders()["Content-Type"] = "image/jpeg";
       break;
     case ImageEncoding::png:
-      transaction.getServerResponse().getHeaders()["Content-Type"] = "image/png";
+      transaction.getClientResponse().getHeaders()["Content-Type"] = "image/png";
       break;
     case ImageEncoding::unknown:
       // do nothing
       break;
     }
 
-    transaction.getServerResponse().getHeaders()["Vary"] = "Accept"; // to have a separate cache entry
-
-    Dbg(webp_dbg_ctl, "url %s", transaction.getServerRequest().getUrl().getUrlString().c_str());
     transaction.resume();
   }
 
@@ -105,8 +141,17 @@ public:
   handleInputComplete() override
   {
     std::string input_data = _img.str();
-    Blob        input_blob(input_data.data(), input_data.length());
-    Image       image;
+
+    if (!has_signature_for(input_data, _input_image_type)) {
+      TSError("[webp_transform] input body does not match its declared image encoding: %d, length: %zu",
+              static_cast<int>(_input_image_type), input_data.length());
+      pass_through(input_data);
+      setOutputComplete();
+      return;
+    }
+
+    Blob  input_blob(input_data.data(), input_data.length());
+    Image image;
 
     try {
       image.read(input_blob);
@@ -125,13 +170,11 @@ public:
       produce(std::string_view(reinterpret_cast<const char *>(output_blob.data()), output_blob.length()));
     } catch (Magick::Warning &warning) {
       TSError("ImageMagick++ warning: %s", warning.what());
-      produce(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
-      _transform_image_type = _input_image_type; // Revert to original encoding on error
+      pass_through(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
     } catch (Magick::Error &error) {
-      TSError("ImageMagick++ error: %s _image_type: %d input_data.length(): %zd", error.what(), (int)_transform_image_type,
+      TSError("ImageMagick++ error: %s _image_type: %d input_data.length(): %zu", error.what(), (int)_transform_image_type,
               input_data.length());
-      produce(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
-      _transform_image_type = _input_image_type; // Revert to original encoding on error
+      pass_through(std::string_view(reinterpret_cast<const char *>(input_blob.data()), input_blob.length()));
     }
 
     setOutputComplete();
@@ -140,7 +183,17 @@ public:
   ~ImageTransform() override = default;
 
 private:
+  void
+  pass_through(std::string_view data)
+  {
+    if (!data.empty()) {
+      produce(data);
+    }
+    _transform_image_type = _input_image_type;
+  }
+
   std::stringstream _img;
+  std::string       _input_content_type;
   ImageEncoding     _input_image_type;
   ImageEncoding     _transform_image_type;
 };
@@ -192,10 +245,10 @@ public:
 
       if (webp_supported == true && transaction_convert_to_webp == true) {
         Dbg(webp_dbg_ctl, "Content type is either jpeg or png. Converting to webp");
-        transaction.addPlugin(new ImageTransform(transaction, input_image_type, ImageEncoding::webp));
+        transaction.addPlugin(new ImageTransform(transaction, ctype, input_image_type, ImageEncoding::webp));
       } else if (webp_supported == false && transaction_convert_to_jpeg == true) {
         Dbg(webp_dbg_ctl, "Content type is webp. Converting to jpeg");
-        transaction.addPlugin(new ImageTransform(transaction, input_image_type, ImageEncoding::jpeg));
+        transaction.addPlugin(new ImageTransform(transaction, ctype, input_image_type, ImageEncoding::jpeg));
       } else {
         Dbg(webp_dbg_ctl, "Nothing to convert");
       }
