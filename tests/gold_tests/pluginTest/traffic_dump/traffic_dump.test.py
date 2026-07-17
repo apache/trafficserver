@@ -68,6 +68,7 @@ ts.Disk.remap_config.AddLines(
         f'map http://www.connect_target.com/ http://127.0.0.1:{server.Variables.http_port}',
         f'map / http://127.0.0.1:{server.Variables.http_port}',
     ])
+ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET, POST ]')
 
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(
