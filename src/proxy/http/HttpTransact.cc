@@ -5035,9 +5035,26 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   // 10.3.5), but RFC 7232) is clear that the 304 and 200 responses
   // must be identical (see section 4.1). This code attempts to strike
   // a balance between the two.
-  cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_AGE));
-  cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_ETAG));
-  cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPIRES));
+  //
+  // Only delete a caching header that the server response does NOT carry.
+  // If the response carries it, the merge below overwrites the cached field
+  // in place (value_set reuses the existing slot). Deleting it here first
+  // would force the merge to recreate the field, and because a deleted
+  // MIMEField slot is never reused until its whole block is empty, a
+  // long-lived cached object that is revalidated repeatedly (e.g. a hot
+  // max-age=60 object whose Expires changes every 304) would accrete a dead
+  // slot per revalidation until its header heap crosses the aggregation
+  // fragment limit and the cache write can no longer commit (frozen stale).
+  HTTPHdr *server_response = &s->hdr_info.server_response;
+  if (!server_response->presence(MIME_PRESENCE_AGE)) {
+    cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_AGE));
+  }
+  if (!server_response->presence(MIME_PRESENCE_ETAG)) {
+    cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_ETAG));
+  }
+  if (!server_response->presence(MIME_PRESENCE_EXPIRES)) {
+    cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPIRES));
+  }
 
   merge_response_header_with_cached_header(cached_hdr, &s->hdr_info.server_response);
 
@@ -5217,9 +5234,6 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
 void
 HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header)
 {
-  MIMEField *new_field;
-  bool       dups_seen = false;
-
   for (auto spot = response_header->begin(), limit = response_header->end(); spot != limit; ++spot) {
     MIMEField &field{*spot};
     auto       name{field.name_get()};
@@ -5258,54 +5272,48 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     if (name.data() == MIME_FIELD_WARNING.c_str()) {
       continue;
     }
-    // Copy all remaining headers with replacement
 
-    // Duplicate header fields cause a bug problem
-    //   since we need to duplicate with replacement.
-    //   Without dups, we can just nuke what is already
-    //   there in the cached header.  With dups, we
-    //   can't do this because what is already there
-    //   may be a dup we've already copied in.  If
-    //   dups show up we look through the remaining
-    //   header fields in the new response, nuke
-    //   them in the cached response and then add in
-    //   the remaining fields one by one from the
-    //   response header
+    // Reconcile the cached header's fields of this name to exactly match the
+    // response's values for this name. Each response field name is processed
+    // once, when we reach its dup-list head (dups are chained in slot order, so
+    // the head is encountered first). Response values are matched positionally
+    // against the cached fields of the same name: existing cached slots are
+    // overwritten in place, any extra response values are appended, and any
+    // surplus cached values are removed.
     //
-    if (field.m_next_dup) {
-      if (dups_seen == false) {
-        // use a second iterator to delete the
-        // remaining response headers in the cached response,
-        // so that they will be added in the next iterations.
-        for (auto spot2 = spot; spot2 != limit; ++spot2) {
-          MIMEField &field2{*spot2};
-          auto       name2{field2.name_get()};
-
-          // It is specified above that content type should not
-          // be altered here however when a duplicate header
-          // is present, all headers following are delete and
-          // re-added back. This includes content type if it follows
-          // any duplicate header. This leads to the loss of
-          // content type in the client response.
-          // This ensures that it is not altered when duplicate
-          // headers are present.
-          if (name2.data() == MIME_FIELD_CONTENT_TYPE.c_str()) {
-            continue;
-          }
-          cached_header->field_delete(name2);
-        }
-        dups_seen = true;
-      }
+    // Reusing cached slots in place (rather than deleting every cached value and
+    // recreating the field, as the previous sticky-"dups_seen" logic did once
+    // any duplicated field was seen) keeps the merge idempotent: re-merging an
+    // unchanged response mutates the existing MIMEFields instead of stranding
+    // dead slots. A deleted MIMEField slot is not reclaimed until its whole
+    // field block empties, so the old behavior grew the cached header heap by a
+    // slot per revalidation. For a long-lived object revalidated continuously
+    // (e.g. a hot max-age=60 object whose Expires changes every 304) that heap
+    // eventually crosses the aggregation fragment limit and the cache write can
+    // no longer commit, freezing the object stale.
+    if (!field.is_dup_head()) {
+      continue; // a non-head dup: already handled when its dup-list head was processed
     }
 
-    auto value{field.value_get()};
-
-    if (dups_seen == false) {
-      cached_header->value_set(name, value);
-    } else {
-      new_field = cached_header->field_create(name);
-      cached_header->field_attach(new_field);
-      cached_header->field_value_set(new_field, value);
+    MIMEField *cached_field = cached_header->field_find(name);
+    for (MIMEField *resp_field = &field; resp_field != nullptr; resp_field = resp_field->m_next_dup) {
+      auto value{resp_field->value_get()};
+      if (cached_field != nullptr) {
+        // overwrite an existing cached value of this name in place (reuses the slot)
+        cached_header->field_value_set(cached_field, value);
+        cached_field = cached_field->m_next_dup;
+      } else {
+        // the response has more values of this name than the cached header
+        MIMEField *new_field = cached_header->field_create(name);
+        cached_header->field_attach(new_field);
+        cached_header->field_value_set(new_field, value);
+      }
+    }
+    // remove any surplus cached values of this name the response no longer carries
+    while (cached_field != nullptr) {
+      MIMEField *next = cached_field->m_next_dup;
+      cached_header->field_delete(cached_field, false /* this dup only */);
+      cached_field = next;
     }
   }
 
