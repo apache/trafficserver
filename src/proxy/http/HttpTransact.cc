@@ -5038,13 +5038,8 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   //
   // Only delete a caching header that the server response does NOT carry.
   // If the response carries it, the merge below overwrites the cached field
-  // in place (value_set reuses the existing slot). Deleting it here first
-  // would force the merge to recreate the field, and because a deleted
-  // MIMEField slot is never reused until its whole block is empty, a
-  // long-lived cached object that is revalidated repeatedly (e.g. a hot
-  // max-age=60 object whose Expires changes every 304) would accrete a dead
-  // slot per revalidation until its header heap crosses the aggregation
-  // fragment limit and the cache write can no longer commit (frozen stale).
+  // in place; deleting it first would strand a dead MIMEField slot on every
+  // revalidation (see merge_response_header_with_cached_header).
   HTTPHdr *server_response = &s->hdr_info.server_response;
   if (!server_response->presence(MIME_PRESENCE_AGE)) {
     cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_AGE));
@@ -5056,7 +5051,7 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
     cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPIRES));
   }
 
-  merge_response_header_with_cached_header(cached_hdr, &s->hdr_info.server_response);
+  merge_response_header_with_cached_header(cached_hdr, server_response);
 
   // Some special processing for 304
   if (s->hdr_info.server_response.status_get() == HTTPStatus::NOT_MODIFIED) {
@@ -5281,16 +5276,13 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     // overwritten in place, any extra response values are appended, and any
     // surplus cached values are removed.
     //
-    // Reusing cached slots in place (rather than deleting every cached value and
-    // recreating the field, as the previous sticky-"dups_seen" logic did once
-    // any duplicated field was seen) keeps the merge idempotent: re-merging an
+    // Reusing cached slots in place keeps the merge idempotent: re-merging an
     // unchanged response mutates the existing MIMEFields instead of stranding
     // dead slots. A deleted MIMEField slot is not reclaimed until its whole
-    // field block empties, so the old behavior grew the cached header heap by a
-    // slot per revalidation. For a long-lived object revalidated continuously
-    // (e.g. a hot max-age=60 object whose Expires changes every 304) that heap
-    // eventually crosses the aggregation fragment limit and the cache write can
-    // no longer commit, freezing the object stale.
+    // field block empties, so a delete-and-recreate merge grows the cached
+    // header heap on every revalidation until it crosses the aggregation
+    // fragment limit and the cache write can no longer commit, freezing the
+    // object stale.
     if (!field.is_dup_head()) {
       continue; // a non-head dup: already handled when its dup-list head was processed
     }
