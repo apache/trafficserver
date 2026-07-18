@@ -57,6 +57,29 @@ TEST_CASE("Encoding pure escapify url", "[pure_esc_url]")
   }
 }
 
+TEST_CASE("Encoding escapify url without a terminator", "[esc_url_unterminated]")
+{
+  // The source is a counted string, not a C string, so nothing may be read past len_in.
+  // Sized exactly so that a read past the end is caught by a sanitizer.
+  constexpr std::string_view src{"abcdef"};
+
+  char *unterminated = static_cast<char *>(std::malloc(src.size()));
+  std::memcpy(unterminated, src.data(), src.size());
+
+  char output[128];
+  int  output_len;
+
+  REQUIRE(Encoding::pure_escapify_url(nullptr, unterminated, src.size(), &output_len, output, sizeof(output)) != nullptr);
+  CHECK(output_len == static_cast<int>(src.size()));
+  CHECK(std::string_view(output, output_len) == src);
+
+  REQUIRE(Encoding::escapify_url(nullptr, unterminated, src.size(), &output_len, output, sizeof(output)) != nullptr);
+  CHECK(output_len == static_cast<int>(src.size()));
+  CHECK(std::string_view(output, output_len) == src);
+
+  std::free(unterminated);
+}
+
 TEST_CASE("Encoding escapify url", "[esc_url]")
 {
   char input[][32] = {
