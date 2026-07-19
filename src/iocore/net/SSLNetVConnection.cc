@@ -1309,9 +1309,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // we get out of this callback, and then will shuffle
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
-  } else if (SslVConnOp::SSL_HOOK_OP_TERMINATE == hookOpRequested) {
-    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
-    return EVENT_DONE;
   }
 
   Dbg(dbg_ctl_ssl, "Go on with the handshake state=%s",
