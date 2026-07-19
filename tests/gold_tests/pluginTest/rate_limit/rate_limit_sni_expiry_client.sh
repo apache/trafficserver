@@ -38,11 +38,12 @@ sni="$3"
 OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -verify_quiet -no_ign_eof"
 
 # 1. Holder: hold the single slot. Its stdin is a FIFO on fd 3 so we end it in step 4.
-fifo="$(mktemp -u "${TMPDIR:-/tmp}/rl_holder.XXXXXX")"
+fifo_dir="$(mktemp -d "${TMPDIR:-/tmp}/rl_holder.XXXXXX")"
+fifo="${fifo_dir}/fifo"
 mkfifo "$fifo"
 ${OSSL} <"$fifo" >/dev/null 2>&1 &
 exec 3<>"$fifo"
-rm -f "$fifo"
+rm -rf "$fifo_dir"
 sleep 3 # let the holder reserve the one slot
 
 # 2. One queued connection: enqueues and stays parked at the ClientHello hook (not killed),

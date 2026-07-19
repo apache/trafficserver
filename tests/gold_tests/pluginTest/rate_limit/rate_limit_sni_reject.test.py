@@ -71,7 +71,7 @@ class RateLimitSniRejectTest:
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             'use-after-free|attempting free|SEGV|received signal', 'ATS must survive the reject churn')
 
-    def _configure_client(self, tr) -> None:
+    def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts
         client = os.path.join(Test.TestDirectory, 'rate_limit_sni_reject_client.sh')
         tr.Processes.Default.Command = f'bash {client} 127.0.0.1 {ts.Variables.ssl_port} rate.limited.com'

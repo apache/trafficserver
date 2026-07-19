@@ -76,7 +76,7 @@ class RateLimitSniQueueTest:
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             '_active <= _limit|received signal', 'the active-slot counter must not underflow and abort ATS')
 
-    def _configure_client(self, tr) -> None:
+    def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts
         client = os.path.join(Test.TestDirectory, 'rate_limit_sni_queue_client.sh')
         tr.Processes.Default.Command = f'bash {client} 127.0.0.1 {ts.Variables.ssl_port} rate.limited.com'
