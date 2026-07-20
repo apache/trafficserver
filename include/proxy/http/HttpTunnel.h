@@ -469,6 +469,8 @@ private:
   bool _should_reenable_for_chunk_handler_fc(HttpTunnelConsumer *c);
   bool _should_reenable_for_tunnel_chain_fc(HttpTunnelConsumer *c);
 
+  HttpTunnelConsumer *_throttle_chunked_producer(HttpTunnelProducer *p);
+
   HttpTunnelProducer *get_producer(VIO *vio);
   HttpTunnelConsumer *get_consumer(VIO *vio);
 
