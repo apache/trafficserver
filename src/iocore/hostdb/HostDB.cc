@@ -214,10 +214,10 @@ HostDBCache::HostDBCache() {}
 bool
 HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 {
-  ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
-  std::shared_lock<ts::shared_mutex> lock{bucket_lock};
-  bool                               retval = false;
-  Queue<HostDBContinuation>         &q      = pending_dns_for_hash(hash);
+  ts::shared_mutex          &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  ts::read_guard             lock{bucket_lock};
+  bool                       retval = false;
+  Queue<HostDBContinuation> &q      = pending_dns_for_hash(hash);
   for (HostDBContinuation *c = q.head; c; c = static_cast<HostDBContinuation *>(c->link.next)) {
     if (hash == c->hash.hash) {
       retval = true;
@@ -230,10 +230,10 @@ HostDBCache::is_pending_dns_for_hash(const CryptoHash &hash)
 bool
 HostDBCache::remove_from_pending_dns_for_hash(const CryptoHash &hash, HostDBContinuation *c)
 {
-  bool                               retval      = false;
-  ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
-  std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-  Queue<HostDBContinuation>         &q = pending_dns_for_hash(hash);
+  bool                       retval      = false;
+  ts::shared_mutex          &bucket_lock = hostDB.refcountcache->lock_for_key(hash.fold());
+  ts::write_guard            lock{bucket_lock};
+  Queue<HostDBContinuation> &q = pending_dns_for_hash(hash);
   if (q.in(c)) {
     q.remove(c);
     retval = true;
@@ -253,6 +253,12 @@ HostDBCache *
 HostDBProcessor::cache()
 {
   return &hostDB;
+}
+
+void
+HostDBProcessor::clear()
+{
+  hostDB.refcountcache->clear();
 }
 
 int
@@ -469,32 +475,26 @@ probe(HostDBHash const &hash, bool ignore_timeout)
   }
 
   // Otherwise HostDB is enabled, so we'll do our thing
-  uint64_t          folded_hash = hash.hash.fold();
-  ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(folded_hash);
+  uint64_t folded_hash = hash.hash.fold();
 
-  Ptr<HostDBRecord> record;
-  {
-    std::shared_lock<ts::shared_mutex> lock{bucket_lock};
-
-    // get the record from cache
-    record = hostDB.refcountcache->get(folded_hash);
-    // If there was nothing in the cache-- this is a miss
-    if (record.get() == nullptr) {
-      record = probe_ip(hash);
-      if (!record) {
-        record = probe_hostfile(hash);
-      }
-      return record;
+  // get the record from cache
+  Ptr<HostDBRecord> record = hostDB.refcountcache->get(folded_hash);
+  // If there was nothing in the cache-- this is a miss
+  if (record.get() == nullptr) {
+    record = probe_ip(hash);
+    if (!record) {
+      record = probe_hostfile(hash);
     }
+    return record;
+  }
 
-    // If the dns response was failed, and we've hit the failed timeout, lets stop returning it
-    if (record->is_failed() && record->is_ip_fail_timeout()) {
-      return NO_RECORD;
-      // if we aren't ignoring timeouts, and we are past it-- then remove the record
-    } else if (!ignore_timeout && record->is_ip_timeout() && !record->serve_stale_but_revalidate()) {
-      Metrics::Counter::increment(hostdb_rsb.ttl_expires);
-      return NO_RECORD;
-    }
+  // If the dns response was failed, and we've hit the failed timeout, lets stop returning it
+  if (record->is_failed() && record->is_ip_fail_timeout()) {
+    return NO_RECORD;
+    // if we aren't ignoring timeouts, and we are past it-- then remove the record
+  } else if (!ignore_timeout && record->is_ip_timeout() && !record->serve_stale_but_revalidate()) {
+    Metrics::Counter::increment(hostdb_rsb.ttl_expires);
+    return NO_RECORD;
   }
 
   // If the record is stale, but we want to revalidate-- lets start that up
@@ -567,12 +567,8 @@ HostDBProcessor::getby(Continuation *cont, cb_process_result_pfn cb_process_resu
     bool loop = lock.is_locked();
     while (loop) {
       loop = false; // Only loop on explicit set for retry.
-      // find the partition lock
-      ts::shared_mutex &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-
-      // If we can get the lock and a level 1 probe succeeds, return
-      HostDBRecord::Handle               r = probe(hash, false);
-      std::shared_lock<ts::shared_mutex> lock{bucket_lock};
+      // If a level 1 probe succeeds, return
+      HostDBRecord::Handle r = probe(hash, false);
       if (r) {
         // fail, see if we should retry with alternate
         if (hash.db_mark != HOSTDB_MARK_SRV && r->is_failed() && hash.host_name) {
@@ -992,10 +988,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     }
 
     if (!serve_stale) { // implies r != old_r
-      ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-      std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-      auto const                         duration_till_revalidate = r->expiry_time().time_since_epoch();
-      auto const                         seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
+      auto const duration_till_revalidate = r->expiry_time().time_since_epoch();
+      auto const seconds_till_revalidate  = duration_cast<ts_seconds>(duration_till_revalidate).count();
+
       hostDB.refcountcache->put(r->key, r.get(), r->_record_size, seconds_till_revalidate);
     } else {
       Warning("Fallback to serving stale record, skip re-update of hostdb for %.*s", int(query_name.size()), query_name.data());
@@ -1121,9 +1116,9 @@ HostDBContinuation::probeEvent(int /* event ATS_UNUSED */, Event *e)
 int
 HostDBContinuation::set_check_pending_dns()
 {
-  ts::shared_mutex                  &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
-  std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-  Queue<HostDBContinuation>         &q = hostDB.pending_dns_for_hash(hash.hash);
+  ts::shared_mutex          &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
+  ts::write_guard            lock{bucket_lock};
+  Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
   this->setThreadAffinity(this_ethread());
   if (q.in(this)) {
     Metrics::Counter::increment(hostdb_rsb.insert_duplicate_to_pending_dns);
@@ -1149,8 +1144,8 @@ HostDBContinuation::remove_and_trigger_pending_dns()
   HostDBContinuation       *c           = nullptr;
   ts::shared_mutex         &bucket_lock = hostDB.refcountcache->lock_for_key(hash.hash.fold());
   {
-    std::unique_lock<ts::shared_mutex> lock{bucket_lock};
-    Queue<HostDBContinuation>         &q = hostDB.pending_dns_for_hash(hash.hash);
+    ts::write_guard            lock{bucket_lock};
+    Queue<HostDBContinuation> &q = hostDB.pending_dns_for_hash(hash.hash);
     q.remove(this);
     c = q.head;
     while (c) {

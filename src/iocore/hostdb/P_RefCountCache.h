@@ -162,33 +162,32 @@ public:
   using hash_type = swoc::IntrusiveHashMap<RefCountCacheLinkage>;
 
   RefCountCachePartition(unsigned int part_num, uint64_t max_size, unsigned int max_items, RefCountCacheBlock *rsb = nullptr);
-  Ptr<C> get(uint64_t key);
-  void   put(uint64_t key, C *item, int size = 0, time_t expire_time = 0);
-  void   erase(uint64_t key, ink_time_t expiry_time = -1);
+  Ptr<C> get(uint64_t key) TS_REQUIRES_SHARED(lock);
+  void   put(uint64_t key, C *item, int size = 0, time_t expire_time = 0) TS_REQUIRES(lock);
+  void   erase(uint64_t key, ink_time_t expiry_time = -1) TS_REQUIRES(lock);
 
-  void clear();
-  bool is_full() const;
-  bool make_space_for(unsigned int);
-  void dealloc_entry(hash_type::iterator ptr);
+  void clear() TS_REQUIRES(lock);
+  bool is_full() const TS_REQUIRES_SHARED(lock);
+  bool make_space_for(unsigned int) TS_REQUIRES(lock);
+  void dealloc_entry(hash_type::iterator ptr) TS_REQUIRES(lock);
 
-  size_t count() const;
-  void   copy(std::vector<RefCountCacheHashEntry *> &items);
+  size_t count() const TS_REQUIRES_SHARED(lock);
 
-  hash_type &get_map();
+  hash_type &get_map() TS_REQUIRES_SHARED(lock);
 
   ts::shared_mutex lock;
 
 private:
-  unsigned int part_num;
-  uint64_t     max_size;
-  unsigned int max_items;
-  uint64_t     size;
-  unsigned int items;
+  unsigned int       part_num;
+  uint64_t           max_size;
+  unsigned int       max_items;
+  uint64_t size      TS_GUARDED_BY(lock);
+  unsigned int items TS_GUARDED_BY(lock);
 
-  hash_type item_map;
+  hash_type item_map TS_GUARDED_BY(lock);
 
-  PriorityQueue<RefCountCacheHashEntry *> expiry_queue;
-  RefCountCacheBlock                     *rsb;
+  PriorityQueue<RefCountCacheHashEntry *> expiry_queue TS_GUARDED_BY(lock);
+  RefCountCacheBlock                                  *rsb;
 };
 
 template <class C>
@@ -343,17 +342,6 @@ RefCountCachePartition<C>::count() const
 }
 
 template <class C>
-void
-RefCountCachePartition<C>::copy(std::vector<RefCountCacheHashEntry *> &items)
-{
-  for (auto &&it : this->item_map) {
-    RefCountCacheHashEntry *val = RefCountCacheHashEntry::alloc();
-    val->set(it.item.get(), it.meta.key, it.meta.size, it.meta.expiry_time);
-    items.push_back(val);
-  }
-}
-
-template <class C>
 swoc::IntrusiveHashMap<RefCountCacheLinkage> &
 RefCountCachePartition<C>::get_map()
 {
@@ -438,14 +426,20 @@ template <class C>
 Ptr<C>
 RefCountCache<C>::get(uint64_t key)
 {
-  return this->partitions[this->partition_for_key(key)]->get(key);
+  auto &partition = *this->partitions[this->partition_for_key(key)];
+
+  ts::read_guard lock{partition.lock};
+  return partition.get(key);
 }
 
 template <class C>
 void
 RefCountCache<C>::put(uint64_t key, C *item, int size, ink_time_t expiry_time)
 {
-  return this->partitions[this->partition_for_key(key)]->put(key, item, size, expiry_time);
+  auto &partition = *this->partitions[this->partition_for_key(key)];
+
+  ts::write_guard lock{partition.lock};
+  return partition.put(key, item, size, expiry_time);
 }
 
 // Pick a partition for a given item
@@ -476,7 +470,10 @@ RefCountCache<C>::count() const
 {
   size_t c = 0;
   for (unsigned int i = 0; i < this->num_partitions; i++) {
-    c += this->partitions[i]->count();
+    auto &partition = *this->partitions[i];
+
+    ts::read_guard lock{partition.lock};
+    c += partition.count();
   }
   return c;
 }
@@ -499,7 +496,10 @@ template <class C>
 void
 RefCountCache<C>::erase(uint64_t key)
 {
-  this->partitions[this->partition_for_key(key)]->erase(key);
+  auto &partition = *this->partitions[this->partition_for_key(key)];
+
+  ts::write_guard lock{partition.lock};
+  partition.erase(key);
 }
 
 template <class C>
@@ -507,6 +507,9 @@ void
 RefCountCache<C>::clear()
 {
   for (unsigned int i = 0; i < this->num_partitions; i++) {
-    this->partitions[i]->clear();
+    auto &partition = *this->partitions[i];
+
+    ts::write_guard lock{partition.lock};
+    partition.clear();
   }
 }
