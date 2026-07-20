@@ -1109,9 +1109,17 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
 
     if (c_write == 0) {
-      // Nothing to do, call back the cleanup handlers
-      c->write_vio = nullptr;
-      consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
+      // Cache writes need a VIO even when the body is empty so that closing the
+      // cache VC commits the response metadata instead of aborting the write.
+      if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
+        c->write_vio = c->vc->do_io_write(this, 0, c->buffer_reader);
+        if (c->write_vio == nullptr) {
+          consumer_handler(VC_EVENT_ERROR, c);
+        }
+      } else {
+        c->write_vio = nullptr;
+        consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
+      }
     } else {
       // In the client half close case, all the data that will be sent
       // from the client is already in the buffer.  Go ahead and set

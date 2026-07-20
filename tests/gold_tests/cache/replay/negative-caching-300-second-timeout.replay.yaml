@@ -40,6 +40,18 @@ meta:
         # transaction.
         delay: 100ms
 
+  - request_200_item: &request_200_item
+      client-request:
+        method: "GET"
+        version: "1.1"
+        scheme: "http"
+        url: /path/200_empty_chunked
+        headers:
+          fields:
+          - [ Host, example.com ]
+
+        delay: 100ms
+
 sessions:
 - transactions:
 
@@ -47,13 +59,16 @@ sessions:
     <<: *request_404_item
 
     # Populate the cache with a 404 response.
+    # Verify that an empty chunked response is cached (issue #11313).
     server-response:
       status: 404
       reason: "Not Found"
       headers:
         fields:
-        - [ Content-Length, 32 ]
+        - [ Transfer-Encoding, chunked ]
         - [ Cache-Control, max-age=300 ]
+      content:
+        size: 0
 
     proxy-response:
       status: 404
@@ -77,3 +92,37 @@ sessions:
     # Expect the cached 404 response.
     proxy-response:
       status: 404
+
+  - all: { headers: { fields: [[ uuid, 23 ]]}}
+    <<: *request_200_item
+
+    # The empty chunked-body behavior is not specific to negative responses.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Cache-Control, max-age=300 ]
+      content:
+        size: 0
+
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 24 ]]}}
+    <<: *request_200_item
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 502
+      reason: Bad Gateway
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    # Expect the cached 200 response.
+    proxy-response:
+      status: 200
