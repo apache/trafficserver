@@ -206,6 +206,14 @@ struct HostDBGetStatusRequest : shared::rpc::ClientRequest {
     return "get_hostdb_status";
   }
 };
+
+struct HostDBClearRequest : shared::rpc::ClientRequest {
+  std::string
+  get_method() const override
+  {
+    return "admin_hostdb_clear";
+  }
+};
 //------------------------------------------------------------------------------------------------------------------------------------
 struct GetPluginListRequest : shared::rpc::ClientRequest {
   using super = shared::rpc::ClientRequest;

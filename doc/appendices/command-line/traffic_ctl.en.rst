@@ -1316,6 +1316,13 @@ traffic_ctl hostdb
 
    If ``HOSTNAME`` is specified, the output is filtered to show only records whose names contain the given string.
 
+.. option:: clear
+
+   :ref:`admin_hostdb_clear`
+
+   Remove all cached DNS resolution records from HostDB without restarting |TS|. Entries loaded from the host file remain. In-flight
+   transactions retain their current resolution, while subsequent transactions resolve their upstream hosts again.
+
 traffic_ctl rpc
 ---------------
 .. program:: traffic_ctl rpc
