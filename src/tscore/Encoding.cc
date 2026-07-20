@@ -77,7 +77,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 
   static char hex_digit[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-  if (!url || (dst && dst_size < len_in)) {
+  if (!url || (dst && dst_size <= len_in)) {
     *len_out = 0;
     return nullptr;
   }
@@ -105,7 +105,8 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
     //
     *len_out = len_in;
     if (dst) {
-      ink_strlcpy(dst, url, dst_size);
+      memcpy(dst, url, len_in);
+      dst[len_in] = '\0';
     }
     return url;
   }
