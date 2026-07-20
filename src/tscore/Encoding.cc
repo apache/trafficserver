@@ -77,7 +77,7 @@ escapify_url_common(Arena *arena, char *url, size_t len_in, int *len_out, char *
 
   static char hex_digit[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
-  if (!url || (dst && dst_size < len_in + 1)) {
+  if (!url || (dst && dst_size <= len_in)) {
     *len_out = 0;
     return nullptr;
   }

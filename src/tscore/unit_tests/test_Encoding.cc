@@ -22,6 +22,7 @@
  */
 
 #include <string_view>
+#include <vector>
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
@@ -63,21 +64,22 @@ TEST_CASE("Encoding escapify url without a terminator", "[esc_url_unterminated]"
   // Sized exactly so that a read past the end is caught by a sanitizer.
   constexpr std::string_view src{"abcdef"};
 
-  char *unterminated = static_cast<char *>(std::malloc(src.size()));
-  std::memcpy(unterminated, src.data(), src.size());
+  std::vector<char> unterminated(src.begin(), src.end());
 
   char output[128];
   int  output_len;
 
-  REQUIRE(Encoding::pure_escapify_url(nullptr, unterminated, src.size(), &output_len, output, sizeof(output)) != nullptr);
+  REQUIRE(Encoding::pure_escapify_url(nullptr, unterminated.data(), unterminated.size(), &output_len, output, sizeof(output)) !=
+          nullptr);
   CHECK(output_len == static_cast<int>(src.size()));
   CHECK(std::string_view(output, output_len) == src);
+  CHECK(output[output_len] == '\0');
 
-  REQUIRE(Encoding::escapify_url(nullptr, unterminated, src.size(), &output_len, output, sizeof(output)) != nullptr);
+  REQUIRE(Encoding::escapify_url(nullptr, unterminated.data(), unterminated.size(), &output_len, output, sizeof(output)) !=
+          nullptr);
   CHECK(output_len == static_cast<int>(src.size()));
   CHECK(std::string_view(output, output_len) == src);
-
-  std::free(unterminated);
+  CHECK(output[output_len] == '\0');
 }
 
 TEST_CASE("Encoding escapify url", "[esc_url]")
