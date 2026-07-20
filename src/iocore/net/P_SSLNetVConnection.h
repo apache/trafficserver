@@ -81,9 +81,8 @@ constexpr int      SSL_DEF_TLS_RECORD_MSEC_THRESHOLD = 1000;
 struct SSLCertLookup;
 
 enum class SslVConnOp {
-  SSL_HOOK_OP_DEFAULT,  ///< Null / initialization value. Do normal processing.
-  SSL_HOOK_OP_TUNNEL,   ///< Switch to blind tunnel
-  SSL_HOOK_OP_TERMINATE ///< Termination connection / transaction.
+  SSL_HOOK_OP_DEFAULT, ///< Null / initialization value. Do normal processing.
+  SSL_HOOK_OP_TUNNEL   ///< Switch to blind tunnel
 };
 
 enum class SSLHandshakeStatus { SSL_HANDSHAKE_ONGOING, SSL_HANDSHAKE_DONE, SSL_HANDSHAKE_ERROR };
