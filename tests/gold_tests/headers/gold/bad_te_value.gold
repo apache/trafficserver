@@ -3,7 +3,7 @@ Date: ``
 Connection: keep-alive
 Server: ATS/``
 Cache-Control: no-store
-Content-Type: text/html
+Content-Type: text/html; charset=utf-8
 Content-Language: en
 Content-Length: 289
 

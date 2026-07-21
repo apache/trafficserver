@@ -438,6 +438,27 @@ protected:
 
 private:
   Value _value;
+  Value _content_type;
+};
+
+class OperatorSetBodyFromFile : public Operator
+{
+public:
+  OperatorSetBodyFromFile() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetBodyFromFile"); }
+
+  OperatorSetBodyFromFile(const OperatorSetBodyFromFile &) = delete;
+  void operator=(const OperatorSetBodyFromFile &)          = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  std::string _body;
+  Value       _content_type;
+  bool        _loaded = false;
 };
 
 class OperatorSetHttpCntl : public Operator
@@ -541,6 +562,7 @@ protected:
 
 private:
   Value _value;
+  Value _content_type;
 };
 
 class OperatorSetStateFlag : public Operator
