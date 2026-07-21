@@ -490,12 +490,17 @@ public:
     HTTPInfo         transform_store;
     CacheDirectives  directives;
     HTTPInfo        *object_read          = nullptr;
+    int              freshness_limit      = -1;
+    ink_time_t       current_age          = -1;
     HTTPInfo        *stale_fallback       = nullptr; // Saved stale object for action 6 fallback during retry
     CacheWriteLock_t write_lock_state     = CacheWriteLock_t::INIT;
     int              lookup_count         = 0;
     SquidHitMissCode hit_miss_code        = SQUID_MISS_NONE;
     URL             *parent_selection_url = nullptr;
     URL              parent_selection_url_storage;
+
+    int pending_write_freshness_limit     = -1;
+    int pending_transform_freshness_limit = -1;
 
     const CacheHostRecord *volume_host_rec = nullptr;
 
@@ -1114,6 +1119,8 @@ public:
   static void             handle_response_keep_alive_headers(State *s, HTTPVersion ver, HTTPHdr *heads);
   static int              get_max_age(HTTPHdr *response);
   static int              calculate_document_freshness_limit(State *s, HTTPHdr *response, time_t response_date, bool *heuristic);
+  static void             set_cache_freshness_info(State *s, HTTPHdr *response, ink_time_t request_time, ink_time_t response_time,
+                                                   bool include_current_age);
   static Freshness_t      what_is_document_freshness(State *s, HTTPHdr *client_request, HTTPHdr *cached_obj_response,
                                                      bool evaluate_actual_freshness = false);
   static Authentication_t AuthenticationNeeded(const OverridableHttpConfigParams *p, HTTPHdr *client_request,

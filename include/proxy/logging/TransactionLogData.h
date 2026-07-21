@@ -166,11 +166,13 @@ public:
   int64_t   get_congestion_control_crat() const;
 
   // ===== Cache state =====
-  int get_cache_write_code() const;
-  int get_cache_transform_write_code() const;
-  int get_cache_open_read_tries() const;
-  int get_cache_open_write_tries() const;
-  int get_max_cache_open_write_retries() const;
+  int     get_cache_write_code() const;
+  int     get_cache_transform_write_code() const;
+  int     get_cache_open_read_tries() const;
+  int     get_cache_open_write_tries() const;
+  int     get_cache_freshness_limit() const;
+  int64_t get_cache_current_age() const;
+  int     get_max_cache_open_write_retries() const;
 
   // ===== Retry attempts =====
   int64_t get_simple_retry_attempts() const;
