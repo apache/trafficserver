@@ -44,17 +44,8 @@ void apply_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view h
 
 void apply_server_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header);
 
-// Masked client variant: sets only the bits selected by @a mask_header using the
-// three-argument TSHttpTxnClientPacketMarkSet overload. Kept separate from
-// apply_client_mark so the existing whole-mark path is unchanged. Returns true when
-// a masked set was performed (both headers present), so the caller can skip the
-// whole-mark path and avoid clobbering the value the masked read-modify-write is
-// supposed to preserve.
 bool apply_client_mark_masked(const LogContext &log, TSHttpTxn txnp, std::string_view mark_header, std::string_view mask_header);
 
-// Masked server variant: the server-side mirror of apply_client_mark_masked, using
-// the three-argument TSHttpTxnServerPacketMarkSet overload. Same true/false
-// contract so the caller can skip the whole-mark path when a masked set ran.
 bool apply_server_mark_masked(const LogContext &log, TSHttpTxn txnp, std::string_view mark_header, std::string_view mask_header);
 
 void echo_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header);
