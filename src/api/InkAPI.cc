@@ -4901,6 +4901,26 @@ TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark)
 }
 
 TSReturnCode
+TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark, int mask)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  HttpSM *sm = reinterpret_cast<HttpSM *>(txnp);
+  if (nullptr == sm->get_ua_txn()) {
+    return TS_ERROR;
+  }
+
+  NetVConnection *vc = sm->get_ua_txn()->get_netvc();
+  if (nullptr == vc) {
+    return TS_ERROR;
+  }
+
+  vc->options.packet_mark =
+    (vc->options.packet_mark & ~static_cast<uint32_t>(mask)) | (static_cast<uint32_t>(mark) & static_cast<uint32_t>(mask));
+  vc->apply_options();
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

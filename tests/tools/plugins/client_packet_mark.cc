@@ -37,6 +37,7 @@ namespace
 {
 constexpr char PLUGIN_NAME[] = "client_packet_mark";
 constexpr char MARK_HEADER[] = "X-Set-Mark";
+constexpr char MASK_HEADER[] = "X-Set-Mask";
 constexpr char ECHO_HEADER[] = "X-Client-Packet-Mark";
 
 DbgCtl dbg_ctl{PLUGIN_NAME};
@@ -50,7 +51,13 @@ handle_send_response(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     // The client connection is live here; this applies the mark to it and reads
     // it back off the client socket.
     packet_mark::LogContext log{PLUGIN_NAME, dbg_ctl};
-    packet_mark::apply_client_mark(log, txnp, MARK_HEADER);
+    // Prefer the masked (three-argument) overload when a mask header is present;
+    // otherwise fall back to the whole-mark (two-argument) overload. Only one of
+    // them runs, so the masked read-modify-write is not clobbered by a preceding
+    // whole-mark set.
+    if (!packet_mark::apply_client_mark_masked(log, txnp, MARK_HEADER, MASK_HEADER)) {
+      packet_mark::apply_client_mark(log, txnp, MARK_HEADER);
+    }
     packet_mark::echo_client_mark(log, txnp, ECHO_HEADER);
   }
 

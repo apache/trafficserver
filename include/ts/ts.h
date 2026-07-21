@@ -1601,6 +1601,32 @@ TSReturnCode           TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp);
 */
 TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
 
+/** Change selected bits of the packet firewall mark for the client side connection
+
+    Only the bits selected by @a mask are modified. Bits set in @a mask are updated from the
+    corresponding bits of @a mark; bits clear in @a mask retain their previous value. Equivalently,
+    the resulting mark is computed as:
+
+    @code
+    result = (current_mark & ~mask) | (mark & mask);
+    @endcode
+
+    @a mark and @a mask are interpreted as 32-bit unsigned bit patterns. A @a mask of 0xFFFFFFFF
+    replaces the entire mark and is equivalent to the two-argument overload. A @a mask of 0 leaves
+    the mark unchanged.
+
+    @note The firewall mark is only honored on platforms whose OS supports it, specifically Linux via
+    @c SO_MARK. On platforms without @c SO_MARK support the call still returns TS_SUCCESS when a
+    client connection is present, but setting the mark has no effect at the OS layer (it is a safe
+    no-op).
+
+    @note The change takes effect immediately on the live client connection
+
+    @return TS_SUCCESS if the client connection was modified, TS_ERROR if there is no client
+    connection to modify
+*/
+TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark, int mask);
+
 /** Change packet firewall mark for the server side connection
 
     Sets the entire server-side packet firewall mark to @a mark; the whole mark is replaced. @a mark

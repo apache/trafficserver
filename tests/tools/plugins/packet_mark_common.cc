@@ -43,9 +43,10 @@ namespace
   // function-pointer types, not std::function: a non-type template parameter has
   // to be a structural type, and std::function is a runtime type-erasure wrapper,
   // so template <std::function<...> Setter> is ill-formed.
-  using MarkSetter = TSReturnCode (*)(TSHttpTxn, int);
-  using FdGetter   = TSReturnCode (*)(TSHttpTxn, int *);
-  using RespGetter = TSReturnCode (*)(TSHttpTxn, TSMBuffer *, TSMLoc *);
+  using MarkSetter       = TSReturnCode (*)(TSHttpTxn, int);
+  using MaskedMarkSetter = TSReturnCode (*)(TSHttpTxn, int, int);
+  using FdGetter         = TSReturnCode (*)(TSHttpTxn, int *);
+  using RespGetter       = TSReturnCode (*)(TSHttpTxn, TSMBuffer *, TSMLoc *);
 
   std::optional<uint32_t>
   get_uint_header(TSMBuffer bufp, TSMLoc hdr_loc, std::string_view header)
@@ -144,6 +145,37 @@ namespace
     }
   }
 
+  // Masked variant: reads both a mark and a mask header and calls the
+  // three-argument overload so only the selected bits change. Parameterized on the
+  // masked setter for symmetry with apply_mark_from_header, though only the client
+  // side has a masked overload today.
+  template <MaskedMarkSetter MaskedSetter>
+  bool
+  apply_masked_mark_from_header(const LogContext &log, TSHttpTxn txnp, std::string_view mark_header, std::string_view mask_header)
+  {
+    TSMBuffer req_bufp{nullptr};
+    TSMLoc    req_loc{TS_NULL_MLOC};
+    if (TSHttpTxnClientReqGet(txnp, &req_bufp, &req_loc) != TS_SUCCESS) {
+      TSError("[%.*s] Failed to get client request headers", static_cast<int>(log.plugin_name.length()), log.plugin_name.data());
+      return false;
+    }
+
+    std::optional<uint32_t> const mark{get_uint_header(req_bufp, req_loc, mark_header)};
+    std::optional<uint32_t> const mask{get_uint_header(req_bufp, req_loc, mask_header)};
+    TSHandleMLocRelease(req_bufp, TS_NULL_MLOC, req_loc);
+
+    if (!mark.has_value() || !mask.has_value()) {
+      return false;
+    }
+
+    Dbg(log.dbg_ctl, "Setting packet mark to 0x%08x mask 0x%08x", *mark, *mask);
+    if (MaskedSetter(txnp, static_cast<int>(*mark), static_cast<int>(*mask)) != TS_SUCCESS) {
+      TSError("[%.*s] Failed to set packet mark 0x%08x mask 0x%08x", static_cast<int>(log.plugin_name.length()),
+              log.plugin_name.data(), *mark, *mask);
+    }
+    return true;
+  }
+
   template <FdGetter FdGet, RespGetter RespGet>
   void
   echo_observed_mark(const LogContext &log, TSHttpTxn txnp, std::string_view echo_header)
@@ -176,6 +208,22 @@ void
 apply_client_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header)
 {
   apply_mark_from_header<TSHttpTxnClientPacketMarkSet>(log, txnp, header);
+}
+
+namespace
+{
+  // Wrapper to explicitly select the three-argument overload of TSHttpTxnClientPacketMarkSet
+  TSReturnCode
+  client_mark_setter_masked(TSHttpTxn txnp, int mark, int mask)
+  {
+    return TSHttpTxnClientPacketMarkSet(txnp, mark, mask);
+  }
+} // anonymous namespace
+
+bool
+apply_client_mark_masked(const LogContext &log, TSHttpTxn txnp, std::string_view mark_header, std::string_view mask_header)
+{
+  return apply_masked_mark_from_header<client_mark_setter_masked>(log, txnp, mark_header, mask_header);
 }
 
 void
