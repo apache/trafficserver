@@ -28,13 +28,27 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
+.. function:: TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark, int mask)
 
 Description
 ===========
 
 Change the packet firewall :arg:`mark` for the server side (origin) connection.
-The entire firewall mark is replaced with :arg:`mark`, which is interpreted as a
-32-bit unsigned bit pattern.
+The two-argument overload replaces the entire firewall mark with :arg:`mark`, which
+is interpreted as a 32-bit unsigned bit pattern.
+
+The three-argument overload changes only the bits selected by :arg:`mask`: bits
+set in :arg:`mask` are taken from the corresponding bits of :arg:`mark`, and bits
+clear in :arg:`mask` retain their previous value. Equivalently, the resulting
+mark is::
+
+    result = (current_mark & ~mask) | (mark & mask);
+
+Both :arg:`mark` and :arg:`mask` are interpreted as 32-bit unsigned bit patterns.
+A :arg:`mask` of ``0xFFFFFFFF`` replaces the entire mark and is equivalent to the
+two-argument overload; a :arg:`mask` of ``0`` leaves the mark unchanged. The
+current mark in this formula is taken from the transaction's recorded config value,
+not from socket state.
 
 Always returns :const:`TS_SUCCESS`, including when no server connection has been
 established yet.

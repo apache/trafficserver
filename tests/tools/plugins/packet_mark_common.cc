@@ -147,8 +147,8 @@ namespace
 
   // Masked variant: reads both a mark and a mask header and calls the
   // three-argument overload so only the selected bits change. Parameterized on the
-  // masked setter for symmetry with apply_mark_from_header, though only the client
-  // side has a masked overload today.
+  // masked setter for symmetry with apply_mark_from_header; both the client and
+  // server sides have a masked overload.
   template <MaskedMarkSetter MaskedSetter>
   bool
   apply_masked_mark_from_header(const LogContext &log, TSHttpTxn txnp, std::string_view mark_header, std::string_view mask_header)
@@ -230,6 +230,22 @@ void
 apply_server_mark(const LogContext &log, TSHttpTxn txnp, std::string_view header)
 {
   apply_mark_from_header<TSHttpTxnServerPacketMarkSet>(log, txnp, header);
+}
+
+namespace
+{
+  // Wrapper to explicitly select the three-argument overload of TSHttpTxnServerPacketMarkSet
+  TSReturnCode
+  server_mark_setter_masked(TSHttpTxn txnp, int mark, int mask)
+  {
+    return TSHttpTxnServerPacketMarkSet(txnp, mark, mask);
+  }
+} // anonymous namespace
+
+bool
+apply_server_mark_masked(const LogContext &log, TSHttpTxn txnp, std::string_view mark_header, std::string_view mask_header)
+{
+  return apply_masked_mark_from_header<server_mark_setter_masked>(log, txnp, mark_header, mask_header);
 }
 
 void

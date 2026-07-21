@@ -1643,6 +1643,32 @@ TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark, int mask);
 */
 TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
 
+/** Change selected bits of the packet firewall mark for the server side connection
+
+    Only the bits selected by @a mask are modified. Bits set in @a mask are updated from the
+    corresponding bits of @a mark; bits clear in @a mask retain their previous value. Equivalently,
+    the resulting mark is computed as:
+
+    @code
+    result = (current_mark & ~mask) | (mark & mask);
+    @endcode
+
+    @a mark and @a mask are interpreted as 32-bit unsigned bit patterns. A @a mask of 0xFFFFFFFF
+    replaces the entire mark and is equivalent to the two-argument overload. A @a mask of 0 leaves
+    the mark unchanged. The current mark in this formula is the value recorded on @a txnp, not
+    socket state.
+
+    @note The firewall mark is only honored on platforms whose OS supports it, specifically Linux via
+    @c SO_MARK. On platforms without @c SO_MARK support the call still returns TS_SUCCESS, but setting
+    the mark has no effect at the OS layer (it is a safe no-op).
+
+    @note If a live server connection exists, the mark is applied to it immediately; the mark is also
+    recorded on the transaction so that any subsequent server connection for this transaction uses it.
+
+    @return TS_SUCCESS always, including when no server connection has been established yet.
+*/
+TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark, int mask);
+
 /** Change packet DSCP for the client side connection
  *
     @note The change takes effect immediately

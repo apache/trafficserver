@@ -235,8 +235,46 @@ class ServerPacketMarkTest(PacketMarkTest):
         self._add_case(self.ECHO_HEADER, "server_packet_mark sets the server-side mark on the live connection", "X-Set-Mark")
         self._add_case(
             self.ECHO_HEADER, "server_packet_mark seeds the mark for a future origin connection", "X-Set-Mark-Preconnect")
+        # Masked overload: only the bits selected by the mask change; the rest keep
+        # the seeded starting mark (SEED_MARK = 0x0000FF00).
+        self._add_masked_case(
+            self.ECHO_HEADER, "server_packet_mark masked set updates only selected bits", 0x0000000A, 0x0000000F, 0x0000FF0A)
+        self._add_masked_case(
+            self.ECHO_HEADER, "server_packet_mark masked set with all-bits mask replaces the whole mark", self.SET_MARK, 0xFFFFFFFF,
+            self.SET_MARK)
+        self._add_masked_case(
+            self.ECHO_HEADER, "server_packet_mark masked set with no-bits mask leaves the mark unchanged", self.SET_MARK,
+            0x00000000, self.SEED_MARK)
+
+
+class ServerPacketMarkZeroSeedTest(PacketMarkTest):
+    """Exercise the server masked overload from a zero starting mark, so the
+    selected bits are the only bits set afterward.
+    """
+
+    ECHO_HEADER = "X-Server-Packet-Mark"
+
+    def __init__(self):
+        super().__init__(seed_mark=0x00000000)
+
+    def _configure(self, ts, server):
+        super()._configure(ts, server)
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.net.sock_packet_mark_out': self.SEED_MARK,
+                'proxy.config.net.sock_option_flag_out': SOCK_OPT_FLAG_PACKET_MARK,
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|server_packet_mark',
+            })
+        Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, f'server_packet_mark.so'), ts)
+
+    def run(self):
+        self._add_masked_case(
+            self.ECHO_HEADER, "server_packet_mark masked set from a zero starting mark sets only the selected bits", 0x0000000A,
+            0x0000000F, 0x0000000A)
 
 
 ClientPacketMarkTest().run()
 ClientPacketMarkZeroSeedTest().run()
 ServerPacketMarkTest().run()
+ServerPacketMarkZeroSeedTest().run()

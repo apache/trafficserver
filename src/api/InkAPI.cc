@@ -4942,6 +4942,21 @@ TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark)
 }
 
 TSReturnCode
+TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark, int mask)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+
+  // The current mark lives on the transaction config so the masked update composes
+  // correctly even before an origin connection exists.
+  TSMgmtInt current = 0;
+  TSHttpTxnConfigIntGet(txnp, TS_CONFIG_NET_SOCK_PACKET_MARK_OUT, &current);
+  uint32_t new_mark =
+    (static_cast<uint32_t>(current) & ~static_cast<uint32_t>(mask)) | (static_cast<uint32_t>(mark) & static_cast<uint32_t>(mask));
+
+  return TSHttpTxnServerPacketMarkSet(txnp, static_cast<int>(new_mark));
+}
+
+TSReturnCode
 TSHttpTxnClientPacketDscpSet(TSHttpTxn txnp, int dscp)
 {
   sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);

@@ -15,6 +15,10 @@
       apply to at that point, so the mark reaches the socket only via the
       transaction config seed.
 
+  When X-Set-Mask accompanies either mark header, the three-argument (masked)
+  overload runs instead of the whole-mark overload, updating only the selected
+  bits via a read-modify-write of the recorded transaction mark.
+
   Regardless of which header drove the set, the readback happens at
   TS_HTTP_READ_RESPONSE_HDR_HOOK: the origin fd is valid there and the server
   response headers -- which propagate to the client response -- carry the
@@ -49,6 +53,7 @@ namespace
 {
 constexpr char PLUGIN_NAME[]            = "server_packet_mark";
 constexpr char MARK_HEADER[]            = "X-Set-Mark";
+constexpr char MASK_HEADER[]            = "X-Set-Mask";
 constexpr char PRECONNECT_MARK_HEADER[] = "X-Set-Mark-Preconnect";
 constexpr char ECHO_HEADER[]            = "X-Server-Packet-Mark";
 
@@ -61,9 +66,12 @@ handle_read_request(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
   if (event == TS_EVENT_HTTP_READ_REQUEST_HDR) {
     // No origin connection exists yet; this exercises the "seed the mark for a
-    // future server connection" half of the contract.
+    // future server connection" half of the contract. The masked overload composes
+    // against the recorded transaction config here, with no live vc to apply to.
     packet_mark::LogContext log{PLUGIN_NAME, dbg_ctl};
-    packet_mark::apply_server_mark(log, txnp, PRECONNECT_MARK_HEADER);
+    if (!packet_mark::apply_server_mark_masked(log, txnp, PRECONNECT_MARK_HEADER, MASK_HEADER)) {
+      packet_mark::apply_server_mark(log, txnp, PRECONNECT_MARK_HEADER);
+    }
   }
 
   TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
@@ -79,7 +87,13 @@ handle_read_response(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
     // The origin connection is live here; this applies the mark to it and reads
     // it back off the server socket.
     packet_mark::LogContext log{PLUGIN_NAME, dbg_ctl};
-    packet_mark::apply_server_mark(log, txnp, MARK_HEADER);
+    // Prefer the masked (three-argument) overload when a mask header is present;
+    // otherwise fall back to the whole-mark (two-argument) overload. Only one of
+    // them runs, so the masked read-modify-write is not clobbered by a preceding
+    // whole-mark set.
+    if (!packet_mark::apply_server_mark_masked(log, txnp, MARK_HEADER, MASK_HEADER)) {
+      packet_mark::apply_server_mark(log, txnp, MARK_HEADER);
+    }
     packet_mark::echo_server_mark(log, txnp, ECHO_HEADER);
   }
 
