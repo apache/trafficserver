@@ -59,6 +59,8 @@ sort_query(std::string_view query)
                    [](std::string_view a, std::string_view b) { return param_name(a) < param_name(b); });
 
   std::string result;
+  result.reserve(query.size()); // same length as query, capped at 64KB by request_line_max_size
+
   for (const auto &param : params) {
     if (!result.empty()) {
       result += '&';
