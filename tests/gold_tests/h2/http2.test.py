@@ -252,8 +252,9 @@ tr.StillRunningAfter = server
 tr = Test.AddTestRun("huge response header")
 # Different versions of curl have "bytes data" at various places in the output.
 # Normalize them by simply filtering out those lines since they are not
-# important to this test.
-tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/huge_resp_hdrs |& grep -v "bytes data"', ts=ts)
+# important to this test. Use "2>&1 |" rather than "|&": autest runs commands
+# through /bin/sh, which is bash 3.2 on macOS and predates "|&".
+tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/huge_resp_hdrs 2>&1 | grep -v "bytes data"', ts=ts)
 tr.Processes.Default.ReturnCode = 0
 # Different versions of curl will have different cases for HTTP/2 field names.
 tr.Processes.Default.Streams.stdout = Testers.GoldFile("gold/http2_8_stdout.gold", case_insensitive=True)

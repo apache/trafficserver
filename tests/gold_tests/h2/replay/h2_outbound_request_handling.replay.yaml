@@ -1,0 +1,141 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Exercises the outbound (SM -> origin over HTTP/2) header handoff: the server
+# request header is handed to the outbound Http2Stream without a serialize +
+# reparse. proxy-request verification confirms the request ATS built by copying
+# (method + URL, pseudos preserved, fields) reaches the origin byte-correct.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'HTTP/2 outbound: server-request direct handoff to an H2 origin'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_tls: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http2'
+      proxy.config.ssl.client.alpn_protocols: 'h2,http/1.1'
+      proxy.config.http.server_session_sharing.pool: 'thread'
+      proxy.config.ssl.client.verify.server.policy: 'PERMISSIVE'
+
+    remap_config:
+      - from: "https://example.com/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+
+  # 1. GET with a query string and a custom header. The outbound copy must set
+  #    method + URL (splitting :path into path + query) and forward the field, so
+  #    the origin's proxy-request sees them exactly.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", "/outbound/item?a=1&b=2"]
+            - ["x-req-custom", "req-alpha"]
+            - [uuid, ob-get]
+    proxy-request:
+      protocol:
+        stack: http2
+        tls:
+          sni: example.com
+          proxy-verify-mode: 1
+          proxy-provided-cert: false
+      method: GET
+      url:
+      - [ path, { value: /outbound/item, as: equal } ]
+      - [ query, { value: "a=1&b=2", as: equal } ]
+      headers:
+        fields:
+        - [ "x-req-custom", { value: "req-alpha", as: equal } ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "8"]
+      content:
+        encoding: plain
+        data: OB-GET-1
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: OB-GET-1, as: equal}
+
+  # 2. POST with a body. The header is direct-passed (0 header bytes on the write),
+  #    then the body streams to the origin over the same H2 stream.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", POST]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /outbound/post]
+            - [Content-Length, "5"]
+            - [uuid, ob-post]
+      - DATA:
+          content:
+            encoding: plain
+            data: HELLO
+    proxy-request:
+      protocol:
+        stack: http2
+        tls:
+          sni: example.com
+          proxy-verify-mode: 1
+          proxy-provided-cert: false
+      method: POST
+      url:
+      - [ path, { value: /outbound/post, as: equal } ]
+      content:
+        verify: {value: HELLO, as: equal}
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "9"]
+      content:
+        encoding: plain
+        data: OB-POST-1
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: OB-POST-1, as: equal}
