@@ -45,4 +45,14 @@ TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
   {
     CHECK(sort_query("a=1") == "a=1");
   }
+
+  SECTION("trailing '&' produces a clean drop, not an empty trailing token")
+  {
+    CHECK(sort_query("a=1&") == "a=1");
+  }
+
+  SECTION("param value containing '=' is preserved and sorts by its name only")
+  {
+    CHECK(sort_query("a=1=2") == "a=1=2");
+  }
 }
