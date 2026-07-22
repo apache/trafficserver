@@ -138,6 +138,31 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
                                                 "\r\n"));
   }
 
+  SECTION("CONNECT request")
+  {
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST);
+
+    auto add = [&hdr](std::string_view name, std::string_view value) {
+      MIMEField *f = hdr.field_create(name);
+
+      hdr.field_attach(f);
+      f->value_set(hdr.m_heap, hdr.m_mime, value);
+    };
+
+    add(PSEUDO_HEADER_METHOD, "CONNECT");
+    add(PSEUDO_HEADER_AUTHORITY, "www.example.com:443");
+    add("uuid", "connect");
+
+    REQUIRE(http2_convert_header_from_2_to_1_1(&hdr) == ParseResult::DONE);
+    CHECK(hdr.method_get() == "CONNECT");
+    CHECK(hdr.url_get()->host_get() == "www.example.com");
+    CHECK(hdr.url_get()->port_get() == 443);
+    CHECK(hdr.field_find(PSEUDO_HEADER_AUTHORITY) == nullptr);
+    CHECK(hdr.field_find("uuid") != nullptr);
+  }
+
   SECTION("reject CRLF in header value")
   {
     const char request[] = "GET /index.html HTTP/1.1\r\n"

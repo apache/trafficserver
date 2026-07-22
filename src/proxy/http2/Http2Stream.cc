@@ -31,8 +31,10 @@
 #include "tscore/Diags.h"
 #include "tscore/HTTPVersion.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ParseRules.h"
 #include "tsutil/DbgCtl.h"
 
+#include <algorithm>
 #include <numeric>
 
 #define REMEMBER(e, r)                                    \
@@ -301,6 +303,39 @@ Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_ta
   return error;
 }
 
+bool
+Http2Stream::supports_direct_header_passing() const
+{
+  return true;
+}
+
+bool
+Http2Stream::is_parsed_receive_header_ready() const
+{
+  return this->_is_parsed_receive_header_ready;
+}
+
+const HTTPHdr *
+Http2Stream::parsed_receive_header() const
+{
+  return &this->_receive_header;
+}
+
+HTTPHdr *
+Http2Stream::_pending_send_header() const
+{
+  if (this->parsing_header_done || this->_sm == nullptr) {
+    return nullptr;
+  }
+  return this->is_outbound_connection() ? this->_sm->get_server_request_header() : this->_sm->get_client_response_header();
+}
+
+bool
+Http2Stream::has_pending_send_header() const
+{
+  return this->_pending_send_header() != nullptr;
+}
+
 void
 Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 {
@@ -311,10 +346,13 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 
   // Convert header to HTTP/1.1 format. Trailing headers need no conversion
   // because they, by definition, do not contain pseudo headers.
+  bool conversion_ok = true;
+
   if (this->trailing_header_is_possible()) {
     Http2StreamDebug("trailing header: Skipping send_headers initialization.");
   } else {
     if (http2_convert_header_from_2_to_1_1(&_receive_header) == ParseResult::ERROR) {
+      conversion_ok = false;
       Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
       if (_receive_header.type_get() == HTTPType::REQUEST) {
         // There's no way to cause Bad Request directly at this time.
@@ -332,6 +370,60 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     }
     ink_release_assert(this->_sm != nullptr);
     this->_http_sm_id = this->_sm->sm_id;
+  }
+
+  // parse_req is skipped here; re-apply strict_uri_parsing. Runs after the REQUEST type
+  // check below, since path_get() asserts that polarity.
+  auto uri_ok = [&]() {
+    int const level = this->_sm->t_state.http_config_param->strict_uri_parsing;
+
+    return level == 0 ||
+           (url_is_uri_compliant(level, _receive_header.path_get()) && url_is_uri_compliant(level, _receive_header.query_get()) &&
+            url_is_uri_compliant(level, _receive_header.fragment_get()));
+  };
+
+  // parse_req also enforces token methods, Host and Content-Length framing (RFC 9110 8.6).
+  auto parse_req_would_accept = [&]() {
+    auto method{_receive_header.method_get()};
+    if (method.empty() || std::any_of(method.begin(), method.end(), [](char c) { return !ParseRules::is_token(c); })) {
+      return false;
+    }
+    // validate_hdr_host() never sees this Host; it rejects the userinfo RFC 9113 8.3.1 bans.
+    if (MIMEField *host = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST)); host != nullptr) {
+      std::string_view parsed_host;
+      int              port     = 0;
+      bool             has_port = false;
+
+      if (host->has_dups() || !http_parse_host_header(host->value_get(), parsed_host, port, has_port)) {
+        return false;
+      }
+    }
+    if (MIMEField *cl = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH)); cl != nullptr) {
+      auto value{cl->value_get()};
+      if (cl->has_dups() || value.empty() || std::any_of(value.begin(), value.end(), [](char c) { return c < '0' || c > '9'; }) ||
+          _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) != nullptr) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // A failed conversion leaves a \xffVOID method that only parse_req can turn into a 400.
+  if (conversion_ok && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
+      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0 && uri_ok() &&
+      parse_req_would_accept()) {
+    // The stream owns _receive_header and outlives the handoff, so the pulled pointer cannot dangle.
+    this->_is_parsed_receive_header_ready = true;
+    if (this->receive_end_stream) {
+      // nbytes == 0 reads as "paused" to the VIO layer, which swallows the signal.
+      this->read_vio.nbytes = this->data_length + _receive_header.length_get();
+      this->read_vio.ndone  = this->read_vio.nbytes;
+      this->signal_read_event(VC_EVENT_READ_COMPLETE);
+    } else {
+      this->has_body = true;
+      this->signal_read_event(VC_EVENT_READ_READY);
+    }
+    return;
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
@@ -567,7 +659,7 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.op        = VIO::WRITE;
   _send_reader        = abuffer;
 
-  if (c != nullptr && nbytes > 0 && this->is_state_writeable()) {
+  if (c != nullptr && (nbytes > 0 || this->has_pending_send_header()) && this->is_state_writeable()) {
     update_write_request(false);
   } else if (!this->is_state_writeable()) {
     // Cannot start a write on a closed stream
@@ -847,7 +939,7 @@ Http2Stream::update_write_request(bool call_update)
 
   IOBufferReader *vio_reader = write_vio.get_reader();
 
-  if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0))) {
+  if (write_vio.ntodo() > 0 && !vio_reader->is_read_avail_more_than(0) && !this->has_pending_send_header()) {
     Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%zd"
                      " session_window=%zd",
                      write_vio.ntodo(), vio_reader->is_read_avail_more_than(0), _peer_rwnd,
@@ -857,15 +949,32 @@ Http2Stream::update_write_request(bool call_update)
 
   // Process the new data
   if (!this->parsing_header_done) {
-    // Still parsing the request or response header
     int         bytes_used = 0;
     ParseResult state;
-    if (this->is_outbound_connection()) {
+    HTTPHdr    *send_hdr = this->_pending_send_header();
+
+    if (send_hdr != nullptr) {
+      // Field by field: copy() would wipe the pseudo-headers create(HTTP_2_0) reserved.
+      if (this->is_outbound_connection()) {
+        this->_send_header.method_set(send_hdr->method_get());
+        this->_send_header.url_set(send_hdr->url_get());
+      } else {
+        this->_send_header.status_set(send_hdr->status_get());
+      }
+      for (auto &field : *send_hdr) {
+        MIMEField *f = this->_send_header.field_create(field.name_get());
+
+        f->value_set(this->_send_header.m_heap, this->_send_header.m_mime, field.value_get());
+        this->_send_header.field_attach(f);
+      }
+      this->_sm->clear_pending_send_header();
+      state = ParseResult::DONE;
+    } else if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
     } else {
+      // Interim 1xx responses (setup_100_continue_transfer()) are still serialized.
       state = this->_send_header.parse_resp(&http_parser, this->_send_reader, &bytes_used, false);
     }
-    // HTTPHdr::parse_resp() consumed the send_reader in above
     write_vio.ndone += bytes_used;
 
     switch (state) {
