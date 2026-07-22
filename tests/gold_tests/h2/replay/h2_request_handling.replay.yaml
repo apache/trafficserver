@@ -1,0 +1,322 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Exercises the HTTP/2 <-> HttpSM header handoff (the "fast path"): the decoded
+# request header is normalized in the 2->1.1 converter and handed to the SM
+# without a serialize+reparse, and the response header is handed back to the
+# stream the same way. Covers request URL normalization (explicit-port and IPv6
+# :authority), query-string caching, and response emission (bodyless 204/304/HEAD
+# and header preservation).
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'HTTP/2 request handling: URL normalization and caching'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_tls: true
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http2|cache'
+
+    remap_config:
+      - from: "https://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+      - from: "https://example.com:8443/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+      - from: "https://[::1]:8443/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+
+  # 1. Query string: cache a query-bearing resource, then re-request it. The
+  #    fast path must split :path into m_path + m_query so the response caches
+  #    and the key is stable. The re-request's origin response is marked unused;
+  #    a cache miss would fetch it and fail the body check.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", "/cache/item?a=1&b=2"]
+            - [uuid, query-fill]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "9"]
+        - [Cache-Control, max-age=300]
+      content:
+        encoding: plain
+        data: CACHED-Q1
+    proxy-response:
+      status: 200
+
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", "/cache/item?a=1&b=2"]
+            - [uuid, query-hit]
+    server-response:
+      status: 500
+      reason: NOTUSED
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: CACHED-Q1, as: equal}
+
+  # 2. Explicit-port :authority. The converter must split host:port so remap
+  #    matches on host example.com, port 8443. If the port stayed in the host
+  #    string the map would not match and this would not be a 200.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", "example.com:8443"]
+            - [":path", /port]
+            - [uuid, explicit-port]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "7"]
+      content:
+        encoding: plain
+        data: PORT-OK
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: PORT-OK, as: equal}
+
+  # 3. IPv6 literal :authority. url_parse_internet keeps the brackets; remap
+  #    matches host [::1], port 8443.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", "[::1]:8443"]
+            - [":path", /v6]
+            - [uuid, ipv6-authority]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "5"]
+      content:
+        encoding: plain
+        data: V6-OK
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: V6-OK, as: equal}
+
+# 4. Cross-protocol cache-key parity: fill over HTTP/1.1-over-TLS, then read the
+#    same https URL over HTTP/2. The keys must match, so the H2 fast path has to
+#    hash host/path/query exactly as the HTTP/1.1 reparse does. A divergent H2
+#    key would miss and fetch the unused 500, failing the body check.
+- protocol:
+    stack: https
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: "/parity?x=1&y=2"
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, parity-fill-h1]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "11"]
+        - [Cache-Control, max-age=300]
+      content:
+        encoding: plain
+        data: PARITY-BODY
+    proxy-response:
+      status: 200
+
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+  - client-request:
+      # Run after the HTTP/1.1 fill above has populated the cache.
+      delay: 2s
+      headers:
+        fields:
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.com]
+        - [":path", "/parity?x=1&y=2"]
+        - [uuid, parity-read-h2]
+    server-response:
+      status: 500
+      reason: NOTUSED
+    proxy-response:
+      status: 200
+      content:
+        verify: {value: PARITY-BODY, as: equal}
+
+# 5. Response direction. The response header is direct-passed to the stream
+#    (no serialize+reparse) and copied into _send_header.
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+
+  # 5a. Bodyless response (204). With zero body bytes, do_io_write must still
+  #     emit the HEADERS frame; otherwise the client hangs waiting for a response.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /no-content]
+            - [uuid, resp-204]
+    server-response:
+      status: 204
+      reason: No Content
+    proxy-response:
+      status: 204
+
+  # 5b. Response header set survives the direct copy (values and a multi-token
+  #     value must match what a serialize+reparse would have produced).
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /resp-headers]
+            - [uuid, resp-headers]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "5"]
+        - [X-Custom-One, alpha]
+        - [X-Custom-Two, "bravo charlie"]
+        - [Cache-Control, no-store]
+      content:
+        encoding: plain
+        data: HDROK
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Custom-One, {value: alpha, as: equal}]
+        - [X-Custom-Two, {value: "bravo charlie", as: equal}]
+        - [Cache-Control, {value: no-store, as: equal}]
+      content:
+        verify: {value: HDROK, as: equal}
+
+  # 5c. HEAD: the body is precluded by method, not status. The header still has to
+  #     be emitted with no body bytes (another zero-body do_io_write trigger path).
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", HEAD]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /head]
+            - [uuid, resp-head]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "20"]
+        - [X-Head-Marker, present]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Head-Marker, {value: present, as: equal}]
+
+  # 5d. 304 relay: a conditional request the origin answers with a bodyless 304,
+  #     which ATS relays to the client (body precluded by status).
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /conditional]
+            - ["if-none-match", '"v1"']
+            - [uuid, resp-304]
+    server-response:
+      status: 304
+      reason: Not Modified
+      headers:
+        fields:
+        - [ETag, '"v1"']
+    proxy-response:
+      status: 304
+      headers:
+        fields:
+        - [ETag, {value: '"v1"', as: equal}]
+
