@@ -1,15 +1,33 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Apache Software Foundation 2019
-/** @file
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
-   Class for handling "views" of text. Views presume the memory for the buffer is managed
-   elsewhere and allow efficient access to segments of the buffer without copies. Views are read
-   only as the view doesn't own the memory. Along with generic buffer methods are specialized
-   methods to support better string parsing, particularly token based parsing.
+      http://www.apache.org/licenses/LICENSE-2.0
 
-   This class is based on @c std::string_view and is easily and cheaply converted to and from that
-   class.
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
+
+/**
+ * @file TextView.h
+ * @brief Read-only view of a text buffer for efficient parsing.
+ *
+ * Class for handling "views" of text. Views presume the memory for the buffer is managed
+ * elsewhere and allow efficient access to segments of the buffer without copies. Views are read
+ * only as the view doesn't own the memory. Along with generic buffer methods are specialized
+ * methods to support better string parsing, particularly token based parsing.
+ *
+ * This class is based on @c std::string_view and is easily and cheaply converted to and from that
+ * class.
+ */
 
 #pragma once
 #include <algorithm>
@@ -1082,7 +1100,7 @@ inline namespace SWOC_VERSION_NS
     static constexpr auto OVERFLOW_LIMIT = MAX / RADIX;
     uintmax_t             zret           = 0;
     uintmax_t             v;
-    while (src.size() && ((v = swoc::svtoi_convert[uint8_t(*src)]) < RADIX)) {
+    while (src.size() && ((v = swoc::svtoi_convert[static_cast<uint8_t>(*src)]) < RADIX)) {
       // Tweaked for performance - need to check range after @a RADIX multiply.
       ++src; // Update view iff the character is parsed.
       if (zret <= OVERFLOW_LIMIT && v <= (MAX - (zret *= RADIX))) {
@@ -1126,7 +1144,7 @@ inline namespace SWOC_VERSION_NS
   inline constexpr CharSet::CharSet(TextView const &chars)
   {
     for (auto c : chars) {
-      _chars[uint8_t(c)] = true;
+      _chars[static_cast<uint8_t>(c)] = true;
     }
   }
 
@@ -1139,7 +1157,7 @@ inline namespace SWOC_VERSION_NS
   inline bool
   CharSet::operator()(char c) const
   {
-    return _chars[uint8_t(c)];
+    return _chars[static_cast<uint8_t>(c)];
   }
 
   // === TextView Implementation ===
@@ -1158,11 +1176,9 @@ inline namespace SWOC_VERSION_NS
   /// @cond TextView_INTERNAL
   /// @internal Template constructor implementation for various integral types.
   template <typename T, typename>
-  constexpr TextView::TextView(char const *ptr, T n) noexcept
-    : super_type(ptr, ptr ? static_cast<size_t>(n) : 0)
+  constexpr TextView::TextView(char const *ptr, T n) noexcept : super_type(ptr, ptr ? static_cast<size_t>(n) : 0)
   {
-    static_assert(!std::is_same_v<T, size_t> && !std::is_same_v<T, int>,
-                  "Use the explicit size_t or int constructors instead");
+    static_assert(!std::is_same_v<T, size_t> && !std::is_same_v<T, int>, "Use the explicit size_t or int constructors instead");
   }
   /// @endcond
   inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
@@ -1175,8 +1191,9 @@ inline namespace SWOC_VERSION_NS
   TextView::init_delimiter_set(std::string_view const &delimiters, std::bitset<256> &set)
   {
     set.reset();
-    for (char c : delimiters)
+    for (char c : delimiters) {
       set[static_cast<uint8_t>(c)] = true;
+    }
   }
 
   inline auto
@@ -1189,7 +1206,7 @@ inline namespace SWOC_VERSION_NS
   inline constexpr char
   TextView::operator*() const
   {
-    return this->empty() ? char(0) : *(this->data());
+    return this->empty() ? static_cast<char>(0) : *(this->data());
   }
 
   inline constexpr bool
@@ -1392,7 +1409,7 @@ inline namespace SWOC_VERSION_NS
   inline TextView
   TextView::split_prefix(int n)
   {
-    return this->split_prefix(size_t(n));
+    return this->split_prefix(static_cast<size_t>(n));
   }
 
   inline TextView
@@ -1452,7 +1469,7 @@ inline namespace SWOC_VERSION_NS
   inline constexpr TextView
   TextView::suffix(int n) const noexcept
   {
-    return this->suffix(size_t(n));
+    return this->suffix(static_cast<size_t>(n));
   }
 
   inline TextView
@@ -1537,7 +1554,7 @@ inline namespace SWOC_VERSION_NS
   inline auto
   TextView::split_suffix(int n) -> self_type
   {
-    return this->split_suffix(size_t(n));
+    return this->split_suffix(static_cast<size_t>(n));
   }
 
   inline TextView
@@ -1572,7 +1589,7 @@ inline namespace SWOC_VERSION_NS
   inline TextView
   TextView::take_suffix(int n)
   {
-    return this->take_suffix(size_t(n));
+    return this->take_suffix(static_cast<size_t>(n));
   }
 
   inline TextView
@@ -1598,9 +1615,11 @@ inline namespace SWOC_VERSION_NS
   inline size_t
   TextView::find_if(F const &pred) const
   {
-    for (const char *spot = this->data(), *limit = this->data_end(); spot < limit; ++spot)
-      if (pred(*spot))
+    for (const char *spot = this->data(), *limit = this->data_end(); spot < limit; ++spot) {
+      if (pred(*spot)) {
         return spot - this->data();
+      }
+    }
     return npos;
   }
 
@@ -1608,9 +1627,11 @@ inline namespace SWOC_VERSION_NS
   inline size_t
   TextView::rfind_if(F const &pred) const
   {
-    for (const char *spot = this->data_end(), *limit = this->data(); spot > limit;)
-      if (pred(*--spot))
+    for (const char *spot = this->data_end(), *limit = this->data(); spot > limit;) {
+      if (pred(*--spot)) {
         return spot - this->data();
+      }
+    }
     return npos;
   }
 
@@ -1685,8 +1706,9 @@ inline namespace SWOC_VERSION_NS
     const char *limit;
 
     // Do this explicitly, so we don't have to initialize the character set twice.
-    for (spot = this->data(), limit = this->data_end(); spot < limit && delimiters(*spot); ++spot)
+    for (spot = this->data(), limit = this->data_end(); spot < limit && delimiters(*spot); ++spot) {
       ;
+    }
     this->remove_prefix(spot - this->data());
 
     spot  = this->data_end();
@@ -1715,8 +1737,9 @@ inline namespace SWOC_VERSION_NS
   {
     const char *spot;
     const char *limit;
-    for (spot = this->data(), limit = this->data_end(); spot < limit && pred(*spot); ++spot)
+    for (spot = this->data(), limit = this->data_end(); spot < limit && pred(*spot); ++spot) {
       ;
+    }
     this->remove_prefix(spot - this->data());
     return *this;
   }
@@ -1727,8 +1750,9 @@ inline namespace SWOC_VERSION_NS
   {
     const char *spot  = this->data_end();
     const char *limit = this->data();
-    while (limit < spot-- && pred(*spot))
+    while (limit < spot-- && pred(*spot)) {
       ;
+    }
     this->remove_suffix(this->data_end() - (spot + 1));
     return *this;
   }
@@ -1841,10 +1865,12 @@ inline namespace SWOC_VERSION_NS
       typename Stream::char_type padding[pad_size];
 
       std::fill_n(padding, pad_size, ostream.fill());
-      for (; n >= pad_size && ostream.good(); n -= pad_size)
+      for (; n >= pad_size && ostream.good(); n -= pad_size) {
         ostream.write(padding, pad_size);
-      if (n > 0 && ostream.good())
+      }
+      if (n > 0 && ostream.good()) {
         ostream.write(padding, n);
+      }
       return ostream;
     };
 
@@ -1854,12 +1880,15 @@ inline namespace SWOC_VERSION_NS
     } else {
       const std::size_t pad_size   = w - b.size();
       const bool        align_left = (os.flags() & Stream::adjustfield) == Stream::left;
-      if (!align_left && os.good())
+      if (!align_left && os.good()) {
         stream_fill(os, pad_size);
-      if (os.good())
+      }
+      if (os.good()) {
         os.write(b.data(), b.size());
-      if (align_left && os.good())
+      }
+      if (align_left && os.good()) {
         stream_fill(os, pad_size);
+      }
     }
     return os;
   }
@@ -1869,8 +1898,9 @@ inline namespace SWOC_VERSION_NS
   TextView::clip_prefix_of(F const &pred)
   {
     size_t idx = 0;
-    for (auto spot = this->data(), limit = spot + this->size(); spot < limit && pred(*spot); ++spot, ++idx)
+    for (auto spot = this->data(), limit = spot + this->size(); spot < limit && pred(*spot); ++spot, ++idx) {
       ; // empty
+    }
     TextView token = this->prefix(idx);
     this->remove_prefix(idx);
     return token;
@@ -1881,8 +1911,9 @@ inline namespace SWOC_VERSION_NS
   TextView::clip_suffix_of(F const &pred)
   {
     size_t idx = this->size() - 1;
-    for (auto spot = this->data() + idx, limit = this->data(); spot >= limit && pred(*spot); --spot, --idx)
+    for (auto spot = this->data() + idx, limit = this->data(); spot >= limit && pred(*spot); --spot, --idx) {
       ; // empty
+    }
     TextView token = this->suffix(idx);
     this->remove_suffix(idx);
     return token;
