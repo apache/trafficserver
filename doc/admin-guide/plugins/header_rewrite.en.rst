@@ -1734,6 +1734,19 @@ files shared by both the global :file:`plugin.config` and individual remapping
 entries in :file:`remap.config`, this hook condition will force the subsequent
 ruleset(s) to be valid only for remapped transactions.
 
+POST_REMAP_HOOK
+~~~~~~~~~~~~~~~
+
+Forces evaluation of the ruleset immediately after remapping has completed, but
+before |TS| contacts the origin server (or fetches the object from cache). There
+is no response data yet, so context-adapting conditions and operators match
+against the request.
+
+This hook is available to both global (:file:`plugin.config`) and per-remap
+(:file:`remap.config`) configurations, and is primarily useful for
+globally-configured ``header_rewrite`` instances that need to act on the request
+after remapping.
+
 SEND_REQUEST_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~
 
