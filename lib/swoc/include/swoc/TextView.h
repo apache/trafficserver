@@ -152,8 +152,7 @@ inline namespace SWOC_VERSION_NS
      * @see TextView(char const *ptr, size_t n) for the primary size constructor
      * @see TextView(char const *ptr, int n) for the signed integer constructor
      */
-    template <typename T>
-    constexpr TextView(char const *ptr, T n) noexcept;
+    template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>> constexpr TextView(char const *ptr, T n) noexcept;
 
     /** Construct from a half open range [first, last).
      *
@@ -1149,18 +1148,18 @@ inline namespace SWOC_VERSION_NS
   // @internal If there is more than one overload for numeric types, it's easy to get ambiguity. The only
   // fix, unfortunately, is lots of overloads to cover the ambiguous cases.
   inline constexpr TextView::TextView(const char *ptr, size_t n) noexcept
-    : super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n)
+    : super_type(ptr, ptr ? (n == npos ? ::strlen(ptr) : n) : 0)
   {
   }
   inline constexpr TextView::TextView(const char *ptr, int n) noexcept
-    : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : size_t(n))
+    : super_type(ptr, ptr ? (n < 0 ? ::strlen(ptr) : static_cast<size_t>(n)) : 0)
   {
   }
   /// @cond TextView_INTERNAL
   /// @internal Template constructor implementation for various integral types.
-  template <typename T>
+  template <typename T, typename>
   constexpr TextView::TextView(char const *ptr, T n) noexcept
-    : super_type(ptr, size_t(n))
+    : super_type(ptr, ptr ? static_cast<size_t>(n) : 0)
   {
     static_assert(!std::is_same_v<T, size_t> && !std::is_same_v<T, int>,
                   "Use the explicit size_t or int constructors instead");
@@ -1283,7 +1282,7 @@ inline namespace SWOC_VERSION_NS
   inline TextView &
   TextView::assign(char const *ptr, size_t n)
   {
-    *this = super_type(ptr, n == npos ? (ptr ? ::strlen(ptr) : 0) : n);
+    *this = super_type(ptr, ptr ? (n == npos ? ::strlen(ptr) : n) : 0);
     return *this;
   }
 
