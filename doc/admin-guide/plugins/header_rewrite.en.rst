@@ -1421,6 +1421,17 @@ the operator will effectively be a no-op.
     This operator is deprecated, use the `set-http-cntl`_ operator instead,
     with the ``SKIP_REMAP`` control.
 
+sort-destination
+~~~~~~~~~~~~~~~~
+::
+
+  sort-destination QUERY
+
+Sorts the query parameters of the remapped destination's URL by parameter
+name. Sorting is stable, so parameters that share the same name keep their
+relative order. Currently ``QUERY`` is the only valid part for
+sort-destination.
+
 set-cookie
 ~~~~~~~~~~
 ::

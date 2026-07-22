@@ -29,6 +29,7 @@
 #include "swoc/swoc_file.h"
 
 #include "operators.h"
+#include "url_query.h"
 #include "ts/apidefs.h"
 #include "conditions.h"
 #include "factory.h"
@@ -477,6 +478,60 @@ OperatorRMDestination::exec(const Resources &res) const
     }
   } else {
     Dbg(pi_dbg_ctl, "OperatorRMDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
+        res.hdr_loc, res._rri);
+  }
+  return true;
+}
+
+// OperatorSortDestination
+void
+OperatorSortDestination::initialize(Parser &p)
+{
+  Operator::initialize(p);
+
+  _url_qual = parse_url_qualifier(p.get_arg());
+
+  require_resources(RSRC_CLIENT_REQUEST_HEADERS);
+  require_resources(RSRC_SERVER_REQUEST_HEADERS);
+}
+
+bool
+OperatorSortDestination::exec(const Resources &res) const
+{
+  if (res._rri || (res.bufp && res.hdr_loc)) {
+    TSMBuffer bufp;
+    TSMLoc    url_m_loc;
+
+    // Determine which TSMBuffer and TSMLoc to use
+    if (res._rri) {
+      bufp      = res._rri->requestBufp;
+      url_m_loc = res._rri->requestUrl;
+    } else {
+      bufp = res.bufp;
+      if (TSHttpHdrUrlGet(res.bufp, res.hdr_loc, &url_m_loc) != TS_SUCCESS) {
+        Dbg(pi_dbg_ctl, "TSHttpHdrUrlGet was unable to return the url m_loc");
+        return true;
+      }
+    }
+
+    switch (_url_qual) {
+    case URL_QUAL_QUERY: {
+      int         q_len  = 0;
+      const char *query  = TSUrlHttpQueryGet(bufp, url_m_loc, &q_len);
+      std::string sorted = sort_query(q_len > 0 ? std::string_view(query, static_cast<size_t>(q_len)) : std::string_view());
+
+      const_cast<Resources &>(res).changed_url = true;
+      TSUrlHttpQuerySet(bufp, url_m_loc, sorted.c_str(), sorted.size());
+      res.reset_query_cache();
+      Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() rewrote QUERY to \"%s\"", sorted.c_str());
+      break;
+    }
+    default:
+      Dbg(pi_dbg_ctl, "Sort destination %i has no handler", _url_qual);
+      break;
+    }
+  } else {
+    Dbg(pi_dbg_ctl, "OperatorSortDestination::exec() unable to continue due to missing bufp=%p or hdr_loc=%p, rri=%p!", res.bufp,
         res.hdr_loc, res._rri);
   }
   return true;
