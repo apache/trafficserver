@@ -127,6 +127,19 @@ test_parsing()
   }
 
   {
+    ParserTest   p("cond %{POST_REMAP_HOOK}");
+    TSHttpHookID hook = TS_HTTP_LAST_HOOK;
+
+    CHECK_EQ(p.getTokens().size(), 2U);
+    CHECK_EQ(p.getTokens()[0], "cond");
+    CHECK_EQ(p.getTokens()[1], "%{POST_REMAP_HOOK}");
+    CHECK_EQ(p.cond_is_hook(hook), true);
+    CHECK_EQ(hook, TS_HTTP_POST_REMAP_HOOK);
+
+    END_TEST();
+  }
+
+  {
     ParserTest p("cond %{CLIENT-HEADER:Host}    =a");
 
     CHECK_EQ(p.getTokens().size(), 4UL);
