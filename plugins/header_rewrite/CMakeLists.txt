@@ -30,6 +30,7 @@ add_atsplugin(
   resources.cc
   ruleset.cc
   statement.cc
+  url_query.cc
   value.cc
 )
 
@@ -98,6 +99,11 @@ if(BUILD_TESTING)
       endif()
     endif()
   endif()
+
+  add_executable(test_url_query unit_tests/test_url_query.cc url_query.cc)
+  target_include_directories(test_url_query PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+  add_catch2_test(NAME test_url_query COMMAND test_url_query)
+  target_link_libraries(test_url_query PRIVATE Catch2::Catch2WithMain libswoc::libswoc)
 
   # add_executable(test_matcher matcher_tests.cc matcher.cc lulu.cc regex_helper.cc)
   # add_catch2_test(NAME test_matcher COMMAND $<TARGET_FILE:test_matcher>)
