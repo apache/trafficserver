@@ -312,10 +312,13 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 
   // Convert header to HTTP/1.1 format. Trailing headers need no conversion
   // because they, by definition, do not contain pseudo headers.
+  bool conversion_ok = true;
+
   if (this->trailing_header_is_possible()) {
     Http2StreamDebug("trailing header: Skipping send_headers initialization.");
   } else {
     if (http2_convert_header_from_2_to_1_1(&_receive_header) == ParseResult::ERROR) {
+      conversion_ok = false;
       Http2StreamDebug("Error converting HTTP/2 headers to HTTP/1.1.");
       if (_receive_header.type_get() == HTTPType::REQUEST) {
         // There's no way to cause Bad Request directly at this time.
@@ -333,6 +336,38 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     }
     ink_release_assert(this->_sm != nullptr);
     this->_http_sm_id = this->_sm->sm_id;
+  }
+
+  // parse_req is skipped here; re-apply strict_uri_parsing.
+  // Evaluated last so path_get() (asserts REQUEST polarity) only sees a REQUEST.
+  auto uri_ok = [&]() {
+    int const level = this->_sm->t_state.http_config_param->strict_uri_parsing;
+
+    return level == 0 ||
+           (url_is_uri_compliant(level, _receive_header.path_get()) && url_is_uri_compliant(level, _receive_header.query_get()) &&
+            url_is_uri_compliant(level, _receive_header.fragment_get()));
+  };
+
+  // A failed conversion leaves a \xffVOID method that only parse_req can turn into a 400.
+  if (conversion_ok && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
+      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0 && uri_ok()) {
+    this->_sm->set_pre_parsed_ua_request(&_receive_header);
+    if (this->receive_end_stream) {
+      // nbytes == 0 reads as "paused" to the VIO layer, which swallows the signal.
+      this->read_vio.nbytes = this->data_length + _receive_header.length_get();
+      this->read_vio.ndone  = this->read_vio.nbytes;
+      this->signal_read_event(VC_EVENT_READ_COMPLETE);
+    } else {
+      this->has_body = true;
+      this->signal_read_event(VC_EVENT_READ_READY);
+    }
+    // Delivery is synchronous (stream mutex): the borrow is copied, or the txn
+    // finished and _sm is null. A still-pending borrow is unreachable; recover anyway.
+    if (this->_sm == nullptr || !this->_sm->has_pending_pre_parsed_ua_request()) {
+      return;
+    }
+    ink_assert(!"pre-parsed handoff was deferred");
+    this->_sm->set_pre_parsed_ua_request(nullptr);
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.

@@ -600,6 +600,7 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
     // The user agent is hosed.  Close it &
     //   bail on the state machine
+    _pre_parsed_ua_request = nullptr; // the stream is going away; the borrow would dangle
     vc_table.cleanup_entry(_ua.get_entry());
     _ua.set_entry(nullptr);
     set_ua_abort(HttpTransact::ABORTED, event);
@@ -620,10 +621,24 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  ParseResult state = t_state.hdr_info.client_request.parse_req(&http_parser, _ua.get_txn()->get_remote_reader(), &bytes_used,
-                                                                _ua.get_entry()->eos, t_state.http_config_param->strict_uri_parsing,
-                                                                t_state.http_config_param->http_request_line_max_size,
-                                                                t_state.http_config_param->http_hdr_field_max_size);
+  ParseResult state;
+
+  if (_pre_parsed_ua_request != nullptr) {
+    // UA_FIRST_READ never fires here: the read buffer stays empty.
+    if (milestones[TS_MILESTONE_UA_FIRST_READ] == 0) {
+      ATS_PROBE1(milestone_ua_first_read, sm_id);
+      milestones[TS_MILESTONE_UA_FIRST_READ] = ink_get_hrtime();
+    }
+    t_state.hdr_info.client_request.copy(_pre_parsed_ua_request);
+    _pre_parsed_ua_request = nullptr;
+    bytes_used             = t_state.hdr_info.client_request.length_get();
+    state                  = ParseResult::DONE;
+  } else {
+    state = t_state.hdr_info.client_request.parse_req(&http_parser, _ua.get_txn()->get_remote_reader(), &bytes_used,
+                                                      _ua.get_entry()->eos, t_state.http_config_param->strict_uri_parsing,
+                                                      t_state.http_config_param->http_request_line_max_size,
+                                                      t_state.http_config_param->http_hdr_field_max_size);
+  }
 
   client_request_hdr_bytes += bytes_used;
 

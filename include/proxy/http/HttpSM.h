@@ -205,6 +205,20 @@ public:
 
   void attach_client_session(ProxyTransaction *txn);
 
+  // Borrowed: must outlive the copy in state_read_client_request_header. Lets HTTP/2 skip serialize+reparse.
+  void
+  set_pre_parsed_ua_request(HTTPHdr *hdr)
+  {
+    _pre_parsed_ua_request = hdr;
+  }
+
+  // Non-null until state_read_client_request_header copies the borrow; lets send_headers assert synchronous delivery.
+  bool
+  has_pending_pre_parsed_ua_request() const
+  {
+    return _pre_parsed_ua_request != nullptr;
+  }
+
   // Called after the network connection has been completed
   //  to set the session timeouts and initiate a read while
   //  holding the lock for the server session
@@ -633,6 +647,8 @@ public:
 
 private:
   void cancel_pending_server_connection();
+
+  HTTPHdr *_pre_parsed_ua_request = nullptr;
 };
 
 ////
