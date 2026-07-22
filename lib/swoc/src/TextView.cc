@@ -1,13 +1,31 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Apache Software Foundation 2019
-/** @file
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
-    Class for handling "views" of a buffer. Views presume the memory for the
-    buffer is managed elsewhere and allow efficient access to segments of the
-    buffer without copies. Views are read only as the view doesn't own the
-    memory. Along with generic buffer methods are specialized methods to support
-    better string parsing, particularly token based parsing.
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
+
+/**
+ * @file TextView.cc
+ * @brief Class for handling "views" of a buffer.
+ *
+ * Class for handling "views" of a buffer. Views presume the memory for the
+ * buffer is managed elsewhere and allow efficient access to segments of the
+ * buffer without copies. Views are read only as the view doesn't own the
+ * memory. Along with generic buffer methods are specialized methods to support
+ * better string parsing, particularly token based parsing.
+ */
 
 #include "swoc/TextView.h"
 
@@ -46,7 +64,7 @@ inline namespace SWOC_VERSION_NS
   svtoi(TextView src, TextView *out, int base)
   {
     static constexpr uintmax_t ABS_MAX = std::numeric_limits<intmax_t>::max();
-    static constexpr uintmax_t ABS_MIN = uintmax_t(std::numeric_limits<intmax_t>::min());
+    static constexpr uintmax_t ABS_MIN = static_cast<uintmax_t>(std::numeric_limits<intmax_t>::min());
     intmax_t                   zret    = 0;
 
     if (src.ltrim_if(&isspace)) {
@@ -69,7 +87,7 @@ inline namespace SWOC_VERSION_NS
           if (temp == ABS_MIN) {
             zret = std::numeric_limits<intmax_t>::min();
           } else {
-            zret = -intmax_t(temp);
+            zret = -static_cast<intmax_t>(temp);
           }
         } else {
           zret = std::min(n, ABS_MAX);
@@ -136,7 +154,7 @@ inline namespace SWOC_VERSION_NS
         intmax_t              v              = 0;
         while (src.size() && (0 <= (v = svtoi_convert[static_cast<unsigned char>(*src)])) && v < base) {
           ++src;
-          if (zret <= OVERFLOW_LIMIT && uintmax_t(v) <= (MAX - (zret *= base))) {
+          if (zret <= OVERFLOW_LIMIT && static_cast<uintmax_t>(v) <= (MAX - (zret *= base))) {
             zret += v;
           } else {
             zret = MAX;
