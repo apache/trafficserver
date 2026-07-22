@@ -1805,6 +1805,9 @@ HttpSM::handle_api_return()
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_DELETE:
   case HttpTransact::SM_ACTION_INTERNAL_CACHE_UPDATE_HEADERS:
   case HttpTransact::SM_ACTION_SEND_ERROR_CACHE_NOOP: {
+    // Consume any unforwarded request body, or close the connection when it cannot be
+    // fully consumed, so leftover bytes are not framed as the next request.
+    do_drain_request_body(t_state.hdr_info.client_response);
     setup_internal_transfer(&HttpSM::tunnel_handler);
     break;
   }
@@ -6103,6 +6106,15 @@ HttpSM::do_drain_request_body(HTTPHdr &response)
   int64_t content_length = t_state.hdr_info.client_request.get_content_length();
   int64_t avail          = ua_txn->get_remote_reader()->read_avail();
 
+  // Consuming the client request buffer is only safe when no request-body tunnel is active: a live
+  // producer could still be reading from it, so consuming here would race and desync the connection.
+  // Callers today reach this after the request-body tunnel is done, so the guard is normally a no-op;
+  // keep it so a future path with a live tunnel drops keep-alive instead of double-consuming the reader.
+  if (tunnel.is_tunnel_active()) {
+    SMDebug("http", "request-body tunnel still active, setting the response to non-keepalive");
+    goto close_connection;
+  }
+
   if (t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING) {
     SMDebug("http", "Chunked body, setting the response to non-keepalive");
     goto close_connection;
@@ -8011,8 +8023,6 @@ HttpSM::set_next_state()
     if (server_entry != nullptr && server_entry->in_tunnel == false) {
       release_server_session();
     }
-
-    do_drain_request_body(t_state.hdr_info.client_response);
 
     // If we're in state SEND_API_RESPONSE_HDR, it means functions
     // registered to hook SEND_RESPONSE_HDR have already been called. So we do not
