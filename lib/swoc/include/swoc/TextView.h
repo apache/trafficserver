@@ -135,6 +135,26 @@ inline namespace SWOC_VERSION_NS
      */
     constexpr TextView(char const *ptr, int n) noexcept;
 
+    /** Construct from pointer and size using template parameter.
+     *
+     * @tparam T Integral type for the size parameter.
+     * @param ptr Pointer to first character.
+     * @param n Number of characters.
+     *
+     * This template constructor provides support for various integral types
+     * beyond the basic @c size_t and @c int constructors. It enables construction
+     * with types like @c long, @c long @c long, @c short, etc.
+     *
+     * @note This constructor uses @c static_assert to prevent use with @c size_t
+     *       and @c int types, as those have explicit constructors defined.
+     * @note The parameter @a n is converted to @c size_t for internal storage.
+     *
+     * @see TextView(char const *ptr, size_t n) for the primary size constructor
+     * @see TextView(char const *ptr, int n) for the signed integer constructor
+     */
+    template <typename T>
+    constexpr TextView(char const *ptr, T n) noexcept;
+
     /** Construct from a half open range [first, last).
      *
      * @param first Start of half open range.
@@ -1136,6 +1156,16 @@ inline namespace SWOC_VERSION_NS
     : super_type(ptr, n < 0 ? (ptr ? ::strlen(ptr) : 0) : size_t(n))
   {
   }
+  /// @cond TextView_INTERNAL
+  /// @internal Template constructor implementation for various integral types.
+  template <typename T>
+  constexpr TextView::TextView(char const *ptr, T n) noexcept
+    : super_type(ptr, size_t(n))
+  {
+    static_assert(!std::is_same_v<T, size_t> && !std::is_same_v<T, int>,
+                  "Use the explicit size_t or int constructors instead");
+  }
+  /// @endcond
   inline constexpr TextView::TextView(std::nullptr_t) noexcept : super_type(nullptr, 0) {}
   inline TextView::TextView(std::string const &str) noexcept : super_type(str) {}
   inline constexpr TextView::TextView(super_type const &that) noexcept : super_type(that) {}
