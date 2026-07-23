@@ -26,7 +26,7 @@ namespace
 {
 
 std::vector<std::string_view>
-tokenize(std::string_view text, char delimiter)
+split(std::string_view text, char delimiter)
 {
   std::vector<std::string_view> tokens;
   swoc::TextView                view(text);
@@ -53,7 +53,7 @@ sort_query(std::string_view query)
     return {};
   }
 
-  std::vector<std::string_view> params = tokenize(query, '&');
+  std::vector<std::string_view> params = split(query, '&');
 
   std::stable_sort(params.begin(), params.end(),
                    [](std::string_view a, std::string_view b) { return param_name(a) < param_name(b); });
