@@ -21,3 +21,4 @@ Test.Summary = __doc__
 
 Test.ATSReplayTest(replay_file="replays/chunked_h1_flow_control.replay.yaml")
 Test.ATSReplayTest(replay_file="replays/chunked_h2_flow_control.replay.yaml")
+Test.ATSReplayTest(replay_file="replays/chunked_passthru_flow_control.replay.yaml")

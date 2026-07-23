@@ -1369,6 +1369,31 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
   return event;
 }
 
+/**
+  Disable the producer read when a consumer has buffered past its high water mark.
+  Returns the tripped consumer, or nullptr if none.
+ */
+HttpTunnelConsumer *
+HttpTunnel::_throttle_chunked_producer(HttpTunnelProducer *p)
+{
+  for (HttpTunnelConsumer *ci = p->consumer_list.head; ci; ci = ci->link.next) {
+    if (!ci->alive || !ci->buffer_reader || !ci->buffer_reader->mbuf || !ci->buffer_reader->mbuf->water_mark) {
+      continue;
+    }
+
+    if (ci->buffer_reader->high_water()) {
+      if (p->read_vio) {
+        Dbg(dbg_ctl_http_tunnel, "disable %s read_vio - %s read_avail = %" PRId64 " / %" PRId64, p->name, ci->name,
+            ci->buffer_reader->read_avail(), ci->buffer_reader->mbuf->water_mark);
+        Metrics::Counter::increment(http_rsb.tunnel_chunked_throttle);
+        p->read_vio->disable();
+      }
+      return ci;
+    }
+  }
+  return nullptr;
+}
+
 //
 // bool HttpTunnel::producer_handler(int event, HttpTunnelProducer* p)
 //
@@ -1391,30 +1416,21 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
   if (p->is_handling_chunked_content()) {
+    // Chunked passthru (drop=0) lets the consumer read read_buffer directly, the
+    // same buffer chunked_reader walks; the parser must run before the throttle or
+    // chunked_reader pins read_buffer at high water and deadlocks. Buffered paths
+    // fill an output buffer, so they keep throttling before the walk.
+    bool const plain_passthru = p->do_chunked_passthru && !p->chunked_handler.drop_chunked_trailers;
+
     // Only throttle on READ_READY. Terminal events (READ_COMPLETE / EOS / PRECOMPLETE) must fall through
     // to the completion path below so the producer is marked !alive and the SM is notified.
-    if (event == VC_EVENT_READ_READY) {
-      // Check high_water of consumers - disable producer read_vio if any of them hit the high_water()
-      for (auto *ci = p->consumer_list.head; ci; ci = ci->link.next) {
-        if (!ci->alive || !ci->buffer_reader || !ci->buffer_reader->mbuf || !ci->buffer_reader->mbuf->water_mark) {
-          continue;
+    if (event == VC_EVENT_READ_READY && !plain_passthru) {
+      if (HttpTunnelConsumer *ci = _throttle_chunked_producer(p); ci != nullptr) {
+        if (ci->write_vio) {
+          Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", ci->name);
+          ci->write_vio->reenable();
         }
-
-        if (ci->buffer_reader->high_water()) {
-          if (p->read_vio) {
-            // Disable producer read_vio
-            Dbg(dbg_ctl_http_tunnel, "disable %s read_vio - %s read_avail = %" PRId64 " / %" PRId64, p->name, ci->name,
-                ci->buffer_reader->read_avail(), ci->buffer_reader->mbuf->water_mark);
-            Metrics::Counter::increment(http_rsb.tunnel_chunked_throttle);
-            p->read_vio->disable();
-          }
-
-          if (ci->write_vio) {
-            Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", ci->name);
-            ci->write_vio->reenable();
-          }
-          return false;
-        }
+        return false;
       }
     }
 
@@ -1423,6 +1439,13 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
       event = producer_handler_dechunked(event, p);
     } else { // p->do_dechunking or p->do_chunked_passthru
       event = producer_handler_chunked(event, p);
+    }
+
+    // Passthru: throttle after the walk. chunked_reader is now drained, so
+    // high_water reflects only consumer backlog and still bounds the cache-write
+    // dechunked_buffer. Fall through so consumers are re-enabled to drain.
+    if (event == VC_EVENT_READ_READY && plain_passthru) {
+      _throttle_chunked_producer(p);
     }
   } else {
     p->last_event = event;

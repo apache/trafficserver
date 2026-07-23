@@ -1,0 +1,161 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Regression test for the chunked-passthrough high-water flow control in
+# HttpTunnel when chunked trailers are NOT dropped
+# (proxy.config.http.drop_chunked_trailers = 0).
+#
+# A chunked HTTP/1.1 origin delivers a large response and an HTTP/1.1 client
+# consumes it, so ATS proxies the body as-is on the
+# TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT path. With trailers retained
+# there is NO intermediate output buffer: the user-agent consumer reads
+# p->read_buffer directly while the chunked parser's chunked_reader walks that
+# same buffer only to track framing.
+#
+# With a small default_buffer_water_mark the read buffer crosses high_water
+# before the consumer drains it. The buggy code threw the chunked high-water
+# throttle on this path and returned WITHOUT walking the parser; because
+# chunked_reader shares read_buffer with the consumer, the un-advanced
+# chunked_reader pinned the buffer above high_water, the producer could never be
+# re-enabled, and the transfer deadlocked until the inactivity timeout. The fix
+# walks the parser before applying the throttle on this path, so chunked_reader
+# stays drained and the high_water check reflects only the consumer's backlog.
+# The response must complete with the full body and no inactivity-timeout stall.
+
+autest:
+  description: 'HTTP/1.1 chunked origin -> HTTP/1.1 chunked client passthru flow-control throttle (drop_chunked_trailers=0)'
+
+  dns:
+    name: 'dns-chunked-passthru-fc'
+
+  server:
+    name: 'server-chunked-passthru-fc'
+
+  client:
+    name: 'client-chunked-passthru-fc'
+
+  ats:
+    name: 'ts-chunked-passthru-fc'
+    process_config:
+      enable_tls: false
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_tunnel'
+      # Retain chunked trailers so the chunked->chunked passthru has no
+      # intermediate buffer (the path that could deadlock).
+      proxy.config.http.drop_chunked_trailers: 0
+      # Small water_mark so the read buffer crosses high_water well before the
+      # user-agent socket can drain it, forcing the throttle.
+      proxy.config.http.default_buffer_water_mark: 4096
+      # Keep the transaction inactivity timeouts short so that, if the tunnel
+      # regresses to the deadlock, the failure surfaces quickly rather than
+      # hanging for the 30s default. A healthy transfer completes well under
+      # this bound.
+      proxy.config.http.transaction_no_activity_timeout_in: 10
+      proxy.config.http.transaction_no_activity_timeout_out: 10
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      diags_log:
+        excludes:
+          # Indicator of the tunnel deadlocking until the inactivity timeout.
+          - expression: 'ERROR.*inactivity timeout'
+            description: 'Tunnel must not stall to inactivity timeout.'
+
+    metric_checks:
+      # The chunked-tunnel throttle must fire at least once: the read buffer
+      # crosses high_water before the consumer drains it. Combined with the
+      # proxy-response size assertion below (which only passes if the producer
+      # was re-enabled and the full body proxied), this covers both the throttle
+      # and the unwind paths.
+      - metric: proxy.process.http.tunnel.chunked_throttle
+        value: '[1-9][0-9]*'
+
+sessions:
+
+- protocol:
+    stack: http
+
+  transactions:
+
+  # A sizable chunked response proxied chunked->chunked. The body is large
+  # enough to exceed water_mark many times over.
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /large-passthru
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, large-passthru-1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      version: "1.1"
+      headers:
+        fields:
+        - [ "Content-Type", "text/plain" ]
+        - [ "Transfer-Encoding", "chunked" ]
+      content:
+        size: 524288  # 512 KB
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Transfer-Encoding", { value: "chunked", as: equal } ]
+      content:
+        size: { value: 524288, as: equal }
+
+  # A second transaction back-to-back, exercising the re-enable path after the
+  # first throttle cycle.
+  - client-request:
+      delay: 100ms
+      method: GET
+      version: "1.1"
+      url: /large-passthru-2
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, large-passthru-2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      version: "1.1"
+      headers:
+        fields:
+        - [ "Content-Type", "text/plain" ]
+        - [ "Transfer-Encoding", "chunked" ]
+      content:
+        size: 262144  # 256 KB
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "Transfer-Encoding", { value: "chunked", as: equal } ]
+      content:
+        size: { value: 262144, as: equal }
