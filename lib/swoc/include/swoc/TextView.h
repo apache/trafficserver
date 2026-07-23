@@ -30,6 +30,7 @@
  */
 
 #pragma once
+
 #include <algorithm>
 #include <bitset>
 #include <cctype>
@@ -1176,7 +1177,8 @@ inline namespace SWOC_VERSION_NS
   /// @cond TextView_INTERNAL
   /// @internal Template constructor implementation for various integral types.
   template <typename T, typename>
-  constexpr TextView::TextView(char const *ptr, T n) noexcept : super_type(ptr, ptr ? static_cast<size_t>(n) : 0)
+  constexpr TextView::TextView(char const *ptr, T n) noexcept
+    : super_type(ptr, ptr ? (n < 0 ? ::strlen(ptr) : static_cast<size_t>(n)) : 0)
   {
     static_assert(!std::is_same_v<T, size_t> && !std::is_same_v<T, int>, "Use the explicit size_t or int constructors instead");
   }
