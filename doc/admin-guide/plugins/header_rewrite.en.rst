@@ -1137,7 +1137,8 @@ rm-destination
 Removes individual components of the remapped destination's address. When
 changing the remapped destination, ``<part>`` should be used to indicate the
 component that is being modified (see `URL Parts`_). Currently the only valid
-parts for rm-destination are QUERY, PATH, and PORT.
+parts for rm-destination are QUERY, PATH, and PORT; any other part is ignored,
+leaving the destination unchanged.
 
 For the query parameter, this operator takes an optional second argument,
 which is a list of query parameters to remove (or keep with ``[INV]`` modifier).
