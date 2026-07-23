@@ -1431,7 +1431,7 @@ sort-destination
 Sorts the query parameters of the remapped destination's URL by parameter
 name. Sorting is stable, so parameters that share the same name keep their
 relative order. Currently ``QUERY`` is the only valid part for
-sort-destination.
+sort-destination; any other part is ignored, leaving the destination unchanged.
 
 set-cookie
 ~~~~~~~~~~
