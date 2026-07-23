@@ -302,6 +302,34 @@ Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_ta
   return error;
 }
 
+bool
+Http2Stream::supports_direct_header_passing() const
+{
+  return true;
+}
+
+bool
+Http2Stream::is_parsed_receive_header_ready() const
+{
+  return this->_is_parsed_receive_header_ready;
+}
+
+const HTTPHdr *
+Http2Stream::parsed_receive_header() const
+{
+  return &this->_receive_header;
+}
+
+bool
+Http2Stream::has_pending_send_header() const
+{
+  if (this->parsing_header_done || this->_sm == nullptr) {
+    return false;
+  }
+  return this->is_outbound_connection() ? this->_sm->get_server_request_header() != nullptr :
+                                          this->_sm->get_client_response_header() != nullptr;
+}
+
 void
 Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
 {
@@ -351,7 +379,8 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
   // A failed conversion leaves a \xffVOID method that only parse_req can turn into a 400.
   if (conversion_ok && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
       _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0 && uri_ok()) {
-    this->_sm->set_pre_parsed_ua_request(&_receive_header);
+    // The stream owns _receive_header and outlives the handoff, so the pulled pointer cannot dangle.
+    this->_is_parsed_receive_header_ready = true;
     if (this->receive_end_stream) {
       // nbytes == 0 reads as "paused" to the VIO layer, which swallows the signal.
       this->read_vio.nbytes = this->data_length + _receive_header.length_get();
@@ -361,13 +390,7 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
       this->has_body = true;
       this->signal_read_event(VC_EVENT_READ_READY);
     }
-    // Delivery is synchronous (stream mutex): the borrow is copied, or the txn
-    // finished and _sm is null. A still-pending borrow is unreachable; recover anyway.
-    if (this->_sm == nullptr || !this->_sm->has_pending_pre_parsed_ua_request()) {
-      return;
-    }
-    ink_assert(!"pre-parsed handoff was deferred");
-    this->_sm->set_pre_parsed_ua_request(nullptr);
+    return;
   }
 
   // Write header to a buffer.  Borrowing logic from HttpSM::write_header_into_buffer.
@@ -603,7 +626,8 @@ Http2Stream::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuffe
   write_vio.op        = VIO::WRITE;
   _send_reader        = abuffer;
 
-  if (c != nullptr && nbytes > 0 && this->is_state_writeable()) {
+  // A bodyless message (nbytes == 0) still owes its HEADERS frame.
+  if (c != nullptr && (nbytes > 0 || this->has_pending_send_header()) && this->is_state_writeable()) {
     update_write_request(false);
   } else if (!this->is_state_writeable()) {
     // Cannot start a write on a closed stream
@@ -883,7 +907,8 @@ Http2Stream::update_write_request(bool call_update)
 
   IOBufferReader *vio_reader = write_vio.get_reader();
 
-  if (write_vio.ntodo() > 0 && (!vio_reader->is_read_avail_more_than(0))) {
+  // A direct-passed header is work to do even with an empty send buffer.
+  if (write_vio.ntodo() > 0 && !vio_reader->is_read_avail_more_than(0) && !this->has_pending_send_header()) {
     Http2StreamDebug("update_write_request give up without doing anything ntodo=%" PRId64 " is_read_avail=%d client_window=%zd"
                      " session_window=%zd",
                      write_vio.ntodo(), vio_reader->is_read_avail_more_than(0), _peer_rwnd,
@@ -893,15 +918,34 @@ Http2Stream::update_write_request(bool call_update)
 
   // Process the new data
   if (!this->parsing_header_done) {
-    // Still parsing the request or response header
     int         bytes_used = 0;
     ParseResult state;
-    if (this->is_outbound_connection()) {
+    HTTPHdr    *send_hdr = this->_sm == nullptr           ? nullptr :
+                           this->is_outbound_connection() ? this->_sm->get_server_request_header() :
+                                                            this->_sm->get_client_response_header();
+
+    if (send_hdr != nullptr) {
+      // Field-by-field, not copy(): copy() would wipe the create(HTTP_2_0) pseudos that the
+      // 1.1->2 conversion fills. The ready flag re-arms per header (1xx interim, retries).
+      if (this->is_outbound_connection()) {
+        this->_send_header.method_set(send_hdr->method_get());
+        this->_send_header.url_set(send_hdr->url_get());
+      } else {
+        this->_send_header.status_set(send_hdr->status_get());
+      }
+      for (auto &field : *send_hdr) {
+        MIMEField *f = this->_send_header.field_create(field.name_get());
+
+        f->value_set(this->_send_header.m_heap, this->_send_header.m_mime, field.value_get());
+        this->_send_header.field_attach(f);
+      }
+      this->_sm->clear_pending_send_header();
+      state = ParseResult::DONE;
+    } else if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
     } else {
-      state = this->_send_header.parse_resp(&http_parser, this->_send_reader, &bytes_used, false);
+      state = ParseResult::CONT;
     }
-    // HTTPHdr::parse_resp() consumed the send_reader in above
     write_vio.ndone += bytes_used;
 
     switch (state) {

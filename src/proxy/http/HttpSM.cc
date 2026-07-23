@@ -600,7 +600,6 @@ HttpSM::state_read_client_request_header(int event, void *data)
   case VC_EVENT_ACTIVE_TIMEOUT:
     // The user agent is hosed.  Close it &
     //   bail on the state machine
-    _pre_parsed_ua_request = nullptr; // the stream is going away; the borrow would dangle
     vc_table.cleanup_entry(_ua.get_entry());
     _ua.set_entry(nullptr);
     set_ua_abort(HttpTransact::ABORTED, event);
@@ -621,23 +620,22 @@ HttpSM::state_read_client_request_header(int event, void *data)
   // tokenize header //
   /////////////////////
 
-  ParseResult state;
+  ParseResult       state;
+  ProxyTransaction *ua_txn = _ua.get_txn();
 
-  if (_pre_parsed_ua_request != nullptr) {
+  if (ua_txn->supports_direct_header_passing() && ua_txn->is_parsed_receive_header_ready()) {
     // UA_FIRST_READ never fires here: the read buffer stays empty.
     if (milestones[TS_MILESTONE_UA_FIRST_READ] == 0) {
       ATS_PROBE1(milestone_ua_first_read, sm_id);
       milestones[TS_MILESTONE_UA_FIRST_READ] = ink_get_hrtime();
     }
-    t_state.hdr_info.client_request.copy(_pre_parsed_ua_request);
-    _pre_parsed_ua_request = nullptr;
-    bytes_used             = t_state.hdr_info.client_request.length_get();
-    state                  = ParseResult::DONE;
+    t_state.hdr_info.client_request.copy(ua_txn->parsed_receive_header());
+    bytes_used = t_state.hdr_info.client_request.length_get();
+    state      = ParseResult::DONE;
   } else {
-    state = t_state.hdr_info.client_request.parse_req(&http_parser, _ua.get_txn()->get_remote_reader(), &bytes_used,
-                                                      _ua.get_entry()->eos, t_state.http_config_param->strict_uri_parsing,
-                                                      t_state.http_config_param->http_request_line_max_size,
-                                                      t_state.http_config_param->http_hdr_field_max_size);
+    state = t_state.hdr_info.client_request.parse_req(
+      &http_parser, ua_txn->get_remote_reader(), &bytes_used, _ua.get_entry()->eos, t_state.http_config_param->strict_uri_parsing,
+      t_state.http_config_param->http_request_line_max_size, t_state.http_config_param->http_hdr_field_max_size);
   }
 
   client_request_hdr_bytes += bytes_used;
@@ -4029,7 +4027,9 @@ HttpSM::tunnel_handler_post_ua(int event, HttpTunnelProducer *p)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT:
   case HTTP_TUNNEL_EVENT_PARSE_ERROR:
-    if (client_response_hdr_bytes == 0) {
+    // Not the raw counter: it stays 0 when the header bypassed the tunnel, which would
+    // synthesize an error over a response the client already got.
+    if (reported_client_response_hdr_bytes() == 0) {
       p->handler_state = static_cast<int>(HttpSmPost_t::UA_FAIL);
       set_ua_abort(HttpTransact::ABORTED, event);
 
@@ -7026,7 +7026,13 @@ HttpSM::setup_server_send_request()
   // We need a reader so bytes don't fall off the end of
   //  the buffer
   IOBufferReader *buf_start = server_entry->write_buffer->alloc_reader();
-  server_request_hdr_bytes = hdr_length = write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
+
+  if (server_txn->supports_direct_header_passing()) {
+    _server_request_header_is_ready = true;
+    server_request_hdr_bytes = hdr_length = 0;
+  } else {
+    server_request_hdr_bytes = hdr_length = write_header_into_buffer(&t_state.hdr_info.server_request, server_entry->write_buffer);
+  }
 
   // the plugin decided to append a message to the request
   if (t_state.api_server_request_body_set) {
@@ -7113,7 +7119,7 @@ HttpSM::setup_cache_read_transfer()
   // Now dump the header into the buffer
   ink_assert(t_state.hdr_info.client_response.status_get() != HTTPStatus::NOT_MODIFIED);
   client_response_hdr_bytes = hdr_size = write_response_header_into_buffer(&t_state.hdr_info.client_response, buf);
-  cache_response_hdr_bytes             = client_response_hdr_bytes;
+  cache_response_hdr_bytes             = reported_client_response_hdr_bytes();
 
   HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::tunnel_handler);
 
@@ -8016,7 +8022,7 @@ HttpSM::update_stats()
 
   HttpTransact::update_size_and_time_stats(
     &t_state, total_time, ua_write_time, os_read_time, client_request_hdr_bytes, client_request_body_bytes,
-    client_response_hdr_bytes, client_response_body_bytes, server_request_hdr_bytes, server_request_body_bytes,
+    reported_client_response_hdr_bytes(), client_response_body_bytes, server_request_hdr_bytes, server_request_body_bytes,
     server_response_hdr_bytes, server_response_body_bytes, pushed_response_hdr_bytes, pushed_response_body_bytes, milestones);
   /*
       if (is_action_tag_set("http_handler_times")) {

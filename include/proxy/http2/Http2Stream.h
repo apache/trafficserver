@@ -82,6 +82,11 @@ public:
   bool expect_receive_trailer() const override;
   void set_expect_receive_trailer() override;
 
+  bool           supports_direct_header_passing() const override;
+  bool           is_parsed_receive_header_ready() const override;
+  const HTTPHdr *parsed_receive_header() const override;
+  bool           has_pending_send_header() const override;
+
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size);
   Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size,
                                       const uint8_t *block, uint32_t block_len);
@@ -222,6 +227,7 @@ private:
   int              _sent_request_method{-1};
 
   HTTPHdr _receive_header;
+  bool    _is_parsed_receive_header_ready = false;
 #if TS_USE_MALLOC_ALLOCATOR
   MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(4096)};
 #else
