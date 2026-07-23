@@ -20,11 +20,13 @@
     Constructor overload resolution tests for TextView.
 
     Verifies correct behavior of the TextView pointer-and-length constructors
-    across different integral types. The primary focus is verifying correct
-    overload resolution on 32-bit systems, where size_t is typically an alias for
-    unsigned int, and correct runtime routing of negative lengths to strlen.
+    across different integral types. This focuses on verifying correct overload
+    resolution for aliased types (e.g., size_t/unsigned) and ensures the -1
+    sentinel behavior works consistently across all signed integral template
+    instantiations.
 */
 
+#include <cstddef>
 #include <cstring>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
@@ -117,15 +119,15 @@ TEST_CASE("TextView: Nullptr results in empty view regardless of length",
 }
 
 // ============================================================================
-// 32-bit Architecture Specific Checks
+// Overload Resolution Regression Tests
 // ============================================================================
 
-// Regression test for size_t / unsigned int overload resolution on 32-bit targets
-// where size_t is an alias for unsigned int.
-TEST_CASE("TextView: 32-bit size_t/unsigned disambiguation",
-          "[libswoc][TextView][Constructors][32bit]")
+// Regression test for size_t / unsigned int overload resolution. These types
+// can be aliased on certain platforms, making this a crucial disambiguation check.
+TEST_CASE("TextView: size_t/unsigned overload disambiguation",
+          "[libswoc][TextView][Constructors][OverloadRegression]")
 {
-  const char* str = "32-bit Test";
+  const char* str = "Unsigned Test";
 
   TextView tv_size_t(str, static_cast<size_t>(9));
   TextView tv_unsigned(str, static_cast<unsigned int>(9));
@@ -135,16 +137,39 @@ TEST_CASE("TextView: 32-bit size_t/unsigned disambiguation",
   REQUIRE(tv_size_t.data() == tv_unsigned.data());
 }
 
-// Regression test for ssize_t / int overload resolution on 32-bit targets
-// where ssize_t is an alias for int.
-TEST_CASE("TextView: 32-bit ssize_t/int disambiguation",
-          "[libswoc][TextView][Constructors][32bit]")
+// Regression test for ssize_t / int overload resolution. These types can
+// be aliased on certain platforms, making this a crucial disambiguation check.
+TEST_CASE("TextView: ssize_t/int overload disambiguation",
+          "[libswoc][TextView][Constructors][OverloadRegression]")
 {
-  const char* str = "32-bit Signed Test";
+  const char* str = "Signed Test";
 
   TextView tv_ssize_t(str, static_cast<ssize_t>(5));
   TextView tv_int(str, static_cast<int>(5));
 
   REQUIRE(tv_ssize_t == tv_int);
   REQUIRE(tv_ssize_t.data() == tv_int.data());
+}
+
+// ============================================================================
+// Signed Integral Sentinel Semantics
+// ============================================================================
+
+// Positive values are already covered by the generic template test.
+// This regression verifies that the special -1 sentinel semantics are
+// preserved for all signed integral template instantiations.
+TEMPLATE_TEST_CASE(
+    "TextView: Template signed integral constructor preserves -1 sentinel",
+    "[libswoc][TextView][Constructors][Sentinel]",
+    short, ssize_t, long, long long, std::ptrdiff_t)
+{
+  const char* str = "Implicit Length";
+
+  // Signed integral constructors implemented via the template overload
+  // must preserve the -1 sentinel semantics used by TextView.
+  TextView tv(str, static_cast<TestType>(-1));
+
+  REQUIRE(tv == str);
+  REQUIRE(tv.length() == std::strlen(str));
+  REQUIRE(tv.data() == str);
 }
