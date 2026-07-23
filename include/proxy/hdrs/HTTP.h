@@ -496,6 +496,23 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const;
 
+  /** Returns the serialized byte length of the HTTP header.
+   *
+   * The count includes the request-line (for requests) or status-line (for
+   * responses), all header fields, and the terminating blank line. The message
+   * body is not included.
+   *
+   * @note Internal fields whose names begin with @c '@' are counted here even
+   *       though @c print() omits them from its output, so this length may
+   *       exceed the number of bytes @c print() actually writes.
+   *
+   * @return Serialized byte length of the header.
+   *
+   * @pre The header must be initialized.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
   int length_get() const;
 
   HTTPType type_get() const;
@@ -616,10 +633,70 @@ public:
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
 
+  /** Parse an HTTP/1.x request header incrementally from a raw buffer.
+   *
+   * Parses input data into the header's request fields. Call repeatedly with the same @p parser
+   * until a result other than @c ParseResult::CONT is returned. When @c ParseResult::DONE is
+   * returned, the request method, URL, version, and header fields are set on this header.
+   *
+   * @param[in,out] parser                Parser state. Must be the same object on each call for a given message.
+   * @param[in,out] start                 On entry, points to the first unparsed byte; on return,
+   *                                       advanced past all consumed bytes.
+   * @param[in]     end                   One past the last available byte of input.
+   * @param[in]     eof                   @c true if no more data will follow @p end.
+   * @param[in]     strict_uri_parsing    URI compliance level: @c 0 performs no compliance check; @c 1 rejects
+   *                                       the URI unless every character is a valid RFC 3986 URI character; @c 2
+   *                                       is more permissive, rejecting the URI only if it contains whitespace or
+   *                                       non-printable characters. Other values behave like @c 0.
+   * @param[in]     max_request_line_size Maximum byte length of the request line; exceeding it returns
+   *                                       @c ParseResult::ERROR.
+   * @param[in]     max_hdr_field_size    Maximum byte length of a single header field; exceeding it
+   *                                       returns @c ParseResult::ERROR.
+   *
+   * @return @c ParseResult::DONE if a complete valid request header has been parsed;
+   *         @c ParseResult::CONT if more data is required;
+   *         @c ParseResult::ERROR on a protocol error or exceeded limit.
+   *
+   * @pre The header must be initialized with @c HTTPType::REQUEST polarity.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
   ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, int strict_uri_parsing = 0,
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = 131070);
   ParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
+  /** Parse an HTTP/1.x request header incrementally from an @c IOBufferReader.
+   *
+   * Reads and consumes data from @p r, parsing it into the header's request fields. Call
+   * repeatedly with the same @p parser until a result other than @c ParseResult::CONT is
+   * returned. When @c ParseResult::DONE is returned, the request method, URL, version, and
+   * header fields are set on this header.
+   *
+   * @param[in,out] parser                Parser state. Must be the same object on each call for a given message.
+   * @param[in,out] r                     Source of input data; bytes consumed by the parser are removed from
+   *                                       the reader.
+   * @param[out]    bytes_used            Must be non-null; set to the number of bytes consumed from @p r.
+   * @param[in]     eof                   @c true if no more data will be provided after what is currently
+   *                                       available on @p r.
+   * @param[in]     strict_uri_parsing    URI compliance level: @c 0 performs no compliance check; @c 1 rejects
+   *                                       the URI unless every character is a valid RFC 3986 URI character; @c 2
+   *                                       is more permissive, rejecting the URI only if it contains whitespace or
+   *                                       non-printable characters. Other values behave like @c 0.
+   * @param[in]     max_request_line_size Maximum byte length of the request line; exceeding it returns
+   *                                       @c ParseResult::ERROR.
+   * @param[in]     max_hdr_field_size    Maximum byte length of a single header field; exceeding it
+   *                                       returns @c ParseResult::ERROR.
+   *
+   * @return @c ParseResult::DONE if a complete valid request header has been parsed;
+   *         @c ParseResult::CONT if more data is required;
+   *         @c ParseResult::ERROR on a protocol error or exceeded limit.
+   *
+   * @pre The header must be initialized with @c HTTPType::REQUEST polarity.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
   ParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, int strict_uri_parsing = 0,
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = UINT16_MAX);
   ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
