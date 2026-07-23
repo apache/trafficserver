@@ -55,4 +55,14 @@ TEST_CASE("sort_query orders params by name", "[header_rewrite][url_query]")
   {
     CHECK(sort_query("a=1=2") == "a=1=2");
   }
+
+  SECTION("leading '&' produces a clean drop, not an empty leading token")
+  {
+    CHECK(sort_query("&a=1") == "a=1");
+  }
+
+  SECTION("consecutive '&'s produce a clean drop, not empty middle tokens")
+  {
+    CHECK(sort_query("b=2&&a=1&&c=3") == "a=1&b=2&c=3");
+  }
 }
