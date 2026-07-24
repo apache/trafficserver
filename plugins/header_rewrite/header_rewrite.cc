@@ -202,12 +202,12 @@ validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
 bool
 RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
 {
-  std::unique_ptr<RuleSet>     rule(nullptr);
-  std::string                  filename;
-  int                          lineno = 0;
-  ConditionGroup              *group  = nullptr;
-  std::stack<ConditionGroup *> group_stack;
-  std::stack<OperatorIf *>     if_stack;
+  std::unique_ptr<RuleSet>                rule(nullptr);
+  std::string                             filename;
+  int                                     lineno = 0;
+  ConditionGroup                         *group  = nullptr;
+  std::stack<ConditionGroup *>            group_stack;
+  std::stack<std::unique_ptr<OperatorIf>> if_stack;
 
   constexpr int MAX_IF_NESTING_DEPTH = 10;
 
@@ -366,10 +366,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
             throw std::runtime_error("maximum if nesting depth exceeded");
           }
 
-          auto *op_if = new OperatorIf();
-
-          if_stack.push(op_if);
-          group = op_if->get_group(); // Set group to the new OperatorIf's group
+          if_stack.push(std::make_unique<OperatorIf>());
+          group = if_stack.top()->get_group(); // Set group to the new OperatorIf's group
           Dbg(dbg_ctl, "Started nested OperatorIf, depth: %zu", if_stack.size());
 
         } else if (p.is_endif()) {
@@ -377,21 +375,20 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
             throw std::runtime_error("endif without matching if");
           }
 
-          OperatorIf *op_if = if_stack.top();
+          auto op_if = std::move(if_stack.top());
 
           if_stack.pop();
           if (!if_stack.empty()) {
             auto *parent_sec = if_stack.top()->cur_section();
 
             if (parent_sec->ops.oper) {
-              parent_sec->ops.oper->append(op_if);
+              parent_sec->ops.oper->append(op_if.release());
             } else {
-              parent_sec->ops.oper.reset(op_if);
+              parent_sec->ops.oper = std::move(op_if);
             }
             group = if_stack.top()->get_group();
           } else {
-            if (!rule->add_operator(op_if)) {
-              delete op_if;
+            if (!rule->add_operator(std::move(op_if))) {
               throw std::runtime_error("Failed to add nested OperatorIf to RuleSet");
             }
             group = rule->get_group();
@@ -434,10 +431,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   // Check for unmatched if statements
   if (!if_stack.empty()) {
     TSError("[%s] %zu unmatched 'if' statement(s) without 'endif' in file: %s", PLUGIN_NAME, if_stack.size(), fname.c_str());
-    while (!if_stack.empty()) {
-      delete if_stack.top();
-      if_stack.pop();
-    }
     return false;
   }
 

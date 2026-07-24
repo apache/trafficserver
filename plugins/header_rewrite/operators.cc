@@ -23,6 +23,7 @@
 #include <cstring>
 #include <algorithm>
 #include <iomanip>
+#include <stdexcept>
 
 #include "records/RecCore.h"
 #include "ts/ts.h"
@@ -1272,8 +1273,7 @@ OperatorRunPlugin::initialize(Parser &p)
   auto plugin_args = p.get_value();
 
   if (plugin_name.empty()) {
-    TSError("[%s] missing plugin name", PLUGIN_NAME);
-    return;
+    throw std::runtime_error("run-plugin missing plugin name");
   }
 
   std::vector<std::string> tokens;
@@ -1284,15 +1284,10 @@ OperatorRunPlugin::initialize(Parser &p)
     tokens.push_back(token);
   }
 
-  // Create argc and argv
-  int    argc = tokens.size() + 2;
-  char **argv = new char *[argc];
+  std::vector<char *> argv{p.from_url(), p.to_url()};
 
-  argv[0] = p.from_url();
-  argv[1] = p.to_url();
-
-  for (size_t i = 0; i < tokens.size(); ++i) {
-    argv[i + 2] = const_cast<char *>(tokens[i].c_str());
+  for (auto const &argument : tokens) {
+    argv.push_back(const_cast<char *>(argument.c_str()));
   }
 
   std::string error;
@@ -1304,14 +1299,12 @@ OperatorRunPlugin::initialize(Parser &p)
     elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), argc, const_cast<char **>(argv), error,
+    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), static_cast<int>(argv.size()), argv.data(), error,
                                             isPluginDynamicReloadEnabled());
   } // done elevating access
 
-  delete[] argv;
-
   if (!_plugin) {
-    TSError("[%s] Unable to load plugin '%s': %s", PLUGIN_NAME, plugin_name.c_str(), error.c_str());
+    throw std::runtime_error("run-plugin unable to load plugin '" + std::string{plugin_name} + "': " + error);
   }
 }
 
@@ -1326,7 +1319,11 @@ OperatorRunPlugin::initialize_hooks()
 bool
 OperatorRunPlugin::exec(const Resources &res) const
 {
-  TSReleaseAssert(_plugin != nullptr);
+  // Rejected at config load (see initialize); guard anyway so a stray bad rule can't abort the server.
+  if (!_plugin) {
+    Dbg(pi_dbg_ctl, "OperatorRunPlugin::exec skipped, plugin was not loaded");
+    return true;
+  }
 
   if (res._rri && res.state.txnp) {
     _plugin->doRemap(res.state.txnp, res._rri);
@@ -1654,7 +1651,7 @@ OperatorIf::new_section(Parser::CondClause clause)
 bool
 OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
 {
-  Operator *op = operator_factory(p.get_op());
+  std::unique_ptr<Operator> op{operator_factory(p.get_op())};
 
   if (!op) {
     TSError("[%s] Unknown operator: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
@@ -1667,7 +1664,6 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
   try {
     op->initialize(p);
   } catch (std::exception const &ex) {
-    delete op;
     TSError("[%s] Failed to initialize operator: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
             lineno, ex.what());
     return false;
@@ -1675,10 +1671,10 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
 
   // Add to current section
   if (_cur_section->ops.oper) {
-    _cur_section->ops.oper->append(op);
+    _cur_section->ops.oper->append(op.release());
   } else {
-    _cur_section->ops.oper.reset(op);
-    _cur_section->ops.oper_mods = op->get_oper_modifiers();
+    _cur_section->ops.oper      = std::move(op);
+    _cur_section->ops.oper_mods = _cur_section->ops.oper->get_oper_modifiers();
   }
 
   return true;
