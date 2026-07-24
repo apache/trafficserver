@@ -20,6 +20,7 @@
 //
 //
 #include <string>
+#include <exception>
 
 #include "ruleset.h"
 #include "factory.h"
@@ -94,7 +95,15 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
   if (nullptr != op) {
     Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
     op->set_config_location(filename, lineno);
-    op->initialize(p);
+
+    try {
+      op->initialize(p);
+    } catch (std::exception const &ex) {
+      delete op;
+      TSError("[%s] in %s:%d: failed to initialize operator %s: %s", PLUGIN_NAME, filename, lineno, p.get_op().c_str(), ex.what());
+      return false;
+    }
+
     if (!op->is_hook_valid(_hook)) {
       delete op;
       Dbg(pi_dbg_ctl, "in %s:%d: can't use this operator in hook=%s:  %s(%s)", filename, lineno, TSHttpHookNameLookup(_hook),

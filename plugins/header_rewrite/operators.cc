@@ -23,6 +23,7 @@
 #include <cstring>
 #include <algorithm>
 #include <iomanip>
+#include <stdexcept>
 
 #include "records/RecCore.h"
 #include "ts/ts.h"
@@ -1282,8 +1283,7 @@ OperatorRunPlugin::initialize(Parser &p)
   auto plugin_args = p.get_value();
 
   if (plugin_name.empty()) {
-    TSError("[%s] missing plugin name", PLUGIN_NAME);
-    return;
+    throw std::runtime_error("run-plugin missing plugin name");
   }
 
   std::vector<std::string> tokens;
@@ -1321,7 +1321,7 @@ OperatorRunPlugin::initialize(Parser &p)
   delete[] argv;
 
   if (!_plugin) {
-    TSError("[%s] Unable to load plugin '%s': %s", PLUGIN_NAME, plugin_name.c_str(), error.c_str());
+    throw std::runtime_error("run-plugin unable to load plugin '" + std::string{plugin_name} + "': " + error);
   }
 }
 
@@ -1336,7 +1336,11 @@ OperatorRunPlugin::initialize_hooks()
 bool
 OperatorRunPlugin::exec(const Resources &res) const
 {
-  TSReleaseAssert(_plugin != nullptr);
+  // Rejected at config load (see initialize); guard anyway so a stray bad rule can't abort the server.
+  if (!_plugin) {
+    Dbg(pi_dbg_ctl, "OperatorRunPlugin::exec skipped, plugin was not loaded");
+    return true;
+  }
 
   if (res._rri && res.state.txnp) {
     _plugin->doRemap(res.state.txnp, res._rri);
