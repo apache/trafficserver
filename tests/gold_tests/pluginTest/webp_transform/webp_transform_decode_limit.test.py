@@ -9,16 +9,23 @@ pixels. TSPluginInit installs Magick::ResourceLimits (width/height/area/memory/
 map and disk(0)) so such an image fails as a caught Magick::Error and the plugin
 reverts to the original bytes.
 
-This test serves a valid but over-wide image (16001 px wide, one pixel past the
-16000 px width limit) that is only a few hundred KB encoded. ImageMagick sniffs
-the body's real format regardless of the declared Content-Type, reads the
-over-limit width, and throws; the plugin catches it, logs an ImageMagick error,
-and forwards the original bytes. The test asserts ATS does not crash (the client
-still gets a 200), the decode-limit error is logged, and the original body is
-returned unchanged (not a converted, smaller webp).
+This test serves a minimal, over-wide WebP (VP8L) image: a real RIFF/WEBP/VP8L
+signature followed by a bit-packed header declaring 16129x2 (16129 > the
+plugin's 16000 px width limit), with no bitstream payload beyond the header.
+ImageMagick's decoder reads the declared width/height straight out of that
+header and throws before it would ever need pixel data; the plugin catches it,
+logs an ImageMagick error, and forwards the original bytes. The test asserts
+ATS does not crash (the client still gets a 200), the decode-limit error is
+logged, and the original body is returned unchanged (not a converted jpeg).
 
-A Netpbm P3 (ASCII) image is used so the body is plain text the test origin can
-serve verbatim; ImageMagick decodes it identically to a binary image.
+The plugin's has_signature_for() guard checks the declared encoding's magic
+bytes before ImageMagick ever sees the body, so the served body must carry a
+real signature -- an arbitrary/mislabeled body would be caught by that guard
+instead and never reach the decode-limit code path this test targets. WebP is
+used (rather than PNG or JPEG) because it is the only one of the three
+signatures the plugin recognizes that can be built entirely from bytes <=0x7f;
+the origin server writes the body via a UTF-8 encode, so any byte over 0x7f
+would not survive the round trip unchanged.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -36,32 +43,47 @@ serve verbatim; ImageMagick decodes it identically to a binary image.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import struct
+
 Test.Summary = 'An over-dimension image is rejected by the decode limits and reverts to the original'
 
 Test.SkipUnless(Condition.PluginExists('webp_transform.so'))
 
 Test.ContinueOnFail = True
 
-# Valid Netpbm P3 (ASCII) image, 16001 px wide by 2 px tall. 16001 > the plugin's
-# 16000 px width ResourceLimit, so ImageMagick rejects it on read. Encoded it is
-# only a few hundred KB, far under the buffer cap, so the byte cap never fires
-# and the decode-side limit is what must catch it.
-W, H = 16001, 2
-ppm = "P3\n{0} {1}\n255\n".format(W, H) + "".join(("127 127 127 " * W).rstrip() + "\n" for _ in range(H))
-PPM_LEN = len(ppm)
+# A minimal WebP (VP8L) image, 16129 px wide by 2 px tall. 16129 > the plugin's
+# 16000 px width ResourceLimit, so ImageMagick rejects it on read. There is no
+# bitstream data beyond the 5-byte VP8L header (signature byte + packed
+# width/height), so the body is a few dozen bytes, far under the buffer cap --
+# the decode-side limit is what must catch it, not the byte cap. 16129x2 is
+# also chosen so every byte of the packed header is <=0x7f (see module
+# docstring for why that matters).
+W, H = 16129, 2
+vp8l_payload = b'\x2f' + struct.pack('<I', (W - 1) | ((H - 1) << 14))
+# RIFF chunks pad to an even length; the chunk-size field itself stays unpadded.
+padded_payload = vp8l_payload + (b'\x00' if len(vp8l_payload) % 2 else b'')
+webp_chunk = b'VP8L' + struct.pack('<I', len(vp8l_payload)) + padded_payload
+webp_body_bytes = b'WEBP' + webp_chunk
+webp_body_bytes = b'RIFF' + struct.pack('<I', len(webp_body_bytes)) + webp_body_bytes
+assert all(b <= 0x7f for b in webp_body_bytes)
+webp_body = webp_body_bytes.decode('ascii')
+WEBP_LEN = len(webp_body)
 
 server = Test.MakeOriginServer("server")
-# Declared image/png so the plugin attempts a png->webp conversion; ImageMagick
-# sniffs the actual P3 format from the bytes and reads the over-limit dimensions.
+# Declared image/webp so the plugin attempts a webp->jpeg conversion; the body
+# carries a real RIFF/WEBP/VP8L signature so has_signature_for() lets it
+# through to ImageMagick, which reads the over-limit dimensions from the VP8L
+# header.
 server.addResponse(
     "sessionlog.json", {
-        "headers": "GET /overwide.png HTTP/1.1\r\nHost: *\r\n\r\n",
+        "headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n",
         "timestamp": "1",
         "body": ""
     }, {
-        "headers": "HTTP/1.1 200 OK\r\nContent-Type: image/png\r\nContent-Length: {0}\r\nConnection: close\r\n\r\n".format(PPM_LEN),
+        "headers":
+            "HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\nContent-Length: {0}\r\nConnection: close\r\n\r\n".format(WEBP_LEN),
         "timestamp": "1",
-        "body": ppm
+        "body": webp_body
     })
 
 ts = Test.MakeATSProcess("ts", enable_cache=False)
@@ -69,7 +91,7 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'webp_transform',
 })
-ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_webp')
+ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_jpeg')
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 # The decode-limit failure is caught and logged as an ImageMagick error at ERROR
@@ -81,15 +103,15 @@ ts.Disk.diags_log.Content = Testers.ContainsExpression(
 tr = Test.AddTestRun("over-dimension image reverts to original instead of crashing")
 tr.MakeCurlCommand(
     '-sS -D - -o /dev/null -w "size_download=%{{size_download}}" -x 127.0.0.1:{0} '
-    '-H "Accept: image/webp" http://127.0.0.1:{1}/overwide.png'.format(ts.Variables.port, server.Variables.Port),
+    '-H "Accept: image/jpeg" http://127.0.0.1:{1}/overwide.webp'.format(ts.Variables.port, server.Variables.Port),
     ts=ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
 # ATS must stay up and return the original image, not crash and not 502 (the byte
 # cap is not exceeded). The reverted body is the original bytes, so its size
-# equals the source image, not a smaller converted webp.
+# equals the source image, not a smaller converted jpeg.
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "HTTP/1.1 200", "Client must get a 200 (decode failed over the limit, original forwarded), not a crash or 502")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "size_download={0}".format(PPM_LEN), "Original bytes must be forwarded unchanged, not a converted webp")
+    "size_download={0}".format(WEBP_LEN), "Original bytes must be forwarded unchanged, not a converted jpeg")
