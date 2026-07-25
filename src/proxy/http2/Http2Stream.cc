@@ -31,8 +31,10 @@
 #include "tscore/Diags.h"
 #include "tscore/HTTPVersion.h"
 #include "tscore/ink_assert.h"
+#include "tscore/ParseRules.h"
 #include "tsutil/DbgCtl.h"
 
+#include <algorithm>
 #include <numeric>
 
 #define REMEMBER(e, r)                                    \
@@ -376,9 +378,37 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
             url_is_uri_compliant(level, _receive_header.fragment_get()));
   };
 
+  // parse_req also enforces token methods, Host and Content-Length framing (RFC 9110 8.6).
+  auto parse_req_would_accept = [&]() {
+    auto method{_receive_header.method_get()};
+    if (method.empty() || std::any_of(method.begin(), method.end(), [](char c) { return !ParseRules::is_token(c); })) {
+      return false;
+    }
+    // url_parse_internet() accepts the userinfo that RFC 9113 8.3.1 bans from :authority,
+    // and the Host built from it never sees validate_hdr_host(). Mirror that check here.
+    if (MIMEField *host = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_HOST)); host != nullptr) {
+      std::string_view parsed_host;
+      int              port     = 0;
+      bool             has_port = false;
+
+      if (host->has_dups() || !http_parse_host_header(host->value_get(), parsed_host, port, has_port)) {
+        return false;
+      }
+    }
+    if (MIMEField *cl = _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH)); cl != nullptr) {
+      auto value{cl->value_get()};
+      if (cl->has_dups() || value.empty() || std::any_of(value.begin(), value.end(), [](char c) { return c < '0' || c > '9'; }) ||
+          _receive_header.field_find(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING)) != nullptr) {
+        return false;
+      }
+    }
+    return true;
+  };
+
   // A failed conversion leaves a \xffVOID method that only parse_req can turn into a 400.
   if (conversion_ok && !this->trailing_header_is_possible() && !this->is_outbound_connection() &&
-      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0 && uri_ok()) {
+      _receive_header.type_get() == HTTPType::REQUEST && this->_sm != nullptr && this->read_vio.nbytes > 0 && uri_ok() &&
+      parse_req_would_accept()) {
     // The stream owns _receive_header and outlives the handoff, so the pulled pointer cannot dangle.
     this->_is_parsed_receive_header_ready = true;
     if (this->receive_end_stream) {
@@ -944,7 +974,8 @@ Http2Stream::update_write_request(bool call_update)
     } else if (this->is_outbound_connection()) {
       state = this->_send_header.parse_req(&http_parser, this->_send_reader, &bytes_used, false);
     } else {
-      state = ParseResult::CONT;
+      // Interim 1xx responses (setup_100_continue_transfer()) are still serialized.
+      state = this->_send_header.parse_resp(&http_parser, this->_send_reader, &bytes_used, false);
     }
     write_vio.ndone += bytes_used;
 

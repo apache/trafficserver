@@ -621,7 +621,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
   /////////////////////
 
   ParseResult       state;
-  ProxyTransaction *ua_txn = _ua.get_txn();
+  ProxyTransaction *ua_txn               = _ua.get_txn();
+  bool              direct_header_passed = false;
 
   if (ua_txn->supports_direct_header_passing() && ua_txn->is_parsed_receive_header_ready()) {
     // UA_FIRST_READ never fires here: the read buffer stays empty.
@@ -630,8 +631,9 @@ HttpSM::state_read_client_request_header(int event, void *data)
       milestones[TS_MILESTONE_UA_FIRST_READ] = ink_get_hrtime();
     }
     t_state.hdr_info.client_request.copy(ua_txn->parsed_receive_header());
-    bytes_used = t_state.hdr_info.client_request.length_get();
-    state      = ParseResult::DONE;
+    bytes_used           = t_state.hdr_info.client_request.length_get();
+    state                = ParseResult::DONE;
+    direct_header_passed = true;
   } else {
     state = t_state.hdr_info.client_request.parse_req(
       &http_parser, ua_txn->get_remote_reader(), &bytes_used, _ua.get_entry()->eos, t_state.http_config_param->strict_uri_parsing,
@@ -718,7 +720,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
     // Disable further I/O on the client
     _ua.get_entry()->read_vio->nbytes = _ua.get_entry()->read_vio->ndone;
 
-    (bytes_used > t_state.http_config_param->http_request_line_max_size) ?
+    // bytes_used is the whole header set on the direct path, not a request-line length.
+    (!direct_header_passed && bytes_used > t_state.http_config_param->http_request_line_max_size) ?
       t_state.http_return_code = HTTPStatus::REQUEST_URI_TOO_LONG :
       t_state.http_return_code = HTTPStatus::NONE;
 
