@@ -71,6 +71,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdint>
 #include <thread>
 #include <utility>
 #include <string>
@@ -95,6 +96,7 @@ static int ssl_vc_index = -1;
 static ink_mutex *mutex_buf            = nullptr;
 static bool       open_ssl_initialized = false;
 
+static DbgCtl dbg_ctl_ssl{"ssl"};
 static DbgCtl dbg_ctl_ssl_load{"ssl_load"};
 static DbgCtl dbg_ctl_ssl_session_cache{"ssl.session_cache"};
 static DbgCtl dbg_ctl_ssl_error{"ssl.error"};
@@ -369,6 +371,53 @@ ssl_next_protos_advertised_callback(SSL *ssl, const unsigned char **out, unsigne
   return SSL_TLSEXT_ERR_NOACK;
 }
 
+static bool
+is_http2_prohibited_cipher(const SSL_CIPHER *cipher)
+{
+  struct CipherRange {
+    uint16_t first;
+    uint16_t last;
+  };
+
+  // RFC 9113 Appendix A lists 276 prohibited TLS 1.2 cipher suites. The IANA
+  // identifiers for those suites form these 24 contiguous ranges.
+  static constexpr CipherRange prohibited_ranges[] = {
+    {0x0000, 0x001b},
+    {0x001e, 0x0046},
+    {0x0067, 0x006d},
+    {0x0084, 0x009d},
+    {0x00a0, 0x00a1},
+    {0x00a4, 0x00a9},
+    {0x00ac, 0x00c5},
+    {0x00ff, 0x00ff},
+    {0xc001, 0xc02a},
+    {0xc02d, 0xc02e},
+    {0xc031, 0xc051},
+    {0xc054, 0xc055},
+    {0xc058, 0xc05b},
+    {0xc05e, 0xc05f},
+    {0xc062, 0xc06b},
+    {0xc06e, 0xc07b},
+    {0xc07e, 0xc07f},
+    {0xc082, 0xc085},
+    {0xc088, 0xc089},
+    {0xc08c, 0xc08f},
+    {0xc092, 0xc09d},
+    {0xc0a0, 0xc0a1},
+    {0xc0a4, 0xc0a5},
+    {0xc0a8, 0xc0a9},
+  };
+
+  if (cipher == nullptr) {
+    return false;
+  }
+
+  const uint16_t cipher_id = SSL_CIPHER_get_protocol_id(cipher);
+
+  return std::any_of(std::begin(prohibited_ranges), std::end(prohibited_ranges),
+                     [cipher_id](const CipherRange &range) { return cipher_id >= range.first && cipher_id <= range.last; });
+}
+
 int
 ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen,
                          void *)
@@ -377,6 +426,10 @@ ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *out
 
   ink_assert(alpns);
   if (alpns) {
+    if (const SSL_CIPHER *cipher = SSL_get_pending_cipher(ssl); is_http2_prohibited_cipher(cipher)) {
+      Dbg(dbg_ctl_ssl, "disabling HTTP/2 for prohibited cipher %s", SSL_CIPHER_get_name(cipher));
+      alpns->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
+    }
     return alpns->select_next_protocol(out, outlen, in, inlen);
   }
 
