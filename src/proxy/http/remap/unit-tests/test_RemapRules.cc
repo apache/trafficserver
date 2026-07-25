@@ -269,3 +269,58 @@ map_with_recv_port http://front.example.com \
     }
   }
 }
+
+SCENARIO("UrlRewrite host lookup is case-insensitive", "[proxy][remap]")
+{
+  // _mappingLookup lower-cases the request host before consulting the hash
+  // table; these scenarios exercise that path with inputs that would not
+  // match in a strict byte-compare. Sized to cross the 16-byte SSE2 body
+  // for hosts that get a real SIMD pass.
+  GIVEN("A forward map with a lowercase source host")
+  {
+    auto        urlrw  = std::make_unique<UrlRewrite>();
+    std::string config = R"RMCFG(
+map http://www.example.com http://origin.example.com
+  )RMCFG";
+
+    auto cpath = write_test_remap(config, "case_insensitive");
+    int  rc    = urlrw->BuildTable(cpath.c_str());
+    REQUIRE(rc == TS_SUCCESS);
+    REQUIRE(urlrw->rule_count() == 1);
+
+    EasyURL             url("http://www.example.com");
+    UrlMappingContainer urlmap;
+
+    THEN("uppercase request host matches the lowercase rule")
+    {
+      const char *host = "WWW.EXAMPLE.COM";
+      REQUIRE(urlrw->forwardMappingLookup(&url.url, 80, host, strlen(host), urlmap));
+    }
+    THEN("mixed-case request host matches the lowercase rule")
+    {
+      const char *host = "Www.Example.Com";
+      REQUIRE(urlrw->forwardMappingLookup(&url.url, 80, host, strlen(host), urlmap));
+    }
+  }
+
+  GIVEN("A forward map with a long host that exercises the 16-byte SIMD body")
+  {
+    auto        urlrw  = std::make_unique<UrlRewrite>();
+    std::string config = R"RMCFG(
+map http://a-very-long-host-name-for-simd.example.com http://origin.example.com
+  )RMCFG";
+
+    auto cpath = write_test_remap(config, "case_insensitive_long");
+    int  rc    = urlrw->BuildTable(cpath.c_str());
+    REQUIRE(rc == TS_SUCCESS);
+
+    EasyURL             url("http://a-very-long-host-name-for-simd.example.com");
+    UrlMappingContainer urlmap;
+
+    THEN("an all-uppercase 49-char host (covers >=32 SIMD bytes) matches")
+    {
+      const char *host = "A-VERY-LONG-HOST-NAME-FOR-SIMD.EXAMPLE.COM";
+      REQUIRE(urlrw->forwardMappingLookup(&url.url, 80, host, strlen(host), urlmap));
+    }
+  }
+}

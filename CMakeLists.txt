@@ -216,6 +216,9 @@ set(ENABLE_TPROXY
         anything else to enable."
 )
 option(ENABLE_QUICHE "Use quiche (default OFF)")
+option(ENABLE_HIGHWAY_DISPATCH
+       "Use Google Highway runtime dispatch for SIMD kernels (default OFF; without it the scalar paths are used)"
+)
 
 option(ENABLE_EXAMPLE "Build example directory (default OFF)")
 set(TS_MAX_HOST_NAME_LEN
@@ -447,9 +450,14 @@ if(EXTERNAL_LIBSWOC)
   find_package(libswoc REQUIRED)
 endif()
 
-if(EXTERNAL_HWY)
-  message(STATUS "Looking for external highway")
-  find_package(HWY "1.4.0" CONFIG REQUIRED)
+if(ENABLE_HIGHWAY_DISPATCH)
+  if(EXTERNAL_HWY)
+    message(STATUS "Looking for external highway")
+    find_package(HWY "1.4.0" CONFIG REQUIRED)
+    set(TS_HAS_HIGHWAY_DISPATCH ${HWY_FOUND})
+  else()
+    set(TS_HAS_HIGHWAY_DISPATCH 1)
+  endif()
 endif()
 
 include(Check128BitCas)
