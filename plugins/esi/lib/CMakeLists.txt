@@ -27,6 +27,14 @@ add_library(
   Stats.cc
   Variables.cc
 )
-target_link_libraries(esicore PUBLIC esi-common fetcher libswoc::libswoc ts::tsutil)
+# esicore is a static library dlopen()ed as part of plugins (esi.so, combo_handler.so) alongside
+# traffic_server. We do NOT link ts::tsutil here even though IncludeUrlValidator.cc references
+# ts::Regex: if libtsutil.a were on the link line for esicore or its consumers, each plugin would
+# statically embed tsutil globals (e.g., DbgCtl::_config_mode) and violate ODR against the same
+# symbols in traffic_server at dlopen time (ASan detects_odr_violation). Instead, unresolved
+# tsutil symbols are left in the plugin and resolved by the runtime linker against traffic_server
+# at load time. The tsutil headers are visible via the global include_directories() in the
+# top-level CMakeLists so compilation still succeeds.
+target_link_libraries(esicore PUBLIC esi-common fetcher libswoc::libswoc)
 target_include_directories(esicore PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 set_target_properties(esicore PROPERTIES POSITION_INDEPENDENT_CODE ON)
