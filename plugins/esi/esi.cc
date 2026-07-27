@@ -1719,9 +1719,11 @@ esiPluginInit(int argc, const char *argv[], OptionInfo *pOptionInfo)
         // intended one but typo'd the regex, do not silently fall back
         // to "no allowlist". TSEmergency exits the process, but return
         // -1 makes the fail-closed contract explicit and survives any
-        // future change to that helper.
-        if (!pOptionInfo->url_validator.setHostAllowRegex(optarg)) {
-          TSEmergency("[esi][%s] include-host-allow regex (%s) failed to compile", __FUNCTION__, optarg);
+        // future change to that helper. The optarg-null guard is
+        // required for the analyzer; getopt_long is documented to
+        // supply optarg for required_argument options.
+        if (optarg == nullptr || !pOptionInfo->url_validator.setHostAllowRegex(optarg)) {
+          TSEmergency("[esi][%s] include-host-allow regex (%s) failed to compile", __FUNCTION__, optarg ? optarg : "(null)");
           return -1;
         }
         break;
