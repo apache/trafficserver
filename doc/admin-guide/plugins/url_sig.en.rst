@@ -33,12 +33,48 @@ for the signature may be either ``MD5`` or ``SHA1``. When the signature check
 passes, the query string of the request is stripped and continues to process as
 if there were no query string at all.
 
+Architecture
+============
+
+The plugin is split into cache-agnostic core logic and a thin ATS adapter:
+
+``url_sig.h``
+   Public header. Config structs, constants, function declarations. No ATS
+   dependencies.
+
+``url_sig_config.cc``
+   Config file parser. Reads from ``std::istream``.
+
+``url_sig_verify.cc``
+   URL validation — parameter extraction, HMAC computation, signature
+   comparison. Depends only on OpenSSL and standard C++20.
+
+``url_sig.cc``
+   ATS remap plugin glue. Implements ``TSRemap*`` hooks, delegates to core.
+
+``test_url_sig.cc``
+   Catch2 unit tests for core logic.
+
+``genkeys.go``
+   Go tool to generate a config file with random keys.
+
+``sign.go``
+   Go tool to sign URLs (produces a curl command).
+
 Installation
 ============
 
 To make this plugin available, you must enable experimental plugins when
-building |TS| by passing the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command
-when building.
+building |TS| by passing ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake``
+command when building. Alternatively, enable just this plugin with
+``-DENABLE_URL_SIG=ON``.
+
+To build the unit tests, also pass ``-DBUILD_TESTING=ON``::
+
+   cmake --preset dev -DENABLE_URL_SIG=ON -DBUILD_TESTING=ON
+   cmake --build build-dev --target url_sig
+   cmake --build build-dev --target test_url_sig
+   ./build-dev/plugins/experimental/url_sig/test_url_sig
 
 Configuration
 =============
@@ -48,243 +84,258 @@ step process. First, you must generate a configuration file containing the list
 of valid signing keys. Secondly, you must indicate to |TS| which URLs require
 valid signatures.
 
-Generating Keys
----------------
+Config File Format
+------------------
 
-This plugin comes with two Perl scripts which assist in generating signatures.
-For |TS| to verify URL signatures, it must have the relevant keys. Using the
-provided *genkeys* script, you can generate a suitable configuration file::
+The config file is a simple ``key = value`` text file. Lines starting with
+``#`` are comments. The file must contain at least one key and an ``error_url``
+line.
 
-    ./genkeys.pl > url_sig.config
+=================  =================================  =============================================
+Key                Value                              Description
+=================  =================================  =============================================
+``key0``–``key15`` string (max 255 chars)             Shared HMAC signing keys.
+``error_url``      ``403`` or ``302 <redirect_url>``  Response for failed validation.
+``sig_anchor``     string                             Anchor name for path-parameter mode.
+``excl_regex``     PCRE regex pattern                 URLs matching skip signature validation.
+``url_type``       ``pristine`` or ``remap``          Which URL to validate against (default: remap).
+``ignore_expiry``  ``true``                           Disable expiration checking (debug only).
+=================  =================================  =============================================
 
-The resulting file will look something like the following, with the actual keys
-differing (as they are generated randomly each time the script is run)::
+Example configuration::
 
-    key0 = YwG7iAxDo6Gaa38KJOceV4nsxiAJZ3DS
-    key1 = nLE3SZKRgaNM9hLz_HnIvrCw_GtTUJT1
-    key2 = YicZbmr6KlxfxPTJ3p9vYhARdPQ9WJYZ
-    key3 = DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
-    key4 = C1r6R6MINoQd5YSH25fU66tuRhhz3fs_
-    key5 = l4dxe6YEpYbJtyiOmX5mafhwKImC5kej
-    key6 = ekKNHXu9_oOC5eqIGJVxV0vI9FYvKVya
-    key7 = BrjibTmpTTuhMHqphkQAuCWA0Zg97WQB
-    key8 = rEtWLb1jcYoq9VG8Z8TKgX4GxBuro20J
-    key9 = mrP_6ibDBG4iYpfDB6W8yn3ZyGmdwc6M
-    key10 = tbzoTTGZXPLcvpswCQCYz1DAIZcAOGyX
-    key11 = lWsn6gUeSEW79Fk2kwKVfzhVG87EXLna
-    key12 = Riox0SmGtBWsrieLUHVWtpj18STM4MP1
-    key13 = kBsn332B7yG3HdcV7Tw51pkvHod7_84l
-    key14 = hYI4GUoIlZRf0AyuXkT3QLvBMEoFxkma
-    key15 = EIgJKwIR0LU9CUeTUdVtjMgGmxeCIbdg
-    error_url = 403
+   # Shared signing keys (up to 16, index 0–15).
+   key0 = YwG7iAxDo6Gaa38KJOceV4nsxiAJZ3DS
+   key1 = nLE3SZKRgaNM9hLz_HnIvrCw_GtTUJT1
+   key2 = YicZbmr6KlxfxPTJ3p9vYhARdPQ9WJYZ
+   key3 = DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
+   key4 = C1r6R6MINoQd5YSH25fU66tuRhhz3fs_
+   key5 = l4dxe6YEpYbJtyiOmX5mafhwKImC5kej
+   key6 = ekKNHXu9_oOC5eqIGJVxV0vI9FYvKVya
+   key7 = BrjibTmpTTuhMHqphkQAuCWA0Zg97WQB
+   key8 = rEtWLb1jcYoq9VG8Z8TKgX4GxBuro20J
+   key9 = mrP_6ibDBG4iYpfDB6W8yn3ZyGmdwc6M
+   key10 = tbzoTTGZXPLcvpswCQCYz1DAIZcAOGyX
+   key11 = lWsn6gUeSEW79Fk2kwKVfzhVG87EXLna
+   key12 = Riox0SmGtBWsrieLUHVWtpj18STM4MP1
+   key13 = kBsn332B7yG3HdcV7Tw51pkvHod7_84l
+   key14 = hYI4GUoIlZRf0AyuXkT3QLvBMEoFxkma
+   key15 = EIgJKwIR0LU9CUeTUdVtjMgGmxeCIbdg
+   error_url = 403
 
-This file should be placed in your |TS| ``etc`` directory, with permissions and
-ownership set such that only the |TS| processes may read it.
+Additional options example::
+
+   sig_anchor = urlsig
+   excl_regex = (/crossdomain.xml|/clientaccesspolicy.xml|/test.html)
+   url_type = pristine
+   ignore_expiry = true
 
 .. important::
 
    The configuration file contains the full set of secret keys which |TS| will
    be using to verify incoming requests, and as such should be treated with as
    much care as any other file in your infrastructure containing keys, pass
-   phrases, and other sensitive data. Unauthorized access to the contents of
-   this file will allow others to spoof requests from your signing portal, thus
-   defeating the entire purpose of using a signing portal in the first place.
+   phrases, and other sensitive data.
+
+Generating Keys
+---------------
+
+The plugin ships with a Go tool to generate random keys. Run it with
+``go run``::
+
+   go run genkeys.go > /etc/trafficserver/url_sig.config
+
+No Go modules or dependencies are needed — the file uses only the Go standard
+library.
+
+The original Perl script ``genkeys.pl`` is still available for backward
+compatibility but requires the ``Digest::SHA`` and ``MIME::Base64::URLSafe``
+modules.
 
 Requiring Signatures on URLs
-----------------------------
+-----------------------------
 
-To require a valid signature, verified by a key from the list you generated
-earlier, modify your :file:`remap.config` configuration to include this plugin
-for any rules you wish it to affect.
+Modify your :file:`remap.config` to include this plugin for any rules you
+wish to protect.
 
 Two parameters for each remap rule are required, and a third one is optional::
 
-    @plugin=url_sig.so @pparam=<config file> @pparam=pristineurl
+   @plugin=url_sig.so @pparam=<config file> @pparam=pristineurl
 
-The first simply enables this plugin for the rule. The second specifies the
-location of the configuration file containing your signing keys.  The third one,
-if present, causes authentication to be performed on the original (pristine) URL
-as received from the client. (The value of the parameter is not case sensitive.)
+The first enables the plugin for the rule. The second specifies the location of
+the configuration file (relative to ``etc/trafficserver/`` unless an absolute
+path). The optional third parameter causes authentication to be performed on
+the original (pristine) URL as received from the client.
 
-For example, if we wanted to restrict all paths under a ``/download`` directory
-on our website ``foo.com`` we might have a remap line like this::
+Example::
 
-    map http://foo.com/download/ http://origin.server.tld/download/ \
-        @plugin=url_sig.so @pparam=url_sig.config
+   map http://cdn.example.com http://origin.example.com \
+       @plugin=url_sig.so @pparam=url_sig.config
+
+With pristine URL mode::
+
+   map http://cdn.example.com http://origin.example.com \
+       @plugin=url_sig.so @pparam=url_sig.config @pparam=pristineurl
 
 .. note::
 
-   To be consistent, the config file option `pristine = true` should
+   To be consistent, the config file option ``url_type = pristine`` should
    be preferred over using a plugin argument.
-
 
 Signing a URL
 =============
 
-Signing a URL is solely the responsibility of your signing portal service. This
-requires that whatever application runs that service must also have a list of
-your signing keys (generated earlier in Configuration_ and stored in the
-``url_sig.config`` file in your |TS| configuration directory). How your signing
-portal application is informed about, or stores, these keys is up to you, but
-it is critical that the ``keyN`` index numbers are matched to the same keys.
-
-Signing is performed by adding several query parameters to a URL, before
-redirecting the client. The parameters' values are all generated by your
-signing portal application, and then a hash is calculated by your portal, using
-the entire URL just constructed, and attached as the final query parameter.
+Signing is performed by adding several query parameters to a URL before
+redirecting the client. The parameters are all generated by your signing portal
+application. A hash is then calculated over the constructed URL and attached as
+the final query parameter.
 
 .. note::
 
-   Ordering is important when adding the query parameters and generating the
-   signature. The signature itself is a hash, using your chosen algorithm, of
-   the entire URL to which you are about to redirect the client, up to and
-   including the ``S=`` substring indicating the signature parameter.
+   Ordering matters. The signature is a hash of the entire URL up to and
+   including the ``S=`` substring. The ``S=`` value itself is not included in
+   the hash input.
 
-The following list details all the query parameters you must add to the URL you
-will hand back to the client for redirection.
+Signing Parameters
+------------------
 
-Client IP
-    The IP address of the client being redirected. This must be their IP as it
-    will appear to your |TS| cache.  Both IP v4 and v6 addresses are supported::
+=====  ==========  ===========  =================================================================
+Param  Name        Required     Description
+=====  ==========  ===========  =================================================================
+``C``  Client IP   optional     Locks signature to a specific client IP (IPv4 or IPv6).
+``E``  Expiration  required     Seconds since Unix epoch when the signature expires.
+``A``  Algorithm   required     ``1`` = HMAC-SHA1, ``2`` = HMAC-MD5.
+``K``  Key Index   required     Index (0–15) of the key in the config file.
+``P``  Parts       required     Bitmask of URL parts to include in the signature (see below).
+``S``  Signature   required     Hex-encoded HMAC digest. **Must be last parameter.**
+=====  ==========  ===========  =================================================================
 
-        C=<ip address>
+Parts Mask
+~~~~~~~~~~
 
-Expiration
-    The time at which this signature will no longer be valid, expressed in
-    seconds since epoch (and thus in UTC)::
+The URL (minus scheme) is split by ``/``. Each character in the parts string
+controls whether that segment is included in the signed string:
 
-        E=<seconds since epoch expiration>
+==========  ================================================================
+Value       Effect
+==========  ================================================================
+``1``       Use the FQDN and all directory parts for signature verification.
+``01``      Ignore the FQDN, but verify using all directory parts.
+``0110``    Ignore the FQDN, use only the first two directory parts.
+``110``     Use the FQDN and first directory, ignore the remainder.
+==========  ================================================================
 
-Algorithm
-    The hash algorithm which your signing portal application has elected to use
-    for this signature::
+If the parts string is shorter than the number of URL segments, the last
+character repeats for remaining segments.
 
-        A=<algorithm number>
+Query String Mode (Default)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    The only supported values at this time are:
+Parameters are appended as a standard query string::
 
-    ===== =========
-    Value Algorithm
-    ===== =========
-    ``1`` HMAC_SHA1
-    ``2`` HMAC_MD5
-    ===== =========
+   http://cdn.example.com/path/file.ts?E=1700000000&A=1&K=3&P=1&S=9e2828d5...
 
-Key Index
-    The key number, from your plugin configuration, which was used for this
-    signature. See Configuration_ for generating these keys and determining the
-    index number of each::
+Path Parameter Mode
+~~~~~~~~~~~~~~~~~~~
 
-        K=<key number>
+Parameters may instead be base64-encoded and embedded in the URL path before
+the filename. This is useful when origin query parameters must be preserved
+independently of the signing parameters.
 
-Parts
-    Configures which components of the URL to use for signature verification.
-    The value of this parameter is a string of ones and zeros, each enabling
-    or disabling the use of a URL part for signatures. The URL scheme (e.g.
-    ``http://``) is never part of the signature. The first number of this
-    parameter's value indicates whether to include the FQDN, and all remaining
-    numbers determine whether to use the directory parts of the URL. If there
-    are more directories in the URL than there are numbers in this parameter,
-    the last number is repeated as many times as necessary::
+Configure ``sig_anchor`` in the config file and use ``--pathparams
+--siganchor`` when signing::
 
-        P=<parts specification>
+   http://cdn.example.com/vod/t;urlsig=O0U9MTQ2.../prog_index.m3u8?appid=2&t=1
 
-    Examples include:
+Application query parameters follow the filename and are never part of the
+signed string.
 
-    ========== ================================================================
-    Value      Effect
-    ========== ================================================================
-    ``1``      Use the FQDN and all directory parts for signature verification.
-    ``01``     Ignore the FQDN, but verify using all directory parts.
-    ``0110``   Ignore the FQDN, and use only the first two directory parts,
-               skipping the remainder, for signatures.
-    ``110``    Use the FQDN and first directory for signature verification, but
-               ignore the remainder of the path.
-    ========== ================================================================
+Using the Go Signing Tool
+-------------------------
 
-Signature
-    The actual signature hash::
+The Go signing tool ``sign.go`` produces a curl command for testing. It
+requires only the Go standard library.
 
-        S=<signature hash>
+**Basic query string signing:**
 
-    The hash should be calculated in accordance with the parts specification
-    you have declared in the ``P=`` query parameter, which if you have chosen
-    any value other than ``1`` may require additional URL parsing be performed
-    by your signing portal.
+.. code-block:: bash
 
-    Additionally, all query parameters up to and including the ``S=`` substring
-    for this parameter must be included, and must be in the same order as they
-    are returned to the client for redirection. For obvious reasons, the value
-    of this parameter is not included in the source string being hashed.
+   go run sign.go \
+       --url http://cdn.example.com/video/segment.ts \
+       --useparts 1 \
+       --algorithm 1 \
+       --duration 3600 \
+       --keyindex 3 \
+       --key DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
 
-    As a simple example, if we are about to redirect a client to the URL
-    ``https://foo.com/downloads/expensive-app.exe`` with signature verification
-    enabled, then we will compute a signature on the following string::
+**With client IP restriction:**
 
-        foo.com/downloads/expensive-app.exe?C=1.2.3.4&E=1453846938&A=1&K=2&P=1&S=
+.. code-block:: bash
 
-    And, assuming that *key2* from our secrets file matches our example in
-    Configuration_, then our signature becomes::
+   go run sign.go \
+       --url http://cdn.example.com/video/segment.ts \
+       --useparts 1 --algorithm 1 --duration 3600 \
+       --keyindex 3 --key DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7 \
+       --client 10.10.10.10
 
-        8c5cfa440458233452ee9b5b570063a0e71827f2
+**Path parameter mode with sig anchor:**
 
-    Which is then appended to the URL for redirection as the value of the ``S``
-    parameter.
+.. code-block:: bash
 
-    For an example implementation of signing which may be adapted for your own
-    portal, refer to the file ``sign.pl`` included with the source code of this
-    plugin.
+   go run sign.go \
+       --url "http://cdn.example.com/vod/t/prog_index.m3u8?appid=2&t=1" \
+       --useparts 1 --algorithm 1 --duration 86400 \
+       --keyindex 3 --key kSCE1_uBREdGI3TPnr_dXKc9f_J4ZV2f \
+       --pathparams --siganchor urlsig
 
-Signature query parameters embedded in the URL path.
+**Through a proxy:**
 
-    Optionally signature query parameters may be embedded in an opaque base64 encoded container
-    embedded in the URL path.  The format is  a semicolon, siganchor string, base64 encoded
-    string.  ``url_sig`` automatically detects the use of embedded path parameters. The
-    following example shows how to generate an embedded path parameters with ``sign.pl``::
+.. code-block:: bash
 
-      ./sign.pl --url "http://test-remap.domain.com/vod/t/prog_index.m3u8?appid=2&t=1" --useparts 1 \
-      --algorithm 1 --duration 86400 --key kSCE1_uBREdGI3TPnr_dXKc9f_J4ZV2f --pathparams --siganchor urlsig
+   go run sign.go \
+       --url http://cdn.example.com/ \
+       --useparts 1 --algorithm 1 --duration 60 \
+       --keyindex 0 --key mykey \
+       --proxy http://localhost:8080
 
-      curl -s -o /dev/null -v --max-redirs 0 'http://test-remap.domain.com/vod/t;urlsig=O0U9MTQ2MzkyOTM4NTtBPTE7Sz0zO1A9MTtTPTIxYzk2YWRiZWZk'
+**Verbose mode** (shows signed string and digest on stderr):
 
-Other Config File Options
-=========================
+.. code-block:: bash
 
-In addition to the keys and error_url, the following options are supported
-in the configuration file::
+   go run sign.go --verbose \
+       --url http://cdn.example.com/ \
+       --useparts 1 --algorithm 1 --duration 60 \
+       --keyindex 0 --key mykey
 
-    sig_anchor
-        signed anchor string token in url
-        default: no anchor
+sign.go Flags
+~~~~~~~~~~~~~
 
-    excl_regex
-        pcre regex for urls that aren't signed.
-        default: no regex
+================  ========  =========  =========================================
+Flag              Required  Default    Description
+================  ========  =========  =========================================
+``--url``         yes                  Full URL to sign.
+``--useparts``    yes                  Parts bitmask string.
+``--duration``    yes                  Signature lifetime in seconds.
+``--key``         yes                  Signing key string.
+``--keyindex``    yes       ``0``      Key index (0–15).
+``--algorithm``   no        ``1``      ``1`` = HMAC-SHA1, ``2`` = HMAC-MD5.
+``--client``      no                   Lock signature to client IP.
+``--pathparams``  no        ``false``  Use path parameter mode.
+``--siganchor``   no                   Anchor name for path params.
+``--proxy``       no                   Proxy URL:port for curl output.
+``--verbose``     no        ``false``  Print signing details to stderr.
+================  ========  =========  =========================================
 
-    url_type
-        which url to match against
-        pristine or remap
-        default: remap
+The original Perl script ``sign.pl`` is still available with equivalent
+functionality. It requires ``Digest::SHA``, ``Digest::HMAC_MD5``, and
+``MIME::Base64::URLSafe``.
 
-     ignore_expiry
-        option which assists in testing where the timestamp check is skipped
-        DO NOT run with this set in production!
-        default: false
+Debugging
+=========
 
-Example::
-
-    sig_anchor = urlsig
-    excl_regex = (/crossdomain.xml|/clientaccesspolicy.xml|/test.html)
-    url_type = pristine
-    ignore_expiry = true
-
-
-Edge Cache Debugging
-====================
-
-To include debugging output for this plugin in your |TS| logs, adjust the values
-for :ts:cv:`proxy.config.diags.debug.enabled` and
-:ts:cv:`proxy.config.diags.debug.tags` in your :file:`records.yaml` as so:
+To include debugging output for this plugin in your |TS| logs, adjust the
+values for :ts:cv:`proxy.config.diags.debug.enabled` and
+:ts:cv:`proxy.config.diags.debug.tags` in your :file:`records.yaml`:
 
 .. code-block:: yaml
 
@@ -294,120 +345,66 @@ for :ts:cv:`proxy.config.diags.debug.enabled` and
          enabled: 1
          tags: url_sig
 
-Once updated, issue a :option:`traffic_ctl config reload` to make the settings
-active.
+Then reload:
 
-Example
-=======
+.. code-block:: bash
 
-#. Enable experimental plugins when building |TS| by by passing
-   the ``-DBUILD_EXPERIMENTAL_PLUGINS=ON`` to the ``cmake`` command.
+   traffic_ctl config reload
 
-#. Generate a secrets configuration for |TS| (replacing the output location
-   with something appropriate to your |TS| installation)::
+- Debug output goes to ``traffic.out`` / ``diags.log``.
+- Failed signature checks are logged to ``error.log``.
 
-    genkeys.pl  > /usr/local/trafficserver/etc/trafficserver/url_sig.config
+Walkthrough Example
+===================
 
-#. Verify that your configuration looks like the following, with actual key
-   values altered::
+#. **Generate keys** (replacing the output location with something appropriate
+   to your |TS| installation)::
 
-    key0 = YwG7iAxDo6Gaa38KJOceV4nsxiAJZ3DS
-    key1 = nLE3SZKRgaNM9hLz_HnIvrCw_GtTUJT1
-    key2 = YicZbmr6KlxfxPTJ3p9vYhARdPQ9WJYZ
-    key3 = DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
-    key4 = C1r6R6MINoQd5YSH25fU66tuRhhz3fs_
-    key5 = l4dxe6YEpYbJtyiOmX5mafhwKImC5kej
-    key6 = ekKNHXu9_oOC5eqIGJVxV0vI9FYvKVya
-    key7 = BrjibTmpTTuhMHqphkQAuCWA0Zg97WQB
-    key8 = rEtWLb1jcYoq9VG8Z8TKgX4GxBuro20J
-    key9 = mrP_6ibDBG4iYpfDB6W8yn3ZyGmdwc6M
-    key10 = tbzoTTGZXPLcvpswCQCYz1DAIZcAOGyX
-    key11 = lWsn6gUeSEW79Fk2kwKVfzhVG87EXLna
-    key12 = Riox0SmGtBWsrieLUHVWtpj18STM4MP1
-    key13 = kBsn332B7yG3HdcV7Tw51pkvHod7_84l
-    key14 = hYI4GUoIlZRf0AyuXkT3QLvBMEoFxkma
-    key15 = EIgJKwIR0LU9CUeTUdVtjMgGmxeCIbdg
-    error_url = 403
+      go run genkeys.go > /etc/trafficserver/url_sig.config
 
-#. Enable signature verification for a remap rule in |TS| by modifying
-   :file:`remap.config` (here we will just remap to Google's homepage for
-   demonstrative purposes)::
+#. **Verify the config** looks correct::
 
-    map http://test-remap.domain.com/download/foo http://google.com \
-        @plugin=url_sig.so @pparam=url_sig.config
+      cat /etc/trafficserver/url_sig.config
 
-#. Reload your |TS| configuration to ensure the changes are active::
+   You should see 16 key lines and an ``error_url`` line.
 
-    traffic_ctl config reload
+#. **Configure a remap rule** in :file:`remap.config`::
 
-#. Attempt to access the now-protected URL without a valid signature. This will
-   fail, and that is a good thing, as it demonstrates that |TS| now rejects any
-   requests to paths matching that rule which do not include a valid signature.::
+      map http://cdn.example.com http://origin.example.com \
+          @plugin=url_sig.so @pparam=url_sig.config
 
-    $ curl -vs -H'Host: test-remap.domain.com' http://localhost:8080/download/foo
-    * Adding handle: conn: 0x200f8a0
-    * Adding handle: send: 0
-    * Adding handle: recv: 0
-    * Curl_addHandleToPipeline: length: 1
-    * - Conn 0 (0x200f8a0) send_pipe: 1, recv_pipe: 0
-    * About to connect() to localhost port 8080 (#0)
-    *   Trying 127.0.0.1...
-    * Connected to localhost (127.0.0.1) port 8080 (#0)
-    > GET /download/foo HTTP/1.1
-    > User-Agent: curl/7.32.0
-    > Accept: */*
-    > Host: test-remap.domain.com
-    >
-    < HTTP/1.1 403 Forbidden
-    < Date: Tue, 15 Apr 2014 22:57:32 GMT
-    < Connection: close
-    * Server ATS/5.0.0 is not blacklisted
-    < Server: ATS/5.0.0
-    < Cache-Control: no-store
-    < Content-Type: text/plain
-    < Content-Language: en
-    < Content-Length: 21
-    <
-    * Closing connection 0
-    Authorization Denied$
+#. **Reload** |TS| configuration::
 
-#. Generate a signed URL using the included ``sign.pl`` script::
+      traffic_ctl config reload
 
-    sign.pl --url http://test-remap.domain.com/download/foo \
-        --useparts 1 --algorithm 1 --duration 60 --keyindex 3 \
-        --key DTV4Tcn046eM9BzJMeYrYpm3kbqOtBs7
+#. **Test an unsigned request** (should get 403)::
 
-#. Now access the protected URL with a valid signature::
+      curl -vs http://localhost:8080/ -H 'Host: cdn.example.com'
 
-    $ curl -s -o /dev/null -v --max-redirs 0 -H 'Host: test-remap.domain.com' \
-        'http://test-remap.domain.com/download/foo?E=1453848506&A=1&K=3&P=1&S=7aea86592de3e9c1b05771b2538a30956c6f10a3'
-    * Adding handle: conn: 0xef0a90
-    * Adding handle: send: 0
-    * Adding handle: recv: 0
-    * Curl_addHandleToPipeline: length: 1
-    * - Conn 0 (0xef0a90) send_pipe: 1, recv_pipe: 0
-    * About to connect() to localhost port 8080 (#0)
-    *   Trying 127.0.0.1...
-    * Connected to localhost (127.0.0.1) port 8080 (#0)
-    > GET /download/foo?E=1397603088&A=1&K=3&P=1&S=28d822f68ac7265db61a8441e0877a98fe1007cc HTTP/1.1
-    > User-Agent: curl/7.32.0
-    > Accept: */*
-    > Host: test-remap.domain.com
-    >
-    < HTTP/1.1 200 OK
-    < Location: http://www.google.com/
-    < Content-Type: text/html; charset=UTF-8
-    < Date: Tue, 15 Apr 2014 23:04:36 GMT
-    < Expires: Thu, 15 May 2014 23:04:36 GMT
-    < Cache-Control: public, max-age=2592000
-    * Server ATS/5.0.0 is not blacklisted
-    < Server: ATS/5.0.0
-    < Content-Length: 219
-    < X-XSS-Protection: 1; mode=block
-    < X-Frame-Options: SAMEORIGIN
-    < Alternate-Protocol: 80:quic
-    < Age: 0
-    < Connection: keep-alive
-    <
-    { [data not shown]
-    * Connection #0 to host localhost left intact
+   Expected response: ``HTTP/1.1 403 Forbidden`` with body
+   ``Authorization Denied``.
+
+#. **Sign a URL** using key3 from your config file::
+
+      go run sign.go \
+          --url http://cdn.example.com/ \
+          --useparts 1 --algorithm 1 --duration 60 \
+          --keyindex 3 --key <key3_value_from_config>
+
+#. **Test the signed URL**. Copy the curl command from sign.go output. If
+   hitting localhost, add ``-H 'Host: cdn.example.com'``::
+
+      curl -s -o /dev/null -v --max-redirs 0 \
+          -H 'Host: cdn.example.com' \
+          'http://localhost:8080/?E=1700000060&A=1&K=3&P=1&S=<signature>'
+
+   Expected response: ``HTTP/1.1 200 OK``.
+
+#. **Test path parameter mode**. Add ``sig_anchor = urlsig`` to
+   ``url_sig.config``, reload, then::
+
+      go run sign.go \
+          --url "http://cdn.example.com/vod/t/file.ts?appid=2" \
+          --useparts 1 --algorithm 1 --duration 86400 \
+          --keyindex 3 --key <key3_value> \
+          --pathparams --siganchor urlsig

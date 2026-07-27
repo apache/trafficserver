@@ -133,6 +133,13 @@ ts.Setup.Copy("url_sig.all.config", ts.Variables.CONFIGDIR)
 ts.Disk.remap_config.AddLine(
     f'map http://ten.eleven.twelve/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.all.config')
 
+# Use config with error_url = 302 redirect.
+#
+ts.Setup.Copy("url_sig.redirect.config", ts.Variables.CONFIGDIR)
+ts.Disk.remap_config.AddLine(
+    f'map http://thirteen.fourteen.fifteen/ http://127.0.0.1:{server.Variables.Port}/' +
+    ' @plugin=url_sig.so @pparam=url_sig.redirect.config')
+
 # Validation failure tests.
 
 LogTee = f" 2>&1 | grep '^<' | tee -a {Test.RunDirectory}/url_sig_long.log"
@@ -228,6 +235,45 @@ p = tr.MakeCurlCommand(
     ts=ts)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
+# Missing expiration parameter.
+#
+tr = Test.AddTestRun("Missing expiration parameter should fail")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
+    "foo/abcde/qrstuvwxyz?C=127.0.0.1&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
+# Missing key index parameter.
+#
+tr = Test.AddTestRun("Missing key index parameter should fail")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
+    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
+# Out-of-range key index.
+#
+tr = Test.AddTestRun("Out-of-range key index (K=99) should fail")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
+    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=99&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
+
+# 302 redirect on signature failure.
+#
+tr = Test.AddTestRun("Unsigned request to 302-redirect config should return 302")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://thirteen.fourteen.fifteen/foo/abcde/qrstuvwxyz'" + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*302", "Should receive 302 redirect")
 
 # Success tests.
 
@@ -351,6 +397,18 @@ p = tr.MakeCurlCommand(
     f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
     "foo/abcde;urlsig=Qz0xMjcuMC4wLjE7RT0zMzA0NjYyMDAwODtBPTI7Sz0xMztQPTEwMTtTPTA1MDllZjljY2VlNjUxZWQ1OTQxM2MyZjE3YmVhODZh/qrstuvwxyz'"
     + LogTee,
+    ts=ts)
+p.ReturnCode = 0
+p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
+
+# ignore_expiry = true allows a signature whose E= is in the past.
+# ten.eleven.twelve uses url_sig.all.config which has ignore_expiry = true.
+# P=101 signed parts: host, abcde, qrstuvwxyz (foo excluded).
+#
+tr = Test.AddTestRun("ignore_expiry allows expired signature")
+p = tr.MakeCurlCommand(
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
+    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=1&A=2&K=13&P=101&S=c52c88a16ad31581579abf44300c5c77'" + LogTee,
     ts=ts)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
