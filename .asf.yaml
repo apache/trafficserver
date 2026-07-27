@@ -27,8 +27,8 @@ github:
   enabled_merge_buttons:
     # Enable squash button:
     squash: true
-    # Disable rebase button:
-    rebase: false
+    # Enable rebase button:
+    rebase: true
     # Disable merge commit button:
     merge: false
   collaborators:
