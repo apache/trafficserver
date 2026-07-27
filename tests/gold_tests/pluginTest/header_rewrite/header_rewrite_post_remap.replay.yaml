@@ -32,6 +32,9 @@ autest:
   ats:
     name: 'ts'
 
+    process_config:
+      enable_cache: true
+
     copy_to_config_dir:
       - 'post_remap.conf'
 
@@ -43,6 +46,7 @@ autest:
     # the ATS config dir, where copy_to_config_dir places it.
     plugin_config:
       - 'header_rewrite.so post_remap.conf'
+      - 'xdebug.so --enable=x-cache'
 
     remap_config:
       - from: "http://www.example.com/"
@@ -50,6 +54,11 @@ autest:
 
 sessions:
 - transactions:
+
+  #############################################################################
+  # Cache miss: the header set at POST_REMAP reaches the origin, and the echo
+  # rule reports it on the response.
+  #############################################################################
   - client-request:
       method: "GET"
       version: "1.1"
@@ -57,20 +66,58 @@ sessions:
       headers:
         fields:
         - [ Host, www.example.com ]
-        - [ uuid, 1 ]
+        - [ x-debug, "x-cache" ]
+        - [ uuid, post-remap-miss ]
 
-    # The header set at POST_REMAP must be present on the request ATS forwards.
     proxy-request:
       headers:
         fields:
-        - [ X-Post-Remap-Applied, { value: "yes", as: equal } ]
+        - [ X-Post-Remap-Host, { value: "backend.ex", as: equal } ]
 
     server-response:
       status: 200
       reason: OK
       headers:
         fields:
-        - [ Connection, close ]
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "3" ]
+        - [ Cache-Control, "max-age=300" ]
+      content:
+        encoding: plain
+        data: xxx
 
     proxy-response:
       status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: "miss", as: equal } ]
+        - [ X-Post-Remap-Echo, { value: "backend.ex", as: equal } ]
+
+  #############################################################################
+  # Cache hit: nothing is forwarded to the origin, so SEND_REQUEST_HDR_HOOK
+  # never runs. The rule still fires, because POST_REMAP is before the lookup.
+  #############################################################################
+  - client-request:
+      delay: 100ms
+      method: "GET"
+      version: "1.1"
+      url: /post_remap/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ x-debug, "x-cache" ]
+        - [ uuid, post-remap-hit ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 404
+      reason: Not Found
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: "hit-fresh", as: equal } ]
+        - [ X-Post-Remap-Echo, { value: "backend.ex", as: equal } ]
