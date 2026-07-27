@@ -190,3 +190,23 @@ TEST_CASE("Regex", "[libts][Regex]")
   }
 #endif
 }
+
+// Regression: RE_ANCHORED | RE_ENDANCHORED on an alternation where a shorter
+// alternative is a prefix of a longer one must backtrack to the longer alt
+// when only the longer alt spans the full subject. On modern PCRE2 this is
+// handled by the native PCRE2_ENDANCHORED flag; on PCRE2 < 10.30 the pattern
+// is rewritten to "(?:pattern)\z" so pcre2 does the same backtracking. A
+// naive post-match length check on the first successful pcre2_match would
+// stop at the shorter alt and incorrectly report no match.
+TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(cdn\.example\.com|cdn\.example\.com\.edge)", RE_ANCHORED | RE_ENDANCHORED) == true);
+
+  RegexMatches matches;
+  CHECK(r.exec("cdn.example.com", matches) > 0);      // shorter alt spans fully
+  CHECK(r.exec("cdn.example.com.edge", matches) > 0); // longer alt spans fully -- requires backtracking
+  CHECK(r.exec("cdn.example.com.evil", matches) == RE_ERROR_NOMATCH);
+  CHECK(r.exec("cdn.example.com.evil.com", matches) == RE_ERROR_NOMATCH);
+  CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
+}
