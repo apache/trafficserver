@@ -1738,14 +1738,17 @@ POST_REMAP_HOOK
 ~~~~~~~~~~~~~~~
 
 Forces evaluation of the ruleset immediately after remapping has completed, but
-before |TS| contacts the origin server (or fetches the object from cache). There
-is no response data yet, so context-adapting conditions and operators match
-against the request.
+before |TS| looks the request up in the cache. There is no response data yet, so
+context-adapting conditions and operators match against the request, which at
+this point is the remapped request.
 
-This hook is available to both global (:file:`plugin.config`) and per-remap
-(:file:`remap.config`) configurations, and is primarily useful for
-globally-configured ``header_rewrite`` instances that need to act on the request
-after remapping.
+For rulesets in :file:`remap.config`, `REMAP_PSEUDO_HOOK`_ already covers this
+window. This hook exists for globally-configured rulesets, which otherwise have
+no hook that sees the remapped request before the cache lookup:
+`READ_REQUEST_HDR_HOOK`_ and `READ_REQUEST_PRE_REMAP_HOOK`_ run before
+remapping, and `SEND_REQUEST_HDR_HOOK`_ runs after the lookup, only when the
+request is forwarded to an origin. Anything that has to influence the lookup
+itself belongs at this hook.
 
 SEND_REQUEST_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~
