@@ -35,17 +35,29 @@
 static_assert(RE_CASE_INSENSITIVE == PCRE2_CASELESS, "Update RE_CASE_INSENSITIVE for current PCRE2 version.");
 static_assert(RE_UNANCHORED == PCRE2_MULTILINE, "Update RE_UNANCHORED for current PCRE2 version.");
 static_assert(RE_ANCHORED == PCRE2_ANCHORED, "Update RE_ANCHORED for current PCRE2 version.");
-static_assert(RE_ENDANCHORED == PCRE2_ENDANCHORED, "Update RE_ENDANCHORED for current PCRE2 version.");
 static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCRE2 version.");
 
 static_assert(RE_ERROR_NOMATCH == PCRE2_ERROR_NOMATCH, "Update RE_ERROR_NOMATCH for current PCRE2 version.");
 static_assert(RE_ERROR_NULL == PCRE2_ERROR_NULL, "Update RE_ERROR_NULL for current PCRE2 version.");
 
+// PCRE2 10.30 added PCRE2_ENDANCHORED. Older PCRE2 (e.g., CentOS 7 ships 10.23) lacks it.
+// On modern PCRE2 we pass RE_ENDANCHORED through natively (zero overhead); on old PCRE2 the
+// bit is not a valid pcre2_compile option and would be rejected with PCRE2_ERROR_BADOPTION,
+// so we transparently rewrite the pattern to "(?:pattern)\z" and strip the bit. See
+// Regex::compile() for the rewrite. This preserves alternation-with-backtracking semantics
+// (unlike a post-match length check, which stops at the first successful alternative).
+#ifdef PCRE2_ENDANCHORED
+static constexpr bool ATS_PCRE2_HAS_ENDANCHORED = true;
+static_assert(RE_ENDANCHORED == PCRE2_ENDANCHORED, "Update RE_ENDANCHORED for current PCRE2 version.");
+static_assert((RE_FULL_MATCH & PCRE2_ENDANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ENDANCHORED");
+#else
+static constexpr bool ATS_PCRE2_HAS_ENDANCHORED = false;
+#endif
+
 // RE_FULL_MATCH is an ATS-only flag; it must not collide with any PCRE2 compile or match flag.
 // We strip it before forwarding to pcre2_match, but a collision would cause spurious behavior
 // if someone OR'd it into a flag word that's also passed elsewhere.
 static_assert((RE_FULL_MATCH & PCRE2_ANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ANCHORED");
-static_assert((RE_FULL_MATCH & PCRE2_ENDANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ENDANCHORED");
 static_assert((RE_FULL_MATCH & PCRE2_NO_UTF_CHECK) == 0, "RE_FULL_MATCH bit collides with PCRE2_NO_UTF_CHECK");
 static_assert((RE_FULL_MATCH & PCRE2_CASELESS) == 0, "RE_FULL_MATCH bit collides with PCRE2_CASELESS");
 static_assert((RE_FULL_MATCH & PCRE2_MULTILINE) == 0, "RE_FULL_MATCH bit collides with PCRE2_MULTILINE");
@@ -384,12 +396,35 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
     return false;
   }
 
+  // On PCRE2 < 10.30 the ENDANCHORED bit is not a valid pcre2_compile option. Rewrite
+  // the pattern to "(?:pattern)\z" and strip the bit so pcre2 enforces end-of-subject
+  // natively (including proper alternation backtracking). Zero overhead on modern PCRE2
+  // where the bit is passed through unchanged.
+  std::string      rewritten_pattern;
+  std::string_view effective_pattern = pattern;
+  bool             pattern_wrapped   = false;
+  if constexpr (!ATS_PCRE2_HAS_ENDANCHORED) {
+    if ((flags & RE_ENDANCHORED) != 0) {
+      rewritten_pattern.reserve(pattern.size() + 6);
+      rewritten_pattern.append("(?:").append(pattern).append(")\\z");
+      effective_pattern  = rewritten_pattern;
+      flags             &= ~static_cast<uint32_t>(RE_ENDANCHORED);
+      pattern_wrapped    = true;
+    }
+  }
+
   PCRE2_SIZE error_offset;
   int        error_code;
-  auto       code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                                  regex_context->get_compile_context());
+  auto code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(effective_pattern.data()), effective_pattern.size(), flags, &error_code,
+                            &error_offset, regex_context->get_compile_context());
   if (!code) {
-    erroroffset = error_offset;
+    // Compensate for the "(?:" prefix so callers see offsets into their pattern, not ours.
+    // If the offset is inside the prefix itself, clamp to 0.
+    if (pattern_wrapped && error_offset >= 3) {
+      erroroffset = static_cast<int>(error_offset - 3);
+    } else {
+      erroroffset = static_cast<int>(error_offset);
+    }
 
     // get pcre2 error message
     PCRE2_UCHAR buffer[256];
