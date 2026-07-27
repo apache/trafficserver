@@ -1716,9 +1716,11 @@ esiPluginInit(int argc, const char *argv[], struct OptionInfo *pOptionInfo)
       }
       case 'H': {
         // The host allowlist is a security control; if the operator intended one
-        // but typo'd the regex, do not silently fall back to "no allowlist".
-        // Fail closed by aborting plugin init.
-        if (!pOptionInfo->url_validator.setHostAllowRegex(optarg)) {
+        // but typo'd or omitted the regex, do not silently fall back to
+        // "no allowlist". Fail closed by aborting plugin init.
+        if (optarg == nullptr) {
+          TSEmergency("[esi][%s] --include-host-allow requires a regex argument", __FUNCTION__);
+        } else if (!pOptionInfo->url_validator.setHostAllowRegex(optarg)) {
           TSEmergency("[esi][%s] invalid --include-host-allow regex: %s", __FUNCTION__, optarg);
         }
         break;
