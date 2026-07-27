@@ -29,20 +29,24 @@ macro(ADD_ESI_TEST NAME)
   )
 endmacro()
 
+# esicore does not link ts::tsutil (see plugins/esi/lib/CMakeLists.txt for why), so test
+# executables that pull in tsutil symbols transitively via esicore must link tsutil
+# themselves. Plugins (esi.so, combo_handler.so) don't need this because they resolve
+# tsutil symbols dynamically against traffic_server at dlopen time.
 add_esi_test(test_docnode docnode_test.cc)
-target_link_libraries(test_docnode PRIVATE Catch2::Catch2WithMain esi-common esicore)
+target_link_libraries(test_docnode PRIVATE Catch2::Catch2WithMain esi-common esicore ts::tsutil)
 add_esi_test(test_parser parser_test.cc)
-target_link_libraries(test_parser PRIVATE Catch2::Catch2WithMain esi-common esicore)
+target_link_libraries(test_parser PRIVATE Catch2::Catch2WithMain esi-common esicore ts::tsutil)
 add_esi_test(test_processor processor_test.cc)
-target_link_libraries(test_processor PRIVATE Catch2::Catch2WithMain esi-common esicore)
+target_link_libraries(test_processor PRIVATE Catch2::Catch2WithMain esi-common esicore ts::tsutil)
 add_esi_test(test_utils utils_test.cc)
 target_link_libraries(test_utils PRIVATE Catch2::Catch2WithMain esi-common)
 add_esi_test(test_vars vars_test.cc)
-target_link_libraries(test_vars PRIVATE Catch2::Catch2WithMain esi-common esicore)
+target_link_libraries(test_vars PRIVATE Catch2::Catch2WithMain esi-common esicore ts::tsutil)
 add_esi_test(test_gzip gzip_test.cc)
 target_link_libraries(test_gzip PRIVATE Catch2::Catch2WithMain esi-common)
 add_esi_test(test_include_url_validator include_url_validator_test.cc)
-target_link_libraries(test_include_url_validator PRIVATE Catch2::Catch2WithMain esi-common esicore)
+target_link_libraries(test_include_url_validator PRIVATE Catch2::Catch2WithMain esi-common esicore ts::tsutil)
 # combo_handler_utils.cc lives in the parent plugin source dir; compile
 # it directly into the test binary since it is bundled into combo_handler.so
 # rather than its own library.
