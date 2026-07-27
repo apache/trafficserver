@@ -28,6 +28,7 @@
 #include <cstring>
 #include <netinet/in.h>
 #include <string>
+#include <sys/socket.h>
 
 using std::string_view;
 
