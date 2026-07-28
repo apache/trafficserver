@@ -2365,9 +2365,28 @@ MIMEScanner::get(TextView &input, TextView &output, bool &output_shares_input, b
 void
 _mime_parser_init(MIMEParser *parser)
 {
-  parser->m_field       = 0;
-  parser->m_field_flags = 0;
-  parser->m_value       = -1;
+  parser->m_dup_bloom[0]  = 0;
+  parser->m_dup_bloom[1]  = 0;
+  parser->m_dup_seed_mh   = nullptr;
+  parser->m_last_attached = nullptr;
+}
+
+// Seed the parser's non-WKS duplicate Bloom from any fields already in the
+// header. A no-op for the common fresh-header parse; keeps the skip-the-search
+// optimization correct if parsing appends to a header that already has fields.
+static void
+mime_parser_seed_dup_bloom(MIMEParser *parser, MIMEHdrImpl *mh)
+{
+  for (MIMEFieldBlockImpl *fblock = &mh->m_first_fblock; fblock != nullptr; fblock = fblock->m_next) {
+    for (uint32_t i = 0; i < fblock->m_freetop; ++i) {
+      MIMEField *f = &fblock->m_field_slots[i];
+      if (f->is_live() && f->m_wks_idx < 0) {
+        uint32_t h = 0;
+        hdrtoken_tokenize(f->m_ptr_name, f->m_len_name, nullptr, &h);
+        parser->m_dup_bloom[(h >> 6) & 1] |= (static_cast<uint64_t>(1) << (h & 63));
+      }
+    }
+  }
 }
 //////////////////////////////////////////////////////
 // init     first time structure setup              //
@@ -2436,11 +2455,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     }
 
     // find name last
-    auto field_value = parsed; // need parsed as is later on.
-    auto field_name  = field_value.split_prefix_at(':');
-    if (field_name.empty()) {
+    //
+    // Fuse the colon scan, FNV-1a name hash, and per-byte field-name validation
+    // into one pass over the name bytes. hdrtoken_field_name_scan returns the
+    // colon index (the name length) and, for those bytes, the hash reused below
+    // by the WKS lookup and the duplicate Bloom, plus whether every byte is a
+    // valid HTTP field-name char.
+    auto     field_value = parsed; // need parsed as is later on.
+    uint32_t field_name_hash;
+    bool     name_all_valid;
+    int colon_idx = hdrtoken_field_name_scan(parsed.data(), static_cast<int>(parsed.size()), &field_name_hash, &name_all_valid);
+    if (colon_idx <= 0) {
+      // colon_idx < 0: no colon; colon_idx == 0: empty name. Both are garbage,
+      // matching the old empty-field_name toss.
       continue; // toss away garbage line
     }
+    auto field_name = parsed.prefix(colon_idx);
+    field_value.remove_prefix(colon_idx + 1);
 
     // RFC7230 section 3.2.4:
     // No whitespace is allowed between the header field-name and colon.  In
@@ -2452,12 +2483,15 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // A proxy MUST remove any such whitespace from a response message before
     // forwarding the message downstream.
     bool raw_print_field = true;
+    bool name_scan_stale = false;
     if (is_ws(field_name.back())) {
       if (!remove_ws_from_field_name) {
         return ParseResult::ERROR;
       }
       field_name.rtrim_if(&ParseRules::is_ws);
       raw_print_field = false;
+      // The fused scan hashed and validated the untrimmed name; recompute below.
+      name_scan_stale = true;
     } else if (parsed.suffix(2) != "\r\n") {
       raw_print_field = false;
     }
@@ -2487,13 +2521,23 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     // tokenize the name //
     ///////////////////////
 
-    int field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size());
-
-    if (field_name_wks_idx < 0) {
-      for (auto i : field_name) {
-        if (!ParseRules::is_http_field_name(i)) {
-          return ParseResult::ERROR;
+    int field_name_wks_idx;
+    if (name_scan_stale) {
+      // BWS trimming shortened the name after the fused scan; redo the hash,
+      // WKS lookup, and byte validation over the trimmed name.
+      field_name_hash    = 0;
+      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size(), nullptr, &field_name_hash);
+      if (field_name_wks_idx < 0) {
+        for (auto i : field_name) {
+          if (!ParseRules::is_http_field_name(i)) {
+            return ParseResult::ERROR;
+          }
         }
+      }
+    } else {
+      field_name_wks_idx = hdrtoken_tokenize_prehashed(field_name.data(), static_cast<int>(field_name.size()), field_name_hash);
+      if ((field_name_wks_idx < 0) && !name_all_valid) {
+        return ParseResult::ERROR;
       }
     }
 
@@ -2511,7 +2555,91 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
-    mime_hdr_field_attach(mh, field, 1, nullptr);
+
+    // For a non-WKS name, consult the parse-local Bloom: if its hash bit is
+    // clear no earlier field can share the name, so skip attach's O(n) duplicate
+    // search (check_for_dups=0 takes the same no-dup path a null find would).
+    // For a WKS name the presence bit gives the same guarantee for free: a clear
+    // bit is exactly the first negative test mime_hdr_field_find performs for an
+    // interned name, so skipping the walk is byte-for-byte equivalent to a null
+    // find. Mask-zero WKS names (no presence bit) must keep the search on.
+    int check_for_dups = 1;
+    if (field_name_wks_idx < 0) {
+      // Seed (or reseed) the Bloom the first time this parser touches a given
+      // header. Keying on the header pointer keeps a reused parser correct when
+      // it is pointed at a different header without an intervening clear.
+      if (parser->m_dup_seed_mh != mh) {
+        parser->m_dup_bloom[0] = 0;
+        parser->m_dup_bloom[1] = 0;
+        mime_parser_seed_dup_bloom(parser, mh);
+        parser->m_dup_seed_mh = mh;
+      }
+      unsigned const word = (field_name_hash >> 6) & 1;
+      uint64_t const bit  = static_cast<uint64_t>(1) << (field_name_hash & 63);
+      if ((parser->m_dup_bloom[word] & bit) == 0) {
+        check_for_dups = 0;
+      }
+      parser->m_dup_bloom[word] |= bit;
+    } else {
+      uint64_t const mask = hdrtoken_index_to_mask(field_name_wks_idx);
+      if (mask != 0 && (mh->m_presence_bits & mask) == 0) {
+        check_for_dups = 0;
+      }
+    }
+
+    // O(1) tail append for a duplicate of the immediately-preceding attached
+    // field (e.g. consecutive Set-Cookie). mime_field_create always hands out
+    // the highest slot, so a duplicate of the last-attached field belongs at
+    // its dup chain's tail. When that field is still its chain tail
+    // (m_next_dup == nullptr), is live, is in this header, and shares this
+    // field's name, splice directly instead of running attach's O(n) duplicate
+    // search. Under the "one chain per name, in slot order" invariant such a
+    // field is necessarily that name's chain tail, so the splice is correct
+    // regardless of how m_last_attached was set -- it stays safe across CONT
+    // re-entry and parser reuse (a mismatch just falls back to attach).
+    bool             fast_tail_append = false;
+    MIMEField *const last             = parser->m_last_attached;
+
+    if (last != nullptr && last->is_live() && last->m_next_dup == nullptr) {
+      bool name_matches;
+
+      if (field_name_wks_idx >= 0) {
+        name_matches = (last->m_wks_idx == field_name_wks_idx);
+      } else {
+        name_matches =
+          (last->m_wks_idx < 0) &&
+          ts::iequals(std::string_view{last->m_ptr_name, static_cast<std::string_view::size_type>(last->m_len_name)}, field_name);
+      }
+
+      if (name_matches) {
+        bool in_mh = false;
+
+        for (MIMEFieldBlockImpl *fb = &mh->m_first_fblock; fb != nullptr; fb = fb->m_next) {
+          if (fb->contains(last)) {
+            in_mh = true;
+            break;
+          }
+        }
+
+        if (in_mh) {
+          field->m_readiness = MIME_FIELD_SLOT_READINESS_LIVE;
+          field->m_flags     = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
+          field->m_next_dup  = nullptr;
+          last->m_next_dup   = field;
+          // Presence bit and slot accelerator were set by the chain head; a tail
+          // dup leaves them untouched, matching attach's patch-after-prev branch.
+          if (field->m_ptr_value && field->is_cooked()) {
+            mh->recompute_cooked_stuff(field);
+          }
+          fast_tail_append = true;
+        }
+      }
+    }
+
+    if (!fast_tail_append) {
+      mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+    }
+    parser->m_last_attached = field;
   }
 }
 

@@ -1118,29 +1118,15 @@ http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const 
 ParseResult
 validate_hdr_request_target(int method_wk_idx, URLImpl *url)
 {
-  ParseResult ret = ParseResult::DONE;
-  auto        host{url->get_host()};
-  auto        path{url->get_path()};
-  auto        scheme{url->get_scheme()};
-
-  if (host.empty()) {
-    if (path == "*"sv) { // asterisk-form
-      // Skip this check for now because URLImpl can't distinguish '*' and '/*'
-      // if (method_wk_idx != HTTP_WKSIDX_OPTIONS) {
-      //   ret = ParseResult::ERROR;
-      // }
-    } else { // origin-form
-      // Nothing to check here
-    }
-  } else if (scheme.empty() && !host.empty()) { // authority-form
-    if (method_wk_idx != HTTP_WKSIDX_CONNECT) {
-      ret = ParseResult::ERROR;
-    }
-  } else { // absolute-form
-    // Nothing to check here
+  // The only rejected request-target is authority-form (host present, scheme
+  // absent) with a method other than CONNECT. get_scheme() is empty iff no
+  // well-known scheme index is set and the inline scheme length is zero; the
+  // asterisk-form check is intentionally disabled (URLImpl can't distinguish
+  // '*' from '/*'), so origin-, asterisk-, and absolute-form all accept.
+  if (url->m_len_host != 0 && url->m_scheme_wks_idx < 0 && url->m_len_scheme == 0 && method_wk_idx != HTTP_WKSIDX_CONNECT) {
+    return ParseResult::ERROR;
   }
-
-  return ret;
+  return ParseResult::DONE;
 }
 
 bool

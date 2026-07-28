@@ -1172,17 +1172,18 @@ url_is_strictly_compliant(const char *start, const char *end)
 bool
 url_is_mostly_compliant(const char *start, const char *end)
 {
+  // Mode 2 accepts exactly the printable, non-space ASCII range 0x21..0x7E --
+  // equivalent to the previous isspace()/isprint() pair, but locale-independent
+  // and call-free. This runs on every request target under the default
+  // strict_uri_parsing=2. OR-reducing an out-of-range flag over the whole target
+  // (no early exit, no data-dependent branch) lets the compiler auto-vectorize
+  // the scan to the build's SIMD; ATS builds -O3, where clang and GCC both do.
+  unsigned char bad = 0;
   for (const char *i = start; i < end; ++i) {
-    if (isspace(*i)) {
-      Dbg(dbg_ctl_http, "Whitespace character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
-    if (!isprint(*i)) {
-      Dbg(dbg_ctl_http, "Non-printable character [0x%.2X] found in URL", static_cast<unsigned char>(*i));
-      return false;
-    }
+    unsigned char const c  = static_cast<unsigned char>(*i);
+    bad                   |= static_cast<unsigned char>((c < 0x21) | (c > 0x7E));
   }
-  return true;
+  return bad == 0;
 }
 
 } // namespace UrlImpl

@@ -25,7 +25,9 @@
 #include "tscore/HashFNV.h"
 #include "tscore/Diags.h"
 #include "tscore/ink_memory.h"
+#include <array>
 #include <cstdio>
+#include <cstring>
 #include "tscore/Allocator.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HdrToken.h"
@@ -53,7 +55,7 @@ DbgCtl dbg_ctl_hdr_token{"hdr_token"};
 
 */
 
-const char *const _hdrtoken_strs[] = {
+constexpr const char *const _hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
   "Approved", // NNTP
@@ -310,20 +312,84 @@ HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
 **/
 #define TINY_MASK(x) (((uint32_t)1 << (x)) - 1)
 
-inline uint32_t
+constexpr uint32_t
 hash_to_slot(uint32_t hash)
 {
   return ((hash >> 15) ^ hash) & TINY_MASK(15);
 }
 
-inline uint32_t
+// Branchless ASCII upper-fold: 'a'..'z' -> 'A'..'Z', every other byte (including
+// 0x80-0xFF) unchanged. Matches libc toupper() under the C locale for all 256
+// byte values but is locale-independent, which is the correct behavior for
+// case-insensitive matching of ASCII HTTP tokens.
+static constexpr unsigned char
+hdrtoken_ascii_toupper(unsigned char c)
+{
+  unsigned char const is_lower = static_cast<unsigned char>((static_cast<unsigned>(c) - 'a') < 26u);
+  return static_cast<unsigned char>(c - (is_lower << 5));
+}
+
+// FNV-1a 32-bit over ASCII-case-folded field-name bytes. Both hdrtoken_hash and
+// the single-pass field-name scan fold their bytes through hdrtoken_hash_step so
+// the seed and per-byte step live in one place. The fold matches toupper() under
+// the C locale for all byte values, so the well-known-string table's hash values
+// and collision pattern are identical to the previous ATSHash32FNV1a +
+// ATSHash::nocase implementation, but locale-independent and call-free.
+static constexpr uint32_t HDRTOKEN_HASH_SEED = 0x811c9dc5u; // FNV-1a 32-bit offset basis
+
+static constexpr uint32_t
+hdrtoken_hash_step(uint32_t hval, unsigned char c)
+{
+  return (hval ^ hdrtoken_ascii_toupper(c)) * 0x01000193u; // fold byte, xor in, multiply by the FNV-1a prime
+}
+
+constexpr uint32_t
 hdrtoken_hash(const unsigned char *string, unsigned int length)
 {
-  ATSHash32FNV1a fnv;
-  fnv.update(string, length, ATSHash::nocase());
-  fnv.final();
-  return fnv.get();
+  uint32_t hval = HDRTOKEN_HASH_SEED;
+  for (unsigned int i = 0; i < length; ++i) {
+    hval = hdrtoken_hash_step(hval, string[i]);
+  }
+  return hval;
 }
+
+// Compile-time slot of a NUL-terminated well-known string. Walking to the NUL
+// (rather than reinterpret_cast<const unsigned char *> + length, which a constant
+// expression cannot do) lets this share hdrtoken_hash_step with hdrtoken_hash, so
+// the slot it computes is exactly the one hdrtoken_hash_init assigns.
+static constexpr uint32_t
+hdrtoken_literal_slot(const char *s)
+{
+  uint32_t hval = HDRTOKEN_HASH_SEED;
+  for (; *s != '\0'; ++s) {
+    hval = hdrtoken_hash_step(hval, static_cast<unsigned char>(*s));
+  }
+  return hash_to_slot(hval);
+}
+
+// Every well-known string must map to a distinct hash slot, or hdrtoken_hash_init
+// would overwrite one bucket with another and silently lose a token. Enforce it at
+// build time so a colliding table -- from editing the string list or the hash --
+// is a compile error rather than a startup abort.
+static constexpr bool
+hdrtoken_wks_slots_unique()
+{
+  // hash_to_slot yields a 15-bit slot: mark each well-known string's slot, and a
+  // repeat is a collision. Kept within the core-language constexpr subset --
+  // std::sort/std::adjacent_find are only constexpr in libstdc++ 12+, and ATS
+  // still builds against older standard libraries.
+  std::array<bool, 1u << 15> seen{};
+  for (const char *const s : _hdrtoken_strs) {
+    uint32_t const slot = hdrtoken_literal_slot(s);
+    if (seen[slot]) {
+      return false;
+    }
+    seen[slot] = true;
+  }
+  return true;
+}
+static_assert(hdrtoken_wks_slots_unique(),
+              "two well-known strings hash to the same slot; hdrtoken_hash_init would drop one -- change the table or the hash");
 
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
@@ -331,13 +397,12 @@ hdrtoken_hash(const unsigned char *string, unsigned int length)
 void
 hdrtoken_hash_init()
 {
-  uint32_t i;
-  int      num_collisions;
-
   memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
-  num_collisions = 0;
 
-  for (i = 0; i < static_cast<int> SIZEOF(_hdrtoken_strs); i++) {
+  // Slot uniqueness across the well-known strings is guaranteed at build time by
+  // static_assert(hdrtoken_wks_slots_unique()), so no bucket is ever assigned
+  // twice below.
+  for (uint32_t i = 0; i < static_cast<uint32_t> SIZEOF(_hdrtoken_strs); i++) {
     // convert the common string to the well-known token
     unsigned const char *wks;
     int                  wks_idx =
@@ -347,17 +412,8 @@ hdrtoken_hash_init()
     uint32_t hash = hdrtoken_hash(wks, hdrtoken_str_lengths[wks_idx]);
     uint32_t slot = hash_to_slot(hash);
 
-    if (hdrtoken_hash_table[slot].wks) {
-      printf("ERROR: hdrtoken_hash_table[%u] collision: '%s' replacing '%s'\n", slot, reinterpret_cast<const char *>(wks),
-             hdrtoken_hash_table[slot].wks);
-      ++num_collisions;
-    }
     hdrtoken_hash_table[slot].wks  = reinterpret_cast<const char *>(wks);
     hdrtoken_hash_table[slot].hash = hash;
-  }
-
-  if (num_collisions > 0) {
-    abort();
   }
 }
 
@@ -531,36 +587,104 @@ hdrtoken_method_tokenize(const char *string, int string_len)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
+// WKS lookup for a name whose FNV-1a hash the caller has already computed
+// (e.g. fused into the field-name scan). Does the slot/length narrowing plus
+// the exact ASCII-case-insensitive byte compare, but no hashing and no
+// interned-pointer test, so it is only valid for a non-interned `string`.
 int
-hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
+hdrtoken_tokenize_prehashed(const char *string, int string_len, uint32_t hash, const char **wks_string_out)
 {
-  int                 wks_idx;
-  HdrTokenHashBucket *bucket;
+  uint32_t            slot   = hash_to_slot(hash);
+  HdrTokenHashBucket *bucket = &(hdrtoken_hash_table[slot]);
 
+  if ((bucket->wks != nullptr) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
+    // hash + length narrow to a single WKS candidate, but a 32-bit hash collision
+    // of equal length would otherwise mis-intern an arbitrary name (giving it the
+    // WKS's presence bits / slot accelerators). Confirm with an exact
+    // ASCII-case-insensitive byte comparison before accepting the WKS.
+    // Browsers send canonical-case field names that match the WKS bytes
+    // exactly, so try a fast exact compare first; memcmp-equal implies
+    // fold-equal. The per-byte fold still runs on a miss to catch case
+    // variants (e.g. "HOST", "host").
+    bool matches = (memcmp(string, bucket->wks, string_len) == 0);
+    if (!matches) {
+      matches = true;
+      for (int i = 0; i < string_len; ++i) {
+        if (hdrtoken_ascii_toupper(static_cast<unsigned char>(string[i])) !=
+            hdrtoken_ascii_toupper(static_cast<unsigned char>(bucket->wks[i]))) {
+          matches = false;
+          break;
+        }
+      }
+    }
+    if (matches) {
+      int wks_idx = hdrtoken_wks_to_index(bucket->wks);
+      if (wks_string_out) {
+        *wks_string_out = bucket->wks;
+      }
+      return wks_idx;
+    }
+  }
+
+  Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
+  return -1;
+}
+
+// Single-pass field-name scan for the MIME parser. Scans up to `maxlen` bytes
+// of `string` for the ':' delimiter while, in the same pass, accumulating the
+// FNV-1a name hash (identical to hdrtoken_hash) and tracking whether every byte
+// before ':' is a valid HTTP field-name char. Returns the index of ':' (i.e.
+// the field-name length) or -1 if no ':' appears within `maxlen`. `*hash_out`
+// and `*all_valid_out` describe the bytes scanned before ':' (or all `maxlen`
+// bytes when ':' is absent).
+int
+hdrtoken_field_name_scan(const char *string, int maxlen, uint32_t *hash_out, bool *all_valid_out)
+{
+  uint32_t hval      = HDRTOKEN_HASH_SEED; // same FNV-1a name hash as hdrtoken_hash
+  bool     all_valid = true;
+  int      i         = 0;
+
+  for (; i < maxlen; ++i) {
+    unsigned char const uc = static_cast<unsigned char>(string[i]);
+    if (uc == ':') {
+      break;
+    }
+    hval       = hdrtoken_hash_step(hval, uc);
+    all_valid &= (ParseRules::is_http_field_name(static_cast<char>(uc)) != 0);
+  }
+
+  *hash_out      = hval;
+  *all_valid_out = all_valid;
+  return (i < maxlen) ? i : -1;
+}
+
+int
+hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out, uint32_t *hash_out)
+{
   ink_assert(string != nullptr);
 
   if (hdrtoken_is_wks(string)) {
-    wks_idx = hdrtoken_wks_to_index(string);
+    int wks_idx = hdrtoken_wks_to_index(string);
     if (wks_string_out) {
       *wks_string_out = string;
+    }
+    // Keep hash_out total: an interned name is matched by its WKS index, not by
+    // hash, so none is computed here. A caller that needs a name hash for an
+    // already-interned string must call hdrtoken_hash() directly.
+    if (hash_out) {
+      *hash_out = 0;
     }
     return wks_idx;
   }
 
   uint32_t hash = hdrtoken_hash(reinterpret_cast<const unsigned char *>(string), static_cast<unsigned int>(string_len));
-  uint32_t slot = hash_to_slot(hash);
-
-  bucket = &(hdrtoken_hash_table[slot]);
-  if ((bucket->wks != nullptr) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
-    wks_idx = hdrtoken_wks_to_index(bucket->wks);
-    if (wks_string_out) {
-      *wks_string_out = bucket->wks;
-    }
-    return wks_idx;
+  // Hand the caller the name hash it can reuse (e.g. a parse-local duplicate
+  // filter) so it need not recompute it.
+  if (hash_out) {
+    *hash_out = hash;
   }
 
-  Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
-  return -1;
+  return hdrtoken_tokenize_prehashed(string, string_len, hash, wks_string_out);
 }
 
 /*-------------------------------------------------------------------------
