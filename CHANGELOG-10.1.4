@@ -1,0 +1,135 @@
+Changes with Apache Traffic Server 10.1.4
+  #13400 - doc: fix Via decoder ring URL (/tools/via moved to /via.html) (#13400)
+  #13329 - Avoid JSONRPC client write spins (#13329)
+  Replace VLA with heap allocation in cachekey appendEncoded
+  Fix SNI/hostname comparison to check full string length
+  Close connection if unneccesary H2 SETTINGS frame arrives
+  Reject Transfer-Encoding in HTTP/2 and HTTP/3 headers
+  Reject Transfer-Encoding where chunked is not the final coding
+  Fix out-of-bounds write in MIME obs-fold handling
+  Enforce per-field size limit in HPACK/QPACK string decoding
+  regex_remap: Overflow in url_len Leads to Stack Overflow
+  Reject oversized HPACK indexes
+  Fix integer overflow in MIME header parsing
+  Fix inverted condition for nonstandard method matching in ACL filtering
+  Limit CONNECT body preclusion to successful responses
+  Fix inverted condition in SNI_IpAllow::TestClientSNIAction
+  Update SNI_IpAllow::TestClientSNIAction autest
+  rate_limit: Fix queue bypass
+  compress: stop gzip transform after deflate() error
+  Add nullptr check before calling SSL_shutdown
+  Fix leaks of POST failures
+  Server Session: Make sure read_buffer is empty before pooling a server session
+  Enforce 16-bit srv_offset invariant in HostDBInfo::assign
+  Replace VLAs with ts::LocalBuffer in HostDB SRV handling
+  Fix OOB read in H2 get_received_frame_count
+  Add bounds checks to DNS answer parsing before NS_GET macros
+  cripts: Fix UB array write in remap instance initialization
+  cripts: Fix path traversal in File::Path::Rebase
+  Bound status code parsing to prevent integer overflow
+  Avoid stack VLA in log filter wiping
+  Validate PROXY v1 port bounds
+  Guard txn_box stack allocations
+  libswoc: Validate IPv6 hextet bounds
+  Reject overflowing XPACK integers
+  Bound outstanding HTTP/2 SETTINGS
+  Fix max_settings_per_minute condition
+  rate_limit: Fix ip-rep UB writes
+  Fix length check of MethodMod::check
+  iocore: tighten IOBuffer and AIO bounds checks
+  stream_editor: allocate rules in contdata_t ctor
+  tscpp: hold intercept try-lock guard via shared mutex
+  URL: reject parsed ports outside uint16 range
+  access_control: cap stack buffer for cookie base64 decode
+  rate_limit: Fix active counter underflow
+  Constrain prefetch relative paths
+  Keep OCSP map on init failure
+  Return evacuation bucket by reference not by value
+  Handle addressless PROXY headers in TLS
+  Guard outbound server_name SNI policy
+  Verify H2 origin certs on session reuse
+  TLSSNISupport: own outbound_sni_policy bytes across config reload
+  Avoid signed tolower for name bytes
+  Reject oversized multiplexer chunks
+  Keep loop detection on outbound-transparent ports
+  Set default value of proxy.config.http2.default_buffer_water_mark to 32KB
+  Avoid UB when URL scheme is absent in scheme_get
+  HTTPHdr: fix use-after-free in destroy() leaving dangling m_http
+  ESI: cap HTTP request length to prevent size_t overflow
+  Invoke Continuation operator bool, not pointer-to-bool
+  Prevent unbounded recursion in host-down Range fallback
+  Add uds-perm/uds-user/uds-group port options
+  CVE-2021-32564: Fix ChunkHandler Flow Control
+  Fix FetchSM header block copying
+  Gate H2 reads during async hooks
+  background_fetch: fix inverted size operator and broken value wildcard
+  Fix an integer overflow in HdrHeap
+  lua: Add checks on server request hdr
+  SSLSNIConfig: fix SNI partial-match policy bypass
+  Combo handler: Reject empty Content-Type when allowlist is configured
+  ESI: bound for nested esi html comment
+  ja3_fingerprint: tighten encode_word_buffer bounds
+  Use ParseRules::is_digit on raw network bytes in HTTP parser
+  header_rewrite: Copy set-body-from response body with memcpy
+  Cap stale_response SIE buffering
+  Guard parent mark-down on UNAVAILABLE_SERVER retry
+  xdebug: Cap X-Remap header length to actual buffer content
+  DNS: fix TCP length-prefix read under edge-triggered epoll
+  Add admin-guide reference for writing secure regex rules
+  cripts: Fix HRW bridge issues, add autests
+  cripts: fix use-after-free in TSRemapDoRemap
+  cripts: Fix abort on duplicate query keys
+  header_rewrite: Fix cookie key over-read
+  CVE-2026-33267: 10.1.x: Strip external @ headers before plugin hooks
+  doc: cover uri_signing cdniuc uri-regex in regex best practices
+  Preserve dynamic-port flag across tunnel_route mapping ops
+  HttpTunnel: Guard get_producer(VIO*) against dead producers
+  ts_lua: clear rri pointer in http_ctx after remap returns
+  ts_lua: use sockaddr_storage for ts_lua_fetch client address
+  cripts: Fix global Client::URL MLoc leak
+  cripts: Fix Bundle::Headers server-side header removal
+  slice: Check for Integer underflow in firstblockbytes
+  ParentSelection: increase size of mapWrapped array for compat with strategies
+  lua: Invalidate cached main_ctx when slot is outside instance's range
+  HttpSM: Stop tracking the fire-and-forget cache-delete Action
+  lua: Free transform context when client-hook VConn closes
+  NextHopRoundRobin: update ring size for wrapping when switching rings
+  certifier: Reject unsafe SNI names
+  Drop H2 origin trailers for H1 clients
+  http2: Reject CONTINUATION accumulation that overflows header_blocks_length
+  Honor number_of_redirections for plugin-initiated redirects
+  cache_range_requests: use std::string spill buffer for building override cachekey
+  webp_transform: bound buffered body and ImageMagick decode
+  header_rewrite: Fix IPv6 CIDR masking for non-aligned prefixes
+  SSLNetVConnection: deregister async handshake eventfd on connection teardown
+  Strip Connection-listed headers per RFC 9110 §7.6.1
+  http2: Defer HPACK dynamic-table updates until encoding succeeds
+  authproxy: Don't assert on auth response with no header fields
+  mgmt/rpc: create JSONRPC unix socket with intended mode atomically
+  cache: Move openReadStartEarliest recursion counter off CacheVC to fix UAF
+  CVE-2026-33930: Bound host header buffer
+  uri_signing: replace stack arrays with LocalBuffer
+  ip_allow: add default CONNECT destination rules
+  Guard against missing delimiter in url_sig C= parameter
+  Fix: cancel stale TLS accept timeouts so session acceptors don't abort
+  CVE-2026-22068: regex_map: anchor host matching to the full hostname
+  Invalidate dns_info.addr when claiming resolved without DNS
+  PendingAction: Don't let CAS failure overwrite the caller's action
+  parent_selection: Cap retries to one per window via failedAt CAS
+  compress: Wrap isspace so obs-text Content-Type bytes don't trigger UB
+  Reject header fields exceeding the uint16 field-length limit
+  ESI: Fix URL include validation in version 10.1.x
+  http: reject chunked extension quoted-string values containing CR or LF
+  Fix race in remap table refcount during reload
+  Guard remap against shutdown table teardown
+  http: reject a bare LF chunked trailer terminator under strict parsing
+  Expand URI normalization test coverage for userinfo handling
+  Combo handler: Refactor Cache-Control parsing and update gold test
+  combo_handler.test.py: Fix empty type test output
+  combo_handler.test.py: realign gold-file TestRun indices for 10.1.x
+  http: drain request body on internally generated cache responses
+  10.1.x: Fix chunked passthrough flow-control deadlock (drop_chunked_trailers=0)
+  Regex: preserve RE_ENDANCHORED semantics on PCRE2 < 10.30
+  esi: drop tsutil from esicore link deps to avoid plugin ODR
+  esi: add <sys/socket.h> for AF_INET/AF_INET6 in IncludeUrlValidator
+  esi: guard optarg null before setHostAllowRegex to satisfy clang analyzer
