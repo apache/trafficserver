@@ -183,6 +183,13 @@ autest:
             args:
               - "rules/set_status_in_if.conf"
 
+      - from: "http://www.example.com/from_19/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_19/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/rule_sort_destination.conf"
+
     metric_checks:
       - metric: "proxy.process.plugin.header_rewrite.operators"
         min: 1
@@ -1973,3 +1980,28 @@ sessions:
 
     proxy-response:
       status: 403
+
+# Test 68: sort-destination QUERY sorts the request-URL query before the
+# request reaches the origin.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_19/?b=2&a=1&c=3
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, 68 ]
+
+    proxy-request:
+      url: /to_19/?a=1&b=2&c=3
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200

@@ -420,6 +420,16 @@ test_parsing()
     END_TEST();
   }
 
+  {
+    ParserTest p("sort-destination QUERY");
+
+    CHECK_EQ(p.getTokens().size(), 2UL);
+    CHECK_EQ(p.getTokens()[0], "sort-destination");
+    CHECK_EQ(p.getTokens()[1], "QUERY");
+
+    END_TEST();
+  }
+
   return errors;
 }
 
