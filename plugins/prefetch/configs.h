@@ -119,9 +119,9 @@ public:
   }
 
   void
-  setFetchCount(const char *optarg)
+  setFetchCount(unsigned count)
   {
-    _fetchCount = getValue(optarg);
+    _fetchCount = count;
   }
 
   unsigned
@@ -131,9 +131,9 @@ public:
   }
 
   void
-  setFetchMax(const char *optarg)
+  setFetchMax(unsigned max)
   {
-    _fetchMax = getValue(optarg);
+    _fetchMax = max;
   }
 
   unsigned

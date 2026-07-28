@@ -21,6 +21,8 @@
  * @brief Plugin configuration.
  */
 
+#include <charconv>  /* std::from_chars() */
+#include <cstring>   /* strlen() */
 #include <fstream>   /* std::ifstream */
 #include <getopt.h>  /* getopt_long() */
 #include <sstream>   /* std::istringstream */
@@ -90,20 +92,25 @@ PrefetchConfig::setFetchOverflow(const char *optarg)
 }
 
 /**
- * @brief Whether @a optarg is a non-empty string of decimal digits (a valid unsigned integer option).
+ * @brief Parses @a optarg as an unsigned integer option value.
+ * @param optarg the option value to parse.
+ * @param value set to the parsed value on success, untouched on failure.
+ * @return true if @a optarg is a non-empty string of decimal digits that fits in @a value.
  */
 static bool
-isUnsignedInt(const char *optarg)
+parseUnsignedInt(const char *optarg, unsigned &value)
 {
-  if (nullptr == optarg || '\0' == *optarg) {
+  if (nullptr == optarg) {
     return false;
   }
-  for (const char *p = optarg; '\0' != *p; ++p) {
-    if (*p < '0' || *p > '9') {
-      return false;
-    }
-  }
-  return true;
+
+  const char *const end = optarg + strlen(optarg);
+  auto const [parsed, ec]{std::from_chars(optarg, end, value)};
+
+  /* from_chars() reports a leading sign or a non-digit as invalid_argument and a value too large
+   * for @a value as result_out_of_range. Requiring it to consume the whole string rejects trailing
+   * characters such as "10abc". */
+  return std::errc{} == ec && parsed == end;
 }
 
 /**
@@ -172,8 +179,8 @@ PrefetchConfig::init(int argc, char *argv[])
       break;
 
     case 'c': /* --fetch-count */
-      if (isUnsignedInt(optarg)) {
-        setFetchCount(optarg);
+      if (unsigned count = 0; parseUnsignedInt(optarg, count)) {
+        setFetchCount(count);
       } else {
         PrefetchError("invalid --fetch-count '%s': expected a non-negative integer", optarg ? optarg : "");
         status = false;
@@ -199,8 +206,8 @@ PrefetchConfig::init(int argc, char *argv[])
     } break;
 
     case 'x': /* --fetch-max */
-      if (isUnsignedInt(optarg)) {
-        setFetchMax(optarg);
+      if (unsigned max = 0; parseUnsignedInt(optarg, max)) {
+        setFetchMax(max);
       } else {
         PrefetchError("invalid --fetch-max '%s': expected a non-negative integer", optarg ? optarg : "");
         status = false;
