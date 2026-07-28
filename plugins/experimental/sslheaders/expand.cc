@@ -49,14 +49,14 @@ x509_expand_certificate(X509 *x509, BIO *bio)
 static void
 x509_expand_subject(X509 *x509, BIO *bio)
 {
-  X509_NAME *name = X509_get_subject_name(x509);
+  const X509_NAME *name = X509_get_subject_name(x509);
   X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE);
 }
 
 static void
 x509_expand_issuer(X509 *x509, BIO *bio)
 {
-  X509_NAME *name = X509_get_issuer_name(x509);
+  const X509_NAME *name = X509_get_issuer_name(x509);
   X509_NAME_print_ex(bio, name, 0 /* indent */, XN_FLAG_ONELINE);
 }
 
@@ -72,8 +72,8 @@ x509_expand_signature(X509 *x509, BIO *bio)
 {
   const ASN1_BIT_STRING *sig;
   X509_get0_signature(&sig, nullptr, x509);
-  const char *ptr = reinterpret_cast<const char *>(sig->data);
-  const char *end = ptr + sig->length;
+  const char *ptr = reinterpret_cast<const char *>(ASN1_STRING_get0_data(sig));
+  const char *end = ptr + ASN1_STRING_length(sig);
 
   // The canonical OpenSSL way to format the signature seems to be
   // X509_signature_dump(). However that separates each byte with a ':', which is

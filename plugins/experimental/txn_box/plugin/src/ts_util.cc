@@ -1106,7 +1106,7 @@ ssl_nid(swoc::TextView const &name)
 namespace
 {
   TextView
-  ssl_value_for(X509_NAME *name, int nid)
+  ssl_value_for(const X509_NAME *name, int nid)
   {
     if (int loc = X509_NAME_get_index_by_NID(name, nid, -1); loc >= 0) {
       if (auto entry = X509_NAME_get_entry(name, loc); entry != nullptr) {
