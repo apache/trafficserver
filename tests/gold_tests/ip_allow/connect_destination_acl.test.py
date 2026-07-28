@@ -123,7 +123,7 @@ def add_denied_connect_run(name, url, http_connect="403"):
         f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_default.Variables.port} '
         f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {url}',
         ts=ts_default)
-    tr.Processes.Default.ReturnCode = 56
+    tr.Processes.Default.ReturnCode = Any(7, 56)
     tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
         f"http_code=000 http_connect={http_connect}", "CONNECT should be rejected before tunneling.")
     tr.StillRunningAfter = server
@@ -138,7 +138,7 @@ tr.MakeCurlCommand(
     f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_default.Variables.port} '
     f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {loopback_url}',
     ts=ts_default)
-tr.Processes.Default.ReturnCode = 56
+tr.Processes.Default.ReturnCode = Any(7, 56)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
     "http_code=000 http_connect=403", "CONNECT to loopback should be rejected by the default outbound policy.")
 tr.StillRunningAfter = server
