@@ -401,12 +401,18 @@ mkcrt(const std::string &commonName, int serial)
   X509_gmtime_adj(X509_get_notAfter(cert.get()), static_cast<long>(3650) * 24 * 3600);
 
   // Get handle to subject name
-  X509_NAME *n = X509_get_subject_name(cert.get());
+  X509_NAME *n = X509_NAME_dup(X509_get_subject_name(cert.get()));
   // Set common name field
   if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)commonName.c_str(), -1, -1, 0) != 1) {
     TSError("[%s] %s: failed to add certificate subject CN", PLUGIN_NAME, __func__);
     return nullptr;
   }
+  if (X509_set_subject_name(cert.get(), n) != 1) {
+    TSError("[%s] %s: failed to set certificate subject", PLUGIN_NAME, __func__);
+    X509_NAME_free(n);
+    return nullptr;
+  }
+  X509_NAME_free(n);
 
   // Set Traffic Server public key
   if (X509_set_pubkey(cert.get(), ca_pkey_scoped.get()) == 0) {

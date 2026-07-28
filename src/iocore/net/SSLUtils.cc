@@ -1004,7 +1004,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
 } /* CheckServerCertNow() */
 
 static char *
-asn1_strdup(ASN1_STRING *s)
+asn1_strdup(const ASN1_STRING *s)
 {
   // Make sure we have an 8-bit encoding.
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
@@ -2212,7 +2212,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     std::set<std::string> name_set;
     // Grub through the names in the certs
-    X509_NAME *subject = nullptr;
+    const X509_NAME *subject = nullptr;
 
     // Insert a key for the subject CN.
     subject = X509_get_subject_name(cert);
@@ -2225,8 +2225,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
           break;
         }
 
-        X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
-        ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
+        const X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
+        const ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
         subj_name           = asn1_strdup(cn);
 
         Dbg(dbg_ctl_ssl_load, "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);

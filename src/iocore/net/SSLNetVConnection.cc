@@ -167,7 +167,7 @@ SSLNetVConnection::_unbindSSLObject()
 }
 
 static void
-debug_certificate_name(const char *msg, X509_NAME *name)
+debug_certificate_name(const char *msg, const X509_NAME *name)
 {
   BIO *bio;
 
