@@ -2231,7 +2231,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
         const X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
         const ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
-        subj_name           = asn1_strdup(cn);
+        subj_name                 = asn1_strdup(cn);
 
         Dbg(dbg_ctl_ssl_load, "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
         name_set.insert(subj_name.get());
