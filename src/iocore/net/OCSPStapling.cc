@@ -514,9 +514,9 @@ err:
 TS_OCSP_CERTID *
 TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 {
-  const X509_NAME    *iname;
-  const ASN1_INTEGER *serial;
-  const ASN1_BIT_STRING    *ikey;
+  const X509_NAME       *iname;
+  const ASN1_INTEGER    *serial;
+  const ASN1_BIT_STRING *ikey;
 
   if (!dgst) {
     dgst = EVP_sha1();

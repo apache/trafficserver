@@ -221,9 +221,9 @@ validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peernam
 {
   GENERAL_NAMES   *gens = nullptr;
   const X509_NAME *name = nullptr;
-  int             i;
-  int             alt_type;
-  bool            retval = false;
+  int              i;
+  int              alt_type;
+  bool             retval = false;
   ;
   equal_fn    equal;
   auto const *hostname_data = reinterpret_cast<const unsigned char *>(hostname.data());
@@ -273,9 +273,9 @@ validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peernam
   name = X509_get_subject_name(x);
 
   while ((i = X509_NAME_get_index_by_NID(name, NID_commonName, i)) >= 0) {
-    const ASN1_STRING   *str;
-    int                 astrlen;
-    unsigned char       *astr;
+    const ASN1_STRING *str;
+    int                astrlen;
+    unsigned char     *astr;
     str = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(name, i));
     // Convert to UTF-8
     astrlen = ASN1_STRING_to_UTF8(&astr, str);
