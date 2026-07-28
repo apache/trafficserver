@@ -303,8 +303,8 @@ records:
     max_ping_frames_per_minute: 60
     max_priority_frames_per_minute: 120
     max_settings_frames_per_minute: 14
-    max_settings_per_frame: 7
-    max_settings_per_minute: 14
+    max_settings_per_frame: 16
+    max_settings_per_minute: 32
     min_avg_window_update: 2560.0
     min_concurrent_streams_in: 10
     no_activity_timeout_in: 120
