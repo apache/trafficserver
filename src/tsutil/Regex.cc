@@ -205,6 +205,13 @@ RegexMatches::operator[](size_t index) const
   }
 
   PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(_MatchData::get(_match_data));
+
+  // A group that did not participate in the match has an unset offset. This happens for an optional
+  // group that precedes a participating one, so a valid index is not enough to guarantee an offset.
+  if (PCRE2_UNSET == ovector[2 * index]) {
+    return std::string_view();
+  }
+
   return std::string_view(_subject.data() + ovector[2 * index], ovector[2 * index + 1] - ovector[2 * index]);
 }
 
