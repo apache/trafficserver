@@ -1532,6 +1532,10 @@ Parent Proxy Configuration
 
    The amount of time allowed between connection retries to a parent cache that is unavailable.
 
+   Once this time has elapsed the parent is selected again as a retry candidate. It is
+   restored to the pool only if that retry actually succeeds; if the retry fails, the parent
+   remains unavailable and a further ``retry_time`` must elapse before it is tried again.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.max_trans_retries INT 2
 
    Limits the number of simultaneous transactions that may retry a parent once the parents
