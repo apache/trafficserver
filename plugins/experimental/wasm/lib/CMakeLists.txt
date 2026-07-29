@@ -38,6 +38,7 @@ endif()
 
 add_library(wasmlib STATIC ${CC_FILES})
 target_compile_options(wasmlib PUBLIC -Wno-unused-parameter)
+target_link_libraries(wasmlib PRIVATE OpenSSL::Crypto)
 if(wamr_FOUND)
   target_compile_options(wasmlib PRIVATE -Wno-missing-field-initializers)
   target_link_libraries(wasmlib PUBLIC wamr::wamr)
