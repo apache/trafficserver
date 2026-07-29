@@ -83,7 +83,7 @@ tr = Test.AddTestRun("Wait for the squid.log to be written")
 timeout = 30
 watcher = tr.Processes.Process("watcher")
 watcher.Command = f"sleep {timeout}"
-watcher.Ready = When.FileContains(ts.Disk.squid_log.Name, r'14 http/1.1 http/2')
+watcher.Ready = When.FileContains(ts.Disk.squid_log.Name, r'16 http/2 http/2')
 watcher.TimeOut = timeout
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -93,7 +93,7 @@ tr.Processes.Default.Command = 'echo await_squid_log'
 tr.Processes.Default.ReturnCode = 0
 
 # UUIDs 1-4 should be http/1.1 clients and H2 origin
-# UUIDs 5-9 should be http/2 clients and H2 origins
+# UUIDs 5-11 and 15-16 should be http/2 clients and H2 origins
 ts.Disk.squid_log.Content = Testers.ContainsExpression(" [1-4] http/1.1 http/2", "cases 1-4 request http/1.1")
 ts.Disk.squid_log.Content += Testers.ExcludesExpression(" [1-4] http/2 http/2", "cases 1-4 request http/1.1")
 ts.Disk.squid_log.Content += Testers.ContainsExpression(" 1[1-4] http/1.1 http/2", "cases 12-14 request http/1.1")
@@ -102,6 +102,8 @@ ts.Disk.squid_log.Content += Testers.ContainsExpression(" [5-9] http/2 http/2", 
 ts.Disk.squid_log.Content += Testers.ExcludesExpression(" [5-9] http/1.1 http/2", "cases 5-11 request http/2")
 ts.Disk.squid_log.Content += Testers.ContainsExpression(" 1[0-1] http/2 http/2", "cases 5-11 request http/2")
 ts.Disk.squid_log.Content += Testers.ExcludesExpression(" 1[0-1] http/1.1 http/2", "cases 5-11 request http/2")
+ts.Disk.squid_log.Content += Testers.ContainsExpression(" 1[5-6] http/2 http/2", "cases 15-16 request http/2")
+ts.Disk.squid_log.Content += Testers.ExcludesExpression(" 1[5-6] http/1.1 http/2", "cases 15-16 request http/2")
 
 tr = Test.AddTestRun("Test HTTP method Metrics")
 tr.Processes.Default.Command = (
