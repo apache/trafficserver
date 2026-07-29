@@ -47,6 +47,9 @@ ts.Disk.records_config.update(
         'proxy.config.http.server_session_sharing.pool': 'thread',
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
+        # Flush log buffers promptly so that the squid.log entry for the last
+        # transaction appears while the test is still waiting for it.
+        'proxy.config.log.max_secs_per_buffer': 1,
     })
 
 ts.Disk.remap_config.AddLines(
@@ -85,18 +88,9 @@ tr.AddVerifierClientProcess(
 tr.Processes.Default.StartBefore(server_expect)
 tr.Processes.Default.ReturnCode = 0
 
-tr = Test.AddTestRun("Wait for the squid.log to be written")
-timeout = 30
-watcher = tr.Processes.Process("watcher")
-watcher.Command = f"sleep {timeout}"
-watcher.Ready = When.FileContains(ts.Disk.squid_log.Name, r'14 http/1.1 http/2')
-watcher.TimeOut = timeout
+tr = Test.AddAwaitFileContainsTestRun("Wait for the squid.log to be written", ts.Disk.squid_log.Name, r'14 http/1.1 http/2')
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
-tr.TimeOut = timeout
-tr.Processes.Default.StartBefore(watcher)
-tr.Processes.Default.Command = 'echo await_squid_log'
-tr.Processes.Default.ReturnCode = 0
 
 # UUIDs 1-4 should be http/1.1 clients and H2 origin
 # UUIDs 5-9 should be http/2 clients and H2 origins
