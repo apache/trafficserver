@@ -194,11 +194,6 @@ use_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
 {
   ink_assert(keyPath && keyPath[0] != '\0');
   int const result{SSL_CTX_use_PrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM)};
-  if (1 != result) {
-    char err_buf[256]{};
-    ERR_error_string_n(ERR_get_error(), err_buf, sizeof(err_buf));
-    Error("failed to load private key %s: %s", keyPath, err_buf);
-  }
   return 1 == result;
 }
 
