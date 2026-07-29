@@ -6,8 +6,8 @@ description: Basic skills; formatting, compiling, testing, installing.
 ## Build Process
 
 1. Which `cmake --list-presets`?
- * Need HTTP3? `ci-fedora-quiche`
- * Not sure? Ask.
+  * Need HTTP3? `ci-fedora-quiche`
+  * Not sure? Ask.
 2. No build directory yet? Configure one.
 3. Which target?
 4. Execute.
