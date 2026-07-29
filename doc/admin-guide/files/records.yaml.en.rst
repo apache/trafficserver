@@ -4316,8 +4316,9 @@ SSL Termination
   This configuration specifies the maximum number of bytes to write
   into a SSL record when replying over a SSL session. In some
   circumstances this setting can improve response latency by reducing
-  buffering at the SSL layer. This setting can have a value between 0
-  and 16383 (max TLS record size).
+  buffering at the SSL layer. This setting accepts ``-1`` for dynamic
+  sizing, ``0`` for the default behavior, or a fixed maximum between
+  ``1`` and ``16383`` bytes.
 
   The default of ``0`` means to always write all available data into
   a single SSL record.

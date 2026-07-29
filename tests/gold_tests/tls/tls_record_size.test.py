@@ -1,7 +1,7 @@
 '''
-Exercise the TLS record-size clamp (proxy.config.ssl.max_record_size > 0): on a
-large TLS download the body must arrive intact and every application-data record
-on the wire must be clamped to the configured size.
+Exercise fixed and dynamic TLS record sizing. On a large TLS download the body
+must arrive intact and application-data records on the wire must follow the
+configured sizing strategy.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -19,30 +19,22 @@ on the wire must be clamped to the configured size.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# NOTE: only the positive (fixed-clamp) branch of the record-sizing logic is
-# covered here. The documented dynamic mode (max_record_size == -1) cannot be
-# enabled through records.yaml because the record's validity check is [0-16383],
-# which rejects -1; that inconsistency is pre-existing, so the dynamic branch
-# stays uncovered by design.
-
 import os
 import sys
 
 Test.Summary = __doc__
 
 
-class TestRecordSizeClamp:
-    '''Verify max_record_size clamps every record of a large TLS download.'''
-
-    # Comfortably larger than the clamp so many records pass through it.
-    _body_len: int = 1024 * 1024
-    _max_record: int = 4096
+class TestRecordSize:
+    '''Verify fixed and dynamic TLS record sizing on large downloads.'''
 
     _server_counter: int = 0
     _ts_counter: int = 0
 
-    def __init__(self) -> None:
+    def __init__(self, max_record: int, body_len: int) -> None:
         '''Declare the test Processes.'''
+        self._max_record = max_record
+        self._body_len = body_len
         self._server = self._configure_server()
         self._ts = self._configure_trafficserver()
 
@@ -51,15 +43,15 @@ class TestRecordSizeClamp:
 
         :return: The origin server Process.
         '''
-        server = Test.MakeOriginServer(f'server-{TestRecordSizeClamp._server_counter}')
-        TestRecordSizeClamp._server_counter += 1
+        server = Test.MakeOriginServer(f'server-{TestRecordSize._server_counter}')
+        TestRecordSize._server_counter += 1
 
-        body = "x" * TestRecordSizeClamp._body_len
+        body = "x" * self._body_len
         request_header = {"headers": "GET /obj HTTP/1.1\r\nHost: ex.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
         response_header = {
             "headers":
                 "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                f"Cache-Control: max-age=3600\r\nContent-Length: {TestRecordSizeClamp._body_len}\r\n\r\n",
+                f"Cache-Control: max-age=3600\r\nContent-Length: {self._body_len}\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": body
         }
@@ -67,12 +59,12 @@ class TestRecordSizeClamp:
         return server
 
     def _configure_trafficserver(self) -> 'Process':
-        '''Configure Traffic Server with a positive max_record_size clamp.
+        '''Configure Traffic Server with the requested record-size strategy.
 
         :return: The Traffic Server Process.
         '''
-        ts = Test.MakeATSProcess(f'ts-{TestRecordSizeClamp._ts_counter}', enable_tls=True)
-        TestRecordSizeClamp._ts_counter += 1
+        ts = Test.MakeATSProcess(f'ts-{TestRecordSize._ts_counter}', enable_tls=True)
+        TestRecordSize._ts_counter += 1
 
         ts.addDefaultSSLFiles()
         ts.Disk.ssl_multicert_yaml.AddLines(
@@ -87,31 +79,45 @@ ssl_multicert:
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-                # Positive cap -> the write path clamps each TLS record to this many bytes.
-                'proxy.config.ssl.max_record_size': TestRecordSizeClamp._max_record,
+                'proxy.config.ssl.max_record_size': self._max_record,
             })
+        if self._max_record == -1:
+            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
+                r'proxy\.config\.ssl\.max_record_size.*Validity Check error',
+                'The dynamic record-size sentinel should pass records validation')
         return ts
 
     def run(self) -> None:
         '''Configure and run the TestRun.
 
-        The client downloads the object and measures the TLS records on the wire,
-        asserting both that the body is intact and that no application-data record
-        exceeds the configured clamp.
+        The client downloads the object and measures the TLS records on the wire.
         '''
-        tr = Test.AddTestRun("max_record_size>0 clamps records on a large TLS download")
+        if self._max_record == -1:
+            description = 'max_record_size=-1 dynamically sizes records on a large TLS download'
+            client_option = '--dynamic'
+            expected_output = 'PASS: TLS records ramp from small to large after the dynamic threshold'
+        else:
+            description = 'max_record_size>0 clamps records on a large TLS download'
+            client_option = f'--max-record {self._max_record}'
+            expected_output = 'PASS: every application-data record is within the configured clamp'
+
+        tr = Test.AddTestRun(description)
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.Command = (
             f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_record_size_client.py")} '
             f'-p {self._ts.Variables.ssl_port} --host ex.test --path /obj '
-            f'--max-record {TestRecordSizeClamp._max_record} --expect-bytes {TestRecordSizeClamp._body_len}')
+            f'{client_option} --expect-bytes {self._body_len}')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            "PASS: every application-data record is within the configured clamp",
-            "every TLS record must be clamped to the configured size")
+            expected_output, 'TLS records must follow the configured sizing strategy')
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 
 
-TestRecordSizeClamp().run()
+# The fixed-size test response is comfortably larger than its 4,096-byte clamp,
+# ensuring that many records exercise the clamp. The dynamic-sizing test
+# response must exceed its 1,000,000-byte threshold by enough data to demonstrate
+# both phases.
+TestRecordSize(4096, 1024 * 1024).run()
+TestRecordSize(-1, 2 * 1024 * 1024).run()
