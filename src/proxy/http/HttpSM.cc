@@ -6916,7 +6916,7 @@ HttpSM::attach_server_session()
   server_entry->vc_type          = HttpVC_t::SERVER_VC;
   server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
 
-  UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
+  NetVConnection *server_vc = server_txn->get_netvc();
 
   // set flag for server session is SSL
   if (server_vc->get_service<TLSBasicSupport>()) {
