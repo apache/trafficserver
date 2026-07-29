@@ -39,12 +39,24 @@ labels) for each PR, useful for generating release documentation:
     uv run --project tools/changelog python tools/changelog/changelog.py \
         -o apache -r trafficserver -m 10.2.0 --doc --format yaml > changelog.yaml
 
+For security releases whose fixes land directly on a release branch without
+public pull requests (and therefore never appear in a milestone), use
+--from-git to source the changelog from a git commit range. This is merged
+with the milestone PRs (deduplicated by PR number) so the result includes both
+the direct-to-branch commits and any milestone PRs. The -m value is still used
+as the version label in the output:
+
+    uv run --project tools/changelog python tools/changelog/changelog.py \
+        -o apache -r trafficserver -m 10.1.4 \
+        --from-git 10.1.3..upstream/10.1.x
+
 Requires a GitHub token via GH_TOKEN env var or -a flag to avoid rate limits.
 """
 
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -238,6 +250,71 @@ def changelog_via_api(
     return changelog
 
 
+def changelog_via_git(git_range: str, verbose: bool, doc: bool) -> list[dict]:
+    """Build the changelog from a git commit range.
+
+    Used for security releases whose fixes are committed directly to a release
+    branch without public PRs, so they never appear in a GitHub milestone. Each
+    commit becomes an entry; a trailing "(#N)" in the subject is captured as the
+    PR number when present, but is not required.
+    """
+    field_sep = "\x1f"
+    record_sep = "\x1e"
+    fmt = f"%H{field_sep}%s{field_sep}%b{record_sep}"
+    result = subprocess.run(
+        ["git", "log", "--no-merges", "--reverse", f"--pretty=format:{fmt}", git_range],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        print(f"git log error: {result.stderr.strip()}", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Reading commits from git range {git_range}", file=sys.stderr)
+
+    changelog = []
+    for record in result.stdout.split(record_sep):
+        record = record.strip("\n")
+        if not record:
+            continue
+        sha, subject, body = record.split(field_sep, 2)
+        matches = re.findall(r"#(\d+)", subject)
+        number = int(matches[-1]) if matches else None
+        if verbose:
+            label = f"#{number}" if number else sha[:12]
+            print(f"{label} - {subject} added.", file=sys.stderr)
+
+        entry: dict = {"number": number, "title": subject}
+        if doc:
+            entry["sha"] = sha
+            entry["body"] = body.strip()
+        changelog.append(entry)
+
+    return changelog
+
+
+def merge_changelogs(milestone_entries: list[dict], git_entries: list[dict]) -> list[dict]:
+    """Union the milestone-sourced and git-sourced entries, deduplicated by PR number.
+
+    Git commits keep their chronological order and carry commit-derived metadata.
+    Where a git commit's PR number matches a milestone PR, the milestone labels are
+    grafted onto the git entry. Milestone PRs with no corresponding commit in the
+    git range (e.g. folded into a combined backport) are appended, sorted by number.
+    """
+    ms_by_number = {e["number"]: e for e in milestone_entries}
+    git_numbers = {e["number"] for e in git_entries if e.get("number")}
+
+    for ge in git_entries:
+        num = ge.get("number")
+        if num in ms_by_number and ms_by_number[num].get("labels") and "labels" not in ge:
+            ge["labels"] = ms_by_number[num]["labels"]
+
+    extras = [e for e in milestone_entries if e["number"] not in git_numbers]
+    extras.sort(key=lambda x: x["number"])
+
+    return git_entries + extras
+
+
 def _lookup_milestone(client: httpx.Client, owner: str, repo: str, title: str) -> int | None:
     page = 1
     while True:
@@ -297,6 +374,14 @@ def main():
         action="store_true",
         help="Use gh CLI instead of direct API calls (avoids rate limits)",
     )
+    parser.add_argument(
+        "--from-git",
+        metavar="RANGE",
+        default=None,
+        help="Also source commits from a git range (e.g. 10.1.3..upstream/10.1.x) and merge them "
+        "with the milestone PRs, deduplicated by PR number. Use for security releases whose fixes "
+        "land directly on a branch without public PRs. -m is still used as the version label.",
+    )
     args = parser.parse_args()
 
     token = args.auth or os.environ.get("GH_TOKEN")
@@ -334,8 +419,16 @@ def main():
             args.doc,
         )
 
+    if args.from_git:
+        git_changelog = changelog_via_git(args.from_git, args.verbose, args.doc)
+        changelog = merge_changelogs(changelog, git_changelog)
+
     if changelog:
-        changelog.sort(key=lambda x: x["number"])
+        # Milestone-only entries all carry a PR number and sort by it. A merged
+        # (--from-git) result preserves git's chronological order with milestone-only
+        # PRs appended, so it must not be re-sorted.
+        if not args.from_git:
+            changelog.sort(key=lambda x: x["number"])
 
         if args.format == "yaml":
             output = {
@@ -351,7 +444,10 @@ def main():
         else:
             print(f"Changes with Apache Traffic Server {args.milestone}")
             for entry in changelog:
-                print(f"  #{entry['number']} - {entry['title']}")
+                if entry.get("number"):
+                    print(f"  #{entry['number']} - {entry['title']}")
+                else:
+                    print(f"  {entry['title']}")
                 if args.doc:
                     if entry.get("sha"):
                         print(f"    SHA: {entry['sha']}")
