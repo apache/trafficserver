@@ -420,19 +420,27 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
     to_return = nullptr;
   }
 
-  // Otherwise, check the thread pool first
-  if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_THREAD ||
-      this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
-    retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_THREAD);
-  }
+  // Always check the thread-local pool first. Multiplexing server sessions
+  // (HTTP/2, HTTP/3) cannot be safely shared across threads -- their state is
+  // owned by the EThread that drives their connection -- so they are filed
+  // exclusively in the per-thread pool by `Http2ServerSession::add_session`
+  // (and analogous code for HTTP/3). If the configured pool type is `global`
+  // or `global_locked`, only the global pool would otherwise be consulted,
+  // which means an existing H/2 origin connection on this thread is invisible
+  // to the lookup. Each new request would then open a fresh TCP+TLS+H/2
+  // handshake to the origin, defeating multiplexing entirely. Trying the
+  // thread-local pool first restores within-thread H/2 origin reuse without
+  // changing behavior for HTTP/1.x sessions, which fall through to the
+  // configured pool below on a thread-local miss.
+  retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_THREAD);
 
-  //  If you didn't get a match, and the global pool is an option go there.
   if (retval != HSMresult_t::DONE) {
     if (TS_SERVER_SESSION_SHARING_POOL_GLOBAL == this->get_pool_type() ||
         TS_SERVER_SESSION_SHARING_POOL_HYBRID == this->get_pool_type()) {
       retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL);
-    } else if (TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED == this->get_pool_type())
+    } else if (TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED == this->get_pool_type()) {
       retval = _acquire_session(ip, hostname_hash, sm, match_style, TS_SERVER_SESSION_SHARING_POOL_GLOBAL_LOCKED);
+    }
   }
 
   return retval;

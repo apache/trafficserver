@@ -6430,7 +6430,26 @@ HttpSM::handle_server_setup_error(int event, void *data)
   [[maybe_unused]] UnixNetVConnection *dbg_vc = nullptr;
   switch (event) {
   case VC_EVENT_EOS:
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    // If the underlying transport (e.g. an HTTP/2 stream) has signaled that
+    // the origin guaranteed it never processed this request -- because of a
+    // GOAWAY whose last_stream_id is below this stream's id, or a RST_STREAM
+    // with REFUSED_STREAM (RFC 9113 6.8 and 8.7) -- treat the failure as a
+    // connection-level error so HttpTransact::is_request_retryable allows
+    // retrying even non-idempotent methods such as POST. Otherwise this
+    // would surface to the client as ERR_CLIENT_ABORT despite the request
+    // being explicitly safe to replay on a fresh connection.
+    if (server_txn != nullptr && server_txn->is_safe_to_retry()) {
+      t_state.current.state = HttpTransact::CONNECTION_ERROR;
+      // A retry with a request body needs to use the complete copy retained
+      // by request buffering. The first origin attempt clears
+      // is_buffering_request_body after consuming that copy, so restore the
+      // flag before setting up the retry's request-body tunnel.
+      if (this->is_postbuf_valid() && this->get_postbuf_done()) {
+        is_buffering_request_body = true;
+      }
+    } else {
+      t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    }
     t_state.set_connect_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:

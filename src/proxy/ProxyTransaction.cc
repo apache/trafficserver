@@ -95,6 +95,12 @@ ProxyTransaction::set_tx_error_code(ProxyError e)
   }
 }
 
+bool
+ProxyTransaction::is_safe_to_retry() const
+{
+  return false;
+}
+
 NetVConnection *
 ProxyTransaction::get_netvc() const
 {

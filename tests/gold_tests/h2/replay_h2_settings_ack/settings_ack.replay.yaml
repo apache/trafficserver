@@ -1,0 +1,187 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+# Five separate H/2 client sessions, each issuing a single request. Each
+# session generates:
+#   * 1 SETTINGS-ACK in response to ATS's connection-preface SETTINGS,
+#   * 1 SETTINGS-ACK in response to the per-stream dynamic-window SETTINGS
+#     that ATS sends with `flow_control.policy_in=2`,
+# i.e. ~2 inbound SETTINGS-ACK frames per session. Across the five
+# sessions ATS receives ~10 inbound SETTINGS-ACK frames in well under a
+# minute. With `max_settings_frames_per_minute=2` and the buggy
+# implementation, ATS would close the connection with ENHANCE_YOUR_CALM
+# and the verifier client would observe its stream being torn down. With
+# the fix in place, ACKs are not counted toward the limit, the limit
+# stays at 0, and all five sessions complete cleanly.
+
+sessions:
+  - protocol:
+      - name: http
+        version: '2'
+      - name: tls
+        sni: settings-ack.example.com
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, settings-ack-1 ]]}}
+        client-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url: /settings-ack/1
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, settings-ack.example.com ]
+              - [ uuid, settings-ack-1 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'one1' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '2'
+      - name: tls
+        sni: settings-ack.example.com
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, settings-ack-2 ]]}}
+        client-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url: /settings-ack/2
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, settings-ack.example.com ]
+              - [ uuid, settings-ack-2 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'two2' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '2'
+      - name: tls
+        sni: settings-ack.example.com
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, settings-ack-3 ]]}}
+        client-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url: /settings-ack/3
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, settings-ack.example.com ]
+              - [ uuid, settings-ack-3 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 6 ]
+          content: { encoding: plain, data: 'three3' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '2'
+      - name: tls
+        sni: settings-ack.example.com
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, settings-ack-4 ]]}}
+        client-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url: /settings-ack/4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, settings-ack.example.com ]
+              - [ uuid, settings-ack-4 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 5 ]
+          content: { encoding: plain, data: 'four4' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '2'
+      - name: tls
+        sni: settings-ack.example.com
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, settings-ack-5 ]]}}
+        client-request:
+          version: '2'
+          scheme: https
+          method: GET
+          url: /settings-ack/5
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, settings-ack.example.com ]
+              - [ uuid, settings-ack-5 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 5 ]
+          content: { encoding: plain, data: 'five5' }
+        proxy-response:
+          status: 200

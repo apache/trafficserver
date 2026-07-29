@@ -146,6 +146,22 @@ public:
   virtual void set_rx_error_code(ProxyError e);
   virtual void set_tx_error_code(ProxyError e);
 
+  /** Whether the request on this transaction is known by the protocol layer to
+   *  be safe to retry on a fresh origin connection.
+   *
+   *  The default is @c false. A subclass should return @c true only when the
+   *  underlying protocol guarantees the origin did not process (and could not
+   *  have observed) the request -- for example, when an HTTP/2 origin sends a
+   *  GOAWAY whose last_stream_id is below this transaction's stream id, or
+   *  sends a RST_STREAM with the REFUSED_STREAM error code (RFC 9113 6.8 and
+   *  8.7). HttpSM uses this to allow retrying non-idempotent methods that
+   *  would otherwise be considered too risky to replay.
+   *
+   *  @return @c true if HttpSM may safely retry the request on a different
+   *          origin connection regardless of method.
+   */
+  virtual bool is_safe_to_retry() const;
+
   bool support_sni() const;
 
   void mark_as_tunnel_endpoint() override;
