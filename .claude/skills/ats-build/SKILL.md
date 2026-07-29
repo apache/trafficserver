@@ -1,87 +1,81 @@
 ---
 name: ats-build
-description: Use this skill for all actions related to building Trafficserver, running tests, or formatting code.
+description: Basic skills; formatting, compiling, testing, installing.
 ---
 
 ## Build Process
 
-1. Determine build directory name, which is based on the current branch, tag, or commit SHA. This will be used for all builds on this branch/tag/commit.
-2. If that build directory exists, skip this step, otherwise, initialize the build.
-3. Determine the correct target to use.
-4. Launch the build.
+1. No build directory yet? Configure one.
+3. Which target?
+4. Execute.
 
-## Command Reference
+## Reference
 
-```bash
-ref=$(git symbolic-ref --short -q HEAD || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
-BUILD_DIR="build-${ref##*/}"
-```
-
-### Initializing a Development Build
+### Configure Development Build
 
 ```bash
-cmake --preset dev -B <build_dir> -DENABLE_AUTEST=ON
+cmake --preset dev -DENABLE_AUTEST=ON
 ```
 
-### Initializing an HTTP3 Development Build
+### Configure HTTP3 Development Build
 
 ```bash
-cmake --preset ci-fedora-quiche -B <build_dir> -DENABLE_AUTEST=ON
+cmake --preset ci-fedora-quiche -DENABLE_AUTEST=ON
 ```
 
-### Initializing a Release Build
+### Configure Release Build
 
 ```bash
-cmake --preset release -B <build_dir>
+cmake --preset release
 ```
 
-### Building a Code Target
+### Build Code Target
 
 ```bash
 cmake --build <build_dir> --target <executable_or_library_target>
 ```
 
-### Running a Unit Test
+### Run Unit Test
 
 ```bash
 ctest --test-dir <build_dir> [-R <filter>]
 ```
 
-### Formatting Code
+### Format
 
 ```bash
 cmake --build <build_dir> --target format
 ```
 
-### Running AuTests
+### Run AuTest
 
-Before running AuTests, run the following command as a safety check to prevent running with the wrong options:
+Options correct? Check:
 
 ```bash
 grep "^AUTEST_OPTIONS" <build_dir>/CMakeCache.txt
 ```
 
-If the options are incorrect, reconfigure the build, then run the AuTests:
+Correct? Run:
 
 ```bash
 cmake --build <build_dir> --target autest
 ```
 
-#### Example: Configuring Build for Specific AuTest
+#### Example: Configure Build for Specific AuTest
 
 ```bash
 cmake -B <build_dir> -DAUTEST_OPTIONS="-f <autest_name>"
 ```
 
-### Installing a Build
+### Install
 
-Before installing, run the following command as a safety check to prevent installing to an undesired location:
+Install location OK? Check:
 
 ```bash
 grep "^CMAKE_INSTALL_PREFIX" <build_dir>/CMakeCache.txt
 ```
 
-After checking, run:
+Correct? Run:
 
 ```bash
 cmake --install <build_dir>
