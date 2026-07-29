@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 from enum import Enum
+import os
 import sys
 
 Test.Summary = 'Exercise stats-over-http plugin'
@@ -47,12 +48,28 @@ class StatsOverHttpPluginTest:
         self.ts = Test.MakeATSProcess("ts")
 
         self.ts.Disk.plugin_config.AddLine('stats_over_http.so _stats')
+        self.ts.Disk.logging_yaml.AddLines(
+            '''
+logging:
+  formats:
+    - name: unmapped_url
+      format: "%<cquuc>"
+  logs:
+    - filename: stats_over_http_url
+      format: unmapped_url
+'''.split("\n"))
+        self.ts.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'stats_over_http_url.log'), id='unmapped_url_log')
+        self.ts.Disk.unmapped_url_log.Content += Testers.ContainsExpression(
+            rf'http://127\.0\.0\.1:{self.ts.Variables.port}/_stats', 'The unmapped URL should contain the Host header value.')
+        self.ts.Disk.unmapped_url_log.Content += Testers.ExcludesExpression(
+            'http:///', 'The unmapped URL should not omit the request host.')
 
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
                 "proxy.config.diags.debug.enabled": 1,
-                "proxy.config.diags.debug.tags": "stats_over_http"
+                "proxy.config.diags.debug.tags": "stats_over_http",
+                "proxy.config.log.max_secs_per_buffer": 1,
             })
 
     def __checkProcessBefore(self, tr):
