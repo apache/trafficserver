@@ -21,7 +21,7 @@ preferences and working conventions. This file is gitignored and optional.
 
 ## Build Commands
 
-Use the ats-build skill for building, testing, and formatting.
+Use the ats-build skill for building, testing, and formatting, unless instructed otherwise.
 
 ### Writing Autests
 
