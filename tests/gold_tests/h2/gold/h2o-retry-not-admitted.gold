@@ -1,0 +1,2 @@
+proxy.process.http.origin.retry_admitted 0
+proxy.process.http.origin.retry_body_unavailable 0
