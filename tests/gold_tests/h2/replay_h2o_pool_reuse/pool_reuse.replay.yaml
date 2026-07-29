@@ -1,0 +1,173 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+# Five separate H/1 client sessions, each issuing a single request to the
+# same origin (matching SNI + IP + cert). This is the production-style
+# pattern that exposes the H/2 origin session pooling bug: every new
+# client session triggers a fresh `acquire_session` lookup with no
+# session attached to the user-agent transaction, so the pool search is
+# what determines whether the existing H/2 origin connection is reused.
+# If reuse works, all 5 requests should be multiplexed onto a single H/2
+# origin connection (1 connection, 5 streams).
+
+sessions:
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, pool-reuse-1 ]]}}
+        client-request:
+          version: '1.1'
+          scheme: http
+          method: GET
+          url: /pool/reuse/1
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, pool.h2o.example.com ]
+              - [ uuid, pool-reuse-1 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'one1' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, pool-reuse-2 ]]}}
+        client-request:
+          version: '1.1'
+          scheme: http
+          method: GET
+          url: /pool/reuse/2
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, pool.h2o.example.com ]
+              - [ uuid, pool-reuse-2 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'two2' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, pool-reuse-3 ]]}}
+        client-request:
+          version: '1.1'
+          scheme: http
+          method: GET
+          url: /pool/reuse/3
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, pool.h2o.example.com ]
+              - [ uuid, pool-reuse-3 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'thr3' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, pool-reuse-4 ]]}}
+        client-request:
+          version: '1.1'
+          scheme: http
+          method: GET
+          url: /pool/reuse/4
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, pool.h2o.example.com ]
+              - [ uuid, pool-reuse-4 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'fou4' }
+        proxy-response:
+          status: 200
+
+  - protocol:
+      - name: http
+        version: '1.1'
+      - name: tcp
+      - name: ip
+        version: '4'
+    transactions:
+      - all: { headers: { fields: [[ uuid, pool-reuse-5 ]]}}
+        client-request:
+          version: '1.1'
+          scheme: http
+          method: GET
+          url: /pool/reuse/5
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Host, pool.h2o.example.com ]
+              - [ uuid, pool-reuse-5 ]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 4 ]
+          content: { encoding: plain, data: 'fiv5' }
+        proxy-response:
+          status: 200
