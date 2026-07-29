@@ -5,7 +5,10 @@ description: Basic skills; formatting, compiling, testing, installing.
 
 ## Build Process
 
-1. No build directory yet? Configure one.
+1. Which `cmake --list-presets`?
+ * Need HTTP3? `ci-fedora-quiche`
+ * Not sure? Ask.
+2. No build directory yet? Configure one.
 3. Which target?
 4. Execute.
 
@@ -14,19 +17,7 @@ description: Basic skills; formatting, compiling, testing, installing.
 ### Configure Development Build
 
 ```bash
-cmake --preset dev -DENABLE_AUTEST=ON
-```
-
-### Configure HTTP3 Development Build
-
-```bash
-cmake --preset ci-fedora-quiche -DENABLE_AUTEST=ON
-```
-
-### Configure Release Build
-
-```bash
-cmake --preset release
+cmake --preset <name> -DENABLE_AUTEST=ON
 ```
 
 ### Build Code Target
