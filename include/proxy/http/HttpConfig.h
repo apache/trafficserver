@@ -213,6 +213,8 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *origin_raw;
   Metrics::Counter::AtomicType *origin_reuse;
   Metrics::Counter::AtomicType *origin_reuse_fail;
+  Metrics::Counter::AtomicType *origin_retry_admitted;
+  Metrics::Counter::AtomicType *origin_retry_body_unavailable;
   Metrics::Counter::AtomicType *origin_server_request_document_total_size;
   Metrics::Counter::AtomicType *origin_server_request_header_total_size;
   Metrics::Counter::AtomicType *origin_server_response_document_total_size;
