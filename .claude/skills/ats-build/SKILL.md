@@ -17,7 +17,7 @@ description: Basic skills; formatting, compiling, testing, installing.
 ### Configure Development Build
 
 ```bash
-cmake --preset <name> -DENABLE_AUTEST=ON
+cmake --preset <name> [-B <build_dir>] -DENABLE_AUTEST=ON
 ```
 
 ### Build Code Target
