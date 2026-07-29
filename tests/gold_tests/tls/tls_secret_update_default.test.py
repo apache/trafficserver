@@ -87,15 +87,10 @@ class TestDefaultSecretUpdate:
                 'proxy.config.url_remap.pristine_host_hdr': 1,
             })
 
-        ts.Disk.ssl_multicert_yaml.AddLines(
+        ts.Disk.ssl_multicert_config.AddLines(
             [
-                'ssl_multicert:',
-                '  - dest_ip: "*"',
-                f'    ssl_cert_name: {self.initial_cert}',
-                f'    ssl_key_name: {self.key_file}',
-                '  - dest_ip: "*"',
-                f'    ssl_cert_name: {self.shadowed_cert}',
-                f'    ssl_key_name: {self.shadowed_key_file}',
+                f'dest_ip=* ssl_cert_name={self.initial_cert} ssl_key_name={self.key_file}',
+                f'dest_ip=* ssl_cert_name={self.shadowed_cert} ssl_key_name={self.shadowed_key_file}',
             ])
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         return ts
@@ -122,7 +117,7 @@ class TestDefaultSecretUpdate:
     def _add_config_touch_run(self) -> 'TestRun':
         '''Mark the multicert configuration for reload.'''
         tr = Test.AddTestRun('Mark the multicert configuration for reload')
-        tr.Processes.Default.Command = f'touch {self._ts.Disk.ssl_multicert_yaml.AbsPath}'
+        tr.Processes.Default.Command = f'touch {self._ts.Disk.ssl_multicert_config.AbsPath}'
         tr.Processes.Default.ReturnCode = 0
         self._keep_processes_running(tr)
         return tr
@@ -134,7 +129,7 @@ class TestDefaultSecretUpdate:
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.ReturnCode = 0
         await_reload = tr.Processes.Process('await_reload', 'sleep 30')
-        await_reload.Ready = When.FileContains(self._ts.Disk.diags_log.Name, 'ssl_multicert.yaml finished loading', 2)
+        await_reload.Ready = When.FileContains(self._ts.Disk.diags_log.Name, 'ssl_multicert.config finished loading', 2)
         tr.Processes.Default.StartBefore(await_reload)
         self._keep_processes_running(tr)
         return tr
