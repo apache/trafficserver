@@ -53,13 +53,7 @@ class Http2MaxActiveStreamsTest:
                 'proxy.config.http2.max_concurrent_streams_in': 100,
             })
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')
-        ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-ssl_multicert:
-  - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
-""".split('\n'))
+        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
         tr.Processes.Default.StartBefore(server)
         tr.Processes.Default.StartBefore(ts)
