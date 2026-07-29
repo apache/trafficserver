@@ -1171,6 +1171,12 @@ run-plugin
 This allows to run an existing remap plugin, conditionally, from within a
 header rewrite rule.
 
+.. note::
+    ``<plugin-argument>`` is fixed when the rule is loaded (or reloaded);
+    it behaves the same as a plugin argument in ``remap.config``. It is
+    not re-evaluated per request, so variable interpolation (e.g.
+    ``%{HEADER:bar}``) does not work here.
+
 set-body
 ~~~~~~~~
 ::
