@@ -58,7 +58,7 @@ std::string
 bio_to_string(BIO *bio)
 {
   BUF_MEM *bm = nullptr;
-  BIO_get_mem_ptr(bio, &bm);
+  REQUIRE(1 == BIO_get_mem_ptr(bio, &bm));
   return std::string{bm->data, bm->length};
 }
 
@@ -78,6 +78,7 @@ make_valid_dh_pem()
   REQUIRE(EVP_PKEY_generate(pctx, &pkey) > 0);
 
   BIO *bio = BIO_new(BIO_s_mem());
+  REQUIRE(bio != nullptr);
   REQUIRE(PEM_write_bio_Parameters(bio, pkey) == 1);
   std::string const out{bio_to_string(bio)};
   BIO_free(bio);
@@ -92,7 +93,8 @@ std::string
 key_to_pem(EVP_PKEY *pkey, EVP_CIPHER const *cipher, char *pass)
 {
   BIO *bio = BIO_new(BIO_s_mem());
-  int  passlen{pass ? static_cast<int>(std::strlen(pass)) : 0};
+  REQUIRE(bio != nullptr);
+  int passlen{pass ? static_cast<int>(std::strlen(pass)) : 0};
   REQUIRE(PEM_write_bio_PrivateKey(bio, pkey, cipher, reinterpret_cast<unsigned char *>(pass), passlen, nullptr, nullptr) == 1);
   std::string out{bio_to_string(bio)};
   BIO_free(bio);
@@ -135,6 +137,7 @@ make_cert_and_key(EVP_CIPHER const *cipher = nullptr, char *pass = nullptr)
   REQUIRE(X509_sign(x509, pkey, EVP_sha256()) > 0);
 
   BIO *cert_bio = BIO_new(BIO_s_mem());
+  REQUIRE(cert_bio != nullptr);
   REQUIRE(PEM_write_bio_X509(cert_bio, x509) == 1);
   std::string const cert_pem{bio_to_string(cert_bio)};
   BIO_free(cert_bio);

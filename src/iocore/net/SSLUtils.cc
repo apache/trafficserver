@@ -858,11 +858,11 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data,
 {
   bool result{false};
   if (keyPath && keyPath[0] != '\0') {
-    result = use_rsa_pkey_from_file(ctx, keyPath);
+    result = use_pkey_from_file(ctx, keyPath);
   }
 
   if (!result) {
-    result = use_rsa_pkey_from_secret_data(ctx, secret_data, secret_data_len);
+    result = use_pkey_from_secret_data(ctx, secret_data, secret_data_len);
   }
 
   if (!result) {
