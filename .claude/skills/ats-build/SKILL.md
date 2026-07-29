@@ -3,13 +3,12 @@ name: ats-build
 description: Use this skill for all actions related to building Trafficserver, running tests, or formatting code.
 ---
 
-There are two development modes for ATS: host local, and docker mount. If a Docker container named `ats-dev` exists, then the source
-code is bind mounted into that container. If that
+There are two development modes for ATS: host local, and docker mount. If a Docker container named `ats-dev` exists, then the source code is bind mounted into that container.
 
 ## Build Process
 
 1. Determine whether build mode is host local or docker mount.
-2. Determine build directory name, which is based on current branch or tag. This will be used for all builds on this branch/tag.
+2. Determine build directory name, which is based on the current branch, tag, or commit SHA. This will be used for all builds on this branch/tag/commit.
 3. If that build directory exists, skip this step, otherwise, initialize the build.
 4. Determine the correct target to use.
 5. Launch the build.
@@ -21,14 +20,14 @@ The commands in this reference are shown without the `docker exec` prefix. If in
 ### Determining Build Directory Name
 
 ```bash
-ref=$(git symbolic-ref --short -q HEAD || git describe --tags)
+ref=$(git symbolic-ref --short -q HEAD || git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
 BUILD_DIR="build-${ref##*/}"
 ```
 
 ### Initializing a Development Build
 
 ```bash
-ATS_BUILD=1 cmake --preset dev -B <build_dir> -DENABLE_AUTEST=ON"
+ATS_BUILD=1 cmake --preset dev -B <build_dir> -DENABLE_AUTEST=ON
 ```
 
 ### Initializing an HTTP3 Development Build
