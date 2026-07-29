@@ -52,6 +52,7 @@ add_library(
   SSLSessionCache.cc
   SSLSessionTicket.cc
   SSLUtils.cc
+  SSLKeyUtils.cc
   OCSPStapling.cc
   TLSBasicSupport.cc
   TLSEventSupport.cc
@@ -147,6 +148,9 @@ if(BUILD_TESTING)
     unit_tests/unit_test_main.cc
     unit_tests/benchmark_TLSCertCompression.cc
   )
+  if(SSLLIB_IS_OPENSSL3)
+    target_sources(test_net PRIVATE unit_tests/test_SSLDHParams.cc)
+  endif()
   # Use link groups to solve circular dependency
   set(LINK_GROUP_LIBS
       ts::logging
