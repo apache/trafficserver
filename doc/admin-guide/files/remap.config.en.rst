@@ -111,6 +111,14 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 
     where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
 
+    To select an origin host and port dynamically through DNS, enable
+    :ts:cv:`proxy.config.srv_enabled`. |TS| then queries the SRV
+    service derived from the replacement URL before resolving the replacement
+    host directly. For example, an ``https://origin.example.com/`` replacement
+    causes a query for ``_https._tcp.origin.example.com``. When a usable SRV
+    record is found, its target and port are used for the origin connection;
+    otherwise, |TS| falls back to the replacement host and port.
+
    .. note:: A remap rule for requests that upgrade from HTTP to WebSocket still require a remap rule with the ``ws`` or ``wss`` scheme.
 
 

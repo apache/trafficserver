@@ -3272,13 +3272,23 @@ DNS
    :overridable:
 
    Enables (``1``) or disables (``0``) the use of SRV records for origin server
-   lookup. |TS| will use weights found in the SRV record as a weighted round
-   robin in origin selection. Note that |TS| will lookup
-   ``_$scheme._$internet_protocol.$origin_name``. For instance, if the origin is
-   set to ``https://my.example.com``, |TS| would lookup ``_https._tcp.my.example.com``.
-   Also note that the port returned in the SRV record MUST match the port being
-   used for the origin (e.g. if the origin scheme is http and a default port, there
-   should be a SRV record with port 80).
+   lookup. |TS| constructs the service name
+   ``_$scheme._tcp.$origin_name`` from the scheme and host in the origin URL
+   (the replacement URL after remapping). For example, this rule::
+
+      map http://www.example.com/ https://origin.example.com/
+
+   causes |TS| to query ``_https._tcp.origin.example.com``. Given these records::
+
+      _https._tcp.origin.example.com. 300 IN SRV 10 1 8443 server1.example.com.
+      _https._tcp.origin.example.com. 300 IN SRV 10 1 8443 server2.example.com.
+
+   |TS| resolves the selected target and connects to its SRV port, ``8443`` in
+   this example. The selected SRV port overrides any port in the origin URL.
+   |TS| honors SRV priority and weight when selecting among records. If the SRV
+   lookup returns no usable records, |TS| falls back to resolving the origin
+   host directly. SRV results are cached in HostDB according to
+   :ts:cv:`proxy.config.hostdb.ttl_mode`.
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
