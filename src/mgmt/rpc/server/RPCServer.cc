@@ -59,13 +59,13 @@ RPCServer::~RPCServer()
 void * /* static */
 RPCServer::run_thread(void *a)
 {
-  void *ret = a;
-  if (jsonrpcServer->_init) {
-    jsonrpcServer->_rpcThread = jsonrpcServer->_init();
+  auto *server = static_cast<RPCServer *>(a);
+  if (server->_init) {
+    server->_rpcThread = server->_init();
   }
-  jsonrpcServer->_socketImpl->run();
+  server->_socketImpl->run();
   Dbg(dbg_ctl, "Socket stopped");
-  return ret;
+  return a;
 }
 
 void
@@ -75,7 +75,7 @@ RPCServer::start_thread(std::function<TSThread()> const &cb_init, std::function<
   _init    = cb_init;
   _destroy = cb_destroy;
 
-  ink_thread_create(&_this_thread, run_thread, nullptr, 0, 0, nullptr);
+  ink_thread_create(&_this_thread, run_thread, this, 0, 0, nullptr);
 }
 
 void
