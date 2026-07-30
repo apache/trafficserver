@@ -104,8 +104,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       for (const auto &i : indexed_test_case) {
         std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
         headers->create(HTTPType::REQUEST);
-        MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-        MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+        MIMEFieldWrapper header(headers->m_heap, headers->m_http->m_fields_impl);
 
         int len = decode_indexed_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table);
         REQUIRE(len == i.encoded_field_len);
@@ -254,8 +253,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         for (const auto &i : literal_test_case) {
           std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
           headers->create(HTTPType::REQUEST);
-          MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
-          MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
+          MIMEFieldWrapper header(headers->m_heap, headers->m_http->m_fields_impl);
 
           int len = decode_literal_header_field(header, i.encoded_field, i.encoded_field + i.encoded_field_len, indexing_table,
                                                 MAX_FIELD_SIZE);
