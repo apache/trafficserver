@@ -39,6 +39,8 @@
 #ifdef OPENSSL_IS_OPENSSL3
 #include <openssl/decoder.h>
 #include <openssl/params.h>
+#include <openssl/store.h>
+#include <openssl/ui.h>
 #else
 #include <openssl/bn.h>
 #endif
@@ -191,17 +193,75 @@ set_ctx_dh(SSL_CTX *ctx, dh_key_t *pkey)
 
 #endif // OPENSSL_IS_OPENSSL3
 
+// A hardware-backed key is named rather than stored: the name resolves through
+// the device and there is no file holding the key. Both versions below therefore
+// ask the hardware before falling back to reading keyPath as a file, which is
+// also the order ATS used when this was ENGINE-only, so that a configured device
+// keeps precedence over any same-named file on disk.
+
+#ifdef OPENSSL_IS_OPENSSL3
+
+bool
+use_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
+{
+  ink_assert(keyPath && keyPath[0] != '\0');
+
+  // A store prompts for a PIN or passphrase through a UI_METHOD rather than the
+  // pem_password_cb an SSL_CTX carries, so wrap the configured callback. The
+  // wrapper invokes the callback unconditionally once prompted, so leave the
+  // UI_METHOD null when there is nothing to wrap rather than hand it a null
+  // callback to call.
+  pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
+  scoped_UI_Method ui{password_cb ? UI_UTIL_wrap_read_pem_callback(password_cb, 0) : nullptr};
+
+  // OpenSSL 3 reaches a hardware key store through a provider, which exposes
+  // its keys as an OSSL_STORE under its own URI scheme -- "pkcs11:" for a
+  // PKCS#11 provider fronting an HSM, for instance.
+  scoped_Store_CTX store{OSSL_STORE_open(keyPath, ui.get(), SSL_CTX_get_default_passwd_cb_userdata(ctx), nullptr, nullptr)};
+
+  if (store) {
+    // Announcing the one type wanted lets a loader retrieve it directly rather
+    // than enumerate the whole store. It does not make a single load sufficient:
+    // a loader that ignores the hint still yields other objects first, which the
+    // generic layer drops by returning nullptr without reaching EOF.
+    OSSL_STORE_expect(store.get(), OSSL_STORE_INFO_PKEY);
+  }
+
+  // A store URI may name a whole collection -- a token's worth of objects, of
+  // which only some are keys -- so scan until a private key turns up.
+  scoped_PKEY pkey;
+  while (store && !pkey && !OSSL_STORE_eof(store.get())) {
+    scoped_Store_Info info{OSSL_STORE_load(store.get())};
+    if (info && OSSL_STORE_INFO_get_type(info.get()) == OSSL_STORE_INFO_PKEY) {
+      pkey.reset(OSSL_STORE_INFO_get1_PKEY(info.get()));
+    }
+    // A single object failing to load is not fatal; OSSL_STORE_eof reports true
+    // once the store itself gives up, so the loop terminates either way.
+  }
+
+  if (pkey && SSL_CTX_use_PrivateKey(ctx, pkey.get())) {
+    return true;
+  }
+
+  // OSSL_STORE also handles plain paths, but only for keys it can decode
+  // itself, so getting here says nothing about whether keyPath names a loadable
+  // file. Not finding the key in hardware is the ordinary case for a file-based
+  // configuration, so leave no errors behind for the caller to misread.
+  ERR_clear_error();
+
+  return 1 == SSL_CTX_use_PrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM);
+}
+
+#else
+
 bool
 use_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
 {
   ink_assert(keyPath && keyPath[0] != '\0');
 
 #if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
-  // A key held by an HSM or other hardware store is named rather than stored:
-  // keyPath is a key identifier the engine resolves, and there is no file to
-  // read. Ask the engine first so that a configured device takes precedence over
-  // any same-named file on disk. Absent a configured engine there is nothing to
-  // ask, and keyPath is left to the file load below.
+  // Before providers, a hardware key store was reached through an ENGINE.
+  // Absent a configured engine there is nothing to ask.
   if (ENGINE *e = ENGINE_get_default_RSA(); e != nullptr) {
     EVP_PKEY *pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
 
@@ -219,10 +279,10 @@ use_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
   }
 #endif
 
-  int const result{SSL_CTX_use_PrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM)};
-
-  return 1 == result;
+  return 1 == SSL_CTX_use_PrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM);
 }
+
+#endif // OPENSSL_IS_OPENSSL3
 
 bool
 use_pkey_from_secret_data(SSL_CTX *ctx, const char *secret_data, int secret_data_len)

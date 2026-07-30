@@ -28,6 +28,8 @@
 #ifdef OPENSSL_IS_OPENSSL3
 #include <openssl/decoder.h>
 #include <openssl/evp.h>
+#include <openssl/store.h>
+#include <openssl/ui.h>
 #endif
 #define OPENSSL_THREAD_DEFINES
 #if __has_include(<openssl/opensslconf.h>)
@@ -130,6 +132,38 @@ namespace detail
       OSSL_DECODER_CTX_free(dctx);
     }
   };
+
+  struct StoreCTXDeleter {
+    void
+    operator()(OSSL_STORE_CTX *sctx)
+    {
+      OSSL_STORE_close(sctx);
+    }
+  };
+
+  struct StoreInfoDeleter {
+    void
+    operator()(OSSL_STORE_INFO *info)
+    {
+      OSSL_STORE_INFO_free(info);
+    }
+  };
+
+  struct PKEYDeleter {
+    void
+    operator()(EVP_PKEY *pkey)
+    {
+      EVP_PKEY_free(pkey);
+    }
+  };
+
+  struct UIMethodDeleter {
+    void
+    operator()(UI_METHOD *ui)
+    {
+      UI_destroy_method(ui);
+    }
+  };
 #endif
 
 } // namespace detail
@@ -159,4 +193,8 @@ using scoped_BIO  = std::unique_ptr<BIO, ssl::detail::BIODeleter>;
 #ifdef OPENSSL_IS_OPENSSL3
 using scoped_PKEY_CTX    = std::unique_ptr<EVP_PKEY_CTX, ssl::detail::PKEYCTXDeleter>;
 using scoped_Decoder_CTX = std::unique_ptr<OSSL_DECODER_CTX, ssl::detail::DecoderCTXDeleter>;
+using scoped_Store_CTX   = std::unique_ptr<OSSL_STORE_CTX, ssl::detail::StoreCTXDeleter>;
+using scoped_Store_Info  = std::unique_ptr<OSSL_STORE_INFO, ssl::detail::StoreInfoDeleter>;
+using scoped_PKEY        = std::unique_ptr<EVP_PKEY, ssl::detail::PKEYDeleter>;
+using scoped_UI_Method   = std::unique_ptr<UI_METHOD, ssl::detail::UIMethodDeleter>;
 #endif

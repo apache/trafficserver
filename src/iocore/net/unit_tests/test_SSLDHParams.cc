@@ -10,6 +10,10 @@
     * The private key handling of load_certs, which transitively invokes the
       file-static SSLPrivateKeyHandler.
 
+    * The loading of a private key held by an OpenSSL 3 provider, standing in
+      for an HSM or other hardware-backed key store. A mock provider is
+      registered in-process so the test needs no external module.
+
   @section license License
 
   Licensed to the Apache Software Foundation (ASF) under one
@@ -33,6 +37,7 @@
 #include "../P_SSLCertLookup.h"
 #include "../P_SSLConfig.h"
 #include "../P_SSLUtils.h"
+#include "MockHardwareProvider.h"
 
 #include <tscore/ink_memory.h>
 #include <tscore/ink_platform.h>
@@ -339,4 +344,20 @@ TEST_CASE("SSLPrivateKeyHandler: an encrypted key file with the wrong passphrase
   TempFile   cert{ck.cert_pem};
   TempFile   key{ck.key_pem};
   CHECK_FALSE(load_key_via_load_certs(cert.get_path(), key.get_path(), fixed_passphrase_cb));
+}
+
+// A hardware-backed key is named by a provider URI rather than a path, and the
+// key material never appears in the certificate secret. Loading one therefore
+// has to go through the provider: there is no file to read, so the secret-data
+// path has nothing to fall back to.
+//
+// This is the case an ENGINE-based ATS handled via ENGINE_load_private_key.
+TEST_CASE("SSLPrivateKeyHandler: a key named by an OpenSSL provider URI is loaded from the provider")
+{
+  CertAndKey                           ck = make_cert_and_key();
+  MockHardwareProvider::ScopedProvider provider{ck.key_pem};
+  REQUIRE(provider.is_loaded());
+
+  TempFile cert{ck.cert_pem};
+  CHECK(load_key_via_load_certs(cert.get_path(), MockHardwareProvider::URI));
 }
