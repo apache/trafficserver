@@ -41,8 +41,12 @@ urtest:
       proxy.config.http.negative_caching_enabled: 1
       proxy.config.http.negative_caching_lifetime: 2
 
-    cache_config:
-      - "dest_domain=backend.example.com ttl-in-cache=30d"
+    cache_yaml:
+      cache:
+        - match:
+            dest_domain: backend.example.com
+          action:
+            ttl_in_cache: 30d
 
     remap_config:
       - from: "/"
