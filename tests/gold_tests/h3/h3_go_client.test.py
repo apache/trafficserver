@@ -103,7 +103,7 @@ logging:
         tr.Setup.Copy("go_h3_client")
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
-        tr.Processes.Default.Env['GOFLAGS'] = '-mod=readonly'
+        tr.Processes.Default.Env['GOFLAGS'] = '-mod=readonly -modcacherw'
         tr.Processes.Default.Env['GOCACHE'] = os.path.join(tr.RunDirectory, 'gocache')
         tr.Processes.Default.Env['GOMODCACHE'] = os.path.join(tr.RunDirectory, 'gomodcache')
         tr.Processes.Default.Env['GOTOOLCHAIN'] = 'local'

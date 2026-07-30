@@ -130,8 +130,10 @@ public:
   Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info);
   virtual ~Http3Transaction();
 
-  int state_stream_open(int event, Event *data) override;
-  int state_stream_closed(int event, Event *data) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
+  int  state_stream_open(int event, Event *data) override;
+  int  state_stream_closed(int event, Event *data) override;
 
   void do_io_close(int lerrno = -1) override;
   void on_header_decode_complete();
@@ -152,8 +154,8 @@ private:
   Http3FrameDispatcher       _frame_dispatcher;
   Http3FrameCollector        _frame_collector;
   Http3ProtocolEnforcer     *_protocol_enforcer = nullptr;
-  Http3FrameGenerator       *_header_framer     = nullptr;
-  Http3FrameGenerator       *_data_framer       = nullptr;
+  Http3HeaderFramer         *_header_framer     = nullptr;
+  Http3DataFramer           *_data_framer       = nullptr;
   Http3HeaderVIOAdaptor     *_header_handler    = nullptr;
   Http3StreamDataVIOAdaptor *_data_handler      = nullptr;
 };

@@ -26,11 +26,25 @@ add_library(
   QUICTypes.cc
   QUICIntUtil.cc
   QUICStream.cc
-  QUICStream.cc
   QUICStreamManager.cc
   QUICStreamAdapter.cc
   QUICStreamVCAdapter.cc
 )
 add_library(ts::quic ALIAS quic)
 
-target_link_libraries(quic PUBLIC ts::inkevent ts::inknet ts::tscore OpenSSL::Crypto OpenSSL::SSL quiche::quiche)
+target_link_libraries(quic PUBLIC ts::inkevent ts::inknet ts::tscore OpenSSL::Crypto OpenSSL::SSL)
+
+if(TS_HAS_QUICHE)
+  target_link_libraries(quic PUBLIC quiche::quiche)
+endif()
+
+if(TS_OPENSSL_QUIC_TLS_CBS_COMPAT AND TS_HAS_QUICHE)
+  add_library(openssl_quic_compat STATIC OpenSSLQuicCompat.cc)
+  add_library(ts::openssl_quic_compat ALIAS openssl_quic_compat)
+  target_link_libraries(openssl_quic_compat PUBLIC OpenSSL::SSL OpenSSL::Crypto)
+  set_property(
+    TARGET quiche::quiche
+    APPEND
+    PROPERTY INTERFACE_LINK_LIBRARIES ts::openssl_quic_compat
+  )
+endif()

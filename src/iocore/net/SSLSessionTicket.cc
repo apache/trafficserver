@@ -53,6 +53,14 @@ ssl_callback_session_ticket(SSL *ssl, unsigned char *keyname, unsigned char *iv,
   if (srs) {
     return srs->processSessionTicket(ssl, keyname, iv, cipher_ctx, hctx, enc);
   } else {
+#if TS_HAS_OPENSSL_QUIC
+    if (SSL_is_quic(ssl) == 1) {
+      // OpenSSL native QUIC can parse client-offered tickets while servicing
+      // the listener, before ATS has accepted and bound a QUIC NetVC.
+      return 0;
+    }
+#endif
+
     // We could implement a default behavior that would have been done if this callback was not registered, but it's not necessary
     // at the moment because TLSSessionResumptionSupport is always available when the callback is registered.
     ink_assert(!"srs should be available");

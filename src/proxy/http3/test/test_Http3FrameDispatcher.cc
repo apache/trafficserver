@@ -27,6 +27,28 @@
 #include "proxy/http3/Http3ProtocolEnforcer.h"
 #include "Mock.h"
 
+namespace
+{
+class AliasedInterestsFrameHandler : public Http3FrameHandler
+{
+public:
+  std::vector<Http3FrameType>
+  interests() override
+  {
+    return {Http3FrameType::MAX_PUSH_ID, Http3FrameType::X_MAX_DEFINED};
+  }
+
+  Http3ErrorUPtr
+  handle_frame(std::shared_ptr<const Http3Frame> /* frame ATS_UNUSED */, Http3StreamType /* s_type ATS_UNUSED */) override
+  {
+    ++this->total_frame_received;
+    return nullptr;
+  }
+
+  int total_frame_received = 0;
+};
+} // namespace
+
 TEST_CASE("Http3FrameHandler dispatch", "[http3]")
 {
   Http3FrameDispatcher  http3FrameDispatcher;
@@ -92,10 +114,35 @@ TEST_CASE("Http3FrameHandler dispatch", "[http3]")
         total_nread += nread;
         CHECK(!error);
       }
-      CHECK(handler.total_frame_received == 5);
+      CHECK(handler.total_frame_received == 1);
       CHECK(total_nread == 19);
     }
   }
+
+  free_MIOBuffer(buf);
+}
+
+TEST_CASE("Http3FrameHandler aliased interests", "[http3]")
+{
+  Http3FrameDispatcher         http3_frame_dispatcher;
+  AliasedInterestsFrameHandler handler;
+  http3_frame_dispatcher.add_handler(&handler);
+
+  MIOBuffer      *buf     = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+  IOBufferReader *reader  = buf->alloc_reader();
+  uint64_t        nread   = 0;
+  uint8_t         input[] = {
+    0x0d, // Type: MAX_PUSH_ID
+    0x01, // Length
+    0x01, // Push ID
+  };
+
+  buf->write(input, sizeof(input));
+
+  auto error = http3_frame_dispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+  CHECK(!error);
+  CHECK(handler.total_frame_received == 1);
+  CHECK(nread == sizeof(input));
 
   free_MIOBuffer(buf);
 }
