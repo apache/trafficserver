@@ -59,7 +59,6 @@
         "ENABLE_AUTEST": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ts-autest",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
-        "ENABLE_WASM_WAMR": "OFF",
         "ENABLE_EXAMPLE": "ON"
       }
     },
@@ -129,7 +128,6 @@
         "THREAD_SAFETY_ANALYSIS_AS_ERROR": "ON",
         "ENABLE_CCACHE": "ON",
         "BUILD_EXPERIMENTAL_PLUGINS": "ON",
-        "ENABLE_WASM_WAMR": "OFF",
         "ENABLE_EXAMPLE": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats"
       }
@@ -185,9 +183,7 @@
       "inherits": ["ci"],
       "cacheVariables": {
         "ENABLE_PROBES": "ON",
-        "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
         "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
         "wamr_ROOT": "/opt",
         "ENABLE_CRIPTS": "ON"
       }
@@ -210,7 +206,6 @@
         "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
         "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
         "wamr_ROOT": "/opt",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
         "ENABLE_QUICHE": "ON"
