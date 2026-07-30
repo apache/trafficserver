@@ -1770,7 +1770,7 @@ TSMimeHdrFieldAppend(TSMBuffer bufp, TSMLoc mh_mloc, TSMLoc field_mloc)
     HdrHeap *heap = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
 
     // allocate a new hdr field and copy any pre-set info
-    mh_field = mime_field_create(heap, mh);
+    mh_field = mime_field_create_for_name(heap, mh, field_handle->field_ptr->name_get());
 
     // FIX: is it safe to copy everything over?
     memcpy(mh_field, field_handle->field_ptr, sizeof(MIMEField));
