@@ -22,6 +22,7 @@
 */
 
 #include "ConvertConfigCommand.h"
+#include "config/cache.h"
 #include "config/ssl_multicert.h"
 #include "config/storage.h"
 #include "config/plugin_config.h"
@@ -34,7 +35,15 @@ ConvertConfigCommand::ConvertConfigCommand(ts::Arguments *args) : CtrlCommand(ar
   BasePrinter::Options print_opts{parse_print_opts(args)};
   _printer = std::make_unique<GenericPrinter>(print_opts);
 
-  if (args->get("ssl_multicert")) {
+  if (args->get("cache")) {
+    auto const &convert_args = args->get("cache");
+    if (convert_args.size() < 2) {
+      throw std::invalid_argument("cache requires <input_file> <output_file>");
+    }
+    _input_file   = convert_args[0];
+    _output_file  = convert_args[1];
+    _invoked_func = [this]() { convert_cache(); };
+  } else if (args->get("ssl_multicert")) {
     auto const &convert_args = args->get("ssl_multicert");
     if (convert_args.size() < 2) {
       throw std::invalid_argument("ssl_multicert requires <input_file> <output_file>");
@@ -62,6 +71,52 @@ ConvertConfigCommand::ConvertConfigCommand(ts::Arguments *args) : CtrlCommand(ar
     _invoked_func  = [this]() { convert_plugin_config(); };
   } else {
     throw std::invalid_argument("Unsupported config type for conversion");
+  }
+}
+
+void
+ConvertConfigCommand::convert_cache()
+{
+  config::CacheConfigParser                 parser;
+  config::CacheConfigParser::Format         input_format = config::CacheConfigParser::Format::YAML;
+  config::ConfigResult<config::CacheConfig> result       = parser.parse(_input_file, &input_format);
+
+  if (result.file_not_found || !result.ok()) {
+    std::string error_msg = "Failed to parse input file '" + _input_file + "'";
+    if (!result.errata.empty()) {
+      error_msg += ": ";
+      error_msg += std::string(result.errata.front().text());
+    }
+    _printer->write_output(error_msg);
+    return;
+  }
+
+  config::CacheConfigMarshaller marshaller;
+  std::string const             yaml_output = marshaller.to_yaml(result.value);
+
+  if (input_format == config::CacheConfigParser::Format::Legacy && result.value.size() > 1) {
+    std::cerr << "Warning: cache.config can combine actions from overlapping rules, but cache.yaml uses only the first matching "
+                 "rule. Review the converted rule order and merge actions where needed.\n";
+  }
+
+  if (_output_file == "-") {
+    std::cout << yaml_output;
+    if (!std::cout) {
+      std::cerr << "Failed to write converted cache configuration to stdout\n";
+    }
+  } else {
+    std::ofstream out(_output_file);
+    if (!out) {
+      _printer->write_output("Failed to open output file '" + _output_file + "' for writing");
+      return;
+    }
+    out << yaml_output;
+    out.close();
+    if (!out) {
+      _printer->write_output("Failed to write output file '" + _output_file + "'");
+      return;
+    }
+    _printer->write_output("Converted " + _input_file + " -> " + _output_file);
   }
 }
 

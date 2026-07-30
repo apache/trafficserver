@@ -18,6 +18,7 @@ import time
 from pathlib import Path
 
 from tools.uranium.services import ATS
+from uranium_tests.jsonrpc.config_reload_helpers import wait_for_status
 
 
 def configure_traffic_server(*, _ats: ATS) -> None:
@@ -29,7 +30,7 @@ def configure_traffic_server(*, _ats: ATS) -> None:
         "proxy.config.diags.debug.enabled": 1,
         "proxy.config.diags.debug.tags": "rpc|config",
     })
-    _ats.cache_config.add_line("dest_domain=example.com ttl-in-cache=30d")
+    _ats.set_cache_yaml({"cache": [{"match": {"dest_domain": "example.com"}, "action": {"ttl_in_cache": "30d"}}]})
 
 
 def start_traffic_server(*, _ats: ATS) -> None:
@@ -51,7 +52,7 @@ def reload_configuration(config_file: Path, token: str, *, _ats: ATS) -> None:
     time.sleep(2)
     result = _ats.traffic_ctl("config", "reload", "-m", "-t", token, "-w", "1", "-r", "0.5", "-T", "30s")
     assert result.returncode in (0, 2), result.output
-    time.sleep(3)
+    wait_for_status(_ats, token, config_file.name, "success")
 
 
 def reload_cache_configuration(*, _ats: ATS) -> None:
@@ -59,7 +60,7 @@ def reload_cache_configuration(*, _ats: ATS) -> None:
 
     :param _ats: Test-local ats configured by the test.
     """
-    reload_configuration(_ats.cache_config.path, "reload_cache_test", _ats=_ats)
+    reload_configuration(_ats.config_directory / "cache.yaml", "reload_cache_test", _ats=_ats)
 
 
 def reload_hosting_configuration(*, _ats: ATS) -> None:
@@ -71,7 +72,7 @@ def reload_hosting_configuration(*, _ats: ATS) -> None:
 
 
 def test_cache_config_reload(ats: ATS) -> None:
-    """Reload cache.config and hosting.config after each file changes.
+    """Reload cache.yaml and hosting.config after each file changes.
 
     :param ats: Traffic Server instance configured or queried by this step.
     """

@@ -26,6 +26,23 @@ import yaml
 from tools.uranium.replay import ReplayTest
 
 
+@pytest.mark.parametrize("legacy", [False, True])
+def test_cache_configuration_formats(tmp_path: Path, legacy: bool) -> None:
+    """Write both cache formats without discarding first-match YAML rules.
+
+    :param tmp_path: Temporary directory for serialized configurations.
+    :param legacy: Whether this test supplies additive cache.config rules.
+    """
+
+    replay = Mock(spec=ReplayTest)
+    replay._replace_runtime_placeholders.side_effect = lambda value, _paths: value
+    document = {"cache": [{"match": {"dest_domain": "example.com"}, "action": {"cache": "never"}}]}
+    config = {"cache_config": ["dest_domain=example.com action=never-cache"]} if legacy else {"cache_yaml": document}
+    ReplayTest._write_ats_configs(replay, config, {"config": tmp_path})
+    assert yaml.safe_load((tmp_path / "cache.yaml").read_text()) == ({"cache": []} if legacy else document)
+    assert (tmp_path / "cache.config").read_text() == ("dest_domain=example.com action=never-cache\n" if legacy else "")
+
+
 @pytest.mark.parametrize("stop_after_client", [False, True])
 def test_origin_shutdown_precedes_metrics_when_requested(tmp_path: Path, stop_after_client: bool) -> None:
     """Preserve intentional origin-disconnect checks without changing default teardown.

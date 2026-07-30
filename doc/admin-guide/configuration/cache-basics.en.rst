@@ -137,13 +137,13 @@ by checking the following conditions in order:
    maximum and minimum freshness limit. Refer to
    `Setting Absolute Freshness Limits`_.
 
--  **Checking revalidate rules in** :file:`cache.config`
+-  **Checking revalidate rules in** :file:`cache.yaml`
 
    Revalidate rules apply freshness limits to specific HTTP objects. You
    can set freshness limits for objects originating from particular
    domains or IP addresses, objects with URLs that contain specified
    regular expressions, objects requested by particular clients, and so
-   on. Refer to :file:`cache.config`.
+   on. Refer to :file:`cache.yaml`.
 
 Modifying Aging Factor for Freshness Computations
 -------------------------------------------------
@@ -354,7 +354,7 @@ one of the following options:
     Revalidate all HTTP objects without ``Expires`` or ``Cache-Control`` headers.
 
 To configure how Traffic Server revalidates objects in the cache, you
-can set specific revalidation rules in :file:`cache.config`.
+can set specific revalidation rules in :file:`cache.yaml`.
 
 To configure revalidation options
 
@@ -435,10 +435,16 @@ To set cache pinning rules:
 
         CONFIG proxy.config.cache.permit.pinning INT 1
 
-#. Add a rule in :file:`cache.config` for each URL you want Traffic Server to
-   pin in the cache. For example::
+#. Add a rule in :file:`cache.yaml` for each URL you want Traffic Server to
+   pin in the cache. For example:
 
-      url_regex=^https?://(www.)?apache.org/dev/ pin-in-cache=12h
+   .. code-block:: yaml
+
+      cache:
+        - match:
+            url_regex: ^https?://(www.)?apache.org/dev/
+          action:
+            pin_in_cache: 12h
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
@@ -587,14 +593,14 @@ You can configure Traffic Server to do the following:
 -  Cache objects served in response to the ``Cookie:`` header. Refer to
    `Caching Cookied Objects`_.
 
--  Observe ``never-cache`` rules in :file:`cache.config`.
+-  Observe ``cache: never`` rules in :file:`cache.yaml`.
 
 Disabling HTTP Object Caching
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 By default, Traffic Server caches all HTTP objects except those for
-which you have set ``never-cache`` as :ref:`action rules <cache-config-format-action>`
-in :file:`cache.config`. You can disable HTTP object caching so that all HTTP
+which you have set ``cache: never`` as a :ref:`cache.yaml action
+<cache-yaml-actions>`. You can disable HTTP object caching so that all HTTP
 objects are served directly from the origin server and never cached, as
 detailed below.
 
@@ -668,10 +674,16 @@ headers.
 
 To force document caching:
 
-#. Add a rule for each URL you want Traffic Server to pin to the cache
-   :file:`cache.config`::
+#. Add a rule for each URL you want Traffic Server to force into
+   :file:`cache.yaml`:
 
-       url_regex=^https?://(www.)?apache.org/dev/ ttl-in-cache=6h
+   .. code-block:: yaml
+
+      cache:
+        - match:
+            url_regex: ^https?://(www.)?apache.org/dev/
+          action:
+            ttl_in_cache: 6h
 
 #. Run the command :option:`traffic_ctl config reload` to apply the configuration changes.
 
