@@ -23,11 +23,13 @@
 
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
+#include "proxy/hdrs/HTTP.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/ink_memory.h"
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <string>
 #include <string_view>
 
 namespace
@@ -90,10 +92,12 @@ TEST_CASE("UrlMatcher does not insert invalid records", "[ControlMatcher]")
 
   matcher.AllocateSpace(1);
   parse_line(config, line, 1);
+  line.config_file_path = "/etc/trafficserver/cache.config";
 
   Result result = matcher.NewEntry(&line);
 
   CHECK(result.failed());
+  CHECK(std::string_view{result.message()}.find("/etc/trafficserver/cache.config") != std::string_view::npos);
   CHECK(matcher.num_el == 0);
 }
 
@@ -115,4 +119,31 @@ TEST_CASE("UrlMatcher rejects duplicate URLs", "[ControlMatcher]")
   CHECK_FALSE(first_result.failed());
   CHECK(second_result.failed());
   CHECK(matcher.num_el == 1);
+}
+
+TEST_CASE("Yaml cache rules distinguish internal and external requests", "[ControlMatcher]")
+{
+  for (bool const internal : {false, true}) {
+    UrlMatcher<CacheControlRecord, CacheControlResult> matcher{"CacheControl", "cache.yaml"};
+    std::string                                        config =
+      std::string{"url=http://example.com/exact internal="} + (internal ? "true" : "false") + " yaml_rule=true yaml_cache=never";
+    matcher_line line;
+
+    matcher.AllocateSpace(1);
+    parse_line(config.data(), line, 1);
+
+    Result result = matcher.NewEntry(&line);
+
+    REQUIRE_FALSE(result.failed());
+    for (bool const internal_request : {false, true}) {
+      TestRequestData    request{"http://example.com/exact"};
+      HTTPHdr            request_header;
+      CacheControlResult cache_result;
+
+      request.hdr          = &request_header;
+      request.internal_txn = internal_request;
+      matcher.Match(&request, &cache_result);
+      CHECK(cache_result.never_cache == (internal_request == internal));
+    }
+  }
 }

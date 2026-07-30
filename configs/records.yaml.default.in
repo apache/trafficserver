@@ -76,7 +76,7 @@ records:
 ##############################################################################
 # Cache control. Docs:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#cache-control
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.yaml.en.html
 ##############################################################################
       ignore_client_cc_max_age: 1
 

@@ -77,6 +77,21 @@ The following features have been changed in this version of ATS.
   Moved away from the binary serialization mechanism used to comunicate between |TS| and the tools to a JSON-RPC text based protocol. Underlying
   Unix Domain Socket protocol remains the same. Check :ref:`jsonrpc-protocol` for more details.
 
+* Cache rule configuration
+
+  :file:`cache.yaml` is now the default file selected by
+  ``proxy.config.cache.control.filename``. Existing deployments that
+  provide only :file:`cache.config` must either retain the legacy filename by
+  setting that record to ``cache.config`` or convert the file:
+
+  .. code-block:: bash
+
+     traffic_ctl config convert cache cache.config cache.yaml
+
+  Review overlapping rules before deploying a conversion. Legacy
+  :file:`cache.config` combines actions from every matching rule, while
+  :file:`cache.yaml` applies only the first matching rule.
+
 * Other changes
 
   * It is now a fatal error when ATS cannot bind or listen to a configured port
