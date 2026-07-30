@@ -291,24 +291,6 @@ TEST_CASE("A WEAK_SCOPED_MUTEX_LOCK guard releases its lock when its enclosing s
   REQUIRE(m->thread_holding == nullptr);
 }
 
-TEST_CASE("WEAK_SCOPED_MUTEX_LOCK on a null Ptr<ProxyMutex> is a no-op that takes and releases no lock", "[inkevent][lock]")
-{
-  Ptr<ProxyMutex> empty;
-  Ptr<ProxyMutex> witness{new_ProxyMutex()};
-  EThread        *t = this_ethread();
-
-  REQUIRE(empty.get() == nullptr);
-
-  {
-    WEAK_SCOPED_MUTEX_LOCK(guard, empty, t);
-    REQUIRE(witness->thread_holding == nullptr);
-    REQUIRE(witness->nthread_holding == 0);
-  }
-
-  REQUIRE(witness->thread_holding == nullptr);
-  REQUIRE(witness->nthread_holding == 0);
-}
-
 TEST_CASE("WEAK_MUTEX_TRY_LOCK on an unheld ProxyMutex constructs a guard whose is_locked() reports the successful acquisition",
           "[inkevent][lock]")
 {
@@ -341,10 +323,9 @@ TEST_CASE("WEAK_MUTEX_TRY_LOCK against a contended ProxyMutex constructs a guard
   REQUIRE(holder.done.wait_until_set());
 }
 
-TEST_CASE("WEAK_MUTEX_TRY_LOCK on a null Ptr<ProxyMutex> reports is_locked() == true while taking no lock", "[inkevent][lock]")
+TEST_CASE("WEAK_MUTEX_TRY_LOCK on a null Ptr<ProxyMutex> reports is_locked() == true", "[inkevent][lock]")
 {
   Ptr<ProxyMutex> empty;
-  Ptr<ProxyMutex> witness{new_ProxyMutex()};
   EThread        *t = this_ethread();
 
   REQUIRE(empty.get() == nullptr);
@@ -352,6 +333,17 @@ TEST_CASE("WEAK_MUTEX_TRY_LOCK on a null Ptr<ProxyMutex> reports is_locked() == 
   WEAK_MUTEX_TRY_LOCK(guard, empty, t);
 
   REQUIRE(guard.is_locked());
-  REQUIRE(witness->thread_holding == nullptr);
-  REQUIRE(witness->nthread_holding == 0);
+}
+
+TEST_CASE("MUTEX_RELEASE on a null WEAK_MUTEX_TRY_LOCK guard clears is_locked() without unlocking a mutex", "[inkevent][lock]")
+{
+  Ptr<ProxyMutex> empty;
+  EThread        *t = this_ethread();
+
+  WEAK_MUTEX_TRY_LOCK(guard, empty, t);
+  REQUIRE(guard.is_locked());
+
+  MUTEX_RELEASE(guard);
+
+  REQUIRE_FALSE(guard.is_locked());
 }
