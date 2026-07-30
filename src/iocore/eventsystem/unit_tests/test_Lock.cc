@@ -48,9 +48,11 @@ private:
   int
   on_event(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    SCOPED_MUTEX_LOCK(guard, target_mutex, this_ethread());
-    held.set();
-    release.wait_until_set();
+    {
+      SCOPED_MUTEX_LOCK(guard, target_mutex, this_ethread());
+      held.set();
+      release.wait_until_set();
+    }
     done.set();
     return 0;
   }
