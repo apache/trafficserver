@@ -26,6 +26,7 @@
 #include "tscore/List.h"
 
 #include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/IOBuffer.h"
 
 #include "iocore/net/quic/QUICConnection.h"
 #include "iocore/net/quic/QUICDebugNames.h"
@@ -53,6 +54,7 @@ public:
   QUICStreamDirection               direction() const;
   bool                              is_bidirectional() const;
   bool                              has_no_more_data() const;
+  bool                              has_data_to_send();
 
   QUICOffset final_offset() const;
 
@@ -66,6 +68,7 @@ public:
    * QUICApplication need to call one of these functions when it process VC_EVENT_*
    */
   void on_read();
+  void on_write();
   void on_eos();
 
   /**
@@ -85,6 +88,9 @@ protected:
   uint64_t                    _received_bytes   = 0;
   uint64_t                    _sent_bytes       = 0;
   bool                        _has_no_more_data = false;
+  Ptr<IOBufferBlock>          _pending_send_block;
+  bool                        _pending_send_fin = false;
+  bool                        _sent_fin         = false;
 };
 
 class QUICStreamStateListener

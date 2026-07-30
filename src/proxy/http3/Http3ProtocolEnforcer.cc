@@ -30,7 +30,7 @@ Http3ProtocolEnforcer::interests()
   return {Http3FrameType::DATA,         Http3FrameType::HEADERS,      Http3FrameType::X_RESERVED_1, Http3FrameType::CANCEL_PUSH,
           Http3FrameType::SETTINGS,     Http3FrameType::PUSH_PROMISE, Http3FrameType::X_RESERVED_2, Http3FrameType::GOAWAY,
           Http3FrameType::X_RESERVED_3, Http3FrameType::X_RESERVED_4, Http3FrameType::MAX_PUSH_ID,  Http3FrameType::X_MAX_DEFINED,
-          Http3FrameType::UNKNOWN};
+          Http3FrameType::RESERVED,     Http3FrameType::UNKNOWN};
 }
 
 Http3ErrorUPtr
@@ -47,9 +47,8 @@ Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, Htt
                                            "only one SETTINGS frame is allowed per the control stream");
     } else if (f_type == Http3FrameType::DATA || f_type == Http3FrameType::HEADERS || f_type == Http3FrameType::X_RESERVED_1 ||
                f_type == Http3FrameType::X_RESERVED_2 || f_type == Http3FrameType::X_RESERVED_3) {
-      std::string error_msg = Http3DebugNames::frame_type(f_type);
-      error_msg.append(" frame is not allowed on control stream");
-      error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED, error_msg.c_str());
+      error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED,
+                                           "frame is not allowed on control stream");
     }
     if (!this->_is_first_frame_received_on_control) {
       this->_is_first_frame_received_on_control = true;
@@ -57,9 +56,13 @@ Http3ProtocolEnforcer::handle_frame(std::shared_ptr<const Http3Frame> frame, Htt
   } else {
     if (f_type == Http3FrameType::X_RESERVED_1 || f_type == Http3FrameType::X_RESERVED_2 ||
         f_type == Http3FrameType::X_RESERVED_3) {
-      std::string error_msg = Http3DebugNames::frame_type(f_type);
-      error_msg.append(" frame is not allowed on any stream");
-      error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED, error_msg.c_str());
+      error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED,
+                                           "frame is not allowed on any stream");
+    } else if (!this->_is_headers_frame_received && f_type == Http3FrameType::DATA) {
+      error = std::make_unique<Http3Error>(Http3ErrorClass::CONNECTION, Http3ErrorCode::H3_FRAME_UNEXPECTED,
+                                           "DATA frame is not allowed before HEADERS");
+    } else if (f_type == Http3FrameType::HEADERS) {
+      this->_is_headers_frame_received = true;
     }
   }
 

@@ -104,6 +104,15 @@ Http3App::start()
 }
 
 void
+Http3App::_handle_error(const Http3Error &error)
+{
+  if (error.cls == Http3ErrorClass::CONNECTION) {
+    this->_qc->close_quic_connection(
+      std::make_unique<QUICConnectionError>(QUICErrorClass::APPLICATION, static_cast<uint16_t>(error.code)));
+  }
+}
+
+void
 Http3App::on_stream_open(QUICStream &stream)
 {
   auto  ret  = this->_streams.emplace(stream.id(), stream);
@@ -131,7 +140,15 @@ Http3App::on_stream_open(QUICStream &stream)
 void
 Http3App::on_stream_close(QUICStream &stream)
 {
-  this->_streams.erase(stream.id());
+  QUICStreamId const stream_id = stream.id();
+
+  if (auto *txn = this->_ssn->get_transaction(stream_id); txn != nullptr) {
+    SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
+    txn->set_stream_cleanup([this, stream_id]() { this->_streams.erase(stream_id); });
+    txn->stream_closed();
+  } else {
+    this->_streams.erase(stream_id);
+  }
 }
 
 int
@@ -285,6 +302,10 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
   }
   default:
     break;
+  }
+
+  if (error && error->cls != Http3ErrorClass::UNDEFINED) {
+    this->_handle_error(*error);
   }
 }
 

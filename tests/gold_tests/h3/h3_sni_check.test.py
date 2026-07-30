@@ -21,7 +21,7 @@ Test.Summary = '''
 Verify h3 SNI checking behavior.
 '''
 
-Test.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'), Condition.HasCurlFeature('http3'))
+Test.SkipUnless(Condition.HasATSFeature('TS_USE_QUIC'))
 
 Test.ContinueOnFail = True
 
@@ -62,19 +62,26 @@ class Test_sni_check:
         :param tr: The TestRun object to associate the ts process with.
         """
         ts = tr.MakeATSProcess(f"ts-{Test_sni_check.ts_counter}", enable_quic=True, enable_tls=True)
+        ts.StartupTimeout = 60
 
         Test_sni_check.ts_counter += 1
         self._ts = ts
         # Configure TLS for Traffic Server.
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.addSSLfile("../tls/ssl/signed-foo.pem")
+        self._ts.addSSLfile("../tls/ssl/signed-foo.key")
+        self._ts.Disk.ssl_multicert_config.AddLines(
+            [
+                'ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key',
+                'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key',
+            ])
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http',
-                'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+                'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.quic.no_activity_timeout_in': 0,
-                'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+                'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
             })
 

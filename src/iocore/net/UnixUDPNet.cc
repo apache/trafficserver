@@ -70,7 +70,8 @@ EventType                        ET_UDP;
 namespace
 {
 #ifdef HAVE_RECVMMSG
-const uint32_t MAX_RECEIVE_MSG_PER_CALL{16}; //< VLEN parameter for the recvmmsg call.
+const uint32_t MAX_RECEIVE_MSG_PER_CALL{16};         //< VLEN parameter for the recvmmsg call.
+const uint32_t MAX_RECEIVE_MSG_BATCHES_PER_EVENT{8}; //< Maximum number of full recvmmsg batches per event.
 #endif
 
 DbgCtl dbg_ctl_udpnet{"udpnet"};
@@ -516,7 +517,7 @@ UDPNetProcessorInternal::read_single_message_from_net(UDPNetHandler *nh, UDPConn
 }
 
 #ifdef HAVE_RECVMMSG
-void
+bool
 UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPConnection *xuc)
 {
   UnixUDPConnection *uc = static_cast<UnixUDPConnection *>(xuc);
@@ -575,7 +576,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
 
   if (return_val <= 0) {
     Dbg(dbg_ctl_udp_read, "Done. recvmmsg() ret is %d, errno %s", return_val, strerror(errno));
-    return;
+    return false;
   }
   Dbg(dbg_ctl_udp_read, "recvmmsg() read %d packets", return_val);
 
@@ -593,7 +594,7 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
 
     if (mhdr.msg_namelen <= 0) {
       Dbg(dbg_ctl_udp_read, "Unable to get remote address from recvmmsg() for fd: %d", uc->getFd());
-      return;
+      return false;
     }
 
     toaddr[packet_num].ss_family = AF_UNSPEC;
@@ -666,6 +667,8 @@ UDPNetProcessorInternal::read_multiple_messages_from_net(UDPNetHandler *nh, UDPC
     nh->udp_callbacks.enqueue(uc);
     uc->onCallbackQueue = 1;
   }
+
+  return return_val == static_cast<int>(MAX_RECEIVE_MSG_PER_CALL);
 }
 #endif
 
@@ -673,7 +676,7 @@ void
 UDPNetProcessorInternal::udp_read_from_net(UDPNetHandler *nh, UDPConnection *xuc)
 {
 #if HAVE_RECVMMSG
-  read_multiple_messages_from_net(nh, xuc);
+  for (uint32_t batch = 0; batch < MAX_RECEIVE_MSG_BATCHES_PER_EVENT && read_multiple_messages_from_net(nh, xuc); ++batch) {}
 #else
   read_single_message_from_net(nh, xuc);
 #endif

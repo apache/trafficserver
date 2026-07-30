@@ -53,6 +53,8 @@ public:
   // Helpers to check VIO states
   bool is_readable();
   bool is_writable();
+  void mark_stream_closed();
+  bool is_stream_closed() const;
 
   void clear_read_ready_event(Event *e);
   void clear_read_complete_event(Event *e);
@@ -65,6 +67,7 @@ public:
 
 protected:
   Ptr<IOBufferBlock> _read(size_t len) override;
+  void               _consume(size_t len) override;
 
   VIO _read_vio;
   VIO _write_vio;
