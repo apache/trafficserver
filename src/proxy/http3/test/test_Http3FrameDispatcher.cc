@@ -231,7 +231,7 @@ TEST_CASE("control stream tests", "[http3]")
     CHECK(nread == sizeof(input));
   }
 
-  SECTION("RESERVED frame is not allowed on control stream")
+  SECTION("HTTP/2 reserved frame is not allowed on control stream")
   {
     uint8_t input[] = {0x04,       // Type
                        0x08,       // Length
@@ -254,6 +254,32 @@ TEST_CASE("control stream tests", "[http3]")
     error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
     REQUIRE(error);
     CHECK(error->code == Http3ErrorCode::H3_FRAME_UNEXPECTED);
+    CHECK(handler.total_frame_received == 1);
+    CHECK(nread == sizeof(input));
+  }
+
+  SECTION("GREASE reserved frame is ignored on control stream")
+  {
+    uint8_t input[] = {0x04,       // Type
+                       0x08,       // Length
+                       0x06,       // Identifier
+                       0x44, 0x00, // Value
+                       0x09,       // Identifier
+                       0x0f,       // Value
+                       0x4a, 0x0a, // Identifier
+                       0x00,       // Value
+                       0x21,       // Type: reserved by the 0x21 + 0x1f * N pattern
+                       0x04,       // Length
+                       0x11, 0x22, 0x33, 0x44};
+
+    buf->write(input, sizeof(input));
+
+    // Initial state
+    CHECK(handler.total_frame_received == 0);
+    CHECK(nread == 0);
+
+    error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::CONTROL, *reader, nread);
+    CHECK(!error);
     CHECK(handler.total_frame_received == 1);
     CHECK(nread == sizeof(input));
   }
@@ -311,7 +337,7 @@ TEST_CASE("ignore unknown frames", "[http3]")
   }
 }
 
-TEST_CASE("Reserved frame type not allowed", "[http3]")
+TEST_CASE("HTTP/2 reserved frame type not allowed", "[http3]")
 {
   SECTION("Reject reserved frame type in non control stream")
   {

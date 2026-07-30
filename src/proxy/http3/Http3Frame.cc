@@ -42,6 +42,13 @@ constexpr int HEADER_OVERHEAD      = 10; // This should work as long as a payloa
 
 DbgCtl dbg_ctl_http3_frame_factory{"http3_frame_factory"};
 
+bool
+is_reserved_frame_type(uint64_t type)
+{
+  return type >= static_cast<uint64_t>(Http3FrameType::RESERVED) &&
+         (type - static_cast<uint64_t>(Http3FrameType::RESERVED)) % 0x1f == 0;
+}
+
 } // end anonymous namespace
 
 //
@@ -64,6 +71,8 @@ Http3Frame::type(const uint8_t *buf, size_t buf_len)
   ink_assert(ret != 1);
   if (type <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
     return static_cast<Http3FrameType>(type);
+  } else if (is_reserved_frame_type(type)) {
+    return Http3FrameType::RESERVED;
   } else {
     return Http3FrameType::UNKNOWN;
   }
@@ -143,8 +152,12 @@ Http3Frame::length() const
 Http3FrameType
 Http3Frame::type() const
 {
-  if (static_cast<uint64_t>(this->_type) <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
+  const auto type = static_cast<uint64_t>(this->_type);
+
+  if (type <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
     return this->_type;
+  } else if (is_reserved_frame_type(type)) {
+    return Http3FrameType::RESERVED;
   } else {
     return Http3FrameType::UNKNOWN;
   }
