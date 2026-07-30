@@ -17,9 +17,15 @@ Test the alternate caching features
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test the alternate caching feature.
 '''
 
-# Verify disabled negative revalidating behavior.
+# Verify cache alternate replacement behavior.
 Test.ATSReplayTest(replay_file="replay/alternate-caching-update-size.yaml")
+
+# Verify TSHttpAltInfoQualitySet affects alternate selection.
+tr = Test.ATSReplayTest(replay_file="replay/alternate-caching-quality.yaml")
+Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'http_alt_info_quality.so'), tr.Processes.ts_alt_quality)
