@@ -168,6 +168,10 @@ IPCSocketServer::init()
     return ec;
   }
 
+  // Set this before RPCServer creates the worker thread so an immediate stop
+  // cannot be overwritten when the worker eventually enters run().
+  _running.store(true);
+
   return ec;
 }
 
@@ -201,8 +205,6 @@ IPCSocketServer::poll_for_new_client(std::chrono::milliseconds timeout) const
 void
 IPCSocketServer::run()
 {
-  _running.store(true);
-
   while (_running) {
     // poll till socket it's ready.
     if (!this->poll_for_new_client()) {

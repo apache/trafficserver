@@ -144,7 +144,7 @@ private:
   void close();
   void late_check_peer_credentials(int peedFd, TSRPCHandlerOptions const &options, swoc::Errata &errata) const;
 
-  std::atomic_bool _running;
+  std::atomic_bool _running{false};
 
   struct sockaddr_un _serverAddr;
   int                _socket{-1};
