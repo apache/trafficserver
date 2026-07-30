@@ -2749,7 +2749,7 @@ Cache Control
 .. ts:cv:: CONFIG proxy.config.cache.permit.pinning INT 0
    :reloadable:
 
-   When enabled (``1``), |TS| will keep certain HTTP objects in the cache for a certain time as specified in cache.config.
+   When enabled (``1``), |TS| will keep certain HTTP objects in the cache for a certain time as specified in cache.yaml.
 
 .. ts:cv:: CONFIG proxy.config.cache.hit_evacuate_percent INT 0
 

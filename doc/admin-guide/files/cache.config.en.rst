@@ -22,6 +22,14 @@
 cache.config
 ************
 
+.. deprecated:: 11.0
+
+   Use :file:`cache.yaml` for new configurations. Convert an existing file with
+   ``traffic_ctl config convert cache cache.config cache.yaml``. Review
+   overlapping rules after conversion because :file:`cache.yaml` uses
+   first-match semantics. The legacy parser remains available by setting
+   ``proxy.config.cache.control.filename`` to ``cache.config``.
+
 The :file:`cache.config` file allows you to overrule the origin's cache
 policies. You can add caching rules to specify the following:
 
@@ -280,4 +288,3 @@ Force a specific regex to be in cache between 7-11pm of the server's time for
 Prevent objects from being evicted from cache::
 
    url_regex=example.com/game/.* pin-in-cache=1h
-

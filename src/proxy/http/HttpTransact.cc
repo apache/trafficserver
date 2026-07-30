@@ -1634,7 +1634,7 @@ HttpTransact::HandleRequest(State *s)
   s->cache_info.action = CacheAction_t::NO_ACTION;
   s->current.mode      = ProxyMode_t::GENERIC;
 
-  // initialize the cache_control structure read from cache.config
+  // initialize the cache_control structure read from the cache configuration
   update_cache_control_information_from_config(s);
 
   // We still need to decide whether or not to do a cache lookup since
@@ -1688,7 +1688,7 @@ HttpTransact::HandleRequest(State *s)
   }
 
   // Added to skip the dns if the document is in the cache.
-  // DNS is requested before cache lookup only if there are rules in cache.config , parent.config or
+  // DNS is requested before cache lookup only if there are cache or parent selection rules, or
   // if the newly added variable doc_in_cache_skip_dns is not enabled
   if (s->server_info.name_addr.is_valid() && (!s->state_machine->enable_redirection || !s->redirect_info.redirect_in_process) &&
       s->parent_params->parent_table->hostMatch) {
@@ -2086,7 +2086,7 @@ HttpTransact::OSDNSLookup(State *s)
     TRANSACT_RETURN(StateMachineAction_t::DNS_REVERSE_LOOKUP, HttpTransact::StartAccessControl);
   } else {
     if (s->force_dns) {
-      StartAccessControl(s); // If skip_dns is enabled and no ip based rules in cache.config and parent.config
+      StartAccessControl(s); // If skip_dns is enabled and there are no IP-based cache or parent selection rules
       // Access Control is called after DNS response
     } else {
       if ((s->cache_info.action == CacheAction_t::NO_ACTION) &&

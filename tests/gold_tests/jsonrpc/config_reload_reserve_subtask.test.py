@@ -72,7 +72,7 @@ files_to_touch = [
     ts.Disk.ip_allow_yaml,
     ts.Disk.logging_yaml,
     ts.Disk.sni_yaml,
-    ts.Disk.cache_config,
+    ts.Disk.cache_yaml,
 ]
 touch_cmd = "touch " + " ".join([f.AbsRunTimePath for f in files_to_touch])
 

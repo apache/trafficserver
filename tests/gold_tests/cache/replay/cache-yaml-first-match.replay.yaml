@@ -1,0 +1,138 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify cache.yaml applies only the first matching rule'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'cache_control|http|cache'
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.http.insert_age_in_response: 0
+
+    cache_yaml:
+      cache:
+        - match:
+            dest_domain: backend.example.com
+            suffix: php
+          action:
+            cache: never
+        - match:
+            dest_domain: backend.example.com
+          action:
+            ttl_in_cache: 1h
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      # Both rules match PHP requests. The first rule prevents caching.
+      - client-request:
+          method: GET
+          url: /object.php
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, php-1]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, "0"]
+              - [Cache-Control, "max-age=300"]
+        proxy-response:
+          status: 200
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          url: /object.php
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, php-2]
+        proxy-request:
+          headers:
+            fields:
+              - [uuid, {value: php-2, as: equal}]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, "0"]
+              - [Cache-Control, "max-age=300"]
+        proxy-response:
+          status: 200
+
+      # Only the general rule matches CSS requests, so the second request hits
+      # the cached object.
+      - client-request:
+          method: GET
+          url: /object.css
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, css-1]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, "0"]
+              - [Cache-Control, "max-age=300"]
+        proxy-response:
+          status: 200
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          url: /object.css
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, css-2]
+        proxy-request:
+          expect: absent
+        server-response:
+          status: 404
+          reason: Not Found
+        proxy-response:
+          status: 200

@@ -9,7 +9,7 @@ Verifies that ALL registered config handlers complete properly by:
           then verifying no terminal-state conflicts appear in diags.log.
 
 Registered configs at time of writing:
-  Files: ip_allow.yaml, parent.config, cache.config, hosting.config,
+  Files: ip_allow.yaml, parent.config, cache.yaml, hosting.config,
          splitdns.config, logging.yaml, sni.yaml, ssl_multicert.yaml
   Record-only: ssl_ticket_key (proxy.config.ssl.server.ticket_key.filename)
 
@@ -69,14 +69,14 @@ ts.Disk.sni_yaml.AddLines([
     '- fqdn: "*.example.com"',
     '  verify_client: NONE',
 ])
-# parent.config, cache.config, hosting.config, splitdns.config,
+# parent.config, cache.yaml, hosting.config, splitdns.config,
 # ssl_multicert.yaml are fine empty — handlers accept empty/comment-only files.
 
 # All registered config files whose mtime we'll bump to trigger reload.
 files_to_touch = [
     ts.Disk.ip_allow_yaml,
     ts.Disk.parent_config,
-    ts.Disk.cache_config,
+    ts.Disk.cache_yaml,
     ts.Disk.hosting_config,
     ts.Disk.splitdns_config,
     ts.Disk.logging_yaml,

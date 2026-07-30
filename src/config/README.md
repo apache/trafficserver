@@ -5,7 +5,8 @@ used by various ATS components including `traffic_server` and `traffic_ctl`.
 
 ## Architecture Overview
 
-Each configuration file type (ssl_multicert, etc.) follows the same pattern:
+Each configuration file type (cache, ssl_multicert, etc.) follows the same
+pattern:
 
 ```
 include/config/<config_name>.h   - Header with data types, parser, marshaller
@@ -68,7 +69,8 @@ std::string json = marshaller.to_json(result.value);
 The parser automatically detects the configuration format:
 
 1. **By file extension**: `.yaml`/`.yml` → YAML, `.config` → Legacy
-2. **By content inspection**: Looks for `ssl_multicert:` (YAML) vs `key=value` (Legacy)
+2. **By content inspection**: Looks for the format's top-level YAML key vs
+   `key=value` legacy syntax
 
 ## Adding a New Configuration Type
 

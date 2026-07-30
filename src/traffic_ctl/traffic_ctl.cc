@@ -214,6 +214,10 @@ main([[maybe_unused]] int argc, const char **argv)
 
   // convert subcommand - convert config files between formats
   auto &convert_command = config_command.add_command("convert", "Convert configuration files to YAML format").require_commands();
+  convert_command.add_command("cache", "Convert cache.config to cache.yaml", "", 2, Command_Execute)
+    .add_example_usage("traffic_ctl config convert cache <input_file> <output_file>")
+    .add_example_usage("traffic_ctl config convert cache cache.config cache.yaml")
+    .add_example_usage("traffic_ctl config convert cache cache.config -  # output to stdout");
   convert_command.add_command("ssl_multicert", "Convert ssl_multicert.config to ssl_multicert.yaml", "", 2, Command_Execute)
     .add_example_usage("traffic_ctl config convert ssl_multicert <input_file> <output_file>")
     .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml")

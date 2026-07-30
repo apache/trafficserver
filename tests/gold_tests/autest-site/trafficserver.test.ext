@@ -267,6 +267,10 @@ def MakeATSProcess(
     # Note: make_id -> We keep the records_config to be used in autests just for backward compatibility
     p.Disk.File(tmpname, id=make_id("records.config"), typename="ats:config:records")
 
+    fname = "cache.yaml"
+    tmpname = os.path.join(config_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
     fname = "cache.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")

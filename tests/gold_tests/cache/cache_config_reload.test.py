@@ -1,8 +1,8 @@
 '''
-Test cache.config and hosting.config reload via ConfigRegistry.
+Test cache.yaml and hosting.config reload via ConfigRegistry.
 
 Verifies that:
-1. cache.config reload works after file touch
+1. cache.yaml reload works after file touch
 2. hosting.config reload works after file touch (requires cache to be initialized)
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
@@ -24,7 +24,7 @@ Verifies that:
 import os
 
 Test.Summary = '''
-Test cache.config and hosting.config reload via ConfigRegistry.
+Test cache.yaml and hosting.config reload via ConfigRegistry.
 '''
 
 Test.ContinueOnFail = True
@@ -36,21 +36,27 @@ ts.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'rpc|config',
 })
 
-# Set up initial cache.config with a caching rule
-ts.Disk.cache_config.AddLine('dest_domain=example.com ttl-in-cache=30d')
+# Set up initial cache.yaml with a caching rule
+ts.Disk.cache_yaml.AddLines([
+    'cache:',
+    '  - match:',
+    '      dest_domain: example.com',
+    '    action:',
+    '      ttl_in_cache: 30d',
+])
 
 config_dir = ts.Variables.CONFIGDIR
 
-# --- Test 1: Touch cache.config and reload ---
+# --- Test 1: Touch cache.yaml and reload ---
 
-tr = Test.AddTestRun("Touch cache.config to trigger change detection")
+tr = Test.AddTestRun("Touch cache.yaml to trigger change detection")
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'cache.config')} && sleep 2"
+tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'cache.yaml')} && sleep 2"
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 tr = Test.AddConfigReload(
-    ts, expect="any", expect_tasks=["cache.config"], token="reload_cache_test", description="Reload after cache.config touch")
+    ts, expect="any", expect_tasks=["cache.yaml"], token="reload_cache_test", description="Reload after cache.yaml touch")
 
 # --- Test 2: Touch hosting.config and reload ---
 

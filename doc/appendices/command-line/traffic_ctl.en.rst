@@ -872,6 +872,13 @@ Display the current value of a configuration record.
 
    Supported types:
 
+   ``cache``
+      Convert :file:`cache.config` to :file:`cache.yaml`.
+
+      .. code-block:: bash
+
+         traffic_ctl config convert cache cache.config cache.yaml
+
    ``ssl_multicert``
       Convert ``ssl_multicert.config`` to :file:`ssl_multicert.yaml`.
 

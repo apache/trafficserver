@@ -30,15 +30,23 @@
 
 #include <sys/types.h>
 
+#include <string>
+#include <string_view>
+
+#include "config/cache.h"
 #include "tscore/Filenames.h"
 #include "proxy/CacheControl.h"
 #include "proxy/ControlMatcher.h"
 #include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "proxy/http/HttpConfig.h"
+
+using CC_table = ControlMatcher<CacheControlRecord, CacheControlResult>;
+
 namespace
 {
-const char modulePrefix[] = "[CacheControl]";
+const char     modulePrefix[]                  = "[CacheControl]";
+constexpr char CACHE_CONTROL_FILENAME_RECORD[] = "proxy.config.cache.control.filename";
 
 #define TWEAK_CACHE_RESPONSES_TO_COOKIES "cache-responses-to-cookies"
 
@@ -61,10 +69,132 @@ DbgCtl dbg_ctl_v_http3{"v_http3"};
 DbgCtl dbg_ctl_http3{"http3"};
 DbgCtl dbg_ctl_cache_control{"cache_control"};
 
+std::string
+quote_matcher_value(std::string_view value)
+{
+  std::string result{"\""};
+
+  for (char c : value) {
+    if (c == '\\' || c == '"') {
+      result.push_back('\\');
+    }
+    result.push_back(c);
+  }
+  result.push_back('"');
+  return result;
+}
+
+void
+append_matcher_pair(std::string &line, std::string_view key, std::string_view value)
+{
+  if (!line.empty()) {
+    line.push_back(' ');
+  }
+  line.append(key);
+  line.push_back('=');
+  line.append(quote_matcher_value(value));
+}
+
+void
+append_optional_match(std::string &line, std::string_view key, std::optional<std::string> const &value)
+{
+  if (value) {
+    append_matcher_pair(line, key, *value);
+  }
+}
+
+std::string
+build_matcher_config(config::CacheConfig const &config)
+{
+  std::string matcher_config;
+
+  for (auto const &rule : config) {
+    std::string line;
+
+    append_optional_match(line, "dest_host", rule.match.dest_host);
+    append_optional_match(line, "dest_domain", rule.match.dest_domain);
+    append_optional_match(line, "dest_ip", rule.match.dest_ip);
+    append_optional_match(line, "url_regex", rule.match.url_regex);
+    append_optional_match(line, "host_regex", rule.match.host_regex);
+    append_optional_match(line, "port", rule.match.port);
+    append_optional_match(line, "scheme", rule.match.scheme);
+    append_optional_match(line, "prefix", rule.match.prefix);
+    append_optional_match(line, "suffix", rule.match.suffix);
+    append_optional_match(line, "method", rule.match.method);
+    append_optional_match(line, "time", rule.match.time);
+    append_optional_match(line, "src_ip", rule.match.src_ip);
+    append_optional_match(line, "iport", rule.match.incoming_port);
+    append_optional_match(line, "tag", rule.match.tag);
+    if (rule.match.internal) {
+      append_matcher_pair(line, "internal", *rule.match.internal ? "true" : "false");
+    }
+    if (rule.match.primary_count() == 0) {
+      append_matcher_pair(line, "url_regex", ".*");
+    }
+
+    append_matcher_pair(line, "yaml_rule", "true");
+    if (rule.action.cache) {
+      append_matcher_pair(line, "yaml_cache", *rule.action.cache == config::CacheMode::NEVER ? "never" : "standard");
+    }
+    append_optional_match(line, "yaml_revalidate", rule.action.revalidate);
+    append_optional_match(line, "yaml_pin_in_cache", rule.action.pin_in_cache);
+    append_optional_match(line, "yaml_ttl_in_cache", rule.action.ttl_in_cache);
+    if (rule.action.ignore_no_cache.value_or(false) || rule.action.ignore_client_no_cache.value_or(false)) {
+      append_matcher_pair(line, "yaml_ignore_client_no_cache", "true");
+    }
+    if (rule.action.ignore_no_cache.value_or(false) || rule.action.ignore_server_no_cache.value_or(false)) {
+      append_matcher_pair(line, "yaml_ignore_server_no_cache", "true");
+    }
+    if (rule.action.cache_responses_to_cookies) {
+      append_matcher_pair(line, TWEAK_CACHE_RESPONSES_TO_COOKIES, std::to_string(*rule.action.cache_responses_to_cookies));
+    }
+
+    matcher_config.append(line);
+    matcher_config.push_back('\n');
+  }
+
+  return matcher_config;
+}
+
+std::unique_ptr<CC_table>
+load_cache_control_table(ConfigContext ctx)
+{
+  constexpr int match_flags = ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE;
+
+  ats_scoped_str config_path(RecConfigReadConfigPath(CACHE_CONTROL_FILENAME_RECORD));
+  auto           table =
+    std::make_unique<CC_table>(CACHE_CONTROL_FILENAME_RECORD, modulePrefix, &http_dest_tags, match_flags | DONT_BUILD_TABLE, ctx);
+
+  ink_release_assert(config_path);
+  ink_strlcpy(table->config_file_path, config_path.get(), sizeof(table->config_file_path));
+  table->flags = match_flags;
+
+  std::string_view path{config_path.get()};
+  if (path.ends_with(".yaml") || path.ends_with(".yml")) {
+    config::CacheConfigParser parser;
+    auto                      result = parser.parse(config_path.get());
+
+    if (result.file_not_found) {
+      CfgLoadLog(ctx, DL_Warning, "Cannot open cache configuration %s", config_path.get());
+      return table;
+    }
+    if (!result.ok()) {
+      CfgLoadFailWithErrata(ctx, result.errata, "%s failed to load", config_path.get());
+      return nullptr;
+    }
+
+    std::string matcher_config = build_matcher_config(result.value);
+    table->m_numEntries        = table->BuildTableFromString(matcher_config.data(), ctx);
+  } else {
+    table->m_numEntries = table->BuildTable(ctx);
+  }
+
+  return table;
+}
+
 } // end anonymous namespace
 
 // Global Ptrs
-using CC_table              = ControlMatcher<CacheControlRecord, CacheControlResult>;
 CC_table *CacheControlTable = nullptr;
 
 // struct CC_FreerContinuation
@@ -105,8 +235,16 @@ void
 initCacheControl()
 {
   ink_assert(CacheControlTable == nullptr);
-  reconfig_mutex    = new_ProxyMutex();
-  CacheControlTable = new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags);
+  reconfig_mutex = new_ProxyMutex();
+
+  auto table = load_cache_control_table({});
+  if (table) {
+    CacheControlTable = table.release();
+  } else {
+    CacheControlTable = new CC_table(CACHE_CONTROL_FILENAME_RECORD, modulePrefix, &http_dest_tags,
+                                     ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE |
+                                       ALLOW_URL_TABLE | DONT_BUILD_TABLE);
+  }
 
   config::ConfigRegistry::Get_Instance().register_config( // File registration.
     "cache_control",                                      // registry key
@@ -126,16 +264,19 @@ initCacheControl()
 void
 reloadCacheControl(ConfigContext ctx)
 {
-  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::CACHE);
-  Dbg(dbg_ctl_cache_control, "%s updated, reloading", ts::filename::CACHE);
+  CfgLoadLog(ctx, DL_Note, "Cache configuration loading ...");
+  Dbg(dbg_ctl_cache_control, "Cache configuration updated, reloading");
 
-  eventProcessor.schedule_in(new CC_FreerContinuation(CacheControlTable), CACHE_CONTROL_TIMEOUT, ET_CALL);
-  CC_table *newTable =
-    new CC_table("proxy.config.cache.control.filename", modulePrefix, &http_dest_tags,
-                 ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE, ctx);
-  ink_atomic_swap(&CacheControlTable, newTable);
+  auto new_table = load_cache_control_table(ctx);
+  if (!new_table) {
+    return;
+  }
 
-  CfgLoadComplete(ctx, "%s finished loading", ts::filename::CACHE);
+  CC_table *old_table = CacheControlTable;
+  ink_atomic_swap(&CacheControlTable, new_table.release());
+  eventProcessor.schedule_in(new CC_FreerContinuation(old_table), CACHE_CONTROL_TIMEOUT, ET_CALL);
+
+  CfgLoadComplete(ctx, "Cache configuration finished loading");
 }
 
 void
@@ -210,7 +351,7 @@ CacheControlRecord::Print() const
 // Result CacheControlRecord::Init(matcher_line* line_info)
 //
 //    matcher_line* line_info - contains parsed label/value
-//      pairs of the current cache.config line
+//      pairs of the current cache rule
 //
 //    Returns NULL if everything is OK
 //      Otherwise, returns an error string that the caller MUST
@@ -236,10 +377,16 @@ CacheControlRecord::Init(matcher_line *line_info)
       continue;
     }
 
-    if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
+    if (strcasecmp(label, "yaml_rule") == 0) {
+      if (strcasecmp(val, "true") != 0) {
+        return Result::failure("Value for yaml_rule must be true");
+      }
+      is_yaml_rule = true;
+      used         = true;
+    } else if (strcasecmp(label, TWEAK_CACHE_RESPONSES_TO_COOKIES) == 0) {
       char *ptr = nullptr;
       int   v   = strtol(val, &ptr, 0);
-      if (!ptr || v < 0 || v > 4) {
+      if (ptr == val || *ptr != '\0' || v < 0 || v > 4) {
         return Result::failure("Value for " TWEAK_CACHE_RESPONSES_TO_COOKIES " must be an integer in the range 0..4");
       } else {
         cache_responses_to_cookies = v;
@@ -252,6 +399,73 @@ CacheControlRecord::Init(matcher_line *line_info)
       line_info->line[0][i] = nullptr;
       --(line_info->num_el);
     }
+  }
+
+  if (is_yaml_rule) {
+    int action_count = cache_responses_to_cookies >= 0 ? 1 : 0;
+
+    for (int i = 0; i < MATCHER_MAX_TOKENS && line_info->num_el; ++i) {
+      label = line_info->line[0][i];
+      val   = line_info->line[1][i];
+      if (!label) {
+        continue;
+      }
+
+      bool used = true;
+      if (strcasecmp(label, "yaml_cache") == 0) {
+        if (strcasecmp(val, "never") == 0) {
+          yaml_cache_action = CacheControlType::NEVER_CACHE;
+        } else if (strcasecmp(val, "standard") == 0) {
+          yaml_cache_action = CacheControlType::STANDARD_CACHE;
+        } else {
+          return Result::failure("%s Invalid cache action at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
+        }
+      } else if (strcasecmp(label, "yaml_revalidate") == 0) {
+        tmp = processDurationString(val, &yaml_revalidate_after);
+        if (tmp != nullptr) {
+          return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
+        }
+      } else if (strcasecmp(label, "yaml_pin_in_cache") == 0) {
+        tmp = processDurationString(val, &yaml_pin_in_cache_for);
+        if (tmp != nullptr) {
+          return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
+        }
+      } else if (strcasecmp(label, "yaml_ttl_in_cache") == 0) {
+        tmp = processDurationString(val, &yaml_ttl_in_cache);
+        if (tmp != nullptr) {
+          return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
+        }
+      } else if (strcasecmp(label, "yaml_ignore_client_no_cache") == 0) {
+        if (strcasecmp(val, "true") != 0) {
+          return Result::failure("%s Invalid boolean at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
+        }
+        yaml_ignore_client_no_cache = true;
+      } else if (strcasecmp(label, "yaml_ignore_server_no_cache") == 0) {
+        if (strcasecmp(val, "true") != 0) {
+          return Result::failure("%s Invalid boolean at line %d in %s", modulePrefix, line_num, ts::filename::CACHE);
+        }
+        yaml_ignore_server_no_cache = true;
+      } else {
+        used = false;
+      }
+
+      if (used) {
+        line_info->line[0][i] = nullptr;
+        --line_info->num_el;
+        ++action_count;
+      }
+    }
+
+    if (action_count == 0) {
+      return Result::failure("%s No action in %s at line %d", modulePrefix, ts::filename::CACHE, line_num);
+    }
+    if (line_info->num_el > 0) {
+      tmp = ProcessModifiers(line_info);
+      if (tmp != nullptr) {
+        return Result::failure("%s %s at line %d in %s", modulePrefix, tmp, line_num, ts::filename::CACHE);
+      }
+    }
+    return Result::ok();
   }
 
   // Now look for the directive.
@@ -338,6 +552,44 @@ CacheControlRecord::UpdateMatch(CacheControlResult *result, RequestData *rdata)
 {
   bool             match   = false;
   HttpRequestData *h_rdata = static_cast<HttpRequestData *>(rdata);
+
+  if (is_yaml_rule) {
+    if (!this->CheckForMatch(h_rdata, result->matched_rule_line)) {
+      return;
+    }
+
+    CacheControlResult rule_result;
+
+    rule_result.matched_rule_line = this->line_num;
+    if (yaml_cache_action == CacheControlType::NEVER_CACHE) {
+      rule_result.never_cache = true;
+      rule_result.never_line  = this->line_num;
+    } else if (yaml_cache_action == CacheControlType::STANDARD_CACHE) {
+      rule_result.never_cache = false;
+      rule_result.never_line  = this->line_num;
+    }
+    if (yaml_revalidate_after != CC_UNSET_TIME) {
+      rule_result.revalidate_after = yaml_revalidate_after;
+      rule_result.reval_line       = this->line_num;
+    }
+    if (yaml_pin_in_cache_for != CC_UNSET_TIME) {
+      rule_result.pin_in_cache_for = yaml_pin_in_cache_for;
+      rule_result.pin_line         = this->line_num;
+    }
+    if (yaml_ttl_in_cache != CC_UNSET_TIME) {
+      rule_result.ttl_in_cache = yaml_ttl_in_cache;
+      rule_result.ttl_line     = this->line_num;
+      rule_result.never_cache  = false;
+      rule_result.never_line   = this->line_num;
+    }
+    rule_result.ignore_client_no_cache     = yaml_ignore_client_no_cache;
+    rule_result.ignore_server_no_cache     = yaml_ignore_server_no_cache;
+    rule_result.cache_responses_to_cookies = cache_responses_to_cookies;
+    *result                                = rule_result;
+
+    Dbg(dbg_ctl_cache_control, "Matched cache.yaml rule at line %d", this->line_num);
+    return;
+  }
 
   switch (this->directive) {
   case CacheControlType::REVALIDATE_AFTER:
