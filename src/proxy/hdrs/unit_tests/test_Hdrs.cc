@@ -657,6 +657,175 @@ test_arena_aux(Arena &arena, int len)
 
 } // end anonymous namespace
 
+TEST_CASE("MIME fields reuse deleted slots", "[proxy][hdrtest][mime]")
+{
+  mime_init();
+  http_init();
+
+  auto add_field = [](HTTPHdr &hdr, std::string_view name) {
+    MIMEField *field = hdr.field_create(name);
+
+    hdr.field_attach(field);
+    return field;
+  };
+
+  SECTION("A fully deleted field block is retained and reused")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    std::array<MIMEField *, MIME_FIELD_BLOCK_SLOTS * 2> fields;
+    for (unsigned index = 0; index < fields.size(); ++index) {
+      fields[index] = add_field(hdr, "X-Field-" + std::to_string(index));
+    }
+
+    MIMEFieldBlockImpl *second_block = hdr.m_mime->m_first_fblock.m_next;
+    REQUIRE(second_block != nullptr);
+    REQUIRE(second_block == hdr.m_mime->m_fblock_list_tail);
+
+    for (unsigned index = MIME_FIELD_BLOCK_SLOTS; index < fields.size(); ++index) {
+      hdr.field_delete(fields[index], false);
+    }
+
+    CHECK(hdr.m_mime->m_first_fblock.m_next == second_block);
+    CHECK(hdr.m_mime->m_fblock_list_tail == second_block);
+
+    MIMEField *reused = hdr.field_create("X-Reused");
+    CHECK(reused == fields.back());
+    CHECK(hdr.m_mime->m_fblock_list_tail == second_block);
+  }
+
+  SECTION("Reused duplicate fields remain ordered by slot")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    MIMEField *first  = add_field(hdr, "X-Duplicate");
+    MIMEField *filler = add_field(hdr, "X-Filler");
+    MIMEField *last   = add_field(hdr, "X-Duplicate");
+    for (unsigned index = 3; index < MIME_FIELD_BLOCK_SLOTS; ++index) {
+      add_field(hdr, "X-Filler-" + std::to_string(index));
+    }
+
+    REQUIRE(first->m_next_dup == last);
+    hdr.field_delete(first, false);
+    REQUIRE(hdr.field_find("X-Duplicate") == last);
+
+    MIMEField *reused = add_field(hdr, "X-Duplicate");
+    CHECK(reused == first);
+    CHECK(hdr.field_find("X-Duplicate") == reused);
+    CHECK(reused->m_next_dup == last);
+    CHECK(last->m_next_dup == nullptr);
+    CHECK(filler->is_live());
+  }
+
+  SECTION("Unused tail slots preserve field insertion order")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    MIMEField *deleted = add_field(hdr, "X-Deleted");
+    MIMEField *kept    = add_field(hdr, "X-Kept");
+
+    hdr.field_delete(deleted, false);
+    MIMEField *appended = add_field(hdr, "X-Appended");
+
+    CHECK(appended != deleted);
+    CHECK(mime_hdr_field_slotnum(hdr.m_mime, kept) < mime_hdr_field_slotnum(hdr.m_mime, appended));
+  }
+
+  SECTION("Repeated field churn stays at the high-water block count")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { hdr.destroy(); });
+
+    MIMEField *field = nullptr;
+    for (unsigned index = 0; index < MIME_FIELD_BLOCK_SLOTS * 2; ++index) {
+      field = add_field(hdr, "X-Field-" + std::to_string(index));
+    }
+
+    MIMEField          *slot         = field;
+    MIMEFieldBlockImpl *second_block = hdr.m_mime->m_first_fblock.m_next;
+    bool                reused_slot  = true;
+    constexpr unsigned  churn_cycles = 1024;
+
+    for (unsigned index = 0; index < churn_cycles; ++index) {
+      hdr.field_delete(field, false);
+      field        = add_field(hdr, "X-Churn");
+      reused_slot &= field == slot;
+    }
+
+    CHECK(reused_slot);
+    CHECK(hdr.m_mime->m_first_fblock.m_next == second_block);
+    CHECK(hdr.m_mime->m_fblock_list_tail == second_block);
+    CHECK(second_block->m_freetop == MIME_FIELD_BLOCK_SLOTS);
+  }
+
+  SECTION("Copied headers rebuild the free list")
+  {
+    HTTPHdr source;
+    HTTPHdr copy;
+    source.create(HTTPType::RESPONSE);
+    copy.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void {
+      source.destroy();
+      copy.destroy();
+    });
+
+    std::array<MIMEField *, MIME_FIELD_BLOCK_SLOTS * 2> fields;
+    for (unsigned index = 0; index < fields.size(); ++index) {
+      fields[index] = add_field(source, "X-Field-" + std::to_string(index));
+    }
+    source.field_delete(fields[4], false);
+    source.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 4], false);
+
+    copy.copy(&source);
+    MIMEFieldBlockImpl *tail          = copy.m_mime->m_fblock_list_tail;
+    MIMEField          *expected_slot = mime_hdr_field_get_slotnum(copy.m_mime, MIME_FIELD_BLOCK_SLOTS + 4);
+
+    CHECK(copy.field_create("X-Reused") == expected_slot);
+    CHECK(copy.m_mime->m_fblock_list_tail == tail);
+  }
+
+  SECTION("Headers copied from an unmarshaled heap rebuild the free list")
+  {
+    HTTPHdr source;
+    source.create(HTTPType::RESPONSE);
+    ts::PostScript cleanup([&]() -> void { source.destroy(); });
+
+    std::array<MIMEField *, MIME_FIELD_BLOCK_SLOTS * 2> fields;
+    for (unsigned index = 0; index < fields.size(); ++index) {
+      fields[index] = add_field(source, "X-Field-" + std::to_string(index));
+    }
+    source.field_delete(fields[MIME_FIELD_BLOCK_SLOTS + 4], false);
+
+    std::vector<char> marshal_buffer(source.m_heap->marshal_length());
+    int               marshal_length = source.m_heap->marshal(marshal_buffer.data(), marshal_buffer.size());
+    REQUIRE(marshal_length > 0);
+
+    TestRefCountObj ref;
+    ref.refcount_inc();
+
+    HTTPHdr unmarshaled;
+    REQUIRE(unmarshaled.unmarshal(marshal_buffer.data(), marshal_length, &ref) > 0);
+
+    HTTPHdr writable;
+    writable.create(HTTPType::RESPONSE);
+    ts::PostScript writable_cleanup([&]() -> void { writable.destroy(); });
+    writable.copy(&unmarshaled);
+
+    MIMEFieldBlockImpl *tail          = writable.m_mime->m_fblock_list_tail;
+    MIMEField          *expected_slot = mime_hdr_field_get_slotnum(writable.m_mime, MIME_FIELD_BLOCK_SLOTS + 4);
+
+    CHECK(writable.field_create("X-Reused") == expected_slot);
+    CHECK(writable.m_mime->m_fblock_list_tail == tail);
+  }
+}
+
 TEST_CASE("HdrTest", "[proxy][hdrtest]")
 {
   hdrtoken_init();

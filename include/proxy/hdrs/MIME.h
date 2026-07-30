@@ -90,6 +90,9 @@ enum class MimeParseState {
 #define MIME_FIELD_SLOTNUM_MAX     (MIME_FIELD_SLOTNUM_MASK - 1)
 #define MIME_FIELD_SLOTNUM_UNKNOWN MIME_FIELD_SLOTNUM_MAX
 
+#define MIME_FIELD_FREE_SLOT_NONE          -1
+#define MIME_FIELD_FREE_SLOT_UNINITIALIZED -2
+
 /***********************************************************************
  *                                                                     *
  *                    MIMEField & MIMEFieldBlockImpl                   *
@@ -304,7 +307,8 @@ struct MIMEHdrImpl : public HdrHeapObjImpl {
     friend struct MIMEHdrImpl;
   };
 
-  // HdrHeapObjImpl is 4 bytes, so this will result in 4 bytes padding
+  // HdrHeapObjImpl is 4 bytes, so this uses the 4 bytes that would otherwise be padding.
+  int32_t  m_free_slot; ///< Slot number at the head of the deleted field free list.
   uint64_t m_presence_bits;
   uint32_t m_slot_accelerators[4];
 
