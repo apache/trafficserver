@@ -17,6 +17,7 @@
 #  limitations under the License.
 
 from enum import Enum
+import re
 import sys
 
 Test.Summary = 'Exercise stats-over-http plugin'
@@ -66,6 +67,12 @@ class StatsOverHttpPluginTest:
         assert (self.state == self.State.RUNNING)
         tr.StillRunningAfter = self.ts
 
+    def __containsLiteral(self, p: "Test.Process", expression: str, description: str):
+        p.Streams.stdout += Testers.ContainsExpression(re.escape(expression), description)
+
+    def __excludesLiteral(self, p: "Test.Process", expression: str, description: str):
+        p.Streams.stdout += Testers.ExcludesExpression(re.escape(expression), description)
+
     def __checkPrometheusMetrics(self, p: 'Test.Process', from_prometheus: bool):
         '''Check the Prometheus metrics output.
         :param p: The process whose output to check.
@@ -92,6 +99,154 @@ class StatsOverHttpPluginTest:
         else:
             p.Streams.stdout += Testers.ContainsExpression(
                 'proxy_process_http_delete_requests 0', 'Verify the successful parsing of Prometheus metrics for a counter.')
+
+    def __checkPrometheusV2Metrics(self, p: "Test.Process"):
+        """Check the Prometheus v2 metrics output.
+        :param p: The process whose output to check.
+        """
+        p.Streams.stdout += Testers.ContainsExpression(
+            "# HELP proxy_process_http_requests",
+            "Output should have a help line for the base metric name.",
+        )
+        p.Streams.stdout += Testers.ContainsExpression(
+            "# TYPE proxy_process_http_requests counter",
+            "Output should have a type line for the base metric name.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests{method="delete"}',
+            "Verify that HTTP method labels (GET, POST, DELETE, etc.) are extracted correctly.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests{method="extension_method"}',
+            "Verify that multi-token HTTP method labels are extracted correctly.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests{method="invalid_client"}',
+            "Verify that invalid client request labels are extracted correctly.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests{direction="incoming"}',
+            "Verify that direction labels (incoming / outgoing) are extracted correctly.",
+        )
+
+        p.Streams.stdout += Testers.ContainsExpression(
+            "proxy_process_http_completed_requests",
+            "Verify that completed_requests remains its own lifecycle counter.",
+        )
+        self.__excludesLiteral(
+            p,
+            'method="completed"',
+            "completed is not an HTTP method label.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_cache_fresh{result="hit"}',
+            "Verify that result labels are extracted correctly.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_disallowed_continue{method="post", status="100"}',
+            "Verify that status code labels are extracted correctly.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_cache_volume_lookup_active{volume="0"}',
+            "Verify that volume labels are extracted from volume_N patterns.",
+        )
+
+        self.__containsLiteral(
+            p,
+            'proxy_process_eventloop_count{le="',
+            "Verify that time buckets are correctly transformed into le labels.",
+        )
+
+    def __checkParsedPrometheusV2Metrics(self, p: "Test.Process"):
+        """Check the Prometheus parser's view of the v2 metrics output.
+        :param p: The process whose output to check.
+        """
+        p.Streams.stdout += Testers.ContainsExpression(
+            "# TYPE proxy_process_http_requests counter",
+            "Prometheus parser should recognize HTTP request metrics as one counter family.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests_total{method="delete"}',
+            "Parsed output should retain HTTP method labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests_total{method="extension_method"}',
+            "Parsed output should retain multi-token HTTP method labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_requests_total{direction="incoming"}',
+            "Parsed output should retain direction labels.",
+        )
+        p.Streams.stdout += Testers.ContainsExpression(
+            "proxy_process_http_completed_requests_total",
+            "Parsed output should keep completed_requests as its own counter family.",
+        )
+        self.__excludesLiteral(
+            p,
+            'method="completed"',
+            "completed should not be parsed as an HTTP method label.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_disallowed_continue_total{method="post",status="100"}',
+            "Parsed output should preserve multiple labels.",
+        )
+        p.Streams.stdout += Testers.ContainsExpression(
+            "# TYPE proxy_process_http_responses counter",
+            "Prometheus parser should recognize HTTP response metrics as one counter family.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_responses_total{direction="incoming"}',
+            "Parsed output should retain direction labels on response metrics.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_responses_total{status="2xx"}',
+            "Parsed output should retain status code class labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_cache_ims_total{result="miss"}',
+            "Parsed output should retain cache result labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_http_transaction_counts_failed_total{result="errors",method="connect"}',
+            "Parsed output should preserve combined result and method labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_eventloop_count{le="100s"}',
+            "Parsed output should retain bucket labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_cache_volume_lookup_active{volume="0"}',
+            "Parsed output should preserve gauge labels.",
+        )
+        self.__containsLiteral(
+            p,
+            'proxy_process_cache_volume_lookup_success_total{volume="0"}',
+            "Parsed output should preserve counter labels for volume metrics.",
+        )
 
     def __testCaseNoAccept(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in JSON format: no Accept and default path')
@@ -124,6 +279,19 @@ class StatsOverHttpPluginTest:
         tr.Processes.Default.ReturnCode = 0
         self.__checkPrometheusMetrics(tr.Processes.Default, from_prometheus=False)
         tr.Processes.Default.Streams.stderr = "gold/stats_over_http_prometheus_stderr.gold"
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
+    def __testCaseAcceptPrometheusV2(self):
+        tr = Test.AddTestRun("Fetch stats over HTTP in Prometheus v2 format via Accept header")
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(
+            f"-vs -H'Accept: text/plain; version=2.0.0' --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats",
+            ts=self.ts,
+        )
+        tr.Processes.Default.ReturnCode = 0
+        self.__checkPrometheusV2Metrics(tr.Processes.Default)
+        tr.Processes.Default.Streams.stderr = ("gold/stats_over_http_prometheus_v2_accept_stderr.gold")
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
 
@@ -160,6 +328,19 @@ class StatsOverHttpPluginTest:
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
 
+    def __testCasePathPrometheusV2(self):
+        tr = Test.AddTestRun("Fetch stats over HTTP in Prometheus v2 format via /_stats/prometheus_v2")
+        self.__checkProcessBefore(tr)
+        tr.MakeCurlCommand(
+            f"-vs --http1.1 http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus_v2",
+            ts=self.ts,
+        )
+        tr.Processes.Default.ReturnCode = 0
+        self.__checkPrometheusV2Metrics(tr.Processes.Default)
+        tr.Processes.Default.Streams.stderr = ("gold/stats_over_http_prometheus_v2_stderr.gold")
+        tr.Processes.Default.TimeOut = 3
+        self.__checkProcessAfter(tr)
+
     def __testCaseAcceptIgnoredIfPathExplicit(self):
         tr = Test.AddTestRun('Fetch stats over HTTP in Prometheus format with Accept csv header')
         self.__checkProcessBefore(tr)
@@ -184,16 +365,36 @@ class StatsOverHttpPluginTest:
         p.Command = f'{sys.executable} {ingester} http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus'
         p.ReturnCode = 0
         self.__checkPrometheusMetrics(p, from_prometheus=True)
+        self.__checkProcessAfter(tr)
+
+    def __queryAndParsePrometheusV2Metrics(self):
+        """
+        Query the ATS stats over HTTP in Prometheus v2 format and parse the output.
+        """
+        tr = Test.AddTestRun('Query and parse Prometheus v2 metrics')
+        ingester = 'prometheus_stats_ingester.py'
+        tr.Setup.CopyAs(ingester)
+        self.__checkProcessBefore(tr)
+        p = tr.Processes.Default
+        p.Command = (
+            f'{sys.executable} {ingester} --validate-v2-format --strict-family-metadata '
+            f'http://127.0.0.1:{self.ts.Variables.port}/_stats/prometheus_v2')
+        p.ReturnCode = 0
+        self.__checkParsedPrometheusV2Metrics(p)
+        self.__checkProcessAfter(tr)
 
     def run(self):
         self.__testCaseNoAccept()
         self.__testCaseAcceptCSV()
         self.__testCaseAcceptPrometheus()
+        self.__testCaseAcceptPrometheusV2()
         self.__testCasePathJSON()
         self.__testCasePathCSV()
         self.__testCasePathPrometheus()
+        self.__testCasePathPrometheusV2()
         self.__testCaseAcceptIgnoredIfPathExplicit()
         self.__queryAndParsePrometheusMetrics()
+        self.__queryAndParsePrometheusV2Metrics()
 
 
 StatsOverHttpPluginTest().run()
