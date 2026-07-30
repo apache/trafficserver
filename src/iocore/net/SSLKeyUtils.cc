@@ -24,15 +24,17 @@
 
 #include <tscore/Diags.h>
 #include <tscore/ink_assert.h>
-#ifndef OPENSSL_IS_OPENSSL3
 #include <tscore/ink_config.h>
-#endif
 
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
+
+#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
+#include <openssl/engine.h>
+#endif
 
 #ifdef OPENSSL_IS_OPENSSL3
 #include <openssl/decoder.h>
@@ -193,7 +195,32 @@ bool
 use_pkey_from_file(SSL_CTX *ctx, const char *keyPath)
 {
   ink_assert(keyPath && keyPath[0] != '\0');
+
+#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
+  // A key held by an HSM or other hardware store is named rather than stored:
+  // keyPath is a key identifier the engine resolves, and there is no file to
+  // read. Ask the engine first so that a configured device takes precedence over
+  // any same-named file on disk. Absent a configured engine there is nothing to
+  // ask, and keyPath is left to the file load below.
+  if (ENGINE *e = ENGINE_get_default_RSA(); e != nullptr) {
+    EVP_PKEY *pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
+
+    if (pkey != nullptr) {
+      bool const result{1 == SSL_CTX_use_PrivateKey(ctx, pkey)};
+
+      EVP_PKEY_free(pkey);
+      if (result) {
+        return true;
+      }
+    }
+    // Not finding the key in hardware is the ordinary case for a file-based
+    // configuration, so leave no errors behind for the caller to misread.
+    ERR_clear_error();
+  }
+#endif
+
   int const result{SSL_CTX_use_PrivateKey_file(ctx, keyPath, SSL_FILETYPE_PEM)};
+
   return 1 == result;
 }
 
