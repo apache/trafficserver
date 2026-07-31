@@ -145,6 +145,13 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
         parent_line = parent_line.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
         ts.Disk.parent_config.AddLine(parent_line)
 
+    # Configure cache_config if specified.
+    cache_config = ats_config.get('cache_config', [])
+    for cache_line in cache_config:
+        cache_line = cache_line.replace('{SERVER_HTTP_PORT}', str(server.Variables.http_port))
+        cache_line = cache_line.replace('{SERVER_HTTPS_PORT}', str(server.Variables.https_port))
+        ts.Disk.cache_config.AddLine(cache_line)
+
     # Configure logging.yaml if specified.
     logging_yaml = ats_config.get('logging_yaml')
     if logging_yaml != None:
