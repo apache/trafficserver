@@ -39,6 +39,10 @@ public:
     SET_HANDLER(&HoldOnEThread::on_event);
   }
 
+  // In case of an exception in a thread that would have set release, we set
+  // it here in order to unfreeze any threads that may be waiting on done.
+  ~HoldOnEThread() { release.set(); }
+
   Ptr<ProxyMutex> target_mutex;
   AtomicFlag      held;
   AtomicFlag      release;
