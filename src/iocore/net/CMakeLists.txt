@@ -77,12 +77,15 @@ add_library(
 )
 add_library(ts::inknet ALIAS inknet)
 
-if(TS_USE_QUIC)
+if(TS_USE_QUIC OR TS_USE_QMUX)
   add_subdirectory(quic)
 
-  target_sources(
-    inknet PRIVATE QUICClosedConCollector.cc QUICMultiCertConfigLoader.cc QUICNextProtocolAccept.cc QUICSupport.cc
-  )
+  target_sources(inknet PRIVATE QUICSupport.cc)
+  target_link_libraries(inknet PUBLIC ts::quic)
+endif()
+
+if(TS_USE_QUIC)
+  target_sources(inknet PRIVATE QUICClosedConCollector.cc QUICMultiCertConfigLoader.cc QUICNextProtocolAccept.cc)
 
   if(TS_HAS_OPENSSL_QUIC)
     target_sources(inknet PRIVATE OpenSSLQUICNetProcessor.cc OpenSSLQUICNetVConnection.cc OpenSSLQUICPacketHandler.cc)
@@ -90,8 +93,11 @@ if(TS_USE_QUIC)
     target_sources(inknet PRIVATE QUICNet.cc QUICNetProcessor.cc QUICNetVConnection.cc QUICPacketHandler.cc)
     target_link_libraries(inknet PUBLIC quiche::quiche)
   endif()
+endif()
 
-  target_link_libraries(inknet PUBLIC ts::quic)
+if(TS_USE_QMUX)
+  add_subdirectory(qmux)
+  target_link_libraries(inknet PUBLIC quiche::quiche ts::qmux)
 endif()
 
 if(BUILD_REGRESSION_TESTING OR BUILD_TESTING)
@@ -165,11 +171,14 @@ if(BUILD_TESTING)
       ts::http
       ts::http_remap
   )
-  if(TS_USE_QUIC)
+  if(TS_USE_QUIC OR TS_USE_QMUX)
     list(APPEND LINK_GROUP_LIBS quic http3)
     if(TS_HAS_QUICHE)
       list(APPEND LINK_GROUP_LIBS quiche::quiche)
     endif()
+  endif()
+  if(TS_USE_QMUX)
+    list(APPEND LINK_GROUP_LIBS qmux)
   endif()
   if(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED OR CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
     string(JOIN "," LINK_GROUP_LIBS_CSV ${LINK_GROUP_LIBS})

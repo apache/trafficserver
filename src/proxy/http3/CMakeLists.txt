@@ -47,6 +47,10 @@ target_link_libraries(
   PRIVATE ts::proxy
 )
 
+if(TS_USE_QMUX)
+  target_link_libraries(http3 PUBLIC ts::qmux)
+endif()
+
 if(BUILD_TESTING)
   add_executable(
     test_http3

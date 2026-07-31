@@ -78,6 +78,7 @@ extern const std::string_view IP_PROTO_TAG_HTTP_QUIC;
 extern const std::string_view IP_PROTO_TAG_HTTP_3;
 extern const std::string_view IP_PROTO_TAG_HTTP_QUIC_D29;
 extern const std::string_view IP_PROTO_TAG_HTTP_3_D29;
+extern const std::string_view IP_PROTO_TAG_H3QX;
 
 struct IpAddr; // forward declare.
 struct UnAddr; // forward declare.

@@ -50,8 +50,12 @@ if(NOT APPLE)
   target_link_options(traffic_server PRIVATE -Wl,--no-undefined,--no-allow-shlib-undefined)
 endif()
 
-if(TS_USE_QUIC)
+if(TS_USE_QUIC OR TS_USE_QMUX)
   target_link_libraries(traffic_server PRIVATE ts::http3 ts::quic)
+endif()
+
+if(TS_USE_QMUX)
+  target_link_libraries(traffic_server PRIVATE ts::qmux)
 endif()
 
 if(TS_HAS_PROFILER)

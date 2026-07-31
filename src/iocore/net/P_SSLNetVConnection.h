@@ -45,6 +45,13 @@
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
 
+#include "tscore/ink_config.h"
+
+#if TS_USE_QMUX
+#include "iocore/net/QUICSupport.h"
+#include "iocore/net/qmux/QMuxConnection.h"
+#endif
+
 #include <netinet/in.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -103,6 +110,10 @@ class SSLNetVConnection : public UnixNetVConnection,
                           public TLSCertSwitchSupport,
                           public TLSEventSupport,
                           public TLSBasicSupport
+#if TS_USE_QMUX
+  ,
+                          public QUICSupport
+#endif
 {
   using super = UnixNetVConnection; ///< Parent type.
 
@@ -415,6 +426,17 @@ private:
   bool            _early_data_finish = false;
   MIOBuffer      *_early_data_buf    = nullptr;
   IOBufferReader *_early_data_reader = nullptr;
+#endif
+
+#if TS_USE_QMUX
+  // QUICSupport
+  QUICConnection *
+  get_quic_connection() override
+  {
+    return _qmux_connection.get();
+  }
+
+  std::unique_ptr<QMuxConnection> _qmux_connection;
 #endif
 
 private:

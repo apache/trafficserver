@@ -51,6 +51,7 @@ const char *const TS_ALPN_PROTOCOL_HTTP_3        = IP_PROTO_TAG_HTTP_3.data();
 const char *const TS_ALPN_PROTOCOL_HTTP_QUIC     = IP_PROTO_TAG_HTTP_QUIC.data();
 const char *const TS_ALPN_PROTOCOL_HTTP_3_D29    = IP_PROTO_TAG_HTTP_3_D29.data();
 const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D29 = IP_PROTO_TAG_HTTP_QUIC_D29.data();
+const char *const TS_ALPN_PROTOCOL_H3QX          = IP_PROTO_TAG_H3QX.data();
 
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP  = "http";
 const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2 = "http2";
@@ -62,6 +63,7 @@ const char *const TS_PROTO_TAG_HTTP_3        = TS_ALPN_PROTOCOL_HTTP_3;
 const char *const TS_PROTO_TAG_HTTP_QUIC     = TS_ALPN_PROTOCOL_HTTP_QUIC;
 const char *const TS_PROTO_TAG_HTTP_3_D29    = TS_ALPN_PROTOCOL_HTTP_3_D29;
 const char *const TS_PROTO_TAG_HTTP_QUIC_D29 = TS_ALPN_PROTOCOL_HTTP_QUIC_D29;
+const char *const TS_PROTO_TAG_H3QX          = TS_ALPN_PROTOCOL_H3QX;
 const char *const TS_PROTO_TAG_TLS_1_3       = IP_PROTO_TAG_TLS_1_3.data();
 const char *const TS_PROTO_TAG_TLS_1_2       = IP_PROTO_TAG_TLS_1_2.data();
 const char *const TS_PROTO_TAG_TLS_1_1       = IP_PROTO_TAG_TLS_1_1.data();
@@ -82,6 +84,7 @@ int TS_ALPN_PROTOCOL_INDEX_HTTP_3        = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC     = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_3_D29    = SessionProtocolNameRegistry::INVALID;
 int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D29 = SessionProtocolNameRegistry::INVALID;
+int TS_ALPN_PROTOCOL_INDEX_H3QX          = SessionProtocolNameRegistry::INVALID;
 
 // Predefined protocol sets for ease of use.
 SessionProtocolSet HTTP_PROTOCOL_SET;
@@ -221,6 +224,7 @@ constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_0("\x8http/1.0");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_1_1("\x8http/1.1");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_2("\x2h2");
 constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_HTTP_3("\x2h3");
+constexpr std::string_view TS_ALPN_PROTO_ID_OPENSSL_H3QX("\x7h3qx-01");
 
 bool
 parse_octal_mode(const char *s, mode_t &out)
@@ -836,6 +840,7 @@ ts_session_protocol_well_known_name_indices_init()
   TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC  = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC});
   TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC_D29 =
     globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_HTTP_QUIC_D29});
+  TS_ALPN_PROTOCOL_INDEX_H3QX = globalSessionProtocolNameRegistry.toIndexConst(std::string_view{TS_ALPN_PROTOCOL_H3QX});
 
   // Now do the predefined protocol sets.
   HTTP_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_0_9);
@@ -846,6 +851,7 @@ ts_session_protocol_well_known_name_indices_init()
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markAllIn();
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_HTTP_3);
   DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
+  DEFAULT_TLS_SESSION_PROTOCOL_SET.markOut(TS_ALPN_PROTOCOL_INDEX_H3QX);
 
   DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_3);
   DEFAULT_QUIC_SESSION_PROTOCOL_SET.markIn(TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC);
@@ -861,6 +867,7 @@ ts_session_protocol_well_known_name_indices_init()
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_3_D29);
   TSProtoTags.insert(TS_PROTO_TAG_HTTP_QUIC_D29);
+  TSProtoTags.insert(TS_PROTO_TAG_H3QX);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_3);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_2);
   TSProtoTags.insert(TS_PROTO_TAG_TLS_1_1);
@@ -898,6 +905,8 @@ SessionProtocolNameRegistry::convert_openssl_alpn_wire_format(int index)
     return TS_ALPN_PROTO_ID_OPENSSL_HTTP_2;
   } else if (index == TS_ALPN_PROTOCOL_INDEX_HTTP_3) {
     return TS_ALPN_PROTO_ID_OPENSSL_HTTP_3;
+  } else if (index == TS_ALPN_PROTOCOL_INDEX_H3QX) {
+    return TS_ALPN_PROTO_ID_OPENSSL_H3QX;
   }
 
   return {};

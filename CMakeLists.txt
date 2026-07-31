@@ -392,7 +392,6 @@ if(ENABLE_QUICHE)
   find_package(quiche REQUIRED)
 
   set(TS_HAS_QUICHE ${quiche_FOUND})
-  set(TS_USE_QUIC ${TS_HAS_QUICHE})
   if(NOT SSLLIB_IS_BORINGSSL
      AND NOT SSLLIB_IS_QUICTLS
      AND NOT TS_OPENSSL_QUIC_TLS_CBS_COMPAT
@@ -411,6 +410,44 @@ if(ENABLE_QUICHE)
   elseif(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     message(STATUS "Using OpenSSL QUIC TLS callbacks compatibility for quiche")
   endif()
+endif()
+
+# A QUIC backend supplies the protocol implementation; the transport options
+# below decide how QUIC streams are actually carried on the wire. At least one
+# transport must be enabled for QUIC to be reachable.
+if(TS_HAS_OPENSSL_QUIC OR TS_HAS_QUICHE)
+  set(TS_HAS_QUIC_BACKEND TRUE)
+else()
+  set(TS_HAS_QUIC_BACKEND FALSE)
+endif()
+
+auto_option(
+  QUIC
+  DESCRIPTION
+  "Carry QUIC over UDP (default AUTO: on when a QUIC backend is available)"
+  FEATURE_VAR
+  TS_USE_QUIC
+  VAR_DEPENDS
+  TS_HAS_QUIC_BACKEND
+)
+
+auto_option(
+  QMUX
+  DESCRIPTION
+  "Carry QUIC over TLS/TCP as QMux (default OFF, requires quiche)"
+  DEFAULT
+  OFF
+  FEATURE_VAR
+  TS_USE_QMUX
+  VAR_DEPENDS
+  TS_HAS_QUICHE
+)
+
+if(TS_HAS_QUIC_BACKEND
+   AND NOT TS_USE_QUIC
+   AND NOT TS_USE_QMUX
+)
+  message(WARNING "A QUIC backend is enabled but neither UDP QUIC nor QMux is, so QUIC will not be served.")
 endif()
 
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl

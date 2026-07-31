@@ -32,6 +32,10 @@
 #include "proxy/http3/Http09App.h"
 #include "proxy/http3/Http3App.h"
 
+#if TS_USE_QMUX
+#include "iocore/net/qmux/QMuxConnection.h"
+#endif
+
 namespace
 {
 DbgCtl dbg_ctl_http3{"http3"};
@@ -77,11 +81,21 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
   if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/0.9 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
     new Http09App(netvc, qc, std::move(session_acl), this->options);
-  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0) {
+  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0 ||
+             IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/3 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
 
     Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this->options);
     app->start();
+
+#if TS_USE_QMUX
+    if (IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
+      auto *qmux_con = dynamic_cast<QMuxConnection *>(qc);
+      if (qmux_con) {
+        qmux_con->start(netvc);
+      }
+    }
+#endif
   } else {
     ink_abort("Negotiated App Name is unknown");
   }

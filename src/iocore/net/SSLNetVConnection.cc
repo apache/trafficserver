@@ -1030,6 +1030,12 @@ SSLNetVConnection::clear()
     ssl = nullptr;
   }
 
+#if TS_USE_QMUX
+  // The destructor never runs (ClassAllocator<SSLNetVConnection, false>), so the
+  // QMux connection has to be released here or it leaks on every VC recycle.
+  _qmux_connection.reset();
+#endif
+
   ALPNSupport::clear();
   TLSBasicSupport::clear();
   TLSEventSupport::clear();
@@ -1482,6 +1488,14 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
 
         Dbg(dbg_ctl_ssl, "Origin selected next protocol '%.*s'", len, proto);
+
+#if TS_USE_QMUX
+        if (this->get_negotiated_protocol_id() == TS_ALPN_PROTOCOL_INDEX_H3QX) {
+          Dbg(dbg_ctl_ssl, "ALPN h3qx-01: creating QMuxConnection");
+          _qmux_connection = std::make_unique<QMuxConnection>(this);
+          this->_set_service(static_cast<QUICSupport *>(this));
+        }
+#endif
       } else {
         Dbg(dbg_ctl_ssl, "Origin did not select a next protocol");
       }
