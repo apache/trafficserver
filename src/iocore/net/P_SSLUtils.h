@@ -114,6 +114,14 @@ namespace detail
     }
   };
 
+  struct PKEYDeleter {
+    void
+    operator()(EVP_PKEY *p)
+    {
+      EVP_PKEY_free(p);
+    }
+  };
+
 #ifdef OPENSSL_IS_OPENSSL3
   struct PKEYCTXDeleter {
     void
@@ -156,6 +164,7 @@ private:
 
 using scoped_X509 = std::unique_ptr<X509, ssl::detail::X509Deleter>;
 using scoped_BIO  = std::unique_ptr<BIO, ssl::detail::BIODeleter>;
+using scoped_PKEY = std::unique_ptr<EVP_PKEY, ssl::detail::PKEYDeleter>;
 #ifdef OPENSSL_IS_OPENSSL3
 using scoped_PKEY_CTX    = std::unique_ptr<EVP_PKEY_CTX, ssl::detail::PKEYCTXDeleter>;
 using scoped_Decoder_CTX = std::unique_ptr<OSSL_DECODER_CTX, ssl::detail::DecoderCTXDeleter>;
