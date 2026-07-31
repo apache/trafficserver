@@ -26,9 +26,11 @@
 #include "iocore/net/quic/QUICContext.h"
 #include "iocore/net/quic/QUICApplicationMap.h"
 #include "iocore/net/quic/QUICStreamManager.h"
+#include "iocore/eventsystem/EThread.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/eventsystem/VIO.h"
 #include "tscore/Diags.h"
+#include "tscore/ink_hrtime.h"
 #include "tsutil/DbgCtl.h"
 
 #include <quiche.h>
@@ -123,6 +125,7 @@ QMuxConnection::QMuxConnection(NetVConnection *netvc) : Continuation(netvc->mute
 
 QMuxConnection::~QMuxConnection()
 {
+  _unschedule_quiche_timeout();
   if (_read_reader) {
     _read_reader->dealloc();
   }
@@ -148,6 +151,25 @@ QMuxConnection::start(NetVConnection *netvc)
 
   netvc->do_io_read(this, INT64_MAX, _read_buf);
   _write_vio = netvc->do_io_write(this, INT64_MAX, _write_buf->alloc_reader());
+
+  _schedule_quiche_timeout();
+}
+
+void
+QMuxConnection::_schedule_quiche_timeout()
+{
+  if (!_quiche_timeout && _quiche_con != nullptr) {
+    _quiche_timeout = this_ethread()->schedule_in(this, HRTIME_MSECONDS(quiche_conn_timeout_as_millis(_quiche_con)));
+  }
+}
+
+void
+QMuxConnection::_unschedule_quiche_timeout()
+{
+  if (_quiche_timeout) {
+    _quiche_timeout->cancel();
+    _quiche_timeout = nullptr;
+  }
 }
 
 void
@@ -163,7 +185,7 @@ QMuxConnection::signal_write_ready()
 }
 
 int
-QMuxConnection::main_event(int event, void * /* data ATS_UNUSED */)
+QMuxConnection::main_event(int event, void *data)
 {
   if (_quiche_con == nullptr) {
     return EVENT_DONE;
@@ -179,8 +201,15 @@ QMuxConnection::main_event(int event, void * /* data ATS_UNUSED */)
     _handle_write();
     break;
   case EVENT_INTERVAL:
+    ink_assert(_quiche_timeout == data);
+    _quiche_timeout = nullptr;
     quiche_conn_on_timeout(_quiche_con);
     _flush_quiche_output();
+    if (quiche_conn_is_closed(_quiche_con)) {
+      close_quic_connection(nullptr);
+    } else {
+      _schedule_quiche_timeout();
+    }
     break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
@@ -471,14 +500,15 @@ QMuxConnection::close_quic_connection(QUICConnectionErrorUPtr error)
   }
   _closed = true;
 
-  uint64_t err_code = 0;
-  if (error) {
-    err_code = error->code;
-  }
+  const bool     is_app_error = error != nullptr && error->cls == QUICErrorClass::APPLICATION;
+  const uint64_t err_code     = error == nullptr ? static_cast<uint64_t>(QUICTransErrorCode::NO_ERROR) : error->code;
 
-  if (int rv = quiche_conn_close(_quiche_con, true, err_code, nullptr, 0); rv < 0) {
+  if (int rv = quiche_conn_close(_quiche_con, is_app_error, err_code, nullptr, 0); rv < 0) {
     Dbg(dbg_ctl_qmux, "[%s] quiche_conn_close error: %d", _cids_str.c_str(), rv);
   }
+  // quiche_conn_close() only queues the CLOSE frame; it has to be flushed like any other
+  // outgoing data or the peer never sees it.
+  _flush_quiche_output();
   Dbg(dbg_ctl_qmux, "[%s] connection closed with error %" PRIu64, _cids_str.c_str(), err_code);
 }
 

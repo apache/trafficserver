@@ -36,6 +36,7 @@
 struct quiche_conn;
 struct quiche_config;
 
+class Event;
 class NetVConnection;
 class VIO;
 class MIOBuffer;
@@ -100,6 +101,8 @@ private:
   void _flush_quiche_output();
   void _handle_read_streams();
   void _handle_write_streams();
+  void _schedule_quiche_timeout();
+  void _unschedule_quiche_timeout();
 
   static quiche_config *_shared_config;
   static void           _init_shared_config();
@@ -121,8 +124,9 @@ private:
   bool _closed   = false;
   bool _in_write = false;
 
-  MIOBuffer      *_read_buf    = nullptr;
-  IOBufferReader *_read_reader = nullptr;
-  MIOBuffer      *_write_buf   = nullptr;
-  VIO            *_write_vio   = nullptr;
+  MIOBuffer      *_read_buf       = nullptr;
+  IOBufferReader *_read_reader    = nullptr;
+  MIOBuffer      *_write_buf      = nullptr;
+  VIO            *_write_vio      = nullptr;
+  Event          *_quiche_timeout = nullptr;
 };
