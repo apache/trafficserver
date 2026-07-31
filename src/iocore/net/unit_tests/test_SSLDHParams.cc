@@ -104,7 +104,8 @@ key_to_pem(EVP_PKEY *pkey, EVP_CIPHER const *cipher, char *pass)
 std::string
 make_rsa_pem()
 {
-  EVP_PKEY         *pkey = EVP_RSA_gen(2048);
+  EVP_PKEY *pkey = EVP_RSA_gen(2048);
+  REQUIRE(pkey != nullptr);
   std::string const out{key_to_pem(pkey, nullptr, nullptr)};
   EVP_PKEY_free(pkey);
   return out;
