@@ -152,6 +152,7 @@ ts.Disk.records_config.update(
 
 ts.Setup.CopyAs('h2client.py', Test.RunDirectory)
 ts.Setup.CopyAs('h2active_timeout.py', Test.RunDirectory)
+ts.Setup.CopyAs('clients/h2_extension_settings.py', Test.RunDirectory)
 
 settings_limit_ts = Test.MakeATSProcess("ts_settings_limit", enable_tls=True, enable_cache=False)
 settings_limit_ts.addDefaultSSLFiles()
@@ -263,3 +264,11 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(settings_limit_ts)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "Received GOAWAY with error code 11", "Received ENHANCE_YOUR_CALM GOAWAY.")
+
+# Test Case 11: Extension settings fit within the default SETTINGS limits.
+tr = Test.AddTestRun("HTTP/2 extension settings")
+tr.Processes.Default.Command = f'{sys.executable} h2_extension_settings.py {ts.Variables.ssl_port}'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+    "Received 200 response", "The request following the extension settings should succeed.")
+tr.StillRunningAfter = server

@@ -5125,7 +5125,7 @@ HTTP/2 Configuration
 
    This is the threshold of sampling stream number to start checking the stream error rate.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 16
    :reloadable:
 
    Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
@@ -5133,7 +5133,7 @@ HTTP/2 Configuration
    code of ENHANCE_YOUR_CALM.
    Any negative value configures no limit to the number of settings received.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 32
    :reloadable:
 
    Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
