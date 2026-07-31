@@ -277,6 +277,7 @@ struct LoggingPreprocContinuation : public Continuation {
   mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
     Log::preproc_thread_main((void *)&m_idx);
+    delete this;
     return 0;
   }
 
@@ -293,6 +294,7 @@ struct LoggingFlushContinuation : public Continuation {
   mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
     Log::flush_thread_main((void *)&m_idx);
+    delete this;
     return 0;
   }
 
