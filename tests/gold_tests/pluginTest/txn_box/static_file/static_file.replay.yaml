@@ -30,6 +30,11 @@ meta:
           text: "Concert missing."
           duration: "2 minutes 30 seconds"
 
+      - text-block-define:
+          name: "unreadable"
+          path: "unreadable.txt"
+          duration: "1 second"
+
 # -- doc-jwt-->
       - text-block-define:
           name: "default-jwt"

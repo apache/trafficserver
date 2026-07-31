@@ -319,8 +319,20 @@ Do_text_block_define::Updater::operator()()
   // If control flow gets here, the file is no longer accessible and the content
   // should be cleared. If the file shows up again, it should have a modified time
   // later than the previously existing file, so that can be left unchanged.
-  std::unique_lock lock(_block->_content_mutex);
-  _block->_content.reset();
+  bool content_was_available = false;
+  {
+    std::unique_lock lock(_block->_content_mutex);
+    content_was_available = static_cast<bool>(_block->_content);
+    _block->_content.reset();
+  }
+
+  if (content_was_available) {
+    std::string msg;
+
+    swoc::bwprint(msg, R"([{}] Unable to read file "{}" for text block "{}" - {}.)", Config::PLUGIN_TAG, _block->_path,
+                  _block->_name, ec);
+    ts::Log_Error(msg);
+  }
 }
 
 /* ------------------------------------------------------------------------------------ */

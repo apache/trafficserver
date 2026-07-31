@@ -434,9 +434,10 @@ Utility
    One of ``path`` and ``text`` must be present. If both are present ``path`` takes precedence. The
    file contents are used if the file can be read, otherwise the value in ``text`` is used. If
    only ``path`` is present it is a configuration error if the file specified by ``path`` cannot
-   be read. If update checking is enabled and the file disappears, the text will be used. If the
-   file is avaiable during a subsequent check and is updated (newer than the last load time) it will
-   be loaded and used instead of the text.
+   be read. If update checking is enabled and the file disappears or becomes unreadable, an error is
+   logged and the text fallback, if configured, will be used. If the file is available during a
+   subsequent check and is updated (newer than the last load time) it will be loaded and used instead
+   of the text.
 
    .. seealso:: :ex:`text-block`.
 
