@@ -2402,7 +2402,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);
 #if TS_USE_QUIC == 1
-    quic_NetProcessor.start(-1, stacksize);
+    if (HttpProxyPort::hasQUIC()) {
+      quic_NetProcessor.start(-1, stacksize);
+    }
 #endif
     FileManager::instance().registerConfigPluginCallbacks([&]() { global_config_cbs->invoke(); });
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);
