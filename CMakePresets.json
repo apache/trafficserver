@@ -191,7 +191,8 @@
         "wamr_ROOT": "/opt",
         "ENABLE_OTEL_TRACER": "ON",
         "ENABLE_WASM_WAMR": "ON",
-        "ENABLE_CRIPTS": "ON"
+        "ENABLE_CRIPTS": "ON",
+        "ENABLE_OPENSSL_QUIC": "ON"
       }
     },
     {
@@ -207,7 +208,7 @@
       "name": "ci-fedora-quiche",
       "displayName": "CI Fedora Quiche",
       "description": "CI Pipeline config for Fedora Linux (quiche build)",
-      "inherits": ["ci"],
+      "inherits": ["ci-fedora"],
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
@@ -217,6 +218,7 @@
         "ENABLE_OTEL_TRACER": "ON",
         "ENABLE_WASM_WAMR": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
+        "ENABLE_OPENSSL_QUIC": "OFF",
         "ENABLE_QUICHE": "ON"
       }
     },

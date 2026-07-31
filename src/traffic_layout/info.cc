@@ -160,6 +160,7 @@ produce_features(bool json)
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
   print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
   print_feature("TS_USE_QUIC", TS_USE_QUIC, json);
+  print_feature("TS_HAS_OPENSSL_QUIC", TS_HAS_OPENSSL_QUIC, json);
   print_feature("TS_HAS_QUICHE", TS_HAS_QUICHE, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);

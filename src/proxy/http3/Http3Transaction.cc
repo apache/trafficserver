@@ -463,7 +463,8 @@ HQTransaction::_is_write_buffer_flushed()
 
   SCOPED_MUTEX_LOCK(lock, this->_info.write_vio->mutex, this_ethread());
 
-  return this->_info.write_vio->ntodo() == 0;
+  IOBufferReader *reader = this->_info.write_vio->get_reader();
+  return reader == nullptr || reader->read_avail() == 0;
 }
 
 bool
@@ -537,6 +538,16 @@ Http3Transaction::~Http3Transaction()
   this->_header_handler = nullptr;
   delete this->_data_handler;
   this->_data_handler = nullptr;
+}
+
+VIO *
+Http3Transaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  if (c != nullptr && nbytes > 0 && buf != nullptr) {
+    this->_header_framer->reset();
+  }
+
+  return super::do_io_write(c, nbytes, buf, owner);
 }
 
 int
@@ -675,7 +686,7 @@ Http3Transaction::on_header_decode_complete()
 bool
 Http3Transaction::is_response_header_sent() const
 {
-  return this->_header_framer->is_done();
+  return this->_header_framer->is_final_header_sent();
 }
 
 bool

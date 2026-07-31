@@ -23,6 +23,9 @@
 
 #include "iocore/net/quic/QUICConfig.h"
 
+#if TS_HAS_OPENSSL_QUIC
+#include <openssl/quic.h>
+#endif
 #include <openssl/ssl.h>
 
 #include "mgmt/config/ConfigContextDiags.h"
@@ -52,6 +55,24 @@ quic_new_ssl_ctx()
 #endif
 
   return ssl_ctx;
+}
+
+SSL_CTX *
+quic_new_server_ssl_ctx()
+{
+#if TS_HAS_OPENSSL_QUIC
+  SSL_CTX *ssl_ctx = SSL_CTX_new(OSSL_QUIC_server_method());
+  if (ssl_ctx == nullptr) {
+    return nullptr;
+  }
+
+  SSL_CTX_set_min_proto_version(ssl_ctx, TLS1_3_VERSION);
+  SSL_CTX_set_max_proto_version(ssl_ctx, TLS1_3_VERSION);
+
+  return ssl_ctx;
+#else
+  return quic_new_ssl_ctx();
+#endif
 }
 
 /**
@@ -429,6 +450,7 @@ QUICConfigParams::disable_http_0_9() const
   return this->_disable_http_0_9;
 }
 
+#if TS_HAS_QUICHE
 quiche_cc_algorithm
 QUICConfigParams::get_cc_algorithm() const
 {
@@ -441,6 +463,7 @@ QUICConfigParams::get_cc_algorithm() const
     return QUICHE_CC_RENO;
   }
 }
+#endif
 
 //
 // QUICConfig
