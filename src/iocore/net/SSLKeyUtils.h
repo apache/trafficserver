@@ -21,14 +21,14 @@
 
 #pragma once
 
-#if OPENSSL_IS_OPENSSL3
+#if OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <openssl/evp.h>
 #else
 #include <openssl/dh.h>
 #endif
 #include <openssl/ssl.h>
 
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 using dh_key_t = EVP_PKEY;
 #else
 using dh_key_t = DH;
