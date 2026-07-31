@@ -66,7 +66,7 @@ CB_clientcert(TSCont /* contp */, TSEvent /* event */, void *edata)
   TSVConn         ssl_vc = reinterpret_cast<TSVConn>(edata);
   TSSslConnection sslobj = TSVConnSslConnectionGet(ssl_vc);
   SSL            *ssl    = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
   X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
   X509 *cert = SSL_get_peer_certificate(ssl);

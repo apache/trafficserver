@@ -314,8 +314,8 @@ if(NOT SSLLIB_IS_BORINGSSL
    AND NOT SSLLIB_IS_AWSLC
    AND OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0"
 )
-  set(SSLLIB_IS_OPENSSL3 TRUE)
-  add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_OPENSSL3)
+  set(SSLLIB_IS_AT_LEAST_OPENSSL3 TRUE)
+  add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_AT_LEAST_OPENSSL3)
 endif()
 
 check_openssl_has_quic_tls_cbs(SSLLIB_HAS_QUIC_TLS_CBS "${OPENSSL_INCLUDE_DIR}")
@@ -636,7 +636,7 @@ check_symbol_exists(ENGINE_get_default_RSA "openssl/engine.h" HAVE_ENGINE_GET_DE
 check_symbol_exists(ENGINE_load_private_key "openssl/engine.h" HAVE_ENGINE_LOAD_PRIVATE_KEY)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
 
-if(SSLLIB_IS_OPENSSL3)
+if(SSLLIB_IS_AT_LEAST_OPENSSL3)
   check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_evp_cb "openssl/ssl.h" TS_HAS_TLS_SESSION_TICKET)
 else()
   check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb "openssl/ssl.h" TS_HAS_TLS_SESSION_TICKET)

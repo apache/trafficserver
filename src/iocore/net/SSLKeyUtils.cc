@@ -23,13 +23,13 @@
 #include "P_SSLUtils.h"
 
 #include <tscore/Diags.h>
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <tscore/ink_assert.h>
 #else
 #include <tscore/ink_config.h>
 #endif
 
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <openssl/evp.h>
 #include <openssl/decoder.h>
 #include <openssl/params.h>
@@ -41,7 +41,7 @@
 #include <openssl/ssl.h>
 #endif
 
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 
 EVP_PKEY *
 gen_dh_2048_256_pkey()
@@ -187,4 +187,4 @@ set_ctx_dh(SSL_CTX *ctx, dh_key_t *pkey)
   return result;
 }
 
-#endif // OPENSSL_IS_OPENSSL3
+#endif // OPENSSL_IS_AT_LEAST_OPENSSL3
