@@ -141,9 +141,10 @@ QMuxConnection::~QMuxConnection()
 void
 QMuxConnection::start(NetVConnection *netvc)
 {
-  _read_buf    = new_MIOBuffer(QMUX_IO_BUFFER_SIZE_INDEX);
-  _read_reader = _read_buf->alloc_reader();
-  _write_buf   = new_MIOBuffer(QMUX_IO_BUFFER_SIZE_INDEX);
+  _read_buf             = new_MIOBuffer(QMUX_IO_BUFFER_SIZE_INDEX);
+  _read_buf->water_mark = QMUX_MAX_RECORD_BYTES;
+  _read_reader          = _read_buf->alloc_reader();
+  _write_buf            = new_MIOBuffer(QMUX_IO_BUFFER_SIZE_INDEX);
 
   netvc->do_io_read(this, INT64_MAX, _read_buf);
   _write_vio = netvc->do_io_write(this, INT64_MAX, _write_buf->alloc_reader());
