@@ -365,7 +365,7 @@ class ConnBase
       auto conn = Connection();
 
       if (mTLS) {
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
         return SSL_get1_peer_certificate(reinterpret_cast<::SSL *>(conn));
 #else
         return SSL_get_peer_certificate(reinterpret_cast<::SSL *>(conn));

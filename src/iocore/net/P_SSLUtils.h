@@ -25,7 +25,7 @@
 #include "iocore/net/SSLTypes.h"
 #include "tscore/Diags.h"
 
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <openssl/decoder.h>
 #include <openssl/evp.h>
 #endif
@@ -114,7 +114,7 @@ namespace detail
     }
   };
 
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
   struct PKEYCTXDeleter {
     void
     operator()(EVP_PKEY_CTX *pctx)
@@ -156,7 +156,7 @@ private:
 
 using scoped_X509 = std::unique_ptr<X509, ssl::detail::X509Deleter>;
 using scoped_BIO  = std::unique_ptr<BIO, ssl::detail::BIODeleter>;
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 using scoped_PKEY_CTX    = std::unique_ptr<EVP_PKEY_CTX, ssl::detail::PKEYCTXDeleter>;
 using scoped_Decoder_CTX = std::unique_ptr<OSSL_DECODER_CTX, ssl::detail::DecoderCTXDeleter>;
 #endif

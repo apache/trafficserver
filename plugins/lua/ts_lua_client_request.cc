@@ -1299,7 +1299,7 @@ ts_lua_client_request_client_cert_get_pem(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1335,7 +1335,7 @@ ts_lua_client_request_client_cert_get_subject(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1371,7 +1371,7 @@ ts_lua_client_request_client_cert_get_issuer(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1407,7 +1407,7 @@ ts_lua_client_request_client_cert_get_serial(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1443,7 +1443,7 @@ ts_lua_client_request_client_cert_get_signature(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1479,7 +1479,7 @@ ts_lua_client_request_client_cert_get_not_before(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1515,7 +1515,7 @@ ts_lua_client_request_client_cert_get_not_after(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1551,7 +1551,7 @@ ts_lua_client_request_client_cert_get_version(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1585,7 +1585,7 @@ ts_lua_client_request_client_cert_get_san_dns(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1626,7 +1626,7 @@ ts_lua_client_request_client_cert_get_san_ip(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1667,7 +1667,7 @@ ts_lua_client_request_client_cert_get_san_email(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1708,7 +1708,7 @@ ts_lua_client_request_client_cert_get_san_uri(lua_State *L)
     TSSslConnection ssl_conn = TSVConnSslConnectionGet(client_conn);
     if (ssl_conn) {
       SSL *ssl = reinterpret_cast<SSL *>(ssl_conn);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);

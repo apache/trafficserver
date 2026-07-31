@@ -258,7 +258,7 @@ public:
   bool
   peer_provided_cert() const override
   {
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(this->ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(this->ssl);
