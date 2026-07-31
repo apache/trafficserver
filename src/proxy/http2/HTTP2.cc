@@ -488,8 +488,8 @@ uint32_t               Http2::no_activity_timeout_out    = 120;
 
 float    Http2::stream_error_rate_threshold        = 0.1;
 uint32_t Http2::stream_error_sampling_threshold    = 10;
-int32_t  Http2::max_settings_per_frame             = 7;
-int32_t  Http2::max_settings_per_minute            = 14;
+int32_t  Http2::max_settings_per_frame             = 16;
+int32_t  Http2::max_settings_per_minute            = 32;
 int32_t  Http2::max_settings_frames_per_minute     = 14;
 int32_t  Http2::max_ping_frames_per_minute         = 60;
 int32_t  Http2::max_priority_frames_per_minute     = 120;
