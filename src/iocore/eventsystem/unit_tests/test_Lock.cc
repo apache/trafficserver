@@ -21,6 +21,7 @@
   limitations under the License.
  */
 
+#define CATCH_CONFIG_THREAD_SAFE_ASSERTIONS
 #include "inkevent_test_fixtures.h"
 
 using inkevent_test::AtomicFlag;
