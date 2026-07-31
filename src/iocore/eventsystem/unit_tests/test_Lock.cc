@@ -55,7 +55,7 @@ private:
     {
       SCOPED_MUTEX_LOCK(guard, target_mutex, this_ethread());
       held.set();
-      release.wait_until_set();
+      REQUIRE(release.wait_until_set());
     }
     done.set();
     return 0;
