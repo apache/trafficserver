@@ -54,18 +54,16 @@
 /// parsing to convert MB-valued knobs into byte counts.
 #define BYTES_IN_MB 1000000
 
-/**
- * Selects which of the two tag tables a Diags operation addresses:
- *   debug tags (controlling Dbg/Diag emission) or action tags (controlling
- *   is_action_tag_set conditional code paths).
+/** Selects which of the two tag tables a Diags operation addresses:
+ * debug tags (controlling Dbg/Diag emission) or action tags (controlling
+ * is_action_tag_set conditional code paths).
  *
  * @note Numeric values are used as array indices into the enable-state
  *   array and Diags::activated_tags. Do not renumber.
  */
 enum DiagsTagType { DiagsTagType_Debug = 0, DiagsTagType_Action = 1 };
 
-/**
- * Per-DiagsLevel output destination configuration.
+/** Per-DiagsLevel output destination configuration.
  *
  * Each boolean controls whether messages at the owning level are emitted
  * to the corresponding sink. Multiple sinks may be set simultaneously;
@@ -83,16 +81,14 @@ struct DiagsModeOutput {
   bool to_diagslog;
 };
 
-/**
- * Identifies which standard stream Diags::set_std_output reseats.
+/** Identifies which standard stream Diags::set_std_output reseats.
  *
  * STDOUT targets the standard output stream; STDERR targets the standard
  * error stream.
  */
 enum StdStream { STDOUT = 0, STDERR };
 
-/**
- * Selects the rolling policy for a managed log file.
+/** Selects the rolling policy for a managed log file.
  *
  * - NO_ROLLING             — never roll; file grows without bound.
  * - ROLL_ON_TIME           — roll when the configured time interval elapses.
@@ -112,9 +108,8 @@ enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_
 /// Terminal levels are DL_Fatal and above (excluding DL_Undefined).
 #define DiagsLevel_IsTerminal(_l) (((_l) >= DL_Fatal) && ((_l) < DL_Undefined))
 
-/**
- * Cleanup callback invoked before process termination on a terminal
- *   DiagsLevel (DL_Fatal, DL_Alert, DL_Emergency).
+/** Cleanup callback invoked before process termination on a terminal
+ * DiagsLevel (DL_Fatal, DL_Alert, DL_Emergency).
  *
  * @pre Runs synchronously on the thread that emitted the terminal message,
  *   before the process exits. MUST NOT throw. MUST tolerate being invoked
@@ -135,9 +130,8 @@ enum RollingEnabledValues { NO_ROLLING = 0, ROLL_ON_TIME, ROLL_ON_SIZE, ROLL_ON_
  */
 using DiagsCleanupFunc = void (*)();
 
-/**
- * Bundles the two orthogonal pieces of Diags output configuration:
- *   the process-global per-tag enable state and the per-level output routing.
+/** Bundles the two orthogonal pieces of Diags output configuration:
+ * the process-global per-tag enable state and the per-level output routing.
  *
  * The enable state for each DiagsTagType is one of:
  *   0 — disabled (no emission),
@@ -158,8 +152,7 @@ using DiagsCleanupFunc = void (*)();
 class DiagsConfigState
 {
 public:
-  /**
-   * Return the current enable state for the given tag type.
+  /** Return the current enable state for the given tag type.
    *
    * @param[in] dtt DiagsTagType_Debug or DiagsTagType_Action.
    * @return 0 (disabled), 1 (enabled), 2 (DEBUG_OVERRIDE mode), or 3
@@ -178,8 +171,7 @@ public:
     return _enabled[dtt];
   }
 
-  /**
-   * Set the enable state for the given tag type.
+  /** Set the enable state for the given tag type.
    *
    * @param[in] dtt DiagsTagType_Debug or DiagsTagType_Action.
    * @param[in] new_value 0, 1, 2, or 3 (see class contract); 3 behaves
@@ -206,8 +198,7 @@ private:
   static int _enabled[2]; // one debug, one action
 };
 
-/**
- * Active diagnostic emission and tag-table state for the process.
+/** Active diagnostic emission and tag-table state for the process.
  *
  * Owns the diags.log, stdout, and stderr BaseLogFile handles, the per-level
  * output routing configuration, the regex tables for debug and action tags,
@@ -237,8 +228,7 @@ private:
 class Diags : public DebugInterface
 {
 public:
-  /**
-   * Construct a Diags instance with the given initial configuration.
+  /** Construct a Diags instance with the given initial configuration.
    *
    * @param[in] prefix_string Tag prefix prepended to all debug output. Must
    *   be non-empty.
@@ -267,8 +257,7 @@ public:
   Diags(std::string_view prefix_string, const char *base_debug_tags, const char *base_action_tags, BaseLogFile *_diags_log,
         int diags_log_perm = -1, int output_log_perm = -1);
 
-  /**
-   * Destroy the Diags instance, closing all owned log files.
+  /** Destroy the Diags instance, closing all owned log files.
    *
    * @pre No thread is currently executing a method on this instance.
    * @post All owned BaseLogFile handles are deleted (closing their FILE *).
@@ -310,9 +299,8 @@ public:
   // conditional debugging //
   ///////////////////////////
 
-  /**
-   * Return the per-connection DEBUG_OVERRIDE flag for the current
-   *   Continuation.
+  /** Return the per-connection DEBUG_OVERRIDE flag for the current
+   * Continuation.
    *
    * @return True if ContFlags::DEBUG_OVERRIDE is set on the currently
    *   executing Continuation; false otherwise or if no Continuation is active.
@@ -330,9 +318,8 @@ public:
     return get_cont_flag(ContFlags::DEBUG_OVERRIDE);
   }
 
-  /**
-   * Test whether the given IP endpoint matches the configured debug
-   *   client IP.
+  /** Test whether the given IP endpoint matches the configured debug
+   * client IP.
    *
    * @param[in] test_ip Endpoint whose IP address is compared against the
    *   configured debug client IP. The port is ignored.
@@ -353,8 +340,7 @@ public:
     return this->debug_client_ip == test_ip;
   }
 
-  /**
-   * Test whether emission for the given tag mode is globally enabled.
+  /** Test whether emission for the given tag mode is globally enabled.
    *
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action; defaults to
    *   DiagsTagType_Debug.
@@ -378,8 +364,7 @@ public:
     return (config.enabled(mode) & 1) || (config.enabled(mode) == 2 && this->get_override());
   }
 
-  /**
-   * Test whether the given tag is active for the given mode.
+  /** Test whether the given tag is active for the given mode.
    *
    * @param[in] tag C string naming the tag to check, or nullptr.
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
@@ -405,9 +390,8 @@ public:
   // low-level tag inquiry functions //
   /////////////////////////////////////
 
-  /**
-   * Test whether a tag string matches the active regex for the given
-   *   tag type.
+  /** Test whether a tag string matches the active regex for the given
+   * tag type.
    *
    * @param[in] tag C string to match, or nullptr.
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
@@ -423,8 +407,7 @@ public:
    */
   bool tag_activated(const char *tag, DiagsTagType mode = DiagsTagType_Debug) const;
 
-  /**
-   * DebugInterface override: test whether a debug tag is active.
+  /** DebugInterface override: test whether a debug tag is active.
    *
    * @param[in] tag C string naming the debug tag, or nullptr.
    * @return True if tag is active in DiagsTagType_Debug mode. A null tag
@@ -446,8 +429,7 @@ public:
   // raw printing interfaces //
   /////////////////////////////
 
-  /**
-   * Emit a message unconditionally, regardless of tag state.
+  /** Emit a message unconditionally, regardless of tag state.
    *
    * @param[in] tag C string label included in output, or nullptr to omit the
    *   tag prefix. Not checked against the tag regex.
@@ -482,8 +464,7 @@ public:
     va_end(ap);
   }
 
-  /**
-   * va_list form of print().
+  /** va_list form of print().
    *
    * @param[in] tag Tag label, or nullptr to omit the tag prefix.
    * @param[in] level DiagsLevel for routing.
@@ -502,8 +483,7 @@ public:
    */
   void print_va(const char *tag, DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const override;
 
-  /**
-   * Emit a message only if the tag is active in DiagsTagType_Debug.
+  /** Emit a message only if the tag is active in DiagsTagType_Debug.
    *
    * @param[in] tag C string naming the debug tag, or nullptr (null matches
    *   unconditionally).
@@ -530,8 +510,7 @@ public:
     }
   }
 
-  /**
-   * va_list form of log().
+  /** va_list form of log().
    *
    * @param[in] tag Tag name, or nullptr (null matches unconditionally).
    * @param[in] level DiagsLevel for routing.
@@ -555,8 +534,7 @@ public:
     }
   }
 
-  /**
-   * Emit a message at the given level unconditionally.
+  /** Emit a message at the given level unconditionally.
    *
    * @param[in] level DiagsLevel for routing and terminal handling.
    * @param[in] loc Source location, or nullptr.
@@ -577,8 +555,7 @@ public:
     va_end(ap);
   }
 
-  /**
-   * va_list form of error().
+  /** va_list form of error().
    *
    * @param[in] level DiagsLevel for routing and terminal handling.
    * @param[in] loc Source location, or nullptr.
@@ -596,8 +573,7 @@ public:
    */
   virtual void error_va(DiagsLevel level, const SourceLocation *loc, const char *fmt, va_list ap) const;
 
-  /**
-   * Print the current Diags configuration to fp.
+  /** Print the current Diags configuration to fp.
    *
    * @param[in] fp Destination FILE *; defaults to stdout.
    * @pre fp is a valid open stream.
@@ -612,8 +588,7 @@ public:
    */
   void dump(FILE *fp = stdout) const;
 
-  /**
-   * Enable tags matching the given PCRE2 pattern for the given mode.
+  /** Enable tags matching the given PCRE2 pattern for the given mode.
    *
    * @param[in] taglist PCRE2 regex string, or nullptr. If nullptr, the stored
    *   pattern is unchanged.
@@ -637,8 +612,7 @@ public:
    */
   void activate_taglist(const char *taglist, DiagsTagType mode = DiagsTagType_Debug);
 
-  /**
-   * Disable all tags for the given mode.
+  /** Disable all tags for the given mode.
    *
    * @param[in] mode DiagsTagType_Debug or DiagsTagType_Action.
    * @pre None.
@@ -651,8 +625,7 @@ public:
    */
   void deactivate_all(DiagsTagType mode = DiagsTagType_Debug);
 
-  /**
-   * Open the given BaseLogFile for use as a diagnostic log destination.
+  /** Open the given BaseLogFile for use as a diagnostic log destination.
    *
    * Does NOT assign diags_log; the caller is responsible for that assignment
    * on success. On failure, blf is deleted before returning.
@@ -679,8 +652,7 @@ public:
    */
   bool setup_diagslog(BaseLogFile *blf);
 
-  /**
-   * Configure the rolling policy for diags.log.
+  /** Configure the rolling policy for diags.log.
    *
    * @param[in] re Rolling policy (see RollingEnabledValues). NO_ROLLING
    *   disables rolling.
@@ -699,8 +671,7 @@ public:
    */
   void config_roll_diagslog(RollingEnabledValues re, int ri, int rs);
 
-  /**
-   * Configure the rolling policy for the output log (traffic.out).
+  /** Configure the rolling policy for the output log (traffic.out).
    *
    * @param[in] re Rolling policy (see RollingEnabledValues). NO_ROLLING
    *   disables rolling.
@@ -719,8 +690,7 @@ public:
    */
   void config_roll_outputlog(RollingEnabledValues re, int ri, int rs);
 
-  /**
-   * Close the current diags.log and reopen it at the configured path.
+  /** Close the current diags.log and reopen it at the configured path.
    *
    * Intended for use after an external log rotation tool has renamed or
    * removed the active diags.log. The implementation:
@@ -759,8 +729,7 @@ public:
    */
   bool reseat_diagslog();
 
-  /**
-   * Roll diags.log if the current rolling policy condition is met.
+  /** Roll diags.log if the current rolling policy condition is met.
    *
    * Under a size-based policy, the current file's size is compared to the
    * configured threshold. Under a time-based policy, the elapsed time since
@@ -788,9 +757,8 @@ public:
    */
   bool should_roll_diagslog();
 
-  /**
-   * Roll the standard-output redirection file if the current rolling
-   *   policy condition is met.
+  /** Roll the standard-output redirection file if the current rolling
+   * policy condition is met.
    *
    * Under a size-based policy, the current file's size is compared to the
    * configured threshold. Under a time-based policy, the elapsed time since
@@ -829,8 +797,7 @@ public:
    */
   bool should_roll_outputlog();
 
-  /**
-   * Reseat the named standard stream to a file at the given path.
+  /** Reseat the named standard stream to a file at the given path.
    *
    * @param[in] stream STDOUT or STDERR (see StdStream).
    * @param[in] file Non-null filesystem path. Symlinks are re-resolved at
