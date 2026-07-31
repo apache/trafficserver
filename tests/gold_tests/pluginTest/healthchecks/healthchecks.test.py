@@ -44,6 +44,9 @@ class TestFileChangeBehavior:
         self._expect_acme_ssl_404()
         self._re_add_acme_ssl()
         self._expect_positive_healthchecks()
+        self._expect_full_buffer_acme_body()
+        self._rewrite_acme_while_serving()
+        self._expect_rewritten_acme_body()
 
     def _configure_global_ts(self) -> None:
         '''Configure a global Traffic Server instance for the test runs.
@@ -146,6 +149,57 @@ class TestFileChangeBehavior:
             p = tr.Processes.Default
             p.Command = 'sleep 1'
             p.ReturnCode = 0
+
+    def _rewrite_acme_while_serving(self) -> None:
+        '''Rewrite the acme file repeatedly while healthcheck requests are in flight.
+
+        The plugin replaces the health check file data underneath transactions which may still be
+        reading the previous data. This drives that replacement so that an ASan enabled build
+        catches the old data being released while it is still referenced.
+        :return: None
+        '''
+        tr = Test.AddTestRun('Rewrite acme while healthchecks are being served')
+        acme_file = os.path.join(Test.RunDirectory, 'acme')
+        url = f'http://127.0.0.1:{self._ts.Variables.port}/acme'
+
+        # Note that autest runs the command through string.Template, so shell variables cannot be
+        # used here. The loop is therefore unrolled.
+        commands = []
+        for iteration in range(10):
+            commands.append(f'echo "{CONTENT} {iteration}" > {acme_file};')
+            commands.append('{curl} -s -o /dev/null ' + url + ' &')
+            commands.append('{curl} -s -o /dev/null ' + url + ' &')
+        commands.append('wait')
+
+        tr.MakeCurlCommandMulti(' '.join(commands), ts=self._ts)
+        tr.Processes.Default.ReturnCode = 0
+
+    def _expect_full_buffer_acme_body(self) -> None:
+        '''Verify that a MAX_BODY_LEN-sized file is not reported as empty.
+        :return: None
+        '''
+        tr = Test.AddTestRun('Expect a full-sized healthcheck response body')
+        acme_file = os.path.join(Test.RunDirectory, 'acme')
+        url = f'http://127.0.0.1:{self._ts.Variables.port}/acme'
+        command = (f'dd if=/dev/zero of={acme_file} bs=16384 count=1 2>/dev/null && sleep 1 && ' + '{curl} -s ' + url + ' | wc -c')
+        tr.MakeCurlCommandMulti(command, ts=self._ts)
+        p = tr.Processes.Default
+        p.ReturnCode = 0
+        p.Streams.All += Testers.ContainsExpression('16384', 'Verify the response contains 16 KiB')
+
+    def _expect_rewritten_acme_body(self) -> None:
+        '''Verify that the most recently written acme content is what gets served.
+        :return: None
+        '''
+        tr = Test.AddTestRun('Expect the last written acme content in the response body')
+        acme_file = os.path.join(Test.RunDirectory, 'acme')
+        url = f'http://127.0.0.1:{self._ts.Variables.port}/acme'
+        command = f'echo "{CONTENT} final" > {acme_file} && sleep 1 && ' + '{curl} -v ' + url
+        tr.MakeCurlCommandMulti(command, ts=self._ts)
+        p = tr.Processes.Default
+        p.ReturnCode = 0
+        p.Streams.All += Testers.ContainsExpression('HTTP/1.1 200', 'Verify 200 response for /acme')
+        p.Streams.All += Testers.ContainsExpression(f'{CONTENT} final', 'Verify the reloaded acme content is served')
 
 
 # Instantiate the test
