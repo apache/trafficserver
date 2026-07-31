@@ -215,7 +215,6 @@ set(ENABLE_TPROXY
         'X' where X is a number to use as the IP_TRANSPARENT sockopt,
         anything else to enable."
 )
-option(ENABLE_OPENSSL_QUIC "Use OpenSSL native QUIC (default OFF)")
 option(ENABLE_QUICHE "Use quiche (default OFF)")
 
 option(ENABLE_EXAMPLE "Build example directory (default OFF)")
@@ -330,6 +329,42 @@ endif()
 
 check_openssl_has_native_quic(SSLLIB_HAS_NATIVE_QUIC "${OPENSSL_INCLUDE_DIR}")
 
+if(DEFINED ENABLE_OPENSSL_QUIC
+   AND NOT ENABLE_OPENSSL_QUIC STREQUAL "AUTO"
+   AND ENABLE_OPENSSL_QUIC
+)
+  if(ENABLE_QUICHE)
+    message(FATAL_ERROR "ENABLE_OPENSSL_QUIC and ENABLE_QUICHE are mutually exclusive QUIC backends")
+  endif()
+  if(NOT SSLLIB_HAS_NATIVE_QUIC)
+    message(FATAL_ERROR "OpenSSL native QUIC support requires OpenSSL 3.5 or newer with OSSL_QUIC_server_method")
+  endif()
+  if(SSLLIB_IS_BORINGSSL
+     OR SSLLIB_IS_AWSLC
+     OR SSLLIB_IS_QUICTLS
+  )
+    message(FATAL_ERROR "OpenSSL native QUIC support requires upstream OpenSSL 3.5 or newer")
+  endif()
+endif()
+
+set(OPENSSL_QUIC_AVAILABLE ${SSLLIB_HAS_NATIVE_QUIC})
+if(SSLLIB_IS_BORINGSSL
+   OR SSLLIB_IS_AWSLC
+   OR SSLLIB_IS_QUICTLS
+   OR ENABLE_QUICHE
+)
+  set(OPENSSL_QUIC_AVAILABLE FALSE)
+endif()
+auto_option(
+  OPENSSL_QUIC
+  FEATURE_VAR
+  TS_HAS_OPENSSL_QUIC
+  DESCRIPTION
+  "Use OpenSSL native QUIC"
+  VAR_DEPENDS
+  OPENSSL_QUIC_AVAILABLE
+)
+
 if(ENABLE_PROFILER)
   find_package(profiler REQUIRED)
   set(TS_HAS_PROFILER ${profiler_FOUND})
@@ -345,21 +380,7 @@ elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
 endif()
 
-if(ENABLE_OPENSSL_QUIC AND ENABLE_QUICHE)
-  message(FATAL_ERROR "ENABLE_OPENSSL_QUIC and ENABLE_QUICHE are mutually exclusive QUIC backends")
-endif()
-
-if(ENABLE_OPENSSL_QUIC)
-  if(NOT SSLLIB_HAS_NATIVE_QUIC)
-    message(FATAL_ERROR "OpenSSL native QUIC support requires OpenSSL 3.5 or newer with OSSL_QUIC_server_method")
-  endif()
-  if(SSLLIB_IS_BORINGSSL
-     OR SSLLIB_IS_AWSLC
-     OR SSLLIB_IS_QUICTLS
-  )
-    message(FATAL_ERROR "OpenSSL native QUIC support requires upstream OpenSSL 3.5 or newer")
-  endif()
-  set(TS_HAS_OPENSSL_QUIC TRUE)
+if(TS_HAS_OPENSSL_QUIC)
   set(TS_USE_QUIC TRUE)
   message(STATUS "Using OpenSSL native QUIC")
 endif()
