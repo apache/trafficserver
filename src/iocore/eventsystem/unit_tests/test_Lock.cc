@@ -141,7 +141,7 @@ TEST_CASE("MUTEX_RELEASE on a MUTEX_TRY_LOCK guard releases the lock early and f
   EThread        *t = this_ethread();
 
   MUTEX_TRY_LOCK(guard, m, t);
-  REQUIRE(guard.is_locked());
+  CHECK(guard.is_locked());
 
   MUTEX_RELEASE(guard);
 
@@ -157,7 +157,7 @@ TEST_CASE("MUTEX_RELEASE invoked twice on the same MUTEX_TRY_LOCK guard is a no-
 
   MUTEX_TRY_LOCK(guard, m, t);
   MUTEX_RELEASE(guard);
-  REQUIRE_FALSE(guard.is_locked());
+  CHECK_FALSE(guard.is_locked());
 
   MUTEX_RELEASE(guard);
 
@@ -353,7 +353,7 @@ TEST_CASE("MUTEX_RELEASE on a null WEAK_MUTEX_TRY_LOCK guard clears is_locked() 
   EThread        *t = this_ethread();
 
   WEAK_MUTEX_TRY_LOCK(guard, empty, t);
-  REQUIRE(guard.is_locked());
+  CHECK(guard.is_locked());
 
   MUTEX_RELEASE(guard);
 
