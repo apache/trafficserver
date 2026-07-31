@@ -57,7 +57,7 @@
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/conf.h>
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <openssl/evp.h>
 #endif
 #include <openssl/dh.h>
