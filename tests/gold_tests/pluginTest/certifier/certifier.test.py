@@ -26,6 +26,20 @@ Test certifier plugin behaviors
 Test.SkipUnless(Condition.PluginExists('certifier.so'))
 
 
+def prepare_certifier_storage(source_path: str, destination_path: str) -> None:
+    """Copy the certifier files and make its mutable state writable by ATS."""
+    store_path = os.path.join(destination_path, 'store')
+    serial_path = os.path.join(destination_path, 'ca-serial.txt')
+
+    def set_permissions() -> None:
+        os.chmod(serial_path, 0o666)
+        os.chmod(store_path, 0o777)
+
+    Setup.Copy(source_path, destination_path)
+    Setup.MakeDir(store_path)
+    Setup.Lambda(func_setup=set_permissions, description="Make certifier state writable by ATS")
+
+
 class DynamicCertTest:
     httpsReplayFile = "replays/https.replay.yaml"
     certPathSrc = os.path.join(Test.TestDirectory, "certs")
@@ -44,8 +58,7 @@ class DynamicCertTest:
         self.ts.addDefaultSSLFiles()
         # copy over the cert store in which the certs will be generated/stored
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
-        Setup.Copy(self.certPathSrc, self.certPathDest)
-        Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -125,8 +138,7 @@ class ReuseExistingCertTest:
         self.ts.addDefaultSSLFiles()
         # copy over the cert store in which the certs will be generated/stored
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
-        Setup.Copy(self.certPathSrc, self.certPathDest)
-        Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -182,8 +194,7 @@ class UnsafeSniTest:
         self.ts = Test.MakeATSProcess("ts3", enable_tls=True)
         self.ts.addDefaultSSLFiles()
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
-        Setup.Copy(self.certPathSrc, self.certPathDest)
-        Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -245,8 +256,7 @@ class NoSniTest:
         self.ts = Test.MakeATSProcess("ts4", enable_tls=True)
         self.ts.addDefaultSSLFiles()
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
-        Setup.Copy(self.certPathSrc, self.certPathDest)
-        Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
