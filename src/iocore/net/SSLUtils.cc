@@ -869,7 +869,7 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data,
           (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
       return false;
     }
-    if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
+    if (!SSL_CTX_check_private_key(ctx)) {
       Dbg(dbg_ctl_ssl_load, "server private key does not match the certificate public key");
       return false;
     }
