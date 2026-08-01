@@ -27,6 +27,7 @@
 #include <cctype>
 #include <exception>
 #include <set>
+#include <utility>
 
 #include <yaml-cpp/yaml.h>
 
