@@ -309,7 +309,7 @@ reload_config(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &pa
         continue;
       }
 
-      valid_configs.emplace_back(std::move(parent_key), std::move(key), it->second);
+      valid_configs.push_back({std::move(parent_key), std::move(key), it->second});
     }
 
     // If no valid configs, return early without creating a task
