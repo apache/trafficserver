@@ -85,10 +85,14 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
              IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/3 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
 
+    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this->options);
+
 #if TS_USE_QMUX
     if (IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
-      // Wire up QMuxConnection's own read/write VIOs before the app can generate any
-      // stream I/O, or its first write can race the transport bridge starting up.
+      // Http3App's constructor runs the generic ProxySession start-up (HQSession::start()),
+      // which claims the netvc's read/write VIOs for itself. Reclaim them for QMuxConnection
+      // here, after that clobber and before app->start() can generate any stream I/O that
+      // would need them.
       auto *qmux_con = dynamic_cast<QMuxConnection *>(qc);
       if (!qmux_con) {
         ink_abort("negotiated h3qx-01 but QUICConnection is not a QMuxConnection");
@@ -97,7 +101,6 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
     }
 #endif
 
-    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this->options);
     app->start();
   } else {
     ink_abort("Negotiated App Name is unknown");
