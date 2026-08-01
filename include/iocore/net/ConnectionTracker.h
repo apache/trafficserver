@@ -32,6 +32,7 @@
 #include <mutex>
 #include <sstream>
 #include <tuple>
+#include <utility>
 #include "records/RecCore.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_config.h"
@@ -429,7 +430,7 @@ ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std
   default:
     Warning("Invalid matching type to add to per_server.connections metrics");
   }
-  return metric_prefix.empty() ? metric_name : metric_prefix + "." + metric_name;
+  return metric_prefix.empty() ? std::move(metric_name) : metric_prefix + "." + metric_name;
 }
 
 inline bool

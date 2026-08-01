@@ -22,11 +22,12 @@
  */
 
 #include <atomic>
+#include <charconv>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
 #include <string>
-#include <charconv>
+#include <utility>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
@@ -9079,7 +9080,8 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
 
   LogField *field = new LogField(
     name.data(), symbol.data(), static_cast<LogField::Type>(type),
-    [marshal_cb](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); }, unmarshal_cb);
+    [marshal_cb = std::move(marshal_cb)](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); },
+    unmarshal_cb);
   Log::global_field_list.add(field, false);
   Log::field_symbol_hash.emplace(symbol.data(), field);
 

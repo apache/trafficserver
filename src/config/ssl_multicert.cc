@@ -281,7 +281,7 @@ SSLMultiCertParser::parse_yaml(std::string_view content)
     return {result, swoc::Errata("YAML parse error: {}", ex.what())};
   }
 
-  return {result, std::move(errata)};
+  return {std::move(result), std::move(errata)};
 }
 
 ConfigResult<SSLMultiCertConfig>
@@ -337,7 +337,7 @@ SSLMultiCertParser::parse_legacy(std::string_view content)
     result.push_back(std::move(entry));
   }
 
-  return {result, std::move(errata)};
+  return {std::move(result), std::move(errata)};
 }
 
 std::string

@@ -207,7 +207,7 @@ public:
   using self_type    = ConfigReloadTask;
   ConfigReloadTask() = default;
   ConfigReloadTask(std::string_view token, std::string_view description, bool main_task, ConfigReloadTaskPtr parent)
-    : _info(State::CREATED, token, description, main_task), _parent{parent}
+    : _info(State::CREATED, token, description, main_task), _parent{std::move(parent)}
   {
     if (_info.main_task) {
       _info.state = State::IN_PROGRESS;
