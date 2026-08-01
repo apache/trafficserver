@@ -60,9 +60,6 @@
 #endif
 #include <openssl/dh.h>
 #include <openssl/ec.h>
-#if HAVE_ENGINE_LOAD_DYNAMIC
-#include <openssl/engine.h>
-#endif
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/objects.h>
@@ -770,10 +767,6 @@ void
 SSLPostConfigInitialize()
 {
   if (SSLConfigParams::engine_conf_file) {
-#if HAVE_ENGINE_LOAD_DYNAMIC
-    ENGINE_load_dynamic();
-#endif
-
     OPENSSL_load_builtin_modules();
     if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
       char err_buf[256] = {0};
@@ -859,20 +852,6 @@ SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data,
   // SSL_CTX_use_PrivateKey() takes its own reference on the key, so this
   // reference must be released on every exit.
   scoped_PKEY pkey;
-#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
-  ENGINE *e = ENGINE_get_default_RSA();
-  if (e != nullptr) {
-    pkey.reset(ENGINE_load_private_key(e, keyPath, nullptr, nullptr));
-    if (pkey) {
-      if (!SSL_CTX_use_PrivateKey(ctx, pkey.get())) {
-        Dbg(dbg_ctl_ssl_load, "failed to load server private key from engine");
-        return false;
-      }
-    }
-  }
-#else
-  void *e = nullptr;
-#endif
   if (pkey == nullptr) {
     scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
 
