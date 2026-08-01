@@ -304,6 +304,14 @@ void
 QMuxConnection::_handle_write()
 {
   _in_write = true;
+  if (!quiche_conn_is_established(_quiche_con)) {
+    // Our own QX_TRANSPORT_PARAMETERS haven't been sent yet. Flush now so that,
+    // if the peer's have already been received, the connection is established
+    // before the _handle_write_streams() check below -- otherwise a stream
+    // queued before this call (e.g. the HTTP/3 control stream) misses this
+    // cycle, and nothing else is guaranteed to trigger another one.
+    _flush_quiche_output();
+  }
   _handle_write_streams();
   _flush_quiche_output();
   _in_write = false;
