@@ -266,9 +266,15 @@ QMuxConnection::_handle_read()
 
     ssize_t done = quiche_conn_recv(_quiche_con, buf, len, &recv_info);
     if (done < 0) {
-      // The record is incomplete. Leave the bytes for the next read event.
-      if (done != QUICHE_ERR_DONE) {
+      if (done == QUICHE_ERR_DONE) {
+        // No complete record in what's buffered yet. Leave the bytes for the next read event.
+      } else {
+        // quiche has already classified this as an unrecoverable per-connection error and
+        // started its own internal close/drain sequence -- these bytes will never parse
+        // successfully, so close now instead of leaving them to linger until the next
+        // scheduled quiche_conn_on_timeout() notices the connection is closed.
         Dbg(dbg_ctl_qmux, "quiche_conn_recv error: %zd", done);
+        close_quic_connection(nullptr);
       }
       break;
     }
