@@ -1028,6 +1028,15 @@ SSLNetVConnection::clear()
     ssl = nullptr;
   }
 
+#if TS_USE_QMUX
+  // The destructor never runs (ClassAllocator<SSLNetVConnection, false>), so the
+  // QMux connection has to be released here or it leaks on every VC recycle.
+  // Clear the QUICSupport service slot too, or a recycled non-QMux VC would
+  // still report a (now null) QUIC connection to get_service<QUICSupport>().
+  _qmux_connection.reset();
+  this->_set_service(static_cast<QUICSupport *>(nullptr));
+#endif
+
   ALPNSupport::clear();
   TLSBasicSupport::clear();
   TLSEventSupport::clear();
@@ -1480,6 +1489,20 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
 
         Dbg(dbg_ctl_ssl, "Origin selected next protocol '%.*s'", len, proto);
+
+#if TS_USE_QMUX
+        if (this->get_negotiated_protocol_id() == TS_ALPN_PROTOCOL_INDEX_H3QX) {
+          Dbg(dbg_ctl_ssl, "ALPN h3qx-01: creating QMuxConnection");
+          _qmux_connection = std::make_unique<QMuxConnection>(this);
+          if (_qmux_connection->is_closed()) {
+            // Config or quiche_accept() failed. Don't advertise a QUIC connection that can
+            // never make progress -- fail the connection instead of completing the handshake.
+            _qmux_connection.reset();
+            return EVENT_ERROR;
+          }
+          this->_set_service(static_cast<QUICSupport *>(this));
+        }
+#endif
       } else {
         Dbg(dbg_ctl_ssl, "Origin did not select a next protocol");
       }

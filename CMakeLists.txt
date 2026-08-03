@@ -284,6 +284,7 @@ include(CheckOpenSSLIsQuictls)
 include(CheckOpenSSLIsAwsLc)
 include(CheckOpenSSLHasQuicTlsCbs)
 include(CheckOpenSSLHasNativeQuic)
+include(CheckQuicheHasQmux)
 find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(SSLLIB_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 check_openssl_is_awslc(SSLLIB_IS_AWSLC AWSLC_VERSION "${OPENSSL_INCLUDE_DIR}")
@@ -328,41 +329,19 @@ endif()
 
 check_openssl_has_native_quic(SSLLIB_HAS_NATIVE_QUIC "${OPENSSL_INCLUDE_DIR}")
 
-if(DEFINED ENABLE_OPENSSL_QUIC
-   AND NOT ENABLE_OPENSSL_QUIC STREQUAL "AUTO"
-   AND ENABLE_OPENSSL_QUIC
+# OpenSSL's native QUIC is a capability of the mandatory OpenSSL dependency, not an optional
+# component to opt into -- same footing as SSLLIB_IS_BORINGSSL or SSLLIB_HAS_QUIC_TLS_CBS above.
+# It's mutually exclusive with quiche by construction: quiche requires BoringSSL or the TLS
+# callback compat shim, neither of which implements this upstream-OpenSSL-3.5+ API.
+set(TS_HAS_OPENSSL_QUIC FALSE)
+if(SSLLIB_HAS_NATIVE_QUIC
+   AND NOT SSLLIB_IS_BORINGSSL
+   AND NOT SSLLIB_IS_AWSLC
+   AND NOT SSLLIB_IS_QUICTLS
+   AND NOT ENABLE_QUICHE
 )
-  if(ENABLE_QUICHE)
-    message(FATAL_ERROR "ENABLE_OPENSSL_QUIC and ENABLE_QUICHE are mutually exclusive QUIC backends")
-  endif()
-  if(NOT SSLLIB_HAS_NATIVE_QUIC)
-    message(FATAL_ERROR "OpenSSL native QUIC support requires OpenSSL 3.5 or newer with OSSL_QUIC_server_method")
-  endif()
-  if(SSLLIB_IS_BORINGSSL
-     OR SSLLIB_IS_AWSLC
-     OR SSLLIB_IS_QUICTLS
-  )
-    message(FATAL_ERROR "OpenSSL native QUIC support requires upstream OpenSSL 3.5 or newer")
-  endif()
+  set(TS_HAS_OPENSSL_QUIC TRUE)
 endif()
-
-set(OPENSSL_QUIC_AVAILABLE ${SSLLIB_HAS_NATIVE_QUIC})
-if(SSLLIB_IS_BORINGSSL
-   OR SSLLIB_IS_AWSLC
-   OR SSLLIB_IS_QUICTLS
-   OR ENABLE_QUICHE
-)
-  set(OPENSSL_QUIC_AVAILABLE FALSE)
-endif()
-auto_option(
-  OPENSSL_QUIC
-  FEATURE_VAR
-  TS_HAS_OPENSSL_QUIC
-  DESCRIPTION
-  "Use OpenSSL native QUIC"
-  VAR_DEPENDS
-  OPENSSL_QUIC_AVAILABLE
-)
 
 if(ENABLE_PROFILER)
   find_package(profiler REQUIRED)
@@ -379,11 +358,6 @@ elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
 endif()
 
-if(TS_HAS_OPENSSL_QUIC)
-  set(TS_USE_QUIC TRUE)
-  message(STATUS "Using OpenSSL native QUIC")
-endif()
-
 if(ENABLE_QUICHE)
   if(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     set(quiche_USE_STATIC TRUE)
@@ -391,7 +365,6 @@ if(ENABLE_QUICHE)
   find_package(quiche REQUIRED)
 
   set(TS_HAS_QUICHE ${quiche_FOUND})
-  set(TS_USE_QUIC ${TS_HAS_QUICHE})
   if(NOT SSLLIB_IS_BORINGSSL
      AND NOT SSLLIB_IS_QUICTLS
      AND NOT TS_OPENSSL_QUIC_TLS_CBS_COMPAT
@@ -410,6 +383,53 @@ if(ENABLE_QUICHE)
   elseif(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     message(STATUS "Using OpenSSL QUIC TLS callbacks compatibility for quiche")
   endif()
+
+  check_quiche_has_qmux(TS_QUICHE_HAS_QMUX)
+endif()
+
+# A QUIC backend supplies the protocol implementation; the transport options
+# below decide how QUIC streams are actually carried on the wire. At least one
+# transport must be enabled for QUIC to be reachable.
+if(TS_HAS_OPENSSL_QUIC OR TS_HAS_QUICHE)
+  set(TS_HAS_QUIC_BACKEND TRUE)
+else()
+  set(TS_HAS_QUIC_BACKEND FALSE)
+endif()
+
+auto_option(
+  QUIC
+  DESCRIPTION
+  "Carry QUIC over UDP (default AUTO: on when a QUIC backend is available)"
+  FEATURE_VAR
+  TS_USE_QUIC
+  VAR_DEPENDS
+  TS_HAS_QUIC_BACKEND
+)
+
+if(TS_USE_QUIC)
+  if(TS_HAS_OPENSSL_QUIC)
+    message(STATUS "Using OpenSSL native QUIC")
+  elseif(TS_HAS_QUICHE)
+    message(STATUS "Using quiche for QUIC transport")
+  endif()
+endif()
+
+auto_option(
+  QMUX
+  DESCRIPTION
+  "Carry QUIC over TLS/TCP as QMux (default AUTO: on when quiche has qmux support)"
+  FEATURE_VAR
+  TS_USE_QMUX
+  VAR_DEPENDS
+  TS_HAS_QUICHE
+  TS_QUICHE_HAS_QMUX
+)
+
+if(TS_HAS_QUIC_BACKEND
+   AND NOT TS_USE_QUIC
+   AND NOT TS_USE_QMUX
+)
+  message(WARNING "A QUIC backend is enabled but neither UDP QUIC nor QMux is, so QUIC will not be served.")
 endif()
 
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl

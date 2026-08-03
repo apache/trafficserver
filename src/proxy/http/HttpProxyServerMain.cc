@@ -40,6 +40,8 @@
 #include "../../iocore/net/P_QUICNetProcessor.h"
 #include "../../iocore/net/P_QUICNextProtocolAccept.h"
 #include "proxy/http3/Http3SessionAccept.h"
+#elif TS_USE_QMUX == 1
+#include "proxy/http3/Http3SessionAccept.h"
 #endif
 
 #include <vector>
@@ -223,6 +225,9 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
+#if TS_USE_QMUX
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_H3QX, new Http3SessionAccept(accept_opt));
+#endif
 
     SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);

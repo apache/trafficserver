@@ -50,7 +50,7 @@ target_link_libraries(
   PRIVATE ts::http2 ts::http_remap ts::inkcache ts::inkutils ts::logging
 )
 
-if(TS_USE_QUIC)
+if(TS_USE_QUIC OR TS_USE_QMUX)
   target_link_libraries(http PRIVATE ts::http3)
 endif()
 
