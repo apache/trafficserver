@@ -24,12 +24,23 @@
 #include "iocore/net/quic/QUICStream.h"
 #include "iocore/net/quic/QUICStreamAdapter.h"
 
-constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD       = 24;
-constexpr size_t   MAX_STREAM_SEND_BYTES_PER_EVENT = 16 * 1024;
+#include <algorithm>
+
+constexpr uint32_t MAX_STREAM_FRAME_OVERHEAD = 24;
 
 QUICStream::QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid) : _connection_info(cinfo), _id(sid) {}
 
 QUICStream::~QUICStream() {}
+
+size_t
+QUICStream::compute_fair_send_budget(size_t num_writable_streams)
+{
+  if (num_writable_streams <= 1) {
+    return MAX_STREAM_SEND_BYTES_PER_EVENT;
+  }
+  return std::clamp(MAX_STREAM_SEND_BYTES_PER_EVENT / num_writable_streams, MIN_STREAM_SEND_BYTES_PER_EVENT,
+                    MAX_STREAM_SEND_BYTES_PER_EVENT);
+}
 
 QUICStreamId
 QUICStream::id() const
@@ -144,24 +155,28 @@ QUICStream::receive_data(QUICStreamIO &stream_io)
 }
 
 int64_t
-QUICStream::send_data(QUICStreamIO &stream_io)
+QUICStream::send_data(QUICStreamIO &stream_io, size_t max_bytes_this_event)
 {
   bool                       fin = false;
   ssize_t                    len = 0;
   [[maybe_unused]] ErrorCode error_code{0};
   size_t                     written_this_event = 0;
+  // _write_vio.nbytes is set once when the VIO is armed and doesn't change over the
+  // course of this call, so query it once instead of re-locking the adapter's mutex
+  // for the same value on every loop iteration below.
+  const uint64_t total_len = this->_adapter->total_len();
 
-  while (written_this_event < MAX_STREAM_SEND_BYTES_PER_EVENT) {
+  while (written_this_event < max_bytes_this_event) {
     len = stream_io.stream_write_capacity(this->_id);
     if (len <= 0) {
       return written_this_event;
     }
 
     if (!this->_pending_send_block) {
-      size_t read_len           = std::min(static_cast<size_t>(len), MAX_STREAM_SEND_BYTES_PER_EVENT - written_this_event);
+      size_t read_len           = std::min(static_cast<size_t>(len), max_bytes_this_event - written_this_event);
       this->_pending_send_block = this->_adapter->read(read_len);
       if (!this->_pending_send_block) {
-        if (!this->_sent_fin && this->_adapter->is_eos() && this->_adapter->total_len() == this->_sent_bytes) {
+        if (!this->_sent_fin && this->_adapter->is_eos() && total_len == this->_sent_bytes) {
           static constexpr uint8_t empty_data  = 0;
           ssize_t                  written_len = stream_io.write_stream(this->_id, &empty_data, 0, true, error_code);
           if (written_len >= 0) {
@@ -172,7 +187,7 @@ QUICStream::send_data(QUICStreamIO &stream_io)
         this->_adapter->encourge_write();
         return written_this_event;
       }
-      this->_pending_send_fin = this->_adapter->total_len() == this->_sent_bytes + this->_pending_send_block->size();
+      this->_pending_send_fin = total_len == this->_sent_bytes + this->_pending_send_block->size();
     }
 
     Ptr<IOBufferBlock> block = this->_pending_send_block;
