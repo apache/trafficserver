@@ -395,7 +395,9 @@ LogObject::_checkout_write(size_t *write_offset, size_t bytes_needed)
         int idx = m_buffer_manager_idx++ % m_flush_threads;
         Dbg(dbg_ctl_log_logbuffer, "adding buffer %d to flush list after checkout", buffer->get_id());
         m_buffer_manager[idx].add_to_flush_queue(buffer);
-        Log::preproc_notify[idx].signal();
+        if (Log::preproc_notify != nullptr) {
+          Log::preproc_notify[idx].signal();
+        }
         buffer = nullptr;
       }
 
@@ -574,7 +576,9 @@ LogObject::flush_buffer(LogBuffer *buffer)
   int idx = m_buffer_manager_idx++ % m_flush_threads;
   Dbg(dbg_ctl_log_logbuffer, "adding buffer %d to flush list after checkout", buffer->get_id());
   m_buffer_manager[idx].add_to_flush_queue(buffer);
-  Log::preproc_notify[idx].signal();
+  if (Log::preproc_notify != nullptr) {
+    Log::preproc_notify[idx].signal();
+  }
 }
 
 int
