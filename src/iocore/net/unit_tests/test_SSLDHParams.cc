@@ -132,9 +132,14 @@ make_cert_and_key(EVP_CIPHER const *cipher = nullptr, char *pass = nullptr)
   X509_gmtime_adj(X509_getm_notAfter(x509), 60L * 60L * 24L * 365L);
   REQUIRE(X509_set_pubkey(x509, pkey) == 1);
 
-  X509_NAME *name = X509_get_subject_name(x509);
+  // OpenSSL 4.0 returns a pointer to const from X509_get_subject_name(), so the name
+  // has to be duplicated before it can be modified and stored back.
+  X509_NAME *name = X509_NAME_dup(X509_get_subject_name(x509));
+  REQUIRE(name != nullptr);
   X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, reinterpret_cast<unsigned char const *>("ats-test"), -1, -1, 0);
+  REQUIRE(X509_set_subject_name(x509, name) == 1);
   REQUIRE(X509_set_issuer_name(x509, name) == 1);
+  X509_NAME_free(name);
   REQUIRE(X509_sign(x509, pkey, EVP_sha256()) > 0);
 
   BIO *cert_bio = BIO_new(BIO_s_mem());

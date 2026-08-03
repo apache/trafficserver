@@ -1004,7 +1004,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
 } /* CheckServerCertNow() */
 
 static char *
-asn1_strdup(ASN1_STRING *s)
+asn1_strdup(const ASN1_STRING *s)
 {
   // Make sure we have an 8-bit encoding.
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
@@ -2212,10 +2212,12 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     std::set<std::string> name_set;
     // Grub through the names in the certs
-    X509_NAME *subject = nullptr;
 
     // Insert a key for the subject CN.
-    subject = X509_get_subject_name(cert);
+    // Let the constness of the X509_NAME pointer be deduced: OpenSSL 4.0 returns a
+    // pointer to const here while earlier versions do not, and
+    // X509_NAME_get_index_by_NID() below only accepts a pointer to const as of 3.0.
+    auto          *subject = X509_get_subject_name(cert);
     ats_scoped_str subj_name;
     if (subject) {
       int pos = -1;
@@ -2225,9 +2227,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
           break;
         }
 
-        X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
-        ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
-        subj_name           = asn1_strdup(cn);
+        auto *e   = X509_NAME_get_entry(subject, pos);
+        auto *cn  = X509_NAME_ENTRY_get_data(e);
+        subj_name = asn1_strdup(cn);
 
         Dbg(dbg_ctl_ssl_load, "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
         name_set.insert(subj_name.get());

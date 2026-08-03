@@ -107,10 +107,17 @@ public:
       }
     }
 
-    void _load_name(X509_NAME *(*getter)(const X509 *)) const;
+    // OpenSSL 4.0 returns a pointer to const from X509_get_subject_name() and
+    // X509_get_issuer_name(), and dropped the const from the X509 parameter of
+    // X509_get_notBefore()/X509_get_notAfter(). Deduce the function pointer types so
+    // these match on any OpenSSL version.
+    using NameGetter = decltype(&X509_get_subject_name);
+    using TimeGetter = decltype(&X509_get_notBefore);
+
+    void _load_name(NameGetter getter) const;
     void _load_integer(ASN1_INTEGER *(*getter)(X509 *)) const;
     void _load_long(long (*getter)(const X509 *)) const;
-    void _load_time(ASN1_TIME *(*getter)(const X509 *)) const;
+    void _load_time(TimeGetter getter) const;
 
     CertBase                                         *_owner = nullptr;
     mutable std::unique_ptr<BIO, decltype(&BIO_free)> _bio{nullptr, BIO_free};

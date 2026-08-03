@@ -1111,8 +1111,14 @@ ssl_nid(swoc::TextView const &name)
 
 namespace
 {
+  // OpenSSL 4.0 returns a pointer to const from X509_get_subject_name() and
+  // X509_get_issuer_name() while earlier versions do not, and
+  // X509_NAME_get_index_by_NID() only accepts a pointer to const as of 3.0. Deduce
+  // the parameter type from the accessor so this compiles against either.
+  using X509_NAME_ptr = decltype(X509_get_subject_name(nullptr));
+
   TextView
-  ssl_value_for(X509_NAME *name, int nid)
+  ssl_value_for(X509_NAME_ptr name, int nid)
   {
     if (int loc = X509_NAME_get_index_by_NID(name, nid, -1); loc >= 0) {
       if (auto entry = X509_NAME_get_entry(name, loc); entry != nullptr) {

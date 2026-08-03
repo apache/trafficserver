@@ -57,8 +57,10 @@ check_names(X509 *cert)
 {
   bool retval = false;
 
-  // Check the common name
-  X509_NAME *subject = X509_get_subject_name(cert);
+  // Check the common name. Let the constness of the X509_NAME pointer be deduced:
+  // OpenSSL 4.0 returns a pointer to const here while earlier versions do not, and
+  // X509_NAME_get_index_by_NID() below only accepts a pointer to const as of 3.0.
+  auto *subject = X509_get_subject_name(cert);
   if (subject) {
     int pos = -1;
     for (; !retval;) {
@@ -67,10 +69,10 @@ check_names(X509 *cert)
         break;
       }
 
-      X509_NAME_ENTRY *e         = X509_NAME_get_entry(subject, pos);
-      ASN1_STRING     *cn        = X509_NAME_ENTRY_get_data(e);
-      char            *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
-      retval                     = check_name(subj_name);
+      auto *e         = X509_NAME_get_entry(subject, pos);
+      auto *cn        = X509_NAME_ENTRY_get_data(e);
+      char *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
+      retval          = check_name(subj_name);
       free(subj_name);
     }
   }
