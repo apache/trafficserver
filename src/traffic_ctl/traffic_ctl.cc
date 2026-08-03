@@ -328,10 +328,10 @@ main([[maybe_unused]] int argc, const char **argv)
   // one. CacheShmCommand supplies the runtime default and keys its "did you set
   // name_prefix?" hint off the option being absent.
   shm_command.add_option("--prefix", "-p", "shm name prefix word, framed as /<word>- (default 'ats')", "", 1, "");
-  shm_command.add_command("status", "Show the cache shared-memory control segment and stripe table", [&]() { command->execute(); })
+  shm_command.add_command("status", "Show the cache shared-memory control segment and stripe table", Command_Execute)
     .add_example_usage("traffic_ctl cache shm status")
     .add_example_usage("traffic_ctl cache shm status --prefix ats-t");
-  shm_command.add_command("clear", "Unlink the cache shared-memory control and stripe segments", [&]() { command->execute(); })
+  shm_command.add_command("clear", "Unlink the cache shared-memory control and stripe segments", Command_Execute)
     .add_example_usage("traffic_ctl cache shm clear")
     .add_example_usage("traffic_ctl cache shm clear --prefix ats-t");
 
