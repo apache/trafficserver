@@ -285,6 +285,7 @@ include(CheckOpenSSLIsQuictls)
 include(CheckOpenSSLIsAwsLc)
 include(CheckOpenSSLHasQuicTlsCbs)
 include(CheckOpenSSLHasNativeQuic)
+include(CheckQuicheHasQmux)
 find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(SSLLIB_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 check_openssl_is_awslc(SSLLIB_IS_AWSLC AWSLC_VERSION "${OPENSSL_INCLUDE_DIR}")
@@ -410,6 +411,8 @@ if(ENABLE_QUICHE)
   elseif(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
     message(STATUS "Using OpenSSL QUIC TLS callbacks compatibility for quiche")
   endif()
+
+  check_quiche_has_qmux(TS_QUICHE_HAS_QMUX)
 endif()
 
 # A QUIC backend supplies the protocol implementation; the transport options
@@ -434,13 +437,12 @@ auto_option(
 auto_option(
   QMUX
   DESCRIPTION
-  "Carry QUIC over TLS/TCP as QMux (default OFF, requires quiche)"
-  DEFAULT
-  OFF
+  "Carry QUIC over TLS/TCP as QMux (default AUTO: on when quiche has qmux support)"
   FEATURE_VAR
   TS_USE_QMUX
   VAR_DEPENDS
   TS_HAS_QUICHE
+  TS_QUICHE_HAS_QMUX
 )
 
 if(TS_HAS_QUIC_BACKEND
