@@ -24,6 +24,7 @@
 #include "proxy/http3/Http3FrameDispatcher.h"
 
 #include "tscore/Diags.h"
+#include "tscore/ink_assert.h"
 #include "iocore/net/quic/QUICIntUtil.h"
 
 #include "proxy/http3/Http3DebugNames.h"
@@ -47,8 +48,9 @@ Http3FrameDispatcher::add_handler(Http3FrameHandler *handler)
   for (Http3FrameType t : handler->interests()) {
     auto const type = static_cast<uint8_t>(t);
     if (!registered[type]) {
-      this->_handlers[type].push_back(handler);
       registered[type] = true;
+      ink_release_assert(this->_handler_count[type] < MAX_HANDLERS_PER_TYPE);
+      this->_handlers[type][this->_handler_count[type]++] = handler;
     }
   }
 }
@@ -127,9 +129,9 @@ Http3FrameDispatcher::on_read_ready(QUICStreamId stream_id, Http3StreamType stre
         Http3FrameType type = this->_current_frame->type();
         Dbg(dbg_ctl_http3, "[RX] [%" PRIu64 "] | %s size=%" PRIu64 "/%" PRIu64, stream_id, Http3DebugNames::frame_type(type),
             this->_current_frame->total_length() - _bytes_to_skip, this->_current_frame->total_length());
-        std::vector<Http3FrameHandler *> handlers = this->_handlers[static_cast<uint8_t>(type)];
-        for (auto h : handlers) {
-          error = h->handle_frame(this->_current_frame, stream_type);
+        uint8_t const type_idx = static_cast<uint8_t>(type);
+        for (uint8_t i = 0; i < this->_handler_count[type_idx]; ++i) {
+          error = this->_handlers[type_idx][i]->handle_frame(this->_current_frame, stream_type);
           if (error && error->cls != Http3ErrorClass::UNDEFINED) {
             return error;
           }
