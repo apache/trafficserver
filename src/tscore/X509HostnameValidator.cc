@@ -211,7 +211,7 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
   }
   retval = equal(ASN1_STRING_get0_data(a), ASN1_STRING_length(a), b, blen);
   if (retval && peername) {
-    *peername = ats_strndup((char *)ASN1_STRING_get0_data(a), ASN1_STRING_length(a));
+    *peername = ats_strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(a)), ASN1_STRING_length(a));
   }
   return retval;
 }

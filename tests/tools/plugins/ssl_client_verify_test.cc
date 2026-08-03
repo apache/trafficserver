@@ -69,11 +69,10 @@ check_names(X509 *cert)
         break;
       }
 
-      auto *e         = X509_NAME_get_entry(subject, pos);
-      auto *cn        = X509_NAME_ENTRY_get_data(e);
-      char *subj_name = strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), ASN1_STRING_length(cn));
-      retval          = check_name(subj_name);
-      free(subj_name);
+      auto       *e  = X509_NAME_get_entry(subject, pos);
+      auto       *cn = X509_NAME_ENTRY_get_data(e);
+      std::string subj_name{reinterpret_cast<const char *>(ASN1_STRING_get0_data(cn)), static_cast<size_t>(ASN1_STRING_length(cn))};
+      retval = check_name(subj_name);
     }
   }
   if (!retval) {

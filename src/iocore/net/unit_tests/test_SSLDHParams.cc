@@ -136,7 +136,8 @@ make_cert_and_key(EVP_CIPHER const *cipher = nullptr, char *pass = nullptr)
   // has to be duplicated before it can be modified and stored back.
   X509_NAME *name = X509_NAME_dup(X509_get_subject_name(x509));
   REQUIRE(name != nullptr);
-  X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, reinterpret_cast<unsigned char const *>("ats-test"), -1, -1, 0);
+  REQUIRE(X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC, reinterpret_cast<unsigned char const *>("ats-test"), -1, -1, 0) ==
+          1);
   REQUIRE(X509_set_subject_name(x509, name) == 1);
   REQUIRE(X509_set_issuer_name(x509, name) == 1);
   X509_NAME_free(name);
