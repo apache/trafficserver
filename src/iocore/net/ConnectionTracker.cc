@@ -524,7 +524,7 @@ ConnectionTracker::Group::release()
 {
   // @a _count is always the authoritative count; the metric, if enabled, only mirrors it.
   if (_count > 0) {
-    int count = --_count;
+    auto count = --_count;
     if (_count_metric != nullptr) {
       ts::Metrics::Gauge::decrement(_count_metric);
     }

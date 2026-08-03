@@ -449,7 +449,7 @@ ConnectionTracker::TxnState::reserve()
 {
   _reserved_p = true;
   // @a _count is always the authoritative count; the metrics, if enabled, only mirror it.
-  int count = ++_g->_count;
+  auto count = ++_g->_count;
   if (_g->_count_metric != nullptr) {
     ts::Metrics::Gauge::increment(_g->_count_metric);
     ts::Metrics::Counter::increment(_g->_count_total_metric);
