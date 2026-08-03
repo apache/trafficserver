@@ -221,7 +221,9 @@ private:
   QUICConnectionId _initial_source_connection_id; // src cid used for Initial packet
   QUICConnectionId _quic_connection_id;           // src cid in local
 
+#if TS_HAS_QUICHE
   QUICConnectionTable *_ctable = nullptr;
+#endif
 
 #if TS_HAS_OPENSSL_QUIC
   std::unordered_map<QUICStreamId, SSL *> _openssl_streams;
@@ -240,10 +242,12 @@ private:
   void   _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
-  void   _schedule_quiche_timeout();
-  void   _unschedule_quiche_timeout();
-  void   _close_quiche_timeout(Event *data);
+  void _schedule_quiche_timeout();
+  void _unschedule_quiche_timeout();
+  void _close_quiche_timeout(Event *data);
+#if TS_HAS_QUICHE
   Event *_quiche_timeout = nullptr;
+#endif
 
   void _schedule_closing_event();
 
