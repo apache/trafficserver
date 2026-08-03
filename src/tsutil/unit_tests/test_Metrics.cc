@@ -23,6 +23,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <iterator>
+
 #include "tsutil/Metrics.h"
 using ts::Metrics;
 
@@ -38,18 +40,35 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(name == "proxy.process.api.metrics.bad_id");
 
     REQUIRE(m.begin() != m.end());
-    REQUIRE(++m.begin() == m.end());
+
+    // Other test cases share this process-wide store, so the number of metrics already present
+    // is not knowable here. Assert the delta from creating one metric instead of an absolute
+    // iterator position.
+    auto pre_count = std::distance(m.begin(), m.end());
+
+    Metrics::Counter::create("iterator.marker");
+    REQUIRE(std::distance(m.begin(), m.end()) == pre_count + 1);
 
     auto it = m.begin();
-    it++;
+    std::advance(it, pre_count);
+    REQUIRE(it != m.end());
+    ++it;
     REQUIRE(it == m.end());
+
+    auto it2 = m.begin();
+    std::advance(it2, pre_count);
+    it2++;
+    REQUIRE(it2 == m.end());
   }
 
   SECTION("New metric")
   {
     auto fooid = Metrics::Counter::create("foo");
 
-    REQUIRE(fooid == 1);
+    // Not an absolute id: that depends on how many metrics other test cases created first.
+    // Assert the id is valid and round-trips through lookup.
+    REQUIRE(fooid != ts::Metrics::NOT_FOUND);
+    REQUIRE(m.lookup("foo") == fooid);
     REQUIRE(m.name(fooid) == "foo");
     REQUIRE(m.type(fooid) == Metrics::MetricType::COUNTER);
 
@@ -75,8 +94,16 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     auto                span  = Metrics::Counter::createSpan(17, &span_id);
 
     REQUIRE(span.size() == 17);
-    REQUIRE(fooid == 1);
-    REQUIRE(span_id == 3);
+    // Not fixed offsets: those only hold against a virgin store. Assert instead that the span
+    // was allocated above the earlier metric and that every id in it is valid. Both ids are
+    // counters, so they are directly comparable -- ids encode the metric type, and so are not
+    // ordered across differing types.
+    REQUIRE(fooid != ts::Metrics::NOT_FOUND);
+    REQUIRE(span_id != ts::Metrics::NOT_FOUND);
+    REQUIRE(span_id > fooid);
+    for (size_t i = 0; i < span.size(); ++i) {
+      REQUIRE(m.valid(span_id + static_cast<ts::Metrics::IdType>(i)));
+    }
 
     m.rename(span_id + 0, "span.0");
     m.rename(span_id + 1, "span.1");
