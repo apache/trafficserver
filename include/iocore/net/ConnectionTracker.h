@@ -489,9 +489,13 @@ ConnectionTracker::TxnState::clear()
 inline void
 ConnectionTracker::TxnState::update_max_count(int count)
 {
-  auto cmax = _g->_count_max.load();
-  if (count > cmax) {
-    _g->_count_max.compare_exchange_weak(cmax, count);
+  auto cmax = _g->_count_max.load(std::memory_order_relaxed);
+
+  while (count > cmax) {
+    if (_g->_count_max.compare_exchange_weak(cmax, count, std::memory_order_relaxed, std::memory_order_relaxed)) {
+      break;
+    }
+    // cmax was reloaded by the failed exchange; retry if we are still larger.
   }
 }
 

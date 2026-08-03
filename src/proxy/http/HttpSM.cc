@@ -5921,7 +5921,9 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
   } else if (t_state.txn_conf->connection_tracker_config.server_min > 0 ||
              t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
     auto &ct_state = t_state.outbound_conn_track_state;
-    ct_state.reserve();
+    // Feed the count through as well, otherwise the group's peak stays at zero whenever metrics
+    // are enabled without a configured maximum.
+    ct_state.update_max_count(ct_state.reserve());
   }
 
   // We did not manage to get an existing session and need to open a new connection
