@@ -219,11 +219,10 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
 bool
 validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peername)
 {
-  GENERAL_NAMES   *gens = nullptr;
-  const X509_NAME *name = nullptr;
-  int              i;
-  int              alt_type;
-  bool             retval = false;
+  GENERAL_NAMES *gens = nullptr;
+  int            i;
+  int            alt_type;
+  bool           retval = false;
   ;
   equal_fn    equal;
   auto const *hostname_data = reinterpret_cast<const unsigned char *>(hostname.data());
@@ -269,11 +268,10 @@ validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peernam
     }
   }
   // No SAN match -- check the subject
-  i    = -1;
-  name = X509_get_subject_name(x);
+  i          = -1;
+  auto *name = X509_get_subject_name(x);
 
-  // const_cast is needed for OpenSSL 1.1.1
-  while ((i = X509_NAME_get_index_by_NID(const_cast<X509_NAME *>(name), NID_commonName, i)) >= 0) {
+  while ((i = X509_NAME_get_index_by_NID(name, NID_commonName, i)) >= 0) {
     const ASN1_STRING *str;
     int                astrlen;
     unsigned char     *astr;

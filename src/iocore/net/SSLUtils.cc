@@ -2212,16 +2212,14 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     std::set<std::string> name_set;
     // Grub through the names in the certs
-    const X509_NAME *subject = nullptr;
 
     // Insert a key for the subject CN.
-    subject = X509_get_subject_name(cert);
+    auto          *subject = X509_get_subject_name(cert);
     ats_scoped_str subj_name;
     if (subject) {
       int pos = -1;
       for (;;) {
-        // const_cast is needed for OpenSSL 1.1.1
-        pos = X509_NAME_get_index_by_NID(const_cast<X509_NAME *>(subject), NID_commonName, pos);
+        pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
         if (pos == -1) {
           break;
         }
