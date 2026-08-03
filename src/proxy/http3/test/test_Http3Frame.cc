@@ -120,6 +120,40 @@ TEST_CASE("Store HEADERS Frame", "[http3]")
     CHECK(len == 6);
     CHECK(memcmp(buf, expected1, len) == 0);
   }
+
+  SECTION("From reader, via factory")
+  {
+    uint8_t buf[32] = {0};
+    size_t  len;
+    uint8_t expected1[] = {
+      0x01,                   // Type
+      0x04,                   // Length
+      0x11, 0x22, 0x33, 0x44, // Payload
+    };
+
+    uint8_t    raw1[]       = "\x11\x22\x33\x44";
+    MIOBuffer *header_block = new_MIOBuffer(BUFFER_SIZE_INDEX_8K);
+    header_block->set(raw1, 4);
+    IOBufferReader *header_block_reader = header_block->alloc_reader();
+
+    Http3HeadersFrameUPtr frame = Http3FrameFactory::create_headers_frame(header_block_reader, 4);
+    CHECK(frame->length() == 4);
+    // The factory must consume the caller's reader (needed so a header block sent across
+    // multiple generate_frame() calls advances instead of re-reading the same bytes).
+    CHECK(header_block_reader->read_avail() == 0);
+
+    // The frame must still serialize correctly even though the original reader was already
+    // consumed above -- it holds its own independent clone of the reader.
+    auto           ibb = frame->to_io_buffer_block();
+    IOBufferReader reader;
+    reader.block = ibb.get();
+    len          = reader.read_avail();
+    reader.read(buf, sizeof(buf));
+    CHECK(len == 6);
+    CHECK(memcmp(buf, expected1, len) == 0);
+
+    free_MIOBuffer(header_block);
+  }
 }
 
 TEST_CASE("Load SETTINGS Frame", "[http3]")

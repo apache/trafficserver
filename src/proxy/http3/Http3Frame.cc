@@ -290,9 +290,17 @@ Http3HeadersFrame::Http3HeadersFrame(ats_unique_buf header_block, size_t header_
   this->_header_block = this->_header_block_uptr.get();
 }
 
+Http3HeadersFrame::Http3HeadersFrame(IOBufferReader *header_block_reader, size_t header_block_len)
+  : Http3Frame(Http3FrameType::HEADERS), _header_block_len(header_block_len), _header_block_reader(header_block_reader->clone())
+{
+  this->_length = header_block_len;
+}
+
 Http3HeadersFrame::~Http3HeadersFrame()
 {
-  if (this->_header_block_uptr == nullptr) {
+  if (this->_header_block_reader != nullptr) {
+    this->_header_block_reader->dealloc();
+  } else if (this->_header_block_uptr == nullptr) {
     ats_free(this->_header_block);
   }
 }
@@ -312,7 +320,11 @@ Http3HeadersFrame::to_io_buffer_block() const
   written += n;
   QUICVariableInt::encode(block_start + written, UINT64_MAX, n, this->_length);
   written += n;
-  memcpy(block_start + written, this->_header_block, this->_header_block_len);
+  if (this->_header_block_reader != nullptr) {
+    this->_header_block_reader->memcpy(block_start + written, this->_header_block_len);
+  } else {
+    memcpy(block_start + written, this->_header_block, this->_header_block_len);
+  }
   written += this->_header_block_len;
 
   block->fill(written);
@@ -597,14 +609,12 @@ Http3FrameFactory::create_headers_frame(const uint8_t *header_block, size_t head
 Http3HeadersFrameUPtr
 Http3FrameFactory::create_headers_frame(IOBufferReader *header_block_reader, size_t header_block_len)
 {
-  ats_unique_buf buf = ats_unique_malloc(header_block_len);
-
-  while (header_block_reader->read(buf.get(), header_block_len) > 0) {
-    ;
-  }
-
   Http3HeadersFrame *frame = http3HeadersFrameAllocator.alloc();
-  new (frame) Http3HeadersFrame(std::move(buf), header_block_len);
+  new (frame) Http3HeadersFrame(header_block_reader, header_block_len);
+  // The frame clones the reader before this, so consuming here only advances the caller's
+  // reader (for chunking header blocks larger than one generate_frame() call), not the frame's
+  // own clone.
+  header_block_reader->consume(header_block_len);
   return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
 }
 

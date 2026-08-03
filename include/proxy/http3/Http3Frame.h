@@ -113,6 +113,11 @@ public:
   Http3HeadersFrame() : Http3Frame() {}
   Http3HeadersFrame(IOBufferReader &reader);
   Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len);
+  // Shares the caller's buffer via a cloned reader instead of copying header_block_len bytes.
+  // Safe as long as the source MIOBuffer outlives this frame, which holds for the qmux/quic
+  // write path: the frame is created, serialized via to_io_buffer_block(), and destroyed, all
+  // synchronously, well within the lifetime of the Http3HeaderFramer that owns the source buffer.
+  Http3HeadersFrame(IOBufferReader *header_block_reader, size_t header_block_len);
   ~Http3HeadersFrame();
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
@@ -125,9 +130,10 @@ protected:
   bool _parse() override;
 
 private:
-  uint8_t       *_header_block      = nullptr;
-  ats_unique_buf _header_block_uptr = {nullptr};
-  size_t         _header_block_len  = 0;
+  uint8_t        *_header_block        = nullptr;
+  ats_unique_buf  _header_block_uptr   = {nullptr};
+  size_t          _header_block_len    = 0;
+  IOBufferReader *_header_block_reader = nullptr;
 };
 
 //
