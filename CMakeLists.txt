@@ -330,41 +330,19 @@ endif()
 
 check_openssl_has_native_quic(SSLLIB_HAS_NATIVE_QUIC "${OPENSSL_INCLUDE_DIR}")
 
-if(DEFINED ENABLE_OPENSSL_QUIC
-   AND NOT ENABLE_OPENSSL_QUIC STREQUAL "AUTO"
-   AND ENABLE_OPENSSL_QUIC
+# OpenSSL's native QUIC is a capability of the mandatory OpenSSL dependency, not an optional
+# component to opt into -- same footing as SSLLIB_IS_BORINGSSL or SSLLIB_HAS_QUIC_TLS_CBS above.
+# It's mutually exclusive with quiche by construction: quiche requires BoringSSL or the TLS
+# callback compat shim, neither of which implements this upstream-OpenSSL-3.5+ API.
+set(TS_HAS_OPENSSL_QUIC FALSE)
+if(SSLLIB_HAS_NATIVE_QUIC
+   AND NOT SSLLIB_IS_BORINGSSL
+   AND NOT SSLLIB_IS_AWSLC
+   AND NOT SSLLIB_IS_QUICTLS
+   AND NOT ENABLE_QUICHE
 )
-  if(ENABLE_QUICHE)
-    message(FATAL_ERROR "ENABLE_OPENSSL_QUIC and ENABLE_QUICHE are mutually exclusive QUIC backends")
-  endif()
-  if(NOT SSLLIB_HAS_NATIVE_QUIC)
-    message(FATAL_ERROR "OpenSSL native QUIC support requires OpenSSL 3.5 or newer with OSSL_QUIC_server_method")
-  endif()
-  if(SSLLIB_IS_BORINGSSL
-     OR SSLLIB_IS_AWSLC
-     OR SSLLIB_IS_QUICTLS
-  )
-    message(FATAL_ERROR "OpenSSL native QUIC support requires upstream OpenSSL 3.5 or newer")
-  endif()
+  set(TS_HAS_OPENSSL_QUIC TRUE)
 endif()
-
-set(OPENSSL_QUIC_AVAILABLE ${SSLLIB_HAS_NATIVE_QUIC})
-if(SSLLIB_IS_BORINGSSL
-   OR SSLLIB_IS_AWSLC
-   OR SSLLIB_IS_QUICTLS
-   OR ENABLE_QUICHE
-)
-  set(OPENSSL_QUIC_AVAILABLE FALSE)
-endif()
-auto_option(
-  OPENSSL_QUIC
-  FEATURE_VAR
-  TS_HAS_OPENSSL_QUIC
-  DESCRIPTION
-  "Use OpenSSL native QUIC"
-  VAR_DEPENDS
-  OPENSSL_QUIC_AVAILABLE
-)
 
 if(ENABLE_PROFILER)
   find_package(profiler REQUIRED)
@@ -379,11 +357,6 @@ if(TS_HAS_JEMALLOC)
   link_libraries(jemalloc::jemalloc)
 elseif(TS_HAS_MIMALLOC)
   link_libraries(mimalloc)
-endif()
-
-if(TS_HAS_OPENSSL_QUIC)
-  set(TS_USE_QUIC TRUE)
-  message(STATUS "Using OpenSSL native QUIC")
 endif()
 
 if(ENABLE_QUICHE)
@@ -433,6 +406,14 @@ auto_option(
   VAR_DEPENDS
   TS_HAS_QUIC_BACKEND
 )
+
+if(TS_USE_QUIC)
+  if(TS_HAS_OPENSSL_QUIC)
+    message(STATUS "Using OpenSSL native QUIC")
+  elseif(TS_HAS_QUICHE)
+    message(STATUS "Using quiche for QUIC transport")
+  endif()
+endif()
 
 auto_option(
   QMUX
