@@ -645,11 +645,15 @@ public:
   class Derived
   {
   public:
+    /// How the sources of a derived metric are combined into its value.
+    enum class Op { SUM, MAX, MIN };
+
     struct DerivedMetricSpec {
       using MetricSpec = std::variant<Metrics::AtomicType *, Metrics::IdType, std::string_view>;
       std::string_view                  derived_name;
       Metrics::MetricType               derived_type;
       std::initializer_list<MetricSpec> derived_from;
+      Op                                op{Op::SUM};
     };
 
     /**

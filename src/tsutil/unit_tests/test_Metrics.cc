@@ -178,6 +178,101 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
   }
 }
 
+TEST_CASE("Metrics derived ops", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("max and min")
+  {
+    auto a = Metrics::Gauge::createPtr("op-a");
+    auto b = Metrics::Gauge::createPtr("op-b");
+    auto c = Metrics::Gauge::createPtr("op-c");
+
+    Metrics::Derived::derive({
+      {"op-sum", Metrics::MetricType::GAUGE, {a, b, c}, Metrics::Derived::Op::SUM},
+      {"op-max", Metrics::MetricType::GAUGE, {a, b, c}, Metrics::Derived::Op::MAX},
+      {"op-min", Metrics::MetricType::GAUGE, {a, b, c}, Metrics::Derived::Op::MIN},
+    });
+
+    Metrics::Gauge::store(a, 3);
+    Metrics::Gauge::store(b, 9);
+    Metrics::Gauge::store(c, 5);
+
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("op-sum")].load() == 17);
+    REQUIRE(m[m.lookup("op-max")].load() == 9);
+    REQUIRE(m[m.lookup("op-min")].load() == 3);
+  }
+
+  SECTION("min is not clamped by a zero seed")
+  {
+    // A zero-seeded accumulator is correct for SUM but wrong for MIN: it would report 0 here
+    // instead of the smallest source value.
+    auto a = Metrics::Gauge::createPtr("posmin-a");
+    auto b = Metrics::Gauge::createPtr("posmin-b");
+
+    Metrics::Derived::derive({
+      {"posmin", Metrics::MetricType::GAUGE, {a, b}, Metrics::Derived::Op::MIN},
+    });
+
+    Metrics::Gauge::store(a, 7);
+    Metrics::Gauge::store(b, 12);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("posmin")].load() == 7);
+  }
+
+  SECTION("negative values aggregate correctly")
+  {
+    auto a = Metrics::Gauge::createPtr("neg-a");
+    auto b = Metrics::Gauge::createPtr("neg-b");
+
+    Metrics::Derived::derive({
+      {"neg-max", Metrics::MetricType::GAUGE, {a, b}, Metrics::Derived::Op::MAX},
+      {"neg-min", Metrics::MetricType::GAUGE, {a, b}, Metrics::Derived::Op::MIN},
+    });
+
+    Metrics::Gauge::store(a, -5);
+    Metrics::Gauge::store(b, -2);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("neg-max")].load() == -2);
+    REQUIRE(m[m.lookup("neg-min")].load() == -5);
+  }
+
+  SECTION("a single source works for every op")
+  {
+    auto a = Metrics::Gauge::createPtr("solo-a");
+
+    Metrics::Derived::derive({
+      {"solo-sum", Metrics::MetricType::GAUGE, {a}, Metrics::Derived::Op::SUM},
+      {"solo-max", Metrics::MetricType::GAUGE, {a}, Metrics::Derived::Op::MAX},
+      {"solo-min", Metrics::MetricType::GAUGE, {a}, Metrics::Derived::Op::MIN},
+    });
+
+    Metrics::Gauge::store(a, 42);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("solo-sum")].load() == 42);
+    REQUIRE(m[m.lookup("solo-max")].load() == 42);
+    REQUIRE(m[m.lookup("solo-min")].load() == 42);
+  }
+
+  SECTION("op defaults to SUM for backward compatibility")
+  {
+    auto a = Metrics::Counter::createPtr("dflt-a");
+    auto b = Metrics::Counter::createPtr("dflt-b");
+    Metrics::Derived::derive({
+      {"dflt-sum", Metrics::MetricType::COUNTER, {a, b}}
+    });
+    Metrics::Counter::increment(a, 2);
+    Metrics::Counter::increment(b, 4);
+    Metrics::Derived::update_derived();
+    REQUIRE(m[m.lookup("dflt-sum")].load() == 6);
+  }
+}
+
 TEST_CASE("Metrics hidden store", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();

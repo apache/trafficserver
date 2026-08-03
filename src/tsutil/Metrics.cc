@@ -22,6 +22,7 @@
  */
 
 #include "tsutil/Assert.h"
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -246,6 +247,7 @@ namespace details
   struct DerivedMetric {
     Metrics::IdType                    metric;
     std::vector<Metrics::AtomicType *> derived_from;
+    Metrics::Derived::Op               op{Metrics::Derived::Op::SUM};
   };
 
   struct DerivativeMetrics {
@@ -259,12 +261,30 @@ namespace details
       std::lock_guard l(metrics_lock);
 
       for (auto &m : metrics) {
-        int64_t sum = 0;
-
-        for (auto d : m.derived_from) {
-          sum += d->load();
+        if (m.derived_from.empty()) {
+          continue;
         }
-        instance[m.metric].store(sum);
+
+        // Seeded from the first source rather than from zero: a zero seed is correct only for
+        // SUM, and would clamp every MIN result to <= 0.
+        int64_t value = m.derived_from.front()->load();
+
+        for (auto it = m.derived_from.begin() + 1; it != m.derived_from.end(); ++it) {
+          int64_t const v = (*it)->load();
+
+          switch (m.op) {
+          case Metrics::Derived::Op::SUM:
+            value += v;
+            break;
+          case Metrics::Derived::Op::MAX:
+            value = std::max(value, v);
+            break;
+          case Metrics::Derived::Op::MIN:
+            value = std::min(value, v);
+            break;
+          }
+        }
+        instance[m.metric].store(value);
       }
     }
 
@@ -293,6 +313,7 @@ Metrics::Derived::derive(const std::initializer_list<Metrics::Derived::DerivedMe
   for (auto &m : metrics) {
     details::DerivedMetric dm{};
     dm.metric = instance._create(m.derived_name, m.derived_type);
+    dm.op     = m.op;
 
     for (auto &d : m.derived_from) {
       if (std::holds_alternative<Metrics::AtomicType *>(d)) {
