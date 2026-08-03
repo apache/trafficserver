@@ -127,7 +127,7 @@ extern "C" int plock(int);
 
 #include "mgmt/config/FileManager.h"
 
-#if TS_USE_QUIC == 1
+#if TS_USE_QUIC == 1 || TS_USE_QMUX == 1
 #include "proxy/http3/Http3.h"
 #include "proxy/http3/Http3Config.h"
 #endif
@@ -2159,7 +2159,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
-#if TS_USE_QUIC == 1
+#if TS_USE_QUIC == 1 || TS_USE_QMUX == 1
   ts::Http3Config::startup();
 #endif
 
@@ -2353,7 +2353,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // Initialize HTTP/2
     Http2::init();
-#if TS_USE_QUIC == 1
+#if TS_USE_QUIC == 1 || TS_USE_QMUX == 1
     // Initialize HTTP/QUIC
     Http3::init();
 #endif

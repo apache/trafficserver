@@ -61,7 +61,7 @@ public:
 
   QUICStream() {}
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
-  ~QUICStream();
+  virtual ~QUICStream();
 
   QUICStreamId                      id() const;
   const QUICConnectionInfoProvider *connection_info();

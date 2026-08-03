@@ -52,7 +52,7 @@ add_subdirectory(http)
 add_subdirectory(http2)
 add_subdirectory(logging)
 
-if(TS_USE_QUIC)
+if(TS_USE_QUIC OR TS_USE_QMUX)
   add_subdirectory(http3)
 endif()
 
