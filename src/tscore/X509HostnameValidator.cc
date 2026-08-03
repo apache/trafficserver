@@ -272,7 +272,8 @@ validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peernam
   i    = -1;
   name = X509_get_subject_name(x);
 
-  while ((i = X509_NAME_get_index_by_NID(name, NID_commonName, i)) >= 0) {
+  // const_cast is needed for OpenSSL 1.1.1
+  while ((i = X509_NAME_get_index_by_NID(const_cast<X509_NAME *>(name), NID_commonName, i)) >= 0) {
     const ASN1_STRING *str;
     int                astrlen;
     unsigned char     *astr;

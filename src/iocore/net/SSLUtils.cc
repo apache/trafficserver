@@ -2220,7 +2220,8 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
     if (subject) {
       int pos = -1;
       for (;;) {
-        pos = X509_NAME_get_index_by_NID(subject, NID_commonName, pos);
+        // const_cast is needed for OpenSSL 1.1.1
+        pos = X509_NAME_get_index_by_NID(const_cast<X509_NAME *>(subject), NID_commonName, pos);
         if (pos == -1) {
           break;
         }
