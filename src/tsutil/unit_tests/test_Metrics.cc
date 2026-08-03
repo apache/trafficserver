@@ -23,9 +23,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <array>
 #include <iterator>
 #include <memory>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -285,4 +287,49 @@ TEST_CASE("Metrics hidden store", "[libtsapi][Metrics]")
     }
     REQUIRE(Metrics::Counter::load(ptrs[0]) == N_THREADS * 10);
   }
+}
+
+TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
+{
+  // Storage packs metrics into fixed-size blobs (MAX_SIZE entries each). Creating more than
+  // MAX_SIZE metrics forces at least one new blob to be allocated, which is exactly where an
+  // off-by-one in the blob/offset bookkeeping would corrupt or orphan entries. Use the hidden
+  // store so this doesn't dump thousands of names into the published store that other test cases
+  // iterate over.
+  auto                                       &h     = Metrics::hidden_instance();
+  constexpr int                               COUNT = Metrics::MAX_SIZE + 100;
+  std::vector<Metrics::Counter::AtomicType *> ptrs;
+  std::vector<std::string>                    names;
+
+  ptrs.reserve(COUNT);
+  names.reserve(COUNT);
+
+  for (int i = 0; i < COUNT; ++i) {
+    names.push_back("blob.growth." + std::to_string(i));
+    auto p = Metrics::Counter::createHiddenPtr(names[i]);
+    REQUIRE(p != nullptr);
+    ptrs.push_back(p);
+    Metrics::Counter::increment(p, i);
+  }
+
+  for (int i = 0; i < COUNT; ++i) {
+    auto id = h.lookup(names[i]);
+    REQUIRE(id != Metrics::NOT_FOUND);
+    REQUIRE(h.valid(id));
+
+    // Re-creating by name must be idempotent and resolve to the exact same atomic: a blob
+    // boundary bug that aliases two entries onto the same slot, or orphans one behind the
+    // boundary, would fail this.
+    auto p2 = Metrics::Counter::createHiddenPtr(names[i]);
+    REQUIRE(p2 == ptrs[i]);
+
+    // Distinct values catch aliasing: if two logically distinct entries were mapped to the same
+    // underlying atomic, this readback would not match the index written above.
+    REQUIRE(Metrics::Counter::load(ptrs[i]) == i);
+  }
+
+  // Every pointer must be distinct: no two names should have been aliased onto the same atomic.
+  std::vector<Metrics::Counter::AtomicType *> sorted_ptrs = ptrs;
+  std::sort(sorted_ptrs.begin(), sorted_ptrs.end());
+  REQUIRE(std::adjacent_find(sorted_ptrs.begin(), sorted_ptrs.end()) == sorted_ptrs.end());
 }

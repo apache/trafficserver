@@ -58,7 +58,8 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
   auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
   debug_assert(blob);
-  debug_assert(_cur_blob < MAX_BLOBS);
+  // The write below is to _blobs[_cur_blob + 1], so the last usable blob index is MAX_BLOBS - 1.
+  release_assert(_cur_blob < MAX_BLOBS - 1);
 
   _blobs[++_cur_blob] = std::move(blob);
   _cur_off            = 0;
@@ -72,6 +73,13 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
 
   if (it != _lookups.end()) {
     return it->second;
+  }
+
+  // The slot is written below and the bookkeeping only then advances, calling addBlob() once
+  // _cur_off reaches MAX_SIZE. Refusing the final slot of the final blob keeps addBlob() from
+  // ever being reached in an exhausted store, at a cost of one slot out of MAX_BLOBS * MAX_SIZE.
+  if (_cur_blob >= MAX_BLOBS - 1 && _cur_off >= MAX_SIZE - 1) {
+    return 0; // Slot 0 is the reserved bad_id. Cannot grow further.
   }
 
   Metrics::IdType           id    = _makeId(_cur_blob, _cur_off, type);
