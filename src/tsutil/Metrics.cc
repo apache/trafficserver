@@ -42,6 +42,16 @@ Metrics::instance()
   return _instance;
 }
 
+Metrics &
+Metrics::hidden_instance()
+{
+  // Separate storage from instance(). Hidden metrics are never published.
+  static std::shared_ptr<Storage> _hidden_store = std::make_shared<Storage>();
+  thread_local Metrics            _instance(_hidden_store);
+
+  return _instance;
+}
+
 void
 Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {

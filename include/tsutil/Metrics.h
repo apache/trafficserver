@@ -115,6 +115,22 @@ public:
   // The singleton instance, owned by the Metrics class
   static Metrics &instance();
 
+  /** The hidden metrics instance.
+   *
+   * A completely separate storage from @c instance(). Metrics here are stored but never
+   * published - they are structurally unreachable from the published store, so no consumer
+   * (traffic_ctl, JSONRPC, stats_over_http) can expose them by omission.
+   *
+   * Intended for high cardinality intermediate values which feed @c Derived aggregates.
+   *
+   * @note An @c IdType from this instance is NOT interchangeable with one from @c instance().
+   *   Ids are meaningful only relative to their store: passing a hidden id to the published
+   *   store yields a silently wrong metric, with no error and no crash, since @c valid() will
+   *   accept it. Prefer @c Gauge::createHiddenPtr / @c Counter::createHiddenPtr, which return
+   *   correctly typed pointers and never hand out an id.
+   */
+  static Metrics &hidden_instance();
+
   // Yes, we don't return objects here, but rather ID's and atomic's directly. Treat
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
   IdType
@@ -417,6 +433,27 @@ public:
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
     }
 
+    /** Create a metric which is stored but never published.
+     *
+     * @see Metrics::hidden_instance()
+     */
+    static AtomicType *
+    createHiddenPtr(const std::string_view name)
+    {
+      auto &instance = Metrics::hidden_instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name, MetricType::GAUGE)));
+    }
+
+    static AtomicType *
+    createHiddenPtr(const std::string_view prefix, const std::string_view name)
+    {
+      auto       &instance = Metrics::hidden_instance();
+      std::string tmpname  = std::string(prefix) + std::string(name);
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
+    }
+
     static Metrics::Gauge::SpanType
     createSpan(size_t size, IdType *id = nullptr)
     {
@@ -509,6 +546,27 @@ public:
     createPtr(const std::string_view prefix, const std::string_view name)
     {
       auto       &instance = Metrics::instance();
+      std::string tmpname  = std::string(prefix) + std::string(name);
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));
+    }
+
+    /** Create a metric which is stored but never published.
+     *
+     * @see Metrics::hidden_instance()
+     */
+    static AtomicType *
+    createHiddenPtr(const std::string_view name)
+    {
+      auto &instance = Metrics::hidden_instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name, MetricType::COUNTER)));
+    }
+
+    static AtomicType *
+    createHiddenPtr(const std::string_view prefix, const std::string_view name)
+    {
+      auto       &instance = Metrics::hidden_instance();
       std::string tmpname  = std::string(prefix) + std::string(name);
 
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));

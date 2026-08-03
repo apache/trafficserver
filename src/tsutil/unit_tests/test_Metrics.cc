@@ -23,7 +23,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <iterator>
+#include <memory>
+#include <thread>
+#include <vector>
 
 #include "tsutil/Metrics.h"
 using ts::Metrics;
@@ -169,5 +173,116 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(m[derived].load() == 4);
     REQUIRE(m[derivedcd].load() == 5);
     REQUIRE(m[derivedce].load() == 10);
+  }
+}
+
+TEST_CASE("Metrics hidden store", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+  auto &h = Metrics::hidden_instance();
+
+  SECTION("stores are separate")
+  {
+    REQUIRE(std::addressof(m) != std::addressof(h));
+
+    auto hp = Metrics::Counter::createHiddenPtr("hidden.only");
+    REQUIRE(hp != nullptr);
+
+    // Not visible in the published store, by name or by iteration.
+    REQUIRE(m.lookup("hidden.only") == Metrics::NOT_FOUND);
+    for (auto &&[name, type, value] : m) {
+      REQUIRE(name != "hidden.only");
+    }
+
+    // Visible in the hidden store.
+    REQUIRE(h.lookup("hidden.only") != Metrics::NOT_FOUND);
+    bool found = false;
+    for (auto &&[name, type, value] : h) {
+      if (name == "hidden.only") {
+        found = true;
+      }
+    }
+    REQUIRE(found);
+  }
+
+  SECTION("same name in both stores is independent")
+  {
+    auto pub = Metrics::Counter::createPtr("dual.name");
+    auto hid = Metrics::Counter::createHiddenPtr("dual.name");
+    REQUIRE(pub != hid);
+
+    // Exercised through the typed facade, which is what proves no cast is needed at a call site
+    // holding a Counter::AtomicType *.
+    Metrics::Counter::increment(pub, 3);
+    Metrics::Counter::increment(hid, 7);
+    REQUIRE(Metrics::Counter::load(pub) == 3);
+    REQUIRE(Metrics::Counter::load(hid) == 7);
+  }
+
+  SECTION("createHiddenPtr is idempotent by name")
+  {
+    auto a = Metrics::Counter::createHiddenPtr("hidden.idem");
+    auto b = Metrics::Counter::createHiddenPtr("hidden.idem");
+    REQUIRE(a == b);
+  }
+
+  SECTION("prefixed create")
+  {
+    auto p = Metrics::Counter::createHiddenPtr("pfx.", "suffix");
+    REQUIRE(p != nullptr);
+    REQUIRE(h.lookup("pfx.suffix") != Metrics::NOT_FOUND);
+  }
+
+  SECTION("the metric type is recorded in the hidden store")
+  {
+    Metrics::IdType cid{}, gid{};
+
+    REQUIRE(Metrics::Counter::createHiddenPtr("hidden.typed.counter") != nullptr);
+    REQUIRE(Metrics::Gauge::createHiddenPtr("hidden.typed.gauge") != nullptr);
+
+    cid = h.lookup("hidden.typed.counter");
+    gid = h.lookup("hidden.typed.gauge");
+    REQUIRE(cid != Metrics::NOT_FOUND);
+    REQUIRE(gid != Metrics::NOT_FOUND);
+
+    REQUIRE(h.type(cid) == Metrics::MetricType::COUNTER);
+    REQUIRE(h.type(gid) == Metrics::MetricType::GAUGE);
+  }
+
+  SECTION("hidden gauge works with the typed Gauge API")
+  {
+    auto g = Metrics::Gauge::createHiddenPtr("hidden.gauge.", "one");
+    REQUIRE(g != nullptr);
+    Metrics::Gauge::store(g, 42);
+    REQUIRE(Metrics::Gauge::load(g) == 42);
+    Metrics::Gauge::increment(g);
+    REQUIRE(Metrics::Gauge::load(g) == 43);
+    Metrics::Gauge::decrement(g);
+    REQUIRE(Metrics::Gauge::load(g) == 42);
+  }
+
+  SECTION("hidden metrics are shared across threads")
+  {
+    // Metrics is thread_local but Storage is shared, so the same name must resolve to the same
+    // atomic on every thread. This is how per-group counters are created from many event threads.
+    constexpr int                                         N_THREADS = 4;
+    std::vector<std::thread>                              threads;
+    std::array<Metrics::Counter::AtomicType *, N_THREADS> ptrs{};
+
+    for (int i = 0; i < N_THREADS; ++i) {
+      threads.emplace_back([i, &ptrs]() {
+        auto p  = Metrics::Counter::createHiddenPtr("hidden.threaded");
+        ptrs[i] = p;
+        Metrics::Counter::increment(p, 10);
+      });
+    }
+    for (auto &t : threads) {
+      t.join();
+    }
+
+    for (int i = 1; i < N_THREADS; ++i) {
+      REQUIRE(ptrs[i] == ptrs[0]);
+    }
+    REQUIRE(Metrics::Counter::load(ptrs[0]) == N_THREADS * 10);
   }
 }
