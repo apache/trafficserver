@@ -201,7 +201,9 @@
       "description": "CI Pipeline config for Fedora Linux compiled with c++20",
       "inherits": ["ci-fedora"],
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "20"
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
       }
     },
     {
