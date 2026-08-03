@@ -1349,14 +1349,11 @@ StripeSM::shutdown(EThread *shutdown_thread)
     return;
   }
 
-  bool shm_backed = CacheShm::is_shm_pointer(this->directory.raw_dir);
-
-  // aggWriteDone advances write_pos again once we drop the mutex, so the shm header is not final; fall through to the
-  // on-disk write instead, which recover_data() reconciles next start.
-  if (shm_backed && this->is_io_in_progress()) {
+  // aggWriteDone advances write_pos again once we drop the mutex, so the shm header is not final; the on-disk write below
+  // plus recover_data() next start reconcile it.
+  if (CacheShm::is_shm_pointer(this->directory.raw_dir) && this->is_io_in_progress()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: AIO write in flight -- invalidating shm copy, syncing dir to disk", this->hash_text.get());
     CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
-    shm_backed = false;
   }
 
   size_t dirlen = this->dirlen();
@@ -1375,10 +1372,8 @@ StripeSM::shutdown(EThread *shutdown_thread)
     if (!this->flush_aggregate_write_buffer(this->fd)) {
       // Mark rather than lean on the unquiesced cursor the failure leaves behind: the event system is still up, so a later
       // aggWriteDone or agg_wrap() can re-equalize agg_pos and write_pos and the gate would let this segment through.
-      // Still sync: an entry for unwritten data reads as a miss, but skipping loses every insert since the last sync.
       Error("Dir %s: aggregation buffer flush failed during shutdown; syncing the directory to disk", this->hash_text.get());
       CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
-      shm_backed = false;
     }
   }
 
@@ -1391,13 +1386,6 @@ StripeSM::shutdown(EThread *shutdown_thread)
   this->directory.footer->sync_serial = this->directory.header->sync_serial;
 
   CHECK_DIR(d);
-
-  // Pure waste for a shm-backed dir: it is already current in the segment and is attached directly next start. If the
-  // segment is later dropped, the on-disk A/B copies plus recover_data() reconcile the tail.
-  if (shm_backed) {
-    Note("Dir %s: shm-backed, skipping on-disk directory write", this->hash_text.get());
-    return;
-  }
 
   size_t B     = this->directory.header->sync_serial & 1;
   off_t  start = this->skip + (B ? dirlen : 0);

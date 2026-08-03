@@ -474,22 +474,28 @@ the directory structurally rather than trusting ``clean_shutdown`` alone -- see
 is harmless either way: the read path checks ``Doc`` magic and key before serving,
 so a stale entry resolves to a miss.
 
-Skipping the on-disk directory write
-------------------------------------
+The on-disk directory is still written
+--------------------------------------
 
-For a shared-memory-backed stripe, ``StripeSM::shutdown`` still flushes
-the aggregation buffer (so pending *content* reaches disk) but then **skips the
-on-disk directory write** entirely:
+``StripeSM::shutdown`` writes the on-disk A/B directory copy for a
+shared-memory-backed stripe exactly as it does without this feature. Skipping it
+looks like an easy win -- the segment is already the current copy and is attached
+directly next start, so the write appears to be pure waste -- but it is not safe.
 
-.. code-block:: text
+The on-disk copy is the *only* thing the fallback has whenever the segment is
+dropped, and ``StripeSM::recover_data`` cannot always reconstruct what is missing
+from it. When the on-disk header still carries ``sync_serial == 0``,
+``handle_recover_from_data`` returns straight to ``handle_recover_write_dir``
+without scanning the data region at all, so an empty directory is accepted as-is.
+A stripe filled and cleanly shut down before the first periodic dir sync
+(:ts:cv:`proxy.config.cache.dir.sync_frequency`, 60 s by default) is exactly that
+case: skipping the shutdown write leaves ``sync_serial == 0`` on disk, and the
+next start that cannot use the segment finds an empty directory and silently
+loses every object. The ``cache_shm_dir_invalid`` autest covers this.
 
-   Dir <stripe>: shm-backed, skipping on-disk directory write
-
-The shared segment is already the durable copy of the directory and is attached
-directly next start, so writing the A/B copies to disk would be pure waste. The
-trade-off is deliberate and safe: if the segment is later dropped for any
-reason, the on-disk A/B copies plus ``StripeSM::recover_data`` reconcile
-the tail -- the same path an unclean restart already takes.
+So the shutdown write stays. It costs what it cost before the feature existed,
+and it buys the guarantee that the fallback path is always recoverable. Only
+*start* time is what this feature set out to improve.
 
 Flush failure at shutdown
 -------------------------
