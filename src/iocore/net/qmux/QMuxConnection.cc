@@ -354,16 +354,21 @@ QMuxConnection::_handle_write_streams()
     return;
   }
 
+  const size_t budget = QUICStream::compute_fair_send_budget(_last_writable_stream_count);
+
   quiche_stream_iter *writable = quiche_conn_writable(_quiche_con);
   uint64_t            stream_id;
+  size_t              count = 0;
 
   while (quiche_stream_iter_next(writable, &stream_id)) {
+    ++count;
     QUICStream *stream = _stream_manager->find_stream(stream_id);
     if (stream != nullptr) {
-      stream->send_data(*this);
+      stream->send_data(*this, budget);
     }
   }
   quiche_stream_iter_free(writable);
+  _last_writable_stream_count = count;
 }
 
 // --- QUICConnectionInfoProvider ---
