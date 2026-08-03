@@ -316,12 +316,22 @@ Metrics::Derived::derive(const std::initializer_list<Metrics::Derived::DerivedMe
     dm.op     = m.op;
 
     for (auto &d : m.derived_from) {
+      Metrics::AtomicType *ptr = nullptr;
+
       if (std::holds_alternative<Metrics::AtomicType *>(d)) {
-        dm.derived_from.push_back(std::get<Metrics::AtomicType *>(d));
+        ptr = std::get<Metrics::AtomicType *>(d);
       } else if (std::holds_alternative<Metrics::IdType>(d)) {
-        dm.derived_from.push_back(instance.lookup(std::get<Metrics::IdType>(d)));
-      } else if (std::holds_alternative<std::string_view>(d)) {
-        dm.derived_from.push_back(instance.lookup(instance.lookup(std::get<std::string_view>(d))));
+        auto id = std::get<Metrics::IdType>(d);
+        ptr     = instance.valid(id) ? instance.lookup(id) : nullptr;
+      } else {
+        auto id = instance.lookup(std::get<std::string_view>(d));
+        ptr     = (id != Metrics::NOT_FOUND) ? instance.lookup(id) : nullptr;
+      }
+
+      // A source that does not resolve is skipped. Passing an unresolved id to lookup() would
+      // silently land on the reserved bad_id slot and contribute its value to the aggregate.
+      if (ptr) {
+        dm.derived_from.push_back(ptr);
       }
     }
     details::DerivativeMetrics::instance().push_back(dm);

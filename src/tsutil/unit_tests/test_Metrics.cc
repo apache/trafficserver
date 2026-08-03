@@ -259,6 +259,57 @@ TEST_CASE("Metrics derived ops", "[libtsapi][Metrics]")
     REQUIRE(m[m.lookup("solo-min")].load() == 42);
   }
 
+  // An unknown name resolves to NOT_FOUND, which _splitID masks to blob 0 / offset 0 -- the
+  // reserved bad_id slot, which holds 0. Under SUM that is invisible, so MIN is tested with
+  // strictly positive sources and MAX with strictly negative ones: in both of those an
+  // aliased-in 0 would become the winning value and change the result. They are separate
+  // sections so that one failure does not mask the other.
+  SECTION("an unresolvable source is skipped under MIN")
+  {
+    auto a = Metrics::Gauge::createPtr("guard-pos-a");
+    auto b = Metrics::Gauge::createPtr("guard-pos-b");
+
+    Metrics::Derived::derive({
+      {"guard-min", Metrics::MetricType::GAUGE, {a, "guard-does-not-exist", b}, Metrics::Derived::Op::MIN},
+    });
+
+    Metrics::Gauge::store(a, 5);
+    Metrics::Gauge::store(b, 8);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("guard-min")].load() == 5); // 0 if the unknown source were included
+  }
+
+  SECTION("an unresolvable source is skipped under MAX")
+  {
+    auto a = Metrics::Gauge::createPtr("guard-neg-a");
+    auto b = Metrics::Gauge::createPtr("guard-neg-b");
+
+    Metrics::Derived::derive({
+      {"guard-max", Metrics::MetricType::GAUGE, {a, "guard-does-not-exist", b}, Metrics::Derived::Op::MAX},
+    });
+
+    Metrics::Gauge::store(a, -9);
+    Metrics::Gauge::store(b, -4);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("guard-max")].load() == -4); // 0 if the unknown source were included
+  }
+
+  SECTION("an invalid source id is skipped")
+  {
+    auto a = Metrics::Gauge::createPtr("guardid-a");
+
+    Metrics::Derived::derive({
+      {"guardid-max", Metrics::MetricType::GAUGE, {a, Metrics::NOT_FOUND}, Metrics::Derived::Op::MAX},
+    });
+
+    Metrics::Gauge::store(a, -7);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("guardid-max")].load() == -7);
+  }
+
   SECTION("op defaults to SUM for backward compatibility")
   {
     auto a = Metrics::Counter::createPtr("dflt-a");
