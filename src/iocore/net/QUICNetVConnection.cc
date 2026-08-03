@@ -688,17 +688,22 @@ void
 QUICNetVConnection::_handle_write_ready()
 {
   if (quiche_conn_is_established(this->_quiche_con)) {
+    const size_t budget = QUICStream::compute_fair_send_budget(this->_last_writable_stream_count);
+
     quiche_stream_iter *writable = quiche_conn_writable(this->_quiche_con);
     uint64_t            s        = 0;
+    size_t              count    = 0;
     while (quiche_stream_iter_next(writable, &s)) {
+      ++count;
       QUICStream *stream = static_cast<QUICStream *>(this->_stream_manager->find_stream(s));
       if (stream == nullptr) {
         [[maybe_unused]] QUICConnectionError err;
         stream = this->_stream_manager->create_stream(s, err);
       }
-      stream->send_data(*this);
+      stream->send_data(*this, budget);
     }
     quiche_stream_iter_free(writable);
+    this->_last_writable_stream_count = count;
   }
 
   Ptr<IOBufferBlock> udp_payload;
