@@ -295,6 +295,26 @@ namespace details
       metrics.push_back(std::move(m));
     }
 
+    void
+    add_source(Metrics::IdType id, Metrics::AtomicType *source, Metrics::Derived::Op op)
+    {
+      if (!source) {
+        return;
+      }
+
+      std::lock_guard l(metrics_lock);
+      auto            it = std::find_if(metrics.begin(), metrics.end(), [id](DerivedMetric const &m) { return m.metric == id; });
+
+      if (it == metrics.end()) {
+        metrics.push_back(DerivedMetric{id, {source}, op});
+        return;
+      }
+      // Already registered sources are skipped so repeated registration is harmless.
+      if (std::find(it->derived_from.begin(), it->derived_from.end(), source) == it->derived_from.end()) {
+        it->derived_from.push_back(source);
+      }
+    }
+
     static DerivativeMetrics &
     instance()
     {
@@ -342,6 +362,15 @@ void
 Metrics::Derived::update_derived()
 {
   details::DerivativeMetrics::instance().update();
+}
+
+void
+Metrics::Derived::add_source(std::string_view derived_name, Metrics::MetricType type, Metrics::AtomicType *source, Op op)
+{
+  // Resolved here rather than in the helper because _create is private to Metrics.
+  auto id = Metrics::instance()._create(derived_name, type);
+
+  details::DerivativeMetrics::instance().add_source(id, source, op);
 }
 
 Metrics::StaticString &

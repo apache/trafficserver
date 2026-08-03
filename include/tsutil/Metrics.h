@@ -664,6 +664,21 @@ public:
      */
     static void derive(const std::initializer_list<DerivedMetricSpec> &metrics);
 
+    /** Add a source to a derived metric, creating the derived metric if needed.
+     *
+     * Unlike @c derive this may be called at any time, so aggregates can be built up as their
+     * sources are discovered at runtime.
+     *
+     * @param derived_name Name of the derived metric, in the published store.
+     * @param type Type of the derived metric. Ignored if the derived metric already exists.
+     * @param source The source metric. May come from either the published or the hidden store.
+     * @param op How to combine the sources. Ignored if the derived metric already exists.
+     *
+     * Adding a source which is already registered for @a derived_name is a no-op, so callers
+     * which may re-register (e.g. an object recreated for the same key) need not track this.
+     */
+    static void add_source(std::string_view derived_name, Metrics::MetricType type, Metrics::AtomicType *source, Op op = Op::SUM);
+
     /**
      * Update derived metrics.
      *

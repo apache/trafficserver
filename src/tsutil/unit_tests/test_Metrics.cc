@@ -324,6 +324,134 @@ TEST_CASE("Metrics derived ops", "[libtsapi][Metrics]")
   }
 }
 
+TEST_CASE("Metrics derived add_source", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("sources registered one at a time accumulate into a single derived metric")
+  {
+    auto a = Metrics::Gauge::createPtr("inc-a");
+    auto b = Metrics::Gauge::createPtr("inc-b");
+    auto c = Metrics::Gauge::createPtr("inc-c");
+
+    // Registered separately, as sources are discovered at runtime. derive() cannot be used this
+    // way: it appends a new entry per call, so several entries would target the same id and each
+    // update would overwrite the others with its own subset.
+    Metrics::Derived::add_source("inc-max", Metrics::MetricType::GAUGE, a, Metrics::Derived::Op::MAX);
+    Metrics::Derived::add_source("inc-max", Metrics::MetricType::GAUGE, b, Metrics::Derived::Op::MAX);
+    Metrics::Derived::add_source("inc-max", Metrics::MetricType::GAUGE, c, Metrics::Derived::Op::MAX);
+
+    Metrics::Gauge::store(a, 4);
+    Metrics::Gauge::store(b, 11);
+    Metrics::Gauge::store(c, 7);
+
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("inc-max")].load() == 11);
+  }
+
+  SECTION("a SUM aggregate sees every source, not just the last registered")
+  {
+    // This is what distinguishes add_source from repeated derive() calls: a SUM over all three
+    // sources rather than over whichever subset was registered last.
+    auto a = Metrics::Gauge::createPtr("incsum-a");
+    auto b = Metrics::Gauge::createPtr("incsum-b");
+    auto c = Metrics::Gauge::createPtr("incsum-c");
+
+    Metrics::Derived::add_source("incsum", Metrics::MetricType::GAUGE, a);
+    Metrics::Derived::add_source("incsum", Metrics::MetricType::GAUGE, b);
+    Metrics::Derived::add_source("incsum", Metrics::MetricType::GAUGE, c);
+
+    Metrics::Gauge::store(a, 1);
+    Metrics::Gauge::store(b, 20);
+    Metrics::Gauge::store(c, 300);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("incsum")].load() == 321);
+  }
+
+  SECTION("add_source is idempotent for a repeated source")
+  {
+    auto a = Metrics::Gauge::createPtr("idem-a");
+
+    Metrics::Derived::add_source("idem-sum", Metrics::MetricType::GAUGE, a);
+    Metrics::Derived::add_source("idem-sum", Metrics::MetricType::GAUGE, a);
+    Metrics::Gauge::store(a, 6);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("idem-sum")].load() == 6); // not 12
+  }
+
+  SECTION("a null source is ignored")
+  {
+    auto a = Metrics::Gauge::createPtr("null-a");
+
+    Metrics::Derived::add_source("null-sum", Metrics::MetricType::GAUGE, nullptr);
+    Metrics::Derived::add_source("null-sum", Metrics::MetricType::GAUGE, a);
+    Metrics::Gauge::store(a, 9);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("null-sum")].load() == 9);
+  }
+
+  SECTION("a hidden metric can feed a published derived metric")
+  {
+    // The whole point of the facility: high cardinality sources stay hidden while only the
+    // aggregate is published.
+    auto h1 = Metrics::Gauge::createHiddenPtr("hidden.src.", "one");
+    auto h2 = Metrics::Gauge::createHiddenPtr("hidden.src.", "two");
+
+    Metrics::Derived::add_source("hidden-derived-sum", Metrics::MetricType::GAUGE, h1);
+    Metrics::Derived::add_source("hidden-derived-sum", Metrics::MetricType::GAUGE, h2);
+    Metrics::Gauge::store(h1, 21);
+    Metrics::Gauge::store(h2, 2);
+    Metrics::Derived::update_derived();
+
+    // The derived metric itself lives in the PUBLISHED store...
+    REQUIRE(m.lookup("hidden-derived-sum") != Metrics::NOT_FOUND);
+    REQUIRE(m[m.lookup("hidden-derived-sum")].load() == 23);
+    // ...while its sources remain absent from it.
+    REQUIRE(m.lookup("hidden.src.one") == Metrics::NOT_FOUND);
+    REQUIRE(m.lookup("hidden.src.two") == Metrics::NOT_FOUND);
+  }
+
+  SECTION("one source can feed two derived metrics with different ops")
+  {
+    // Commit 9 relies on this: a per-group gauge feeds both a SUM and a MAX aggregate.
+    auto a = Metrics::Gauge::createHiddenPtr("dual.src.a");
+    auto b = Metrics::Gauge::createHiddenPtr("dual.src.b");
+
+    Metrics::Derived::add_source("dual-sum", Metrics::MetricType::GAUGE, a, Metrics::Derived::Op::SUM);
+    Metrics::Derived::add_source("dual-sum", Metrics::MetricType::GAUGE, b, Metrics::Derived::Op::SUM);
+    Metrics::Derived::add_source("dual-max", Metrics::MetricType::GAUGE, a, Metrics::Derived::Op::MAX);
+    Metrics::Derived::add_source("dual-max", Metrics::MetricType::GAUGE, b, Metrics::Derived::Op::MAX);
+
+    Metrics::Gauge::store(a, 2);
+    Metrics::Gauge::store(b, 3);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("dual-sum")].load() == 5);
+    REQUIRE(m[m.lookup("dual-max")].load() == 3);
+  }
+
+  SECTION("add_source works on a derived metric created by derive")
+  {
+    auto a = Metrics::Gauge::createPtr("mix-a");
+    auto b = Metrics::Gauge::createPtr("mix-b");
+
+    Metrics::Derived::derive({
+      {"mix-sum", Metrics::MetricType::GAUGE, {a}, Metrics::Derived::Op::SUM},
+    });
+    Metrics::Derived::add_source("mix-sum", Metrics::MetricType::GAUGE, b);
+
+    Metrics::Gauge::store(a, 10);
+    Metrics::Gauge::store(b, 5);
+    Metrics::Derived::update_derived();
+
+    REQUIRE(m[m.lookup("mix-sum")].load() == 15);
+  }
+}
+
 TEST_CASE("Metrics hidden store", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();
