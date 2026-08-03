@@ -78,7 +78,7 @@ CertBase::X509Value::_update_value() const
 }
 
 void
-CertBase::X509Value::_load_name(decltype(&X509_get_subject_name) getter) const
+CertBase::X509Value::_load_name(NameGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto *name = getter(_owner->_x509);
@@ -95,7 +95,7 @@ CertBase::X509Value::_load_name(decltype(&X509_get_subject_name) getter) const
 }
 
 void
-CertBase::X509Value::_load_integer(decltype(&X509_get_serialNumber) getter) const
+CertBase::X509Value::_load_integer(IntegerGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto *value = getter(_owner->_x509);
@@ -107,7 +107,7 @@ CertBase::X509Value::_load_integer(decltype(&X509_get_serialNumber) getter) cons
 }
 
 void
-CertBase::X509Value::_load_long(decltype(&X509_get_version) getter) const
+CertBase::X509Value::_load_long(LongGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto value = getter(_owner->_x509);
@@ -119,7 +119,7 @@ CertBase::X509Value::_load_long(decltype(&X509_get_version) getter) const
 }
 
 void
-CertBase::X509Value::_load_time(decltype(&X509_get_notBefore) getter) const
+CertBase::X509Value::_load_time(TimeGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto *time = getter(_owner->_x509);

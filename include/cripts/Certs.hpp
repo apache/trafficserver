@@ -107,10 +107,15 @@ public:
       }
     }
 
-    void _load_name(decltype(&X509_get_subject_name) getter) const;
-    void _load_integer(decltype(&X509_get_serialNumber) getter) const;
-    void _load_long(decltype(&X509_get_version) getter) const;
-    void _load_time(decltype(&X509_get_notBefore) getter) const;
+    using NameGetter    = decltype(&X509_get_subject_name);
+    using IntegerGetter = decltype(&X509_get_serialNumber);
+    using LongGetter    = decltype(&X509_get_version);
+    using TimeGetter    = decltype(&X509_get_notBefore);
+
+    void _load_name(NameGetter getter) const;
+    void _load_integer(IntegerGetter getter) const;
+    void _load_long(LongGetter getter) const;
+    void _load_time(TimeGetter getter) const;
 
     CertBase                                         *_owner = nullptr;
     mutable std::unique_ptr<BIO, decltype(&BIO_free)> _bio{nullptr, BIO_free};
