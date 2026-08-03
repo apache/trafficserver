@@ -949,12 +949,19 @@ traffic_ctl metric
    Display the current value of the specified statistics.
 
 .. program:: traffic_ctl metric
-.. option:: match REGEX [REGEX...]
+.. option:: match [--include-hidden] REGEX [REGEX...]
 
    :ref:`admin_lookup_records`
 
    Display the current values of all statistics whose names match
    the given regular expression.
+
+.. option:: --include-hidden
+
+   Also match hidden metrics. Hidden metrics are internal metrics that are stored but never
+   published through the normal metrics registry; they are not part of the stable metric
+   contract and may be added, changed, or removed between releases without notice. This
+   option is intended for debugging.
 
 .. program:: traffic_ctl metric
 .. option:: describe RECORD [RECORD...]

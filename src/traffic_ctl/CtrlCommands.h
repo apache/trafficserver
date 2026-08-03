@@ -120,7 +120,9 @@ protected:
   /// @param argData argument's data.
   /// @param isRegex if the request should be done by regex or name.
   /// @param recQueryType Config or Metric.
-  shared::rpc::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType);
+  /// @param includeHidden if true, also match hidden (internal, normally unpublished) metrics. Only meaningful for METRIC.
+  shared::rpc::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType,
+                                            bool includeHidden = false);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class ConfigCommand : public RecordCommand
@@ -174,6 +176,7 @@ private:
 class MetricCommand : public RecordCommand
 {
   static inline const std::string MONITOR_STR{"monitor"};
+  static inline const std::string INCLUDE_HIDDEN_STR{"include-hidden"};
 
   void metric_get();
   void metric_match();

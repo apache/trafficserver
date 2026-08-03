@@ -57,7 +57,10 @@ enum RecT {
   RECT_NODE    = 0x04,
   RECT_LOCAL   = 0x10,
   RECT_PLUGIN  = 0x20,
-  RECT_ALL     = 0x3F
+  RECT_ALL     = 0x3F,
+  /// Hidden metrics. Deliberately outside RECT_ALL so they are only ever returned when
+  /// explicitly requested. See ts::Metrics::hidden_instance().
+  RECT_HIDDEN_METRIC = 0x40
 };
 
 enum RecDataT {

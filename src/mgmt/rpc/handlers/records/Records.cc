@@ -104,6 +104,7 @@ template <> struct convert<RequestRecordElement> {
           case RECT_LOCAL:
           case RECT_PLUGIN:
           case RECT_ALL:
+          case RECT_HIDDEN_METRIC: // Opt-in only, deliberately not part of RECT_ALL, see RecDefs.h.
             info.recTypes.push_back(rt);
             break;
           default:

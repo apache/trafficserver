@@ -117,6 +117,8 @@ struct ClientRequestNotification : JSONRPCRequest {
 // handy definitions.
 static const std::vector<int> CONFIG_REC_TYPES = {1, 16};
 static const std::vector<int> METRIC_REC_TYPES = {2, 4, 32};
+// Same as METRIC_REC_TYPES, plus 64 (RECT_HIDDEN_METRIC, see RecDefs.h) to also match hidden metrics.
+static const std::vector<int> METRIC_REC_TYPES_INCLUDE_HIDDEN = {2, 4, 32, 64};
 static constexpr bool         NOT_REGEX{false};
 static constexpr bool         REGEX{true};
 
