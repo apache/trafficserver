@@ -1111,11 +1111,11 @@ ssl_nid(swoc::TextView const &name)
 
 namespace
 {
+  template <typename T>
   TextView
-  ssl_value_for(const X509_NAME *name, int nid)
+  ssl_value_for(T *name, int nid)
   {
-    // const_cast is needed for OpenSSL 1.1.1
-    if (int loc = X509_NAME_get_index_by_NID(const_cast<X509_NAME *>(name), nid, -1); loc >= 0) {
+    if (int loc = X509_NAME_get_index_by_NID(name, nid, -1); loc >= 0) {
       if (auto entry = X509_NAME_get_entry(name, loc); entry != nullptr) {
         if (auto value = X509_NAME_ENTRY_get_data(entry); value != nullptr) {
           return {reinterpret_cast<char const *>(ASN1_STRING_get0_data(value)), size_t(ASN1_STRING_length(value))};
