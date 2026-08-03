@@ -1,0 +1,114 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Traffic for the shm stripe-directory rejection test. All three transactions
+# share a cache key (same method + host + url) and differ only in the uuid, so
+# the verifier-client can drive them one at a time via --keys:
+#
+#   * key "fill":  replayed against ts1 (cold cache). The request misses, ATS
+#     forwards it to the origin (verifier-server) and caches the 200 response.
+#
+#   * keys "hit_write_pos" / "hit_freelist": replayed against ts2 / ts3 after the
+#     in-shm stripe header has been tampered with. Each instance must reject the
+#     shm directory, rebuild it from disk, and still serve the object out of cache
+#     (X-Cache: hit-fresh). The 502 server-response is a sentinel: it is only ever
+#     returned if ATS wrongly forwards the request to the origin, in which case
+#     the proxy-response check fails the run.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /cache-shm-dir-invalid/object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, fill ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, "max-age=300,public" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # Tamper write_pos in the in-shm stripe header, then restart ATS.
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /cache-shm-dir-invalid/object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, hit_write_pos ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 502
+      reason: "Bad Gateway"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
+
+  # Tamper freelist[0] in the in-shm stripe header, then restart ATS.
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /cache-shm-dir-invalid/object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, hit_freelist ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 502
+      reason: "Bad Gateway"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: hit-fresh, as: equal } ]

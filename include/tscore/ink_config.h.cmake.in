@@ -151,6 +151,7 @@ const int DEFAULT_STACKSIZE = @DEFAULT_STACK_SIZE@;
 #cmakedefine01 TS_HAS_SO_PEERCRED
 #cmakedefine01 TS_HAS_TESTS
 #cmakedefine01 TS_USE_DIAGS
+#cmakedefine01 TS_USE_CACHE_SHM
 #cmakedefine01 TS_USE_EPOLL
 #cmakedefine01 TS_USE_FAST_SDK
 #cmakedefine01 TS_ENABLE_FIPS

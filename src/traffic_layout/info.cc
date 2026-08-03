@@ -151,6 +151,7 @@ produce_features(bool json)
   print_feature("TS_HAS_PROFILER", TS_HAS_PROFILER, json);
   print_feature("TS_USE_FAST_SDK", TS_USE_FAST_SDK, json);
   print_feature("TS_USE_DIAGS", TS_USE_DIAGS, json);
+  print_feature("TS_USE_CACHE_SHM", TS_USE_CACHE_SHM, json);
   print_feature("TS_USE_EPOLL", TS_USE_EPOLL, json);
   print_feature("TS_USE_KQUEUE", TS_USE_KQUEUE, json);
   print_feature("TS_USE_POSIX_CAP", TS_USE_POSIX_CAP, json);

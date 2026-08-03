@@ -27,6 +27,7 @@
 #include "P_CacheInternal.h"
 #include "PreservationTable.h"
 #include "Stripe.h"
+#include "CacheShm.h"
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
@@ -275,23 +276,32 @@ Directory::bucket_length(Dir *b, int s)
 }
 
 int
+Directory::check_segment(int s)
+{
+  Dir *seg = this->get_segment(s);
+
+  for (int i = 0; i < this->buckets; i++) {
+    Dir *b = dir_bucket(i, seg);
+    if (!(this->bucket_length(b, s) >= 0)) {
+      return 0;
+    }
+    if (!(!dir_next(b) || dir_offset(b))) {
+      return 0;
+    }
+    if (!(dir_bucket_loop_check(b, seg))) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+int
 Directory::check()
 {
-  int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
-  for (s = 0; s < this->segments; s++) {
-    Dir *seg = this->get_segment(s);
-    for (i = 0; i < this->buckets; i++) {
-      Dir *b = dir_bucket(i, seg);
-      if (!(this->bucket_length(b, s) >= 0)) {
-        return 0;
-      }
-      if (!(!dir_next(b) || dir_offset(b))) {
-        return 0;
-      }
-      if (!(dir_bucket_loop_check(b, seg))) {
-        return 0;
-      }
+  for (int s = 0; s < this->segments; s++) {
+    if (!this->check_segment(s)) {
+      return 0;
     }
   }
   return 1;
@@ -947,6 +957,11 @@ sync_cache_dir_on_shutdown()
   for (auto &thr : threads) {
     thr.join();
   }
+
+  // Each stripe was snapshotted above. This does not stop future writers (the event system
+  // is still up), but a late or in-flight write only leaves a dir entry the next start's
+  // magic+key read check treats as a miss -- never served corruption -- so mark clean here.
+  CacheShm::mark_clean_shutdown();
 
   Dbg(dbg_ctl_cache_dir_sync, "shutdown sync done");
 }
