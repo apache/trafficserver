@@ -304,7 +304,7 @@ from any other IP, we connect to the daemon via localhost: ::
       > Host: example.com
       > Accept: */*
       >
-      < HTTP/1.1 200 Ok
+      < HTTP/1.1 200 OK
       < Date: Thu, 08 Jan 2010 20:32:07 GMT
       < Connection: keep-alive
 
@@ -316,7 +316,7 @@ If the removed object was stored as a partial response, that is if it carried a
 ``Content-Range``, then the ``200 OK`` also reports that range back in a
 ``X-Purged-Content-Range`` header::
 
-      < HTTP/1.1 200 Ok
+      < HTTP/1.1 200 OK
       < X-Purged-Content-Range: bytes 0-1048575/9437184
 
 This lets a caller that holds one piece of a larger resource learn the whole
