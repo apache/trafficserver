@@ -19,9 +19,46 @@
 #include "client.h"
 
 #include "Config.h"
+#include "server.h"
 #include "util.h"
 
+#include "swoc/TextView.h"
+
+#include <cctype>
 #include <cinttypes>
+#include <limits>
+
+namespace
+{
+// Miss bound for this purge: the request header when usable, else the config value.
+int
+purge_miss_bound(HttpHeader const &header, Config const *const conf)
+{
+  char probestr[64];
+  int  probelen = sizeof(probestr);
+
+  if (!header.valueForKey(conf->m_purge_probe_header.data(), conf->m_purge_probe_header.size(), probestr, &probelen)) {
+    return conf->m_purge_probe_blocks;
+  }
+
+  swoc::TextView value{probestr, static_cast<size_t>(probelen)};
+  // isspace is only defined for values representable as unsigned char
+  value.trim_if([](char c) { return 0 != isspace(static_cast<unsigned char>(c)); });
+
+  swoc::TextView parsed;
+  intmax_t const blocks = swoc::svtoi(value, &parsed, 10);
+
+  // parsed must cover the whole value: "8abc" is a mistake, not eight blocks
+  if (parsed.size() != value.size() || blocks <= 0 || std::numeric_limits<int>::max() < blocks) {
+    ERROR_LOG("Ignoring invalid %.*s value '%.*s'", static_cast<int>(conf->m_purge_probe_header.size()),
+              conf->m_purge_probe_header.data(), probelen, probestr);
+    return conf->m_purge_probe_blocks;
+  }
+
+  return static_cast<int>(blocks);
+}
+
+} // namespace
 
 // this is called once per transaction when the client sends a req header
 bool
@@ -94,6 +131,28 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
 
     data->m_req_range = rangebe;
 
+    if (data->is_purge()) {
+      // The substituted range covers block 0, so walking it would delete the head
+      if (TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE == data->m_statustype) {
+        ERROR_LOG("Refusing PURGE with an unparseable range");
+        finish_purge(contp, data, TS_HTTP_STATUS_BAD_REQUEST);
+        return true;
+      }
+
+      data->m_purge_miss_bound = purge_miss_bound(header, conf);
+      DEBUG_LOG("%p Purge miss bound %d block(s)", data, data->m_purge_miss_bound);
+
+      // A suffix range cannot know its start block, so purge a superset: everything
+      if (data->m_req_range.isEndBytes()) {
+        data->m_req_range = Range(0, Range::maxval);
+        data->m_blocknum  = 0;
+        DEBUG_LOG("%p Purge suffix range widened to the whole object", data);
+      }
+
+      // The miss bound is for this proxy to act on, not to propagate
+      header.removeKey(conf->m_purge_probe_header.data(), conf->m_purge_probe_header.size());
+    }
+
     // remove ATS keys to avoid 404 loop
     header.removeKey(TS_MIME_FIELD_VIA, TS_MIME_LEN_VIA);
     header.removeKey(TS_MIME_FIELD_X_FORWARDED_FOR, TS_MIME_LEN_X_FORWARDED_FOR);
@@ -126,6 +185,11 @@ handle_client_resp(TSCont contp, TSEvent event, Data *const data)
 {
   switch (event) {
   case TS_EVENT_VCONN_WRITE_READY: {
+    // finish_purge writes the whole response at once; nothing to throttle or pull
+    if (data->is_purge()) {
+      break;
+    }
+
     switch (data->m_blockstate) {
     case BlockState::Fail:
     case BlockState::PendingRef:

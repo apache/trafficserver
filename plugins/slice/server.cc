@@ -32,7 +32,7 @@
 namespace
 {
 ContentRange
-contentRangeFrom(HttpHeader const &header)
+content_range_for_key(HttpHeader const &header, char const *const key, int const keylen)
 {
   ContentRange bcr;
 
@@ -42,20 +42,23 @@ contentRangeFrom(HttpHeader const &header)
   char rangestr[1024];
   int  rangelen = sizeof(rangestr);
 
-  // look for expected Content-Range field
-  bool const hasContentRange(header.valueForKey(TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE, rangestr, &rangelen));
-
-  if (!hasContentRange) {
-    DEBUG_LOG("invalid response header, no Content-Range");
+  if (!header.valueForKey(key, keylen, rangestr, &rangelen)) {
+    DEBUG_LOG("invalid response header, no %.*s", keylen, key);
   } else {
     // ensure null termination
     rangestr[rangelen] = '\0';
     if (!bcr.fromStringClosed(rangestr)) {
-      DEBUG_LOG("invalid response header, malformed Content-Range, %s", rangestr);
+      DEBUG_LOG("invalid response header, malformed %.*s, %s", keylen, key, rangestr);
     }
   }
 
   return bcr;
+}
+
+ContentRange
+contentRangeFrom(HttpHeader const &header)
+{
+  return content_range_for_key(header, TS_MIME_FIELD_CONTENT_RANGE, TS_MIME_LEN_CONTENT_RANGE);
 }
 
 int64_t
@@ -136,7 +139,7 @@ handleFirstServerHeader(Data *const data, TSCont const contp)
     int64_t const hlen = TSHttpHdrLengthGet(header.m_buffer, header.m_lochdr);
     int64_t const clen = contentLengthFrom(header);
     if (TS_HTTP_STATUS_OK == header.status() && data->onlyHeader()) {
-      DEBUG_LOG("HEAD/PURGE request stripped Range header: expects 200");
+      DEBUG_LOG("HEAD request stripped Range header: expects 200");
       data->m_bytestosend   = hlen;
       data->m_blockexpected = 0;
       TSVIONBytesSet(output_vio, hlen);
@@ -499,12 +502,173 @@ handleNextServerHeader(Data *const data)
   return true;
 }
 
+// Take the largest extent any block reports: blocks disagree when the origin
+// object was replaced in place, and the shorter one would leave a tail cached.
+void
+note_purge_extent(Data *const data, int64_t const length)
+{
+  if (length <= data->m_contentlen) {
+    return;
+  }
+
+  data->m_contentlen = length;
+  DEBUG_LOG("purge extent now %" PRId64 ", walking through block %" PRId64, length,
+            data->purge_range().lastBlockFor(data->m_config->m_blockbytes));
+}
+
+// Record what the block response said, without answering the client.
+void
+note_purge_block_result(Data *const data)
+{
+  HttpHeader const header(data->m_resp_hdrmgr.m_buffer, data->m_resp_hdrmgr.m_lochdr);
+  DEBUG_LOG("Purge block header\n%s", header.toString().c_str());
+
+  TSHttpStatus const status = header.status();
+
+  if (TS_HTTP_STATUS_OK == status) {
+    ++data->m_purge_hits;
+    data->m_purge_misses = 0;
+
+    // Not Content-Range: cache_range_requests reads that on a 200 as a stored 206
+    // and rewrites the status
+    ContentRange const purgedcr = content_range_for_key(header, PURGED_CONTENT_RANGE.data(), PURGED_CONTENT_RANGE.size());
+    if (purgedcr.isValid() && 0 < purgedcr.m_length) {
+      note_purge_extent(data, purgedcr.m_length);
+    } else {
+      DEBUG_LOG("Purged block %" PRId64 " reported no usable extent", data->m_blocknum);
+    }
+  } else {
+    // Already absent. The walk used to stop here, leaving every later block cached.
+    ++data->m_purge_misses;
+    DEBUG_LOG("Purge block %" PRId64 " was not cached (%d)", data->m_blocknum, status);
+  }
+}
+
+// Issue the next purge, or answer the client if the walk is over.
+void
+advance_purge(TSCont const contp, Data *const data)
+{
+  int64_t const blockbytes = data->m_config->m_blockbytes;
+  Range const   range      = data->purge_range();
+
+  ++data->m_blocknum;
+  int64_t const firstblock = range.firstBlockFor(blockbytes);
+  if (data->m_blocknum < firstblock) {
+    data->m_blocknum = firstblock;
+  }
+
+  if (data->m_contentlen < 0) {
+    // With no extent reported yet, the miss bound is the only end condition
+    if (data->m_purge_miss_bound <= data->m_purge_misses) {
+      DEBUG_LOG("purge gave up after %d consecutive uncached block(s)", data->m_purge_misses);
+      finish_purge(contp, data);
+      return;
+    }
+  } else if (!range.blockIsInside(blockbytes, data->m_blocknum)) {
+    finish_purge(contp, data);
+    return;
+  }
+
+  data->m_blockstate = BlockState::Pending;
+  if (!request_block(contp, data)) {
+    ERROR_LOG("Failed to issue purge for block %" PRId64, data->m_blocknum);
+    finish_purge(contp, data);
+  }
+}
+
 } // namespace
+
+// Answer the client once every block has been walked. Nothing is written
+// downstream before this, so one uncached block cannot leak a 404 to the client.
+// A non-NONE status overrides the outcome of the walk.
+void
+finish_purge(TSCont const contp, Data *const data, TSHttpStatus const status)
+{
+  data->m_upstream.close();
+  data->m_blockstate = BlockState::Done;
+
+  TSHttpStatus const reply =
+    (TS_HTTP_STATUS_NONE != status) ? status : (0 < data->m_purge_hits ? TS_HTTP_STATUS_OK : TS_HTTP_STATUS_NOT_FOUND);
+
+  DEBUG_LOG("purge removed %" PRId64 " block(s), answering %d", data->m_purge_hits, reply);
+
+  if (!data->m_dnstream.isOpen()) {
+    shutdown(contp, data);
+    return;
+  }
+
+  HdrMgr synthmgr;
+  if (!form_purge_response(synthmgr, reply)) {
+    ERROR_LOG("Failed forming the purge response");
+    shutdown(contp, data);
+    return;
+  }
+
+  HttpHeader const synth(synthmgr.m_buffer, synthmgr.m_lochdr);
+  int const        hlen = synth.byteSize();
+
+  data->m_dnstream.setupVioWrite(contp, hlen);
+  TSHttpHdrPrint(synthmgr.m_buffer, synthmgr.m_lochdr, data->m_dnstream.m_write.m_iobuf);
+  data->m_bytessent = hlen;
+  TSVIOReenable(data->m_dnstream.m_write.m_vio);
+}
+
+// A purge walks blocks instead of transferring them, so it runs its own machine
+void
+handle_purge_resp(TSCont const contp, TSEvent const event, Data *const data)
+{
+  switch (event) {
+  case TS_EVENT_VCONN_READ_READY:
+  case TS_EVENT_VCONN_READ_COMPLETE: {
+    if (!data->m_server_block_header_parsed) {
+      int64_t                consumed  = 0;
+      TSIOBufferReader const reader    = data->m_upstream.m_read.m_reader;
+      TSVIO const            input_vio = data->m_upstream.m_read.m_vio;
+      TSParseResult const    res = data->m_resp_hdrmgr.populateFrom(data->m_http_parser, reader, TSHttpHdrParseResp, &consumed);
+
+      TSVIONDoneSet(input_vio, TSVIONDoneGet(input_vio) + consumed);
+
+      if (TS_PARSE_CONT == res) {
+        return;
+      }
+
+      data->m_server_block_header_parsed = true;
+      note_purge_block_result(data);
+    }
+
+    // No block PURGE response has a body worth reading, but drop whatever arrives
+    // so the upstream read cannot stall on a full buffer
+    data->m_upstream.m_read.drainReader();
+  } break;
+
+  case TS_EVENT_VCONN_EOS: {
+    if (!data->m_server_block_header_parsed) {
+      // No response at all; count it as absent so the walk moves on
+      ++data->m_purge_misses;
+      DEBUG_LOG("Purge block %" PRId64 " ended with no response header", data->m_blocknum);
+    }
+
+    // The next block cannot be requested while this one holds the upstream
+    data->m_upstream.close();
+    advance_purge(contp, data);
+  } break;
+
+  default: {
+    DEBUG_LOG("%p handle_purge_resp unhandled event: %s", data, TSHttpEventNameLookup(event));
+  } break;
+  }
+}
 
 // this is called every time the server has data for us
 void
 handle_server_resp(TSCont contp, TSEvent event, Data *const data)
 {
+  // A purge never transfers content, so it gets its own state machine
+  if (data->is_purge()) {
+    handle_purge_resp(contp, event, data);
+    return;
+  }
+
   switch (event) {
   case TS_EVENT_VCONN_READ_READY: {
     if (data->m_blockstate == BlockState::Passthru) {
@@ -691,10 +855,7 @@ handle_server_resp(TSCont contp, TSEvent event, Data *const data)
       // isn't keeping up
 
       bool start_next_block = false;
-      if (data->m_method_type == TS_HTTP_METHOD_PURGE) {
-        // for PURGE requests, clients won't request more data (no body content)
-        start_next_block = true;
-      } else if (data->m_dnstream.m_write.isOpen()) {
+      if (data->m_dnstream.m_write.isOpen()) {
         // check throttle condition
         TSVIO const   output_vio  = data->m_dnstream.m_write.m_vio;
         int64_t const output_done = TSVIONDoneGet(output_vio);

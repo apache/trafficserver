@@ -86,6 +86,21 @@ string502(int const httpver)
   return msg;
 }
 
+// Form the response to a sliced PURGE, once every block has been walked
+bool
+form_purge_response(HdrMgr &hdrmgr, TSHttpStatus const status)
+{
+  if (!hdrmgr.create_response(status)) {
+    return false;
+  }
+
+  // The core adds Date, Age, Server and Connection to an intercept's response
+  HttpHeader header(hdrmgr.m_buffer, hdrmgr.m_lochdr);
+  header.setKeyVal(TS_MIME_FIELD_CONTENT_LENGTH, TS_MIME_LEN_CONTENT_LENGTH, "0", 1);
+
+  return true;
+}
+
 void
 form416HeaderAndBody(HttpHeader &header, int64_t const contentlen, std::string const &bodystr)
 {

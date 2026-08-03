@@ -27,8 +27,9 @@
 
 namespace
 {
-constexpr std::string_view DefaultSliceSkipHeader = {"X-Slicer-Info"};
-constexpr std::string_view DefaultCrrIdentHeader  = {"X-Crr-Ident"};
+constexpr std::string_view DefaultSliceSkipHeader  = {"X-Slicer-Info"};
+constexpr std::string_view DefaultCrrIdentHeader   = {"X-Crr-Ident"};
+constexpr std::string_view DefaultPurgeProbeHeader = {"X-Slice-Purge-Probe"};
 } // namespace
 
 Config::~Config()
@@ -121,13 +122,15 @@ Config::fromArgs(int const argc, char const *const argv[])
     {const_cast<char *>("minimum-size"),         required_argument, nullptr, 'm'},
     {const_cast<char *>("metadata-cache-size"),  required_argument, nullptr, 'z'},
     {const_cast<char *>("stats-prefix"),         required_argument, nullptr, 'x'},
+    {const_cast<char *>("purge-probe-blocks"),   required_argument, nullptr, 'q'},
+    {const_cast<char *>("purge-probe-header"),   required_argument, nullptr, 'H'},
     {nullptr,                                    0,                 nullptr, 0  },
   };
 
   // getopt assumes args start at '1' so this hack is needed
   char *const *argvp = (const_cast<char *const *>(argv) - 1);
   for (;;) {
-    int const opt = getopt_long(argc + 1, argvp, "b:de:g:i:lm:p:r:s:t:x:z:", longopts, nullptr);
+    int const opt = getopt_long(argc + 1, argvp, "b:de:g:H:i:lm:p:q:r:s:t:x:z:", longopts, nullptr);
     if (-1 == opt) {
       break;
     }
@@ -248,6 +251,19 @@ Config::fromArgs(int const argc, char const *const argv[])
       stat_prefix = optarg;
       DEBUG_LOG("Stat prefix: %s", stat_prefix.c_str());
     } break;
+    case 'q': {
+      int const blocksread = atoi(optarg);
+      if (0 < blocksread) {
+        m_purge_probe_blocks = blocksread;
+        DEBUG_LOG("Using purge probe blocks %d", m_purge_probe_blocks);
+      } else {
+        ERROR_LOG("Invalid purge-probe-blocks: %s", optarg);
+      }
+    } break;
+    case 'H': {
+      m_purge_probe_header.assign(optarg);
+      DEBUG_LOG("Using purge probe header %s", optarg);
+    } break;
     default:
       break;
     }
@@ -274,6 +290,10 @@ Config::fromArgs(int const argc, char const *const argv[])
   if (m_skip_header.empty()) {
     m_skip_header = DefaultSliceSkipHeader;
     DEBUG_LOG("Using default slice skip header %s", m_skip_header.c_str());
+  }
+  if (m_purge_probe_header.empty()) {
+    m_purge_probe_header = DefaultPurgeProbeHeader;
+    DEBUG_LOG("Using default purge probe header %s", m_purge_probe_header.c_str());
   }
 
   if (m_min_size_to_slice > 0) {

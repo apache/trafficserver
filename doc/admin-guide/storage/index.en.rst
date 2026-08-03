@@ -312,6 +312,21 @@ The next time Traffic Server receives a request for the removed object,
 it will contact the origin server to retrieve a new copy, which will replace
 the previously cached version in Traffic Server.
 
+If the removed object was stored as a partial response, that is if it carried a
+``Content-Range``, then the ``200 OK`` also reports that range back in a
+``X-Purged-Content-Range`` header::
+
+      < HTTP/1.1 200 Ok
+      < X-Purged-Content-Range: bytes 0-1048575/9437184
+
+This lets a caller that holds one piece of a larger resource learn the whole
+resource's extent without a second lookup. It is what allows the
+:ref:`admin-plugins-slice` plugin to purge an object block by block and know which
+block is the last one. The range is reported under its own header name rather than
+as ``Content-Range``, because ``Content-Range`` on a ``200`` response has no
+meaning under :rfc:`9110` and is read by other components as a sign that a stored
+partial response is being served.
+
 This procedure only removes the index to the object from a specific Traffic Server
 cache. While the object remains on disk, Traffic Server will no longer able to find
 the object. The next request for that object will result in a fresh copy of the

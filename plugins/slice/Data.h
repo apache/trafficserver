@@ -77,6 +77,10 @@ struct Data {
   int64_t m_blockskip{0};     // number of bytes to skip in this block
   int64_t m_blockconsumed{0}; // body bytes consumed
 
+  int64_t m_purge_hits{0};       // blocks a purge actually removed
+  int     m_purge_misses{0};     // consecutive uncached blocks the walk has seen
+  int     m_purge_miss_bound{0}; // from the config or the request header
+
   BlockState m_blockstate{Pending}; // is there an active slice block
 
   int64_t m_bytestosend{0}; // header + content bytes to send
@@ -109,11 +113,25 @@ struct Data {
     memset(&m_client_ip, 0, sizeof(m_client_ip));
   }
 
-  // Check if response only expects header
+  // HEAD only; a purge sends just a header too but never reaches the transfer path
   bool
   onlyHeader() const
   {
-    return (m_method_type == TS_HTTP_METHOD_HEAD || m_method_type == TS_HTTP_METHOD_PURGE);
+    return m_method_type == TS_HTTP_METHOD_HEAD;
+  }
+
+  bool
+  is_purge() const
+  {
+    return m_method_type == TS_HTTP_METHOD_PURGE;
+  }
+
+  // The purge range, closed against the object length once known. m_req_range
+  // stays as sent so a longer extent can widen the walk; a clamp could only shrink.
+  Range
+  purge_range() const
+  {
+    return (m_contentlen < 0) ? m_req_range : m_req_range.intersectedWith(Range(0, m_contentlen));
   }
 
   ~Data()

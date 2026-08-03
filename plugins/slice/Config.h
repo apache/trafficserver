@@ -36,6 +36,8 @@ struct Config {
   static constexpr int64_t const blockbytesmax     = 1024 * 1024 * 128; // 128MB
   static constexpr int64_t const blockbytesdefault = 1024 * 1024;       // 1MB
 
+  static constexpr int const purgeprobeblocksdefault = 8;
+
   int64_t     m_blockbytes{blockbytesdefault};
   std::string m_remaphost; // remap host to use for loopback slice GET
   std::string m_regexstr;  // regex string for things to slice (default all)
@@ -49,8 +51,12 @@ struct Config {
   bool     m_head_strip_range{false}; // strip range header for head requests
   uint64_t m_min_size_to_slice{0};    // Only strip objects larger than this
 
+  // consecutive uncached blocks a purge tolerates before giving up on the object
+  int m_purge_probe_blocks{purgeprobeblocksdefault};
+
   std::string m_skip_header;
   std::string m_crr_ident_header;
+  std::string m_purge_probe_header; // request header overriding m_purge_probe_blocks
 
   // Convert optarg to bytes
   static int64_t bytesFrom(char const *const valstr);
