@@ -155,6 +155,11 @@ CacheShm::detach_stripe(char *)
 {
 }
 
+void
+CacheShm::release_for_test()
+{
+}
+
 #else
 
 namespace
@@ -927,6 +932,23 @@ CacheShm::detach_stripe(char *raw_dir)
   // next start to attach.
   munmap(it->first, it->second.size);
   g_pointers.erase(it);
+}
+
+void
+CacheShm::release_for_test()
+{
+  std::scoped_lock lk{g_table_mutex};
+  if (g_control != nullptr) {
+    munmap(g_control, CONTROL_SIZE);
+    g_control = nullptr;
+  }
+  // Closing the fd is what releases the control flock, so the next initialize() in this process is not refused as a
+  // concurrent attach.
+  g_control_fd = ats_scoped_fd{};
+  g_control_name.clear();
+  std::memset(g_entry_claimed, 0, sizeof(g_entry_claimed));
+  g_claims_this_run = 0;
+  _mode             = Mode::Disabled;
 }
 
 #endif // TS_USE_CACHE_SHM

@@ -81,6 +81,11 @@ public:
   /// Backs the concurrent-attach owner-liveness guard. Exposed for unit testing.
   static bool process_is_alive(int pid);
 
+  /// Drops the process-wide segment state so a unit test can exercise a second start in one process. Stands in for process
+  /// exit, which is the only thing that does this in production: the control flock is held for the process lifetime, and
+  /// where the platform honors it a second initialize() would otherwise be refused by the concurrent-attach guard.
+  static void release_for_test();
+
 private:
   static Mode _mode;
 };

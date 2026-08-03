@@ -204,6 +204,7 @@ TEST_CASE("An untrusted stripe entry is recreated instead of attached", "[cache]
   const uint32_t count_before = control_stripe_count();
 
   // Baseline: an unmarked entry is reused, so the sentinel survives the restart.
+  CacheShm::release_for_test();
   REQUIRE(enable_shm());
   REQUIRE(CacheShm::mode() == CacheShm::Mode::AttachExisting);
   char *reattached = CacheShm::attach_or_create_stripe(key, dir_size);
@@ -216,6 +217,7 @@ TEST_CASE("An untrusted stripe entry is recreated instead of attached", "[cache]
   CacheShm::detach_stripe(reattached);
 
   // Same key, same size, entry still present -- but marked, so a fresh (zero-filled) segment must come back instead.
+  CacheShm::release_for_test();
   REQUIRE(enable_shm());
   REQUIRE(CacheShm::mode() == CacheShm::Mode::AttachExisting);
   char *fresh = CacheShm::attach_or_create_stripe(key, dir_size);
