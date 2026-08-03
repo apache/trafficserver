@@ -27,6 +27,7 @@
 
 #include <cstring>
 #include <string>
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <cctype>
@@ -901,7 +902,7 @@ parse_config(const char *filename)
               AddHeader add_hdr;
               add_hdr.name  = hdr.first.as<std::string>();
               add_hdr.value = hdr.second.as<std::string>();
-              rule.add_headers.push_back(add_hdr);
+              rule.add_headers.push_back(std::move(add_hdr));
             }
           }
         }
@@ -953,7 +954,7 @@ parse_config(const char *filename)
               cond.patterns.push_back(pattern_node.as<std::string>());
             }
           }
-          rule.headers.push_back(cond);
+          rule.headers.push_back(std::move(cond));
         }
       }
 

@@ -35,6 +35,7 @@
 
 #include <thread>
 #include <unordered_map>
+#include <utility>
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -932,7 +933,7 @@ sync_cache_dir_on_shutdown()
   for (auto &[disk, indices] : drive_stripe_map) {
     Dbg(dbg_ctl_cache_dir_sync, "Disk %s: syncing %zu stripe(s)", disk->path, indices.size());
     auto stripe_indices = indices;
-    threads.emplace_back([stripe_indices]() {
+    threads.emplace_back([stripe_indices = std::move(stripe_indices)]() {
       // Use a thread_local variable to give each OS thread a unique EThread* sentinel instead of 0xdeadbeef.
       thread_local char thread_sentinel;
       EThread          *t = reinterpret_cast<EThread *>(&thread_sentinel);

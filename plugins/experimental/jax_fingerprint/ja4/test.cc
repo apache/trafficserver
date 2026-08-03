@@ -34,6 +34,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace
@@ -127,7 +128,7 @@ public:
   void
   set_first_alpn(std::string first_alpn)
   {
-    this->_first_alpn = first_alpn;
+    this->_first_alpn = std::move(first_alpn);
   }
   void
   add_cipher(std::uint16_t cipher)

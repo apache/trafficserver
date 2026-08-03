@@ -187,7 +187,7 @@ TEST_CASE("ConfigContext: supplied_yaml on default context has no content", "[co
 TEST_CASE("ConfigContext: reload_directives round-trip via task", "[config][context][directive]")
 {
   auto          task = std::make_shared<ConfigReloadTask>("test-dir-1", "test", false, nullptr);
-  ConfigContext ctx(task, "test_handler");
+  ConfigContext ctx(std::move(task), "test_handler");
 
   YAML::Node directives;
   directives["id"]      = "foo";
