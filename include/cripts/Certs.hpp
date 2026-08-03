@@ -107,10 +107,10 @@ public:
       }
     }
 
-    void _load_name(X509_NAME *(*getter)(const X509 *)) const;
-    void _load_integer(ASN1_INTEGER *(*getter)(X509 *)) const;
-    void _load_long(long (*getter)(const X509 *)) const;
-    void _load_time(ASN1_TIME *(*getter)(const X509 *)) const;
+    void _load_name(decltype(&X509_get_subject_name) getter) const;
+    void _load_integer(decltype(&X509_get_serialNumber) getter) const;
+    void _load_long(decltype(&X509_get_version) getter) const;
+    void _load_time(decltype(&X509_get_notBefore) getter) const;
 
     CertBase                                         *_owner = nullptr;
     mutable std::unique_ptr<BIO, decltype(&BIO_free)> _bio{nullptr, BIO_free};
