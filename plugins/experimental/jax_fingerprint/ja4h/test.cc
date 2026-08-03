@@ -27,6 +27,7 @@
 
 #include <string>
 #include <map>
+#include <utility>
 
 namespace
 {
@@ -89,7 +90,7 @@ public:
   void
   set_method(std::string method)
   {
-    this->_method = method;
+    this->_method = std::move(method);
   }
   void
   set_version(int version)
@@ -99,7 +100,7 @@ public:
   void
   set_fields(std::map<std::string, std::string> fields)
   {
-    this->_fields = fields;
+    this->_fields = std::move(fields);
   }
 
 private:

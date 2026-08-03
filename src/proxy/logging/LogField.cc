@@ -311,8 +311,8 @@ LogField::LogField(const char *name, const char *symbol, Type type, CustomMarsha
     m_time_field(false),
     m_alias_map(nullptr),
     m_set_func(nullptr),
-    m_custom_marshal_func(custom_marshal),
-    m_custom_unmarshal_func(custom_unmarshal)
+    m_custom_marshal_func(std::move(custom_marshal)),
+    m_custom_unmarshal_func(std::move(custom_unmarshal))
 {
   ink_assert(m_name != nullptr);
   ink_assert(m_symbol != nullptr);

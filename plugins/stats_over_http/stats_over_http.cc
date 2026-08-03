@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <ts/ts.h>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <unistd.h>
 #include <zlib.h>
@@ -744,7 +745,7 @@ parse_metric_v2(std::string_view name)
     }
   }
 
-  return {base_name, labels};
+  return {std::move(base_name), std::move(labels)};
 }
 
 static bool

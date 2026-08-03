@@ -27,6 +27,7 @@
 #include "tsutil/ts_diag_levels.h"
 
 #include <algorithm>
+#include <utility>
 #include "tsutil/Metrics.h"
 #include "tsutil/ts_time_parser.h"
 
@@ -85,7 +86,7 @@ ConfigReloadTask::add_child(std::string_view description)
   // Read token directly - can't call get_token() as it would deadlock (tries to acquire shared_lock on same mutex)
   auto trace = std::make_shared<ConfigReloadTask>(_info.token, description, false, shared_from_this());
   _info.sub_tasks.push_back(trace);
-  return ConfigContext{trace, description};
+  return ConfigContext{std::move(trace), description};
 }
 
 ConfigReloadTask &
@@ -469,7 +470,7 @@ ConfigReloadProgress::check_progress(int /* etype */, void * /* data */)
 }
 
 ConfigReloadProgress::ConfigReloadProgress(ConfigReloadTaskPtr reload)
-  : Continuation(new_ProxyMutex()), _reload{reload}, _every{get_configured_check_interval()}
+  : Continuation(new_ProxyMutex()), _reload{std::move(reload)}, _every{get_configured_check_interval()}
 {
   SET_HANDLER(&ConfigReloadProgress::check_progress);
 }

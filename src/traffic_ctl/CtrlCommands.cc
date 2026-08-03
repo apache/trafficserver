@@ -22,11 +22,12 @@
 
 #include <algorithm>
 #include <cctype>
+#include <csignal>
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
+#include <utility>
 #include <thread>
-#include <csignal>
 #include <unistd.h>
 
 #include <swoc/TextView.h>
@@ -278,7 +279,7 @@ ConfigCommand::config_status()
       {"error",   DL_Error  },
     };
 
-    std::string lowered{min_level};
+    std::string lowered{std::move(min_level)};
     std::transform(lowered.begin(), lowered.end(), lowered.begin(),
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
@@ -893,7 +894,7 @@ HostDBCommand::status_get()
     };
   }
 
-  HostDBGetStatusRequest request{params};
+  HostDBGetStatusRequest request{std::move(params)};
 
   auto response = invoke_rpc(request);
 

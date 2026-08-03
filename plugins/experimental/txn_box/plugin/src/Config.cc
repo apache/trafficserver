@@ -23,6 +23,7 @@
 #include <string>
 #include <map>
 #include <numeric>
+#include <utility>
 #include <glob.h>
 
 #include <swoc/TextView.h>
@@ -649,7 +650,7 @@ Config::parse_yaml(YAML::Node root, TextView path)
 
   if (root.IsSequence()) {
     for (auto child : root) {
-      errata.note((this->*drtv_loader)(child));
+      errata.note((this->*drtv_loader)(std::move(child)));
     }
     if (!errata.is_ok()) {
       errata.note(R"(While loading list of top level directives for "{}" at {}.)", path, root.Mark());
