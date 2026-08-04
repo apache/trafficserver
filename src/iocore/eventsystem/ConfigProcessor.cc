@@ -22,7 +22,10 @@
  */
 
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Tasks.h"
 #include "tscore/ink_atomic.h"
+#include "tscore/ink_thread.h"
 #if TS_HAS_TESTS
 #include "tscore/TestBox.h"
 #endif
@@ -34,7 +37,68 @@ namespace
 
 DbgCtl dbg_ctl_config{"config"};
 
+void
+destroy_config(unsigned int id, ConfigInfo *info)
+{
+  ink_hrtime start = ink_get_hrtime();
+
+  delete info;
+
+  if (dbg_ctl_config.on()) {
+    char thread_name[MAX_THREAD_NAME_LENGTH] = {};
+
+    ink_get_thread_name(thread_name, sizeof(thread_name));
+    DbgPrint(dbg_ctl_config, "Destroyed config %u in %" PRId64 " ns on thread %s", id, ink_get_hrtime() - start, thread_name);
+  }
 }
+
+/// Runs the destructor of a detached ConfigInfo on ET_TASK.
+class ConfigInfoDestroyer : public Continuation
+{
+public:
+  ConfigInfoDestroyer(unsigned int id, ConfigInfo *info) : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
+  {
+    SET_HANDLER(&ConfigInfoDestroyer::handle_event);
+  }
+
+  int
+  handle_event(int /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+  {
+    destroy_config(m_id, m_info);
+    delete this;
+    return EVENT_DONE;
+  }
+
+private:
+  unsigned int m_id;
+  ConfigInfo  *m_info;
+};
+
+/// Hand a detached ConfigInfo to ET_TASK for destruction. Returns false when the caller has to
+/// destroy it itself.
+bool
+destroy_config_on_task_thread(unsigned int id, ConfigInfo *info)
+{
+  EThread *ethread = this_ethread();
+
+  // There is nowhere to send this unless the task threads are up. Before they are registered ET_TASK
+  // is ET_CALL, and between registration and spawning the group is still empty.
+  if (ethread == nullptr || ethread->is_event_type(ET_TASK) || eventProcessor.thread_group[ET_TASK]._count == 0) {
+    return false;
+  }
+
+  ConfigInfoDestroyer *destroyer = new ConfigInfoDestroyer(id, info);
+
+  if (eventProcessor.schedule_imm(destroyer, ET_TASK) == nullptr) {
+    // The event system is shutting down and will never run the destroyer.
+    delete destroyer;
+    return false;
+  }
+
+  return true;
+}
+
+} // namespace
 
 class ConfigInfoReleaser : public Continuation
 {
@@ -94,7 +158,10 @@ ConfigProcessor::set(unsigned int id, ConfigInfo *info, unsigned timeout_secs)
     // The ConfigInfoReleaser now takes our refcount, but
     // some other thread might also have one ...
     ink_assert(old_info->refcount() > 0);
-    eventProcessor.schedule_in(new ConfigInfoReleaser(id, old_info), HRTIME_SECONDS(timeout_secs));
+    // Destroying a config releases everything it owns - a replaced certificate table takes its whole
+    // certificate set with the chains, keys and staples. Run it on ET_TASK, which already carries the
+    // config load, so the cost cannot land on a network event loop.
+    eventProcessor.schedule_in(new ConfigInfoReleaser(id, old_info), HRTIME_SECONDS(timeout_secs), ET_TASK);
   }
 
   return id;
@@ -140,7 +207,12 @@ ConfigProcessor::release(unsigned int id, ConfigInfo *info)
     // When we release, we should already have replaced this object in the index.
     Dbg(dbg_ctl_config, "Release config %d %p", id, info);
     ink_release_assert(info != this->infos[idx]);
-    delete info;
+
+    // The releaser runs on ET_TASK, but a transaction that outlived it drops the last reference on
+    // its own thread, which serves network connections.
+    if (!destroy_config_on_task_thread(id, info)) {
+      destroy_config(id, info);
+    }
   }
 }
 
