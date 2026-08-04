@@ -34,6 +34,47 @@
 #include "iocore/net/SSLTypes.h"
 #include "mgmt/config/ConfigContext.h"
 
+#include <array>
+#include <string>
+#include <vector>
+
+class QUICTokenKeyConfigParams : public ConfigInfo
+{
+public:
+  static constexpr size_t KEY_LENGTH = 32;
+  using Key                          = std::array<uint8_t, KEY_LENGTH>;
+
+  ~QUICTokenKeyConfigParams() override;
+
+  /** Load one or more raw token keys from @a path. */
+  bool load(const char *path, ConfigContext ctx = {});
+
+  /** Generate a random primary token key. */
+  bool generate(ConfigContext ctx = {});
+
+  const std::vector<Key> &keys() const;
+  const std::string      &filename() const;
+
+private:
+  std::vector<Key> m_keys;
+  std::string      m_filename;
+};
+
+class QUICTokenKeyConfig
+{
+public:
+  static void startup();
+  static bool reconfigure(ConfigContext ctx = {});
+
+  static QUICTokenKeyConfigParams *acquire();
+  static void                      release(QUICTokenKeyConfigParams *params);
+
+  using scoped_config = ConfigProcessor::scoped_config<QUICTokenKeyConfig, QUICTokenKeyConfigParams>;
+
+private:
+  static int _config_id;
+};
+
 class QUICConfigParams : public ConfigInfo
 {
 public:

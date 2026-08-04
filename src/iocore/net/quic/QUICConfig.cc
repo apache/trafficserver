@@ -23,13 +23,19 @@
 
 #include "iocore/net/quic/QUICConfig.h"
 
+#include <openssl/crypto.h>
+#include <openssl/rand.h>
 #if TS_HAS_OPENSSL_QUIC
 #include <openssl/quic.h>
 #endif
 #include <openssl/ssl.h>
 
 #include "mgmt/config/ConfigContextDiags.h"
+#include "mgmt/config/ConfigRegistry.h"
 #include "records/RecHttp.h"
+#include "tscore/Layout.h"
+#include "tscore/MatcherUtils.h"
+#include "tscore/ink_memory.h"
 
 #include "../P_SSLConfig.h"
 #include "../P_TLSKeyLogger.h"
@@ -37,8 +43,144 @@
 #include "iocore/net/quic/QUICGlobals.h"
 #include "iocore/net/quic/QUICTransportParameters.h"
 
+int QUICTokenKeyConfig::_config_id           = 0;
 int QUICConfig::_config_id                   = 0;
 int QUICConfigParams::_connection_table_size = 65521;
+
+QUICTokenKeyConfigParams::~QUICTokenKeyConfigParams()
+{
+  if (!m_keys.empty()) {
+    OPENSSL_cleanse(m_keys.data(), m_keys.size() * sizeof(Key));
+  }
+}
+
+bool
+QUICTokenKeyConfigParams::load(const char *path, ConfigContext ctx)
+{
+  int            key_data_len = 0;
+  ats_scoped_str key_data{readIntoBuffer(path, __func__, &key_data_len)};
+
+  if (!key_data) {
+    CfgLoadFail(ctx, "Could not load QUIC token key from %s", path);
+    return false;
+  }
+
+  if (key_data_len < 0) {
+    CfgLoadFail(ctx, "QUIC token key file %s is too large", path);
+    return false;
+  }
+
+  size_t const key_data_size = static_cast<size_t>(key_data_len);
+
+  if (key_data_size < KEY_LENGTH || key_data_size % KEY_LENGTH != 0) {
+    CfgLoadFail(ctx, "QUIC token key file %s must contain one or more %zu-byte keys", path, KEY_LENGTH);
+    OPENSSL_cleanse(key_data.get(), key_data_size);
+    return false;
+  }
+
+  m_keys.resize(key_data_size / KEY_LENGTH);
+  memcpy(m_keys.data(), key_data.get(), key_data_size);
+  OPENSSL_cleanse(key_data.get(), key_data_size);
+  m_filename = path;
+  return true;
+}
+
+bool
+QUICTokenKeyConfigParams::generate(ConfigContext ctx)
+{
+  m_keys.resize(1);
+  if (RAND_bytes(m_keys.front().data(), static_cast<int>(m_keys.front().size())) != 1) {
+    CfgLoadFail(ctx, "Could not generate a random QUIC token key");
+    OPENSSL_cleanse(m_keys.data(), m_keys.size() * sizeof(Key));
+    m_keys.clear();
+    return false;
+  }
+  return true;
+}
+
+const std::vector<QUICTokenKeyConfigParams::Key> &
+QUICTokenKeyConfigParams::keys() const
+{
+  return m_keys;
+}
+
+const std::string &
+QUICTokenKeyConfigParams::filename() const
+{
+  return m_filename;
+}
+
+void
+QUICTokenKeyConfig::startup()
+{
+  config::ConfigRegistry::Get_Instance().register_record_config("quic_token_key",
+                                                                [](ConfigContext ctx) {
+                                                                  CfgLoadLog(ctx, DL_Note, "QUIC token key loading ...");
+                                                                  if (QUICTokenKeyConfig::reconfigure(ctx)) {
+                                                                    ctx.complete("QUIC token key reloaded");
+                                                                  } else {
+                                                                    ctx.fail("Failed to reload QUIC token key");
+                                                                  }
+                                                                },
+                                                                {"proxy.config.quic.server.token_key.filename"});
+
+  if (!reconfigure()) {
+    Fatal("Failed to initialize QUIC token key");
+  }
+}
+
+bool
+QUICTokenKeyConfig::reconfigure(ConfigContext ctx)
+{
+  std::string path;
+  if (auto rec_str = RecGetRecordStringAlloc("proxy.config.quic.server.token_key.filename"); rec_str && !rec_str->empty()) {
+    path = Layout::relative_to(Layout::get()->sysconfdir, *rec_str);
+  }
+
+  if (path.empty()) {
+    bool already_random = false;
+    {
+      scoped_config current;
+      already_random = current && current->filename().empty();
+    }
+    if (already_random) {
+      return true;
+    }
+  }
+
+  auto *params = new QUICTokenKeyConfigParams;
+  if ((!path.empty() && !params->load(path.c_str(), ctx)) || (path.empty() && !params->generate(ctx))) {
+    delete params;
+    return false;
+  }
+
+  bool unchanged = false;
+  {
+    scoped_config current;
+    unchanged = current && current->filename() == params->filename() && current->keys() == params->keys();
+  }
+  if (unchanged) {
+    delete params;
+    return true;
+  }
+
+  _config_id = configProcessor.set(_config_id, params);
+  return true;
+}
+
+QUICTokenKeyConfigParams *
+QUICTokenKeyConfig::acquire()
+{
+  return static_cast<QUICTokenKeyConfigParams *>(configProcessor.get(_config_id));
+}
+
+void
+QUICTokenKeyConfig::release(QUICTokenKeyConfigParams *params)
+{
+  if (_config_id > 0) {
+    configProcessor.release(_config_id, params);
+  }
+}
 
 SSL_CTX *
 quic_new_ssl_ctx()
@@ -471,6 +613,7 @@ QUICConfigParams::get_cc_algorithm() const
 void
 QUICConfig::startup()
 {
+  QUICTokenKeyConfig::startup();
   reconfigure();
 }
 
