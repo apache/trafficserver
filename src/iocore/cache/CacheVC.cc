@@ -215,6 +215,14 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
 #ifdef DEBUG
   ink_assert(!c || c->mutex->thread_holding);
 #endif
+  if (nbytes == 0) {
+    // A zero-byte write represents an empty document, while closing without a
+    // write represents a header-only update.
+    f.allow_empty_doc = 1;
+    if (alternate.valid()) {
+      alternate.object_size_set(0);
+    }
+  }
   if (c && !trigger && !recursive) {
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   }
@@ -225,6 +233,14 @@ void
 CacheVC::do_io_close(int alerrno)
 {
   ink_assert(mutex->thread_holding == this_ethread());
+  if (alerrno == -1 && vio.op == VIO::WRITE && vio.get_reader() != nullptr && vio.nbytes == 0) {
+    // The write may have started with an unknown length and been finalized
+    // at zero after the response framing was parsed.
+    f.allow_empty_doc = 1;
+    if (alternate.valid()) {
+      alternate.object_size_set(0);
+    }
+  }
   int previous_closed = closed;
   closed              = (alerrno == -1) ? 1 : -1; // Stupid default arguments
   DDbg(dbg_ctl_cache_close, "do_io_close %p %d %d", this, alerrno, closed);
@@ -1042,7 +1058,8 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   }
 
   MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(MIME_FIELD_CONTENT_LENGTH, MIME_LEN_CONTENT_LENGTH);
-  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTP_STATUS_NO_CONTENT) {
+  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTP_STATUS_NO_CONTENT ||
+      (f.allow_empty_doc && vio.nbytes == 0)) {
     f.allow_empty_doc = 1;
     // Set the object size here to zero in case this is a cache replace where the new object
     // length is zero but the old object was not.
