@@ -321,13 +321,20 @@ private:
 class QUICAddressValidationToken
 {
 public:
+  static constexpr size_t MAC_LENGTH = 32;
+
   enum class Type : uint8_t {
     RESUMPTION,
     RETRY,
   };
 
-  // FIXME Check token length
-  QUICAddressValidationToken(const uint8_t *buf, size_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICAddressValidationToken(const uint8_t *buf, size_t len)
+  {
+    if (buf != nullptr && len <= sizeof(_token)) {
+      memcpy(_token, buf, len);
+      _token_len = len;
+    }
+  }
   virtual ~QUICAddressValidationToken(){};
 
   static Type
@@ -354,7 +361,7 @@ protected:
 
   // The size should be smaller than maximum size of Retry packet
   uint8_t      _token[1200] = {0};
-  unsigned int _token_len;
+  unsigned int _token_len   = 0;
 };
 
 class QUICResumptionToken : public QUICAddressValidationToken
