@@ -1,0 +1,134 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# Two transactions request the same uncached object. The first takes the cache
+# write lock and holds it while its origin response is outstanding. The second
+# loses the write lock, and its scheduled retry hands a cache read event back to
+# HttpSM. HttpSM used to cancel its own cache action while dispatching that
+# event, which aborted debug builds on the canceled action assertion in
+# HttpCacheSM and dropped the callback in release builds.
+#
+# Read-while-writer is disabled so that the contending cache read fails
+# immediately rather than waiting for the writer, which is what makes the
+# callback arrive synchronously from within the write retry.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify a cache write retry preserves the cache read callback that follows it'
+  dns:
+    name: 'dns-write-retry-callback'
+
+  server:
+    name: 'origin-write-retry-callback'
+
+  client:
+    name: 'client-write-retry-callback'
+    process_config:
+      # The two sessions below have to overlap in time, so the client must not
+      # serialize them onto a single thread.
+      other_args: '--thread-limit 4'
+
+  ats:
+    name: 'ts-write-retry-callback'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_cache|http_trans'
+      # READ_RETRY: retry the cache read when the write lock is lost.
+      proxy.config.http.cache.open_write_fail_action: 5
+      proxy.config.http.cache.max_open_write_retries: 1
+      proxy.config.http.cache.max_open_write_retry_timeout: 0
+      proxy.config.http.cache.max_open_read_retries: 2
+      proxy.config.http.cache.open_read_retry_time: 250
+      proxy.config.cache.enable_read_while_writer: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "[Ff]atal|failed assertion"
+            description: "Verify ATS does not abort while retrying the cache write"
+        contains:
+          - expression: "falling back to read retry"
+            description: "Verify the contending transaction retried its cache read after losing the write lock"
+          - expression: "READ_RETRY cache read failed, bypassing cache"
+            description: "Verify the retried cache read was delivered and handled"
+
+sessions:
+  # Take the cache write lock and hold it for the duration of this slow origin
+  # response.
+  - transactions:
+      - client-request:
+          method: GET
+          version: '1.1'
+          url: /contended-object
+          headers:
+            fields:
+              - [uuid, cache-writer]
+              - [Host, example.com]
+
+        server-response:
+          delay: 3s
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 16]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, writer]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: writer, as: equal}]
+
+  # Lose the cache write lock to the session above. Both write attempts fail
+  # while that writer owns the lock, so the scheduled write retry delivers a
+  # cache read event to HttpSM, which issues another cache read. That read also
+  # fails, and the transaction proxies to the origin without caching.
+  - transactions:
+      - client-request:
+          delay: 200ms
+          method: GET
+          version: '1.1'
+          url: /contended-object
+          headers:
+            fields:
+              - [uuid, cache-contender]
+              - [Host, example.com]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 16]
+              - [Cache-Control, "max-age=300"]
+              - [X-Response, contender]
+
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [X-Response, {value: contender, as: equal}]
