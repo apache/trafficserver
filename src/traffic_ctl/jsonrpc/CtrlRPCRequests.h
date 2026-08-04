@@ -142,6 +142,14 @@ struct ConfigSetRecordResponse {
   std::vector<UpdatedRec> data;
 };
 //------------------------------------------------------------------------------------------------------------------------------------
+struct CacheClearRequest : shared::rpc::ClientRequest {
+  std::string
+  get_method() const override
+  {
+    return "admin_cache_clear";
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
 struct HostStatusLookUpResponse {
   struct HostStatusInfo {
     std::string hostName;

@@ -160,6 +160,17 @@ public:
   ConfigCommand(ts::Arguments *args);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
+class CacheCommand : public CtrlCommand
+{
+public:
+  CacheCommand(ts::Arguments *args);
+
+private:
+  static inline const std::string CLEAR_STR{"clear"};
+
+  void clear();
+};
+// -----------------------------------------------------------------------------------------------------------------------------------
 class MetricCommand : public RecordCommand
 {
   static inline const std::string MONITOR_STR{"monitor"};
