@@ -323,6 +323,7 @@ CacheVC::die()
 {
   if (vio.op == VIO::WRITE) {
     if (f.update && total_len) {
+      ink_assert(alternate.valid());
       alternate.object_key_set(earliest_key);
     }
     if (!is_io_in_progress()) {
