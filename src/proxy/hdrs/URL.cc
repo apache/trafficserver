@@ -1212,6 +1212,22 @@ url_is_mostly_compliant(const char *start, const char *end)
 } // namespace UrlImpl
 using namespace UrlImpl;
 
+bool
+url_is_uri_compliant(int strict_uri_parsing, std::string_view value)
+{
+  const char *start = value.data();
+  const char *end   = start + value.length();
+
+  switch (strict_uri_parsing) {
+  case 1:
+    return url_is_strictly_compliant(start, end);
+  case 2:
+    return url_is_mostly_compliant(start, end);
+  default:
+    return true;
+  }
+}
+
 ParseResult
 url_parse(HdrHeap *heap, URLImpl *url, const char **start, const char *end, bool copy_strings_p, int strict_uri_parsing,
           bool verify_host_characters)

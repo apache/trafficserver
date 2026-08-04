@@ -53,6 +53,9 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Proxy Verifier should not report errors.')
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'Equals Success: Key: "1", Content Data: "body", Value: "response-body"', 'Client should receive the response body.')
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    'Equals Success: Key: "2", Content Data: "body", Value: "bodyless-response"',
+    'Client should receive the response to a bodyless request.')
 
 server.Streams.All += Testers.ContainsExpression(
     'Equals Success: Key: "1", Content Data: "body", Value: "request-body"', 'Origin should receive the request body.')

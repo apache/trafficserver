@@ -1211,7 +1211,12 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       }
     }
 
-    if (c_write == 0) {
+    // A bodyless HTTP/2 response (204/304/HEAD) still owes a HEADERS frame, and the stream
+    // self-signals WRITE_COMPLETE. Match by identity: plugin agents are HTTP_CLIENT too.
+    ProxyTransaction *ua_txn       = sm->get_ua_txn();
+    bool const        flush_header = c_write == 0 && ua_txn != nullptr && c->vc == ua_txn && ua_txn->has_pending_send_header();
+
+    if (c_write == 0 && !flush_header) {
       // Nothing to do, call back the cleanup handlers
       c->write_vio = nullptr;
       consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
@@ -1234,10 +1239,9 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
       Dbg(dbg_ctl_http_tunnel, "Start write vio %" PRId64 " bytes", c_write);
       // Start the writes now that we know we will consume all the initial data
       c->write_vio = c->vc->do_io_write(this, c_write, c->buffer_reader);
-      ink_assert(c_write > 0);
       if (c->write_vio == nullptr) {
         consumer_handler(VC_EVENT_ERROR, c);
-      } else if (c->write_vio->ntodo() == 0 && c->alive) {
+      } else if (!flush_header && c->write_vio->ntodo() == 0 && c->alive) {
         consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
       }
     }

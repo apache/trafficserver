@@ -610,6 +610,12 @@ private:
   IOBufferReader *_netvc_reader      = nullptr;
   MIOBuffer      *_netvc_read_buffer = nullptr;
 
+  bool _client_response_header_is_ready = false;
+  bool _server_request_header_is_ready  = false;
+
+  // Direct-passed headers bypass the tunnel, so client_response_hdr_bytes stays 0.
+  int _direct_response_hdr_bytes = 0;
+
   void kill_this();
   void update_stats();
   void transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info);
@@ -625,6 +631,23 @@ public:
   int     client_transaction_id() const;
   int     client_transaction_priority_weight() const;
   int     client_transaction_priority_dependence() const;
+
+  HTTPHdr *get_client_response_header();
+  HTTPHdr *get_server_request_header();
+
+  // For logging/SDK: client_response_hdr_bytes counts only what the tunnel wrote.
+  int
+  reported_client_response_hdr_bytes() const
+  {
+    return client_response_hdr_bytes > 0 ? client_response_hdr_bytes : _direct_response_hdr_bytes;
+  }
+
+  void
+  clear_pending_send_header()
+  {
+    _client_response_header_is_ready = false;
+    _server_request_header_is_ready  = false;
+  }
 
   ink_hrtime get_server_inactivity_timeout();
   ink_hrtime get_server_active_timeout();
@@ -713,11 +736,28 @@ HttpSM::get_cache_sm()
 inline int
 HttpSM::write_response_header_into_buffer(HTTPHdr *h, MIOBuffer *b)
 {
-  if (t_state.client_info.http_version == HTTPVersion(0, 9)) {
+  if (_ua.get_txn()->supports_direct_header_passing()) {
+    // Nothing lands in the buffer, so 0 keeps the tunnel's byte math honest.
+    _client_response_header_is_ready = true;
+    _direct_response_hdr_bytes       = h->length_get();
+    return 0;
+  } else if (t_state.client_info.http_version == HTTPVersion(0, 9)) {
     return 0;
   } else {
     return write_header_into_buffer(h, b);
   }
+}
+
+inline HTTPHdr *
+HttpSM::get_client_response_header()
+{
+  return _client_response_header_is_ready ? &t_state.hdr_info.client_response : nullptr;
+}
+
+inline HTTPHdr *
+HttpSM::get_server_request_header()
+{
+  return _server_request_header_is_ready ? &t_state.hdr_info.server_request : nullptr;
 }
 
 inline int
