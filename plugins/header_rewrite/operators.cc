@@ -1242,20 +1242,6 @@ OperatorSetPluginCntl::initialize(Parser &p)
   }
 }
 
-// This operator should be allowed everywhere
-void
-OperatorSetPluginCntl::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
-}
-
 bool
 OperatorSetPluginCntl::exec(const Resources &res) const
 {
@@ -1431,20 +1417,6 @@ OperatorSetStateFlag::initialize(Parser &p)
   }
 }
 
-// This operator should be allowed everywhere
-void
-OperatorSetStateFlag::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
-}
-
 bool
 OperatorSetStateFlag::exec(const Resources &res) const
 {
@@ -1483,20 +1455,6 @@ OperatorSetStateInt8::initialize(Parser &p)
       return;
     }
   }
-}
-
-// This operator should be allowed everywhere
-void
-OperatorSetStateInt8::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
 }
 
 bool
@@ -1553,20 +1511,6 @@ OperatorSetStateInt16::initialize(Parser &p)
       return;
     }
   }
-}
-
-// This operator should be allowed everywhere
-void
-OperatorSetStateInt16::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
 }
 
 bool
