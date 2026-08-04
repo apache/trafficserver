@@ -26,6 +26,8 @@
 
 #include <tscore/ink_assert.h>
 
+#include <cstdint>
+
 using inkevent_test::AtomicFlag;
 using inkevent_test::EventProcessorListener;
 
@@ -48,9 +50,8 @@ public:
   // it here in order to unfreeze any threads that may be waiting on done.
   ~HoldOnEThread()
   {
-    this->release.set();
     this->cancel_callback();
-    this->done.wait_until_set();
+    this->wait_for_callback_finish();
   }
 
   bool
@@ -101,6 +102,10 @@ private:
   bool
   is_expecting_callback()
   {
+    if (reinterpret_cast<std::uintptr_t>(this->callback_action) & 1) {
+      return false;
+    }
+
     ink_assert(this->mutex->thread_holding == this_ethread());
     return !this->held.is_set() && !this->callback_action->cancelled;
   }
