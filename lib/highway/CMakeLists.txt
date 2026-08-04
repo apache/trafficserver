@@ -22,10 +22,9 @@ if(POLICY CMP0083)
   cmake_policy(SET CMP0083 NEW)
 endif()
 
-# Workaround for 3.19 raising error 'IMPORTED_LOCATION not set for imported
-# target "GTest::gtest_main"'.
+# Reject imported targets without a usable location during generation.
 if(POLICY CMP0111)
-  cmake_policy(SET CMP0111 OLD)
+  cmake_policy(SET CMP0111 NEW)
 endif()
 
 # Starting with GCC-13, we want to make sure to remove gnu extension (ie.

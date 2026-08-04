@@ -739,6 +739,9 @@ else()
       CACHE INTERNAL "GENERAL_NAME lives in the bssl namespace" FORCE
   )
 endif()
+# Prevent unrelated feature probes from inheriting the OpenSSL dependencies.
+list(REMOVE_ITEM CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
 
 set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)

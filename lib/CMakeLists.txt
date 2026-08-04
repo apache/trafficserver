@@ -111,6 +111,8 @@ if(NOT EXTERNAL_HWY)
       OFF
       CACHE BOOL "Enable HWY tests" FORCE
   )
+  set(CMAKE_POLICY_DEFAULT_CMP0075 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
   add_subdirectory(highway)
   add_library(hwy::hwy ALIAS hwy)
   add_library(hwy::hwy_contrib ALIAS hwy_contrib)
