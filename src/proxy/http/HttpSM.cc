@@ -5865,7 +5865,8 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     }
 
     ct_state.update_max_count(ccount);
-  } else if (t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+  } else if (t_state.txn_conf->connection_tracker_config.server_min > 0 ||
+             t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
     auto &ct_state = t_state.outbound_conn_track_state;
     ct_state.reserve();
   }
