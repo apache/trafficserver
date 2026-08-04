@@ -187,8 +187,8 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   static const std::string_view trailer{" \n]}"};
 
   static const auto printer = [](swoc::BufferWriter &w, ConnectionTracker::Group const *g) -> swoc::BufferWriter & {
-    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count_metric != nullptr ? g->_count_metric->load() : g->_count.load(),
-            g->_count_max.load(), g->_blocked.load(), g->get_last_alert_epoch_time());
+    w.print(item_fmt, g->_match_type, g->_addr, g->_fqdn, g->_count.load(), g->_count_max.load(), g->_blocked.load(),
+            g->get_last_alert_epoch_time());
     return w;
   };
 
@@ -522,26 +522,13 @@ ConnectionTracker::Group::should_alert(std::time_t *lat)
 void
 ConnectionTracker::Group::release()
 {
-  // If metric enabled, use metric as count
-  if (_count_metric != nullptr) {
-    if (_count_metric->load() > 0) {
+  // @a _count is always the authoritative count; the metric, if enabled, only mirrors it.
+  if (_count > 0) {
+    auto count = --_count;
+    if (_count_metric != nullptr) {
       ts::Metrics::Gauge::decrement(_count_metric);
-      if (_count_metric->load() == 0) {
-        TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
-        std::lock_guard<std::mutex> lock(table._mutex); // Table lock
-        if (_count_metric->load() > 0) {
-          // Someone else grabbed the Group between our last check and taking the
-          // lock.
-          return;
-        }
-        table._table.erase(_key);
-      }
-    } else {
-      // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
-      Error("Number of tracked connections should be greater than or equal to zero: %" PRId64, _count_metric->load());
     }
-  } else if (_count > 0) {
-    if (--_count == 0) {
+    if (count == 0) {
       TableSingleton             &table = _direction == DirectionType::INBOUND ? _inbound_table : _outbound_table;
       std::lock_guard<std::mutex> lock(table._mutex); // Table lock
       if (_count > 0) {
@@ -553,7 +540,7 @@ ConnectionTracker::Group::release()
     }
   } else {
     // A bit dubious, as there's no guarantee it's still negative, but even that would be interesting to know.
-    Error("Number of tracked connections should be greater than or equal to zero: %u", _count.load());
+    Error("Number of tracked connections should be greater than or equal to zero: %d", _count.load());
   }
 }
 
@@ -615,8 +602,7 @@ ConnectionTracker::dump_outbound(FILE *f)
 
     for (std::shared_ptr<Group const> g : groups) {
       swoc::LocalBufferWriter<128> w;
-      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", (g->_count_metric != nullptr ? g->_count_metric->load() : g->_count.load()),
-              g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
+      w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
     }
 
