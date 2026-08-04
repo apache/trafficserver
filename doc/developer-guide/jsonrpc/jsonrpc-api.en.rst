@@ -444,6 +444,8 @@ Example with stats meta:
 JSONRPC API
 ===========
 
+* `admin_cache_clear`_
+
 * `admin_lookup_records`_
 
 
@@ -470,6 +472,61 @@ JSONRPC API
 * `filemanager.get_files_registry`_
 
 * `get_connection_tracker_info`_
+
+
+Cache
+=====
+
+.. _admin_cache_clear:
+
+admin_cache_clear
+-----------------
+
+|method|
+
+Description
+~~~~~~~~~~~
+
+Invalidate cached HTTP objects in the global cache-generation namespace without restarting |TS|. The method advances
+:ts:cv:`proxy.config.http.cache.generation`, causing subsequent cache lookups to use a new key namespace. Remap rules that override
+this configuration have independent namespaces and are not affected. The invalidated data remains on cache storage until it is
+overwritten through normal cache operation. The configuration change applies to the running process and is not persisted to
+:file:`records.yaml`.
+
+Parameters
+~~~~~~~~~~
+
+* ``params``: Omitted
+
+Result
+~~~~~~
+
+The response will contain the default `success_response` or an error. :ref:`jsonrpc-node-errors`.
+
+Examples
+~~~~~~~~
+
+Request:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "id": "9db0608c-b696-46f4-b865-1b5dc8a80d38",
+      "jsonrpc": "2.0",
+      "method": "admin_cache_clear"
+   }
+
+Response:
+
+.. code-block:: json
+   :linenos:
+
+   {
+      "jsonrpc": "2.0",
+      "result": "success",
+      "id": "9db0608c-b696-46f4-b865-1b5dc8a80d38"
+   }
 
 .. _jsonapi-management-records:
 

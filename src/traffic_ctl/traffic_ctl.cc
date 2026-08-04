@@ -94,6 +94,7 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
+  auto &cache_command      = parser.add_command("cache", "Manage the document cache").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
   auto &server_command     = parser.add_command("server", "Stop, restart and examine the server").require_commands();
   auto &storage_command    = parser.add_command("storage", "Manipulate cache storage").require_commands();
@@ -200,6 +201,10 @@ main([[maybe_unused]] int argc, const char **argv)
 
   config_command.add_command("registry", "Show configuration file registry", Command_Execute)
     .add_example_usage("traffic_ctl config registry");
+
+  // cache commands
+  cache_command.add_command("clear", "Advance the global cache generation", "", 0, Command_Execute)
+    .add_example_usage("traffic_ctl cache clear");
 
   // ssl-multicert subcommand
   auto &ssl_multicert_command =
@@ -330,6 +335,7 @@ main([[maybe_unused]] int argc, const char **argv)
     }
 
     static const std::map<std::string, std::function<std::unique_ptr<CtrlCommand>(ts::Arguments *)>> factories = {
+      {"cache",   [](ts::Arguments *a) { return std::make_unique<CacheCommand>(a); }    },
       {"metric",  [](ts::Arguments *a) { return std::make_unique<MetricCommand>(a); }   },
       {"server",  [](ts::Arguments *a) { return std::make_unique<ServerCommand>(a); }   },
       {"storage", [](ts::Arguments *a) { return std::make_unique<StorageCommand>(a); }  },

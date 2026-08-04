@@ -43,6 +43,8 @@ of subcommands that control different aspects of Traffic Server:
 
 :program:`traffic_ctl config`
    Manipulate and display configuration records
+:program:`traffic_ctl cache`
+   Invalidate cached objects
 :program:`traffic_ctl metric`
    Manipulate performance and status metrics
 :program:`traffic_ctl server`
@@ -1136,6 +1138,22 @@ traffic_ctl server
       # Disable debug logging
       $ traffic_ctl server debug disable
       ■ TS Runtime debug set to »OFF(0)«
+
+.. _traffic-control-command-cache:
+
+traffic_ctl cache
+-----------------
+
+.. program:: traffic_ctl cache
+.. option:: clear
+
+   :ref:`admin_cache_clear`
+
+   Invalidate cached HTTP objects in the global cache-generation namespace without restarting |TS|. This advances
+   :ts:cv:`proxy.config.http.cache.generation`, causing subsequent cache lookups to use a new key namespace. Remap rules that
+   override this configuration have independent namespaces and are not affected. The invalidated data remains on cache storage until
+   it is overwritten through normal cache operation. The configuration change applies to the running process and is not persisted to
+   :file:`records.yaml`.
 
 .. _traffic-control-command-storage:
 

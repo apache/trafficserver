@@ -737,6 +737,26 @@ ConfigCommand::config_show_file_registry()
   _printer->write_output(invoke_rpc(ConfigShowFileRegistryRequest{}));
 }
 //------------------------------------------------------------------------------------------------------------------------------------
+CacheCommand::CacheCommand(ts::Arguments *args) : CtrlCommand(args)
+{
+  auto printOpts = parse_print_opts(args);
+
+  if (get_parsed_arguments()->get(CLEAR_STR)) {
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
+    _invoked_func = [&]() { clear(); };
+  }
+}
+
+void
+CacheCommand::clear()
+{
+  CacheClearRequest request;
+
+  auto response = invoke_rpc(request);
+
+  _printer->write_output(response);
+}
+//------------------------------------------------------------------------------------------------------------------------------------
 MetricCommand::MetricCommand(ts::Arguments *args) : RecordCommand(args)
 {
   BasePrinter::Options printOpts{parse_print_opts(args)};
