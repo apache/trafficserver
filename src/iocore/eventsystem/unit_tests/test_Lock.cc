@@ -38,33 +38,64 @@ public:
   HoldOnEThread(ProxyMutex *self_mutex, Ptr<ProxyMutex> &target) : Continuation(self_mutex), target_mutex(target)
   {
     SET_HANDLER(&HoldOnEThread::on_event);
+    this->callback_action = eventProcessor.schedule_imm(this, ET_CALL);
   }
 
   // In case of an exception in a thread that would have set release, we set
   // it here in order to unfreeze any threads that may be waiting on done.
   ~HoldOnEThread()
   {
-    release.set();
-    done.wait_until_set();
+    this->release.set();
+    this->cancel_callback();
+    this->done.wait_until_set();
   }
 
+  bool
+  wait_for_callback_start()
+  {
+    return this->held.wait_until_set();
+  }
+
+  bool
+  wait_for_callback_finish()
+  {
+    this->release.set();
+    return this->done.wait_until_set();
+  }
+
+private:
+  Action         *callback_action{};
   Ptr<ProxyMutex> target_mutex;
   AtomicFlag      held;
   AtomicFlag      release;
   AtomicFlag      done;
 
-private:
   int
   on_event(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
-    {
-      SCOPED_MUTEX_LOCK(guard, target_mutex, this_ethread());
-      held.set();
-      // Non-fatal so that done gets set.
-      CHECK(release.wait_until_set());
+    SCOPED_MUTEX_LOCK(guard, this->target_mutex, this_ethread());
+    this->held.set();
+    if (this->release.wait_until_set()) {
+      MUTEX_RELEASE(guard);
+      this->done.set();
     }
-    done.set();
     return 0;
+  }
+
+  void
+  cancel_callback()
+  {
+    SCOPED_MUTEX_LOCK(guard, this->mutex, this_ethread());
+    if (this->is_expecting_callback()) {
+      this->callback_action->cancel(this);
+      this->done.set();
+    }
+  }
+
+  bool
+  is_expecting_callback()
+  {
+    return !this->held.is_set() && !this->callback_action->cancelled;
   }
 };
 
@@ -90,16 +121,12 @@ TEST_CASE("MUTEX_TRY_LOCK against a contended ProxyMutex constructs a guard whos
   Ptr<ProxyMutex> cont_self{new_ProxyMutex()};
   HoldOnEThread   holder{cont_self.get(), contended};
 
-  REQUIRE(eventProcessor.schedule_imm(&holder, ET_CALL) != nullptr);
-  REQUIRE(holder.held.wait_until_set());
+  REQUIRE(holder.wait_for_callback_start());
 
   EThread *t = this_ethread();
   MUTEX_TRY_LOCK(guard, contended, t);
 
   REQUIRE_FALSE(guard.is_locked());
-
-  holder.release.set();
-  REQUIRE(holder.done.wait_until_set());
 }
 
 TEST_CASE("MUTEX_TRY_LOCK by the holding thread is reentrant and returns a guard reporting is_locked() == true", "[inkevent][lock]")
@@ -265,11 +292,8 @@ TEST_CASE("After the holding EThread fully releases a contended ProxyMutex, MUTE
   Ptr<ProxyMutex> cont_self{new_ProxyMutex()};
   HoldOnEThread   holder{cont_self.get(), contended};
 
-  REQUIRE(eventProcessor.schedule_imm(&holder, ET_CALL) != nullptr);
-  REQUIRE(holder.held.wait_until_set());
-
-  holder.release.set();
-  REQUIRE(holder.done.wait_until_set());
+  REQUIRE(holder.wait_for_callback_start());
+  REQUIRE(holder.wait_for_callback_finish());
 
   EThread *t = this_ethread();
   MUTEX_TRY_LOCK(guard, contended, t);
@@ -323,16 +347,12 @@ TEST_CASE("WEAK_MUTEX_TRY_LOCK against a contended ProxyMutex constructs a guard
   Ptr<ProxyMutex> cont_self{new_ProxyMutex()};
   HoldOnEThread   holder{cont_self.get(), contended};
 
-  REQUIRE(eventProcessor.schedule_imm(&holder, ET_CALL) != nullptr);
-  REQUIRE(holder.held.wait_until_set());
+  REQUIRE(holder.wait_for_callback_start());
 
   EThread *t = this_ethread();
   WEAK_MUTEX_TRY_LOCK(guard, contended, t);
 
   REQUIRE_FALSE(guard.is_locked());
-
-  holder.release.set();
-  REQUIRE(holder.done.wait_until_set());
 }
 
 TEST_CASE("WEAK_MUTEX_TRY_LOCK on a null Ptr<ProxyMutex> reports is_locked() == true", "[inkevent][lock]")
