@@ -494,6 +494,9 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP:
     hook = TS_HTTP_PRE_REMAP_HOOK;
     break;
+  case TS_EVENT_HTTP_POST_REMAP:
+    hook = TS_HTTP_POST_REMAP_HOOK;
+    break;
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
     break;
