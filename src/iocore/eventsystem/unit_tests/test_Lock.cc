@@ -24,6 +24,8 @@
 #define CATCH_CONFIG_THREAD_SAFE_ASSERTIONS
 #include "inkevent_test_fixtures.h"
 
+#include <tscore/ink_assert.h>
+
 using inkevent_test::AtomicFlag;
 using inkevent_test::EventProcessorListener;
 
@@ -39,6 +41,7 @@ public:
   {
     SET_HANDLER(&HoldOnEThread::on_event);
     this->callback_action = eventProcessor.schedule_imm(this, ET_CALL);
+    ink_assert(this->callback_action != nullptr);
   }
 
   // In case of an exception in a thread that would have set release, we set
@@ -60,6 +63,8 @@ public:
   wait_for_callback_finish()
   {
     this->release.set();
+    // The callback can finish without setting done due to wait timeouts. We
+    // return false in that case.
     return this->done.wait_until_set();
   }
 
@@ -88,6 +93,7 @@ private:
     SCOPED_MUTEX_LOCK(guard, this->mutex, this_ethread());
     if (this->is_expecting_callback()) {
       this->callback_action->cancel(this);
+      ink_assert(this->callback_action->cancelled);
       this->done.set();
     }
   }
@@ -95,6 +101,7 @@ private:
   bool
   is_expecting_callback()
   {
+    ink_assert(this->mutex->thread_holding == this_ethread());
     return !this->held.is_set() && !this->callback_action->cancelled;
   }
 };
