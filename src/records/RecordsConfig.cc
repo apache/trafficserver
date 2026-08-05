@@ -395,7 +395,7 @@ static constexpr RecordElement RecordsConfig[] =
         ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.min", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "[0-1]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-2]$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_prefix", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

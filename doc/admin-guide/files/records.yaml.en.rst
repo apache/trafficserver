@@ -2007,6 +2007,35 @@ Origin Server Connect Attempts
    the connection. Useful when the origin supports keep-alive, removing the time needed to set up a
    new connection from the next request at the expense of added (inactive) connections.
 
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_enabled INT 0
+   :reloadable:
+
+   Publish per upstream server connection metrics. These metrics are dynamically named, one set per
+   upstream server group or hostname, so the number of them scales with the number of distinct
+   upstream servers seen. See :ref:`per-server-connection-metrics`.
+
+   ===== ======================================================================================
+   Value Effect
+   ===== ======================================================================================
+   ``0`` No per server connection metrics.
+   ``1`` Publish only the per hostname aggregate metrics. The per group metrics from which the
+         aggregates are computed exist internally but are not published.
+   ``2`` Publish the per hostname aggregates and the per group metrics.
+   ===== ======================================================================================
+
+   Level ``2`` can produce a very large number of metrics when the
+   :ts:cv:`match type <proxy.config.http.per_server.connection.match>` includes the address or
+   port, since there is then one set per address and port rather than one per hostname.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_prefix STRING NULL
+   :reloadable:
+
+   An optional prefix inserted into the per server connection metric names, between the fixed
+   ``proxy.process.http.per_server.<counter>.`` portion of the name and the upstream server group
+   or hostname. Useful to distinguish metrics from separate
+   :ts:cv:`match <proxy.config.http.per_server.connection.match>` configurations sharing the same
+   upstream. See :ref:`per-server-connection-metrics`.
+
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
    :reloadable:
    :overridable:
