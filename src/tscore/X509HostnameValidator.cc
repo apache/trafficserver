@@ -281,7 +281,7 @@ validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peernam
     astrlen = ASN1_STRING_to_UTF8(&astr, str);
 
     if (astrlen < 0) {
-      return -1;
+      return false;
     }
     retval = equal(astr, astrlen, hostname_data, hostname_len);
     if (retval && peername) {
