@@ -35,6 +35,7 @@
 
 #include "swoc/IntrusiveHashMap.h"
 #include <cstdint>
+#include <mutex>
 #include <unistd.h>
 
 using ts::Metrics;
@@ -507,6 +508,9 @@ void
 RefCountCache<C>::clear()
 {
   for (unsigned int i = 0; i < this->num_partitions; i++) {
-    this->partitions[i]->clear();
+    auto &partition = *this->partitions[i];
+
+    std::unique_lock<ts::shared_mutex> lock{partition.lock};
+    partition.clear();
   }
 }

@@ -264,6 +264,8 @@ main([[maybe_unused]] int argc, const char **argv)
   // hostdb commands
   hostdb_command.add_command("status", "Get HostDB info", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
     .add_example_usage("traffic_ctl hostdb status");
+  hostdb_command.add_command("clear", "Clear all HostDB entries", "", 0, Command_Execute)
+    .add_example_usage("traffic_ctl hostdb clear");
 
   // plugin command
   plugin_command

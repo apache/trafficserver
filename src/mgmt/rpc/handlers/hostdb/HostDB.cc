@@ -84,24 +84,28 @@ template <> struct convert<HostDBCache> {
   {
     Node partitions;
     for (size_t i = 0; i < hostDB->refcountcache->partition_count(); i++) {
-      auto                                 &partition = hostDB->refcountcache->get_partition(i);
-      std::vector<RefCountCacheHashEntry *> partition_entries;
+      auto                             &partition = hostDB->refcountcache->get_partition(i);
+      std::vector<HostDBRecord::Handle> partition_records;
 
       {
         std::shared_lock<ts::shared_mutex> shared_lock{partition.lock};
-        partition_entries.reserve(partition.count());
-        partition.copy(partition_entries);
+
+        partition_records.reserve(partition.count());
+        for (auto &&entry : partition.get_map()) {
+          partition_records.emplace_back(make_ptr(static_cast<HostDBRecord *>(entry.item.get())));
+        }
       }
 
-      if (partition_entries.empty()) {
+      if (partition_records.empty()) {
         continue;
       }
 
       Node partition_node;
       partition_node["id"] = i;
 
-      for (RefCountCacheHashEntry *entry : partition_entries) {
-        HostDBRecord *record = static_cast<HostDBRecord *>(entry->item.get());
+      for (auto const &record_handle : partition_records) {
+        HostDBRecord *record = record_handle.get();
+
         if (!hostname.empty() && record->name_view().find(hostname) == std::string_view::npos) {
           continue;
         }
@@ -202,5 +206,12 @@ get_hostdb_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node const
       .note("Error found when calling get_hostdb_status API: {}", ex.what());
   }
   return resp;
+}
+
+swoc::Rv<YAML::Node>
+clear_hostdb(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  hostDBProcessor.clear();
+  return {};
 }
 } // namespace rpc::handlers::hostdb
