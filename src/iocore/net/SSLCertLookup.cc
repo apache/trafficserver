@@ -34,6 +34,7 @@
 #include "P_SSLUtils.h"
 
 #include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -234,24 +235,24 @@ fail:
 
 SSLCertContext::SSLCertContext(SSLCertContext const &other)
 {
+  std::shared_lock lock(other.ctx_mutex);
   opt        = other.opt;
   userconfig = other.userconfig;
   keyblock   = other.keyblock;
   ctx_type   = other.ctx_type;
-  std::shared_lock lock(other.ctx_mutex);
-  ctx = other.ctx;
+  ctx        = other.ctx;
 }
 
 SSLCertContext &
 SSLCertContext::operator=(SSLCertContext const &other)
 {
   if (&other != this) {
+    std::scoped_lock lock(this->ctx_mutex, other.ctx_mutex);
     this->opt        = other.opt;
     this->userconfig = other.userconfig;
     this->keyblock   = other.keyblock;
     this->ctx_type   = other.ctx_type;
-    std::shared_lock lock(other.ctx_mutex);
-    this->ctx = other.ctx;
+    this->ctx        = other.ctx;
   }
   return *this;
 }
