@@ -42,7 +42,8 @@ server = Test.MakeOriginServer("server")
 
 # A wide pause window (well beyond the abort client's 0.4s handshake attempt)
 # so the abort reliably lands while the async job is still in flight.
-Test.PrepareTestPlugin(async_handshake, ts, '-delay-ms=2000')
+if os.path.isfile(async_handshake):
+    Test.PrepareTestPlugin(async_handshake, ts, '-delay-ms=2000')
 
 server.addResponse(
     "sessionlog.json", {
