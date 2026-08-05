@@ -15,7 +15,7 @@
 #
 #######################
 
-# This will download and extract proxy-verifier to git common directory and setup variables to point to it.
+# This will download and extract proxy-verifier to PV_DEST_DIR and setup variables to point to it.
 #
 # Required variables:
 #   PROXY_VERIFIER_VERSION
@@ -23,6 +23,7 @@
 #
 # Defines variables:
 #
+#   PV_DEST_DIR            Directory the archive is downloaded to and extracted in
 #   PROXY_VERIFIER_PATH Full path to the extracted proxy verifier for the build architecture
 #   PROXY_VERIFIER_CLIENT  Full path to client-verifier
 #   PROXY_VERIFIER_SERVER  Full path to server-verifier
@@ -35,22 +36,29 @@ if(NOT PROXY_VERIFIER_HASH)
   message(FATAL_ERROR "PROXY_VERIFIER_HASH Required")
 endif()
 
-# GIT_COMMON_DIR is set by the top-level CMakeLists.txt.
-if(NOT GIT_COMMON_DIR)
-  message(FATAL_ERROR "GIT_COMMON_DIR not set. This should be set by the top-level CMakeLists.txt")
+# Prefer the git common directory (set by the top-level CMakeLists.txt) so the download is shared by
+# every worktree and build directory of the same clone. It isn't always available -- a source tree
+# exported without .git, or a worktree whose common directory sits outside the paths visible to the
+# build, such as when the worktree alone is mapped into a container. Fall back to the build
+# directory, which always exists and is writable, rather than failing the configure.
+if(GIT_COMMON_DIR)
+  set(PV_DEST_DIR "${GIT_COMMON_DIR}")
+else()
+  set(PV_DEST_DIR "${CMAKE_BINARY_DIR}")
+  message(STATUS "GIT_COMMON_DIR not set, storing proxy-verifier in the build directory instead")
 endif()
 
 # Convert to absolute path (handles relative .git from regular non-worktree clones).
-get_filename_component(GIT_COMMON_DIR "${GIT_COMMON_DIR}" ABSOLUTE BASE_DIR "${CMAKE_SOURCE_DIR}")
+get_filename_component(PV_DEST_DIR "${PV_DEST_DIR}" ABSOLUTE BASE_DIR "${CMAKE_SOURCE_DIR}")
 
-# Download proxy-verifier to git common directory.
-set(PV_ARCHIVE ${GIT_COMMON_DIR}/proxy-verifier/proxy-verifier.tar.gz)
+# Download proxy-verifier to the destination directory.
+set(PV_ARCHIVE ${PV_DEST_DIR}/proxy-verifier/proxy-verifier.tar.gz)
 file(
   DOWNLOAD https://ci.trafficserver.apache.org/bintray/proxy-verifier-${PROXY_VERIFIER_VERSION}.tar.gz ${PV_ARCHIVE}
   EXPECTED_HASH ${PROXY_VERIFIER_HASH}
   SHOW_PROGRESS
 )
-file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE} DESTINATION ${GIT_COMMON_DIR})
+file(ARCHIVE_EXTRACT INPUT ${PV_ARCHIVE} DESTINATION ${PV_DEST_DIR})
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   if(CMAKE_HOST_SYSTEM_PROCESSOR STREQUAL "x86_64"
@@ -78,7 +86,7 @@ else()
   message(FATAL_ERROR "Host ${CMAKE_HOST_SYSTEM_NAME} doesnt support running proxy verifier")
 endif()
 
-set(PROXY_VERIFIER_PATH ${GIT_COMMON_DIR}/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})
+set(PROXY_VERIFIER_PATH ${PV_DEST_DIR}/proxy-verifier-${PROXY_VERIFIER_VERSION}/${PV_SUBDIR})
 set(PROXY_VERIFIER_CLIENT ${PROXY_VERIFIER_PATH}/verifier-client)
 set(PROXY_VERIFIER_SERVER ${PROXY_VERIFIER_PATH}/verifier-server)
 
