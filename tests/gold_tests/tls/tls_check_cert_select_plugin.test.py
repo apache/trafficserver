@@ -22,6 +22,13 @@ Test.Summary = '''
 Test ATS offering different certificates based on SNI. Load via plugin
 '''
 
+# The origin only has a response registered for a request with no Host header, so with
+# pristine_host_hdr every request 404s at the origin. A 404 therefore proves the exchange
+# happened. Match the response status line rather than a bare "404", which also matches the
+# ephemeral port number curl prints (a port such as 62404 made this test fail at random).
+# Covers both HTTP/1.1 ("HTTP/1.1 404 Not Found") and HTTP/2 ("HTTP/2 404").
+HTTP_404 = r"HTTP/[\d.]+ 404"
+
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server", ssl=True)
@@ -94,7 +101,7 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN=bar.com", "Cert should contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should make an exchange")
 
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
@@ -106,7 +113,7 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Cert should contain foo.com")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should make an exchange")
 
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
@@ -119,7 +126,7 @@ tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connec
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=random.server.com", "Cert should contain random.server.com")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should make an exchange")
 
 # No SNI match should match specific IP address, foo.com
 # SNI name and returned cert name will not match, so must use -k to avoid cert verification
@@ -133,7 +140,7 @@ tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Cert should contain foo.com")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=bar.com", "Cert should not contain bar.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
+tr2.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should make an exchange")
 
 # Copy in a new version of the bar.com cert.  Replace it with the version
 # signed by signer 1.  Wait at least a second to sure the file update time
@@ -162,7 +169,7 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN=bar.com", "Cert should contain bar.com")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
-tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should make an exchange")
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should make an exchange")
 
 tr = Test.AddTestRun("Test new version of bar cert with bad CA")
 tr.MakeCurlCommand(
@@ -174,4 +181,4 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(r"curl: \(60\) SSL
 # Older versions of curl do not print certificate subject details when
 # certificate verification fails.
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Cert should not contain foo.com")
-tr.Processes.Default.Streams.All += Testers.ExcludesExpression("404", "Should make an exchange")
+tr.Processes.Default.Streams.All += Testers.ExcludesExpression(HTTP_404, "Should make an exchange")
