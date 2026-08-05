@@ -1,0 +1,5 @@
+REMAP {
+    if inbound.url.url == "https://download.swift.org/" {
+        inbound.status = 301;
+    }
+}
