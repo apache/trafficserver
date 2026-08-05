@@ -88,6 +88,7 @@ AND           : '&&';
 OR            : '||';
 TILDE         : '~';
 NOT_TILDE     : '!~';
+BANG          : '!';
 COLON         : ':';
 COMMA         : ',';
 SEMICOLON     : ';';
@@ -217,7 +218,7 @@ term
     ;
 
 factor
-    : '!' factor
+    : BANG factor
     | LPAREN expression RPAREN
     | functionCall
     | comparison
@@ -230,9 +231,9 @@ comparison
     : comparable (EQUALS | NEQ | GT | LT) value modifier?
     | comparable (TILDE | NOT_TILDE) regex modifier?
     | comparable IN set modifier?
-    | comparable '!' IN set modifier?
+    | comparable BANG IN set modifier?
     | comparable IN iprange
-    | comparable '!' IN iprange
+    | comparable BANG IN iprange
     ;
 
 modifier
