@@ -37,6 +37,7 @@
 #include "config/ssl_multicert.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
+#include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "records/RecHttp.h"
 #include "tscore/MatcherUtils.h"
@@ -205,6 +206,30 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return preverify_ok;
 }
 
+static std::string
+ssl_client_offered_signature_algorithms(TLSSNISupport::ClientHello &client_hello)
+{
+  uint8_t const *extension = nullptr;
+  size_t         length    = 0;
+
+  if (client_hello.getExtension(TLSEXT_TYPE_signature_algorithms, &extension, &length) != 1 || length < 2) {
+    return {};
+  }
+
+  size_t const algorithms_length = static_cast<size_t>(extension[0]) << 8 | extension[1];
+  if (algorithms_length != length - 2 || algorithms_length % 2 != 0) {
+    return {};
+  }
+
+  std::vector<uint16_t> algorithms;
+  algorithms.reserve(algorithms_length / 2);
+  for (size_t offset = 2; offset < length; offset += 2) {
+    algorithms.push_back(static_cast<uint16_t>(extension[offset]) << 8 | extension[offset + 1]);
+  }
+
+  return SSLFormatSignatureAlgorithms(algorithms);
+}
+
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
@@ -218,6 +243,10 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
   SSL                       *s  = client_hello->ssl;
   TLSSNISupport::ClientHello ch = {client_hello};
 #endif
+
+  if (auto *tbs = TLSBasicSupport::getInstance(s); tbs != nullptr) {
+    tbs->capture_tls_offered_signature_algorithms(ssl_client_offered_signature_algorithms(ch));
+  }
 
   TLSSNISupport *snis = TLSSNISupport::getInstance(s);
   if (snis) {
@@ -260,6 +289,10 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   SSLNetVConnection    *sslnetvc = dynamic_cast<SSLNetVConnection *>(tcss);
   bool                  reenabled;
   int                   retval = 1;
+
+  if (auto *tbs = TLSBasicSupport::getInstance(ssl); tbs != nullptr) {
+    tbs->capture_tls_offered_signature_algorithms();
+  }
 
   // If we are in tunnel mode, don't select a cert.  Pause!
   if (sslnetvc) {
@@ -996,6 +1029,8 @@ static void
 ssl_callback_info(const SSL *ssl, int where, int ret)
 {
   Dbg(dbg_ctl_ssl_load, "ssl_callback_info ssl: %p, where: %d, ret: %d, State: %s", ssl, where, ret, SSL_state_string_long(ssl));
+
+  SSLHandshakeInfoCallback(ssl, where, ret);
 
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
 
@@ -2512,6 +2547,183 @@ SSLGetGroupName([[maybe_unused]] SSL *ssl)
 #else
   return "";
 #endif // HAVE_SSL_GET0_GROUP_NAME
+}
+
+namespace
+{
+bool
+is_grease_signature_algorithm(uint16_t algorithm)
+{
+  return (algorithm & 0x0f0f) == 0x0a0a;
+}
+
+#if HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
+bool
+signature_algorithm_matches_private_key(SSL *ssl, uint16_t algorithm)
+{
+  EVP_PKEY *private_key = SSL_get_privatekey(ssl);
+
+  if (private_key == nullptr) {
+    return false;
+  }
+
+  int const key_type = EVP_PKEY_base_id(private_key);
+
+  switch (algorithm) {
+  case 0x0804: // rsa_pss_rsae_sha256
+  case 0x0805: // rsa_pss_rsae_sha384
+  case 0x0806: // rsa_pss_rsae_sha512
+    return key_type == EVP_PKEY_RSA;
+  case 0x0809: // rsa_pss_pss_sha256
+  case 0x080a: // rsa_pss_pss_sha384
+  case 0x080b: // rsa_pss_pss_sha512
+    return key_type == EVP_PKEY_RSA_PSS;
+  default:
+    break;
+  }
+
+#if defined(TLS1_3_VERSION)
+  if (SSL_version(ssl) >= TLS1_3_VERSION && key_type == EVP_PKEY_EC) {
+    int expected_curve = NID_undef;
+
+    switch (algorithm) {
+    case 0x0403: // ecdsa_secp256r1_sha256
+      expected_curve = NID_X9_62_prime256v1;
+      break;
+    case 0x0503: // ecdsa_secp384r1_sha384
+      expected_curve = NID_secp384r1;
+      break;
+    case 0x0603: // ecdsa_secp521r1_sha512
+      expected_curve = NID_secp521r1;
+      break;
+    case 0x081a: // ecdsa_brainpoolP256r1tls13_sha256
+      expected_curve = NID_brainpoolP256r1;
+      break;
+    case 0x081b: // ecdsa_brainpoolP384r1tls13_sha384
+      expected_curve = NID_brainpoolP384r1;
+      break;
+    case 0x081c: // ecdsa_brainpoolP512r1tls13_sha512
+      expected_curve = NID_brainpoolP512r1;
+      break;
+    default:
+      break;
+    }
+
+    if (expected_curve != NID_undef) {
+      EC_KEY const *ec_key = EVP_PKEY_get0_EC_KEY(private_key);
+
+      if (ec_key != nullptr) {
+        EC_GROUP const *group = EC_KEY_get0_group(ec_key);
+        return group != nullptr && EC_GROUP_get_curve_name(group) == expected_curve;
+      }
+    }
+  }
+#endif
+
+  return true;
+}
+#endif
+} // namespace
+
+std::string
+SSLFormatSignatureAlgorithms(swoc::MemSpan<uint16_t const> algorithms)
+{
+  std::string result;
+
+  for (uint16_t const algorithm : algorithms) {
+    if (is_grease_signature_algorithm(algorithm)) {
+      continue;
+    }
+    if (!result.empty()) {
+      result.push_back('-');
+    }
+    result.append(std::to_string(algorithm));
+  }
+
+  return result;
+}
+
+std::string
+SSLGetOfferedSignatureAlgorithms([[maybe_unused]] SSL *ssl)
+{
+#if HAVE_SSL_GET0_PEER_VERIFY_ALGORITHMS
+  uint16_t const *algorithms = nullptr;
+  size_t const    count      = SSL_get0_peer_verify_algorithms(ssl, &algorithms);
+
+  return SSLFormatSignatureAlgorithms({algorithms, count});
+#elif HAVE_SSL_GET_SIGALGS
+  int const count = SSL_get_sigalgs(ssl, 0, nullptr, nullptr, nullptr, nullptr, nullptr);
+
+  if (count <= 0) {
+    return {};
+  }
+
+  std::vector<uint16_t> algorithms;
+  algorithms.reserve(count);
+  for (int index = 0; index < count; ++index) {
+    unsigned char signature = 0;
+    unsigned char hash      = 0;
+
+    if (SSL_get_sigalgs(ssl, index, nullptr, nullptr, nullptr, &signature, &hash) > 0) {
+      algorithms.push_back(static_cast<uint16_t>(hash) << 8 | signature);
+    }
+  }
+
+  return SSLFormatSignatureAlgorithms(algorithms);
+#else
+  return {};
+#endif
+}
+
+std::string
+SSLGetNegotiatedSignatureAlgorithm([[maybe_unused]] SSL *ssl)
+{
+#if HAVE_SSL_GET_SIGNATURE_ALGORITHM_USED
+  uint16_t const algorithm = SSL_get_signature_algorithm_used(ssl);
+
+  return algorithm == 0 ? "" : std::to_string(algorithm);
+#elif HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
+  int signature_type = NID_undef;
+  int hash           = NID_undef;
+
+  if (SSL_get_signature_type_nid(ssl, &signature_type) != 1 || SSL_get_signature_nid(ssl, &hash) != 1) {
+    return {};
+  }
+
+  int const count = SSL_get_shared_sigalgs(ssl, 0, nullptr, nullptr, nullptr, nullptr, nullptr);
+  for (int index = 0; index < count; ++index) {
+    int           shared_signature_type = NID_undef;
+    int           shared_hash           = NID_undef;
+    unsigned char signature             = 0;
+    unsigned char raw_hash              = 0;
+
+    if (SSL_get_shared_sigalgs(ssl, index, &shared_signature_type, &shared_hash, nullptr, &signature, &raw_hash) <= 0 ||
+        shared_signature_type != signature_type || shared_hash != hash) {
+      continue;
+    }
+
+    uint16_t const algorithm = static_cast<uint16_t>(raw_hash) << 8 | signature;
+    if (signature_algorithm_matches_private_key(ssl, algorithm)) {
+      return std::to_string(algorithm);
+    }
+  }
+
+  return {};
+#else
+  return {};
+#endif
+}
+
+void
+SSLHandshakeInfoCallback(const SSL *ssl, int where, int /* ret */)
+{
+  if ((where & SSL_CB_HANDSHAKE_DONE) == 0) {
+    return;
+  }
+
+  if (auto *tbs = TLSBasicSupport::getInstance(const_cast<SSL *>(ssl)); tbs != nullptr) {
+    tbs->capture_tls_negotiated_signature_algorithm();
+  }
 }
 
 SSL_SESSION *

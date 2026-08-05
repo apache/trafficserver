@@ -2234,6 +2234,18 @@ SSLNetVConnection::_get_tls_group() const
   }
 }
 
+std::string
+SSLNetVConnection::_get_tls_offered_signature_algorithms() const
+{
+  return SSLGetOfferedSignatureAlgorithms(ssl);
+}
+
+std::string
+SSLNetVConnection::_get_tls_negotiated_signature_algorithm() const
+{
+  return SSLGetNegotiatedSignatureAlgorithm(ssl);
+}
+
 int
 SSLNetVConnection::_verify_certificate(X509_STORE_CTX * /* ctx ATS_UNUSED */)
 {

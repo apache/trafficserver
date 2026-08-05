@@ -658,6 +658,20 @@ check_symbol_exists(SSL_CTX_get0_implemented_groups "openssl/ssl.h" HAVE_SSL_CTX
 check_symbol_exists(SSL_get_group_id "openssl/ssl.h" HAVE_SSL_GET_GROUP_ID)
 check_symbol_exists(SSL_get_group_name "openssl/ssl.h" HAVE_SSL_GET_GROUP_NAME)
 check_symbol_exists(SSL_group_to_name "openssl/ssl.h" HAVE_SSL_GROUP_TO_NAME)
+check_symbol_exists(SSL_get_sigalgs "openssl/ssl.h" HAVE_SSL_GET_SIGALGS)
+check_symbol_exists(SSL_get_shared_sigalgs "openssl/ssl.h" HAVE_SSL_GET_SHARED_SIGALGS)
+check_symbol_exists(SSL_get0_peer_verify_algorithms "openssl/ssl.h" HAVE_SSL_GET0_PEER_VERIFY_ALGORITHMS)
+check_symbol_exists(SSL_get_signature_algorithm_used "openssl/ssl.h" HAVE_SSL_GET_SIGNATURE_ALGORITHM_USED)
+check_cxx_source_compiles(
+  "#include <openssl/ssl.h>
+  int main() {
+    SSL *ssl = nullptr;
+    int digest = 0;
+    int type = 0;
+    return SSL_get_signature_nid(ssl, &digest) + SSL_get_signature_type_nid(ssl, &type);
+  }"
+  HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS
+)
 check_symbol_exists(SSL_set_max_early_data "openssl/ssl.h" HAVE_SSL_SET_MAX_EARLY_DATA)
 check_symbol_exists(SSL_read_early_data "openssl/ssl.h" HAVE_SSL_READ_EARLY_DATA)
 check_symbol_exists(SSL_write_early_data "openssl/ssl.h" HAVE_SSL_WRITE_EARLY_DATA)

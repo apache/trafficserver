@@ -1,0 +1,4 @@
+tls12-full TLSv1.2 1025 1025 0
+tls12-resumed TLSv1.2 1025 - 1
+tls13-full TLSv1.3 2052-1025 2052 0
+tls13-resumed TLSv1.3 2052-1025 - 1

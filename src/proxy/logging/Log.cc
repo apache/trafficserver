@@ -602,6 +602,16 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cqssg", field);
 
+  field = new LogField("client_offered_signature_algorithms", "cqssig", LogField::Type::STRING,
+                       &LogAccess::marshal_client_offered_signature_algorithms, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssig", field);
+
+  field = new LogField("client_negotiated_signature_algorithm", "cqssin", LogField::Type::STRING,
+                       &LogAccess::marshal_client_negotiated_signature_algorithm, &LogAccess::unmarshal_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("cqssin", field);
+
   field = new LogField("client_sec_alpn", "cqssa", LogField::Type::STRING, &LogAccess::marshal_client_security_alpn,
                        &LogAccess::unmarshal_str);
   global_field_list.add(field, false);
