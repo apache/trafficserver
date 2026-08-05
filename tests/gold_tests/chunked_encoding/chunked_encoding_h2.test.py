@@ -16,6 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+import sys
+
 Test.Summary = '''
 Test interaction of H2 and chunked encoding
 '''
@@ -36,12 +39,13 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
 
+origin_server = os.path.join(Test.TestDirectory, "chunked_encoding_h2_server.py")
 delay_server = Test.Processes.Process(
-    "delay-server", "bash -c '" + Test.TestDirectory + "/delay-server.sh {} outserver1'".format(Test.Variables.upstream_port))
+    "delay-server", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port} outserver1 delayed-chunked')
 server2 = Test.Processes.Process(
-    "server2", "bash -c '" + Test.TestDirectory + "/server2.sh {} outserver2'".format(Test.Variables.upstream_port2))
+    "server2", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port2} outserver2 content-length')
 server3 = Test.Processes.Process(
-    "server3", "bash -c '" + Test.TestDirectory + "/server3.sh {} outserver3'".format(Test.Variables.upstream_port3))
+    "server3", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port3} outserver3 chunked')
 
 ts.Disk.records_config.update(
     {
@@ -58,9 +62,8 @@ ts.Disk.remap_config.AddLine('map /post-chunked http://127.0.0.1:{0}'.format(Tes
 
 ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
 
-# Using netcat as a cheap origin server in case 1 so we can insert a delay in sending back the response.
-# Replaced microserver for cases 2 and 3 as well because I was getting python exceptions when running
-# microserver if chunked encoding headers were specified for the request headers
+# Use a raw origin server in case 1 so the final chunk can be delayed. Use it
+# for cases 2 and 3 as well because microserver rejects chunked request headers.
 
 # H2 GET request
 # chunked response without content-length
@@ -70,7 +73,7 @@ tr = Test.AddTestRun()
 tr.Processes.Default.Command = 'nghttp -vv https://127.0.0.1:{}/delay-chunked-response'.format(ts.Variables.ssl_port)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
-tr.Processes.Default.StartBefore(delay_server)
+tr.Processes.Default.StartBefore(delay_server, ready=When.PortOpen(Test.Variables.upstream_port))
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("RST_STREAM", "Delayed chunk close should not cause reset")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length", "Should return chunked")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(":status: 200", "Should get successful response")
@@ -81,7 +84,7 @@ tr.StillRunningAfter = ts
 # HTTP2 POST: www.example.com Host, chunked body
 server2_out = Test.Disk.File("outserver2")
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(server2)
+tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(Test.Variables.upstream_port2))
 tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
         ts.Variables.ssl_port),
@@ -97,7 +100,7 @@ server2_out = Testers.ContainsExpression("Transfer-Encoding: chunked", "Request 
 # HTTP2 POST: chunked post body and chunked response
 server3_out = Test.Disk.File("outserver3")
 tr = Test.AddTestRun()
-tr.Processes.Default.StartBefore(server3)
+tr.Processes.Default.StartBefore(server3, ready=When.PortOpen(Test.Variables.upstream_port3))
 tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
         ts.Variables.ssl_port),
