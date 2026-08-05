@@ -324,6 +324,20 @@ class TestValidatorChainUnits:
         assert Validator.quote_if_needed("simple") == "simple"
         assert Validator.quote_if_needed("has space") == '"has space"'
 
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            ('"X-Foo"', "X-Foo"),
+            ('"X Foo"', '"X Foo"'),
+            ("X-Foo", "X-Foo"),
+            ('""', '""'),
+            ('"@internal"', '"@internal"'),
+            ('"1foo"', '"1foo"'),
+        ],
+    )
+    def test_unquote_if_ident(self, value, expected):
+        assert Validator.unquote_if_ident(value) == expected
+
 
 class TestPlainTextFormatterParity:
     """The plain formatter must preserve current CLI output byte-for-byte."""
