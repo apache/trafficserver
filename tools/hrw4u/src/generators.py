@@ -72,8 +72,8 @@ class TableGenerator:
                 },
             "URL_CONTEXT_MAP":
                 {
-                    SectionType.REMAP: "inbound.url.",
-                    frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}): "outbound.url."
+                    frozenset({SectionType.REMAP, SectionType.PRE_REMAP, SectionType.READ_REQUEST,
+                               SectionType.SEND_REQUEST}): "outbound.url."
                 }
         }
 

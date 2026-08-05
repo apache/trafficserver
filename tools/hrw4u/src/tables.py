@@ -47,7 +47,6 @@ OPERATOR_MAP: dict[str, MapParams] = {
     "inbound.resp.": MapParams(target=HeaderOperations.OPERATIONS, add=True, validate=Validator.http_header_name(), sections={SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "inbound.status.reason": MapParams(target="set-status-reason", validate=Validator.quoted_or_simple(), sections=HTTP_SECTIONS),
     "inbound.status": MapParams(target="set-status", validate=Validator.range(0, 999), sections=HTTP_SECTIONS),
-    "inbound.url.": MapParams(target=HeaderOperations.DESTINATION_OPERATIONS, upper=True, validate=Validator.suffix_group(SuffixGroup.URL_FIELDS), sections=HTTP_SECTIONS),
     "outbound.cookie.": MapParams(target=HeaderOperations.COOKIE_OPERATIONS, validate=Validator.http_token(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "outbound.req.": MapParams(target=HeaderOperations.OPERATIONS, add=True, validate=Validator.http_header_name(), sections={SectionType.SEND_REQUEST, SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
     "outbound.resp.": MapParams(target=HeaderOperations.OPERATIONS, add=True, validate=Validator.http_header_name(), sections={SectionType.READ_RESPONSE, SectionType.SEND_RESPONSE}),
@@ -156,7 +155,7 @@ CONTEXT_TYPE_MAP: dict[str, str | tuple[str, str]] = {
     "header_condition": ("HEADER_CONTEXT_MAP", "inbound.resp."),
     "header_ops": ("HEADER_CONTEXT_MAP", "inbound.resp."),
     "cookie_ops": "inbound.cookie.",
-    "destination_ops": ("URL_CONTEXT_MAP", "inbound.url.")
+    "destination_ops": ("URL_CONTEXT_MAP", "outbound.url.")
 }
 
 # Operator command mappings for reverse resolution

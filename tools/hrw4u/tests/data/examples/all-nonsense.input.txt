@@ -60,12 +60,12 @@ PRE_REMAP {
 
 REMAP {
   if (from.url.host == "old.example.com" with NOCASE) {
-    inbound.url.host = "new.example.com";
+    outbound.url.host = "new.example.com";
     keep_query("id,utm_campaign");
   }
 
   if (to.url.path ~ /(?i)^\/legacy\//) {
-    inbound.url.path = "/v2/";
+    outbound.url.path = "/v2/";
     remove_query("debug,trace");
   }
 
