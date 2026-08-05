@@ -3836,12 +3836,6 @@ HttpTransact::handle_response_from_parent(State *s)
   TxnDbg(dbg_ctl_http_trans, "(hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
-  // if this parent was retried from a markdown, then
-  // notify that the retry has completed.
-  if (s->parent_result.retry) {
-    markParentUp(s);
-  }
-
   simple_or_unavailable_server_retry(s);
 
   s->parent_info.state = s->current.state;

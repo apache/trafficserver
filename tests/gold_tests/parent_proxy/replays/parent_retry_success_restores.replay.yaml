@@ -1,0 +1,177 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A parent that recovers must be restored to the pool by a successful retry.
+#
+# This is the positive counterpart to parent_retry_failure_stays_down.replay.yaml,
+# which covers the case where the retry probe also fails. Together they pin both
+# outcomes of the retry path: restore only on success, stay down on failure.
+#
+# The parent stops being silent partway through the replay, so the retry probe
+# sent after retry_time elapses actually succeeds. markParentUp() must then run
+# from the CONNECTION_ALIVE branch of handle_response_from_parent, clearing the
+# failure count and returning the parent to the pool.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'A successful retry restores a parent that had been marked down'
+
+  server:
+    name: 'server-recovered'
+    # The first transaction is abandoned by ATS mid-flight (the response is
+    # still being held when the timeout fires), so the server may report an
+    # incomplete transaction cycle.
+    return_code: [0, 1]
+
+  client:
+    name: 'client-recovered'
+    process_config:
+      # The first request waits out a 2s ATS timeout and the retry probe waits a
+      # further 3s for retry_time, both well past the 5s default.
+      other_args: '--poll-timeout 30000'
+
+  # Resolve every hostname to loopback, as in the failing-retry scenario.
+  dns:
+    name: 'dns-recovered'
+
+  ats:
+    name: 'ts-recovered'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'parent_select|http_trans'
+      # See parent_retry_failure_stays_down.replay.yaml for why
+      # no_dns_just_forward_to_parent must stay unset and why this must be 0.
+      proxy.config.http.uncacheable_requests_bypass_parent: 0
+      proxy.config.http.parent_proxy.enable_parent_timeout_markdowns: 1
+      proxy.config.http.parent_proxy.fail_threshold: 1
+      proxy.config.http.parent_proxy.retry_time: 2
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+      proxy.config.http.parent_proxy.self_detect: 0
+      proxy.config.http.transaction_no_activity_timeout_out: 2
+      proxy.config.url_remap.remap_required: 0
+
+    parent_config:
+      - 'dest_domain=. parent="127.0.0.1:{SERVER_HTTP_PORT}" go_direct=false parent_is_proxy=true'
+
+    log_validation:
+      diags_log:
+        contains:
+          # Note() from ParentSelectionStrategy::markParentUp, emitted only when
+          # a retry succeeds against a parent with a non-zero failure count.
+          - expression: 'http parent proxy 127\.0\.0\.1:\d+ restored with request'
+            description: 'A successful retry restores the parent'
+        excludes:
+          # The retry succeeds, so it must never be re-marked down.
+          - expression: 'Parent retry marked as down'
+            description: 'A successful retry must not re-mark the parent down'
+
+sessions:
+- transactions:
+  # 1: the parent accepts but never responds. ATS times out (504) and marks it
+  # down, since fail_threshold is 1.
+  - all: { headers: { fields: [[ uuid, degrade1 ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /degrade1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 504
+
+  # 2: still inside retry_time, so the parent is skipped at selection and ATS
+  # returns 502 without touching the leg.
+  - all: { headers: { fields: [[ uuid, downcheck ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /downcheck
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # 3: the retry probe. The client delay pushes it past retry_time so the parent
+  # is selected as a retry candidate, and this time the parent responds promptly
+  # (no server delay). The 200 proves the retry succeeded and the parent was
+  # restored from the CONNECTION_ALIVE branch.
+  - all: { headers: { fields: [[ uuid, retryprobe ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /retryprobe
+      delay: 3s
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200
+
+  # 4: the parent is available again, so this request goes straight through
+  # without waiting for another retry_time window.
+  - all: { headers: { fields: [[ uuid, aftercheck ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /aftercheck
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 200
