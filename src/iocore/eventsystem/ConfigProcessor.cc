@@ -81,9 +81,9 @@ destroy_config_on_task_thread(unsigned int id, ConfigInfo *info)
 {
   EThread *ethread = this_ethread();
 
-  // There is nowhere to send this unless the task threads are up. Before they are registered ET_TASK
-  // is ET_CALL, and between registration and spawning the group is still empty.
-  if (ethread == nullptr || ethread->is_event_type(ET_TASK) || eventProcessor.thread_group[ET_TASK]._count == 0) {
+  // ET_TASK is ET_CALL until the task threads are registered, so before that point an ET_NET caller
+  // destroys the config on its own thread.
+  if (ethread == nullptr || ethread->is_event_type(ET_TASK)) {
     return false;
   }
 
