@@ -172,6 +172,13 @@ class InverseSymbolResolver(SymbolResolverBase):
             return result, False
         return None, False
 
+    def _pad_cidr_args(self, parts: list[str]) -> list[str]:
+        # HRW4U cidr() requires both ipv4 and ipv6 bit counts; HRW %{CIDR:N} leaves
+        # the other at its implicit default (v4=24, v6=48; see header_rewrite docs).
+        v4 = parts[0].strip() if len(parts) >= 1 and parts[0].strip() else "24"
+        v6 = parts[1].strip() if len(parts) >= 2 and parts[1].strip() else "48"
+        return [Validator.quote_if_needed(v4), Validator.quote_if_needed(v6)]
+
     def _handle_prefix_conditions(self, tag: str, payload: str, section: SectionType | None) -> tuple[str, bool] | None:
         for tag_match, lhs_prefix, needs_upper in self._rev_conditions_prefix:
             if tag_match == tag:
@@ -444,6 +451,10 @@ class InverseSymbolResolver(SymbolResolverBase):
 
         if tag in self._rev_functions:
             fn = self._rev_functions[tag]
+            if tag == "CIDR":
+                parts = [p.strip() for p in payload.split(",")] if payload is not None else []
+                args = self._pad_cidr_args(parts)
+                return f"{fn}({', '.join(args)})", True
             if payload is not None:
                 parts = [p.strip() for p in payload.split(",")]
                 args = [Validator.quote_if_needed(p) for p in parts if p != ""]
