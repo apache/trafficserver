@@ -206,12 +206,12 @@ do_check_string(ASN1_STRING *a, int cmp_type, equal_fn equal, const unsigned cha
 {
   bool retval = false;
 
-  if (!a->data || !a->length || cmp_type != a->type) {
+  if (!ASN1_STRING_get0_data(a) || !ASN1_STRING_length(a) || cmp_type != ASN1_STRING_type(a)) {
     return false;
   }
-  retval = equal(a->data, a->length, b, blen);
+  retval = equal(ASN1_STRING_get0_data(a), ASN1_STRING_length(a), b, blen);
   if (retval && peername) {
-    *peername = ats_strndup((char *)a->data, a->length);
+    *peername = ats_strndup(reinterpret_cast<const char *>(ASN1_STRING_get0_data(a)), ASN1_STRING_length(a));
   }
   return retval;
 }
@@ -220,7 +220,6 @@ bool
 validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peername)
 {
   GENERAL_NAMES *gens = nullptr;
-  X509_NAME     *name = nullptr;
   int            i;
   int            alt_type;
   bool           retval = false;
@@ -269,13 +268,13 @@ validate_hostname(X509 *x, std::string_view hostname, bool is_ip, char **peernam
     }
   }
   // No SAN match -- check the subject
-  i    = -1;
-  name = X509_get_subject_name(x);
+  i          = -1;
+  auto *name = X509_get_subject_name(x);
 
   while ((i = X509_NAME_get_index_by_NID(name, NID_commonName, i)) >= 0) {
-    ASN1_STRING   *str;
-    int            astrlen;
-    unsigned char *astr;
+    const ASN1_STRING *str;
+    int                astrlen;
+    unsigned char     *astr;
     str = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(name, i));
     // Convert to UTF-8
     astrlen = ASN1_STRING_to_UTF8(&astr, str);

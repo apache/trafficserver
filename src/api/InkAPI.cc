@@ -8319,9 +8319,9 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     }
 
     // Extract common name
-    int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
-    X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
-    ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    const int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
+    const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     char *common_name_str = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
     if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
       // Embedded null char

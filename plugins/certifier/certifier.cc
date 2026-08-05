@@ -88,10 +88,11 @@ template <> struct default_delete<SSL_CTX> {
 } // namespace std
 
 /// Name aliases for unique pts to openSSL objects
-using scoped_X509     = std::unique_ptr<X509>;
-using scoped_X509_REQ = std::unique_ptr<X509_REQ>;
-using scoped_EVP_PKEY = std::unique_ptr<EVP_PKEY>;
-using scoped_SSL_CTX  = std::unique_ptr<SSL_CTX>;
+using scoped_X509      = std::unique_ptr<X509>;
+using scoped_X509_REQ  = std::unique_ptr<X509_REQ>;
+using scoped_EVP_PKEY  = std::unique_ptr<EVP_PKEY>;
+using scoped_SSL_CTX   = std::unique_ptr<SSL_CTX>;
+using scoped_X509_NAME = std::unique_ptr<X509_NAME, decltype(&X509_NAME_free)>;
 
 class SslLRUList
 {
@@ -401,10 +402,18 @@ mkcrt(const std::string &commonName, int serial)
   X509_gmtime_adj(X509_get_notAfter(cert.get()), static_cast<long>(3650) * 24 * 3600);
 
   // Get handle to subject name
-  X509_NAME *n = X509_get_subject_name(cert.get());
+  scoped_X509_NAME n{X509_NAME_dup(X509_get_subject_name(cert.get())), X509_NAME_free};
+  if (n == nullptr) {
+    TSError("[%s] %s: failed to duplicate certificate subject", PLUGIN_NAME, __func__);
+    return nullptr;
+  }
   // Set common name field
-  if (X509_NAME_add_entry_by_txt(n, "CN", MBSTRING_ASC, (unsigned char *)commonName.c_str(), -1, -1, 0) != 1) {
+  if (X509_NAME_add_entry_by_txt(n.get(), "CN", MBSTRING_ASC, (unsigned char *)commonName.c_str(), -1, -1, 0) != 1) {
     TSError("[%s] %s: failed to add certificate subject CN", PLUGIN_NAME, __func__);
+    return nullptr;
+  }
+  if (X509_set_subject_name(cert.get(), n.get()) != 1) {
+    TSError("[%s] %s: failed to set certificate subject", PLUGIN_NAME, __func__);
     return nullptr;
   }
 
