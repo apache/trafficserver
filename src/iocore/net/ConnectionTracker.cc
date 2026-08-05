@@ -26,6 +26,8 @@
 #include "records/RecCore.h"
 #include "swoc/IPAddr.h"
 
+#include <algorithm>
+
 using namespace std::literals;
 
 ConnectionTracker::TableSingleton ConnectionTracker::_inbound_table;
@@ -156,7 +158,9 @@ Config_Update_Conntrack_Metric_Enabled(const char * /* name ATS_UNUSED */, RecDa
   auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
 
   if (RECD_INT == dtype) {
-    config->metric_enabled = data.rec_int;
+    auto level             = std::clamp(static_cast<int>(data.rec_int), static_cast<int>(ConnectionTracker::METRIC_LEVEL_NONE),
+                                        static_cast<int>(ConnectionTracker::METRIC_LEVEL_GROUP));
+    config->metric_enabled = static_cast<ConnectionTracker::MetricLevel>(level);
     return true;
   }
   return false;
@@ -440,11 +444,40 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
 {
   Metrics::Gauge::increment(net_rsb.connection_tracker_table_size);
   // only add metrics for server connections
-  if (_global_config->metric_enabled && direction == DirectionType::OUTBOUND) {
+  if (_global_config->metric_enabled != METRIC_LEVEL_NONE && direction == DirectionType::OUTBOUND) {
     std::string _metric_name = metric_name(key, fqdn, _global_config->metric_prefix);
-    _count_metric            = Metrics::Gauge::createPtr("proxy.process.http.per_server.current_connection.", _metric_name);
-    _count_total_metric      = Metrics::Counter::createPtr("proxy.process.http.per_server.total_connection.", _metric_name);
-    _blocked_metric          = Metrics::Counter::createPtr("proxy.process.http.per_server.blocked_connection.", _metric_name);
+    // Per group metrics always live in the hidden store. metric_enabled controls what is published
+    // from them (see MetricLevel), not whether they exist.
+    _count_metric       = Metrics::Gauge::createHiddenPtr("proxy.process.http.per_server.current_connection.", _metric_name);
+    _count_total_metric = Metrics::Counter::createHiddenPtr("proxy.process.http.per_server.total_connection.", _metric_name);
+    _blocked_metric     = Metrics::Counter::createHiddenPtr("proxy.process.http.per_server.blocked_connection.", _metric_name);
+
+    // Only MATCH_BOTH groups have siblings sharing a hostname to aggregate across.
+    std::string _host_metric_name = host_metric_name(key, fqdn, _global_config->metric_prefix);
+    if (!_host_metric_name.empty()) {
+      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _host_metric_name,
+                                   Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _host_metric_name,
+                                   Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source("proxy.process.http.per_server.blocked_connection." + _host_metric_name,
+                                   Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+      // The largest current count among this hostname's groups, sampled. Deliberately taken over
+      // the instantaneous gauge rather than each group's all time peak, so the value falls again
+      // and a maximum over time can be computed by whatever scrapes it.
+      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection_max." + _host_metric_name,
+                                   Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
+    }
+
+    if (_global_config->metric_enabled >= METRIC_LEVEL_GROUP) {
+      // Mirror the per group metrics into the published store under their own name. A single
+      // source SUM is an identity: the published value always equals the hidden source.
+      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _metric_name, Metrics::MetricType::GAUGE,
+                                   _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _metric_name, Metrics::MetricType::COUNTER,
+                                   _count_total_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source("proxy.process.http.per_server.blocked_connection." + _metric_name, Metrics::MetricType::COUNTER,
+                                   _blocked_metric, Metrics::Derived::Op::SUM);
+    }
 
     if (dbg_ctl.on()) {
       swoc::LocalBufferWriter<256> w;
