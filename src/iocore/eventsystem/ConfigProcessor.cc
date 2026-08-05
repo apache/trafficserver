@@ -56,7 +56,7 @@ destroy_config(unsigned int id, ConfigInfo *info)
 class ConfigInfoDestroyer : public Continuation
 {
 public:
-  ConfigInfoDestroyer(unsigned int id, ConfigInfo *info) : Continuation(new_ProxyMutex()), m_id(id), m_info(info)
+  ConfigInfoDestroyer(unsigned int id, ConfigInfo *info) : Continuation(nullptr), m_id(id), m_info(info)
   {
     SET_HANDLER(&ConfigInfoDestroyer::handle_event);
   }
