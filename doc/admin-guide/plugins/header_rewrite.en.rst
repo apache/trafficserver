@@ -1181,29 +1181,67 @@ set-body
 ~~~~~~~~
 ::
 
-  set-body <text>
+  set-body <text> [<content-type>]
 
-Sets the body to ``<text>``. Can also be used to delete a body with ``""``. This is only useful when overriding the origin status, i.e.
-intercepting/pre-empting a request so that you can override the body from the body-factory with your own.
+Sets the body to ``<text>``. If ``<content-type>`` is supplied, it is used for
+the response instead of the default ``text/html``. Can also be used to delete
+a body with ``""``. This is only useful when overriding the origin status,
+i.e. intercepting/pre-empting a request so that you can override the body from
+the body-factory with your own.
+
+Quoted values support escaped quotes and the ``\n``, ``\r``, and ``\t``
+control characters. For example, a JSON error response can be configured as::
+
+   cond %{REMAP_PSEUDO_HOOK}
+      set-status 400
+      set-body "{\"error\": \"bad request\"}\n" "application/problem+json"
+
+set-body-from-file
+~~~~~~~~~~~~~~~~~~
+::
+
+  set-body-from-file <path> [<content-type>]
+
+Loads the file at ``<path>`` when the rule configuration is loaded and uses
+its exact contents as the response body. Relative paths are resolved from the
+directory containing the rule file. If ``<content-type>`` is omitted, the
+default ``text/html`` is used. Reload the header rewrite configuration after
+changing the body file.
+
+For example::
+
+   cond %{REMAP_PSEUDO_HOOK}
+      set-status 403
+      set-body-from-file errors/forbidden.json "application/json"
 
 set-body-from
 ~~~~~~~~~~~~~
 ::
 
-  set-body-from <URL>
+  set-body-from <URL> [<content-type>]
 
 Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error response
 and set the body with the result. Triggering this rule on an OK transaction will
 send a 500 status code to the client with the desired response. If this is triggered
 on any error status code, that original status code will be sent to the client.
+By default, the fetched response's ``Content-Type`` is also used. The optional
+``<content-type>`` overrides that value.
 
 .. note::
-    This config should only be set using READ_RESPONSE_HDR_HOOK
+    This operator is supported only with ``READ_RESPONSE_HDR_HOOK`` because
+    its fetch suspends an active transaction. To generate a literal response
+    at remap time, use ``set-body`` instead.
 
 An example config would look like::
 
    cond %{READ_RESPONSE_HDR_HOOK}
       set-body-from http://www.example.com/second
+
+To create a JSON error during remap without contacting another endpoint::
+
+   cond %{REMAP_PSEUDO_HOOK}
+      set-status 400
+      set-body "{\"error\": \"bad request\"}\n" "application/problem+json"
 
 Where ``http://www.example.com/second`` is the destination to retrieve the custom response from.
 This can be enabled per-mapping or globally.

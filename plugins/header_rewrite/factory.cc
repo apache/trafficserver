@@ -73,6 +73,8 @@ operator_factory(const std::string &op)
     o = new OperatorSetDebug();
   } else if (op == "set-body") {
     o = new OperatorSetBody();
+  } else if (op == "set-body-from-file") {
+    o = new OperatorSetBodyFromFile();
   } else if (op == "set-http-cntl") {
     o = new OperatorSetHttpCntl();
   } else if (op == "set-plugin-cntl") {
