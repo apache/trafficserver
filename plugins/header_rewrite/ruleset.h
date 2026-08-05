@@ -49,7 +49,7 @@ public:
   Condition  *make_condition(Parser &p, const char *filename, int lineno);
   ResourceIDs get_all_resource_ids() const;
   bool        add_operator(Parser &p, const char *filename, int lineno);
-  bool        add_operator(Operator *op);
+  bool        add_operator(std::unique_ptr<Operator> op);
 
   ConditionGroup *
   get_group()
