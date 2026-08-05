@@ -667,8 +667,13 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
                   /* A replacement that collapses to empty (e.g. every referenced group was optional and
                    * absent) would otherwise be scheduled with a zero-length path, which BgFetch skips --
                    * leaving the original request path in place and prefetching the pristine URL itself.
-                   * Stop rather than issue that self-prefetch. */
-                  PrefetchError("prefetch pattern produced an empty path; check the fetch-path-pattern replacement");
+                   * Stop rather than issue that self-prefetch. Report once per instance; whether the
+                   * replacement collapses depends on the request, so this recurs per transaction. */
+                  if (config.shouldReportEmptyPath()) {
+                    PrefetchError("prefetch pattern produced an empty path; check the fetch-path-pattern replacement");
+                  } else {
+                    PrefetchDebug("prefetch pattern produced an empty path");
+                  }
                   break;
                 }
                 PrefetchDebug("replaced: %s", expandedPath.c_str());

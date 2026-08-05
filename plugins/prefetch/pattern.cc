@@ -189,13 +189,14 @@ Pattern::replace(const String &subject, String &result)
      * the group may still not have participated in *this* match (e.g. a trailing optional group such as
      * "(\?.*)?" when the subject has no query string).  pcre2_match() returns one past the highest
      * participating group, so substitute an empty string for a group at or beyond that -- the documented
-     * PCRE2 semantics for an unmatched group -- rather than failing the whole replacement. */
-    std::string_view dst = (replIndex < matchCount) ? matches[replIndex] : std::string_view{};
+     * PCRE2 semantics for an unmatched group -- rather than failing the whole replacement.  Use ""
+     * rather than a default-constructed view so data() is never null, which "%.*s" requires. */
+    std::string_view dst = (replIndex < matchCount) ? matches[replIndex] : std::string_view{""};
 
     PrefetchDebug("replacing '$%d' with '%.*s'", replIndex, static_cast<int>(dst.length()), dst.data());
 
     result.append(_replacement, previous, _tokenOffset[i] - previous);
-    result.append(dst.data(), dst.length());
+    result.append(dst);
 
     previous = _tokenOffset[i] + 2; /* 2 is the size of $0 or $1 or $2, ... or $9 */
   }

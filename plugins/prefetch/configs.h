@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <string>
 
 #include "common.h"
@@ -180,6 +181,20 @@ public:
     return _nextPaths;
   }
 
+  /**
+   * @brief Whether an expanded path that collapsed to empty should be reported.
+   *
+   * Whether the replacement collapses depends on the request, so the condition recurs per
+   * transaction for as long as the pattern stays misconfigured. Report it once per remap instance
+   * so a bad pattern is visible without flooding the error log. A config reload builds a new
+   * instance and reports again.
+   */
+  bool
+  shouldReportEmptyPath()
+  {
+    return !_reportedEmptyPath.exchange(true, std::memory_order_relaxed);
+  }
+
   void
   setLogName(const char *optarg)
   {
@@ -226,4 +241,6 @@ private:
   bool         _exactMatch    = false;
   bool         _cmcd_nor      = false;
   MultiPattern _nextPaths;
+
+  std::atomic<bool> _reportedEmptyPath{false}; /* see shouldReportEmptyPath() */
 };
