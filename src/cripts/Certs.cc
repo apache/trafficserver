@@ -54,8 +54,8 @@ CertBase::Signature::_load() const
   if (!_ready && _owner->_x509) {
     const ASN1_BIT_STRING *sig;
     X509_get0_signature(&sig, nullptr, _owner->_x509);
-    const char *ptr = reinterpret_cast<const char *>(sig->data);
-    const char *end = ptr + sig->length;
+    const char *ptr = reinterpret_cast<const char *>(ASN1_STRING_get0_data(sig));
+    const char *end = ptr + ASN1_STRING_length(sig);
 
     super_type::_load();
     for (; ptr < end; ++ptr) {
@@ -78,7 +78,7 @@ CertBase::X509Value::_update_value() const
 }
 
 void
-CertBase::X509Value::_load_name(X509_NAME *(*getter)(const X509 *)) const
+CertBase::X509Value::_load_name(NameGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto *name = getter(_owner->_x509);
@@ -95,7 +95,7 @@ CertBase::X509Value::_load_name(X509_NAME *(*getter)(const X509 *)) const
 }
 
 void
-CertBase::X509Value::_load_integer(ASN1_INTEGER *(*getter)(X509 *)) const
+CertBase::X509Value::_load_integer(IntegerGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto *value = getter(_owner->_x509);
@@ -107,7 +107,7 @@ CertBase::X509Value::_load_integer(ASN1_INTEGER *(*getter)(X509 *)) const
 }
 
 void
-CertBase::X509Value::_load_long(long (*getter)(const X509 *)) const
+CertBase::X509Value::_load_long(LongGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto value = getter(_owner->_x509);
@@ -119,7 +119,7 @@ CertBase::X509Value::_load_long(long (*getter)(const X509 *)) const
 }
 
 void
-CertBase::X509Value::_load_time(ASN1_TIME *(*getter)(const X509 *)) const
+CertBase::X509Value::_load_time(TimeGetter getter) const
 {
   if (!_ready && _owner->_x509) {
     auto *time = getter(_owner->_x509);
@@ -153,8 +153,8 @@ namespace
   _write_ip_address(const ASN1_OCTET_STRING *ip, BIO *_bio)
   {
     char                 buffer[INET6_ADDRSTRLEN];
-    const unsigned char *raw = ip->data;
-    int                  len = ip->length;
+    const unsigned char *raw = ASN1_STRING_get0_data(ip);
+    int                  len = ASN1_STRING_length(ip);
 
     if (inet_ntop(len == 4 ? AF_INET : AF_INET6, raw, buffer, sizeof(buffer))) {
       BIO_printf(_bio, "%s", buffer);

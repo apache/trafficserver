@@ -490,7 +490,7 @@ TS_OCSP_cert_id_new(const EVP_MD *dgst, const X509_NAME *issuerName, const ASN1_
   }
 
   /* Calculate the issuerKey hash, excluding tag and length */
-  if (!EVP_Digest(issuerKey->data, issuerKey->length, md, &i, dgst, nullptr)) {
+  if (!EVP_Digest(ASN1_STRING_get0_data(issuerKey), ASN1_STRING_length(issuerKey), md, &i, dgst, nullptr)) {
     goto err;
   }
 
@@ -514,9 +514,9 @@ err:
 TS_OCSP_CERTID *
 TS_OCSP_cert_to_id(const EVP_MD *dgst, const X509 *subject, const X509 *issuer)
 {
-  const X509_NAME    *iname;
-  const ASN1_INTEGER *serial;
-  ASN1_BIT_STRING    *ikey;
+  const X509_NAME       *iname;
+  const ASN1_INTEGER    *serial;
+  const ASN1_BIT_STRING *ikey;
 
   if (!dgst) {
     dgst = EVP_sha1();

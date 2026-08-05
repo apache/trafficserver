@@ -37,7 +37,7 @@ namespace
 DbgCtl dbg_ctl{PLUGIN_NAME};
 
 static void
-debug_certificate(const char *msg, X509_NAME *name)
+debug_certificate(const char *msg, const X509_NAME *name)
 {
   BIO *bio;
 
