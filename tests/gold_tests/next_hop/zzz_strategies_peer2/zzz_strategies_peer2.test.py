@@ -20,8 +20,8 @@ Test.Summary = '''
 Test next hop using strategies.yaml with consistent hashing, with peering, and no upstream group"
 '''
 
-# The tls_conn_timeout test will fail if it runs before this test in CI.  Therefore, this test has a zzz
-# prefix so it will run last in CI.
+# This test must run after tls_conn_timeout and is listed in tests/serial_tests.txt
+# to preserve that ordering.
 
 # Define and populate MicroServer.
 #
