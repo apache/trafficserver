@@ -16,19 +16,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-# Deterministically drive the rate_limit SNI limiter's queue-accounting balance bug. A
-# queued connection never increments the active-slot counter, but its VCONN_CLOSE always
-# decrements it, so one queued connection that closes is a single unmatched decrement.
-# With exactly one queued connection there is no way for the sweep to mask it:
+# Drive the rate_limit SNI limiter's queue-then-resume path with exactly one queued connection,
+# and check that the active-slot counter stays balanced and the server survives.
 #
 #   1. holder completes its handshake and holds the single slot (counter = 1);
-#   2. one connection enqueues (slot full), then closes cleanly (FIN) while parked;
-#   3. the sweep resumes it, its handshake fails and it closes -> one unmatched decrement
-#      -> counter 1 -> 0 (the queue is now empty, so no reserve() can rebalance it);
-#   4. the holder is closed; its matched decrement lands on the understated counter
-#      -> counter 0 -> wraps below zero;
-#   5. a probe connection's reserve() observes the wrapped counter and the limiter's
-#      release assertion (_active <= _limit) aborts the server.
+#   2. one connection enqueues because the slot is full, then closes while parked;
+#   3. the sweep reserves a slot and resumes a queued connection;
+#   4. the holder is closed and releases its slot;
+#   5. a probe connection reserves the freed slot.
+#
+# Against the plugin before 508c1bea26 this aborts the server: the sweep resumed a queued
+# connection without a reservation, whose close then decremented the counter unmatched until it
+# wrapped and reserve() tripped TSReleaseAssert(_active <= _limit). The test asserts the counter
+# never wraps and no signal is logged, so it pins that fix as well as this change.
 #
 # args: host port sni
 set -u
@@ -36,7 +36,20 @@ host="$1"
 port="$2"
 sni="$3"
 
-OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -verify_quiet -no_ign_eof"
+OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -no_ign_eof"
+
+# Run a command in the background and terminate it after a deadline. coreutils "timeout" is not
+# available everywhere (notably macOS), so do it with sleep and kill.
+run_for() {
+  deadline="$1"
+  shift
+  "$@" &
+  target=$!
+  (
+    sleep "${deadline}"
+    kill -TERM "${target}" 2>/dev/null
+  ) &
+}
 
 # 1. Holder: hold the single slot. Its stdin is a FIFO kept open on fd 3, so we end the
 #    holder deterministically in step 4 (closing fd 3 -> EOF -> clean TLS close -> FIN).
@@ -48,18 +61,18 @@ exec 3<>"$fifo"
 rm -rf "$fifo_dir"
 sleep 3 # let the holder reserve the one slot
 
-# 2. One queued connection: enqueues (slot full), then sends a clean FIN ~0.3s later while
-#    still parked at the ClientHello hook.
-timeout 0.3 ${OSSL} </dev/null >/dev/null 2>&1 &
-sleep 2 # >= 2 sweep periods (300ms each): the sweep resumes the queued connection, its
-        # handshake fails (EPIPE) and it closes -> one unmatched decrement -> counter 1 -> 0
+# 2. One queued connection: enqueues because the slot is full, then closes while still parked
+#    at the ClientHello hook.
+run_for 0.3 sh -c "${OSSL} </dev/null >/dev/null 2>&1"
+sleep 2 # >= 2 sweep periods (300ms each), so the sweep runs while the connection is queued
 
-# 4. End the holder: its matched decrement lands on the already-understated counter.
+# 4. End the holder, releasing its slot.
 exec 3>&- # close the FIFO write end -> holder sees EOF -> clean TLS close (FIN)
-sleep 2   # let the holder's close run: counter 0 -> wraps below zero
+sleep 2
 
-# 5. Probe: its reserve() reads the wrapped counter and trips TSReleaseAssert(_active <= _limit).
-timeout 2 ${OSSL} </dev/null >/dev/null 2>&1 || true
-sleep 1
+# 5. Probe: reserve() must succeed against a balanced counter rather than tripping the
+#    TSReleaseAssert(_active <= _limit) that a wrapped counter causes.
+run_for 2 sh -c "${OSSL} </dev/null >/dev/null 2>&1"
+sleep 3
 
 echo "rate_limit-queue-crash-done"

@@ -330,8 +330,13 @@ public:
   // Remove a still-queued element (e.g. a connection that closed before it was resumed).
   // Returns true if it was found in the queue, so the caller can tell a queued element
   // (which never reserved a slot) from one that was already resumed.
+  //
+  // Linear in the queue depth, and only reached when an element closes while queued, which
+  // requires the limiter to be at its limit. The depth is bounded by the configured queue size;
+  // note that a "queue" without a "size" leaves _max_queue at UINT32_MAX, in which case the only
+  // bound is proxy.config.net.connections_throttle.
   bool
-  remove(T elem)
+  remove(const T &elem)
   {
     std::lock_guard<std::mutex> lock(_queue_lock);
 

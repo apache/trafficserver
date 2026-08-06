@@ -35,7 +35,20 @@ host="$1"
 port="$2"
 sni="$3"
 
-OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -verify_quiet -no_ign_eof"
+OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -no_ign_eof"
+
+# Run a command in the background and terminate it after a deadline. coreutils "timeout" is not
+# available everywhere (notably macOS), so do it with sleep and kill.
+run_for() {
+  deadline="$1"
+  shift
+  "$@" &
+  target=$!
+  (
+    sleep "${deadline}"
+    kill -TERM "${target}" 2>/dev/null
+  ) &
+}
 
 # 1. Holder: hold the single slot. Its stdin is a FIFO on fd 3 so we end it in step 4.
 fifo_dir="$(mktemp -d "${TMPDIR:-/tmp}/rl_holder.XXXXXX")"
@@ -57,7 +70,7 @@ exec 3>&-
 sleep 2
 
 # 5. Probe: its reserve() reads the counter; if it wrapped, the release assertion aborts.
-timeout 2 ${OSSL} </dev/null >/dev/null 2>&1 || true
+run_for 2 sh -c "${OSSL} </dev/null >/dev/null 2>&1"
 kill "${queued}" 2>/dev/null || true
 sleep 1
 

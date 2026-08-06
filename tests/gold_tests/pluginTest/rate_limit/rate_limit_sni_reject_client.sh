@@ -29,7 +29,20 @@ host="$1"
 port="$2"
 sni="$3"
 
-OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -verify_quiet -no_ign_eof"
+OSSL="openssl s_client -connect ${host}:${port} -servername ${sni} -quiet -no_ign_eof"
+
+# Run a command in the background and terminate it after a deadline. coreutils "timeout" is not
+# available everywhere (notably macOS), so do it with sleep and kill.
+run_for() {
+  deadline="$1"
+  shift
+  "$@" &
+  target=$!
+  (
+    sleep "${deadline}"
+    kill -TERM "${target}" 2>/dev/null
+  ) &
+}
 
 # holder: complete the handshake and hold the single slot for ~5s (slow stdin keeps it open).
 (sleep 5) | ${OSSL} >/dev/null 2>&1 &
@@ -38,7 +51,7 @@ sleep 2 # let the holder reserve the slot
 # Burst of near-simultaneous handshakes against the full limiter; with no queue every one
 # is rejected with TS_EVENT_ERROR, so its handshake VC is torn down consumer-driven.
 for _ in $(seq 5); do
-  timeout 2 ${OSSL} </dev/null >/dev/null 2>&1 &
+  run_for 2 sh -c "${OSSL} </dev/null >/dev/null 2>&1"
 done
 
 # Let the burst finish and the holder release its slot cleanly.
