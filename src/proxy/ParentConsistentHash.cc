@@ -20,10 +20,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include <algorithm>
 #include <atomic>
 #include "proxy/HostStatus.h"
 #include "proxy/ParentConsistentHash.h"
 #include "tscore/HashSip.h"
+#include "tsutil/LocalBuffer.h"
 
 namespace
 {
@@ -152,12 +154,17 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   TSHostStatus               host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
 
   // Bound the all-down ring walk: read each distinct parent's status at most once.
-  // Sized to the pool -- num_parents is not capped at MAX_PARENTS, so a fixed array would overflow.
-  int const         num_parents_in_ring[2] = {result->rec->num_parents, result->rec->num_secondary_parents};
-  std::vector<bool> seen_parent[2]         = {std::vector<bool>(num_parents_in_ring[PRIMARY]),
-                                              std::vector<bool>(num_parents_in_ring[SECONDARY])};
-  int               seen_count[2]          = {0, 0};
-  int               host_status_calls      = 0; // getHostStatus() calls this selection (== distinct parents examined)
+  // Stack resident up to MAX_PARENTS -- the parent.config parser does not cap num_parents, so a bigger
+  // pool falls back to the heap rather than overflowing the stack.
+  int const                          num_parents_in_ring[2] = {result->rec->num_parents, result->rec->num_secondary_parents};
+  ts::LocalBuffer<bool, MAX_PARENTS> primary_seen(num_parents_in_ring[PRIMARY]);
+  ts::LocalBuffer<bool, MAX_PARENTS> secondary_seen(num_parents_in_ring[SECONDARY]);
+  bool *const                        seen_parent[2]    = {primary_seen.data(), secondary_seen.data()};
+  int                                seen_count[2]     = {0, 0};
+  int                                host_status_calls = 0; // getHostStatus() calls this selection (== distinct parents examined)
+
+  std::fill_n(seen_parent[PRIMARY], num_parents_in_ring[PRIMARY], false);
+  std::fill_n(seen_parent[SECONDARY], num_parents_in_ring[SECONDARY], false);
 
   Dbg(dbg_ctl_parent_select, "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
