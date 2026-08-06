@@ -243,6 +243,36 @@ purge_segments(const std::string &prefix)
     return report;
   }
   report.segment_size = static_cast<long long>(sb.st_size);
+
+  // Before any size branch: flock needs only the fd, and a segment too small for *our* layout can still be a live older
+  // build's -- unlinking it would strip the names out from under the very upgrade the frozen header exists to support.
+  const LockResult lock = try_lock_control(fd);
+
+  // Map only what is really there. A foreign build's segment may be shorter than CONTROL_SIZE, and mapping past the last
+  // page of the object faults on access; the frozen header prefix is all the owner guard needs.
+  const std::size_t map_len = std::min(static_cast<std::size_t>(sb.st_size), CONTROL_SIZE);
+  void             *addr    = nullptr;
+  if (map_len >= CONTROL_HEADER_SIZE) {
+    addr = ::mmap(nullptr, map_len, PROT_READ, MAP_SHARED, fd, 0);
+    if (addr == MAP_FAILED) {
+      report.sys_errno = errno;
+      report.outcome   = PurgeOutcome::MapFailed;
+      return report;
+    }
+  }
+  const auto *ctrl = static_cast<const CacheShmControl *>(addr);
+  // Too short to even hold the frozen header: no build of ours wrote it, so there is no owner to protect.
+  const bool magic_ok = ctrl != nullptr && std::memcmp(ctrl->magic, CACHE_SHM_MAGIC, sizeof(CACHE_SHM_MAGIC)) == 0;
+
+  if (lock == LockResult::HeldByOther || (lock == LockResult::Unsupported && magic_ok && process_is_alive(ctrl->owner_pid))) {
+    report.owner_pid = magic_ok ? ctrl->owner_pid : 0;
+    report.outcome   = PurgeOutcome::OwnedByLive;
+    if (addr != nullptr) {
+      ::munmap(addr, map_len);
+    }
+    return report;
+  }
+
   if (static_cast<std::size_t>(sb.st_size) < CONTROL_SIZE) {
     // Too small to hold this build's header/table: there is no table to walk, so
     // sweep the stripe name space and unlink the control object itself.
@@ -250,40 +280,23 @@ purge_segments(const std::string &prefix)
     sweep_stripe_name_space();
     int e = ::shm_unlink(report.control_name.c_str()) == 0 ? 0 : errno;
     report.unlinked.push_back({report.control_name, true, e});
+    if (addr != nullptr) {
+      ::munmap(addr, map_len);
+    }
     return report;
   }
 
   // Larger than this build's page-rounded CONTROL_SIZE means a build with a different
   // sizeof(CacheShmControl) wrote it. The frozen header prefix is still readable (so
-  // the owner guard below applies), but stripes[] may have a different stride entirely,
+  // the owner guard above applies), but stripes[] may have a different stride entirely,
   // so its names must not drive shm_unlink.
-  const bool own_size = is_own_control_size(static_cast<std::size_t>(sb.st_size));
-
-  void *addr = ::mmap(nullptr, CONTROL_SIZE, PROT_READ, MAP_SHARED, fd, 0);
-  if (addr == MAP_FAILED) {
-    report.sys_errno = errno;
-    report.outcome   = PurgeOutcome::MapFailed;
-    return report;
-  }
-
-  const auto *ctrl     = static_cast<const CacheShmControl *>(addr);
-  const bool  magic_ok = std::memcmp(ctrl->magic, CACHE_SHM_MAGIC, sizeof(CACHE_SHM_MAGIC)) == 0;
-
-  const LockResult lock = try_lock_control(fd);
-  if (lock == LockResult::HeldByOther || (lock == LockResult::Unsupported && magic_ok && process_is_alive(ctrl->owner_pid))) {
-    report.owner_pid = magic_ok ? ctrl->owner_pid : 0;
-    report.outcome   = PurgeOutcome::OwnedByLive;
-    ::munmap(addr, CONTROL_SIZE);
-    return report;
-  }
-
-  if (magic_ok && own_size) {
+  if (magic_ok && is_own_control_size(static_cast<std::size_t>(sb.st_size))) {
     unlink_table_stripes(prefix, ctrl, report.unlinked);
   } else {
     // Bad magic, or a foreign sizeof(CacheShmControl): the table cannot be walked.
     sweep_stripe_name_space();
   }
-  ::munmap(addr, CONTROL_SIZE);
+  ::munmap(addr, map_len);
 
   int e = ::shm_unlink(report.control_name.c_str()) == 0 ? 0 : errno;
   report.unlinked.push_back({report.control_name, true, e});

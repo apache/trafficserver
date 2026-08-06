@@ -214,8 +214,8 @@ class CacheShmFastRestartTest:
 
     def _clean_shutdown_ts2(self):
         # Stop ts2 before clearing the shm: `cache shm clear` refuses to unlink a
-        # segment a live traffic_server still owns, so the segments must be
-        # ownerless (clean_shutdown clears owner_pid) before cleanup runs.
+        # segment a live traffic_server still owns, so the owner must be gone
+        # (its retained owner_pid then reads as dead) before cleanup runs.
         tr = Test.AddTestRun('Drain and clean-shutdown ts2')
         tr.Processes.Default.Env = self.ts2.Env
         tr.Processes.Default.Command = (

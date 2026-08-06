@@ -5,7 +5,7 @@ Control segment:    ``
   abi_hash:         0x``
   storage_sig:      0x``
   clean_shutdown:   1 (clean)
-  owner_pid:        0 (none -- not currently attached)
+  owner_pid:        `` (stale -- owner no longer running)
   stripe_count:     2
 
 Stripes:

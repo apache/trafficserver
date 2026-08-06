@@ -158,6 +158,7 @@ private:
   void _init_data(off_t store_block_size, int avg_obj_size = -1);
   void _init_data_internal(int avg_obj_size = -1); // Defaults to cache_config_min_average_object_size;
   void _init_directory(std::size_t directory_size, int header_size, int footer_size);
+  bool _shm_freelist_is_valid(int s, Dir *seg, int64_t segment_entries);
 };
 
 inline uint32_t

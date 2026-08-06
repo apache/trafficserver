@@ -169,7 +169,9 @@ class CacheShmBadDiskDroppedTest:
         # The gold masks the run-specific names, the ABI/storage hashes, and the
         # page-rounded sizes with the `` wildcard, so what is asserted literally
         # is the meaningful state: valid magic/schema, clean_shutdown=1,
-        # stripe_count=2, and both stripe segments present.
+        # stripe_count=2, both stripe segments present, and a retained owner_pid
+        # that reads as stale (a clean shutdown keeps the pid so a platform
+        # without flock cannot attach into the shutdown window).
         tr = Test.AddTestRun('Dump shm control state after ts1 clean shutdown')
         # Use ts1's Env: it has been started, so the per-instance bin dir is on
         # PATH (ts2's Env only gains it once ts2 starts, which is the next step).
@@ -197,8 +199,8 @@ class CacheShmBadDiskDroppedTest:
 
     def _clean_shutdown_ts2(self):
         # Stop ts2 before clearing the shm: `cache shm clear` refuses to unlink a
-        # segment a live traffic_server still owns, so the segments must be
-        # ownerless (clean_shutdown clears owner_pid) before cleanup runs.
+        # segment a live traffic_server still owns, so the owner must be gone
+        # (its retained owner_pid then reads as dead) before cleanup runs.
         tr = Test.AddTestRun('Drain and clean-shutdown ts2')
         tr.Processes.Default.Env = self.ts2.Env
         tr.Processes.Default.Command = (

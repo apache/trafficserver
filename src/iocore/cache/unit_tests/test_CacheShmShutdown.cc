@@ -318,6 +318,81 @@ TEST_CASE("A small stripe's directory validates with in-use entries", "[cache][s
   unlink_test_segments();
 }
 
+// A live entry's offset feeds CacheVC::handleRead, where an offset past the stripe truncates the read length to a negative
+// -- so huge unsigned -- value. dir_valid() is no help: an out-of-phase entry is bounded from below only.
+TEST_CASE("A directory entry starting past the stripe fails the attach gate", "[cache][shm]")
+{
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  CacheDisk disk;
+  init_disk(disk);
+  CacheVol cache_vol;
+  {
+    GateStripe stripe{&disk, 10, 0};
+    stripe.cache_vol    = &cache_vol;
+    disk.hw_sector_size = 512;
+    attach_tmpfile_to_stripe(stripe);
+    stripe.clear_dir();
+    REQUIRE(stripe.shm_directory_is_valid());
+
+    // The last entry that still *starts* inside the stripe has to pass: its extent may legitimately overhang the end,
+    // which is exactly what handleRead's truncation is for, so bounding the extent would reject healthy directories.
+    Dir *e = stripe.directory.dir;
+    dir_set_offset(e, stripe.offset_to_vol_offset(stripe.skip + stripe.len) - 1);
+    dir_set_head(e, 1);
+    REQUIRE(stripe.vol_offset(e) < stripe.skip + stripe.len);
+    CHECK(stripe.shm_directory_is_valid());
+
+    // One block on, the read would start at or past the end of the stripe.
+    dir_set_offset(e, dir_offset(e) + 1);
+    REQUIRE(stripe.vol_offset(e) >= stripe.skip + stripe.len);
+    CHECK_FALSE(stripe.shm_directory_is_valid());
+  }
+
+  unlink_test_segments();
+}
+
+// A cycle in a segment's free list is made of in-range links, so the per-entry bounds pass, and check_segment() walks the
+// bucket chains rather than the free list. Left unchecked, freelist_pop() writes a link over a live entry's tag bits.
+TEST_CASE("A cyclic segment free list fails the attach gate", "[cache][shm]")
+{
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  CacheDisk disk;
+  init_disk(disk);
+  CacheVol cache_vol;
+  {
+    GateStripe stripe{&disk, 10, 0};
+    stripe.cache_vol    = &cache_vol;
+    disk.hw_sector_size = 512;
+    attach_tmpfile_to_stripe(stripe);
+    stripe.clear_dir();
+    REQUIRE(stripe.shm_directory_is_valid());
+
+    Dir           *seg  = stripe.directory.get_segment(0);
+    const uint16_t head = stripe.directory.header->freelist[0];
+    Dir           *next = dir_in_seg(seg, dir_next(dir_in_seg(seg, head)));
+    REQUIRE(dir_next(dir_in_seg(seg, head)) != 0);
+
+    // Point the head's successor back at the head. Both links stay inside the segment, and no bucket chain is touched.
+    dir_set_next(next, head);
+
+    CHECK_FALSE(stripe.shm_directory_is_valid());
+  }
+
+  unlink_test_segments();
+}
+
 // What the flush-failure path actually leans on. A real short write leaves write_pos in range with agg_pos ahead of it, so
 // the quiesced-cursor check has to be what rejects the segment -- not the range check, which only a synthetic write_pos
 // trips.

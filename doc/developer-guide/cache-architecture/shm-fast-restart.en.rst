@@ -157,8 +157,9 @@ up to ``MAX_STRIPES`` (256) ``cache_shm::StripeEntry`` rows. A
        other times, including throughout a running process, so a crash leaves
        it ``0``.
    * - ``owner_pid``
-     - PID of the process currently mapping the segment read-write, or ``0``
-       when none. Backs the concurrent-attach guard.
+     - PID of the process that took the segment, or ``0`` when none. Backs the
+       concurrent-attach guard, so it is held until that process exits rather
+       than cleared at clean shutdown.
    * - ``stripe_count``
      - High-water mark of used rows in ``stripes[]``.
    * - ``stripes[]``
@@ -305,9 +306,13 @@ is therefore based on ownership, with two layers:
   (``LockResult::Unsupported``). There, the guard falls back to the recorded
   ``owner_pid``: if it names a live process other than ourselves
   (``CacheShm::process_is_alive``, via ``kill(pid, 0)``), the new
-  process disables shared memory. A clean shutdown clears ``owner_pid`` to
-  ``0``; a crash leaves a stale pid, but a crash also leaves
-  ``clean_shutdown = 0``, so the segment is dropped by that gate anyway.
+  process disables shared memory. The pid is held until the owner exits and is
+  *not* cleared at clean shutdown, because ``mark_clean_shutdown`` runs while the
+  event threads are still writing (see `Wiring`_): on a platform with no lock,
+  clearing it there is what would let a second process attach into that window.
+  A crash leaves a stale pid, but a crash also leaves ``clean_shutdown = 0``, so
+  the segment is dropped by that gate anyway; a pid that has been recycled by an
+  unrelated process costs the next start its fast restart and nothing more.
 
 A symmetric check guards the ``CreateFresh`` path: after creating the fresh
 control segment, ``initialize`` takes the lock, and if it lost a creation race
@@ -402,6 +407,24 @@ and the shape of the entry graph before the attach:
   hold fewer entries than those bits can spell -- the ``head`` bit alone is 8192,
   so every stripe under roughly 65 MB failed validation and silently gave up fast
   restart;
+* every *in-use* entry starts inside the stripe, i.e. ``vol_offset(e) < skip +
+  len`` -- the same invariant ``Directory::insert()`` asserts. ``dir_valid()``
+  cannot stand in for it: an in-phase entry is bounded above by ``write_pos``, but
+  an out-of-phase one is bounded from *below* only (``vol_out_of_phase_valid``), so
+  a torn 40-bit offset passes. ``CacheVC::handleRead`` then computes an
+  out-of-stripe ``aio_offset``, and its end truncation subtracts past zero into a
+  ``size_t`` ``aio_nbytes`` of roughly 2^64 while the buffer it sizes from the same
+  value comes back at the *smallest* index -- a read far larger than its
+  destination. Note the bound is on where the entry *starts*, not on its extent:
+  ``dir_approx_size`` rounds up, so the last object in a stripe legitimately
+  overhangs ``skip + len``, which is precisely what that truncation exists for;
+* each segment's free list is walked structurally, not just bounds-checked: at most
+  one node per entry, every node empty, and ``prev`` pointing back at the node
+  nearer the head. An in-range cycle such as ``A -> B -> A`` satisfies every
+  per-entry check above and is invisible to ``check_segment()``, which walks bucket
+  chains. Attached, it lets ``freelist_pop()`` hand out an entry twice and write a
+  free-list link over the second holder's ``tag``/``phase``/``head``/``pinned``
+  word, until the ``dir_offset(e)`` guard in ``freelist_pop`` resets the segment;
 * ``Directory::check_segment()`` passes for the segment: bucket chain lengths, no
   chained-but-empty entries, no chain loops. This is the ``CHECK_DIR`` walk that is
   otherwise debug-only, and it is what turns a torn directory into a rebuild rather
@@ -461,10 +484,11 @@ On a clean exit, ``AutoStopCont::mainEvent`` calls
 ``sync_cache_dir_on_shutdown()`` whenever the cache is initialized.
 ``sync_cache_dir_on_shutdown`` snapshots every stripe (taking each stripe mutex,
 which excludes writers *concurrent with* the snapshot), and only then calls
-``CacheShm::mark_clean_shutdown``, which sets ``clean_shutdown = 1``, clears
-``owner_pid`` to ``0``, and ``msync``\ s the header. When the feature is
-disabled, ``mark_clean_shutdown`` is a no-op (there is no control segment), so
-the shutdown path is unchanged for a stock |TS|.
+``CacheShm::mark_clean_shutdown``, which sets ``clean_shutdown = 1`` and
+``msync``\ s the header. ``owner_pid`` is deliberately left alone; see
+`Concurrent-attach guard`_. When the feature is disabled,
+``mark_clean_shutdown`` is a no-op (there is no control segment), so the shutdown
+path is unchanged for a stock |TS|.
 
 It does not stop *future* writers: this runs before ``shut_down_event_system()``
 and the main thread exits without joining the event threads, so a stripe can
@@ -676,6 +700,15 @@ header-only form (:ts:git:`include/shared/cache_shm/Layout.h` and
    **refuses** to clear segments owned by a live ``traffic_server`` (stop it
    first), so it cannot orphan a running instance's fast restart. This is the
    on-demand equivalent of ``purge_stale_on_start``.
+
+   The owner check comes *before* any branch on the segment's size. A segment
+   smaller than this build's ``CacheShmControl`` is an *older* build's, and that
+   build may still be running -- exactly the upgrade case the frozen header exists
+   to make legible. ``flock`` needs only the fd, so it costs nothing to take first;
+   the frozen header prefix is then mapped for the ``owner_pid`` backstop, mapping
+   only what the object actually holds, since a mapping past an object's last page
+   faults on access. A segment too short to hold even the frozen header was written
+   by no build of ours, so there is no owner to protect and it is swept.
 
 .. _cache-shm-configuration:
 

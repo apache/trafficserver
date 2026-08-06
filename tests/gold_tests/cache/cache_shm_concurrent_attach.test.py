@@ -176,7 +176,7 @@ class CacheShmConcurrentAttachTest:
     def run(self):
         self._start_owner()
         self._start_second_refused()
-        # Stop the non-owner first, then the owner (clears owner_pid), then clear.
+        # Stop the non-owner first, then the owner, then clear: its retained owner_pid reads as dead once it exits.
         self._clean_shutdown(self.ts2, 'shmc_ts2')
         self._clean_shutdown(self.ts1, 'shmc_ts1')
         self._cleanup_shm()

@@ -32,12 +32,15 @@
 #include "tscore/ink_config.h"
 #include "tscore/ink_memory.h"
 
+#include <algorithm>
 #include <cstring>
 #include <limits>
 #include <string>
 
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 // Required by the shared test harness (main.cc).
@@ -232,9 +235,10 @@ namespace
 // A prefix of our own so these tests can never touch a real instance's segments.
 constexpr const char *PURGE_PREFIX_WORD = "atspurgetest";
 
-// Valid magic, no owner, one claimed stripe. False if shm is unavailable here.
+// Valid magic, one claimed stripe, and `owner_pid` as given. `size` may be short of CONTROL_SIZE -- an older build with a
+// smaller stripe table -- so only what exists is mapped. False if shm is unavailable here.
 bool
-plant_control_segment(const std::string &prefix, std::size_t size)
+plant_control_segment(const std::string &prefix, std::size_t size, int32_t owner_pid = 0)
 {
   const std::string name = cache_shm::control_segment_name(prefix);
   shm_unlink(name.c_str());
@@ -247,20 +251,21 @@ plant_control_segment(const std::string &prefix, std::size_t size)
     shm_unlink(name.c_str());
     return false;
   }
-  void *addr = mmap(nullptr, cache_shm::CONTROL_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  const std::size_t map_len = std::min(size, cache_shm::CONTROL_SIZE);
+  void             *addr    = mmap(nullptr, map_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   close(fd);
   if (addr == MAP_FAILED) {
     shm_unlink(name.c_str());
     return false;
   }
   auto *ctrl = static_cast<cache_shm::CacheShmControl *>(addr);
-  std::memset(ctrl, 0, cache_shm::CONTROL_SIZE);
+  std::memset(ctrl, 0, map_len);
   std::memcpy(ctrl->magic, cache_shm::CACHE_SHM_MAGIC, sizeof(cache_shm::CACHE_SHM_MAGIC));
   ctrl->schema_version = cache_shm::CACHE_SHM_SCHEMA_VERSION;
-  ctrl->owner_pid      = 0; // no live owner, so purge is allowed to proceed
+  ctrl->owner_pid      = owner_pid;
   ctrl->stripe_count   = 1;
   // Deliberately unnamed: a foreign build's stripes[] may have another stride, so a correct purge cannot read this.
-  munmap(addr, cache_shm::CONTROL_SIZE);
+  munmap(addr, map_len);
   return true;
 }
 
@@ -286,6 +291,21 @@ segment_exists(const std::string &name)
   }
   close(fd);
   return true;
+}
+
+// The kernel rounds an shm object up to a page, so a segment shorter than CONTROL_SIZE is not representable everywhere:
+// Apple Silicon's 16 KB page already exceeds it. -1 if the segment is gone.
+long long
+segment_size(const std::string &name)
+{
+  int fd = shm_open(name.c_str(), O_RDONLY, 0);
+  if (fd < 0) {
+    return -1;
+  }
+  struct stat sb;
+  const int   rc = fstat(fd, &sb);
+  close(fd);
+  return rc < 0 ? -1 : static_cast<long long>(sb.st_size);
 }
 
 } // namespace
@@ -338,6 +358,74 @@ TEST_CASE("CacheShm purge walks the table when the control layout is ours", "[ca
 
   shm_unlink(stray.c_str());
   shm_unlink(cache_shm::control_segment_name(prefix).c_str());
+}
+
+// A segment shorter than our CacheShmControl was written by an *older* build, which may still be running. The frozen
+// header is there so a newer traffic_ctl can recognise that owner, not so it can unlink the names out from under it.
+TEST_CASE("CacheShm purge refuses a smaller foreign control segment with a live owner", "[cache][shm]")
+{
+  const std::string prefix      = cache_shm::normalize_name_prefix(PURGE_PREFIX_WORD);
+  const std::string control     = cache_shm::control_segment_name(prefix);
+  const std::string stripe_name = cache_shm::stripe_segment_name(prefix, 0);
+
+  // Past the frozen header so the owner is readable, short of CONTROL_SIZE so the table cannot be walked.
+  if (!plant_control_segment(prefix, cache_shm::CONTROL_HEADER_SIZE + 64, static_cast<int32_t>(getpid()))) {
+    WARN("shm unavailable in this environment; skipping");
+    return;
+  }
+  if (segment_size(control) >= static_cast<long long>(cache_shm::CONTROL_SIZE)) {
+    WARN("shm objects round up past CONTROL_SIZE here; a smaller foreign segment is not representable");
+    shm_unlink(control.c_str());
+    return;
+  }
+  REQUIRE(plant_stripe_segment(stripe_name));
+
+  // Hold the lock too, so the refusal is asserted on both kinds of platform: flock decides where it is honoured (a second
+  // open file description conflicts even within one process), owner_pid where it is not.
+  int held = shm_open(control.c_str(), O_RDONLY, 0);
+  REQUIRE(held >= 0);
+  (void)::flock(held, LOCK_EX | LOCK_NB);
+
+  const cache_shm::PurgeReport report = cache_shm::purge_segments(prefix);
+
+  CHECK(report.outcome == cache_shm::PurgeOutcome::OwnedByLive);
+  CHECK(report.unlinked.empty());
+  CHECK(segment_exists(stripe_name));
+  CHECK(segment_exists(control));
+
+  close(held);
+  shm_unlink(stripe_name.c_str());
+  shm_unlink(control.c_str());
+}
+
+// The counterpart: with no live owner the same short segment must still be cleared, or an operator cannot recover from a
+// stale one left by a build that is gone.
+TEST_CASE("CacheShm purge clears a smaller foreign control segment with no owner", "[cache][shm]")
+{
+  const std::string prefix      = cache_shm::normalize_name_prefix(PURGE_PREFIX_WORD);
+  const std::string control     = cache_shm::control_segment_name(prefix);
+  const std::string stripe_name = cache_shm::stripe_segment_name(prefix, 0);
+
+  if (!plant_control_segment(prefix, cache_shm::CONTROL_HEADER_SIZE + 64)) {
+    WARN("shm unavailable in this environment; skipping");
+    return;
+  }
+  if (segment_size(control) >= static_cast<long long>(cache_shm::CONTROL_SIZE)) {
+    WARN("shm objects round up past CONTROL_SIZE here; a smaller foreign segment is not representable");
+    shm_unlink(control.c_str());
+    return;
+  }
+  REQUIRE(plant_stripe_segment(stripe_name));
+
+  const cache_shm::PurgeReport report = cache_shm::purge_segments(prefix);
+
+  CHECK(report.outcome == cache_shm::PurgeOutcome::TooSmall);
+  CHECK(report.table_untrusted);
+  CHECK_FALSE(segment_exists(stripe_name));
+  CHECK_FALSE(segment_exists(control));
+
+  shm_unlink(stripe_name.c_str());
+  shm_unlink(control.c_str());
 }
 
 #endif // TS_USE_CACHE_SHM

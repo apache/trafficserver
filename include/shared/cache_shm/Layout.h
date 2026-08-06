@@ -70,8 +70,9 @@ struct CacheShmControl {
   uint64_t storage_signature; ///< storage.yaml fingerprint
   uint8_t  clean_shutdown;    ///< 0 = dirty, 1 = clean
   uint8_t  pad1[3];
-  int32_t  owner_pid; ///< PID holding the exclusive lock; 0 when none. Backs the
-                      ///< concurrent-attach guard. Cleared on clean shutdown.
+  int32_t  owner_pid; ///< PID of the process that took the segment; 0 when none. Backs the
+                      ///< concurrent-attach guard, so it is held until the owner exits, not
+                      ///< cleared at clean shutdown; the next start tests it for liveness.
   uint32_t    stripe_count;
   uint32_t    pad2;
   StripeEntry stripes[MAX_STRIPES];

@@ -220,14 +220,53 @@ Stripe::_shm_directory_is_valid()
       if (dir_next(e) >= segment_entries) {
         return false;
       }
-      if (dir_is_empty(e) && dir_prev(e) >= segment_entries) {
+      if (dir_is_empty(e)) {
+        if (dir_prev(e) >= segment_entries) {
+          return false;
+        }
+        continue;
+      }
+      // Same invariant Directory::insert() asserts. dir_valid() cannot stand in for it: an out-of-phase entry is bounded
+      // from below only, and CacheVC::handleRead() turns an out-of-stripe offset into a negative (so huge) read length.
+      if (this->vol_offset(e) >= data_hi) {
         return false;
       }
+    }
+
+    if (!this->_shm_freelist_is_valid(s, seg, segment_entries)) {
+      return false;
     }
 
     if (!this->directory.check_segment(s)) {
       return false;
     }
+  }
+
+  return true;
+}
+
+// The per-entry bounds above only prove each link points inside the segment; an in-range cycle or a stale prev link
+// still passes, and Directory::check_segment() walks the bucket chains, not the free list.
+bool
+Stripe::_shm_freelist_is_valid(int s, Dir *seg, int64_t segment_entries)
+{
+  int64_t node  = this->directory.header->freelist[s];
+  int64_t prev  = 0;
+  int64_t steps = 0;
+
+  while (node != 0) {
+    if (node >= segment_entries || ++steps > segment_entries) {
+      return false;
+    }
+    Dir *e = dir_in_seg(seg, node);
+
+    // Every producer (Directory::free_entry, delete_entry, freelist_pop, unlink_from_freelist) clears the entry and
+    // leaves prev pointing back at the node nearer the head, so a mismatch means the list was left half-updated.
+    if (!dir_is_empty(e) || dir_prev(e) != prev) {
+      return false;
+    }
+    prev = node;
+    node = dir_next(e);
   }
 
   return true;
