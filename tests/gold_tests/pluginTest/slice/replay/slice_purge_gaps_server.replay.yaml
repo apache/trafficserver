@@ -360,6 +360,25 @@ sessions:
   - client-request:
       method: GET
       version: "1.1"
+      url: /outside
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, outside-fill-1]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 10-19/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'bbbbbbbbbb', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
       url: /endbytes
       headers:
         fields:

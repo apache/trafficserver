@@ -36,8 +36,9 @@ class SlicePurgeGapsTest:
 
     ATS now reports the removed object's extent as X-Purged-Content-Range, so the
     walk learns where the object ends from the blocks it is already deleting, and
-    a 404 is merely noted and stepped over. Until some block reports an extent the
-    only end condition is a bound on consecutive misses.
+    a 404 is merely noted and stepped over. The requested range bounds the walk
+    throughout; until some block reports an extent, an open ended one is bounded
+    only by a limit on consecutive misses.
 
     Each object below exercises one thing, and each is purged exactly once,
     because a purge consumes the state it is measured against.
@@ -53,6 +54,9 @@ class SlicePurgeGapsTest:
                this isolates the 404 handling from the extent discovery.
     /openend   purged with "bytes=20-". The start is stated, so only block 2 may
                go and block 0 must survive.
+    /outside   only block 1 cached, purged for block 0 alone. No block is removed,
+               so no extent is ever reported and only the range can end the walk
+               before it reaches a block the client did not name.
     /endbytes  purged with "bytes=-10". A suffix range cannot know which block it
                starts at, so it is widened to the whole object and every block
                goes.
@@ -224,6 +228,20 @@ class SlicePurgeGapsTest:
         self._purged('openend-check-2', 'openendbytes=20-29', 'The block covering the range should be purged.')
         self._survived('openend-check-0', 'openendbytes=0-9', 'A purge should not remove blocks before its stated start.')
 
+    def _range_bounds_the_walk(self) -> None:
+        """A range ends the walk even before any block has reported an extent.
+
+        /outside has only block 1 cached and is purged for block 0 alone. Nothing
+        is ever removed, so no block reports an extent, and the miss bound would
+        otherwise carry the walk past the end of the named range and into a block
+        the client never asked to remove.
+        """
+        self._fill('Cache only block 1 of /outside', 'outside', [1])
+        self._run('PURGE /outside for block 0 only, which is not cached', 'outside-purge')
+        self._run('Block 1 of /outside survived a purge that did not name it', 'outside-check-1')
+        self._survived(
+            'outside-check-1', 'outsidebytes=10-19', 'A purge should stop at the end of its range, not at the miss bound.')
+
     def _suffix_range(self) -> None:
         """A "bytes=-N" purge is widened to the whole object."""
         self._fill('Cache blocks 0 and 2 of /endbytes', 'endbytes', [0, 2])
@@ -273,6 +291,7 @@ class SlicePurgeGapsTest:
         self._largest_extent_wins()
         self._closed_range()
         self._open_ended_range()
+        self._range_bounds_the_walk()
         self._suffix_range()
         self._unparseable_range()
         self._miss_bound_and_override()

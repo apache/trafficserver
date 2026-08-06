@@ -369,10 +369,10 @@ extent implies. Blocks of one object can disagree about its length when the orig
 object has been replaced in place; slice takes the largest extent any block
 reports, so the longer generation's tail is not left behind.
 
-Until some block has reported an extent, the walk has no end but the miss bound:
-it stops after ``--purge-probe-blocks`` consecutive uncached blocks and reports
-that nothing was found. That is what bounds a PURGE for a URL which is not cached
-at all.
+Until some block has reported an extent, a walk over an open-ended range has no
+end but the miss bound: it stops after ``--purge-probe-blocks`` consecutive
+uncached blocks and reports that nothing was found. That is what bounds a PURGE
+for a URL which is not cached at all.
 
 An operator often knows more about the object than the plugin does, since the
 block count is just the object's size divided by the block size. That count can be
@@ -405,9 +405,8 @@ of the object, and if no block is cached at all the miss bound stops the walk.
 A suffix range, ``bytes=-<n>``, names its blocks by their distance from an end
 slice does not know yet, and purging is the only way it could find out. Rather
 than guess at the start, such a purge is widened to the whole object: a superset of
-what was asked for, so the named blocks certainly go. Note this is the one place a
-PURGE removes more than its range names; a ``GET`` with the same header is
-unaffected and still returns exactly the last *n* bytes.
+what was asked for, so the named blocks certainly go. A ``GET`` with the same header
+is unaffected and still returns exactly the last *n* bytes.
 
 The response is sent once the walk is complete: ``200`` if at least one block was
 removed, ``404`` if none was found. This matches what Traffic Server reports for a

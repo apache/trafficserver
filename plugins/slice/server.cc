@@ -557,14 +557,15 @@ advance_purge(TSCont const contp, Data *const data)
     data->m_blocknum = firstblock;
   }
 
-  if (data->m_contentlen < 0) {
-    // With no extent reported yet, the miss bound is the only end condition
-    if (data->m_purge_miss_bound <= data->m_purge_misses) {
-      DEBUG_LOG("purge gave up after %d consecutive uncached block(s)", data->m_purge_misses);
-      finish_purge(contp, data);
-      return;
-    }
-  } else if (!range.blockIsInside(blockbytes, data->m_blocknum)) {
+  // The requested range bounds the walk whether or not the extent is known yet
+  if (!range.blockIsInside(blockbytes, data->m_blocknum)) {
+    finish_purge(contp, data);
+    return;
+  }
+
+  // An open ended range has no such bound until some block reports an extent
+  if (data->m_contentlen < 0 && data->m_purge_miss_bound <= data->m_purge_misses) {
+    DEBUG_LOG("purge gave up after %d consecutive uncached block(s)", data->m_purge_misses);
     finish_purge(contp, data);
     return;
   }

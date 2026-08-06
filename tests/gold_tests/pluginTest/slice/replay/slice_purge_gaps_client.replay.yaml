@@ -486,6 +486,56 @@ sessions:
   - client-request:
       method: GET
       version: "1.1"
+      url: /outside
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, outside-fill-1]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 10-19/30, as: equal}]
+      content:
+        encoding: plain
+        data: 'bbbbbbbbbb'
+        verify: {as: equal}
+
+  - client-request:
+      method: PURGE
+      version: "1.1"
+      url: /outside
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, outside-purge]
+    proxy-response:
+      status: 404
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /outside
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, outside-check-1]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 10-19/30, as: equal}]
+      content:
+        encoding: plain
+        data: 'bbbbbbbbbb'
+        verify: {as: equal}
+
+  - client-request:
+      method: GET
+      version: "1.1"
       url: /endbytes
       headers:
         fields:
