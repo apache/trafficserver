@@ -2533,6 +2533,12 @@ HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(state_cache_open_write, event);
 
+  // The cache action has already delivered this callback, so drop it before any
+  // thread adjustment below can assign over it. Assigning to pending_action
+  // cancels whatever it holds, and canceling the cache SM's reusable captive
+  // action here would break every cache operation this transaction makes later.
+  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
+
   // Make sure we are on the "right" thread
   if (_ua.get_txn()) {
     pending_action = _ua.get_txn()->adjust_thread(this, event, data);
@@ -2543,8 +2549,6 @@ HttpSM::state_cache_open_write(int event, void *data)
     NetVConnection *vc = _ua.get_txn()->get_netvc();
     ink_release_assert(vc && vc->thread == this_ethread());
   }
-
-  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
   ATS_PROBE1(milestone_cache_open_write_end, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = ink_get_hrtime();
