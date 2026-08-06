@@ -92,7 +92,7 @@ are available:
 
 .. option:: --maxage
 
-   An optional ``max-age`` for how long a transaction can sit in the delay queue.
+   An optional maximum age for how long a transaction can sit in the delay queue.
    The value (default 0) is the age in seconds.
 
 .. option:: --prefix
@@ -149,7 +149,7 @@ and nodes are documented below.
             rate: 200
             queue:
                size: 1000
-               max-age: 30
+               max_age: 30
             metrics:
                tag: example.com
                prefix: ddos
@@ -163,11 +163,11 @@ and nodes are documented below.
             buckets: 10
             size: 15
             percentage: 90
-            max-age: 300
+            max_age: 300
             perma-block:
                limit: 100
                threshold: 1
-               max-age: 1800
+               max_age: 1800
       lists:
          - name: internal
             cidr:
@@ -212,8 +212,8 @@ For the top level `selector` node, the following options are available:
    how many queued transactions we will allow. When this threshold is reached,
    all additional connections are immediately errored out in the TLS handshake.
 
-   The queue option can include a `size` and a `max-age` option. The size is
-   default to ``UINT_MAX``, which is essentially unlimited. The max-age is
+   The queue option can include a `size` and a `max_age` option. The size is
+   default to ``UINT_MAX``, which is essentially unlimited. The max_age is
    default to ``0``, which means no age limit.
 
    No queue is enabled without this configuration directive, but it can also be
@@ -268,7 +268,7 @@ and the following options:
    This is the minimum percentage of the ``limit`` that the pressure must be at, before
    we start blocking IPs. The default is ``0.9`` which means ``90%`` of the limit.
 
-.. option:: max-age
+.. option:: max_age
 
    This is used for aging out entries out of the LRU, the default is ``0`` which means
    no aging happens. Even with no aging, entries will eventually fall out of buckets
@@ -289,7 +289,7 @@ blocked for a long time. The configuration for this bucket is:
    This option specifies from which bucket an IP is allowed to move from into the
    perma block bucket. A good value here is likely ``0`` or ``1``, which is very conservative.
 
-.. option:: max-age
+.. option:: max_age
 
    Like above, but only applies to the long term (`perma-block`) bucket. Default is
    ``0``, which means no aging to this bucket is applied.
