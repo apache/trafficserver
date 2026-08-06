@@ -32,7 +32,7 @@ namespace
 {
 // Miss bound for this purge: the request header when usable, else the config value.
 int
-purge_miss_bound(HttpHeader const &header, Config const *const conf)
+purge_miss_bound(HttpHeader const &header, Config *const conf)
 {
   char probestr[64];
   int  probelen = sizeof(probestr);
@@ -50,8 +50,11 @@ purge_miss_bound(HttpHeader const &header, Config const *const conf)
 
   // parsed must cover the whole value: "8abc" is a mistake, not eight blocks
   if (parsed.size() != value.size() || blocks <= 0 || std::numeric_limits<int>::max() < blocks) {
-    ERROR_LOG("Ignoring invalid %.*s value '%.*s'", static_cast<int>(conf->m_purge_probe_header.size()),
-              conf->m_purge_probe_header.data(), probelen, probestr);
+    // paced: the value is client supplied, so a bad one repeats as fast as requests arrive
+    if (conf->canLogError()) {
+      ERROR_LOG("Ignoring invalid %.*s value '%.*s'", static_cast<int>(conf->m_purge_probe_header.size()),
+                conf->m_purge_probe_header.data(), probelen, probestr);
+    }
     return conf->m_purge_probe_blocks;
   }
 
@@ -134,12 +137,15 @@ handle_client_req(TSCont contp, TSEvent event, Data *const data)
     if (data->is_purge()) {
       // The substituted range covers block 0, so walking it would delete the head
       if (TS_HTTP_STATUS_REQUESTED_RANGE_NOT_SATISFIABLE == data->m_statustype) {
-        ERROR_LOG("Refusing PURGE with an unparseable range");
+        // paced: the range is client supplied, so a bad one repeats as fast as requests arrive
+        if (data->m_config->canLogError()) {
+          ERROR_LOG("Refusing PURGE with an unparseable range");
+        }
         finish_purge(contp, data, TS_HTTP_STATUS_BAD_REQUEST);
         return true;
       }
 
-      data->m_purge_miss_bound = purge_miss_bound(header, conf);
+      data->m_purge_miss_bound = purge_miss_bound(header, data->m_config);
       DEBUG_LOG("%p Purge miss bound %d block(s)", data, data->m_purge_miss_bound);
 
       // A suffix range cannot know its start block, so purge a superset: everything
