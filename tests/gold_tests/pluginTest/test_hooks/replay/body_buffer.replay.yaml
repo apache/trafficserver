@@ -33,6 +33,7 @@ autest:
     name: 'ts-body-buffer'
     process_config:
       enable_cache: false
+      enable_tls: true
 
     plugin_config:
       - request_buffer.so
@@ -52,6 +53,8 @@ autest:
             description: "Verify that the plugin parsed the content-length request body data"
           - expression: "request_buffer_plugin gets the request body with length\\[25\\]"
             description: "Verify that the plugin parsed the chunked request body data"
+          - expression: "request_buffer_plugin gets the request body with length\\[19\\]"
+            description: "Verify that the plugin parsed the HTTP/2 request body data"
 
 sessions:
   - transactions:
@@ -121,3 +124,40 @@ sessions:
           content:
             verify: { value: "10\r\nchunked response\r\n0\r\n\r\n", as: equal }
 
+  # Verify request body buffering for HTTP/2 transactions.
+  - protocol:
+      stack: http2
+      tls:
+        sni: www.example.com
+    transactions:
+      - client-request:
+          headers:
+            fields:
+              - [":method", POST]
+              - [":scheme", https]
+              - [":authority", www.example.com]
+              - [":path", /http2]
+              - [Content-Length, 19]
+              - [uuid, http2-post]
+          content:
+            data: "HTTP/2 request body"
+
+        proxy-request:
+          method: "POST"
+          url: /http2
+          content:
+            verify: { value: "HTTP/2 request body", as: equal }
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 15]
+          content:
+            data: "HTTP/2 response"
+
+        proxy-response:
+          status: 200
+          content:
+            verify: { value: "HTTP/2 response", as: equal }
