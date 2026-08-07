@@ -79,11 +79,11 @@ QUICNetVConnection::init(QUICVersion /* version ATS_UNUSED */, QUICConnectionId 
                          QUICPacketHandler *packet_handler, QUICConnectionTable *ctable, SSL *ssl)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
-  this->_udp_con                     = udp_con;
-  this->_quiche_con                  = quiche_con;
-  this->_packet_handler              = packet_handler;
-  this->_original_quic_connection_id = original_cid;
-  this->_quic_connection_id.randomize();
+  this->_udp_con                      = udp_con;
+  this->_quiche_con                   = quiche_con;
+  this->_packet_handler               = packet_handler;
+  this->_original_quic_connection_id  = original_cid;
+  this->_quic_connection_id           = QUICConnectionId::random();
   this->_initial_source_connection_id = this->_quic_connection_id;
 
   if (ctable) {
@@ -448,37 +448,37 @@ QUICNetVConnection::ping()
 QUICConnectionId
 QUICNetVConnection::peer_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::original_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::first_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::retry_source_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::initial_source_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 std::string_view

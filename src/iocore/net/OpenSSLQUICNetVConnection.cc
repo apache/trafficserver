@@ -101,9 +101,9 @@ QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
 
-  this->_ssl            = ssl;
-  this->_packet_handler = packet_handler;
-  this->_quic_connection_id.randomize();
+  this->_ssl                          = ssl;
+  this->_packet_handler               = packet_handler;
+  this->_quic_connection_id           = QUICConnectionId::random();
   this->_initial_source_connection_id = this->_quic_connection_id;
   this->_cid_text                     = this->_quic_connection_id.hex();
 
@@ -477,25 +477,25 @@ QUICNetVConnection::ping()
 QUICConnectionId
 QUICNetVConnection::peer_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::original_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::first_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::retry_source_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
