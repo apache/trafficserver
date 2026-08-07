@@ -213,13 +213,14 @@ private:
   SSL                      *_ssl;
   QUICConfig::scoped_config _quic_config;
 
-  QUICConnectionId _peer_quic_connection_id;      // dst cid in local
-  QUICConnectionId _peer_old_quic_connection_id;  // dst previous cid in local
-  QUICConnectionId _original_quic_connection_id;  // dst cid of initial packet from client
-  QUICConnectionId _first_quic_connection_id;     // dst cid of initial packet from client that doesn't have retry token
-  QUICConnectionId _retry_source_connection_id;   // src cid used for sending Retry packet
-  QUICConnectionId _initial_source_connection_id; // src cid used for Initial packet
-  QUICConnectionId _quic_connection_id;           // src cid in local
+  QUICConnectionId _peer_quic_connection_id     = QUICConnectionId::ZERO(); // dst cid in local
+  QUICConnectionId _peer_old_quic_connection_id = QUICConnectionId::ZERO(); // dst previous cid in local
+  QUICConnectionId _original_quic_connection_id = QUICConnectionId::ZERO(); // dst cid of initial packet from client
+  QUICConnectionId _first_quic_connection_id =
+    QUICConnectionId::ZERO(); // dst cid of initial packet from client without retry token
+  QUICConnectionId _retry_source_connection_id   = QUICConnectionId::ZERO(); // src cid used for sending Retry packet
+  QUICConnectionId _initial_source_connection_id = QUICConnectionId::ZERO(); // src cid used for Initial packet
+  QUICConnectionId _quic_connection_id           = QUICConnectionId::ZERO(); // src cid in local
 
 #if TS_HAS_QUICHE
   QUICConnectionTable *_ctable = nullptr;

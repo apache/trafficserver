@@ -29,9 +29,9 @@
 #include "iocore/net/quic/QUICTypes.h"
 #include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/quic/QUICIntUtil.h"
-#include <random>
 #include <openssl/crypto.h>
 #include <openssl/hmac.h>
+#include <openssl/rand.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;
 
@@ -723,15 +723,24 @@ QUICConnectionId::ZERO()
   return QUICConnectionId(zero, 0);
 }
 
-QUICConnectionId::QUICConnectionId()
-{
-  this->randomize();
-}
-
-QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len) : _len(len)
+QUICConnectionId::QUICConnectionId(const uint8_t *buf, uint8_t len) : _len(std::min<uint8_t>(len, MAX_LENGTH))
 {
   ink_assert(len <= QUICConnectionId::MAX_LENGTH);
-  memcpy(this->_id, buf, std::min(static_cast<int>(len), QUICConnectionId::MAX_LENGTH));
+  memcpy(this->_id, buf, this->_len);
+}
+
+QUICConnectionId
+QUICConnectionId::random()
+{
+  uint8_t const length         = SCID_LEN;
+  uint8_t       id[MAX_LENGTH] = {0};
+
+  ink_release_assert(length <= MAX_LENGTH);
+  if (length == 0) {
+    return ZERO();
+  }
+  ink_release_assert(RAND_bytes(id, length) == 1);
+  return {id, length};
 }
 
 uint8_t
@@ -749,20 +758,6 @@ QUICConnectionId::is_zero() const
     }
   }
   return true;
-}
-
-void
-QUICConnectionId::randomize()
-{
-  std::random_device rnd;
-  uint32_t           x = rnd();
-  for (int i = QUICConnectionId::SCID_LEN - 1; i >= 0; --i) {
-    if (i % 4 == 0) {
-      x = rnd();
-    }
-    this->_id[i] = (x >> (8 * (i % 4))) & 0xFF;
-  }
-  this->_len = QUICConnectionId::SCID_LEN;
 }
 
 uint64_t

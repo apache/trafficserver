@@ -185,8 +185,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   }
 
   // Setup QUICNetVConnection
-  QUICConnectionId client_dst_cid;
-  client_dst_cid.randomize();
+  QUICConnectionId client_dst_cid = QUICConnectionId::random();
   // vc->init set handler of vc `QUICNetVConnection::startEvent`
   vc->init(QUIC_SUPPORTED_VERSIONS[0], client_dst_cid, client_dst_cid, con, packet_handler);
   packet_handler->init(vc);
