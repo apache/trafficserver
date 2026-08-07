@@ -1579,18 +1579,22 @@ REGRESSION_TEST(SDK_API_TSPortDescriptor)(RegressionTest *test, int /* atype ATS
   TSContDataSet(server_cont, params);
   TSContDataSet(client_cont, params);
 
-  port = TSPortDescriptorParse(nullptr);
-  if (port) {
-    SDK_RPRINT(test, "TSPortDescriptorParse", "NULL port descriptor", TC_FAIL, "TSPortDescriptorParse(NULL) returned %s", port);
+  if (TSPortDescriptorParse(nullptr, &port) != TS_ERROR) {
+    SDK_RPRINT(test, "TSPortDescriptorParse", "NULL port descriptor", TC_FAIL, "TSPortDescriptorParse(NULL) returned TS_SUCCESS");
     *pstatus = REGRESSION_TEST_FAILED;
     return;
   }
 
   snprintf(desc, sizeof(desc), "%u", params->port);
-  port = TSPortDescriptorParse(desc);
-
-  if (TSPortDescriptorAccept(port, server_cont) == TS_ERROR) {
+  if (TSPortDescriptorParse(desc, &port) != TS_SUCCESS) {
     SDK_RPRINT(test, "TSPortDescriptorParse", "Basic port descriptor", TC_FAIL, "TSPortDescriptorParse(%s) returned TS_ERROR",
+               desc);
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
+  }
+
+  if (TSPortDescriptorAccept(&port, server_cont) == TS_ERROR) {
+    SDK_RPRINT(test, "TSPortDescriptorAccept", "Basic port descriptor", TC_FAIL, "TSPortDescriptorAccept(%s) returned TS_ERROR",
                desc);
     *pstatus = REGRESSION_TEST_FAILED;
     return;

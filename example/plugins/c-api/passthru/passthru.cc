@@ -296,17 +296,16 @@ PassthruAccept(TSCont /* cont */, TSEvent event, void *edata)
 static TSReturnCode
 PassthruListen()
 {
-  TSMgmtString     ports      = nullptr;
-  TSPortDescriptor descriptor = nullptr;
-  TSCont           cont       = nullptr;
+  TSMgmtString     ports = nullptr;
+  TSPortDescriptor descriptor;
+  TSCont           cont = nullptr;
 
   if (TSMgmtStringGet("config.plugin.passthru.server_ports", &ports) == TS_ERROR) {
     TSError("[%s] missing config.plugin.passthru.server_ports configuration", PLUGIN_NAME);
     return TS_ERROR;
   }
 
-  descriptor = TSPortDescriptorParse(ports);
-  if (descriptor == nullptr) {
+  if (TSPortDescriptorParse(ports, &descriptor) != TS_SUCCESS) {
     TSError("[%s] failed to parse config.plugin.passthru.server_ports", PLUGIN_NAME);
     TSfree(ports);
     return TS_ERROR;
@@ -316,7 +315,7 @@ PassthruListen()
   TSfree(ports);
 
   cont = TSContCreate(PassthruAccept, nullptr);
-  return TSPortDescriptorAccept(descriptor, cont);
+  return TSPortDescriptorAccept(&descriptor, cont);
 }
 
 void
