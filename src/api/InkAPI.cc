@@ -23,10 +23,12 @@
 
 #include <atomic>
 #include <charconv>
+#include <new>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "iocore/net/NetVConnection.h"
@@ -7775,24 +7777,43 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
 }
 
 // Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
-TSPortDescriptor
-TSPortDescriptorParse(const char *descriptor)
+TSReturnCode
+TSPortDescriptorParse(const char *descriptor, TSPortDescriptor *result)
 {
-  HttpProxyPort *port = new HttpProxyPort();
+  static_assert(sizeof(result->_opaque) >= sizeof(HttpProxyPort));
+  static_assert(alignof(TSPortDescriptor) >= alignof(HttpProxyPort));
+  static_assert(std::is_trivially_destructible_v<HttpProxyPort>);
 
-  if (descriptor && port->processOptions(descriptor)) {
-    return reinterpret_cast<TSPortDescriptor>(port);
+  if (result == nullptr) {
+    return TS_ERROR;
   }
 
-  delete port;
-  return nullptr;
+  result->_is_valid = false;
+  if (descriptor == nullptr) {
+    return TS_ERROR;
+  }
+
+  auto *port = new (result->_opaque) HttpProxyPort();
+
+  result->_is_valid = port->processOptions(descriptor);
+  return result->_is_valid ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
-TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
+TSPortDescriptorAccept(const TSPortDescriptor *descp, TSCont contp)
 {
+  if (descp == nullptr || contp == nullptr || !descp->_is_valid) {
+    return TS_ERROR;
+  }
+
+  const HttpProxyPort *port = std::launder(reinterpret_cast<const HttpProxyPort *>(descp->_opaque));
+
+  if ((port->m_family != AF_INET && port->m_family != AF_INET6 && port->m_family != AF_UNIX) ||
+      (port->m_family != AF_UNIX && port->m_port == 0)) {
+    return TS_ERROR;
+  }
+
   Action                     *action = nullptr;
-  HttpProxyPort              *port   = reinterpret_cast<HttpProxyPort *>(descp);
   NetProcessor::AcceptOptions net(make_net_accept_options(port, -1 /* nthreads */));
 
   if (port->isSSL()) {

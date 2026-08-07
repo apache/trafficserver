@@ -2187,19 +2187,32 @@ TSReturnCode TSPluginDescriptorAccept(TSCont contp);
 */
 TSReturnCode TSNetAcceptNamedProtocol(TSCont contp, const char *protocol);
 
-/**
-  Create a new port from the string specification used by the
-  proxy.config.http.server_ports configuration value.
+/** Parse a port descriptor.
+ *
+ * Parse the string specification used by the
+ * @c proxy.config.http.server_ports configuration value into caller-owned
+ * storage. The API does not allocate or free this storage, and no separate
+ * destruction function is required.
+ *
+ * @param[in] descriptor Port descriptor string to parse.
+ * @param[out] result Storage for the parsed port descriptor.
+ * @return @c TS_SUCCESS if @a descriptor was parsed, @c TS_ERROR otherwise.
  */
-TSPortDescriptor TSPortDescriptorParse(const char *descriptor);
+TSReturnCode TSPortDescriptorParse(const char *descriptor, TSPortDescriptor *result);
 
-/**
-   Start listening on the given port descriptor. If a connection is
-   successfully accepted, the TS_EVENT_NET_ACCEPT is delivered to the
-   continuation. The event data will be a valid TSVConn bound to the accepted
-   connection.
+/** Start listening on a parsed port descriptor.
+ *
+ * If a connection is successfully accepted, @c TS_EVENT_NET_ACCEPT is
+ * delivered to @a contp. The event data will be a valid @c TSVConn bound to
+ * the accepted connection. Neither the descriptor nor its storage is retained
+ * after this function returns. The descriptor can therefore be destroyed or
+ * reused immediately after this function returns.
+ *
+ * @param[in] descriptor Parsed port descriptor.
+ * @param[in] contp Continuation that accepts connections on the port.
+ * @return @c TS_SUCCESS if the port was opened, @c TS_ERROR otherwise.
  */
-TSReturnCode TSPortDescriptorAccept(TSPortDescriptor, TSCont);
+TSReturnCode TSPortDescriptorAccept(const TSPortDescriptor *descriptor, TSCont contp);
 
 /* --------------------------------------------------------------------------
    DNS Lookups */

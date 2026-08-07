@@ -42,6 +42,7 @@
  *
  */
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -1139,7 +1140,21 @@ using TSCacheHttpInfo = struct tsapi_cachehttpinfo *;
 using TSCacheTxn      = struct tsapi_cachetxn *;
 using TSSslVerifyCTX  = struct tsapi_x509_store_ctx *;
 
-using TSPortDescriptor   = struct tsapi_port *;
+/** Caller-owned storage for a parsed proxy port descriptor.
+ *
+ * The contents are opaque and must only be initialized and accessed through
+ * the TSPortDescriptor API.
+ */
+class alignas(std::uint64_t) TSPortDescriptor
+{
+  friend TSReturnCode TSPortDescriptorParse(const char *, TSPortDescriptor *);
+  friend TSReturnCode TSPortDescriptorAccept(const TSPortDescriptor *, struct tsapi_cont *);
+
+private:
+  std::byte _opaque[216];
+  bool      _is_valid{false};
+};
+
 using TSVIO              = struct tsapi_vio *;
 using TSThread           = struct tsapi_thread *;
 using TSEventThread      = struct tsapi_event_thread *;
