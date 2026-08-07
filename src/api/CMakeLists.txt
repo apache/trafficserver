@@ -63,4 +63,37 @@ if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
 endif()
 
+if(BUILD_TESTING)
+  add_executable(test_api unit_tests/test_HttpOverridableConfig.cc)
+  target_link_libraries(
+    test_api
+    PRIVATE Catch2::Catch2WithMain
+            ts::tscore
+            ts::tsapi
+            ts::overridable_txn_vars
+            ts::tsutil
+            ts::http
+            ts::http_remap
+            ts::http2
+            ts::logging
+            ts::hdrs
+            ts::diagsconfig
+            ts::inkutils
+            ts::inkdns
+            ts::inkhostdb
+            ts::inkcache
+            ts::aio
+            ts::proxy
+            ts::inknet
+            ts::records
+            ts::inkevent
+            libswoc::libswoc
+            ts::jsonrpc_protocol
+            ts::jsonrpc_server
+            ts::rpcpublichandlers
+            ts::configmanager
+  )
+  add_catch2_test(NAME test_api COMMAND test_api)
+endif()
+
 clang_tidy_check(tsapi)
