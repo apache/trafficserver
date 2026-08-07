@@ -31,6 +31,7 @@ development team.
    ArgParser.en
    MemArena.en
    MemSpan.en
+   Metrics.en
    TextView.en
    buffer-writer.en
    scalar.en

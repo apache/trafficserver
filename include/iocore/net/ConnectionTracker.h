@@ -82,16 +82,36 @@ public:
     MatchType server_match{MATCH_IP}; ///< Server match type.
   };
 
+  /** Levels for the @c metric_enabled configuration.
+   *
+   * The per group metrics are always created, in the hidden metric store, whenever metrics are
+   * enabled at all. What varies by level is what gets published:
+   *   - @c METRIC_LEVEL_NONE: no per group metrics are created and nothing is published.
+   *   - @c METRIC_LEVEL_HOST: the per group metrics stay hidden; the per hostname aggregates
+   *     (computed across the groups of a hostname by a @c Derived metric) are published.
+   *   - @c METRIC_LEVEL_GROUP: as above, plus the per group metrics are also mirrored into the
+   *     published store.
+   *
+   * Keeping the per group metrics in the hidden store at every level means changing the level at
+   * runtime is only a change of what is registered for publication, with no metric to migrate
+   * between the two stores.
+   */
+  enum MetricLevel {
+    METRIC_LEVEL_NONE  = 0, ///< No per server metrics.
+    METRIC_LEVEL_HOST  = 1, ///< Only the per hostname aggregate metrics are published.
+    METRIC_LEVEL_GROUP = 2, ///< The per hostname aggregates and the per group metrics are published.
+  };
+
   /** Static configuration values. */
   struct GlobalConfig {
     GlobalConfig() = default;
     GlobalConfig(GlobalConfig const &);
     GlobalConfig &operator=(GlobalConfig const &);
 
-    std::chrono::seconds            client_alert_delay{60}; ///< Alert delay in seconds.
-    std::chrono::seconds            server_alert_delay{60}; ///< Alert delay in seconds.
-    bool                            metric_enabled{false};  ///< Enabling per server metrics.
-    std::string                     metric_prefix;          ///< Per server metric prefix.
+    std::chrono::seconds            client_alert_delay{60};            ///< Alert delay in seconds.
+    std::chrono::seconds            server_alert_delay{60};            ///< Alert delay in seconds.
+    MetricLevel                     metric_enabled{METRIC_LEVEL_NONE}; ///< Which per server metrics to publish.
+    std::string                     metric_prefix;                     ///< Per server metric prefix.
     swoc::IPRangeSet                client_exempt_list; ///< The set of IP addresses to not block due client connection counting.
     mutable ts::bravo::shared_mutex client_exempt_list_mutex; ///< Protects client_exempt_list from concurrent access.
   };
@@ -145,7 +165,8 @@ public:
     std::atomic<int>    _in_queue{0};   ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
-    // Recording data as metrics
+    // Recording data as metrics. These are always in the hidden metric store when created; see
+    // @c MetricLevel for how they are published.
     ts::Metrics::Gauge::AtomicType   *_count_metric       = nullptr;
     ts::Metrics::Counter::AtomicType *_count_total_metric = nullptr;
     ts::Metrics::Counter::AtomicType *_blocked_metric     = nullptr;
@@ -170,6 +191,20 @@ public:
     /// Time of the last alert in epoch seconds.
     std::time_t        get_last_alert_epoch_time() const;
     static std::string metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix);
+
+    /** Name of the metric which aggregates a value across all groups of a hostname.
+     *
+     * Only @c MATCH_BOTH groups have more than one group per hostname. For @c MATCH_HOST there is
+     * exactly one group per hostname, so an aggregate would be over a set of one, and
+     * @c Group::metric_name already returns the FQDN alone for that match type - identical to what
+     * this would return, so publishing both would collide on one name.
+     *
+     * @param key The group key.
+     * @param fqdn The full FQDN.
+     * @param metric_prefix The configured metric prefix.
+     * @return The metric name, or an empty string if @a key is not @c MATCH_BOTH.
+     */
+    static std::string host_metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix);
 
     /// Release the reference count to this group and remove it from the
     /// group table if it is no longer referenced.
@@ -433,6 +468,15 @@ ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std
   return metric_prefix.empty() ? std::move(metric_name) : metric_prefix + "." + metric_name;
 }
 
+inline std::string
+ConnectionTracker::Group::host_metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix)
+{
+  if (MATCH_BOTH != key._match_type) {
+    return {}; // Only MATCH_BOTH has more than one group per hostname to aggregate across.
+  }
+  return metric_prefix.empty() ? std::string(fqdn) : metric_prefix + "." + std::string(fqdn);
+}
+
 inline bool
 ConnectionTracker::TxnState::is_active() const
 {
@@ -489,9 +533,13 @@ ConnectionTracker::TxnState::clear()
 inline void
 ConnectionTracker::TxnState::update_max_count(int count)
 {
-  auto cmax = _g->_count_max.load();
-  if (count > cmax) {
-    _g->_count_max.compare_exchange_weak(cmax, count);
+  auto cmax = _g->_count_max.load(std::memory_order_relaxed);
+
+  while (count > cmax) {
+    if (_g->_count_max.compare_exchange_weak(cmax, count, std::memory_order_relaxed, std::memory_order_relaxed)) {
+      break;
+    }
+    // cmax was reloaded by the failed exchange; retry if we are still larger.
   }
 }
 
