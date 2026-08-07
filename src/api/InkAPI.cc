@@ -3343,8 +3343,10 @@ DbgCtl dbg_ctl_plugin_config{"config.reload"};
 // pointers, so a stale handle can never alias a freshly-allocated context (no
 // ABA). Every accessor validates the id under the registry lock, so a call made
 // after Complete/Fail - or on a bogus handle - is a genuine no-op instead of a
-// use-after-free read. Complete/Fail extract (and thus free) the context under
-// the same lock, so a second finalize can never double-free.
+// use-after-free read. Complete/Fail unregister the context under the same lock,
+// so a second finalize can never double-free. Accessors hold shared ownership for
+// the duration of the call, so a Complete/Fail racing on another thread cannot
+// free the context mid-call.
 class PluginCtxRegistry
 {
 public:
@@ -3366,21 +3368,21 @@ public:
   }
 
   /// Look up a live context by handle. Returns @c nullptr when the handle was
-  /// already finalized or was never valid. The returned pointer stays owned by
-  /// the registry; callers must use it only within the (single-threaded per
-  /// handle) plugin contract.
-  PluginConfigContext *
+  /// already finalized or was never valid. The caller keeps shared ownership for
+  /// the duration of its call, so a concurrent Complete/Fail unregisters the
+  /// context without freeing it out from under the caller.
+  std::shared_ptr<PluginConfigContext>
   lookup(TSCfgLoadCtx handle)
   {
     uint64_t        id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle));
     std::lock_guard lock(_mutex);
     auto            it = _live.find(id);
-    return it != _live.end() ? it->second.get() : nullptr;
+    return it != _live.end() ? it->second : nullptr;
   }
 
   /// Remove a context from the registry, transferring ownership to the caller.
   /// Returns @c nullptr when the handle is unknown or already finalized.
-  std::unique_ptr<PluginConfigContext>
+  std::shared_ptr<PluginConfigContext>
   extract(TSCfgLoadCtx handle)
   {
     uint64_t        id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle));
@@ -3396,16 +3398,16 @@ public:
 
 private:
   std::mutex                                                         _mutex;
-  std::unordered_map<uint64_t, std::unique_ptr<PluginConfigContext>> _live;
+  std::unordered_map<uint64_t, std::shared_ptr<PluginConfigContext>> _live;
   uint64_t                                                           _next_id{1};
 };
 
 /// Resolve a handle to its live context, logging when the handle is invalid or
 /// already finalized. Returns @c nullptr in that case so callers can no-op.
-PluginConfigContext *
+std::shared_ptr<PluginConfigContext>
 resolve_plugin_ctx(TSCfgLoadCtx handle, const char *api_fn)
 {
-  auto *pctx = PluginCtxRegistry::instance().lookup(handle);
+  auto pctx = PluginCtxRegistry::instance().lookup(handle);
   if (pctx == nullptr) {
     Warning("%s called on an invalid or already-finalized TSCfgLoadCtx; ignoring", api_fn);
     ink_assert(!"TSCfgLoadCtx used after Complete/Fail or otherwise invalid");
@@ -3605,14 +3607,14 @@ finalize_plugin_ctx(TSCfgLoadCtx handle, std::string_view msg, bool complete)
       pctx->ctx.fail();
     }
   }
-  // pctx frees here.
+  // pctx frees here, or when the last concurrent accessor releases its reference.
 }
 } // anonymous namespace
 
 void
 TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxInProgress");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxInProgress");
   if (pctx == nullptr) {
     return;
   }
@@ -3639,7 +3641,7 @@ TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg)
 void
 TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddLog");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddLog");
   if (pctx == nullptr || msg.empty()) {
     return;
   }
@@ -3664,7 +3666,7 @@ TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
 TSCfgLoadCtx
 TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddSubtask");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddSubtask");
   if (pctx == nullptr) {
     return nullptr;
   }
@@ -3687,7 +3689,7 @@ TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
 std::string_view
 TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetFilename");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetFilename");
   if (pctx == nullptr) {
     return {};
   }
@@ -3697,7 +3699,7 @@ TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
 std::string_view
 TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadToken");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadToken");
   if (pctx == nullptr) {
     return {};
   }
@@ -3707,7 +3709,7 @@ TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
 TSYaml
 TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetSuppliedYaml");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetSuppliedYaml");
   if (pctx == nullptr || !pctx->supplied_yaml.IsDefined()) {
     return nullptr;
   }
@@ -3717,7 +3719,7 @@ TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx)
 TSYaml
 TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx)
 {
-  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadDirectives");
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadDirectives");
   if (pctx == nullptr || !pctx->reload_directives.IsDefined()) {
     return nullptr;
   }
