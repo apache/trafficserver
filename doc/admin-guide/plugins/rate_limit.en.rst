@@ -93,7 +93,12 @@ are available:
 .. option:: --maxage
 
    An optional maximum age for how long a transaction can sit in the delay queue.
-   The value (default 0) is the age in seconds.
+   The value (default 0) is the age in **milliseconds**.
+
+   Note that the equivalent YAML setting, ``max_age`` under a ``queue`` node, is in
+   seconds. The two configuration paths have always differed by a factor of 1000, so
+   the units are documented here as they behave rather than made consistent, to avoid
+   changing the expiry of existing configurations.
 
 .. option:: --prefix
 
@@ -212,9 +217,9 @@ For the top level `selector` node, the following options are available:
    how many queued transactions we will allow. When this threshold is reached,
    all additional connections are immediately errored out in the TLS handshake.
 
-   The queue option can include a `size` and a `max_age` option. The size is
-   default to ``UINT_MAX``, which is essentially unlimited. The max_age is
-   default to ``0``, which means no age limit.
+   The queue option can include a `size` and a `max_age` option. The size defaults
+   to ``UINT_MAX``, which is essentially unlimited. The max_age is in seconds and
+   defaults to ``0``, which means no age limit.
 
    No queue is enabled without this configuration directive, but it can also be
    disabled explicitly if the size is set to ``0``.
