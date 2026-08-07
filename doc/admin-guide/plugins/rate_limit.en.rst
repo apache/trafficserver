@@ -92,8 +92,13 @@ are available:
 
 .. option:: --maxage
 
-   An optional ``max-age`` for how long a transaction can sit in the delay queue.
-   The value (default 0) is the age in seconds.
+   An optional maximum age for how long a transaction can sit in the delay queue.
+   The value (default 0) is the age in **milliseconds**.
+
+   Note that the equivalent YAML setting, ``max_age`` under a ``queue`` node, is in
+   seconds. The two configuration paths have always differed by a factor of 1000, so
+   the units are documented here as they behave rather than made consistent, to avoid
+   changing the expiry of existing configurations.
 
 .. option:: --prefix
 
@@ -149,7 +154,7 @@ and nodes are documented below.
             rate: 200
             queue:
                size: 1000
-               max-age: 30
+               max_age: 30
             metrics:
                tag: example.com
                prefix: ddos
@@ -163,11 +168,11 @@ and nodes are documented below.
             buckets: 10
             size: 15
             percentage: 90
-            max-age: 300
+            max_age: 300
             perma-block:
                limit: 100
                threshold: 1
-               max-age: 1800
+               max_age: 1800
       lists:
          - name: internal
             cidr:
@@ -212,9 +217,9 @@ For the top level `selector` node, the following options are available:
    how many queued transactions we will allow. When this threshold is reached,
    all additional connections are immediately errored out in the TLS handshake.
 
-   The queue option can include a `size` and a `max-age` option. The size is
-   default to ``UINT_MAX``, which is essentially unlimited. The max-age is
-   default to ``0``, which means no age limit.
+   The queue option can include a `size` and a `max_age` option. The size defaults
+   to ``UINT_MAX``, which is essentially unlimited. The max_age is in seconds and
+   defaults to ``0``, which means no age limit.
 
    No queue is enabled without this configuration directive, but it can also be
    disabled explicitly if the size is set to ``0``.
@@ -268,12 +273,17 @@ and the following options:
    This is the minimum percentage of the ``limit`` that the pressure must be at, before
    we start blocking IPs. The default is ``0.9`` which means ``90%`` of the limit.
 
-.. option:: max-age
+.. option:: max_age
 
    This is used for aging out entries out of the LRU, the default is ``0`` which means
    no aging happens. Even with no aging, entries will eventually fall out of buckets
    because of the LRU mechanism that kicks in. The aging is here to make sure a spike
    in traffic from an IP doesn't keep the entry for too long in the LRUs.
+
+   Note that this option was incorrectly documented as ``max-age`` with a hyphen in previous
+   versions.  The code ignores ``max-age`` in all versions of this plugin.  We have chosen
+   to keep the behavior the same and update the documentation, so that previously inert
+   configurations don't activate unexpectedly with an upgrade.
 
 In addition, there's an optional configuration for the permanently blocking buckets,
 `perma-block`. This is a special bucket, which is only used for IPs which have been
@@ -289,7 +299,7 @@ blocked for a long time. The configuration for this bucket is:
    This option specifies from which bucket an IP is allowed to move from into the
    perma block bucket. A good value here is likely ``0`` or ``1``, which is very conservative.
 
-.. option:: max-age
+.. option:: max_age
 
    Like above, but only applies to the long term (`perma-block`) bucket. Default is
    ``0``, which means no aging to this bucket is applied.
