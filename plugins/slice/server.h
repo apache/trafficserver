@@ -35,3 +35,14 @@
  */
 
 void handle_server_resp(TSCont contp, TSEvent event, Data *const data);
+
+/** Walk the object's slice blocks issuing a PURGE for each.
+ *
+ * A purge transfers no content, so it runs a separate state machine: it walks
+ * every block whether or not each is cached, taking the object's extent from the
+ * ones it removes, and answers the client only once the walk is done.
+ */
+void handle_purge_resp(TSCont contp, TSEvent event, Data *const data);
+
+// Answer a purge: 200 if any block was removed, 404 if none was, or status if given
+void finish_purge(TSCont contp, Data *const data, TSHttpStatus const status = TS_HTTP_STATUS_NONE);

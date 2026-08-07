@@ -186,7 +186,21 @@ The slice plugin supports the following options::
         that causes `cache_range_requests` to be bypassed in such requests, and
         allow ATS to handle those range requests internally.
 
+    --purge-probe-blocks=<int> (optional)
+        Default is 8
+        How many consecutive uncached slice blocks a PURGE walks, before any block
+        has reported the object's extent, until it concludes that nothing about the
+        object is cached.  May be overridden per request with the header named by
+        ``--purge-probe-header``.  See `Purge Requests`_.
+        -q for short
 
+    --purge-probe-header=<string> (optional)
+        Default is X-Slice-Purge-Probe
+        Name of the request header a PURGE may use to override
+        ``--purge-probe-blocks`` for that request.  A malformed value is ignored
+        in favour of the configured default.  Slice strips this header from the
+        block requests it issues.
+        -H for short
 
 Examples::
 
@@ -338,17 +352,78 @@ requests may end up being served from temporally different assets.
 Purge Requests
 --------------
 
-The slice plugin supports PURGE requests, discarding the requested object from cache.
-If a range is given in the client request, only the slice blocks from the
-requested range will be purged (if in cache). If not, all of the blocks will be discarded
-from the cache.
+The slice plugin supports PURGE requests, discarding the requested object from
+cache. Without a range every block is discarded; with a range, the blocks that
+range covers are. Two cases below purge more than the range names: a suffix range,
+and block 0 when ``--ref-relative`` is disabled.
 
-If a block receives a 404, indicating the requested block to be purged is not in the cache,
-slice will not continue to purge the following blocks.
+Slice issues one PURGE per block and walks every block it was asked for, whether
+or not each one is currently cached. A block that is already absent answers 404
+internally; that is simply noted and the walk continues, so a gap left by
+per-block eviction cannot leave the blocks behind it in cache.
 
-The functionality works with `--ref-relative` both enabled and disabled. If `--ref-relative` is
-disabled (using slice 0 as the reference block), requesting to PURGE a block that does not have
-slice 0 in its range will still PURGE the slice 0 block, as the reference block is always processed.
+Slice learns where the object ends from the blocks it removes. PURGE is a Traffic
+Server extension, so a successful block purge reports the removed object's extent
+in a ``X-Purged-Content-Range`` header, and the walk continues to the last block that
+extent implies. Blocks of one object can disagree about its length when the origin
+object has been replaced in place; slice takes the largest extent any block
+reports, so the longer generation's tail is not left behind.
+
+Until some block has reported an extent, a walk over an open-ended range has no
+end but the miss bound: it stops after ``--purge-probe-blocks`` consecutive
+uncached blocks and reports that nothing was found. That is what bounds a PURGE
+for a URL which is not cached at all.
+
+An operator often knows more about the object than the plugin does, since the
+block count is just the object's size divided by the block size. That count can be
+supplied per request with the header named by ``--purge-probe-header``, default
+``X-Slice-Purge-Probe``::
+
+    PURGE /obj HTTP/1.1
+    X-Slice-Purge-Probe: 64
+
+This only changes how long the walk keeps going without having found anything; it
+never limits how many blocks are purged once an extent is known.
+
+The bound has to be able to span a whole object, because in the worst case only
+the object's last block is still cached, so the value an operator wants is the
+object's size divided by the block size: a 10 GB object in 1 MB blocks needs
+10240. There is no ceiling on it beyond that, since reaching the bound costs one
+internal cache lookup per block and PURGE is already restricted by
+:file:`ip_allow.yaml`. A malformed value is ignored in favour of the configured
+default, and slice strips the header from the block requests it issues.
+
+If the bound is reached, slice logs that it gave up and reports ``404`` even though
+later blocks may still be cached. Raise ``--purge-probe-blocks``, or send the
+override, for objects whose leading blocks are routinely absent.
+
+A client range that is already closed, such as ``bytes=0-6399999999``, bounds the
+walk directly, and is clamped against the object's extent as soon as some block
+reports one. An over-estimate therefore costs no extra block PURGEs beyond the end
+of the object, and if no block is cached at all the miss bound stops the walk.
+
+A suffix range, ``bytes=-<n>``, names its blocks by their distance from an end
+slice does not know yet, and purging is the only way it could find out. Rather
+than guess at the start, such a purge is widened to the whole object: a superset of
+what was asked for, so the named blocks certainly go. A ``GET`` with the same header
+is unaffected and still returns exactly the last *n* bytes.
+
+The response is sent once the walk is complete: ``200`` if at least one block was
+removed, ``404`` if none was found. This matches what Traffic Server reports for a
+PURGE of an object that is not sliced.
+
+A block whose PURGE returns neither ``200`` nor ``404`` — a ``403`` from
+:file:`ip_allow.yaml`, for instance, or a ``502`` — says nothing about whether that
+block was cached, and nothing about the blocks behind it. The walk stops there and that
+status is reported in place of ``200``, so the two success statuses keep meaning what
+they say: ``200`` that the object is gone and ``404`` that it was not there, never that
+this proxy could not tell. Blocks the walk had already removed stay removed, and blocks
+behind the failing one are left cached, so such a PURGE is worth repeating once
+whatever refused it has been dealt with.
+
+The functionality works with ``--ref-relative`` both enabled and disabled. With it
+disabled, block 0 is always the first block walked, so a PURGE whose range does not
+cover block 0 still purges it.
 
 Conditional Slicing
 -------------------
