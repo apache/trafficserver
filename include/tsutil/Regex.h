@@ -68,7 +68,12 @@ public:
 
   /** Get the match at the given index.
    *
-   * @return The match at the given index.
+   * An index the match did not populate, and a group that did not participate in the match, both
+   * yield an empty view. The result never has a null data(), so it can be handed straight to
+   * memcpy(), std::string::append() and "%.*s". Use get_ovector_pointer() to tell a group that did
+   * not participate from one that matched an empty string.
+   *
+   * @return The match at the given index, or an empty view.
    */
   std::string_view operator[](size_t index) const;
   /** Get the ovector pointer for the capture groups.  Don't use this unless you know what you are doing.
