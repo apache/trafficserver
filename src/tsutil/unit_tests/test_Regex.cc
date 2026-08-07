@@ -460,6 +460,23 @@ TEST_CASE("RegexMatches edge cases", "[libts][Regex][RegexMatches]")
     CHECK(count >= 2); // At least whole match + first group
     CHECK(matches[1] == "foo");
   }
+
+  SECTION("RegexMatches with a non-participating group before a participating one")
+  {
+    // pcre2_match() returns one past the highest participating group, so an earlier optional group
+    // that did not participate is still within that count. Its offsets are unset.
+    Regex r;
+    REQUIRE(r.compile("(a)?(b)") == true);
+
+    RegexMatches matches;
+    int          count = r.exec("b", matches);
+
+    CHECK(count == 3);
+    CHECK(matches[0] == "b");
+    CHECK(matches[1] == "");
+    CHECK(matches[2] == "b");
+    CHECK(matches[1].data() == nullptr);
+  }
 }
 
 TEST_CASE("Regex with special characters", "[libts][Regex][special]")
