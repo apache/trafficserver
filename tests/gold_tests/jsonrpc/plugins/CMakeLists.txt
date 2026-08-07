@@ -18,3 +18,12 @@
 add_autest_plugin(jsonrpc_plugin_handler_test jsonrpc_plugin_handler_test.cc)
 
 target_link_libraries(jsonrpc_plugin_handler_test PRIVATE jsonrpc_protocol libswoc::libswoc)
+
+add_autest_plugin(cfg_plugin_test cfg_plugin_test.cc)
+target_link_libraries(cfg_plugin_test PRIVATE yaml-cpp::yaml-cpp)
+
+add_autest_plugin(cfg_plugin_deferred_test cfg_plugin_deferred_test.cc)
+target_link_libraries(cfg_plugin_deferred_test PRIVATE yaml-cpp::yaml-cpp)
+
+add_autest_plugin(cfg_plugin_directives_test cfg_plugin_directives_test.cc)
+target_link_libraries(cfg_plugin_directives_test PRIVATE yaml-cpp::yaml-cpp)
