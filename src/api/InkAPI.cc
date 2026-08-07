@@ -23,6 +23,9 @@
 
 #include <atomic>
 #include <charconv>
+#include <cstdint>
+#include <memory>
+#include <mutex>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
@@ -3321,19 +3324,94 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_f
 
 namespace
 {
-// Handle behind the opaque TSCfgLoadCtx. The wrapper lambda new's one per
-// handler invocation; TSCfgLoadCtx{Complete,Fail} delete it. Caches the
-// strings/nodes the getters need to return as stable pointers.
+// Handle behind the opaque TSCfgLoadCtx. One is created per handler invocation
+// (and per subtask) and owned by PluginCtxRegistry. Caches the strings/nodes the
+// getters need to return as stable pointers for the lifetime of the handle.
 struct PluginConfigContext {
-  ConfigContext     ctx;
-  std::string       filename;
-  std::string       reload_token;
-  YAML::Node        supplied_yaml;
-  YAML::Node        reload_directives;
-  std::atomic<bool> consumed{false};
+  ConfigContext ctx;
+  std::string   filename;
+  std::string   reload_token;
+  YAML::Node    supplied_yaml;
+  YAML::Node    reload_directives;
 };
 
 DbgCtl dbg_ctl_plugin_config{"config.reload"};
+
+// Process-lifetime registry of live TSCfgLoadCtx handles.
+//
+// Handles handed to plugins are opaque monotonically-increasing ids, never raw
+// pointers, so a stale handle can never alias a freshly-allocated context (no
+// ABA). Every accessor validates the id under the registry lock, so a call made
+// after Complete/Fail - or on a bogus handle - is a genuine no-op instead of a
+// use-after-free read. Complete/Fail extract (and thus free) the context under
+// the same lock, so a second finalize can never double-free.
+class PluginCtxRegistry
+{
+public:
+  static PluginCtxRegistry &
+  instance()
+  {
+    static PluginCtxRegistry r;
+    return r;
+  }
+
+  /// Take ownership of @a pctx and return its opaque handle.
+  TSCfgLoadCtx
+  create(std::unique_ptr<PluginConfigContext> pctx)
+  {
+    std::lock_guard lock(_mutex);
+    uint64_t        id = _next_id++;
+    _live.emplace(id, std::move(pctx));
+    return reinterpret_cast<TSCfgLoadCtx>(static_cast<uintptr_t>(id));
+  }
+
+  /// Look up a live context by handle. Returns @c nullptr when the handle was
+  /// already finalized or was never valid. The returned pointer stays owned by
+  /// the registry; callers must use it only within the (single-threaded per
+  /// handle) plugin contract.
+  PluginConfigContext *
+  lookup(TSCfgLoadCtx handle)
+  {
+    uint64_t        id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle));
+    std::lock_guard lock(_mutex);
+    auto            it = _live.find(id);
+    return it != _live.end() ? it->second.get() : nullptr;
+  }
+
+  /// Remove a context from the registry, transferring ownership to the caller.
+  /// Returns @c nullptr when the handle is unknown or already finalized.
+  std::unique_ptr<PluginConfigContext>
+  extract(TSCfgLoadCtx handle)
+  {
+    uint64_t        id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle));
+    std::lock_guard lock(_mutex);
+    auto            it = _live.find(id);
+    if (it == _live.end()) {
+      return nullptr;
+    }
+    auto pctx = std::move(it->second);
+    _live.erase(it);
+    return pctx;
+  }
+
+private:
+  std::mutex                                                         _mutex;
+  std::unordered_map<uint64_t, std::unique_ptr<PluginConfigContext>> _live;
+  uint64_t                                                           _next_id{1};
+};
+
+/// Resolve a handle to its live context, logging when the handle is invalid or
+/// already finalized. Returns @c nullptr in that case so callers can no-op.
+PluginConfigContext *
+resolve_plugin_ctx(TSCfgLoadCtx handle, const char *api_fn)
+{
+  auto *pctx = PluginCtxRegistry::instance().lookup(handle);
+  if (pctx == nullptr) {
+    Warning("%s called on an invalid or already-finalized TSCfgLoadCtx; ignoring", api_fn);
+    ink_assert(!"TSCfgLoadCtx used after Complete/Fail or otherwise invalid");
+  }
+  return pctx;
+}
 
 /// Verify we're inside TSPluginInit() after a successful TSPluginRegister().
 /// Returns the active plugin name on success, nullptr on failure (after logging).
@@ -3380,31 +3458,39 @@ TSCfgRegister(const TSCfgRegistrationInfo *info)
   auto cb    = info->handler;
   auto udata = info->data;
 
-  // Lambda captures only the function pointer + opaque user data. Plugin name
-  // and key live on the Entry; the wrapper looks them up via the ctx that the
-  // framework attaches them to (set_plugin_name in ConfigRegistry).
-  config::ConfigReloadHandler wrapper = [cb, udata](ConfigContext ctx) {
-    auto *handle              = new PluginConfigContext{};
-    handle->reload_token      = ctx.get_reload_token();
-    handle->supplied_yaml     = ctx.supplied_yaml();
-    handle->reload_directives = ctx.reload_directives();
-    auto const &key           = ctx.get_description();
-    if (auto const *entry = config::ConfigRegistry::Get_Instance().find(key); entry != nullptr) {
-      handle->filename = entry->resolve_filename();
+  // Lambda captures the function pointer, opaque user data, and the registry key
+  // (so it never has to rely on ctx.get_description() matching the key). The
+  // handle is owned by PluginCtxRegistry for the duration of the reload.
+  config::ConfigReloadHandler wrapper = [cb, udata, key_str](ConfigContext ctx) {
+    auto pctx               = std::make_unique<PluginConfigContext>();
+    pctx->reload_token      = ctx.get_reload_token();
+    pctx->supplied_yaml     = ctx.supplied_yaml();
+    pctx->reload_directives = ctx.reload_directives();
+    if (auto const *entry = config::ConfigRegistry::Get_Instance().find(key_str); entry != nullptr) {
+      pctx->filename = entry->resolve_filename();
     }
-    handle->ctx = std::move(ctx);
+    pctx->ctx = std::move(ctx);
 
-    Dbg(dbg_ctl_plugin_config, "Invoking plugin config handler for '%s'", key.c_str());
-    cb(reinterpret_cast<TSCfgLoadCtx>(handle), udata);
-    // Past this point @p handle may be deleted (synchronous completion). Deferred
-    // completion is detected upstream via ctx.is_terminal(). If the plugin never
-    // completes, the handle leaks but core's progress timeout still unblocks.
+    TSCfgLoadCtx handle = PluginCtxRegistry::instance().create(std::move(pctx));
+
+    Dbg(dbg_ctl_plugin_config, "Invoking plugin config handler for '%s'", key_str.c_str());
+    cb(handle, udata);
+    // On synchronous completion the plugin has already finalized (and freed) the
+    // handle. On deferred completion the handle stays live in the registry until
+    // the plugin calls Complete/Fail. If the plugin never finalizes, the entry
+    // persists (bounded: one per un-finalized reload) but core's progress
+    // timeout still unblocks the reload cycle.
   };
 
-  // Duplicate-key handling lives in ConfigRegistry::do_register and emits a
-  // Warning identifying both owners; callers can probe with TSCfgIsRegistered.
-  config::ConfigRegistry::Get_Instance().register_plugin_config(key_str, plugin_name, config_path_str, filename_record_str,
-                                                                std::move(wrapper), cfg_source, {}, info->is_required);
+  // Duplicate-key / invalid registrations are dropped by register_plugin_config;
+  // surface that to the plugin as TS_ERROR rather than a false success. Callers
+  // can also probe up front with TSCfgIsRegistered.
+  if (!config::ConfigRegistry::Get_Instance().register_plugin_config(key_str, plugin_name, config_path_str, filename_record_str,
+                                                                     std::move(wrapper), cfg_source, {}, info->is_required)) {
+    Error("[%s] TSCfgRegister: registration dropped for key '%s' (duplicate key or invalid plugin state)", plugin_name,
+          key_str.c_str());
+    return TS_ERROR;
+  }
 
   Dbg(dbg_ctl_plugin_config, "[%s] TSCfgRegister: registered '%s' (file: %s)", plugin_name, key_str.c_str(),
       config_path_str.c_str());
@@ -3493,33 +3579,16 @@ TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
 
 namespace
 {
-/// Check that a handle is alive (not yet consumed by Complete/Fail). On a
-/// post-finalize call we log + assert in debug; the call becomes a no-op
-/// in release. Cross-thread post-delete access still slips past us - that
-/// is plugin-side UB.
-bool
-plugin_ctx_alive(PluginConfigContext *pctx, const char *api_fn)
-{
-  if (pctx == nullptr) {
-    return false;
-  }
-  if (pctx->consumed.load(std::memory_order_acquire)) {
-    Warning("%s called on finalized TSCfgLoadCtx (reload_token=%s); ignoring", api_fn, pctx->reload_token.c_str());
-    ink_assert(!"TSCfgLoadCtx used after Complete/Fail");
-    return false;
-  }
-  return true;
-}
-
+/// Finalize a handle with Complete or Fail. The context is extracted (and thus
+/// freed) under the registry lock, so a second finalize - or any later accessor
+/// call - safely finds nothing and no-ops instead of touching freed memory.
 void
-finalize_plugin_ctx(PluginConfigContext *pctx, std::string_view msg, bool complete)
+finalize_plugin_ctx(TSCfgLoadCtx handle, std::string_view msg, bool complete)
 {
+  auto pctx = PluginCtxRegistry::instance().extract(handle);
   if (pctx == nullptr) {
-    return;
-  }
-  if (pctx->consumed.exchange(true)) {
-    Warning("Plugin double-finalized TSCfgLoadCtx (reload_token=%s); ignoring second call", pctx->reload_token.c_str());
-    ink_assert(!"TSCfgLoadCtx finalized more than once");
+    Warning("TSCfgLoadCtx%s called on an invalid or already-finalized handle; ignoring", complete ? "Complete" : "Fail");
+    ink_assert(!"TSCfgLoadCtx finalized more than once or otherwise invalid");
     return;
   }
 
@@ -3536,16 +3605,15 @@ finalize_plugin_ctx(PluginConfigContext *pctx, std::string_view msg, bool comple
       pctx->ctx.fail();
     }
   }
-
-  delete pctx;
+  // pctx frees here.
 }
 } // anonymous namespace
 
 void
 TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxInProgress")) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxInProgress");
+  if (pctx == nullptr) {
     return;
   }
 
@@ -3559,20 +3627,20 @@ TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
 void
 TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg)
 {
-  finalize_plugin_ctx(reinterpret_cast<PluginConfigContext *>(ctx), msg, /*complete=*/true);
+  finalize_plugin_ctx(ctx, msg, /*complete=*/true);
 }
 
 void
 TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg)
 {
-  finalize_plugin_ctx(reinterpret_cast<PluginConfigContext *>(ctx), msg, /*complete=*/false);
+  finalize_plugin_ctx(ctx, msg, /*complete=*/false);
 }
 
 void
 TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxAddLog") || msg.empty()) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddLog");
+  if (pctx == nullptr || msg.empty()) {
     return;
   }
 
@@ -3596,8 +3664,8 @@ TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
 TSCfgLoadCtx
 TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxAddSubtask")) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddSubtask");
+  if (pctx == nullptr) {
     return nullptr;
   }
 
@@ -3606,21 +3674,21 @@ TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
     return nullptr;
   }
 
-  auto *child_handle              = new PluginConfigContext{};
+  auto child_handle               = std::make_unique<PluginConfigContext>();
   child_handle->filename          = pctx->filename;
   child_handle->reload_token      = pctx->reload_token;
   child_handle->supplied_yaml     = child_ctx.supplied_yaml();
   child_handle->reload_directives = child_ctx.reload_directives();
   child_handle->ctx               = std::move(child_ctx);
 
-  return reinterpret_cast<TSCfgLoadCtx>(child_handle);
+  return PluginCtxRegistry::instance().create(std::move(child_handle));
 }
 
 std::string_view
 TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetFilename")) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetFilename");
+  if (pctx == nullptr) {
     return {};
   }
   return pctx->filename;
@@ -3629,8 +3697,8 @@ TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
 std::string_view
 TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetReloadToken")) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadToken");
+  if (pctx == nullptr) {
     return {};
   }
   return pctx->reload_token;
@@ -3639,8 +3707,8 @@ TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
 TSYaml
 TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetSuppliedYaml") || !pctx->supplied_yaml.IsDefined()) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetSuppliedYaml");
+  if (pctx == nullptr || !pctx->supplied_yaml.IsDefined()) {
     return nullptr;
   }
   return reinterpret_cast<TSYaml>(&pctx->supplied_yaml);
@@ -3649,8 +3717,8 @@ TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx)
 TSYaml
 TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx)
 {
-  auto *pctx = reinterpret_cast<PluginConfigContext *>(ctx);
-  if (!plugin_ctx_alive(pctx, "TSCfgLoadCtxGetReloadDirectives") || !pctx->reload_directives.IsDefined()) {
+  auto *pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadDirectives");
+  if (pctx == nullptr || !pctx->reload_directives.IsDefined()) {
     return nullptr;
   }
   return reinterpret_cast<TSYaml>(&pctx->reload_directives);

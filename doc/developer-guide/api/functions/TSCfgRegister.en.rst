@@ -192,6 +192,7 @@ Synopsis
    ``Dbg(ctl, ...)`` instead of this API.
 
 .. function:: TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info)
+.. function:: bool TSCfgIsRegistered(std::string_view key)
 .. function:: TSReturnCode TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name)
 .. function:: TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
 .. function:: void TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
@@ -231,9 +232,19 @@ Registration
    incomplete ``info`` struct.
 
    If another plugin (or core) has already registered the same key,
-   the duplicate registration is rejected and a warning is logged
-   identifying both owners; ``TS_SUCCESS`` is still returned, since
-   the plugin has no useful recovery path at init time.
+   the duplicate registration is rejected, a warning is logged
+   identifying both owners, and ``TS_ERROR`` is returned. The colliding
+   registration is **not** installed, so the handler would never run;
+   the plugin can detect this and log or bail out. Plugins that may be
+   loaded more than once can probe first with :func:`TSCfgIsRegistered`
+   to avoid the duplicate attempt entirely.
+
+:func:`TSCfgIsRegistered`
+   Returns ``true`` if ``key`` is already registered (by any plugin or
+   core), ``false`` otherwise (including for an empty ``key``). Plugins
+   that may be loaded more than once - e.g. by an admin retry, or as a
+   remap plugin instance - can call this before :func:`TSCfgRegister`
+   to skip a duplicate registration that would otherwise be rejected.
 
 :func:`TSCfgAttachReloadTrigger`
    Wires a record so that changing its value re-runs the reload handler
@@ -303,14 +314,16 @@ State transitions:
 
 :func:`TSCfgLoadCtxComplete`
    Mark the task as successfully completed. Pass ``{}`` for ``msg`` if
-   no message is needed. After this call the framework deletes the
-   context handle - **do not access** ``ctx`` after a successful
-   Complete.
+   no message is needed. This call finalizes and invalidates ``ctx``:
+   **do not use** ``ctx`` afterwards. A later call on the same handle
+   (a second Complete/Fail, or any accessor) is ignored and logged as
+   misuse rather than acting on freed state, but plugins must not rely
+   on that as normal control flow.
 
 :func:`TSCfgLoadCtxFail`
    Mark the task as failed. Pass ``{}`` for ``msg`` if no message is
-   needed. After this call the framework deletes the context handle -
-   **do not access** ``ctx`` after a Fail.
+   needed. This call finalizes and invalidates ``ctx`` with the same
+   post-finalize semantics as :func:`TSCfgLoadCtxComplete`.
 
 :func:`TSCfgLoadCtxAddLog`
    Append a log entry at ``level`` to the task. Visible in

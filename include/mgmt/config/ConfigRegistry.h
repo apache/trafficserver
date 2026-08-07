@@ -141,7 +141,10 @@ public:
   ///
   /// @a plugin_name must be non-empty; it is recorded on the Entry and used
   /// for diagnostics, log attribution, and traffic_ctl status output.
-  void register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
+  /// @return @c true if the config was registered; @c false if the registration
+  ///         was dropped (empty @a plugin_name or a colliding key). Callers that
+  ///         surface an error to plugins (e.g. TSCfgRegister) rely on this.
+  bool register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
                               const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
                               std::initializer_list<const char *> trigger_records = {}, bool is_required = false);
 
@@ -293,6 +296,12 @@ public:
   bool         contains(const std::string &key) const;
   Entry const *find(const std::string &key) const;
 
+  /// Whether @a key names an entry that can actually be reloaded, i.e. it
+  /// exists and has a reload handler. Checked atomically under the registry
+  /// lock so callers never dereference a dangling Entry. Handler-less entries
+  /// (e.g. the static @c storage / @c plugin catalog entries) return @c false.
+  bool is_reloadable(const std::string &key) const;
+
   /// Callback context for RecRegisterConfigUpdateCb (public for callback access)
   struct TriggerContext {
     std::string     config_key;
@@ -307,8 +316,9 @@ private:
   ConfigRegistry(ConfigRegistry const &)            = delete;
   ConfigRegistry &operator=(ConfigRegistry const &) = delete;
 
-  /// Internal: common registration logic
-  void do_register(Entry entry);
+  /// Internal: common registration logic.
+  /// @return @c true if the entry was inserted, @c false on a duplicate key.
+  bool do_register(Entry entry);
 
   /// Internal: setup trigger callbacks for an entry
   void setup_triggers(Entry &entry);

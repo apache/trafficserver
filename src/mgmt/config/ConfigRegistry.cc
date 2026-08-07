@@ -206,7 +206,7 @@ ConfigRegistry::Entry::resolve_filename() const
   return fname;
 }
 
-void
+bool
 ConfigRegistry::do_register(Entry entry)
 {
   const char *type_str  = (entry.type == ConfigType::YAML) ? "YAML" : "legacy";
@@ -242,6 +242,8 @@ ConfigRegistry::do_register(Entry entry)
     Warning("Config '%s' already registered by %s; ignoring registration from %s", it->first.c_str(), existing_owner,
             incoming_owner);
   }
+
+  return inserted;
 }
 
 void
@@ -265,7 +267,7 @@ ConfigRegistry::register_config(const std::string &key, const std::string &defau
   do_register(std::move(entry));
 }
 
-void
+bool
 ConfigRegistry::register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
                                        const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
                                        std::initializer_list<const char *> trigger_records, bool is_required)
@@ -273,7 +275,7 @@ ConfigRegistry::register_plugin_config(const std::string &key, const std::string
   if (plugin_name.empty()) {
     Warning("ConfigRegistry::register_plugin_config: empty plugin_name for key '%s'; refusing", key.c_str());
     ink_assert(!"register_plugin_config called with empty plugin_name");
-    return;
+    return false;
   }
 
   Entry entry;
@@ -290,7 +292,7 @@ ConfigRegistry::register_plugin_config(const std::string &key, const std::string
     entry.trigger_records.emplace_back(record);
   }
 
-  do_register(std::move(entry));
+  return do_register(std::move(entry));
 }
 
 void
@@ -477,6 +479,14 @@ ConfigRegistry::find(const std::string &key) const
   return it != _entries.end() ? &it->second : nullptr;
 }
 
+bool
+ConfigRegistry::is_reloadable(const std::string &key) const
+{
+  std::shared_lock lock(_mutex);
+  auto             it = _entries.find(key);
+  return it != _entries.end() && static_cast<bool>(it->second.handler);
+}
+
 void
 ConfigRegistry::set_passed_config(const std::string &key, YAML::Node content)
 {
@@ -543,7 +553,13 @@ ConfigRegistry::execute_reload(const std::string &key)
     }
   }
 
-  ink_release_assert(entry_copy.handler);
+  // A handler-less entry can reach here if a file that maps to a catalog-only
+  // registry key (e.g. the static "storage"/"plugin" entries) changes on disk.
+  // Skip it rather than aborting the server with a release assert.
+  if (!entry_copy.handler) {
+    Warning("Config '%s' has no reload handler; ignoring reload request", key.c_str());
+    return;
+  }
 
   // Create context with subtask tracking.
   // For rpc reload: use key as description, no filename (source: rpc)

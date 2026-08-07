@@ -1260,7 +1260,10 @@ TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
     logged on failure; @a info must be non-null.
 
     @param info  Registration parameters.
-    @return TS_SUCCESS on registration attempt, TS_ERROR on precondition fail.
+    @return TS_SUCCESS if the config was registered; TS_ERROR on a precondition
+            failure or if the registration was dropped (duplicate key). On a
+            duplicate key the handler is never installed - probe first with
+            TSCfgIsRegistered() if the plugin may be loaded more than once.
 */
 TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
 
@@ -1268,7 +1271,7 @@ TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
 
     Plugins that may be loaded more than once (e.g. by an admin retry, or as
     a remap plugin instance) can use this to skip a duplicate TSCfgRegister
-    call, which would otherwise be silently dropped.
+    call, which would otherwise be rejected with TS_ERROR.
 
     @param key  Registry key.
     @return     true if @a key is currently registered (core or plugin).
@@ -1294,13 +1297,16 @@ TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info);
 */
 void TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg);
 
-/** Report successful config load. Frees @a ctx; do not use after this call.
-    Null @a ctx is a no-op; empty @a msg means no message.
+/** Report successful config load. Finalizes and invalidates @a ctx; do not use
+    it after this call. A later call on the same handle (double finalize, or any
+    accessor) is ignored and logged as misuse, not acted on. Null/unknown @a ctx
+    is a no-op; empty @a msg means no message.
 */
 void TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg);
 
-/** Report failed config load. Frees @a ctx; do not use after this call.
-    Null @a ctx is a no-op; empty @a msg means no message.
+/** Report failed config load. Finalizes and invalidates @a ctx with the same
+    post-finalize semantics as TSCfgLoadCtxComplete(). Null/unknown @a ctx is a
+    no-op; empty @a msg means no message.
 */
 void TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg);
 

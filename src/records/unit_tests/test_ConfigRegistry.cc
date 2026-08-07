@@ -266,3 +266,46 @@ TEST_CASE("ConfigRegistry register_plugin_config accepts empty filename_record",
   CHECK(entry->filename_record.empty());
   CHECK(entry->default_filename == "fixed.yaml");
 }
+
+// ─── Duplicate-key registration is reported ───────────────────────────────────
+
+TEST_CASE("ConfigRegistry register_plugin_config reports duplicate-key failure", "[config][registry][plugin][duplicate]")
+{
+  auto &reg = ConfigRegistry::Get_Instance();
+
+  bool first =
+    reg.register_plugin_config("test_plugin_dup_key", "test_plugin", "a.yaml", "", noop_handler, ConfigSource::FileOnly, {}, false);
+  REQUIRE(first);
+
+  // A second registration under the same key must be rejected and reported, so
+  // TSCfgRegister can surface TS_ERROR instead of a false success.
+  bool second = reg.register_plugin_config("test_plugin_dup_key", "other_plugin", "b.yaml", "", noop_handler,
+                                           ConfigSource::FileOnly, {}, false);
+  REQUIRE_FALSE(second);
+
+  // The original owner is preserved; the losing registration installs nothing.
+  auto const *entry = reg.find("test_plugin_dup_key");
+  REQUIRE(entry != nullptr);
+  CHECK(entry->plugin_name == "test_plugin");
+  CHECK(entry->default_filename == "a.yaml");
+}
+
+// ─── is_reloadable: handler-less entries are not schedulable ───────────────────
+
+TEST_CASE("ConfigRegistry is_reloadable distinguishes handler-less entries", "[config][registry][reloadable]")
+{
+  auto &reg = ConfigRegistry::Get_Instance();
+
+  // An entry with a handler is reloadable.
+  reg.register_config("test_reloadable_with_handler", "", "", noop_handler, ConfigSource::FileOnly, {});
+  CHECK(reg.is_reloadable("test_reloadable_with_handler"));
+
+  // A catalog-only entry (no handler) must NOT be routed to schedule_reload; this
+  // is the guard that keeps a storage.config/plugin.config edit from aborting the
+  // server via the handler-less reload path.
+  reg.register_config("test_reloadable_no_handler", "", "", nullptr, ConfigSource::FileOnly, {});
+  CHECK_FALSE(reg.is_reloadable("test_reloadable_no_handler"));
+
+  // An unknown key is not reloadable.
+  CHECK_FALSE(reg.is_reloadable("test_reloadable_unknown_xyz"));
+}
