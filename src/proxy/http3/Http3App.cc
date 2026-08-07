@@ -51,13 +51,12 @@ DbgCtl dbg_ctl_v{debug_tag_v};
 
 } // end anonymous namespace
 
-Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
-                   const HttpSessionAccept::Options &options)
+Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, HttpSessionAcceptBase const *acceptor)
   : QUICApplication(qc)
 {
-  this->_ssn                 = new Http3Session(client_vc);
-  this->_ssn->acl            = std::move(session_acl);
-  this->_ssn->accept_options = &options;
+  this->_ssn           = new Http3Session(client_vc);
+  this->_ssn->acl      = std::move(session_acl);
+  this->_ssn->acceptor = acceptor;
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
