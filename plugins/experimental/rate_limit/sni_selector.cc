@@ -219,9 +219,17 @@ sni_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
     QueueTime now     = std::chrono::system_clock::now(); // Only do this once per limiter
 
     if (owner) { // Don't operate on the aliases
-      // Try to enable some queued VCs (if any) if there are slots available
+      // Try to enable some queued VCs (if any) if there are slots available. Reserving before
+      // dequeuing means a resumed VC owns the slot it was granted, so its VCONN_CLOSE releases
+      // exactly that slot.
       while (limiter->size() > 0 && limiter->reserve() == ReserveStatus::RESERVED) {
-        auto [vc, contp, start_time]    = limiter->pop();
+        auto [vc, contp, start_time] = limiter->pop();
+
+        if (nullptr == vc) { // A concurrent close emptied the queue; give the slot back
+          limiter->free();
+          break;
+        }
+
         std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
         (void)contp; // Ugly, but silences some compilers.
@@ -236,11 +244,18 @@ sni_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
 
         while (limiter->size() > 0 && limiter->hasOldEntity(now)) {
           // The oldest object on the queue is too old on the queue, so "kill" it.
-          auto [vc, contp, start_time]  = limiter->pop();
+          auto [vc, contp, start_time] = limiter->pop();
+
+          if (nullptr == vc) { // A concurrent close emptied the queue
+            break;
+          }
+
           std::chrono::milliseconds age = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
           (void)contp;
           Dbg(dbg_ctl, "Queued VC is too old (%ldms), erroring out", static_cast<long>(age.count()));
+          // This VC never reserved a slot; detach it (clear the arg and release the selector
+          // lease) so its VCONN_CLOSE does not release a slot it never held.
           TSUserArgSet(vc, gVCIdx, nullptr);
           limiter->selector()->release();
           TSVConnReenableEx(vc, TS_EVENT_ERROR);
