@@ -612,6 +612,22 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     });
   }
 
+  if (rec_type & RECT_HIDDEN_METRIC) {
+    // Opt-in only: hidden metrics are never reachable through RECT_ALL, see RecDefs.h.
+    for (auto &&[name, type, val] : ts::Metrics::hidden_instance()) {
+      if (regex.exec(name.data())) {
+        RecRecord tmp;
+
+        tmp.rec_type = RECT_PROCESS;
+
+        tmp.name         = name.data();
+        tmp.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
+        tmp.data.rec_int = val;
+        callback(&tmp, data);
+      }
+    }
+  }
+
   int num_records = g_num_records;
   for (int i = 0; i < num_records; i++) {
     RecRecord *r = &(g_records[i]);
