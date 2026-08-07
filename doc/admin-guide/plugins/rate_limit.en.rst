@@ -275,6 +275,11 @@ and the following options:
    because of the LRU mechanism that kicks in. The aging is here to make sure a spike
    in traffic from an IP doesn't keep the entry for too long in the LRUs.
 
+   Note that this option was incorrectly documented as ``max-age`` with a hyphen in previous
+   versions.  The code ignores ``max-age`` in all versions of this plugin.  We have chosen
+   to keep the behavior the same and update the documentation, so that previously inert
+   configurations don't activate unexpectedly with an upgrade.
+
 In addition, there's an optional configuration for the permanently blocking buckets,
 `perma-block`. This is a special bucket, which is only used for IPs which have been
 blocked for a long time. The configuration for this bucket is:
