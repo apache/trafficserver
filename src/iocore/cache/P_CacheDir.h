@@ -308,12 +308,14 @@ public:
    */
   Dir *get_segment(int s) const;
 
-  int      probe(const CacheKey *, StripeSM *, Dir *, Dir **);
-  int      insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
-  int      overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
-  int      remove(const CacheKey *key, StripeSM *stripe, Dir *del);
-  void     free_entry(Dir *e, int s);
-  int      check();
+  int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
+  int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
+  int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
+  int  remove(const CacheKey *key, StripeSM *stripe, Dir *del);
+  void free_entry(Dir *e, int s);
+  int  check();
+  /// check() for one segment, so a caller already walking segments need not stream the whole directory a second time.
+  int      check_segment(int s);
   void     cleanup(StripeSM *stripe);
   void     clear_range(off_t start, off_t end, StripeSM *stripe);
   uint64_t entries_used();
