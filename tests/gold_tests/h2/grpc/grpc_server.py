@@ -37,7 +37,7 @@ class Talker(simple_pb2_grpc.TalkerServicer):
         self._num_expected_messages = num_expected_messages
         self._done_event = done_event
 
-    def _record_message(self) -> None:
+    def _record_message(self, _context: grpc.aio.ServicerContext) -> None:
         global global_message_counter
 
         global_message_counter += 1
@@ -46,14 +46,14 @@ class Talker(simple_pb2_grpc.TalkerServicer):
 
     async def MakeRequest(self, request: simple_pb2.SimpleRequest, context: grpc.aio.ServicerContext):
         """An example gRPC method."""
-        self._record_message()
+        context.add_done_callback(self._record_message)
         print(f'Received request: {request.message}')
         response = simple_pb2.SimpleResponse(message=f"Echo: {request.message}")
         return response
 
     async def MakeAnotherRequest(self, request: simple_pb2.SimpleRequest, context: grpc.aio.ServicerContext):
         """An example gRPC method."""
-        self._record_message()
+        context.add_done_callback(self._record_message)
         print(f'Received another request: {request.message}')
         response = simple_pb2.SimpleResponse(message=f"Another echo: {request.message}")
         return response
