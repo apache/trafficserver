@@ -302,6 +302,23 @@ dot_fill(int width)
   return out;
 }
 
+// Task descriptions reach us straight from plugins (TSCfgRegister,
+// TSCfgLoadCtxAddSubtask), so a stray newline or control character would garble
+// the tree layout. UTF-8 multi-byte sequences (>= 0x80) pass through untouched.
+std::string
+sanitize_label(const std::string &s)
+{
+  std::string out;
+
+  out.reserve(s.size());
+  for (char ch : s) {
+    auto c = static_cast<unsigned char>(ch);
+
+    out += (c < 0x20 || c == 0x7f) ? ' ' : ch;
+  }
+  return out;
+}
+
 // Recursively print a task and its children using tree-drawing characters.
 // @param prefix        characters printed before this task's icon (tree connectors from parent)
 // @param child_prefix  base prefix for this task's log lines and its children's connectors
@@ -310,11 +327,17 @@ void
 print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, const std::string &prefix,
                 const std::string &child_prefix, DiagsLevel min_level = DL_Undefined, int content_width = 55)
 {
+  // Show both when they carry distinct information: several tasks can load the
+  // same file (SSLCertificateConfig and QUICCertConfig both take ssl_multicert.yaml),
+  // and the filename alone leaves them indistinguishable.
   std::string fname;
+
   if (f.filename.empty() || f.filename == "<none>") {
     fname = f.description;
-  } else {
+  } else if (f.description.empty() || f.description == f.filename) {
     fname = f.filename;
+  } else {
+    fname = f.description + " (" + f.filename + ")";
   }
 
   int dur_ms = duration_ms(f.meta.created_time_ms, f.meta.last_updated_time_ms);
@@ -324,6 +347,8 @@ print_task_tree(const ConfigReloadResponse::ReloadInfo &f, bool full_report, con
   if (!f.meta.plugin_name.empty()) {
     label += " [plugin: " + f.meta.plugin_name + "]";
   }
+  label = sanitize_label(label);
+
   std::string dur_str = format_duration(dur_ms);
 
   // Right-pad duration to fixed width so values align
