@@ -62,7 +62,8 @@ public:
   /// Whether a pointer was returned from attach_or_create_stripe (munmap vs ats_free).
   static bool is_shm_pointer(char *raw_dir);
 
-  /// Called after sync_cache_dir_on_shutdown; a crash instead leaves the flag clear, which drops the segment next start.
+  /// Called once the event system is shut down, after sync_cache_dir_on_shutdown; a crash instead leaves the flag clear,
+  /// which drops the segment next start.
   static void mark_clean_shutdown();
 
   /// Marks this stripe's control-segment entry so the next start recreates it rather than attaching. Never writes through

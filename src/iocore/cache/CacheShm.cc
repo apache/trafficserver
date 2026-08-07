@@ -885,10 +885,10 @@ CacheShm::mark_clean_shutdown()
   }
   Note("cache shm: marking clean shutdown");
   g_control->clean_shutdown = 1;
-  // owner_pid stays until the process exits. Event threads are still running here (see sync_cache_dir_on_shutdown), and
-  // where flock is a no-op -- macOS, FreeBSD -- it is the only thing that stops a starting process from attaching to
-  // directories we may still be writing. A stale PID only costs the next start its fast restart; a concurrent attach
-  // costs correctness.
+  // owner_pid stays until the process exits. The event system is shut down by the time we get here, but that flag joins
+  // no thread, and where flock is a no-op -- macOS, FreeBSD -- the PID is the only thing that stops a starting process
+  // from attaching to directories a straggler may still be writing. A stale PID only costs the next start its fast
+  // restart; a concurrent attach costs correctness.
   msync(g_control, CONTROL_SIZE, MS_SYNC);
 }
 

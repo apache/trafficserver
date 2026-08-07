@@ -393,6 +393,95 @@ TEST_CASE("A cyclic segment free list fails the attach gate", "[cache][shm]")
   unlink_test_segments();
 }
 
+// What a walk from the free-list head cannot see. Directory::insert() unlinks an empty row from the free list and only
+// then fills it; a shutdown torn in between leaves that row empty, off the free list, out of every bucket chain, and still
+// holding its old links -- so the next insert to pick it writes through them into a live chain.
+TEST_CASE("An entry unlinked from the free list but never filled fails the attach gate", "[cache][shm]")
+{
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  CacheDisk disk;
+  init_disk(disk);
+  CacheVol cache_vol;
+  {
+    GateStripe stripe{&disk, 10, 0};
+    stripe.cache_vol    = &cache_vol;
+    disk.hw_sector_size = 512;
+    attach_tmpfile_to_stripe(stripe);
+    stripe.clear_dir();
+    REQUIRE(stripe.shm_directory_is_valid());
+
+    Dir           *seg  = stripe.directory.get_segment(0);
+    const uint16_t head = stripe.directory.header->freelist[0];
+    Dir           *torn = dir_in_seg(seg, dir_next(dir_in_seg(seg, head)));
+    REQUIRE(dir_next(dir_in_seg(seg, head)) != 0);
+    REQUIRE(dir_next(torn) != 0);
+
+    // Exactly what Directory::unlink_from_freelist() does, leaving torn's own links untouched and its offset still 0.
+    dir_set_next(dir_in_seg(seg, dir_prev(torn)), dir_next(torn));
+    dir_set_prev(dir_in_seg(seg, dir_next(torn)), dir_prev(torn));
+
+    // The free list that remains is self-consistent, so a reachability-only walk of it sees nothing wrong.
+    REQUIRE(dir_is_empty(torn));
+    REQUIRE(dir_next(torn) < static_cast<int64_t>(stripe.directory.buckets) * DIR_DEPTH);
+    REQUIRE(dir_prev(torn) < static_cast<int64_t>(stripe.directory.buckets) * DIR_DEPTH);
+
+    CHECK_FALSE(stripe.shm_directory_is_valid());
+  }
+
+  unlink_test_segments();
+}
+
+// The other half of the same tear: torn after the row is linked into the bucket chain but before dir_assign_data fills it.
+// The row belongs to exactly one structure, so membership alone accepts it; probe() would then walk an offset-0 entry.
+TEST_CASE("An empty entry linked into a bucket chain fails the attach gate", "[cache][shm]")
+{
+  unlink_test_segments();
+  if (!enable_shm()) {
+    WARN("shm unavailable in this environment; skipping");
+    unlink_test_segments();
+    return;
+  }
+
+  CacheDisk disk;
+  init_disk(disk);
+  CacheVol cache_vol;
+  {
+    GateStripe stripe{&disk, 10, 0};
+    stripe.cache_vol    = &cache_vol;
+    disk.hw_sector_size = 512;
+    attach_tmpfile_to_stripe(stripe);
+    stripe.clear_dir();
+    REQUIRE(stripe.shm_directory_is_valid());
+
+    Dir *seg  = stripe.directory.get_segment(0);
+    Dir *root = dir_in_seg(seg, 0);
+    dir_set_offset(root, 1);
+    dir_set_head(root, 1);
+    REQUIRE(stripe.shm_directory_is_valid());
+
+    // Pop the head cleanly, the way freelist_pop() does, then link it in without filling it.
+    const uint16_t head                  = stripe.directory.header->freelist[0];
+    Dir           *e                     = dir_in_seg(seg, head);
+    stripe.directory.header->freelist[0] = dir_next(e);
+    dir_set_prev(dir_in_seg(seg, dir_next(e)), 0);
+    dir_set_next(e, 0);
+    dir_set_next(root, head);
+
+    REQUIRE(dir_is_empty(e));
+    REQUIRE(stripe.directory.check_segment(0));
+
+    CHECK_FALSE(stripe.shm_directory_is_valid());
+  }
+
+  unlink_test_segments();
+}
+
 // What the flush-failure path actually leans on. A real short write leaves write_pos in range with agg_pos ahead of it, so
 // the quiesced-cursor check has to be what rejects the segment -- not the range check, which only a synthetic write_pos
 // trips.

@@ -86,6 +86,7 @@ extern "C" int plock(int);
 #include "../iocore/dns/P_SplitDNSProcessor.h"
 #include "../iocore/hostdb/P_HostDB.h"
 #include "../iocore/cache/P_CacheDir.h"
+#include "../iocore/cache/CacheShm.h"
 #include "../records/P_RecCore.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"
@@ -300,6 +301,13 @@ struct AutoStopCont : public Continuation {
     shutdown_url_rewrite();
 
     TSSystemState::shut_down_event_system();
+
+    // Only now is the directory quiescent enough to be worth trusting next start; marking clean while event threads
+    // could still mutate it would publish a directory torn mid-Directory::insert. Not a hard barrier -- the flag above
+    // stops new work but joins no thread -- so Stripe::_shm_directory_is_valid still has to prove the structure.
+    if (cacheProcessor.IsCacheEnabled() == CacheInitState::INITIALIZED) {
+      CacheShm::mark_clean_shutdown();
+    }
 
     // Wake preproc threads to drain remaining log buffers before exit.
     for (int i = 0; i < Log::preproc_threads; i++) {

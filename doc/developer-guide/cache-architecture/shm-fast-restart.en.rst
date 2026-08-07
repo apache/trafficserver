@@ -374,11 +374,12 @@ Validating a trusted segment
 
 The magic/version checks confirm the segment *looks like* a directory, but a
 stale-yet-magic-valid segment could still present offsets that would turn into
-out-of-bounds disk I/O. And ``CacheShm::mark_clean_shutdown`` runs while the
-event threads are still live (see `Shutdown`_), so a directory mutation torn at
-process exit can sit behind a ``clean_shutdown = 1`` flag.
-``Stripe::_shm_directory_is_valid`` therefore validates both the header fields
-and the shape of the entry graph before the attach:
+out-of-bounds disk I/O. And ``CacheShm::mark_clean_shutdown`` runs after
+``TSSystemState::shut_down_event_system`` but joins no event thread (see
+`Shutdown`_), so a directory mutation torn at process exit can still sit behind a
+``clean_shutdown = 1`` flag. ``Stripe::_shm_directory_is_valid`` therefore
+validates both the header fields and the shape of the entry graph before the
+attach:
 
 * ``sector_size`` is non-zero and no larger than ``STORE_BLOCK_SIZE``;
 * ``write_pos``, ``last_write_pos`` and ``agg_pos`` all lie within the stripe's
@@ -418,13 +419,39 @@ and the shape of the entry graph before the attach:
   destination. Note the bound is on where the entry *starts*, not on its extent:
   ``dir_approx_size`` rounds up, so the last object in a stripe legitimately
   overhangs ``skip + len``, which is precisely what that truncation exists for;
-* each segment's free list is walked structurally, not just bounds-checked: at most
-  one node per entry, every node empty, and ``prev`` pointing back at the node
-  nearer the head. An in-range cycle such as ``A -> B -> A`` satisfies every
-  per-entry check above and is invisible to ``check_segment()``, which walks bucket
-  chains. Attached, it lets ``freelist_pop()`` hand out an entry twice and write a
-  free-list link over the second holder's ``tag``/``phase``/``head``/``pinned``
-  word, until the ``dir_offset(e)`` guard in ``freelist_pop`` resets the segment;
+* every entry in the segment is accounted for exactly once, by
+  ``_shm_segment_membership_is_valid``. This is a membership proof, not a
+  reachability walk: the free list is walked (every node empty, ``prev`` pointing
+  back at the node nearer the head), then every bucket chain is walked (every node
+  in use, no node a bucket root), each visit marked in a scratch bitmap, and
+  finally *every* index in the segment must have been marked. Anything reached
+  twice, and anything reached at all, fails.
+
+  Reachability alone is not enough, because the state that matters is the one no
+  walk visits. ``Directory::insert()`` takes an empty row off the free list with
+  ``unlink_from_freelist()`` and only fills it several statements later; torn in
+  between, the row is empty, off the free list, not yet in any bucket chain, and
+  still holding the free-list ``prev``/``next`` it had. Every per-entry check above
+  passes, the remaining free list is self-consistent, and ``check_segment()`` walks
+  bucket chains. The next insert to scan that bucket finds the row empty, unlinks it
+  a second time, and writes ``dir_set_next`` into whatever its stale ``prev`` now
+  names -- truncating or cross-linking a live chain, or clobbering
+  ``header->freelist[s]`` when that ``prev`` is 0 -- and ``dir_set_prev`` into the
+  ``tag``/``phase``/``head``/``pinned`` word of whatever its stale ``next`` names.
+  The mirror-image tear, after the row is chained but before ``dir_assign_data``
+  fills it, leaves an empty entry inside a bucket chain; it *is* reached exactly
+  once, which is why membership is paired with the empty/in-use polarity of where
+  each entry was reached.
+
+  The same pass subsumes what a free-list-only walk caught: an in-range cycle such
+  as ``A -> B -> A`` satisfies every per-entry check and is invisible to
+  ``check_segment()``, and attached it lets ``freelist_pop()`` hand out an entry
+  twice. The invariant being proved is the one the live code maintains --
+  ``init_segment()`` frees rows 1..``DIR_DEPTH``-1 of every bucket onto the free
+  list and never row 0, ``insert()`` moves an entry from the free list to a chain,
+  and ``delete_entry()`` moves it back -- so a clean segment always satisfies it,
+  and the cost is one ``segment_entries``-bit bitmap on a walk that was already
+  linear in the segment;
 * ``Directory::check_segment()`` passes for the segment: bucket chain lengths, no
   chained-but-empty entries, no chain loops. This is the ``CHECK_DIR`` walk that is
   otherwise debug-only, and it is what turns a torn directory into a rebuild rather
@@ -483,20 +510,28 @@ Wiring
 On a clean exit, ``AutoStopCont::mainEvent`` calls
 ``sync_cache_dir_on_shutdown()`` whenever the cache is initialized.
 ``sync_cache_dir_on_shutdown`` snapshots every stripe (taking each stripe mutex,
-which excludes writers *concurrent with* the snapshot), and only then calls
-``CacheShm::mark_clean_shutdown``, which sets ``clean_shutdown = 1`` and
-``msync``\ s the header. ``owner_pid`` is deliberately left alone; see
-`Concurrent-attach guard`_. When the feature is disabled,
-``mark_clean_shutdown`` is a no-op (there is no control segment), so the shutdown
-path is unchanged for a stock |TS|.
+which excludes writers *concurrent with* the snapshot). Marking the segment clean
+is deliberately **not** part of it: ``AutoStopCont::mainEvent`` calls
+``CacheShm::mark_clean_shutdown`` itself, after ``shut_down_event_system()``, and
+that is what sets ``clean_shutdown = 1`` and ``msync``\ s the header. ``owner_pid``
+is deliberately left alone; see `Concurrent-attach guard`_. When the feature is
+disabled, ``mark_clean_shutdown`` is a no-op (there is no control segment), so the
+shutdown path is unchanged for a stock |TS|.
 
-It does not stop *future* writers: this runs before ``shut_down_event_system()``
-and the main thread exits without joining the event threads, so a stripe can
-still be written after its snapshot. That is why the fast-attach path re-validates
-the directory structurally rather than trusting ``clean_shutdown`` alone -- see
-`Validating a trusted segment`_. A late write that only lands a directory entry
-is harmless either way: the read path checks ``Doc`` magic and key before serving,
-so a stale entry resolves to a miss.
+Ordering it after ``shut_down_event_system()`` matters because the mark is a
+promise about the *whole* directory, not just the snapshot. Marked before it, any
+event thread still running could be torn mid-``Directory::insert()`` and the
+resulting half-linked directory would be published as trusted -- see
+`Validating a trusted segment`_ for what that costs.
+
+It is not a hard barrier, though: ``shut_down_event_system()`` sets a flag and the
+main thread exits without joining the event threads, so a straggler can still
+write after the mark. That is why the fast-attach path re-validates the directory
+structurally rather than trusting ``clean_shutdown`` alone. A late write that only
+lands a directory *entry* is harmless either way: the read path checks ``Doc``
+magic and key before serving, so a stale entry resolves to a miss. A late write
+that tears the directory's *links* is not, and the membership check in
+``Stripe::_shm_directory_is_valid`` is what catches it.
 
 The on-disk directory is still written
 --------------------------------------

@@ -208,6 +208,8 @@ Stripe::_shm_directory_is_valid()
 
   const int64_t segment_entries = static_cast<int64_t>(this->directory.buckets) * DIR_DEPTH;
 
+  std::vector<bool> visited;
+
   for (int s = 0; s < this->directory.segments; s++) {
     if (this->directory.header->freelist[s] >= segment_entries) {
       return false;
@@ -233,7 +235,7 @@ Stripe::_shm_directory_is_valid()
       }
     }
 
-    if (!this->_shm_freelist_is_valid(s, seg, segment_entries)) {
+    if (!this->_shm_segment_membership_is_valid(s, seg, segment_entries, visited)) {
       return false;
     }
 
@@ -245,17 +247,25 @@ Stripe::_shm_directory_is_valid()
   return true;
 }
 
-// The per-entry bounds above only prove each link points inside the segment; an in-range cycle or a stale prev link
-// still passes, and Directory::check_segment() walks the bucket chains, not the free list.
+// The per-entry bounds above only prove each link points inside the segment; they say nothing about the shape. Prove
+// that too: every entry must be reached exactly once, as a bucket root, as an empty free-list node, or as an in-use
+// bucket-chain node. Reachability alone is not enough -- a shutdown torn mid-Directory::insert leaves an entry unlinked
+// from the free list but not yet filled, so no walk visits it, and the next insert to find that empty row writes
+// through its stale prev/next into a live chain or over a live entry's tag.
 bool
-Stripe::_shm_freelist_is_valid(int s, Dir *seg, int64_t segment_entries)
+Stripe::_shm_segment_membership_is_valid(int s, Dir *seg, int64_t segment_entries, std::vector<bool> &visited)
 {
-  int64_t node  = this->directory.header->freelist[s];
-  int64_t prev  = 0;
-  int64_t steps = 0;
+  // Below 5, a link is a raw segment index; at or above it dir_from_offset() compacts roots out of the link space and
+  // the raw dir_in_seg() indexing here (and in the bounds loop above) would address the wrong entries.
+  static_assert(DIR_DEPTH < 5, "Dir link values are treated as raw segment indices");
+
+  visited.assign(segment_entries, false);
+
+  int64_t node = this->directory.header->freelist[s];
+  int64_t prev = 0;
 
   while (node != 0) {
-    if (node >= segment_entries || ++steps > segment_entries) {
+    if (node >= segment_entries || visited[node]) {
       return false;
     }
     Dir *e = dir_in_seg(seg, node);
@@ -265,8 +275,39 @@ Stripe::_shm_freelist_is_valid(int s, Dir *seg, int64_t segment_entries)
     if (!dir_is_empty(e) || dir_prev(e) != prev) {
       return false;
     }
-    prev = node;
-    node = dir_next(e);
+    visited[node] = true;
+    prev          = node;
+    node          = dir_next(e);
+  }
+
+  for (int64_t b = 0; b < this->directory.buckets; b++) {
+    const int64_t root = b * DIR_DEPTH;
+
+    // A root is reachable only as a root: init_segment() frees rows 1..DIR_DEPTH-1 onto the free list, never row 0.
+    if (visited[root]) {
+      return false;
+    }
+    visited[root] = true;
+
+    // A chain carries no back-links to check, since dir_prev is tag/phase/head/pinned on the in-use entries it holds.
+    node = dir_next(dir_in_seg(seg, root));
+    while (node != 0) {
+      if (node >= segment_entries || node % DIR_DEPTH == 0 || visited[node]) {
+        return false;
+      }
+      Dir *e = dir_in_seg(seg, node);
+      if (dir_is_empty(e)) {
+        return false;
+      }
+      visited[node] = true;
+      node          = dir_next(e);
+    }
+  }
+
+  for (int64_t i = 0; i < segment_entries; i++) {
+    if (!visited[i]) {
+      return false;
+    }
   }
 
   return true;

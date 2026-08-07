@@ -27,7 +27,6 @@
 #include "P_CacheInternal.h"
 #include "PreservationTable.h"
 #include "Stripe.h"
-#include "CacheShm.h"
 
 #include "tscore/hugepages.h"
 #include "tscore/Random.h"
@@ -958,11 +957,8 @@ sync_cache_dir_on_shutdown()
     thr.join();
   }
 
-  // Each stripe was snapshotted above. This does not stop future writers (the event system
-  // is still up), but a late or in-flight write only leaves a dir entry the next start's
-  // magic+key read check treats as a miss -- never served corruption -- so mark clean here.
-  CacheShm::mark_clean_shutdown();
-
+  // The event system is still up here, so the shm trust flag is not set yet -- the caller marks it clean only
+  // after shutting the event system down. See CacheShm::mark_clean_shutdown.
   Dbg(dbg_ctl_cache_dir_sync, "shutdown sync done");
 }
 
