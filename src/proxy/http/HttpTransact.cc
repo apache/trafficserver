@@ -3365,6 +3365,19 @@ HttpTransact::handle_cache_write_lock(State *s)
     // HIT_STALE (revalidation case), the hook already fired and deferred is false.
     CacheHTTPInfo *obj = s->cache_info.object_read;
     if (obj != nullptr) {
+      if (!is_read_retry_write_fail_action(s->cache_open_write_fail_action)) {
+        // Fail actions 2 and 3 do not retry the cache read: they serve the
+        // object this transaction already looked up. Deciding otherwise here
+        // would issue a second cache lookup while the transaction still holds
+        // the cache read connection from the first one, and the read that
+        // completes on that second lookup replaces the connection out from
+        // under it.
+        TxnDbg(dbg_ctl_http_trans, "write lock lost with a cached object and no read retry configured");
+        s->hdr_info.server_request.destroy();
+        HandleCacheOpenReadHitFreshness(s);
+        return;
+      }
+
       // Restore request/response times from cached object for freshness calculations and Age header.
       // Similar to HandleCacheOpenReadHitFreshness, handle clock skew by capping times.
       s->request_sent_time      = obj->request_sent_time_get();
