@@ -31,6 +31,7 @@
 #include "CacheEvacuateDocVC.h"
 #include "PreservationTable.h"
 #include "Stripe.h"
+#include "CacheShm.h"
 
 #include "iocore/cache/CacheDefs.h"
 #include "CacheVC.h"
@@ -176,6 +177,23 @@ StripeSM::init(bool clear)
   if (clear) {
     Note("clearing cache directory '%s'", hash_text.get());
     return clear_dir_aio();
+  }
+
+  // shm fast restart: skip the disk read and recover_data(), which would rescan the tail and discard the entries the
+  // shm copy preserved. See doc/developer-guide/cache-architecture/shm-fast-restart.en.rst.
+  if (CacheShm::mode() == CacheShm::Mode::AttachExisting && CacheShm::is_shm_pointer(this->directory.raw_dir)) {
+    if (this->directory.header->magic == STRIPE_MAGIC && this->directory.footer->magic == STRIPE_MAGIC &&
+        CACHE_DB_MAJOR_VERSION_COMPATIBLE <= this->directory.header->version._major &&
+        this->directory.header->version._major <= CACHE_DB_MAJOR_VERSION && this->_shm_directory_is_valid()) {
+      Note("attaching cached directory from shm for '%s' (fast restart, recovery skipped)", hash_text.get());
+      this->sector_size = this->directory.header->sector_size;
+      this->scan_pos    = this->directory.header->write_pos;
+      this->_preserved_dirs.periodic_scan(this);
+      this->set_io_not_in_progress();
+      SET_HANDLER(&StripeSM::dir_init_done);
+      return this->dir_init_done(EVENT_IMMEDIATE, nullptr);
+    }
+    Note("shm directory invalid for '%s'; falling back to disk read", hash_text.get());
   }
 
   init_info           = new StripeInitInfo();
@@ -1326,9 +1344,18 @@ StripeSM::shutdown(EThread *shutdown_thread)
   SCOPED_MUTEX_LOCK(lock, this->mutex, shutdown_thread);
 
   if (DISK_BAD(this->disk)) {
-    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: ignoring -- bad disk", this->hash_text.get());
+    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: bad disk -- invalidating shm copy for disk recovery", this->hash_text.get());
+    CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
     return;
   }
+
+  // aggWriteDone advances write_pos again once we drop the mutex, so the shm header is not final; the on-disk write below
+  // plus recover_data() next start reconcile it.
+  if (CacheShm::is_shm_pointer(this->directory.raw_dir) && this->is_io_in_progress()) {
+    Dbg(dbg_ctl_cache_dir_sync, "Dir %s: AIO write in flight -- invalidating shm copy, syncing dir to disk", this->hash_text.get());
+    CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
+  }
+
   size_t dirlen = this->dirlen();
   ink_assert(dirlen > 0); // make clang happy - if not > 0 the vol is seriously messed up
   if (!this->directory.header->dirty && !this->dir_sync_in_progress) {
@@ -1342,7 +1369,12 @@ StripeSM::shutdown(EThread *shutdown_thread)
   // directories have not been inserted for these writes
   if (!this->_write_buffer.is_empty()) {
     Dbg(dbg_ctl_cache_dir_sync, "Dir %s: flushing agg buffer first", this->hash_text.get());
-    this->flush_aggregate_write_buffer(this->fd);
+    if (!this->flush_aggregate_write_buffer(this->fd)) {
+      // Mark rather than lean on the unquiesced cursor the failure leaves behind: the event system is still up, so a later
+      // aggWriteDone or agg_wrap() can re-equalize agg_pos and write_pos and the gate would let this segment through.
+      Error("Dir %s: aggregation buffer flush failed during shutdown; syncing the directory to disk", this->hash_text.get());
+      CacheShm::invalidate_stripe_directory(this->directory.raw_dir);
+    }
   }
 
   // We already asserted that dirlen > 0.
@@ -1354,6 +1386,7 @@ StripeSM::shutdown(EThread *shutdown_thread)
   this->directory.footer->sync_serial = this->directory.header->sync_serial;
 
   CHECK_DIR(d);
+
   size_t B     = this->directory.header->sync_serial & 1;
   off_t  start = this->skip + (B ? dirlen : 0);
   B            = pwrite(this->fd, this->directory.raw_dir, dirlen, start);

@@ -41,5 +41,6 @@ understanding and modifying the source.
    api-functions.en
    consistency.en
    ram-cache.en
+   shm-fast-restart.en
    cache-tool.en
    tiered-storage.en

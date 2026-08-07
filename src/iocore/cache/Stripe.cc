@@ -24,6 +24,7 @@
 #include "P_CacheDisk.h"
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
+#include "CacheShm.h"
 
 #include "tsutil/DbgCtl.h"
 
@@ -153,21 +154,163 @@ Stripe::_init_directory(std::size_t directory_size, int header_size, int footer_
 
   Dbg(dbg_ctl_cache_init, "Stripe %s: allocating %zu directory bytes for a %lld byte volume (%lf%%)", hash_text.get(),
       directory_size, (long long)this->len, percent(directory_size, this->len));
-  if (ats_hugepage_enabled()) {
-    this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
-    if (this->directory.raw_dir != nullptr) {
-      this->directory.raw_dir_huge = true;
-    }
-  }
-  if (nullptr == this->directory.raw_dir) {
-    this->directory.raw_dir      = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+  // Try shared memory first; a successful attach bypasses the MAP_HUGETLB path below
+  // (tmpfs can't use it -- CacheShm advises THP instead).
+  this->directory.raw_dir = CacheShm::attach_or_create_stripe(hash_text.get(), directory_size);
+  if (this->directory.raw_dir != nullptr) {
     this->directory.raw_dir_huge = false;
+  } else {
+    if (ats_hugepage_enabled()) {
+      this->directory.raw_dir = static_cast<char *>(ats_alloc_hugepage(directory_size));
+      if (this->directory.raw_dir != nullptr) {
+        this->directory.raw_dir_huge = true;
+      }
+    }
+    if (nullptr == this->directory.raw_dir) {
+      this->directory.raw_dir      = static_cast<char *>(ats_memalign(ats_pagesize(), directory_size));
+      this->directory.raw_dir_huge = false;
+    }
   }
   this->directory.raw_dir_size = directory_size;
   this->directory.dir          = reinterpret_cast<Dir *>(this->directory.raw_dir + header_size);
   this->directory.header       = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir);
   std::size_t const footer_offset{directory_size - static_cast<std::size_t>(footer_size)};
   this->directory.footer = reinterpret_cast<StripeHeaderFooter *>(this->directory.raw_dir + footer_offset);
+}
+
+// Gate the fast-restart attach: magic/version say the segment looks like a directory, but not that it is safe to follow.
+// Rationale for every check, and why the passes are fused per segment, is in doc/developer-guide/cache-architecture/
+// shm-fast-restart.en.rst ("Validating a trusted segment"). On failure the caller falls back to the disk read.
+bool
+Stripe::_shm_directory_is_valid()
+{
+  if (this->directory.header->sector_size == 0 || this->directory.header->sector_size > STORE_BLOCK_SIZE) {
+    return false;
+  }
+
+  if (this->directory.header->phase > 1) {
+    return false;
+  }
+
+  const off_t data_lo = this->start;
+  const off_t data_hi = this->skip + this->len;
+
+  if (this->directory.header->write_pos < data_lo || this->directory.header->write_pos > data_hi ||
+      this->directory.header->last_write_pos < data_lo || this->directory.header->last_write_pos > data_hi ||
+      this->directory.header->agg_pos < data_lo || this->directory.header->agg_pos > data_hi) {
+    return false;
+  }
+
+  // Not a clean-shutdown artifact if the write cursor never quiesced.
+  if (this->directory.header->agg_pos != this->directory.header->write_pos) {
+    return false;
+  }
+
+  const int64_t segment_entries = static_cast<int64_t>(this->directory.buckets) * DIR_DEPTH;
+
+  std::vector<bool> visited;
+
+  for (int s = 0; s < this->directory.segments; s++) {
+    if (this->directory.header->freelist[s] >= segment_entries) {
+      return false;
+    }
+
+    // dir_prev only holds a link on empty entries; on an in-use one it is tag/phase/head/pinned.
+    Dir *seg = this->directory.get_segment(s);
+    for (int64_t i = 0; i < segment_entries; i++) {
+      Dir *e = dir_in_seg(seg, i);
+      if (dir_next(e) >= segment_entries) {
+        return false;
+      }
+      if (dir_is_empty(e)) {
+        if (dir_prev(e) >= segment_entries) {
+          return false;
+        }
+        continue;
+      }
+      // Same invariant Directory::insert() asserts. dir_valid() cannot stand in for it: an out-of-phase entry is bounded
+      // from below only, and CacheVC::handleRead() turns an out-of-stripe offset into a negative (so huge) read length.
+      if (this->vol_offset(e) >= data_hi) {
+        return false;
+      }
+    }
+
+    if (!this->_shm_segment_membership_is_valid(s, seg, segment_entries, visited)) {
+      return false;
+    }
+
+    if (!this->directory.check_segment(s)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// The per-entry bounds above only prove each link points inside the segment; they say nothing about the shape. Prove
+// that too: every entry must be reached exactly once, as a bucket root, as an empty free-list node, or as an in-use
+// bucket-chain node. Reachability alone is not enough -- a shutdown torn mid-Directory::insert leaves an entry unlinked
+// from the free list but not yet filled, so no walk visits it, and the next insert to find that empty row writes
+// through its stale prev/next into a live chain or over a live entry's tag.
+bool
+Stripe::_shm_segment_membership_is_valid(int s, Dir *seg, int64_t segment_entries, std::vector<bool> &visited)
+{
+  // Below 5, a link is a raw segment index; at or above it dir_from_offset() compacts roots out of the link space and
+  // the raw dir_in_seg() indexing here (and in the bounds loop above) would address the wrong entries.
+  static_assert(DIR_DEPTH < 5, "Dir link values are treated as raw segment indices");
+
+  visited.assign(segment_entries, false);
+
+  int64_t node = this->directory.header->freelist[s];
+  int64_t prev = 0;
+
+  while (node != 0) {
+    if (node >= segment_entries || visited[node]) {
+      return false;
+    }
+    Dir *e = dir_in_seg(seg, node);
+
+    // Every producer (Directory::free_entry, delete_entry, freelist_pop, unlink_from_freelist) clears the entry and
+    // leaves prev pointing back at the node nearer the head, so a mismatch means the list was left half-updated.
+    if (!dir_is_empty(e) || dir_prev(e) != prev) {
+      return false;
+    }
+    visited[node] = true;
+    prev          = node;
+    node          = dir_next(e);
+  }
+
+  for (int64_t b = 0; b < this->directory.buckets; b++) {
+    const int64_t root = b * DIR_DEPTH;
+
+    // A root is reachable only as a root: init_segment() frees rows 1..DIR_DEPTH-1 onto the free list, never row 0.
+    if (visited[root]) {
+      return false;
+    }
+    visited[root] = true;
+
+    // A chain carries no back-links to check, since dir_prev is tag/phase/head/pinned on the in-use entries it holds.
+    node = dir_next(dir_in_seg(seg, root));
+    while (node != 0) {
+      if (node >= segment_entries || node % DIR_DEPTH == 0 || visited[node]) {
+        return false;
+      }
+      Dir *e = dir_in_seg(seg, node);
+      if (dir_is_empty(e)) {
+        return false;
+      }
+      visited[node] = true;
+      node          = dir_next(e);
+    }
+  }
+
+  for (int64_t i = 0; i < segment_entries; i++) {
+    if (!visited[i]) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // coverity[exn_spec_violation] - ink_assert aborts (doesn't throw), Dbg is exception-safe
@@ -182,12 +325,19 @@ Stripe::~Stripe()
     ink_assert(this->directory.raw_dir_size > 0);
     ink_assert(this->directory.raw_dir_size < MAX_STRIPE_SIZE);
 
+    // shm-backed directories must outlive the process; never ats_free or poison them.
+    const bool is_shm = CacheShm::is_shm_pointer(this->directory.raw_dir);
+
 #ifdef DEBUG
-    // Poison memory before freeing to help detect use-after-free
-    memset(this->directory.raw_dir, 0xDE, this->directory.raw_dir_size);
+    if (!is_shm) {
+      // Poison memory before freeing to help detect use-after-free
+      memset(this->directory.raw_dir, 0xDE, this->directory.raw_dir_size);
+    }
 #endif
 
-    if (this->directory.raw_dir_huge) {
+    if (is_shm) {
+      CacheShm::detach_stripe(this->directory.raw_dir);
+    } else if (this->directory.raw_dir_huge) {
       ats_free_hugepage(this->directory.raw_dir, this->directory.raw_dir_size);
     } else {
       ats_free(this->directory.raw_dir);

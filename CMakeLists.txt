@@ -568,6 +568,9 @@ check_symbol_exists(mcheck_pedantic mcheck.h HAVE_MCHECK_PEDANTIC)
 check_symbol_exists(posix_fadvise fcntl.h HAVE_POSIX_FADVISE)
 check_symbol_exists(posix_fallocate fcntl.h HAVE_POSIX_FALLOCATE)
 check_symbol_exists(posix_madvise sys/mman.h HAVE_POSIX_MADVISE)
+# On glibc < 2.34 shm_open/shm_unlink live in librt, which ATS does not link, so the cache shm feature is compiled out
+# there. This is a link test, so it fails exactly on those platforms.
+check_symbol_exists(shm_open sys/mman.h HAVE_SHM_OPEN)
 check_symbol_exists(accept4 sys/socket.h HAVE_ACCEPT4)
 check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
 check_symbol_exists(sysconf unistd.h HAVE_SYSCONF)
@@ -603,6 +606,11 @@ if(HAVE_IOURING AND USE_IOURING)
   message(STATUS "Using io_uring")
   set(TS_USE_LINUX_IO_URING 1)
 endif(HAVE_IOURING AND USE_IOURING)
+
+option(ENABLE_CACHE_SHM "Host the cache directory in POSIX shared memory for fast restart" 1)
+if(HAVE_SHM_OPEN AND ENABLE_CACHE_SHM)
+  set(TS_USE_CACHE_SHM 1)
+endif(HAVE_SHM_OPEN AND ENABLE_CACHE_SHM)
 
 list(APPEND CMAKE_REQUIRED_LIBRARIES pthread)
 check_symbol_exists(pthread_getname_np pthread.h HAVE_PTHREAD_GETNAME_NP)

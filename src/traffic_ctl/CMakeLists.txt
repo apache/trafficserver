@@ -16,8 +16,14 @@
 #######################
 
 add_executable(
-  traffic_ctl traffic_ctl.cc CtrlCommands.cc CtrlPrinters.cc FileConfigCommand.cc PrintUtils.cc
-              ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
+  traffic_ctl
+  traffic_ctl.cc
+  CacheShmCommand.cc
+  CtrlCommands.cc
+  CtrlPrinters.cc
+  FileConfigCommand.cc
+  PrintUtils.cc
+  ${CMAKE_SOURCE_DIR}/src/shared/rpc/IPCSocketClient.cc
 )
 
 target_link_libraries(traffic_ctl ts::tscore libswoc::libswoc yaml-cpp::yaml-cpp ts::tsutil)

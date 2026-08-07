@@ -31,6 +31,7 @@
 #include "tscore/signals.h"
 
 #include "CtrlCommands.h"
+#include "CacheShmCommand.h"
 #include "FileConfigCommand.h"
 #include "TrafficCtlStatus.h"
 
@@ -286,6 +287,20 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--params", "-p", "Parameters to be passed in the request, YAML or JSON format", "", MORE_THAN_ONE_ARG_N, "", "")
     .add_example_usage("traffic_ctl rpc invoke foo_bar -p \"numbers: [1, 2, 3]\"");
 
+  // cache shm commands - operate directly on POSIX shared memory; no running server required.
+  auto &shm_command = cache_command.add_command("shm", "Inspect and manage cache shared-memory segments").require_commands();
+  // No parser-level default for --prefix: ArgParser injects defaults into the parsed
+  // arguments, which would make an omitted --prefix indistinguishable from an explicit
+  // one. CacheShmCommand supplies the runtime default and keys its "did you set
+  // name_prefix?" hint off the option being absent.
+  shm_command.add_option("--prefix", "-p", "shm name prefix word, framed as /<word>- (default 'ats')", "", 1, "");
+  shm_command.add_command("status", "Show the cache shared-memory control segment and stripe table", Command_Execute)
+    .add_example_usage("traffic_ctl cache shm status")
+    .add_example_usage("traffic_ctl cache shm status --prefix ats-t");
+  shm_command.add_command("clear", "Unlink the cache shared-memory control and stripe segments", Command_Execute)
+    .add_example_usage("traffic_ctl cache shm clear")
+    .add_example_usage("traffic_ctl cache shm clear --prefix ats-t");
+
   auto create_command = [](ts::Arguments &args) -> std::unique_ptr<CtrlCommand> {
     if (args.get("config")) {
       if (args.get("cold")) {
@@ -294,8 +309,15 @@ main([[maybe_unused]] int argc, const char **argv)
       return std::make_unique<ConfigCommand>(&args);
     }
 
+    if (args.get("cache")) {
+      // `cache shm` reads the shm segments directly, so it must not be routed through the RPC-backed CacheCommand.
+      if (args.get("shm")) {
+        return std::make_unique<CacheShmCommand>(&args);
+      }
+      return std::make_unique<CacheCommand>(&args);
+    }
+
     static const std::map<std::string, std::function<std::unique_ptr<CtrlCommand>(ts::Arguments *)>> factories = {
-      {"cache",   [](ts::Arguments *a) { return std::make_unique<CacheCommand>(a); }    },
       {"metric",  [](ts::Arguments *a) { return std::make_unique<MetricCommand>(a); }   },
       {"server",  [](ts::Arguments *a) { return std::make_unique<ServerCommand>(a); }   },
       {"storage", [](ts::Arguments *a) { return std::make_unique<StorageCommand>(a); }  },
