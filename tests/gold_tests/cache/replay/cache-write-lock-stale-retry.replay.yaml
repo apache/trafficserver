@@ -1,0 +1,145 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+# proxy.config.http.cache.open_write_fail_action 6
+# (READ_RETRY_STALE_ON_REVALIDATE) retries the cache read when the write lock
+# for a revalidation cannot be taken, hoping that whoever holds the lock has
+# written a newer object. The retry has to replace the cache read connection the
+# transaction opened for its first lookup, and the stale object saved as the
+# fallback for that retry lives inside that connection, so neither may outlive
+# the other. Debug builds used to abort in
+# HttpCacheSM::state_cache_open_read() when the retry read completed.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  # The retried read finds the same stale object, which action 6 serves, so this
+  # response should never be seen. Negative revalidating is disabled below so
+  # that a 500 from the origin is passed through to the client rather than
+  # masked by the cached object, making an unexpected origin request visible in
+  # the proxy response.
+  - origin_not_expected: &origin_not_expected
+      server-response:
+        status: 500
+        reason: "Internal Server Error"
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ X-Response, origin ]
+
+autest:
+  description: 'Verify a lost write lock on revalidation can retry the cache read'
+
+  dns:
+    name: 'dns-stale-retry'
+
+  server:
+    name: 'origin-stale-retry'
+
+  client:
+    name: 'client-stale-retry'
+
+  ats:
+    name: 'ts-stale-retry'
+    process_config:
+      enable_cache: true
+
+    copy_to_config_dir:
+      - 'cache-write-lock-fail-write.conf'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_cache|http_trans|http_match'
+      # READ_RETRY_STALE_ON_REVALIDATE: retry the cache read when the write lock
+      # is lost, and fall back to the stale object if the retry finds nothing
+      # fresher.
+      proxy.config.http.cache.open_write_fail_action: 6
+      proxy.config.http.cache.max_open_write_retry_timeout: 0
+      proxy.config.http.cache.max_open_read_retries: 2
+      proxy.config.http.cache.open_read_retry_time: 100
+      # Pass an origin error through instead of covering it with the cached
+      # object, so that the proxy response below detects an origin request.
+      proxy.config.http.negative_revalidating_enabled: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: header_rewrite.so
+            args: ['cache-write-lock-fail-write.conf']
+
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: "[Ff]atal|failed assertion"
+            description: 'Verify ATS does not abort when the retried cache read completes'
+        contains:
+          - expression: "READ_RETRY: object stale, triggering actual cache retry"
+            description: 'Verify the lost write lock triggered a cache read retry'
+          - expression: "cache_serve_stale_on_write_lock_fail"
+            description: 'Verify the stale object was served after the retry found nothing fresher'
+
+sessions:
+- transactions:
+
+  # Populate the cache with an object that is stale one second later.
+  - client-request:
+      method: GET
+      version: '1.1'
+      url: /stale-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, prime-cache ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, "max-age=1" ]
+        - [ X-Response, cached ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: cached, as: equal } ]
+
+  # The cached object is stale now, so ATS prepares to revalidate it and asks
+  # the cache for the write lock. The header below denies that lock, so the
+  # transaction retries its cache read and then serves the stale object.
+  - client-request:
+      delay: 2s
+
+      method: GET
+      version: '1.1'
+      url: /stale-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, revalidate-without-write-lock ]
+        - [ X-Fail-Cache-Write, '1' ]
+
+    <<: *origin_not_expected
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: cached, as: equal } ]
