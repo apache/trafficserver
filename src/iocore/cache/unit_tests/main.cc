@@ -162,6 +162,16 @@ struct EventProcessorListener : Catch::EventListenerBase {
     std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/src/iocore/cache/unit_tests/etc/";
     Layout::get()->sysconfdir = std::move(src_dir);
   }
+
+  void
+  testRunEnded(Catch::TestRunStats const & /* testRunStats ATS_UNUSED */) override
+  {
+    // Stop the event threads before the process tears down static state (e.g.
+    // the Metrics singleton) at exit. Synchronous tests never call TEST_DONE()
+    // themselves, so without this an ET_NET thread keeps running and can touch
+    // freed memory during shutdown.
+    test_done();
+  }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 
