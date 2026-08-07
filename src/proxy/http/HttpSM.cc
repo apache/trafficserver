@@ -1140,11 +1140,37 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   pending_action = nullptr;
   switch (event) {
   case NET_EVENT_OPEN: {
+    netvc = static_cast<NetVConnection *>(data);
+    if (plugin_tunnel_type == HttpPluginTunnel_t::NONE) {
+      _netvc             = netvc;
+      _netvc_read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
+      _netvc_reader      = _netvc_read_buffer->alloc_reader();
+
+      // Wait for write readiness to verify that the nonblocking TCP connection
+      // completed before reporting a successful tunnel to the client.
+      _netvc->do_io_write(this, 1, _netvc_reader);
+      _netvc->set_inactivity_timeout(get_server_connect_timeout());
+      return 0;
+    }
+    [[fallthrough]];
+  }
+  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE: {
+    if (netvc == nullptr) {
+      netvc = _netvc;
+      netvc->do_io_write(nullptr, 0, nullptr);
+      free_MIOBuffer(_netvc_read_buffer);
+      _netvc             = nullptr;
+      _netvc_read_buffer = nullptr;
+      _netvc_reader      = nullptr;
+    }
+
     // Record the VC in our table
-    server_entry     = vc_table.new_entry();
-    server_entry->vc = netvc = static_cast<NetVConnection *>(data);
-    server_entry->vc_type    = HttpVC_t::RAW_SERVER_VC;
-    t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
+    server_entry          = vc_table.new_entry();
+    server_entry->vc      = netvc;
+    server_entry->vc_type = HttpVC_t::RAW_SERVER_VC;
+    t_state.current.state = HttpTransact::CONNECTION_ALIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     netvc->set_inactivity_timeout(get_server_inactivity_timeout());
@@ -1157,9 +1183,24 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
     break;
   }
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    t_state.set_connect_fail(ETIMEDOUT);
+    [[fallthrough]];
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
-  case NET_EVENT_OPEN_FAILED:
+  case NET_EVENT_OPEN_FAILED: {
+    if (_netvc != nullptr) {
+      if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
+        t_state.set_connect_fail(_netvc->lerrno);
+      }
+      _netvc->do_io_write(nullptr, 0, nullptr);
+      _netvc->do_io_close();
+      _netvc = nullptr;
+      free_MIOBuffer(_netvc_read_buffer);
+      _netvc_read_buffer = nullptr;
+      _netvc_reader      = nullptr;
+    }
     if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
       if (event == VC_EVENT_EOS) {
         t_state.set_connect_fail(EPIPE);
@@ -1171,6 +1212,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     // use this value just to get around other values
     t_state.hdr_info.response_error = HttpTransact::ResponseError_t::STATUS_CODE_SERVER_ERROR;
     break;
+  }
   case EVENT_INTERVAL:
     // If we get EVENT_INTERNAL it means that we moved the transaction
     // to a different thread in do_http_server_open.  Since we didn't
