@@ -45,12 +45,12 @@ DbgCtl dbg_ctl_v{debug_tag_v};
 } // end anonymous namespace
 
 Http09App::Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
-                     const HttpSessionAccept::Options &options)
+                     HttpSessionAcceptBase const *acceptor)
   : QUICApplication(qc)
 {
-  this->_ssn                 = new Http09Session(client_vc);
-  this->_ssn->acl            = std::move(session_acl);
-  this->_ssn->accept_options = &options;
+  this->_ssn           = new Http09Session(client_vc);
+  this->_ssn->acl      = std::move(session_acl);
+  this->_ssn->acceptor = acceptor;
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
