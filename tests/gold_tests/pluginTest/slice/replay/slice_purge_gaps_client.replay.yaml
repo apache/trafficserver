@@ -757,3 +757,139 @@ sessions:
         encoding: plain
         data: 'aaaaaaaaaa'
         verify: {as: equal}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, failblock-fill-0]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 0-9/40, as: equal}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaa'
+        verify: {as: equal}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=30-39]
+        - [uuid, failblock-fill-3]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 30-39/40, as: equal}]
+      content:
+        encoding: plain
+        data: 'dddddddddd'
+        verify: {as: equal}
+
+  - client-request:
+      method: PURGE
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [uuid, failblock-purge]
+    proxy-response:
+      status: 500
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, failblock-check-0]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 0-9/40, as: equal}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaa'
+        verify: {as: equal}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=30-39]
+        - [uuid, failblock-check-3]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 30-39/40, as: equal}]
+      content:
+        encoding: plain
+        data: 'dddddddddd'
+        verify: {as: equal}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /denied
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, denied-fill-0]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 0-9/30, as: equal}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaa'
+        verify: {as: equal}
+
+  - client-request:
+      method: PURGE
+      version: "1.1"
+      url: /denied
+      headers:
+        fields:
+        - [Host, slice]
+        - [uuid, denied-purge]
+    proxy-response:
+      status: 403
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /denied
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, denied-check-0]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 0-9/30, as: equal}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaa'
+        verify: {as: equal}

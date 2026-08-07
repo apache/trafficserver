@@ -516,6 +516,20 @@ note_purge_extent(Data *const data, int64_t const length)
             data->purge_range().lastBlockFor(data->m_config->m_blockbytes));
 }
 
+// A block that could not be purged is not a block that was absent, so the client must
+// not be told the object is gone. The walk stops here: the rest of the object is
+// unknown, and a 5xx often means the cache is in no state to be asked again.
+void
+note_purge_failure(Data *const data, TSHttpStatus const status)
+{
+  data->m_purge_error = status;
+
+  // paced: a config refusing PURGE would otherwise log once per purge request
+  if (data->m_config->canLogError()) {
+    ERROR_LOG("Purge of block %" PRId64 " failed (%d), the object may be left partly cached", data->m_blocknum, status);
+  }
+}
+
 // Record what the block response said, without answering the client.
 void
 note_purge_block_result(Data *const data)
@@ -537,10 +551,13 @@ note_purge_block_result(Data *const data)
     } else {
       DEBUG_LOG("Purged block %" PRId64 " reported no usable extent", data->m_blocknum);
     }
-  } else {
+  } else if (TS_HTTP_STATUS_NOT_FOUND == status) {
     // Already absent. The walk used to stop here, leaving every later block cached.
     ++data->m_purge_misses;
-    DEBUG_LOG("Purge block %" PRId64 " was not cached (%d)", data->m_blocknum, status);
+    DEBUG_LOG("Purge block %" PRId64 " was not cached", data->m_blocknum);
+  } else {
+    // Anything else is a refusal or a failure, which says nothing about the block
+    note_purge_failure(data, status);
   }
 }
 
@@ -548,6 +565,12 @@ note_purge_block_result(Data *const data)
 void
 advance_purge(TSCont const contp, Data *const data)
 {
+  // A block that could not be purged says nothing about the ones behind it
+  if (TS_HTTP_STATUS_NONE != data->m_purge_error) {
+    finish_purge(contp, data);
+    return;
+  }
+
   int64_t const blockbytes = data->m_config->m_blockbytes;
   Range const   range      = data->purge_range();
 
@@ -572,7 +595,7 @@ advance_purge(TSCont const contp, Data *const data)
 
   data->m_blockstate = BlockState::Pending;
   if (!request_block(contp, data)) {
-    ERROR_LOG("Failed to issue purge for block %" PRId64, data->m_blocknum);
+    note_purge_failure(data, TS_HTTP_STATUS_INTERNAL_SERVER_ERROR);
     finish_purge(contp, data);
   }
 }
@@ -588,8 +611,12 @@ finish_purge(TSCont const contp, Data *const data, TSHttpStatus const status)
   data->m_upstream.close();
   data->m_blockstate = BlockState::Done;
 
-  TSHttpStatus const reply =
-    (TS_HTTP_STATUS_NONE != status) ? status : (0 < data->m_purge_hits ? TS_HTTP_STATUS_OK : TS_HTTP_STATUS_NOT_FOUND);
+  // A block that could not be purged outranks the hits: 200 has to keep meaning that
+  // the object is gone, and 404 that it was never there
+  TSHttpStatus const reply = (TS_HTTP_STATUS_NONE != status)              ? status :
+                             (TS_HTTP_STATUS_NONE != data->m_purge_error) ? data->m_purge_error :
+                             (0 < data->m_purge_hits)                     ? TS_HTTP_STATUS_OK :
+                                                                            TS_HTTP_STATUS_NOT_FOUND;
 
   DEBUG_LOG("purge removed %" PRId64 " block(s), answering %d", data->m_purge_hits, reply);
 
@@ -644,8 +671,8 @@ handle_purge_resp(TSCont const contp, TSEvent const event, Data *const data)
 
   case TS_EVENT_VCONN_EOS: {
     if (!data->m_server_block_header_parsed) {
-      // No response at all; count it as absent so the walk moves on
-      ++data->m_purge_misses;
+      // No response at all is not evidence the block was absent
+      note_purge_failure(data, TS_HTTP_STATUS_BAD_GATEWAY);
       DEBUG_LOG("Purge block %" PRId64 " ended with no response header", data->m_blocknum);
     }
 

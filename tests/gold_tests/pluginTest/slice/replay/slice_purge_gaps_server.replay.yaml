@@ -508,3 +508,79 @@ sessions:
         - [Content-Length, '10']
         - [Cache-Control, 'public, max-age=86400']
       content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, failblock-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/40]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=30-39]
+        - [uuid, failblock-fill-3]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 30-39/40]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'dddddddddd', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, failblock-check-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/40]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /denied
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, denied-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}

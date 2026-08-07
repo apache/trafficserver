@@ -77,9 +77,10 @@ struct Data {
   int64_t m_blockskip{0};     // number of bytes to skip in this block
   int64_t m_blockconsumed{0}; // body bytes consumed
 
-  int64_t m_purge_hits{0};       // blocks a purge actually removed
-  int     m_purge_misses{0};     // consecutive uncached blocks the walk has seen
-  int     m_purge_miss_bound{0}; // from the config or the request header
+  int64_t      m_purge_hits{0};                    // blocks a purge actually removed
+  int          m_purge_misses{0};                  // consecutive uncached blocks the walk has seen
+  int          m_purge_miss_bound{0};              // from the config or the request header
+  TSHttpStatus m_purge_error{TS_HTTP_STATUS_NONE}; // block failure that ended the walk
 
   BlockState m_blockstate{Pending}; // is there an active slice block
 

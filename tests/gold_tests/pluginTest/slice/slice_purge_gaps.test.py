@@ -21,6 +21,7 @@ Test.Summary = __doc__
 Test.SkipUnless(
     Condition.PluginExists('slice.so'),
     Condition.PluginExists('cache_range_requests.so'),
+    Condition.PluginExists('header_rewrite.so'),
 )
 Test.ContinueOnFail = True
 
@@ -38,7 +39,9 @@ class SlicePurgeGapsTest:
     walk learns where the object ends from the blocks it is already deleting, and
     a 404 is merely noted and stepped over. The requested range bounds the walk
     throughout; until some block reports an extent, an open ended one is bounded
-    only by a limit on consecutive misses.
+    only by a limit on consecutive misses. A block response that is neither 200 nor
+    404 is a failure rather than an absence, and says nothing about the blocks
+    behind it, so the walk stops there and reports that status.
 
     Each object below exercises one thing, and each is purged exactly once,
     because a purge consumes the state it is measured against.
@@ -65,6 +68,12 @@ class SlicePurgeGapsTest:
                override, and the fallback when the override is malformed.
     /badrange  purged with an unparseable range, which must be refused rather
                than silently applied to block 0.
+    /failblock blocks 0 and 3 cached, with a 500 injected for block 1's PURGE. Block
+               0 is removed, the walk stops at block 1, block 3 is left alone, and
+               the client hears the 500 rather than the 200 block 0 earned.
+    /denied    block 0 cached, with a 403 injected for every block PURGE, as
+               ip_allow refusing PURGE would. The walk stops at its first block, so
+               nothing is removed and the client must not be told 404.
 
     Whether a block was purged is measured on the origin, not on the response
     body: the origin serves each check phase exactly what the matching fill phase
@@ -74,6 +83,10 @@ class SlicePurgeGapsTest:
 
     _client_replay: str = 'replay/slice_purge_gaps_client.replay.yaml'
     _server_replay: str = 'replay/slice_purge_gaps_server.replay.yaml'
+
+    # The core answers a block PURGE with nothing but 200 or 404, so a failure has to
+    # be injected to be tested at all.
+    _fail_rules: str = 'purge_block_failure.conf'
 
     _block_bytes: int = 10
 
@@ -89,7 +102,7 @@ class SlicePurgeGapsTest:
         """Declare the origin and the two proxies."""
         self._started = False
         self._configure_origin()
-        self._ts = self._make_ts('ts')
+        self._ts = self._make_ts('ts', fail_rules=True)
         self._ts_bound = self._make_ts('ts-bound', miss_bound=self._low_miss_bound)
 
         self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
@@ -119,7 +132,7 @@ class SlicePurgeGapsTest:
             'PURGE', 'A PURGE should be answered by ATS and never forwarded to the origin.')
         self._origin.Streams.stdout += Testers.ExcludesExpression('HEAD /', 'A purge should never issue a HEAD upstream.')
 
-    def _make_ts(self, label: str, miss_bound: int = None) -> 'Process':
+    def _make_ts(self, label: str, miss_bound: int = None, fail_rules: bool = False) -> 'Process':
         """Create a proxy that slices in front of cache_range_requests.
 
         --ref-relative keeps a ranged GET from dragging block 0 in as a reference
@@ -127,13 +140,19 @@ class SlicePurgeGapsTest:
 
         :param label: process name suffix.
         :param miss_bound: --purge-probe-blocks value, or None for the default.
+        :param fail_rules: load the header_rewrite rules that fail a block PURGE.
         """
         ts = Test.MakeATSProcess(label, enable_cache=True)
+
+        rules = ''
+        if fail_rules:
+            ts.Setup.CopyAs(f'rules/{self._fail_rules}', Test.RunDirectory)
+            rules = f' @plugin=header_rewrite.so @pparam={Test.RunDirectory}/{self._fail_rules}'
 
         bound = '' if miss_bound is None else f' @pparam=--purge-probe-blocks={miss_bound}'
         ts.Disk.remap_config.AddLine(
             f'map http://slice/ http://127.0.0.1:{self._origin.Variables.http_port}/'
-            f' @plugin=slice.so @pparam=--blockbytes-test={self._block_bytes} @pparam=--ref-relative{bound}'
+            f'{rules} @plugin=slice.so @pparam=--blockbytes-test={self._block_bytes} @pparam=--ref-relative{bound}'
             ' @plugin=cache_range_requests.so')
         ts.Disk.records_config.update(
             {
@@ -284,6 +303,32 @@ class SlicePurgeGapsTest:
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             'Refusing PURGE with an unparseable range', 'The refusal should be visible in the error log.')
 
+    def _block_failure(self) -> None:
+        """A block that could not be purged is not a block that was absent.
+
+        Only a 404 says the block was not cached. Any other status says the walk could
+        not tell, and says nothing about the blocks behind it either, so it stops there
+        and the client hears that status rather than the 200 the earlier blocks earned.
+        Both failures are injected with header_rewrite, since the core answers a block
+        PURGE with nothing but 200 or 404 on its own.
+        """
+        self._fill('Cache blocks 0 and 3 of /failblock', 'failblock', [0, 3])
+        self._run('PURGE /failblock, whose block 1 answers 500', 'failblock-purge')
+        self._run('/failblock was purged up to the failing block only', 'failblock-check-0 failblock-check-3')
+        self._purged('failblock-check-0', 'failblockbytes=0-9', 'A block removed before the failure should stay removed.')
+        self._survived(
+            'failblock-check-3', 'failblockbytes=30-39',
+            'The walk should stop at the failing block, leaving what is behind it cached.')
+        self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            'Purge of block 1 failed', 'The block that ended the walk should be logged.')
+
+        self._fill('Cache block 0 of /denied', 'denied', [0])
+        self._run('PURGE /denied, whose every block answers 403', 'denied-purge')
+        self._run('Block 0 of /denied survived the refused purge', 'denied-check-0')
+        self._survived('denied-check-0', 'deniedbytes=0-9', 'A purge refused at its first block must not remove anything.')
+        self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            'Purge of block 0 failed', 'A purge refused outright should be logged rather than reported as a 404.')
+
     def run(self) -> None:
         """Configure the test runs."""
         self._gap_mid_walk()
@@ -295,6 +340,7 @@ class SlicePurgeGapsTest:
         self._suffix_range()
         self._unparseable_range()
         self._miss_bound_and_override()
+        self._block_failure()
 
 
 SlicePurgeGapsTest().run()

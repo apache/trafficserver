@@ -412,6 +412,15 @@ The response is sent once the walk is complete: ``200`` if at least one block wa
 removed, ``404`` if none was found. This matches what Traffic Server reports for a
 PURGE of an object that is not sliced.
 
+A block whose PURGE returns neither ``200`` nor ``404`` — a ``403`` from
+:file:`ip_allow.yaml`, for instance, or a ``502`` — says nothing about whether that
+block was cached, and nothing about the blocks behind it. The walk stops there and that
+status is reported in place of ``200``, so the two success statuses keep meaning what
+they say: ``200`` that the object is gone and ``404`` that it was not there, never that
+this proxy could not tell. Blocks the walk had already removed stay removed, and blocks
+behind the failing one are left cached, so such a PURGE is worth repeating once
+whatever refused it has been dealt with.
+
 The functionality works with ``--ref-relative`` both enabled and disabled. With it
 disabled, block 0 is always the first block walked, so a PURGE whose range does not
 cover block 0 still purges it.
