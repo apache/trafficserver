@@ -130,6 +130,7 @@ SSLConfigParams::reset()
   ssl_ctx_options                                      = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   ssl_client_ctx_options                               = SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3;
   configExitOnLoadError                                = 1;
+  configPartialReload                                  = 0;
   configLoadConcurrency                                = 1;
 }
 
@@ -439,6 +440,7 @@ SSLConfigParams::initialize(ConfigContext ctx)
 
   configFilePath        = ats_stringdup(RecConfigReadConfigPath("proxy.config.ssl.server.multicert.filename"));
   configExitOnLoadError = RecGetRecordInt("proxy.config.ssl.server.multicert.exit_on_load_fail").value_or(0);
+  configPartialReload   = RecGetRecordInt("proxy.config.ssl.server.multicert.partial_reload").value_or(0);
   configLoadConcurrency = RecGetRecordInt("proxy.config.ssl.server.multicert.concurrency").value_or(1);
   if (configLoadConcurrency == 0) {
     configLoadConcurrency = std::clamp(static_cast<int>(std::thread::hardware_concurrency()), 1, 256);
@@ -701,10 +703,18 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
     retStatus = false;
   }
 
-  // If the load succeeded, load it. If there is no current configuration, load even a broken
-  // config so that a bad initial load doesn't completely disable TLS.
-  if (retStatus || configid == 0) {
+  // Use user_cert_count, not count(RSA|EC): load() guarantees a default context in ssl_storage
+  // (inserting a bare bootstrap when no wildcard cert loaded), so count(RSA) >= 1 even when
+  // all user certs fail, which would spuriously trigger a partial commit.
+  const bool hasAnyCert    = lookup->user_cert_count > 0;
+  const bool partialCommit = !retStatus && params->configPartialReload && hasAnyCert;
+  const bool initialLoad   = (configid == 0);
+  if (retStatus || initialLoad || partialCommit) {
     configid = configProcessor.set(configid, lookup);
+    // Only flip retStatus on live reloads, startup must preserve false to honour configExitOnLoadError.
+    if (partialCommit && !initialLoad) {
+      retStatus = true;
+    }
   } else {
     delete lookup;
   }
