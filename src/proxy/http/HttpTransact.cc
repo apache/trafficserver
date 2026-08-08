@@ -2207,6 +2207,9 @@ HttpTransact::HandleRequestAuthorized(State *s)
 void
 HttpTransact::DecideCacheLookup(State *s)
 {
+  s->cache_info.freshness_limit = -1;
+  s->cache_info.current_age     = -1;
+
   // Check if a client request is lookupable.
   if (s->redirect_info.redirect_in_process) {
     // for redirect, we want to skip cache lookup and write into
@@ -3139,6 +3142,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
     obj = s->cache_info.object_read;
   }
   cached_response = obj->response_get();
+  set_cache_freshness_info(s, cached_response, obj->request_sent_time_get(), obj->response_received_time_get(), true);
 
   // If the client request is conditional, and the cached copy meets
   // the conditions, do not need to send back the full document,
@@ -4932,6 +4936,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
     // unset warning revalidation failed header if it set
     // (potentially added by negative revalidating)
     delete_warning_value(base_response, HTTPWarningCode::REVALIDATION_FAILED);
+    set_cache_freshness_info(s, base_response, s->request_sent_time, s->response_received_time, true);
   }
   ink_assert(base_response->valid());
 
@@ -5319,6 +5324,8 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
   if (s->txn_conf->cache_ignore_auth) {
     cache_info->response_get()->field_delete(static_cast<std::string_view>(MIME_FIELD_WWW_AUTHENTICATE));
   }
+
+  set_cache_freshness_info(s, cache_info->response_get(), s->request_sent_time, s->response_received_time, false);
 
   dump_header(dbg_ctl_http_hdrs, cache_info->request_get(), s->state_machine_id(), "Cached Request Hdr");
 }
@@ -7698,6 +7705,20 @@ HttpTransact::calculate_document_freshness_limit(State *s, HTTPHdr *response, ti
   TxnDbg(dbg_ctl_http_match, "final freshness_limit = %d", freshness_limit);
 
   return (freshness_limit);
+}
+
+void
+HttpTransact::set_cache_freshness_info(State *s, HTTPHdr *response, ink_time_t request_time, ink_time_t response_time,
+                                       bool include_current_age)
+{
+  bool       heuristic     = false;
+  ink_time_t response_date = response->get_date();
+
+  s->cache_info.freshness_limit = calculate_document_freshness_limit(s, response, response_date, &heuristic);
+  if (include_current_age) {
+    s->cache_info.current_age =
+      HttpTransactCache::calculate_document_age(request_time, response_time, response, response_date, s->current.now);
+  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -157,6 +157,8 @@ Cache Details
 .. _crra:
 .. _cwra:
 .. _cccs:
+.. _cfl:
+.. _cca:
 
 These log fields reveal details of the |TS| proxy interaction with its own
 cache while attempting to service incoming client requests.
@@ -191,6 +193,17 @@ cccs  Proxy Cache    Cache collapsed connection success;
                      -1: collapsing was attempted but failed, request went upstream
                      0: collapsing was unnecessary
                      1: attempted to collapse and got a cache hit on subsequent read attempts
+
+cfl   Proxy Cache    Freshness limit, in seconds, for an object served from or
+                     written to cache. The limit reflects parsed cache response
+                     metadata and the effective cache configuration. The value
+                     is ``-1`` when not applicable.
+
+cca   Proxy Cache    Current age, in seconds, of the cached object when served.
+                     The age is calculated from the cached response metadata
+                     and cache timing state. The value is ``-1`` when not
+                     applicable.
+
 ===== ============== ==========================================================
 
 .. _admin-logging-fields-txn:
