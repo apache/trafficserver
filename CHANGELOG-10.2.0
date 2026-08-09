@@ -1,0 +1,651 @@
+Changes with Apache Traffic Server 10.2.0
+  #11945 - Make directory operations methods on `Directory`
+  #12026 - Static link opentelemetry-cpp libraries to otel_tracer plugin
+  #12060 - Eliminate deprecated lib records apis
+  #12066 - cppcheck - records. Fix few warnings, nothing major.
+  #12067 - Use ip command as a fallback in redirect_actions test
+  #12074 - Change MIMEFieldWrapper name_get and value_get to return string_view
+  #12083 - Some cleanup for header_rewrite docs
+  #12089 - Bump version to 10.2.0
+  #12091 - Return string view from HTTPHdr methods
+  #12092 - slice/cache_range_requests plugin: avoid subsequent slice IMS requests
+  #12114 - doc: mark sni.yaml verify_client as Inbound
+  #12121 - [compress] Add an option to do not compress partial object
+  #12122 - Add CurlCommand to autests
+  #12130 - Cleanup debug log of plugins
+  #12131 - Use %p to print memory address in hex in ConfigProcessor debug log (#12119)
+  #12133 - Sphinx 8.x and sphinx-rtd-theme 3.x
+  #12134 - Assert safety of evacuate size type at compilation
+  #12136 - tools/build_boringssl_h3_tools.sh tweaks
+  #12147 - Take string view arguments in cache processor
+  #12152 - tidy - Fix redundant cast
+  #12153 - Cleanup - Use C++ style cast instead of the C style. Part 1.
+  #12159 - Cleanup - Use C++ style cast instead of the C style. Part 2
+  #12161 - build_h3_tools version updates
+  #12162 - Remove misleading log statement
+  #12167 - Take string view in mime methods
+  #12172 - Cleanup - some more clang-tidy recommendation.
+  #12180 - otel build update for GCC 15
+  #12188 - remove -k parameter and clear_hostdb command
+  #12193 - Cleanup: Track HttpCacheSM read retry event
+  #12198 - proxy.config.http.per_client.connection.exempt_list
+  #12201 - Add Zstandard compression support and update tests
+  #12203 - Update dependency comments for building boringssl and openssl for HTTP/3 on Debian
+  #12213 - Adds new partial string matching to header_rewrite
+  #12218 - Refactor HRW matchers, add SETS
+  #12219 - Updated SSLSNIConfig to use the Regex class (pcre2)
+  #12220 - x-ja3-via and x-ja4-via
+  #12226 - Clean up code to eliminate Clang Analyzer warnings
+  #12229 - Cleanup: Just use vector for seen in RamCacheLRU
+  #12230 - Allow header_rewrite to run a compiler for HRW4u
+  #12238 - Cleanup: Use std::unique_ptr where easily applicable
+  #12239 - Cleanup: Remove unused member of CacheLookupInfo
+  #12242 - Fix build for io_uring
+  #12243 - Cleanup: Use string_view in URL and HTTPHdr
+  #12245 - Connection tracker: Add functions to query inbound groups.
+  #12247 - hrw4u is a new header_rewrite configuration DSL
+  #12249 - Cleanup: Use enum class
+  #12250 - Add per_server.connection metrics
+  #12255 - gdb pretty printer for HttpSM history
+  #12256 - HRW: Allow sets to have quoted strings
+  #12260 - jsonrpc - Implement handler to fetch in/out bound connection tracker info.
+  #12265 - SnowflakeID for organizationally unique identifiers
+  #12266 - Remove unused function from OpenDirEntry
+  #12271 - Try both old(9.2) and new cache key generation
+  #12277 - Minor header_rewrite doc cleanup
+  #12281 - Cleanup: Move serve_stale autests under cache
+  #12282 - Fix FileManager to handle file updates properly.
+  #12285 - Fix for issue 12279 - verify_config - Fix error checking when parsing records.yaml
+  #12286 - Add some more hrw4u help
+  #12287 - HRW4U: Allow repeated sections within a section
+  #12289 - Docs: add doc build folders to gitignore
+  #12293 - Add a setting to choose the data source of IP address for ACL
+  #12304 - HRW: Add support for elif, in if-elif-else
+  #12305 - HRW4U: Adds support for HRW if-elif clauses
+  #12306 - hrw4u: add inbound.cookie
+  #12308 - traffic_ctl - Set the appropriate error exit code.
+  #12309 - hrw4u -- accept text from stdin
+  #12310 - Make negative_caching_list and negative_revalidating_list overridable using MgmtConverter
+  #12311 - Fix docs about Overridable Variables
+  #12322 - gdb-helpers.py: Add tunnel events to the history parser
+  #12328 - Add security policy
+  #12338 - Add support for http+unix scheme to remap config
+  #12339 - docs: Add more condition/operators
+  #12342 - traffic_ctl - Add ECONNREFUSED to the retry list when connection to the rpc.
+  #12343 - typo in tls version warning
+  #12344 - header_rewrite: Add optional switches to change plugin behavior on load
+  #12345 - Fixes some test errors from previous commits
+  #12346 - Hrw4U:   Multi cond fixes +  allow conds to have a default expression of !=""
+  #12348 - Cleanup HostDBContinuation
+  #12350 - Fix autest syntax and remove test file copy
+  #12351 - Fix cripts build issue
+  #12354 - Changed traffic_layout to report the version of PCRE2
+  #12356 - Changed traffic_via over to PCRE2
+  #12357 - Implement HuffmanCodec with LiteSpeed
+  #12358 - Fix the curl.test.ext spawn_curl_commands ts parameter
+  #12359 - TS API: Add TSHttpTxnVerifiedAddrSet/Get and real-ip plugin
+  #12365 - HRW: Fix a broken Matcher related to Diags
+  #12371 - Hrw autest refactor
+  #12372 - Move code for SSL from UnixNetVC to SSLNetVC
+  #12375 - Adds a Memory Bank structure for LLMs
+  #12376 - Changed ControlMatcher to use PCRE2
+  #12377 - Cripts: Refactor the cache key / URL APIs
+  #12379 - Fix nightly OS build issue - null stringview
+  #12380 - Cleanup of Cripts docs, add missing parts
+  #12381 - Some minor docs cleanup for hrw4u
+  #12383 - Cripts: Add Geo APIs to the cripts::IP object
+  #12384 - Cleanup of the parent selection tests
+  #12388 - CMakePresets: branch-autest-uds
+  #12389 - hrw4u: Check operators, add http header validation, url validation
+  #12392 - Add support for storing and retrieving metric type
+  #12393 - TLS curve/group name logging for Ticket Resumption
+  #12396 - Format SDK_Overridable_Configs
+  #12397 - Retry Connect with Exponential Backoff
+  #12400 - conf_remap: Fix build to add appropriate lib deps
+  #12403 - hrw4u: Wrong validator for status reason
+  #12404 - cqssrt log field for TLS resumption type
+  #12405 - Fix user_agent_session_miss for ATS SSL session cache
+  #12406 - stats_over_http: Add HINT and TYPE Prometheus annotations
+  #12407 - Fix stderr closure bug in LogFile::check_fd() using fstat()
+  #12408 - slice plugin: simplify self healing by switching to ident header
+  #12413 - RecordsConfig.cc: Ensure RechCheckT/regex consistency
+  #12423 - Update README.md - Fix rocky 9 badge
+  #12424 - Cursor Rules File for autests
+  #12427 - test_SnowflakeID: Avoid sequence number continuation
+  #12429 - Add log messages about QUIC cert loading for consistency
+  #12434 - Autest: fix or skip failed --curl-uds tests
+  #12436 - Add USDT tracepoints for connection fd tracking
+  #12437 - Error messages when server closes connection
+  #12439 - This cleans up some of the hrw4u example tests
+  #12444 - docs: hrw4u header existence
+  #12447 - escalate: Add x-escalate-redirect header (#1092)
+  #12448 - escalate.so: --escalate-non-get-methods
+  #12451 - Add the inverse hrw4u tool, u4wrh
+  #12453 - Catch2: update to v3.9.1
+  #12456 - hrw: forward declare template specializations
+  #12458 - TSMimeHdrFieldAppend doc/doxygen updates
+  #12459 - ESI: --allowed-response-codes
+  #12460 - Implement probe-full-json feature for xdebug plugin
+  #12461 - xdebug probe: fix empty value handling
+  #12463 - xdebug probe-full-json: encoding the origin body
+  #12464 - Hrw4 u errors and more
+  #12466 - Comment out the matcher header_rewrite test
+  #12467 - Remove a redundant flag in CacheVC
+  #12468 - [Doc] additional delays with linux defer_accept
+  #12471 - esi_nested_include test updates
+  #12475 - trafficserver.test.ext: Add enable_cripts
+  #12476 - Add a per client connection max exempt list cript
+  #12478 - Fix integer overflow in compress plugin for large file compression
+  #12479 - ESI: fix possible integer overflow issues
+  #12483 - RAM cache stats and logs updates
+  #12484 - prscs: proxy response status code setter
+  #12487 - Fix lua deps and ensure lua plugin is built
+  #12491 - Add 10.1.x to the list of versions in the docs
+  #12493 - Remove maybe problematic constructors on storage_type
+  #12494 - esi: Add URL to many error messages
+  #12495 - Fix doc for sni.yaml server_groups_list
+  #12501 - Logging: Add chiv field from real-ip plugin
+  #12505 - Adds content type parameter handling to compress plugin
+  #12510 - lua: minimal support for Unix socket incoming connections
+  #12512 - API for Next Hop Strategy rebind during a transaction
+  #12515 - Update test for TSHttpTxnVerifiedAddr
+  #12516 - Remove ready=When.PortOpen that are used for httpbin
+  #12518 - header_rewrite: Fix that address source PLUGIN is unavailable for remap plugin use case
+  #12521 - header_rewrite: Add set-effective-address operator
+  #12524 - watchdog: alert on ET_NET thread stalls beyond threshold
+  #12526 - Warn if existing remap shadows inserted remap
+  #12530 - header_rewrite: Fix a bug that parameters on remap rules are overwritten by subsequent rules
+  #12532 - Check valid ts in curl command
+  #12533 - Cleanup: HttpTransact::StateMachineAction_t
+  #12535 - Cleanup: remove unused static variable
+  #12536 - HRW: Bug where after an elif an else may be required
+  #12539 - TLS: Add per-curve handshake time metrics
+  #12540 - remap_acl speedup via config reload
+  #12541 - autest: tighten config_update_interval_ms
+  #12544 - update compress plugin to use more functionality from libswoc
+  #12545 - Compiling the cachekey test and converted it from a command line program to a unit test
+  #12546 - Add flags option to Regex::exec
+  #12548 - IPRangeSet::erase
+  #12549 - Provide Regex::exec backwards compatibility
+  #12551 - ControlMatcher: error versus NOMATCH checking
+  #12552 - libswoc 1.5.15: version update
+  #12553 - hrw4u: add validation for some boolean values
+  #12554 - realip: Add null check for netvc
+  #12557 - HRW: Fixes a regression bug due to #12536
+  #12562 - Hrw: Supports nested If
+  #12563 - Cleanup: Remove unused code of HostDB
+  #12564 - url_sig: use Regex instead of pcre
+  #12565 - Event metrics cleanup
+  #12567 - Configurable Hash Algorithm and Parameters for Consistent Hash Parent Selection
+  #12568 - Use ts::Metrics for socks metrics
+  #12569 - url_sig: modernize memory management
+  #12570 - Convert slice to use Regex
+  #12571 - cookie_remap: replace pcre with Regex
+  #12572 - access_control: use Regex instead of pcre
+  #12573 - Update header_rewrite to use Regex
+  #12574 - regex_revalidate: migrate from pcre to Regex
+  #12575 - regex_remap: convert from pcre to Regex
+  #12576 - prefetch: use Regex instead of pcre
+  #12577 - HRW: Adds some more regex tests, in prep for PCRE2 migration
+  #12578 - geoip - replace pcre with Regex
+  #12579 - Remove autopep8 references since we use yapf
+  #12580 - Use single Regex matcher for ssl wildcard
+  #12581 - Remove eventsystem Inline.cc and cleanup private headers.
+  #12584 - Use single regex match in RecLookupMatchingRecords
+  #12585 - traffic_cache: use single regex in url_matcher port
+  #12586 - Use single regex match for Diags tags
+  #12587 - Use single regex match for regression tests
+  #12588 - hrw4u: Add support for += / add-header
+  #12590 - compress plugin: refactor compression algorithms into their own files
+  #12591 - Add ts::Metrics::StaticString and remove RecRegisterStatString
+  #12592 - Speed up day/month parsing
+  #12595 - HRW: Adopt new hrw tests to new infrastructure
+  #12599 - regex_remap plugin fix for no specified strategy
+  #12602 - Reduce the calls to ink_get_hrtime in the event loop
+  #12603 - Add traffic_ctl hostdb status
+  #12606 - Expose PCRE2 error codes in tsutils Regex.h API
+  #12607 - Convert cachekey plugin to use Regex class (PCRE2) instead of PCRE
+  #12608 - Exclude hop-by-hop headers from AWS v4 signature in origin_server_auth plugin
+  #12612 - Add copy constructor and assignment operator to Regex class
+  #12613 - Fix stringop-truncation warning in ats_unix_append_id
+  #12614 - Fix nonnull warning in uri_signing unit tests
+  #12616 - Fix benchmarks, add benchmark_Random
+  #12617 - Change polite_hook_wait Au test to demonstrate a useful scenario.
+  #12618 - Respect Vary rules when ignore_accept_encoding_mismatch is set to `2` (default value)
+  #12619 - Converting maxmind_acl to Regex from PCRE
+  #12621 - ArgParser: Add mutually exclusive option groups
+  #12623 - tools -  traffic_ctl, traffic_layout: use ArgParse groups to handle mutually exclusive options.
+  #12624 - Optimize ts::Random performance by reusing distribution objects
+  #12625 - Cleanup: Remove unused functions of HostDBInfo
+  #12626 - Cleanup: Remove unused handlers of HttpSM
+  #12627 - Test: `traffic_ctl_output_test*`: Add validate functions for specific JSON fields validation
+  #12628 - SSL_CTX_get0_implemented_groups for TLS group metrics
+  #12629 - records: Accept `const char*` in `RecSetRecordString` to avoid const_cast.
+  #12630 - enum compatibility fix for apidefs in 10.2.0
+  #12631 - cookie_remap: disable_pristine_host_hdr
+  #12633 - Records: Clean up - remove unreachable code.
+  #12635 - Wasm plugin: Handle AF_INET6 case for port extraction
+  #12636 - records:  Replace record registration macros with non macro solution.
+  #12637 - Fix scheme detection via port for regex remap
+  #12639 - Parallel dir entry sync options
+  #12641 - HttpTransact.cc cleanup: remove extra ';'
+  #12643 - Fix wrong checks for some integer config records
+  #12645 - Add set-cc-alg to header_rewrite
+  #12646 - ArgParser: Improve missing subcommand error message
+  #12647 - traffic_ctl: Refactor command execution in traffic_ctl
+  #12648 - ATSReplayTest: autests via replay.yaml
+  #12650 - Add support for verified addr api for lua plugin
+  #12651 - Add support for proxy protocol info for lua plugin
+  #12652 - Fix documentation for memory_profile plugin
+  #12659 - Remove doc/conf.py
+  #12661 - Plugins: Remove duplicate CRLF after TSHttpHdrPrint
+  #12662 - Improve the Sphinx configs for laTeX/PDF builds
+  #12665 - Fix negative_caching_lifetime being overridden by ttl-in-cache
+  #12667 - Transfer-Encoding:chunked log field fix
+  #12668 - Fix s-maxage not respected with Authorization headers
+  #12671 - Minor spelling fix in remap shadowing warning
+  #12675 - Fix Rocky Linux 8 ASAN plugin tests by suppressing dynamic linker leaks
+  #12677 - Fix format specifier for ip_source bitfield in header_rewrite
+  #12678 - Clean up certifier SslData destructor
+  #12679 - Implement RFC 9213 Targeted HTTP Cache Control
+  #12682 - Remove Extendible and AcidPtr (unused code)
+  #12683 - Add support for retrieving cert info in lua plugin
+  #12684 - Update format string for formatting chrono duration
+  #12685 - Remove PCRE references, complete migration to PCRE2
+  #12687 - Remove references to Ubuntu 20.04 and 23.04
+  #12688 - Add USDT for cache directory insertion and deletion
+  #12689 - Fix stats_over_http compilation with Clang 16 and earlier
+  #12690 - Fix false positive -Wrestrict warning in test_ja4.cc with GCC 12
+  #12692 - Update README.md directory structure and package requirements
+  #12693 - autest.en.rst: Add dev autest docs
+  #12694 - cache-*.test.py tests to use ATSReplayTest
+  #12695 - .claude/CLAUDE.md
+  #12696 - cmake format target: add whitespace correction
+  #12697 - Fix negative revalidating for zero-length objects
+  #12698 - Replace deprecated ASN1_STRING_data function
+  #12700 - Revert "cache-*.test.py tests to use ATSReplayTest"
+  #12701 - cache-*.test.py tests to use ATSReplayTest (#12694)
+  #12702 - Fix request buffering with post_copy_size=0
+  #12704 - Apply virtualenv and pip improvements to cmake-format.sh
+  #12709 - Fix Sphinx documentation build warnings
+  #12712 - Fix cache test reenable loop in VC_EVENT_READ_READY handler
+  #12713 - Fix  convert2yaml script to include missed records.
+  #12714 - Fix a build error in UnixEvent.cc due to insufficient header inclusion
+  #12715 - Fix false positive -Wrestrict warning in HttpUserAgent.h with GCC 12
+  #12717 - Cache volumes: RAM cache settings and remap option
+  #12718 - Fix DOS pre-commit hook check.
+  #12719 - Simplify overridable config code
+  #12723 - Fix potential buffer overflow in http_load snprintf calls
+  #12729 - Fix issue where origins could be unintentionally marked as down
+  #12731 - Catch2: Use CAPTURE and GENERATE
+  #12735 - Automatic caching of parsed STRING config values
+  #12736 - Fix test_net to not depend on system sni.yaml
+  #12739 - Cleanup HttpCacheKey
+  #12740 - Add filter_body plugin for request/response body content filtering
+  #12742 - xdebug: probe-full-json fix single quote escapes
+  #12743 - Adds Cache Groups concepts to Cripts
+  #12744 - Skip lua_proxy_protocol test if curl command is old
+  #12749 - HRW: Produce errors when bad mods are used
+  #12752 - traffic_ctl: Add config reset command
+  #12754 - Add debug instrumentation to Stripe destructor
+  #12756 - Fix null pointer dereference in traffic_crashlog
+  #12760 - Fix xdebug transform calling WRITE_READY when no data consumed
+  #12762 - realip: Remove an unnecessary mutex
+  #12763 - Adds metrics and log fields for tracking TLS handshake bytes
+  #12768 - Fix: HTTPHdr host cache invalidation when Host header modified
+  #12774 - Add .git-blame-ignore-revs
+  #12775 - Add backtrace to crash logs
+  #12777 - Fix DbgCtl use-after-free shutdown crash via leaky singleton
+  #12780 - Add a build option for Thread Sanitizer
+  #12781 - Migrate from Pipenv to uv
+  #12783 - Fix false crash logs with regression tests
+  #12786 - Add ERR_TUN_ACTIVE_TIMEOUT squid code for tunnel timeouts
+  #12789 - Fix DenseThreadId static destruction order fiasco
+  #12791 - Add state transition diagram of StripeSM
+  #12793 - Revert "Fix false crash logs with regression tests"
+  #12797 - Restore DbgCtl::_rm_reference() for ABI compatibility
+  #12798 - Fix uninitialized LogConfig member variable
+  #12799 - fix(rpc): improve error reporting for socket path issues.
+  #12802 - Fix origin_server_auth URL encoding for mixed-encoding URLs
+  #12803 - Fix NetAcceptAction::cancel() use-after-free race condition
+  #12804 - traffic_ctl: Add `--append` option to append debug tags instead of replacing them. (inc ArgParser support).
+  #12806 - Fix Valgrind uninitialized memory warnings
+  #12811 - ja*: Fix preserve logic to check for any header in fingerprint group
+  #12812 - LLM / Claude cleanup
+  #12814 - autest: adds a hrw test for LAST-CAPTURE group
+  #12815 - hrw4u: Fix uv dependencies
+  #12820 - hrw4u: Fix section validations and operators
+  #12821 - Coverity Fixes
+  #12822 - hrw: Supports indexed query parameters as conds
+  #12823 - Count proxy.process.http.incoming_requests at transaction start
+  #12833 - Ignore the ext extensions from git
+  #12835 - Fix CI fuzz job
+  #12839 - Add cache stripe lock contention metric
+  #12840 - HRW/HRW4U: Adds SERVER-HEADER & SERVER-URL
+  #12841 - Revert "Fix NetAcceptAction::cancel() use-after-free race condition"
+  #12842 - Fix Coverity UNINIT issues
+  #12843 - Coverity Fixes
+  #12844 - Minor changes to the CLAUDE.md
+  #12845 - Add fixes around fail_action 5
+  #12846 - Fix HostDBInfo::is_down condition
+  #12848 - tools: Add traffic_grapher for real-time ATS metrics visualization
+  #12849 - Lua plugin support for connection exempt list
+  #12852 - Add fail action 6, will fallback to serving stale if retry attempts are exhausted
+  #12853 - hrw4u: Adds QP parameter indexing by name
+  #12856 - Add port in HostDBRecord
+  #12858 - Add HOSTNAME option to traffic_ctl hostdb status
+  #12859 - cmake: detect FreeBSD's native cap with capsicum
+  #12860 - Add: Server-side TLS handshake milestones and timing fixes
+  #12861 - proxy.process.http.000_responses metric
+  #12864 - Add support for more PP fields
+  #12865 - hrw4u: Allows bulk compilation of many files (faster)
+  #12866 - Fix failed assertion in build_response for 1xx races
+  #12867 - Add parallel autest runner for faster test execution
+  #12868 - add host_override to parent.config and other sni name fixes
+  #12869 - Doc: mention elif, nested conditionals
+  #12871 - hrw4u: Allow negation with the 'in' keyword
+  #12872 - Add support for custom logging field
+  #12873 - Fix cache directory corruption in parallel dir sync
+  #12874 - NetAcceptAction::cancel() use-after-free fix: part 2
+  #12876 - Fix filter_body plugin: deterministic request blocking and response body blocking
+  #12877 - parallel autests: print failure output
+  #12878 - Add proxy.process.http.429_responses metric
+  #12880 - Check state of HostDBInfo
+  #12882 - Fix flaky filter_body test: ReturnCode
+  #12883 - Add AuTest and Doc for DELETE method
+  #12884 - Fix log_retention test: use correct test run variable
+  #12885 - add mstsms log field, slow log as a csv field
+  #12886 - Stabilize post and slow_post autests under parallel runs
+  #12889 - First cut at a CoPilot review agent
+  #12890 - Fix the log field type for cqpv and sqpv
+  #12894 - autest: add missing newline before worker output in parallel runner
+  #12895 - rpc: tolerate unsupported chmod on unix sockets
+  #12897 - Fix: difference_msec epoch leak when start milestone is unset
+  #12898 - Fix: set UA_BEGIN_WRITE milestone unconditionally
+  #12899 - Test: add msdms milestone logging field validation autest
+  #12900 - Fix: msdms log fields emit dash instead of -1 for unset milestones
+  #12901 - log-filenames.test.py: fix diags check flakyness
+  #12902 - Fix: Build with OpenSSL 3.5+ which removed engine API
+  #12903 - synserver accept assertion to log event details before aborting
+  #12904 - hrw: fix lost [OR] modifiers, add more autests
+  #12906 - fix(http): stale `skip_bytes` in cache-write consumer after 100 Continue with transform
+  #12907 - hrw4u: More fixes for complex groups and logical operations
+  #12908 - Add CAP_CHOWN to permitted capability set
+  #12915 - Revert "cmake: detect FreeBSD's native cap with capsicum (#12859)"
+  #12917 - Fix nullptr crash in RecConfigOverrideFromEnvironment with runroot
+  #12921 - Add support for PP2_SUBTYPE_SSL_GROUP
+  #12928 - Add option 3 to connect down policy
+  #12930 - Fix: Handle EBADF in synserver accept instead of aborting
+  #12932 - Add AuTest for connect_attempts rr_retries and max_retries
+  #12934 - ArgParser Fix: apply default values after dependency validation
+  #12935 - 10.2.x: Update gitignore for codex files (#12893)
+  #12937 - Add HTTP result code to USDT milestone_sm_finish
+  #12939 - hrw4u: Adds procedures (macros) and libraries
+  #12940 - [autest] thread_config: add startup polling and skip test on non-Linux
+  #12945 - Docs: Add cache inspector removal to upgrading guide
+  #12946 - Docs: Fix misleading compress plugin cache option description
+  #12948 - Fix header_rewrite MaxMind geo lookups for GeoIP2/GeoLite2 mmdb databases
+  #12949 - Slice: Add prefetch deduplication and freelist
+  #12950 - hrw4u: Adds sandbox protection feature for the compiler
+  #12951 - Add a null check to OCSP stapling
+  #12956 - hrw4u: Fix section placement for hookless rules in u4wrh
+  #12957 - hrw4u: Add code coverage support for tests
+  #12961 - Add a setting to adjust the maximum PP header size
+  #12962 - Add AuTest for large chunked contents
+  #12972 - Fix cache retry assert on ServerAddrSet
+  #12974 - Fix cache_fill Content-Length greater-than config parsing
+  #12975 - Initialize uninitialized local variables in core production code
+  #12976 - Fix uninitialized pointer/field members in core classes
+  #12977 - Fix uninitialized fields in header_rewrite and ja4_fingerprint plugins
+  #12979 - Fix uninitialized variables in txn_box plugin
+  #12981 - Fix uninitialized variables in test and benchmark code
+  #12982 - Fix possible crashes on OCSP request timeout
+  #12985 - Check valid parent selection hash string
+  #12989 - hrw4u/header_rewrite: Add session-scope state variables
+  #12994 - Clarify hostdb host_file.path reload timing and tip usage
+  #12995 - Add jax_fingerprint plugin
+  #12996 - Parallelize dir-sync on graceful shutdowns
+  #13000 - Initialize remaining Coverity uninit members in core and ESI
+  #13001 - AGENTS.md has to be at the root of the repo
+  #13002 - autest: 1.10.4 -> 1.10.6
+  #13004 - Fix remaining uninitialized variable and field Coverity defects
+  #13005 - Remove unused member variables across multiple subsystems
+  #13012 - Fix flaky autests for timeout, sigusr2, and thread_config
+  #13014 - 10.2: Delay remap table publish until startup completes (#12988)
+  #13015 - Add 204 and 308 to heuristically cacheable status codes
+  #13016 - 10.2: Proxy Verifier: use concise stack protocol specification (#13003)
+  #13017 - autest: print worker diagnostics for exceptions
+  #13019 - log-milestone-fields: stabilize across ms truncation
+  #13021 - sigusr2 autest: simplify Process and Ready objects
+  #13023 - Initialize uninitialized pointer and scalar members in QUIC and tscpp classes
+  #13024 - Fix MATCH_SET parsing of quoted items and add tests
+  #13026 - Fix memory leaks in SSL subsystem
+  #13027 - Fix memory leaks in core shutdown path
+  #13028 - Fix memory leaks in plugins
+  #13029 - Clean up stale LSAN suppression entries
+  #13030 - Fix three high-impact Coverity defects
+  #13034 - Use AddAwaitFileContainsTestRun more in autests
+  #13036 - Fix prev_is_cr flag handling in chunked encoding parser
+  #13041 - [usdt] http_attach_client_session: add args
+  #13042 - Support per-remap geo DB handles in header_rewrite
+  #13043 - Backport #12998 - Parallel SSL cert load
+  #13044 - Add sni.yaml session ticket overrides (#13006)
+  #13045 - Add shutdown hook function for lua plugin
+  #13046 - Try to change uid/gid on plugin runtime dir before dropping privs, if POSIX not available
+  #13047 - Fix link_libraries for cripts unit tests
+  #13050 - Reject malformed Host header ports
+  #13051 - Proxy Verifier v3.1.2
+  #13054 - proxy-request.expect: absent in PV replays
+  #13055 - Add autest for empty POST framing: 411 response
+  #13057 - Install rustup instead of cargo to use a newer version of rustc
+  #13060 - Cleanup: memory cache lookup code
+  #13065 - Flush logs before shutdown
+  #13066 - Ignore uv.lock in RAT exclusions
+  #13068 - hrw4u: Fix u4wrh HEADER value resolution missing section context
+  #13069 - Add connect_down_policy: 4 for empty reply
+  #13071 - Upgrade bundled RAT to 0.17
+  #13072 - Refactor jax_fingerprint plugin for better modularity and fewer allocations
+  #13074 - Make sure string metrics are dumped in RecDumpRecords
+  #13077 - Allow full CIDR range (1-128) for IPv6 literals in HRW4U grammar
+  #13078 - Fix use-after-free in ParsedConfigCache for short config strings
+  #13081 - Fix broken default.com test case in targeted-cache-control
+  #13082 - jax_fingerprint: Address user arg slot exhaustion
+  #13083 - Cleanup serving stale while origin server down
+  #13084 - jax_fingerprint: Add --log-field option for custom log fields
+  #13085 - jax_fingerprint: ja4_common -> common
+  #13088 - Add support for TLS Certificate Compression (RFC 8879)
+  #13089 - Fix cache_read_vc assertion crash in redirect flow
+  #13091 - Cleanup set_connect_fail debug log
+  #13092 - Clarify HostDBInfo state
+  #13093 - Fix HTTP/3 crash in HQTransaction::_signal_event
+  #13094 - Guard HTTP/3 test targets with BUILD_TESTING
+  #13098 - Reduce TLS handshake contention on SSLCertContext
+  #13100 - Fix autest tls_sni_ticket so it can work with BoringSSL
+  #13102 - Fix connect attempt retries
+  #13104 - 10.2.x: jax_fingerprint: use ssl_multicert_config
+  #13105 - 10.2.x: Log malformed HTTP/2 requests
+  #13106 - Fix lock-order inversion deadlock in Diags::tag_activated
+  #13107 - compress; Fixes a regression in protocol parser
+  #13109 - 10.2.x: Add log field fallbacks (#13018)
+  #13111 - Replace echo command on autest test cases with printf (#13099)
+  #13112 - Add doxygen comment guidance to AGENTS.md
+  #13115 - Relocate HostDB tests and benchmark to standard directories
+  #13117 - Cap uncompressed length in TLS Certificate Compression
+  #13119 - Restore a shortcut in hot loop in _mime_hdr_field_list_search_by_string
+  #13120 - Propagate PROXY-Protocol src to outbound surfaces
+  #13122 - Remove unused error page template
+  #13124 - 10.2: Remove virtual dispatch from LogData
+  #13126 - hrw4u: Add AST for static analysis and codegen
+  #13130 - Fix HTTP/2 stream (transaction) inactivity timeout
+  #13132 - Fix index issue with records in HostDBRecord::select_best_srv
+  #13133 - Add length check in Doc::data_len()
+  #13134 - Add cache key hash logging field and public API
+  #13136 - Update dependencies for h3 tools
+  #13137 - Turn off ASAN leak detection running tscore/CompileParseRules during build
+  #13139 - Limit regex remap substitutions
+  #13140 - Fix use of uninitialized value issue from fuzzing
+  #13141 - Honor RECA_NO_ACCESS in record lookup RPC encoder
+  #13142 - mgmt/rpc: refuse RECA_READ_ONLY/RECA_NO_ACCESS writes
+  #13143 - Fix combo paths with embedded colons
+  #13147 - hrw4u: add --error-format flag with pluggable formatters
+  #13151 - Fix AIO callback from_api completion lifetime
+  #13153 - Update dockerfile
+  #13154 - Rename: PreTransactionLogData -> NonHttpSmLogData
+  #13156 - Add Prometheus v2 labeled stats
+  #13158 - Fix RangeTransform on stale-revalidate
+  #13159 - Avoid confusing AIO callback lifetime test
+  #13160 - add bypass header config option to maxmind_acl plugin
+  #13161 - Fix undercount of cp_list_len
+  #13164 - nexthop health status don't overflow fail count
+  #13171 - Quiet ESI streaming gunzip zero-output logs
+  #13172 - Zero hdrtoken heap to fix use-of-uninitialized-value
+  #13174 - proxy.config.ssl.client.CA.cert.filename: overridable
+  #13181 - slice: fix stpcpy off-by-one for header value extraction
+  #13188 - Add TSMutex lock guard
+  #13195 - cripts: shrink Context from 3408 to 1920 bytes, expand data[] to 16
+  #13197 - Update cert compression reporting
+  #13202 - Reduce TLS write-path overhead
+  #13209 - redo_cache_lookup: move to examples; fix `fallback` lifetime
+  #13210 - tscore: fix out-of-bounds read in ats_base64_decode
+  #13211 - Minor fixes to make Cripts building better
+  #13213 - Add H3 quiche traffic handling tests and provide fixes
+  #13215 - slice: Avoid redundant prefetch re-scheduling
+  #13219 - Fix the memory-pressure throttle and its RSS metric
+  #13229 - ocsp: add single-cert stapling fast path and certinfo RAII
+  #13230 - Update FastLZ to b1342da
+  #13232 - Sync CacheDir on shutdown
+  #13233 - Fix CLFUS RAM cache value metric broken by integer division
+  #13234 - Fix LRU RAM cache seen filter never engaging below 100% full
+  #13236 - Fix truncated HTTP version in log field unmarshalling
+  #13239 - curl 8.20 test update: curl PROXY destination changes
+  #13240 - Fix incorrect errno short names on FreeBSD/macOS in bwf::Errno
+  #13241 - Fix build: TLS log fields use m_data, not m_http_sm
+  #13242 - Clamp HTTP3 frame type buf size to reader bytes
+  #13243 - jax_fingerprint: Emit type-default for custom log fields with no transaction
+  #13245 - Move some directory helpers to `Directory`
+  #13250 - Fix compilation under `LOOP_CHECK_MODE`
+  #13255 - Add S3-FIFO RAM cache eviction algorithm (ram_cache.algorithm = 2)
+  #13256 - Fix mismatched log field types more
+  #13258 - authproxy: Release client request handle in StateAuthorized
+  #13259 - Use ls-hpack's fast Huffman decoder for HPACK/QPACK strings
+  #13268 - Remove unused EThread members
+  #13269 - Cripts: make URL::Query copyable via deep-copy of _state
+  #13276 - Fix tsapi build with ENABLE_PROBES=ON
+  #13277 - logging: add a marshalled-bytes counter
+  #13278 - Add per-plugin workload counters
+  #13281 - Remove TsBuffer.h
+  #13282 - net: count application bytes in read_bytes for TLS
+  #13283 - Add unit tests for `Continuation` logic
+  #13286 - header_rewrite: count operators and conditions run
+  #13287 - compress: count uncompressed input bytes
+  #13289 - TLS: count handshake signatures by key type
+  #13290 - Expand client IP debug logging test coverage
+  #13291 - Fix txn_box unused find result
+  #13296 - traffic_crashlog: fix false-positive crash logs on clean shutdown
+  #13302 - tools/clang-format.sh: cache clang-format in the common git dir
+  #13304 - tests: give cripts ATS startup a longer readiness window
+  #13305 - ci: modernize the coverage helper script
+  #13306 - tests: add TLS gold tests
+  #13308 - Use fixture listener in test_EventSystem
+  #13310 - Introduce Clang Thread Safety Analysis, and apply it to two subsystems
+  #13312 - Throttle OCSP cert-status error instead of logging on every handshake
+  #13313 - docs: add call condition note for TSUrlHostGet
+  #13316 - Downgrade inbound H2 stream error log
+  #13321 - pqsi-pqsp.test.py: address log order flakiness
+  #13322 - slice_prefetch.test.py: address cache.log flakiness
+  #13323 - stale_response.test.py: address log wait flakiness
+  #13324 - jax_fingerprint.test.py: address log wait flakiness
+  #13326 - Fix stale_response FORCE_SIE enum
+  #13327 - Clarify HttpSM cache action cleanup
+  #13330 - Annotate BRAVO locks for thread-safety analysis
+  #13332 - Add unit tests for `Action` logic
+  #13333 - authproxy: strip request-body framing from auth sub-requests
+  #13338 - jax_fingerprint: Reduce allocations and gate methods at build time
+  #13339 - [10.2.x] Self-Describing Binary Log Format (v3) (#13231)
+  #13340 - [10.2.x] cache: apply per-volume settings on first start after clear (#13252)
+  #13341 - [10.2.x] Fix unit test & AuTest
+  #13342 - Refresh default TLS context on secret update
+  #13343 - rate_limit: don't update metrics when a selector has no metrics: block
+  #13344 - Add USDT to iocore/net, iocore/cache, http, http2
+  #13345 - Fix Proxy-Protocol log field symbols
+  #13349 - Support OpenSSL 3.0 APIs for Diffie-Hellman
+  #13350 - Add tests for OpenSSL cert loading
+  #13354 - [10.2.x] ATS Configuration Reload with observability/tracing - Token model (#12892)
+  #13356 - Reject over-long unix socket paths in server_ports
+  #13357 - Cleanup: remove unused functions related connect attempts
+  #13360 - traffic_crashlog: emit a well-formed report when the backtrace is empty
+  #13361 - track remaining length while decoding qpack header block
+  #13363 - Fix H2 origin payload handling
+  #13367 - Use ts::bravo::shared_mutex for host status lock
+  #13368 - Bound the ring walk of ParentConsistentHash::selectParent
+  #13369 - [10.2.x] Improve config reload error reporting with severity-aware task logs (#13090)
+  #13370 - prefetch: only admit query-key requests that carry the key
+  #13371 - tls_renegotiation autest: gate the detection-line check to OpenSSL
+  #13372 - autest: skip async handshake test when plugin is absent
+  #13374 - docs: document the wipe_field_value logging filter
+  #13375 - cripts: build against fmt 11+ (incl. 12.x)
+  #13379 - Preserve client port in transaction logs
+  #13383 - Improve testing and documentation for client firewall marks
+  #13384 - Generalize client packet mark test
+  #13385 - Improve testing and documentation for server firewall marks
+  #13386 - Hard-enforce max_active_streams_in at HTTP/2 stream creation
+  #13390 - Handle webp_transform input robustly
+  #13391 - Add HTTP alternate quality AuTest
+  #13397 - Make QUIC token secrets configurable
+  #13398 - Avoid Diags lock for syslog output
+  #13399 - doc: fix Via decoder ring URL (/tools/via moved to /via.html)
+  #13402 - Extend pipeline autest to verify HTTP/1.1 request framing
+  #13403 - Remove unused RemapProcessor.h include from RemapPlugins.h
+  #13404 - copy only len_in bytes in the escapify no-escape path
+  #13405 - Cache: fix cached-header HdrHeap growth on repeated 304 revalidation
+  #13406 - Deliver VCONN_CLOSE for parked TLS hooks; fix SNI queue accounting
+  #13407 - ssl: remove the dead SSL_HOOK_OP_TERMINATE op
+  #13410 - Cache empty chunked responses
+  #13416 - Allow dynamic TLS record sizing
+  #13422 - Document `HTTPHdr` methods for #13420 review
+  #13423 - Fix Fedora OTEL and WAMR builds
+  #13426 - header_rewrite: add POST_REMAP_HOOK support
+  #13429 - doc: clarify run-plugin argument is fixed at load time
+  #13431 - Make log pipe test tolerate restricted kernels
+  #13432 - healthchecks: reference count status file data
+  #13438 - Fix exact URL cache config matching
+  #13441 - Return an empty view for a non-participating capture group
+  #13444 - Raise HTTP/2 SETTINGS limits
+  #13453 - Fix PluginVC server connection cast
+  #13461 - Fix JSONRPC server shutdown race
+  #13462 - Stabilize proxy protocol access log test
+  #13463 - 10.2.x: HTTP/3 via OpenSSL QUIC
+  #13464 - TLS: Fix EVP_PKEY leak in SSLPrivateKeyHandler
+  #13465 - Add QMux support (HTTP/3 over TLS/TCP)
+  #13466 - Release logging thread continuations
+  #13468 - Enable OpenSSL QUIC when available
+  #13469 - Rename `OPENSSL_IS_X` -> `OPENSSL_IS_AT_LEAST_X`
+  #13470 - Fix some copy instead of move Coverity CIDs
+  #13471 - Remove OpenSSL ENGINE code
+  #13472 - Guard pre-init log wakeups
+  #13473 - Fix certifier test permissions
+  #13474 - Only restore a retried parent when the retry succeeds
+  #13475 - slice: purge every block of an object, not just those before a gap
+  #13476 - Resolve OpenSSL 4.0 build issues
+  #13477 - ci-fedora-cxx20 preset: use clang
+  #13478 - Guard quiche-only QUIC connection state
+  #13479 - build(deps): bump golang.org/x/crypto from 0.50.0 to 0.52.0 in /tests/gold_tests/qmux/go_qmux_client
+  #13480 - Fix enabling per-server metrics that disables the outbound keep-alive minimum
+  #13486 - header_rewrite: inherit default hook support
+  #13487 - Preserve the cache action while dispatching cache write events
+  #13488 - Fix wrong variable in eventloop events max metric
+  #13489 - Harden AuTests against timing races
+  #13490 - ocsp: use Bravo lock for cached responses
+  #13491 - Destroy replaced configs on ET_TASK
+  #13492 - Track minimum-only origin connections
+  #13493 - header_rewrite: reject bad run-plugin at config load
+  #13494 - autest: skip tls_engine_abort test when plugin is absent
+  #13497 - Fall back to the build directory when GIT_COMMON_DIR is unset
+  #13498 - Fix bad return in `validate_hostname`
+  #13500 - build(deps): bump golang.org/x/net from 0.54.0 to 0.55.0 in /tests/gold_tests/qmux/go_qmux_client
+  #13502 - 10.2.x: Add `Test.AddConfigReload()` autest extension (#13075)
+  #13503 - Anchor the 404 check in tls_check_cert_select_plugin
+  #13504 - Avoid stale H2 writes after 100 Continue
+  #13508 - Harden timing-sensitive AuTests
+  #13509 - Initialize logging queues before workers
+  #13515 - Fix cache read VC replacement after a lost write lock
