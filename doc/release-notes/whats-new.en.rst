@@ -23,7 +23,7 @@
 What's New in ATS v10.2
 =======================
 
-This version of |ATS| includes 1034 commits from 655 pull requests, with 44
+This version of |ATS| includes 1034 commits from 650 pull requests, with 44
 contributors participating in this development cycle.
 
 Configuration Reload
@@ -81,7 +81,7 @@ Features
   :ts:cv:`proxy.config.ssl.server.multicert.concurrency`.
 * :file:`sni.yaml` supports session ticket overrides.
 * QUIC token secrets are configurable via
-  ``proxy.config.quic.server.token_key.filename``.
+  :ts:cv:`proxy.config.quic.server.token_key.filename`.
 * The PROXY protocol header size limit is configurable with
   :ts:cv:`proxy.config.proxy_protocol.max_header_size`.
 * A per-client connection limit exempt list is available through
@@ -115,7 +115,7 @@ New :file:`records.yaml` settings in this release:
 * :ts:cv:`proxy.config.http.parent_proxy.consistent_hash_algorithm`
 * :ts:cv:`proxy.config.http.per_client.connection.exempt_list`
 * :ts:cv:`proxy.config.proxy_protocol.max_header_size`
-* ``proxy.config.quic.server.token_key.filename``
+* :ts:cv:`proxy.config.quic.server.token_key.filename`
 * :ts:cv:`proxy.config.ssl.client.cert_compression.algorithms`
 * :ts:cv:`proxy.config.ssl.server.cert_compression.algorithms`
 * :ts:cv:`proxy.config.ssl.server.multicert.concurrency`
