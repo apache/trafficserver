@@ -222,17 +222,19 @@ RegexMatches::size() const
 std::string_view
 RegexMatches::operator[](size_t index) const
 {
-  // check if the index is valid
-  if (index >= pcre2_get_ovector_count(_MatchData::get(_match_data))) {
-    return std::string_view();
+  // The ovector is allocated with a fixed number of pairs, but pcre2_match() writes only as far as
+  // the highest participating group. Every pair past that keeps whatever _buffer happened to hold,
+  // so the allocated count is not a usable bound -- _size is what the match actually populated.
+  if (_size <= 0 || index >= static_cast<size_t>(_size)) {
+    return "";
   }
 
   PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(_MatchData::get(_match_data));
 
-  // A group that did not participate in the match has an unset offset. This happens for an optional
-  // group that precedes a participating one, so a valid index is not enough to guarantee an offset.
+  // Within _size a group can still have not participated, in which case PCRE2 sets both of its
+  // offsets to PCRE2_UNSET. An optional group preceding a participating one is the usual way.
   if (PCRE2_UNSET == ovector[2 * index]) {
-    return std::string_view();
+    return "";
   }
 
   return std::string_view(_subject.data() + ovector[2 * index], ovector[2 * index + 1] - ovector[2 * index]);
