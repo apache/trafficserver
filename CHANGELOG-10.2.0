@@ -651,3 +651,153 @@ Changes with Apache Traffic Server 10.2.0
   #13508 - Harden timing-sensitive AuTests
   #13509 - Initialize logging queues before workers
   #13515 - Fix cache read VC replacement after a lost write lock
+  Replace VLA with heap allocation in cachekey appendEncoded
+  Guard against size_t overflow in appendEncoded buffer sizing
+  Use ts::LocalBuffer instead of std::vector in appendEncoded
+  Fix SNI/hostname comparison to check full string length
+  Close connection if unneccesary H2 SETTINGS frame arrives
+  Reject Transfer-Encoding in HTTP/2 and HTTP/3 headers
+  Reject Transfer-Encoding where chunked is not the final coding
+  Fix out-of-bounds write in MIME obs-fold handling
+  Enforce per-field size limit in HPACK/QPACK string decoding
+  regex_remap: Issue 46 - Overflow in url_len Leads to Stack Overflow
+  Also address issue #48
+  Reject oversized HPACK indexes
+  Enforce 16-bit srv_offset invariant in HostDBInfo::assign
+  Document valid range for round_robin_max_count
+  Replace VLAs with ts::LocalBuffer in HostDB SRV handling
+  Fix OOB read in H2 get_received_frame_count
+  Add bounds checks to DNS answer parsing before NS_GET macros
+  cripts: Issue 31 - UB array write in remap instance initialization
+  cripts: Issue 32 - Fix path traversal in File::Path::Rebase
+  Fix integer overflow in MIME header parsing
+  Fix inverted condition for nonstandard method matching in ACL filtering
+  Bound status code parsing to prevent integer overflow
+  Avoid stack VLA in log filter wiping
+  Avoid stack VLA in proxy protocol parsing
+  Validate PROXY v1 port bounds
+  Guard txn_box stack allocations
+  Limit CONNECT body preclusion to successful responses
+  libswoc: Validate IPv6 hextet bounds
+  Reject overflowing XPACK integers
+  Bound outstanding HTTP/2 SETTINGS
+  Fix inverted condition in SNI_IpAllow::TestClientSNIAction
+  Fix max_settings_per_minute condition
+  Update autest for SNI_IpAllow::TestClientSNIAction #188 changes
+  http2: Add tests for CRLF rejection in H2 header values
+  Fix format issue in http2_crlf_header_validation
+  rate_limit: Issue 106 - Fix queue bypass
+  rate_limit: Issue 108 - Fix ip-rep UB writes
+  compress: stop gzip transform after deflate() error
+  Fix leaks of POST failures
+  Add nullptr check before calling SSL_shutdown
+  Fix length check of MethodMod:check
+  iocore: tighten IOBuffer and AIO bounds checks
+  stream_editor: allocate rules in contdata_t ctor
+  tscpp: hold intercept try-lock guard via shared mutex
+  URL: reject parsed ports outside uint16 range
+  access_control: cap stack buffer for cookie base64 decode
+  rate_limit: Fix active counter underflow
+  Constrain prefetch relative paths
+  Server Session: Make sure read_buffer is empty before pooling a server session
+  Keep OCSP map on init failure
+  Return evacuation bucket by reference not by value
+  Handle addressless PROXY headers in TLS
+  Guard outbound server_name SNI policy
+  Verify H2 origin certs on session reuse
+  TLSSNISupport: own outbound_sni_policy bytes across config reload
+  Avoid signed tolower for name bytes
+  Reject oversized multiplexer chunks
+  Keep loop detection on outbound-transparent ports
+  Set default value of proxy.config.http2.default_buffer_water_mark to 32KB
+  Avoid UB when URL part is absent in URLImpl getters
+  HTTPHdr: fix use-after-free in destroy() leaving dangling m_http
+  ESI: cap HTTP request length to prevent size_t overflow
+  Invoke Continuation operator bool, not pointer-to-bool
+  Prevent unbounded recursion in host-down Range fallback
+  Add uds-perm/uds-user/uds-group port options
+  Fix ChunkHandler Flow Control
+  Fix FetchSM header block copying
+  Gate H2 reads during async hooks
+  background_fetch: fix inverted size operator and broken value wildcard
+  Fix an integer overflow in HdrHeap
+  lua: Add checks on server request hdr
+  Regex: add RE_FULL_MATCH flag, fix SNI partial-match policy bypass
+  Combo handler: Reject empty Content-Type when allowlist is configured
+  ESI: bound for nested esi html comment
+  ja3_fingerprint: tighten encode_word_buffer bounds
+  Use ParseRules::is_digit on raw network bytes in HTTP parser
+  header_rewrite: Copy set-body-from response body with memcpy
+  Cap stale_response SIE buffering
+  Guard parent mark-down on UNAVAILABLE_SERVER retry
+  xdebug: Cap X-Remap header length to actual buffer content
+  DNS: fix TCP length-prefix read under edge-triggered epoll
+  Add admin-guide reference for writing secure regex rules
+  combo_handler.test.py: Fix empty type test output
+  test_proxy: Fix macOS link duplicates after FetchSM test was added
+  Fixes HRW bridge issues, adds autests to Cripts
+  cripts: Fix undersized sockaddr in Geo IP lookup
+  cripts: fix use-after-free in TSRemapDoRemap
+  cripts: Fix abort on duplicate query keys
+  header_rewrite: Fix cookie key over-read
+  doc: cover uri_signing cdniuc uri-regex in regex best practices
+  Preserve dynamic-port flag across tunnel_route mapping ops
+  HttpTunnel: Guard get_producer(VIO*) against dead producers
+  ts_lua: clear rri pointer in http_ctx after remap returns
+  ts_lua: use sockaddr_storage for ts_lua_fetch client address
+  header_rewrite: Guard SESSION/STATE access on null handle
+  cripts: Fix global Client::URL MLoc leak
+  cripts: Fix Bundle::Headers server-side header removal
+  slice: Check for Integer underflow in firstblockbytes
+  ParentSelection: increase size of mapWrapped array for compat with strategies
+  lua: Invalidate cached main_ctx when slot is outside instance's range
+  DNS: Run HostEnt destructor on free to release SRV vector heap
+  HttpSM: Stop tracking the fire-and-forget cache-delete Action
+  lua: Free transform context when client-hook VConn closes
+  NextHopRoundRobin: update ring size for wrapping when switching rings
+  certifier: Reject unsafe SNI names
+  Drop H2 origin trailers for H1 clients
+  http2: Reject CONTINUATION accumulation that overflows header_blocks_length
+  Honor number_of_redirections for plugin-initiated redirects
+  cache_range_requests: use std::string spill buffer for building override cachekey
+  Reject header fields exceeding the uint16 field-length limit
+  webp_transform: bound buffered body and ImageMagick decode
+  header_rewrite: Fix IPv6 CIDR masking for non-aligned prefixes
+  Implement SSRF validation for ESI include URLs
+  SSLNetVConnection: deregister async handshake eventfd on connection teardown
+  Strip Connection-listed headers per RFC 9110 §7.6.1
+  Test H2 control-character rejection
+  http2: Defer HPACK dynamic-table updates until encoding succeeds
+  authproxy: Don't assert on auth response with no header fields
+  mgmt/rpc: create JSONRPC unix socket with intended mode atomically
+  cache: Move openReadStartEarliest recursion counter off CacheVC to fix UAF
+  Bound host header buffer
+  uri_signing: replace stack arrays with LocalBuffer
+  http: reject chunked extension quoted-string values containing CR or LF
+  ip_allow: add default CONNECT destination rules
+  Guard against missing delimiter in url_sig C= parameter
+  master: Strip external @ headers before plugin hooks
+  Fix: cancel stale TLS accept timeouts so session acceptors don't abort
+  regex_map: anchor host matching to the full hostname
+  Invalidate dns_info.addr when claiming resolved without DNS
+  PendingAction: Don't let CAS failure overwrite the caller's action
+  parent_selection: Cap retries to one per window via failedAt CAS
+  compress: Wrap isspace so obs-text Content-Type bytes don't trigger UB
+  Expand URI normalization test coverage for userinfo handling
+  Guard remap against shutdown table teardown
+  Revert "Guard remap against shutdown table teardown"
+  Guard remap against shutdown table teardown
+  http: reject a bare LF chunked trailer terminator under strict parsing
+  Combo handler: Refactor Cache-Control parsing and update gold test
+  Fix null-deref in error_log_connection_failure for a DOWN host
+  Fix tls_engine_abort autest referencing removed async_engine plugin
+  Fix header_rewrite_bundle cookie rules matching the wrong path
+  http: drain request body on internally generated cache responses
+  Fix chunked passthrough flow-control deadlock (drop_chunked_trailers=0)
+  webp_transform: fix decode_limit test to send a matching signature
+  Regex: preserve RE_ENDANCHORED semantics on PCRE2 < 10.30
+  esi: drop tsutil from esicore link deps to avoid plugin ODR
+  esi: add <sys/socket.h> for AF_INET/AF_INET6 in IncludeUrlValidator
+  esi: guard optarg null before setHostAllowRegex to satisfy clang analyzer
+  connect_destination_acl: accept curl exit 7 for a refused CONNECT
+  Fix race in remap table refcount during reload

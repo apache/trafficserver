@@ -26,6 +26,16 @@ What's New in ATS v10.2
 This version of |ATS| includes 1036 commits from 652 pull requests, with 44
 contributors participating in this development cycle.
 
+Security Fixes
+--------------
+
+This release also contains all of the security fixes described in the
+`July 2026 security advisory <https://trafficserver.apache.org/security-2026-07.html>`__.
+Those fixes were committed directly to the release branch rather than through
+public pull requests, so they do not carry PR numbers; they are listed by commit
+subject at the end of ``CHANGELOG-10.2.0``. Refer to the advisory for the CVE
+identifiers, severities, and affected version ranges.
+
 Configuration Reload
 --------------------
 
