@@ -907,10 +907,19 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
   case VC_EVENT_EOS: {
     // We got an early EOS.
     if (!terminate_sm) { // Not done already
+      // ProxySession::do_io_shutdown dereferences its NetVConnection
+      // unconditionally, so only shut down while the peer is still attached.
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
+
       if (_ua.get_txn()->allow_half_open() || tunnel.has_consumer_besides_client()) {
         if (netvc) {
-          netvc->do_io_shutdown(IO_SHUTDOWN_READ);
+          // Shut the read side down through the transaction rather than through
+          // the NetVConnection. For multiplexed protocols the NetVConnection is
+          // shared by every stream on the connection, so shutting its read side
+          // down here would stop the session from reading frames for all of the
+          // other streams. HTTP/2 and HTTP/3 therefore implement
+          // do_io_shutdown() as a no-op.
+          _ua.get_txn()->do_io_shutdown(IO_SHUTDOWN_READ);
         }
       } else if (t_state.txn_conf->cache_http &&
                  (server_entry != nullptr && server_entry->vc_read_handler == &HttpSM::state_read_server_response_header)) {
