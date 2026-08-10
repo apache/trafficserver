@@ -19,6 +19,112 @@
 
 .. _upgrading:
 
+Upgrading to ATS v10.2
+======================
+
+This section covers changes when upgrading from |TS| v10.1 to v10.2. If you are
+upgrading from v9.x, read :ref:`upgrading-to-10x` below as well, since all of
+those changes apply too.
+
+Incompatible Changes
+--------------------
+
+The following change alters existing behavior. It is included deliberately, as
+a bug fix: the previous behavior did not match the documented intent of the
+settings involved.
+
+* Origin connect retries now honor HostDB state
+
+  |TS| has three settings that bound how many times a failed origin connection
+  is retried. Prior to this release none of them were applied according to the
+  actual state of the origin, so the configured limits did not take effect as
+  documented. The retry limit is now selected by the ``HostDBInfo`` state of the
+  server being contacted:
+
+  - ``UP`` uses :ts:cv:`proxy.config.http.connect_attempts_max_retries`
+  - ``SUSPECT`` uses
+    :ts:cv:`proxy.config.http.connect_attempts_max_retries_suspect_server`
+  - ``DOWN`` gets no retries
+
+  This is an intentional incompatibility. Deployments that relied on the
+  previous behavior will see a different number of origin connect attempts
+  after upgrading, most visibly toward origins HostDB considers ``DOWN``, which
+  are no longer retried at all. Review these three settings before upgrading.
+
+Changes to Features
+-------------------
+
+* :ts:cv:`proxy.config.http.cache.ignore_accept_encoding_mismatch` now honors
+  ``Vary: Accept-Encoding`` at its documented default of ``2``. Previously any
+  non-zero value was treated as "ignore the mismatch", so the default did not
+  behave as documented. Deployments that depended on the old behavior should
+  set the value to ``1`` explicitly.
+
+* Replaced configurations are now destroyed on an ``ET_TASK`` thread instead of
+  a network thread. This is transparent, but it moves config teardown work off
+  the event loop.
+
+Removed Features
+----------------
+
+* The ``-k`` / ``--clear_hostdb`` command line flag and the
+  ``PROXY_CLEAR_HOSTDB`` environment variable have been removed from
+  :program:`traffic_server`. The ``clear_hostdb`` command is still available
+  via ``traffic_server -C clear_hostdb``.
+
+* OpenSSL ENGINE support has been removed. It was unintentionally disabled in
+  v10.0 and the API is gone in recent OpenSSL releases. The
+  :ts:cv:`proxy.config.ssl.engine.conf_file` record still exists but has no
+  effect.
+
+Configuration Changes
+---------------------
+
+The following :file:`records.yaml` changes have been made in v10.2:
+
+- :ts:cv:`proxy.config.http.connect_attempts_max_retries_down_server` is
+  deprecated in favor of
+  :ts:cv:`proxy.config.http.connect_attempts_max_retries_suspect_server`. When
+  only the deprecated record is set its value is mirrored forward and a warning
+  is logged; when both are set, the new record wins.
+- :ts:cv:`proxy.config.http.connect.down.policy` accepts a new value ``3``,
+  which counts inactive connections as failures.
+- :ts:cv:`proxy.config.ssl.max_record_size` now accepts the documented value
+  ``-1`` to enable dynamic TLS record sizing. This was previously rejected by
+  records validation.
+- :ts:cv:`proxy.config.ssl.client.CA.cert.filename` is now overridable.
+- ``negative_caching_list`` and ``negative_revalidating_list`` are now
+  overridable.
+- :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers` has been
+  added to support RFC 9213 targeted cache control. It defaults to an empty
+  string, so the feature is off unless configured.
+
+See :ref:`whats_new` for the full list of settings added in this release.
+
+JSONRPC now refuses writes to records marked ``RECA_READ_ONLY`` or
+``RECA_NO_ACCESS``. Tooling that previously attempted such writes will now
+receive an error rather than silently having no effect.
+
+Plugins
+-------
+
+* ``redo_cache_lookup`` has been moved out of the experimental plugins and into
+  the examples. It is no longer built or installed.
+
+* ``header_rewrite`` now rejects an invalid ``run-plugin`` directive at
+  configuration load time rather than at runtime. A configuration that was
+  previously accepted and failed later will now fail to load.
+
+Build
+-----
+
+The Python tooling used by the test suite has migrated from Pipenv to ``uv``.
+Developers running autests will need ``uv`` available; this does not affect
+runtime deployments.
+
+
+.. _upgrading-to-10x:
+
 Upgrading to ATS v10.x
 ======================
 
