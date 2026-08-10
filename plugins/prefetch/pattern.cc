@@ -131,45 +131,6 @@ Pattern::empty() const
 }
 
 /**
- * @brief Capture or capture-and-replace depending on whether a replacement string is specified.
- * @see replace()
- * @see capture()
- * @param subject PCRE2 subject string
- * @param result vector of strings where the result of captures or the replacements will be returned.
- * @return true if there was a match and capture or replacement succeeded, false if failure.
- */
-bool
-Pattern::process(const String &subject, StringVector &result)
-{
-  if (!_replacement.empty()) {
-    /* Replacement pattern was provided in the configuration - capture and replace. */
-    String element;
-    if (replace(subject, element)) {
-      result.push_back(element);
-    } else {
-      return false;
-    }
-  } else {
-    /* Replacement was not provided so return all capturing groups except the group zero. */
-    StringVector captures;
-    if (capture(subject, captures)) {
-      if (captures.size() == 1) {
-        result.push_back(captures[0]);
-      } else {
-        StringVector::iterator it = captures.begin() + 1;
-        for (; it != captures.end(); it++) {
-          result.push_back(*it);
-        }
-      }
-    } else {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-/**
  * @brief PCRE2 matches a subject string against the regex pattern.
  * @param subject PCRE2 subject
  * @return true - matched, false - did not.
@@ -190,39 +151,6 @@ Pattern::match(const String &subject)
       PrefetchError("matching error %d", matchCount);
     }
     return false;
-  }
-
-  return true;
-}
-
-/**
- * @brief Return all PCRE2 capture groups that matched in the subject string
- * @param subject PCRE2 subject string
- * @param result reference to vector of strings containing all capture groups
- */
-bool
-Pattern::capture(const String &subject, StringVector &result)
-{
-  PrefetchDebug("matching '%s' to '%s'", _pattern.c_str(), subject.c_str());
-
-  if (_regex.empty()) {
-    return false;
-  }
-
-  RegexMatches matches;
-  int          matchCount = _regex.exec(subject, matches, RE_NOTEMPTY);
-
-  if (matchCount <= 0) {
-    if (matchCount != RE_ERROR_NOMATCH) {
-      PrefetchError("matching error %d", matchCount);
-    }
-    return false;
-  }
-
-  for (int i = 0; i < matchCount; i++) {
-    std::string_view match = matches[i];
-    result.emplace_back(match.data(), match.length());
-    PrefetchDebug("capturing '%s' %d", result.back().c_str(), i);
   }
 
   return true;
@@ -253,25 +181,22 @@ Pattern::replace(const String &subject, String &result)
     return false;
   }
 
-  /* Verify the replacement has the right number of matching groups */
-  for (int i = 0; i < _tokenCount; i++) {
-    if (_tokens[i] >= matchCount) {
-      PrefetchError("invalid reference in replacement string: $%d", _tokens[i]);
-      return false;
-    }
-  }
-
   int previous = 0;
   for (int i = 0; i < _tokenCount; i++) {
-    int              replIndex = _tokens[i];
-    std::string_view dst       = matches[replIndex];
+    int replIndex = _tokens[i];
 
-    String src(_replacement, _tokenOffset[i], 2);
+    /* $replIndex was validated at config-load time against the number of groups the pattern defines, but
+     * the group may still not have participated in *this* match (e.g. a trailing optional group such as
+     * "(\?.*)?" when the subject has no query string).  pcre2_match() returns one past the highest
+     * participating group, so substitute an empty string for a group at or beyond that -- the documented
+     * PCRE2 semantics for an unmatched group -- rather than failing the whole replacement.  Use ""
+     * rather than a default-constructed view so data() is never null, which "%.*s" requires. */
+    std::string_view dst = (replIndex < matchCount) ? matches[replIndex] : std::string_view{""};
 
-    PrefetchDebug("replacing '%s' with '%.*s'", src.c_str(), static_cast<int>(dst.length()), dst.data());
+    PrefetchDebug("replacing '$%d' with '%.*s'", replIndex, static_cast<int>(dst.length()), dst.data());
 
     result.append(_replacement, previous, _tokenOffset[i] - previous);
-    result.append(dst.data(), dst.length());
+    result.append(dst);
 
     previous = _tokenOffset[i] + 2; /* 2 is the size of $0 or $1 or $2, ... or $9 */
   }
@@ -327,6 +252,31 @@ Pattern::compile()
         _tokenCount++;
         /* Skip the next char */
         i++;
+      }
+    }
+  }
+
+  /* Validate replacement references against the number of capture groups the pattern actually defines
+   * (not how many happen to participate in any given match) at config-load time.  This catches a
+   * genuinely out-of-range reference such as $5 against a 3-group pattern, and a pattern that defines
+   * more groups than can be captured -- RegexMatches holds the whole match plus TOKENCOUNT-1 groups. */
+  if (success) {
+    int32_t captureCount = _regex.get_capture_count();
+    if (captureCount < 0) {
+      PrefetchError("failed to get capture count for regex '%s'", _pattern.c_str());
+      success = false;
+    } else if (captureCount > TOKENCOUNT - 1) {
+      PrefetchError("regex '%s' defines %d capture groups; the prefetch plugin supports at most %d (references $0..$%d)",
+                    _pattern.c_str(), captureCount, TOKENCOUNT - 1, TOKENCOUNT - 1);
+      success = false;
+    } else {
+      for (int i = 0; i < _tokenCount; i++) {
+        if (_tokens[i] > captureCount) {
+          PrefetchError("invalid reference $%d in replacement '%s': pattern defines only %d group(s)", _tokens[i],
+                        _replacement.c_str(), captureCount);
+          success = false;
+          break;
+        }
       }
     }
   }
