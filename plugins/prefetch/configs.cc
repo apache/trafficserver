@@ -21,6 +21,8 @@
  * @brief Plugin configuration.
  */
 
+#include <charconv>  /* std::from_chars() */
+#include <cstring>   /* strlen() */
 #include <fstream>   /* std::ifstream */
 #include <getopt.h>  /* getopt_long() */
 #include <sstream>   /* std::istringstream */
@@ -71,14 +73,44 @@ iequals(const StringView lhs, const StringView rhs)
                     [](const char a, const char b) { return tolower(a) == tolower(b); });
 }
 
-void
+bool
 PrefetchConfig::setFetchOverflow(const char *optarg)
 {
-  if (StringView("64") == optarg) {
+  if (nullptr == optarg) {
+    return false;
+  }
+  if (StringView("32") == optarg) {
+    _fetchOverflow = EvalPolicy::Overflow32;
+  } else if (StringView("64") == optarg) {
     _fetchOverflow = EvalPolicy::Overflow64;
   } else if (iequals("bignum", optarg)) {
     _fetchOverflow = EvalPolicy::Bignum;
+  } else {
+    return false;
   }
+  return true;
+}
+
+/**
+ * @brief Parses @a optarg as an unsigned integer option value.
+ * @param optarg the option value to parse.
+ * @param value set to the parsed value on success, untouched on failure.
+ * @return true if @a optarg is a non-empty string of decimal digits that fits in @a value.
+ */
+static bool
+parseUnsignedInt(const char *optarg, unsigned &value)
+{
+  if (nullptr == optarg) {
+    return false;
+  }
+
+  const char *const end = optarg + strlen(optarg);
+  auto const [parsed, ec]{std::from_chars(optarg, end, value)};
+
+  /* from_chars() reports a leading sign or a non-digit as invalid_argument and a value too large
+   * for @a value as result_out_of_range. Requiring it to consume the whole string rejects trailing
+   * characters such as "10abc". */
+  return std::errc{} == ec && parsed == end;
 }
 
 /**
@@ -147,7 +179,12 @@ PrefetchConfig::init(int argc, char *argv[])
       break;
 
     case 'c': /* --fetch-count */
-      setFetchCount(optarg);
+      if (unsigned count = 0; parseUnsignedInt(optarg, count)) {
+        setFetchCount(count);
+      } else {
+        PrefetchError("invalid --fetch-count '%s': expected a non-negative integer", optarg ? optarg : "");
+        status = false;
+      }
       break;
 
     case 'e': /* --fetch-path-pattern */ {
@@ -156,7 +193,10 @@ PrefetchConfig::init(int argc, char *argv[])
         if (pattern->init(optarg)) {
           _nextPaths.add(std::move(pattern));
         } else {
-          PrefetchError("failed to initialize next object pattern");
+          /* An unusable fetch-path-pattern is a configuration error; fail instance creation so ATS
+           * refuses to load the remap rule rather than silently running with prefetch disabled. */
+          PrefetchError("failed to initialize fetch-path-pattern '%s'", optarg ? optarg : "");
+          status = false;
         }
       }
     } break;
@@ -166,11 +206,19 @@ PrefetchConfig::init(int argc, char *argv[])
     } break;
 
     case 'x': /* --fetch-max */
-      setFetchMax(optarg);
+      if (unsigned max = 0; parseUnsignedInt(optarg, max)) {
+        setFetchMax(max);
+      } else {
+        PrefetchError("invalid --fetch-max '%s': expected a non-negative integer", optarg ? optarg : "");
+        status = false;
+      }
       break;
 
     case 'o': /* --fetch-overflow */
-      setFetchOverflow(optarg);
+      if (!setFetchOverflow(optarg)) {
+        PrefetchError("invalid --fetch-overflow '%s': expected 32, 64, or bignum", optarg ? optarg : "");
+        status = false;
+      }
       break;
 
     case 'r': /* --replace-host */
