@@ -795,6 +795,7 @@ public:
   TSHttpStatus authorizeGcp(S3Config *s3);
   TSHttpStatus authorize(S3Config *s3);
   bool         set_header(const char *header, int header_len, const char *val, int val_len);
+  void         stripUnauthorizedAmzHeaders(const StringSet &allowedHeaders);
 
 private:
   TSHttpTxn _txnp;
@@ -851,6 +852,57 @@ S3Request::set_header(const char *header, int header_len, const char *val, int v
   return ret;
 }
 
+///////////////////////////////////////////////////////////////////////////
+// Unlike isXAmzHeader(), takes the raw (not pre-lowercased) name, so callers
+// can skip lowercasing/allocating for headers that don't match.
+static bool
+hasXAmzPrefix(const char *name, int name_len)
+{
+  return name && name_len >= static_cast<int>(X_AMZ.length()) && 0 == strncasecmp(name, X_AMZ.c_str(), X_AMZ.length());
+}
+
+///////////////////////////////////////////////////////////////////////////
+// Strip any x-amz- request header the client sent that isn't explicitly
+// allow-listed via v4-include-headers. AWS SigV4 always signs whatever
+// x-amz- headers are present at signing time, so an unsolicited client
+// x-amz- header (e.g. x-amz-acl) would otherwise reach S3 with a valid
+// signature, which can trigger bucket-policy denials that get negatively
+// cached.
+void
+S3Request::stripUnauthorizedAmzHeaders(const StringSet &allowedHeaders)
+{
+  TSMLoc field_loc = TSMimeHdrFieldGet(_bufp, _hdr_loc, 0);
+
+  while (field_loc) {
+    TSMLoc next_field_loc = TSMimeHdrFieldNext(_bufp, _hdr_loc, field_loc);
+
+    int         name_len = 0;
+    const char *name     = TSMimeHdrFieldNameGet(_bufp, _hdr_loc, field_loc, &name_len);
+
+    if (hasXAmzPrefix(name, name_len)) {
+      bool strip = allowedHeaders.empty();
+
+      // allowedHeaders is empty in the common case (v4-include-headers unset), where every
+      // x-amz- header is stripped unconditionally, so skip lowercasing/allocating the name
+      // and the set lookup below.
+      if (!strip) {
+        String lowercaseName(name, name_len);
+        std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(),
+                       [](unsigned char c) { return ::tolower(c); });
+        strip = allowedHeaders.end() == allowedHeaders.find(lowercaseName);
+      }
+
+      if (strip) {
+        Dbg(dbg_ctl, "stripping unauthorized client header %.*s", name_len, name);
+        TSMimeHdrFieldDestroy(_bufp, _hdr_loc, field_loc);
+      }
+    }
+
+    TSHandleMLocRelease(_bufp, _hdr_loc, field_loc);
+    field_loc = next_field_loc;
+  }
+}
+
 // dst points to starting offset of dst buffer
 // dst_len remaining space in buffer
 static size_t
@@ -888,6 +940,8 @@ S3Request::authorize(S3Config *s3)
 TSHttpStatus
 S3Request::authorizeAwsV4(S3Config *s3)
 {
+  stripUnauthorizedAmzHeaders(s3->v4includeHeaders());
+
   TsApi  api(_bufp, _hdr_loc, _url_loc);
   time_t now = time(nullptr);
 

@@ -152,6 +152,11 @@ If ``--v4-include-headers`` is not specified all headers except those specified 
 
 If ``--v4-include-headers`` is specified only the headers specified will be signed except those specified in ``--v4-exclude-headers``
 
+Since all ``x-amz-*`` headers are always signed, an ``x-amz-*`` header sent by a client would otherwise reach the
+origin with a valid signature covering whatever value the client chose. To prevent this, any ``x-amz-*`` header
+present on the client request is stripped before signing unless it is explicitly named in
+``--v4-include-headers``.
+
 
 AWS Authentication version 2
 ============================
