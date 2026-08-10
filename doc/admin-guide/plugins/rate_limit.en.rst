@@ -96,9 +96,7 @@ are available:
    The value (default 0) is the age in **milliseconds**.
 
    Note that the equivalent YAML setting, ``max_age`` under a ``queue`` node, is in
-   seconds. The two configuration paths have always differed by a factor of 1000, so
-   the units are documented here as they behave rather than made consistent, to avoid
-   changing the expiry of existing configurations.
+   seconds.
 
 .. option:: --prefix
 
@@ -279,11 +277,6 @@ and the following options:
    no aging happens. Even with no aging, entries will eventually fall out of buckets
    because of the LRU mechanism that kicks in. The aging is here to make sure a spike
    in traffic from an IP doesn't keep the entry for too long in the LRUs.
-
-   Note that this option was incorrectly documented as ``max-age`` with a hyphen in previous
-   versions.  The code ignores ``max-age`` in all versions of this plugin.  We have chosen
-   to keep the behavior the same and update the documentation, so that previously inert
-   configurations don't activate unexpectedly with an upgrade.
 
 In addition, there's an optional configuration for the permanently blocking buckets,
 `perma-block`. This is a special bucket, which is only used for IPs which have been
