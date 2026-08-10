@@ -571,6 +571,7 @@ Changes with Apache Traffic Server 10.2.0
   #13345 - Fix Proxy-Protocol log field symbols
   #13349 - Support OpenSSL 3.0 APIs for Diffie-Hellman
   #13350 - Add tests for OpenSSL cert loading
+  #13352 - prefetch: don't drop replacements for non-participating optional capture groups
   #13354 - [10.2.x] ATS Configuration Reload with observability/tracing - Token model (#12892)
   #13356 - Reject over-long unix socket paths in server_ports
   #13357 - Cleanup: remove unused functions related connect attempts
@@ -651,6 +652,8 @@ Changes with Apache Traffic Server 10.2.0
   #13508 - Harden timing-sensitive AuTests
   #13509 - Initialize logging queues before workers
   #13515 - Fix cache read VC replacement after a lost write lock
+  #13517 - Bound RegexMatches::operator[] by what the match populated
+  #13523 - Shut the client read side down per transaction, not per connection
   Replace VLA with heap allocation in cachekey appendEncoded
   Guard against size_t overflow in appendEncoded buffer sizing
   Use ts::LocalBuffer instead of std::vector in appendEncoded

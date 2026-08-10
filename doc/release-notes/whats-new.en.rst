@@ -23,7 +23,7 @@
 What's New in ATS v10.2
 =======================
 
-This version of |ATS| includes 1036 commits from 652 pull requests, with 44
+This version of |ATS| includes 1039 commits from 655 pull requests, with 44
 contributors participating in this development cycle.
 
 Security Fixes
