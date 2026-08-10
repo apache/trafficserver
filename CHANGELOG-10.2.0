@@ -557,6 +557,7 @@ Changes with Apache Traffic Server 10.2.0
   #13324 - jax_fingerprint.test.py: address log wait flakiness
   #13326 - Fix stale_response FORCE_SIE enum
   #13327 - Clarify HttpSM cache action cleanup
+  #13328 - cache: shared-memory-backed Dir for fast restart
   #13330 - Annotate BRAVO locks for thread-safety analysis
   #13332 - Add unit tests for `Action` logic
   #13333 - authproxy: strip request-body framing from auth sub-requests
@@ -602,6 +603,7 @@ Changes with Apache Traffic Server 10.2.0
   #13407 - ssl: remove the dead SSL_HOOK_OP_TERMINATE op
   #13410 - Cache empty chunked responses
   #13416 - Allow dynamic TLS record sizing
+  #13418 - Add traffic_ctl cache clear command
   #13422 - Document `HTTPHdr` methods for #13420 review
   #13423 - Fix Fedora OTEL and WAMR builds
   #13426 - header_rewrite: add POST_REMAP_HOOK support

@@ -23,7 +23,7 @@
 What's New in ATS v10.2
 =======================
 
-This version of |ATS| includes 1034 commits from 650 pull requests, with 44
+This version of |ATS| includes 1036 commits from 652 pull requests, with 44
 contributors participating in this development cycle.
 
 Configuration Reload
@@ -49,9 +49,40 @@ per-handler logs inspected. See :doc:`../developer-guide/config-reload-framework
   than on a network thread, so a large config teardown no longer blocks an
   event loop.
 
+Shared-Memory Cache Directory (Fast Restart)
+--------------------------------------------
+
+The cache directory — the memory-resident index mapping cached objects to their
+location on disk — is normally rebuilt from disk on every start, which takes
+minutes on a large cache. It can now be hosted in POSIX shared memory so the
+next process start attaches the existing segment in milliseconds instead of
+rebuilding it.
+
+Recovery is fail-safe: anything untrustworthy (crash, reboot, ABI or schema
+mismatch, failed validation, bad disk) falls back to the existing disk-rebuild
+path, and cache reads still validate the ``Doc`` magic and key, so a stale entry
+is a miss rather than served corruption.
+
+The feature is opt-in and defaults to off, making it a functional no-op unless
+enabled:
+
+* :ts:cv:`proxy.config.cache.shm.enabled`
+* :ts:cv:`proxy.config.cache.shm.name_prefix`
+* :ts:cv:`proxy.config.cache.shm.use_hugepages`
+* :ts:cv:`proxy.config.cache.shm.purge_stale_on_start`
+
+``traffic_ctl cache shm status`` and ``traffic_ctl cache shm clear`` inspect and
+drop the segment. See :ref:`cache-shm-fast-restart` for the design, recovery
+model and platform notes.
+
 Features
 --------
 
+* ``traffic_ctl cache clear`` performs a logical cache purge by advancing the
+  global HTTP cache generation, so a cache reset no longer requires restarting
+  |TS| or hand-editing the cache generation. It is backed by a restricted
+  JSONRPC method. See :ref:`traffic-control-command-cache` and
+  :ref:`admin_cache_clear`.
 * Implement RFC 9213 Targeted HTTP Cache Control. Cache directives can be
   targeted at specific caches via headers such as ``CDN-Cache-Control``,
   configured through
@@ -107,6 +138,10 @@ New :file:`records.yaml` settings in this release:
 * :ts:cv:`proxy.config.cache.ram_cache.s3fifo.ghost_size_percent`
 * :ts:cv:`proxy.config.cache.ram_cache.s3fifo.main_percent`
 * :ts:cv:`proxy.config.cache.ram_cache.s3fifo.promote_threshold`
+* :ts:cv:`proxy.config.cache.shm.enabled`
+* :ts:cv:`proxy.config.cache.shm.name_prefix`
+* :ts:cv:`proxy.config.cache.shm.purge_stale_on_start`
+* :ts:cv:`proxy.config.cache.shm.use_hugepages`
 * :ts:cv:`proxy.config.exec_thread.loop_time_update_probability`
 * :ts:cv:`proxy.config.exec_thread.watchdog.timeout_ms`
 * :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
