@@ -1,0 +1,149 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A response transform makes the tunnel run the whole body through the transform
+# before anything is written back to the client. While that is happening the
+# client stream has no write of its own, so a client stream reset is delivered as
+# a VC_EVENT_EOS on the stream's read VIO and lands in
+# HttpSM::state_watch_for_client_abort. The transform write consumer is still
+# alive there, so the SM half closes the client read side to let the rest of the
+# transaction finish.
+#
+# That shutdown has to apply to the stream, not to the underlying connection: for
+# HTTP/2 the NetVConnection is shared by every stream, so shutting its read side
+# down stops the session from reading frames for all of the other streams. The
+# second request below is sent after the reset and only gets a response if ATS is
+# still reading the connection.
+#
+
+meta:
+  version: '1.0'
+
+autest:
+  description: 'Verify an HTTP/2 stream reset does not stop the session from reading'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_tls: true
+      enable_cache: true
+
+    plugin_config:
+      # A response transform so the tunnel has a consumer besides the client
+      # while the body is being read from the origin.
+      - 'null_transform.so'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http_tunnel'
+      # Let the rest of the transaction run for as long as the origin takes.
+      proxy.config.http.background_fill_active_timeout: 0
+      proxy.config.http.background_fill_completed_threshold: 0.0
+      # The origin speaks HTTP/2 so that it can delay the response body without
+      # delaying the response header.
+      proxy.config.ssl.client.alpn_protocols: 'h2,http/1.1'
+      proxy.config.ssl.client.verify.server.policy: 'PERMISSIVE'
+
+    remap_config:
+      - 'map / https://127.0.0.1:{SERVER_HTTPS_PORT}'
+
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: 'adding consumer .transform write.'
+            description: 'Verify the tunnel had a consumer besides the client'
+          - expression: 'state_watch_for_client_abort, VC_EVENT_EOS'
+            description: 'Verify the stream reset was handled as a client abort'
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: test_sni
+
+  transactions:
+
+  # Stream 1: the origin sends the response header right away and then stalls
+  # before the body, so the transform stage of the tunnel is still running when
+  # the client resets the stream.
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.data.com]
+            - [":path", /reset-mid-transform]
+            - [uuid, reset-mid-transform]
+      - RST_STREAM:
+          delay: 1s
+          error-code: CANCEL
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":status", 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '11']
+            - [Cache-Control, 'max-age=300']
+      - DATA:
+          delay: 3s
+          content:
+            encoding: plain
+            data: server_test
+            size: 11
+
+  # Stream 3: sent after the reset above. ATS only sees this request if it is
+  # still reading the connection, so a missing response here means one stream's
+  # abort took the whole connection down with it.
+  - client-request:
+      delay: 2s
+      headers:
+        fields:
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.data.com]
+        - [":path", /after-the-reset]
+        - [uuid, after-the-reset]
+
+    server-response:
+      headers:
+        fields:
+        - [":status", 200]
+        - [Content-Type, text/html]
+        - [Content-Length, '16']
+        - [X-Response, after-the-reset]
+      content:
+        encoding: plain
+        data: after_the_reset
+        size: 16
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Response, {value: 'after-the-reset', as: equal}]
