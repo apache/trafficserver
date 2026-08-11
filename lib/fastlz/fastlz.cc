@@ -162,7 +162,7 @@ static void flz_smallcopy(uint8_t* dest, const uint8_t* src, uint32_t count) {
 }
 
 /* special case of memcpy: exactly MAX_COPY bytes */
-static void flz_maxcopy(void* dest, const void* src) {
+static void flz_maxcopy(uint8_t* dest, const uint8_t* src) {
 #if defined(FLZ_ARCH64)
   const uint32_t* p = (const uint32_t*)src;
   uint32_t* q = (uint32_t*)dest;
