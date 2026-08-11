@@ -24,6 +24,7 @@
 #pragma once
 
 #include <atomic>
+#include <cstddef>
 
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/EThread.h"
@@ -111,12 +112,9 @@ public:
 
   /// configuration settings for managing the active and keep-alive queues
   struct Config {
-    uint32_t max_connections_in                 = 0;
-    uint32_t max_requests_in                    = 0;
-    uint32_t inactive_threshold_in              = 0;
-    uint32_t transaction_no_activity_timeout_in = 0;
-    uint32_t keep_alive_no_activity_timeout_in  = 0;
-    uint32_t default_inactivity_timeout         = 0;
+    uint32_t max_connections_in         = 0;
+    uint32_t max_requests_in            = 0;
+    uint32_t default_inactivity_timeout = 0;
 
     /** Return the address of the first value in this struct.
 
@@ -130,6 +128,13 @@ public:
       return *(&max_connections_in + n);
     }
   };
+  // Config is addressed as an array of uint32_t through operator[], and
+  // config_value_affects_per_thread_value is a bitset indexed by field
+  // position, so the offset of each member is part of the interface.
+  static_assert(offsetof(Config, max_connections_in) == 0 * sizeof(uint32_t));
+  static_assert(offsetof(Config, max_requests_in) == 1 * sizeof(uint32_t));
+  static_assert(offsetof(Config, default_inactivity_timeout) == 2 * sizeof(uint32_t));
+
   /** Static global config, set and updated per process.
 
       This is updated asynchronously and then events are sent to the NetHandler

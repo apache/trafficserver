@@ -128,15 +128,6 @@ NetHandler::update_nethandler_config(const char *str, RecDataT, RecData data, vo
   } else if (name == "proxy.config.net.max_requests_in"sv) {
     updated_member = &NetHandler::global_config.max_requests_in;
     Dbg(dbg_ctl_net_queue, "proxy.config.net.max_requests_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.inactive_threshold_in"sv) {
-    updated_member = &NetHandler::global_config.inactive_threshold_in;
-    Dbg(dbg_ctl_net_queue, "proxy.config.net.inactive_threshold_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.transaction_no_activity_timeout_in"sv) {
-    updated_member = &NetHandler::global_config.transaction_no_activity_timeout_in;
-    Dbg(dbg_ctl_net_queue, "proxy.config.net.transaction_no_activity_timeout_in updated to %" PRId64, data.rec_int);
-  } else if (name == "proxy.config.net.keep_alive_no_activity_timeout_in"sv) {
-    updated_member = &NetHandler::global_config.keep_alive_no_activity_timeout_in;
-    Dbg(dbg_ctl_net_queue, "proxy.config.net.keep_alive_no_activity_timeout_in updated to %" PRId64, data.rec_int);
   } else if (name == "proxy.config.net.default_inactivity_timeout"sv) {
     updated_member = &NetHandler::global_config.default_inactivity_timeout;
     Dbg(dbg_ctl_net_queue, "proxy.config.net.default_inactivity_timeout updated to %" PRId64, data.rec_int);
@@ -175,13 +166,8 @@ void
 NetHandler::init_for_process()
 {
   // read configuration values and setup callbacks for when they change
-  global_config.max_connections_in    = RecGetRecordInt("proxy.config.net.max_connections_in").value_or(0);
-  global_config.max_requests_in       = RecGetRecordInt("proxy.config.net.max_requests_in").value_or(0);
-  global_config.inactive_threshold_in = RecGetRecordInt("proxy.config.net.inactive_threshold_in").value_or(0);
-  global_config.transaction_no_activity_timeout_in =
-    RecGetRecordInt("proxy.config.net.transaction_no_activity_timeout_in").value_or(0);
-  global_config.keep_alive_no_activity_timeout_in =
-    RecGetRecordInt("proxy.config.net.keep_alive_no_activity_timeout_in").value_or(0);
+  global_config.max_connections_in         = RecGetRecordInt("proxy.config.net.max_connections_in").value_or(0);
+  global_config.max_requests_in            = RecGetRecordInt("proxy.config.net.max_requests_in").value_or(0);
   global_config.default_inactivity_timeout = RecGetRecordInt("proxy.config.net.default_inactivity_timeout").value_or(0);
 
   // Atomic configurations.
@@ -198,20 +184,12 @@ NetHandler::init_for_process()
 
   RecRegisterConfigUpdateCb("proxy.config.net.max_connections_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.max_requests_in", update_nethandler_config, nullptr);
-  RecRegisterConfigUpdateCb("proxy.config.net.inactive_threshold_in", update_nethandler_config, nullptr);
-  RecRegisterConfigUpdateCb("proxy.config.net.transaction_no_activity_timeout_in", update_nethandler_config, nullptr);
-  RecRegisterConfigUpdateCb("proxy.config.net.keep_alive_no_activity_timeout_in", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.default_inactivity_timeout", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.additional_accepts", update_nethandler_config, nullptr);
   RecRegisterConfigUpdateCb("proxy.config.net.per_client.max_connections_in", update_nethandler_config, nullptr);
 
   Dbg(dbg_ctl_net_queue, "proxy.config.net.max_connections_in updated to %d", global_config.max_connections_in);
   Dbg(dbg_ctl_net_queue, "proxy.config.net.max_requests_in updated to %d", global_config.max_requests_in);
-  Dbg(dbg_ctl_net_queue, "proxy.config.net.inactive_threshold_in updated to %d", global_config.inactive_threshold_in);
-  Dbg(dbg_ctl_net_queue, "proxy.config.net.transaction_no_activity_timeout_in updated to %d",
-      global_config.transaction_no_activity_timeout_in);
-  Dbg(dbg_ctl_net_queue, "proxy.config.net.keep_alive_no_activity_timeout_in updated to %d",
-      global_config.keep_alive_no_activity_timeout_in);
   Dbg(dbg_ctl_net_queue, "proxy.config.net.default_inactivity_timeout updated to %d", global_config.default_inactivity_timeout);
   Dbg(dbg_ctl_net_queue, "proxy.config.net.additional_accepts updated to %d", additional_accepts.load(std::memory_order_relaxed));
   Dbg(dbg_ctl_net_queue, "proxy.config.net.per_client.max_connections_in updated to %d",

@@ -39,9 +39,18 @@ std::atomic<bool> net_memory_throttle = false;
 int               fds_throttle;
 ink_hrtime        last_transient_accept_error;
 
+namespace
+{
+/// Config members that @c NetHandler::configure_per_thread_values reads.
+constexpr unsigned long long PER_THREAD_DEPENDENT_CONFIG{0x3};
+// std::bitset silently discards bits at or above its width, which would drop a
+// member from the set without any diagnostic if Config ever shrinks.
+static_assert(PER_THREAD_DEPENDENT_CONFIG < (1ULL << NetHandler::CONFIG_ITEM_COUNT));
+} // end anonymous namespace
+
 NetHandler::Config                                     NetHandler::global_config;
 std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
-const std::bitset<NetHandler::CONFIG_ITEM_COUNT>       NetHandler::config_value_affects_per_thread_value{0x3};
+const std::bitset<NetHandler::CONFIG_ITEM_COUNT> NetHandler::config_value_affects_per_thread_value{PER_THREAD_DEPENDENT_CONFIG};
 
 namespace
 {
