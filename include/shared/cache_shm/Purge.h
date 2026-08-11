@@ -286,10 +286,9 @@ purge_segments(const std::string &prefix)
     return report;
   }
 
-  // Larger than this build's page-rounded CONTROL_SIZE means a build with a different
-  // sizeof(CacheShmControl) wrote it. The frozen header prefix is still readable (so
-  // the owner guard above applies), but stripes[] may have a different stride entirely,
-  // so its names must not drive shm_unlink.
+  // A control size this build does not accept means a build with a different sizeof(CacheShmControl) wrote it. The frozen
+  // header prefix is still readable (so the owner guard above applies), but stripes[] may have a different stride
+  // entirely, so its names must not drive shm_unlink.
   if (magic_ok && is_own_control_size(static_cast<std::size_t>(sb.st_size))) {
     unlink_table_stripes(prefix, ctrl, report.unlinked);
   } else {
