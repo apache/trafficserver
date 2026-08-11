@@ -32,6 +32,8 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
+#include <bit>
+
 ink_hrtime        last_throttle_warning;
 ink_hrtime        last_shedding_warning;
 int               net_connections_throttle;
@@ -45,7 +47,7 @@ namespace
 constexpr unsigned long long PER_THREAD_DEPENDENT_CONFIG{0x3};
 // std::bitset silently discards bits at or above its width, which would drop a
 // member from the set without any diagnostic if Config ever shrinks.
-static_assert(PER_THREAD_DEPENDENT_CONFIG < (1ULL << NetHandler::CONFIG_ITEM_COUNT));
+static_assert(std::bit_width(PER_THREAD_DEPENDENT_CONFIG) <= NetHandler::CONFIG_ITEM_COUNT);
 } // end anonymous namespace
 
 NetHandler::Config                                     NetHandler::global_config;
