@@ -31,9 +31,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <array>
+#include <string>
 #include <string_view>
-
-using namespace std::literals;
 
 namespace
 {
@@ -69,6 +68,12 @@ public:
 
   operator TSHttpTxn() { return reinterpret_cast<TSHttpTxn>(&_sm); }
 
+  const HttpForwarded::OptionBitSet &
+  forwarded_options() const
+  {
+    return _sm.t_state.txn_conf->insert_forwarded;
+  }
+
 private:
   HttpSM _sm;
 };
@@ -86,7 +91,7 @@ TEST_CASE("Find HTTP overridable configurations", "[api][overridable-config]")
     CHECK(key == descriptor.key);
     CHECK(type == descriptor.type);
 
-    REQUIRE(TSHttpTxnConfigFind(descriptor.name.data(), descriptor.name.size(), &key, &type) == TS_SUCCESS);
+    REQUIRE(TSHttpTxnConfigFind(descriptor.name.data(), static_cast<int>(descriptor.name.size()), &key, &type) == TS_SUCCESS);
     CHECK(key == descriptor.key);
     CHECK(type == descriptor.type);
   }
@@ -97,48 +102,113 @@ TEST_CASE("Find HTTP overridable configurations", "[api][overridable-config]")
   CHECK(TSHttpTxnConfigFind("proxy.config.invalid", -1, &key, &type) == TS_ERROR);
 }
 
-TEST_CASE("Set and get HTTP overridable configurations", "[api][overridable-config]")
+TEST_CASE("Round trip HTTP overridable configurations", "[api][overridable-config]")
 {
   TestHttpTxn txn;
 
-  SECTION("integer")
-  {
-    static constexpr TSMgmtInt expected = 0;
-    TSMgmtInt                  actual;
+  for (auto const &descriptor : CONFIG_DESCRIPTORS) {
+    INFO(descriptor.name);
 
-    REQUIRE(TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_CACHE_HTTP, expected) == TS_SUCCESS);
-    REQUIRE(TSHttpTxnConfigIntGet(txn, TS_CONFIG_HTTP_CACHE_HTTP, &actual) == TS_SUCCESS);
-    CHECK(actual == expected);
+    switch (descriptor.type) {
+    case TS_RECORDDATATYPE_INT: {
+      TSMgmtInt expected;
+      TSMgmtInt actual;
+
+      REQUIRE(TSHttpTxnConfigIntGet(txn, descriptor.key, &expected) == TS_SUCCESS);
+      REQUIRE(TSHttpTxnConfigIntSet(txn, descriptor.key, expected) == TS_SUCCESS);
+      REQUIRE(TSHttpTxnConfigIntGet(txn, descriptor.key, &actual) == TS_SUCCESS);
+      CHECK(actual == expected);
+      break;
+    }
+    case TS_RECORDDATATYPE_FLOAT: {
+      TSMgmtFloat expected;
+      TSMgmtFloat actual;
+
+      REQUIRE(TSHttpTxnConfigFloatGet(txn, descriptor.key, &expected) == TS_SUCCESS);
+      REQUIRE(TSHttpTxnConfigFloatSet(txn, descriptor.key, expected) == TS_SUCCESS);
+      REQUIRE(TSHttpTxnConfigFloatGet(txn, descriptor.key, &actual) == TS_SUCCESS);
+      CHECK(actual == expected);
+      break;
+    }
+    case TS_RECORDDATATYPE_STRING: {
+      if (descriptor.key == TS_CONFIG_SSL_CERT_FILEPATH) {
+        REQUIRE(TSHttpTxnConfigStringSet(txn, descriptor.key, "", 0) == TS_SUCCESS);
+        break;
+      }
+
+      if (descriptor.key == TS_CONFIG_HTTP_INSERT_FORWARDED) {
+        static constexpr std::string_view expected{"none"};
+
+        REQUIRE(TSHttpTxnConfigStringSet(txn, descriptor.key, expected.data(), static_cast<int>(expected.size())) == TS_SUCCESS);
+        CHECK(txn.forwarded_options().none());
+        break;
+      }
+
+      const char *value;
+      int         length;
+
+      REQUIRE(TSHttpTxnConfigStringGet(txn, descriptor.key, &value, &length) == TS_SUCCESS);
+      REQUIRE(length >= 0);
+      REQUIRE((value != nullptr || length == 0));
+
+      std::string expected;
+
+      if (value != nullptr) {
+        expected.assign(value, length);
+      }
+
+      REQUIRE(TSHttpTxnConfigStringSet(txn, descriptor.key, expected.data(), static_cast<int>(expected.size())) == TS_SUCCESS);
+
+      const char *actual;
+      int         actual_length;
+
+      REQUIRE(TSHttpTxnConfigStringGet(txn, descriptor.key, &actual, &actual_length) == TS_SUCCESS);
+      REQUIRE(actual_length >= 0);
+      REQUIRE((actual != nullptr || actual_length == 0));
+      CHECK(std::string_view(actual != nullptr ? actual : "", actual_length) == expected);
+      break;
+    }
+    default:
+      FAIL("Unexpected overridable configuration data type");
+      break;
+    }
   }
+}
 
-  SECTION("float")
-  {
-    static constexpr TSMgmtFloat expected = 0.25;
-    TSMgmtFloat                  actual;
+TEST_CASE("Clamp constrained HTTP overridable configuration", "[api][overridable-config]")
+{
+  TestHttpTxn txn;
+  TSMgmtInt   actual;
 
-    REQUIRE(TSHttpTxnConfigFloatSet(txn, TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR, expected) == TS_SUCCESS);
-    REQUIRE(TSHttpTxnConfigFloatGet(txn, TS_CONFIG_HTTP_CACHE_HEURISTIC_LM_FACTOR, &actual) == TS_SUCCESS);
-    CHECK(actual == expected);
-  }
+  REQUIRE(TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, 95) == TS_SUCCESS);
+  REQUIRE(TSHttpTxnConfigIntGet(txn, TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, &actual) == TS_SUCCESS);
+  CHECK(actual == TS_SERVER_OUTBOUND_MATCH_BOTH);
+}
 
-  SECTION("constrained integer")
-  {
-    TSMgmtInt actual;
+TEST_CASE("Round trip bounded SSL string overrides", "[api][overridable-config]")
+{
+  static constexpr std::array SSL_STRING_CONFIGS{
+    TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY, TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES, TS_CONFIG_SSL_CLIENT_SNI_POLICY,
+    TS_CONFIG_SSL_CLIENT_CERT_FILENAME,        TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME,     TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME,
+    TS_CONFIG_SSL_CLIENT_CA_CERT_PATH,         TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS,
+  };
+  static constexpr std::array<char, 3> EXPECTED{'a', '\0', 'b'};
 
-    REQUIRE(TSHttpTxnConfigIntSet(txn, TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, 95) == TS_SUCCESS);
-    REQUIRE(TSHttpTxnConfigIntGet(txn, TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH, &actual) == TS_SUCCESS);
-    CHECK(actual == TS_SERVER_OUTBOUND_MATCH_BOTH);
-  }
+  TestHttpTxn txn;
 
-  SECTION("string")
-  {
-    static constexpr auto expected = "Catch test"sv;
-    const char           *actual;
-    int                   length;
+  for (auto const key : SSL_STRING_CONFIGS) {
+    const char *actual;
+    int         actual_length;
 
-    REQUIRE(TSHttpTxnConfigStringSet(txn, TS_CONFIG_HTTP_RESPONSE_SERVER_STR, expected.data(), expected.size()) == TS_SUCCESS);
-    REQUIRE(TSHttpTxnConfigStringGet(txn, TS_CONFIG_HTTP_RESPONSE_SERVER_STR, &actual, &length) == TS_SUCCESS);
+    REQUIRE(TSHttpTxnConfigStringSet(txn, key, EXPECTED.data(), EXPECTED.size()) == TS_SUCCESS);
+    REQUIRE(TSHttpTxnConfigStringGet(txn, key, &actual, &actual_length) == TS_SUCCESS);
     REQUIRE(actual != nullptr);
-    CHECK(std::string_view(actual, length) == expected);
+    CHECK(actual_length == EXPECTED.size());
+    CHECK(std::string_view(actual, actual_length) == std::string_view(EXPECTED.data(), EXPECTED.size()));
+
+    REQUIRE(TSHttpTxnConfigStringSet(txn, key, nullptr, 0) == TS_SUCCESS);
+    REQUIRE(TSHttpTxnConfigStringGet(txn, key, &actual, &actual_length) == TS_SUCCESS);
+    CHECK(actual == nullptr);
+    CHECK(actual_length == 0);
   }
 }

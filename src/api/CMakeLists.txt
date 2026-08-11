@@ -16,7 +16,15 @@
 #######################
 
 # plugin api *only*
-add_library(tsapi SHARED InkAPI.cc InkAPIInternal.cc InkIOCoreAPI.cc)
+add_library(tsapi_objects OBJECT InkAPI.cc InkAPIInternal.cc InkIOCoreAPI.cc)
+set_target_properties(tsapi_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(tsapi_objects PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp OpenSSL::SSL)
+if(ENABLE_PROBES)
+  target_link_libraries(tsapi_objects PRIVATE systemtap::systemtap)
+endif()
+
+add_library(tsapi SHARED)
+target_link_libraries(tsapi PRIVATE tsapi_objects)
 if(BUILD_REGRESSION_TESTING)
   target_sources(tsapi PRIVATE InkAPITest.cc)
 endif()
@@ -69,7 +77,7 @@ if(BUILD_TESTING)
     test_api
     PRIVATE Catch2::Catch2WithMain
             ts::tscore
-            ts::tsapi
+            tsapi_objects
             ts::overridable_txn_vars
             ts::tsutil
             ts::http
@@ -96,4 +104,4 @@ if(BUILD_TESTING)
   add_catch2_test(NAME test_api COMMAND test_api)
 endif()
 
-clang_tidy_check(tsapi)
+clang_tidy_check(tsapi_objects)

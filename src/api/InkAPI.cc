@@ -7521,6 +7521,16 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
 
   s->t_state.setup_per_txn_configs();
 
+  auto set_txn_string = [s, value, length](char *&destination, size_t &destination_length) {
+    if (value && length > 0) {
+      destination        = s->t_state.arena.str_store(value, length);
+      destination_length = length;
+    } else {
+      destination        = nullptr;
+      destination_length = 0;
+    }
+  };
+
   switch (conf) {
   case TS_CONFIG_HTTP_RESPONSE_SERVER_STR:
     if (value && length > 0) {
@@ -7563,44 +7573,31 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     }
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_verify_server_policy = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_verify_server_policy,
+                   s->t_state.my_txn_conf().ssl_client_verify_server_policy_len);
     break;
   case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_verify_server_properties = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_verify_server_properties,
+                   s->t_state.my_txn_conf().ssl_client_verify_server_properties_len);
     break;
   case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_sni_policy = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_sni_policy, s->t_state.my_txn_conf().ssl_client_sni_policy_len);
     break;
   case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_cert_filename = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_cert_filename, s->t_state.my_txn_conf().ssl_client_cert_filename_len);
     break;
   case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_private_key_filename = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_private_key_filename,
+                   s->t_state.my_txn_conf().ssl_client_private_key_filename_len);
     break;
   case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_ca_cert_filename, s->t_state.my_txn_conf().ssl_client_ca_cert_filename_len);
     break;
   case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_ca_cert_path = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_ca_cert_path, s->t_state.my_txn_conf().ssl_client_ca_cert_path_len);
     break;
   case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
-    if (value && length > 0) {
-      s->t_state.my_txn_conf().ssl_client_alpn_protocols = const_cast<char *>(value);
-    }
+    set_txn_string(s->t_state.my_txn_conf().ssl_client_alpn_protocols, s->t_state.my_txn_conf().ssl_client_alpn_protocols_len);
     break;
   case TS_CONFIG_SSL_CERT_FILEPATH:
     /* noop */
@@ -7676,9 +7673,37 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     *value  = sm->t_state.txn_conf->server_session_sharing_match_str;
     *length = *value ? strlen(*value) : 0;
     break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_POLICY:
+    *value  = sm->t_state.txn_conf->ssl_client_verify_server_policy;
+    *length = sm->t_state.txn_conf->ssl_client_verify_server_policy_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_VERIFY_SERVER_PROPERTIES:
+    *value  = sm->t_state.txn_conf->ssl_client_verify_server_properties;
+    *length = sm->t_state.txn_conf->ssl_client_verify_server_properties_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_SNI_POLICY:
+    *value  = sm->t_state.txn_conf->ssl_client_sni_policy;
+    *length = sm->t_state.txn_conf->ssl_client_sni_policy_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_CERT_FILENAME:
+    *value  = sm->t_state.txn_conf->ssl_client_cert_filename;
+    *length = sm->t_state.txn_conf->ssl_client_cert_filename_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_PRIVATE_KEY_FILENAME:
+    *value  = sm->t_state.txn_conf->ssl_client_private_key_filename;
+    *length = sm->t_state.txn_conf->ssl_client_private_key_filename_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_FILENAME:
+    *value  = sm->t_state.txn_conf->ssl_client_ca_cert_filename;
+    *length = sm->t_state.txn_conf->ssl_client_ca_cert_filename_len;
+    break;
   case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
     *value  = sm->t_state.txn_conf->ssl_client_ca_cert_path;
-    *length = *value ? strlen(*value) : 0;
+    *length = sm->t_state.txn_conf->ssl_client_ca_cert_path_len;
+    break;
+  case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
+    *value  = sm->t_state.txn_conf->ssl_client_alpn_protocols;
+    *length = sm->t_state.txn_conf->ssl_client_alpn_protocols_len;
     break;
   default: {
     MgmtConverter const *conv;
