@@ -654,6 +654,11 @@ Changes with Apache Traffic Server 10.2.0
   #13515 - Fix cache read VC replacement after a lost write lock
   #13517 - Bound RegexMatches::operator[] by what the match populated
   #13523 - Shut the client read side down per transaction, not per connection
+  #13531 - Change libswoc test for undefined errno to a much higher number
+  #13532 - Fix signature on flz_maxcopy to avoid cast error
+  #13535 - Fix an intermittent cache unit test deadlock at exit
+  #13536 - cache: fix shm sizing on large-page Linux
+  #13537 - Share regex_remap rule sets
   Replace VLA with heap allocation in cachekey appendEncoded
   Guard against size_t overflow in appendEncoded buffer sizing
   Use ts::LocalBuffer instead of std::vector in appendEncoded
