@@ -17,11 +17,16 @@
    or implied. See the License for the specific language governing permissions and limitations under
    the License.
  */
+#include <atomic>
+#include <string>
+#include <thread>
+
 #include <catch2/catch_test_macros.hpp>
 #include "records/RecCore.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/eventsystem/RecProcess.h"
 #include "tscore/Layout.h"
+#include "tsutil/Metrics.h"
 #include "test_Diags.h"
 
 TEST_CASE("RecRegisterConfig - Type Dispatch", "[librecords][RecConfig]")
@@ -86,4 +91,44 @@ TEST_CASE("RecRegisterStat - Type Dispatch", "[librecords][RecStat]")
     RecCounter value = RecGetRecordCounter("proxy.node.test.counter").value_or(0);
     REQUIRE(value == 500);
   }
+}
+
+TEST_CASE("RecLookupRecord - Concurrent metric registration", "[librecords][RecLookup]")
+{
+  constexpr char record_name[]  = "proxy.test.concurrent.string_value";
+  constexpr char record_value[] = "stable";
+
+  REQUIRE(RecRegisterConfigString(RECT_CONFIG, record_name, record_value, RECU_DYNAMIC, RECC_NULL, nullptr, REC_SOURCE_NULL) ==
+          REC_ERR_OKAY);
+
+  std::atomic<bool> start{false};
+  std::atomic<bool> finished{false};
+  std::jthread      register_metrics([&]() {
+    while (!start.load(std::memory_order_acquire)) {
+      std::this_thread::yield();
+    }
+
+    for (int i = 0; i < 100000; ++i) {
+      auto metric_name = std::string{"proxy.process.test.concurrent_metric_registration."} + std::to_string(i);
+
+      ts::Metrics::Counter::create(metric_name);
+    }
+    finished.store(true, std::memory_order_release);
+  });
+
+  bool   all_lookups_succeeded = true;
+  size_t lookup_count          = 0;
+
+  start.store(true, std::memory_order_release);
+  while (!finished.load(std::memory_order_acquire)) {
+    if (RecGetRecordStringAlloc(record_name) != record_value) {
+      all_lookups_succeeded = false;
+      break;
+    }
+    ++lookup_count;
+  }
+  register_metrics.join();
+
+  CHECK(lookup_count > 0);
+  CHECK(all_lookups_succeeded);
 }
