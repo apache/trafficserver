@@ -270,14 +270,10 @@ open_and_map_shm(const std::string &name, std::size_t size, ShmAccess access, [[
       return nullptr;
     }
   } else {
-    // The kernel rounds an shm object up to a page, so accept any size in [requested, page-up].
     struct stat sb {
     };
-    std::size_t expected_max = INK_ALIGN(size, ats_pagesize());
-    if (fstat(fd, &sb) < 0 || sb.st_size < 0 || static_cast<std::size_t>(sb.st_size) < size ||
-        static_cast<std::size_t>(sb.st_size) > expected_max) {
-      Dbg(dbg_ctl, "shm %s size mismatch (have %lld, want %zu, max %zu)", name.c_str(), static_cast<long long>(sb.st_size), size,
-          expected_max);
+    if (fstat(fd, &sb) < 0 || sb.st_size < 0 || !cache_shm::is_expected_shm_size(static_cast<std::size_t>(sb.st_size), size)) {
+      Dbg(dbg_ctl, "shm %s size mismatch (have %lld, want %zu)", name.c_str(), static_cast<long long>(sb.st_size), size);
       return nullptr;
     }
   }
