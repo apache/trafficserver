@@ -225,6 +225,19 @@ TEST_CASE("CacheShm process liveness check backs the concurrent-attach guard", "
   CHECK_FALSE(CacheShm::process_is_alive(std::numeric_limits<int>::max()));
 }
 
+TEST_CASE("CacheShm object size matching follows platform behavior", "[cache][shm]")
+{
+  constexpr std::size_t requested = cache_shm::CONTROL_SIZE;
+
+  CHECK(cache_shm::is_expected_shm_size(requested, requested));
+  CHECK_FALSE(cache_shm::is_expected_shm_size(requested - 1, requested));
+#if defined(__APPLE__)
+  CHECK(cache_shm::is_expected_shm_size(INK_ALIGN(requested, ats_pagesize()), requested));
+#else
+  CHECK_FALSE(cache_shm::is_expected_shm_size(requested + sizeof(cache_shm::StripeEntry), requested));
+#endif
+}
+
 // The rest of this file needs real shm objects, unlike the layout/fingerprint cases
 // above, so it is gated the same way the feature is.
 #if TS_USE_CACHE_SHM
@@ -293,8 +306,8 @@ segment_exists(const std::string &name)
   return true;
 }
 
-// The kernel rounds an shm object up to a page, so a segment shorter than CONTROL_SIZE is not representable everywhere:
-// Apple Silicon's 16 KB page already exceeds it. -1 if the segment is gone.
+// macOS rounds a POSIX shm object up to a page, so a segment shorter than CONTROL_SIZE is not representable there.
+// -1 if the segment is gone.
 long long
 segment_size(const std::string &name)
 {

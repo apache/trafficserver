@@ -87,13 +87,26 @@ constexpr std::size_t CONTROL_HEADER_SIZE = offsetof(CacheShmControl, stripes);
 static_assert(CONTROL_HEADER_SIZE == 48, "the control segment header is a frozen layout; see the comment above");
 static_assert(std::is_standard_layout_v<CacheShmControl>, "the control segment is shared across processes and builds");
 
-// Whether a control segment of `actual` bytes was written by *this* build; the kernel rounds an shm object up to a page.
-// Anything larger has a stripes[] of unknown stride and must never be walked with our layout. Shared by the attach gate,
-// the purge primitive and `traffic_ctl cache shm status` so the three cannot drift apart.
+/// Whether @a actual is the object size this platform reports after truncating
+/// a POSIX shared-memory object to @a requested bytes.
+inline bool
+is_expected_shm_size(std::size_t actual, std::size_t requested)
+{
+#if defined(__APPLE__)
+  // macOS rounds the reported object size up to the VM page size.
+  return actual >= requested && actual <= INK_ALIGN(requested, ats_pagesize());
+#else
+  return actual == requested;
+#endif
+}
+
+// Whether a control segment of `actual` bytes was written by *this* build. Anything else has a stripes[] of unknown
+// stride and must never be walked with our layout. Shared by the attach gate, the purge primitive and
+// `traffic_ctl cache shm status` so the three cannot drift apart.
 inline bool
 is_own_control_size(std::size_t actual)
 {
-  return actual >= CONTROL_SIZE && actual <= INK_ALIGN(CONTROL_SIZE, ats_pagesize());
+  return is_expected_shm_size(actual, CONTROL_SIZE);
 }
 
 // Frame the operator's middle word (e.g. "ats") as "/<word>-". The framing is supplied here so it cannot be mis-typed:
