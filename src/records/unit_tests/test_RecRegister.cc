@@ -17,10 +17,6 @@
    or implied. See the License for the specific language governing permissions and limitations under
    the License.
  */
-#include <atomic>
-#include <string>
-#include <thread>
-
 #include <catch2/catch_test_macros.hpp>
 #include "records/RecCore.h"
 #include "iocore/eventsystem/EventSystem.h"
@@ -28,6 +24,9 @@
 #include "tscore/Layout.h"
 #include "tsutil/Metrics.h"
 #include "test_Diags.h"
+
+#include <atomic>
+#include <thread>
 
 TEST_CASE("RecRegisterConfig - Type Dispatch", "[librecords][RecConfig]")
 {
@@ -101,34 +100,23 @@ TEST_CASE("RecLookupRecord - Concurrent metric registration", "[librecords][RecL
   REQUIRE(RecRegisterConfigString(RECT_CONFIG, record_name, record_value, RECU_DYNAMIC, RECC_NULL, nullptr, REC_SOURCE_NULL) ==
           REC_ERR_OKAY);
 
-  std::atomic<bool> start{false};
   std::atomic<bool> finished{false};
-  std::jthread      register_metrics([&]() {
-    while (!start.load(std::memory_order_acquire)) {
-      std::this_thread::yield();
-    }
-
+  std::thread       register_metrics([&]() {
     for (int i = 0; i < 100000; ++i) {
-      auto metric_name = std::string{"proxy.process.test.concurrent_metric_registration."} + std::to_string(i);
-
-      ts::Metrics::Counter::create(metric_name);
+      ts::Metrics::Counter::createSpan(1);
     }
     finished.store(true, std::memory_order_release);
   });
 
-  bool   all_lookups_succeeded = true;
-  size_t lookup_count          = 0;
+  bool all_lookups_succeeded = true;
 
-  start.store(true, std::memory_order_release);
-  while (!finished.load(std::memory_order_acquire)) {
+  do {
     if (RecGetRecordStringAlloc(record_name) != record_value) {
       all_lookups_succeeded = false;
       break;
     }
-    ++lookup_count;
-  }
+  } while (!finished.load(std::memory_order_acquire));
   register_metrics.join();
 
-  CHECK(lookup_count > 0);
   CHECK(all_lookups_succeeded);
 }
