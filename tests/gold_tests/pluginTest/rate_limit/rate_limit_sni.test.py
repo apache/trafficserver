@@ -109,7 +109,7 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.Command = (
     f"curl -sk -o /dev/null '{BASE_URL}/slow' {RESOLVE} & "
     f"sleep 0.5; "
-    f"curl -sk -o /dev/null '{BASE_URL}/queued' {RESOLVE} 2>/dev/null; "
+    f"curl -sk --max-time 2 -o /dev/null '{BASE_URL}/queued' {RESOLVE} 2>/dev/null; "
     f"wait; sleep 0.5; "
     f"curl -sk -o /dev/null -w '%{{http_code}}' '{BASE_URL}/test' {RESOLVE}")
 tr.Processes.Default.ReturnCode = 0
@@ -119,3 +119,5 @@ tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
 # Verify ATS didn't crash
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("FATAL", "ATS should not crash from active counter underflow")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("ink_release_assert", "No assertion failure from _active underflow")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    "Queued VC is too old", "The queued connection should expire before the client disconnects")

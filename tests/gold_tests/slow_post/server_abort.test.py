@@ -41,6 +41,10 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.tags': 'http|dns',
         'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.http.connect_attempts_max_retries': 0,
+        'proxy.config.http.connect_attempts_rr_retries': 0,
+        'proxy.config.http.connect_attempts_timeout': 2,
+        'proxy.config.http.transaction_no_activity_timeout_out': 2,
         'proxy.config.ssl.server.cert.path': f'{Test.TestDirectory}/test_secrets',
         'proxy.config.ssl.server.private_key.path': f'{Test.TestDirectory}/test_secrets',
     })
