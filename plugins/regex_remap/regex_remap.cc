@@ -25,6 +25,7 @@
 #include "ts/remap_version.h"
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <cstdio>
 #include <ctime>
 #include <cstring>
@@ -32,12 +33,16 @@
 #include <cctype>
 #include <unistd.h>
 
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <cctype>
 #include <memory>
+#include <mutex>
 #include <sstream>
+#include <unordered_map>
+#include <vector>
 
 // Get some specific stuff from libts, yes, we can do that now that we build inside the core.
 #include "tscore/ink_platform.h"
@@ -104,30 +109,49 @@ struct UrlComponents {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// Class encapsulating one regular expression (and the linked list).
+// One immutable remap rule: the compiled regex plus its substitution template
+// and per-rule options (status, timeouts, strategy, config overrides).
+//
+// A RemapRegex is shared. Once compile_rule_set() hands it to RuleSet::add() it
+// is const, and it is read concurrently and without locks by every ET_NET
+// thread of every RemapInstance that loaded the same rule file. Nothing here
+// may be mutated after that point, and nothing per-instance or per-transaction
+// may be stored here. That is why the match context and profiling hit counts
+// are passed in as arguments rather than kept as members: they belong to
+// RemapInstance. Put new per-instance state on RemapInstance, indexed in
+// lockstep with RuleSet::rules(), never on this class.
 //
 class RemapRegex
 {
 public:
+  RemapRegex()                              = default;
+  RemapRegex(RemapRegex const &)            = delete;
+  RemapRegex &operator=(RemapRegex const &) = delete;
+
   ~RemapRegex()
   {
     Dbg(dbg_ctl, "Calling destructor");
     TSfree(_rex_string);
     TSfree(_subst);
+
+    while (_first_override) {
+      Override *tmp = _first_override;
+
+      _first_override = _first_override->next;
+      if (TS_RECORDDATATYPE_STRING == tmp->type) {
+        TSfree(tmp->data.rec_string);
+      }
+      delete tmp;
+    }
   }
 
   bool initialize(const std::string &reg, const std::string &sub, const std::string &opt);
 
-  // For profiling information
+  // Profiling output for one rule, as a percentage of this instance's matches.
   void
-  increment()
+  print(int ix, int total_hits, int rule_hits, const char *now) const
   {
-    ink_atomic_increment(&(_hits), 1);
-  }
-  void
-  print(int ix, int max, const char *now)
-  {
-    fprintf(stderr, "[%s]:    Regex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * _hits / max);
+    fprintf(stderr, "[%s]:    Regex %d ( %s ): %.2f%%\n", now, ix, _rex_string, 100.0 * rule_hits / total_hits);
   }
 
   // Returns '0' on success
@@ -135,10 +159,9 @@ public:
 
   // number of matches, or negative if failed
   int
-  match(std::string_view const str, RegexMatches &matches) const
+  match(std::string_view const str, RegexMatches &matches, RegexMatchContext const *match_context) const
   {
-    TSAssert(nullptr != _match_context);
-    int const stat = _rex.exec(str, matches, 0, _match_context);
+    int const stat = _rex.exec(str, matches, 0, match_context);
     if (0 <= stat) {
       Dbg(dbg_ctl, "Regex match (%d): %.*s", stat, (int)str.length(), str.data());
       return matches.size();
@@ -147,39 +170,9 @@ public:
   }
 
   // Substitutions
-  int get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url);
+  int get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url) const;
   int substitute(char dest[], RegexMatches const &matches, const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
-                 UrlComponents *req_url, bool lowercase_substitutions);
-
-  // setter / getters for members the linked list.
-  inline void
-  set_next(RemapRegex *next)
-  {
-    _next = next;
-  }
-  inline RemapRegex *
-  next() const
-  {
-    return _next;
-  }
-
-  inline void
-  set_match_context(RegexMatchContext const *const ctx)
-  {
-    _match_context = ctx;
-  }
-
-  // setter / getters for order number within the linked list
-  inline void
-  set_order(int order)
-  {
-    _order = order;
-  }
-  inline int
-  order()
-  {
-    return _order;
-  }
+                 UrlComponents *req_url, bool lowercase_substitutions) const;
 
   // Various getters
   inline const char *
@@ -242,27 +235,22 @@ public:
     Override              *next;
   };
 
-  Override *
+  Override const *
   get_overrides() const
   {
     return _first_override;
   }
 
 private:
-  char *_rex_string = nullptr;
-  char *_subst      = nullptr;
-  int   _subst_len  = 0;
-  int   _num_subs   = -1;
-  int   _hits       = 0;
-  int   _options    = 0;
-  int   _order      = -1;
+  char *_rex_string              = nullptr;
+  char *_subst                   = nullptr;
+  int   _subst_len               = 0;
+  int   _num_subs                = -1;
+  int   _options                 = 0;
+  bool  _lowercase_substitutions = false;
 
-  bool _lowercase_substitutions = false;
-
-  Regex                    _rex;
-  RegexMatchContext const *_match_context = nullptr; // owned by RemapInstance
-  RemapRegex              *_next          = nullptr;
-  TSHttpStatus             _status        = static_cast<TSHttpStatus>(0);
+  Regex        _rex;
+  TSHttpStatus _status = static_cast<TSHttpStatus>(0);
 
   int _active_timeout      = -1;
   int _no_activity_timeout = -1;
@@ -468,7 +456,7 @@ RemapRegex::compile(std::string &error, int &erroffset)
 // We also calculate a total length for the new string, which is the max length the
 // substituted string can have (used for the ts::LocalBuffer).
 int
-RemapRegex::get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url)
+RemapRegex::get_lengths(RegexMatches const &matches, int lengths[], TSRemapRequestInfo *rri, UrlComponents *req_url) const
 {
   int len = _subst_len + 1; // Bigger then necessary
 
@@ -523,7 +511,7 @@ RemapRegex::get_lengths(RegexMatches const &matches, int lengths[], TSRemapReque
 // length of the string as written to dest (not including the trailing '0').
 int
 RemapRegex::substitute(char dest[], RegexMatches const &matches, const int lengths[], TSHttpTxn txnp, TSRemapRequestInfo *rri,
-                       UrlComponents *req_url, bool lowercase_substitutions)
+                       UrlComponents *req_url, bool lowercase_substitutions) const
 {
   if (_num_subs > 0) {
     char *p1   = dest;
@@ -607,12 +595,219 @@ RemapRegex::substitute(char dest[], RegexMatches const &matches, const int lengt
   return 0; // Shouldn't happen.
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// One immutable generation of a regex_remap rule file. The exact source bytes
+// are retained so a reload can distinguish changed content while the previous
+// generation remains live.
+//
+class RuleSet
+{
+public:
+  using Rules = std::vector<std::unique_ptr<RemapRegex const>>;
+
+  explicit RuleSet(std::string const &source) : _source(source) {}
+
+  bool
+  has_source(std::string const &source) const
+  {
+    // Remap reloads build the new table before releasing the old one. Compare
+    // exact bytes so a still-live generation for this filename cannot give new
+    // instances stale rules after the file changes.
+    return _source == source;
+  }
+
+  void
+  add(std::unique_ptr<RemapRegex> rule)
+  {
+    _rules.push_back(std::move(rule));
+  }
+
+  Rules const &
+  rules() const
+  {
+    return _rules;
+  }
+
+private:
+  std::string _source;
+  Rules       _rules;
+};
+
+using SharedRuleSet = std::shared_ptr<RuleSet const>;
+
+///////////////////////////////////////////////////////////////////////////////
+// Compile and publish one immutable rule-file generation.
+//
+SharedRuleSet
+compile_rule_set(std::string const &filename, std::string const &source)
+{
+  auto               rule_set = std::make_shared<RuleSet>(source);
+  std::istringstream input(source);
+  int                lineno = 0;
+  std::string        line;
+
+  while (getline(input, line)) {
+    std::string            regex, subst, options;
+    std::string::size_type pos1, pos2;
+
+    ++lineno;
+    if (line.empty()) {
+      continue;
+    }
+
+    pos1 = line.find_first_not_of(" \t\n");
+    if (pos1 != std::string::npos) {
+      if (line[pos1] == '#') {
+        continue;
+      }
+
+      pos2 = line.find_first_of(" \t\n", pos1);
+      if (pos2 != std::string::npos) {
+        regex = line.substr(pos1, pos2 - pos1);
+        pos1  = line.find_first_not_of(" \t\n#", pos2);
+        if (pos1 != std::string::npos) {
+          pos2 = line.find_first_of(" \t\n", pos1);
+          if (pos2 == std::string::npos) {
+            pos2 = line.length();
+          }
+          subst = line.substr(pos1, pos2 - pos1);
+          pos1  = line.find_first_not_of(" \t\n#", pos2);
+          if (pos1 != std::string::npos) {
+            pos2 = line.find_first_of("\n#", pos1);
+            if (pos2 == std::string::npos) {
+              pos2 = line.length();
+            }
+            options = line.substr(pos1, pos2 - pos1);
+          }
+        }
+      }
+    }
+
+    if (regex.empty()) {
+      TSError("[%s] no regexp found in %s: line %d", PLUGIN_NAME, filename.c_str(), lineno);
+      continue;
+    }
+    if (subst.empty() && options.empty()) {
+      TSError("[%s] no substitution string found in %s: line %d", PLUGIN_NAME, filename.c_str(), lineno);
+      continue;
+    }
+
+    auto cur = std::make_unique<RemapRegex>();
+
+    if (!cur->initialize(regex, subst, options)) {
+      TSError("[%s] can't create a new regex remap rule", PLUGIN_NAME);
+      continue;
+    }
+
+    std::string error;
+    int         erroffset;
+    Dbg(dbg_ctl, "Compiling regex: %s", regex.c_str());
+    if (0 != cur->compile(error, erroffset)) {
+      std::ostringstream oss;
+      oss << '[' << PLUGIN_NAME << "] Regex compile failed in " << filename << " (line " << lineno << ')';
+      if (erroffset > 0) {
+        oss << " at offset " << erroffset;
+      }
+      oss << ": " << error;
+      if (cur->regex_empty()) {
+        oss << "  (no regular expression)";
+      } else {
+        oss << "  regex: \"" << cur->regex() << '"';
+      }
+      TSError("%s", oss.str().c_str());
+      continue;
+    }
+
+    Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
+    rule_set->add(std::move(cur));
+  }
+
+  if (rule_set->rules().empty()) {
+    TSError("[%s] no regular expressions from the maps", PLUGIN_NAME);
+    return nullptr;
+  }
+
+  return rule_set;
+}
+
+class RuleSetCache
+{
+  /// Live generations of one rule file. More than one entry exists only while
+  /// an old config generation is still draining and the file content changed.
+  /// Weak ownership is deliberate: the cache must never keep a RuleSet alive.
+  using Generations = std::vector<std::weak_ptr<RuleSet const>>;
+  using Entries     = std::unordered_map<std::string, Generations>;
+
+public:
+  static SharedRuleSet
+  get(std::string const &filename, std::string const &source)
+  {
+    std::lock_guard<std::mutex> lock(mutex());
+    auto                       &entries = cache();
+
+    auto existing = entries.find(filename);
+    if (existing != entries.end()) {
+      std::erase_if(existing->second, [](std::weak_ptr<RuleSet const> const &entry) { return entry.expired(); });
+      for (auto const &entry : existing->second) {
+        if (auto rule_set = entry.lock(); rule_set && rule_set->has_source(source)) {
+          Dbg(dbg_ctl, "Reusing cached regular expressions from %s", filename.c_str());
+          return rule_set;
+        }
+      }
+      if (existing->second.empty()) {
+        entries.erase(existing);
+      }
+    }
+
+    // Pruning is bookkeeping, not correctness: lock() above cannot return an
+    // expired generation. Keep the full sweep off the once-per-mapping hit path.
+    prune_expired(entries);
+
+    // Compile with the lock held. Concurrent instances of the same source must
+    // serialize here, or each would compile a copy and all but one would be wasted.
+    auto rule_set = compile_rule_set(filename, source);
+    if (rule_set) {
+      entries[filename].push_back(rule_set);
+      Dbg(dbg_ctl, "Cached regular expressions from %s", filename.c_str());
+    }
+    return rule_set;
+  }
+
+private:
+  static void
+  prune_expired(Entries &entries)
+  {
+    for (auto file = entries.begin(); file != entries.end();) {
+      std::erase_if(file->second, [](std::weak_ptr<RuleSet const> const &entry) { return entry.expired(); });
+      if (file->second.empty()) {
+        file = entries.erase(file);
+      } else {
+        ++file;
+      }
+    }
+  }
+
+  static Entries &
+  cache()
+  {
+    static Entries entries;
+    return entries;
+  }
+
+  static std::mutex &
+  mutex()
+  {
+    static std::mutex lock;
+    return lock;
+  }
+};
+
 // Hold one remap instance
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  RemapRegex       *first         = nullptr;
-  RemapRegex       *last          = nullptr;
+  SharedRuleSet     rule_set;
+  std::vector<int>  rule_hits;
   RegexMatchContext match_context = {};
   bool              pristine_url  = false;
   bool              profile       = false;
@@ -643,10 +838,6 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_sizeATS_UNUSED */)
 {
   RemapInstance *ri = new RemapInstance();
-
-  std::ifstream f;
-  int           lineno = 0;
-  int           count  = 0;
 
   *ih = (void *)ri;
   if (ri == nullptr) {
@@ -696,111 +887,39 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     ri->filename += argv[2];
   }
 
-  if (0 != access(ri->filename.c_str(), R_OK)) {
-    TSError("[%s] failed to access %s: %s", PLUGIN_NAME, ri->filename.c_str(), strerror(errno));
+  struct stat st;
+  if (0 != stat(ri->filename.c_str(), &st)) {
+    TSError("[%s] failed to stat %s: %s", PLUGIN_NAME, ri->filename.c_str(), strerror(errno));
+    return TS_ERROR;
+  }
+  if (!S_ISREG(st.st_mode)) {
+    TSError("[%s] %s is not a regular file", PLUGIN_NAME, ri->filename.c_str());
     return TS_ERROR;
   }
 
-  f.open((ri->filename).c_str(), std::ios::in);
+  std::ifstream f((ri->filename).c_str(), std::ios::in | std::ios::binary);
   if (!f.is_open()) {
     TSError("[%s] unable to open %s", PLUGIN_NAME, (ri->filename).c_str());
     return TS_ERROR;
   }
   Dbg(dbg_ctl, "Loading regular expressions from %s", (ri->filename).c_str());
 
-  while (!f.eof()) {
-    std::string            line, regex, subst, options;
-    std::string::size_type pos1, pos2;
-
-    getline(f, line);
-    ++lineno;
-    if (line.empty()) {
-      continue;
-    }
-
-    pos1 = line.find_first_not_of(" \t\n");
-    if (pos1 != std::string::npos) {
-      if (line[pos1] == '#') {
-        continue; // Skip comment lines
-      }
-
-      pos2 = line.find_first_of(" \t\n", pos1);
-      if (pos2 != std::string::npos) {
-        regex = line.substr(pos1, pos2 - pos1);
-        pos1  = line.find_first_not_of(" \t\n#", pos2);
-        if (pos1 != std::string::npos) {
-          pos2 = line.find_first_of(" \t\n", pos1);
-          if (pos2 == std::string::npos) {
-            pos2 = line.length();
-          }
-          subst = line.substr(pos1, pos2 - pos1);
-          pos1  = line.find_first_not_of(" \t\n#", pos2);
-          if (pos1 != std::string::npos) {
-            pos2 = line.find_first_of("\n#", pos1);
-            if (pos2 == std::string::npos) {
-              pos2 = line.length();
-            }
-            options = line.substr(pos1, pos2 - pos1);
-          }
-        }
-      }
-    }
-
-    if (regex.empty()) {
-      // No regex found on this line
-      TSError("[%s] no regexp found in %s: line %d", PLUGIN_NAME, (ri->filename).c_str(), lineno);
-      continue;
-    }
-    if (subst.empty() && options.empty()) {
-      // No substitution found on this line (and no options)
-      TSError("[%s] no substitution string found in %s: line %d", PLUGIN_NAME, (ri->filename).c_str(), lineno);
-      continue;
-    }
-
-    // Got a regex and substitution string
-    std::unique_ptr<RemapRegex> cur(new RemapRegex);
-
-    if (!cur->initialize(regex, subst, options)) {
-      TSError("[%s] can't create a new regex remap rule", PLUGIN_NAME);
-      continue;
-    }
-
-    std::string error;
-    int         erroffset;
-    Dbg(dbg_ctl, "Compiling regex: %s", regex.c_str());
-    if (0 != cur->compile(error, erroffset)) {
-      std::ostringstream oss;
-      oss << '[' << PLUGIN_NAME << "] Regex compile failed in " << (ri->filename).c_str() << " (line " << lineno << ')';
-      if (erroffset > 0) {
-        oss << " at offset " << erroffset;
-      }
-      oss << ": " << error;
-      if (cur->regex_empty()) {
-        oss << "  (no regular expression)";
-      } else {
-        oss << "  regex: \"" << cur->regex() << '"';
-      }
-      TSError("%s", oss.str().c_str());
-    } else {
-      Dbg(dbg_ctl, "Added regex=%s with subs=%s and options `%s'", regex.c_str(), subst.c_str(), options.c_str());
-      cur->set_order(++count);
-      cur->set_match_context(&(ri->match_context));
-      auto tmp = cur.get();
-      if (ri->first == nullptr) {
-        ri->first = cur.release();
-      } else {
-        ri->last->set_next(cur.release());
-      }
-      ri->last = tmp;
-    }
+  std::streamsize const expected_size = st.st_size;
+  std::string           source(static_cast<size_t>(expected_size), '\0');
+  f.read(source.data(), expected_size);
+  if (f.bad() || f.gcount() != expected_size) {
+    TSError("[%s] short read on %s: got %lld of %lld bytes", PLUGIN_NAME, ri->filename.c_str(), static_cast<long long>(f.gcount()),
+            static_cast<long long>(expected_size));
+    return TS_ERROR;
   }
 
-  ri->match_context.set_match_limit(REGEX_MATCH_LIMIT);
-
-  // Make sure we got something...
-  if (ri->first == nullptr) {
-    TSError("[%s] no regular expressions from the maps", PLUGIN_NAME);
+  ri->rule_set = RuleSetCache::get(ri->filename, source);
+  if (!ri->rule_set) {
     return TS_ERROR;
+  }
+  ri->match_context.set_match_limit(REGEX_MATCH_LIMIT);
+  if (ri->profile) {
+    ri->rule_hits.resize(ri->rule_set->rules().size());
   }
 
   return TS_SUCCESS;
@@ -811,8 +930,6 @@ TSRemapDeleteInstance(void *ih)
 {
   Dbg(dbg_ctl, "TSRemapDeleteInstance");
   RemapInstance *ri = static_cast<RemapInstance *>(ih);
-  RemapRegex    *re;
-  RemapRegex    *tmp;
 
   if (ri->profile) {
     char             now[64];
@@ -830,33 +947,11 @@ TSRemapDeleteInstance(void *ih)
     fprintf(stderr, "[%s]:    Total regex internal errors: %d\n", now, ri->failures);
 
     if (ri->hits > 0) { // Avoid divide by zeros...
-      int ix = 1;
-
-      re = ri->first;
-      while (re) {
-        re->print(ix, ri->hits, now);
-        re = re->next();
-        ++ix;
+      auto const &rules = ri->rule_set->rules();
+      for (size_t ix = 0; ix < rules.size(); ++ix) {
+        rules[ix]->print(ix + 1, ri->hits, ri->rule_hits[ix], now);
       }
     }
-  }
-
-  re = ri->first;
-  while (re) {
-    RemapRegex::Override *override = re->get_overrides();
-
-    while (override) {
-      RemapRegex::Override *tmp = override;
-
-      if (TS_RECORDDATATYPE_STRING == override->type) {
-        TSfree(override->data.rec_string);
-      }
-      override = override->next;
-      delete tmp;
-    }
-    tmp = re;
-    re  = re->next();
-    delete tmp;
   }
 
   delete ri;
@@ -873,6 +968,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     return TSREMAP_NO_REMAP;
   }
   RemapInstance *ri = static_cast<RemapInstance *>(ih);
+  if (!ri->rule_set) {
+    Dbg(dbg_ctl, "No rule set on this instance, skipping");
+    return TSREMAP_NO_REMAP;
+  }
 
   struct SrcUrl {
     TSMBuffer bufp;
@@ -904,8 +1003,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   int           lengths[MATCHCOUNT + 1];
   int           dest_len;
-  TSRemapStatus retval    = TSREMAP_DID_REMAP;
-  RemapRegex   *re        = ri->first;
+  TSRemapStatus retval    = TSREMAP_NO_REMAP;
   int           match_len = 0;
 
   // Cap the stack allocation to 16KB, a typical browser upper limit
@@ -951,10 +1049,17 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
   RegexMatches matches(MATCHCOUNT);
 
-  // Apply the regular expressions, in order. First one wins.
-  while (re) {
+  auto const &rules = ri->rule_set->rules();
+
+  // Apply the rules in file order; the first one that matches wins. This relies
+  // on get_lengths() always returning a positive length for a matching rule. If
+  // that changes, a match could fall through after applying its options and let
+  // a later rule stack its options on top.
+  for (size_t rule_ix = 0; rule_ix < rules.size(); ++rule_ix) {
+    auto const &re = rules[rule_ix];
+
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf.data(), matches);
+    auto match_result = re->match(match_buf.data(), matches, &(ri->match_context));
     if (match_result >= 0) {
       int new_len = re->get_lengths(matches, lengths, rri, &req_url);
 
@@ -996,7 +1101,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
         lowercase_substitutions = true;
       }
 
-      RemapRegex::Override *override = re->get_overrides();
+      RemapRegex::Override const *override = re->get_overrides();
 
       while (override) {
         switch (override->type) {
@@ -1020,11 +1125,13 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
       // Update profiling if requested
       if (ri->profile) {
-        re->increment();
+        ink_atomic_increment(&(ri->rule_hits[rule_ix]), 1);
         ink_atomic_increment(&(ri->hits), 1);
       }
 
       if (new_len > 0) {
+        retval = TSREMAP_DID_REMAP;
+
         // Cap the stack allocation to 16KB, a typical browser upper limit
         ts::LocalBuffer<char, 16384> dest(new_len + 8);
 
@@ -1032,7 +1139,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
 
         Dbg(dbg_ctl, "New URL is estimated to be %d bytes long, or less", new_len);
         Dbg(dbg_ctl, "New URL is %s (length %d)", dest.data(), dest_len);
-        Dbg(dbg_ctl, "    matched rule %d [%s]", re->order(), re->regex());
+        Dbg(dbg_ctl, "    matched rule %zu [%s]", rule_ix + 1, re->regex());
 
         // Check for a quick response, if the status option is set
         if (re->status_option() > 0) {
@@ -1067,15 +1174,10 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
       TSError(R"([%s] Bad regular expression result %d ("%s") from "%s" in file "%s".)", PLUGIN_NAME, match_result, errmsg.c_str(),
               re->regex(), ri->filename.c_str());
     }
+  }
 
-    // Try the next regex
-    re = re->next();
-    if (re == nullptr) {
-      retval = TSREMAP_NO_REMAP; // No match
-      if (ri->profile) {
-        ink_atomic_increment(&(ri->misses), 1);
-      }
-    }
+  if (retval == TSREMAP_NO_REMAP && ri->profile) {
+    ink_atomic_increment(&(ri->misses), 1);
   }
 
   return retval;
