@@ -75,10 +75,11 @@ HttpHookState::getNext()
 void
 HttpHookState::Scope::init(HttpAPIHooks const *feature_hooks, TSHttpHookID id)
 {
+  // operator[] yields nullptr for an out of range id, which candidate() already tolerates.
   _hooks = (*feature_hooks)[id];
 
   _p = nullptr;
-  _c = _hooks->head();
+  _c = _hooks ? _hooks->head() : nullptr;
 }
 
 APIHook const *
