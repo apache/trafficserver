@@ -3812,9 +3812,13 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
                   csv_value_mask                         = 0;
                   m_cooked_stuff.m_cache_control.m_mask &= ~mask;
                 }
+              } else if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
+                // RFC 9111, Section 5.2.1.2: a valueless max-stale request
+                // directive permits a stale response of any age.
+                m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
               } else {
-                // No '=' found, or whitespace before '='. This is malformed.
-                // For directives that require values, this is an error.
+                // No '=' found, or whitespace before '='. This is malformed
+                // for directives that require values.
                 // Clear the mask for this directive.
                 csv_value_mask                         = 0;
                 m_cooked_stuff.m_cache_control.m_mask &= ~mask;

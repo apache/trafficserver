@@ -19,7 +19,7 @@ meta:
 
 # Configuration section for autest integration
 autest:
-  description: 'Test basic cache operations: miss, hit, no-cache-control, stale, and only-if-cached'
+  description: 'Test basic cache operations: miss, hit, no-cache-control, stale, only-if-cached, and max-stale'
 
   dns:
     name: 'dns-cache-basic'
@@ -221,3 +221,74 @@ sessions:
         fields:
         - [X-Cache, { value: "miss", as: equal }]
         - [Cache-Control, { value: "no-store", as: equal }]
+
+  #############################################################################
+  # Test 6: Populate an entry for a valueless max-stale request
+  #############################################################################
+  - client-request:
+      method: GET
+      url: /max-stale
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, max-stale-populate]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Type, text/plain]
+        - [Content-Length, "5"]
+        # max-age=0 makes the cached response stale immediately.
+        - [Cache-Control, "max-age=0"]
+      content:
+        encoding: plain
+        data: stale
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Cache, { value: "miss", as: equal }]
+      content:
+        encoding: plain
+        data: stale
+        verify: { as: equal }
+
+  #############################################################################
+  # Test 7: Valueless max-stale permits serving a stale response of any age
+  #############################################################################
+  - client-request:
+      # Allow the cache write from the preceding transaction to finish.
+      delay: 100ms
+      method: GET
+      url: /max-stale
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, www.example.com]
+        - [Cache-Control, "max-stale"]
+        - [x-debug, "x-cache,x-cache-key,via"]
+        - [uuid, max-stale-serve]
+
+    proxy-request:
+      expect: absent
+
+    # The server response is a sentinel and must not be used.
+    server-response:
+      status: 502
+      reason: Bad Gateway
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        # ATS reports an acceptable-stale lookup as a fresh cache hit.
+        - [X-Cache, { value: "hit-fresh", as: equal }]
+      content:
+        encoding: plain
+        data: stale
+        verify: { as: equal }
