@@ -1515,8 +1515,8 @@ Configure Traffic Server to insert ``Via`` header in the response to the client
       # traffic_ctl config set proxy.config.http.insert_response_via_str 1
       # traffic_ctl config reload
 
-Autest
-======
+Uranium Tests
+================
 
 Runroot needs to be configured in order to let `traffic_ctl` know where to find the socket. This is done by default
 and there is no change you have to do to interact with it, but make sure that you are not overriding the `dump_runroot=False`

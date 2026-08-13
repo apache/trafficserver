@@ -1,0 +1,160 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+
+
+def test_tls_verify_ca_override(urtest: UraniumTest) -> None:
+    '''
+    '''
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    #  limitations under the License.
+
+    urtest.Summary = '''
+    Test tls server certificate verification options. Exercise conf_remap for ca bundle path and file.
+    '''
+
+    # Define default ATS
+    ts = urtest.MakeATSProcess("ts")
+    server1 = urtest.MakeOriginServer(
+        "server1",
+        ssl=True,
+        options={
+            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
+            "--cert": "{0}/signed-foo.pem".format(urtest.RunDirectory)
+        })
+    server2 = urtest.MakeOriginServer(
+        "server2",
+        ssl=True,
+        options={
+            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
+            "--cert": "{0}/signed2-foo.pem".format(urtest.RunDirectory)
+        })
+
+    request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    request_bad_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    server1.addResponse("sessionlog.json", request_foo_header, response_header)
+    server1.addResponse("sessionlog.json", request_bad_foo_header, response_header)
+    server2.addResponse("sessionlog.json", request_bar_header, response_header)
+    server2.addResponse("sessionlog.json", request_bad_bar_header, response_header)
+
+    # add ssl materials like key, certificates for the server
+    ts.addSSLfile("ssl/signed-foo.pem")
+    ts.addSSLfile("ssl/signed2-foo.pem")
+    ts.addSSLfile("ssl/signed-foo.key")
+    ts.addSSLfile("ssl/server.pem")
+    ts.addSSLfile("ssl/server.key")
+    ts.addSSLfile("ssl/signer.pem")
+    ts.addSSLfile("ssl/signer.key")
+    ts.addSSLfile("ssl/signer2.pem")
+    ts.addSSLfile("ssl/signer2.key")
+
+    def ca_cert_overrides(filename):
+        return (
+            f'@pparam=proxy.config.ssl.client.CA.cert.path={ts.Variables.SSLDir} '
+            f'@pparam=proxy.config.ssl.client.CA.cert.filename={filename}')
+
+    ts.Disk.remap_config.AddLine(
+        f'map /case1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
+        f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
+    ts.Disk.remap_config.AddLine(
+        f'map /badcase1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
+        f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
+    ts.Disk.remap_config.AddLine(
+        f'map /case2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
+        f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
+    ts.Disk.remap_config.AddLine(
+        f'map /badcase2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
+        f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
+
+    ts.Disk.ssl_multicert_yaml.AddLines(
+        """
+    ssl_multicert:
+      - dest_ip: "*"
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+    """.split("\n"))
+
+    # Case 1, global config policy=permissive properties=signature
+    #         override for foo.com policy=enforced properties=all
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+            # set global policy
+            'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
+            'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
+            'proxy.config.ssl.client.CA.cert.path': '/tmp',
+            'proxy.config.ssl.client.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+            'proxy.config.exec_thread.autoconfig.scale': 1.0,
+            'proxy.config.url_remap.pristine_host_hdr': 1
+        })
+
+    # Should succeed
+    tr = urtest.AddTestRun("Use correct ca bundle for server 1")
+    tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port), ts=ts)
+    tr.ReturnCode = 0
+    tr.Setup.Copy("ssl/signed-foo.key")
+    tr.Setup.Copy("ssl/signed-foo.pem")
+    tr.Setup.Copy("ssl/signed2-foo.pem")
+    tr.Processes.Default.StartBefore(server1)
+    tr.Processes.Default.StartBefore(server2)
+    tr.Processes.Default.StartBefore(urtest.Processes.ts)
+    tr.StillRunningAfter = server1
+    tr.StillRunningAfter = ts
+    # Should succeed.  No message
+    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+
+    tr2 = urtest.AddTestRun("Use incorrect ca  bundle for server 1")
+    tr2.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/badcase1".format(ts.Variables.port), ts=ts)
+    tr2.ReturnCode = 0
+    tr2.StillRunningAfter = server1
+    tr2.StillRunningAfter = ts
+    # Should succeed, but will be message in log about name mismatch
+    tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
+
+    tr2 = urtest.AddTestRun("Use correct ca bundle for server 2")
+    tr2.MakeCurlCommand("-k -H \"host: random.com\"  http://127.0.0.1:{0}/case2".format(ts.Variables.port), ts=ts)
+    tr2.ReturnCode = 0
+    tr2.StillRunningAfter = server2
+    tr2.StillRunningAfter = ts
+    # Should succeed, but will be message in log about signature
+    tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+
+    tr3 = urtest.AddTestRun("User incorrect ca bundle for server 2")
+    tr3.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/badcase2".format(ts.Variables.port), ts=ts)
+    tr3.ReturnCode = 0
+    tr3.StillRunningAfter = server2
+    tr3.StillRunningAfter = ts
+    # Should succeed.  No error messages
+    tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
+    urtest.execute()

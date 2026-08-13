@@ -60,7 +60,7 @@ thread_local int t_read_recursive = 0;
 // openReadStartEarliest into the recursive Lread path. When an inner recursion
 // level falls into free_CacheVC the outer frame then touches the recursion
 // counter through the freed `this`; reaching the depth limit is not required to
-// trigger it. Used by the autest reproducer to observe the recursive-read
+// trigger it. Used by the Uranium test reproducer to observe the recursive-read
 // use-after-free (ASan build) on the unfixed sources.
 #if TS_HAS_TESTS
 static bool const test_force_corrupt_doc = std::getenv("ATS_TEST_FORCE_CORRUPT_DOC") != nullptr;
