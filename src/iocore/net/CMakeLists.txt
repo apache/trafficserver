@@ -47,6 +47,7 @@ add_library(
   SSLNetVConnection.cc
   SSLNextProtocolAccept.cc
   SSLNextProtocolSet.cc
+  SSLRPKUtils.cc
   SSLSNIConfig.cc
   SSLStats.cc
   SSLSessionCache.cc
@@ -147,6 +148,7 @@ if(BUILD_TESTING)
     unit_tests/test_ProxyProtocol.cc
     unit_tests/test_SSLCertLookup.cc
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
+    unit_tests/test_SSLRPKUtils.cc
     unit_tests/test_SSLSNIConfig.cc
     unit_tests/test_YamlSNIConfig.cc
     unit_tests/test_OCSPStapling.cc
