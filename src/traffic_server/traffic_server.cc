@@ -309,8 +309,9 @@ struct AutoStopCont : public Continuation {
       CacheShm::mark_clean_shutdown();
     }
 
-    // Wake preproc threads to drain remaining log buffers before exit. Log::preproc_threads is set by Log::init(), but the
-    // notify array is not allocated until Log::create_threads(), so a shutdown arriving between the two finds it null.
+    // Wake preproc threads to drain remaining log buffers before exit. The notify array is allocated only once the log
+    // threads are spawned, which has not happened yet this early in startup and never happens at all for the log-only
+    // tools, so a null array means there is no preproc thread in existence and nothing to wake.
     if (Log::preproc_notify != nullptr) {
       for (int i = 0; i < Log::preproc_threads; i++) {
         Log::preproc_notify[i].signal();
