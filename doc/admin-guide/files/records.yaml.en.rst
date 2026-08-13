@@ -2671,8 +2671,17 @@ Cache Control
    |TS| uses the smaller of this limit and
    :ts:cv:`proxy.config.http.cache.max_stale_age`.
 
-   For example, a value of ``25`` allows a response with a one-hour freshness lifetime to be served
-   stale for up to 15 minutes, provided that the absolute stale age limit is at least 15 minutes.
+   For example, a value of ``25`` allows a response with a one-hour freshness lifetime
+   (``Cache-Control: max-age=3600``) to be served stale for up to 15 minutes (25% of one hour),
+   provided that the absolute stale age limit is at least 15 minutes.
+
+   Percentage limits are calculated in whole seconds and rounded down. If the calculated limit is
+   less than one second, no stale window is allowed. For example, a value of ``1`` with
+   ``Cache-Control: max-age=99`` produces a zero-second stale window.
+
+   A value of ``0`` applies no percentage limit. For example, with the default
+   :ts:cv:`proxy.config.http.cache.max_stale_age` of seven days, a response with a one-hour
+   freshness lifetime can be served stale for up to seven days after that freshness lifetime ends.
 
    Responses without ``max-age`` are controlled by :ts:cv:`proxy.config.http.cache.max_stale_age`
    alone.
