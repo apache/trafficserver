@@ -60,10 +60,35 @@ configure_file(pyproject.toml pyproject.toml COPYONLY)
 configure_file(autest.sh.in autest.sh)
 configure_file(autest-parallel.py.in autest-parallel.py)
 
+set(PYTEST_REPLAY_COMMAND
+    ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}:$ENV{PYTHONPATH} ${RUNUV} run pytest -p
+    ats_testkit.plugin ${CMAKE_CURRENT_SOURCE_DIR}/pytest_tests ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin
+    --proxy-verifier-bin ${PROXY_VERIFIER_PATH} --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX}
+    ${PYTEST_OPTIONS_LIST}
+)
+
+add_custom_target(
+  pytest-replay
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+  COMMAND ${RUNUV} sync
+  COMMAND ${PYTEST_REPLAY_COMMAND}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
+
+add_custom_target(
+  pytest-replay-no-install
+  COMMAND ${RUNUV} sync
+  COMMAND ${PYTEST_REPLAY_COMMAND}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
+
 add_custom_target(
   autest
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
   COMMAND ${RUNUV} sync
+  COMMAND ${PYTEST_REPLAY_COMMAND}
   COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNUV} run autest --directory
           ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
           --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS_LIST}
@@ -74,6 +99,7 @@ add_custom_target(
 add_custom_target(
   autest_no_install
   COMMAND ${RUNUV} sync
+  COMMAND ${PYTEST_REPLAY_COMMAND}
   COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNUV} run autest --directory
           ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
           --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS_LIST}
