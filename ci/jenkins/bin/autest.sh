@@ -120,7 +120,7 @@ if [ "x${pv_version}" != "x" ]; then
 fi
 
 ${AUTEST} \
-    -D ./tests/gold_tests \
+    -D ./tests/uranium_tests \
     --sandbox "$SANDBOX" \
     --ats-bin "${INSTALL}/bin" \
     $PROXY_VERIFIER_ARGUMENT \
