@@ -75,7 +75,8 @@ HttpHookState::getNext()
 void
 HttpHookState::Scope::init(HttpAPIHooks const *feature_hooks, TSHttpHookID id)
 {
-  // operator[] yields nullptr for an out of range id, which candidate() already tolerates.
+  // operator[] yields nullptr for an out of range id, and a release build can reach that: the only thing rejecting a
+  // bad hook id upstream is an assert that compiles out. Leave the scope empty rather than dereferencing null.
   _hooks = (*feature_hooks)[id];
 
   _p = nullptr;
