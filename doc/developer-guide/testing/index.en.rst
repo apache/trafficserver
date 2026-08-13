@@ -25,5 +25,5 @@ Testing Traffic Server
 .. toctree::
    :maxdepth: 2
 
-   autests.en
+   uranium-tests.en
    config-reload-ext.en

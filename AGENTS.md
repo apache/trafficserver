@@ -11,15 +11,15 @@ with a sophisticated plugin system.
 **Key Technologies:**
 - Language: C++20
 - Build System: CMake (migrated from autotools in v10)
-- Testing: Catch2 (unit tests) + AuTest Python framework (end-to-end tests)
+- Testing: Catch2 (unit tests) + pytest (Uranium tests, with an AuTest compatibility backend)
 - Protocols: TLS, HTTP/1.1, HTTP/2, HTTP/3 (via Quiche)
 
 ## Project Structure
 
 Core sources live in `src/` (for example `src/proxy`, `src/iocore`,
 `src/traffic_server`). Public headers are in `include/`. Built-in plugins are
-in `plugins/` and `plugins/experimental/`. End-to-end tests are in `tests/`,
-especially `tests/gold_tests/`. Build system files are in `cmake/` plus the
+in `plugins/` and `plugins/experimental/`. Uranium tests are in `tests/`,
+especially `tests/uranium_tests/`. Build system files are in `cmake/` plus the
 top-level `CMakeLists.txt`, and docs are in `doc/`. Third party libraries that
 we include locally are in `lib/`.
 
@@ -80,61 +80,63 @@ Unit tests are built into executables. Find the test binary and run it directly:
 ./build/src/tscore/test_tscore
 ```
 
-### End-to-End Tests (AuTest)
+### Uranium Tests (pytest)
 
-**Enable autests during configuration:**
+**Enable Uranium tests during configuration:**
 ```bash
-cmake -B build -DENABLE_AUTEST=ON
+cmake -B build -DENABLE_URTEST=ON
 cmake --build build
 cmake --install build
 ```
 
-**Run all autests:**
+**Run all Uranium tests:**
 ```bash
-cmake --build build -t autest
+cmake --build build -t urtest
 ```
 
 **Run specific test(s):**
 ```bash
 cd build/tests
-./autest.sh --sandbox /tmp/sbcodex --clean=none -f <test_name_without_test_py>
+./urtest.sh -f <test_name_without_extension>
 ```
 
 For example, to run `cache-auth.test.py`:
 ```bash
-./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
+./urtest.sh -f cache-auth
 ```
 
 To run multiple tests efficiently, pass the -j option.
 
 ```bash
 cd build/tests
-./autest.sh -j4 --sandbox /tmp/sbcodex --clean=none -f 'header_rewrite*'
+./urtest.sh -j4 -f 'header_rewrite*'
 ```
 
-Most end-to-end test coverage is in `tests/gold_tests/`. The CI system uses the
-Docker image `ci.trafficserver.apache.org/ats/fedora:43` (Fedora version updated
-regularly).
+Most Uranium test coverage is in `tests/uranium_tests/`. The CI system uses the
+Docker image `ci.trafficserver.apache.org/ats/fedora:44` (Fedora version updated
+regularly). The source-tree `tests/urtest.sh` defaults to this image. It runs
+directly instead when it detects that it is already inside a Fedora 44
+container. Use `--run-in-docker` or `--no-run-in-docker` to override.
 
-### Writing End-to-End Tests
+### Writing Uranium Tests
 
 **New tests should normally be direct pytest replay tests.** Name the Proxy
-Verifier replay `<scenario>.test.yaml`; the file's `autest` section describes
+Verifier replay `<scenario>.test.yaml`; the file's `urtest` section describes
 DNS, server, client, and ATS setup, and pytest collects it without a companion
-`.test.py` wrapper. Run these with `cmake --build build -t pytest-replay`.
+`.test.py` wrapper. Run these with `cmake --build build -t urtest-replay`.
 
 If a direct replay test is not a good fit (say, the test needs a custom client), then
 organize the test around a test class with member functions that configure any
 servers, the ATS process, and the client. See
-`tests/gold_tests/ats_probe/ats_probe.test.py` for an example of a test organized
+`tests/uranium_tests/ats_probe/ats_probe.test.py` for an example of a test organized
 around a test class.
 
-In autests, launch Python helpers with `{sys.executable}` rather than a
+In compatibility tests, launch Python helpers with `{sys.executable}` rather than a
 hardcoded `python3`, so the test runs under the same interpreter the harness
 uses.
 
-**For complete details on writing end-to-end tests, see:**
-- `doc/developer-guide/testing/autests.en.rst` - Comprehensive end-to-end test guide
+**For complete details on writing Uranium tests, see:**
+- `doc/developer-guide/testing/uranium-tests.en.rst` - Comprehensive Uranium test guide
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
 - AuTest framework: https://autestsuite.bitbucket.io/
 
