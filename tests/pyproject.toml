@@ -46,6 +46,11 @@ dependencies = [
     "python-jose",
     "pyyaml",
 
+    # Pytest drives replay-based end-to-end tests. xdist gives each worker an
+    # independent sandbox and lets CI run those tests concurrently.
+    "pytest>=8.0",
+    "pytest-xdist>=3.6",
+
     # For the grpc tests.
     "grpcio",
     "grpcio-tools",
@@ -62,4 +67,3 @@ dependencies = [
 dev = [
     "pyflakes",
 ]
-
