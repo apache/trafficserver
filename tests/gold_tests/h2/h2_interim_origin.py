@@ -5,12 +5,18 @@ Proxy Verifier cannot emit interim/1xx responses, so this hand-frames HTTP/2 so 
 can exercise ATS origin-side handling of 1xx interim responses.
 
 Modes (chosen by --mode):
-  single   : 103 Early Hints, then 200            (the deepwiki/Vercel case)
-  multi    : 103, 103, 100, then 200              (multiple sequential interims)
-  continue : 100 Continue, then 200
-  cont     : a single 103 whose header block is split across HEADERS+CONTINUATION,
-             then 200                              (multi-frame interim)
-  none     : 200 only                             (control; must always pass)
+  single     : 103 Early Hints, then 200          (the common CDN/framework preload case)
+  multi      : 103, 103, 100, then 200            (multiple sequential interims)
+  continue   : 100 Continue, then 200
+  cont       : a single 103 whose header block is split across HEADERS+CONTINUATION,
+               then 200                            (multi-frame interim)
+  none       : 200 only                           (control; must always pass)
+  endstream  : a 103 carrying END_STREAM           (malformed, RFC 9113 8.1)
+  finalsplit : no interim; the FINAL 200 header block spans HEADERS+CONTINUATION
+
+Mode names are used as remap path prefixes, and remap matches first-rule-wins on the
+path prefix. Do not name a mode so that it extends another mode's name, or requests for
+the longer path will be routed to the shorter mode's origin.
 """
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -77,6 +83,16 @@ def send_response(sock: ssl.SSLSocket, mode: str, sid: int) -> None:
         # RFC 9113 8.1 violation: an informational (1xx) response with END_STREAM.
         sock.sendall(frame(0x1, 0x5, sid, interim_block("103")))  # HEADERS: END_HEADERS | END_STREAM
         return
+    elif mode == "finalsplit":
+        # The FINAL response header block spans HEADERS+CONTINUATION, with no interim
+        # response at all. Legal HTTP/2 at any block size; nothing requires the block to
+        # exceed SETTINGS_MAX_FRAME_SIZE for a sender to split it.
+        blk = final_block()
+        half = len(blk) // 2
+        sock.sendall(frame(0x1, 0x0, sid, blk[:half]))  # HEADERS, no END_HEADERS
+        sock.sendall(frame(0x9, 0x4, sid, blk[half:]))  # CONTINUATION, END_HEADERS
+        sock.sendall(frame(0x0, 0x1, sid, BODY))  # DATA, END_STREAM
+        return
     # mode "none": no interim
     sock.sendall(frame(0x1, 0x4, sid, final_block()))  # final HEADERS, END_HEADERS
     sock.sendall(frame(0x0, 0x1, sid, BODY))  # DATA, END_STREAM
@@ -132,7 +148,7 @@ def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("address")
     p.add_argument("port", type=int)
-    p.add_argument("--mode", default="single", choices=["single", "multi", "continue", "cont", "none", "endstream"])
+    p.add_argument("--mode", default="single", choices=["single", "multi", "continue", "cont", "none", "endstream", "finalsplit"])
     return p.parse_args()
 
 

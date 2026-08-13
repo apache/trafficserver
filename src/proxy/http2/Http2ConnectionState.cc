@@ -307,7 +307,8 @@ is_outbound_interim_response(Http2Stream *stream)
   if (status_field == nullptr) {
     return false;
   }
-  // An HTTP/2 :status is always exactly three ASCII digits; 1xx is informational.
+  // :status is origin-controlled and HeaderValidator only checks that it is present, so
+  // bound the length before indexing. RFC 9110 15 requires exactly three digits.
   auto value{status_field->value_get()};
   return value.length() == 3 && value[0] == '1';
 }
@@ -1228,14 +1229,22 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
       }
     }
 
-    // Set up the State Machine
-    SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-    stream->mark_milestone(Http2StreamMilestone::START_TXN);
-    // This should be fine, need to verify whether we need to replace this with the
-    // "from_early_data" flag from the associated HEADERS frame.
-    stream->new_transaction(frame.is_from_early_data());
-    // Send request header to SM
-    stream->send_headers(*this);
+    // Set up the State Machine. An outbound stream and a trailing header block both
+    // already have a state machine attached, so only a new inbound request may start
+    // one; new_transaction() asserts that none is attached yet. This mirrors the
+    // equivalent branch in rcv_headers_frame().
+    if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible()) {
+      SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
+      stream->mark_milestone(Http2StreamMilestone::START_TXN);
+      // This should be fine, need to verify whether we need to replace this with the
+      // "from_early_data" flag from the associated HEADERS frame.
+      stream->new_transaction(frame.is_from_early_data());
+      // Send request header to SM
+      stream->send_headers(*this);
+    } else {
+      // Propagate the response (or the trailer) to the existing state machine.
+      stream->send_headers(*this);
+    }
     // Give a chance to send response before reading next frame.
     this->session->interrupt_reading_frames();
   } else {

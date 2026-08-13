@@ -42,6 +42,10 @@ MODES = ['single', 'multi', 'continue', 'cont', 'none']
 # 1xx with END_STREAM is malformed (RFC 9113 8.1); ATS must reject it so the client
 # does not hang waiting for a final response that can never arrive.
 INTERIM_ONLY = ['endstream']
+# finalsplit: the FINAL response header block spans HEADERS+CONTINUATION with no interim.
+# This is the only path the HALF_CLOSED_LOCAL relaxation newly makes reachable; the
+# `cont` mode returns early on the interim check and never gets there.
+PROBE = ['finalsplit']
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 ts.addDefaultSSLFiles()
@@ -56,7 +60,7 @@ ssl_multicert:
 # Create an origin process per mode and build the remap table from their ports.
 origins = {}
 remap_lines = []
-for mode in MODES + INTERIM_ONLY:
+for mode in MODES + INTERIM_ONLY + PROBE:
     origin = Test.Processes.Process(f"origin-{mode}")
     port = get_port(origin, f"port_{mode}")
     origin.Command = f"{sys.executable} {ORIGIN} 127.0.0.1 {port} --mode {mode}"
@@ -75,21 +79,21 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.enabled': 0,
         'proxy.config.exec_thread.limit': 4,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http2',
+        'proxy.config.diags.debug.tags': 'http2|http',
     })
 
 first = True
 for mode in MODES:
     tr = Test.AddTestRun(f"h2 origin interim response: mode={mode}")
     if first:
-        for m in MODES + INTERIM_ONLY:
+        for m in MODES + INTERIM_ONLY + PROBE:
             tr.Processes.Default.StartBefore(origins[m])
         tr.Processes.Default.StartBefore(ts)
         first = False
     tr.MakeCurlCommand(f'-v -s -H "Host: ats.test" http://127.0.0.1:{ts.Variables.port}/{mode}', ts=ts)
     tr.Processes.Default.ReturnCode = 0
     tr.StillRunningAfter = ts
-    for m in MODES + INTERIM_ONLY:
+    for m in MODES + INTERIM_ONLY + PROBE:
         tr.StillRunningAfter += origins[m]
     tr.Processes.Default.Streams.All += Testers.ContainsExpression(
         'HTTP/.* 200', f'mode={mode}: client must receive the final 200, not a 502')
@@ -106,3 +110,17 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(
     'HTTP/.* 5[0-9][0-9]', 'endstream: client must get a 5xx error, not hang')
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
     'interim-origin-body', 'endstream: client must not receive a 200 body')
+
+# A final (non-1xx) response whose header block spans HEADERS+CONTINUATION on an
+# outbound stream. This is the path the HALF_CLOSED_LOCAL relaxation actually opened:
+# the interim check returns early, so rcv_continuation_frame() runs to completion and
+# reaches the inbound-only new_transaction() call that rcv_headers_frame() guards with
+# !is_outbound_connection().
+tr = Test.AddTestRun("h2 origin: final response split across HEADERS+CONTINUATION")
+tr.MakeCurlCommand(f'-v -s --max-time 10 -H "Host: ats.test" http://127.0.0.1:{ts.Variables.port}/finalsplit', ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    'HTTP/.* 200', 'finalsplit: a CONTINUATION-split final response must yield a 200')
+tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+    'interim-origin-body', 'finalsplit: client must receive the 200 response body')
