@@ -313,7 +313,7 @@ trafficserver/
 **Pattern discovery:**
 - Search for similar functionality in existing code
 - Check `include/ts/ts.h` for plugin API patterns
-- Look at tests in `tests/gold_tests/` for usage examples
+- Look at tests in `tests/uranium_tests/` for usage examples
 
 ### Code Organization
 
@@ -362,7 +362,7 @@ plugins/my_plugin/
 
 **When adding new functionality:**
 1. Check if unit tests exist in same directory (Catch2)
-2. Add integration tests in `tests/gold_tests/` (autest)
+2. Add integration tests in `tests/uranium_tests/` (autest)
 3. Prefer `Test.ATSReplayTest()` with `replay.yaml` format (Proxy Verifier). If
    `ATSReplayTest` doesn't fit, prefer organizing the test around a test class with
    separate functions for configuring the servers, ATS, client, etc.

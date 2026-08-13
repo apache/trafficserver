@@ -1,0 +1,85 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+
+
+def test_header_rewrite_url_glob(urtest: UraniumTest) -> None:
+    '''
+    Test global header_rewrite with set-redirect operator.
+    '''
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    #  limitations under the License.
+
+    urtest.Summary = '''
+    Test global header_rewrite with set-redirect operator.
+    '''
+
+    urtest.ContinueOnFail = True
+    ts = urtest.MakeATSProcess("ts", block_for_debug=False)
+    server = urtest.MakeOriginServer("server")
+
+    # Configure the server to return 200 responses. The rewrite rules below set a
+    # non-200 status, so if curl gets a 200 response something went wrong.
+    urtest.testName = ""
+    request_header = {"headers": "GET / HTTP/1.1\r\nHost: no_path.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    server.addResponse("sessionfile.log", request_header, response_header)
+
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.url_remap.remap_required': 0,
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.show_location': 0,
+            'proxy.config.diags.debug.tags': 'header',
+        })
+    ts.Setup.CopyAs('rules/glob_set_redirect.conf', urtest.RunDirectory)
+
+    ts.Disk.plugin_config.AddLine(f'header_rewrite.so {urtest.RunDirectory}/glob_set_redirect.conf')
+
+    # Run operator on Read Response Hdr hook (ID:REQUEST == 0).
+    tr = urtest.AddTestRun()
+    tr.Processes.Default.StartBefore(ts)
+    tr.Processes.Default.StartBefore(server)
+    tr.MakeCurlCommand(f'--head 127.0.0.1:{ts.Variables.port} -H "Host: 127.0.0.1:{server.Variables.Port}" --verbose', ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stderr = "gold/set-redirect-glob.gold"
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts
+    ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
+
+    # Run operator on Send Response Hdr hook (ID:REQUEST == 1).
+    tr = urtest.AddTestRun()
+    tr.MakeCurlCommand(f'--head 127.0.0.1:{ts.Variables.port} -H "Host: 127.0.0.1:{server.Variables.Port}" --verbose', ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+    tr.Processes.Default.Streams.stderr = "gold/set-redirect-glob.gold"
+    tr.StillRunningAfter = server
+    tr.StillRunningAfter = ts
+    ts.Disk.traffic_out.Content = "gold/header_rewrite-tag.gold"
+    urtest.execute()

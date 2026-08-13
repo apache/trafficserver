@@ -146,7 +146,7 @@ transaction hooks::
     }
 
 For more example code using hooks, see the test_hooks plugin in tests/tools/plugins (used by the test_hooks.test.py
-Gold test).
+Uranium test).
 
 See Also
 ========
