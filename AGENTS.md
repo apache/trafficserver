@@ -116,14 +116,14 @@ Most end-to-end test coverage is in `tests/gold_tests/`. The CI system uses the
 Docker image `ci.trafficserver.apache.org/ats/fedora:43` (Fedora version updated
 regularly).
 
-### Writing Autests
+### Writing End-to-End Tests
 
-**New tests should use the `Test.ATSReplayTest()` approach**, which references a
-`replay.yaml` file that describes the test configuration and traffic patterns
-using the Proxy Verifier format. This is simpler, more maintainable, and
-parseable by tools.
+**New tests should normally be direct pytest replay tests.** Name the Proxy
+Verifier replay `<scenario>.test.yaml`; the file's `autest` section describes
+DNS, server, client, and ATS setup, and pytest collects it without a companion
+`.test.py` wrapper. Run these with `cmake --build build -t pytest-replay`.
 
-If `ATSReplayTest` is not a good fit (say, the test needs a custom client), then
+If a direct replay test is not a good fit (say, the test needs a custom client), then
 organize the test around a test class with member functions that configure any
 servers, the ATS process, and the client. See
 `tests/gold_tests/ats_probe/ats_probe.test.py` for an example of a test organized
@@ -133,8 +133,8 @@ In autests, launch Python helpers with `{sys.executable}` rather than a
 hardcoded `python3`, so the test runs under the same interpreter the harness
 uses.
 
-**For complete details on writing autests, see:**
-- `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to autest
+**For complete details on writing end-to-end tests, see:**
+- `doc/developer-guide/testing/autests.en.rst` - Comprehensive end-to-end test guide
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
 - AuTest framework: https://autestsuite.bitbucket.io/
 

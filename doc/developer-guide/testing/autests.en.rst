@@ -19,35 +19,33 @@
 
 .. _autest-writing:
 
-Writing Autests
-***************
+Writing End-to-End Tests
+************************
 
-|TS| has two types of developer tests: (1) Catch2 tests for unit tests and (2)
-AuTest framework tests for end-to-end testing. The Catch tests reside next the
-the associated source code being tested while AuTests are located in
-``tests/gold_tests/`` with ``.test.py`` extensions.
+|TS| uses Catch2 for unit tests and pytest plus AuTest for end-to-end tests.
+Catch2 tests reside next to the associated source code. End-to-end tests are
+under ``tests/gold_tests/``. New replay-driven tests are collected directly by
+pytest; tests that need bespoke process orchestration continue to use AuTest.
 
 * For catch test framework documentation, see: https://github.com/catchorg/Catch2
 * For AuTest framework documentation, see: https://autestsuite.bitbucket.io/index.html
 
-This document focuses on AuTest framework tests because they are rather unique
-to the |TS| project while Catch2 documentation can be found elsewhere.
+This document focuses on end-to-end tests because Catch2 documentation is
+available elsewhere.
 
 File Structure and Naming
 ==========================
 
-Here is a summary of the file structure and naming conventions for AuTest tests:
+The end-to-end runners use distinct filename conventions:
 
-- AuTest tests are placed in appropriate subdirectories under
+- Tests are placed in appropriate subdirectories under
   ``tests/gold_tests/`` (e.g., ``cache/``, ``pluginTest/<plugin_name>``, ``tls/``,
   etc.)
-- AuTest test files have a descriptive name with a ``.test.py`` extension (e.g.,
-  ``cache-auth.test.py``, ``stats_over_http.test.py``). When the tests are run,
-  be aware that their names, sans the ``.test.py`` extension, are used to
-  identify the test.
-- The ``.test.py`` typically are thin and reference the associated
-  ``replay.yaml`` file that describes the test via the ``Test.ATSReplayTest()``
-  method.
+- Replay-driven pytest files have a descriptive ``.test.yaml`` extension. The
+  file is both the test registration and the Proxy Verifier replay.
+- Bespoke AuTest files have a descriptive ``.test.py`` extension. Use these
+  only when the direct replay runner cannot express the required client,
+  server, or lifecycle.
 - ``tests/gold_tests/autest-site`` is a special directory. AuTest, a general
   testing framework, is extended to add domain specific support, |TS| in this
   case, via ``.test.ext`` extension files. The files in here customize the
@@ -55,10 +53,31 @@ Here is a summary of the file structure and naming conventions for AuTest tests:
   availabe to the ``Test`` and ``TestRun`` AuTest objects, specific ``Process``
   objects available to test, ``Skip`` conditions for individual tests, etc.
 
-Running Autests
-===============
+Running End-to-End Tests
+========================
 
-If |TS| cmake build is configured via ``-DENABLE_AUTEST=ON``, tests can be run with:
+Configure the build with ``-DENABLE_AUTEST=ON``. The ``autest`` build target
+runs both direct pytest replays and the remaining AuTests, preserving the
+existing CI entry point:
+
+.. code-block:: bash
+
+   cmake --build build --target autest
+
+Run only the pytest replay suite with:
+
+.. code-block:: bash
+
+   cmake --build build --target pytest-replay
+
+Pass pytest selection or concurrency options at configure time. For example:
+
+.. code-block:: bash
+
+   cmake -B build -DENABLE_AUTEST=ON -DPYTEST_OPTIONS="-n 4 -k cache-control"
+   cmake --build build --target pytest-replay
+
+For a bespoke AuTest, use ``autest.sh`` directly:
 
 .. code-block:: bash
 
@@ -82,77 +101,49 @@ processes. Each worker gets an isolated port range to avoid conflicts:
 
 Without ``-j``, tests run sequentially.
 
-Recommended Approach: ATSReplayTest
-====================================
+Recommended Approach: Direct Replay Tests
+==========================================
 
-Currently, many tests are specified largely entirely using the generic AuTest
-framework specific syntax via ``.test.py`` files. These use the generic AuTest
-framework syntax, which is generically very capable, but not tuned to the
-specific |TS| environment and not generally parseable by code editors and AI
-tools.
+New tests should normally be a single ``.test.yaml`` file. Pytest recognizes
+that suffix through the ATS testkit plugin, constructs isolated DNS, Proxy
+Verifier server, ATS, and Proxy Verifier client processes, and reports the file
+as one pytest item. ATS readiness is based on the fully-initialized log message,
+not merely an open port.
 
-AuTest itself has a solution for this via its extensibility mechanism. A
-concerted effort is underway to make more full use of the AuTest extension
-mechanism to simplify the test writing process specifically for |TS|.  At a high
-level, the extension is called ``ATSReplayTest`` and it is used in a ``test.py``
-file to reference an associated ``replay.yaml`` file which fully describes the
-test.  The goal is that a large percentage, maybe 90%, of the tests can be
-written using this approach while certain requests, perhaps requiring ad-hoc
-clients and servers, will be written using the generic AuTest framework syntax.
+The YAML format is parseable without executing Python and keeps the test
+topology, ATS configuration, traffic, and validation together. Tests requiring
+ad-hoc clients or servers can still use the generic AuTest syntax.
 
-The traffic portion of the ``replay.yaml`` files specify Proxy Verifier HTTP
-traffic behavior and follow the replay and verification syntax described
+The traffic portion of the ``.test.yaml`` files specifies Proxy Verifier HTTP
+traffic behavior and follows the replay and verification syntax described
 extensively in its project's README.md file here:
 https://github.com/yahoo/proxy-verifier
 
-Simple Test File Structure
----------------------------
+Test File Structure
+-------------------
 
-Here is an example of a test file using ``ATSReplayTest``:
+Name the replay itself ``<scenario>.test.yaml``. No companion ``.test.py``
+registration is needed. If a feature has multiple configurations, keep each
+configuration in a separate file:
 
-.. code-block:: python
+.. code-block:: text
 
-   '''
-   Brief description of what the test validates
-   '''
-   #  Licensed to the Apache Software Foundation (ASF) under one
-   #  or more contributor license agreements.  See the NOTICE file
-   #  distributed with this work for additional information
-   #  regarding copyright ownership.  The ASF licenses this file
-   #  to you under the Apache License, Version 2.0 (the
-   #  "License"); you may not use this file except in compliance
-   #  with the License.  You may obtain a copy of the License at
-   #
-   #      http://www.apache.org/licenses/LICENSE-2.0
-   #
-   #  Unless required by applicable law or agreed to in writing, software
-   #  distributed under the License is distributed on an "AS IS" BASIS,
-   #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   #  See the License for the specific language governing permissions and
-   #  limitations under the License.
+   replay/scenario1.test.yaml
+   replay/scenario2.test.yaml
+   replay/scenario3.test.yaml
 
-   Test.Summary = '''
-   Brief description of test purpose
-   '''
-
-   Test.ATSReplayTest(replay_file="replay/my-test.replay.yaml")
-
-For tests with multiple |TS| configuration scenarios, you can call
-``Test.ATSReplayTest()`` multiple times, each with a different replay file
-specifying different configurations of |TS|, dns, servers, clients, etc.
-
-.. code-block:: python
-
-   Test.ATSReplayTest(replay_file="replay/scenario1.replay.yaml")
-   Test.ATSReplayTest(replay_file="replay/scenario2.replay.yaml")
-   Test.ATSReplayTest(replay_file="replay/scenario3.replay.yaml")
+Each file is an independent pytest item and therefore has its own result,
+sandbox, ports, and failure artifacts. Keep multiple sessions in one file when
+they intentionally share ATS state, such as a cache prime followed by a cache
+hit.
 
 Replay File Structure
 ----------------------
 
 The replay file contains both the test configuration (in the ``autest`` YAML
 node) and the traffic replay and verification specification (in the ``sessions``
-YAML node). Here is an example:
+YAML node). The ``autest`` key retains its name for compatibility with existing
+replay files. Here is an example:
 
 .. code-block:: yaml
 
@@ -175,38 +166,33 @@ YAML node). Here is an example:
    meta:
      version: "1.0"
 
-   # Configuration section for autest integration
+   # Configuration section for ATS pytest integration
    autest:
      description: 'Test description for this scenario'
 
      # Optional (but typical) DNS configuration.
      dns:
        name: 'dns'
-       # Other MakeDNServer parameters can be set, see microDNS.test.ext
 
      # Required: Server configuration.
      server:
        name: 'server'
-       # Other AddVerifierServerProcess parameters can be set, see verifier_server.test.ext
 
      # Required: Client configuration.
      client:
        name: 'client'
-       # Other AddVerifierClientProcess parameters can be set, see verifier_client.test.ext
+       # Optional one-shot client timeout in seconds.
+       timeout: 60
 
      # Required: ATS configuration.
      ats:
        name: 'ts'
 
-       # Optional: Enable cache (default is determined by process_config)
-       # enable_cache: true
-
-       # Other parameters can be set, see trafficserver.test.ext
-
        # Optional: ATS process configuration
        process_config:
          enable_cache: true
-         # Other MakeATSProcess parameters can be set, see trafficserver.test.ext
+         enable_tls: false
+         enable_quic: false
 
        # ATS records.config settings
        records_config:
@@ -256,6 +242,11 @@ YAML node). Here is an example:
          - metric: "proxy.process.http.200_responses"
            value: 1
 
+     # Optional runtime capability gates.
+     requires:
+       ats_features: [TS_HAS_CRIPTS]
+       plugins: [example.so]
+
    # Traffic specification using Proxy Verifier format
    # client-request and server-response generate request and response traffic
    #   toward the ATS proxy.
@@ -292,7 +283,7 @@ YAML node). Here is an example:
            - [Content-Length, "4"]
            - [Cache-Control, "max-age=300"]
 
-       # Verify respone headers from ATS.
+       # Verify response headers from ATS.
        proxy-response:
          status: 200
          headers:
@@ -332,28 +323,26 @@ autest Configuration Section
 
 The ``autest`` section configures the test environment:
 
-- **description** (required): A brief description of what this test scenario
-  validates. This is helpful to document the intetion of the test for the human
-  reading the file and is also helpful when tests fail as this description is included
-  in failure output.
+- **description** or **summary** (one required): A brief description of what
+  this test scenario validates. This documents the intention for human readers
+  and is included in test reports and failure output.
 - **dns** (optional): DNS server configuration with ``name`` and optional
-  ``process_config``. See the ``microDNS.test.ext`` file for more details. Including
-  the DNS allows remap entries to contain hostnames rather than localhost IP
-  addresses.
+  records. Including DNS allows remap entries to contain hostnames rather than
+  localhost IP addresses.
 - **server** (required): Proxy Verifier Server configuration with ``name`` and
-  optional ``process_config``. See the ``verifier_server.test.ext`` file for
-  more details. This acts as the HTTP origin server that receives requests from
-  |TS| as they are proxied from the client to the server. It also provides any
-  request verification and generates the configured HTTP response.
+  optional ``process_config``. This acts as the HTTP origin server that receives
+  requests from |TS|, verifies them, and generates configured responses.
 - **client** (required): Proxy Verifier Client configuration with ``name`` and
-  optional ``process_config``. See the ``verifier_client.test.ext`` file for
-  more details. This acts as the HTTP client that requests content from the
-  server via the |TS| proxy and validates the response.
+  optional ``process_config`` and ``timeout``. This requests content through
+  |TS| and validates the response.
+- **requires** (optional): Runtime gates such as ATS build features, installed
+  plugins, or minimum OpenSSL and Proxy Verifier versions. An unmet requirement
+  skips the item.
 - **ats** (required): |TS| configuration including:
 
   - **name**: ATS process name
-  - **enable_tls**: Set to ``true`` for HTTPS testing
-  - **process_config**: Parameters passed to ``MakeATSProcess`` (e.g., ``enable_cache``)
+  - **process_config**: ATS lifecycle options such as ``enable_cache``,
+    ``enable_tls``, ``enable_quic``, and ``enable_cripts``
   - **records_config**: Dictionary of records.config settings
   - **remap_config**: List of remap rules (string or dict format)
   - **cache_config**: List of cache.config rules
@@ -387,8 +376,8 @@ Metric Verification
 
 The ``metric_checks`` section allows you to verify |TS| metric values after all
 traffic in the test has completed. Each entry specifies a metric name and its
-expected value. After the traffic test run, ``ATSReplayTest`` automatically adds
-follow-up test runs that use ``traffic_ctl metric get`` to verify each metric.
+expected value. After traffic completes, the pytest replay runner uses
+``traffic_ctl metric get`` while ATS remains running to verify each metric.
 
 .. code-block:: yaml
 
@@ -397,6 +386,7 @@ follow-up test runs that use ``traffic_ctl metric get`` to verify each metric.
        value: 1
      - metric: "proxy.process.http.200_responses"
        value: 2
+       delay: 5
 
 Sessions and Transactions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
