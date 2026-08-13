@@ -1,0 +1,142 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+
+
+def test_new_log_flds(urtest: UraniumTest) -> None:
+    '''
+    '''
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    #  limitations under the License.
+
+    import os
+    import sys
+
+    urtest.Summary = '''
+    Test new log fields
+    '''
+
+    urtest.SkipUnless(Condition.HasCurlFeature('http2'))
+
+    # ----
+    # Setup httpbin Origin Server
+    # ----
+    httpbin = urtest.MakeHttpBinServer("httpbin")
+
+    # ----
+    # Setup ATS
+    # ----
+    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+
+    ts.addDefaultSSLFiles()
+
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.diags.debug.enabled': 1,
+            'proxy.config.diags.debug.tags': 'snowflake|http',
+            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
+            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        })
+
+    ts.Disk.remap_config.AddLine(
+        'map http://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.port, httpbin.Variables.Port))
+
+    ts.Disk.remap_config.AddLine(
+        'map https://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port))
+
+    ts.Disk.remap_config.AddLine(
+        'map https://reallyreallyreallyreallylong.com http://127.0.0.1:{1}/ip'.format(
+            ts.Variables.ssl_port, httpbin.Variables.Port))
+
+    ts.Disk.ssl_multicert_yaml.AddLines(
+        """
+    ssl_multicert:
+      - dest_ip: "*"
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+    """.split("\n"))
+
+    ts.Disk.logging_yaml.AddLines(
+        '''
+    logging:
+      formats:
+        - name: custom
+          format: "%<psfid> %<ccid> %<ctid> %<cssn>"
+      logs:
+        - filename: test_new_log_flds
+          format: custom
+    '''.split("\n"))
+
+    tr = urtest.AddTestRun()
+    # Delay on readiness of ssl port
+    tr.Processes.Default.StartBefore(urtest.Processes.ts)
+    tr.Processes.Default.StartBefore(httpbin)
+    #
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = urtest.AddTestRun()
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+
+    tr = urtest.AddTestRun()
+    tr.MakeCurlCommand('"http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port), ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+
+    if not Condition.CurlUsingUnixDomainSocket():
+        tr = urtest.AddTestRun()
+        tr.MakeCurlCommand(
+            '"https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port), ts=ts)
+        tr.Processes.Default.ReturnCode = 0
+
+        tr = urtest.AddTestRun()
+        tr.MakeCurlCommand(
+            (
+                '"https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
+                ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1').format(ts.Variables.ssl_port),
+            ts=ts)
+        tr.Processes.Default.ReturnCode = 0
+
+    # Wait for the final log line to be written.
+    #
+    urtest.AddAwaitFileContainsTestRun(
+        'Await new log field output.',
+        os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'),
+        r'reallyreallyreallyreallylong\.com$',
+    )
+
+    # Validate generated log.
+    #
+    tr = urtest.AddTestRun()
+    observer_script = os.path.join(urtest.TestDirectory, 'new_log_flds_observer.py')
+    log_path = os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log')
+    tr.Processes.Default.Command = f'{sys.executable} {observer_script} < {log_path}'
+    tr.Processes.Default.ReturnCode = 0
+    urtest.execute()

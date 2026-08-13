@@ -1,0 +1,86 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+
+
+def test_traffic_ctl_server_output(urtest: UraniumTest) -> None:
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    #  limitations under the License.
+
+    import sys
+    import os
+
+    # To include util classes
+    sys.path.insert(0, f'{urtest.TestDirectory}')
+
+    from traffic_ctl_test_utils import Make_traffic_ctl
+
+    urtest.Summary = '''
+    Test traffic_ctl different commands.
+    '''
+
+    urtest.ContinueOnFail = True
+
+    records_yaml = '''
+      exec_thread:
+        autoconfig:
+          enabled: 0
+        limit: 4
+        '''
+
+    urtest.Summary = 'Basic test for traffic_ctl server command features.'
+
+    traffic_ctl = Make_traffic_ctl(urtest, records_yaml)
+    ######
+    # traffic_ctl server status
+    traffic_ctl.server().status().validate_json_contains(
+        initialized_done='true', is_ssl_handshaking_stopped='false', is_draining='false', is_event_system_shut_down='false')
+    # Drain ats so we can check the output.
+    traffic_ctl.server().drain().exec()
+
+    # After the drain, server status should reflect this change.
+    traffic_ctl.server().status().validate_json_contains(initialized_done='true', is_draining='true')
+
+    # Get basic and empty connection tracker info.
+    traffic_ctl.rpc().invoke(
+        handler="get_connection_tracker_info", params='"table: both"').validate_result_with_text(
+            '{"outbound": {"count": "0", "list": []}, "inbound": {"count": "0", "list": []}}')
+    # default = outbound only
+    traffic_ctl.rpc().invoke(
+        handler="get_connection_tracker_info").validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
+    # request inbound only
+    traffic_ctl.rpc().invoke(
+        handler="get_connection_tracker_info",
+        params='"table: inbound"').validate_result_with_text('{"inbound": {"count": "0", "list": []}}')
+    # request outbound only
+    traffic_ctl.rpc().invoke(
+        handler="get_connection_tracker_info",
+        params='"table: outbound"').validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
+    urtest.execute()

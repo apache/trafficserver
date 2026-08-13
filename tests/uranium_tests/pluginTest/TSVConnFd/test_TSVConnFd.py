@@ -1,0 +1,94 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+
+
+def test_TSVConnFd(urtest: UraniumTest) -> None:
+    #  Licensed to the Apache Software Foundation (ASF) under one
+    #  or more contributor license agreements.  See the NOTICE file
+    #  distributed with this work for additional information
+    #  regarding copyright ownership.  The ASF licenses this file
+    #  to you under the Apache License, Version 2.0 (the
+    #  "License"); you may not use this file except in compliance
+    #  with the License.  You may obtain a copy of the License at
+    #
+    #      http://www.apache.org/licenses/LICENSE-2.0
+    #
+    #  Unless required by applicable law or agreed to in writing, software
+    #  distributed under the License is distributed on an "AS IS" BASIS,
+    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    #  See the License for the specific language governing permissions and
+    #  limitations under the License.
+
+    import os
+
+    urtest.Summary = '''
+    Test TSVConnFdCreate() TS API call.
+    '''
+
+    plugin_name = "TSVConnFd"
+
+    server = urtest.MakeOriginServer("server")
+
+    request_header = {"headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "112233"}
+    server.addResponse("sessionlog.json", request_header, response_header)
+
+    # File to be deleted when tests are fully completed.
+    #
+    InProgressFilePathspec = os.path.join(urtest.RunDirectory, "in_progress")
+
+    ts = urtest.MakeATSProcess("ts", block_for_debug=False)
+
+    ts.Disk.records_config.update(
+        {
+            'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
+            'proxy.config.url_remap.remap_required': 1,
+            'proxy.config.diags.debug.enabled': 3,
+            'proxy.config.diags.debug.tags': f'{plugin_name}',
+        })
+
+    rp = os.path.join(urtest.Variables.AtsBuildUraniumTestsDir, 'pluginTest', 'TSVConnFd', '.libs', f'{plugin_name}.so')
+    ts.Setup.Copy(rp, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
+
+    urtest.GetTcpPort("tcp_port")
+
+    ts.Disk.plugin_config.AddLine(f"{plugin_name}.so {InProgressFilePathspec} {ts.Variables.tcp_port}")
+
+    ts.Disk.remap_config.AddLine("map http://myhost.test http://127.0.0.1:{0}".format(server.Variables.Port))
+
+    ipv4flag = ""
+    if not Condition.CurlUsingUnixDomainSocket():
+        ipv4flag = "--ipv4"
+    # Dummy transaction to trigger plugin.
+    #
+    tr = urtest.AddTestRun()
+    tr.Processes.Default.StartBefore(server)
+    tr.Processes.Default.StartBefore(ts)
+    tr.MakeCurlCommandMulti(
+        f'touch {InProgressFilePathspec} ; ' +
+        f'{{curl}} --verbose {ipv4flag} --header "Host:myhost.test" http://localhost:{ts.Variables.port}/',
+        ts=ts)
+    tr.Processes.Default.ReturnCode = 0
+
+    # Give tests up to 10 seconds to complete.
+    #
+    tr = urtest.AddTestRun()
+    tr.Processes.Default.Command = (
+        os.path.join(urtest.Variables.AtsTestToolsDir, 'condwait') + ' 15 1 -f ' + InProgressFilePathspec)
+    tr.Processes.Default.ReturnCode = 0
+    urtest.execute()

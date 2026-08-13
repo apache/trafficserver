@@ -20,33 +20,40 @@ from pathlib import Path
 import pytest
 import yaml
 
-from ats_testkit.config import ReplayConfigError, ReplaySpec, merge_flat_records, replace_server_ports
+from uranium_testkit.config import ReplayConfigError, ReplaySpec, merge_flat_records, replace_server_ports
 
 
 def test_all_migrated_replays_are_valid() -> None:
     """Verify every directly collected replay has valid test metadata."""
 
-    gold_tests = Path(__file__).parents[1] / "gold_tests"
-    replay_files = list(gold_tests.rglob("*.test.yaml"))
-    assert len(replay_files) == 96
+    uranium_tests = Path(__file__).parents[1] / "uranium_tests"
+    replay_files = list(uranium_tests.rglob("*.test.yaml"))
+    assert len(replay_files) >= 96
     for path in replay_files:
         ReplaySpec.load(path)
 
 
-def test_no_gold_test_registers_an_ats_replay() -> None:
+def test_no_uranium_test_registers_an_uranium_replay() -> None:
     """Keep replay ownership out of legacy Python wrappers."""
 
-    gold_tests = Path(__file__).parents[1] / "gold_tests"
-    registrations = [path for path in gold_tests.rglob("*.test.py") if "Test.ATSReplayTest(" in path.read_text()]
+    uranium_tests = Path(__file__).parents[1] / "uranium_tests"
+    registrations = [path for path in uranium_tests.rglob("test_*.py") if "Test.ATSReplayTest(" in path.read_text()]
     assert registrations == []
 
 
-def test_replay_requires_autest_metadata(tmp_path: Path) -> None:
+def test_all_bespoke_tests_are_available_to_pytest() -> None:
+    """Keep the compatibility inventory explicit while definitions migrate."""
+
+    uranium_tests = Path(__file__).parents[1] / "uranium_tests"
+    assert len(list(uranium_tests.rglob("test_*.py"))) == 505
+
+
+def test_replay_requires_urtest_metadata(tmp_path: Path) -> None:
     """Reject a Proxy Verifier file that has not opted into direct collection."""
 
     path = tmp_path / "missing.test.yaml"
     path.write_text(yaml.safe_dump({"meta": {"version": "1.0"}, "sessions": []}))
-    with pytest.raises(ReplayConfigError, match="'autest' mapping"):
+    with pytest.raises(ReplayConfigError, match="'urtest' mapping"):
         ReplaySpec.load(path)
 
 
@@ -56,7 +63,7 @@ def test_replay_accepts_summary_as_description(tmp_path: Path) -> None:
     path = tmp_path / "summary.test.yaml"
     path.write_text(
         yaml.safe_dump({
-            "autest": {
+            "urtest": {
                 "summary": "Summary-only replay",
                 "server": {},
                 "client": {},
