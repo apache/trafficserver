@@ -309,9 +309,12 @@ struct AutoStopCont : public Continuation {
       CacheShm::mark_clean_shutdown();
     }
 
-    // Wake preproc threads to drain remaining log buffers before exit.
-    for (int i = 0; i < Log::preproc_threads; i++) {
-      Log::preproc_notify[i].signal();
+    // Wake preproc threads to drain remaining log buffers before exit. Log::preproc_threads is set by Log::init(), but the
+    // notify array is not allocated until Log::create_threads(), so a shutdown arriving between the two finds it null.
+    if (Log::preproc_notify != nullptr) {
+      for (int i = 0; i < Log::preproc_threads; i++) {
+        Log::preproc_notify[i].signal();
+      }
     }
     delete this;
     return EVENT_CONT;
