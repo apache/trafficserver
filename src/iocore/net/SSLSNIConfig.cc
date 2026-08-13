@@ -31,6 +31,7 @@
 
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
+#include "SSLRPKUtils.h"
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/SNIActionItem.h"
 #include "mgmt/config/ConfigContextDiags.h"
@@ -173,6 +174,7 @@ SNIConfigParams::set_next_hop_properties(YamlSNIConfig::Item const &item)
   nps.set_glob_name(item.fqdn);
   nps.prop.verify_server_policy     = item.verify_server_policy;
   nps.prop.verify_server_properties = item.verify_server_properties;
+  nps.prop.client_rpk_enabled       = item.client_rpk_enabled;
 
   return true;
 }
@@ -190,6 +192,16 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
     auto ctx =
       params->getCTX(nps.prop.client_cert_file, nps.prop.client_key_file, params->clientCACertFilename, params->clientCACertPath);
     if (ctx.get() == nullptr) {
+      return false;
+    }
+  }
+
+  if (!item.server_rpk_ca.empty()) {
+    SSLConfig::scoped_config params;
+    nps.prop.server_rpk_ca_file = Layout::get()->relative_to(params->clientCACertPath, item.server_rpk_ca.data());
+    // Fail the config load now rather than at handshake time if the pinned keys are unreadable.
+    SSLRPKUtils::TrustedKeySet probe;
+    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.server_rpk_ca_file.c_str(), probe)) {
       return false;
     }
   }
