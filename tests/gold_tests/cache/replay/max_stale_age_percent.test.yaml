@@ -1,0 +1,117 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+
+  - origin_response: &origin_response
+      server-response:
+        status: 500
+        reason: "Internal Server Error"
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ X-Response, should_not_see ]
+
+autest:
+  description: "Verify the percentage maximum stale age limit"
+
+  dns:
+    name: 'dns-max-stale-age-percent'
+
+  server:
+    name: 'server-max-stale-age-percent'
+
+  client:
+    name: 'client-max-stale-age-percent'
+
+  ats:
+    name: 'ts-max-stale-age-percent'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.push_method_enabled: 1
+      proxy.config.http.parent_proxy.fail_threshold: 1
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.cache.max_stale_age: 100
+      proxy.config.http.cache.max_stale_age_percent: 50
+      proxy.config.http.parent_proxy.self_detect: 0
+
+    parent_config:
+      - 'dest_domain=. parent="localhost:82" round_robin=consistent_hash go_direct=false'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://localhost:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  # Populate the cache with a four-second freshness lifetime.
+  - client-request:
+      method: "PUSH"
+      version: "1.1"
+      url: /percentage
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, push ]
+        - [ Content-Length, 73 ]
+      content:
+        encoding: plain
+        data: "HTTP/1.1 200 OK\nContent-Length: 6\nCache-Control: public,max-age=4\n\nCACHED"
+
+    <<: *origin_response
+
+    proxy-response:
+      status: 201
+
+  # At five seconds old, the object is stale but remains within the two-second
+  # percentage stale window.
+  - client-request:
+      delay: 5s
+      method: "GET"
+      version: "1.1"
+      url: /percentage
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, within_percentage_limit ]
+
+    <<: *origin_response
+
+    proxy-response:
+      status: 200
+
+  # At eight seconds old, the object exceeds max-age (4 seconds) plus 50%
+  # (2 seconds), even though the absolute stale age limit is 100 seconds.
+  - client-request:
+      delay: 3s
+      method: "GET"
+      version: "1.1"
+      url: /percentage
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, past_percentage_limit ]
+
+    <<: *origin_response
+
+    proxy-response:
+      status: 502

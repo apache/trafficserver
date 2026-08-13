@@ -6,7 +6,7 @@ This directory contains different tests for Apache Trafficserver. It is recommen
 ## Layout
 The current layout is:
 
-**gold_tests/** - contains all the tests that run on the Reusable Gold Testing System (AuTest)
+**gold_tests/** - contains pytest replay tests and bespoke tests that run on AuTest
 
 **tools/** - contains programs used to help with testing.
 
@@ -15,27 +15,38 @@ The current layout is:
 
 # Basic setup
 
-To enable autests, you need to set the ENABLE_AUTESTS cmake variable.  You can add this to your build with:
+To enable end-to-end tests, set the ENABLE_AUTEST CMake variable:
 
     $ cmake -B build -DENABLE_AUTEST=ON
 
-This will turn on building the autest plugins and helper tools as well as create an `autest` target.
+This builds the required plugins and helper tools and creates the end-to-end test targets.
 
 # Running tests
 
-Running the tests can be done using the `autest` target
+Run all pytest replays followed by the remaining bespoke AuTests with the
+`autest` target:
 
     $ cmake --build build -t autest
 
-This will build ATS, install it to a temporary directory, setup the virtual environment via uv, and run all of the autests.
+This builds and installs ATS, sets up the virtual environment via uv, and runs
+both suites. To run only replay tests, use:
 
-To run autest again, or to run individual tests, the cmake build generates a helper script in the build directory at
-`<build>/tests/autest.sh`.  This script can be used to run individual tests and further configure autest.
+    $ cmake --build build -t pytest-replay
+
+Replay tests are Proxy Verifier files named `<scenario>.test.yaml`. Pytest
+collects each file directly, so no companion `.test.py` registration is needed.
+Configure `PYTEST_OPTIONS` to pass selection or concurrency arguments:
+
+    $ cmake -B build -DENABLE_AUTEST=ON -DPYTEST_OPTIONS="-n 4 -k cache"
+
+To run an individual bespoke AuTest, the CMake build generates a helper script
+at `<build>/tests/autest.sh`. This script can run individual tests and further
+configure AuTest.
 
 To run a single test, you can use the `--filter` flag to name
-which test to run. The tests are in files whose names are the test name
-, and are suffixed with `.test.py`. Thus, the `something_descriptive`
-test will be specified in a file named `something_descriptive.test.py`.
+which test to run. Bespoke AuTest files are suffixed with `.test.py`. Thus, the
+`something_descriptive` test is specified in a file named
+`something_descriptive.test.py`.
 The corresponding `autest.sh` command is:
 
     $ ./autest.sh --filter=something_descriptive
