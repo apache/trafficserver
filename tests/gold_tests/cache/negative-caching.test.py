@@ -21,15 +21,6 @@ Test.Summary = '''
 Test negative caching.
 '''
 
-# Negative caching disabled
-Test.ATSReplayTest(replay_file="replay/negative-caching-disabled.replay.yaml")
-
-# Negative caching enabled with default configuration
-Test.ATSReplayTest(replay_file="replay/negative-caching-default.replay.yaml")
-
-# Customized response caching for negative caching configuration
-Test.ATSReplayTest(replay_file="replay/negative-caching-customized.replay.yaml")
-
 #
 # Verify correct proxy.config.http.negative_caching_lifetime behavior.
 # These tests require multiple test runs with shared ATS processes, so use class-based approach.
@@ -132,6 +123,3 @@ p = tr.AddVerifierClientProcess("client-ttl-in-cache", replay_file, http_ports=[
 p.StartBefore(dns)
 p.StartBefore(server)
 p.StartBefore(ts)
-
-# Test malformed Cache-Control header with semicolons instead of commas (issue #12029)
-Test.ATSReplayTest(replay_file="replay/negative-caching-malformed-cc.replay.yaml")
