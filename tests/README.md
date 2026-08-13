@@ -1,12 +1,17 @@
 
-# Getting Started
+# Uranium Tests
 
-This directory contains different tests for Apache Trafficserver. It is recommended that all tests move to this common area under the correct location based on the type of test being added.
+This directory contains Apache Traffic Server's Uranium test suite and its
+supporting tools. See the
+[developer guide](../doc/developer-guide/testing/uranium-tests.en.rst) for the
+name's intentionally tongue-in-cheek origin and the complete authoring guide.
 
 ## Layout
 The current layout is:
 
-**gold_tests/** - contains pytest replay tests and bespoke tests that run on AuTest
+**uranium_tests/** - contains Uranium tests collected by pytest. Replay YAML
+files run natively; bespoke Python definitions use the AuTest compatibility
+backend while they are migrated.
 
 **tools/** - contains programs used to help with testing.
 
@@ -15,91 +20,106 @@ The current layout is:
 
 # Basic setup
 
-To enable end-to-end tests, set the ENABLE_AUTEST CMake variable:
+To enable Uranium tests, set the `ENABLE_URTEST` CMake variable:
 
-    $ cmake -B build -DENABLE_AUTEST=ON
+    $ cmake -B build -DENABLE_URTEST=ON
 
-This builds the required plugins and helper tools and creates the end-to-end test targets.
+This builds the required plugins and helper tools and creates the Uranium test targets.
 
 # Running tests
 
-Run all pytest replays followed by the remaining bespoke AuTests with the
-`autest` target:
+Pytest owns the complete Uranium test inventory. Run it with the `urtest` target:
 
-    $ cmake --build build -t autest
+    $ cmake --build build -t urtest
 
 This builds and installs ATS, sets up the virtual environment via uv, and runs
-both suites. To run only replay tests, use:
+native replay items plus bespoke compatibility items under one scheduler. To
+run only replay tests, use:
 
-    $ cmake --build build -t pytest-replay
+    $ cmake --build build -t urtest-replay
 
 Replay tests are Proxy Verifier files named `<scenario>.test.yaml`. Pytest
 collects each file directly, so no companion `.test.py` registration is needed.
-Configure `PYTEST_OPTIONS` to pass selection or concurrency arguments:
+Configure `URTEST_OPTIONS` to pass selection or concurrency arguments:
 
-    $ cmake -B build -DENABLE_AUTEST=ON -DPYTEST_OPTIONS="-n 4 -k cache"
+    $ cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache"
 
-To run an individual bespoke AuTest, the CMake build generates a helper script
-at `<build>/tests/autest.sh`. This script can run individual tests and further
-configure AuTest.
+## The urtest.sh entry point
 
-To run a single test, you can use the `--filter` flag to name
-which test to run. Bespoke AuTest files are suffixed with `.test.py`. Thus, the
-`something_descriptive` test is specified in a file named
-`something_descriptive.test.py`.
-The corresponding `autest.sh` command is:
+`tests/urtest.sh` is the portable entry point. On a normal host it starts the
+official `ci.trafficserver.apache.org/ats/fedora:44` image, incrementally builds
+ATS in `build-urtest-container`, and runs the tests there. In a Fedora 44
+container it detects that it is already in the official environment and runs
+directly, which is also the Jenkins CI behavior.
 
-    $ ./autest.sh --filter=something_descriptive
+The container uses a short `/tmp` sandbox so ATS Unix socket paths remain
+portable. When the run finishes, regular files are copied back to
+`build-urtest-container/sandbox` for inspection on the host.
+
+Force either behavior when needed:
+
+    $ ./tests/urtest.sh --run-in-docker
+    $ ./tests/urtest.sh --no-run-in-docker
+
+Docker mode matches CI's relevant permissions: `--init`, host networking, and
+`SYS_PTRACE`. It does not use a privileged container and does not mount the
+Docker socket. Set `ATS_URTEST_DOCKER_IMAGE` to test another image or
+`ATS_URTEST_DOCKER_ARGS` to append site-specific Docker arguments.
+
+The CMake build also generates `<build>/tests/urtest.sh`. This is the fastest
+entry point when ATS is already built and installed in the current environment.
+Use `--no-run-in-docker` outside the official container when that is
+intentional.
+
+## Running one test
+
+The `-f` and `--filter` options select either a native `.test.yaml` item or a
+bespoke `.test.py` item by basename. They preserve the familiar
+basename-filter workflow:
+
+    $ ./build/tests/urtest.sh -f cache-auth
+    $ ./build/tests/urtest.sh --filter='cache-*'
+
+Pytest selection remains available for advanced cases:
+
+    $ ./build/tests/urtest.sh -k cache_control
 
 # Running tests in parallel
 
-For faster test execution, a parallel test runner is available that distributes
-tests across multiple workers. This is especially useful on machines with many
-CPU cores.
+Pytest-xdist distributes both kinds of Uranium test item across isolated workers:
 
-    $ python3 autest-parallel.py -j 16 --ats-bin <install>/bin --build-root <build-dir> --sandbox /tmp/autest-parallel
+    $ ./build/tests/urtest.sh -j 16
 
 Key options:
 
-* `-j N` - Number of parallel workers (default: number of CPU cores)
-* `--ats-bin` - Path to the ATS install bin directory
-* `--build-root` - Path to the build directory (for test plugins)
-* `--sandbox` - Directory for test sandboxes (default: `/tmp/autest-parallel`)
-* `-v` - Verbose output with real-time test progress per worker
-* `--collect-timings` - Run tests individually to collect per-test timing data
-* `--list` - List all tests and exit (useful for checking test discovery)
+* `-j N` - Number of parallel pytest workers
+* `-f NAME` - Run one name or glob; multiple names may follow one `-f`
+* `--sandbox` - Directory for test sandboxes
+* `-v` - Verbose pytest output
+* `--list` - List all tests and exit
 
-The parallel runner uses port offsets to ensure each worker gets a unique port
-range, preventing conflicts between concurrent test instances. Tests known to
-require serial execution (listed in `serial_tests.txt`) are run sequentially
-after the parallel phase completes.
-
-## Timing-based load balancing
-
-If a `test-timings.json` file exists (generated by a previous run with
-`--collect-timings`), the runner uses the Longest Processing Time (LPT)
-algorithm to distribute tests across workers for balanced execution times.
-Without timing data, tests are distributed round-robin.
+The pytest runtime uses isolated sandboxes and port ranges. Tests listed in
+`serial_tests.txt` take an exclusive execution lock, so they cannot overlap any
+other Uranium test item.
 
 ## Adding serial tests
 
 If a test cannot run in parallel (e.g., it uses hardcoded global resources),
-add its path relative to `gold_tests/` to `serial_tests.txt`.
+add its path relative to `uranium_tests/` to `serial_tests.txt`.
 
-# Advanced setup
+# AuTest compatibility definitions
 
-AuTest and the relevant tools can be install manually instead of using the wrapper script. By doing this, it is often easier to debug issues with the testing system, or the tests. There are two ways this can be done.
-1. Run the bootstrap script then source the path with a "source ./env-test/bin/activate" command. At this point autest command should run without the wrapper script
-2. Make sure you install python 3.6 or better on your system. From there install these python packages ( ie pip install ):
-  - hyper
-  - git+https://bitbucket.org/autestsuite/reusable-gold-testing-system.git
-  - [traffic-replay](https://bitbucket.org/autestsuite/trafficreplay/src/master/) (This will automatically install [MicroDNS](https://bitbucket.org/autestsuite/microdns/src/master/), [MicroServer](https://bitbucket.org/autestsuite/microserver/src/master/), [TrafficReplayLibrary](https://bitbucket.org/autestsuite/trafficreplaylibrary/src/master/), and dnslib as part of the dependencies.)
+New tests should use native replay YAML whenever possible. Existing bespoke
+`.test.py` definitions are collected and reported by pytest but still execute
+through the pinned AuTest dependency. The APIs below document that migration
+boundary. See the [AuTest documentation](https://autestsuite.bitbucket.io/) and
+the [CurlHeader README](uranium_tests/autest-site/readme.md) when maintaining one
+of those definitions.
 
-# Writing tests for AuTest
-When writing for the AuTest system please refer to the current [Online Documentation](https://autestsuite.bitbucket.io/) for general use of the system. To use CurlHeader tester for testing output of curl, please refer to [CurlHeader README](gold_tests/autest-site/readme.md)
+## Documentation of the AuTest compatibility extension for ATS
 
-## Documentation of AuTest extension for ATS.
-Autest allows for the creation of extensions to help specialize and simplify test writing for a given application domain. Minus API addition the extension code will check that python 3.6 or better is used. There is also a new command line argumented added specifically for Trafficserver:
+The pinned AuTest backend supports extensions that specialize test writing for
+an application domain. The ATS extension adds this command-line argument:
 
 --ats-bin < path to bin directory >
 

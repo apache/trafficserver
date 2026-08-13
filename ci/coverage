@@ -16,8 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# Build ATS with gcov instrumentation, run the unit tests (and optionally
-# autests), and produce a coverage report with gcovr.
+# Build ATS with gcov instrumentation, run the unit and optional Uranium
+# tests, and produce a coverage report with gcovr.
 #
 # Usage:
 #   ci/coverage [extra cmake args...]
@@ -27,8 +27,8 @@
 #   PREFIX     install prefix             (default: /tmp/ts-coverage)
 #   NPROCS     build parallelism          (default: nproc)
 #   GCOVR      gcovr command              (default: gcovr, falls back to uvx gcovr)
-#   AUTEST     run autests too if set to a -f/--filter basename glob,
-#              e.g. AUTEST='tls_*' or AUTEST=all for the whole suite
+#   URTEST    run Uranium tests too if set to a basename glob,
+#              e.g. URTEST='tls_*' or URTEST=all for the whole suite
 #
 # Requires: cmake, ninja or make, gcc/gcov, and gcovr (pip install gcovr).
 
@@ -55,11 +55,11 @@ fi
 COVERAGE_FLAGS="-g -O0 --coverage -fprofile-update=atomic -fprofile-abs-path"
 
 configure() {
-  # Enabling autest pulls in Python3/uv/nc and the proxy-verifier toolchain at
-  # configure time, so only ask for it when AUTEST actually selects a run.
-  local autest_args=()
-  if [ -n "$AUTEST" ]; then
-    autest_args=(-DENABLE_AUTEST=ON)
+  # Enabling Uranium tests pulls in Python3/uv/nc and Proxy Verifier at
+  # configure time, so only ask for it when URTEST selects a run.
+  local urtest_args=()
+  if [ -n "$URTEST" ]; then
+    urtest_args=(-DENABLE_URTEST=ON)
   fi
 
   cmake -S "$SRCROOT" -B "$BUILDDIR" \
@@ -67,7 +67,7 @@ configure() {
     -DCMAKE_INSTALL_PREFIX="$PREFIX" \
     -DCMAKE_COMPILE_WARNING_AS_ERROR=OFF \
     -DBUILD_TESTING=ON \
-    "${autest_args[@]}" \
+    "${urtest_args[@]}" \
     -DBUILD_EXPERIMENTAL_PLUGINS=ON \
     -DENABLE_EXAMPLE=ON \
     -DCMAKE_CXX_FLAGS_DEBUG="$COVERAGE_FLAGS" \
@@ -86,18 +86,16 @@ run_tests() {
 
   ctest --test-dir "$BUILDDIR" -j "$NPROCS"
 
-  if [ -n "$AUTEST" ]; then
+  if [ -n "$URTEST" ]; then
     local filter_args=()
-    if [ "$AUTEST" != all ]; then
-      # Quote the pattern: the parallel runner fnmatches it against each test's
-      # basename (e.g. 'tls_*'), so it must reach autest verbatim rather than be
+    if [ "$URTEST" != all ]; then
+      # Quote the pattern: the runner matches it against each test's basename
+      # (e.g. 'tls_*'), so it must reach urtest verbatim rather than be
       # glob-expanded by the shell first.
-      filter_args=(-f "$AUTEST")
+      filter_args=(-f "$URTEST")
     fi
-    # Match ctest's parallelism: -j routes autest.sh through autest-parallel.py,
-    # which already aims --sandbox at a per-build-tree path under /tmp, so
-    # concurrent coverage runs in separate build trees don't trample each other.
-    (cd "$BUILDDIR/tests" && ./autest.sh -j "$NPROCS" "${filter_args[@]}")
+    # Match ctest's parallelism while retaining a per-build-tree sandbox.
+    (cd "$BUILDDIR/tests" && ./urtest.sh -j "$NPROCS" "${filter_args[@]}")
   fi
 }
 

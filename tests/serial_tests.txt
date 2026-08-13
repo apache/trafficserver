@@ -1,12 +1,14 @@
 # Tests that must run serially (not in parallel) due to resource conflicts
 # or other constraints that prevent parallel execution.
 #
-# Format: One test file path per line, relative to tests/gold_tests/
+# Format: One test file path per line, relative to tests/uranium_tests/
 # Lines starting with # are comments and ignored.
 
 # Spins up 12 ATS instances with varying thread configs; fails under parallel load
-thread_config/thread_config.test.py
+thread_config/test_thread_config.py
 
-# Each must run after tls_conn_timeout and starts 14 ATS instances at once.
-next_hop/zzz_strategies_peer/zzz_strategies_peer.test.py
-next_hop/zzz_strategies_peer2/zzz_strategies_peer2.test.py
+# These must retain this order. The peer tests each start 14 ATS instances and
+# must run after tls_conn_timeout.
+timeout/test_tls_conn_timeout.py
+next_hop/zzz_strategies_peer/test_zzz_strategies_peer.py
+next_hop/zzz_strategies_peer2/test_zzz_strategies_peer2.py

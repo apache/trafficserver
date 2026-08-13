@@ -993,9 +993,9 @@ After registering a new handler:
 7. Use :option:`traffic_ctl config status` ``--format json`` to inspect the raw
    :ref:`get_reload_config_status` response for automation testing.
 
-**Autests** — the project includes autest helpers for config reload testing.
+**Uranium tests** — the project includes compatibility helpers for config reload testing.
 
-For **end-to-end tests** that trigger a reload via ``traffic_ctl`` and validate the result, use
+For **Uranium tests** that trigger a reload via ``traffic_ctl`` and validate the result, use
 the :ref:`autest-config-reload` extension (``Test.AddConfigReload()``).
 This is the recommended approach for most reload tests.
 
@@ -1004,11 +1004,11 @@ use ``AddJsonRPCClientRequest`` with ``Request.admin_config_reload()`` to trigge
 ``Testers.CustomJSONRPCResponse`` to validate responses programmatically. See the existing tests
 for examples:
 
-- ``tests/gold_tests/jsonrpc/config_reload_tracking.test.py`` — token generation, status
+- ``tests/uranium_tests/jsonrpc/config_reload_tracking.test.py`` — token generation, status
   queries, history, force reload, duplicate token rejection.
-- ``tests/gold_tests/jsonrpc/config_reload_rpc.test.py`` — inline reload, multiple configs,
+- ``tests/uranium_tests/jsonrpc/config_reload_rpc.test.py`` — inline reload, multiple configs,
   ``FileOnly`` rejection, large payloads.
-- ``tests/gold_tests/jsonrpc/config_reload_failures.test.py`` — error handling, broken configs,
+- ``tests/uranium_tests/jsonrpc/config_reload_failures.test.py`` — error handling, broken configs,
   handler failure reporting.
 
 
