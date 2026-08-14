@@ -41,6 +41,11 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
     return false;
   }
 
+  // Discard anything already on this thread's error queue so the PEM_R_NO_START_LINE check
+  // below on the first iteration can't be confused by an unrelated error left over from earlier,
+  // unrelated OpenSSL/BoringSSL calls on this thread.
+  ERR_clear_error();
+
   for (;;) {
     // Read the PEM envelope first and decode it separately. Asking PEM_read_bio_PUBKEY() to do
     // both makes end-of-file indistinguishable from a decode failure: on OpenSSL 3 it runs the

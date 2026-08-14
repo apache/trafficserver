@@ -559,9 +559,12 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, const std::string &trusted_key_fi
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
   // BoringSSL rejects raw public keys unless a custom verify callback is installed, and this
   // displaces the SSL_set_verify()/verify_callback() pair the caller already set for this
-  // connection. Only RPK-configured next hops take this path; every other outbound connection
-  // keeps the classic callback untouched.
-  SSL_set_custom_verify(ssl, SSL_VERIFY_PEER, ssl_client_custom_verify_callback);
+  // connection. Only next hops actually prepared to accept/pin an RPK server key take this path
+  // -- an offer-only connection (client_rpk_enabled with no server_rpk_ca) never advertises RPK
+  // acceptance above, so the peer will always present X.509 and the classic callback suffices.
+  if (!trusted_key_file.empty()) {
+    SSL_set_custom_verify(ssl, SSL_VERIFY_PEER, ssl_client_custom_verify_callback);
+  }
 #endif
 
   return true;

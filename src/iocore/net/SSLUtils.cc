@@ -314,9 +314,34 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     }
   }
 
-  X509_STORE_CTX *store_ctx = X509_STORE_CTX_new();
-  bool initialized = store_ctx != nullptr && X509_STORE_CTX_init(store_ctx, SSL_CTX_get_cert_store(ctx), leaf, intermediates);
-  bool verified    = false;
+  // A per-SNI verify_client action (VerifyClient::SNIAction) may have pinned a CA file/dir onto
+  // this connection via setClientCertCACerts()/SSL_set0_verify_cert_store() -- that call only
+  // takes effect for the classic SSL_set_verify() path, since BoringSSL has no public getter for
+  // whatever store it attached. Rebuild the same override here rather than falling back to the
+  // SSL_CTX's default store and silently ignoring a per-connection CA that was configured for
+  // this exact SNI.
+  X509_STORE *verify_store = nullptr;
+  bool        owns_store   = false;
+  const char *ca_cert_file = netvc->get_ca_cert_file();
+  const char *ca_cert_dir  = netvc->get_ca_cert_dir();
+  if ((ca_cert_file != nullptr && ca_cert_file[0] != '\0') || (ca_cert_dir != nullptr && ca_cert_dir[0] != '\0')) {
+    verify_store = X509_STORE_new();
+    if (verify_store != nullptr &&
+        X509_STORE_load_locations(verify_store, ca_cert_file != nullptr && ca_cert_file[0] != '\0' ? ca_cert_file : nullptr,
+                                  ca_cert_dir != nullptr && ca_cert_dir[0] != '\0' ? ca_cert_dir : nullptr)) {
+      owns_store = true;
+    } else {
+      X509_STORE_free(verify_store);
+      verify_store = nullptr;
+    }
+  }
+  if (verify_store == nullptr) {
+    verify_store = SSL_CTX_get_cert_store(ctx);
+  }
+
+  X509_STORE_CTX *store_ctx   = X509_STORE_CTX_new();
+  bool            initialized = store_ctx != nullptr && X509_STORE_CTX_init(store_ctx, verify_store, leaf, intermediates);
+  bool            verified    = false;
   if (initialized) {
     X509_STORE_CTX_set_depth(store_ctx, SSL_CTX_get_verify_depth(ctx));
     verified = X509_verify_cert(store_ctx) == 1;
@@ -335,6 +360,9 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   bool hook_ok = initialized && tbs->verify_certificate(store_ctx) == 0;
 
   X509_STORE_CTX_free(store_ctx);
+  if (owns_store) {
+    X509_STORE_free(verify_store);
+  }
   X509_free(leaf);
   sk_X509_pop_free(intermediates, X509_free);
 
