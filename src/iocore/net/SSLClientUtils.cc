@@ -313,8 +313,13 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
     }
     if (i == 0) {
       leaf = cert;
-    } else {
-      sk_X509_push(intermediates, cert);
+    } else if (!sk_X509_push(intermediates, cert)) {
+      SSLError("failed to append an intermediate certificate on a RPK-enabled connection");
+      X509_free(cert);
+      X509_free(leaf);
+      sk_X509_pop_free(intermediates, X509_free);
+      *out_alert = SSL_AD_INTERNAL_ERROR;
+      return ssl_verify_invalid;
     }
   }
 
