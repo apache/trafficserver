@@ -132,6 +132,8 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
         return launch_docker(config.source_root, test_arguments)
 
     pytest_arguments = translate_arguments(test_arguments, os.environ)
+    if any(argument in ("-h", "--help") for argument in test_arguments):
+        print(runner_help(), flush=True)
     if config.curl_uds and "--curl-uds" not in pytest_arguments:
         pytest_arguments.append("--curl-uds")
     command = [
@@ -142,8 +144,8 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
         "pytest",
         "--import-mode=importlib",
         "-p",
-        "uranium_testkit.plugin",
-        str(config.source_root / "tests" / "pytest_tests"),
+        "tools.uranium.plugin",
+        str(config.source_root / "tests" / "tools" / "uranium" / "tests"),
         str(config.source_root / "tests" / "uranium_tests"),
         f"--ats-bin={config.install_prefix / 'bin'}",
         f"--proxy-verifier-bin={config.verifier_bin}",
@@ -171,6 +173,24 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
 
     result = subprocess.run(command, cwd=config.source_root, env=environment, check=False)
     return result.returncode
+
+
+def runner_help() -> str:
+    """Describe wrapper-owned options before pytest renders its own help."""
+
+    return f"""usage: urtest.sh [urtest.sh options] [pytest options]
+
+urtest.sh options (consumed before pytest; these spellings take precedence):
+  -h, --help                    Show this section followed by pytest's help.
+  --run-in-docker               Run in {DEFAULT_IMAGE}.
+  --no-run-in-docker            Run in the current environment.
+
+Docker is the default unless urtest.sh is already running inside the official
+Fedora 44 test container. Any argument not consumed above is passed to pytest.
+Common pytest options include -k for selection, -n for parallel workers, and
+--collect-only/--co for listing tests; they are documented below.
+
+pytest options (passed through after urtest.sh processing):"""
 
 
 def choose_docker_mode(arguments: Sequence[str]) -> tuple[bool, list[str]]:
@@ -279,41 +299,9 @@ def launch_docker(source_root: Path, arguments: Sequence[str]) -> int:
 
 
 def translate_arguments(arguments: Sequence[str], environment: Mapping[str, str]) -> list[str]:
-    """Translate the established ``urtest.sh`` CLI into pytest options."""
+    """Add CI sharding options without reinterpreting pytest arguments."""
 
-    translated = []
-    filters = []
-    index = 0
-    while index < len(arguments):
-        argument = arguments[index]
-        if argument in ("-j", "--jobs"):
-            value, index = _required_value(arguments, index, argument)
-            translated.extend(["-n", value, "--dist", "loadgroup"])
-        elif argument.startswith("-j") and argument != "-j":
-            translated.extend(["-n", argument[2:], "--dist", "loadgroup"])
-        elif argument.startswith("--jobs="):
-            translated.extend(["-n", argument.split("=", 1)[1], "--dist", "loadgroup"])
-        elif argument in ("-f", "--filter", "--filters"):
-            index += 1
-            start = index
-            while index < len(arguments) and not arguments[index].startswith("-"):
-                filters.append(arguments[index])
-                index += 1
-            if start == index:
-                raise RunnerError(f"{argument} requires at least one test name")
-            continue
-        elif argument.startswith(("--filter=", "--filters=")):
-            filters.append(argument.split("=", 1)[1])
-        elif argument in ("-C", "--clean"):
-            value, index = _required_value(arguments, index, argument)
-            translated.extend(["--legacy-clean", value])
-        elif argument.startswith("--clean="):
-            translated.extend(["--legacy-clean", argument.split("=", 1)[1]])
-        elif argument == "--list":
-            translated.extend(["--collect-only", "-q"])
-        else:
-            translated.append(argument)
-        index += 1
+    translated = list(arguments)
 
     shard_count = _nonnegative_integer(environment.get("SHARDCNT"))
     shard_index = _nonnegative_integer(environment.get("SHARD"))
@@ -321,9 +309,6 @@ def translate_arguments(arguments: Sequence[str], environment: Mapping[str, str]
         if shard_index is None or shard_index >= shard_count:
             raise RunnerError("SHARD and SHARDCNT must satisfy 0 <= SHARD < SHARDCNT")
         translated.extend(["--urtest-shard-index", str(shard_index), "--urtest-shard-count", str(shard_count)])
-    else:
-        for pattern in filters:
-            translated.extend(["--urtest-filter", pattern])
     return translated
 
 
@@ -357,15 +342,6 @@ def _parse_configured_build(arguments: list[str]) -> tuple[ConfiguredBuild, list
         project_directory=Path(values["project-directory"]),
         curl_uds=curl_uds,
     ), test_arguments
-
-
-def _required_value(arguments: Sequence[str], index: int, option: str) -> tuple[str, int]:
-    """Return the following CLI value and its index."""
-
-    value_index = index + 1
-    if value_index >= len(arguments):
-        raise RunnerError(f"{option} requires a value")
-    return arguments[value_index], value_index
 
 
 def _nonnegative_integer(value: str | None) -> int | None:
