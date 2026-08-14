@@ -19,4 +19,4 @@
 set -u
 
 test_directory=$(cd "$(dirname "$0")" && pwd)
-exec python3 "${test_directory}/uranium_testkit/runner.py" source "$(dirname "${test_directory}")" "$@"
+exec python3 "${test_directory}/tools/uranium/runner.py" source "$(dirname "${test_directory}")" "$@"

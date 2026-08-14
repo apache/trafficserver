@@ -20,7 +20,6 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
-import fnmatch
 import os
 
 import pytest
@@ -30,7 +29,7 @@ from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
 from .runtime import TestRuntime
 from .scenario import UraniumTest
-from .services import ATS, Curl
+from .services import ATS, ATSFactory, Curl
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -41,7 +40,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     group.addoption("--proxy-verifier-bin", help="Directory containing verifier-client and verifier-server")
     group.addoption("--build-root", help="ATS build directory containing test plugins")
     group.addoption("--sandbox", help="Directory for isolated test process trees")
-    group.addoption("--urtest-filter", action="append", default=[], help="Glob selecting Uranium test names")
     group.addoption("--urtest-shard-index", type=int, help="Zero-based CI shard to collect")
     group.addoption("--urtest-shard-count", type=int, help="Total number of CI shards")
     group.addoption("--curl-uds", action="store_true", help="Run supported Uranium tests with curl Unix sockets")
@@ -66,7 +64,7 @@ def pytest_collect_file(file_path: Path, parent: pytest.Collector) -> pytest.Fil
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Apply stable name filtering and zero-based CI sharding."""
+    """Apply serial scheduling, UDS exclusions, and zero-based CI sharding."""
 
     for item in items:
         if item.path.name.startswith("test_") and "uranium_tests" in item.path.parts:
@@ -77,11 +75,6 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
     selected = items
     deselected: list[pytest.Item] = []
-    patterns = config.getoption("urtest_filter")
-    if patterns:
-        selected, rejected = _partition_items(selected, lambda item: _matches_filter(item, patterns))
-        deselected.extend(rejected)
-
     if config.getoption("curl_uds"):
         unsupported = {"h2", "tls", "tls_hooks"}
         selected, rejected = _partition_items(
@@ -169,7 +162,7 @@ def get_runtime(config: pytest.Config) -> TestRuntime:
     if cached is not None:
         return cached
 
-    repository_root = Path(__file__).resolve().parents[2]
+    repository_root = Path(__file__).resolve().parents[3]
     values = {
         "ats_bin": config.getoption("ats_bin") or os.environ.get("ATS_BIN"),
         "verifier_bin": config.getoption("proxy_verifier_bin") or os.environ.get("PROXY_VERIFIER_BIN"),
@@ -236,21 +229,31 @@ def urtest(uranium_scenario: UraniumTest) -> UraniumTest:
 
 
 @pytest.fixture
-def ats(uranium_scenario: UraniumTest) -> Iterator[ATS]:
+def ats_factory(uranium_scenario: UraniumTest) -> Iterator[ATSFactory]:
+    """Create Traffic Server instances with fixture-owned cleanup."""
+
+    factory = ATSFactory(uranium_scenario)
+    try:
+        yield factory
+    finally:
+        factory.close()
+
+
+@pytest.fixture
+def ats(ats_factory: ATSFactory) -> ATS:
     """Provide one configured Traffic Server with fixture-owned cleanup."""
 
-    service = ATS(uranium_scenario)
-    try:
-        yield service
-    finally:
-        service.close()
+    return ats_factory.create("ats")
 
 
 @pytest.fixture
 def curl(uranium_scenario: UraniumTest) -> Curl:
     """Provide a curl client rooted in this test's sandbox."""
 
-    return Curl(Path(uranium_scenario.RunDirectory))
+    return Curl(
+        Path(uranium_scenario.RunDirectory),
+        use_uds=bool(uranium_scenario.Variables.get("CurlUds", False)),
+    )
 
 
 def _partition_items(items: list[pytest.Item], predicate: Callable[[pytest.Item],
@@ -262,15 +265,6 @@ def _partition_items(items: list[pytest.Item], predicate: Callable[[pytest.Item]
     for item in items:
         (selected if predicate(item) else rejected).append(item)
     return selected, rejected
-
-
-def _matches_filter(item: pytest.Item, patterns: list[str]) -> bool:
-    """Match procedural basenames, direct replay names, and pytest node IDs."""
-
-    names = {item.name, item.path.name, item.nodeid}
-    names.update({name.removesuffix(suffix) for name in names for suffix in (".py", ".test.yaml", ".test.yml")})
-    names.update({name.removeprefix("test_") for name in names})
-    return any(fnmatch.fnmatch(name, pattern) for name in names for pattern in patterns)
 
 
 def _is_below_uranium_directory(item: pytest.Item, directories: set[str]) -> bool:
@@ -287,7 +281,7 @@ def _is_below_uranium_directory(item: pytest.Item, directories: set[str]) -> boo
 def _is_serial_test(test_path: Path) -> bool:
     """Read the existing list of tests that require exclusive execution."""
 
-    tests_root = Path(__file__).resolve().parents[1]
+    tests_root = Path(__file__).resolve().parents[2]
     try:
         relative = test_path.resolve().relative_to(tests_root / "uranium_tests").as_posix()
     except ValueError:

@@ -14,15 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_testkit.services import ATS, Curl
+from tools.uranium.services import ATS, Curl
 
 
 def test_traffic_server_starts_with_custom_listener(ats: ATS, curl: Curl) -> None:
     """Verify that records.yaml can replace the default listener configuration."""
 
-    ats.records.update({"proxy.config.http.server_ports": str(ats.http_port)})
+    ats.records.update({"proxy.config.http.server_ports": f"{ats.http_port} {ats.uds_path}"})
     ats.start()
 
-    result = curl.get(f"http://127.0.0.1:{ats.http_port}")
+    result = curl.get(ats)
 
     assert result.returncode == 0, result.output
