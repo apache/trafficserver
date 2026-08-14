@@ -1179,8 +1179,8 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
       Dbg(dbg_ctl, "config expiration time for version: %s %s is in the past, re-checking in 1 minute", s3->versionString(),
           config_fname.c_str());
       if (s3->incr_conf_reload_count() % 10 == 0) {
-        TSError("[%s] tried to reload config automatically but failed, please try manual reloading the config file: %s",
-                PLUGIN_NAME, config_fname.c_str());
+        TSError("[%s] Reloading a stale config file has been failing (%d attempts): %s", PLUGIN_NAME, s3->incr_conf_reload_count(),
+                config_fname.c_str());
       }
       s3->schedule_conf_reload(60);
     }
