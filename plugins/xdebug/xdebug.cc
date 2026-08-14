@@ -947,6 +947,7 @@ TSPluginInit(int argc, const char *argv[])
     switch (opt) {
     case 'h':
       Dbg(dbg_ctl, "Setting header: %s", optarg);
+      TSfree(const_cast<char *>(xDebugHeader.str)); // The option can be repeated, so the earlier value is not leaked
       xDebugHeader.str = TSstrdup(optarg);
       break;
     case 'e':

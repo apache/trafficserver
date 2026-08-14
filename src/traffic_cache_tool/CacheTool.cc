@@ -208,7 +208,7 @@ struct Cache {
   std::map<int, Volume>              _volumes;
   std::vector<StripeSM *>            globalVec_stripe;
   std::unordered_set<ts::CacheURL *> URLset;
-  unsigned short                    *stripes_hash_table;
+  unsigned short                    *stripes_hash_table = nullptr;
 };
 
 Errata
@@ -685,7 +685,14 @@ Cache::calcTotalSpanPhysicalSize()
 }
 #endif
 
-Cache::~Cache() {}
+Cache::~Cache()
+{
+  // The URL set and the stripe hash table are owned solely by this instance.
+  for (auto *url : URLset) {
+    delete url;
+  }
+  ats_free(stripes_hash_table);
+}
 
 Errata
 Span::load()

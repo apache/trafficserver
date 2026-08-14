@@ -378,12 +378,14 @@ TSPluginInit(int argc, char const **argv)
 
   if (!read_config_option(argc, argv, *config)) {
     TSError("[%s] Failed to parse options.", PLUGIN_NAME);
+    delete config;
     return;
   }
 
   if (!config->log_filename.empty()) {
     if (!create_log_file(config->log_filename, config->log_handle)) {
       TSError("[%s] Failed to create log.", PLUGIN_NAME);
+      delete config;
       return;
     } else {
       Dbg(dbg_ctl, "Created log file.");
@@ -465,6 +467,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (!config->log_filename.empty()) {
     if (!create_log_file(config->log_filename, config->log_handle)) {
       TSError("[%s] Failed to create log.", PLUGIN_NAME);
+      delete config;
       return TS_ERROR;
     } else {
       Dbg(dbg_ctl, "Created log file.");
@@ -473,6 +476,7 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
 
   if (reserve_user_arg(*config) == TS_ERROR) {
     TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
+    delete config;
     return TS_ERROR;
   }
 

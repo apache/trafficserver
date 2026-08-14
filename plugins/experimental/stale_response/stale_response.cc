@@ -1070,6 +1070,10 @@ parse_args(int argc, char const *argv[])
       plugin_config->log_info.stale_if_error = true;
       break;
     case 'd':
+      // The option may be repeated; release the previously duplicated name first.
+      if (plugin_config->log_info.filename != PLUGIN_TAG) {
+        free(const_cast<char *>(plugin_config->log_info.filename));
+      }
       plugin_config->log_info.filename = strdup(optarg);
       break;
 

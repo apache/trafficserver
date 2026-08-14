@@ -388,7 +388,9 @@ parse_map_referer(const YAML::Node &node, url_mapping *url_mapping)
       !strcasecmp(url.c_str(), "<default_redirect_url>") || !strcasecmp(url.c_str(), "default_redirect_url")) {
     url_mapping->default_redirect_url = true;
   }
-  url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(ats_strdup(url.c_str()));
+  // parse_format_redirect_url() copies what it needs out of the buffer, so hand it the local
+  // string's storage rather than a fresh allocation that nothing would own.
+  url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(url.data());
 
   if (!node["regex"] || !node["regex"].IsSequence()) {
     return swoc::Errata("'regex' field must be sequence");
