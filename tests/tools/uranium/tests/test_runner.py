@@ -21,7 +21,7 @@ import subprocess
 
 import pytest
 
-from uranium_testkit.runner import (
+from tools.uranium.runner import (
     RunnerError,
     _cmake_cache_value,
     _copy_sandbox_artifacts,
@@ -29,6 +29,7 @@ from uranium_testkit.runner import (
     choose_docker_mode,
     is_official_test_container,
     launch_docker,
+    runner_help,
     translate_arguments,
 )
 
@@ -62,35 +63,47 @@ def test_official_container_requires_fedora_44_and_container_marker(tmp_path: Pa
     assert not is_official_test_container(tmp_path)
 
 
-def test_urtest_arguments_translate_to_pytest() -> None:
-    """Preserve the common established command-line spellings."""
+def test_pytest_arguments_pass_through_unchanged() -> None:
+    """Leave selection, parallelism, collection, and sandbox options to pytest."""
 
-    translated = translate_arguments(
-        ["-j2", "-v", "--sandbox", "/tmp/sb", "--clean=none", "-f", "cache-*", "tls-basic"],
-        {},
-    )
+    arguments = ["-n", "2", "-v", "--sandbox", "/tmp/sb", "--collect-only", "-k", "cache or tls"]
+
+    assert translate_arguments(arguments, {}) == arguments
+
+
+def test_runner_help_separates_wrapper_and_pytest_options() -> None:
+    """Explain the wrapper's priority before displaying downstream help."""
+
+    help_text = runner_help()
+
+    assert "urtest.sh options (consumed before pytest; these spellings take precedence):" in help_text
+    assert "-k for selection, -n for parallel workers" in help_text
+    assert "--collect-only/--co for listing tests" in help_text
+    assert "-j N" not in help_text
+    assert "--clean" not in help_text
+    assert "--list" not in help_text
+    assert "Docker is the default" in help_text
+    assert help_text.endswith("pytest options (passed through after urtest.sh processing):")
+
+
+def test_ci_sharding_preserves_pytest_selection() -> None:
+    """Combine native pytest selection with stable CI sharding."""
+
+    translated = translate_arguments(["-k", "legacy-one or legacy-two"], {"SHARD": "3", "SHARDCNT": "12"})
     assert translated == [
-        "-n",
-        "2",
-        "--dist",
-        "loadgroup",
-        "-v",
-        "--sandbox",
-        "/tmp/sb",
-        "--legacy-clean",
-        "none",
-        "--urtest-filter",
-        "cache-*",
-        "--urtest-filter",
-        "tls-basic",
+        "-k",
+        "legacy-one or legacy-two",
+        "--urtest-shard-index",
+        "3",
+        "--urtest-shard-count",
+        "12",
     ]
 
 
-def test_ci_sharding_replaces_old_python_only_filter_list() -> None:
-    """Let pytest shard its full inventory when old Jenkins passes Python names."""
+def test_pytest_short_options_are_not_reinterpreted() -> None:
+    """Leave pytest and plugin short options under pytest's control."""
 
-    translated = translate_arguments(["-f", "legacy-one", "legacy-two"], {"SHARD": "3", "SHARDCNT": "12"})
-    assert translated == ["--urtest-shard-index", "3", "--urtest-shard-count", "12"]
+    assert translate_arguments(["-f", "-k", "basic"], {}) == ["-f", "-k", "basic"]
 
 
 def test_invalid_ci_shard_fails() -> None:
@@ -113,16 +126,16 @@ def test_docker_launch_forwards_ci_sharding(monkeypatch: pytest.MonkeyPatch, tmp
     def find_executable(executable: str) -> str:
         return f"/usr/bin/{executable}"
 
-    monkeypatch.setattr("uranium_testkit.runner.shutil.which", find_executable)
-    monkeypatch.setattr("uranium_testkit.runner.subprocess.run", record_run)
+    monkeypatch.setattr("tools.uranium.runner.shutil.which", find_executable)
+    monkeypatch.setattr("tools.uranium.runner.subprocess.run", record_run)
     monkeypatch.setenv("SHARD", "3")
     monkeypatch.setenv("SHARDCNT", "12")
 
-    assert launch_docker(tmp_path, ["-j2", "-q"]) == 0
+    assert launch_docker(tmp_path, ["-n2", "-q"]) == 0
     command = commands[0]
     assert command[command.index("SHARD=3") - 1] == "--env"
     assert command[command.index("SHARDCNT=12") - 1] == "--env"
-    assert command[-4:] == [str(tmp_path / "tests" / "urtest.sh"), "--no-run-in-docker", "-j2", "-q"]
+    assert command[-4:] == [str(tmp_path / "tests" / "urtest.sh"), "--no-run-in-docker", "-n2", "-q"]
 
 
 def test_source_runner_keeps_a_short_stable_sandbox(tmp_path: Path) -> None:
