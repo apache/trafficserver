@@ -435,6 +435,12 @@ public:
   }
 
   int
+  get_conf_reload_count()
+  {
+    return _conf_reload_count;
+  }
+
+  int
   incr_invalid_file_count()
   {
     return _invalid_file_count++;
@@ -1179,7 +1185,7 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
       Dbg(dbg_ctl, "config expiration time for version: %s %s is in the past, re-checking in 1 minute", s3->versionString(),
           config_fname.c_str());
       if (s3->incr_conf_reload_count() % 10 == 0) {
-        TSError("[%s] Reloading a stale config file has been failing (%d attempts): %s", PLUGIN_NAME, s3->incr_conf_reload_count(),
+        TSError("[%s] Reloading a stale config file has been failing (%d attempts): %s", PLUGIN_NAME, s3->get_conf_reload_count(),
                 config_fname.c_str());
       }
       s3->schedule_conf_reload(60);
