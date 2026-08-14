@@ -93,6 +93,7 @@ public:
   int ttl_line           = -1;
   int ignore_client_line = -1;
   int ignore_server_line = -1;
+  int matched_rule_line  = -1;
 };
 
 inline CacheControlResult::CacheControlResult()
@@ -105,9 +106,16 @@ class CacheControlRecord : public ControlBase
 {
 public:
   CacheControlRecord();
-  CacheControlType directive                  = CacheControlType::INVALID;
-  int              time_arg                   = 0;
-  int              cache_responses_to_cookies = -1;
+  CacheControlType directive                   = CacheControlType::INVALID;
+  int              time_arg                    = 0;
+  int              cache_responses_to_cookies  = -1;
+  bool             is_yaml_rule                = false;
+  CacheControlType yaml_cache_action           = CacheControlType::INVALID;
+  int              yaml_revalidate_after       = CC_UNSET_TIME;
+  int              yaml_pin_in_cache_for       = CC_UNSET_TIME;
+  int              yaml_ttl_in_cache           = CC_UNSET_TIME;
+  bool             yaml_ignore_client_no_cache = false;
+  bool             yaml_ignore_server_no_cache = false;
   Result           Init(matcher_line *line_info);
   void             UpdateMatch(CacheControlResult *result, RequestData *rdata);
   void             Print() const;

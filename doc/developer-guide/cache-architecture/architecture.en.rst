@@ -100,7 +100,7 @@ which cache stripes) are contained in a specific cache volume.
 
 The layout and structure of the cache spans, the cache volumes, and the cache
 stripes that compose them are derived entirely from :file:`storage.yaml` and
-:file:`cache.config` and is recomputed from scratch when the
+:file:`cache.yaml` and is recomputed from scratch when the
 :program:`traffic_server` is started. Therefore, any change to those files can
 (and almost always will) invalidate the existing cache in its entirety.
 
@@ -477,7 +477,7 @@ pinned objects as there is a dead zone immediately before the write cursor from
 which data cannot be evacuated. Evacuated data is read from disk and placed in
 the write queue and written as its turn comes up.
 
-Objects can only be pinned via :file:`cache.config` and while
+Objects can only be pinned via :file:`cache.yaml` and while
 :ts:cv:`proxy.config.cache.permit.pinning` is set to non-zero (it is zero by
 default). Objects which are in use when the write cursor is near use the same
 underlying evacuation mechanism but are handled automatically and not via the
@@ -730,7 +730,7 @@ The set of things which can affect cacheability are:
 
 * Built in constraints.
 * Settings in :file:`records.yaml`.
-* Settings in :file:`cache.config`.
+* Settings in :file:`cache.yaml`.
 * Plugin operations.
 
 The initial internal checks, along with their :file:`records.yaml`
@@ -755,7 +755,7 @@ The checks that are done are:
       This check can be disabled by setting a non-zero value for
       :ts:cv:`proxy.config.http.cache.cache_urls_that_look_dynamic`.
 
-      In addition if a TTL is set for rule that matches in :file:`cache.config`
+      In addition if a TTL is set for a rule that matches in :file:`cache.yaml`
       then this check is not done.
 
    Range Request
@@ -842,13 +842,13 @@ can't be checked until we've selected an alternate).
 
 Most of this work is done in ``HttpTransact::what_is_document_freshness``.
 
-First, the TTL (time to live) value, which can be set in :file:`cache.config`,
-is checked if the request matches the configuration file line. This is done
+First, the TTL (time to live) value, which can be set in :file:`cache.yaml`,
+is checked if the request matches the configuration rule. This is done
 based on when the object was placed in the cache, not on any data in the
 headers.
 
 Next, an internal flag (``needs-revalidate-once``) is checked if the
-:file:`cache.config` value ``revalidate-after`` is not set, and if set the
+:file:`cache.yaml` value ``revalidate`` is not set, and if set the
 object is marked *stale*.
 
 After these checks the object age is calculated by ``HttpTransactHeaders::calculate_document_age``.
@@ -860,7 +860,7 @@ How this age is used is determined by the :file:`records.yaml` setting for
 built calculations are used which compare the freshness limits with document
 age, modified by any of the client supplied cache control values (``max-age``,
 ``min-fresh``, ``max-stale``) unless explicitly overridden in
-:file:`cache.config`.
+:file:`cache.yaml`.
 
 If the object is not stale then it is served to the client. If it is stale, the
 client request may be changed to an ``If Modified Since`` request to
@@ -1110,7 +1110,7 @@ appropriate evacuation bucket.
 
 .. [#cacheability-overrides]
 
-   The code appears to check :file:`cache.config` in this logic by setting the
+   The code appears to check :file:`cache.yaml` in this logic by setting the
    ``does_config_permit_lookup`` in the ``cache_info.directives`` of the state
    machine instance but I can find no place where the value is used. The
    directive ``does_config_permit_storing`` is set and later checked so the
