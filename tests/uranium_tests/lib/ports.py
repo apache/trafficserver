@@ -21,7 +21,7 @@ from contextlib import contextmanager
 from typing import Iterator
 import socket
 
-from uranium_testkit.scenario import _scenario
+from tools.uranium.scenario import _scenario
 
 
 def PortOpen(port: int, address: str | None = None, bound_ports: set[int] | None = None) -> bool:  # noqa: N802

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
 
 
 def test_simple_post_valid_buffer_check(urtest: UraniumTest) -> None:
