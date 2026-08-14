@@ -1230,7 +1230,7 @@ class UraniumTest(Entity):
         installed_body_factory = Path(self.runtime.layout["SYSCONFDIR"]) / "body_factory"
         if installed_body_factory.is_dir():
             shutil.copytree(installed_body_factory, body_factory, dirs_exist_ok=True)
-        min_config = self.runtime.repository_root / "tests" / "uranium_testkit" / "min_cfg"
+        min_config = self.runtime.repository_root / "tests" / "tools" / "uranium" / "min_cfg"
         if min_config.is_dir():
             for source in min_config.iterdir():
                 if source.is_file() and source.name != "readme.txt":

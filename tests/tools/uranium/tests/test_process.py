@@ -20,8 +20,8 @@ import sys
 
 import pytest
 
-from uranium_testkit.process import ManagedProcess, ProcessError
-from uranium_testkit.replay import ReplayTest
+from tools.uranium.process import ManagedProcess, ProcessError
+from tools.uranium.replay import ReplayTest
 
 
 def test_managed_process_captures_output(tmp_path: Path) -> None:

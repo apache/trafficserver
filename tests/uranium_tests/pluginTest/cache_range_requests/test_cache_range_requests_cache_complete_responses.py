@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_testkit.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
 
 
 def test_cache_range_requests_cache_complete_responses(urtest: UraniumTest) -> None:

@@ -14,7 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from uranium_testkit.services import ATS, Curl
+from tools.uranium.services import ATS, Curl
 
 
 def test_traffic_server_starts(ats: ATS, curl: Curl) -> None:
@@ -22,6 +22,6 @@ def test_traffic_server_starts(ats: ATS, curl: Curl) -> None:
 
     ats.start()
 
-    result = curl.get(f"http://127.0.0.1:{ats.http_port}")
+    result = curl.get(ats)
 
     assert result.returncode == 0, result.output
