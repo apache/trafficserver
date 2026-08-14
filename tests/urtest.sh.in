@@ -24,7 +24,7 @@ if [ -n "${configured_curl_uds}" ]; then
   curl_uds_argument=(--configured-curl-uds)
 fi
 
-exec python3 "@CMAKE_CURRENT_SOURCE_DIR@/uranium_testkit/runner.py" configured \
+exec python3 "@CMAKE_CURRENT_SOURCE_DIR@/tools/uranium/runner.py" configured \
   "--source-root=@CMAKE_SOURCE_DIR@" \
   "--build-root=@CMAKE_BINARY_DIR@" \
   "--install-prefix=@CMAKE_INSTALL_PREFIX@" \
