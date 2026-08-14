@@ -19,6 +19,8 @@ limitations under the License.
 
 #pragma once
 
+#include <utility>
+
 #include <libnuraft/nuraft.hxx>
 
 #include "log_store.h"
@@ -37,7 +39,7 @@ public:
       int                             server_id  = s.first;
       std::string                     endpoint   = s.second;
       nuraft::ptr<nuraft::srv_config> new_server = nuraft::cs_new<nuraft::srv_config>(server_id, endpoint);
-      saved_config_->get_servers().push_back(new_server);
+      saved_config_->get_servers().push_back(std::move(new_server));
     }
   }
 

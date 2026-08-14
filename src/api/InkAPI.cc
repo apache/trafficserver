@@ -8335,7 +8335,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
         return TS_ERROR;
       }
       // Atomic Swap
-      cc->setCtx(test_ctx);
+      cc->setCtx(std::move(test_ctx));
       return TS_SUCCESS;
     }
   }
@@ -8935,7 +8935,7 @@ TSRPCHandlerDone(TSYaml resp)
 {
   Dbg(dbg_ctl_rpc_api, ">> Handler seems to be done");
   std::lock_guard<std::mutex> lock(::rpc::g_rpcHandlingMutex);
-  auto                        data       = *reinterpret_cast<YAML::Node *>(resp);
+  auto                       &data       = *reinterpret_cast<YAML::Node *>(resp);
   ::rpc::g_rpcHandlerResponseData        = data;
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();

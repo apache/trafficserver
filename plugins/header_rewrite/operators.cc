@@ -1269,8 +1269,8 @@ OperatorRunPlugin::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  auto plugin_name = p.get_arg();
-  auto plugin_args = p.get_value();
+  const auto &plugin_name = p.get_arg();
+  const auto &plugin_args = p.get_value();
 
   if (plugin_name.empty()) {
     throw std::runtime_error("run-plugin missing plugin name");

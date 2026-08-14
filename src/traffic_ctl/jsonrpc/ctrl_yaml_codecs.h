@@ -299,7 +299,7 @@ template <> struct convert<HostStatusLookUpResponse> {
       HostStatusLookUpResponse::HostStatusInfo hi;
       hi.hostName = item["hostname"].Scalar();
       hi.status   = item["status"].Scalar();
-      info.statusList.push_back(hi);
+      info.statusList.push_back(std::move(hi));
     }
     for (auto &&item : errorList) {
       info.errorList.push_back(item.Scalar());

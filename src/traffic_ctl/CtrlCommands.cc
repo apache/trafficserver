@@ -990,7 +990,7 @@ PluginCommand::plugin_msg()
     // have a value
     params.str = msgs[1];
   }
-  BasicPluginMessageRequest request{params};
+  BasicPluginMessageRequest request{std::move(params)};
   auto                      response = invoke_rpc(request);
   _printer->write_output(response);
 }

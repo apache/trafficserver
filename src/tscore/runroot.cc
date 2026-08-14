@@ -29,6 +29,7 @@
 #include "tscore/Layout.h"
 #include "tscore/runroot.h"
 #include <yaml-cpp/yaml.h>
+#include <utility>
 
 static std::string runroot_file = {};
 
@@ -110,7 +111,7 @@ runroot_extra_handling(const char *executable, bool json)
   if (env_val) {
     path = get_yaml_path(env_val);
     if (!path.empty()) {
-      runroot_file = path;
+      runroot_file = std::move(path);
       if (!json) {
         ink_notice("using the environment variable TS_RUNROOT");
       }
@@ -124,7 +125,7 @@ runroot_extra_handling(const char *executable, bool json)
   if (getcwd(cwd, sizeof(cwd)) != nullptr) {
     path = get_parent_yaml_path(cwd);
     if (!path.empty()) {
-      runroot_file = path;
+      runroot_file = std::move(path);
       if (!json) {
         ink_notice("using cwd as TS_RUNROOT");
       }
@@ -138,7 +139,7 @@ runroot_extra_handling(const char *executable, bool json)
     bindir             = bindir.substr(0, bindir.find_last_of('/')); // getting the bin dir not executable path
     path               = get_parent_yaml_path(bindir);
     if (!path.empty()) {
-      runroot_file = path;
+      runroot_file = std::move(path);
       if (!json) {
         ink_notice("using the installed dir as TS_RUNROOT");
       }
@@ -161,7 +162,7 @@ argparser_runroot_handler(std::string const &value, const char *executable, bool
       if (!json) {
         ink_notice("using command line path as RUNROOT");
       }
-      runroot_file = path;
+      runroot_file = std::move(path);
       return;
     } else if (!json) {
       ink_warning("Unable to access runroot: '%s'", value.c_str());
@@ -201,7 +202,7 @@ runroot_handler(const char **argv, bool json)
       if (!json) {
         ink_notice("using command line path as RUNROOT");
       }
-      runroot_file = path;
+      runroot_file = std::move(path);
       return;
     } else if (!json) {
       ink_warning("Unable to access runroot: '%s'", value.c_str());
@@ -250,7 +251,7 @@ runroot_map(const std::string &file)
       if (value[0] != '/') {
         value = Layout::relative_to(prefix, value);
       }
-      map[it.first.as<std::string>()] = value;
+      map[it.first.as<std::string>()] = std::move(value);
     }
   } catch (YAML::Exception &e) {
     ink_warning("Unable to read '%s': %s", file.c_str(), e.what());

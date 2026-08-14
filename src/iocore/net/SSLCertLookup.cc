@@ -433,7 +433,7 @@ SSLCertLookup::getPolicies(const std::string &secret_name, std::set<shared_SSLMu
 {
   auto iter = cert_secret_registry.find(secret_name);
   if (iter != cert_secret_registry.end()) {
-    for (auto name : iter->second) {
+    for (auto const &name : iter->second) {
       SSLCertContext *cc = this->find(name);
       if (cc) {
         policies.insert(cc->userconfig);

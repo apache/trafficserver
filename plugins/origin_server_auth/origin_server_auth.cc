@@ -134,7 +134,7 @@ loadRegionMap(StringMap &m, const String &filename)
       Dbg(dbg_ctl, "added entry-point:%s, region:%s", entrypoint.c_str(), region.c_str());
     }
 
-    m[entrypoint] = region;
+    m[entrypoint] = std::move(region);
   }
 
   if (m.at("").empty()) {

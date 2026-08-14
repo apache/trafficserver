@@ -80,7 +80,7 @@ STEKShareLogStore::append(nuraft::ptr<nuraft::log_entry> &entry)
 
   std::lock_guard<std::mutex> l(logs_lock_);
   size_t                      idx = start_idx_ + logs_.size() - 1;
-  logs_[idx]                      = clone;
+  logs_[idx]                      = std::move(clone);
   return idx;
 }
 
@@ -205,7 +205,7 @@ STEKShareLogStore::pack(uint64_t index, int32_t cnt)
     assert(le.get());
     nuraft::ptr<nuraft::buffer> buf  = le->serialize();
     size_total                      += buf->size();
-    logs.push_back(buf);
+    logs.push_back(std::move(buf));
   }
 
   nuraft::ptr<nuraft::buffer> buf_out = nuraft::buffer::alloc(sizeof(int32_t) + cnt * sizeof(int32_t) + size_total);
@@ -236,7 +236,7 @@ STEKShareLogStore::apply_pack(uint64_t index, nuraft::buffer &pack)
     nuraft::ptr<nuraft::log_entry> le = nuraft::log_entry::deserialize(*buf_local);
     {
       std::lock_guard<std::mutex> l(logs_lock_);
-      logs_[cur_idx] = le;
+      logs_[cur_idx] = std::move(le);
     }
   }
 
