@@ -21,6 +21,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import subprocess
+from typing import Any
 
 from .scenario import FileNode, Process, UraniumTest
 
@@ -56,8 +57,8 @@ class RecordsConfig:
 class ATS:
     """A fixture-owned Traffic Server process."""
 
-    def __init__(self, scenario: UraniumTest, name: str = "ats") -> None:
-        self._process: Process = scenario.MakeATSProcess(name)
+    def __init__(self, scenario: UraniumTest, name: str = "ats", **process_options: Any) -> None:
+        self._process: Process = scenario.MakeATSProcess(name, **process_options)
         self._was_started = False
         self.records = RecordsConfig(self._process.Disk.records_config)
 
@@ -66,6 +67,12 @@ class ATS:
         """Return the IPv4 HTTP listening port selected for this process."""
 
         return int(self._process.Variables.port)
+
+    @property
+    def uds_path(self) -> str:
+        """Return the Unix-domain socket path selected for this process."""
+
+        return str(self._process.Variables.uds_path)
 
     @property
     def is_running(self) -> bool:
@@ -87,26 +94,67 @@ class ATS:
             self._process.validate()
 
 
+class ATSFactory:
+    """Create Traffic Server instances owned by one pytest scenario."""
+
+    def __init__(self, scenario: UraniumTest) -> None:
+        self._scenario = scenario
+        self._services: list[ATS] = []
+        self._names: set[str] = set()
+
+    def create(self, name: str | None = None, **process_options: Any) -> ATS:
+        """Create a named Traffic Server with fixture-owned cleanup."""
+
+        process_name = name or f"ats{len(self._services) + 1}"
+        if process_name in self._names:
+            raise ValueError(f"Traffic Server process {process_name!r} already exists")
+        service = ATS(self._scenario, process_name, **process_options)
+
+        self._services.append(service)
+        self._names.add(process_name)
+        return service
+
+    def close(self) -> None:
+        """Stop and validate every created instance in reverse order."""
+
+        failures: list[Exception] = []
+        for service in reversed(self._services):
+            try:
+                service.close()
+            except Exception as error:
+                failures.append(error)
+        self._services.clear()
+        self._names.clear()
+        if failures:
+            raise ExceptionGroup("Traffic Server cleanup failed", failures)
+
+
 class Curl:
     """Run curl requests and return ordinary Python result objects."""
 
-    def __init__(self, working_directory: Path) -> None:
+    def __init__(self, working_directory: Path, *, use_uds: bool = False) -> None:
         self._working_directory = working_directory
+        self._use_uds = use_uds
 
     def get(
             self,
-            url: str,
+            ats: ATS,
+            path: str = "/",
             *,
             headers: Mapping[str, str] | None = None,
             options: Sequence[str] = (),
             timeout: float = 30,
     ) -> CommandResult:
-        """Issue a GET request to @a url."""
+        """Issue a GET request to @a path through @a ats."""
 
-        arguments = [*options]
+        request_path = path if path.startswith("/") else f"/{path}"
+        arguments = []
+        if self._use_uds:
+            arguments.extend(["--unix-socket", ats.uds_path])
+        arguments.extend(options)
         for name, value in (headers or {}).items():
             arguments.extend(["--header", f"{name}: {value}"])
-        arguments.append(url)
+        arguments.append(f"http://127.0.0.1:{ats.http_port}{request_path}")
         return self.run(*arguments, timeout=timeout)
 
     def run(self, *arguments: str, timeout: float = 30) -> CommandResult:

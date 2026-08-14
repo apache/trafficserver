@@ -20,13 +20,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from uranium_testkit.config import ReplayConfigError, ReplaySpec, merge_flat_records, replace_server_ports
+from tools.uranium.config import ReplayConfigError, ReplaySpec, merge_flat_records, replace_server_ports
 
 
 def test_all_migrated_replays_are_valid() -> None:
     """Verify every directly collected replay has valid test metadata."""
 
-    uranium_tests = Path(__file__).parents[1] / "uranium_tests"
+    uranium_tests = Path(__file__).parents[3] / "uranium_tests"
     replay_files = list(uranium_tests.rglob("*.test.yaml"))
     assert len(replay_files) >= 96
     for path in replay_files:
@@ -36,7 +36,7 @@ def test_all_migrated_replays_are_valid() -> None:
 def test_no_uranium_test_registers_an_uranium_replay() -> None:
     """Keep replay ownership out of legacy Python wrappers."""
 
-    uranium_tests = Path(__file__).parents[1] / "uranium_tests"
+    uranium_tests = Path(__file__).parents[3] / "uranium_tests"
     registrations = [path for path in uranium_tests.rglob("test_*.py") if "Test.ATSReplayTest(" in path.read_text()]
     assert registrations == []
 
@@ -44,7 +44,7 @@ def test_no_uranium_test_registers_an_uranium_replay() -> None:
 def test_all_bespoke_tests_are_available_to_pytest() -> None:
     """Keep the compatibility inventory explicit while definitions migrate."""
 
-    uranium_tests = Path(__file__).parents[1] / "uranium_tests"
+    uranium_tests = Path(__file__).parents[3] / "uranium_tests"
     assert len(list(uranium_tests.rglob("test_*.py"))) == 505
 
 
