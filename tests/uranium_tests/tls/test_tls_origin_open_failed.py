@@ -14,85 +14,50 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import re
+
+from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory
 
 
-def test_tls_origin_open_failed(urtest: UraniumTest) -> None:
-    '''
-    Verify that a failed outbound TLS origin connection is surfaced to the client as
-    an error (5xx) without crashing ATS.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class OriginOpenFailureScenario:
+    """Force the outbound TLS socket bind to fail before connect."""
 
-    import ports
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin_port = services.allocate_port()
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = __doc__
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Bind outbound sockets to a non-local documentation address."""
 
-    class TestOriginOpenFailed:
-        '''Verify a failed outbound TLS connect is surfaced as a 5xx, not a crash.'''
+        ats = ats_factory.create("ts")
+        ats.remap_config.add_line(f"map http://dead.test/ https://127.0.0.1:{self._origin_port}/")
+        ats.records.update(
+            {
+                "proxy.config.outgoing_ip_to_bind": "192.0.2.1",
+                "proxy.config.http.connect_attempts_max_retries": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ssl",
+            })
+        return ats
 
-        _ts_counter: int = 0
+    def run(self) -> None:
+        """Require a 5xx response while ATS stays alive."""
 
-        def __init__(self) -> None:
-            '''Declare the test Processes.'''
-            self._ts = self._configure_trafficserver()
+        self._ats.start()
+        result = self._curl.get(
+            self._ats,
+            headers={"Host": "dead.test"},
+            options=("--silent", "--output", "/dev/null", "--write-out", "%{http_code}"),
+        )
+        assert result.returncode == 0, result.output
+        assert re.fullmatch(r"50[02]", result.stdout)
+        assert self._ats.is_running
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        assert re.search(r"received signal|failed assertion", traffic_out) is None
 
-        def _configure_trafficserver(self) -> 'Process':
-            '''Configure Traffic Server with an https origin whose connect fails.
 
-            :return: The Traffic Server Process.
-            '''
-            ts = urtest.MakeATSProcess(f'ts-{TestOriginOpenFailed._ts_counter}')
-            TestOriginOpenFailed._ts_counter += 1
+def test_tls_origin_open_failed(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A failed outbound TLS open yields a 5xx without crashing ATS."""
 
-            # Reserve a port for a TLS origin; its liveness is irrelevant since the
-            # source bind below fails before any connect is attempted.
-            ports.get_port(ts, 'origin_port')
-
-            ts.Disk.remap_config.AddLine(f'map http://dead.test/ https://127.0.0.1:{ts.Variables.origin_port}/')
-            ts.Disk.records_config.update(
-                {
-                    # Bind every outbound connection to a non-local source address
-                    # (RFC 5737 documentation range) so bind() fails synchronously with
-                    # EADDRNOTAVAIL, i.e. the connect fails before any TCP/TLS exchange
-                    # rather than via a later, routable connect that would be refused
-                    # asynchronously.
-                    'proxy.config.outgoing_ip_to_bind': '192.0.2.1',
-                    'proxy.config.http.connect_attempts_max_retries': 1,
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|ssl',
-                })
-
-            # Tearing down the failed outbound TLS connect must not crash ATS.
-            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-                "received signal|failed assertion", "ATS must not crash on a failed outbound TLS connect")
-            return ts
-
-        def run(self) -> None:
-            '''Configure and run the TestRun.'''
-            tr = urtest.AddTestRun("a failed outbound TLS connect is surfaced cleanly")
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.MakeCurlCommand(
-                f'-s -o /dev/null -w "%{{http_code}}" -H "Host: dead.test" http://127.0.0.1:{self._ts.Variables.port}/',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            # A failed origin connection is surfaced as a 5xx (502 Bad Gateway).
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("50[02]", "a failed origin connect yields a 5xx")
-            tr.StillRunningAfter = self._ts
-
-    TestOriginOpenFailed().run()
-    urtest.execute()
+    OriginOpenFailureScenario(ats_factory, services, curl).run()

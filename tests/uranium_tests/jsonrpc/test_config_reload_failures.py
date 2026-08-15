@@ -14,417 +14,130 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from typing import Any
+import json
+import time
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_config_reload_failures(urtest: UraniumTest) -> None:
-    '''
-    Test config reload failure scenarios.
+class ConfigReloadFailureScenario:
+    """Exercise failure reporting and recovery for configuration reloads."""
 
-    Tests:
-    1. Failed tasks (invalid config content)
-    2. Failed subtasks (invalid SSL certificates)
-    3. Incomplete subtasks (timeout scenarios)
-    4. Status propagation when subtasks fail
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._request_id = 0
+        self._ats = self.configure_ats(ats_factory)
 
-    from jsonrpc import Request, Response
-    import os
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure TLS so a broken certificate reference can fail reload."""
 
-    urtest.Summary = 'Test config reload failure scenarios and status propagation'
-    urtest.ContinueOnFail = True
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "config|ssl|ip_allow",
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+            })
+        self.write_multicert(ats, valid=True)
+        return ats
 
-    ts = urtest.MakeATSProcess('ts', dump_runroot=True, enable_tls=True)
+    @staticmethod
+    def write_multicert(ats: ATS, *, valid: bool) -> None:
+        """Write either the valid baseline or an additional bad certificate."""
 
-    urtest.testName = 'config_reload_failures'
-
-    # Enable debugging
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'config|ssl|ip_allow',
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-        })
-
-    # Add valid SSL certs for baseline
-    ts.addDefaultSSLFiles()
-
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        [
-            'ssl_multicert:',
+        entries = [
             '  - dest_ip: "*"',
-            '    ssl_cert_name: server.pem',
-            '    ssl_key_name: server.key',
-        ])
-
-    # Override default diags check — this test intentionally triggers SSL errors
-    ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Expected errors from invalid SSL cert injection")
-
-    # ============================================================================
-    # Test 1: Baseline - successful reload
-    # ============================================================================
-    tr = urtest.AddTestRun("Baseline - successful reload")
-    tr.Processes.Default.StartBefore(ts)
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
-
-    def validate_baseline(resp: Response):
-        '''Verify baseline reload succeeds'''
-        if resp.is_error():
-            return (False, f"Baseline failed: {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        return (True, f"Baseline succeeded: token={token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_baseline)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 2: Wait and check baseline completed successfully
-    # ============================================================================
-    tr = urtest.AddTestRun("Verify baseline completed with success status")
-    tr.DelayStart = 3
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_baseline_status(resp: Response):
-        '''Check baseline reload status'''
-        if resp.is_error():
-            error = resp.error_as_str()
-            if 'in progress' in error.lower():
-                return (True, f"Still in progress: {error}")
-            return (True, f"Query result: {error}")
-
-        result = resp.result
-        tasks = result.get('tasks', [])
-
-        # Check for any failed tasks
-        def find_failures(task_list):
-            failures = []
-            for t in task_list:
-                if t.get('status') == 'fail':
-                    failures.append(t.get('description', 'unknown'))
-                failures.extend(find_failures(t.get('sub_tasks', [])))
-            return failures
-
-        failures = find_failures(tasks)
-        if failures:
-            return (True, f"Found failures (may be expected): {failures}")
-
-        return (True, f"Baseline status OK, {len(tasks)} tasks")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_baseline_status)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 3: Inject invalid ip_allow config (should fail)
-    # ============================================================================
-    tr = urtest.AddTestRun("Inject invalid ip_allow config")
-    tr.DelayStart = 2
-
-    # Invalid ip_allow YAML - missing required fields
-    invalid_ip_allow = """ip_allow:
-      - apply: invalid_value
-        action: not_a_valid_action
-    """
-
-    # This should trigger a validation error in IpAllow
-    # Note: The actual behavior depends on how strict the parser is
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
-
-    def validate_after_invalid_config(resp: Response):
-        '''Check reload after invalid config injection'''
-        if resp.is_error():
-            return (True, f"Reload error (may be expected): {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        errors = result.get('error', [])
-
-        if errors:
-            return (True, f"Reload reported errors: {errors}")
-
-        return (True, f"Reload started: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_after_invalid_config)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 4: Add invalid SSL cert reference (subtask failure)
-    # ============================================================================
-    tr = urtest.AddTestRun("Configure invalid SSL cert path")
-    tr.DelayStart = 2
-
-    # Add a bad cert reference to ssl_multicert.yaml
-    # This should cause the SSL subtask to fail
-    sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
-    tr.Disk.File(sslcertpath, id="ssl_multicert_yaml", typename="ats:config")
-    tr.Disk.ssl_multicert_yaml.AddLines(
-        [
-            'ssl_multicert:',
-            '  - dest_ip: "*"',
-            '    ssl_cert_name: server.pem',
-            '    ssl_key_name: server.key',
-            '  - dest_ip: 1.2.3.4',
-            '    ssl_cert_name: /nonexistent/bad.pem',
-            '    ssl_key_name: /nonexistent/bad.key',
-        ])
-
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
-
-    def validate_ssl_failure(resp: Response):
-        '''Check reload with bad SSL config'''
-        if resp.is_error():
-            return (True, f"SSL reload error: {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        return (True, f"SSL reload started: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_ssl_failure)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 5: Check for failed subtasks after SSL reload
-    # ============================================================================
-    tr = urtest.AddTestRun("Check for failed SSL subtasks")
-    tr.DelayStart = 3
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_failed_subtasks(resp: Response):
-        '''Check if SSL subtasks show failure'''
-        if resp.is_error():
-            error = resp.error_as_str()
-            if 'in progress' in error.lower():
-                return (True, f"Still in progress: {error}")
-            return (True, f"Query: {error}")
-
-        result = resp.result
-        tasks = result.get('tasks', [])
-
-        def analyze_tasks(task_list, depth=0):
-            analysis = []
-            for t in task_list:
-                desc = t.get('description', 'unknown')
-                status = t.get('status', 'unknown')
-                logs = t.get('logs', [])
-
-                info = f"{'  '*depth}{desc}: {status}"
-                if status == 'fail' and logs:
-                    info += f" - {logs[0][:50]}..."
-
-                analysis.append(info)
-
-                # Recurse into subtasks
-                analysis.extend(analyze_tasks(t.get('sub_tasks', []), depth + 1))
-
-            return analysis
-
-        task_info = analyze_tasks(tasks)
-        return (True, f"Task analysis:\n" + "\n".join(task_info[:10]))
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_failed_subtasks)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 6: Verify parent status reflects subtask failure
-    # ============================================================================
-    tr = urtest.AddTestRun("Verify status propagation from subtask to parent")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_status_propagation(resp: Response):
-        '''Verify failed subtask propagates to parent'''
-        if resp.is_error():
-            error = resp.error_as_str()
-            if 'in progress' in error.lower():
-                return (True, f"In progress: {error}")
-            return (True, f"Query: {error}")
-
-        result = resp.result
-        tasks = result.get('tasks', [])
-
-        def check_propagation(task_list):
-            """
-            For each task with subtasks, verify:
-            - If any subtask is 'fail', parent should be 'fail'
-            - If any subtask is 'in_progress', parent should be 'in_progress'
-            - If all subtasks are 'success', parent should be 'success'
-            """
-            issues = []
-            for t in task_list:
-                sub_tasks = t.get('sub_tasks', [])
-                if not sub_tasks:
-                    continue
-
-                parent_status = t.get('status', '')
-                sub_statuses = [st.get('status', '') for st in sub_tasks]
-
-                if 'fail' in sub_statuses and parent_status != 'fail':
-                    issues.append(f"{t.get('description')}: has failed subtask but parent is '{parent_status}'")
-
-                if 'in_progress' in sub_statuses and parent_status != 'in_progress':
-                    issues.append(f"{t.get('description')}: has in_progress subtask but parent is '{parent_status}'")
-
-                # Recurse
-                issues.extend(check_propagation(sub_tasks))
-
-            return issues
-
-        issues = check_propagation(tasks)
-        if issues:
-            return (True, f"Propagation issues found: {issues}")
-
-        return (True, "Status propagation verified correctly")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_status_propagation)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 7: Check task logs contain error details
-    # ============================================================================
-    tr = urtest.AddTestRun("Check failed tasks have error logs")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_error_logs(resp: Response):
-        '''Verify failed tasks have descriptive logs'''
-        if resp.is_error():
-            return (True, f"Query: {resp.error_as_str()}")
-
-        result = resp.result
-        tasks = result.get('tasks', [])
-
-        def find_failed_with_logs(task_list):
-            results = []
-            for t in task_list:
-                if t.get('status') == 'fail':
-                    logs = t.get('logs', [])
-                    desc = t.get('description', 'unknown')
-                    if logs:
-                        results.append(f"{desc}: {logs}")
-                    else:
-                        results.append(f"{desc}: NO LOGS (should have error details)")
-
-                results.extend(find_failed_with_logs(t.get('sub_tasks', [])))
-            return results
-
-        failed_info = find_failed_with_logs(tasks)
-        if failed_info:
-            return (True, f"Failed tasks with logs: {failed_info}")
-
-        return (True, "No failed tasks found (baseline may have recovered)")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_error_logs)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 8: Force reload to reset state
-    # ============================================================================
-    tr = urtest.AddTestRun("Force reload to reset")
-    tr.DelayStart = 2
-
-    # Reset ssl_multicert.yaml to valid state
-    sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
-    tr.Disk.File(sslcertpath, id="ssl_multicert_yaml", typename="ats:config")
-    tr.Disk.ssl_multicert_yaml.AddLines(
-        [
-            'ssl_multicert:',
-            '  - dest_ip: "*"',
-            '    ssl_cert_name: server.pem',
-            '    ssl_key_name: server.key',
-        ])
-
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
-
-    def validate_reset(resp: Response):
-        '''Reset to clean state'''
-        if resp.is_error():
-            return (True, f"Reset: {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        return (True, f"Reset reload started: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_reset)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 9: Verify clean state after reset
-    # ============================================================================
-    tr = urtest.AddTestRun("Verify clean state after reset")
-    tr.DelayStart = 3
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_clean_state(resp: Response):
-        '''Verify we're back to clean state'''
-        if resp.is_error():
-            error = resp.error_as_str()
-            if 'in progress' in error.lower():
-                return (True, f"In progress: {error}")
-            return (True, f"Query: {error}")
-
-        result = resp.result
-        tasks = result.get('tasks', [])
-
-        # Count failures
-        def count_failures(task_list):
-            count = 0
-            for t in task_list:
-                if t.get('status') == 'fail':
-                    count += 1
-                count += count_failures(t.get('sub_tasks', []))
-            return count
-
-        failures = count_failures(tasks)
-        if failures > 0:
-            return (True, f"Still have {failures} failed tasks (may need more time)")
-
-        return (True, "Clean state - no failures")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_clean_state)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 10: Summary
-    # ============================================================================
-    tr = urtest.AddTestRun("Final summary")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_summary(resp: Response):
-        '''Final summary of failure testing'''
-        if resp.is_error():
-            return (True, f"Final: {resp.error_as_str()}")
-
-        result = resp.result
-
-        summary = """
-        Config Reload Failure Testing Summary:
-        - Failed tasks: Detected when config validation fails
-        - Failed subtasks: SSL cert failures propagate to parent
-        - Status propagation: Parent status reflects worst subtask status
-        - Error logs: Failed tasks should include error details
-        """
-
-        return (True, f"Test complete. Token: {result.get('token', 'none')}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_summary)
-    tr.StillRunningAfter = ts
-    urtest.execute()
+            "    ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ]
+        if not valid:
+            entries.extend(
+                [
+                    "  - dest_ip: 1.2.3.4",
+                    "    ssl_cert_name: /nonexistent/bad.pem",
+                    "    ssl_key_name: /nonexistent/bad.key",
+                ])
+        ats.write_config_file("ssl_multicert.yaml", "ssl_multicert:\n" + "\n".join(entries) + "\n")
+
+    def rpc(self, method: str, params: object | None = None) -> dict[str, Any]:
+        """Invoke one JSON-RPC method and decode its response."""
+
+        self._request_id += 1
+        request: dict[str, object] = {
+            "jsonrpc": "2.0",
+            "id": str(self._request_id),
+            "method": method,
+        }
+        if params is not None:
+            request["params"] = params
+        command = self._ats.rpc(request)
+        assert command.returncode == 0, command.output
+        return json.loads(command.stdout)
+
+    def reload(self, *, force: bool = False) -> dict[str, Any]:
+        """Start a file-based reload and require a well-formed response."""
+
+        params = {"force": True} if force else None
+        response = self.rpc("admin_config_reload", params)
+        assert response.get("jsonrpc") == "2.0", response
+        assert "result" in response or "error" in response, response
+        return response
+
+    def verify_baseline(self) -> None:
+        """Require a normal reload to start successfully."""
+
+        response = self.reload(force=True)
+        assert "error" not in response, response
+        assert response["result"].get("token"), response
+        time.sleep(3)
+
+    def verify_failed_subtask(self) -> None:
+        """Require a file-only handler to report an inline reload failure."""
+
+        response = self.rpc(
+            "admin_config_reload",
+            {
+                "configs":
+                    {
+                        "ssl_multicert":
+                            {
+                                "ssl_multicert":
+                                    [
+                                        {
+                                            "dest_ip": "*",
+                                            "ssl_cert_name": "/nonexistent/bad.pem",
+                                            "ssl_key_name": "/nonexistent/bad.key",
+                                        }
+                                    ]
+                            }
+                    }
+            },
+        )
+        assert "error" not in response, response
+        errors = response["result"].get("errors", [])
+        assert errors, response
+        assert "6011" in str(errors), errors
+
+    def verify_recovery(self) -> None:
+        """Restore the valid file and require a new reload to be accepted."""
+
+        time.sleep(2)
+        response = self.reload(force=True)
+        assert "error" not in response, response
+        assert response["result"].get("token"), response
+
+    def run(self) -> None:
+        """Run the baseline, failed-subtask, and recovery sequence."""
+
+        self._ats.start()
+        self.verify_baseline()
+        self.verify_failed_subtask()
+        self.verify_recovery()
+
+
+def test_config_reload_failures(ats_factory: ATSFactory) -> None:
+    """A failed reload subtask is reported and does not prevent recovery."""
+
+    ConfigReloadFailureScenario(ats_factory).run()

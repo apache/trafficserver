@@ -13,437 +13,219 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify slice repairs inconsistent cached blocks."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
 
-def test_slice_selfhealing(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    import time
-    import datetime
+class SliceSelfHealingScenario:
+    """Seed inconsistent blocks and exercise each slice repair path."""
 
-    urtest.Summary = '''
-    Slice selfhealing test
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-    def to_httpdate(dt):
-        # string representation of a date according to RFC 1123 (HTTP/1.1).
-        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][dt.weekday()]
-        month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][dt.month - 1]
-        return "%s, %02d %s %04d %02d:%02d:%02d GMT" % (weekday, dt.day, month, dt.year, dt.hour, dt.minute, dt.second)
+    @staticmethod
+    def add_range_response(origin: OriginServer, uid: str, byte_range: str, etag: str, body: str) -> None:
+        """Add a cacheable five-byte asset block."""
 
-    # Test description:
-    # Preload the cache with the entire asset to be range requested.
-    # Reload remap rule with slice plugin
-    # Request content through the slice plugin
+        start, requested_end = (int(value) for value in byte_range.split("-"))
+        end = min(requested_end, 4)
+        origin.add_response(
+            {
+                "headers":
+                    (f"GET {{PATH}} HTTP/1.1\r\nHost: www.example.com\r\nuuid: {uid}\r\n"
+                     f"Range: bytes={byte_range}\r\n\r\n")
+            },
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nCache-Control: max-age=5000\r\n"
+                        f"Connection: close\r\nContent-Range: bytes {start}-{end}/5\r\nEtag: \"{etag}\"\r\n\r\n"),
+                "body": body,
+            },
+        )
 
-    urtest.SkipUnless(
-        Condition.PluginExists('slice.so'),
-        Condition.PluginExists('cache_range_requests.so'),
-        Condition.PluginExists('xdebug.so'),
-    )
-    urtest.ContinueOnFail = False
+    @classmethod
+    def configure_server(cls, services: ServiceFactory) -> OriginServer:
+        """Create old, new, non-range, missing, and custom-identity responses."""
 
-    # configure origin server
-    server = urtest.MakeOriginServer("server", lookup_key="{%uuid}")
+        origin = services.origin("origin", lookup_key="{%uuid}")
+        for uid, byte_range, etag, body in (
+            ("etagold-1", "3-5", "etagold", "aa"),
+            ("etagnew-0", "0-2", "etagnew", "bbb"),
+            ("etagnew-1", "3-5", "etagnew", "bb"),
+            ("etagold-0", "0-2", "etagold", "aaa"),
+            ("assetgone-0", "0-2", "etag", "aaa"),
+            ("etagold-custom-1", "3-5", "etagold-custom", "aa"),
+            ("etagnew-custom-0", "0-2", "etagnew-custom", "bbb"),
+            ("etagnew-custom-1", "3-5", "etagnew-custom", "bb"),
+        ):
+            cls.add_range_response(origin, uid, byte_range, etag, body)
+        origin.add_response(
+            {"headers": ("GET /code200 HTTP/1.1\r\nHost: www.example.com\r\nuuid: code200\r\n"
+                         "Range: bytes=3-5\r\n\r\n")},
+            {
+                "headers": ("HTTP/1.1 200 OK\r\nCache-Control: max-age=5000\r\nConnection: close\r\nEtag: \"etag\"\r\n\r\n"),
+                "body": "ccccc",
+            },
+        )
+        origin.add_response(
+            {"headers": "GET {PATH} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n",
+                "body": "Not Found"
+            },
+        )
+        return origin
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure default and custom identity repair chains."""
 
-    # default root
-    req_header_chk = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_chk = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    server.addResponse("sessionlog.json", req_header_chk, res_header_chk)
-
-    # set up slice plugin with remap host into cache_range_requests
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
-            ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
-            f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' +
-            '  @plugin=cache_range_requests.so @pparam=--consider-ident',
-            f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=slice.so @pparam=--blockbytes-test=3' +
-            ' @pparam=--remap-host=crrhdr @pparam=--crr-ident-header=crr-foo',
-            f'map http://crrhdr/ http://127.0.0.1:{server.Variables.Port}/'
-            '  @plugin=cache_range_requests.so @pparam=--ident-header=crr-foo',
-        ])
-
-    ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
-
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
+        ats = ats_factory.create("ats")
+        required = ("slice.so", "cache_range_requests.so", "xdebug.so")
+        if not all(ats.plugin_exists(plugin) for plugin in required):
+            pytest.skip("slice.so, cache_range_requests.so, and xdebug.so are required")
+        origin = f"http://127.0.0.1:{self._origin.port}/"
+        ats.remap_config.add_lines(
+            (
+                f"map http://slice/ {origin} @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr",
+                f"map http://crr/ {origin} @plugin=cache_range_requests.so @pparam=--consider-ident",
+                f"map http://slicehdr/ {origin} @plugin=slice.so @pparam=--blockbytes-test=3 "
+                "@pparam=--remap-host=crrhdr @pparam=--crr-ident-header=crr-foo",
+                f"map http://crrhdr/ {origin} @plugin=cache_range_requests.so @pparam=--ident-header=crr-foo",
+            ))
+        ats.plugin_config.add_line("xdebug.so --enable=x-cache")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_range_requests|slice",
         })
+        return ats
 
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
+    def request(
+        self,
+        host: str,
+        path: str,
+        *,
+        byte_range: str | None = None,
+        uid: str | None = None,
+        identity: str | None = None,
+        show_download_size: bool = False,
+    ) -> CommandResult:
+        """Issue one range request through the persistent ATS cache."""
 
-    # Test case: 2nd slice out of date (refetch and continue)
+        arguments = [
+            "--silent",
+            "--show-error",
+            "--dump-header",
+            "-",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+            "--header",
+            "x-debug: x-cache",
+        ]
+        if byte_range is not None:
+            arguments.extend(("--range", byte_range))
+        if uid is not None:
+            arguments.extend(("--header", f"uuid: {uid}"))
+        if identity is not None:
+            arguments.extend(("--header", f"crr-foo: {identity}"))
+        if show_download_size:
+            arguments.extend(("--write-out", "SENT: '%{size_download}'"))
+        arguments.append(f"http://{host}/{path}")
+        return self._curl.run_for(self._ats, *arguments)
 
-    req_header_2ndold1 = {
-        "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-1\r\n" + "Range: bytes=3-5\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+    @staticmethod
+    def assert_contains(result: CommandResult, *values: str) -> None:
+        """Assert all expected response fragments are present."""
 
-    res_header_2ndold1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagold"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "aa"
-    }
+        for value in values:
+            assert value in result.output, result.output
 
-    server.addResponse("sessionlog.json", req_header_2ndold1, res_header_2ndold1)
+    def repair_non_reference_block(self) -> None:
+        """Replace an old second block and continue the response."""
 
-    req_header_2ndnew0 = {
-        "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-0\r\n" + "Range: bytes=0-2\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+        self.assert_contains(self.request("crr", "second", byte_range="0-2", uid="etagnew-0"), "bbb", "etagnew")
+        self.assert_contains(self.request("crr", "second", byte_range="3-5", uid="etagold-1"), "aa", "etagold")
+        healed = self.request("slice", "second", byte_range="3-", uid="etagnew-1")
+        assert healed.returncode == 0, healed.output
+        self.assert_contains(healed, "bb", "etagnew")
+        complete = self.request("slice", "second")
+        assert complete.returncode == 0, complete.output
+        self.assert_contains(complete, "bbbbb", "etagnew")
 
-    res_header_2ndnew0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bbb"
-    }
+    def repair_reference_block(self) -> None:
+        """Abort an inconsistent response, heal its reference, and retry."""
 
-    server.addResponse("sessionlog.json", req_header_2ndnew0, res_header_2ndnew0)
+        self.assert_contains(self.request("crr", "reference", byte_range="0-2", uid="etagold-0"), "aaa", "etagold")
+        self.assert_contains(self.request("crr", "reference", byte_range="3-5", uid="etagnew-1"), "bb", "etagnew")
+        aborted = self.request(
+            "slice",
+            "reference",
+            byte_range="3-",
+            uid="etagnew-0",
+            show_download_size=True,
+        )
+        self.assert_contains(aborted, "etagold", "SENT: '0'")
+        complete = self.request("slice", "reference")
+        assert complete.returncode == 0, complete.output
+        self.assert_contains(complete, "bbbbb", "etagnew")
 
-    req_header_2ndnew1 = {
-        "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-1\r\n" + "Range: bytes=3-5\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+    def handle_non_range_and_missing_assets(self) -> None:
+        """Pass through a 200 and turn an incomplete cached asset into a 404."""
 
-    res_header_2ndnew1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bb"
-    }
+        full = self.request("slice", "code200", byte_range="3-5", uid="code200")
+        assert full.returncode == 0, full.output
+        self.assert_contains(full, "200 OK", "ccccc")
+        seeded = self.request("slice", "assetgone", byte_range="0-2", uid="assetgone-0")
+        assert seeded.returncode == 0, seeded.output
+        self.assert_contains(seeded, "aaa", "etag")
+        incomplete = self.request("slice", "assetgone")
+        self.assert_contains(incomplete, "aaa", "Content-Length: 5", "etag")
+        for _attempt in range(20):
+            missing = self.request("slice", "assetgone")
+            if "404 Not Found" in missing.output:
+                break
+            time.sleep(0.1)
+        else:
+            pytest.fail(f"slice did not discard the incomplete cached asset:\n{missing.output}")
 
-    server.addResponse("sessionlog.json", req_header_2ndnew1, res_header_2ndnew1)
+    def repair_with_custom_identity(self) -> None:
+        """Repair a block when cache_range_requests uses a custom identity header."""
 
-    # 0 Test - Preload reference etagnew-0
-    tr = urtest.AddTestRun("Preload reference etagnew-0")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://crr/second -r 0-2 -H "uuid: etagnew-0"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/bbb.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
-    tr.StillRunningAfter = ts
+        identity = format_datetime(datetime.now(UTC) + timedelta(seconds=100), usegmt=True)
+        old = self.request(
+            "crrhdr",
+            "second-custom",
+            byte_range="3-5",
+            uid="etagold-custom-1",
+            identity=identity,
+        )
+        self.assert_contains(old, "aa", "etagold-custom")
+        healed = self.request("slicehdr", "second-custom", byte_range="3-", uid="etagnew-custom-1")
+        assert healed.returncode == 0, healed.output
+        self.assert_contains(healed, "bb", "etagnew-custom")
 
-    # 1 Test - Preload slice etagold-1
-    tr = urtest.AddTestRun("Preload slice etagold-1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://crr/second -r 3-5 -H "uuid: etagold-1"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/aa.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
-    tr.StillRunningAfter = ts
+    def run(self) -> None:
+        """Run all repair paths against one persistent cache."""
 
-    # 2 Test - Request second slice via slice plugin, with instructions to fetch new 2nd slice
-    tr = urtest.AddTestRun("Request 2nd slice (expect refetch)")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/second -r 3- -H "uuid: etagnew-1"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/bb.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
-    tr.StillRunningAfter = ts
+        self._origin.start()
+        self._ats.start()
+        self.repair_non_reference_block()
+        self.repair_reference_block()
+        self.handle_non_range_and_missing_assets()
+        self.repair_with_custom_identity()
+        wait_for_file_lines(self._ats.diags_log, "logSliceError", 1)
 
-    # 3 Test - Request fully healed asset via slice plugin
-    tr = urtest.AddTestRun("Request full healed slice")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/second', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression("bbbbb", "expected bbbbb content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
-    tr.StillRunningAfter = ts
 
-    # Test case: reference slice out of date (abort connection, heal reference)
+def test_slice_selfhealing(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Slice heals stale blocks, missing assets, and custom identities."""
 
-    req_header_refold0 = {
-        "headers":
-            "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-0\r\n" + "Range: bytes=0-2\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_refold0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagold"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "aaa"
-    }
-
-    server.addResponse("sessionlog.json", req_header_refold0, res_header_refold0)
-
-    req_header_refnew0 = {
-        "headers":
-            "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-0\r\n" + "Range: bytes=0-2\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_refnew0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bbb"
-    }
-
-    server.addResponse("sessionlog.json", req_header_refnew0, res_header_refnew0)
-
-    req_header_refnew1 = {
-        "headers":
-            "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-1\r\n" + "Range: bytes=3-5\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_refnew1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bb"
-    }
-
-    server.addResponse("sessionlog.json", req_header_refnew1, res_header_refnew1)
-
-    # 4 Test - Preload reference etagold-0
-    tr = urtest.AddTestRun("Preload reference etagold-0")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://crr/reference -r 0-2 -H "uuid: etagold-0"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/aaa.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
-    tr.StillRunningAfter = ts
-
-    # 5 Test - Preload slice 1 etagnew-1
-    tr = urtest.AddTestRun("Preload slice etagnew-1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://crr/reference -r 3-5 -H "uuid: etagnew-1"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/bb.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
-    tr.StillRunningAfter = ts
-
-    # 6 Test - Request reference slice via slice plugin, with instructions to
-    # fetch new 2nd slice -- this will send the old header, but abort and
-    # refetch it
-    tr = urtest.AddTestRun("Request 2nd slice (expect abort)")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/reference -r 3- -H "uuid: etagnew-0" -w "SENT: \'%{size_download}\'"', ts=ts)
-    # ps.ReturnCode = 0 # curl will fail here
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagold", "expected etagold")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("SENT: '0'", "expected empty payload")
-    tr.StillRunningAfter = ts
-
-    # 7 Test - Request full healed asset via slice plugin
-    tr = urtest.AddTestRun("Request full healed slice")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/reference', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression("bbbbb", "expected bbbbb content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew", "expected etagnew")
-    tr.StillRunningAfter = ts
-
-    # Request results in 200, not 206 (server not support range requests)
-
-    req_header_200 = {
-        "headers": "GET /code200 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: code200\r\n" + "Range: bytes=3-5\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_200 = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=5000\r\n" + "Connection: close\r\n" + 'Etag: "etag"\r\n' +
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "ccccc"
-    }
-
-    server.addResponse("sessionlog.json", req_header_200, res_header_200)
-
-    # 8 test - Request through slice but get a 200 back
-    tr = urtest.AddTestRun("Request gets a 200")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/code200 -r 3-5 -H "uuid: code200"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression("ccccc", "expected full ccccc content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200")
-    tr.StillRunningAfter = ts
-
-    # Test for asset gone
-
-    # Preload
-    req_header_assetgone0 = {
-        "headers":
-            "GET /assetgone HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: assetgone-0\r\n" + "Range: bytes=0-2\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_assetgone0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etag"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "aaa"
-    }
-
-    server.addResponse("sessionlog.json", req_header_assetgone0, res_header_assetgone0)
-
-    # 9 test - Preload reference slice
-    tr = urtest.AddTestRun("Preload reference assetgone-0")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/assetgone -r 0-2 -H "uuid: assetgone-0"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/aaa.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etag", "expected etag")
-    tr.StillRunningAfter = ts
-
-    # 10 test - Fetch full asset, 2nd slice should trigger 404 response
-    tr = urtest.AddTestRun("Fetch full asset")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/assetgone', ts=ts)
-    # ps.ReturnCode = 0 # curl will return non zero
-    ps.Streams.stderr = "gold/aaa.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etag", "expected etag")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Length: 5", "expected header of content-length 5")
-    tr.StillRunningAfter = ts
-
-    # 11 test - Fetch full asset again, full blown 404
-    tr = urtest.AddTestRun("Fetch full asset, 404")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/assetgone', ts=ts)
-    # ps.ReturnCode = 0 # curl will return non zero
-    ps.Streams.stdout.Content = Testers.ContainsExpression("404 Not Found", "Expected 404")
-    tr.StillRunningAfter = ts
-
-    ## custom headers
-
-    # Test case: 2nd slice out of date (refetch and continue)
-
-    req_header_custom_2ndold1 = {
-        "headers":
-            "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-custom-1\r\n" + "Range: bytes=3-5\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_custom_2ndold1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagold-custom"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "aa"
-    }
-
-    server.addResponse("sessionlog.json", req_header_custom_2ndold1, res_header_custom_2ndold1)
-
-    req_header_custom_2ndnew0 = {
-        "headers":
-            "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-custom-0\r\n" + "Range: bytes=0-2\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_custom_2ndnew0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew-custom"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bbb"
-    }
-
-    server.addResponse("sessionlog.json", req_header_custom_2ndnew0, res_header_custom_2ndnew0)
-
-    req_header_custom_2ndnew1 = {
-        "headers":
-            "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-custom-1\r\n" + "Range: bytes=3-5\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    res_header_custom_2ndnew1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-            "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew-custom"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bb"
-    }
-
-    server.addResponse("sessionlog.json", req_header_custom_2ndnew1, res_header_custom_2ndnew1)
-
-    edt = datetime.datetime.fromtimestamp(time.time() + 100)
-    edate = to_httpdate(edt)
-
-    # 12 Test - Preload reference etagold-1
-    tr = urtest.AddTestRun("Preload slice etagold-custom-1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(
-        curl_and_args + f' http://crrhdr/second-custom -r 3-5 -H "uuid: etagold-custom-1" -H "crr-foo: {edate}"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/aa.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagold-custom", "expected etagold-custom")
-    tr.StillRunningAfter = ts
-
-    # 13 Test - Request second slice via slice plugin, with instructions to fetch new 2nd slice
-    tr = urtest.AddTestRun("Request 2nd slice (expect refetch)")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slicehdr/second-custom -r 3- -H "uuid: etagnew-custom-1"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/bb.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("etagnew-custom", "expected etagnew-custom")
-    tr.StillRunningAfter = ts
-
-    # Over riding the built in ERROR check since we expect to see logSliceErrors
-    ts.Disk.diags_log.Content = Testers.ContainsExpression("logSliceError", "logSliceErrors generated")
-    urtest.execute()
+    SliceSelfHealingScenario(ats_factory, services).run()

@@ -14,422 +14,292 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import sys
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    Curl,
+    DNSServer,
+    OriginServer,
+    ProcessService,
+    ServiceFactory,
+    assert_matches_gold,
+)
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
+PROXY_PROTOCOL_CLIENT = TEST_DIRECTORY / "proxy_protocol_client.py"
+SPLIT_CLIENT = TEST_DIRECTORY / "split_client_hello.py"
+SPLIT_SERVER = TEST_DIRECTORY / "receive_split_client_hello.py"
 
 
-def test_tls_tunnel(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsTunnelScenario:
+    """Exercise SNI blind tunnels, dynamic ports, reloads, and split ClientHello input."""
 
-    from ports import get_port
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._services = services
+        self._curl = curl
+        self._server_foo = self.configure_origin(services, "server-foo", "foo.com", "foo ok")
+        self._server_bar = self.configure_origin(services, "server-bar", "bar.com", "bar ok")
+        self._server_forbidden = self.configure_origin(services, "server-forbidden", "proxy.protocol.port.com", "pp ok")
+        self._split_port = services.allocate_port()
+        self._split_server = self.configure_split_server(services)
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test tunneling based on SNI
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory, name: str, host: str, body: str) -> OriginServer:
+        """Create an HTTPS microserver used as a blind-tunnel destination."""
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_proxy_protocol=True)
-    server_foo = urtest.MakeOriginServer("server_foo", ssl=True)
-    server_bar = urtest.MakeOriginServer("server_bar", ssl=True)
-    server2 = urtest.MakeOriginServer("server2")
-    # The following server will listen on a port that is not in the connect_ports
-    # list.
-    server_forbidden = urtest.MakeOriginServer("forbidden", ssl=True)
-    dns = urtest.MakeDNServer("dns")
+        origin = services.origin(name, ssl=True)
+        origin.add_response(
+            {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": body
+            },
+        )
+        origin.add_response(
+            {"headers": "GET /proxy_protocol HTTP/1.1\r\nHost: proxy.protocol.port.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": "pp ok"
+            },
+        )
+        return origin
 
-    request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_pp_header = {
-        "headers": "GET /proxy_protocol HTTP/1.1\r\nHost: proxy.protocol.port.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-    response_foo_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "foo ok"
-    }
-    response_bar_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bar ok"
-    }
-    response_pp_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "pp ok"}
-    server_foo.addResponse("sessionlog.json", request_foo_header, response_foo_header)
-    server_foo.addResponse("sessionlog.json", request_pp_header, response_pp_header)
-    server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
-    server_forbidden.addResponse("sessionlog.json", request_pp_header, response_pp_header)
+    def configure_split_server(self, services: ServiceFactory) -> ProcessService:
+        """Create the bespoke server that verifies fragmented ClientHello input."""
 
-    # Server to interact with a split CLIENT_HELLO in a blind tunnel.
-    split_client_hello_server = urtest.Processes.Process('receive_split_client_hello_server')
-    server_port = get_port(split_client_hello_server, 'tcp_port')
-    server_command = f'{sys.executable} receive_split_client_hello.py 127.0.0.1 {server_port}'
-    split_client_hello_server.Command = server_command
+        return services.process(
+            "split-client-hello-server",
+            [sys.executable, SPLIT_SERVER, "127.0.0.1", str(self._split_port)],
+            ready_port=self._split_port,
+        )
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signed-bar.pem")
-    ts.addSSLfile("ssl/signed-bar.key")
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
-    ts.addSSLfile("ssl/signer.key")
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve every expanded SNI tunnel destination to loopback."""
 
-    dns.addRecords(records={"localhost": ["127.0.0.1"]})
-    dns.addRecords(records={"one.testmatch": ["127.0.0.1"]})
-    dns.addRecords(records={"two.example.one": ["127.0.0.1"]})
-    dns.addRecords(records={"backend.incoming.port.com": ["127.0.0.1"]})
-    dns.addRecords(records={"backend.proxy.protocol.port.com": ["127.0.0.1"]})
-    dns.addRecords(records={"backend.wildcard.with.incoming.port.com": ["127.0.0.1"]})
-    dns.addRecords(records={"backend.wildcard.with.proxy.protocol.port.com": ["127.0.0.1"]})
-    # Need no remap rules.  Everything should be processed by sni
+        dns = services.dns("dns")
+        dns.add_records(
+            {
+                "localhost": ["127.0.0.1"],
+                "one.testmatch": ["127.0.0.1"],
+                "two.example.one": ["127.0.0.1"],
+                "backend.incoming.port.com": ["127.0.0.1"],
+                "backend.proxy.protocol.port.com": ["127.0.0.1"],
+                "backend.wildcard.with.incoming.port.com": ["127.0.0.1"],
+                "backend.wildcard.with.proxy.protocol.port.com": ["127.0.0.1"],
+            })
+        return dns
 
-    # Make sure the TS server certs are different from the origin certs
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: signed-foo.pem
-        ssl_key_name: signed-foo.key
-    """.split("\n"))
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure SNI tunnel routes and the dynamic-port restrictions."""
 
-    # Case 1, global config policy=permissive properties=signature
-    #         override for foo.com policy=enforced properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.http.connect_ports':
-                '{0} {1} {2}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port),
-            'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
-            'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
-            'proxy.config.dns.resolv_conf': 'NULL'
-        })
-    ts.addPrivateConnectAllowYaml()
+        ats = ats_factory.create("ts", enable_tls=True, enable_proxy_protocol=True)
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "signed-foo.pem",
+            SSL_DIRECTORY / "signed-foo.key",
+            SSL_DIRECTORY / "signed-bar.pem",
+            SSL_DIRECTORY / "signed-bar.key",
+            SSL_DIRECTORY / "server.pem",
+            SSL_DIRECTORY / "server.key",
+            SSL_DIRECTORY / "signer.pem",
+            SSL_DIRECTORY / "signer.key",
+        )
+        ats.set_ssl_multicert_yaml(
+            {"ssl_multicert": [{
+                "dest_ip": "*",
+                "ssl_cert_name": "signed-foo.pem",
+                "ssl_key_name": "signed-foo.key"
+            }]})
+        ats.records.update(
+            {
+                "proxy.config.http.connect_ports":
+                    (f"{ats.https_port} {self._server_foo.https_port} {self._server_bar.https_port}"),
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ssl|proxyprotocol",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+            })
+        ats.allow_private_connect()
+        ats.write_config_file("sni.yaml", self.initial_sni_document(ats))
+        return ats
 
-    # foo.com should not terminate.  Just tunnel to server_foo
-    # bar.com should terminate.  Forward its tcp stream to server_bar
-    # empty SNI should tunnel to server_bar
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: foo.com',
-            f"  tunnel_route: localhost:{server_foo.Variables.SSL_Port}",
-            '- fqdn: slashdot.org',
-            f"  tunnel_route: 127.0.0.1:{split_client_hello_server.Variables.tcp_port}",
-            "- fqdn: '*.bar.com'",
-            f"  tunnel_route: localhost:{server_foo.Variables.SSL_Port}",
-            "- fqdn: '*.match.com'",
-            f"  tunnel_route: $1.testmatch:{server_foo.Variables.SSL_Port}",
-            "- fqdn: '*.ok.two.com'",
-            f"  tunnel_route: two.example.$1:{server_foo.Variables.SSL_Port}",
-            "- fqdn: ''",  # No SNI sent
-            f"  tunnel_route: localhost:{server_bar.Variables.SSL_Port}",
-            "- fqdn: 'incoming.port.com'",
-            "  tunnel_route: backend.incoming.port.com:{inbound_local_port}",
-            "- fqdn: 'proxy.protocol.port.com'",
-            "  tunnel_route: backend.proxy.protocol.port.com:{proxy_protocol_port}",
-            "- fqdn: '*.backend.incoming.port.com'",
-            "  tunnel_route: backend.$1.incoming.port.com:{inbound_local_port}",
-            "- fqdn: '*.with.incoming.port.com'",
-            "  tunnel_route: backend.$1.with.incoming.port.com:{inbound_local_port}",
-            "- fqdn: '*.with.proxy.protocol.port.com'",
-            "  tunnel_route: backend.$1.with.proxy.protocol.port.com:{proxy_protocol_port}",
-        ])
+    def initial_sni_document(self, ats: ATS) -> str:
+        """Render the initial tunnel policy with the allocated service ports."""
 
-    tr = urtest.AddTestRun("foo.com Tunnel-test")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand("-v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server_foo)
-    tr.Processes.Default.StartBefore(server_bar)
-    tr.Processes.Default.StartBefore(dns)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server_foo
-    tr.StillRunningAfter = server_bar
-    tr.StillRunningAfter = dns
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-        "Not Found on Accelerato", "Should not try to remap on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
+        return (
+            "sni:\n"
+            "  - fqdn: foo.com\n"
+            f"    tunnel_route: localhost:{self._server_foo.https_port}\n"
+            "  - fqdn: slashdot.org\n"
+            f"    tunnel_route: 127.0.0.1:{self._split_port}\n"
+            "  - fqdn: '*.bar.com'\n"
+            f"    tunnel_route: localhost:{self._server_foo.https_port}\n"
+            "  - fqdn: '*.match.com'\n"
+            f"    tunnel_route: $1.testmatch:{self._server_foo.https_port}\n"
+            "  - fqdn: '*.ok.two.com'\n"
+            f"    tunnel_route: two.example.$1:{self._server_foo.https_port}\n"
+            "  - fqdn: ''\n"
+            f"    tunnel_route: localhost:{self._server_bar.https_port}\n"
+            "  - fqdn: incoming.port.com\n"
+            "    tunnel_route: backend.incoming.port.com:{inbound_local_port}\n"
+            "  - fqdn: proxy.protocol.port.com\n"
+            "    tunnel_route: backend.proxy.protocol.port.com:{proxy_protocol_port}\n"
+            "  - fqdn: '*.backend.incoming.port.com'\n"
+            "    tunnel_route: backend.$1.incoming.port.com:{inbound_local_port}\n"
+            "  - fqdn: '*.with.incoming.port.com'\n"
+            "    tunnel_route: backend.$1.with.incoming.port.com:{inbound_local_port}\n"
+            "  - fqdn: '*.with.proxy.protocol.port.com'\n"
+            "    tunnel_route: backend.$1.with.proxy.protocol.port.com:{proxy_protocol_port}\n")
 
-    tr = urtest.AddTestRun("bob.bar.com Tunnel-test")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand("-v --resolve 'bob.bar.com:{0}:127.0.0.1' -k  https://bob.bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-        "Not Found on Accelerato", "Should not try to remap on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from bar")
+    def curl_request(self, host: str, *, expected: int = 0, use_address: bool = False) -> str:
+        """Send one HTTPS request and return curl's combined diagnostic output."""
 
-    tr = urtest.AddTestRun("bar.com no Tunnel-test")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand("-v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
+        arguments = ["--verbose", "--insecure"]
+        if not use_address:
+            arguments.extend(("--resolve", f"{host}:{self._ats.https_port}:127.0.0.1"))
+        url_host = "127.0.0.1" if use_address else host
+        arguments.append(f"https://{url_host}:{self._ats.https_port}")
+        result = self._curl.run_for(self._ats, *arguments, timeout=10)
+        assert result.returncode == expected, result.output
+        return result.output
 
-    tr = urtest.AddTestRun("no SNI Tunnel-test")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand("-v -k  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-        "Not Found on Accelerato", "Should not try to remap on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
+    def proxy_protocol_request(self, name: str, sni: str, destination_port: int, expected: int) -> str:
+        """Run the bespoke TLS client with a Proxy Protocol v2 destination port."""
 
-    tr = urtest.AddTestRun("one.match.com Tunnel-test")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        "-vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-        "Not Found on Accelerato", "Should not try to remap on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
+        client = self._services.process(
+            name,
+            [
+                sys.executable,
+                PROXY_PROTOCOL_CLIENT,
+                "127.0.0.1",
+                str(self._ats.proxy_protocol_https_port),
+                sni,
+                "127.0.0.1",
+                "127.0.0.1",
+                "60123",
+                str(destination_port),
+                "2",
+                "--https",
+            ],
+            expected_return_codes=(expected,),
+        )
+        return client.run(timeout=10).output
 
-    tr = urtest.AddTestRun("one.ok.two.com Tunnel-test")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        "-vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https://one.ok.two.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-        "Not Found on Accelerato", "Should not try to remap on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should get a response from tm")
+    def split_client_hello(self, name: str, split_size: int | None = None) -> None:
+        """Send the recorded ClientHello whole or in fragments through ATS."""
 
-    tr = urtest.AddTestRun("test {inbound_local_port}")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        "-vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    # The tunnel connecting to the outgoing port which is the same as the incoming
-    # port (per the `inbound_local_port` configuration) will result in ATS
-    # connecting back to itself. This will result in a connection close and a
-    # non-zero return code from curl. In production, the server will listen on the
-    # same port as ATS but have a different IP.
-    tr.ReturnCode = 35
-    tr.StillRunningAfter = ts
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        f"CONNECT tunnel://backend.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1", "Verify a CONNECT request is handled")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Cycle Detected", "The loop should be detected")
+        command = [sys.executable, SPLIT_CLIENT, "127.0.0.1", str(self._ats.https_port)]
+        if split_size is not None:
+            command.extend(("--split_size", str(split_size)))
+        result = self._services.process(name, command).run(timeout=10)
+        assert "dummy SERVER_HELLO" in result.output
+        assert "data: 0" in result.output
+        assert "data: 1" in result.output
 
-    tr = urtest.AddTestRun("test {proxy_protocol_port}")
-    tr.TimeOut = 5
-    tr.Setup.Copy('proxy_protocol_client.py')
-    tr.Processes.Default.Command = (
-        f'{sys.executable} proxy_protocol_client.py '
-        f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} proxy.protocol.port.com '
-        f'127.0.0.1 127.0.0.1 60123 {server_foo.Variables.SSL_Port} '
-        f'2 --https')
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify a successful response is received")
+    @staticmethod
+    def assert_tunneled(output: str, body: str) -> None:
+        """Require a successful blind-tunnel response from an origin."""
 
-    # This test run causes an exception in proxy_protocol_client.py
-    #
-    tr = urtest.AddTestRun("test proxy_protocol_port - not in connect_ports")
-    tr.TimeOut = 5
-    tr.Processes.Default.StartBefore(server_forbidden)
-    tr.Setup.Copy('proxy_protocol_client.py')
-    # Note that server_forbidden is listing on a port that is not in the
-    # connect_ports list. Therefore the tunnel should be rejected.
-    rejected_port = server_forbidden.Variables.SSL_Port
-    tr.Processes.Default.Command = (
-        f'{sys.executable} proxy_protocol_client.py '
-        f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} proxy.protocol.port.com '
-        f'127.0.0.1 127.0.0.1 60123 {rejected_port} '
-        f'2 --https')
-    tr.ReturnCode = 1
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify a the handshake failed")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        f"Rejected a tunnel to port {rejected_port} not in connect_ports", "Verify the tunnel was rejected")
+        assert "Could Not Connect" not in output
+        assert "Not Found on Accelerato" not in output
+        assert "HTTP/1.1 200 OK" in output
+        assert "ATS" not in output
+        assert body in output
 
-    tr = urtest.AddTestRun("test wildcard with inbound_local_port")
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        "-vvv --resolve 'wildcard.with.incoming.port.com:{0}:127.0.0.1' -k  https://wildcard.with.incoming.port.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
+    def verify_initial_routes(self) -> None:
+        """Verify literal, wildcard, substitution, empty-SNI, and dynamic-port routes."""
 
-    # See the inbound_local_port test above for the explanation of the return code.
-    tr.ReturnCode = 35
-    tr.StillRunningAfter = ts
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        rf"Destination now is \[backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port}\]",
-        "Verify the tunnel destination is expanded correctly.")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        f"CONNECT tunnel://backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1",
-        "Verify a CONNECT request is handled")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Cycle Detected", "The loop should be detected")
+        self.assert_tunneled(self.curl_request("foo.com"), "foo ok")
+        self.assert_tunneled(self.curl_request("bob.bar.com"), "foo ok")
+        terminated = self.curl_request("bar.com")
+        assert "Not Found on Accelerato" in terminated
+        assert "ATS" in terminated
+        self.assert_tunneled(self.curl_request("unused", use_address=True), "bar ok")
+        self.assert_tunneled(self.curl_request("one.match.com"), "foo ok")
+        self.assert_tunneled(self.curl_request("one.ok.two.com"), "foo ok")
 
-    tr = urtest.AddTestRun("test wildcard with proxy_protocol_port")
-    tr.TimeOut = 5
-    tr.Setup.Copy('proxy_protocol_client.py')
-    tr.Processes.Default.Command = (
-        f'{sys.executable} proxy_protocol_client.py '
-        f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
-        f'127.0.0.1 127.0.0.1 60123 {server_foo.Variables.SSL_Port} '
-        f'2 --https')
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        rf"Destination now is \[backend.wildcard.with.proxy.protocol.port.com:{server_foo.Variables.SSL_Port}\]",
-        "Verify the tunnel destination is expanded correctly.")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify a successful response is received")
+        self.curl_request("incoming.port.com", expected=35)
+        allowed = self.proxy_protocol_request("proxy-protocol-allowed", "proxy.protocol.port.com", self._server_foo.https_port, 0)
+        assert "HTTP/1.1 200 OK" in allowed
+        rejected = self.proxy_protocol_request(
+            "proxy-protocol-rejected", "proxy.protocol.port.com", self._server_forbidden.https_port, 1)
+        assert re.search(r"ssl\.SSL.*Error:.*EOF", rejected)
 
-    # Regression: a tunnel_route that combines $N match groups with a port variable
-    # must still enforce connect_ports.  An earlier bug let MATCH_GROUPS clear the
-    # dynamic-port flag set by MAP_WITH_PROXY_PROTOCOL_PORT, bypassing the check.
-    tr = urtest.AddTestRun("test wildcard with proxy_protocol_port - not in connect_ports")
-    tr.TimeOut = 5
-    tr.Setup.Copy('proxy_protocol_client.py')
-    wildcard_rejected_port = server_forbidden.Variables.SSL_Port
-    tr.Processes.Default.Command = (
-        f'{sys.executable} proxy_protocol_client.py '
-        f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
-        f'127.0.0.1 127.0.0.1 60123 {wildcard_rejected_port} '
-        f'2 --https')
-    tr.ReturnCode = 1
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify the handshake failed")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        f"Rejected a tunnel to port {wildcard_rejected_port} not in connect_ports",
-        "Verify the tunnel was rejected even though the route uses a $N match group")
+        self.curl_request("wildcard.with.incoming.port.com", expected=35)
+        wildcard_allowed = self.proxy_protocol_request(
+            "wildcard-proxy-allowed",
+            "wildcard.with.proxy.protocol.port.com",
+            self._server_foo.https_port,
+            0,
+        )
+        assert "HTTP/1.1 200 OK" in wildcard_allowed
+        wildcard_rejected = self.proxy_protocol_request(
+            "wildcard-proxy-rejected",
+            "wildcard.with.proxy.protocol.port.com",
+            self._server_forbidden.https_port,
+            1,
+        )
+        assert re.search(r"ssl\.SSL.*Error:.*EOF", wildcard_rejected)
 
-    # Update sni file and reload
-    tr = urtest.AddTestRun("Update config files")
-    # Update the SNI config
-    snipath = ts.Disk.sni_yaml.AbsPath
-    recordspath = ts.Disk.records_config.AbsPath
-    tr.Disk.File(snipath, id="sni_yaml", typename="ats:config"),
-    tr.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: bar.com',
-        '  tunnel_route: localhost:{0}'.format(server_bar.Variables.SSL_Port),
-    ])
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server_foo
-    tr.StillRunningAfter = server_bar
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.Command = 'echo Updated configs'
-    tr.Processes.Default.ReturnCode = 0
+    def reload_sni_policy(self) -> None:
+        """Replace the SNI file and wait for its configuration task to succeed."""
 
-    # Test a large CLIENT_HELLO.
-    tr = urtest.AddTestRun("Single large CLIENT_HELLO blind tunnel test")
-    tr.TimeOut = 5
-    tr.Setup.Copy('split_client_hello.py')
-    tr.Setup.Copy('receive_split_client_hello.py')
-    p = tr.Processes.Default
-    p.StartBefore(split_client_hello_server, ready=When.PortOpen(server_port))
-    p.Command = f'{sys.executable} split_client_hello.py 127.0.0.1 {ts.Variables.ssl_port} -s 0'
-    p.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = dns
-    p.Streams.All += Testers.ContainsExpression('dummy SERVER_HELLO', 'Verify a dummy SERVER_HELLO response is received')
-    p.Streams.All += Testers.ContainsExpression('data: 0', 'Verify that the first data packet was received.')
-    p.Streams.All += Testers.ContainsExpression('data: 1', 'Verify that the second data packet was received.')
+        (self._ats.config_directory / "sni.yaml").write_text(
+            "sni:\n"
+            "  - fqdn: bar.com\n"
+            f"    tunnel_route: localhost:{self._server_bar.https_port}\n")
+        result = self._ats.traffic_ctl("config", "reload", "-m", "-t", "tls-tunnel-reload", "-w", "0.1", "-r", "0.2", "-T", "30s")
+        assert result.returncode == 0, result.output
 
-    # Test a CLIENT_HELLO split over two TCP packets.
-    tr = urtest.AddTestRun("Split large CLIENT_HELLO blind tunnel test")
-    tr.TimeOut = 5
-    tr.Setup.Copy('split_client_hello.py')
-    tr.Setup.Copy('receive_split_client_hello.py')
-    p = tr.Processes.Default
-    p.Command = f'{sys.executable} split_client_hello.py 127.0.0.1 {ts.Variables.ssl_port}'
-    p.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = dns
-    p.Streams.All += Testers.ContainsExpression('dummy SERVER_HELLO', 'Verify a dummy SERVER_HELLO response is received')
-    p.Streams.All += Testers.ContainsExpression('data: 0', 'Verify that the first data packet was received.')
-    p.Streams.All += Testers.ContainsExpression('data: 1', 'Verify that the second data packet was received.')
+    def verify_logs_and_metrics(self) -> None:
+        """Check tunnel expansion diagnostics, rejections, and connection metrics."""
 
-    trreload = urtest.AddConfigReload(ts, expect="success", expect_tasks=["sni.yaml"], description="Reload config")
-    trreload.StillRunningAfter = server_foo
-    trreload.StillRunningAfter = server_bar
+        output = self._ats.traffic_out.read_text(errors="replace")
+        assert f"CONNECT tunnel://backend.incoming.port.com:{self._ats.https_port} HTTP/1.1" in output
+        assert "HTTP/1.1 400 Cycle Detected" in output
+        assert f"Rejected a tunnel to port {self._server_forbidden.https_port} not in connect_ports" in output
+        assert f"Destination now is [backend.wildcard.with.incoming.port.com:{self._ats.https_port}]" in output
+        assert (f"Destination now is [backend.wildcard.with.proxy.protocol.port.com:{self._server_foo.https_port}]" in output)
 
-    # Should terminate on traffic_server (not tunnel)
-    tr = urtest.AddTestRun("foo.com no Tunnel-test")
-    tr.TimeOut = 30
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.StartBefore(server2)
-    tr.MakeCurlCommand("-v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+        names = [line.split()[0] for line in (TEST_DIRECTORY / "gold/tls-tunnel-metrics.gold").read_text().splitlines()]
+        metrics = self._ats.traffic_ctl("metric", "get", *names)
+        assert metrics.returncode == 0, metrics.output
+        assert_matches_gold(metrics.stdout, TEST_DIRECTORY / "gold/tls-tunnel-metrics.gold")
 
-    # Should tunnel to server_bar
-    tr = urtest.AddTestRun("bar.com  Tunnel-test")
-    tr.MakeCurlCommand("-v --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Terminate on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
+    def run(self) -> None:
+        """Run every phase of the SNI tunnel scenario."""
 
-    tr = urtest.AddTestRun("Test Metrics")
-    tr.Processes.Default.Command = (
-        f"{urtest.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
-        " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
-        " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
-        " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
-        " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
-        " proxy.process.tunnel.current_client_connections_blind_tcp" + " proxy.process.tunnel.total_server_connections_blind_tcp" +
-        " proxy.process.tunnel.current_server_connections_blind_tcp" + " proxy.process.tunnel.total_client_connections_tls_tunnel" +
-        " proxy.process.tunnel.current_client_connections_tls_tunnel" +
-        " proxy.process.tunnel.total_client_connections_tls_forward" +
-        " proxy.process.tunnel.current_client_connections_tls_forward" +
-        " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
-        " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
-        " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
-        " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
-        f" {urtest.TestDirectory}/gold/tls-tunnel-metrics.gold")
-    # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    urtest.execute()
+        self._server_foo.start()
+        self._server_bar.start()
+        self._server_forbidden.start()
+        self._dns.start()
+        self._split_server.start()
+        self._ats.start()
+        self.verify_initial_routes()
+        self.split_client_hello("whole-client-hello", split_size=0)
+        self.split_client_hello("split-client-hello")
+        self.reload_sni_policy()
+        terminated = self.curl_request("foo.com")
+        assert "Not Found on Accelerato" in terminated
+        assert "ATS" in terminated
+        self.assert_tunneled(self.curl_request("bar.com"), "bar ok")
+        self.verify_logs_and_metrics()
+
+
+def test_tls_tunnel(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """SNI tunnel routing handles all supported destination expansion modes."""
+
+    TlsTunnelScenario(ats_factory, services, curl).run()

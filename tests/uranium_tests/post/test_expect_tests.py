@@ -14,94 +14,82 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, ProcessService, ServiceFactory, VerifierServer
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_expect_tests(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ExpectContinueScenario:
+    """Exercise the two-stage response with the test's purpose-built client."""
 
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._dns = self.configure_dns(services)
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    class ExpectTest:
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve the replay hostnames to the local verifier server."""
 
-        _expect_client: str = 'expect_client.py'
-        _http_utils: str = 'http_utils.py'
-        _replay_file: str = 'replay/expect-continue.replay.yaml'
+        return services.dns("dns", default="127.0.0.1")
 
-        def __init__(self):
-            tr = urtest.AddTestRun('Verify Expect: 100-Continue handling.')
-            self._setup_dns(tr)
-            self._setup_origin(tr)
-            self._setup_trafficserver(tr)
-            self._setup_client(tr)
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> VerifierServer:
+        """Serve the final response after accepting the request body."""
 
-        def _setup_dns(self, tr: 'TestRun') -> None:
-            '''Set up the DNS server.
+        return services.verifier_server("origin", "replay/expect-continue.replay.yaml")
 
-            :param tr: The TestRun to which to add the DNS server.
-            '''
-            dns = tr.MakeDNServer('dns', default='127.0.0.1')
-            self._dns = dns
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure ATS to generate the interim 100 Continue response."""
 
-        def _setup_origin(self, tr: 'TestRun') -> None:
-            '''Set up the origin server.
+        ats = ats_factory.create("ts", enable_cache=False)
+        ats.remap_config.add_line(f"map / http://backend.example.com:{self._origin.http_port}")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.http.send_100_continue_response": 1,
+            })
+        return ats
 
-            :param tr: The TestRun to which to add the origin server.
-            '''
-            server = tr.AddVerifierServerProcess("server", replay_path=self._replay_file)
-            self._server = server
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Launch the ad hoc client that waits for 100 before sending its body."""
 
-        def _setup_trafficserver(self, tr: 'TestRun') -> None:
-            '''Set up the traffic server.
+        return services.process(
+            "expect-client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "expect_client.py",
+                "127.0.0.1",
+                str(self._ats.http_port),
+                "-s",
+                "example.com",
+            ),
+        )
 
-            :param tr: The TestRun to which to add the traffic server.
-            '''
-            ts = tr.MakeATSProcess("ts", enable_cache=False)
-            self._ts = ts
-            ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{self._server.Variables.http_port}')
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http',
-                    'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.http.send_100_continue_response': 1,
-                })
+    def run(self) -> None:
+        """Start dependencies, execute the client, and inspect both responses."""
 
-        def _setup_client(self, tr: 'TestRun') -> None:
-            '''Set up the client.
+        self._dns.start()
+        self._origin.start()
+        self._ats.start()
+        result = self._client.run()
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 100" in result.stdout
+        assert "HTTP/1.1 200" in result.stdout
 
-            :param tr: The TestRun to which to add the client.
-            '''
-            tr.Setup.CopyAs(self._expect_client)
-            tr.Setup.CopyAs(self._http_utils)
-            tr.Processes.Default.Command = \
-                f'{sys.executable} {self._expect_client} 127.0.0.1 {self._ts.Variables.port} -s example.com'
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.StartBefore(self._dns)
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                'HTTP/1.1 100', 'Verify the 100 Continue response was received.')
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                'HTTP/1.1 200', 'Verify the 200 OK response was received.')
 
-    urtest.Summary = 'Verify Expect: 100-Continue handling.'
-    ExpectTest()
-    urtest.execute()
+def test_expect_continue(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS sends 100 Continue before forwarding the body to the origin."""
+
+    if curl.uses_uds:
+        pytest.skip("the purpose-built Expect client requires a TCP listener")
+    ExpectContinueScenario(ats_factory, services).run()

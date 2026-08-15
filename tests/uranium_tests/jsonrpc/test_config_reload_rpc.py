@@ -14,195 +14,104 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from typing import Any
+import json
+import time
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_config_reload_rpc(urtest: UraniumTest) -> None:
-    '''
-    Test inline config reload functionality via unified admin_config_reload RPC method.
+class ConfigReloadRpcScenario:
+    """Exercise file and inline modes of admin_config_reload."""
 
-    Inline mode is triggered by passing the "configs" parameter.
-    Tests the following features:
-    1. Basic inline reload with single config
-    2. Multiple configs in single request
-    3. File-based vs inline mode detection
-    4. Unknown config key error handling
-    5. Invalid YAML content handling
-    6. Reload while another is in progress
-    7. Verify config is actually applied
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._request_id = 0
+        self._ats = self.configure_ats(ats_factory)
 
-    from jsonrpc import Request, Response
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable diagnostics for the unified config reload RPC."""
 
-    urtest.Summary = 'Test inline config reload via RPC'
-    urtest.ContinueOnFail = True
+        ats = ats_factory.create("ts")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config",
+        })
+        return ats
 
-    ts = urtest.MakeATSProcess('ts', dump_runroot=True)
+    def rpc(self, method: str, params: object | None = None) -> dict[str, Any]:
+        """Invoke one method and return its decoded JSON-RPC response."""
 
-    urtest.testName = 'config_reload_rpc'
+        self._request_id += 1
+        request: dict[str, object] = {
+            "jsonrpc": "2.0",
+            "id": str(self._request_id),
+            "method": method,
+        }
+        if params is not None:
+            request["params"] = params
+        command = self._ats.rpc(request)
+        assert command.returncode == 0, command.output
+        return json.loads(command.stdout)
 
-    # Initial configuration
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'rpc|config',
-    })
+    def reload(self, configs: object | None = None) -> dict[str, Any]:
+        """Invoke admin_config_reload in file or inline mode."""
 
-    # ============================================================================
-    # Test 1: File-based reload (no configs parameter)
-    # ============================================================================
-    tr = urtest.AddTestRun("File-based reload without configs parameter")
-    tr.Processes.Default.StartBefore(ts)
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
+        params = None if configs is None else {"configs": configs}
+        response = self.rpc("admin_config_reload", params)
+        assert "error" not in response, response
+        return response["result"]
 
-    def validate_file_based(resp: Response):
-        '''Verify file-based reload works when configs is not provided'''
-        result = resp.result
-        token = result.get('token', '')
-        message = result.get('message', [])
+    @staticmethod
+    def assert_result_error(result: dict[str, Any], *codes: str) -> None:
+        """Require one expected nested config error code or message."""
 
-        if token:
-            return (True, f"File-based reload started: token={token}")
+        errors = result.get("errors", [])
+        assert errors, result
+        rendered = str(errors)
+        assert any(code in rendered for code in codes), errors
 
-        errors = result.get('errors', [])
-        if errors:
-            return (True, f"File-based reload response: {errors}")
+    def check_basic_modes(self) -> None:
+        """Verify file reload, empty inline content, and unknown keys."""
 
-        return (True, f"Response: {result}")
+        file_result = self.reload()
+        assert file_result.get("token") or file_result.get("errors") is not None
+        time.sleep(2)
+        empty = self.reload({})
+        assert empty.get("message") == ["No configs were scheduled for reload"]
+        time.sleep(2)
+        self.assert_result_error(
+            self.reload({"unknown_config_key": {
+                "some": "data"
+            }}),
+            "6010",
+            "not registered",
+        )
+        time.sleep(1)
+        self.assert_result_error(
+            self.reload({"remap.config": {
+                "some": "data"
+            }}),
+            "6010",
+            "not registered",
+        )
 
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_file_based)
-    tr.StillRunningAfter = ts
+    def check_file_only_rejections(self) -> None:
+        """Verify registered FileOnly handlers reject inline content."""
 
-    # ============================================================================
-    # Test 2: Empty configs map (should trigger inline mode but process 0 configs)
-    # ============================================================================
-    tr = urtest.AddTestRun("Empty configs map")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={}))
-
-    def validate_empty_configs(resp: Response):
-        '''Verify behavior with empty configs'''
-        result = resp.result
-
-        # Empty configs should succeed but with 0 changes
-        success = result.get('success', -1)
-        failed = result.get('failed', -1)
-
-        if success == 0 and failed == 0:
-            return (True, f"Empty configs handled: success={success}, failed={failed}")
-
-        # Or it might be an error
-        errors = result.get('errors', [])
-        if errors:
-            return (True, f"Empty configs rejected: {errors}")
-
-        return (True, f"Result: {result}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_empty_configs)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 3: Unknown config key (error code 6010)
-    # ============================================================================
-    tr = urtest.AddTestRun("Unknown config key should error with code 6010")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"unknown_config_key": {"some": "data"}}))
-
-    def validate_unknown_key(resp: Response):
-        '''Verify error for unknown config key - should return error code 6010'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected error for unknown key, got: {result}")
-
-        error_str = str(errors)
-        if '6010' in error_str or 'not registered' in error_str:
-            return (True, f"Unknown key rejected with code 6010: {errors}")
-        return (False, f"Expected error 6010, got: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_key)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 3b: Unregistered config rejected (error code 6010)
-    # Note: remap.config is not registered in ConfigRegistry
-    # ============================================================================
-    tr = urtest.AddTestRun("Unregistered config should error with code 6010")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"remap.config": {"some": "data"}}))
-
-    def validate_legacy_not_supported(resp: Response):
-        '''Verify unregistered config returns error code 6010'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected rejection for unregistered config, got: {result}")
-
-        error_str = str(errors)
-        if '6010' in error_str or 'not registered' in error_str:
-            return (True, f"Unregistered config correctly rejected: {errors}")
-        return (False, f"Expected error 6010, got: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_legacy_not_supported)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 4: RPC-injected content rejected for FileOnly config (ip_allow)
-    # ip_allow is registered with ConfigSource::FileOnly — RPC content must be rejected
-    # ============================================================================
-    tr = urtest.AddTestRun("RPC-injected content rejected for FileOnly config (ip_allow)")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(
-        ts,
-        Request.admin_config_reload(
-            configs={"ip_allow": [{
+        time.sleep(2)
+        self.assert_result_error(
+            self.reload({"ip_allow": [{
                 "apply": "in",
                 "ip_addrs": "127.0.0.1",
                 "action": "allow",
-                "methods": ["GET", "HEAD"]
-            }]}))
-
-    def validate_rpc_inject_rejected(resp: Response):
-        '''ip_allow is registered as FileOnly — RPC-injected content must be rejected with 6011'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected rejection for FileOnly config, got: {result}")
-
-        error_str = str(errors)
-        if '6011' in error_str or 'does not support RPC' in error_str:
-            return (True, f"FileOnly config correctly rejected RPC injection: {errors}")
-        return (False, f"Expected error 6011, got: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_rpc_inject_rejected)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 5: Multiple configs in single request
-    # ============================================================================
-    tr = urtest.AddTestRun("Multiple configs in single request")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(
-        ts,
-        Request.admin_config_reload(
-            configs={
+                "methods": ["GET", "HEAD"],
+            }]}),
+            "6011",
+            "does not support RPC",
+        )
+        time.sleep(2)
+        multiple = self.reload(
+            {
                 "ip_allow": [{
                     "apply": "in",
                     "ip_addrs": "0.0.0.0/0",
@@ -218,99 +127,29 @@ def test_config_reload_rpc(urtest: UraniumTest) -> None:
                             "enabled": 1
                         }
                     }
-                }
-            }))
+                },
+            })
+        self.assert_result_error(multiple, "6010", "6011")
 
-    def validate_multiple_configs(resp: Response):
-        '''All configs should be rejected — none support RPC content source at this stage'''
-        result = resp.result
-        errors = result.get('errors', [])
+    def check_overlapping_reloads(self) -> None:
+        """Verify inline work is rejected while or after file reload begins."""
 
-        if not errors:
-            return (False, f"Expected rejections for all configs, got: {result}")
+        time.sleep(1)
+        first = self.reload()
+        assert "token" in first or "errors" in first
+        overlapping = self.reload({"ip_allow": [{"apply": "in", "ip_addrs": "10.0.0.0/8"}]})
+        self.assert_result_error(overlapping, "6011", "6004")
+        time.sleep(3)
+        token_case = self.reload({"unknown_for_token_test": {"data": "value"}})
+        token = token_case.get("token", "")
+        assert not token or token.startswith("inline-")
 
-        # Each config should produce an error (6010=not registered, 6011=RPC source not supported)
-        error_str = str(errors)
-        if '6010' in error_str or '6011' in error_str:
-            return (True, f"All configs rejected as expected: {len(errors)} errors")
-        return (False, f"Unexpected errors: {errors}")
+    def check_structures_and_directives(self) -> None:
+        """Pass nested content, large documents, and reload directives."""
 
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_multiple_configs)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 6: Reload while another is in progress
-    # ============================================================================
-    tr = urtest.AddTestRun("First reload request")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_first_reload(resp: Response):
-        '''Start a regular reload'''
-        result = resp.result
-        token = result.get('token', '')
-        return (True, f"First reload started: token={token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_first_reload)
-    tr.StillRunningAfter = ts
-
-    # Immediately try inline reload
-    tr = urtest.AddTestRun("Inline reload while regular reload in progress")
-    tr.DelayStart = 0  # No delay - immediately after
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"ip_allow": [{"apply": "in", "ip_addrs": "10.0.0.0/8"}]}))
-
-    def validate_in_progress_rejection(resp: Response):
-        '''Should be rejected for RPC source not supported or reload in progress'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected rejection, got: {result}")
-
-        error_str = str(errors)
-        # Either 6011 (RPC source not supported) or 6004 (reload in progress)
-        if '6011' in error_str or '6004' in error_str:
-            return (True, f"Correctly rejected: {errors}")
-        return (False, f"Unexpected error: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_in_progress_rejection)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 7: Verify token is returned with inline- prefix
-    # ============================================================================
-    tr = urtest.AddTestRun("Verify inline token prefix")
-    tr.DelayStart = 3  # Wait for previous reloads to complete
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"unknown_for_token_test": {"data": "value"}}))
-
-    def validate_inline_token(resp: Response):
-        '''Verify token has inline- prefix'''
-        result = resp.result
-        token = result.get('token', '')
-
-        if token and token.startswith('inline-'):
-            return (True, f"Token has correct prefix: {token}")
-
-        if not token:
-            # Check if there's an error (which is fine)
-            errors = result.get('errors', [])
-            if errors:
-                return (True, f"No token (error case): {errors}")
-
-        return (True, f"Token result: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_inline_token)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 8: Nested YAML structure (records.diags.debug)
-    # ============================================================================
-    tr = urtest.AddTestRun("Nested YAML structure")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(
-        ts,
-        Request.admin_config_reload(
-            configs={"records": {
+        time.sleep(2)
+        nested = self.reload(
+            {"records": {
                 "diags": {
                     "debug": {
                         "enabled": 1,
@@ -321,162 +160,64 @@ def test_config_reload_rpc(urtest: UraniumTest) -> None:
                     "cache": {
                         "http": 1
                     }
+                },
+            }})
+        assert isinstance(nested, dict)
+        time.sleep(2)
+        status = self.rpc("get_reload_config_status")
+        assert "result" in status or "error" in status
+        time.sleep(2)
+        large_ip_allow = [{"apply": "in", "ip_addrs": f"10.{index}.0.0/16", "action": "allow"} for index in range(50)]
+        self.assert_result_error(self.reload({"ip_allow": large_ip_allow}), "6011")
+        time.sleep(2)
+        self.assert_result_error(
+            self.reload({"sni": {
+                "_reload": {
+                    "fqdn": "*.example.com"
                 }
-            }}))
-
-    def validate_nested_yaml(resp: Response):
-        '''Verify nested YAML handling'''
-        result = resp.result
-        success = result.get('success', 0)
-        failed = result.get('failed', 0)
-        errors = result.get('errors', [])
-
-        return (True, f"Nested YAML: success={success}, failed={failed}, errors={errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_nested_yaml)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 9: Query status after inline reload
-    # ============================================================================
-    tr = urtest.AddTestRun("Query status after inline reload")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status())
-
-    def validate_status_after_inline(resp: Response):
-        '''Check status includes inline reload info'''
-        if resp.is_error():
-            return (True, f"Status query error (may be expected): {resp.error_as_str()}")
-
-        result = resp.result
-        tasks = result.get('tasks', [])
-
-        if tasks:
-            # Check if any task has inline- prefix
-            for task in tasks:
-                token = task.get('token', '')
-                if token.startswith('inline-'):
-                    return (True, f"Found inline reload in status: {token}")
-
-        return (True, f"Status result: {result}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_status_after_inline)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 10: Large config content
-    # ============================================================================
-    tr = urtest.AddTestRun("Large config content")
-    tr.DelayStart = 2
-
-    # Generate a larger config
-    large_ip_allow = []
-    for i in range(50):
-        large_ip_allow.append({"apply": "in", "ip_addrs": f"10.{i}.0.0/16", "action": "allow"})
-
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"ip_allow": large_ip_allow}))
-
-    def validate_large_config(resp: Response):
-        '''Large ip_allow config should also be rejected (FileOnly)'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected rejection for FileOnly config, got: {result}")
-
-        error_str = str(errors)
-        if '6011' in error_str:
-            return (True, f"Large config correctly rejected: {errors}")
-        return (False, f"Expected error 6011, got: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_large_config)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 11: Reload directive for registered FileOnly config (sni)
-    # Directive-only request — sni is FileOnly, so the RPC handler rejects with 6011.
-    # Verifies the _reload structure is handled gracefully through the RPC stack.
-    # ============================================================================
-    tr = urtest.AddTestRun("Reload directive for FileOnly config (sni)")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"sni": {"_reload": {"fqdn": "*.example.com"}}}))
-
-    def validate_directive_fileonly(resp: Response):
-        '''sni is FileOnly — directive-only request rejected with 6011'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected rejection for FileOnly config, got: {result}")
-
-        error_str = str(errors)
-        if '6011' in error_str:
-            return (True, f"Directive-only correctly rejected for FileOnly config: {errors}")
-        return (False, f"Expected error 6011, got: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_fileonly)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 12: Reload directive for unregistered config (virtualhost)
-    # virtualhost is not registered yet — should get 6010.
-    # This is the intended use case once the virtualhost handler is registered.
-    # ============================================================================
-    tr = urtest.AddTestRun("Reload directive for unregistered config (virtualhost)")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(configs={"virtualhost": {"_reload": {"id": "myhost.example.com"}}}))
-
-    def validate_directive_unregistered(resp: Response):
-        '''virtualhost is not registered — rejected with 6010'''
-        result = resp.result
-        errors = result.get('errors', [])
-
-        if not errors:
-            return (False, f"Expected error for unregistered config, got: {result}")
-
-        error_str = str(errors)
-        if '6010' in error_str or 'not registered' in error_str:
-            return (True, f"Directive for unregistered config rejected: {errors}")
-        return (False, f"Expected error 6010, got: {errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_unregistered)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 13: Directives mixed with content for FileOnly config (ip_allow)
-    # _reload directives alongside actual config content — still rejected with 6011.
-    # ============================================================================
-    tr = urtest.AddTestRun("Directives mixed with content for FileOnly config")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(
-        ts,
-        Request.admin_config_reload(
-            configs={
-                "ip_allow": {
-                    "_reload": {
-                        "validate_only": "true"
-                    },
-                    "rules": [{
-                        "apply": "in",
-                        "ip_addrs": "0/0",
-                        "action": "allow"
-                    }]
+            }}),
+            "6011",
+        )
+        time.sleep(2)
+        self.assert_result_error(
+            self.reload({"virtualhost": {
+                "_reload": {
+                    "id": "myhost.example.com"
                 }
-            }))
+            }}),
+            "6010",
+            "not registered",
+        )
+        time.sleep(2)
+        self.assert_result_error(
+            self.reload(
+                {
+                    "ip_allow":
+                        {
+                            "_reload": {
+                                "validate_only": "true"
+                            },
+                            "rules": [{
+                                "apply": "in",
+                                "ip_addrs": "0/0",
+                                "action": "allow"
+                            }],
+                        }
+                }),
+            "6011",
+        )
 
-    def validate_directive_mixed(resp: Response):
-        '''ip_allow is FileOnly — mixed directive+content rejected with 6011'''
-        result = resp.result
-        errors = result.get('errors', [])
+    def run(self) -> None:
+        """Run every config reload RPC behavior."""
 
-        if not errors:
-            return (False, f"Expected rejection, got: {result}")
+        self._ats.start()
+        self.check_basic_modes()
+        self.check_file_only_rejections()
+        self.check_overlapping_reloads()
+        self.check_structures_and_directives()
 
-        error_str = str(errors)
-        if '6011' in error_str:
-            return (True, f"Mixed directive+content correctly rejected: {errors}")
-        return (False, f"Expected error 6011, got: {errors}")
 
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_directive_mixed)
-    tr.StillRunningAfter = ts
-    urtest.execute()
+def test_config_reload_rpc(ats_factory: ATSFactory) -> None:
+    """admin_config_reload handles file, inline, error, and directive modes."""
+
+    ConfigReloadRpcScenario(ats_factory).run()

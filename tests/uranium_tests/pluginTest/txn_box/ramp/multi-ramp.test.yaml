@@ -1,0 +1,162 @@
+meta:
+  version: "1.0"
+
+  blocks:
+  - ua-req-hdr: &ua-req-hdr
+      headers:
+        fields:
+        - [ Host, base.ex ]
+
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+      <<: *ua-req-hdr
+
+  - upstream-rsp: &upstream-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol:
+    stack: https
+  transactions:
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/search/channel/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/search/channel/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/channels/nightwish"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/channels/nightwish"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/alias/within-temptation"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/alias/within-temptation"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v2/video/channels/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v2/video/channels/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/audio/channels/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/audio/channels/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+  - client-request:
+      <<: *base_request
+      url: "/v1/video/sub/delain"
+    proxy-request:
+      <<: *base_request
+      url: "/v1/video/sub/delain"
+    server-response:
+      <<: *upstream-rsp
+    proxy-response:
+      status: 200
+
+urtest:
+  description: Verify txn_box traffic bucketing
+  requires: {plugins: [txn_box.so]}
+  server:
+    name: txn-box-multi-ramp-origin
+    process_config:
+      other_args: '--verbose info --format {url}'
+  dns: {name: txn-box-multi-ramp-dns, process_config: {default: 127.0.0.1}}
+  client:
+    name: txn-box-multi-ramp-client
+    timeout: 120
+    process_config:
+      other_args: '--verbose info --format {url} --repeat 1000'
+  ats:
+    name: txn-box-multi-ramp-ts
+    process_config: {enable_tls: true}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box
+      proxy.config.http.cache.http: 0
+      proxy.config.ssl.server.cert.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.server.private_key.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.client.verify.server.policy: DISABLED
+      proxy.config.ssl.server.cipher_suite: ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2
+    logging_yaml:
+      logging:
+        formats:
+        - name: ramp
+          format: '%<cqu>'
+        logs:
+        - filename: ramp
+          format: ramp
+          mode: ascii
+    copy_to_ssl_dir: [../ssl/server.key, ../ssl/server.pem]
+    ssl_multicert_yaml:
+      ssl_multicert:
+      - dest_ip: '*'
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+    plugin_config: [txn_box.so]
+    file_checks:
+    - path: '{LOG_DIR}/ramp.log'
+      timeout: 120
+      line_count_min: 6000
+      matches:
+      - {expression: 'stage\.video\.ex.*v1/video/channels', min: 50, max: 150}
+      - {expression: 'stage\.video\.ex.*v1/video/search', min: 250, max: 350}
+      - {expression: 'stage\.video\.ex.*v1/video/alias', min: 250, max: 350}
+      - {expression: 'stage\.video\.ex.*v1/audio', max: 0}
+      - {expression: 'stage\.video\.ex.*v2/video', max: 0}
+      - {expression: 'stage\.video\.ex.*v1/video/sub', min: 1000, max: 1000}
+  variants:
+  - name: style-1
+    ats:
+      copy_to_config_dir: [multi-ramp-1.cfg.yaml]
+      remap_config:
+      - map http://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-ramp-1.cfg.yaml
+      - map https://base.ex/ https://base.ex:{SERVER_HTTPS_PORT}/ @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-ramp-1.cfg.yaml
+  - name: style-2
+    ats:
+      copy_to_config_dir: [multi-ramp-2.cfg.yaml]
+      remap_config:
+      - map http://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-ramp-2.cfg.yaml
+      - map https://base.ex/ https://base.ex:{SERVER_HTTPS_PORT}/ @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-ramp-2.cfg.yaml
+  - name: style-3
+    ats:
+      copy_to_config_dir: [multi-ramp-3.cfg.yaml]
+      remap_config:
+      - map http://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-ramp-3.cfg.yaml
+      - map https://base.ex/ https://base.ex:{SERVER_HTTPS_PORT}/ @plugin=txn_box.so @pparam={CONFIG_DIR}/multi-ramp-3.cfg.yaml

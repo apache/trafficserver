@@ -1,0 +1,45 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify header_rewrite set-body-from success, failure, status, and binary-body handling"
+  replay: "header_rewrite_set_body_from.replay.yaml"
+  requires: {plugins: [header_rewrite.so]}
+  server:
+    name: "set-body-from-origin"
+    process_config: {other_args: "--format {url}"}
+  client:
+    name: "set-body-from-client"
+    process_config:
+      keys: "body-remap-fail body-remap-success body-plugin-success body-plugin-fail body-success-200 body-binary"
+  ats:
+    name: "set-body-from-ts"
+    process_config: {enable_cache: false}
+    copy_to_config_dir:
+      - "rules/rule_set_body_from_remap.conf"
+      - "rules/rule_set_body_from_plugin.conf"
+    plugin_config:
+      - "header_rewrite.so {CONFIG_DIR}/rules/rule_set_body_from_plugin.conf"
+    remap_config:
+      - "map http://www.example.com/remap_success http://127.0.0.1:{SERVER_HTTP_PORT}/remap_success @plugin=header_rewrite.so @pparam={CONFIG_DIR}/rules/rule_set_body_from_remap.conf"
+      - "map http://www.example.com/200 http://127.0.0.1:{SERVER_HTTP_PORT}/200 @plugin=header_rewrite.so @pparam={CONFIG_DIR}/rules/rule_set_body_from_remap.conf"
+      - "map http://www.example.com/remap_fail http://127.0.0.1:{SERVER_HTTP_PORT}/remap_fail @plugin=header_rewrite.so @pparam={CONFIG_DIR}/rules/rule_set_body_from_remap.conf"
+      - "map http://www.example.com/remap_binary http://127.0.0.1:{SERVER_HTTP_PORT}/remap_binary @plugin=header_rewrite.so @pparam={CONFIG_DIR}/rules/rule_set_body_from_remap.conf"
+      - "map http://www.example.com/binary_body http://127.0.0.1:{SERVER_HTTP_PORT}/binary_body"
+      - "map http://www.example.com/plugin_success http://127.0.0.1:{SERVER_HTTP_PORT}/plugin_success"
+      - "map http://www.example.com/plugin_fail http://127.0.0.1:{SERVER_HTTP_PORT}/plugin_fail"
+      - "map http://www.example.com/404.html http://127.0.0.1:{SERVER_HTTP_PORT}/404.html"
+      - "map http://www.example.com/plugin_no_server http://127.0.0.1:{UNUSED_PORT}/plugin_no_server"

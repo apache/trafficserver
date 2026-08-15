@@ -14,102 +14,73 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import yaml
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult
 
 
-def test_traffic_ctl_cold_config(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ColdConfigScenario:
+    """Verify traffic_ctl reads and writes records.yaml without a reload."""
 
-    import os
-    from jsonrpc import Notification, Request, Response
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = 'Basic records test. Testing the new records.yaml logic and making sure it works as expected.'
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure records used by append, update, and typed-value cases."""
 
-    ts = urtest.MakeATSProcess("ts")
+        ats = ats_factory.create("ts")
+        ats.records.update(
+            {
+                "proxy.config.accept_threads": 1,
+                "proxy.config.cache.limits.http.max_alts": 5,
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "http|dns",
+            })
+        return ats
 
-    ts.Disk.records_config.update(
-        '''
-        accept_threads: 1
-        cache:
-          limits:
-            http:
-              max_alts: 5
-        diags:
-          debug:
-            enabled: 0
-            tags: http|dns
-        ''')
+    def traffic_ctl(self, *arguments: str) -> CommandResult:
+        """Run traffic_ctl and require success."""
 
-    # 0 - We want to make sure that the unregistered records are still being detected.
-    tr = urtest.AddTestRun("Test Append value to existing records.yaml")
+        result = self._ats.traffic_ctl(*arguments)
+        assert result.returncode == 0, result.output
+        return result
 
-    tr.Processes.Default.Command = 'traffic_ctl config set proxy.config.diags.debug.tags rpc --cold'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.StartBefore(ts)
-    ts.Disk.records_config.Content = 'gold/records.yaml.cold_test0.gold'
+    def assert_cold_value(self, record: str, value: str) -> None:
+        """Read one cold value back from records.yaml."""
 
-    # 1
-    tr = urtest.AddTestRun("Get value from latest added node.")
-    tr.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.tags --cold'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
+        result = self.traffic_ctl("config", "get", record, "--cold")
+        assert f"{record}: {value}" in result.stdout
 
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-        'proxy.config.diags.debug.tags: rpc', 'Config should show the right tags')
+    def run(self) -> None:
+        """Exercise append, update, type-tag, and alternate-file writes."""
 
-    # 2
-    tr = urtest.AddTestRun("Test modify latest yaml document from records.yaml")
-    tr.Processes.Default.Command = 'traffic_ctl config set proxy.config.diags.debug.tags http -u -c'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    ts.Disk.records_config.Content = 'gold/records.yaml.cold_test2.gold'
+        self._ats.start()
+        self.traffic_ctl("config", "set", "proxy.config.diags.debug.tags", "rpc", "--cold")
+        self.assert_cold_value("proxy.config.diags.debug.tags", "rpc")
 
-    # 3
-    tr = urtest.AddTestRun("Get value from latest added node 1.")
-    tr.Processes.Default.Command = 'traffic_ctl config get proxy.config.diags.debug.tags --cold'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
+        self.traffic_ctl("config", "set", "proxy.config.diags.debug.tags", "http", "-u", "-c")
+        self.assert_cold_value("proxy.config.diags.debug.tags", "http")
 
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-        'proxy.config.diags.debug.tags: http', 'Config should show the right tags')
+        self.traffic_ctl("config", "set", "proxy.config.cache.limits.http.max_alts", "1", "-t", "int", "-c")
+        self.assert_cold_value("proxy.config.cache.limits.http.max_alts", "1")
 
-    # 4
-    tr = urtest.AddTestRun("Append a new field node using a tag")
-    tr.Processes.Default.Command = 'traffic_ctl config set proxy.config.cache.limits.http.max_alts 1 -t int -c'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    ts.Disk.records_config.Content = 'gold/records.yaml.cold_test4.gold'
+        for filename, update in (("new_records.yaml", True), ("new_records2.yaml", False)):
+            path = self._ats.config_directory / filename
+            arguments = [
+                "config",
+                "set",
+                "proxy.config.cache.limits.http.max_alts",
+                "3",
+            ]
+            if update:
+                arguments.append("-u")
+            arguments.extend(["-c", str(path)])
+            self.traffic_ctl(*arguments)
+            document = yaml.safe_load(path.read_text())
+            assert document["records"]["cache"]["limits"]["http"]["max_alts"] == 3
 
-    # 5
-    file = os.path.join(ts.Variables.CONFIGDIR, "new_records.yaml")
-    tr = urtest.AddTestRun("Adding a new node(with update flag set) to a non existing file")
-    tr.Processes.Default.Command = f'traffic_ctl config set proxy.config.cache.limits.http.max_alts 3  -u -c {file}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'
 
-    # 5
-    file = os.path.join(ts.Variables.CONFIGDIR, "new_records2.yaml")
-    tr = urtest.AddTestRun("Adding a new node to a non existing file")
-    tr.Processes.Default.Command = f'traffic_ctl config set proxy.config.cache.limits.http.max_alts 3 -c {file}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'
-    urtest.execute()
+def test_traffic_ctl_cold_config(ats_factory: ATSFactory) -> None:
+    """traffic_ctl cold operations preserve nested records.yaml values."""
+
+    ColdConfigScenario(ats_factory).run()

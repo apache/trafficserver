@@ -28,8 +28,7 @@ from .config import ReplayConfigError, ReplaySpec
 from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
 from .runtime import TestRuntime
-from .scenario import UraniumTest
-from .services import ATS, ATSFactory, Curl
+from .services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -115,13 +114,17 @@ class ReplayFile(pytest.File):
         """Load collection metadata and yield one test item."""
 
         try:
-            spec = ReplaySpec.load(Path(self.path))
+            specs = ReplaySpec.load_all(Path(self.path))
         except ReplayConfigError as error:
             raise self.CollectError(str(error)) from error
-        suffix = ".test.yaml" if spec.path.name.endswith(".test.yaml") else ".test.yml"
-        item = ReplayItem.from_parent(self, name=spec.path.name.removesuffix(suffix), spec=spec)
-        item.add_marker("uranium_replay")
-        yield item
+        for spec in specs:
+            suffix = ".test.yaml" if spec.path.name.endswith(".test.yaml") else ".test.yml"
+            name = spec.path.name.removesuffix(suffix)
+            if spec.variant_name is not None:
+                name += f"-{spec.variant_name}"
+            item = ReplayItem.from_parent(self, name=name, spec=spec)
+            item.add_marker("uranium_replay")
+            yield item
 
 
 class ReplayItem(pytest.Item):
@@ -196,43 +199,34 @@ def uranium_replay(uranium_test_runtime: TestRuntime, request: pytest.FixtureReq
     """Return a helper that executes a replay file from a handwritten pytest test."""
 
     def run(path: Path) -> None:
-        spec = ReplaySpec.load(path)
-        ReplayTest(spec, uranium_test_runtime, request.node.nodeid).run()
+        for spec in ReplaySpec.load_all(path):
+            ReplayTest(spec, uranium_test_runtime, request.node.nodeid).run()
 
     return run
 
 
 @pytest.fixture
-def uranium_scenario(uranium_test_runtime: TestRuntime, request: pytest.FixtureRequest) -> Iterator[UraniumTest]:
-    """Own the sandbox and processes shared by procedural service fixtures."""
+def procedural_context(
+    uranium_test_runtime: TestRuntime,
+    request: pytest.FixtureRequest,
+) -> Iterator[ProceduralContext]:
+    """Own the execution lock and sandbox for a native procedural test."""
 
     is_serial = request.node.get_closest_marker("serial") is not None
     with uranium_test_runtime.execution_lock(is_exclusive=is_serial):
-        scenario = UraniumTest(
+        yield ProceduralContext.create(
             uranium_test_runtime,
             request.node.nodeid,
             Path(request.node.path),
-            curl_uds=request.config.getoption("curl_uds"),
+            use_uds=request.config.getoption("curl_uds"),
         )
-        try:
-            yield scenario
-        finally:
-            if not scenario._executed:
-                scenario.cleanup()
 
 
 @pytest.fixture
-def urtest(uranium_scenario: UraniumTest) -> UraniumTest:
-    """Provide the transitional scenario API to tests not yet rewritten."""
-
-    return uranium_scenario
-
-
-@pytest.fixture
-def ats_factory(uranium_scenario: UraniumTest) -> Iterator[ATSFactory]:
+def ats_factory(procedural_context: ProceduralContext) -> Iterator[ATSFactory]:
     """Create Traffic Server instances with fixture-owned cleanup."""
 
-    factory = ATSFactory(uranium_scenario)
+    factory = ATSFactory(procedural_context)
     try:
         yield factory
     finally:
@@ -247,13 +241,24 @@ def ats(ats_factory: ATSFactory) -> ATS:
 
 
 @pytest.fixture
-def curl(uranium_scenario: UraniumTest) -> Curl:
+def curl(procedural_context: ProceduralContext) -> Curl:
     """Provide a curl client rooted in this test's sandbox."""
 
     return Curl(
-        Path(uranium_scenario.RunDirectory),
-        use_uds=bool(uranium_scenario.Variables.get("CurlUds", False)),
+        procedural_context.run_directory,
+        use_uds=procedural_context.use_uds,
     )
+
+
+@pytest.fixture
+def services(procedural_context: ProceduralContext) -> Iterator[ServiceFactory]:
+    """Create support processes with fixture-owned cleanup."""
+
+    factory = ServiceFactory(procedural_context)
+    try:
+        yield factory
+    finally:
+        factory.close()
 
 
 def _partition_items(items: list[pytest.Item], predicate: Callable[[pytest.Item],

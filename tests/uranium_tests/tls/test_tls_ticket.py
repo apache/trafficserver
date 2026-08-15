@@ -14,127 +14,84 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import shlex
+import shutil
+
+from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_ticket(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsTicketScenario:
+    """Resume a TLS 1.2 session across ATS instances sharing a ticket key."""
 
-    import re
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._first = self.configure_ats(ats_factory, "ts")
+        self._second = self.configure_ats(ats_factory, "ts2")
+        self._ticket = self._first.run_directory.parent / "ticket.out"
 
-    urtest.Summary = '''
-    Test tls tickets
-    '''
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the reusable empty-response origin."""
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    ts2 = urtest.MakeATSProcess("ts2", enable_tls=True)
-    server = urtest.MakeOriginServer("server")
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    # Add info the origin server responses
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+    def configure_ats(self, ats_factory: ATSFactory, name: str) -> ATS:
+        """Configure one TLS endpoint to read the shared ticket key."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts2.addSSLfile("ssl/server.pem")
-    ts2.addSSLfile("ssl/server.key")
+        ats = ats_factory.create(name, enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.records.update(
+            {
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.ssl.server.session_ticket.enable": 1,
+                "proxy.config.ssl.server.ticket_key.filename": "../../file.ticket",
+            })
+        return ats
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
-    ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+    def openssl_request(self, ats: ATS, *, resume: bool) -> str:
+        """Create or resume the session and return OpenSSL's diagnostic output."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-    ts2.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        session_option = f"-sess_in {shlex.quote(str(self._ticket))}" if resume else f"-sess_out {shlex.quote(str(self._ticket))}"
+        result = ats.run_shell(
+            f"printf 'GET / HTTP/1.0\\r\\n\\r\\n' | openssl s_client -tls1_2 "
+            f"-connect 127.0.0.1:{ats.https_port} {session_option}",
+            timeout=30,
+        )
+        assert result.returncode == 0, result.output
+        return result.output
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.ssl.server.session_ticket.enable': '1',
-            'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
-        })
-    ts2.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
-            'proxy.config.ssl.server.session_ticket.enable': '1',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
-        })
+    def run(self) -> None:
+        """Create a ticket on one ATS and resume it on the second."""
 
-    tr = urtest.AddTestRun("Create ticket")
-    tr.Setup.Copy('file.ticket')
-    tr.Command = 'printf "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out ticket.out'.format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    path1 = tr.Processes.Default.Streams.stdout.AbsPath
-    tr.StillRunningAfter = server
+        shutil.copy2(TEST_DIRECTORY / "file.ticket", self._first.run_directory.parent / "file.ticket")
+        self._origin.start()
+        self._first.start()
+        self._second.start()
+        first = self.openssl_request(self._first, resume=False)
+        second = self.openssl_request(self._second, resume=True)
+        first_ids = re.findall(r"Session-ID: ([0-9A-F]+)", first)
+        second_ids = re.findall(r"Session-ID: ([0-9A-F]+)", second)
+        assert first_ids and second_ids, f"Missing TLS session id:\n{first}\n{second}"
+        assert first_ids[0] == second_ids[0]
 
-    # Pull out session created in tr to test for session id in tr2
 
-    def checkSession(ev):
-        retval = False
-        f1 = open(path1, 'r')
-        f2 = open(path2, 'r')
-        err = "Session ids match"
-        if not f1 or not f2:
-            err = "Failed to open {0} or {1}".format(path1, path2)
-            return (retval, "Check that session ids match", err)
+def test_tls_ticket(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A shared TLS ticket key resumes the same session on another ATS."""
 
-        f1Content = f1.read()
-        f2Content = f2.read()
-        match1 = re.findall('Session-ID: ([0-9A-F]+)', f1Content)
-        match2 = re.findall('Session-ID: ([0-9A-F]+)', f2Content)
-
-        if match1 and match2:
-            if match1[0] == match2[0]:
-                err = "{0} and {1} do match".format(match1[0], match2[0])
-                retval = True
-            else:
-                err = "{0} and {1} do not match".format(match1[0], match2[0])
-        else:
-            err = "Didn't find session id"
-        return (retval, "Check that session ids match", err)
-
-    tr2 = urtest.AddTestRun("Test ticket")
-    tr2.Setup.Copy('file.ticket')
-    tr2.Command = 'printf "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in ticket.out'.format(
-        ts2.Variables.ssl_port)
-    tr2.Processes.Default.StartBefore(urtest.Processes.ts2)
-    tr2.ReturnCode = 0
-    path2 = tr2.Processes.Default.Streams.stdout.AbsPath
-    tr2.Processes.Default.Streams.All.Content = Testers.Lambda(checkSession)
-    urtest.execute()
+    TlsTicketScenario(ats_factory, services).run()

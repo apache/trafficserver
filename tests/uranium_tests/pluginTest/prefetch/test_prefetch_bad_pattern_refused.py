@@ -14,62 +14,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_prefetch_bad_pattern_refused(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class PrefetchBadPatternScenario:
+    """Verify prefetch refuses more capture groups than its ovector holds."""
 
-    urtest.Summary = '''
-    Test that prefetch.so treats an unusable fetch-path-pattern as a configuration error: ATS refuses to
-    load the remap rule (and fails to start) instead of silently running with prefetch disabled.
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    The pattern below defines 10 capture groups.  The plugin's ovector (OVECOUNT = TOKENCOUNT*3) can hold
-    offsets for the whole match plus at most TOKENCOUNT-1 (9) groups, so the pattern is rejected at
-    config-load time; that fails the remap instance, and remap.config fails to load.
-    '''
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure a fetch path expression with ten capture groups."""
 
-    ts = urtest.MakeATSProcess("ts")
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'prefetch',
-    })
-    ts.Disk.remap_config.AddLine(
-        "map http://domain.in http://127.0.0.1:8080" + " @plugin=prefetch.so" + " @pparam=--front=true" +
-        " @pparam=--fetch-policy=simple" + r" @pparam=--fetch-path-pattern=/(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)/$1/")
+        ats = ats_factory.create("ts")
+        if not ats.plugin_exists("prefetch.so"):
+            pytest.skip("prefetch.so is not installed")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "prefetch",
+        })
+        ats.remap_config.add_line(
+            "map http://domain.in http://127.0.0.1:8080 @plugin=prefetch.so "
+            "@pparam=--front=true @pparam=--fetch-policy=simple "
+            r"@pparam=--fetch-path-pattern=/(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)/$1/")
+        ats.expect_start_failure("defines 10 capture groups", 33)
+        return ats
 
-    ts.ReturnCode = 33  # Emergency exit: remap.config failed to load.
-    ts.Ready = 0
-    # ATS is expected to log the rejection; this ContainsExpression both asserts it and replaces the
-    # default "diags.log must not contain ERROR:" check (the rejection is logged via TSError).
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        "defines 10 capture groups", "over-limit fetch-path-pattern must be rejected at config load")
+    def run(self) -> None:
+        """Start ATS and observe the expected remap load failure."""
 
-    tr = urtest.AddTestRun("prefetch rejects an over-limit capture-group pattern at load")
-    # Wait for the rejection message with a separate watcher: gating ts readiness on the log line directly
-    # can race the process exiting before autest observes the line.
-    watcher = urtest.Processes.Process("watcher")
-    watcher.Command = "sleep 30"
-    watcher.Ready = When.FileContains(ts.Disk.diags_log.Name, "defines 10 capture groups")
-    watcher.StartBefore(ts)
+        self._ats.start()
+        assert not self._ats.is_running
 
-    tr.Processes.Default.Command = "echo done"
-    tr.TimeOut = 30
-    tr.Processes.Default.StartBefore(watcher)
-    urtest.execute()
+
+def test_prefetch_bad_pattern_refused(ats_factory: ATSFactory) -> None:
+    """An over-limit prefetch pattern fails remap configuration loading."""
+
+    PrefetchBadPatternScenario(ats_factory).run()

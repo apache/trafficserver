@@ -13,278 +13,247 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify ATS TLS 1.3 early-data handling for HTTP/1 and HTTP/2."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_0rtt_server(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsEarlyDataScenario:
+    """Exercise safe, unsafe, multiplexed, global, and SNI early-data policy."""
 
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self.require_openssl()
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._enabled = self.configure_ats(ats_factory, "enabled", max_early_data=16384, sni_name="example-no.com", sni_value=0)
+        self._disabled = self.configure_ats(
+            ats_factory,
+            "disabled",
+            max_early_data=0,
+            sni_name="example-yes.com",
+            sni_value=16384,
+        )
+        self._client_directory = self.configure_client_files(ats_factory.run_directory)
 
-    urtest.Summary = '''
-    Test ATS TLSv1.3 0-RTT support
-    '''
+    @staticmethod
+    def require_openssl() -> None:
+        """Skip when the command-line client predates TLS 1.3 early data."""
 
-    # Checking only OpenSSL version allows you to run this test with BoringSSL (and it should pass).
-    urtest.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'),)
+        output = subprocess.check_output(("openssl", "version"), text=True)
+        match = re.search(r"\d+(?:\.\d+)+", output)
+        version = tuple(int(part) for part in match.group().split(".")) if match else ()
+        if version < (1, 1, 1):
+            pytest.skip("OpenSSL 1.1.1 or newer is required")
 
-    ts1 = urtest.MakeATSProcess('ts1', enable_tls=True)
-    ts2 = urtest.MakeATSProcess('ts2', enable_tls=True)
-    server = urtest.MakeOriginServer('server')
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create ordinary, early GET, early POST, and multiplexed responses."""
 
-    request_header1 = {'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n', 'timestamp': '1469733493.993', 'body': ''}
-    response_header1 = {
-        'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': 'curl test'
-    }
-    request_header2 = {
-        'headers': 'GET /early_get HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': ''
-    }
-    response_header2 = {
-        'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': 'early data accepted'
-    }
-    request_header3 = {
-        'headers': 'POST /early_post HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 11\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': 'knock knock'
-    }
-    response_header3 = {
-        'headers': 'HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n',
-        'timestamp': '1415926535.898',
-        'body': ''
-    }
-    request_header4 = {
-        'headers': 'GET /early_multi_1 HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': ''
-    }
-    response_header4 = {
-        'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': 'early data accepted multi_1'
-    }
-    request_header5 = {
-        'headers': 'GET /early_multi_2 HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': ''
-    }
-    response_header5 = {
-        'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': 'early data accepted multi_2'
-    }
-    request_header6 = {
-        'headers': 'GET /early_multi_3 HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': ''
-    }
-    response_header6 = {
-        'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-        'timestamp': '1469733493.993',
-        'body': 'early data accepted multi_3'
-    }
-    server.addResponse('sessionlog.json', request_header1, response_header1)
-    server.addResponse('sessionlog.json', request_header2, response_header2)
-    server.addResponse('sessionlog.json', request_header3, response_header3)
-    server.addResponse('sessionlog.json', request_header4, response_header4)
-    server.addResponse('sessionlog.json', request_header5, response_header5)
-    server.addResponse('sessionlog.json', request_header6, response_header6)
+        origin = services.origin("origin")
+        for path, body in (
+            ("/", "curl test"),
+            ("/early_get", "early data accepted"),
+            ("/early_multi_1", "early data accepted multi_1"),
+            ("/early_multi_2", "early data accepted multi_2"),
+            ("/early_multi_3", "early data accepted multi_3"),
+        ):
+            origin.add_response(
+                {"headers": f"GET {path} HTTP/1.1\r\nHost: {{%Host}}\r\n\r\n"},
+                {
+                    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                    "body": body
+                },
+            )
+        origin.add_response(
+            {
+                "headers": ("POST /early_post HTTP/1.1\r\nHost: {%Host}\r\nContent-Length: 11\r\n\r\n"),
+                "body": "knock knock",
+            },
+            {
+                "headers": ("HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\n"
+                            "Transfer-Encoding: chunked\r\n\r\n"),
+                "body": "",
+            },
+        )
+        return origin
 
-    ts1.addSSLfile('ssl/server.pem')
-    ts1.addSSLfile('ssl/server.key')
+    def configure_ats(
+        self,
+        ats_factory: ATSFactory,
+        name: str,
+        *,
+        max_early_data: int,
+        sni_name: str,
+        sni_value: int,
+    ) -> ATS:
+        """Configure one global policy with an opposing SNI override."""
 
-    ts1.Setup.Copy('test-0rtt-s_client.py')
-    ts1.Setup.Copy('h2_early_decode.py')
-    ts1.Setup.Copy('early_h1_get.txt')
-    ts1.Setup.Copy('early_h1_post.txt')
-    ts1.Setup.Copy('early_h2_get.txt')
-    ts1.Setup.Copy('early_h2_post.txt')
-    ts1.Setup.Copy('early_h2_multi1.txt')
-    ts1.Setup.Copy('early_h2_multi2.txt')
+        ats = ats_factory.create(name, enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+        ats.set_ssl_multicert_yaml(
+            {"ssl_multicert": [{
+                "dest_ip": "*",
+                "ssl_cert_name": "server.pem",
+                "ssl_key_name": "server.key"
+            },]})
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ssl_early_data|ssl",
+                "proxy.config.exec_thread.autoconfig.enabled": 0,
+                "proxy.config.exec_thread.limit": 8,
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.session_ticket.enable": 1,
+                "proxy.config.ssl.server.max_early_data": max_early_data,
+                "proxy.config.ssl.server.allow_early_data_params": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.write_config_file(
+            "sni.yaml",
+            f"sni:\n- fqdn: {sni_name}\n  server_max_early_data: {sni_value}\n",
+        )
+        return ats
 
-    ts1.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.limit': 8,
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-            'proxy.config.ssl.server.session_ticket.enable': 1,
-            'proxy.config.ssl.server.max_early_data': 16384,
-            'proxy.config.ssl.server.allow_early_data_params': 0,
-            'proxy.config.ssl.server.cipher_suite':
-                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-        })
+    @staticmethod
+    def configure_client_files(run_directory: Path) -> Path:
+        """Copy mutable session and early-data inputs into the test sandbox."""
 
-    ts1.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        directory = run_directory / "early-data-client"
+        directory.mkdir()
+        for filename in (
+                "early_h1_get.txt",
+                "early_h1_post.txt",
+                "early_h2_get.txt",
+                "early_h2_post.txt",
+                "early_h2_multi1.txt",
+                "early_h2_multi2.txt",
+        ):
+            shutil.copy2(TEST_DIRECTORY / filename, directory / filename)
+        return directory
 
-    ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+    def run_client(self, ats: ATS, http_version: str, case: str, *, sni: str | None = None) -> CommandResult:
+        """Run the bespoke OpenSSL early-data driver."""
 
-    ts1.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: example-no.com',
-        '  server_max_early_data: 0',
-    ])
+        arguments: list[str | Path] = [
+            sys.executable,
+            TEST_DIRECTORY / "test-0rtt-s_client.py",
+            "--ats-port",
+            str(ats.https_port),
+            "--http-version",
+            http_version,
+            "--test-name",
+            case,
+            "--run-dir",
+            self._client_directory,
+        ]
+        if sni is not None:
+            arguments.extend(("--server-name", sni))
+        result = ats.run(*arguments, timeout=10)
+        assert result.returncode == 0, result.output
+        return result
 
-    ts2.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ssl_early_data|ssl',
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.limit': 8,
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts1.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts1.Variables.SSLDir),
-            'proxy.config.ssl.server.session_ticket.enable': 1,
-            'proxy.config.ssl.server.max_early_data': 0,
-            'proxy.config.ssl.server.allow_early_data_params': 0,
-            'proxy.config.ssl.server.cipher_suite':
-                'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-        })
+    @staticmethod
+    def assert_output(result: CommandResult, *, contains: tuple[str, ...] = (), excludes: tuple[str, ...] = ()) -> None:
+        """Verify expected and prohibited early-data response fragments."""
 
-    ts2.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        for value in contains:
+            assert value in result.output, result.output
+        for value in excludes:
+            assert value not in result.output, result.output
 
-    ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+    def verify_basic_request(self) -> None:
+        """Confirm an ordinary full-handshake request reaches the origin."""
 
-    ts2.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: example-yes.com',
-        '  server_max_early_data: 16384',
-    ])
+        ats = self._enabled
+        result = self._curl.run_for(
+            ats,
+            "--insecure",
+            "--silent",
+            "--show-error",
+            "--resolve",
+            f"example.com:{ats.https_port}:127.0.0.1",
+            f"https://example.com:{ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        self.assert_output(result, contains=("curl test",), excludes=("early data accepted",))
 
-    tr = urtest.AddTestRun('Basic Curl Test')
-    tr.MakeCurlCommand('-k --resolve example.com:{0}:127.0.0.1 https://example.com:{0}'.format(ts1.Variables.ssl_port), ts=ts1)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts1)
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+    def verify_enabled_policy(self) -> None:
+        """Accept safe data, reject POST, and handle multiplexed HTTP/2 streams."""
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET)')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h1 -t get -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+        forbidden = ("curl test",)
+        self.assert_output(self.run_client(self._enabled, "h1", "get"), contains=("early data accepted",), excludes=forbidden)
+        self.assert_output(
+            self.run_client(self._enabled, "h1", "post"),
+            contains=("HTTP/1.1 425 Too Early",),
+            excludes=("curl test", "early data accepted"),
+        )
+        self.assert_output(self.run_client(self._enabled, "h2", "get"), contains=("early data accepted",), excludes=forbidden)
+        self.assert_output(
+            self.run_client(self._enabled, "h2", "post"),
+            contains=(":status 425",),
+            excludes=("curl test", "early data accepted"),
+        )
+        self.assert_output(
+            self.run_client(self._enabled, "h2", "multi1"),
+            contains=(
+                "early data accepted multi_1",
+                "early data accepted multi_2",
+                "early data accepted multi_3",
+            ),
+            excludes=forbidden,
+        )
+        self.assert_output(
+            self.run_client(self._enabled, "h2", "multi2"),
+            contains=("early data accepted multi_1", ":status 425", "early data accepted multi_3"),
+            excludes=forbidden,
+        )
+        self.assert_output(
+            self.run_client(self._enabled, "h1", "get", sni="example.com"),
+            contains=("early data accepted",),
+            excludes=forbidden,
+        )
+        self.assert_output(
+            self.run_client(self._enabled, "h1", "get", sni="example-no.com"),
+            excludes=("curl test", "early data accepted"),
+        )
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 POST)')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h1 -t post -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('HTTP/1.1 425 Too Early', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+    def verify_disabled_policy(self) -> None:
+        """Reject early data globally unless its SNI policy enables it."""
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 GET)')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t get -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+        for sni in (None, "example.com"):
+            self.assert_output(
+                self.run_client(self._disabled, "h1", "get", sni=sni),
+                excludes=("curl test", "early data accepted"),
+            )
+        self.assert_output(
+            self.run_client(self._disabled, "h1", "get", sni="example-yes.com"),
+            contains=("early data accepted",),
+            excludes=("curl test",),
+        )
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 POST)')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t post -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression(':status 425', 'Only safe methods are allowed')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('early data accepted', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+    def run(self) -> None:
+        """Run the complete early-data matrix against both global policies."""
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 Multiplex)')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t multi1 -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted multi_1', '')
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_2', '')
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_3', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+        self._origin.start()
+        self._enabled.start()
+        self._disabled.start()
+        self.verify_basic_request()
+        self.verify_enabled_policy()
+        self.verify_disabled_policy()
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/2 Multiplex with POST)')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h2 -t multi2 -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted multi_1', '')
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(':status 425', 'Only safe methods are allowed')
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression('early data accepted multi_3', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET) SNI Provided')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h1 -t get -r {urtest.RunDirectory} -s example.com'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts1
+def test_tls_0rtt_server(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS applies HTTP safety and SNI policy to TLS 1.3 early data."""
 
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET) Disabled By SNI Config')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts1.Variables.ssl_port} -v h1 -t get -r {urtest.RunDirectory} -s example-no.com'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET) Disabled In General')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts2.Variables.ssl_port} -v h1 -t get -r {urtest.RunDirectory}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts2)
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts2
-
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET) Disabled In General SNI Provided')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts2.Variables.ssl_port} -v h1 -t get -r {urtest.RunDirectory} -s example.com'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter += ts2
-
-    tr = urtest.AddTestRun('TLSv1.3 0-RTT Support (HTTP/1.1 GET) Enabled By SNI Config')
-    tr.Processes.Default.Command = f'{sys.executable} {urtest.RunDirectory}/test-0rtt-s_client.py -p {ts2.Variables.ssl_port} -v h1 -t get -r {urtest.RunDirectory} -s example-yes.com'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression('early data accepted', '')
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression('curl test', '')
-    urtest.execute()
+    TlsEarlyDataScenario(ats_factory, services, curl).run()

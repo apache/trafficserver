@@ -1,10 +1,10 @@
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not use
+#  this file except in compliance with the License.  You may obtain
+#  a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -14,135 +14,119 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import os
+import re
+import shlex
+import shutil
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_h3_go_client(urtest: UraniumTest) -> None:
-    '''
-    Verify HTTP/3 client interop with a quic-go client.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information regarding
-    #  copyright ownership.  The ASF licenses this file to you under
-    #  the Apache License, Version 2.0 (the "License"); you may not
-    #  use this file except in compliance with the License.  You may
-    #  obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class H3GoClientScenario:
+    """Verify HTTP/3 interoperability with a quic-go client."""
 
-    import os
+    _replay = "replays/h3_server_for_go_client.replay.yaml"
 
-    urtest.Summary = '''
-    Verify that a quic-go HTTP/3 client can complete sequential and concurrent
-    transactions through ATS.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        if not ats_factory.has_feature("TS_USE_QUIC"):
+            pytest.skip("ATS was built without QUIC")
+        if shutil.which("go") is None:
+            pytest.skip("Go 1.24 or newer is required")
+        version = re.search(r"go(\d+(?:\.\d+)+)", subprocess.check_output(("go", "version"), text=True))
+        if version is None or tuple(int(part) for part in version.group(1).split(".")) < (1, 24):
+            pytest.skip("Go 1.24 or newer is required")
+        self._server = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services, ats_factory.run_directory)
 
-    urtest.SkipUnless(
-        Condition.HasATSFeature('TS_USE_QUIC'),
-        Condition.HasGoVersion('1.24'),
-    )
+    def configure_server(self, services: ServiceFactory) -> VerifierServer:
+        """Create the sequential and concurrent request origin."""
 
-    def add_default_ssl_multicert(ts):
-        """Configure the default server certificate."""
-        ts.Disk.ssl_multicert_yaml.AddLines(
-            """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        return services.verifier_server("server-go-h3-client", self._replay, verbose=False, other_args="--poll-timeout 30000")
 
-    class TestHttp3GoClient:
-        """Configure a test to verify HTTP/3 quic-go client interoperability."""
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure QUIC limits, routing, and an HTTP/3 access log."""
 
-        replay_file = "replays/h3_server_for_go_client.replay.yaml"
+        ats = ats_factory.create("ts-go-h3-client", enable_tls=True, enable_quic=True, enable_cache=False)
+        ats.set_startup_timeout(60)
+        ats.add_default_ssl_files()
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "quic|http3",
+                "proxy.config.quic.initial_max_data_in": 1000000,
+                "proxy.config.quic.initial_max_stream_data_bidi_remote_in": 1000000,
+                "proxy.config.quic.server.stateless_retry_enabled": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}")
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats":
+                            [
+                                {
+                                    "name": "h3_go_access",
+                                    "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
+                                }
+                            ],
+                        "logs": [{
+                            "filename": "h3_go_access",
+                            "format": "h3_go_access"
+                        }],
+                    }
+            })
+        return ats
 
-        def __init__(self, name: str):
-            """Initialize the test."""
-            self.name = name
-            self._configure_server()
-            self._configure_traffic_server()
-            self._configure_client()
+    def configure_client(self, services: ServiceFactory, sandbox: Path) -> ProcessService:
+        """Create the Go client with isolated build caches."""
 
-        def _configure_server(self):
-            """Configure the Proxy Verifier origin server."""
-            self._server = urtest.MakeVerifierServerProcess(
-                "server-go-h3-client", self.replay_file, verbose=False, other_args="--poll-timeout 30000")
+        source = shlex.quote(str(TEST_DIRECTORY / "go_h3_client"))
+        command = (
+            f"cd {source} && exec go run . --addr 127.0.0.1:{self._ats.https_port} "
+            f"--authority go.example.com:{self._ats.https_port} --server-name go.example.com")
+        environment = {
+            **os.environ,
+            "GOFLAGS": "-mod=readonly -modcacherw",
+            "GOCACHE": str(sandbox / "gocache"),
+            "GOMODCACHE": str(sandbox / "gomodcache"),
+            "GOTOOLCHAIN": "local",
+        }
+        return services.process("client", ("/bin/bash", "-c", command), environment=environment)
 
-        def _configure_traffic_server(self):
-            """Configure Traffic Server."""
-            ts = urtest.MakeATSProcess("ts-go-h3-client", enable_tls=True, enable_quic=True, enable_cache=False)
-            ts.StartupTimeout = 60
-            ts.addDefaultSSLFiles()
-            add_default_ssl_multicert(ts)
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'quic|http3',
-                    'proxy.config.quic.initial_max_data_in': 1000000,
-                    'proxy.config.quic.initial_max_stream_data_bidi_remote_in': 1000000,
-                    'proxy.config.quic.server.stateless_retry_enabled': 0,
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                })
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
-            ts.Disk.logging_yaml.AddLines(
-                '''
-    logging:
-      formats:
-        - name: h3_go_access
-          format: 'c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>'
+    def run(self) -> None:
+        """Complete all client requests and verify their access-log protocol."""
 
-      logs:
-        - filename: h3_go_access
-          format: h3_go_access
-    '''.split("\n"))
+        self._server.start()
+        self._ats.start()
+        result = self._client.run(timeout=120)
+        assert result.returncode == 0, result.output
+        assert "completed 13 HTTP/3 requests" in result.stdout
+        content = wait_for_file_lines(self._ats.log_directory / "h3_go_access.log", r"c_alpn=h3", 2, timeout=10)
+        assert re.search(
+            r"c_alpn=h3 client_version=http/3 c_method=GET c_url=https://go\.example\.com:[0-9]+/go-get-empty",
+            content,
+        )
+        assert re.search(
+            r"c_alpn=h3 client_version=http/3 c_method=POST c_url=https://go\.example\.com:[0-9]+/go-post-large",
+            content,
+        )
 
-            self._access_log = urtest.Disk.File(os.path.join(ts.Variables.LOGDIR, 'h3_go_access.log'), exists=True)
-            self._access_log.Content = Testers.ContainsExpression(
-                r'c_alpn=h3 client_version=http/3 c_method=GET c_url=https://go\.example\.com:[0-9]+/go-get-empty',
-                "ATS should log the quic-go request as HTTP/3")
-            self._access_log.Content += Testers.ContainsExpression(
-                r'c_alpn=h3 client_version=http/3 c_method=POST c_url=https://go\.example\.com:[0-9]+/go-post-large',
-                "ATS should log the quic-go large POST as HTTP/3")
 
-            self._ts = ts
+def test_h3_go_client(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A quic-go client completes sequential and concurrent requests through ATS."""
 
-        def _configure_client(self):
-            """Configure the quic-go client test runs."""
-            tr = urtest.AddTestRun(self.name)
-            tr.Setup.Copy("go_h3_client")
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.Processes.Default.Env['GOFLAGS'] = '-mod=readonly -modcacherw'
-            tr.Processes.Default.Env['GOCACHE'] = os.path.join(tr.RunDirectory, 'gocache')
-            tr.Processes.Default.Env['GOMODCACHE'] = os.path.join(tr.RunDirectory, 'gomodcache')
-            tr.Processes.Default.Env['GOTOOLCHAIN'] = 'local'
-            tr.Processes.Default.Command = (
-                f'cd "{os.path.join(tr.RunDirectory, "go_h3_client")}" && '
-                f'go run . --addr 127.0.0.1:{self._ts.Variables.ssl_port} '
-                f'--authority go.example.com:{self._ts.Variables.ssl_port} '
-                '--server-name go.example.com')
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-                "completed 13 HTTP/3 requests", "The quic-go client should complete all HTTP/3 requests.")
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-
-            tr = urtest.AddTestRun("Wait for quic-go HTTP/3 access log")
-            tr.Processes.Default.Command = (
-                os.path.join(urtest.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-                os.path.join(self._ts.Variables.LOGDIR, 'h3_go_access.log'))
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-
-    TestHttp3GoClient("quic-go HTTP/3 client requests")
-    urtest.execute()
+    H3GoClientScenario(ats_factory, services).run()
