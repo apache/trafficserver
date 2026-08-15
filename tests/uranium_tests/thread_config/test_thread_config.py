@@ -14,260 +14,73 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_thread_config(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ThreadConfigurationScenario:
+    """Start ATS with representative execution, accept, task, and AIO counts."""
 
-    import sys
+    CASES = tuple((execution, *other) for execution in (1, 2, 32, 100) for other in ((0, 1, 1), (1, 2, 8), (10, 10, 32)))
 
-    urtest.Summary = 'Test that Trafficserver starts with different thread configurations.'
-    urtest.ContinueOnFail = True
-    urtest.SkipUnless(Condition.IsPlatform("linux"))
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats_factory = ats_factory
+        self._checker = Path(__file__).with_name("check_threads.py")
 
-    ts = urtest.MakeATSProcess('ts-1_exec-0_accept-1_task-1_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 1,
-            'proxy.config.accept_threads': 0,
-            'proxy.config.task_threads': 1,
-            'proxy.config.cache.threads_per_disk': 1,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-    ts.Setup.CopyAs('check_threads.py', urtest.RunDirectory)
+    def configure_ats(self, execution: int, accept: int, task: int, aio: int) -> ATS:
+        """Configure one ATS process for the requested thread counts."""
 
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 1 -a 0 -t 1 -c 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
+        ats = self._ats_factory.create(f"ts-{execution}-exec-{accept}-accept-{task}-task-{aio}-aio")
+        ats.records.update(
+            {
+                "proxy.config.exec_thread.autoconfig.enabled": 0,
+                "proxy.config.exec_thread.autoconfig.scale": 1.5,
+                "proxy.config.exec_thread.limit": execution,
+                "proxy.config.accept_threads": accept,
+                "proxy.config.task_threads": task,
+                "proxy.config.cache.threads_per_disk": aio,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "iocore_thread_start|iocore_net_accept_start",
+            })
+        return ats
 
-    ts = urtest.MakeATSProcess('ts-1_exec-1_accept-2_task-8_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 1,
-            'proxy.config.accept_threads': 1,
-            'proxy.config.task_threads': 2,
-            'proxy.config.cache.threads_per_disk': 8,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
+    def check_threads(self, ats: ATS, execution: int, accept: int, task: int, aio: int) -> None:
+        """Run the process-level thread inspector against @a ats."""
 
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 1 -a 1 -t 2 -c 8'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
+        result = ats.run(
+            sys.executable,
+            self._checker,
+            "-p",
+            ats.run_directory,
+            "-e",
+            str(execution),
+            "-a",
+            str(accept),
+            "-t",
+            str(task),
+            "-c",
+            str(aio),
+            timeout=20,
+        )
+        assert result.returncode == 0, result.output
 
-    ts = urtest.MakeATSProcess('ts-1_exec-10_accept-10_task-32_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 1,
-            'proxy.config.accept_threads': 10,
-            'proxy.config.task_threads': 10,
-            'proxy.config.cache.threads_per_disk': 32,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
+    def run(self) -> None:
+        """Check every configured thread-count combination."""
 
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 1 -a 10 -t 10 -c 32'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
+        for execution, accept, task, aio in self.CASES:
+            ats = self.configure_ats(execution, accept, task, aio)
+            ats.start()
+            self.check_threads(ats, execution, accept, task, aio)
+            ats.stop()
 
-    ts = urtest.MakeATSProcess('ts-2_exec-0_accept-1_task-1_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 2,
-            'proxy.config.accept_threads': 0,
-            'proxy.config.task_threads': 1,
-            'proxy.config.cache.threads_per_disk': 1,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
 
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 2 -a 0 -t 1 -c 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
+def test_thread_config(ats_factory: ATSFactory) -> None:
+    """Traffic Server honors explicit thread configuration on Linux."""
 
-    ts = urtest.MakeATSProcess('ts-2_exec-1_accept-2_task-8_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 2,
-            'proxy.config.accept_threads': 1,
-            'proxy.config.task_threads': 2,
-            'proxy.config.cache.threads_per_disk': 8,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 2 -a 1 -t 2 -c 8'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-2_exec-10_accept-10_task-32_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 2,
-            'proxy.config.accept_threads': 10,
-            'proxy.config.task_threads': 10,
-            'proxy.config.cache.threads_per_disk': 32,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 2 -a 10 -t 10 -c 32'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-32_exec-0_accept-1_task-1_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 32,
-            'proxy.config.accept_threads': 0,
-            'proxy.config.task_threads': 1,
-            'proxy.config.cache.threads_per_disk': 1,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 32 -a 0 -t 1 -c 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-32_exec-1_accept-2_task-8_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 32,
-            'proxy.config.accept_threads': 1,
-            'proxy.config.task_threads': 2,
-            'proxy.config.cache.threads_per_disk': 8,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 32 -a 1 -t 2 -c 8'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-32_exec-10_accept-10_task-32_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 32,
-            'proxy.config.accept_threads': 10,
-            'proxy.config.task_threads': 10,
-            'proxy.config.cache.threads_per_disk': 32,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 32 -a 10 -t 10 -c 32'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-100_exec-0_accept-1_task-1_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 100,
-            'proxy.config.accept_threads': 0,
-            'proxy.config.task_threads': 1,
-            'proxy.config.cache.threads_per_disk': 1,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 100 -a 0 -t 1 -c 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-100_exec-1_accept-2_task-8_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 100,
-            'proxy.config.accept_threads': 1,
-            'proxy.config.task_threads': 2,
-            'proxy.config.cache.threads_per_disk': 8,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 100 -a 1 -t 2 -c 8'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-
-    ts = urtest.MakeATSProcess('ts-100_exec-10_accept-10_task-32_aio')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.exec_thread.autoconfig.enabled': 0,
-            'proxy.config.exec_thread.autoconfig.scale': 1.5,
-            'proxy.config.exec_thread.limit': 100,
-            'proxy.config.accept_threads': 10,
-            'proxy.config.task_threads': 10,
-            'proxy.config.cache.threads_per_disk': 32,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-        })
-
-    tr = urtest.AddTestRun()
-    TS_ROOT = ts.Env['TS_ROOT']
-    tr.Processes.Default.Command = f'{sys.executable} check_threads.py -p {TS_ROOT} -e 100 -a 10 -t 10 -c 32'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-    urtest.execute()
+    if not sys.platform.startswith("linux"):
+        pytest.skip("Thread names are validated only on Linux")
+    ThreadConfigurationScenario(ats_factory).run()

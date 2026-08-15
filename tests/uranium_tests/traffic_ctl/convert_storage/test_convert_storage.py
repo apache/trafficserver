@@ -14,76 +14,44 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-def test_convert_storage(urtest: UraniumTest) -> None:
-    '''
-    Test the traffic_ctl config convert storage command.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class StorageConversionScenario:
+    """Verify traffic_ctl converts legacy storage and volume configuration."""
 
-    urtest.Summary = 'Test traffic_ctl config convert storage command.'
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._source = Path(__file__).parent
+        self._ats = self.configure_ats(ats_factory)
 
-    # Create an ATS process to get the environment with PATH set correctly.
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Create the ATS environment used to invoke traffic_ctl."""
 
-    # Test 1: Basic conversion (spans only, no volume=N annotations).
-    tr = urtest.AddTestRun("Test basic storage.config + volume.config conversion")
-    tr.Setup.Copy('legacy_config/basic.storage.config')
-    tr.Setup.Copy('legacy_config/basic.volume.config')
-    tr.Processes.Default.Command = \
-        'traffic_ctl config convert storage basic.storage.config basic.volume.config -'
-    tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = ts
+        return ats_factory.create("ts", enable_cache=False)
 
-    # Test 2: Exclusive volume assignments (volume=N per span line).
-    tr = urtest.AddTestRun("Test storage.config with exclusive volume=N span assignments")
-    tr.Setup.Copy('legacy_config/exclusive.storage.config')
-    tr.Setup.Copy('legacy_config/exclusive.volume.config')
-    tr.Processes.Default.Command = \
-        'traffic_ctl config convert storage exclusive.storage.config exclusive.volume.config -'
-    tr.Processes.Default.Streams.stdout = "gold/exclusive.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
+    def convert(self, storage: str, volumes: str, gold: str, output: str = "-") -> None:
+        """Convert one input pair and compare it with its wildcard gold file."""
 
-    # Test 3: Spans only, no volume.config (missing volume.config is treated as empty).
-    tr = urtest.AddTestRun("Test storage.config with no volume.config (spans only)")
-    tr.Setup.Copy('legacy_config/no_volumes.storage.config')
-    tr.Processes.Default.Command = \
-        'traffic_ctl config convert storage no_volumes.storage.config /nonexistent/volume.config -'
-    tr.Processes.Default.Streams.stdout = "gold/no_volumes.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
+        storage_path = self._source / "legacy_config" / storage
+        volumes_path = Path(volumes) if volumes.startswith("/") else self._source / "legacy_config" / volumes
+        result = self._ats.traffic_ctl("config", "convert", "storage", str(storage_path), str(volumes_path), output)
+        assert result.returncode == 0, result.output
+        actual = result.stdout if output == "-" else (self._ats.run_directory / output).read_text()
+        assert_matches_gold(actual, self._source / "gold" / gold)
 
-    # Test 4: Output to file.
-    tr = urtest.AddTestRun("Test output to file")
-    tr.Setup.Copy('legacy_config/basic.storage.config')
-    tr.Setup.Copy('legacy_config/basic.volume.config')
-    tr.Processes.Default.Command = \
-        'traffic_ctl config convert storage basic.storage.config basic.volume.config generated.yaml' \
-        ' > /dev/null && cat generated.yaml'
-    tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    def run(self) -> None:
+        """Exercise ordinary, exclusive-volume, missing-volume, and file output."""
+
+        self._ats.start()
+        self.convert("basic.storage.config", "basic.volume.config", "basic.yaml")
+        self.convert("exclusive.storage.config", "exclusive.volume.config", "exclusive.yaml")
+        self.convert("no_volumes.storage.config", "/nonexistent/volume.config", "no_volumes.yaml")
+        self.convert("basic.storage.config", "basic.volume.config", "basic.yaml", "generated.yaml")
+
+
+def test_convert_storage(ats_factory: ATSFactory) -> None:
+    """traffic_ctl converts supported storage.config and volume.config forms."""
+
+    StorageConversionScenario(ats_factory).run()

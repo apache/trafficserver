@@ -1,0 +1,127 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Apply inbound method policy through named IP categories"
+  replay: replays/https_categories_internal.replay.yaml
+  server:
+    name: origin
+    replay: replays/https_categories_server.replay.yaml
+  client:
+    name: client
+  ats:
+    name: ts
+    process_config:
+      enable_tls: true
+      enable_cache: false
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: http|ip_allow
+      proxy.config.cache.ip_categories.filename: "{CONFIG_DIR}/categories.yaml"
+      proxy.config.http.push_method_enabled: 1
+      proxy.config.ssl.client.verify.server.policy: PERMISSIVE
+      proxy.config.http.connect_ports: "{SERVER_HTTP_PORT}"
+      proxy.config.url_remap.acl_behavior_policy: 1
+    ip_allow_yaml: &ip-allow
+      ip_allow:
+        - apply: in
+          ip_categories: ACME_INTERNAL
+          action: set_allow
+          methods: [GET, HEAD, POST, PUSH]
+        - apply: in
+          ip_categories: ACME_EXTERNAL
+          action: set_allow
+          methods: [GET, HEAD]
+        - apply: in
+          ip_categories: ACME_ALL
+          action: set_allow
+          methods: [HEAD]
+        - apply: in
+          ip_categories: ALL
+          action: set_deny
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}"
+
+  variants:
+    - name: internal-and-external
+      client:
+        replay: replays/https_categories_internal.replay.yaml
+      ats:
+        inline_config_files:
+          categories.yaml: |
+            ip_categories:
+              - name: ACME_INTERNAL
+                ip_addrs: 127.0.0.1
+              - name: ACME_EXTERNAL
+                ip_addrs: 127.0.0.1
+              - name: ACME_ALL
+                ip_addrs: 127.0.0.1
+              - name: ALL
+                ip_addrs: 127.0.0.1
+
+    - name: external
+      client:
+        replay: replays/https_categories_external.replay.yaml
+      ats:
+        inline_config_files: &external-categories
+          categories.yaml: |
+            ip_categories:
+              - name: ACME_INTERNAL
+                ip_addrs: 1.2.3.4
+              - name: ACME_REMAP_EXTERNAL
+                ip_addrs: 127.0.0.1
+              - name: ACME_EXTERNAL
+                ip_addrs: 127.0.0.1
+              - name: ACME_ALL
+                ip_addrs: [1.2.3.4, 127.0.0.1]
+              - name: ALL
+                ip_addrs: [1.2.3.4, 127.0.0.1]
+
+    - name: denied-before-http
+      client:
+        replay: replays/https_categories_all.replay.yaml
+        return_code: 1
+        process_config:
+          allow_errors: true
+      ats:
+        inline_config_files:
+          categories.yaml: |
+            ip_categories:
+              - name: ACME_INTERNAL
+                ip_addrs: 1.2.3.4
+              - name: ACME_EXTERNAL
+                ip_addrs: 1.2.3.4
+              - name: ACME_ALL
+                ip_addrs: 1.2.3.4
+              - name: ALL
+                ip_addrs: [1.2.3.4, 127.0.0.1]
+        log_validation:
+          diags_log:
+            contains:
+              - expression: "client '127.0.0.1' prohibited by ip-allow policy"
+
+    - name: remap-denies-external-get
+      client:
+        replay: replays/https_categories_external_remap.replay.yaml
+      ats:
+        inline_config_files: *external-categories
+        remap_config:
+          - >-
+            map / http://127.0.0.1:{SERVER_HTTP_PORT}
+            @action=set_deny @src_ip_category=ACME_REMAP_EXTERNAL @method=GET

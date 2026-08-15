@@ -14,149 +14,118 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import ssl
+import sys
+
+import pytest
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    CommandResult,
+    ProcessService,
+    ServiceFactory,
+    VerifierServer,
+    wait_for_file_lines,
+)
+
+TEST_DIRECTORY = Path(__file__).parent
+OVERSIZED_SIZE = 70000
 
 
-def test_oversized_field_h2(urtest: UraniumTest) -> None:
-    '''
-    Verify that an HTTP/2 header whose name or value length exceeds the uint16_t
-    field-length limit (>= 65535 bytes) is treated as an HPACK connection error
-    (GOAWAY with COMPRESSION_ERROR, code 0x9) and is never forwarded to the origin.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class OversizedFieldH2Scenario:
+    """Drive oversized HTTP/2 names and values with a raw HPACK client."""
 
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        if ssl.OPENSSL_VERSION_INFO < (1, 1, 1):
+            pytest.skip("OpenSSL 1.1.1 or newer is required")
+        if not services.proxy_verifier_at_least("2.8.0"):
+            pytest.skip("Proxy Verifier 2.8.0 or newer is required")
+        self._services = services
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Verify that an HTTP/2 header field whose name or value length exceeds the
-    uint16_t field-length limit (>= 65535 bytes) is rejected as an HPACK connection
-    error (GOAWAY COMPRESSION_ERROR, code 0x9) rather than stored with a truncated
-    length, and is never forwarded to the origin.
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> VerifierServer:
+        """Serve only the normal request and detect accidental oversized forwarding."""
 
-    urtest.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'), Condition.HasProxyVerifierVersion('2.8.0'))
+        return services.verifier_server(
+            "origin",
+            "replay/oversized_field_h2.replay.yaml",
+            https_ports=[],
+        )
 
-    class OversizedFieldH2Test:
-        '''Drive an oversized HTTP/2 header with a raw HPACK client.'''
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Raise the list limit while retaining the uint16 field-size ceiling."""
 
-        replayFile = "replay/oversized_field_h2.replay.yaml"
-        clientScript = "oversized_field_h2_client.py"
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http2|hpack",
+                "proxy.config.http.header_field_max_size": 65535,
+                "proxy.config.http2.max_header_list_size": 8 * 1024 * 1024,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.http_port}")
+        return ats
 
-        # Header sizes large enough to exceed the uint16_t (65535) field-length limit.
-        oversizedSize = 70000
+    def configure_client(self, name: str, path: str, name_size: int, value_size: int) -> ProcessService:
+        """Configure one invocation of the raw HPACK client."""
 
-        def __init__(self):
-            self.__setupOriginServer()
-            self.__setupTS()
-            self.__setupClient()
+        return self._services.process(
+            name,
+            (
+                sys.executable,
+                TEST_DIRECTORY / "clients" / "oversized_field_h2_client.py",
+                path,
+                str(name_size),
+                str(value_size),
+                "127.0.0.1",
+                str(self._ats.https_port),
+                "example.com",
+            ),
+        )
 
-        def __setupOriginServer(self):
-            self._server = urtest.MakeVerifierServerProcess("verifier-server", self.replayFile)
-            # The origin must never receive the oversized requests. If ATS forwarded
-            # them (the pre-fix behavior), the verifier server would log a request
-            # for these paths / serve the marker bodies.
-            self._server.Streams.All += Testers.ExcludesExpression(
-                'h2-oversized-value', 'Origin must not receive the oversized-value request.')
-            self._server.Streams.All += Testers.ExcludesExpression(
-                'h2-oversized-name', 'Origin must not receive the oversized-name request.')
-            # Regression guard: the normal, under-limit request MUST reach the origin.
-            self._server.Streams.All += Testers.ContainsExpression(
-                'h2-normal', 'Origin must receive the normal under-limit request.')
+    @staticmethod
+    def verify_rejection(result: CommandResult) -> None:
+        """Require a connection error rather than an HTTP response."""
 
-        def __setupTS(self):
-            self._ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
-            self._ts.addDefaultSSLFiles()
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http2|hpack',
-                    'proxy.config.ssl.server.cert.path': f"{self._ts.Variables.SSLDir}",
-                    'proxy.config.ssl.server.private_key.path': f"{self._ts.Variables.SSLDir}",
-                    # max_header_list_size is raised well above the oversized field so the
-                    # request is not rejected at the HTTP/2 header-list-size level first.
-                    # header_field_max_size is set to its maximum (65535, the uint16_t
-                    # ceiling enforced by the records range check); a field larger than that
-                    # is rejected by the configured field-size limit with a COMPRESSION_ERROR.
-                    # The uint16_t storage limit in the MIME setters is exercised directly by
-                    # the HpackIndexingTable unit test: header_field_max_size can no longer be
-                    # configured above 65535, so an oversized field can no longer reach the
-                    # storage path end to end through config.
-                    'proxy.config.http.header_field_max_size': 65535,
-                    'proxy.config.http2.max_header_list_size': 8 * 1024 * 1024,
-                })
-            # Rejecting the oversized field is an HPACK connection error, so ATS
-            # intentionally logs "ERROR: HTTP/2 connection error code=0x09 ...
-            # compression error". Whitelist exactly that line; the default check
-            # treats any "ERROR:" in diags.log as a failure, so assert this
-            # expected line is present instead.
-            self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-                r"ERROR: HTTP/2 connection error code=0x09 .* compression error",
-                "ATS must log the expected HTTP/2 COMPRESSION_ERROR for the oversized field.")
-            self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}")
-            self._ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        assert result.returncode == 0, result.output
+        assert "status=None" in result.output
+        assert "goaway_error=9" in result.output
 
-        def __setupClient(self):
-            self._ts.Setup.CopyAs(f"clients/{self.clientScript}", urtest.RunDirectory)
+    @staticmethod
+    def verify_normal(result: CommandResult) -> None:
+        """Require an ordinary under-limit request to be proxied."""
 
-        def run(self):
-            # Case 1: oversized header VALUE.
-            tr = urtest.AddTestRun("oversized H2 header value")
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            port = self._ts.Variables.ssl_port
-            tr.Processes.Default.Command = (
-                f"{sys.executable} {self.clientScript} /h2-oversized-value 0 {self.oversizedSize} 127.0.0.1 {port} example.com")
-            tr.Processes.Default.ReturnCode = 0
-            # No :status (connection error, not a response) and GOAWAY COMPRESSION_ERROR (0x9).
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'status=None', 'Client must not get an HTTP response for the oversized header.')
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'goaway_error=9', 'ATS must send GOAWAY with COMPRESSION_ERROR (0x9).')
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+        assert result.returncode == 0, result.output
+        assert "status=200" in result.output
 
-            # Case 2: oversized header NAME.
-            tr = urtest.AddTestRun("oversized H2 header name")
-            tr.Processes.Default.Command = (
-                f"{sys.executable} {self.clientScript} /h2-oversized-name {self.oversizedSize} 0 127.0.0.1 {port} example.com")
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'status=None', 'Client must not get an HTTP response for the oversized header.')
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'goaway_error=9', 'ATS must send GOAWAY with COMPRESSION_ERROR (0x9).')
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+    def run(self) -> None:
+        """Reject oversized value and name cases, then proxy the control request."""
 
-            # Case 3: NORMAL, under-limit request (regression guard against
-            # over-rejection). Sanity mode "0 0" sends a plain GET; the client must
-            # get a 200 and the origin must receive it.
-            tr = urtest.AddTestRun("normal under-limit H2 request")
-            tr.Processes.Default.Command = (f"{sys.executable} {self.clientScript} /h2-normal 0 0 127.0.0.1 {port} example.com")
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'status=200', 'Client must get a 200 for the normal under-limit request.')
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+        self._origin.start()
+        self._ats.start()
+        value_client = self.configure_client("oversized-value", "/h2-oversized-value", 0, OVERSIZED_SIZE)
+        name_client = self.configure_client("oversized-name", "/h2-oversized-name", OVERSIZED_SIZE, 0)
+        normal_client = self.configure_client("normal", "/h2-normal", 0, 0)
+        self.verify_rejection(value_client.run(timeout=15))
+        self.verify_rejection(name_client.run(timeout=15))
+        self.verify_normal(normal_client.run(timeout=15))
+        wait_for_file_lines(
+            self._ats.diags_log,
+            r"ERROR: HTTP/2 connection error code=0x09 .* compression error",
+            2,
+        )
+        origin_output = self._origin.output
+        assert re.search(r"h2-normal", origin_output)
+        assert "h2-oversized-value" not in origin_output
+        assert "h2-oversized-name" not in origin_output
 
-    OversizedFieldH2Test().run()
-    urtest.execute()
+
+def test_oversized_field_h2(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Oversized HTTP/2 fields produce GOAWAY COMPRESSION_ERROR and never reach the origin."""
+
+    OversizedFieldH2Scenario(ats_factory, services).run()

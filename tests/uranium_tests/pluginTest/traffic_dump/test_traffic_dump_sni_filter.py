@@ -14,136 +14,121 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer
+
+TEST_DIRECTORY = Path(__file__).parent
+TEST_TOOLS = TEST_DIRECTORY.parents[2] / "tools"
 
 
-def test_traffic_dump_sni_filter(urtest: UraniumTest) -> None:
-    """
-    Verify traffic_dump functionality.
-    """
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TrafficDumpSniFilterScenario:
+    """Verify traffic_dump records only the configured TLS SNI."""
 
-    import os
-    import sys
+    _replay = "replay/various_sni.yaml"
 
-    urtest.Summary = '''
-    Verify traffic_dump functionality.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._services = services
+        self._server = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        if not self._ats.plugin_exists("traffic_dump.so"):
+            pytest.skip("traffic_dump.so is required")
+        self._client = self.configure_client(services)
 
-    urtest.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
+    def configure_server(self, services: ServiceFactory) -> VerifierServer:
+        """Create the TLS origin for the SNI sessions."""
 
-    schema_path = os.path.join(urtest.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
-    replay_file = "replay/various_sni.yaml"
-    server = urtest.MakeVerifierServerProcess(
-        "server-various-sni", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+        return services.verifier_server(
+            "server-various-sni",
+            self._replay,
+            ssl_cert=TEST_DIRECTORY / "ssl" / "server_combined.pem",
+            ca_cert=TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the bob.com filter and permissive SNI policy."""
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(
+            TEST_DIRECTORY / "ssl" / "server.pem",
+            TEST_DIRECTORY / "ssl" / "server.key",
+            TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "traffic_dump",
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.http.host_sni_policy": 2,
+                "proxy.config.ssl.TLSv1_3.enabled": 0,
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            })
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.remap_config.add_line(f"map / https://127.0.0.1:{self._server.https_port}")
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n- fqdn: bob.com\n  verify_client: NONE\n  host_sni_policy: PERMISSIVE\n",
+        )
+        ats.plugin_config.add_line(f'traffic_dump.so --logdir {ats.log_directory} --sample 1 --sni-filter "bob.com"')
+        return ats
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'traffic_dump',
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.http.host_sni_policy': 2,
-            'proxy.config.ssl.TLSv1_3.enabled': 0,
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        })
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the client that opens matching, mismatched, and absent-SNI sessions."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        return services.verifier_client(
+            "client-various-sni",
+            self._replay,
+            https_ports=[self._ats.https_port],
+            ssl_cert=TEST_DIRECTORY / "ssl" / "server_combined.pem",
+            ca_cert=TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
 
-    ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
+    def run(self) -> None:
+        """Replay the sessions and inspect the sole dumped connection."""
 
-    ts.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: bob.com',
-        '  verify_client: NONE',
-        '  host_sni_policy: PERMISSIVE',
-    ])
+        self._server.start()
+        self._ats.start()
+        result = self._client.run()
+        assert result.returncode == 0, result.output
+        dump_directory = self._ats.log_directory / "127"
+        first = dump_directory / "0000000000000000"
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline and not first.is_file():
+            time.sleep(0.1)
+        assert first.is_file()
+        assert not (dump_directory / "0000000000000001").exists()
+        assert not (dump_directory / "0000000000000002").exists()
 
-    # Configure traffic_dump's SNI filter to only dump connections with SNI bob.com.
-    sni_filter = "bob.com"
-    ts.Disk.plugin_config.AddLine(f'traffic_dump.so --logdir {replay_dir} --sample 1 '
-                                  f'--sni-filter "{sni_filter}"')
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        assert "Filtering to only dump connections with SNI: bob.com" in traffic_out
+        assert "Ignore HTTPS session with non-filtered SNI: dave" in traffic_out
+        assert "Initialized with sample pool size of 1 bytes and unlimited disk utilization" in traffic_out
+        verify = self._ats.run(
+            sys.executable,
+            TEST_DIRECTORY / "verify_replay.py",
+            TEST_TOOLS / "lib" / "replay_schema.json",
+            first,
+            "--client-protocols",
+            "http,tls,tcp,ip",
+            "--client-tls-features",
+            "sni:bob.com,proxy-verify-mode:0,proxy-provided-cert:true",
+        )
+        assert verify.returncode == 0, verify.output
 
-    # Set up trafficserver expectations.
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        f"Filtering to only dump connections with SNI: {sni_filter}", "Verify filtering for the expected SNI.")
 
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Ignore HTTPS session with non-filtered SNI: dave", "Verify that the non-desired SNI session was filtered out.")
+def test_traffic_dump_sni_filter(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """traffic_dump's SNI filter records only matching TLS sessions."""
 
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Initialized with sample pool size of 1 bytes and unlimited disk utilization",
-        "Verify traffic_dump initialized with the configured disk limit.")
-
-    # Set up the json replay file expectations.
-    replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
-    ts.Disk.File(replay_file_session_1, exists=True)
-
-    # The second session should be filtered out because it doesn't have the
-    # expected SNI (note exists is set to False).
-    replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000001")
-    ts.Disk.File(replay_file_session_2, exists=False)
-
-    # The third session should also be filtered out because it doesn't have any
-    # SNI (note exists is set to False).
-    replay_file_session_2 = os.path.join(replay_dir, "127", "0000000000000002")
-    ts.Disk.File(replay_file_session_2, exists=False)
-
-    # Run the traffic with connections containing various SNI values.
-    tr = urtest.AddTestRun("Test SNI filter with various SNI values in the handshakes.")
-    # Use the same port across the two servers so that the remap config will work
-    # across both.
-    server_port = server.Variables.http_port
-    tr.AddVerifierClientProcess(
-        "client-various-sni",
-        replay_file,
-        https_ports=[ts.Variables.ssl_port],
-        ssl_cert="ssl/server_combined.pem",
-        ca_cert="ssl/signer.pem")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    # Verify the properties of the replay file for the dumped transaction.
-    tr = urtest.AddTestRun("Verify the json content of the first session")
-    session_1_protocols = "http,tls,tcp,ip"
-    session_1_tls_features = 'sni:bob.com,proxy-verify-mode:0,proxy-provided-cert:true'
-    verify_replay = "verify_replay.py"
-    tr.Setup.CopyAs(verify_replay, urtest.RunDirectory)
-    tr.Processes.Default.Command = \
-        (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
-         f'--client-protocols "{session_1_protocols}" --client-tls-features "{session_1_tls_features}"')
-    tr.Processes.Default.ReturnCode = 0
-    urtest.execute()
+    TrafficDumpSniFilterScenario(ats_factory, services).run()

@@ -122,7 +122,7 @@ class H3ClientProtocol(QuicConnectionProtocol):
             (b":scheme", b"https"),
             (b":authority", authority.encode()),
             (b":path", request_case.path.encode()),
-            (b"user-agent", b"ats-h3-aioquic-autest"),
+            (b"user-agent", b"ats-h3-aioquic-uranium"),
             (b"x-h3-python-client", b"aioquic"),
             (b"x-h3-reused-header", REUSED_HEADER_VALUE),
             (b"x-h3-test-case", request_case.name.encode()),
@@ -149,7 +149,8 @@ class H3ClientProtocol(QuicConnectionProtocol):
             event_summary = ", ".join(f"{name}={count}" for name, count in sorted(self._event_counts.items()))
             if response is None:
                 raise TimeoutError(
-                    f"{request_case.name}: timed out before receiving response headers; raw QUIC stream bytes={raw_response_bytes}; "
+                    f"{request_case.name}: timed out before receiving response headers; "
+                    f"raw QUIC stream bytes={raw_response_bytes}; "
                     f"events=[{event_summary}]") from e
             raise TimeoutError(
                 f"{request_case.name}: timed out after receiving {len(response.header_blocks)} header block(s) and "

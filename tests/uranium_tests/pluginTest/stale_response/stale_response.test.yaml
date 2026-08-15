@@ -1,0 +1,105 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify stale_response plugin options"
+  replay: "stale_response_no_default.replay.yaml"
+  requires:
+    plugins: ["stale_response.so"]
+  server:
+    name: "stale-response-origin"
+  client:
+    name: "stale-response-client"
+  ats:
+    name: "stale-response-ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|stale_response"
+      proxy.config.http.server_session_sharing.pool: "global"
+      proxy.config.http.negative_revalidating_enabled: 0
+      proxy.config.log.rolling_enabled: 0
+  variants:
+    - name: "global-no-defaults"
+      ats:
+        plugin_config: ["stale_response.so --log-all --log-filename stale_responses"]
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-while-revalidate:.*stale.jpeg"}
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-if-error:.*error.jpeg"}
+    - name: "global-default-directives"
+      replay: "stale_response_with_defaults.replay.yaml"
+      ats:
+        plugin_config: ["stale_response.so --log-all --log-filename stale_responses --stale-while-revalidate-default 30 --stale-if-error-default 30"]
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-while-revalidate:.*stale.jpeg"}
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-if-error:.*error.jpeg"}
+    - name: "global-force-swr"
+      replay: "stale_response_with_force_swr.replay.yaml"
+      ats:
+        plugin_config: ["stale_response.so --log-all --log-filename stale_responses --force-stale-while-revalidate 30"]
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-while-revalidate:.*stale.jpeg"}
+    - name: "global-force-sie"
+      replay: "stale_response_with_force_sie.replay.yaml"
+      ats:
+        plugin_config: ["stale_response.so --log-all --log-filename stale_responses --force-stale-if-error 30"]
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-if-error:.*error.jpeg"}
+    - name: "global-max-memory"
+      replay: "stale_response_max_memory.replay.yaml"
+      ats:
+        plugin_config: ["stale_response.so --log-all --log-filename stale_responses --max-memory-usage 256"]
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/"]
+        log_validation:
+          traffic_out:
+            contains:
+              - {expression: "response exceeded memory limit; sending stale data", description: "The plugin must use stale data after exceeding its memory limit"}
+    - name: "remap-no-defaults"
+      ats:
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=stale_response.so @pparam=--log-all @pparam=--log-filename @pparam=stale_responses"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-while-revalidate:.*stale.jpeg"}
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-if-error:.*error.jpeg"}
+    - name: "remap-default-directives"
+      replay: "stale_response_with_defaults.replay.yaml"
+      ats:
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=stale_response.so @pparam=--log-all @pparam=--log-filename @pparam=stale_responses @pparam=--stale-while-revalidate-default @pparam=30 @pparam=--stale-if-error-default @pparam=30"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-while-revalidate:.*stale.jpeg"}
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-if-error:.*error.jpeg"}
+    - name: "remap-force-swr"
+      replay: "stale_response_with_force_swr.replay.yaml"
+      ats:
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=stale_response.so @pparam=--log-all @pparam=--log-filename @pparam=stale_responses @pparam=--force-stale-while-revalidate @pparam=30"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-while-revalidate:.*stale.jpeg"}
+    - name: "remap-force-sie"
+      replay: "stale_response_with_force_sie.replay.yaml"
+      ats:
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=stale_response.so @pparam=--log-all @pparam=--log-filename @pparam=stale_responses @pparam=--force-stale-if-error @pparam=30"]
+        file_checks:
+          - {path: "{LOG_DIR}/stale_responses.log", contains: "stale-if-error:.*error.jpeg"}
+    - name: "remap-max-memory"
+      replay: "stale_response_max_memory.replay.yaml"
+      ats:
+        remap_config: ["map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=stale_response.so @pparam=--log-all @pparam=--log-filename @pparam=stale_responses @pparam=--max-memory-usage @pparam=256"]
+        log_validation:
+          traffic_out:
+            contains:
+              - {expression: "response exceeded memory limit; sending stale data", description: "The remap plugin must use stale data after exceeding its memory limit"}

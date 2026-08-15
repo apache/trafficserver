@@ -1,0 +1,103 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: proxy-req
+      do:
+        with: proxy-req-path
+        select:
+        - match: "1"
+          do:
+          - proxy-req-field<alpha>: "smoke"
+          - proxy-req-field<bravo>: [ "path" , { concat: [ "/" , "stuff" ]}]
+          - proxy-req-field<charlie>: [ "path/" , { concat: [ "/" , "stuff" ]}]
+        - match: "2"
+          do:
+          - var<delay>: "15 minutes"
+          - proxy-req-field<alpha>: hours<1>
+          - proxy-req-field<bravo>: [ hours<1>, minutes<30> ]
+          - proxy-req-field<charlie>: minutes<90>
+          - var<delta>: [ [ minutes<90>, var<delay> ] , { as-duration: } ]
+          - debug: "Delta is '{var<delta>}'"
+          - proxy-req-field<delta>: var<delta>
+          - proxy-req-field<echo>: [ [ hours<1>, minutes<30> ] , { as-duration: } ]
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+
+  - base-rsp: &base-rsp
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol: # plain text sessions
+    stack: http
+  transactions:
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ alpha, { value: "smoke", as: equal } ]
+        - [ bravo, { value: "path/stuff", as: equal } ]
+        - [ charlie, { value: "path/stuff", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/2"
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      headers:
+        fields:
+        - [ alpha, { value: "1 h", as: equal } ]
+        - [ bravo, { value: [ "1 h", "30 m" ], as: equal } ]
+        - [ charlie, { value: "1 h 30 m", as: equal } ]
+        - [ delta, { value: "1 h 45 m", as: equal } ]
+        - [ echo, { value: "1 h 30 m", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      <<: *base-rsp
+
+
+urtest:
+  description: Verify txn_box tuple values
+  requires:
+    plugins:
+    - txn_box.so
+  server:
+    name: txn-box-tuple-origin
+  client:
+    name: txn-box-tuple-client
+  ats:
+    name: txn-box-tuple-ts
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box
+    copy_to_config_dir:
+    - tuple.test.yaml
+    remap_config:
+    - map / http://127.0.0.1:{SERVER_HTTP_PORT}
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key meta.txn_box.global {CONFIG_DIR}/tuple.test.yaml

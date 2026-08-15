@@ -14,165 +14,131 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, assert_matches_gold, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_via(urtest: UraniumTest) -> None:
-    '''
-    Test the VIA header. This runs several requests through ATS and extracts the upstream VIA headers.
-    Those are then checked against a gold file to verify the protocol stack based output is correct.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ViaHeaderScenario:
+    """Observe the protocol stack encoded in upstream Via headers."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if not Curl.supports("http2") or not Curl.supports("IPv6"):
+            pytest.skip("curl HTTP/2 and IPv6 support are required")
+        self._curl = curl
+        self._enable_quic = ats_factory.has_feature("TS_USE_QUIC") and Curl.supports("http3")
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Check VIA header for protocol stack data.
-    '''
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Load the microserver hook that records normalized Via headers."""
 
-    urtest.SkipUnless(Condition.HasCurlFeature('http2'), Condition.HasCurlFeature('IPv6'))
-    urtest.ContinueOnFail = True
+        origin = services.origin(
+            "server",
+            options={"--load": TEST_DIRECTORY / "via-observer.py"},
+        )
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    # Define default ATS
-    if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
-        ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_quic=True)
-    else:
-        ts = urtest.MakeATSProcess("ts", enable_tls=True)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable maximal Via detail on every supported listener."""
 
-    server = urtest.MakeOriginServer("server", options={'--load': os.path.join(urtest.TestDirectory, 'via-observer.py')})
+        ats = ats_factory.create("ts", enable_tls=True, enable_quic=self._enable_quic)
+        records: dict[str, object] = {
+            "proxy.config.http.insert_request_via_str": 4,
+            "proxy.config.http.insert_response_via_str": 4,
+        }
+        if not self._curl.uses_uds:
+            server_ports = (f"{ats.http_port} {ats.ipv6_port}:ipv6 "
+                            f"{ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6")
+            if self._enable_quic:
+                server_ports += f" {ats.https_port}:quic {ats.ipv6_https_port}:quic:ipv6"
+            records["proxy.config.http.server_ports"] = server_ports
+        ats.records.update(records)
+        ats.remap_config.add_lines(
+            (
+                f"map http://www.example.com http://127.0.0.1:{self._origin.port}",
+                f"map https://www.example.com http://127.0.0.1:{self._origin.port}",
+            ))
+        return ats
 
-    testName = "VIA"
+    def curl(self, *arguments: str) -> None:
+        """Run one client protocol variant."""
 
-    # We only need one transaction as only the VIA header will be checked.
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+        result = self._curl.run_for(self._ats, "--verbose", *arguments)
+        assert result.returncode == 0, result.output
 
-    # These should be promoted rather than other tests like this reaching around.
-    ts.addDefaultSSLFiles()
+    def run_uds_requests(self) -> int:
+        """Exercise the Via stack available over a Unix socket."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.http.insert_request_via_str': 4,
-            'proxy.config.http.insert_response_via_str': 4,
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        })
+        self.curl("--http1.1", "--proxy", f"localhost:{self._ats.http_port}", "http://www.example.com")
+        self.curl("--http1.0", "--proxy", f"localhost:{self._ats.http_port}", "http://www.example.com")
+        self.curl("--http1.1", "--proxy", f"localhost:{self._ats.ipv6_port}", "http://www.example.com")
+        return 3
 
-    ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
-    ts.Disk.remap_config.AddLine(
-        'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
+    def run_network_requests(self) -> int:
+        """Exercise clear-text, TLS, HTTP/2, optional HTTP/3, and IPv6."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        self.curl("--ipv4", "--http1.1", "--proxy", f"localhost:{self._ats.http_port}", "http://www.example.com")
+        self.curl("--ipv4", "--http1.0", "--proxy", f"localhost:{self._ats.http_port}", "http://www.example.com")
+        self.curl(
+            "--ipv4",
+            "--http2",
+            "--insecure",
+            "--header",
+            "Host: www.example.com",
+            f"https://localhost:{self._ats.https_port}",
+        )
+        count = 3
+        if self._enable_quic:
+            self.curl(
+                "--ipv4",
+                "--http3",
+                "--insecure",
+                "--header",
+                "Host: www.example.com",
+                f"https://localhost:{self._ats.https_port}",
+            )
+            count += 1
+        self.curl(
+            "--ipv4",
+            "--http1.1",
+            "--insecure",
+            "--header",
+            "Host: www.example.com",
+            f"https://localhost:{self._ats.https_port}",
+        )
+        self.curl("--ipv6", "--http1.1", "--proxy", f"localhost:{self._ats.ipv6_port}", "http://www.example.com")
+        self.curl(
+            "--ipv6",
+            "--http1.1",
+            "--insecure",
+            "--header",
+            "Host: www.example.com",
+            f"https://localhost:{self._ats.ipv6_https_port}",
+        )
+        return count + 3
 
-    # Set up to check the output after the tests have run.
-    via_log_id = urtest.Disk.File("via.log")
-    if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
-        via_log_id.Content = "via_h3.gold"
-    elif Condition.CurlUsingUnixDomainSocket():
-        via_log_id.Content = "via_uds.gold"
-    else:
-        via_log_id.Content = "via.gold"
+    def run(self) -> None:
+        """Send each protocol variant and compare the observed Via stacks."""
 
-    ipv4flag = ""
-    ipv6flag = ""
-    if not Condition.CurlUsingUnixDomainSocket():
-        ipv4flag = "--ipv4"
-        ipv6flag = "--ipv6"
+        self._origin.start()
+        self._ats.start()
+        count = self.run_uds_requests() if self._curl.uses_uds else self.run_network_requests()
+        log_path = self._origin.run_directory / "via.log"
+        wait_for_file_lines(log_path, r"^Via:", count)
+        gold = "via_uds.gold" if self._curl.uses_uds else ("via_h3.gold" if self._enable_quic else "via.gold")
+        assert_matches_gold(log_path.read_text(errors="replace"), TEST_DIRECTORY / gold)
 
-    # Basic HTTP 1.1
-    tr = urtest.AddTestRun()
-    # Wait for the micro server
-    tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    # Delay on readiness of our ssl ports
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
 
-    tr.MakeCurlCommand(
-        '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
+def test_via(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Upstream Via headers accurately describe each client protocol stack."""
 
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    # HTTP 1.0
-    tr = urtest.AddTestRun()
-    tr.MakeCurlCommand(
-        '--verbose {0} --http1.0 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    if not Condition.CurlUsingUnixDomainSocket():
-        # HTTP 2
-        tr = urtest.AddTestRun()
-        tr.MakeCurlCommand(
-            '--verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-                ts.Variables.ssl_port),
-            ts=ts)
-        tr.Processes.Default.ReturnCode = 0
-
-        tr.StillRunningAfter = server
-        tr.StillRunningAfter = ts
-
-        # HTTP 3
-        if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
-            tr = urtest.AddTestRun()
-            tr.MakeCurlCommand(
-                '--verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-                    ts.Variables.ssl_port),
-                ts=ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = server
-            tr.StillRunningAfter = ts
-
-        # TLS
-        tr = urtest.AddTestRun()
-        tr.MakeCurlCommand(
-            '--verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-                ts.Variables.ssl_port),
-            ts=ts)
-        tr.Processes.Default.ReturnCode = 0
-
-        tr.StillRunningAfter = server
-        tr.StillRunningAfter = ts
-
-    # IPv6
-    tr = urtest.AddTestRun()
-    tr.MakeCurlCommand(
-        '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    if not Condition.CurlUsingUnixDomainSocket():
-        tr = urtest.AddTestRun()
-        tr.MakeCurlCommand(
-            '--verbose --ipv6 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-                ts.Variables.ssl_portv6),
-            ts=ts)
-        tr.Processes.Default.ReturnCode = 0
-
-        tr.StillRunningAfter = server
-        tr.StillRunningAfter = ts
-    urtest.execute()
+    ViaHeaderScenario(ats_factory, services, curl).run()

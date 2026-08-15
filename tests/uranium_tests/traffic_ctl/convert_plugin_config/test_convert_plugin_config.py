@@ -14,76 +14,50 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-def test_convert_plugin_config(urtest: UraniumTest) -> None:
-    '''
-    Test the traffic_ctl config convert plugin_config command.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class PluginConfigConversionScenario:
+    """Verify traffic_ctl converts legacy plugin.config syntax to YAML."""
 
-    urtest.Summary = 'Test traffic_ctl config convert plugin_config command.'
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._source = Path(__file__).parent
+        self._ats = self.configure_ats(ats_factory)
 
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Create the ATS environment used to invoke traffic_ctl."""
 
-    # Test 1: Basic plugin.config conversion.
-    tr = urtest.AddTestRun("Test basic plugin.config conversion")
-    tr.Setup.Copy('legacy_config/basic.config')
-    tr.Processes.Default.Command = 'traffic_ctl config convert plugin_config basic.config -'
-    tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = ts
+        return ats_factory.create("ts", enable_cache=False)
 
-    # Test 2: Commented-out lines become enabled: false.
-    tr = urtest.AddTestRun("Test commented lines converted to disabled entries")
-    tr.Setup.Copy('legacy_config/commented.config')
-    tr.Processes.Default.Command = 'traffic_ctl config convert plugin_config commented.config -'
-    tr.Processes.Default.Streams.stdout = "gold/commented.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
+    def convert(self, source: str, gold: str, *options: str, output: str = "-") -> None:
+        """Convert one input and compare it with its wildcard gold file."""
 
-    # Test 3: Quoted arguments.
-    tr = urtest.AddTestRun("Test plugin.config with quoted arguments")
-    tr.Setup.Copy('legacy_config/quoted.config')
-    tr.Processes.Default.Command = 'traffic_ctl config convert plugin_config quoted.config -'
-    tr.Processes.Default.Streams.stdout = "gold/quoted.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
+        result = self._ats.traffic_ctl(
+            "config",
+            "convert",
+            "plugin_config",
+            *options,
+            str(self._source / "legacy_config" / source),
+            output,
+        )
+        assert result.returncode == 0, result.output
+        actual = result.stdout if output == "-" else (self._ats.run_directory / output).read_text()
+        assert_matches_gold(actual, self._source / "gold" / gold)
 
-    # Test 4: Output to file instead of stdout.
-    tr = urtest.AddTestRun("Test output to file")
-    tr.Setup.Copy('legacy_config/basic.config')
-    tr.Processes.Default.Command = 'traffic_ctl config convert plugin_config basic.config generated.yaml > /dev/null && cat generated.yaml'
-    tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
+    def run(self) -> None:
+        """Exercise ordinary, disabled, quoted, file, and filtered output."""
 
-    # Test 5: --skip-disabled omits commented-out plugins from output.
-    tr = urtest.AddTestRun("Test --skip-disabled drops disabled entries")
-    tr.Setup.Copy('legacy_config/commented.config')
-    tr.Processes.Default.Command = 'traffic_ctl config convert plugin_config --skip-disabled commented.config -'
-    tr.Processes.Default.Streams.stdout = "gold/skip_disabled.yaml"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-    urtest.execute()
+        self._ats.start()
+        self.convert("basic.config", "basic.yaml")
+        self.convert("commented.config", "commented.yaml")
+        self.convert("quoted.config", "quoted.yaml")
+        self.convert("basic.config", "basic.yaml", output="generated.yaml")
+        self.convert("commented.config", "skip_disabled.yaml", "--skip-disabled")
+
+
+def test_convert_plugin_config(ats_factory: ATSFactory) -> None:
+    """traffic_ctl converts all supported plugin.config forms."""
+
+    PluginConfigConversionScenario(ats_factory).run()

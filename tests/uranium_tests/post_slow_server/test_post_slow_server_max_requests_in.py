@@ -14,80 +14,78 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import time
+
+from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, ServiceFactory, assert_matches_gold
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_post_slow_server_max_requests_in(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SlowOriginPostScenario:
+    """Exercise a POST while the origin stalls its TLS handshake."""
 
-    from enum import Enum
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin_port = services.allocate_port()
+        self._ready_file = ats_factory.run_directory / "origin.ready"
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = 'Exercise POST request with max_requests_in'
-    urtest.ContinueOnFail = True
+    def configure_origin(self, services: ServiceFactory) -> ProcessService:
+        """Start the one-shot clear-text netcat server used as a TLS origin."""
 
-    class PostAndMaxRequestsInTest:
-        """
-        Cover #8273 - Make sure inbound side inactive timeout doesn't happens during outbound side TLS handshake
-        """
+        return services.process(
+            "origin",
+            ("bash", TEST_DIRECTORY / "server.sh", str(self._origin_port), self._ready_file),
+        )
 
-        def __init__(self):
-            self.__setupOriginServer()
-            self.__setupTS()
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Set the outbound connect timeout and inbound request limit."""
 
-        def __setupOriginServer(self):
-            urtest.GetTcpPort("server_port")
-            self.origin_server = urtest.Processes.Process(
-                "server", "bash -c '" + urtest.TestDirectory + "/server.sh {}'".format(urtest.Variables.server_port))
+        ats = ats_factory.create("ts")
+        ats.records.update(
+            {
+                "proxy.config.net.max_requests_in": 1000,
+                "proxy.config.http.connect_attempts_timeout": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
+            })
+        ats.remap_config.add_line(f"map / https://127.0.0.1:{self._origin_port}/")
+        return ats
 
-        def __setupTS(self):
-            self.ts = urtest.MakeATSProcess("ts")
+    def wait_for_origin(self) -> None:
+        """Wait for the server script to reach its netcat listener."""
 
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.http.server_ports": f"{self.ts.Variables.port} {self.ts.Variables.uds_path}",
-                    "proxy.config.net.max_requests_in": 1000,
-                    'proxy.config.http.connect_attempts_timeout': 1,
-                    "proxy.config.diags.debug.enabled": 1,
-                    "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
-                })
+        deadline = time.monotonic() + 10
+        while not self._ready_file.exists() and time.monotonic() < deadline:
+            time.sleep(0.05)
+        assert self._ready_file.exists(), self._origin.output
 
-            self.ts.Disk.remap_config.AddLines([
-                f"map / https://127.0.0.1:{urtest.Variables.server_port}/",
-            ])
+    def run(self) -> None:
+        """Send the POST and compare the generated 502 response."""
 
-        def __testCase0(self):
-            """
-            - POST request
-            - Outbound side TLS Handshake hits connect_attempts_timeout
-            - Client gets 502
-            """
-            tr = urtest.AddTestRun()
-            tr.Processes.Default.StartBefore(self.origin_server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.MakeCurlCommand(f"-X POST --http1.1 -vs http://127.0.0.1:{self.ts.Variables.port}/ --data key=value", ts=self.ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = "gold/post_slow_server_max_requests_in_0_stdout.gold"
-            tr.Processes.Default.Streams.stderr = "gold/post_slow_server_max_requests_in_0_stderr.gold"
-            tr.StillRunningAfter = self.ts
+        self._origin.start()
+        self.wait_for_origin()
+        self._ats.start()
+        result = self._curl.run_for(
+            self._ats,
+            "--request",
+            "POST",
+            "--http1.1",
+            "--verbose",
+            "--silent",
+            f"http://127.0.0.1:{self._ats.http_port}/",
+            "--data",
+            "key=value",
+            timeout=10,
+        )
+        assert result.returncode == 0, result.output
+        assert_matches_gold(result.stdout, TEST_DIRECTORY / "gold" / "post_slow_server_max_requests_in_0_stdout.gold")
+        assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / "post_slow_server_max_requests_in_0_stderr.gold")
 
-        def run(self):
-            self.__testCase0()
 
-    PostAndMaxRequestsInTest().run()
-    urtest.execute()
+def test_post_slow_server_max_requests_in(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A stalled origin handshake does not trigger the inbound request limit."""
+
+    SlowOriginPostScenario(ats_factory, services, curl).run()

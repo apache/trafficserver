@@ -106,6 +106,13 @@ class ManagedProcess:
                 f"{self.name} exited with status {return_code}; expected "
                 f"{sorted(self.expected_return_codes)}.\n{self.output()}")
 
+    def send_signal(self, signal_number: int) -> None:
+        """Send @a signal_number to the process group leader."""
+
+        if self._process is None or self._process.poll() is not None:
+            raise ProcessError(f"{self.name} is not running")
+        self._process.send_signal(signal_number)
+
     def stop(self, timeout: float = 5.0) -> None:
         """Stop the process group, escalating to SIGKILL if necessary."""
 

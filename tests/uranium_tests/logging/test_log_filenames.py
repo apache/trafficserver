@@ -14,264 +14,118 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory, wait_for_file_lines
 
 
-def test_log_filenames(urtest: UraniumTest) -> None:
-    '''
-    Verify log file naming behavior.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class LogFilenamesScenario:
+    """Verify system and custom logs honor configured destinations."""
 
-    import os
-    import ports
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        self._curl = curl
 
-    urtest.Summary = '''
-    Verify log file naming behavior.
-    '''
+    def configure_ats(self, suffix: str, system_destination: str, custom_destination: str) -> ATS:
+        """Configure system logs, a sentinel log, and one custom log."""
 
-    class LogFilenamesTest:
-        """ Common test configuration logic across the filename tests.
-        """
+        ats = self._ats_factory.create(
+            f"ts-{suffix}",
+            disable_log_checks=system_destination in ("stdout", "stderr"),
+            capture_traffic_out=system_destination not in ("stdout", "stderr"),
+        )
+        closed_port = self._services.allocate_port()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "log",
+                "proxy.config.log.periodic_tasks_interval": 1,
+                "proxy.config.diags.logfile.filename": system_destination,
+                "proxy.config.error.logfile.filename":
+                    (system_destination.replace("diags", "error") if system_destination.endswith(".log") else system_destination),
+            })
+        ats.remap_config.add_lines(
+            (
+                f"map /server/down http://127.0.0.1:{closed_port}",
+                "map / https://trafficserver.apache.org @action=deny",
+            ))
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats": [{
+                            "name": "url_and_return_code",
+                            "format": "%<pqu>: %<pssc>"
+                        }],
+                        "logs":
+                            [
+                                {
+                                    "filename": "sentinel",
+                                    "format": "url_and_return_code"
+                                },
+                                {
+                                    "filename": custom_destination,
+                                    "format": "url_and_return_code"
+                                },
+                            ],
+                    }
+            })
+        return ats
 
-        # A counter for the ATS process to make each of them unique.
-        __ts_counter = 1
+    def send_traffic(self, ats: ATS) -> None:
+        """Generate one denied transaction and one failed origin connection."""
 
-        # The default log names for the various system logs.
-        default_log_data = {'diags': 'diags.log', 'error': 'error.log'}
+        ats.start()
+        result = self._curl.run_for(
+            ats,
+            f"http://127.0.0.1:{ats.http_port}/some/path",
+            "--verbose",
+            "--next",
+            f"http://127.0.0.1:{ats.http_port}/server/down",
+            "--verbose",
+        )
+        assert result.returncode == 0, result.output
+        wait_for_file_lines(ats.log_directory / "sentinel.log", r"^http://127\.0\.0\.1:\d+/: 502$", 1)
 
-        def __init__(self, description, log_data=default_log_data):
-            ''' Handle initialization tasks common across the tests.
+    @staticmethod
+    def assert_logs(ats: ATS, system_destination: str, custom_destination: str) -> None:
+        """Verify expected system diagnostics and access entries."""
 
-            Args:
-                description (str): The description of the test. This is passed to
-                the TestRun.
+        if system_destination in ("stdout", "stderr"):
+            system_content = ats.process_output
+            error_content = system_content
+        else:
+            system_content = (ats.log_directory / system_destination).read_text(errors="replace")
+            error_filename = system_destination.replace("diags", "error")
+            error_content = (ats.log_directory / error_filename).read_text(errors="replace")
 
-                log_data (dict): The log name information passed to the
-                MakeATSProcess extension.
-            '''
-            self.__description = description
-            self.ts = self.__configure_traffic_server(log_data)
-            self.tr = self.__configure_traffic_TestRun(description)
-            self.__configure_await_TestRun(self.sentinel_log_path)
+        if custom_destination in ("stdout", "stderr"):
+            custom_content = ats.process_output
+        else:
+            custom_content = (ats.log_directory / f"{custom_destination}.log").read_text(errors="replace")
 
-        def __configure_traffic_server(self, log_data):
-            ''' Common ATS configuration logic.
+        assert "logging.yaml finished loading" in system_content
+        assert "CONNECT: attempt fail" in error_content
+        assert "https://trafficserver.apache.org/some/path: 403" in custom_content
 
-            Args:
-                log_data (dict): The log name information passed to the
-                MakeATSProcess extension.
+    def run_case(self, suffix: str, system_destination: str, custom_destination: str) -> None:
+        """Run and verify one destination combination."""
 
-            Return:
-                The traffic_server process.
-            '''
-            self._ts_name = f"ts{LogFilenamesTest.__ts_counter}"
-            LogFilenamesTest.__ts_counter += 1
-            self.ts = urtest.MakeATSProcess(self._ts_name, use_traffic_out=False, log_data=log_data)
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 0,
-                    'proxy.config.diags.debug.tags': 'log',
-                    'proxy.config.log.periodic_tasks_interval': 1,
-                })
+        ats = self.configure_ats(suffix, system_destination, custom_destination)
+        self.send_traffic(ats)
+        if system_destination in ("stdout", "stderr"):
+            ats.stop()
+        self.assert_logs(ats, system_destination, custom_destination)
 
-            # Intentionally retrieve a port that is closed, that is no server is
-            # listening on it. We will use this to attempt talking with a
-            # non-existent server, which will result in an error log entry.
-            ports.get_port(self.ts, 'closed_port')
-            self.ts.Disk.remap_config.AddLines(
-                [
-                    f'map /server/down http://127.0.0.1:{self.ts.Variables.closed_port}',
-                    'map / https://trafficserver.apache.org @action=deny',
-                ])
+    def run(self) -> None:
+        """Exercise default, renamed, stdout, and stderr log destinations."""
 
-            # The following log is configured so that we can wait upon it being
-            # written so we know that ATS is done writing logs.
-            self.sentinel_log_filename = "sentinel"
-            self.ts.Disk.logging_yaml.AddLine(
-                f'''
-                logging:
-                  formats:
-                    - name: url_and_return_code
-                      format: "%<pqu>: %<pssc>"
-                  logs:
-                    - filename: {self.sentinel_log_filename}
-                      format: url_and_return_code
-                ''')
+        self.run_case("default", "diags.log", "my_custom_log")
+        self.run_case("renamed", "my_diags.log", "my_custom_log")
+        self.run_case("stdout", "stdout", "stdout")
+        self.run_case("stderr", "stderr", "stderr")
 
-            self.sentinel_log_path = os.path.join(self.ts.Variables.LOGDIR, f"{self.sentinel_log_filename}.log")
 
-            return self.ts
+def test_log_filenames(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS writes system and custom logs to configured files or streams."""
 
-        def __configure_await_TestRun(self, log_path):
-            ''' Configure a TestRun that awaits upon the provided log_path to
-            contain the sentinel log entry.
-
-            Args:
-                log_path (str): The log file upon which we will wait.
-            '''
-            description = self.__description
-            urtest.AddAwaitFileContainsTestRun(
-                f'Awaiting log files to be written for: {description}',
-                log_path,
-                r'^http://127\.0\.0\.1:\d+/: 502$',
-            )
-
-        def __configure_traffic_TestRun(self, description):
-            ''' Configure a TestRun to run the expected transactions.
-
-            Args:
-                description (str): The description to use for the TestRun.
-            '''
-            tr = urtest.AddTestRun(f'Run traffic for: {description}')
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self.ts.Variables.port}/some/path --verbose --next '
-                f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose',
-                ts=self.ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.StartBefore(self.ts)
-
-        def configure_named_custom_log(self, custom_log_filename):
-            """ Configure ATS to log to the custom log file via logging.yaml.
-
-            Args:
-                custom_log_filename (str): The name of the custom log file to
-                configure.
-
-            Return:
-                The path to the configured custom log file.
-            """
-            self.custom_log_filename = custom_log_filename
-            self.ts.Disk.logging_yaml.AddLine(
-                f'''
-                    - filename: {custom_log_filename}
-                      format: url_and_return_code
-                ''')
-
-            if custom_log_filename in ('stdout', 'stderr'):
-                self.custom_log_path = custom_log_filename
-                if custom_log_filename == 'stdout':
-                    self.ts.Disk.custom_log = self.ts.Streams.stdout
-                else:
-                    self.ts.Disk.custom_log = self.ts.Streams.stderr
-            else:
-                self.custom_log_path = os.path.join(self.ts.Variables.LOGDIR, f"{custom_log_filename}.log")
-                self.ts.Disk.File(self.custom_log_path, id="custom_log")
-            return self.custom_log_path
-
-        def set_log_expectations(self):
-            ''' Configure sanity checks for each of the log types (diags, error,
-            etc.) to verify they are emitting the expected content.
-            '''
-
-            diags_path = self.ts.Disk.diags_log.AbsPath
-            self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "logging.yaml finished loading", f"{diags_path} should contain traffic_server diag messages")
-
-            error_log_path = self.ts.Disk.error_log.AbsPath
-            self.ts.Disk.error_log.Content += Testers.ContainsExpression(
-                "CONNECT: attempt fail", f"{error_log_path} should contain connection error messages")
-
-            custom_log_path = self.ts.Disk.custom_log.AbsPath
-            self.ts.Disk.custom_log.Content += Testers.ContainsExpression(
-                "https://trafficserver.apache.org/some/path: 403", f"{custom_log_path} should contain the custom transaction logs")
-
-    class DefaultNamedTest(LogFilenamesTest):
-        ''' Verify that if custom names are not configured, then the default
-        'diags.log' and 'error.log' are written to.
-        '''
-
-        def __init__(self):
-            super().__init__('default log filename configuration')
-
-            self.configure_named_custom_log('my_custom_log')
-            self.set_log_expectations()
-
-    class CustomNamedTest(LogFilenamesTest):
-        ''' Verify that the user can assign custom filenames to diags.log, etc.
-        '''
-
-        def __init__(self):
-            log_data = {'diags': 'my_diags.log', 'error': 'my_error.log'}
-            super().__init__('specify log filename configuration', log_data)
-
-            # Configure custom names for diags.log, etc.
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.logfile.filename': 'my_diags.log',
-                    'proxy.config.error.logfile.filename': 'my_error.log',
-                })
-
-            self.configure_named_custom_log('my_custom_log')
-            self.set_log_expectations()
-
-    class stdoutTest(LogFilenamesTest):
-        ''' Verify that we can configure the logs to go to stdout.
-        '''
-
-        def __init__(self):
-
-            log_data = {'diags': 'stdout', 'error': 'stdout'}
-            super().__init__('specify logs to go to stdout', log_data)
-
-            # Configure custom names for diags.log, etc.
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.logfile.filename': 'stdout',
-                    'proxy.config.error.logfile.filename': 'stdout',
-                })
-
-            self.configure_named_custom_log('stdout')
-
-            # The diags.log file will not be created since we are piping to stdout.
-            # Therefore, simply wait upon the port being open.
-            self.ts.Ready = When.PortOpen(self.ts.Variables.port)
-            self.set_log_expectations()
-
-    class stderrTest(LogFilenamesTest):
-        '''
-        Verify that we can configure the logs to go to stderr.
-        '''
-
-        def __init__(self):
-
-            log_data = {'diags': 'stderr', 'error': 'stderr'}
-            super().__init__('specify logs to go to stderr', log_data)
-
-            # Configure custom names for diags.log, etc.
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.logfile.filename': 'stderr',
-                    'proxy.config.error.logfile.filename': 'stderr',
-                })
-
-            self.configure_named_custom_log('stderr')
-
-            # The diags.log file will not be created since we are piping to stderr.
-            # Therefore, simply wait upon the port being open.
-            self.ts.Ready = When.PortOpen(self.ts.Variables.port)
-            self.set_log_expectations()
-
-    #
-    # Run the tests.
-    #
-    DefaultNamedTest()
-    CustomNamedTest()
-    stdoutTest()
-
-    stderrTest()
-    urtest.execute()
+    LogFilenamesScenario(ats_factory, services, curl).run()

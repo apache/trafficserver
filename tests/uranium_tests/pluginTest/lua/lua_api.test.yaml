@@ -1,0 +1,129 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Verify focused Lua remap APIs"
+  replay: "lua_api.replay.yaml"
+  requires: {plugins: [tslua.so]}
+  server: {name: "origin"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "ts_lua"
+  variants:
+    - name: "watermark"
+      client:
+        process_config: {keys: "lua-watermark"}
+      ats:
+        copy_to_config_dir: ["watermark.lua"]
+        remap_config:
+          - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=tslua.so @pparam={CONFIG_DIR}/watermark.lua"
+        file_checks:
+          - {path: "{LOG_DIR}/traffic.out", contains: 'WMbytes\(31337\)'}
+
+    - name: "client-hook"
+      client:
+        process_config: {keys: "lua-client-hook"}
+      ats:
+        copy_to_config_dir: ["client_hook.lua"]
+        remap_config:
+          - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=tslua.so @pparam={CONFIG_DIR}/client_hook.lua"
+        file_checks:
+          - {path: "{LOG_DIR}/traffic.out", contains: "AAAA"}
+
+    - name: "remap-after-hook"
+      client:
+        process_config: {keys: "lua-remap-after-hook"}
+      ats:
+        copy_to_config_dir: ["remap_after_hook.lua"]
+        remap_config:
+          - "map http://www.example.com/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=tslua.so @pparam={CONFIG_DIR}/remap_after_hook.lua"
+
+    - name: "fetch-ipv6-client-address"
+      client:
+        process_config: {keys: "lua-fetch-outer"}
+      ats:
+        copy_to_config_dir: ["fetch_ipv6_cliaddr.lua"]
+        remap_config:
+          - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=tslua.so @pparam={CONFIG_DIR}/fetch_ipv6_cliaddr.lua"
+
+    - name: "header-table"
+      server: {enabled: false}
+      client:
+        process_config: {keys: "lua-header-table"}
+      ats:
+        copy_to_config_dir: ["header_table.lua"]
+        remap_config:
+          - "map / http://127.0.0.1 @plugin=tslua.so @pparam={CONFIG_DIR}/header_table.lua"
+
+    - name: "verified-address"
+      server: {enabled: false}
+      client:
+        process_config: {keys: "lua-verified-v4 lua-verified-v6 lua-verified-invalid lua-verified-both"}
+      ats:
+        copy_to_config_dir: ["verified_addr.lua"]
+        remap_config:
+          - "map / http://127.0.0.1 @plugin=tslua.so @pparam={CONFIG_DIR}/verified_addr.lua"
+
+    - name: "debug-tags"
+      server: {enabled: false}
+      client:
+        process_config: {keys: "lua-debug-tags"}
+      ats:
+        copy_to_config_dir: ["tags.lua"]
+        remap_config:
+          - "map http://test/ http://127.0.0.1/ @plugin=tslua.so @pparam={CONFIG_DIR}/tags.lua"
+
+    - name: "states-and-stats"
+      server: {enabled: false}
+      client:
+        process_config: {keys: "lua-states-stats"}
+      ats:
+        environment:
+          URTEST_TEST_DIR: "{TEST_DIR}"
+        copy_to_config_dir: ["hello.lua", "global.lua"]
+        plugin_config:
+          - "tslua.so --states=4 {CONFIG_DIR}/global.lua"
+        remap_config:
+          - "map http://hello/ http://127.0.0.1/ @plugin=tslua.so @pparam=--states=4 @pparam={CONFIG_DIR}/hello.lua"
+        post_client_commands:
+          - 'bash "{TEST_DIR}/metrics.sh"'
+
+    - name: "proxy-protocol"
+      client:
+        process_config:
+          keys: "lua-proxy-present lua-proxy-absent"
+          http_ports: ["{ATS_PROXY_PROTOCOL_PORT}"]
+      ats:
+        process_config:
+          enable_cache: false
+          enable_proxy_protocol: true
+        copy_to_config_dir: ["proxy_protocol.lua"]
+        remap_config:
+          - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=tslua.so @pparam={CONFIG_DIR}/proxy_protocol.lua"
+        file_checks:
+          - {path: "{LOG_DIR}/traffic.out", contains: "PP-Version: 1"}
+          - {path: "{LOG_DIR}/traffic.out", contains: "PP-Source: 192\\.168\\.1\\.100"}
+          - {path: "{LOG_DIR}/traffic.out", contains: "PP-Protocol: 2"}
+          - {path: "{LOG_DIR}/traffic.out", contains: "PP-SocketType: 1"}
+          - {path: "{LOG_DIR}/traffic.out", contains: "PP-Version: 0"}
+
+sessions: []

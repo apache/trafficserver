@@ -1,0 +1,72 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    remap:
+      with: random<0,999>
+      select:
+      - lt: 300
+        do:
+        - ua-req-url-host: "ex.two"
+        - ua-req-url-port: {server_port}
+        - ua-req-scheme: "http"
+
+  blocks:
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+      url: "/1"
+
+sessions:
+- protocol:
+    stack: http
+  transactions:
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base_request
+      headers:
+        fields:
+        - [ Host, one.ex ]
+    proxy-request:
+      <<: *base_request
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+    proxy-response:
+      status: 200
+
+urtest:
+  description: Verify txn_box traffic ramping
+  template_replay: true
+  requires: {plugins: [txn_box.so]}
+  server:
+    name: txn-box-ramp-origin
+    process_config:
+      listen_extra_http: true
+      other_args: '--verbose diag'
+  dns: {name: txn-box-ramp-dns, process_config: {default: 127.0.0.1}}
+  client:
+    name: txn-box-ramp-client
+    process_config:
+      other_args: '--verbose diag --repeat 100'
+  ats:
+    name: txn-box-ramp-ts
+    records_config:
+      proxy.config.log.max_secs_per_buffer: 1
+    template_to_config_dir: [ramp.test.yaml]
+    logging_yaml:
+      logging:
+        formats:
+        - name: ramp
+          format: '%<cqu>'
+        logs:
+        - filename: ramp
+          format: ramp
+          mode: ascii
+    plugin_config: [txn_box.so]
+    remap_config:
+    - map http://one.ex http://three.ex:{SERVER_HTTP_PORT} @plugin=txn_box.so @pparam=--key=meta.txn_box.remap @pparam={CONFIG_DIR}/ramp.test.yaml

@@ -14,89 +14,87 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATSFactory, Curl, ServiceFactory, assert_matches_gold
 
 
-def test_proxy_serve_stale_dns_fail(urtest: UraniumTest) -> None:
-    '''
-    Test proxy serving stale content when DNS lookup fails
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ProxyServeStaleDnsFailScenario:
+    """A child and parent proxy serve stale content after DNS failure."""
 
-    urtest.ContinueOnFail = True
-    # Set up hierarchical caching processes
-    ts_child = urtest.MakeATSProcess("ts_child")
-    ts_parent = urtest.MakeATSProcess("ts_parent", enable_uds=False)
-    nameserver = urtest.MakeDNServer("dns")
-    server_name = "http://unknown.domain.com/"
+    SERVER_NAME = "http://unknown.domain.com/"
 
-    urtest.testName = "STALE"
+    def __init__(self, ats_factory: ATSFactory, curl: Curl, services: ServiceFactory) -> None:
+        self.ats_factory = ats_factory
+        self.curl = curl
+        self.services = services
 
-    # Config child proxy to route to parent proxy
-    ts_child.Disk.records_config.update(
-        {
-            'proxy.config.http.push_method_enabled': 1,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.http.cache.max_stale_age': 10,
-            'proxy.config.http.parent_proxy.self_detect': 0,
-            'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        })
-    ts_child.Disk.parent_config.AddLine(
-        f'dest_domain=. parent=localhost:{ts_parent.Variables.port} round_robin=consistent_hash go_direct=false')
-    ts_child.Disk.remap_config.AddLine(f'map http://localhost:{ts_child.Variables.port} {server_name}')
+    def _configure_dns(self) -> None:
+        self.dns = self.services.dns("dns")
+        self.dns.add_records({"localhost": ["127.0.0.1"]})
 
-    # Configure parent proxy
-    ts_parent.Disk.records_config.update(
-        {
-            'proxy.config.http.push_method_enabled': 1,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.http.cache.max_stale_age': 10,
-            'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        })
-    ts_parent.Disk.remap_config.AddLine(f'map http://localhost:{ts_parent.Variables.port} {server_name}')
-    ts_parent.Disk.remap_config.AddLine(f'map {server_name} {server_name}')
+    def _configure_traffic_servers(self) -> None:
+        self.child = self.ats_factory.create("ts_child")
+        self.parent = self.ats_factory.create("ts_parent", enable_uds=False)
+        self._configure_child_proxy()
+        self._configure_parent_proxy()
 
-    # Configure nameserver
-    nameserver.addRecords(records={"localhost": ["127.0.0.1"]})
+    def _configure_child_proxy(self) -> None:
+        self.child.records.update(
+            {
+                "proxy.config.http.push_method_enabled": 1,
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.http.cache.max_stale_age": 10,
+                "proxy.config.http.parent_proxy.self_detect": 0,
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self.dns.port}",
+            })
+        self.child.parent_config.add_line(
+            f"dest_domain=. parent=localhost:{self.parent.http_port} round_robin=consistent_hash go_direct=false")
+        self.child.remap_config.add_line(f"map http://localhost:{self.child.http_port} {self.SERVER_NAME}")
 
-    # Object to push to proxies
-    stale_5 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=5\n\nCACHED"
-    stale_10 = "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public, max-age=10\n\nCACHED"
+    def _configure_parent_proxy(self) -> None:
+        self.parent.records.update(
+            {
+                "proxy.config.http.push_method_enabled": 1,
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.http.cache.max_stale_age": 10,
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self.dns.port}",
+            })
+        self.parent.remap_config.add_lines(
+            [
+                f"map http://localhost:{self.parent.http_port} {self.SERVER_NAME}",
+                f"map {self.SERVER_NAME} {self.SERVER_NAME}",
+            ])
 
-    # Testing scenarios
-    child_curl_request = (
-        # Test child serving stale with failed DNS OS lookup
-        f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{ts_child.Variables.port}";'
-        f'{{curl}} -X PUSH -d "{stale_10}" "http://localhost:{ts_parent.Variables.port}";'
-        f'sleep 7; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
-        f'sleep 17; {{curl}} -s -v http://localhost:{ts_child.Variables.port};'
-        # Test parent serving stale with failed DNS OS lookup
-        f'{{curl_base}} -X PUSH -d "{stale_5}" "http://localhost:{ts_parent.Variables.port}";'
-        f'sleep 7; {{curl_base}} -s -v http://localhost:{ts_parent.Variables.port};'
-        f'sleep 17; {{curl_base}} -s -v http://localhost:{ts_parent.Variables.port};')
+    def _start_services(self) -> None:
+        self.dns.start()
+        self.parent.start()
+        self.child.start()
 
-    # Test case for when parent server is down but child proxy can serve cache object
-    tr = urtest.AddTestRun()
-    tr.MakeCurlCommandMulti(child_curl_request, ts=ts_child)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts_child)
-    tr.Processes.Default.StartBefore(ts_parent)
-    tr.Processes.Default.StartBefore(nameserver)
-    tr.Processes.Default.Streams.stderr = "gold/serve_stale_dns_fail.gold"
-    tr.StillRunningAfter = ts_child
-    tr.StillRunningAfter = ts_parent
-    urtest.execute()
+    def _exercise_stale_cache_behavior(self) -> None:
+        stale_5 = (
+            "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\n"
+            "Cache-Control: public, max-age=5\n\nCACHED")
+        stale_10 = stale_5.replace("max-age=5", "max-age=10")
+        script = (
+            f'{{curl}} -X PUSH -d "{stale_5}" "http://localhost:{self.child.http_port}";'
+            f'{{curl}} -X PUSH -d "{stale_10}" "http://localhost:{self.parent.http_port}";'
+            f"sleep 7; {{curl}} -s -v http://localhost:{self.child.http_port};"
+            f"sleep 17; {{curl}} -s -v http://localhost:{self.child.http_port};"
+            f'{{curl_base}} -X PUSH -d "{stale_5}" "http://localhost:{self.parent.http_port}";'
+            f"sleep 7; {{curl_base}} -s -v http://localhost:{self.parent.http_port};"
+            f"sleep 17; {{curl_base}} -s -v http://localhost:{self.parent.http_port};")
+        result = self.curl.run_script(self.child, script, timeout=70)
+
+        assert result.returncode == 0, result.output
+        assert_matches_gold(result.stderr, Path(__file__).parent / "gold/serve_stale_dns_fail.gold")
+
+    def run(self) -> None:
+        self._configure_dns()
+        self._configure_traffic_servers()
+        self._start_services()
+        self._exercise_stale_cache_behavior()
+
+
+def test_proxy_serve_stale_dns_fail(ats_factory: ATSFactory, curl: Curl, services: ServiceFactory) -> None:
+    ProxyServeStaleDnsFailScenario(ats_factory, curl, services).run()

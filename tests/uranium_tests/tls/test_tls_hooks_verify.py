@@ -14,122 +14,95 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_hooks_verify(urtest: UraniumTest) -> None:
-    '''
-    Test SERVER_VERIFY_HOOK
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsHooksVerifyScenario:
+    """Exercise enforced and permissive SERVER_VERIFY_HOOK outcomes."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test different combinations of TLS handshake hooks to ensure they are applied consistently.
-    '''
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create an HTTPS origin with a certificate that needs hook handling."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server", ssl=True)
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    # desired response form the origin server
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+        origin = services.origin("server", ssl=True)
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Load the verification plugin and configure three SNI policies."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl_verify_test',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
-            'proxy.config.ssl.client.verify.server.properties': 'NONE',
-            'proxy.config.url_remap.pristine_host_hdr': 1
-        })
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl_verify_test",
+                "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
+                "proxy.config.ssl.client.verify.server.properties": "NONE",
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+            })
+        for hostname in ("foo.com", "bar.com", "random.com"):
+            ats.remap_config.add_line(f"map https://{hostname}:{ats.https_port}/ https://127.0.0.1:{self._origin.https_port}")
+        ats.write_config_file("sni.yaml", "sni:\n- fqdn: bar.com\n  verify_server_policy: PERMISSIVE\n")
+        ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_verify_test.so")
+        ats.plugin_config.add_line("ssl_verify_test.so -count=2 -bad=random.com -bad=bar.com")
+        return ats
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def request(self, hostname: str) -> str:
+        """Send one TLS request using @a hostname as SNI and Host."""
 
-    ts.Disk.remap_config.AddLine(
-        'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
-    ts.Disk.remap_config.AddLine(
-        'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
-    ts.Disk.remap_config.AddLine(
-        'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+        result = self._curl.run_for(
+            self._ats,
+            "--resolve",
+            f"{hostname}:{self._ats.https_port}:127.0.0.1",
+            "--insecure",
+            f"https://{hostname}:{self._ats.https_port}",
+        )
+        assert result.returncode == 0, result.output
+        return result.output
 
-    ts.Disk.sni_yaml.AddLine('sni:')
-    ts.Disk.sni_yaml.AddLine('- fqdn: bar.com')
-    ts.Disk.sni_yaml.AddLine('  verify_server_policy: PERMISSIVE')
+    def run(self) -> None:
+        """Verify hook decisions and both callback invocations for each SNI."""
 
-    urtest.PrepareTestPlugin(
-        os.path.join(urtest.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com')
+        self._origin.start()
+        self._ats.start()
+        assert "Could Not Connect" not in self.request("foo.com")
+        assert "Could Not Connect" in self.request("random.com")
+        assert "Could Not Connect" not in self.request("bar.com")
 
-    tr = urtest.AddTestRun("request good name")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand("--resolve \"foo.com:{0}:127.0.0.1\" -k  https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have failed")
+        diags = self._ats.diags_log.read_text(errors="replace")
+        assert "Action=Terminate SNI=random.com" in diags
+        assert "Action=Continue SNI=bar.com" in diags
+        assert "SNI=foo.com" not in diags
 
-    tr2 = urtest.AddTestRun("request bad name")
-    tr2.StillRunningAfter = ts
-    tr2.StillRunningAfter = server
-    tr2.MakeCurlCommand("--resolve \"random.com:{0}:127.0.0.1\" -k  https://random.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr2.Processes.Default.ReturnCode = 0
-    tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        for hostname, outcome in (("foo.com", "good HS"), ("random.com", "error HS"), ("bar.com", "error HS")):
+            for callback in (0, 1):
+                expression = rf"Server verify callback {callback} [\da-fx]+? - event is good SNI={hostname} {outcome}"
+                assert re.search(expression, traffic_out), traffic_out
+        assert "Server verify callback SNI APIs match=true" in traffic_out
 
-    tr3 = urtest.AddTestRun("request bad name permissive")
-    tr3.StillRunningAfter = ts
-    tr3.StillRunningAfter = server
-    tr3.MakeCurlCommand("--resolve \"bar.com:{0}:127.0.0.1\" -k  https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr3.Processes.Default.ReturnCode = 0
-    tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have failed")
 
-    # Overriding the built in ERROR check since we expect tr2 to fail
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        "WARNING: TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for 127.0.0.1.  Action=Terminate SNI=random.com",
-        "random.com should fail")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for 127.0.0.1.  Action=Continue SNI=bar.com",
-        "bar.com should fail but continue")
-    ts.Disk.diags_log.Content += Testers.ExcludesExpression("SNI=foo.com", "foo.com should not fail in any way")
+def test_tls_hooks_verify(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """SERVER_VERIFY_HOOK decisions honor the configured SNI policy."""
 
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        r"Server verify callback 0 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        r"Server verify callback 1 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        r"Server verify callback 0 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        r"Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        r"Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        r"Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Server verify callback SNI APIs match=true", "verify SNI names match")
-    urtest.execute()
+    TlsHooksVerifyScenario(ats_factory, services, curl).run()

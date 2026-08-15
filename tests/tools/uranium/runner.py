@@ -395,16 +395,20 @@ def _copy_sandbox_artifacts(source: Path, destination: Path) -> None:
         ignored = []
         for name in names:
             try:
-                mode = (Path(directory) / name).lstat().st_mode
+                status = (Path(directory) / name).lstat()
             except OSError:
                 ignored.append(name)
                 continue
-            if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+            if not (stat.S_ISREG(status.st_mode) or stat.S_ISDIR(status.st_mode)):
+                ignored.append(name)
+            elif stat.S_ISREG(status.st_mode) and status.st_size > 64 * 1024 * 1024:
+                # Cache spans are reproducible inputs, not useful diagnostics.
                 ignored.append(name)
         return ignored
 
     try:
-        shutil.copytree(source, destination, dirs_exist_ok=True, ignore=ignore_special_files)
+        shutil.rmtree(destination, ignore_errors=True)
+        shutil.copytree(source, destination, ignore=ignore_special_files)
     except OSError as error:
         print(f"urtest.sh: could not preserve sandbox artifacts: {error}", file=sys.stderr)
 

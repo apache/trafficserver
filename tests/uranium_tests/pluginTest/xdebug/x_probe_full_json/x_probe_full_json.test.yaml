@@ -1,0 +1,64 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify probe-full-json escaping, binary encoding, body suppression, and valid JSON"
+  replay: "x_probe_full_json.replay.yaml"
+  requires:
+    plugins: [xdebug.so]
+    programs: [curl, jq]
+  server: {name: "probe-full-json-origin"}
+  client: {name: "probe-full-json-client"}
+  ats:
+    name: "probe-full-json-ts"
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "xdebug"
+    plugin_config: ["xdebug.so --enable=probe-full-json"]
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}"
+    post_client_commands:
+      - >-
+        curl -fsS -H 'uuid: 1' -H 'Host: example.com' -H 'X-Debug: probe-full-json'
+        'http://127.0.0.1:{ATS_HTTP_PORT}/test' |
+        jq '."client-request"."uuid",."server-body",."proxy-response"."x-response"' |
+        diff -u '{TEST_DIR}/gold/jq_escaped.gold' -
+      - >-
+        curl -fsS -H 'uuid: 2' -H 'Host: example.com' -H 'X-Debug: probe-full-json'
+        'http://127.0.0.1:{ATS_HTTP_PORT}/binary' |
+        jq '."client-request"."uuid",."server-body",."proxy-response"."x-response"' |
+        diff -u '{TEST_DIR}/gold/jq_hex.gold' -
+      - >-
+        curl -fsS -H 'uuid: 1' -H 'Host: example.com' -H 'X-Debug: probe-full-json=hex'
+        'http://127.0.0.1:{ATS_HTTP_PORT}/test' |
+        jq -er '."server-body"' |
+        grep -F '3c21444f43545950452068746d6c3e'
+      - >-
+        curl -fsS -H 'uuid: 1' -H 'Host: example.com' -H 'X-Debug: probe-full-json=escape'
+        'http://127.0.0.1:{ATS_HTTP_PORT}/test' |
+        jq '."client-request"."uuid",."server-body",."proxy-response"."x-response"' |
+        diff -u '{TEST_DIR}/gold/jq_escaped.gold' -
+      - >-
+        curl -fsS -H 'uuid: 1' -H 'Host: example.com' -H 'X-Debug: probe-full-json=nobody'
+        'http://127.0.0.1:{ATS_HTTP_PORT}/test' |
+        jq '."client-request"."uuid",."server-body",."proxy-response"."x-response"' |
+        diff -u '{TEST_DIR}/gold/jq_nobody.gold' -
+      - >-
+        value=$(curl -fsS -H 'uuid: 3' -H 'Host: example.com' -H 'X-Debug: probe-full-json'
+        'http://127.0.0.1:{ATS_HTTP_PORT}/csp-test' |
+        jq -er '."server-response"."content-security-policy"');
+        grep -F "'self'" <<<"$value" && grep -F "'unsafe-inline'" <<<"$value"

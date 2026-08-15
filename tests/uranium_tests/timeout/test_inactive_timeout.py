@@ -14,75 +14,78 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
 
-def test_inactive_timeout(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class InactivityTimeoutScenario:
+    """Delay the origin beyond ATS's outbound transaction timeout."""
 
-    urtest.Summary = 'Testing ATS inactivity timeout'
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.SkipUnless(Condition.HasCurlFeature('http2'))
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Delay the origin response long enough for ATS to time out."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server", delay=8)
+        origin = services.origin("origin", delay=8)
+        origin.add_response(
+            {
+                "headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": ""
+            },
+            "sessionfile.log",
+        )
+        return origin
 
-    request_header = {"headers": "GET /file HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "5678", "body": ""}
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable HTTP and TLS listeners with a two-second origin timeout."""
 
-    server.addResponse("sessionfile.log", request_header, response_header)
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.records.update(
+            {
+                "proxy.config.url_remap.remap_required": 1,
+                "proxy.config.http.transaction_no_activity_timeout_out": 2,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        return ats
 
-    ts.addDefaultSSLFiles()
+    @staticmethod
+    def verify_timeout(result: CommandResult) -> None:
+        """Require the ATS timeout response body."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.url_remap.remap_required': 1,
-            'proxy.config.http.transaction_no_activity_timeout_out': 2,
-        })
+        assert result.returncode == 0, result.output
+        assert "Inactivity Timeout" in result.stdout
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
+    def run(self) -> None:
+        """Exercise clear-text, HTTP/1.1 TLS, and HTTP/2 TLS clients."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        self._origin.start()
+        self._ats.start()
+        self.verify_timeout(self._curl.get(self._ats, "/file", options=("--include",), timeout=20))
+        if self._curl.uses_uds:
+            return
+        for protocol in ("--http1.1", "--http2"):
+            result = self._curl.run(
+                "--insecure",
+                "--include",
+                protocol,
+                f"https://127.0.0.1:{self._ats.https_port}/file",
+                timeout=20,
+            )
+            self.verify_timeout(result)
 
-    tr = urtest.AddTestRun("tr")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.MakeCurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        "Inactivity Timeout", "Request should fail with inactivity timeout")
 
-    if not Condition.CurlUsingUnixDomainSocket():
-        tr2 = urtest.AddTestRun("tr")
-        tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
-        tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            "Inactivity Timeout", "Request should fail with inactivity timeout")
+def test_inactive_timeout(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS returns an inactivity timeout for stalled origin responses."""
 
-        tr3 = urtest.AddTestRun("tr")
-        tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
-        tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            "Inactivity Timeout", "Request should fail with inactivity timeout")
-    urtest.execute()
+    if not curl.supports("http2"):
+        pytest.skip("curl with HTTP/2 support is required")
+    InactivityTimeoutScenario(ats_factory, services, curl).run()

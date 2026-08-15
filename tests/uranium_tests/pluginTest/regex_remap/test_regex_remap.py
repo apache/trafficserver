@@ -13,261 +13,184 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify regex_remap matching and compiled-rule generation sharing."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import json
+import os
+from pathlib import Path
+import time
+from typing import Any
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory, wait_for_file_lines
 
 
-def test_regex_remap(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class RegexRemapScenario:
+    """Exercise regular-expression rules before and after remap reload."""
 
-    import os
-    import json
+    ORIGINAL_RULES = (
+        "# regex_remap configuration",
+        "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301",
+        "^/match_limit/(a+)+$ https://redirect.com/ @status=301",
+    )
+    UPDATED_RULE = "^/cache-generation$ https://updated.example/ @status=302"
 
-    urtest.Summary = '''
-    Test regex_remap
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._services = services
+        self._transactions = self.load_transactions()
+        self._origin = self.configure_server()
+        self._dns = self.configure_dns()
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-    # Test description:
-    # Exercise regex_remap rule matching, redirects, pristine-URL mapping, and the
-    # regex match limit. Then verify that two map rules naming the same rule file
-    # share one compiled rule set, and that rewriting that file and reloading
-    # remap.config compiles a new shared generation instead of reusing the live one.
-    # No rule here uses a $n / $h substitution, so that path is not covered.
+    def load_transactions(self) -> list[dict[str, Any]]:
+        """Load the three historical request values used by the regression."""
 
-    urtest.SkipUnless(Condition.PluginExists('regex_remap.so'),)
-    urtest.ContinueOnFail = False
+        replay = json.loads(self._services.resolve_path("replay/yts-2819.replay.json").read_text())
+        return list(replay["sessions"][0]["transactions"])
 
-    # configure origin server
-    server = urtest.MakeOriginServer("server", lookup_key="{%uuid}")
-    server.addSessionFromFiles("replay")
-    replay = {}
-    with open(os.path.join(urtest.TestDirectory, 'replay/yts-2819.replay.json')) as src:
-        replay = json.load(src)
+    def configure_server(self) -> OriginServer:
+        """Create an origin keyed by the transaction UUID header."""
 
-    replay_txns = replay["sessions"][0]["transactions"]
+        origin = self._services.origin("origin", lookup_key="{%uuid}")
+        for transaction in self._transactions:
+            request = transaction["client-request"]
+            response = transaction["server-response"]
+            uuid = request["headers"]["fields"][1][1]
+            response_uuid = response["headers"]["fields"][1][1]
+            origin.add_response(
+                {"headers": f"GET / HTTP/1.1\r\nHost: example.one\r\nuuid: {uuid}\r\n\r\n"},
+                {
+                    "headers":
+                        (
+                            f"HTTP/1.1 {response['status']} {response['reason']}\r\n"
+                            f"uuid: {response_uuid}\r\nContent-Length: 6128\r\nConnection: close\r\n\r\n"),
+                    "body": "x" * 6128,
+                },
+            )
+        return origin
 
-    nameserver = urtest.MakeDNServer("dns", default='127.0.0.1')
+    def configure_dns(self) -> DNSServer:
+        """Resolve fallback remap destinations locally."""
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
+        return self._services.dns("dns", default="127.0.0.1")
 
-    testName = "regex_remap"
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure shared and isolated regex rule files."""
 
-    regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')
-    regex_remap2_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap2.conf')
-    curl_and_args = '-s -D - -v --proxy localhost:{} '.format(ts.Variables.port)
+        ats = ats_factory.create("ats", enable_cache=False)
+        if not ats.plugin_exists("regex_remap.so"):
+            pytest.skip("regex_remap.so is not installed")
+        ats.write_config_file("regex_remap.conf", "\n".join(self.ORIGINAL_RULES) + "\n")
+        ats.write_config_file(
+            "regex_remap2.conf",
+            (
+                "# second regex_remap configuration\n"
+                "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ "
+                f"http://127.0.0.1:{self._origin.port}\n"),
+        )
+        ats.remap_config.add_lines(
+            (
+                f"map http://example.one/ http://127.0.0.1:{self._origin.port}/ "
+                "@plugin=regex_remap.so @pparam=regex_remap.conf",
+                f"map http://example.two/ http://127.0.0.1:{self._origin.port}/ "
+                "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine",
+                "map http://example.three/ http://wrong.com/ "
+                "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|regex_remap",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+            })
+        return ats
 
-    regex_remap_lines = [
-        "# regex_remap configuration\n",
-        "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ https://redirect.com/ @status=301\n",
-        "^/match_limit/(a+)+$ https://redirect.com/ @status=301\n",
-    ]
+    def request(self, url: str, uuid: str | None = None) -> str:
+        """Issue one proxied request and return response headers."""
 
-    ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines(regex_remap_lines)
+        arguments = [
+            "--silent",
+            "--dump-header",
+            "-",
+            "--output",
+            "/dev/null",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+        ]
+        if uuid is not None:
+            arguments.extend(("--header", f"uuid: {uuid}"))
+        arguments.append(url)
+        result = self._curl.run_for(self._ats, *arguments)
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-    ts.Disk.File(
-        regex_remap2_conf_path, typename="ats:config").AddLines(
-            [
-                "# 2nd regex_remap configuration\n"
-                "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " +
-                f"http://localhost:{server.Variables.Port}\n"
-            ])
+    def run_matching_checks(self) -> None:
+        """Verify smoke, redirect, pristine remap, and match-limit behavior."""
 
-    ts.Disk.remap_config.AddLine(
-        "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(
-            server.Variables.Port))
-    ts.Disk.remap_config.AddLine(
-        "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port) +
-        "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n")
-    ts.Disk.remap_config.AddLine(
-        "map http://example.three/ http://wrong.com/ ".format(server.Variables.Port) +
-        "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n")
+        smoke, long_match, short_match = self._transactions
+        output = self.request(smoke["client-request"]["url"], "smoke")
+        assert "HTTP/1.1 200 OK" in output and "uuid: smoke" in output
+        path = "/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E"
+        output = self.request(f"http://example.two{path}")
+        assert "HTTP/1.1 301 Redirect" in output and "Location: https://redirect.com/" in output
+        output = self.request(f"http://example.three{path}", "smoke")
+        assert "HTTP/1.1 200 OK" in output and "Content-Length: 6128" in output
+        for transaction in (long_match, short_match):
+            output = self.request(transaction["client-request"]["url"], transaction["client-request"]["headers"]["fields"][1][1])
+            assert "HTTP/1.1 200 OK" in output and "uuid: 180" in output
+        wait_for_file_lines(self._ats.diags_log, r"ERROR: .regex_remap. Bad regular expression result -47", 1)
 
-    # The cache assertions below depend on regex_remap remaining in the debug tags.
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|regex_remap',
-            'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-            'proxy.config.dns.resolv_conf': 'NULL'
-        })
+    def reload_rules(self) -> None:
+        """Install a new shared generation and reload remap.config."""
 
-    # 0 Test - Load cache (miss) (path1)
-    tr = urtest.AddTestRun("smoke test")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(nameserver)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    creq = replay_txns[0]['client-request']
-    tr.MakeCurlCommand(curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + creq["url"], ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/regex_remap_smoke.gold"
-    tr.StillRunningAfter = ts
+        rules_path = self._ats.config_directory / "regex_remap.conf"
+        rules_path.write_text("\n".join((self.UPDATED_RULE, *self.ORIGINAL_RULES)) + "\n")
+        remap_path = self._ats.config_directory / "remap.config"
+        timestamp = max(
+            int(time.time()) + 2,
+            int(rules_path.stat().st_mtime) + 2,
+            int(remap_path.stat().st_mtime) + 2,
+        )
+        os.utime(rules_path, (timestamp, timestamp))
+        os.utime(remap_path, (timestamp, timestamp))
+        result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+        assert result.returncode == 0, result.output
+        wait_for_file_lines(self._ats.traffic_out, "Reusing cached regular expressions from", 3, timeout=15)
 
-    # 1 Test - Match and redirect
-    tr = urtest.AddTestRun("pristine test")
-    tr.MakeCurlCommand(
-        curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
-        f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'",
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
-    tr.StillRunningAfter = ts
+    def run_generation_checks(self) -> None:
+        """Verify shared mappings and exact compiled generation counts."""
 
-    # 2 Test - Match and remap
-    tr = urtest.AddTestRun("2nd pristine test")
-    tr.MakeCurlCommand(
-        curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
-        " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
-        " | grep -e '^HTTP/' -e '^Content-Length'",
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
-    tr.StillRunningAfter = ts
+        for host in ("example.one", "example.two"):
+            output = self.request(f"http://{host}/cache-generation")
+            assert "HTTP/1.1 302" in output and "Location: https://updated.example/" in output
+        output = self.request("http://example.three/cache-generation")
+        assert "HTTP/1.1 302" not in output and "Location: https://updated.example/" not in output
+        log = self._ats.traffic_out.read_text(errors="replace")
+        assert log.count("Cached regular expressions from") == 3
+        assert log.count("Reusing cached regular expressions from") == 3
+        assert log.count("Compiling regex:") == 6
+        cached_lines = [line for line in log.splitlines() if "Cached regular expressions from" in line]
+        assert sum("/regex_remap.conf" in line for line in cached_lines) == 2
+        assert sum("/regex_remap2.conf" in line for line in cached_lines) == 1
+        reused_lines = [line for line in log.splitlines() if "Reusing cached regular expressions from" in line]
+        assert sum("/regex_remap.conf" in line for line in reused_lines) == 2
+        assert sum("/regex_remap2.conf" in line for line in reused_lines) == 1
 
-    # 3 Test - Match limit test 0
-    tr = urtest.AddTestRun("match limit 0")
-    creq = replay_txns[1]['client-request']
-    tr.MakeCurlCommand(curl_and_args + \
-        '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
-    tr.StillRunningAfter = ts
+    def run(self) -> None:
+        """Run matching checks and then verify a reloaded shared generation."""
 
-    # 4 Test - Match limit test 1
-    tr = urtest.AddTestRun("match limit 1")
-    creq = replay_txns[2]['client-request']
-    tr.MakeCurlCommand(curl_and_args + \
-        '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
-    tr.StillRunningAfter = ts
+        self._origin.start()
+        self._dns.start()
+        self._ats.start()
+        self.run_matching_checks()
+        self.reload_rules()
+        self.run_generation_checks()
 
-    class TestRegexRemapRuleCache:
-        '''Verify shared compiled rules across a remap.config reload.'''
 
-        updated_rule = "^/cache-generation$ https://updated.example/ @status=302\n"
+def test_regex_remap(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """regex_remap shares compiled rules and isolates distinct files."""
 
-        def __init__(self, ts_process: 'Process', original_rules: str, curl_args: str):
-            '''Configure the cache and reload TestRuns.'''
-            self._ts = ts_process
-            self._original_rules = original_rules
-            self._curl_args = curl_args
-            self._regex_remap_path = os.path.join(ts_process.Variables.CONFIGDIR, 'regex_remap.conf')
-            self._remap_path = os.path.join(ts_process.Variables.CONFIGDIR, 'remap.config')
-
-            self._add_rule_update_run()
-            self._add_reload_run()
-            self._add_new_generation_run()
-            self._add_shared_generation_run()
-            self._add_isolated_generation_run()
-            self._add_cache_verification_run()
-
-        def _update_rules(self) -> None:
-            '''Write a new rule generation and mark remap.config as changed.'''
-            with open(self._regex_remap_path, 'w') as config_file:
-                config_file.write(self.updated_rule + self._original_rules)
-            os.utime(self._remap_path)
-
-        def _add_rule_update_run(self) -> 'TestRun':
-            '''Change the shared rule file while its first generation is live.'''
-            tr = urtest.AddTestRun("change shared regex_remap rules")
-            tr.Processes.Default.Command = "echo 'Updating shared regex_remap rules'"
-            tr.Processes.Default.Setup.Lambda(self._update_rules)
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self._ts
-            return tr
-
-        def _add_reload_run(self) -> 'TestRun':
-            '''Reload remap.config after the shared rule file changes.'''
-            tr = urtest.AddConfigReload(
-                self._ts, expect_tasks=["remap.config"], description="Reload changed shared regex_remap rules")
-            tr.StillRunningAfter = self._ts
-            return tr
-
-        def _add_new_generation_run(self) -> 'TestRun':
-            '''Verify the new rule generation is active after the reload.'''
-            tr = urtest.AddTestRun("new shared rule generation")
-            tr.MakeCurlCommand(
-                self._curl_args + "'http://example.one/cache-generation' | grep -e '^HTTP/' -e '^Location'", ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 302", "New rule returns a redirect")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                "Location: https://updated.example/", "New rule generation is active")
-            tr.StillRunningAfter = self._ts
-            return tr
-
-        def _add_shared_generation_run(self) -> 'TestRun':
-            '''Verify the other mapping on this file sees the same generation.'''
-            tr = urtest.AddTestRun("second mapping sees same rule generation")
-            tr.MakeCurlCommand(
-                self._curl_args + "'http://example.two/cache-generation' | grep -e '^HTTP/' -e '^Location'", ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 302", "Sharing mapping returns a redirect")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                "Location: https://updated.example/", "Sharing mapping is on the new generation")
-            tr.StillRunningAfter = self._ts
-            return tr
-
-        def _add_isolated_generation_run(self) -> 'TestRun':
-            '''Verify a different rule file does not reuse the changed generation.'''
-            tr = urtest.AddTestRun("different rule file remains isolated")
-            tr.MakeCurlCommand(
-                self._curl_args + "'http://example.three/cache-generation' | grep -e '^HTTP/' -e '^Location'", ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("HTTP/1.1 302", "Different file does not redirect")
-            tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-                "Location: https://updated.example/", "Different file does not use the changed generation")
-            tr.StillRunningAfter = self._ts
-            return tr
-
-        def _add_cache_verification_run(self) -> 'TestRun':
-            '''Verify each distinct generation is compiled only once.'''
-            await_tr = urtest.AddAwaitFileContainsTestRun(
-                "await rule cache debug output", self._ts.Disk.traffic_out.Name, "Reusing cached regular expressions from", 3)
-            await_tr.StillRunningAfter = self._ts
-
-            # Compiles: regex_remap.conf gen1, regex_remap2.conf gen1, and
-            # regex_remap.conf gen2 == 3 generations and 6 regular expressions.
-            # Reuses: example.two shares regex_remap.conf on both loads, while
-            # example.three reuses regex_remap2.conf across the build-then-swap
-            # reload because the previous remap table is still holding it == 3.
-            tr = urtest.AddTestRun("verify compiled rule cache")
-            tr.Processes.Default.Command = (
-                f"log={self._ts.Disk.traffic_out.Name}; "
-                "cached=$$(grep -c 'Cached regular expressions from' $$log); "
-                "reused=$$(grep -c 'Reusing cached regular expressions from' $$log); "
-                "compiled=$$(grep -c 'Compiling regex:' $$log); "
-                "cached_primary=$$(grep 'Cached regular expressions from' $$log | grep -F -c '/regex_remap.conf'); "
-                "cached_secondary=$$(grep 'Cached regular expressions from' $$log | grep -F -c '/regex_remap2.conf'); "
-                "reused_primary=$$(grep 'Reusing cached regular expressions from' $$log | grep -F -c '/regex_remap.conf'); "
-                "reused_secondary=$$(grep 'Reusing cached regular expressions from' $$log | grep -F -c '/regex_remap2.conf'); "
-                "echo cached=$$cached reused=$$reused compiled=$$compiled "
-                "cached_primary=$$cached_primary cached_secondary=$$cached_secondary "
-                "reused_primary=$$reused_primary reused_secondary=$$reused_secondary; "
-                "test $$cached -eq 3 -a $$reused -eq 3 -a $$compiled -eq 6 -a "
-                "$$cached_primary -eq 2 -a $$cached_secondary -eq 1 -a "
-                "$$reused_primary -eq 2 -a $$reused_secondary -eq 1")
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self._ts
-            return tr
-
-    TestRegexRemapRuleCache(ts, ''.join(regex_remap_lines), curl_and_args)
-    urtest.execute()
+    RegexRemapScenario(ats_factory, services).run()

@@ -1,0 +1,134 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Reject an incompatible cachekey and cache_range_requests configuration"
+  requires:
+    plugins: ["cache_range_requests.so", "cachekey.so", "xdebug.so"]
+  server:
+    name: server
+  client:
+    name: client
+  ats:
+    name: ts
+    process_config:
+      disable_log_checks: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: cache_range_requests
+    plugin_config:
+      - "xdebug.so --enable=x-cache"
+    remap_config:
+      - "map http://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=cachekey.so @pparam=--include-headers=Range @plugin=cache_range_requests.so @pparam=--no-modify-cachekey"
+      - "map http://www.fail.com http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=cachekey.so @pparam=--static-prefix=foo @plugin=cache_range_requests.so"
+    log_validation:
+      diags_log:
+        contains:
+          - expression: "ERROR"
+            description: "The incompatible plugin configuration is rejected"
+          - expression: "Failed to change the cache url, disabling cache for this transaction to avoid cache poisoning."
+            description: "The transaction cannot poison another cache key"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [x-debug, x-cache]
+              - [uuid, full]
+        proxy-request:
+          headers:
+            fields:
+              - [uuid, {value: full, as: equal}]
+        server-response: &asset-response
+          status: 206
+          reason: Partial Content
+          headers:
+            fields:
+              - [Accept-Ranges, bytes]
+              - [Etag, '"foo"']
+              - [Cache-Control, "public, max-age=500"]
+              - [Content-Length, "18"]
+          content:
+            data: "lets go surfin now"
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [X-Cache, {value: miss, as: contains}]
+
+      - client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, www.example.com]
+              - [Range, "bytes=0-"]
+              - [x-debug, x-cache]
+              - [uuid, range-full]
+        proxy-request:
+          headers:
+            fields:
+              - [Range, {value: "bytes=0-", as: equal}]
+              - [uuid, {value: range-full, as: equal}]
+        server-response:
+          <<: *asset-response
+          headers:
+            fields:
+              - [Accept-Ranges, bytes]
+              - [Etag, '"foo"']
+              - [Cache-Control, "public, max-age=500"]
+              - [Content-Range, "bytes 0-18/18"]
+              - [Content-Length, "18"]
+        proxy-response:
+          status: 206
+          headers:
+            fields:
+              - [X-Cache, {value: miss, as: contains}]
+
+      - client-request:
+          method: GET
+          url: /path
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, www.fail.com]
+              - [Range, "bytes=0-"]
+              - [uuid, range-fail]
+        proxy-request:
+          headers:
+            fields:
+              - [Range, {value: "bytes=0-", as: equal}]
+              - [uuid, {value: range-fail, as: equal}]
+        server-response:
+          <<: *asset-response
+          headers:
+            fields:
+              - [Accept-Ranges, bytes]
+              - [Etag, '"foo"']
+              - [Cache-Control, "public, max-age=500"]
+              - [Content-Range, "bytes 0-18/18"]
+              - [Content-Length, "18"]
+        proxy-response:
+          status: 206
