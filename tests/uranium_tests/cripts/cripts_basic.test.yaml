@@ -1,0 +1,125 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: '1.0'
+
+blocks:
+- base-response: &base-response
+    status: 200
+    reason: OK
+    headers:
+      fields:
+      - [Content-Length, 0]
+      - [Connection, close]
+
+sessions:
+- protocol: {stack: http}
+  transactions:
+  - all: {headers: {fields: [[uuid, basic-http]]}}
+    client-request: &basic-request
+      method: GET
+      version: '1.1'
+      url: /
+      headers:
+        fields:
+        - [Host, www.example.com]
+    proxy-request:
+      <<: *basic-request
+    server-response:
+      <<: *base-response
+      headers:
+        fields:
+        - [responseHeader, unchanged]
+        - [Content-Length, 0]
+        - [Connection, close]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [responseHeader, {value: changed, as: equal}]
+        - [criptsResponseHeader, {value: response, as: equal}]
+- protocol: {stack: http}
+  transactions:
+  - all: {headers: {fields: [[uuid, query-copy]]}}
+    client-request: &query-request
+      method: GET
+      version: '1.1'
+      url: /path/to/resource?foo=1&bar=2&baz=3
+      headers:
+        fields:
+        - [Host, query.example.com]
+    proxy-request:
+      <<: *query-request
+    server-response:
+      <<: *base-response
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [X-Original-Query, {value: 'foo=1&bar=2&baz=3', as: equal}]
+        - [X-Copy-Query, {value: 'bar=2&baz=3', as: equal}]
+        - [X-Assigned-Query, {value: 'foo=1&bar=2&baz=3', as: equal}]
+        - [X-Original-Path, {value: path/to/resource, as: equal}]
+        - [X-Copy-Path, {value: edited/to/resource, as: equal}]
+        - [X-Assigned-Path, {value: path/to/resource, as: equal}]
+- protocol: {stack: https}
+  transactions:
+  - all: {headers: {fields: [[uuid, basic-tls]]}}
+    client-request:
+      <<: *basic-request
+    proxy-request:
+      <<: *basic-request
+    server-response:
+      <<: *base-response
+      headers:
+        fields:
+        - [responseHeader, unchanged]
+        - [Content-Length, 0]
+        - [Connection, close]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [responseHeader, {value: changed, as: equal}]
+        - [criptsResponseHeader, {value: response, as: equal}]
+        - [X-Subject, {value: 'C = IE, ST = Dublin, L = Dublin, O = example.com, OU = example.com, CN = example.com', as: equal}]
+        - [X-NotBefore, {value: 'Jan 26 14:56:08 2021 GMT', as: equal}]
+        - [X-NotAfter, {value: 'Aug 21 14:56:08 2119 GMT', as: equal}]
+
+urtest:
+  description: Exercise Cripts response, certificate, query, and path APIs
+  requires:
+    ats_features: [TS_HAS_CRIPTS]
+  server: {name: cripts-origin}
+  client: {name: cripts-client}
+  ats:
+    name: cripts-ts
+    process_config:
+      enable_tls: true
+      enable_cache: false
+      enable_cripts: true
+    startup_timeout: 60
+    records_config:
+      proxy.config.plugin.dynamic_reload_mode: 1
+      proxy.config.url_remap.pristine_host_hdr: 1
+    copy_to_config_dir:
+    - {source: files/basic.cript, destination: basic.cript}
+    - {source: files/query_copy.cript, destination: query_copy.cript}
+    remap_config:
+    - map http://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=basic.cript
+    - map https://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=basic.cript
+    - map http://query.example.com http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=query_copy.cript

@@ -14,120 +14,93 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_origin_post_abort(urtest: UraniumTest) -> None:
-    '''
-    When a TLS origin resets the connection while ATS is still sending it a POST
-    request body, ATS must fail the transaction promptly -- the transport error must
-    reach the request-body tunnel right away as VC_EVENT_ERROR, not sit until the
-    outbound inactivity timeout rescues it.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsOriginPostAbortScenario:
+    """Reset a TLS origin connection while ATS is sending a POST body."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin_port = services.allocate_port()
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.Summary = __doc__
+    def configure_origin(self, services: ServiceFactory) -> ProcessService:
+        """Create the raw TLS origin that sends an RST mid-body."""
 
-    class TestOriginPostAbort:
-        '''Verify a TLS origin RST mid-POST-body fails the transaction promptly.'''
+        certificate = TEST_DIRECTORY.parents[1] / "tools" / "ssl" / "server.pem"
+        return services.process(
+            "origin",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "tls_post_abort_origin.py",
+                "-p",
+                str(self._origin_port),
+                "-c",
+                certificate,
+                "-d",
+                "1.0",
+            ),
+            ready_port=self._origin_port,
+        )
 
-        _ts_counter: int = 0
-        _origin_counter: int = 0
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure a TLS origin with timeouts much longer than the test limit."""
 
-        def __init__(self) -> None:
-            '''Declare the test Processes.'''
-            urtest.GetTcpPort("origin_port")
-            self._ts = self._configure_trafficserver()
-            self._origin = self._configure_origin()
+        ats = ats_factory.create("ts", enable_cache=False)
+        ats.records.update(
+            {
+                "proxy.config.url_remap.remap_required": 1,
+                "proxy.config.http.connect_attempts_max_retries": 0,
+                "proxy.config.http.connect_attempts_timeout": 15,
+                "proxy.config.http.transaction_no_activity_timeout_out": 15,
+                "proxy.config.http.transaction_no_activity_timeout_in": 30,
+                "proxy.config.net.sock_send_buffer_size_out": 65536,
+                "proxy.config.ssl.client.verify.server.policy": "DISABLED",
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "http|ssl|ssl_io",
+            })
+        ats.remap_config.add_line(f"map /post https://127.0.0.1:{self._origin_port}")
+        return ats
 
-        def _configure_trafficserver(self) -> 'Process':
-            '''Configure Traffic Server with a TLS origin and a generous rescue timeout.
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the timed streaming POST client."""
 
-            :return: The Traffic Server Process.
-            '''
-            ts = urtest.MakeATSProcess(f'ts-{TestOriginPostAbort._ts_counter}', enable_cache=False)
-            TestOriginPostAbort._ts_counter += 1
+        return services.process(
+            "client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "tls_post_abort_client.py",
+                "-p",
+                str(self._ats.http_port),
+                "-t",
+                "8",
+            ),
+        )
 
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.url_remap.remap_required': 1,
-                    'proxy.config.http.connect_attempts_max_retries': 0,
-                    'proxy.config.http.connect_attempts_timeout': 15,
-                    # The rescue timeout: a prompt failure must beat this by a wide margin.
-                    'proxy.config.http.transaction_no_activity_timeout_out': 15,
-                    'proxy.config.http.transaction_no_activity_timeout_in': 30,
-                    # Keep the kernel send buffer small so the request body cannot be
-                    # absorbed by the kernel: ATS must still be mid-send at the RST.
-                    'proxy.config.net.sock_send_buffer_size_out': 65536,
-                    'proxy.config.ssl.client.verify.server.policy': 'DISABLED',
-                    'proxy.config.diags.debug.enabled': 0,
-                    'proxy.config.diags.debug.tags': 'http|ssl|ssl_io',
-                })
-            ts.Disk.remap_config.AddLine(f'map /post https://127.0.0.1:{urtest.Variables.origin_port}')
+    def run(self) -> None:
+        """Require the reset path and a prompt client-visible 5xx."""
 
-            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-                'received signal|failed assertion', 'ATS must not crash handling the mid-body origin abort')
-            return ts
+        self._origin.start()
+        self._ats.start()
+        client = self._client.run(timeout=12)
+        assert client.returncode == 0, client.output
+        assert "PASS: transaction failed promptly" in client.output
+        assert "status-code: 5" in client.output
+        assert "request headers received" in self._origin.stdout
+        assert "connection reset sent" in self._origin.stdout
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        assert "received signal" not in traffic_out
+        assert "failed assertion" not in traffic_out
 
-        def _configure_origin(self) -> 'Process':
-            '''Configure a raw-socket TLS origin that resets mid-request-body.
 
-            The scenario needs a TLS origin that accepts the request body and then RSTs
-            the connection mid-body (SO_LINGER 0). Proxy Verifier can only close cleanly
-            (close_notify), so it cannot express a mid-body reset; hence the small
-            raw-socket origin helper rather than an ATSReplayTest.
+def test_tls_origin_post_abort(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A TLS origin RST fails an in-flight POST promptly without crashing ATS."""
 
-            :return: The origin server Process.
-            '''
-            origin = urtest.Processes.Process(
-                f'origin-{TestOriginPostAbort._origin_counter}',
-                f'{sys.executable} {os.path.join(urtest.TestDirectory, "tls_post_abort_origin.py")} '
-                f'-p {urtest.Variables.origin_port} '
-                f'-c {os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.pem")} -d 1.0')
-            TestOriginPostAbort._origin_counter += 1
-
-            # These markers prove the reset path was actually exercised: the origin
-            # completed the TLS handshake, received the forwarded request headers, and
-            # then reset the connection mid-body. Without them the client could pass on
-            # any prompt response -- e.g. a broken remap or a never-started origin that
-            # yields a fast 5xx without the body ever reaching a resetting origin.
-            origin.Streams.stdout = Testers.ContainsExpression(
-                'request headers received', 'the origin must receive the forwarded request headers')
-            origin.Streams.stdout += Testers.ContainsExpression(
-                'connection reset sent', 'the origin must reset the connection mid-body')
-            return origin
-
-        def run(self) -> None:
-            '''Configure and run the TestRun.'''
-            tr = urtest.AddTestRun("POST to a TLS origin that resets mid-body must fail promptly")
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.Processes.Default.StartBefore(self._origin, ready=When.PortOpen(urtest.Variables.origin_port))
-            tr.Processes.Default.Command = (
-                f'{sys.executable} {os.path.join(urtest.TestDirectory, "tls_post_abort_client.py")} '
-                f'-p {self._ts.Variables.port} -t 8')
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'PASS: transaction failed promptly', 'the POST must fail promptly on the origin RST')
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'status-code: 5', 'ATS must surface the mid-body origin reset as a 5xx')
-            tr.StillRunningAfter = self._ts
-
-    TestOriginPostAbort().run()
-    urtest.execute()
+    TlsOriginPostAbortScenario(ats_factory, services).run()

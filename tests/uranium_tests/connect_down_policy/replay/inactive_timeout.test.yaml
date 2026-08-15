@@ -1,0 +1,73 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /inactive/timeout/test
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    # Server accepts the connection but goes silent (delay longer than inactivity timeout).
+    server-response:
+      status: 200
+      delay: 10s
+
+    # ATS should time out waiting for the server response and return 504.
+    proxy-response:
+      status: 504
+
+urtest:
+  description: Apply connect-down policy after an inactive origin timeout
+  server: {name: connect-down-policy-origin}
+  client: {name: connect-down-policy-client}
+  ats:
+    name: connect-down-policy-ts
+    process_config: {enable_cache: false}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: hostdb|http
+      proxy.config.http.connect_attempts_max_retries: 0
+      proxy.config.http.connect_attempts_rr_retries: 0
+      proxy.config.http.transaction_no_activity_timeout_out: 3
+      proxy.config.hostdb.fail.timeout: 60
+    remap_config:
+    - map / http://127.0.0.1:{SERVER_HTTP_PORT}/
+  variants:
+  - name: mark-down
+    ats:
+      records_config:
+        proxy.config.http.connect.down.policy: 3
+      file_checks:
+      - path: '{LOG_DIR}/error.log'
+        contains: marking down
+        timeout: 10
+  - name: do-not-mark-down
+    ats:
+      records_config:
+        proxy.config.http.connect.down.policy: 2
+      log_validation:
+        error_log:
+          excludes:
+          - expression: marking down
+            description: Policy 2 must not mark the origin down

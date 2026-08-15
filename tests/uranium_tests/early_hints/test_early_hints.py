@@ -14,180 +14,124 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from dataclasses import dataclass
+from pathlib import Path
+import os
+import re
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+TOOLS_DIRECTORY = TEST_DIRECTORY.parents[1] / "tools"
 
 
-def test_early_hints(urtest: UraniumTest) -> None:
-    '''
-    Verify correct handling of 103 Early Hints responses.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+@dataclass(frozen=True)
+class ProtocolCase:
+    """Describe one client protocol used for the early-hints exchange."""
 
-    from enum import Enum, auto
-    import os
-    from ports import get_port
-    import re
-    import sys
+    name: str
+    curl_arguments: tuple[str, ...]
+    scheme: str
+    enable_quic: bool = False
 
-    class Protocol(Enum):
-        HTTP = auto()
-        HTTPS = auto()
-        HTTP2 = auto()
-        HTTP3 = auto()
 
-        @classmethod
-        def to_string(cls, protocol):
-            if protocol == cls.HTTP:
-                return 'HTTP'
-            elif protocol == cls.HTTPS:
-                return 'HTTPS'
-            elif protocol == cls.HTTP2:
-                return 'HTTP2'
-            elif protocol == cls.HTTP3:
-                return 'HTTP3'
-            else:
-                return None
+class EarlyHintsScenario:
+    """Verify two 103 responses precede the final response on each protocol."""
 
-    class TestEarlyHints:
-        '''Verify that ATS can properly handle a 103 response.'''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        self._curl = curl
+        self._dns = self.configure_dns(services)
 
-        _early_hints_server = 'early_hints_server.py'
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve the synthetic backend name to loopback."""
 
-        def __init__(self, protocol: Protocol):
-            '''Create a test run for the given protocol.
-            :param protocol: The protocol the client will use for the test.
-            '''
-            self._protocol = protocol
-            self._protocol_str = Protocol.to_string(protocol)
-            tr = urtest.AddTestRun(f'Early hints with client protocol: {self._protocol_str}')
-            self._configure_dns(tr)
-            self._configure_server(tr)
-            ts = self._configure_ts(tr)
-            self._copy_scripts(tr, ts)
-            self._configure_client(tr)
+        return services.dns("dns", default="127.0.0.1")
 
-        def _configure_dns(self, tr: 'TestRun'):
-            '''Configure the DNS for the test run.
-            :param tr: The TestRun for the DNS process.
-            '''
-            dns = tr.MakeDNServer(f'dns_{self._protocol_str}', default='127.0.0.1')
-            self._dns = dns
-            return dns
+    @staticmethod
+    def server_environment() -> dict[str, str]:
+        """Expose the shared HTTP helper module to the custom origin."""
 
-        def _configure_server(self, tr: 'TestRun'):
-            '''Configure the origin server for the test run.
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(TOOLS_DIRECTORY)
+        return environment
 
-            :param tr: The TestRun for the origin server.
-            '''
-            tr.Setup.Copy(self._early_hints_server)
-            server = tr.Processes.Process(f'server_{self._protocol_str}')
-            server_port = get_port(server, "http_port")
-            server.Command = \
-                f'{sys.executable} {self._early_hints_server} 127.0.0.1 {server_port} '
-            server.Ready = When.PortOpenv4(server_port)
+    def configure_server(self, case: ProtocolCase) -> tuple[ProcessService, int]:
+        """Create a one-shot origin that emits two Early Hints responses."""
 
-            self._server = server
-            return server
+        port = self._services.allocate_port()
+        server = self._services.process(
+            f"server_{case.name}",
+            (sys.executable, TEST_DIRECTORY / "early_hints_server.py", "127.0.0.1", str(port)),
+            environment=self.server_environment(),
+            ready_port=port,
+        )
+        return server, port
 
-        def _configure_ts(self, tr: 'TestRun'):
-            '''Configure the traffic server for the test run.
+    def configure_ats(self, case: ProtocolCase, server_port: int) -> ATS:
+        """Create one ATS instance for @a case."""
 
-            :param tr: The TestRun for the traffic server.
-            '''
-            ts = urtest.MakeATSProcess(f'ts_{self._protocol_str}', enable_tls=True, enable_quic=self._protocol == Protocol.HTTP3)
-            self._ts = ts
-            ts.Disk.remap_config.AddLine(f'map / http://backend.server.com:{self._server.Variables.http_port}')
-            ts.addDefaultSSLFiles()
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                    'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http',
-                })
-            return ts
+        ats = self._ats_factory.create(
+            f"ts_{case.name}",
+            enable_tls=case.scheme == "https",
+            enable_quic=case.enable_quic,
+        )
+        if case.scheme == "https":
+            ats.add_default_ssl_files()
+        ats.remap_config.add_line(f"map / http://backend.server.com:{server_port}")
+        ats.records.update(
+            {
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+            })
+        return ats
 
-        def _copy_scripts(self, tr: 'TestRun', ts: 'TestATSProcess'):
-            '''Copy the python server and helper files to the test run directory.
-            :param tr: The TestRun for the server.
-            :param ts: The TestATSProcess for the traffic server. This is needed
-              for the ATS tools directory it stores in Variables.
-            '''
-            tr.Setup.Copy(self._early_hints_server)
-            tools_dir = ts.Variables.AtsTestToolsDir
-            http_utils = os.path.join(tools_dir, 'http_utils.py')
-            tr.Setup.CopyAs(http_utils, urtest.RunDirectory)
+    def run_case(self, case: ProtocolCase) -> None:
+        """Run and validate one protocol exchange."""
 
-        def _configure_client(self, tr: 'TestRun'):
-            '''Configure a client to use the given protocol to ATS.
-            :param tr: The TestRun for the client.
-            '''
-            client = tr.Processes.Default
-            if self._protocol == Protocol.HTTP:
-                protocol_arg = '--http1.1'
-                scheme = 'http'
-                ts_port = self._ts.Variables.port
-            elif self._protocol == Protocol.HTTPS:
-                protocol_arg = '-k --http1.1'
-                scheme = 'https'
-                ts_port = self._ts.Variables.ssl_port
-            elif self._protocol == Protocol.HTTP2:
-                protocol_arg = '-k --http2'
-                scheme = 'https'
-                ts_port = self._ts.Variables.ssl_port
-            elif self._protocol == Protocol.HTTP3:
-                protocol_arg = '-k --http3-only'
-                scheme = 'https'
-                ts_port = self._ts.Variables.ssl_port
-            tr.MakeCurlCommand(
-                f'-v {protocol_arg} '
-                f'--resolve "server.com:{ts_port}:127.0.0.1" '
-                f'-H "Host: server.com" '
-                f'{scheme}://server.com:{ts_port}/{self._protocol_str}',
-                ts=self._ts)
+        server, server_port = self.configure_server(case)
+        ats = self.configure_ats(case, server_port)
+        server.start()
+        ats.start()
+        port = ats.https_port if case.scheme == "https" else ats.http_port
+        result = self._curl.run_for(
+            ats,
+            "--verbose",
+            *case.curl_arguments,
+            "--resolve",
+            f"server.com:{port}:127.0.0.1",
+            "--header",
+            "Host: server.com",
+            f"{case.scheme}://server.com:{port}/{case.name}",
+        )
+        assert result.returncode == 0, result.output
+        assert re.search(r"HTTP/.* 103.*HTTP/.* 103", result.output, re.DOTALL)
+        assert "ink: </style.css>; rel=preload" in result.output
+        assert re.search(r"HTTP/.* 200", result.output)
+        assert "10bytebody" in result.output
+        server.wait(timeout=10)
 
-            client.ReturnCode = 0
-            self._ts.StartBefore(self._dns)
-            self._ts.StartBefore(self._server)
-            client.StartBefore(self._ts)
+    def run(self) -> None:
+        """Exercise clear-text HTTP, TLS, HTTP/2, and optional HTTP/3."""
 
-            # Note that the server is configured to send two 103 responses.
-            client.Streams.All += Testers.ContainsExpression(
-                'HTTP/.* 103.*HTTP/.* 103',
-                'Verify that two 103 Early Hints responses were received.',
-                reflags=re.MULTILINE | re.DOTALL)
-            client.Streams.All += Testers.ContainsExpression(
-                'ink: </style.css>; rel=preload', 'Verify preload link header was received.')
-            client.Streams.All += Testers.ContainsExpression('HTTP/.* 200', 'Verify 200 OK response was received.')
-            client.Streams.All += Testers.ContainsExpression('10bytebody', 'Verify the body to the 200 OK was received.')
+        self._dns.start()
+        cases = [
+            ProtocolCase("HTTP", ("--http1.1",), "http"),
+            ProtocolCase("HTTPS", ("--insecure", "--http1.1"), "https"),
+            ProtocolCase("HTTP2", ("--insecure", "--http2"), "https"),
+        ]
+        if self._ats_factory.has_feature("TS_USE_QUIC") and self._curl.supports("http3"):
+            cases.append(ProtocolCase("HTTP3", ("--insecure", "--http3-only"), "https", enable_quic=True))
+        for case in cases:
+            self.run_case(case)
 
-    TestEarlyHints(Protocol.HTTP)
-    if not Condition.CurlUsingUnixDomainSocket():
-        TestEarlyHints(Protocol.HTTPS)
-        TestEarlyHints(Protocol.HTTP2)
-        if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3') and Condition.HasCurlOption('--http3-only'):
-            TestEarlyHints(Protocol.HTTP3)
-    urtest.execute()
+
+def test_early_hints(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS forwards repeated 103 Early Hints responses before the final 200."""
+
+    EarlyHintsScenario(ats_factory, services, curl).run()

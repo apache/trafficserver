@@ -298,7 +298,7 @@ def verify_client_request_body_bytes(replay_json, expected_body_bytes):
         return False
 
     # If the client request had that many bytes, verify that the proxy-request
-    # does too. This is not guaranteed to always be true, but for our autest it
+    # does too. This is not guaranteed to always be true, but for this test it
     # currently holds and this check is worthwhile.
     try:
         proxy_request_body_size = replay_json['sessions'][0]['transactions'][0]['proxy-request']['content']['size']
@@ -330,7 +330,7 @@ def verify_proxy_response_body_bytes(replay_json, expected_body_bytes):
         return False
 
     # If the proxy response had that many bytes, verify that the server-response
-    # does too. This is not guaranteed to always be true, but for our autest it
+    # does too. This is not guaranteed to always be true, but for this test it
     # currently holds and this check is worthwhile.
     try:
         server_response_body_size = replay_json['sessions'][0]['transactions'][0]['server-response']['content']['size']

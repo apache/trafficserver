@@ -14,149 +14,150 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import yaml
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, assert_matches_gold
 
 
-def test_traffic_ctl_config_output(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    import sys
-    import os
+class ConfigOutputScenario:
+    """Verify traffic_ctl configuration output and reset operations."""
 
-    # To include util classes
-    sys.path.insert(0, f'{urtest.TestDirectory}')
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._gold = Path(__file__).parent / "gold"
+        self._ats = self.configure_ats(ats_factory)
 
-    from traffic_ctl_test_utils import Make_traffic_ctl
-    # import ruamel.yaml Uncomment only when GoldFilePathFor is used.
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure values used by get, match, and diff output."""
 
-    urtest.Summary = '''
-    Test traffic_ctl config output responses.
-    '''
+        ats = ats_factory.create("ts")
+        ats.records.update(
+            {
+                "proxy.config.udp.threads": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rpc",
+                "proxy.config.diags.debug.throttling_interval_msec": 0,
+            })
+        return ats
 
-    urtest.ContinueOnFail = True
+    def command(self, *arguments: str, expected: int = 0) -> CommandResult:
+        """Run traffic_ctl and validate its exit status."""
 
-    records_yaml = '''
-        udp:
-          threads: 1
-        diags:
-          debug:
-            enabled: 1
-            tags: rpc
-            throttling_interval_msec: 0
-        '''
+        result = self._ats.traffic_ctl(*arguments)
+        assert result.returncode == expected, result.output
+        return result
 
-    traffic_ctl = Make_traffic_ctl(urtest, records_yaml)
+    def assert_text(self, expected: str, *arguments: str) -> None:
+        """Require exact stdout for one command."""
 
-    ##### CONFIG GET
+        result = self.command(*arguments)
+        assert result.stdout == expected + ("\n" if expected else "")
 
-    # Test 0: YAML output
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().validate_with_goldfile("t1_yaml.gold")
-    # Test 1: Default output
-    traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 1")
-    # Test 2: Default output with default.
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").with_default() \
-        .validate_with_text("proxy.config.diags.debug.tags: rpc # default http|dns")
+    def assert_gold(self, gold: str, *arguments: str) -> None:
+        """Compare one command with a wildcard gold file."""
 
-    # Test 3: Now same output test but with defaults, traffic_ctl supports adding default value
-    # when using --records.
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().with_default().validate_with_goldfile("t2_yaml.gold")
-    # Test 4:
-    traffic_ctl.config().get(
-        "proxy.config.diags.debug.tags proxy.config.diags.debug.enabled proxy.config.diags.debug.throttling_interval_msec"
-    ).as_records().with_default().validate_with_goldfile("t3_yaml.gold")
+        result = self.command(*arguments)
+        assert_matches_gold(result.stdout, self._gold / gold)
 
-    ##### CONFIG MATCH
-    # Test 5:
-    traffic_ctl.config().match("threads").with_default().validate_with_goldfile("match.gold")
+    def verify_get_match_diff_and_describe(self) -> None:
+        """Verify each read-only configuration output mode."""
 
-    # Test 6: The idea is to check the traffic_ctl yaml emitter when a value starts with the
-    # same prefix of a node like:
-    # diags:
-    #    logfile:
-    #    logfile_perm: rw-r--r--
-    #
-    # traffic_ctl have a special logic to deal with cases like this, so better test it.
-    traffic_ctl.config().match("diags.logfile").as_records().validate_with_goldfile("t4_yaml.gold")
+        self.assert_gold("t1_yaml.gold", "config", "get", "proxy.config.diags.debug.tags", "--records")
+        self.assert_text("proxy.config.diags.debug.enabled: 1", "config", "get", "proxy.config.diags.debug.enabled")
+        self.assert_text(
+            "proxy.config.diags.debug.tags: rpc # default http|dns",
+            "config",
+            "get",
+            "proxy.config.diags.debug.tags",
+            "--default",
+        )
+        self.assert_gold("t2_yaml.gold", "config", "get", "proxy.config.diags.debug.tags", "--records", "--default")
+        self.assert_gold(
+            "t3_yaml.gold",
+            "config",
+            "get",
+            "proxy.config.diags.debug.tags",
+            "proxy.config.diags.debug.enabled",
+            "proxy.config.diags.debug.throttling_interval_msec",
+            "--records",
+            "--default",
+        )
+        self.assert_gold("match.gold", "config", "match", "threads", "--default")
+        self.assert_gold("t4_yaml.gold", "config", "match", "diags.logfile", "--records")
+        result = self.command("config", "diff")
+        for record, current, default in (
+            ("proxy.config.config_update_interval_ms", "20", "3000"),
+            ("proxy.config.diags.debug.enabled", "1", "0"),
+            ("proxy.config.diags.debug.tags", "rpc", "http|dns"),
+            ("proxy.config.http.wait_for_cache", "1", "0"),
+            ("proxy.config.udp.threads", "1", "0"),
+        ):
+            assert f"{record} has changed" in result.stdout
+            assert f"Current Value: {current}" in result.stdout
+            assert f"Default Value: {default}" in result.stdout
 
-    ##### CONFIG DIFF
-    # Test 7:
-    traffic_ctl.config().diff().validate_with_goldfile("diff.gold")
-    # Test 8:
-    traffic_ctl.config().diff().as_records().validate_with_goldfile("diff_yaml.gold")
+        result = self.command("config", "diff", "--records")
+        records = yaml.safe_load(result.stdout)["records"]
+        assert records["config_update_interval_ms"] == 20
+        assert records["diags"]["debug"]["enabled"] == 1
+        assert records["diags"]["debug"]["tags"] == "rpc"
+        assert records["http"]["wait_for_cache"] == 1
+        assert records["udp"]["threads"] == 1
+        self.assert_gold("describe.gold", "config", "describe", "proxy.config.http.server_ports")
 
-    ##### CONFIG DESCRIBE
-    # Test 9: don't really care about values, but just output and that the command actually went through
-    traffic_ctl.config().describe("proxy.config.http.server_ports").validate_with_goldfile("describe.gold")
+    def set_record(self, record: str, value: str) -> None:
+        """Set one runtime record and require success."""
 
-    ##### CONFIG RESET
-    # Test 10: Reset a single modified record (proxy.config.diags.debug.tags is set to "rpc" in records_yaml,
-    # default is "http|dns", so it should be reset)
-    traffic_ctl.config().reset("proxy.config.diags.debug.tags").validate_with_text(
-        "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync "
-        "configuration, restart is not required")
-    # Test 11: Validate the record was reset to its default value
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
+        self.command("config", "set", record, value)
 
-    # Test 12: Reset records matching a partial path (proxy.config.diags)
-    # First set the record back to non-default for this test
-    traffic_ctl.config().set("proxy.config.diags.debug.tags", "rpc").exec()
-    # Test 13: Resetting proxy.config.diags should reset all matching modified records under that path
-    traffic_ctl.config().reset("proxy.config.diags").validate_contains_all(
-        "Set proxy.config.diags.debug.tags", "Set proxy.config.diags.debug.enabled")
-    # Test 14: Validate the record was reset to its default value
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
+    def assert_debug_tags(self, value: str) -> None:
+        """Verify the current debug tag expression."""
 
-    # Test 15: Reset all records using "records" keyword
-    # First set the record back to non-default for this test
-    traffic_ctl.config().set("proxy.config.diags.debug.tags", "rpc").exec()
-    # Test 16: This will reset all modified records (including proxy.config.diags.debug.tags)
-    # Some may require restart, which is ok, we can use diff anyways as the records that needs
-    # restart will just change the value but won't have any effect.
-    traffic_ctl.config().reset("records").exec()
-    # Validate the diff
-    # Test 17: Validate the diff
-    traffic_ctl.config().diff().validate_with_text("")
-    # Test 18: Validate the record was reset to its default value
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
+        self.assert_text(f"proxy.config.diags.debug.tags: {value}", "config", "get", "proxy.config.diags.debug.tags")
 
-    # # Test resetting when no records need resetting (all already at default)
-    # # Create a new instance with default values only
-    # traffic_ctl_default = Make_traffic_ctl(Test, None)
-    # traffic_ctl_default.config().reset("proxy.config.diags.debug.enabled").validate_with_text(
-    #     "No records to reset (all matching records are already at default values)")
+    def verify_reset(self) -> None:
+        """Verify dotted, partial, all-record, and YAML-style reset paths."""
 
-    ##### CONFIG RESET with YAML-style paths (records.* format)
-    # Test 19: Set a record to non-default first
-    traffic_ctl.config().set("proxy.config.diags.debug.tags", "yaml_test").exec()
-    # Test 20: Reset using YAML-style path (records.diags.debug.tags instead of proxy.config.diags.debug.tags)
-    traffic_ctl.config().reset("records.diags.debug.tags").validate_with_text(
-        "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync "
-        "configuration, restart is not required")
-    # Test 21: Validate the record was reset to its default value
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
+        reset_message = (
+            "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync "
+            "configuration, restart is not required")
+        self.assert_text(reset_message, "config", "reset", "proxy.config.diags.debug.tags")
+        self.assert_debug_tags("http|dns")
 
-    # Test 22: Reset using YAML-style partial path (records.diags)
-    traffic_ctl.config().set("proxy.config.diags.debug.tags", "yaml_partial_test").exec()
-    traffic_ctl.config().set("proxy.config.diags.debug.enabled", "1").exec()
-    # Test 23: Reset using records.diags (YAML format)
-    traffic_ctl.config().reset("records.diags").validate_contains_all(
-        "Set proxy.config.diags.debug.tags", "Set proxy.config.diags.debug.enabled")
-    # Test 24: Validate record was reset
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
+        self.set_record("proxy.config.diags.debug.tags", "rpc")
+        result = self.command("config", "reset", "proxy.config.diags")
+        assert "Set proxy.config.diags.debug.tags" in result.stdout
+        assert "Set proxy.config.diags.debug.enabled" in result.stdout
+        self.assert_debug_tags("http|dns")
 
-    # Test 25: Make sure that the command returns an exit code of 2
-    traffic_ctl.config().get("invalid.should.set.the.exit.code.to.2").validate_with_exit_code(2)
-    urtest.execute()
+        self.set_record("proxy.config.diags.debug.tags", "rpc")
+        self.command("config", "reset", "records")
+        self.assert_text("", "config", "diff")
+        self.assert_debug_tags("http|dns")
+
+        self.set_record("proxy.config.diags.debug.tags", "yaml_test")
+        self.assert_text(reset_message, "config", "reset", "records.diags.debug.tags")
+        self.assert_debug_tags("http|dns")
+
+        self.set_record("proxy.config.diags.debug.tags", "yaml_partial_test")
+        self.set_record("proxy.config.diags.debug.enabled", "1")
+        result = self.command("config", "reset", "records.diags")
+        assert "Set proxy.config.diags.debug.tags" in result.stdout
+        assert "Set proxy.config.diags.debug.enabled" in result.stdout
+        self.assert_debug_tags("http|dns")
+
+        self.command("config", "get", "invalid.should.set.the.exit.code.to.2", expected=2)
+
+    def run(self) -> None:
+        """Exercise configuration display and mutation commands."""
+
+        self._ats.start()
+        self.verify_get_match_diff_and_describe()
+        self.verify_reset()
+
+
+def test_traffic_ctl_config_output(ats_factory: ATSFactory) -> None:
+    """traffic_ctl formats configuration output and resets values correctly."""
+
+    ConfigOutputScenario(ats_factory).run()

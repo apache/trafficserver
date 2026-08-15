@@ -1,0 +1,107 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, body-remap-fail]]}}
+        client-request: &remap-fail-request
+          method: GET
+          url: /remap_fail
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response: &not-found
+          status: 404
+          headers: {fields: [[Content-Length, 13], [Connection, close]]}
+          content: {data: "404 Not Found", size: 13}
+        proxy-response: {status: 404}
+
+      - all: {headers: {fields: [[uuid, body-remap-success]]}}
+        client-request:
+          method: GET
+          url: /remap_success
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response: *not-found
+        proxy-response: &custom-not-found
+          status: 404
+          content: {data: "Custom body found\n", size: 18}
+
+      - all: {headers: {fields: [[uuid, body-plugin-success]]}}
+        client-request:
+          method: GET
+          url: /plugin_success
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response: *not-found
+        proxy-response: *custom-not-found
+
+      - all: {headers: {fields: [[uuid, body-plugin-fail]]}}
+        client-request:
+          method: GET
+          url: /plugin_fail
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response: *not-found
+        proxy-response: {status: 404}
+
+      - all: {headers: {fields: [[uuid, body-success-200]]}}
+        client-request:
+          method: GET
+          url: /200
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 6], [Connection, close]]}
+          content: {data: "200 OK", size: 6}
+        proxy-response:
+          status: 500
+          content: {data: "Custom body found\n", size: 18}
+
+      - all: {headers: {fields: [[uuid, body-binary]]}}
+        client-request:
+          method: GET
+          url: /remap_binary
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response: *not-found
+        proxy-response:
+          status: 404
+          content: {data: "BeforeNUL\0AfterNUL_AAAAAAAAAAAAAAAAAAAAAAAA", size: 43}
+
+      - all: {headers: {fields: [[uuid, body-fetch-custom]]}}
+        client-request:
+          method: GET
+          url: /404.html
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 18], [Connection, close]]}
+          content: {data: "Custom body found\n", size: 18}
+
+      - all: {headers: {fields: [[uuid, body-fetch-binary]]}}
+        client-request:
+          method: GET
+          url: /binary_body
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 43], [Connection, close]]}
+          content: {data: "BeforeNUL\0AfterNUL_AAAAAAAAAAAAAAAAAAAAAAAA", size: 43}

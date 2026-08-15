@@ -1,0 +1,116 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    global:
+      when: ua-req
+      do:
+      - with: ua-req-path
+        select:
+        - match: "delain"
+        - match: "nightwish"
+          do:
+          - proxy-reply: [ 401 , "Use another server" ]
+        - match: "lyria"
+          do:
+          - proxy-reply:
+              status: 401
+              reason: "Use another server"
+        - match: "within-temptation"
+          do:
+          - proxy-reply:
+              status: 416
+              reason: "They're not a teapot."
+              body: "Non teapots should use a different URL"
+        - otherwise:
+          do:
+          - proxy-reply: 403
+
+    remap:
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol:
+    stack: http
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, delain ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, nightwish ]]}}
+    client-request:
+      <<: *base-req
+      url: "/nightwish"
+      headers:
+        fields:
+        - [ Host, bad.ex ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  - all: { headers: { fields: [[ uuid, lyria ]]}}
+    client-request:
+      <<: *base-req
+      url: "/lyria"
+      headers:
+        fields:
+        - [ Host, bad.ex ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 401
+
+  - all: { headers: { fields: [[ uuid, within-tempation ]]}}
+    client-request:
+      <<: *base-req
+      url: "/within-temptation"
+      headers:
+        fields:
+        - [ Host, bad.ex ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 416
+
+urtest:
+  description: Verify the txn_box proxy-reply directive
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-reply-origin}
+  dns: {name: txn-box-reply-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-reply-client, process_config: {other_args: --verbose info}}
+  ats:
+    name: txn-box-reply-ts
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box|http
+      proxy.config.http.cache.http: 0
+    copy_to_config_dir: [reply.test.yaml]
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key meta.txn-box.global {CONFIG_DIR}/reply.test.yaml
+    remap_config:
+    - map http://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam=--key=meta.txn-box.remap @pparam={CONFIG_DIR}/reply.test.yaml
+    - map http://unmatched.ex/ http://unmatched.ex:{SERVER_HTTP_PORT}/

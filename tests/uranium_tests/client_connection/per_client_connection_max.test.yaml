@@ -1,0 +1,187 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: Enforce and exempt per-client connection limits
+  replay: http_slow_origins.replay.yaml
+  server:
+    name: per-client-max-origin
+  dns:
+    name: per-client-max-dns
+    process_config: {default: 127.0.0.1}
+  client:
+    name: per-client-max-client
+    process_config:
+      run_parallel: true
+      allow_errors: true
+    log_validation:
+      contains:
+      - {expression: first-request}
+      - {expression: second-request}
+      - {expression: third-request}
+      - {expression: fifth-request}
+  ats:
+    name: per-client-max-ts
+    process_config:
+      enable_cache: false
+      enable_tls: true
+    records_config:
+      proxy.config.ssl.client.verify.server.policy: PERMISSIVE
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: socket|http|net_queue|iocore_net|conn_track|cripts
+      proxy.config.net.per_client.max_connections_in: 3
+      proxy.config.http.keep_alive_enabled_in: 0
+    metric_checks:
+    - {metric: proxy.process.net.per_client.connections_throttled_in, value: '1', delay: 1}
+    - {metric: proxy.process.net.per_client.connections_exempt_in, value: '0', delay: 0}
+    - {metric: proxy.process.net.connection_tracker_table_size, value: '0', delay: 1}
+    log_validation:
+      diags_log:
+        contains:
+        - expression: 'WARNING:.*too many connections:.*limit=3'
+  variants:
+  - name: http-throttled
+    ats:
+      remap_config: ['map / http://127.0.0.1:{SERVER_HTTP_PORT}']
+    client:
+      return_code: 1
+      log_validation:
+        contains:
+        - {expression: first-request}
+        - {expression: second-request}
+        - {expression: third-request}
+        - {expression: fifth-request}
+        - {expression: 'Failed HTTP/1 transaction with key: fourth-request'}
+  - name: https-throttled
+    replay: https_slow_origins.replay.yaml
+    ats:
+      remap_config: ['map / https://127.0.0.1:{SERVER_HTTPS_PORT}']
+    client:
+      return_code: 1
+  - name: http2-throttled
+    replay: http2_slow_origins.replay.yaml
+    ats:
+      remap_config: ['map / https://127.0.0.1:{SERVER_HTTPS_PORT}']
+    client:
+      return_code: 1
+  - name: http-inline-exempt
+    ats:
+      records_config:
+        proxy.config.http.per_client.connection.exempt_list: 127.0.0.1,::1
+      remap_config: ['map / http://127.0.0.1:{SERVER_HTTP_PORT}']
+      metric_checks:
+      - {metric: proxy.process.net.per_client.connections_throttled_in, value: '0', delay: 1}
+      - {metric: proxy.process.net.per_client.connections_exempt_in, value: '5', delay: 0}
+      - {metric: proxy.process.net.connection_tracker_table_size, value: '0', delay: 1}
+      log_validation:
+        diags_log:
+          contains: []
+          excludes:
+          - {expression: 'WARNING:.*too many connections:'}
+    client:
+      log_validation:
+        contains:
+        - {expression: first-request}
+        - {expression: second-request}
+        - {expression: third-request}
+        - {expression: fourth-request}
+        - {expression: fifth-request}
+  - name: https-inline-not-exempt
+    replay: https_slow_origins.replay.yaml
+    ats:
+      records_config:
+        proxy.config.http.per_client.connection.exempt_list: 1.2.3.4,5.6.0.0/16
+      remap_config: ['map / https://127.0.0.1:{SERVER_HTTPS_PORT}']
+    client: {return_code: 1}
+  - name: http2-inline-exempt
+    replay: http2_slow_origins.replay.yaml
+    ats:
+      records_config:
+        proxy.config.http.per_client.connection.exempt_list: 0/0,::/0
+      remap_config: ['map / https://127.0.0.1:{SERVER_HTTPS_PORT}']
+      metric_checks:
+      - {metric: proxy.process.net.per_client.connections_throttled_in, value: '0', delay: 1}
+      - {metric: proxy.process.net.per_client.connections_exempt_in, value: '5', delay: 0}
+      - {metric: proxy.process.net.connection_tracker_table_size, value: '0', delay: 1}
+      log_validation:
+        diags_log:
+          contains: []
+          excludes:
+          - {expression: 'WARNING:.*too many connections:'}
+    client:
+      log_validation:
+        contains:
+        - {expression: first-request}
+        - {expression: second-request}
+        - {expression: third-request}
+        - {expression: fourth-request}
+        - {expression: fifth-request}
+  - name: http-file-exempt-localhost
+    requires: {plugins: [connection_exempt_list.so]}
+    ats:
+      copy_to_config_dir: [exempt_lists/exempt_localhost.yaml]
+      plugin_config:
+      - connection_exempt_list.so {CONFIG_DIR}/exempt_lists/exempt_localhost.yaml
+      remap_config: ['map / http://127.0.0.1:{SERVER_HTTP_PORT}']
+      metric_checks:
+      - {metric: proxy.process.net.per_client.connections_throttled_in, value: '0', delay: 1}
+      - {metric: proxy.process.net.per_client.connections_exempt_in, value: '5', delay: 0}
+      - {metric: proxy.process.net.connection_tracker_table_size, value: '0', delay: 1}
+      log_validation:
+        diags_log:
+          contains: []
+          excludes:
+          - {expression: 'WARNING:.*too many connections:'}
+    client:
+      log_validation:
+        contains:
+        - {expression: first-request}
+        - {expression: second-request}
+        - {expression: third-request}
+        - {expression: fourth-request}
+        - {expression: fifth-request}
+  - name: http-file-not-exempt
+    requires: {plugins: [connection_exempt_list.so]}
+    ats:
+      copy_to_config_dir: [exempt_lists/no_localhost.yaml]
+      plugin_config:
+      - connection_exempt_list.so {CONFIG_DIR}/exempt_lists/no_localhost.yaml
+      remap_config: ['map / http://127.0.0.1:{SERVER_HTTP_PORT}']
+    client: {return_code: 1}
+  - name: http-file-exempt-all
+    requires: {plugins: [connection_exempt_list.so]}
+    ats:
+      copy_to_config_dir: [exempt_lists/exempt_all.yaml]
+      plugin_config:
+      - connection_exempt_list.so {CONFIG_DIR}/exempt_lists/exempt_all.yaml
+      remap_config: ['map / http://127.0.0.1:{SERVER_HTTP_PORT}']
+      metric_checks:
+      - {metric: proxy.process.net.per_client.connections_throttled_in, value: '0', delay: 1}
+      - {metric: proxy.process.net.per_client.connections_exempt_in, value: '5', delay: 0}
+      - {metric: proxy.process.net.connection_tracker_table_size, value: '0', delay: 1}
+      log_validation:
+        diags_log:
+          contains: []
+          excludes:
+          - {expression: 'WARNING:.*too many connections:'}
+    client:
+      log_validation:
+        contains:
+        - {expression: first-request}
+        - {expression: second-request}
+        - {expression: third-request}
+        - {expression: fourth-request}
+        - {expression: fifth-request}

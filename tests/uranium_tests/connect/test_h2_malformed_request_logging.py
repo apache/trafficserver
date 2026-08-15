@@ -14,208 +14,136 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
+REPLAY_FILE = TEST_DIRECTORY / "replays" / "h2_malformed_request_logging.replay.yaml"
+MALFORMED_CLIENT = TEST_DIRECTORY / "malformed_h2_request_client.py"
 
 
-def test_h2_malformed_request_logging(urtest: UraniumTest) -> None:
-    '''
-    Verify malformed HTTP/2 requests are access logged.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class MalformedH2RequestLoggingScenario:
+    """Verify malformed HTTP/2 requests are logged before transaction creation."""
 
-    import os
-    import re
-    import sys
+    CASES = (
+        ("connect-missing-authority", "malformed-connect", "CONNECT", "/"),
+        ("get-missing-path", "malformed-get-missing-path", "GET", "https://missing-path.example/"),
+        (
+            "get-connection-header",
+            "malformed-get-connection",
+            "GET",
+            "https://bad-connection.example/bad-connection",
+        ),
+    )
 
-    urtest.Summary = 'Malformed HTTP/2 requests are logged before transaction creation'
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._services = services
+        self._server = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._valid_client = self.configure_valid_client(services)
 
-    class MalformedH2RequestLoggingTest:
-        """
-        Exercise malformed and valid HTTP/2 request logging paths.
-        """
+    @staticmethod
+    def configure_server(services: ServiceFactory) -> VerifierServer:
+        """Create the origin for the healthy control requests."""
 
-        REPLAY_FILE = 'replays/h2_malformed_request_logging.replay.yaml'
-        MALFORMED_CLIENT = 'malformed_h2_request_client.py'
-        MALFORMED_CASES = (
+        return services.verifier_server("malformed-request-server", REPLAY_FILE)
+
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure an HTTP/2-only listener and the malformed-request log format."""
+
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.storage_config.add_line("")
+        ats.records.update(
             {
-                'scenario': 'connect-missing-authority',
-                'uuid': 'malformed-connect',
-                'method': 'CONNECT',
-                'pqu': '/',
-                'description': 'Send malformed HTTP/2 CONNECT request',
-            },
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|hpack|http2",
+                "proxy.config.http.server_ports": f"{ats.https_port}:ssl",
+                "proxy.config.http.connect_ports": self._server.http_port,
+                "proxy.config.log.max_secs_per_buffer": 1,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}/")
+        ats.allow_private_connect(("CONNECT", "GET"))
+        ats.set_logging_yaml(
             {
-                'scenario': 'get-missing-path',
-                'uuid': 'malformed-get-missing-path',
-                'method': 'GET',
-                'pqu': 'https://missing-path.example/',
-                'description': 'Send malformed HTTP/2 GET request without :path',
-            },
-            {
-                'scenario': 'get-connection-header',
-                'uuid': 'malformed-get-connection',
-                'method': 'GET',
-                'pqu': 'https://bad-connection.example/bad-connection',
-                'description': 'Send malformed HTTP/2 GET request with Connection header',
-            },
+                "logging":
+                    {
+                        "formats":
+                            [
+                                {
+                                    "name": "malformed_h2_request",
+                                    "format": ("uuid=%<{uuid}cqh> cqpv=%<cqpv> cqhm=%<cqhm> "
+                                               "crc=%<crc> sstc=%<sstc> pqu=%<pqu>"),
+                                }
+                            ],
+                        "logs": [{
+                            "filename": "squid",
+                            "format": "malformed_h2_request",
+                            "mode": "ascii"
+                        }],
+                    }
+            })
+        return ats
+
+    def configure_valid_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the healthy GET and CONNECT control client."""
+
+        return services.verifier_client("valid-request-client", REPLAY_FILE, https_ports=[self._ats.https_port])
+
+    def malformed_request(self, scenario: str) -> str:
+        """Run the raw-frame client for one malformed shape."""
+
+        process = self._services.process(
+            f"malformed-client-{scenario}",
+            [sys.executable, MALFORMED_CLIENT, str(self._ats.https_port), scenario],
         )
+        result = process.run(timeout=10)
+        assert re.search(r"Received (RST_STREAM on stream 1 with error code 1|GOAWAY with error code [01])", result.stdout)
+        return result.output
 
-        def __init__(self):
-            self._setup_server()
-            self._setup_ts()
-            self._processes_started = False
-            urtest.Setup.CopyAs(self.MALFORMED_CLIENT, urtest.RunDirectory)
+    def validate_logs(self) -> None:
+        """Check malformed and healthy transactions in the access log."""
 
-        @property
-        def _squid_log_path(self) -> str:
-            return os.path.join(self._ts.Variables.LOGDIR, 'squid.log')
+        wait_for_file_lines(
+            self._ats.log_directory / "squid.log",
+            "crc=ERR_INVALID_REQ",
+            len(self.CASES),
+        )
+        squid_log = wait_for_file_lines(
+            self._ats.log_directory / "squid.log",
+            r"uuid=valid-get",
+            1,
+        )
+        for _scenario, uuid, method, url in self.CASES:
+            expected = (rf"uuid={uuid} cqpv=http/2 cqhm={method} "
+                        rf"crc=ERR_INVALID_REQ sstc=0 pqu={re.escape(url)}")
+            assert re.search(expected, squid_log)
+        assert re.search(r"uuid=valid-get cqpv=http/2 cqhm=GET ", squid_log)
+        if "uuid=valid-connect" in squid_log:
+            assert re.search(r"uuid=valid-connect .*crc=ERR_INVALID_REQ", squid_log) is None
+        assert re.search(r"uuid=valid-get .*crc=ERR_INVALID_REQ", squid_log) is None
 
-        def _setup_server(self):
-            self._server = urtest.MakeVerifierServerProcess('malformed-request-server', self.REPLAY_FILE)
-            for case in self.MALFORMED_CASES:
-                self._server.Streams.stdout += Testers.ExcludesExpression(
-                    f'uuid: {case["uuid"]}',
-                    f'{case["description"]} must not reach the origin server.',
-                )
-            self._server.Streams.stdout += Testers.ContainsExpression(
-                'GET /get HTTP/1.1\nuuid: valid-connect',
-                reflags=re.MULTILINE,
-                description='A valid CONNECT tunnel should still reach the origin.',
-            )
-            self._server.Streams.stdout += Testers.ContainsExpression(
-                r'GET /valid-get HTTP/1\.1\n(?:.*\n)*uuid: valid-get',
-                reflags=re.MULTILINE,
-                description='A valid non-CONNECT request should still reach the origin.',
-            )
+    def run(self) -> None:
+        """Run malformed wire requests followed by healthy control traffic."""
 
-        def _setup_ts(self):
-            self._ts = urtest.MakeATSProcess('ts', enable_tls=True, enable_cache=False)
-            self._ts.addDefaultSSLFiles()
-            self._ts.Disk.File(
-                os.path.join(self._ts.Variables.CONFIGDIR, 'storage.config'),
-                id='storage_config',
-                typename='ats:config',
-            )
-            self._ts.Disk.storage_config.AddLine('')
-            self._ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split('\n'))
+        self._server.start()
+        self._ats.start()
+        for scenario, _uuid, _method, _url in self.CASES:
+            self.malformed_request(scenario)
+        self._valid_client.run()
+        server_output = self._server.output
+        for _scenario, uuid, _method, _url in self.CASES:
+            assert f"uuid: {uuid}" not in server_output
+        assert re.search(r"GET /get HTTP/1\.1\nuuid: valid-connect", server_output)
+        assert re.search(r"GET /valid-get HTTP/1\.1\n(?:.*\n)*uuid: valid-get", server_output)
+        self.validate_logs()
+        assert "recv headers malformed request" in self._ats.traffic_out.read_text(errors="replace")
 
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|hpack|http2',
-                    'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
-                    'proxy.config.http.server_ports': f'{self._ts.Variables.ssl_port}:ssl',
-                    'proxy.config.http.connect_ports': self._server.Variables.http_port,
-                })
-            self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}/')
-            self._ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
-            self._ts.Disk.logging_yaml.AddLines(
-                """
-    logging:
-      formats:
-        - name: malformed_h2_request
-          format: 'uuid=%<{uuid}cqh> cqpv=%<cqpv> cqhm=%<cqhm> crc=%<crc> sstc=%<sstc> pqu=%<pqu>'
-      logs:
-        - filename: squid
-          format: malformed_h2_request
-          mode: ascii
-    """.split('\n'))
-            self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                'recv headers malformed request',
-                'ATS should reject malformed requests at the HTTP/2 layer.',
-            )
-            for index, case in enumerate(self.MALFORMED_CASES):
-                expected = (
-                    rf'uuid={case["uuid"]} cqpv=http/2 cqhm={case["method"]} '
-                    rf'crc=ERR_INVALID_REQ sstc=0 pqu={re.escape(case["pqu"])}')
-                tester = Testers.ContainsExpression(
-                    expected,
-                    f'{case["description"]} should be logged with ERR_INVALID_REQ.',
-                )
-                if index == 0:
-                    self._ts.Disk.squid_log.Content = tester
-                else:
-                    self._ts.Disk.squid_log.Content += tester
-            self._ts.Disk.squid_log.Content += Testers.ContainsExpression(
-                r'uuid=valid-connect cqpv=http/2 cqhm=CONNECT ',
-                'A valid HTTP/2 CONNECT should still use the normal transaction log path.',
-            )
-            self._ts.Disk.squid_log.Content += Testers.ContainsExpression(
-                r'uuid=valid-get cqpv=http/2 cqhm=GET ',
-                'A valid HTTP/2 GET should still use the normal transaction log path.',
-            )
-            self._ts.Disk.squid_log.Content += Testers.ExcludesExpression(
-                r'uuid=valid-connect .*crc=ERR_INVALID_REQ',
-                'Valid HTTP/2 CONNECT logging must not be marked as malformed.',
-            )
-            self._ts.Disk.squid_log.Content += Testers.ExcludesExpression(
-                r'uuid=valid-get .*crc=ERR_INVALID_REQ',
-                'Valid HTTP/2 GET logging must not be marked as malformed.',
-            )
 
-        def _add_malformed_request_runs(self):
-            for case in self.MALFORMED_CASES:
-                tr = urtest.AddTestRun(case['description'])
-                tr.Processes.Default.Command = (
-                    f'{sys.executable} {self.MALFORMED_CLIENT} {self._ts.Variables.ssl_port} {case["scenario"]}')
-                tr.Processes.Default.ReturnCode = 0
-                self._keep_support_processes_running(tr)
-                tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                    r'Received (RST_STREAM on stream 1 with error code 1|GOAWAY with error code [01])',
-                    'ATS should reject the malformed request at the HTTP/2 layer.',
-                )
+def test_h2_malformed_request_logging(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Malformed HTTP/2 requests receive ERR_INVALID_REQ access-log records."""
 
-        def _add_valid_request_run(self):
-            tr = urtest.AddTestRun('Send valid HTTP/2 requests')
-            tr.AddVerifierClientProcess('valid-request-client', self.REPLAY_FILE, https_ports=[self._ts.Variables.ssl_port])
-            self._keep_support_processes_running(tr)
-
-        def _await_malformed_log_entries(self):
-            tr = urtest.AddAwaitFileContainsTestRun(
-                'Await malformed request squid log entries',
-                self._squid_log_path,
-                'crc=ERR_INVALID_REQ',
-                desired_count=len(self.MALFORMED_CASES),
-            )
-            self._keep_support_processes_running(tr)
-
-        def _keep_support_processes_running(self, tr):
-            if self._processes_started:
-                tr.StillRunningAfter = self._server
-                tr.StillRunningAfter = self._ts
-                return
-
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-            self._processes_started = True
-
-        def run(self):
-            self._add_malformed_request_runs()
-            self._add_valid_request_run()
-            self._await_malformed_log_entries()
-
-    MalformedH2RequestLoggingTest().run()
-    urtest.execute()
+    MalformedH2RequestLoggingScenario(ats_factory, services).run()

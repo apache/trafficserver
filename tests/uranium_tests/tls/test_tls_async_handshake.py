@@ -14,90 +14,95 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProceduralContext, ServiceFactory, wait_for_file_lines
 
 
-def test_tls_async_handshake(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class AsyncHandshakeScenario:
+    """Drive a TLS handshake through the OpenSSL asynchronous job hook."""
 
-    import os
+    def __init__(
+        self,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        context: ProceduralContext,
+        curl: Curl,
+    ) -> None:
+        self._curl = curl
+        self._plugin = context.runtime.resolve_artifact(context.test_directory, "{AtsTestPluginsDir}/async_handshake.so")
+        if not self._plugin.is_file():
+            pytest.skip(f"async handshake test plugin is absent: {self._plugin}")
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test TLS handshakes through OpenSSL's async job interface.
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Serve the request made after the asynchronous handshake."""
 
-    async_handshake = os.path.join(urtest.Variables.AtsTestPluginsDir, 'async_handshake.so')
+        origin = services.origin("origin")
+        origin.add_response(
+            {
+                "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                        "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"),
+                "body": "ok",
+            },
+        )
+        return origin
 
-    urtest.SkipUnless(
-        Condition.HasOpenSSLVersion('1.1.1'),
-        Condition.IsOpenSSL(),
-        Condition(lambda: os.path.isfile(async_handshake), async_handshake + " not found."),
-    )
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Load the async hook and enable OpenSSL asynchronous handshakes."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server")
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_custom_plugin(self._plugin)
+        ats.plugin_config.add_line(self._plugin.name)
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.records.update(
+            {
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.ssl.async.handshake.enabled": 1,
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "ssl|http",
+            })
+        return ats
 
-    if os.path.isfile(async_handshake):
-        urtest.PrepareTestPlugin(async_handshake, ts)
+    def run(self) -> None:
+        """Perform a request and require evidence that the async job resumed."""
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers":
-                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "ok"
-        })
+        self._origin.start()
+        self._ats.start()
+        result = self._curl.run(
+            "--insecure",
+            "--verbose",
+            "--header",
+            "uuid: basic",
+            "--header",
+            "Host: example.com",
+            f"https://127.0.0.1:{self._ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 200" in result.output or "HTTP/2 200" in result.output
+        wait_for_file_lines(self._ats.traffic_out, "resumed OpenSSL async job", 1)
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+def test_tls_async_handshake(
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    procedural_context: ProceduralContext,
+    curl: Curl,
+) -> None:
+    """OpenSSL asynchronous TLS handshakes resume and complete."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.ssl.async.handshake.enabled': 1,
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'ssl|http'
-        })
-
-    tr = urtest.AddTestRun("Run-Test")
-    tr.MakeCurlCommand("-k -v -H uuid:basic -H host:example.com  https://127.0.0.1:{0}/".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression(r"HTTP/(2|1\.1) 200", "Request succeeds")
-    tr.StillRunningAfter = server
-
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression("resumed OpenSSL async job", "The OpenSSL async job resumes")
-    urtest.execute()
+    version = subprocess.run(("openssl", "version"), capture_output=True, text=True, check=False).stdout
+    if "BoringSSL" in version:
+        pytest.skip("the async job interface requires OpenSSL")
+    AsyncHandshakeScenario(ats_factory, services, procedural_context, curl).run()

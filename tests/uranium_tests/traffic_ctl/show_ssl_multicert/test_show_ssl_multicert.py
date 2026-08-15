@@ -14,97 +14,46 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, assert_matches_gold
 
 
-def test_show_ssl_multicert(urtest: UraniumTest) -> None:
-    '''
-    Test the traffic_ctl config ssl-multicert show command.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ShowSSLMulticertScenario:
+    """Verify traffic_ctl renders ssl_multicert configuration as YAML and JSON."""
 
-    urtest.Summary = 'Test traffic_ctl config ssl-multicert show command.'
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._source = Path(__file__).parent
+        self._ats = self.configure_ats(ats_factory)
 
-    class ShowSSLMulticert:
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure TLS with the default Uranium certificate."""
 
-        def __init__(self):
-            self.setup_ts()
-            self.setup_show_default()
-            self.setup_show_json()
-            self.setup_show_yaml()
+        ats = ats_factory.create("ts", enable_cache=False, enable_tls=True)
+        ats.add_default_ssl_files()
+        return ats
 
-        def setup_ts(self):
-            self._ts = urtest.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
-            self._ts.addDefaultSSLFiles()
-            self._ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - ssl_cert_name: server.pem
-        dest_ip: "*"
-        ssl_key_name: server.key
-    """.split("\n"))
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': f'{self._ts.Variables.SSLDir}',
-                    'proxy.config.ssl.server.private_key.path': f'{self._ts.Variables.SSLDir}',
-                })
+    def verify_output(self, option: str | None, gold: str) -> None:
+        """Run the show command and compare its selected serialization."""
 
-        def setup_show_default(self):
-            tr = urtest.AddTestRun("Test ssl-multicert show (default YAML format)")
-            tr.Processes.Default.Command = 'traffic_ctl config ssl-multicert show'
-            tr.Processes.Default.Streams.stdout = "gold/show_yaml.gold"
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.StillRunningAfter = self._ts
+        arguments = ["config", "ssl-multicert", "show"]
+        if option is not None:
+            arguments.append(option)
+        result = self._ats.traffic_ctl(*arguments)
+        assert result.returncode == 0, result.output
+        assert_matches_gold(result.stdout, self._source / "gold" / gold)
 
-        def setup_show_json(self):
-            # Test with explicit --json flag.
-            tr = urtest.AddTestRun("Test ssl-multicert show --json")
-            tr.Processes.Default.Command = 'traffic_ctl config ssl-multicert show --json'
-            tr.Processes.Default.Streams.stdout = "gold/show_json.gold"
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.StillRunningAfter = self._ts
+    def run(self) -> None:
+        """Exercise default, long, and short output-format options."""
 
-            # Test with short -j flag.
-            tr = urtest.AddTestRun("Test ssl-multicert show -j")
-            tr.Processes.Default.Command = 'traffic_ctl config ssl-multicert show -j'
-            tr.Processes.Default.Streams.stdout = "gold/show_json.gold"
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.StillRunningAfter = self._ts
+        self._ats.start()
+        for option in (None, "--yaml", "-y"):
+            self.verify_output(option, "show_yaml.gold")
+        for option in ("--json", "-j"):
+            self.verify_output(option, "show_json.gold")
 
-        def setup_show_yaml(self):
-            # Test with --yaml flag.
-            tr = urtest.AddTestRun("Test ssl-multicert show --yaml")
-            tr.Processes.Default.Command = 'traffic_ctl config ssl-multicert show --yaml'
-            tr.Processes.Default.Streams.stdout = "gold/show_yaml.gold"
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.StillRunningAfter = self._ts
 
-            # Test with short -y flag.
-            tr = urtest.AddTestRun("Test ssl-multicert show -y")
-            tr.Processes.Default.Command = 'traffic_ctl config ssl-multicert show -y'
-            tr.Processes.Default.Streams.stdout = "gold/show_yaml.gold"
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.StillRunningAfter = self._ts
+def test_show_ssl_multicert(ats_factory: ATSFactory) -> None:
+    """ssl-multicert show supports its YAML and JSON spellings."""
 
-    ShowSSLMulticert()
-    urtest.execute()
+    ShowSSLMulticertScenario(ats_factory).run()

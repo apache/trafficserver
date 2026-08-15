@@ -14,117 +14,90 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+import time
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_metric_response_000(urtest: UraniumTest) -> None:
-    """Verify the proxy.process.http.000_responses stat is incremented for client aborts."""
+class MetricResponse000Scenario:
+    """Increment the 000-response metric for an aborted partial request."""
 
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        self._curl = curl
+        self._directory = Path(__file__).parent
+        self._origin = self.configure_origin()
+        self._ats = self.configure_ats()
 
-    import os
-    import sys
+    def configure_origin(self) -> OriginServer:
+        """Create the origin response used by the successful control request."""
 
-    urtest.Summary = __doc__
-
-    class MetricResponse000Test:
-        """Verify that the 000_responses stat is incremented when a client aborts."""
-
-        _abort_client = 'abort_client.py'
-        _server_counter = 0
-        _ts_counter = 0
-
-        def __init__(self):
-            """Configure and run the test."""
-            self._configure_server()
-            self._configure_traffic_server()
-            self._configure_abort_client()
-            self._configure_successful_request()
-            self._verify_000_metric()
-
-        def _configure_server(self) -> None:
-            """Configure the origin server."""
-            self._server = urtest.MakeOriginServer(f'server-{MetricResponse000Test._server_counter}')
-            MetricResponse000Test._server_counter += 1
-
-            request_header = {
+        origin = self._services.origin("origin")
+        origin.add_response(
+            {
                 "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-                "timestamp": "1469733493.993",
                 "body": ""
-            }
-            response_header = {
+            },
+            {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
-                "timestamp": "1469733493.993",
                 "body": ""
-            }
-            self._server.addResponse("sessionlog.json", request_header, response_header)
+            },
+        )
+        return origin
 
-        def _configure_traffic_server(self) -> None:
-            """Configure ATS."""
-            self._ts = urtest.MakeATSProcess(f'ts-{MetricResponse000Test._ts_counter}', enable_cache=False)
-            MetricResponse000Test._ts_counter += 1
+    def configure_ats(self) -> ATS:
+        """Configure an uncached reverse proxy for the origin."""
 
-            self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}/')
-            self._ts.Disk.records_config.update({
-                'proxy.config.diags.debug.enabled': 0,
-                'proxy.config.diags.debug.tags': 'http',
-            })
+        ats = self._ats_factory.create("ts", enable_cache=False)
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "http",
+        })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        return ats
 
-        def _configure_abort_client(self) -> None:
-            """Configure a client to send a partial request and abort."""
-            tr = urtest.AddTestRun('Trigger a client abort with partial request')
+    def abort_partial_request(self) -> None:
+        """Send an incomplete request and close the connection."""
 
-            tr.Setup.CopyAs(os.path.join(urtest.TestDirectory, self._abort_client), urtest.RunDirectory)
+        client = self._services.process(
+            "abort-client",
+            [sys.executable, self._directory / "abort_client.py", "127.0.0.1",
+             str(self._ats.http_port)],
+        )
+        client.run()
 
-            p = tr.Processes.Default
-            p.Command = f'{sys.executable} {self._abort_client} 127.0.0.1 {self._ts.Variables.port}'
-            p.ReturnCode = 0
+    def send_control_request(self) -> None:
+        """Verify an ordinary completed transaction still succeeds."""
 
-            self._ts.StartBefore(self._server)
-            p.StartBefore(self._ts)
+        result = self._curl.get(self._ats, options=("-s", "-o", "/dev/null", "-w", "%{http_code}"))
+        assert result.returncode == 0, result.output
+        assert result.stdout == "200"
 
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+    def verify_metric(self) -> None:
+        """Wait until ATS publishes exactly one 000 response."""
 
-        def _configure_successful_request(self) -> None:
-            """Send a successful request to verify it doesn't increment 000 stat."""
-            tr = urtest.AddTestRun('Send a successful request')
-            tr.Processes.Default.Command = f'curl -s -o /dev/null -w "%{{http_code}}" http://127.0.0.1:{self._ts.Variables.port}/'
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression('200', 'Expected 200 response')
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            result = self._ats.traffic_ctl("metric", "get", "proxy.process.http.000_responses")
+            if result.returncode == 0 and result.stdout.rstrip().endswith(" 1"):
+                return
+            time.sleep(0.1)
+        raise AssertionError(f"000-response metric did not reach one:\n{result.output}")
 
-        def _verify_000_metric(self) -> None:
-            """Verify the 000_responses stat is incremented."""
-            # Wait for stats to propagate.
-            tr = urtest.AddTestRun('Wait for stats')
-            tr.Processes.Default.Command = 'sleep 2'
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self._ts
+    def run(self) -> None:
+        """Run the aborted request, control request, and metric check."""
 
-            # Verify the 000_responses stat is non-zero.
-            tr = urtest.AddTestRun('Check 000_responses stat')
-            tr.Processes.Default.Command = 'traffic_ctl metric get proxy.process.http.000_responses'
-            tr.Processes.Default.Env = self._ts.Env
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                'proxy.process.http.000_responses 1', 'The 000_responses stat should be 1')
-            tr.StillRunningAfter = self._ts
+        self._origin.start()
+        self._ats.start()
+        self.abort_partial_request()
+        self.send_control_request()
+        self.verify_metric()
 
-    MetricResponse000Test()
-    urtest.execute()
+
+def test_metric_response_000(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Client aborts increment proxy.process.http.000_responses."""
+
+    MetricResponse000Scenario(ats_factory, services, curl).run()

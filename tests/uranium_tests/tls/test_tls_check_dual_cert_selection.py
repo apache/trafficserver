@@ -14,170 +14,104 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import shlex
+
+from tools.uranium.services import ATS, ATSFactory
+
+SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
 
-def test_tls_check_dual_cert_selection(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class DualCertSelectionScenario:
+    """Verify ATS selects between ECDSA and RSA certificates."""
 
-    import os
-    import re
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test ATS offering both RSA and EC certificates
-    '''
+    @staticmethod
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Install paired certificates and prefer the ECDSA cipher."""
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server", ssl=True)
-    dns = urtest.MakeDNServer("dns")
+        ats = ats_factory.create("ts", enable_tls=True)
+        names = (
+            "signed-foo.pem",
+            "signed-foo.key",
+            "signed-foo-ec.pem",
+            "signed-foo-ec.key",
+            "signed-san.pem",
+            "signed-san.key",
+            "signed-san-ec.pem",
+            "signed-san-ec.key",
+            "signer.pem",
+            "signer.key",
+            "server.pem",
+            "server.key",
+        )
+        ats.copy_to_ssl(*(SSL_DIRECTORY / name for name in names))
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                "  - ssl_cert_name: signed-foo-ec.pem,signed-foo.pem",
+                "    ssl_key_name: signed-foo-ec.key,signed-foo.key",
+                "  - ssl_cert_name: signed-san-ec.pem,signed-san.pem",
+                "    ssl_key_name: signed-san-ec.key,signed-san.key",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.cipher_suite": ("ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256"),
+                "proxy.config.diags.debug.tags": "ssl",
+                "proxy.config.diags.debug.enabled": 1,
+            })
+        return ats
 
-    request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+    @staticmethod
+    def certificate_prefix(name: str) -> str:
+        """Return the PEM certificate portion before its end marker."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signed-foo-ec.pem")
-    ts.addSSLfile("ssl/signed-foo-ec.key")
-    ts.addSSLfile("ssl/signed-san.pem")
-    ts.addSSLfile("ssl/signed-san.key")
-    ts.addSSLfile("ssl/signed-san-ec.pem")
-    ts.addSSLfile("ssl/signed-san-ec.key")
-    ts.addSSLfile("ssl/signer.pem")
-    ts.addSSLfile("ssl/signer.key")
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
+        content = (SSL_DIRECTORY / name).read_text()
+        return content[:content.index("END CERTIFICATE-----")]
 
-    ts.Disk.remap_config.AddLine('map / https://foo.com:{1}'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
+    def handshake(self, hostname: str, *, rsa_only: bool = False) -> str:
+        """Perform a TLS 1.2 handshake for @a hostname."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - ssl_cert_name: signed-foo-ec.pem,signed-foo.pem
-        ssl_key_name: signed-foo-ec.key,signed-foo.key
-      - ssl_cert_name: signed-san-ec.pem,signed-san.pem
-        ssl_key_name: signed-san-ec.key,signed-san.key
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        cipher = " -cipher ECDHE-RSA-AES128-GCM-SHA256" if rsa_only else ""
+        script = (
+            f"printf 'foo\\n' | openssl s_client -tls1_2 -servername {shlex.quote(hostname)}"
+            f"{cipher} -connect 127.0.0.1:{self._ats.https_port}")
+        result = self._ats.run_shell(script)
+        assert result.returncode == 0, result.output
+        return result.output
 
-    # Case 1, global config policy=permissive properties=signature
-    #         override for foo.com policy=enforced properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256',
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.diags.debug.tags': 'ssl',
-            'proxy.config.diags.debug.enabled': 1
-        })
+    def run(self) -> None:
+        """Check paired and single-algorithm SNI names."""
 
-    dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
-    dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
+        self._ats.start()
+        assert self.certificate_prefix("signed-foo-ec.pem") in self.handshake("foo.com")
+        assert self.certificate_prefix("signed-foo.pem") in self.handshake("foo.com", rsa_only=True)
 
-    foo_ec_string = ""
-    foo_rsa_string = ""
-    san_ec_string = ""
-    san_rsa_string = ""
-    with open(os.path.join(urtest.TestDirectory, 'ssl', 'signed-foo-ec.pem'), 'r') as myfile:
-        file_string = myfile.read()
-        cert_end = file_string.find("END CERTIFICATE-----")
-        foo_ec_string = re.escape(file_string[0:cert_end])
-    with open(os.path.join(urtest.TestDirectory, 'ssl', 'signed-foo.pem'), 'r') as myfile:
-        file_string = myfile.read()
-        cert_end = file_string.find("END CERTIFICATE-----")
-        foo_rsa_string = re.escape(file_string[0:cert_end])
-    with open(os.path.join(urtest.TestDirectory, 'ssl', 'signed-san-ec.pem'), 'r') as myfile:
-        file_string = myfile.read()
-        cert_end = file_string.find("END CERTIFICATE-----")
-        san_ec_string = re.escape(file_string[0:cert_end])
-    with open(os.path.join(urtest.TestDirectory, 'ssl', 'signed-san.pem'), 'r') as myfile:
-        file_string = myfile.read()
-        cert_end = file_string.find("END CERTIFICATE-----")
-        san_rsa_string = re.escape(file_string[0:cert_end])
+        san_ec = self.handshake("two.com")
+        assert self.certificate_prefix("signed-san-ec.pem") in san_ec
+        assert "CN=group.com" in san_ec
 
-    # Should receive a EC cert since ATS cipher list prefers EC
-    tr = urtest.AddTestRun("Default for foo should return EC cert")
-    tr.Setup.Copy("ssl/signer.pem")
-    tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -connect 127.0.0.1:{0}".format(
-        ts.Variables.ssl_port, foo_ec_string)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(dns)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_ec_string, "Should select EC cert", reflags=re.S | re.M)
+        san_rsa = self.handshake("two.com", rsa_only=True)
+        assert self.certificate_prefix("signed-san.pem") in san_rsa
+        assert "CN=group.com" in san_rsa
 
-    # Should receive a RSA cert
-    tr = urtest.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-    tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
+        rsa_only = self.handshake("rsa.com")
+        assert self.certificate_prefix("signed-san.pem") in rsa_only
+        assert "CN=group.com" in rsa_only
 
-    # Should receive a EC cert
-    tr = urtest.AddTestRun("Default for two.com should return EC cert")
-    tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -connect 127.0.0.1:{0}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
+        ec_only = self.handshake("ec.com")
+        assert self.certificate_prefix("signed-san-ec.pem") in ec_only
+        assert "CN=group.com" in ec_only
 
-    # Should receive a RSA cert
-    tr = urtest.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-    tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
 
-    # Should receive a RSA cert
-    tr = urtest.AddTestRun("rsa.com only in rsa cert")
-    tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername rsa.com -connect 127.0.0.1:{0}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_rsa_string, "Should select RSA cert", reflags=re.S | re.M)
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
+def test_tls_check_dual_cert_selection(ats_factory: ATSFactory) -> None:
+    """ATS selects the matching ECDSA or RSA certificate for each client."""
 
-    # Should receive a EC cert
-    tr = urtest.AddTestRun("ec.com only in ec cert")
-    tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername ec.com -connect 127.0.0.1:{0}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression(san_ec_string, "Should select EC cert", reflags=re.S | re.M)
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com", "Should select a group SAN")
-    urtest.execute()
+    DualCertSelectionScenario(ats_factory).run()

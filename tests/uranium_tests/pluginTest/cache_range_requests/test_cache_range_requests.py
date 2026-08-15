@@ -13,378 +13,197 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify cache_range_requests keys, statuses, and long-key spill handling."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import re
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
 
-def test_cache_range_requests(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CacheRangeRequestsScenario:
+    """Exercise range caching and parent-selection key options."""
 
-    urtest.Summary = '''
-    Basic cache_range_requests plugin test
-    '''
+    BODY = "lets go surfin now"
+    LONG_PATH = "A" * 16400
 
-    # Test description:
-    # Preload the cache with the entire asset to be range requested.
-    # Reload remap rule with cache_range_requests plugin
-    # Request content through the cache_range_requests plugin
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-    urtest.SkipUnless(
-        Condition.PluginExists('cache_range_requests.so'),
-        Condition.PluginExists('header_rewrite.so'),
-        Condition.PluginExists('xdebug.so'),
-    )
-    urtest.ContinueOnFail = False
-    urtest.testName = "cache_range_requests"
+    @classmethod
+    def add_response(
+        cls,
+        origin: OriginServer,
+        uuid: str | None,
+        *,
+        status: str,
+        body: str,
+        content_range: str | None = None,
+        etag: str = '"path"',
+    ) -> None:
+        """Add a UUID-keyed cacheable origin response."""
 
-    # Define and configure ATS
-    ts = urtest.MakeATSProcess("ts")
+        uuid_line = "" if uuid is None else f"uuid: {uuid}\r\n"
+        fields = [f"HTTP/1.1 {status}", "Connection: close"]
+        if status.startswith(("200", "206")):
+            fields.extend(("Cache-Control: max-age=500", f"Etag: {etag}"))
+        if content_range is not None:
+            fields.extend(("Accept-Ranges: bytes", f"Content-Range: bytes {content_range}"))
+        origin.add_response(
+            {"headers": f"GET /path HTTP/1.1\r\nHost: www.example.com\r\n{uuid_line}\r\n"},
+            {
+                "headers": "\r\n".join(fields) + "\r\n\r\n",
+                "body": body
+            },
+        )
 
-    # Define and configure origin server
-    server = urtest.MakeOriginServer("server", lookup_key="{%uuid}")
+    @classmethod
+    def configure_server(cls, services: ServiceFactory) -> OriginServer:
+        """Create full, ranged, parent-keyed, long-key, and 404 responses."""
 
-    # default root
-    req_chk = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+        origin = services.origin("origin", lookup_key="{%uuid}")
+        cls.add_response(origin, "full", status="200 OK", body=cls.BODY)
+        cls.add_response(origin, "inner", status="206 Partial Content", body=cls.BODY[7:15], content_range="7-15/18")
+        cls.add_response(origin, "frange", status="206 Partial Content", body=cls.BODY, content_range="0-18/18")
+        cls.add_response(origin, "last", status="206 Partial Content", body=cls.BODY[-5:], content_range="13-18/18")
+        cls.add_response(origin, "pselect", status="206 Partial Content", body=cls.BODY[1:10], content_range="1-10/19")
+        cls.add_response(
+            origin,
+            "long_key",
+            status="206 Partial Content",
+            body=cls.BODY,
+            content_range="0-17/18",
+            etag='"longkey"',
+        )
+        cls.add_response(origin, None, status="404 Not Found", body="Not Found")
+        return origin
 
-    res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure standard, parent-selection, deprecated, and long-key mappings."""
 
-    server.addResponse("sessionlog.json", req_chk, res_chk)
-
-    body = "lets go surfin now"
-
-    req_full = {
-        "headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "uuid: full\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_full = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=500\r\n" + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_full, res_full)
-
-    block_bytes = 7
-    bodylen = len(body)
-
-    inner_str = "7-15"
-
-    req_inner = {
-        "headers":
-            "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(inner_str) +
-            "uuid: inner\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_inner = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
-            "Content-Range: bytes {0}/{1}\r\n".format(inner_str, bodylen) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body[7:15]
-    }
-
-    server.addResponse("sessionlog.json", req_inner, res_inner)
-
-    frange_str = "0-"
-
-    req_frange = {
-        "headers":
-            "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(frange_str) +
-            "uuid: frange\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_frange = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_frange, res_frange)
-
-    last_str = "-5"
-
-    req_last = {
-        "headers":
-            "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(last_str) +
-            "uuid: last\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_last = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=200\r\n" +
-            "Content-Range: bytes {0}-{1}/{1}\r\n".format(bodylen - 5, bodylen) + "Connection: close\r\n" + 'Etag: "path"\r\n' +
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body[-5:]
-    }
-
-    server.addResponse("sessionlog.json", req_last, res_last)
-
-    pselect_str = "1-10"
-
-    req_pselect = {
-        "headers":
-            "GET /path HTTP/1.1\r\n" + "Host: parentselect\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(pselect_str) +
-            "uuid: pselect\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_pselect = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=200\r\n" +
-            "Content-Range: bytes {}/19\r\n".format(pselect_str) + "Connection: close\r\n" + 'Etag: "path"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body[1:10]
-    }
-
-    server.addResponse("sessionlog.json", req_pselect, res_pselect)
-
-    req_psd = {
-        "headers":
-            "GET /path HTTP/1.1\r\n" + "Host: psd\r\n" + "Accept: */*\r\n" + "Range: bytes={}\r\n".format(pselect_str) +
-            "uuid: pselect\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    server.addResponse("sessionlog.json", req_psd, res_pselect)
-
-    # long cache key test: URL path long enough to push cache key over 16384 bytes
-    long_path = 'A' * 16400
-    req_long_key = {
-        "headers":
-            "GET /{} HTTP/1.1\r\n".format(long_path) + "Host: www.longkey.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-17\r\n" +
-            "uuid: long_key\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_long_key = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=500\r\n" +
-            "Content-Range: bytes 0-17/{}\r\n".format(len(body)) + "Connection: close\r\n" + 'Etag: "longkey"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_long_key, res_long_key)
-
-    # cache range requests plugin remap
-    ts.Setup.CopyAs('reason.conf', urtest.RunDirectory)
-    ts.Disk.remap_config.AddLines(
-        [
-            'map http://www.example.com http://127.0.0.1:{}'.format(server.Variables.Port) +
-            ' @plugin=header_rewrite.so @pparam={}/reason.conf @plugin=cache_range_requests.so'.format(urtest.RunDirectory),
-
-            # long cache key: URL alone exceeds the 16384-byte stack buffer
-            'map http://www.longkey.com http://127.0.0.1:{}'.format(server.Variables.Port) + ' @plugin=cache_range_requests.so',
-
-            # parent select cache key option
-            'map http://parentselect http://127.0.0.1:{}'.format(server.Variables.Port) +
-            ' @plugin=cache_range_requests.so @pparam=--ps-cachekey',
-
-            # deprecated
-            'map http://psd http://127.0.0.1:{}'.format(server.Variables.Port) +
-            ' @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url',
-        ])
-
-    # cache debug
-    ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-parentselection-key')
-
-    # minimal configuration
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'cache_range_requests|http',
+        ats = ats_factory.create("ats")
+        required = ("cache_range_requests.so", "header_rewrite.so", "xdebug.so")
+        if not all(ats.plugin_exists(plugin) for plugin in required):
+            pytest.skip("cache_range_requests.so, header_rewrite.so, and xdebug.so are required")
+        ats.copy_to_config("reason.conf")
+        origin = f"http://127.0.0.1:{self._origin.port}"
+        ats.remap_config.add_lines(
+            (
+                f"map http://www.example.com {origin} @plugin=header_rewrite.so "
+                f"@pparam={ats.config_directory}/reason.conf @plugin=cache_range_requests.so",
+                f"map http://www.longkey.com {origin} @plugin=cache_range_requests.so",
+                f"map http://parentselect {origin} @plugin=cache_range_requests.so @pparam=--ps-cachekey",
+                f"map http://psd {origin} @plugin=cache_range_requests.so @pparam=ps_mode:cache_key_url",
+            ))
+        ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-parentselection-key")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_range_requests|http",
         })
+        return ats
 
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
+    def request(
+        self,
+        host: str,
+        path: str,
+        *,
+        byte_range: str | None = None,
+        uuid: str | None = None,
+        debug: str = "x-cache",
+    ) -> CommandResult:
+        """Issue a proxied range request and return its complete result."""
 
-    # 0 Test - Fetch whole asset into cache
-    tr = urtest.AddTestRun("full asset cache miss bypass")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -H "uuid: full"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/full.stderr.gold"
-    tr.StillRunningAfter = ts
+        arguments = [
+            "--silent",
+            "--show-error",
+            "--dump-header",
+            "-",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+            "--header",
+            f"x-debug: {debug}",
+        ]
+        if byte_range is not None:
+            arguments.extend(("--range", byte_range))
+        if uuid is not None:
+            arguments.extend(("--header", f"uuid: {uuid}"))
+        arguments.append(f"http://{host}{path}")
+        return self._curl.run_for(self._ats, *arguments)
 
-    # test inner range
-    # 1 Test - Fetch range into cache
-    tr = urtest.AddTestRun("inner range cache miss")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/inner.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 7-15/18", "expected content-range header")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
-    tr.StillRunningAfter = ts
+    @staticmethod
+    def assert_range(result: CommandResult, *, cache: str, content_range: str, body: str) -> None:
+        """Verify one successful plugin range response."""
 
-    # 2 Test - Fetch from cache
-    tr = urtest.AddTestRun("inner range cache hit")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(inner_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/inner.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 7-15/18", "expected content-range header")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
-    tr.StillRunningAfter = ts
+        assert result.returncode == 0, result.output
+        assert "206 Foo Bar" in result.stdout, result.output
+        assert f"X-Cache: {cache}" in result.stdout, result.output
+        assert f"Content-Range: bytes {content_range}" in result.stdout, result.output
+        assert body in result.stdout, result.output
 
-    # full range
+    def run(self) -> None:
+        """Exercise misses, hits, errors, parent keys, and the spill path."""
 
-    # 3 Test - 0- request
-    tr = urtest.AddTestRun("0- request miss")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: frange"'.format(frange_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/full.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected content-range header")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
-    tr.StillRunningAfter = ts
+        self._origin.start()
+        self._ats.start()
+        full = self.request("www.example.com", "/path", uuid="full")
+        assert full.returncode == 0 and self.BODY in full.stdout
+        self.assert_range(
+            self.request("www.example.com", "/path", byte_range="7-15", uuid="inner"),
+            cache="miss",
+            content_range="7-15/18",
+            body=self.BODY[7:15],
+        )
+        self.assert_range(
+            self.request("www.example.com", "/path", byte_range="7-15"),
+            cache="hit",
+            content_range="7-15/18",
+            body=self.BODY[7:15],
+        )
+        self.assert_range(
+            self.request("www.example.com", "/path", byte_range="0-", uuid="frange"),
+            cache="miss",
+            content_range="0-18/18",
+            body=self.BODY,
+        )
+        self.assert_range(
+            self.request("www.example.com", "/path", byte_range="0-"),
+            cache="hit",
+            content_range="0-18/18",
+            body=self.BODY,
+        )
+        self.assert_range(
+            self.request("www.example.com", "/path", byte_range="-5", uuid="last"),
+            cache="miss",
+            content_range="13-18/18",
+            body=self.BODY[-5:],
+        )
+        self.assert_range(
+            self.request("www.example.com", "/path", byte_range="-5"),
+            cache="hit",
+            content_range="13-18/18",
+            body=self.BODY[-5:],
+        )
+        for _index in range(2):
+            missing = self.request("www.example.com", "/404", byte_range="0-")
+            assert "404 Not Found" in missing.stdout and "X-Cache: miss" in missing.stdout
+        full_range = self.request("www.example.com", "/path?origin-200", byte_range="7-15", uuid="full")
+        assert "200 OK" in full_range.stdout and "X-Cache: miss" in full_range.stdout
+        assert "Content-Range:" not in full_range.stdout
+        parent = self.request("parentselect", "/path", byte_range="1-10", uuid="pselect", debug="x-parentselection-key")
+        assert re.search(r"X-ParentSelection-Key: .*-bytes=", parent.stdout), parent.output
+        ordinary = self.request("www.example.com", "/path", byte_range="7-15", uuid="inner", debug="x-parentselection-key")
+        assert "X-ParentSelection-Key" not in ordinary.stdout
+        deprecated = self.request("psd", "/path", byte_range="1-10", uuid="pselect", debug="x-parentselection-key")
+        assert re.search(r"X-ParentSelection-Key: .*-bytes=", deprecated.stdout), deprecated.output
+        long_key = self.request("www.longkey.com", f"/{self.LONG_PATH}", byte_range="0-17", uuid="long_key")
+        assert long_key.returncode == 0 and "206" in long_key.stdout
+        assert "disabling cache for this transaction" not in self._ats.diags_log.read_text(errors="replace")
 
-    # 4 Test - 0- request
-    tr = urtest.AddTestRun("0- request hit")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(frange_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/full.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-18/18", "expected Content-Range header")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar header")
-    tr.StillRunningAfter = ts
 
-    # end range
+def test_cache_range_requests(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Range cache keys remain correct for hits, parent selection, and long URLs."""
 
-    # 5 Test - -5 request miss
-    tr = urtest.AddTestRun("-5 request miss")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: last"'.format(last_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/last.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 13-18/18", "expected content-range header")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Foo Bar status")
-    tr.StillRunningAfter = ts
-
-    # 6 Test - -5 request hit
-    tr = urtest.AddTestRun("-5 request hit")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {}'.format(last_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/last.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 13-18/18", "expected content-range header")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("206 Foo Bar", "Expected 206 Bar Bar status")
-    tr.StillRunningAfter = ts
-
-    # Ensure 404's aren't getting cached
-
-    # 7 Test - 404
-    tr = urtest.AddTestRun("404 request 1st")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/404 -r 0-', ts=ts)
-    ps.Streams.stdout = "gold/404.stdout.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    tr.StillRunningAfter = ts
-
-    # 8 Test - 404
-    tr = urtest.AddTestRun("404 request 2nd")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/404 -r 0-', ts=ts)
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("404 Not Found", "expected 404 response")
-    tr.StillRunningAfter = ts
-
-    # 9 Test - origin returns 200 response to range request
-    tr = urtest.AddTestRun("origin returns 200")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: full"', ts=ts)
-    ps.ReturnCode = 3  # <--- note the return code
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("200 OK", "expected full 200 response")
-    ps.Streams.stdout.Content += Testers.ExcludesExpression("Content-Range:", "didn't expect Content-Range header")
-    tr.StillRunningAfter = ts
-
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-parentselection-key"'.format(ts.Variables.port)
-
-    # 10 Test - cache_key_url request
-    tr = urtest.AddTestRun("cache_key_url request")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://parentselect/path -r {} -H "uuid: pselect"'.format(pselect_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-ParentSelection-Key: .*-bytes=",
-        "expected bytes in parent selection key",
-    )
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    # 11 Test - non cache_key_url request ... no X-ParentSelection-Key
-    tr = urtest.AddTestRun("non cache_key_url request")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.example.com/path -r {} -H "uuid: inner"'.format(inner_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("X-ParentSelection-Key", "parent select key shouldn't show up")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    # 12 Test - cache_key_url request -- deprecated
-    tr = urtest.AddTestRun("cache_key_url request - deprecated")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://psd/path -r {} -H "uuid: pselect"'.format(pselect_str), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-ParentSelection-Key: .*-bytes=",
-        "expected bytes in parent selection key",
-    )
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    # 13 Test - range request where URL+range_value exceeds 16384 bytes (spill path)
-    tr = urtest.AddTestRun("long cache key spill")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://www.longkey.com/{} -r 0-17 -H "uuid: long_key"'.format(long_path), ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206", "expected 206 for long-key range request")
-    ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-        "disabling cache for this transaction",
-        "spill path must not disable cache",
-    )
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    urtest.execute()
+    CacheRangeRequestsScenario(ats_factory, services).run()

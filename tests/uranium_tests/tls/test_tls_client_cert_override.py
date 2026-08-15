@@ -14,157 +14,169 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import shutil
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_tls_client_cert_override(urtest: UraniumTest) -> None:
-    '''
-    Test offering client cert to origin
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsClientCertOverrideScenario:
+    """Select outbound client certificates with conf_remap."""
 
-    urtest.Summary = '''
-    Test conf_remp to specify different client certificates to offer to the origin
-    '''
+    def __init__(
+        self,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        curl: Curl,
+        *,
+        use_secret_plugin: bool = False,
+    ) -> None:
+        self._curl = curl
+        self._use_secret_plugin = use_secret_plugin
+        self._server1 = self.configure_origin(
+            services,
+            "server",
+            "signer.pem",
+            "signed-foo.pem",
+            "signed-foo.key",
+        )
+        self._server2 = self.configure_origin(
+            services,
+            "server2",
+            "signer2.pem",
+            "signed2-bar.pem",
+            "signed-bar.key",
+        )
+        self._ats = self.configure_ats(ats_factory)
 
-    ts = urtest.MakeATSProcess("ts")
-    cafile = "{0}/signer.pem".format(urtest.RunDirectory)
-    cafile2 = "{0}/signer2.pem".format(urtest.RunDirectory)
-    server = urtest.MakeOriginServer(
-        "server",
-        ssl=True,
-        options={
-            "--clientCA": cafile,
-            "--clientverify": ""
-        },
-        clientcert="{0}/signed-foo.pem".format(urtest.RunDirectory),
-        clientkey="{0}/signed-foo.key".format(urtest.RunDirectory))
-    server2 = urtest.MakeOriginServer(
-        "server2",
-        ssl=True,
-        options={
-            "--clientCA": cafile2,
-            "--clientverify": ""
-        },
-        clientcert="{0}/signed2-bar.pem".format(urtest.RunDirectory),
-        clientkey="{0}/signed-bar.key".format(urtest.RunDirectory))
-    server.Setup.Copy("ssl/signer.pem")
-    server.Setup.Copy("ssl/signer2.pem")
-    server.Setup.Copy("ssl/signed-foo.pem")
-    server.Setup.Copy("ssl/signed-foo.key")
-    server.Setup.Copy("ssl/signed2-foo.pem")
-    server.Setup.Copy("ssl/signed2-bar.pem")
-    server.Setup.Copy("ssl/signed-bar.key")
-    server2.Setup.Copy("ssl/signer.pem")
-    server2.Setup.Copy("ssl/signer2.pem")
-    server2.Setup.Copy("ssl/signed-foo.pem")
-    server2.Setup.Copy("ssl/signed-foo.key")
-    server2.Setup.Copy("ssl/signed2-foo.pem")
-    server2.Setup.Copy("ssl/signed2-bar.pem")
-    server2.Setup.Copy("ssl/signed-bar.key")
+    def configure_origin(
+        self,
+        services: ServiceFactory,
+        name: str,
+        client_ca: str,
+        certificate: str,
+        key: str,
+    ) -> OriginServer:
+        """Create an HTTPS origin that requires a client certificate."""
 
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+        origin = services.origin(
+            name,
+            ssl=True,
+            clientcert=SSL_DIRECTORY / certificate,
+            clientkey=SSL_DIRECTORY / key,
+            options={
+                "--clientCA": SSL_DIRECTORY / client_ca,
+                "--clientverify": "",
+            },
+        )
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signed2-foo.pem")
-    ts.addSSLfile("ssl/signed-bar.pem")
-    ts.addSSLfile("ssl/signed2-bar.pem")
-    ts.addSSLfile("ssl/signed-bar.key")
+    def remap_with_certificate(self, ats: ATS, path: str, origin: OriginServer, certificate: str, key: str) -> str:
+        """Build one client-certificate remap rule."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.cert.filename': 'signed-foo.pem',
-            'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        })
+        return (
+            f"map {path} https://127.0.0.1:{origin.https_port}/ "
+            "@plugin=conf_remap.so "
+            f"@pparam=proxy.config.ssl.client.cert.filename={certificate} "
+            f"@pparam=proxy.config.ssl.client.private_key.filename={key}")
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure matching and mismatched client-certificate routes."""
 
-    ts.Disk.remap_config.AddLine(
-        'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-        .format(server.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key"))
-    ts.Disk.remap_config.AddLine(
-        'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-        .format(server.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key"))
-    ts.Disk.remap_config.AddLine(
-        'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-        .format(server2.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key"))
-    ts.Disk.remap_config.AddLine(
-        'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-        .format(server2.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key"))
+        ats = ats_factory.create("ts")
+        if not ats.plugin_exists("conf_remap.so"):
+            pytest.skip("conf_remap.so is not installed")
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "server.pem",
+            SSL_DIRECTORY / "server.key",
+            SSL_DIRECTORY / "signed-foo.pem",
+            SSL_DIRECTORY / "signed-foo.key",
+            SSL_DIRECTORY / "signed2-foo.pem",
+            SSL_DIRECTORY / "signed-bar.pem",
+            SSL_DIRECTORY / "signed2-bar.pem",
+            SSL_DIRECTORY / "signed-bar.key",
+        )
+        client_directory = ats.ssl_directory.parent if self._use_secret_plugin else ats.ssl_directory
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl",
+                "proxy.config.ssl.client.cert.path": str(client_directory),
+                "proxy.config.ssl.client.cert.filename": "signed-foo.pem",
+                "proxy.config.ssl.client.private_key.path": str(client_directory),
+                "proxy.config.ssl.client.private_key.filename": "signed-foo.key",
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            })
+        if self._use_secret_plugin:
+            ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_secret_load_test.so")
+            ats.plugin_config.add_line("ssl_secret_load_test.so")
+            ats.write_config_file("sni.yaml", "sni:\n  - fqdn: random\n    verify_server_properties: NONE\n")
+        ats.remap_config.add_lines(
+            (
+                self.remap_with_certificate(ats, "/case1", self._server1, "signed-foo.pem", "signed-foo.key"),
+                self.remap_with_certificate(ats, "/badcase1", self._server1, "signed2-foo.pem", "signed-foo.key"),
+                self.remap_with_certificate(ats, "/case2", self._server2, "signed2-foo.pem", "signed-foo.key"),
+                self.remap_with_certificate(ats, "/badcase2", self._server2, "signed-foo.pem", "signed-foo.key"),
+            ))
+        return ats
 
-    # Should succeed
-    tr = urtest.AddTestRun("Connect with correct client cert to first server")
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(server2)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = server2
-    tr.MakeCurlCommand("-H host:example.com  http://127.0.0.1:{0}/case1".format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
+    def request(self, path: str, host: str) -> str:
+        """Request one client-certificate selection case."""
 
-    # Should fail
-    trfail = urtest.AddTestRun("Connect with bad client cert to first server")
-    trfail.StillRunningAfter = ts
-    trfail.StillRunningAfter = server
-    trfail.StillRunningAfter = server2
-    trfail.MakeCurlCommand('-H host:example.com  http://127.0.0.1:{0}/badcase1'.format(ts.Variables.port), ts=ts)
-    trfail.Processes.Default.ReturnCode = 0
-    trfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
+        result = self._curl.get(self._ats, path, headers={"Host": host})
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-    # Should succeed
-    trbar = urtest.AddTestRun("Connect with correct client cert to second server")
-    trbar.StillRunningAfter = ts
-    trbar.StillRunningAfter = server
-    trbar.StillRunningAfter = server2
-    trbar.MakeCurlCommand("-H host:bar.com  http://127.0.0.1:{0}/case2".format(ts.Variables.port), ts=ts)
-    trbar.Processes.Default.ReturnCode = 0
-    trbar.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
+    def run(self) -> None:
+        """Verify matching certificates succeed and mismatched CAs fail."""
 
-    # Should fail
-    trbarfail = urtest.AddTestRun("Connect with bad client cert to second server")
-    trbarfail.StillRunningAfter = ts
-    trbarfail.StillRunningAfter = server
-    trbarfail.StillRunningAfter = server2
-    trbarfail.MakeCurlCommand('-H host:bar.com  http://127.0.0.1:{0}/badcase2'.format(ts.Variables.port), ts=ts)
-    trbarfail.Processes.Default.ReturnCode = 0
-    trbarfail.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Check response")
-    urtest.execute()
+        self._server1.start()
+        self._server2.start()
+        self._ats.start()
+        assert "Could Not Connect" not in self.request("/case1", "example.com")
+        assert "Could Not Connect" in self.request("/badcase1", "example.com")
+        assert "Could Not Connect" not in self.request("/case2", "bar.com")
+        assert "Could Not Connect" in self.request("/badcase2", "bar.com")
+        if self._use_secret_plugin:
+            self.verify_secret_updates()
+
+    def verify_secret_updates(self) -> None:
+        """Verify reload-triggered and polled in-place client-certificate changes."""
+
+        shutil.copy2(SSL_DIRECTORY / "signed-foo.pem", self._ats.ssl_directory / "signed2-foo.pem")
+        (self._ats.config_directory / "sni.yaml").touch()
+        result = self._ats.traffic_ctl(
+            "config",
+            "set",
+            "proxy.config.ssl.client.cert.path",
+            str(self._ats.ssl_directory.parent),
+        )
+        assert result.returncode == 0, result.output
+        result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+        assert result.returncode == 0, result.output
+        assert "Could Not Connect" not in self.request("/badcase1", "foo.com")
+
+        shutil.copy2(SSL_DIRECTORY / "signed2-foo.pem", self._ats.ssl_directory / "signed-foo.pem")
+        (self._ats.ssl_directory / "signed-foo.pem").touch()
+        (self._ats.ssl_directory / "signed-foo.key").touch()
+        time.sleep(4)
+        assert "Could Not Connect" in self.request("/case1", "example.com")
+        assert "Could Not Connect" not in self.request("/badcase1", "example.com")
+
+
+def test_tls_client_cert_override(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """conf_remap selects an outbound client certificate per mapping."""
+
+    TlsClientCertOverrideScenario(ats_factory, services, curl).run()

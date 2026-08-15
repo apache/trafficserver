@@ -14,108 +14,110 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    CommandResult,
+    OriginServer,
+    ProcessService,
+    ServiceFactory,
+    wait_for_file_lines,
+)
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tunnel_active_timeout(urtest: UraniumTest) -> None:
-    '''
-    Verify that tunnel active timeout produces ERR_TUN_ACTIVE_TIMEOUT squid code.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TunnelActiveTimeoutScenario:
+    """Hold a CONNECT tunnel open beyond ATS's active timeout."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.Summary = '''
-    Verify that tunnel active timeout produces ERR_TUN_ACTIVE_TIMEOUT squid code.
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Provide the TLS endpoint reached through the tunnel."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server", ssl=True)
+        origin = services.origin("origin", ssl=True)
+        origin.add_response(
+            {
+                "headers": "GET / HTTP/1.1\r\nHost: server\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": "hello"
+            },
+        )
+        return origin
 
-    # Simple response from origin
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: server\r\n\r\n", "timestamp": "1234", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1234", "body": "hello"}
-    server.addResponse("sessionlog.json", request_header, response_header)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Allow the CONNECT target and configure a two-second active timeout."""
 
-    ts.addDefaultSSLFiles()
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ssl|tunnel",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.http.connect_ports": str(self._origin.https_port),
+                "proxy.config.http.transaction_active_timeout_in": 2,
+                "proxy.config.log.max_secs_per_buffer": 1,
+            })
+        ats.remap_config.add_line(f"map / https://127.0.0.1:{self._origin.https_port}")
+        ats.allow_private_connect()
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats": [{
+                            "name": "custom",
+                            "format": "%<crc> %<pssc> %<cqhm>"
+                        }],
+                        "logs": [{
+                            "filename": "squid.log",
+                            "format": "custom"
+                        }],
+                    }
+            })
+        return ats
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        f"""
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split('\n'))
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Establish the tunnel and leave it idle long enough to expire."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ssl|tunnel',
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.http.connect_ports': f'{server.Variables.SSL_Port}',
-            # Set a short active timeout for tunnels (2 seconds)
-            'proxy.config.http.transaction_active_timeout_in': 2,
-            # Force log flush every second for test reliability
-            'proxy.config.log.max_secs_per_buffer': 1,
-        })
+        return services.process(
+            "client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "tunnel_timeout_client.py",
+                "127.0.0.1",
+                str(self._ats.http_port),
+                "127.0.0.1",
+                str(self._origin.https_port),
+                "5",
+            ),
+        )
 
-    ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.SSL_Port}')
-    ts.addPrivateConnectAllowYaml()
+    @staticmethod
+    def verify_client(result: CommandResult) -> None:
+        """Require the client to observe and tolerate the timeout closure."""
 
-    # Configure custom log format to capture squid code
-    ts.Disk.logging_yaml.AddLines(
-        '''
-    logging:
-      formats:
-        - name: custom
-          format: '%<crc> %<pssc> %<cqhm>'
-      logs:
-        - filename: squid.log
-          format: custom
-    '''.split("\n"))
+        assert result.returncode == 0, result.output
 
-    # Test: Perform a CONNECT request that will time out
-    tr = urtest.AddTestRun("Tunnel active timeout test")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
+    def run(self) -> None:
+        """Run the tunnel and verify its Squid result code."""
 
-    # Use the tunnel_timeout_client.py script to establish a CONNECT tunnel and then
-    # just hold the connection until ATS times it out
-    tr.Setup.Copy('tunnel_timeout_client.py')
+        self._origin.start()
+        self._ats.start()
+        self.verify_client(self._client.run(timeout=15))
+        wait_for_file_lines(self._ats.log_directory / "squid.log", r"ERR_TUN_ACTIVE_TIMEOUT.*CONNECT", 1, timeout=10)
 
-    # Connect, establish tunnel, then sleep to trigger active timeout
-    tr.Processes.Default.Command = (
-        f'{sys.executable} tunnel_timeout_client.py 127.0.0.1 {ts.Variables.port} '
-        f'127.0.0.1 {server.Variables.SSL_Port} 5')
-    # The connection will be closed by ATS due to timeout
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
 
-    # Wait for the access log to be written
-    tr = urtest.AddTestRun("Wait for the access log to write out")
-    tr.DelayStart = 3
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Command = 'echo "waiting for log flush"'
-    tr.Processes.Default.ReturnCode = 0
+def test_tunnel_active_timeout(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Tunnel expiration is logged as ERR_TUN_ACTIVE_TIMEOUT."""
 
-    # Verify the squid code in the access log
-    ts.Disk.File(os.path.join(ts.Variables.LOGDIR, 'squid.log')).Content = Testers.ContainsExpression(
-        'ERR_TUN_ACTIVE_TIMEOUT.*CONNECT', 'Verify the tunnel timeout squid code is logged')
-    urtest.execute()
+    TunnelActiveTimeoutScenario(ats_factory, services).run()

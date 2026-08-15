@@ -1,0 +1,51 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify the JA4 fingerprint plugin"
+  replay: "ja4_fingerprint_client.replay.yaml"
+  requires: {plugins: [ja4_fingerprint.so]}
+  server:
+    name: "ja4-origin"
+    process_config: {other_args: "--format '{url}'"}
+  client: {name: "ja4-client"}
+  ats:
+    name: "ja4-ts"
+    process_config: {enable_cache: false, enable_tls: true}
+    records_config:
+      proxy.config.proxy_name: "test.proxy.com"
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "ja4_fingerprint|http"
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}"
+    plugin_config: ["ja4_fingerprint.so"]
+    file_checks:
+      - path: "{LOG_DIR}/ja4_fingerprint.log"
+        contains: "JA4"
+        timeout: 15
+    log_validation:
+      traffic_out:
+        contains:
+          - {expression: "JA4 fingerprint:", description: "JA4 fingerprint should be logged"}
+  variants:
+    - name: "new-headers"
+      server: {replay: "ja4_fingerprint_basic_server.replay.yaml"}
+      client: {process_config: {keys: "no-existing-headers"}}
+
+    - name: "preserve-existing-headers"
+      server: {replay: "ja4_fingerprint.replay.yaml"}
+      ats:
+        plugin_config: ["ja4_fingerprint.so --preserve"]

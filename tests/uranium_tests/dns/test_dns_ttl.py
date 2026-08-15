@@ -14,150 +14,83 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, DNSServer, ServiceFactory, VerifierServer
 
 
-def test_dns_ttl(urtest: UraniumTest) -> None:
-    '''
-    Test DNS TTL behavior.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class DnsTtlScenario:
+    """Verify expired DNS entries are rejected or served stale as configured."""
 
-    import ports
+    SUCCESS_REPLAY = "replay/single_transaction.replay.yaml"
+    ERROR_REPLAY = "replay/server_error.replay.yaml"
 
-    urtest.Summary = 'Test DNS TTL behavior'
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, serve_stale_for: int | None) -> None:
+        self._services = services
+        self._serve_stale_for = serve_stale_for
+        self._dns = self.configure_dns(services)
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    class TtlDnsTest:
-        single_transaction_replay = "replay/single_transaction.replay.yaml"
-        server_error_replay = "replay/server_error.replay.yaml"
-        process_counter = 1
+    def configure_dns(self, services: ServiceFactory) -> DNSServer:
+        """Resolve the origin while the DNS process is running."""
 
-        # The TTL to set for every resolved hostname.
-        dnsTTL = 1
+        dns = services.dns("dns")
+        dns.add_records({"resolve.this.com": ["127.0.0.1"]})
+        return dns
 
-        # The DNS query timeout.
-        queryTimeout = 1
+    def configure_origin(self, services: ServiceFactory) -> VerifierServer:
+        """Configure the reusable successful origin transaction."""
 
-        def __init__(self, configure_serve_stale=False, exceed_serve_stale=False):
-            """
-            Args:
-                configure_serve_stale: (bool) Whether the ATS process should be configured to
-                serve stale DNS entries.
+        return services.verifier_server("origin", self.SUCCESS_REPLAY)
 
-                exceed_serve_stale: (bool) Configure the serve_stale timeout to be low
-                enough that the timed out DNS response will not be used.
-            """
-            self.configure_serve_stale = configure_serve_stale
-            self.exceed_serve_stale = exceed_serve_stale
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure a one-second DNS TTL and lookup timeout."""
 
-            self.server_process_counter = TtlDnsTest.get_unique_process_counter()
-            TtlDnsTest.process_counter += 1
+        ats = ats_factory.create("ts", enable_cache=False)
+        records: dict[str, object] = {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "dns",
+            "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+            "proxy.config.dns.resolv_conf": "NULL",
+            "proxy.config.hostdb.ttl_mode": 1,
+            "proxy.config.hostdb.timeout": 1,
+            "proxy.config.hostdb.lookup_timeout": 1,
+        }
+        if self._serve_stale_for is not None:
+            records["proxy.config.hostdb.serve_stale_for"] = self._serve_stale_for
+        ats.records.update(records)
+        ats.remap_config.add_line(f"map / http://resolve.this.com:{self._origin.http_port}/")
+        return ats
 
-            self.setupOriginServer()
-            self.setupTS()
+    def run_client(self, name: str, replay: str) -> None:
+        """Run one Proxy Verifier client and require its expectations."""
 
-        @classmethod
-        def get_unique_process_counter(cls):
-            this_counter = cls.process_counter
-            cls.process_counter += 1
-            return this_counter
+        result = self._services.verifier_client(name, replay, http_ports=[self._ats.http_port]).run()
+        assert result.returncode == 0, result.output
 
-        def addDNSServerToTestRun(self, test_run):
-            dns = test_run.MakeDNServer("dns", port=self.dns_port)
-            dns.addRecords(records={'resolve.this.com': ['127.0.0.1']})
-            return dns
+    def run(self) -> None:
+        """Prime DNS, expire it with DNS down, and verify stale policy."""
 
-        def setupOriginServer(self):
-            self.server = urtest.MakeVerifierServerProcess(
-                f"server-{self.server_process_counter}", TtlDnsTest.single_transaction_replay)
+        self._origin.start()
+        self._dns.start()
+        self._ats.start()
+        self.run_client("prime-client", self.SUCCESS_REPLAY)
 
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess(f"ts-{self.server_process_counter}", enable_cache=False)
-            self.dns_port = ports.get_port(self.ts, 'dns_port')
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.diags.debug.enabled": 1,
-                    "proxy.config.diags.debug.tags": "dns",
-                    'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns_port}',
-                    'proxy.config.dns.resolv_conf': 'NULL',
+        self._dns.stop()
+        time.sleep(3)
+        expected = self.SUCCESS_REPLAY if self._serve_stale_for == 300 else self.ERROR_REPLAY
+        self.run_client("expired-client", expected)
 
-                    # Configure ATS to treat each resolved name to have a 1 second
-                    # time to live.
-                    "proxy.config.hostdb.ttl_mode": 1,
-                    "proxy.config.hostdb.timeout": self.dnsTTL,
 
-                    # MicroDNS will be down for the second transaction. Have ATS give
-                    # up trying to talk to it after one second.
-                    "proxy.config.hostdb.lookup_timeout": self.queryTimeout,
-                })
-            if self.configure_serve_stale:
-                if self.exceed_serve_stale:
-                    stale_timeout = 1
-                else:
-                    stale_timeout = 300
+@pytest.mark.parametrize(
+    "serve_stale_for",
+    [None, 300, 1],
+    ids=["stale-disabled", "within-stale-window", "beyond-stale-window"],
+)
+def test_dns_ttl(ats_factory: ATSFactory, services: ServiceFactory, serve_stale_for: int | None) -> None:
+    """DNS TTL expiry honors the configured serve-stale window."""
 
-                self.ts.Disk.records_config.update({"proxy.config.hostdb.serve_stale_for": stale_timeout})
-            self.ts.Disk.remap_config.AddLine(f"map / http://resolve.this.com:{self.server.Variables.http_port}/")
-
-        def testRunWithDNS(self):
-            tr = urtest.AddTestRun()
-
-            # Run the DNS server with this test run so it will not be running in
-            # the next one.
-            dns = self.addDNSServerToTestRun(tr)
-            process_number = TtlDnsTest.get_unique_process_counter()
-            tr.AddVerifierClientProcess(
-                f"client-{process_number}", TtlDnsTest.single_transaction_replay, http_ports=[self.ts.Variables.port])
-
-            tr.Processes.Default.StartBefore(dns)
-            tr.Processes.Default.StartBefore(self.server)
-            tr.Processes.Default.StartBefore(self.ts)
-
-            tr.StillRunningAfter = dns
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
-
-        def testRunWithoutDNS(self):
-            tr = urtest.AddTestRun()
-
-            # Delay running the second transaction for long enough to guarantee
-            # that both the TTL and the DNS query timeout (lookup_timeout) are
-            # exceeded.
-            tr.DelayStart = 3
-
-            # Will the stale resolved DNS response be used?
-            if self.configure_serve_stale and not self.exceed_serve_stale:
-                # Yes: expect a proxied transaction with a 200 OK response.
-                replay_file = TtlDnsTest.single_transaction_replay
-            else:
-                # No: expect a 5xx response because the server name could not be
-                # resolved.
-                replay_file = TtlDnsTest.server_error_replay
-            process_number = TtlDnsTest.get_unique_process_counter()
-            tr.AddVerifierClientProcess(f"client-{process_number}", replay_file, http_ports=[self.ts.Variables.port])
-
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
-
-        def run(self):
-            self.testRunWithDNS()
-            self.testRunWithoutDNS()
-
-    TtlDnsTest().run()
-    TtlDnsTest(configure_serve_stale=True, exceed_serve_stale=False).run()
-    TtlDnsTest(configure_serve_stale=True, exceed_serve_stale=True).run()
-    urtest.execute()
+    DnsTtlScenario(ats_factory, services, serve_stale_for).run()

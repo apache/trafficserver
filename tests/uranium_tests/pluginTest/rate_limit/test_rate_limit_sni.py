@@ -14,129 +14,87 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory
 
 
-def test_rate_limit_sni(urtest: UraniumTest) -> None:
-    '''
-    Test rate_limit plugin: SNI queue expiry does not underflow active counter (Finding #109).
+class RateLimitSniExpiryScenario:
+    """Expire a queued TLS connection while another request holds the active slot."""
 
-    With the bug, when a queued SNI connection expires via max_age, free() is
-    called on VCONN_CLOSE even though reserve() never succeeded, underflowing
-    the active counter and crashing on the next reserve() assertion.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    _hostname = "queue-expiry.example.com"
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test rate_limit SNI queue expiry: active counter underflow regression (Finding #109).
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Delay the active request long enough for the queued request to expire."""
 
-    urtest.ContinueOnFail = True
+        origin = services.origin("origin", delay=4)
+        for path, body in (("slow", "SLOW"), ("test", "OK")):
+            origin.add_response(
+                {
+                    "headers": f"GET /{path} HTTP/1.1\r\nHost: queue-expiry.example.com\r\n\r\n",
+                    "body": ""
+                },
+                {
+                    "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
+                    "body": body,
+                },
+            )
+        return origin
 
-    server = urtest.MakeOriginServer("server", delay=4)
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure a one-slot SNI limiter with a one-second queue age."""
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /slow HTTP/1.1\r\nHost: queue-expiry.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\n"
-                       "Content-Length: 4\r\n"
-                       "Connection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "SLOW"
-        })
+        ats = ats_factory.create("ts", enable_tls=True)
+        if not ats.plugin_exists("rate_limit.so"):
+            pytest.skip("rate_limit.so is required")
+        ats.write_config_file(
+            "rate_limit.yaml",
+            "selector:\n"
+            f"  - sni: {self._hostname}\n"
+            "    limit: 1\n"
+            "    queue:\n"
+            "      size: 5\n"
+            "      max_age: 1\n",
+        )
+        ats.plugin_config.add_line(f"rate_limit.so {ats.config_directory}/rate_limit.yaml")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rate_limit",
+                "proxy.config.http.insert_response_via_str": 0,
+                "proxy.config.url_remap.remap_required": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        return ats
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /test HTTP/1.1\r\nHost: queue-expiry.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\n"
-                       "Content-Length: 2\r\n"
-                       "Connection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "OK"
-        })
+    def run(self) -> None:
+        """Expire a queued request, then require a healthy follow-up request."""
 
-    ts.addDefaultSSLFiles()
+        self._origin.start()
+        self._ats.start()
+        url = f"https://{self._hostname}:{self._ats.https_port}"
+        resolve = f"--resolve {self._hostname}:{self._ats.https_port}:127.0.0.1"
+        result = self._ats.run_shell(
+            f"curl -sk --max-time 10 -o /dev/null {url}/slow {resolve} & "
+            "sleep 0.5; "
+            f"curl -sk --max-time 8 -o /dev/null {url}/queued {resolve} 2>/dev/null || true; "
+            "wait; sleep 0.5; "
+            f"curl -sk --max-time 10 -o /dev/null -w '%{{http_code}}' {url}/test {resolve}",
+            timeout=30,
+        )
+        assert result.returncode == 0, result.output
+        assert "200" in result.stdout
+        diags = self._ats.diags_log.read_text(errors="replace")
+        assert "FATAL" not in diags
+        assert "ink_release_assert" not in diags
 
-    # SNI selector with limit=1, queue=5, max_age=1s (1000ms).
-    # The short max_age causes queued connections to expire quickly.
-    rate_limit_yaml = os.path.join(ts.Variables.CONFIGDIR, 'rate_limit.yaml')
-    ts.Disk.File(
-        rate_limit_yaml, typename="ats:config").AddLines(
-            [
-                'selector:',
-                '  - sni: queue-expiry.example.com',
-                '    limit: 1',
-                '    queue:',
-                '      size: 5',
-                '      max_age: 1',
-                '',
-            ])
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'rate_limit',
-            'proxy.config.http.insert_response_via_str': 0,
-            'proxy.config.url_remap.remap_required': 0,
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-        })
+def test_rate_limit_sni(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """SNI queue expiry does not underflow the limiter's active-slot count."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-    ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
-
-    ts.Disk.plugin_config.AddLine(f'rate_limit.so {rate_limit_yaml}')
-
-    RESOLVE = f"--resolve 'queue-expiry.example.com:{ts.Variables.ssl_port}:127.0.0.1'"
-    BASE_URL = f"https://queue-expiry.example.com:{ts.Variables.ssl_port}"
-
-    # Test: Queue expiry regression.
-    # First request holds the slot (4s origin delay), second gets queued and
-    # expires after max_age (1s). Health check after proves ATS didn't crash.
-    tr = urtest.AddTestRun("Queue expiry: ATS survives without active counter underflow")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.Command = (
-        f"curl -sk -o /dev/null '{BASE_URL}/slow' {RESOLVE} & "
-        f"sleep 0.5; "
-        f"curl -sk -o /dev/null '{BASE_URL}/queued' {RESOLVE} 2>/dev/null; "
-        f"wait; sleep 0.5; "
-        f"curl -sk -o /dev/null -w '%{{http_code}}' '{BASE_URL}/test' {RESOLVE}")
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "200", "Health check after queue expiry should succeed (ATS still alive)")
-
-    # Verify ATS didn't crash
-    ts.Disk.diags_log.Content = Testers.ExcludesExpression("FATAL", "ATS should not crash from active counter underflow")
-    ts.Disk.diags_log.Content += Testers.ExcludesExpression("ink_release_assert", "No assertion failure from _active underflow")
-    urtest.execute()
+    RateLimitSniExpiryScenario(ats_factory, services).run()

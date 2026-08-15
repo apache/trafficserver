@@ -14,182 +14,109 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory, assert_matches_gold, send_tcp
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_combo_handler(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ComboHandlerScenario:
+    """Fetch and combine origin assets through combo_handler."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        if not self._ats.plugin_exists("combo_handler.so"):
+            pytest.skip("combo_handler.so is not installed")
 
-    urtest.Summary = '''
-    Test combo_handler plugin
-    '''
+    @staticmethod
+    def add_object(
+        origin: OriginServer,
+        content_type: str,
+        path: str,
+        cache_control: str = "public, max-age=31536000",
+    ) -> None:
+        """Add one cacheable object to the microserver."""
 
-    # Skip if plugin not present.
-    #
-    urtest.SkipUnless(Condition.PluginExists('combo_handler.so'),)
+        origin.add_response(
+            {"headers": f"GET {path} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n"},
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: \"359670651\"\r\n"
+                        f"Cache-Control: {cache_control}\r\nAccept-Ranges: bytes\r\nContent-Type: {content_type}\r\n\r\n"),
+                "body": f"Content for {path}\n",
+            },
+        )
 
-    # Function to generate a unique data file path (in the top level of the test's run directory),  put data (in string 'data') into
-    # the file, and return the file name.
-    #
-    _data_file__file_count = 0
+    @classmethod
+    def configure_origin(cls, services: ServiceFactory) -> OriginServer:
+        """Create every asset used by the combo requests."""
 
-    def data_file(data):
-        nonlocal _data_file__file_count
-        file_path = urtest.RunDirectory + f"/tcp_client_in_{_data_file__file_count}"
-        _data_file__file_count += 1
-        with open(file_path, "x") as f:
-            f.write(data)
-        return file_path
+        origin = services.origin("origin")
+        cls.add_object(origin, "text/css ; charset=utf-8", "/obj1")
+        cls.add_object(origin, "text/javascript", "/sub/obj2")
+        cls.add_object(origin, "text/argh", "/obj3")
+        cls.add_object(origin, "application/javascript", "/obj4")
+        cls.add_object(origin, "application/javascript", "/s/assets/module:variant_v1.js")
+        cls.add_object(origin, "", "/obj_empty_ct")
+        cls.add_object(origin, "text/javascript", "/obj_priv_short", "private, max-age=60")
+        cls.add_object(origin, "text/javascript", "/obj_revalidate", "public, max-age=0")
+        return origin
 
-    # Function to return command (string) to run tcp_client.py tool.  'host' 'port', and 'file_path' are the parameters to tcp_client.
-    #
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the global and remap combo_handler instances."""
 
-    def tcp_client_cmd(host, port, file_path):
-        return f"{sys.executable} {urtest.Variables.AtsTestToolsDir}/tcp_client.py {host} {port} {file_path}"
+        ats = ats_factory.create("ts", disable_log_checks=True)
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|combo_handler",
+        })
+        ats.plugin_config.add_line("combo_handler.so - - - ctwl.txt")
+        ats.remap_config.add_lines(
+            (
+                "map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so",
+                f"map http://localhost/127.0.0.1/ http://127.0.0.1:{self._origin.http_port}/",
+                f"map http://localhost/sub/ http://127.0.0.1:{self._origin.http_port}/sub/",
+                f"map http://localhost/s/ http://127.0.0.1:{self._origin.http_port}/s/",
+            ))
+        ats.copy_to_config(TEST_DIRECTORY / "ctwl.txt")
+        return ats
 
-    # Function to return command (string) to run tcp_client.py tool.  'host' and 'port' are the first two parameters to tcp_client.
-    # 'data' is the data to put in the data file input to tcp_client.
-    #
+    def request(self, query: str) -> str:
+        """Send one raw combo request and return its chunked response."""
 
-    def tcp_client(host, port, data):
-        return tcp_client_cmd(host, port, data_file(data))
+        return send_tcp(
+            self._ats.http_port,
+            f"GET /admin/v1/combo?{query} HTTP/1.1\nHost: xyz\nConnection: close\n\n",
+        )
 
-    server = urtest.MakeOriginServer("server")
+    def run(self) -> None:
+        """Verify type filtering, colon paths, and cache-control merging."""
 
-    def add_server_obj(content_type, path, cache_control="public, max-age=31536000"):
-        request_header = {
-            "headers": "GET " + path + " HTTP/1.1\r\n" + "Host: just.any.thing\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }
-        response_header = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "359670651"\r\n' + "Cache-Control: " + cache_control +
-                "\r\n" + "Accept-Ranges: bytes\r\n" + "Content-Type: " + content_type + "\r\n" + "\r\n",
-            "timestamp": "1469733493.993",
-            "body": "Content for " + path + "\n"
-        }
-        server.addResponse("sessionfile.log", request_header, response_header)
+        self._origin.start()
+        self._ats.start()
+        gold = TEST_DIRECTORY / "combo_handler_files"
+        cases = (
+            ("obj1&sub:obj2&obj3", "tr1.gold"),
+            ("obj1&sub:obj2&obj4", "tr2.gold"),
+            ("obj1&obj_empty_ct", "tr3.gold"),
+            ("obj1&obj_priv_short", "cache_control_aggregation.gold"),
+            ("obj1&obj_revalidate", "max_age_zero.gold"),
+        )
+        for query, filename in cases:
+            assert_matches_gold(self.request(query), gold / filename)
 
-    add_server_obj("text/css ; charset=utf-8", "/obj1")
-    add_server_obj("text/javascript", "/sub/obj2")
-    add_server_obj("text/argh", "/obj3")
-    add_server_obj("application/javascript", "/obj4")
-    add_server_obj("application/javascript", "/s/assets/module:variant_v1.js")
-    # Empty Content-Type header: the field is present but carries no value.
-    # With an allowlist configured this must be rejected; otherwise it would
-    # silently bypass the type check.
-    add_server_obj("", "/obj_empty_ct")
-    # Exercises CacheControlHeader::update via the refactored
-    # parse_cache_control_value(): private must propagate to the combo
-    # response and the smaller max-age must win across objects.
-    add_server_obj("text/javascript", "/obj_priv_short", cache_control="private, max-age=60")
-    # max-age=0 is a valid directive ("must revalidate"). The combo must
-    # propagate it as the minimum, not silently fall back to the 10-year
-    # default.
-    add_server_obj("text/javascript", "/obj_revalidate", cache_control="public, max-age=0")
+        colon_response = self.request("s:assets/module:variant_v1.js")
+        assert "HTTP/1.1 200 OK" in colon_response
+        assert "Content for /s/assets/module:variant_v1.js" in colon_response
+        assert "ERROR" in self._ats.diags_log.read_text(errors="replace")
 
-    ts = urtest.MakeATSProcess("ts")
 
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http|combo_handler',
-    })
+def test_combo_handler(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """combo_handler combines only allowed objects and merges cache controls."""
 
-    ts.Disk.plugin_config.AddLine("combo_handler.so - - - ctwl.txt")
-
-    ts.Disk.remap_config.AddLine('map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so')
-    ts.Disk.remap_config.AddLine(f'map http://localhost/127.0.0.1/ http://127.0.0.1:{server.Variables.Port}/')
-    ts.Disk.remap_config.AddLine(f'map http://localhost/sub/ http://127.0.0.1:{server.Variables.Port}/sub/')
-    ts.Disk.remap_config.AddLine(f'map http://localhost/s/ http://127.0.0.1:{server.Variables.Port}/s/')
-
-    # Configure the combo_handler's configuration file.
-    ts.Setup.Copy("ctwl.txt", ts.Variables.CONFIGDIR)
-
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.Command = "echo start stuff"
-    tr.Processes.Default.ReturnCode = 0
-
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = tcp_client(
-        "127.0.0.1", ts.Variables.port,
-        "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File("_output/1-tr-Default/stream.all.txt")
-    f.Content = "combo_handler_files/tr1.gold"
-
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = tcp_client(
-        "127.0.0.1", ts.Variables.port,
-        "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
-    f.Content = "combo_handler_files/tr2.gold"
-
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = tcp_client(
-        "127.0.0.1", ts.Variables.port,
-        "GET /admin/v1/combo?s:assets/module:variant_v1.js HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File("_output/3-tr-Default/stream.all.txt")
-    f.Content = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should successfully combine an object with a colon in its path")
-    f.Content += Testers.ContainsExpression(
-        "Content for /s/assets/module:variant_v1.js", "Should fetch the object path after the first colon")
-
-    # An object whose Content-Type header is present but empty must not slip
-    # past the allowlist. Pairing it with the allowed obj1 ensures the request
-    # would have succeeded if the empty value were not enforced -- so a 403
-    # here is a regression check for the bypass fix.
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = tcp_client(
-        "127.0.0.1", ts.Variables.port,
-        "GET /admin/v1/combo?obj1&obj_empty_ct HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File("_output/4-tr-Default/stream.all.txt")
-    f.Content = "combo_handler_files/tr3.gold"
-
-    # Combining a long-TTL public object with a short-TTL private object
-    # must yield a Cache-Control of "max-age=60, private". This exercises
-    # both parse paths in the refactored parse_cache_control_value().
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = tcp_client(
-        "127.0.0.1", ts.Variables.port,
-        "GET /admin/v1/combo?obj1&obj_priv_short HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File("_output/5-tr-Default/stream.all.txt")
-    f.Content = "combo_handler_files/cache_control_aggregation.gold"
-
-    # An object with max-age=0 must drive the combined response down to
-    # max-age=0 instead of being filtered out as if it were absent. Pairs
-    # with the long-TTL obj1 to confirm the min-merge respects zero.
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = tcp_client(
-        "127.0.0.1", ts.Variables.port,
-        "GET /admin/v1/combo?obj1&obj_revalidate HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File("_output/6-tr-Default/stream.all.txt")
-    f.Content = "combo_handler_files/max_age_zero.gold"
-
-    ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")
-    urtest.execute()
+    ComboHandlerScenario(ats_factory, services).run()

@@ -14,103 +14,89 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, ProcessService, ServiceFactory, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_slice_content_shrink(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SliceContentShrinkScenario:
+    """Make content shrink below the byte range selected by the slice plugin."""
 
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin_port = services.allocate_port()
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    from ports import get_port
+    def configure_origin(self, services: ServiceFactory) -> ProcessService:
+        """Start the origin that changes length and ETag between slice fetches."""
 
-    urtest.Summary = '''
-    Slice plugin: verify no integer underflow when content shrinks below block position.
+        return services.process(
+            "origin",
+            (sys.executable, TEST_DIRECTORY / "shrink_origin.py", str(self._origin_port)),
+            ready_port=self._origin_port,
+        )
 
-    When origin reports Content-Range with total length smaller than the requested
-    block position (content shrunk between fetches), the plugin must fail gracefully
-    rather than underflowing m_blockskip which would corrupt the response.
-    '''
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the slice plugin with seven-byte test blocks."""
 
-    urtest.SkipUnless(Condition.PluginExists('slice.so'),)
-    urtest.ContinueOnFail = False
+        ats = ats_factory.create("ts", enable_cache=False)
+        if not ats.plugin_exists("slice.so"):
+            pytest.skip("slice.so is required")
+        ats.remap_config.add_line(
+            f"map http://slice/ http://127.0.0.1:{self._origin_port}/ "
+            "@plugin=slice.so @pparam=--blockbytes-test=7")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "slice",
+        })
+        return ats
 
-    # Define ATS - no cache so every slice sub-request goes to origin
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
+    def request_range(self, path: str, byte_range: str) -> CommandResult:
+        """Request one range through ATS's forward-proxy listener."""
 
-    # Test: Request bytes 14-20 via slice plugin (blockbytes=7)
-    # Slice will:
-    #   1. Fetch block 0 (reference): gets CL=21, etag "old"
-    #   2. Fetch block 2 (interior, skips block 1): gets CL=10, etag "new" (MISMATCH! m_contentlen=10)
-    #   3. Refetch block 0 (reference): gets CL=10, etag "new" (matches new m_contentlen)
-    #   4. Enters ActiveRef: blockpos=14, m_contentlen=10 => guard triggers, Fail state
-    #
-    # Client should get an error/empty response, NOT corrupted data.
+        return self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--dump-header",
+            "/dev/stdout",
+            "--output",
+            "/dev/stderr",
+            "--proxy",
+            f"localhost:{self._ats.http_port}",
+            f"http://slice/{path}",
+            "--range",
+            byte_range,
+            "--write-out",
+            "\nSIZE:%{size_download}",
+        )
 
-    tr = urtest.AddTestRun("Request triggering content shrink underflow guard")
+    @staticmethod
+    def verify_empty_response(result: CommandResult) -> None:
+        """Require the failed range to expose no response body."""
 
-    # Copy and start custom origin server
-    tr.Setup.CopyAs("shrink_origin.py")
+        assert result.returncode in (0, 18), result.output
+        assert re.search(r"SIZE:0\b", result.stdout)
+        assert result.stderr == ""
 
-    origin = tr.Processes.Process("origin")
-    origin_port = get_port(origin, 'http_port')
-    origin.Command = f'{sys.executable} shrink_origin.py {origin_port}'
-    origin.Ready = When.PortOpenv4(origin_port)
+    def run(self) -> None:
+        """Exercise aligned and mid-block shrink cases."""
 
-    # Configure remap to point at our custom origin
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://slice/ http://127.0.0.1:{origin_port}/'
-            ' @plugin=slice.so @pparam=--blockbytes-test=7',
-        ])
+        self._origin.start()
+        self._ats.start()
+        self.verify_empty_response(self.request_range("shrink", "14-20"))
+        second = self.request_range("shrink_mid", "16-20")
+        assert second.returncode in (0, 18), second.output
+        wait_for_file_lines(self._ats.diags_log, "shrunk below requested range start", 1)
 
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'slice',
-    })
 
-    ps = tr.Processes.Default
-    ps.StartBefore(origin)
-    ps.StartBefore(urtest.Processes.ts)
-    ps.Command = (
-        f'curl -s -D /dev/stdout -o /dev/stderr'
-        f' -x localhost:{ts.Variables.port}'
-        f' http://slice/shrink -r 14-20'
-        f' -w "\\nSIZE:%{{size_download}}"')
-    ps.Streams.stdout = Testers.ContainsExpression(r"SIZE:0\b", "expected zero client-visible body size")
-    ps.Streams.stderr = Testers.ExcludesExpression(r".", "expected no client-visible response body")
-    tr.StillRunningAfter = ts
+def test_slice_content_shrink(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Shrinking content fails cleanly without an unsigned slice-offset underflow."""
 
-    # Test 2: Non-block-aligned range. blockbytes=7, client requests bytes=16-20.
-    # firstblock=2, blockpos=14. Content shrinks to 15.
-    # m_contentlen(15) > blockpos(14) would pass a blockpos-only guard, but
-    # m_contentlen(15) <= m_req_range.m_beg(16) catches it.
-    tr = urtest.AddTestRun("Mid-block range: content shrinks above blockpos but below range start")
-    ps = tr.Processes.Default
-    ps.Command = (
-        f'curl -s -D /dev/stdout -o /dev/stderr'
-        f' -x localhost:{ts.Variables.port}'
-        f' http://slice/shrink_mid -r 16-20'
-        f' -w "\\nSIZE:%{{size_download}}"')
-    tr.StillRunningAfter = ts
-
-    # Verify the error was logged (our new guard message)
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        "shrunk below requested range start", "expected underflow guard error log")
-    urtest.execute()
+    SliceContentShrinkScenario(ats_factory, services, curl).run()

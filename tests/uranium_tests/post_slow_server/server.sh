@@ -49,4 +49,8 @@ response ()
   done
 }
 
+if [[ -n "$2" ]]; then
+  touch "$2"
+fi
+
 response | nc -l $1 > rcv_file

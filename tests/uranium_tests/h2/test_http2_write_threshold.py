@@ -14,150 +14,107 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, DNSServer, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+TEST_SSL = TEST_DIRECTORY.parents[1] / "tools" / "ssl"
 
 
-def test_http2_write_threshold(urtest: UraniumTest) -> None:
-    """Test proxy.config.http2.write_size_threshold."""
+class Http2WriteThresholdScenario:
+    """Exercise the HTTP/2 write-size threshold and its timer."""
 
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(
+        self,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        write_threshold: float,
+        write_timeout: int,
+    ) -> None:
+        self._write_threshold = write_threshold
+        self._write_timeout = write_timeout
+        self._server_port = services.allocate_port()
+        self._dns = self.configure_dns(services)
+        self._server = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    import os
-    from ports import get_port
-    import sys
+    def configure_dns(self, services: ServiceFactory) -> DNSServer:
+        """Resolve example.com to the local trickle server."""
 
-    class TestGrpc():
-        """Test proxy.config.http2.write_size_threshold and its associated timeout."""
+        return services.dns("dns", default=["127.0.0.1"])
 
-        def __init__(self, description: str, write_threshold: int, write_timeout: int) -> None:
-            """Configure a TestRun for gRPC traffic.
+    def configure_server(self, services: ServiceFactory) -> ProcessService:
+        """Create the TLS HTTP/2 server that trickles frames."""
 
-            :param description: The description for the test runs.
-            """
-            self._description = description
-            tr = urtest.AddTestRun(self._description)
-            dns = self._configure_dns(tr)
-            server = self._configure_h2_server(tr, write_timeout)
-            ts = self._configure_traffic_server(tr, dns.Variables.Port, server.Variables.port, write_threshold, write_timeout)
+        return services.process(
+            "server",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "trickle_server.py",
+                str(self._server_port),
+                TEST_SSL / "server.pem",
+                TEST_SSL / "server.key",
+                str(self._write_timeout),
+            ),
+            ready_port=self._server_port,
+        )
 
-            ts.StartBefore(dns)
-            ts.StartBefore(server)
-            tr.Processes.Default.StartBefore(ts)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure outbound H2 and the selected write thresholds."""
 
-            tr.TimeOut = 10
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.remap_config.add_line(f"map / https://example.com:{self._server_port}/")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
+                "proxy.config.http.server_session_sharing.pool": "thread",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.http2.write_size_threshold": self._write_threshold,
+                "proxy.config.http2.write_time_threshold": self._write_timeout,
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "http",
+            })
+        return ats
 
-            self._configure_h2_client(tr, ts.Variables.ssl_port, write_timeout)
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the HTTP/2 client that measures frame delivery timing."""
 
-        def _configure_dns(self, tr: 'TestRun') -> 'Process':
-            """Configure a locally running MicroDNS server.
+        return services.process(
+            "client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "trickle_client.py",
+                "example.com",
+                str(self._ats.https_port),
+                TEST_SSL / "server.pem",
+                str(self._write_timeout),
+            ),
+        )
 
-            :param tr: The TestRun with which to associate the MicroDNS server.
-            :return: The MicroDNS server process.
-            """
-            self._dns = tr.MakeDNServer("dns", default=['127.0.0.1'])
-            return self._dns
+    def run(self) -> None:
+        """Run the trickle transaction through ATS."""
 
-        def _configure_h2_server(self, tr: 'TestRun', write_timeout: int) -> 'Process':
-            """Set up the go HTTP/2 server.
+        self._dns.start()
+        self._server.start()
+        self._ats.start()
+        result = self._client.run(timeout=20)
+        assert result.returncode == 0, result.output
 
-            :param tr: The TestRun with which to associate the server.
-            :param write_timeout: The expected maximum amount of time frames should be delivered.
-            :return: The server process.
-            """
-            tr.Setup.Copy('trickle_server.py')
-            self._server = tr.Processes.Process('server')
 
-            server_pem = os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.pem")
-            server_key = os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.key")
-            self._server.Setup.Copy(server_pem)
-            self._server.Setup.Copy(server_key)
+def test_http2_write_threshold(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """proxy.config.http2.write_size_threshold flushes by size or timeout."""
 
-            port = get_port(self._server, 'port')
-            command = (f'{sys.executable} {tr.RunDirectory}/trickle_server.py {port} '
-                       f'server.pem server.key {write_timeout}')
-            self._server.Command = command
-            self._server.ReturnCode = 0
-            self._server.Ready = When.PortOpen(port)
-            return self._server
-
-        def _configure_traffic_server(
-                self, tr: 'TestRun', dns_port: int, server_port: int, write_threshold: int, write_timeout: int) -> 'Process':
-            """Configure the traffic server process.
-
-            :param tr: The TestRun with which to associate the traffic server.
-            :param dns_port: The MicroDNS server port that traffic server should connect to.
-            :param server_port: The server port that traffic server should connect to.
-            :param write_threshold: The value to set for proxy.config.http2.write_size_threshold.
-            :param write_timeout: The value to set for proxy.config.http2.write_time_threshold.
-            :return: The traffic server process.
-            """
-            self._ts = tr.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
-
-            self._ts.addDefaultSSLFiles()
-            self._ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-            self._ts.Disk.remap_config.AddLine(f"map / https://example.com:{server_port}/")
-
-            self._ts.Disk.records_config.update(
-                {
-                    "proxy.config.ssl.server.cert.path": self._ts.Variables.SSLDir,
-                    "proxy.config.ssl.server.private_key.path": self._ts.Variables.SSLDir,
-                    'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-                    'proxy.config.http.server_session_sharing.pool': 'thread',
-                    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                    'proxy.config.dns.nameservers': f"127.0.0.1:{dns_port}",
-                    'proxy.config.dns.resolv_conf': "NULL",
-                    'proxy.config.http2.write_size_threshold': write_threshold,
-                    'proxy.config.http2.write_time_threshold': write_timeout,
-
-                    # Only enable debug logging during manual exectution. All the
-                    # DATA frames get multiple logs and it makes the traffic.out too
-                    # unwieldy.
-                    "proxy.config.diags.debug.enabled": 0,
-                    "proxy.config.diags.debug.tags": "http",
-                })
-            return self._ts
-
-        def _configure_h2_client(self, tr: 'TestRun', proxy_port: int, write_timeout: int) -> None:
-            """Start the HTTP/2 client.
-
-            :param tr: The TestRun with which to associate the client.
-            :param proxy_port: The proxy_port to which to connect.
-            """
-            tr.Setup.Copy('trickle_client.py')
-            ca = os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.pem")
-            key = os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.key")
-
-            self._server.Setup.Copy(ca)
-            self._server.Setup.Copy(key)
-            # The cert is for example.com, so we must use that domain.
-            hostname = 'example.com'
-            command = (
-                f'{sys.executable} {tr.RunDirectory}/trickle_client.py '
-                f'{hostname} {proxy_port} server.pem {write_timeout}')
-            p = tr.Processes.Default
-            p.Command = command
-            p.ReturnCode = 0
-
-    test = TestGrpc("Test proxy.config.http2.write_size_threshold", 0.5, 10)
-    urtest.execute()
+    Http2WriteThresholdScenario(ats_factory, services, 0.5, 10).run()
