@@ -194,27 +194,6 @@ Http3Frame::reset(IOBufferReader &reader)
 }
 
 //
-// UNKNOWN Frame
-//
-Http3UnknownFrame::Http3UnknownFrame(IOBufferReader &reader) : Http3Frame(reader) {}
-
-Ptr<IOBufferBlock>
-Http3UnknownFrame::to_io_buffer_block() const
-{
-  Ptr<IOBufferBlock> block;
-  size_t             n = 0;
-
-  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD + this->length(), BUFFER_SIZE_INDEX_32K));
-  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
-  memcpy(block_start, this->_buf, this->_buf_len);
-  n += this->_buf_len;
-
-  block->fill(n);
-  return block;
-}
-
-//
 // DATA Frame
 //
 
@@ -283,13 +262,6 @@ Http3DataFrame::data() const
 //
 Http3HeadersFrame::Http3HeadersFrame(IOBufferReader &reader) : Http3Frame(reader) {}
 
-Http3HeadersFrame::Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len)
-  : Http3Frame(Http3FrameType::HEADERS), _header_block_uptr(std::move(header_block)), _header_block_len(header_block_len)
-{
-  this->_length       = header_block_len;
-  this->_header_block = this->_header_block_uptr.get();
-}
-
 Http3HeadersFrame::Http3HeadersFrame(IOBufferReader *header_block_reader, size_t header_block_len)
   : Http3Frame(Http3FrameType::HEADERS), _header_block_len(header_block_len), _header_block_reader(header_block_reader->clone())
 {
@@ -300,7 +272,7 @@ Http3HeadersFrame::~Http3HeadersFrame()
 {
   if (this->_header_block_reader != nullptr) {
     this->_header_block_reader->dealloc();
-  } else if (this->_header_block_uptr == nullptr) {
+  } else {
     ats_free(this->_header_block);
   }
 }
@@ -593,17 +565,6 @@ Http3FrameFactory::fast_create(IOBufferReader &reader)
   }
 
   return frame;
-}
-
-Http3HeadersFrameUPtr
-Http3FrameFactory::create_headers_frame(const uint8_t *header_block, size_t header_block_len)
-{
-  ats_unique_buf buf = ats_unique_malloc(header_block_len);
-  memcpy(buf.get(), header_block, header_block_len);
-
-  Http3HeadersFrame *frame = http3HeadersFrameAllocator.alloc();
-  new (frame) Http3HeadersFrame(std::move(buf), header_block_len);
-  return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
 }
 
 Http3HeadersFrameUPtr
