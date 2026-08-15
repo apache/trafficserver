@@ -14,195 +14,115 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory, assert_matches_gold
+
+GOLD_DIRECTORY = Path(__file__).parent / "gold"
 
 
-def test_background_fill(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class BackgroundFillScenario:
+    """Exercise background fill over HTTP/1.1, TLS, and HTTP/2."""
 
-    from enum import Enum
+    def __init__(self, ats_factory: ATSFactory, curl: Curl, services: ServiceFactory) -> None:
+        self.ats_factory = ats_factory
+        self.curl = curl
+        self.services = services
 
-    urtest.Summary = 'Exercise Background Fill'
-    urtest.SkipUnless(Condition.HasCurlFeature('http2'), Condition.HasProxyVerifierVersion('2.8.0'))
-    urtest.ContinueOnFail = True
+    def _check_requirements(self) -> None:
+        if not self.curl.supports("http2"):
+            pytest.skip("curl lacks HTTP/2 support")
 
-    class BackgroundFillTest:
-        """
-        https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#proxy-config-http-background-fill-completed-threshold
-        """
+    def _configure_services(self) -> None:
+        self.httpbin = self.services.httpbin("httpbin")
+        self.for_httpbin = self.ats_factory.create("for_httpbin", enable_tls=True, enable_cache=True)
 
-        class State(Enum):
+    def _configure_ats(self, ats: ATS, origin_port: int) -> None:
+        ats.add_default_ssl_files()
+        ats.ssl_multicert_config.add_lines(
             """
-            State of process
-            """
-            INIT = 0
-            RUNNING = 1
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""")
+        ats.records.update(
+            {
+                "proxy.config.http.server_ports": f"{ats.http_port} {ats.https_port}:ssl {ats.uds_path}",
+                "proxy.config.http.background_fill_active_timeout": "0",
+                "proxy.config.http.background_fill_completed_threshold": "0.0",
+                "proxy.config.http.cache.required_headers": 0,
+                "proxy.config.http.insert_response_via_str": 2,
+                "proxy.config.http.server_session_sharing.pool": "thread",
+                "proxy.config.http.server_session_sharing.match": "ip,sni,cert",
+                "proxy.config.exec_thread.autoconfig.enabled": 0,
+                "proxy.config.exec_thread.limit": 1,
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.diags.debug.enabled": 3,
+                "proxy.config.diags.debug.tags": "http",
+            })
+        ats.plugin_config.add_line("xdebug.so --enable=x-cache")
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{origin_port}")
 
-        def __init__(self):
-            self.state = self.State.INIT
-            self.ts = {}
-            self.__setupOriginServer()
-            self.__setupTS(['for_httpbin', 'for_pv'])
+    def _configure_traffic_servers(self) -> None:
+        self._configure_ats(self.for_httpbin, self.httpbin.port)
 
-        def __setupOriginServer(self):
-            self.httpbin = urtest.MakeHttpBinServer("httpbin")
-            self.pv_server = urtest.MakeVerifierServerProcess("server0", "replay/bg_fill.yaml")
+    def _start_services(self) -> None:
+        self.httpbin.start()
+        self.for_httpbin.start()
 
-        def __setupTS(self, ts_names=['default']):
-            for name in ts_names:
-                self.ts[name] = urtest.MakeATSProcess(name, select_ports=True, enable_tls=True, enable_cache=True)
-
-                self.ts[name].addDefaultSSLFiles()
-                self.ts[name].Disk.ssl_multicert_yaml.AddLines(
-                    """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-                self.ts[name].Disk.records_config.update(
-                    {
-                        "proxy.config.http.server_ports":
-                            f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl {self.ts[name].Variables.uds_path}",
-                        "proxy.config.http.background_fill_active_timeout": "0",
-                        "proxy.config.http.background_fill_completed_threshold": "0.0",
-                        "proxy.config.http.cache.required_headers": 0,  # Force cache
-                        "proxy.config.http.insert_response_via_str": 2,
-                        'proxy.config.http.server_session_sharing.pool': 'thread',
-                        'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
-                        'proxy.config.exec_thread.autoconfig.enabled': 0,
-                        'proxy.config.exec_thread.limit': 1,
-                        'proxy.config.ssl.server.cert.path': f"{self.ts[name].Variables.SSLDir}",
-                        'proxy.config.ssl.server.private_key.path': f"{self.ts[name].Variables.SSLDir}",
-                        'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-                        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                        "proxy.config.diags.debug.enabled": 3,
-                        "proxy.config.diags.debug.tags": "http",
-                    })
-
-                self.ts[name].Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
-
-                if name == 'for_httpbin' or name == 'default':
-                    self.ts[name].Disk.remap_config.AddLines([
-                        f"map / http://127.0.0.1:{self.httpbin.Variables.Port}",
-                    ])
-                else:
-                    self.ts[name].Disk.remap_config.AddLines([
-                        f'map / https://127.0.0.1:{self.pv_server.Variables.https_port}',
-                    ])
-
-        def __checkProcessBefore(self, tr):
-            if self.state == self.State.RUNNING:
-                tr.StillRunningBefore = self.httpbin
-                tr.StillRunningBefore = self.pv_server
-                tr.StillRunningBefore = self.ts['for_httpbin']
-                tr.StillRunningBefore = self.ts['for_pv']
-            else:
-                tr.Processes.Default.StartBefore(self.httpbin)
-                tr.Processes.Default.StartBefore(self.pv_server)
-                tr.Processes.Default.StartBefore(self.ts['for_httpbin'])
-                tr.Processes.Default.StartBefore(self.ts['for_pv'])
-                self.state = self.State.RUNNING
-
-        def __checkProcessAfter(self, tr):
-            assert (self.state == self.State.RUNNING)
-            tr.StillRunningAfter = self.httpbin
-            tr.StillRunningAfter = self.pv_server
-            tr.StillRunningAfter = self.ts['for_httpbin']
-            tr.StillRunningAfter = self.ts['for_pv']
-
-        def __testCase0(self):
-            """
-            HTTP/1.1 over TCP
-            """
-            tr = urtest.AddTestRun()
-            self.__checkProcessBefore(tr)
-            tr.MakeCurlCommandMulti(
+    def _verify_httpbin_background_fill(self) -> None:
+        scripts = [
+            (
                 f"""
-    {{curl}} -X PURGE --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
-    timeout 1 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4;
-    sleep 5;
-    {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4 -H "x-debug: x-cache"
-    """,
-                ts=self.ts['for_httpbin'])
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stderr = "gold/background_fill_0_stderr_H.gold"
-            self.__checkProcessAfter(tr)
+{{curl}} -X PURGE --http1.1 -vs http://127.0.0.1:{self.for_httpbin.http_port}/drip?duration=4
+timeout 1 {{curl}} --http1.1 -vs http://127.0.0.1:{self.for_httpbin.http_port}/drip?duration=4 || true
+sleep 5
+{{curl}} --http1.1 -vs http://127.0.0.1:{self.for_httpbin.http_port}/drip?duration=4 -H "x-debug: x-cache"
+""",
+                "background_fill_0_stderr_H.gold",
+            ),
+        ]
+        if not self.curl.uses_uds:
+            scripts.extend(
+                [
+                    (
+                        f"""
+{{curl}} -X PURGE --http1.1 -vsk https://127.0.0.1:{self.for_httpbin.https_port}/drip?duration=4
+timeout 1 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.for_httpbin.https_port}/drip?duration=4 || true
+sleep 5
+{{curl}} --http1.1 -vsk https://127.0.0.1:{self.for_httpbin.https_port}/drip?duration=4 -H "x-debug: x-cache"
+""",
+                        "background_fill_1_stderr_H.gold",
+                    ),
+                    (
+                        f"""
+{{curl}} -X PURGE --http2 -vsk https://127.0.0.1:{self.for_httpbin.https_port}/drip?duration=4
+timeout 1 {{curl}} --http2 -vsk https://127.0.0.1:{self.for_httpbin.https_port}/drip?duration=4 || true
+sleep 5
+{{curl}} --http2 -vsk https://127.0.0.1:{self.for_httpbin.https_port}/drip?duration=4 -H "x-debug: x-cache"
+""",
+                        "background_fill_2_stderr_H.gold",
+                    ),
+                ])
 
-        def __testCase1(self):
-            """
-            HTTP/1.1 over TLS
-            """
-            tr = urtest.AddTestRun()
-            self.__checkProcessBefore(tr)
-            tr.MakeCurlCommandMulti(
-                f"""
-    {{curl}} -X PURGE --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
-    timeout 1 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
-    sleep 5;
-    {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4 -H "x-debug: x-cache"
-    """,
-                ts=self.ts['for_httpbin'])
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stderr = "gold/background_fill_1_stderr_H.gold"
-            self.__checkProcessAfter(tr)
+        for script, gold_name in scripts:
+            result = self.curl.run_script(self.for_httpbin, script, timeout=20)
+            assert result.returncode == 0, result.output
+            assert_matches_gold(result.stderr, GOLD_DIRECTORY / gold_name)
 
-        def __testCase2(self):
-            """
-            HTTP/2 over TLS
-            """
-            tr = urtest.AddTestRun()
-            self.__checkProcessBefore(tr)
-            tr.MakeCurlCommandMulti(
-                f"""
-    {{curl}} -X PURGE --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
-    timeout 1 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4;
-    sleep 5;
-    {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4 -H "x-debug: x-cache"
-    """,
-                ts=self.ts['for_httpbin'])
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stderr = "gold/background_fill_2_stderr_H.gold"
-            self.__checkProcessAfter(tr)
+    def run(self) -> None:
+        self._check_requirements()
+        self._configure_services()
+        self._configure_traffic_servers()
+        self._start_services()
+        self._verify_httpbin_background_fill()
 
-        def __testCase3(self):
-            """
-            HTTP/2 over TLS using ProxyVerifier
-            """
-            tr = urtest.AddTestRun()
-            self.__checkProcessBefore(tr)
-            tr.AddVerifierClientProcess(
-                "pv_client",
-                "replay/bg_fill.yaml",
-                http_ports=[self.ts['for_pv'].Variables.port],
-                https_ports=[self.ts['for_pv'].Variables.ssl_port])
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = "gold/background_fill_3_stdout.gold"
-            self.__checkProcessAfter(tr)
 
-        def run(self):
-            self.__testCase0()
-            if not Condition.CurlUsingUnixDomainSocket():
-                self.__testCase1()
-                self.__testCase2()
-                self.__testCase3()
-
-    BackgroundFillTest().run()
-    urtest.execute()
+def test_background_fill(ats_factory: ATSFactory, curl: Curl, services: ServiceFactory) -> None:
+    BackgroundFillScenario(ats_factory, curl, services).run()

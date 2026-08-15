@@ -1,10 +1,10 @@
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not use
+#  this file except in compliance with the License.  You may obtain
+#  a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -14,115 +14,84 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_h3_session_ticket(urtest: UraniumTest) -> None:
-    '''
-    Verify HTTP/3 QUIC TLS session ticket handling.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information regarding
-    #  copyright ownership.  The ASF licenses this file to you under
-    #  the Apache License, Version 2.0 (the "License"); you may not
-    #  use this file except in compliance with the License.  You may
-    #  obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class H3SessionTicketScenario:
+    """Save and offer an HTTP/3 QUIC TLS session ticket with OpenSSL."""
 
-    import os
-    import shlex
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        if not ats_factory.has_feature("TS_USE_QUIC"):
+            pytest.skip("ATS was built without QUIC")
+        version_output = subprocess.check_output(("openssl", "version"), text=True)
+        version = re.search(r"\d+(?:\.\d+)+", version_output)
+        if version is None or tuple(int(part) for part in version.group().split(".")) < (3, 5, 0):
+            pytest.skip("OpenSSL 3.5.0 or newer is required")
+        help_result = subprocess.run(("openssl", "s_client", "-help"), capture_output=True, text=True, check=False)
+        if "-quic" not in help_result.stdout + help_result.stderr:
+            pytest.skip("OpenSSL s_client with QUIC support is required")
+        self._ats = self.configure_ats(ats_factory)
+        self._session_file = ats_factory.run_directory / "h3-quic-session.pem"
 
-    urtest.Summary = '''
-    Verify that HTTP/3 QUIC connections can receive and offer TLS session tickets.
-    '''
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure QUIC and the server ticket key."""
 
-    urtest.SkipUnless(
-        Condition.HasATSFeature('TS_USE_QUIC'),
-        Condition.HasOpenSSLVersion('3.5.0'),
-        Condition.HasOpenSSLQuicClient(),
-    )
-    urtest.Setup.Copy('../tls/file.ticket')
+        ats = ats_factory.create("ts", enable_tls=True, enable_quic=True, enable_cache=False)
+        ats.set_startup_timeout(60)
+        ats.add_default_ssl_files()
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ticket_file = ats_factory.run_directory / "file.ticket"
+        shutil.copy2(TEST_DIRECTORY.parent / "tls" / "file.ticket", ticket_file)
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "quic|ssl",
+                "proxy.config.quic.server.stateless_retry_enabled": 0,
+                "proxy.config.ssl.server.session_ticket.enable": 1,
+                "proxy.config.ssl.server.session_ticket.number": 2,
+                "proxy.config.ssl.server.ticket_key.filename": str(ticket_file),
+            })
+        return ats
 
-    def add_default_ssl_multicert(ts):
-        """Configure the default server certificate."""
-        if hasattr(ts.Disk, "ssl_multicert_yaml"):
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-        else:
-            ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+    def openssl_handshake(self, session_option: str) -> None:
+        """Run one QUIC handshake that saves or offers the session file."""
 
-    class TestHttp3SessionTicket:
-        """Configure an HTTP/3 QUIC TLS session ticket test."""
+        result = self._ats.run(
+            TEST_DIRECTORY / "h3_session_ticket.sh",
+            session_option,
+            self._session_file,
+            str(self._ats.https_port),
+            timeout=10,
+        )
+        assert result.returncode == 0, result.output
+        assert "CONNECTION ESTABLISHED" in result.output
+        assert "Protocol version: QUICv1" in result.output
 
-        def __init__(self, name: str):
-            """Initialize the test."""
-            self.name = name
-            self.session_file = os.path.join(urtest.RunDirectory, "h3-quic-session.pem")
-            self.ticket_file = os.path.join(urtest.RunDirectory, "file.ticket")
-            self._configure_traffic_server()
-            self._configure_ticket_save()
-            self._configure_ticket_reuse()
+    def run(self) -> None:
+        """Save a server ticket and offer it on a second QUIC connection."""
 
-        def _configure_traffic_server(self):
-            """Configure Traffic Server."""
-            ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_quic=True, enable_cache=False)
-            ts.StartupTimeout = 60
-            ts.addDefaultSSLFiles()
-            add_default_ssl_multicert(ts)
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'quic|ssl',
-                    'proxy.config.quic.server.stateless_retry_enabled': 0,
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.session_ticket.enable': 1,
-                    'proxy.config.ssl.server.session_ticket.number': 2,
-                    'proxy.config.ssl.server.ticket_key.filename': self.ticket_file,
-                })
+        self._session_file.unlink(missing_ok=True)
+        self._ats.start()
+        self.openssl_handshake("-sess_out")
+        self.openssl_handshake("-sess_in")
 
-            self._ts = ts
 
-        def _s_client_command(self, session_option: str):
-            """Build an OpenSSL QUIC client command for ticket save or reuse."""
-            script = os.path.join(urtest.TestDirectory, "h3_session_ticket.sh")
-            return f"{shlex.quote(script)} {session_option} {shlex.quote(self.session_file)} {self._ts.Variables.ssl_port}"
+def test_h3_session_ticket(ats_factory: ATSFactory) -> None:
+    """HTTP/3 connections can receive and offer TLS session tickets."""
 
-        def _check_s_client_handshake(self, tr):
-            """Verify that OpenSSL completed the QUIC handshake."""
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                "CONNECTION ESTABLISHED", "OpenSSL should complete the QUIC handshake.")
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                "Protocol version: QUICv1", "OpenSSL should negotiate QUICv1.")
-
-        def _configure_ticket_save(self):
-            """Configure the ticket save test run."""
-            tr = urtest.AddTestRun(self.name)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.Processes.Default.Command = f"rm -f {shlex.quote(self.session_file)}; {self._s_client_command('-sess_out')}"
-            self._check_s_client_handshake(tr)
-            tr.StillRunningAfter = self._ts
-
-        def _configure_ticket_reuse(self):
-            """Configure the ticket reuse test run."""
-            tr = urtest.AddTestRun("OpenSSL QUIC offers saved session ticket")
-            tr.Processes.Default.Command = self._s_client_command("-sess_in")
-            self._check_s_client_handshake(tr)
-            tr.StillRunningAfter = self._ts
-
-    TestHttp3SessionTicket("OpenSSL QUIC saves session ticket")
-    urtest.execute()
+    H3SessionTicketScenario(ats_factory).run()

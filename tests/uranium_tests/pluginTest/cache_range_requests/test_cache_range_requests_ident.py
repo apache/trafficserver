@@ -13,359 +13,142 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify cache_range_requests identity headers control freshness."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_cache_range_requests_ident(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CacheRangeIdentScenario:
+    """Exercise ETag, Last-Modified, forced-stale, and custom identity headers."""
 
-    import datetime
-    import os
-    import time
+    BODY = "lets go surfin now"
+    ETAG = '"772102f4-56f4bc1e6d417"'
+    LAST_MODIFIED = "Fri, 07 Mar 2025 18:06:58 GMT"
 
-    urtest.Summary = '''
-    cache_range_requests X-Crr-Ident plugin test
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-    # Test description:
-    # Preload the cache with the entire asset to be range requested.
-    # Ensure asset is stale and request with properly formed header.
+    @classmethod
+    def add_asset(
+        cls,
+        origin: OriginServer,
+        path: str,
+        *,
+        etag: str | None,
+        last_modified: str | None,
+        max_age: int,
+    ) -> None:
+        """Add one cacheable full-range response."""
 
-    urtest.SkipUnless(
-        Condition.PluginExists('cache_range_requests.so'),
-        Condition.PluginExists('xdebug.so'),
-    )
-    urtest.ContinueOnFail = False
-    urtest.testName = "cache_range_requests_ident"
+        fields = [
+            "HTTP/1.1 206 Partial Content",
+            "Accept-Ranges: bytes",
+            f"Cache-Control: max-age={max_age}",
+            f"Content-Range: bytes 0-{len(cls.BODY)}/{len(cls.BODY)}",
+            "Connection: close",
+        ]
+        if etag is not None:
+            fields.append(f"Etag: {etag}")
+        if last_modified is not None:
+            fields.append(f"Last-Modified: {last_modified}")
+        origin.add_response(
+            {"headers": (f"GET /{path} HTTP/1.1\r\nHost: www.example.com\r\nAccept: */*\r\nRange: bytes=0-\r\n\r\n")},
+            {
+                "headers": "\r\n".join(fields) + "\r\n\r\n",
+                "body": cls.BODY
+            },
+        )
 
-    # Define and configure origin server
-    server = urtest.MakeOriginServer("server")
+    @classmethod
+    def configure_server(cls, services: ServiceFactory) -> OriginServer:
+        """Create short- and long-lived identity combinations."""
 
-    # default root
-    req_chk = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+        origin = services.origin("origin")
+        cls.add_asset(origin, "both", etag=cls.ETAG, last_modified=cls.LAST_MODIFIED, max_age=1)
+        cls.add_asset(origin, "etag", etag=cls.ETAG, last_modified=None, max_age=1)
+        cls.add_asset(origin, "lm", etag=None, last_modified=cls.LAST_MODIFIED, max_age=1)
+        cls.add_asset(origin, "custom", etag="foo", last_modified=None, max_age=1)
+        cls.add_asset(origin, "fresh", etag="fresh", last_modified=cls.LAST_MODIFIED, max_age=3600)
+        return origin
 
-    res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure standard and custom identity-header mappings."""
 
-    server.addResponse("sessionlog.json", req_chk, res_chk)
-
-    body = "lets go surfin now"
-    bodylen = len(body)
-
-    # baseline for testing
-    last_modified = "Fri, 07 Mar 2025 18:06:58 GMT"
-    etag = '"772102f4-56f4bc1e6d417"'
-
-    req_both = {
-        "headers": "GET /both HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_both = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag + '\r\n' +
-            'Last-Modified: ' + last_modified + '\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_both, res_both)
-
-    req_etag = {
-        "headers": "GET /etag HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_etag = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag + '\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_etag, res_etag)
-
-    req_lm = {
-        "headers": "GET /lm HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    res_lm = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Last-Modified: ' + last_modified +
-            '\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_lm, res_lm)
-
-    # test for custom Ident header
-    req_custom = {
-        "headers": "GET /custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    etag_custom = 'foo'
-
-    res_custom = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag_custom + '\r\n' +
-            '\r\n',
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_custom, res_custom)
-
-    # Long lived asset for FRESH to STALE testing
-    req_fresh = {
-        "headers": "GET /fresh HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-
-    etag_fresh = 'fresh'
-
-    res_fresh = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=3600\r\n" +
-            "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag_fresh + '\r\n' +
-            '\r\n' + 'Last-Modified: ' + last_modified + '\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body
-    }
-
-    server.addResponse("sessionlog.json", req_fresh, res_fresh)
-
-    # Define and configure ATS
-    ts = urtest.MakeATSProcess("ts")
-
-    # cache range requests plugin remap
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://ident http://127.0.0.1:{server.Variables.Port}' +
-            ' @plugin=cache_range_requests.so @pparam=--consider-ident',
-            f'map http://identheader http://127.0.0.1:{server.Variables.Port}' +
-            ' @plugin=cache_range_requests.so @pparam=--consider-ident' + ' @pparam=--ident-header=CrrIdent',
-        ])
-
-    # cache debug
-    ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
-
-    # minimal configuration
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'cache_range_requests',
+        ats = ats_factory.create("ats")
+        if not ats.plugin_exists("cache_range_requests.so") or not ats.plugin_exists("xdebug.so"):
+            pytest.skip("cache_range_requests.so and xdebug.so are required")
+        ats.remap_config.add_lines(
+            (
+                f"map http://ident http://127.0.0.1:{self._origin.port} "
+                "@plugin=cache_range_requests.so @pparam=--consider-ident",
+                f"map http://identheader http://127.0.0.1:{self._origin.port} "
+                "@plugin=cache_range_requests.so @pparam=--consider-ident @pparam=--ident-header=CrrIdent",
+            ))
+        ats.plugin_config.add_line("xdebug.so --enable=x-cache")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_range_requests",
         })
+        return ats
 
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
+    def request(self, host: str, path: str, expected_cache: str, ident: str | None = None) -> None:
+        """Issue a full-range request and verify its x-cache state."""
 
-    ##
-    ## Stale to Fresh testing
-    ##
+        arguments = [
+            "--silent",
+            "--dump-header",
+            "-",
+            "--output",
+            "/dev/null",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+            "--header",
+            "x-debug: x-cache",
+            "--range",
+            "0-",
+        ]
+        if ident is not None:
+            header = "CrrIdent" if host == "identheader" else "X-Crr-Ident"
+            arguments.extend(("--header", f"{header}: {ident}"))
+        arguments.append(f"http://{host}/{path}")
+        result = self._curl.run_for(self._ats, *arguments)
+        assert result.returncode == 0, result.output
+        assert f"X-Cache: {expected_cache}" in result.stdout, result.output
 
-    ## Fetch short lived assets into cache
+    def run(self) -> None:
+        """Drive stale-to-fresh and fresh-to-stale identity transitions."""
 
-    # 0 Test - Fetch both asset into cache
-    tr = urtest.AddTestRun("0- range cache load")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://ident/both -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
-    tr.StillRunningAfter = ts
+        self._origin.start()
+        self._ats.start()
+        for path in ("both", "etag", "lm"):
+            self.request("ident", path, "miss")
+        time.sleep(2)
+        self.request("ident", "both", "hit-fresh", f"Etag {self.ETAG}")
+        self.request("ident", "both", "hit-stale", f"Last-Modified {self.LAST_MODIFIED}")
+        self.request("ident", "both", "hit-stale", "Etag no_match")
+        self.request("ident", "etag", "hit-fresh", f"Etag {self.ETAG}")
+        self.request("ident", "etag", "hit-stale", f"Last-Modified {self.LAST_MODIFIED}")
+        self.request("ident", "etag", "hit-stale", "Etag no_match")
+        self.request("ident", "lm", "hit-fresh", f"Last-Modified {self.LAST_MODIFIED}")
+        self.request("ident", "lm", "hit-stale", f"Etag {self.ETAG}")
+        self.request("ident", "fresh", "miss")
+        self.request("ident", "fresh", "hit-fresh")
+        self.request("ident", "fresh", "hit-stale", "Etag not_the_same")
+        self.request("ident", "fresh", "hit-stale", f"Last-Modified {self.LAST_MODIFIED}")
+        self.request("ident", "fresh", "hit-fresh", "Etag fresh")
+        self.request("ident", "fresh", "hit-fresh")
+        self.request("ident", "fresh", "hit-stale", "Stale")
+        self.request("identheader", "custom", "miss")
+        self.request("identheader", "custom", "hit-fresh", "Etag foo")
 
-    # 1 Test - Fetch etag asset into cache
-    tr = urtest.AddTestRun("0- etag cache load")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ident/etag -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
-    tr.StillRunningAfter = ts
 
-    # 2 Test - Fetch lm asset into cache
-    tr = urtest.AddTestRun("0- lm cache load")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ident/lm -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
-    tr.StillRunningAfter = ts
+def test_cache_range_requests_ident(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Identity hints override ordinary cached-object freshness as configured."""
 
-    ## both tests
-
-    # 3 Test - Ensure Etag header match results in hit-fresh
-    tr = urtest.AddTestRun("0- both Etag check")
-    tr.DelayStart = 2  # Time to ensure stale
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://ident/both -r 0- -H 'X-Crr-Ident: Etag {etag}'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    tr.StillRunningAfter = ts
-
-    # 4 Test - Plugin expects Etag even if Last-Modified matches - hit-stale
-    tr = urtest.AddTestRun("0- both Last-Modified check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f' http://ident/both -r 0- -H "X-Crr-Ident: Last-Modified {last_modified}"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    # 5 Test - Bad etag stays stale
-    tr = urtest.AddTestRun("0- both bad Etag check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://ident/both -r 0- -H 'X-Crr-Ident: Etag no_match'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    ## etag only supplied
-
-    # 6 Test - Ensure Etag header match results in hit-fresh
-    tr = urtest.AddTestRun("0- etag Etag check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://ident/etag -r 0- -H 'X-Crr-Ident: Etag {etag}'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    tr.StillRunningAfter = ts
-
-    # 7 Test - Last modified will result in stale
-    tr = urtest.AddTestRun("0- etag lm cache stale check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f' http://ident/etag -r 0- -H "X-Crr-Ident: Last-Modified {last_modified}"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache stale")
-    tr.StillRunningAfter = ts
-
-    # 8 Test - Bad etag stays stale
-    tr = urtest.AddTestRun("0- etag bad Etag check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://ident/etag -r 0- -H 'X-Crr-Ident: Etag no_match'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    ## last modified
-
-    # 9 Test - Last modified will result in fresh
-    tr = urtest.AddTestRun("0- lm lm fresh check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f' http://ident/lm -r 0- -H "X-Crr-Ident: Last-Modified {last_modified}"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache fresh")
-    tr.StillRunningAfter = ts
-
-    # 10 Test - Ensure Etag header match results in hit-fresh
-    tr = urtest.AddTestRun("0- lm Etag check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://ident/lm -r 0- -H 'X-Crr-Ident: Etag {etag}'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    ## Fresh to stale testing
-
-    # 11 Test - Fetch "fresh" into cache
-    tr = urtest.AddTestRun("0- fresh range cache load")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ident/fresh -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
-    tr.StillRunningAfter = ts
-
-    # 12 Test - Ensure "fresh" is in cache
-    tr = urtest.AddTestRun("0- fresh range cache check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ident/fresh -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache fresh")
-    tr.StillRunningAfter = ts
-
-    # 13 request with different etag and ensure it goes stale
-    tr = urtest.AddTestRun("0- fresh range to stale")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + " http://ident/fresh -r 0- -H 'X-Crr-Ident: Etag not_the_same'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    # 14 request with Last-Modified ensure it goes stale (expected etag)
-    tr = urtest.AddTestRun("0- etag fresh range to stale")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f' http://ident/fresh -r 0- -H "X-Crr-Ident: Last-Modified {last_modified}"', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    # 15 Test - Ensure Etag header match results in hit-fresh
-    tr = urtest.AddTestRun("0- fresh ensure Etag check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://ident/fresh -r 0- -H 'X-Crr-Ident: Etag {etag_fresh}'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    tr.StillRunningAfter = ts
-
-    # 16 hit test asset to ensure its still fresh
-    tr = urtest.AddTestRun("0- plain request path again")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ident/fresh -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    tr.StillRunningAfter = ts
-
-    # 17 request with force stale
-    tr = urtest.AddTestRun("0- force stale")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + " http://ident/fresh -r 0- -H 'X-Crr-Ident: Stale'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit-stale")
-    tr.StillRunningAfter = ts
-
-    ## custom header
-
-    # 18 Test - Fetch custom asset into cache
-    tr = urtest.AddTestRun("0- custom range cache load")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://identheader/custom -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss for load")
-    tr.StillRunningAfter = ts
-
-    # 19 Test - Ensure CrrIdent Etag header results in hit-fresh, custom header
-    tr = urtest.AddTestRun("0- fresh CrrIdent Etag check")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + f" http://identheader/custom -r 0- -H 'CrrIdent: Etag {etag_custom}'", ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    CacheRangeIdentScenario(ats_factory, services).run()

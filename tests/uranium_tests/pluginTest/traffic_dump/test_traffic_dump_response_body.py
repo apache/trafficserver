@@ -14,153 +14,121 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, ServiceFactory, VerifierServer
+
+TEST_DIRECTORY = Path(__file__).parent
+TEST_TOOLS = TEST_DIRECTORY.parents[2] / "tools"
+REPLAY_FILE = TEST_DIRECTORY / "replay" / "response_body.yaml"
 
 
-def test_traffic_dump_response_body(urtest: UraniumTest) -> None:
-    """
-    Verify traffic_dump response body functionality.
-    """
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TrafficDumpResponseBodyScenario:
+    """Validate response bodies written to traffic_dump replay files."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._services = services
+        self._server = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._dump_directory = self._ats.log_directory / "127"
 
-    urtest.Summary = '''
-    Verify traffic_dump response body functionality.
-    '''
+    def configure_server(self, services: ServiceFactory) -> VerifierServer:
+        """Create the origin for all response-body cases."""
 
-    urtest.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
+        return services.verifier_server("server", REPLAY_FILE)
 
-    # Configure the origin server.
-    replay_file = "replay/response_body.yaml"
-    server = urtest.MakeVerifierServerProcess("server", replay_file)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable full traffic_dump body capture on HTTP/1 and HTTP/2."""
 
-    # Configure ATS.
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    replay_dir = os.path.join(ts.RunDirectory, "ts", "log")
+        ats = ats_factory.create("ts", enable_tls=True)
+        if not ats.plugin_exists("traffic_dump.so"):
+            pytest.skip("traffic_dump.so is not installed")
+        ats.copy_to_ssl(
+            TEST_DIRECTORY / "ssl" / "server.pem",
+            TEST_DIRECTORY / "ssl" / "server.key",
+            TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "traffic_dump",
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.http.host_sni_policy": 2,
+                "proxy.config.ssl.TLSv1_3.enabled": 0,
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}")
+        ats.plugin_config.add_line(f"traffic_dump.so --logdir {ats.log_directory} --sample 1 --limit 1000000000 -b")
+        return ats
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
+    def run_traffic(self) -> None:
+        """Replay the four HTTP/1 and HTTP/2 response cases."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'traffic_dump',
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.http.host_sni_policy': 2,
-            'proxy.config.ssl.TLSv1_3.enabled': 0,
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        })
+        client = self._services.verifier_client(
+            "client",
+            REPLAY_FILE,
+            http_ports=[self._ats.http_port],
+            https_ports=[self._ats.https_port],
+            ssl_cert=TEST_DIRECTORY / "ssl" / "server_combined.pem",
+            ca_cert=TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
+        result = client.run()
+        assert result.returncode == 0, result.output
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def wait_for_dump(self, index: int) -> Path:
+        """Wait for the replay file with @a index to be closed and visible."""
 
-    ts.Disk.remap_config.AddLines([
-        f'map / http://127.0.0.1:{server.Variables.http_port}',
-    ])
+        path = self._dump_directory / f"{index:016d}"
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if path.is_file() and path.stat().st_size:
+                return path
+            time.sleep(0.1)
+        raise AssertionError(f"traffic_dump did not write {path}")
 
-    # Configure traffic_dump to dump body bytes (-b).
-    ts.Disk.plugin_config.AddLine(f'traffic_dump.so --logdir {replay_dir} --sample 1 --limit 1000000000 -b')
+    def verify_dump(self, index: int, response_body: str | None = None) -> None:
+        """Validate one dumped replay and its optional body text."""
 
-    ts_dump_0 = os.path.join(replay_dir, "127", "0000000000000000")
-    ts.Disk.File(ts_dump_0, exists=True)
+        arguments: list[str | Path] = [
+            sys.executable,
+            TEST_DIRECTORY / "verify_replay.py",
+            TEST_TOOLS / "lib" / "replay_schema.json",
+            self.wait_for_dump(index),
+        ]
+        if response_body is not None:
+            arguments.extend(("--response_body", response_body))
+        result = self._ats.run(*arguments)
+        assert result.returncode == 0, result.output
 
-    ts_dump_1 = os.path.join(replay_dir, "127", "0000000000000001")
-    ts.Disk.File(ts_dump_1, exists=True)
+    def run(self) -> None:
+        """Capture traffic and validate all serialized response bodies."""
 
-    ts_dump_2 = os.path.join(replay_dir, "127", "0000000000000002")
-    ts.Disk.File(ts_dump_2, exists=True)
+        self._server.start()
+        self._ats.start()
+        self.run_traffic()
+        self.verify_dump(0)
+        self.verify_dump(1, "0000000 0000001 ")
+        self.verify_dump(2, '12"34')
+        self.verify_dump(3, "0000000 0000001 0000002 ")
+        assert "Dumping body bytes: true" in self._ats.traffic_out.read_text(errors="replace")
 
-    ts_dump_3 = os.path.join(replay_dir, "127", "0000000000000003")
-    ts.Disk.File(ts_dump_3, exists=True)
 
-    ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-        "Dumping body bytes: true", "Verify that dumping body bytes is enabled.")
+def test_traffic_dump_response_body(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """traffic_dump serializes response bodies for HTTP/1 and HTTP/2."""
 
-    # Run our test traffic.
-    tr = urtest.AddTestRun("Run the test traffic.")
-    tr.AddVerifierClientProcess(
-        "client",
-        replay_file,
-        http_ports=[ts.Variables.port],
-        https_ports=[ts.Variables.ssl_port],
-        ssl_cert="ssl/server_combined.pem",
-        ca_cert="ssl/signer.pem")
-
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    # Common verification variables.
-    verify_replay = "verify_replay.py"
-    schema = os.path.join(urtest.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
-    verify_command_prefix = f'{sys.executable} {verify_replay} {schema}'
-
-    #
-    # Verify a response without a body is dumped correctly.
-    #
-    tr = urtest.AddTestRun("Verify the json content of the transaction with no response body.")
-    tr.Setup.CopyAs(verify_replay, urtest.RunDirectory)
-    tr.Processes.Default.Command = f'{verify_command_prefix} {ts_dump_0}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    #
-    # Verify a response with a body is dumped correctly.
-    #
-    tr = urtest.AddTestRun("Verify the json content of the transaction with a response body.")
-    tr.Setup.CopyAs(verify_replay, urtest.RunDirectory)
-    tr.Processes.Default.Command = \
-        f'{verify_command_prefix} {ts_dump_1} --response_body "0000000 0000001 "'
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-
-    #
-    # Verify a response with a character to be escaped is dumped correctly.
-    #
-    tr = urtest.AddTestRun("Verify the json content of the response body with a character to be escaped.")
-    tr.Setup.CopyAs(verify_replay, urtest.RunDirectory)
-    tr.Processes.Default.Command = \
-        rf'{verify_command_prefix} {ts_dump_2} --response_body 12\"34'
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    #
-    # Verify an HTTP/2 response with a body is dumped correctly.
-    #
-    tr = urtest.AddTestRun("Verify the json content of the response body of an HTTP/2 transaction.")
-    tr.Setup.CopyAs(verify_replay, urtest.RunDirectory)
-    tr.Processes.Default.Command = \
-        f'{verify_command_prefix} {ts_dump_3} --response_body "0000000 0000001 0000002 "'
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    TrafficDumpResponseBodyScenario(ats_factory, services).run()

@@ -14,128 +14,113 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_engine_abort(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsEngineAbortScenario:
+    """Abort TLS handshakes while an OpenSSL asynchronous job is paused."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("the TLS abort client requires a TCP listener")
+        openssl = subprocess.check_output(("openssl", "version"), text=True)
+        version = re.search(r"\d+(?:\.\d+)+", openssl)
+        if not openssl.startswith("OpenSSL") or version is None:
+            pytest.skip("OpenSSL 1.1.1 or newer is required")
+        if tuple(int(part) for part in version.group().split(".")) < (1, 1, 1):
+            pytest.skip("OpenSSL 1.1.1 or newer is required")
+        self._plugin = services.resolve_path("{AtsTestPluginsDir}/async_handshake.so")
+        if not self._plugin.is_file():
+            pytest.skip(f"{self._plugin} not found")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._abort_client = self.configure_client(services)
 
-    urtest.Summary = '''
-    Abort TLS handshakes while an OpenSSL async job is mid-pause, to exercise the
-    SSLNetVConnection teardown path. When a handshake returns SSL_ERROR_WANT_ASYNC
-    an eventfd is registered on the poller with the connection as its target, and a
-    connection torn down before the async job finishes must deregister that eventfd
-    so the poller is not left pointing at a freed connection. Built under ASan the
-    server must survive the abort barrage with no sanitizer error and still serve a
-    normal request.
-    '''
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the normal response used after the abort barrage."""
 
-    async_handshake = os.path.join(urtest.Variables.AtsTestPluginsDir, 'async_handshake.so')
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n"},
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+                        "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n"),
+                "body": "ok",
+            },
+        )
+        return origin
 
-    urtest.SkipUnless(
-        Condition.HasOpenSSLVersion('1.1.1'),
-        Condition.IsOpenSSL(),
-        Condition(lambda: os.path.isfile(async_handshake), async_handshake + " not found."),
-    )
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable asynchronous TLS handshakes with a two-second pause."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server")
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.records.update(
+            {
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.ssl.async.handshake.enabled": 1,
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "ssl",
+            })
+        ats.copy_custom_plugin(self._plugin)
+        ats.plugin_config.add_line("async_handshake.so -delay-ms=2000")
+        return ats
 
-    # A wide pause window (well beyond the abort client's 0.4s handshake attempt)
-    # so the abort reliably lands while the async job is still in flight.
-    if os.path.isfile(async_handshake):
-        urtest.PrepareTestPlugin(async_handshake, ts, '-delay-ms=2000')
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the client that abandons thirty in-flight handshakes."""
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers":
-                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "ok"
-        })
+        return services.process(
+            "abort-client",
+            (sys.executable, TEST_DIRECTORY / "tls_engine_abort.py", str(self._ats.https_port), "30"),
+        )
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
+    def run(self) -> None:
+        """Run the barrage, then prove ATS can still serve a normal request."""
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+        self._origin.start()
+        self._ats.start()
+        aborts = self._abort_client.run(timeout=30)
+        assert aborts.returncode == 0, aborts.output
+        assert "sent 30 aborted handshakes" in aborts.output
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        result = self._curl.run_for(
+            self._ats,
+            "--insecure",
+            "--verbose",
+            "--header",
+            "uuid:basic",
+            "--header",
+            "host:example.com",
+            f"https://127.0.0.1:{self._ats.https_port}/",
+            timeout=15,
+        )
+        assert result.returncode == 0, result.output
+        assert re.search(r"HTTP/(2|1\.1) 200", result.output), result.output
+        traffic_out = wait_for_file_lines(self._ats.traffic_out, "sent async wake signal to", 1, timeout=10)
+        assert "AddressSanitizer" not in traffic_out
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.ssl.async.handshake.enabled': 1,
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'ssl'
-        })
 
-    # Fire a barrage of handshakes that abort while the async job is mid-pause. Correct
-    # teardown is validated by ATS surviving this with no crash and, under ASan, no
-    # sanitizer error. Without deregistration the connection is freed while its
-    # eventfd still has a live poller registration.
-    abort_client = os.path.join(urtest.TestDirectory, 'tls_engine_abort.py')
+def test_tls_engine_abort(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Aborted asynchronous handshakes leave no stale poller registration."""
 
-    tr = urtest.AddTestRun("abort-during-async-handshake")
-    tr.Processes.Default.Command = "{0} {1} {2} 30".format(sys.executable, abort_client, ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts, ready=When.PortOpen(ts.Variables.ssl_port))
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("sent 30 aborted handshakes", "Abort client ran")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    # After the abort barrage, a normal request must still succeed: the server is
-    # healthy, not crashed or wedged.
-    tr2 = urtest.AddTestRun("normal-request-after-aborts")
-    tr2.MakeCurlCommand("-k -v -H uuid:basic -H host:example.com https://127.0.0.1:{0}/".format(ts.Variables.ssl_port), ts=ts)
-    tr2.ReturnCode = 0
-    tr2.Processes.Default.Streams.All = Testers.ContainsExpression(r"HTTP/(2|1\.1) 200", "Request succeeds after the abort barrage")
-    tr2.StillRunningAfter = ts
-    tr2.StillRunningAfter = server
-
-    # The abort barrage must actually drive handshakes into the async pause,
-    # otherwise the eventfd is never registered and the test proves nothing. The
-    # async_handshake plugin's wake thread prints this to stderr (-> traffic.out)
-    # when it signals the eventfd at the end of its pause; that only happens if a
-    # handshake entered the WANT_ASYNC path and armed the eventfd, so its presence
-    # confirms the teardown path was exercised (and that the async job completed
-    # after the abort -- exactly the use-after-free window this fix closes).
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "sent async wake signal to", "Async job engaged on at least one handshake")
-
-    # The server process must not have reported an AddressSanitizer error. ASan
-    # writes to stderr, which the harness binds to traffic.out -- not diags.log --
-    # so the exclusion has to be checked against traffic.out to catch the UAF.
-    ts.Disk.traffic_out.Content += Testers.ExcludesExpression("AddressSanitizer", "No ASan error in the server")
-    urtest.execute()
+    TlsEngineAbortScenario(ats_factory, services, curl).run()

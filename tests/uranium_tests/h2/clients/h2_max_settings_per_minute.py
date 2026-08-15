@@ -18,7 +18,7 @@
 """Exercise the HTTP/2 max_settings_per_minute guard.
 
 This client sends one SETTINGS frame containing two parameters. The matching
-AuTest config disables the per-frame settings limit and sets
+The test config disables the per-frame settings limit and sets
 max_settings_per_minute to one, so ATS should reject the connection with
 ENHANCE_YOUR_CALM.
 """

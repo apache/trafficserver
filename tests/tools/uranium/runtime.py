@@ -163,11 +163,11 @@ class TestRuntime:
         stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", replay_path.stem)[:48]
         return self.sandbox_root / f"{stem}-{digest}"
 
-    def compatibility_sandbox(self, node_name: str) -> Path:
-        """Return an especially short sandbox for AuTest's deeper process tree."""
+    def procedural_sandbox(self, node_name: str) -> Path:
+        """Return a short sandbox that leaves room for ATS Unix sockets."""
 
         digest = hashlib.sha256(node_name.encode()).hexdigest()[:10]
-        return self.sandbox_root / f"l-{digest}"
+        return self.sandbox_root / f"p-{digest}"
 
     def prepare_sandbox(self, path: Path) -> None:
         """Create an empty item sandbox without allowing a broad deletion target."""
@@ -181,6 +181,10 @@ class TestRuntime:
 
     def requirement_failure(self, requirements: dict[str, Any]) -> str | None:
         """Return why a replay should be skipped, or None when it can run."""
+
+        for program in requirements.get("programs", []):
+            if shutil.which(str(program)) is None:
+                return f"Required program is unavailable: {program}"
 
         for feature in requirements.get("ats_features", []):
             if not self.features.get(feature):

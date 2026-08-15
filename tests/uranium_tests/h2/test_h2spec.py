@@ -14,82 +14,66 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import shutil
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, HttpBinServer, ProcessService, ServiceFactory, assert_matches_gold
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_h2spec(urtest: UraniumTest) -> None:
-    '''
-    Test HTTP/2 with h2spec
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class H2SpecScenario:
+    """Run the HTTP/2 conformance client against an ATS TLS listener."""
 
-    urtest.Summary = '''
-    Test HTTP/2 with httpspec
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.SkipUnless(Condition.HasProgram("h2spec", "h2spec need to be installed on system for this test to work"),)
-    urtest.ContinueOnFail = True
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> HttpBinServer:
+        """Serve the generic resources requested by h2spec."""
 
-    # ----
-    # Setup httpbin Origin Server
-    # ----
-    httpbin = urtest.MakeHttpBinServer("httpbin")
+        return services.httpbin("httpbin")
 
-    # ----
-    # Setup ATS. Disable the cache to simplify the test.
-    # ----
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Expose an uncached TLS endpoint with Via headers enabled."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addDefaultSSLFiles()
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.records.update(
+            {
+                "proxy.config.http.insert_request_via_str": 1,
+                "proxy.config.http.insert_response_via_str": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+            })
+        return ats
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port))
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.http.insert_request_via_str': 1,
-            'proxy.config.http.insert_response_via_str': 1,
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-        })
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Select the generic, framing, stream, and HPACK conformance groups."""
 
-    # ----
-    # Test Cases
-    # ----
+        targets = ("generic", "http2/3", "http2/4", "http2/5", "http2/6", "http2/7", "http2/8", "hpack")
+        return services.process(
+            "h2spec",
+            ("h2spec", *targets, "-t", "-k", "--timeout", "10", "-p", str(self._ats.https_port)),
+        )
 
-    # In case you need to disable some of the tests, you can specify sections like http2/6.4.
-    h2spec_targets = "generic http2/3 http2/4 http2/5 http2/6 http2/7 http2/8 hpack"
+    def run(self) -> None:
+        """Run the conformance suite and validate its summary and ATS diagnostics."""
 
-    test_run = urtest.AddTestRun()
-    test_run.Processes.Default.Command = 'h2spec {0} -t -k --timeout 10 -p {1}'.format(h2spec_targets, ts.Variables.ssl_port)
-    test_run.Processes.Default.ReturnCode = 0
-    test_run.Processes.Default.StartBefore(httpbin)
-    test_run.Processes.Default.StartBefore(urtest.Processes.ts)
-    test_run.Processes.Default.Streams.stdout = "gold/h2spec_stdout.gold"
-    test_run.StillRunningAfter = httpbin
+        self._origin.start()
+        self._ats.start()
+        result = self._client.run(timeout=120)
+        assert_matches_gold(result.stdout, TEST_DIRECTORY / "gold" / "h2spec_stdout.gold")
+        assert "ERROR: HTTP/2" in self._ats.diags_log.read_text(errors="replace")
 
-    # Over riding the built in ERROR check since we expect some error cases
-    ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR: HTTP/2", "h2spec tests should have error log")
-    urtest.execute()
+
+def test_h2spec(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """ATS passes the selected h2spec conformance groups."""
+
+    if shutil.which("h2spec") is None:
+        pytest.skip("h2spec is required")
+    H2SpecScenario(ats_factory, services).run()

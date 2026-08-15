@@ -1,0 +1,48 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify xdebug cache-info and effective-URL response headers"
+  replay: "xdebug_headers.replay.yaml"
+  requires: {plugins: [xdebug.so]}
+  server: {name: "xdebug-header-origin"}
+  client: {name: "xdebug-header-client"}
+  ats:
+    name: "xdebug-header-ts"
+    records_config:
+      proxy.config.url_remap.remap_required: 0
+      proxy.config.diags.debug.enabled: 0
+    remap_config:
+      - "map http://one http://127.0.0.1:{SERVER_HTTP_PORT}"
+      - "map http://two http://127.0.0.1:{SERVER_HTTP_PORT}/two"
+      - "regex_map http://three[0-9]+ http://127.0.0.1:{SERVER_HTTP_PORT}"
+      - "regex_map http://four http://127.0.0.1:{SERVER_HTTP_PORT}/four"
+  variants:
+    - name: "cache-info"
+      client: {process_config: {keys: "cache-none cache-one cache-two cache-three"}}
+      ats:
+        plugin_config: ["xdebug.so --enable=x-cache-info"]
+        remap_config:
+          - "map http://one http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map http://two http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "regex_map http://three[0-9]+ http://127.0.0.1:{SERVER_HTTP_PORT}"
+
+    - name: "effective-url"
+      client: {process_config: {keys: "effective-none effective-one effective-two effective-three effective-four"}}
+      ats:
+        plugin_config: ["xdebug.so --enable=x-effective-url"]
+
+sessions: []

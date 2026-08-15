@@ -14,142 +14,101 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_config_reload_reserve_subtask(urtest: UraniumTest) -> None:
-    '''
-    Test that reserve_subtask correctly pre-registers subtasks during a reload.
+class ConfigReloadReserveSubtaskScenario:
+    """Exercise subtask reservation after records.yaml completes first."""
 
-    When records.yaml is changed alongside other config files, the "records"
-    subtask completes first (records.yaml is always processed first in
-    rereadConfig).  This pushes the main task to SUCCESS before other
-    file-based or record-triggered handlers have a chance to register their
-    subtasks.  reserve_subtask() must accept a SUCCESS parent and pull it back
-    to IN_PROGRESS by adding a CREATED child.
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    This test:
-      1. Modifies records.yaml on disk (--cold) to change a trigger record so
-         that a record-triggered handler fires during the next reload.
-      2. Touches additional config files so file-based handlers also fire.
-      3. Triggers a reload with a named token.
-      4. Verifies that traffic.out contains "Reserved subtask" messages — proving
-         reserve_subtask() succeeded despite the parent being SUCCESS.
-      5. Verifies no "ignoring transition" warnings (no state conflicts).
-      6. Verifies the reload reaches a terminal state with all subtasks tracked.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure every reload handler involved in the race."""
 
-    urtest.Summary = 'Verify reserve_subtask pre-registers subtasks when records.yaml is first'
-    urtest.ContinueOnFail = True
+        ats = ats_factory.create("ts", enable_cache=True)
+        ats.set_startup_timeout(30)
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rpc|config|config.reload|filemanager",
+            })
+        ats.write_config_file(
+            "ip_allow.yaml",
+            "ip_allow:\n"
+            "  - apply: in\n"
+            "    ip_addrs: 0/0\n"
+            "    action: allow\n"
+            "    methods: ALL\n",
+        )
+        ats.set_logging_yaml({"logging": {
+            "formats": [{
+                "name": "reserve_test",
+                "format": "%<cqtq>",
+            }]
+        }})
+        ats.write_config_file(
+            "sni.yaml",
+            'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',
+        )
+        return ats
 
-    # --- Setup ---
-    ts = urtest.MakeATSProcess("ts", enable_cache=True)
-    # Allow extra startup time — cache clearing can take ~10s in some environments.
-    ts.StartupTimeout = 30
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'rpc|config|config.reload|filemanager',
-        })
+    def change_records_without_notifying_ats(self) -> None:
+        """Change a trigger record on disk before the explicit reload."""
 
-    # Provide valid content for files whose handlers reject empty input.
-    ts.Disk.ip_allow_yaml.AddLines([
-        'ip_allow:',
-        '- apply: in',
-        '  ip_addrs: 0/0',
-        '  action: allow',
-        '  methods: ALL',
-    ])
-    ts.Disk.logging_yaml.AddLines([
-        'logging:',
-        '  formats:',
-        '    - name: reserve_test',
-        '      format: "%<cqtq>"',
-    ])
-    ts.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: "*.example.com"',
-        '  verify_client: NONE',
-    ])
+        result = self._ats.traffic_ctl(
+            "config",
+            "set",
+            "proxy.config.diags.debug.tags",
+            "rpc|config|config.reload|filemanager|upd",
+            "--cold",
+        )
+        assert result.returncode == 0, result.output
 
-    # Files to touch to trigger file-based handlers during reload.
-    files_to_touch = [
-        ts.Disk.ip_allow_yaml,
-        ts.Disk.logging_yaml,
-        ts.Disk.sni_yaml,
-        ts.Disk.cache_config,
-    ]
-    touch_cmd = "touch " + " ".join([f.AbsRunTimePath for f in files_to_touch])
+    def touch_other_reload_files(self) -> None:
+        """Make file-based handlers participate in the same reload."""
 
-    # ============================================================================
-    # Test 1: Start ATS, let it settle, then modify records.yaml on disk
-    # ============================================================================
-    tr = urtest.AddTestRun("Modify records.yaml via --cold to change a trigger record")
-    tr.Processes.Default.StartBefore(ts)
-    # Change debug tags — this touches records.yaml on disk so rereadConfig
-    # detects it as changed.  The --cold flag modifies the file without
-    # notifying the running process (the reload will pick it up).
-    tr.Processes.Default.Command = (
-        'sleep 3 && traffic_ctl config set proxy.config.diags.debug.tags '
-        '"rpc|config|config.reload|filemanager|upd" --cold')
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+        paths = (
+            self._ats.config_directory / "ip_allow.yaml",
+            self._ats.config_directory / "logging.yaml",
+            self._ats.config_directory / "sni.yaml",
+            self._ats.config_directory / "cache.config",
+        )
+        for path in paths:
+            path.touch()
 
-    # ============================================================================
-    # Test 2: Touch additional config files to bump mtime
-    # ============================================================================
-    tr = urtest.AddTestRun("Touch config files to trigger file-based handlers")
-    tr.Processes.Default.Command = touch_cmd
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+    def reload_and_check_status(self) -> None:
+        """Trigger a named reload and verify its terminal state."""
 
-    # ============================================================================
-    # Test 3: Trigger reload with a named token
-    # ============================================================================
-    tr = urtest.AddTestRun("Trigger reload with named token")
-    tr.Processes.Default.Command = "traffic_ctl config reload -t reserve_subtask_test"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+        result = self._ats.traffic_ctl("config", "reload", "-t", "reserve_subtask_test")
+        assert result.returncode == 0, result.output
+        time.sleep(15)
+        status = self._ats.traffic_ctl("config", "status", "-t", "reserve_subtask_test")
+        assert status.returncode == 0, status.output
+        assert "success" in status.stdout
+        assert "in_progress" not in status.stdout
 
-    # ============================================================================
-    # Test 4: Wait for all handlers to complete, then query status
-    # ============================================================================
-    tr = urtest.AddTestRun("Verify reload completed — no tasks stuck in progress")
-    tr.DelayStart = 15
-    tr.Processes.Default.Command = "traffic_ctl config status -t reserve_subtask_test"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    # No subtask should still be in_progress after 15s.
-    tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-        "in_progress", "No task should remain in progress after 15s delay")
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("success", "Final reload status must be success")
-    tr.StillRunningAfter = ts
+    def check_reload_diagnostics(self) -> None:
+        """Verify reservation succeeded without conflicting transitions."""
 
-    # ============================================================================
-    # Test 5: Verify no state-transition conflicts in traffic.out
-    #
-    # "ignoring transition from" means two code paths disagree about a task's
-    # outcome.  This must never happen.
-    # ============================================================================
-    ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-        "ignoring transition from", "No state-transition conflicts should appear in traffic.out")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Reserved subtask", "reserve_subtask() must log pre-registration messages")
-    urtest.execute()
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        assert "Reserved subtask" in traffic_out
+        assert "ignoring transition from" not in traffic_out
+
+    def run(self) -> None:
+        """Run the complete reload race scenario."""
+
+        self._ats.start()
+        time.sleep(3)
+        self.change_records_without_notifying_ats()
+        self.touch_other_reload_files()
+        self.reload_and_check_status()
+        self.check_reload_diagnostics()
+
+
+def test_config_reload_reserve_subtask(ats_factory: ATSFactory) -> None:
+    """Reload handlers can reserve children after the parent first succeeds."""
+
+    ConfigReloadReserveSubtaskScenario(ats_factory).run()

@@ -14,128 +14,122 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import os
+import shutil
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_cache_dir_probe(urtest: UraniumTest) -> None:
-    '''Verify cache directory SystemTap probes fire on insert and remove.'''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CacheDirectoryProbeScenario:
+    """Trace cache directory insert and remove USDT probes with bpftrace."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._tracer = self.configure_tracer(services)
 
-    urtest.Summary = '''Verify cache directory SystemTap probes fire on cache fill and PURGE.'''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Serve a cacheable object and accept its PURGE request."""
 
-    # Skipping this test generally because it requires privilege. Thus most CI systems will skip it.
-    urtest.SkipUnless(
-        Condition(lambda: os.geteuid() == 0, "Test requires privilege", True),
-        Condition.HasProgram("bpftrace", "Need bpftrace to verify the probe."))
-
-    class CacheDirProbeTest:
-        '''Verify cache directory SystemTap probes.'''
-        bt_script: str = 'cache_dir_probe.bt'
-        _cache_path: str = '/cacheable'
-
-        def __init__(self):
-            tr = urtest.AddTestRun('Cache directory probes should trigger on insert and purge.')
-            self._configure_origin(tr)
-            self._configure_traffic_server(tr)
-            self._configure_bpftrace(tr)
-            self._configure_client(tr)
-
-        def _configure_origin(self, tr: 'TestRun') -> 'Process':
-            '''Configure the origin microserver.'''
-            origin = urtest.MakeOriginServer('origin')
-            self._origin = origin
-
-            cache_request = {
-                "headers": f"GET {self._cache_path} HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
-                "timestamp": "1469733493.993",
+        origin = services.origin("origin")
+        origin.add_response(
+            {
+                "headers": "GET /cacheable HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
                 "body": ""
-            }
-            cache_response = {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=120\r\nContent-Length: 5\r\n\r\n",
-                "timestamp": "1469733493.993",
-                "body": "hello"
-            }
-            origin.addResponse("sessionlog.json", cache_request, cache_response)
-            origin.addResponse("sessionlog.json", cache_request, cache_response)
-
-            purge_request = {
-                "headers": f"PURGE {self._cache_path} HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
-                "timestamp": "1469733493.993",
+            },
+            {
+                "headers": ("HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=120\r\n"
+                            "Content-Length: 5\r\n\r\n"),
+                "body": "hello",
+            },
+        )
+        origin.add_response(
+            {
+                "headers": "PURGE /cacheable HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
                 "body": ""
-            }
-            purge_response = {
+            },
+            {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
-                "timestamp": "1469733493.993",
                 "body": ""
-            }
-            origin.addResponse("sessionlog.json", purge_request, purge_response)
-            return origin
+            },
+        )
+        return origin
 
-        def _configure_traffic_server(self, tr: 'TestRun') -> 'Process':
-            '''Configure the Traffic Server process.'''
-            ts = tr.MakeATSProcess("ts_cache_dir_probe", enable_cache=True)
-            self._ts = ts
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|cache',
-                    'proxy.config.http.cache.required_headers': 0,
-                    # Keep ATS running as the invoking user inside sudo (no privilege drop).
-                    'proxy.config.admin.user_id': '#-1',
-                })
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._origin.Variables.Port}')
-            return ts
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Keep ATS privileged so bpftrace can observe its cache probes."""
 
-        def _configure_bpftrace(self, tr: 'TestRun') -> 'Process':
-            '''Configure the bpftrace process for the cache directory probes.'''
-            bpftrace = tr.Processes.Process('bpftrace')
-            self._bpftrace = bpftrace
+        ats = ats_factory.create("ts", enable_cache=True)
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|cache",
+                "proxy.config.http.cache.required_headers": 0,
+                "proxy.config.admin.user_id": "#-1",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        return ats
 
-            tr.Setup.Copy(self.bt_script)
-            tr_script = os.path.join(tr.RunDirectory, self.bt_script)
+    @staticmethod
+    def configure_tracer(services: ServiceFactory) -> ProcessService:
+        """Create the bpftrace process for the cache probe script."""
 
-            # fan out output so AuTest stream checks still work
-            tee_path = os.path.join(tr.RunDirectory, 'bpftrace.out')
-            bpftrace.Command = f"bpftrace {tr_script}"
-            bpftrace.ReturnCode = 0
-            bpftrace.Streams.All += Testers.ContainsExpression('cache_dir_insert', 'cache_dir_insert probe fired.')
-            bpftrace.Streams.All += Testers.ContainsExpression('cache_dir_remove', 'cache_dir_remove probe fired.')
+        return services.process("bpftrace", ("bpftrace", TEST_DIRECTORY / "cache_dir_probe.bt"))
 
-            return bpftrace
+    def wait_for_trace(self, expression: str, timeout: float = 10) -> None:
+        """Wait for one marker in the live tracer output."""
 
-        def _configure_client(self, tr: 'TestRun') -> 'Process':
-            '''Configure the client traffic to exercise cache insert and purge.'''
-            client = tr.Processes.Default
-            self._client = client
-            cache_url = f"http://127.0.0.1:{self._ts.Variables.port}{self._cache_path}"
-            # Ideally we don't need this "sleep 1", but I haven't been able to get it to work with the Ready = When.FileContains(...) approach.
-            client.Command = (
-                f"sleep 1 && curl -sSf -o /dev/null -H 'Host: cache-probe.test' {cache_url} && "
-                f"curl -sSf -o /dev/null -X PURGE -H 'Host: cache-probe.test' {cache_url} && "
-                f"curl -sSf -o /dev/null -H 'Host: cache-probe.test' {cache_url}")
-            client.ReturnCode = 0
-            client.Env = self._ts.Env
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if expression in self._tracer.output:
+                return
+            if not self._tracer.is_running and self._tracer.output:
+                pytest.skip(f"bpftrace cannot attach to the ATS probes:\n{self._tracer.output}")
+            time.sleep(0.1)
+        raise AssertionError(f"Expected {expression!r} in bpftrace output:\n{self._tracer.output}")
 
-            self._ts.StartBefore(self._origin)  # origin before ts
-            self._bpftrace.StartBefore(self._ts)  # ts before bpftrace
-            client.StartBefore(self._bpftrace)  # bpftrace before client
-            return client
+    def request(self, method: str = "GET") -> None:
+        """Send one cache operation through ATS."""
 
-    CacheDirProbeTest()
-    urtest.execute()
+        result = self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--show-error",
+            "--fail",
+            "--output",
+            "/dev/null",
+            "--request",
+            method,
+            "--header",
+            "Host: cache-probe.test",
+            f"http://127.0.0.1:{self._ats.http_port}/cacheable",
+        )
+        assert result.returncode == 0, result.output
+
+    def run(self) -> None:
+        """Fill, purge, and refill while tracing both directory operations."""
+
+        if os.geteuid() != 0 or shutil.which("bpftrace") is None:
+            pytest.skip("cache probe tracing requires root and bpftrace")
+        self._origin.start()
+        self._ats.start()
+        self._tracer.start()
+        self.wait_for_trace("cache_dir_probe: ready")
+        self.request()
+        self.request("PURGE")
+        self.request()
+        self.wait_for_trace("cache_dir_insert")
+        self.wait_for_trace("cache_dir_remove")
+
+
+def test_cache_dir_probe(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Cache fill and PURGE fire their directory USDT probes."""
+
+    CacheDirectoryProbeScenario(ats_factory, services, curl).run()

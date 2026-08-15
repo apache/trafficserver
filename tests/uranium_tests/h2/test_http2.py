@@ -13,296 +13,262 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Cover HTTP/2 behavior that requires curl or bespoke frame clients."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_http2(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class Http2TlsScenario:
+    """Common configuration for a custom HTTP/2 client and HTTP/1 origin."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, name: str) -> None:
+        self._origin = self.configure_origin(services, name)
+        self._ats = self.configure_ats(ats_factory, name)
 
-    urtest.Summary = '''
-    Test a basic remap of a http/2 connection
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory, name: str) -> OriginServer:
+        """Create a default empty HTTP response origin."""
 
-    urtest.SkipUnless(Condition.HasCurlFeature('http2'))
-    urtest.ContinueOnFail = True
+        origin = services.origin(f"origin-{name}")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    # ----
-    # Setup Origin Server
-    # ----
-    server = urtest.MakeOriginServer("server")
+    def configure_ats(self, ats_factory: ATSFactory, name: str) -> ATS:
+        """Configure a TLS HTTP/2 ingress mapped to the origin."""
 
-    # For Test Case 1 & 5 - /
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        })
+        ats = ats_factory.create(f"ats-{name}", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.http2.active_timeout_in": 3,
+                "proxy.config.http2.max_concurrent_streams_in": 65535,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        return ats
 
-    # For Test Case 2 - /bigfile
-    # Add info for the large H2 download test
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers":
-                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 191414\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        })
+    def start(self) -> None:
+        """Start the origin and ATS in dependency order."""
 
-    # For Test Case 3 - /test2
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /test2 HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        })
+        self._origin.start()
+        self._ats.start()
 
-    # For Test Case 6 - /postchunked
-    post_body = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890"
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "POST /postchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": post_body
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "0123456789"
-        })
 
-    # For Test Case 7 - /bigpostchunked
-    # Make a post body that will be split across at least two frames
-    big_post_body = "0123456789" * 131070
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "POST /bigpostchunked HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": big_post_body
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "0123456789"
-        })
+class Http2ActiveTimeoutScenario(Http2TlsScenario):
+    """Use the frame client that holds an HTTP/2 connection past its timeout."""
 
-    big_post_body_file = open(os.path.join(urtest.RunDirectory, "big_post_body"), "w")
-    big_post_body_file.write(big_post_body)
-    big_post_body_file.close()
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        super().__init__(ats_factory, services, "active-timeout")
 
-    # For Test Case 8 - /huge_resp_hdrs
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "200 OK"
-        })
+    def run(self) -> None:
+        """Verify the connection ends at the configured active timeout."""
 
-    # For Test Case 9 - /status/204
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /status/204 HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 204 No Content\r\nServer: microserver\r\nConnection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        })
+        self.start()
+        result = self._ats.run(
+            sys.executable,
+            TEST_DIRECTORY / "h2active_timeout.py",
+            str(self._ats.https_port),
+            "/",
+            "4",
+            timeout=10,
+        )
+        assert result.returncode == 0, result.output
+        assert "CONNECTION_TIMEOUT" in result.output
 
-    # ----
-    # Setup ATS
-    # ----
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
-    # add ssl materials like key, certificates for the server
-    ts.addDefaultSSLFiles()
+class Http2ExtensionSettingsScenario(Http2TlsScenario):
+    """Send an extension setting before an otherwise ordinary request."""
 
-    ts.Setup.CopyAs('rules/huge_resp_hdrs.conf', urtest.RunDirectory)
-    ts.Disk.remap_config.AddLine(
-        'map /huge_resp_hdrs http://127.0.0.1:{0}/huge_resp_hdrs @plugin=header_rewrite.so @pparam={1}/huge_resp_hdrs.conf '.format(
-            server.Variables.Port, urtest.RunDirectory))
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        super().__init__(ats_factory, services, "extension-settings")
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+    def run(self) -> None:
+        """Verify extension settings fit within the default limits."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.http2.active_timeout_in': 3,
-            'proxy.config.http2.max_concurrent_streams_in': 65535,
-        })
+        self.start()
+        result = self._ats.run(
+            sys.executable,
+            TEST_DIRECTORY / "clients" / "h2_extension_settings.py",
+            str(self._ats.https_port),
+            timeout=10,
+        )
+        assert result.returncode == 0, result.output
+        assert "Received 200 response" in result.stdout
 
-    ts.Setup.CopyAs('h2client.py', urtest.RunDirectory)
-    ts.Setup.CopyAs('h2active_timeout.py', urtest.RunDirectory)
-    ts.Setup.CopyAs('clients/h2_extension_settings.py', urtest.RunDirectory)
 
-    settings_limit_ts = urtest.MakeATSProcess("ts_settings_limit", enable_tls=True, enable_cache=False)
-    settings_limit_ts.addDefaultSSLFiles()
-    settings_limit_ts.Setup.CopyAs('clients/h2_max_settings_per_minute.py', urtest.RunDirectory)
-    settings_limit_ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': f'{settings_limit_ts.Variables.SSLDir}',
-            'proxy.config.ssl.server.private_key.path': f'{settings_limit_ts.Variables.SSLDir}',
-            'proxy.config.http2.max_settings_per_frame': -1,
-            'proxy.config.http2.max_settings_per_minute': 1,
-            'proxy.config.http2.max_settings_frames_per_minute': 100,
-        })
-    settings_limit_ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-    settings_limit_ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        "ERROR: HTTP/2 connection error.*recv settings too frequent setting changes",
-        "ATS should log the SETTINGS limit connection error.")
+class Http2SettingsRateLimitScenario:
+    """Exceed the per-minute setting-change limit with a bespoke client."""
 
-    # ----
-    # Test Cases
-    # ----
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    # Test Case 1:  basic H2 interaction
-    tr = urtest.AddTestRun("basic H2 interaction")
-    tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} / --verify_default_body'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.Streams.stdout = "gold/remap-200.gold"
-    tr.StillRunningAfter = server
+    @staticmethod
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Disable per-frame limiting and allow one setting change per minute."""
 
-    # Test Case 2: Make sure all the big file gets back.  Regression test for issue 1646
-    tr = urtest.AddTestRun("big file download")
-    tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} /bigfile --repeat 2 --verify_default_body'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/bigfile.gold"
-    tr.StillRunningAfter = server
+        ats = ats_factory.create("ats-settings-rate-limit", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.http2.max_settings_per_frame": -1,
+                "proxy.config.http2.max_settings_per_minute": 1,
+                "proxy.config.http2.max_settings_frames_per_minute": 100,
+            })
+        return ats
 
-    # Test Case 3: Chunked content
-    tr = urtest.AddTestRun("chunked content")
-    tr.Processes.Default.Command = f'{sys.executable} h2client.py {ts.Variables.ssl_port} /test2 --print_body'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/chunked.gold"
-    tr.StillRunningAfter = server
+    def run(self) -> None:
+        """Verify ATS replies with ENHANCE_YOUR_CALM and logs the reason."""
 
-    # NOTE: Skipping this test run because traffic-replay doesn't currently support H2
-    # Test Case 4: Multiple request
-    # client_path = os.path.join(Test.Variables.AtsTestToolsDir, 'traffic-replay/')
-    # tr = Test.AddTestRun("multiple request")
-    # tr.Processes.Default.Command = \
-    #     (f"{sys.executable} {client_path} -type h2 -log_dir {server.Variables.DataDir} "
-    #      f"-port {ts.Variables.port} -host '127.0.0.1' -s_port {ts.Variables.ssl_port} -v -colorize False")
-    # tr.Processes.Default.ReturnCode = 0
-    # tr.Processes.Default.Streams.stdout = "gold/replay.gold"
-    # tr.StillRunningAfter = server
+        self._ats.start()
+        result = self._ats.run(
+            sys.executable,
+            TEST_DIRECTORY / "clients" / "h2_max_settings_per_minute.py",
+            str(self._ats.https_port),
+            timeout=10,
+        )
+        assert result.returncode == 0, result.output
+        assert "Received GOAWAY with error code 11" in result.stdout
+        wait_for_file_lines(
+            self._ats.diags_log,
+            r"ERROR: HTTP/2 connection error.*recv settings too frequent setting changes",
+            1,
+        )
 
-    # Test Case 5: h2_active_timeout
-    tr = urtest.AddTestRun("h2_active_timeout")
-    tr.Processes.Default.Command = f'{sys.executable} h2active_timeout.py {ts.Variables.ssl_port} / 4'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = "gold/active_timeout.gold"
-    tr.StillRunningAfter = server
 
-    # Test Case 6: Post with chunked body
-    # While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
-    # on the post body
-    tr = urtest.AddTestRun("post with chunked body")
-    tr.MakeCurlCommand(
-        '-s -k -H "Transfer-Encoding: chunked" -d "{0}" https://127.0.0.1:{1}/postchunked'.format(post_body, ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
-    tr.StillRunningAfter = server
+class Http2CurlScenario:
+    """Exercise curl's chunked uploads and receipt of very large H2 headers."""
 
-    # Test Case 7: Post with big chunked body
-    # While HTTP/2 does not support Transfer-encoding we pass that into curl to encourage it to not set the content length
-    # on the post body
-    tr = urtest.AddTestRun("post with big chunked body")
-    tr.MakeCurlCommand(
-        '-s -k -H "Transfer-Encoding: chunked" -d @big_post_body https://127.0.0.1:{0}/bigpostchunked'.format(
-            ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = "gold/post_chunked.gold"
-    tr.StillRunningAfter = server
+    SMALL_BODY = "1234567890" * 11
+    LARGE_BODY = "0123456789" * 131070
 
-    # Test Case 8: Huge response header
-    tr = urtest.AddTestRun("huge response header")
-    # Different versions of curl have "bytes data" at various places in the output.
-    # Normalize them by simply filtering out those lines since they are not
-    # important to this test.
-    tr.MakeCurlCommand(f'-vs -k --http2 https://127.0.0.1:{ts.Variables.ssl_port}/huge_resp_hdrs |& grep -v "bytes data"', ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    # Different versions of curl will have different cases for HTTP/2 field names.
-    tr.Processes.Default.Streams.stdout = Testers.GoldFile("gold/http2_8_stdout.gold", case_insensitive=True)
-    tr.StillRunningAfter = server
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("TLS HTTP/2 curl coverage requires a TCP listener")
+        if not curl.supports("http2"):
+            pytest.skip("curl does not support HTTP/2")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._large_body_file = ats_factory.run_directory / "big_post_body"
+        self._large_body_file.write_text(self.LARGE_BODY)
 
-    # Test Case 9: Header Only Response - e.g. 204
-    tr = urtest.AddTestRun("header only response")
-    tr.MakeCurlCommand('-vs -k --http2 https://127.0.0.1:{0}/status/204'.format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/http2_9_stdout.gold"
-    # Different versions of curl will have different cases for HTTP/2 field names.
-    tr.Processes.Default.Streams.stderr = Testers.GoldFile("gold/http2_9_stderr.gold", case_insensitive=True)
-    tr.StillRunningAfter = server
+    @classmethod
+    def configure_origin(cls, services: ServiceFactory) -> OriginServer:
+        """Create responses for small upload, large upload, and huge headers."""
 
-    # Test Case 10: max_settings_per_minute with max_settings_per_frame disabled
-    tr = urtest.AddTestRun("max_settings_per_minute with max_settings_per_frame disabled")
-    tr.Processes.Default.Command = f'{sys.executable} h2_max_settings_per_minute.py {settings_limit_ts.Variables.ssl_port}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(settings_limit_ts)
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-        "Received GOAWAY with error code 11", "Received ENHANCE_YOUR_CALM GOAWAY.")
+        origin = services.origin("origin-curl")
+        for path, body in (("/postchunked", cls.SMALL_BODY), ("/bigpostchunked", cls.LARGE_BODY)):
+            origin.add_response(
+                {
+                    "headers": f"POST {path} HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+                    "body": body
+                },
+                {
+                    "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 10\r\n\r\n",
+                    "body": "0123456789",
+                },
+            )
+        origin.add_response(
+            {"headers": "GET /huge_resp_hdrs HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 6\r\n\r\n",
+                "body": "200 OK",
+            },
+        )
+        return origin
 
-    # Test Case 11: Extension settings fit within the default SETTINGS limits.
-    tr = urtest.AddTestRun("HTTP/2 extension settings")
-    tr.Processes.Default.Command = f'{sys.executable} h2_extension_settings.py {ts.Variables.ssl_port}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        "Received 200 response", "The request following the extension settings should succeed.")
-    tr.StillRunningAfter = server
-    urtest.execute()
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure TLS and header_rewrite for the large response-header case."""
+
+        ats = ats_factory.create("ats-curl", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        if not ats.plugin_exists("header_rewrite.so"):
+            pytest.skip("header_rewrite.so is not installed")
+        ats.copy_to_config(TEST_DIRECTORY / "rules" / "huge_resp_hdrs.conf")
+        ats.remap_config.add_lines(
+            (
+                f"map /huge_resp_hdrs http://127.0.0.1:{self._origin.port}/huge_resp_hdrs "
+                f"@plugin=header_rewrite.so @pparam={ats.config_directory / 'huge_resp_hdrs.conf'}",
+                f"map / http://127.0.0.1:{self._origin.port}",
+            ))
+        return ats
+
+    def post(self, path: str, data: str) -> None:
+        """POST through curl's chunked-input mode and verify the response."""
+
+        result = self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--show-error",
+            "--insecure",
+            "--header",
+            "Transfer-Encoding: chunked",
+            "--data-binary",
+            data,
+            f"https://127.0.0.1:{self._ats.https_port}{path}",
+            timeout=30,
+        )
+        assert result.returncode == 0, result.output
+        assert result.stdout == "0123456789", result.output
+
+    def verify_huge_response_headers(self) -> None:
+        """Verify six large fields survive HTTP/2 header encoding and decoding."""
+
+        result = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--silent",
+            "--insecure",
+            "--http2",
+            f"https://127.0.0.1:{self._ats.https_port}/huge_resp_hdrs",
+            timeout=30,
+        )
+        assert result.returncode == 0, result.output
+        assert result.stdout == "200 OK", result.output
+        assert "HTTP/2 200" in result.stderr, result.output
+        for index in range(6):
+            assert f"x-huge-{index}:" in result.stderr.lower(), result.output
+
+    def run(self) -> None:
+        """Run both chunked uploads and the huge response-header request."""
+
+        self._origin.start()
+        self._ats.start()
+        self.post("/postchunked", self.SMALL_BODY)
+        self.post("/bigpostchunked", f"@{self._large_body_file}")
+        self.verify_huge_response_headers()
+
+
+def test_http2_active_timeout(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """The custom client observes the configured H2 active timeout."""
+
+    Http2ActiveTimeoutScenario(ats_factory, services).run()
+
+
+def test_http2_extension_settings(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """An extension setting does not prevent the following request."""
+
+    Http2ExtensionSettingsScenario(ats_factory, services).run()
+
+
+def test_http2_settings_rate_limit(ats_factory: ATSFactory) -> None:
+    """Frequent setting changes trigger ENHANCE_YOUR_CALM."""
+
+    Http2SettingsRateLimitScenario(ats_factory).run()
+
+
+def test_http2_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Curl can upload chunked bodies and receive huge HTTP/2 fields."""
+
+    Http2CurlScenario(ats_factory, services, curl).run()

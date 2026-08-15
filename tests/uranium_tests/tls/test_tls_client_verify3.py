@@ -14,158 +14,126 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_tls_client_verify3(urtest: UraniumTest) -> None:
-    '''
-    Test per SNI server name selection of CA certs for validating cert sent by client.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsClientVerifyCaScenario:
+    """Select inbound client-certificate CAs from the requested SNI name."""
 
-    urtest.Summary = '''
-    Test per SNI server name selection of CA certs for validating cert sent by client.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the clear-text origin behind the TLS endpoint."""
 
-    server = urtest.MakeOriginServer("server")
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET /xyz HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": "yadayadayada",
+            },
+        )
+        return origin
 
-    request_header = {"headers": "GET /xyz HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "yadayadayada"
-    }
-    server.addResponse("sessionlog.json", request_header, response_header)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the default AAA CA and per-SNI BBB and CCC CAs."""
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_config(SSL_DIRECTORY / "bbb-ca.pem")
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "server.pem",
+            SSL_DIRECTORY / "server.key",
+            SSL_DIRECTORY / "bbb-signed.key",
+            SSL_DIRECTORY / "bbb-signed.pem",
+            SSL_DIRECTORY / "aaa-ca.pem",
+            SSL_DIRECTORY / "ccc-ca.pem",
+        )
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                "  - ssl_cert_name: bbb-signed.pem",
+                "    ssl_key_name: bbb-signed.key",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl",
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.ssl.client.certification_level": 2,
+                "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "aaa-ca.pem"),
+                "proxy.config.ssl.TLSv1_3.enabled": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: bbb.com\n"
+            "    verify_client: STRICT\n"
+            "    verify_client_ca_certs: bbb-ca.pem\n"
+            "  - fqdn: bbb-signed\n"
+            "    verify_client: STRICT\n"
+            "    verify_client_ca_certs: bbb-ca.pem\n"
+            "  - fqdn: ccc.com\n"
+            "    verify_client: STRICT\n"
+            "    verify_client_ca_certs:\n"
+            f"      file: {ats.ssl_directory / 'ccc-ca.pem'}\n",
+        )
+        return ats
 
-    ts.Setup.Copy("ssl/bbb-ca.pem", ts.Variables.CONFIGDIR)
-    ts.Setup.Copy("ssl/bbb-signed.key", ts.Variables.SSLDir)
-    ts.Setup.Copy("ssl/bbb-signed.pem", ts.Variables.SSLDir)
-    ts.Setup.Copy("ssl/aaa-ca.pem", ts.Variables.SSLDir)
-    ts.Setup.Copy("ssl/ccc-ca.pem", ts.Variables.SSLDir)
+    def request(self, hostname: str, certificate_name: str) -> tuple[int, str]:
+        """Connect with @a certificate_name while requesting @a hostname."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl',
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.ssl.client.certification_level': 2,
-            'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/aaa-ca.pem',
-            'proxy.config.ssl.TLSv1_3.enabled': 0
-        })
+        result = self._curl.run(
+            "--verbose",
+            "--insecure",
+            "--tls-max",
+            "1.2",
+            "--cert",
+            str(SSL_DIRECTORY / f"{certificate_name}.pem"),
+            "--key",
+            str(SSL_DIRECTORY / f"{certificate_name}.key"),
+            "--resolve",
+            f"{hostname}:{self._ats.https_port}:127.0.0.1",
+            f"https://{hostname}:{self._ats.https_port}/xyz",
+        )
+        return result.returncode, result.output
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - ssl_cert_name: bbb-signed.pem
-        ssl_key_name: bbb-signed.key
-    """.split("\n"))
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def run(self) -> None:
+        """Exercise matching and mismatched CA selections."""
 
-    # Just map everything through to origin.  This test is concentrating on the user-agent side.
-    ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
+        self._origin.start()
+        self._ats.start()
+        for hostname, certificate in (
+            ("aaa.com", "aaa-signed"),
+            ("bbb-signed", "bbb-signed"),
+            ("ccc.com", "ccc-signed"),
+        ):
+            return_code, output = self.request(hostname, certificate)
+            assert return_code == 0, output
+            assert "yadayadayada" in output
+        for hostname, certificate in (
+            ("aaa.com", "bbb-signed"),
+            ("bbb.com", "ccc-signed"),
+            ("ccc.com", "aaa-signed"),
+        ):
+            return_code, output = self.request(hostname, certificate)
+            assert return_code != 0, output
 
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: bbb.com',
-            '  verify_client: STRICT',
-            '  verify_client_ca_certs: bbb-ca.pem',
-            '- fqdn: bbb-signed',
-            '  verify_client: STRICT',
-            '  verify_client_ca_certs: bbb-ca.pem',
-            '- fqdn: ccc.com',
-            '  verify_client: STRICT',
-            '  verify_client_ca_certs:',
-            f'    file: {ts.Variables.SSLDir}/ccc-ca.pem',
-        ])
 
-    # Success test runs.
+def test_tls_client_verify3(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """SNI policy chooses the CA used to validate an inbound client certificate."""
 
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
-            ts.Variables.ssl_port, urtest.TestDirectory + "/ssl/aaa-signed"),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    tr = urtest.AddTestRun()
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb-signed:{0}:127.0.0.1'" +
-         " https://bbb-signed:{0}/xyz").format(ts.Variables.ssl_port, urtest.TestDirectory + "/ssl/bbb-signed"),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    tr = urtest.AddTestRun()
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
-            ts.Variables.ssl_port, urtest.TestDirectory + "/ssl/ccc-signed"),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    # Failure test runs.
-
-    tr = urtest.AddTestRun()
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
-            ts.Variables.ssl_port, urtest.TestDirectory + "/ssl/bbb-signed"),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 35
-
-    tr = urtest.AddTestRun()
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb.com:{0}:127.0.0.1'" + " https://bbb.com:{0}/xyz").format(
-            ts.Variables.ssl_port, urtest.TestDirectory + "/ssl/ccc-signed"),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 35
-
-    tr = urtest.AddTestRun()
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        (" -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" +
-         " https://ccc.com:{0}/xyz").format(ts.Variables.ssl_port, urtest.TestDirectory + "/ssl/aaa-signed"),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 35
-    urtest.execute()
+    TlsClientVerifyCaScenario(ats_factory, services, curl).run()

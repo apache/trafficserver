@@ -14,260 +14,185 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    Curl,
+    HttpBinServer,
+    ProcessService,
+    ServiceFactory,
+    VerifierServer,
+    assert_matches_gold,
+    wait_for_file_lines,
+)
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_connect(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CurlConnectScenario:
+    """Exercise curl's HTTP/1.1 proxy-tunnel mode and its access log entry."""
 
-    from enum import Enum
-    import os
-    import re
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = 'Exercise HTTP CONNECT Method'
-    urtest.ContinueOnFail = True
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> HttpBinServer:
+        """Create the HTTP origin reached after CONNECT succeeds."""
 
-    class ConnectTest:
+        return services.httpbin("httpbin")
 
-        class State(Enum):
-            """
-            State of process
-            """
-            INIT = 0
-            RUNNING = 1
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Allow CONNECT only to the allocated origin port."""
 
-        def __init__(self):
-            self.state = self.State.INIT
-            self.__setupOriginServer()
-            self.__setupTS()
+        ats = ats_factory.create("ts")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.http.server_ports": str(ats.http_port),
+                "proxy.config.http.connect_ports": str(self._origin.port),
+                "proxy.config.log.max_secs_per_buffer": 1,
+            })
+        ats.remap_config.add_line(f"map http://foo.com/ http://127.0.0.1:{self._origin.port}/")
+        ats.allow_private_connect()
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats":
+                            [{
+                                "name": "common",
+                                "format": '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>',
+                            }],
+                        "logs": [{
+                            "filename": "access",
+                            "format": "common"
+                        }],
+                    }
+            })
+        return ats
 
-        def __setupOriginServer(self):
-            self.httpbin = urtest.MakeHttpBinServer("httpbin")
+    def run(self) -> None:
+        """Tunnel one request and validate curl diagnostics and the CONNECT log."""
 
-        def __setupTS(self):
-            self.ts = urtest.MakeATSProcess("ts")
+        self._origin.start()
+        self._ats.start()
+        result = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--fail",
+            "--silent",
+            "--proxytunnel",
+            "--proxy",
+            f"127.0.0.1:{self._ats.http_port}",
+            "http://foo.com/get",
+            timeout=10,
+        )
+        assert result.returncode == 0, result.output
+        assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / "connect_0_stderr.gold")
+        access_log = wait_for_file_lines(self._ats.log_directory / "access.log", "CONNECT", 1)
+        assert_matches_gold(access_log, TEST_DIRECTORY / "gold" / "connect_access.gold")
 
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http',
-                    'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
-                    'proxy.config.http.connect_ports': f"{self.httpbin.Variables.Port}",
-                })
 
-            self.ts.Disk.remap_config.AddLines([
-                f"map http://foo.com/ http://127.0.0.1:{self.httpbin.Variables.Port}/",
-            ])
-            self.ts.addPrivateConnectAllowYaml()
+class VerifierConnectScenario:
+    """Exercise HTTP/1.1 or HTTP/2 CONNECT with Proxy Verifier."""
 
-            self.ts.Disk.logging_yaml.AddLines(
-                '''
-    logging:
-      formats:
-        - name: common
-          format: '%<chi> - %<caun> [%<cqtn>] "%<cqhm> %<pqu> %<cqpv>" %<pssc> %<pscl>'
-      logs:
-        - filename: access
-          format: common
-    '''.split("\n"))
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, *, use_http2: bool) -> None:
+        self._services = services
+        self._use_http2 = use_http2
+        replay_name = "connect_h2.replay.yaml" if use_http2 else "connect.replay.yaml"
+        self._replay = TEST_DIRECTORY / "replays" / replay_name
+        suffix = "h2" if use_http2 else "h1"
+        self._server = self.configure_server(services, suffix)
+        self._ats = self.configure_ats(ats_factory, suffix)
+        self._client = self.configure_client(services, suffix)
 
-        def __checkProcessBefore(self, tr):
-            if self.state == self.State.RUNNING:
-                tr.StillRunningBefore = self.httpbin
-                tr.StillRunningBefore = self.ts
-            else:
-                tr.Processes.Default.StartBefore(self.httpbin)
-                tr.Processes.Default.StartBefore(self.ts)
-                self.state = self.State.RUNNING
+    def configure_server(self, services: ServiceFactory, suffix: str) -> VerifierServer:
+        """Create the verifier tunnel destination."""
 
-        def __checkProcessAfter(self, tr):
-            assert (self.state == self.State.RUNNING)
-            tr.StillRunningAfter = self.httpbin
-            tr.StillRunningAfter = self.ts
+        return services.verifier_server(f"connect-server-{suffix}", self._replay)
 
-        def __testCase0(self):
-            tr = urtest.AddTestRun()
-            self.__checkProcessBefore(tr)
-            tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
-            tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
-            tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-                rf'(Connected to|Established connection to) 127\.0\.0\.1.*{self.ts.Variables.port}',
-                'Curl should connect through the ATS proxy port.')
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.TimeOut = 3
-            self.__checkProcessAfter(tr)
+    def configure_ats(self, ats_factory: ATSFactory, suffix: str) -> ATS:
+        """Configure a listener and CONNECT ACL for the verifier origin."""
 
-        def __testAccessLog(self):
-            """Wait for the access log entry to be written."""
-            urtest.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/connect_access.gold')
+        ats = ats_factory.create(f"connect-ts-{suffix}", enable_tls=self._use_http2)
+        if self._use_http2:
+            ats.add_default_ssl_files()
+            server_ports = f"{ats.https_port}:ssl"
+            tags = "http|hpack"
+        else:
+            server_ports = str(ats.http_port)
+            tags = "http|iocore_net|rec"
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": tags,
+                "proxy.config.http.server_ports": server_ports,
+                "proxy.config.http.connect_ports": str(self._server.http_port),
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}/")
+        ats.allow_private_connect()
+        return ats
 
-            urtest.AddAwaitFileContainsTestRun(
-                'Await CONNECT access log entry.',
-                os.path.join(self.ts.Variables.LOGDIR, 'access.log'),
-                'CONNECT',
-            )
+    def configure_client(self, services: ServiceFactory, suffix: str) -> ProcessService:
+        """Create the verifier client for the selected inbound protocol."""
 
-        def run(self):
-            self.__testCase0()
-            self.__testAccessLog()
+        options = {"https_ports": [self._ats.https_port]} if self._use_http2 else {"http_ports": [self._ats.http_port]}
+        return services.verifier_client(f"connect-client-{suffix}", self._replay, **options)
 
-    ConnectTest().run()
+    def verify_server_output(self) -> None:
+        """Require the tunneled request and exclude the CONNECT metadata at the origin."""
 
-    class ConnectViaPVTest:
-        # This test also executes the CONNECT request but using proxy verifier to
-        # generate traffic
-        connectReplayFile = "replays/connect.replay.yaml"
+        if self._use_http2:
+            assert "test: connect-request" not in self._server.output
+            assert re.search(r"GET /get HTTP/1\.1\nuuid: 1\ntest: real-request", self._server.output)
+        else:
+            assert "uuid: 1" not in self._server.output
+            assert re.search(r"GET /get HTTP/1\.1\nuuid: 2", self._server.output)
 
-        def __init__(self):
-            self.setupOriginServer()
-            self.setupTS()
+    def verify_metrics(self) -> None:
+        """Compare the HTTP/1.1 tunnel connection metrics with their gold file."""
 
-        def setupOriginServer(self):
-            self.server = urtest.MakeVerifierServerProcess("connect-verifier-server", self.connectReplayFile)
-            # Verify server output
-            self.server.Streams.stdout += Testers.ExcludesExpression(
-                "uuid: 1", "Verify the CONNECT request doesn't reach the server.")
-            self.server.Streams.stdout += Testers.ContainsExpression(
-                "GET /get HTTP/1.1\nuuid: 2", reflags=re.MULTILINE, description="Verify the server gets the second request.")
+        gold = TEST_DIRECTORY / "gold" / "metrics.gold"
+        names = [line.split()[0] for line in gold.read_text().splitlines()]
+        result = self._ats.traffic_ctl("metric", "get", *names)
+        assert result.returncode == 0, result.output
+        assert_matches_gold(result.stdout, gold)
 
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess("connect-ts")
+    def run(self) -> None:
+        """Run the tunneled verifier transaction and validate ATS accounting."""
 
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|iocore_net|rec',
-                    'proxy.config.http.server_ports': f"{self.ts.Variables.port}",
-                    'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
-                })
+        self._server.start()
+        self._ats.start()
+        self._client.run()
+        self.verify_server_output()
+        traffic_output = self._ats.traffic_out.read_text(errors="replace")
+        assert re.search(
+            rf"Proxy's Request.*\n.*\nCONNECT 127\.0\.0\.1:{self._server.http_port} HTTP/1\.1",
+            traffic_output,
+        )
+        if not self._use_http2:
+            self.verify_metrics()
 
-            self.ts.Disk.remap_config.AddLines([
-                f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-            ])
-            self.ts.addPrivateConnectAllowYaml()
-            # Verify ts logs
-            self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
-                reflags=re.MULTILINE,
-                description="Verify that ATS recognizes the CONNECT request.")
 
-        def runTraffic(self):
-            tr = urtest.AddTestRun("Verify correct handling of CONNECT request")
-            tr.AddVerifierClientProcess("connect-client", self.connectReplayFile, http_ports=[self.ts.Variables.port])
-            tr.Processes.Default.StartBefore(self.server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
+def test_connect_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """curl can tunnel an HTTP request through ATS."""
 
-        def __testMetrics(self):
-            tr = urtest.AddTestRun("Test metrics")
-            tr.Processes.Default.Command = (
-                f"{urtest.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
-                " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
-                " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
-                " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
-                " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
-                " proxy.process.tunnel.current_client_connections_blind_tcp" +
-                " proxy.process.tunnel.total_server_connections_blind_tcp" +
-                " proxy.process.tunnel.current_server_connections_blind_tcp" +
-                " proxy.process.tunnel.total_client_connections_tls_tunnel" +
-                " proxy.process.tunnel.current_client_connections_tls_tunnel" +
-                " proxy.process.tunnel.total_client_connections_tls_forward" +
-                " proxy.process.tunnel.current_client_connections_tls_forward" +
-                " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
-                " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
-                " proxy.process.tunnel.total_client_connections_tls_http" +
-                " proxy.process.tunnel.current_client_connections_tls_http" + " proxy.process.tunnel.total_server_connections_tls" +
-                " proxy.process.tunnel.current_server_connections_tls'" + f" {urtest.TestDirectory}/gold/metrics.gold")
-            # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-            tr.Processes.Default.Env = self.ts.Env
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
+    CurlConnectScenario(ats_factory, services, curl).run()
 
-        def run(self):
-            self.runTraffic()
-            self.__testMetrics()
 
-    ConnectViaPVTest().run()
+def test_connect_verifier_http1(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Proxy Verifier can carry HTTP/1.1 through an ATS CONNECT tunnel."""
 
-    class ConnectViaPVTest2:
-        # This test executes a HTTP/2 CONNECT request with Proxy Verifier.
-        connectReplayFile = "replays/connect_h2.replay.yaml"
+    VerifierConnectScenario(ats_factory, services, use_http2=False).run()
 
-        def __init__(self):
-            self.setupOriginServer()
-            self.setupTS()
 
-        def setupOriginServer(self):
-            self.server = urtest.MakeVerifierServerProcess("connect-verifier-server2", self.connectReplayFile)
-            # Verify server output
-            self.server.Streams.stdout += Testers.ExcludesExpression(
-                "test: connect-request", "Verify the CONNECT request doesn't reach the server.")
-            self.server.Streams.stdout += Testers.ContainsExpression(
-                "GET /get HTTP/1.1\nuuid: 1\ntest: real-request",
-                reflags=re.MULTILINE,
-                description="Verify the server gets the second(tunneled) request.")
+def test_connect_verifier_http2(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Proxy Verifier can carry HTTP/1.1 inside an HTTP/2 CONNECT stream."""
 
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess("connect-ts2", enable_tls=True)
-
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|hpack',
-                    'proxy.config.ssl.server.cert.path': f'{self.ts.Variables.SSLDir}',
-                    'proxy.config.ssl.server.private_key.path': f'{self.ts.Variables.SSLDir}',
-                    'proxy.config.http.server_ports': f"{self.ts.Variables.ssl_port}:ssl",
-                    'proxy.config.http.connect_ports': f"{self.server.Variables.http_port}",
-                })
-
-            self.ts.addDefaultSSLFiles()
-            self.ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-            self.ts.Disk.remap_config.AddLines([
-                f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
-            ])
-            self.ts.addPrivateConnectAllowYaml()
-            # Verify ts logs
-            self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
-                reflags=re.MULTILINE,
-                description="Verify that ATS recognizes the CONNECT request.")
-
-        def runTraffic(self):
-            tr = urtest.AddTestRun("Verify correct handling of CONNECT request on HTTP/2")
-            tr.AddVerifierClientProcess("connect-client2", self.connectReplayFile, https_ports=[self.ts.Variables.ssl_port])
-            tr.Processes.Default.StartBefore(self.server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
-
-        def run(self):
-            self.runTraffic()
-
-    ConnectViaPVTest2().run()
-    urtest.execute()
+    VerifierConnectScenario(ats_factory, services, use_http2=True).run()

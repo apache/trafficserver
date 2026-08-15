@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve one raw HTTP request for the chunked HTTP/2 AuTest."""
+"""Serve one raw HTTP request for the chunked HTTP/2 test."""
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file

@@ -19,7 +19,7 @@ meta:
 
 # This test proves that multi-parameter storage.yaml volume entries are parsed
 # correctly AND that the per-volume settings actually take effect on the first
-# start after a cache clear (AuTest always starts ATS against a fresh cache).
+# start after a cache clear (every Uranium item starts ATS against a fresh cache).
 # The generated storage.yaml contains:
 #
 #   cache:
@@ -181,4 +181,3 @@ sessions:
       headers:
         fields:
           - [X-Volume-Test, { value: "2", as: equal }]
-

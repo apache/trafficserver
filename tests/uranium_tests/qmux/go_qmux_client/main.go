@@ -129,7 +129,7 @@ func encodeRequestHeaders(authority string, tc requestCase) ([]byte, error) {
 		{Name: ":scheme", Value: "https"},
 		{Name: ":authority", Value: authority},
 		{Name: ":path", Value: tc.path},
-		{Name: "user-agent", Value: "ats-qmux-go-autest"},
+		{Name: "user-agent", Value: "ats-qmux-go-uranium"},
 		{Name: "x-qmux-client", Value: "qmux-go"},
 		{Name: "x-qmux-test-case", Value: tc.name},
 		{Name: "uuid", Value: tc.name},

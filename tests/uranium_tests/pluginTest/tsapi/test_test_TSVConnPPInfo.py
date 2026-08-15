@@ -14,120 +14,106 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import subprocess
+
+import pytest
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    CommandResult,
+    Curl,
+    HttpBinServer,
+    ProceduralContext,
+    ServiceFactory,
+    wait_for_file_lines,
+)
 
 
-def test_test_TSVConnPPInfo(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TSVConnProxyProtocolInfoScenario:
+    """Read Proxy Protocol metadata through the TSVConnPPInfo API."""
 
-    import os
+    def __init__(
+        self,
+        context: ProceduralContext,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        curl: Curl,
+    ) -> None:
+        self._context = context
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test TS API to get PROXY protocol info
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> HttpBinServer:
+        """Start the HTTPBin origin used by both proxy-protocol requests."""
 
-    urtest.SkipUnless(
-        Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
-        Condition.HasCurlOption("--haproxy-clientip"),
-    )
-    urtest.ContinueOnFail = True
+        return services.httpbin("httpbin")
 
-    # ----
-    # Setup Origin Server
-    # ----
-    httpbin = urtest.MakeHttpBinServer("httpbin")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable clear-text and TLS Proxy Protocol listeners and the test plugin."""
 
-    # 128ytes
-    post_body = "0123456789abcdef" * 8
-    post_body_file = open(os.path.join(urtest.RunDirectory, "post_body"), "w")
-    post_body_file.write(post_body)
-    post_body_file.close()
+        ats = ats_factory.create("ts", enable_tls=True, enable_proxy_protocol=True)
+        plugin = self._context.runtime.resolve_artifact(
+            self._context.test_directory,
+            "{AtsBuildUraniumTestsDir}/pluginTest/tsapi/.libs/test_TSVConnPPInfo.so",
+        )
+        ats.copy_custom_plugin(plugin)
+        ats.plugin_config.add_line(plugin.name)
+        ats.remap_config.add_line(f"map /httpbin/ http://127.0.0.1:{self._origin.port}/")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|proxyprotocol|test_TSVConnPPInfo",
+            })
+        self._plugin_log = ats.log_directory / "test_TSVConnPPInfo_plugin_log.txt"
+        ats.set_environment("OUTPUT_FILE", str(self._plugin_log))
+        return ats
 
-    # ----
-    # Setup ATS
-    # ----
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_proxy_protocol=True)
+    @staticmethod
+    def verify_request(result: CommandResult) -> None:
+        """Require curl and HTTPBin to complete the request."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addDefaultSSLFiles()
+        assert result.returncode == 0, result.output
 
-    ts.Disk.remap_config.AddLines(['map /httpbin/ http://127.0.0.1:{0}/'.format(httpbin.Variables.Port)])
+    def run(self) -> None:
+        """Issue clear-text and TLS requests with distinct client addresses."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        self._origin.start()
+        self._ats.start()
+        self.verify_request(
+            self._curl.run(
+                "--haproxy-protocol",
+                "--haproxy-clientip",
+                "1.2.3.4",
+                f"http://127.0.0.1:{self._ats.proxy_protocol_port}/httpbin/get",
+            ))
+        self.verify_request(
+            self._curl.run(
+                "--haproxy-protocol",
+                "--haproxy-clientip",
+                "5.6.7.8",
+                "--insecure",
+                f"https://127.0.0.1:{self._ats.proxy_protocol_https_port}/httpbin/get",
+            ))
+        log = wait_for_file_lines(self._plugin_log, r"PP Info Received", 2)
+        assert log.startswith("Global: event=TS_EVENT_HTTP_SSN_START")
+        assert re.search(r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", log)
+        assert re.search(r"PP Info Received:V1,P2,T1,SRC5\.6\.7\.8,DST(127\.0\.0\.1|5\.6\.7\.8)", log)
 
-    urtest.PrepareTestPlugin(
-        os.path.join(urtest.Variables.AtsBuildUraniumTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSVConnPPInfo.so'), ts)
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|proxyprotocol|test_TSVConnPPInfo',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
-        })
+def test_test_TSVConnPPInfo(
+    procedural_context: ProceduralContext,
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    curl: Curl,
+) -> None:
+    """The TSVConn API reports Proxy Protocol version, transport, and addresses."""
 
-    # http2_info.so will output test logging to this file.
-    log_path = os.path.join(ts.Variables.LOGDIR, "test_TSVConnPPInfo_plugin_log.txt")
-    urtest.Env["OUTPUT_FILE"] = log_path
-
-    # ----
-    # Test Cases
-    # ----
-
-    # plaintext HTTP
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 10
-    tr.Processes.Default.Command = (
-        f"curl --haproxy-protocol --haproxy-clientip 1.2.3.4 "
-        f"'http://127.0.0.1:{ts.Variables.proxy_protocol_port}/httpbin/get'")
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(httpbin)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.Streams.stdout = "test_TSVConnPPInfo_curl0.gold"
-    tr.StillRunningAfter = httpbin
-    tr.StillRunningAfter = ts
-
-    # HTTPS
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 10
-    tr.Processes.Default.Command = (
-        f"curl --haproxy-protocol --haproxy-clientip 5.6.7.8 -k "
-        f"'https://127.0.0.1:{ts.Variables.proxy_protocol_ssl_port}/httpbin/get'")
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "test_TSVConnPPInfo_curl1.gold"
-    tr.StillRunningAfter = httpbin
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.Command = "echo check log"
-    tr.Processes.Default.ReturnCode = 0
-    f = tr.Disk.File(log_path)
-    f.Content = "test_TSVConnPPInfo_plugin_log.gold"
-    # curl 8.20+ intentionally uses --haproxy-clientip for both PROXY addresses so the address family matches.
-    f.Content += Testers.ContainsExpression(
-        r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", "Expected information should be received")
-    f.Content += Testers.ContainsExpression(
-        r"PP Info Received:V1,P2,T1,SRC5\.6\.7\.8,DST(127\.0\.0\.1|5\.6\.7\.8)", "Expected information should be received")
-    urtest.execute()
+    help_text = subprocess.run(("curl", "--help", "all"), capture_output=True, text=True, check=False).stdout
+    if "--haproxy-clientip" not in help_text:
+        pytest.skip("curl with --haproxy-clientip is required")
+    TSVConnProxyProtocolInfoScenario(procedural_context, ats_factory, services, curl).run()

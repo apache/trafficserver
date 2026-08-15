@@ -14,216 +14,93 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+
+from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer
+
+REPLAY_FILE = Path(__file__).parent / "tls_sni_with_port.replay.yaml"
 
 
-def test_tls_sni_with_port(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SniWithPortScenario:
+    """Route one SNI name differently based on the inbound listener port."""
 
-    import functools
-    from typing import Any, Callable, Dict, Optional
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._services = services
+        self._server_one = services.verifier_server("server-one", REPLAY_FILE)
+        self._server_two = services.verifier_server("server-two", REPLAY_FILE)
+        self._server_three = services.verifier_server("server-three", REPLAY_FILE)
+        self._ports = tuple(services.allocate_port() for _ in range(4))
+        self._ats = self.configure_ats(ats_factory)
 
-    from ports import get_port
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure one unmapped listener and three port-aware SNI listeners."""
 
-    urtest.Summary = 'Tests SNI port-based routing'
+        port_one, port_two, port_three, port_unmapped = self._ports
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.http.server_ports": (f"{port_one}:ssl {port_two}:ssl {port_three}:ssl {port_unmapped}:ssl"),
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "dns|http|ssl|sni",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server_three.http_port}")
+        ats.allow_private_connect(("CONNECT", "GET"))
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: yay.example.com\n"
+            f"    inbound_port_ranges: {port_one}-{port_one}\n"
+            f"    tunnel_route: localhost:{self._server_one.https_port}\n"
+            "  - fqdn: yay.example.com\n"
+            "    inbound_port_ranges:\n"
+            f"      - {port_two}\n"
+            f"      - {port_three}\n"
+            f"    tunnel_route: localhost:{self._server_two.https_port}\n",
+        )
+        return ats
 
-    TestParams = Dict[str, Any]
+    def configure_client(self, name: str, port: int, key: str) -> ProcessService:
+        """Create a verifier client for one listener and transaction key."""
 
-    class TestSNIWithPort:
-        """Configure a test for SNI port-based routing ."""
+        return self._services.verifier_client(name, REPLAY_FILE, https_ports=[port], keys=[key])
 
-        replay_filepath: str = "tls_sni_with_port.replay.yaml"
-        client_counter: int = 0
-        server_counter: int = 0
-        ts_counter: int = 0
+    @staticmethod
+    def observed(server: VerifierServer, key: str) -> bool:
+        """Return whether @a server received the transaction body for @a key."""
 
-        def __init__(self, name: str, /, autorun) -> None:
-            """Initialize the test.
+        expression = rf"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key {key}"
+        return re.search(expression, server.output) is not None
 
-            :param name: The name of the test.
-            """
-            self.name = name
-            self.autorun = autorun
+    def run(self) -> None:
+        """Verify unmapped, single-port, and multi-port route behavior."""
 
-        def _init_run(self) -> "TestRun":
-            """Initialize processes for the test run."""
+        for server in (self._server_one, self._server_two, self._server_three):
+            server.start()
+        self._ats.start()
+        port_one, port_two, port_three, port_unmapped = self._ports
 
-            tr = urtest.AddTestRun(self.name)
-            server_one = TestSNIWithPort.configure_server(tr, "yay.com")
-            server_two = TestSNIWithPort.configure_server(tr, "oof.com")
-            server_three = TestSNIWithPort.configure_server(tr, "wow.com")
-            self._configure_traffic_server(tr, server_one, server_two, server_three)
+        self.configure_client("client-unmapped", port_unmapped, "conn_remapped").run()
+        assert not self.observed(self._server_one, "conn_remapped")
+        assert not self.observed(self._server_two, "conn_remapped")
+        assert self.observed(self._server_three, "conn_remapped")
 
-            tr.Processes.Default.StartBefore(server_one)
-            tr.Processes.Default.StartBefore(server_two)
-            tr.Processes.Default.StartBefore(self._ts)
+        self.configure_client("client-one", port_one, "conn_accepted").run()
+        assert self.observed(self._server_one, "conn_accepted")
+        assert not self.observed(self._server_two, "conn_accepted")
 
-            return {
-                "tr": tr,
-                "ts": self._ts,
-                "server_one": server_one,
-                "server_two": server_two,
-                "server_three": server_three,
-                "port_one": self._port_one,
-                "port_two": self._port_two,
-                "port_three": self._port_three,
-                "port_unmapped": self._port_unmapped
-            }
+        self.configure_client("client-two", port_two, "conn_accepted").run()
+        assert self.observed(self._server_two, "conn_accepted")
+        self.configure_client("client-three", port_three, "conn_accepted").run()
+        assert len(re.findall(r"key conn_accepted", self._server_two.output)) >= 2
 
-        @classmethod
-        def runner(cls, name: str, autorun: bool = True) -> Optional[Callable]:
-            """Create a runner for a test case.
+        diagnostics = self._ats.diags_log.read_text(errors="replace")
+        assert "unsupported key 'inbound_port_range'" not in diagnostics
+        assert "not available in the map" in self._ats.traffic_out.read_text(errors="replace")
 
-            :param autorun: Run the test case once it's set up. Default is True.
-            """
-            test = cls(name, autorun=autorun)._prepare_test_case
-            return test
 
-        def _prepare_test_case(self, func: Callable) -> Callable:
-            """Set up a test case and possibly run it.
+def test_tls_sni_with_port(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """SNI inbound_port_ranges selects the intended tunnel route."""
 
-            :param func: The test case to set up.
-            """
-            functools.wraps(func)
-            test_params = self._init_run()
-
-            def wrapper(*args, **kwargs) -> Any:
-                return func(test_params, *args, **kwargs)
-
-            if self.autorun:
-                wrapper()
-            return wrapper
-
-        @staticmethod
-        def configure_server(tr: "TestRun", domain: str):
-            server = tr.AddVerifierServerProcess(
-                f"server{TestSNIWithPort.server_counter}.{domain}", TestSNIWithPort.replay_filepath)
-            TestSNIWithPort.server_counter += 1
-
-            return server
-
-        def _configure_traffic_server(self, tr: "TestRun", server_one: "Process", server_two: "Process", server_three: "Process"):
-            """Configure Traffic Server.
-
-            :param tr: The TestRun object to associate the ts process with.
-            """
-            ts = tr.MakeATSProcess(f"ts-{TestSNIWithPort.ts_counter}", select_ports=False, enable_tls=True)
-            TestSNIWithPort.ts_counter += 1
-
-            ts.addDefaultSSLFiles()
-            self._port_one = get_port(ts, "PortOne")
-            self._port_two = get_port(ts, "PortTwo")
-            self._port_three = get_port(ts, "PortThree")
-            self._port_unmapped = get_port(ts, "UnspecifiedPort")
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': f"{ts.Variables.SSLDir}",
-                    'proxy.config.ssl.server.private_key.path': f"{ts.Variables.SSLDir}",
-                    'proxy.config.http.server_ports':
-                        f"{self._port_one}:ssl {self._port_two}:ssl {self._port_three}:ssl {self._port_unmapped}:ssl",
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'dns|http|ssl|sni',
-                })
-
-            ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server_three.Variables.http_port}")
-            ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
-
-            ts.Disk.sni_yaml.AddLines(
-                [
-                    "sni:",
-                    "- fqdn: yay.example.com",
-                    f"  inbound_port_ranges: {self._port_one}-{self._port_one}",
-                    f"  tunnel_route: localhost:{server_one.Variables.https_port}",
-                    "- fqdn: yay.example.com",
-                    "  inbound_port_ranges:",
-                    f"  - {self._port_two}",
-                    f"  - {self._port_three}",
-                    f"  tunnel_route: localhost:{server_two.Variables.https_port}",
-                ])
-
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-            self._ts = ts
-
-    # Tests start.
-
-    @TestSNIWithPort.runner("Test that a request to a port not in the SNI does not get through.")
-    def test0(params: TestParams) -> None:
-        client = params["tr"].AddVerifierClientProcess(
-            f"client0", TestSNIWithPort.replay_filepath, https_ports=[params["port_unmapped"]], keys="conn_remapped")
-
-        params["tr"].Processes.Default.ReturnCode = 0
-        params["ts"].Disk.diags_log.Content += Testers.ExcludesExpression(
-            "unsupported key 'inbound_port_range'", "we should not warn about the key")
-        params["ts"].Disk.traffic_out.Content += Testers.IncludesExpression(
-            "not available in the map", "the request should not match an SNI")
-        params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_remapped",
-            "the request should not go to server one")
-        params["server_two"].Streams.All.Content += Testers.ExcludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_remapped",
-            "the request should not go to server two")
-        params["server_three"].Streams.All.Content += Testers.IncludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_remapped",
-            "request was remaped to server three")
-
-    @TestSNIWithPort.runner("Test that a request to a port one goes to server one.")
-    def test1(params: TestParams) -> None:
-        client = params["tr"].AddVerifierClientProcess(
-            f"client1", TestSNIWithPort.replay_filepath, https_ports=[params["port_one"]], keys="conn_accepted")
-
-        params["tr"].Processes.Default.ReturnCode = 0
-        params["server_one"].Streams.All.Content += Testers.IncludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
-            "the request should go to server one")
-        params["server_two"].Streams.All.Content += Testers.ExcludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
-            "the request should not go to server two")
-
-    @TestSNIWithPort.runner("Test that a request to port two goes to server two.")
-    def test2(params: TestParams) -> None:
-        client = params["tr"].AddVerifierClientProcess(
-            f"client2", TestSNIWithPort.replay_filepath, https_ports=[params["port_two"]], keys="conn_accepted")
-
-        params["tr"].Processes.Default.ReturnCode = 0
-        params["server_two"].Streams.All.Content += Testers.IncludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
-            "the request should go to server two")
-        params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
-            "the request should not go to server one")
-
-    @TestSNIWithPort.runner("Test that a request to port three goes to server two.")
-    def test3(params: TestParams) -> None:
-        client = params["tr"].AddVerifierClientProcess(
-            f"client3", TestSNIWithPort.replay_filepath, https_ports=[params["port_three"]], keys="conn_accepted")
-
-        params["tr"].Processes.Default.ReturnCode = 0
-        params["server_two"].Streams.All.Content += Testers.IncludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
-            "the request should go to server two")
-        params["server_one"].Streams.All.Content += Testers.ExcludesExpression(
-            r"Received (\(with headers\) )?an HTTP/1 (Content-Length )?body of 16 bytes for key conn_accepted",
-            "the request should not go to server one")
-
-    urtest.execute()
+    SniWithPortScenario(ats_factory, services).run()
