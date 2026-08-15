@@ -262,8 +262,8 @@ Http3DataFrame::data() const
 //
 Http3HeadersFrame::Http3HeadersFrame(IOBufferReader &reader) : Http3Frame(reader) {}
 
-Http3HeadersFrame::Http3HeadersFrame(IOBufferReader *header_block_reader, size_t header_block_len)
-  : Http3Frame(Http3FrameType::HEADERS), _header_block_len(header_block_len), _header_block_reader(header_block_reader->clone())
+Http3HeadersFrame::Http3HeadersFrame(IOBufferReader &header_block_reader, size_t header_block_len)
+  : Http3Frame(Http3FrameType::HEADERS), _header_block_len(header_block_len), _header_block_reader(header_block_reader.clone())
 {
   this->_length = header_block_len;
 }
@@ -571,7 +571,7 @@ Http3HeadersFrameUPtr
 Http3FrameFactory::create_headers_frame(IOBufferReader *header_block_reader, size_t header_block_len)
 {
   Http3HeadersFrame *frame = http3HeadersFrameAllocator.alloc();
-  new (frame) Http3HeadersFrame(header_block_reader, header_block_len);
+  new (frame) Http3HeadersFrame(*header_block_reader, header_block_len);
   // The frame clones the reader before this, so consuming here only advances the caller's
   // reader (for chunking header blocks larger than one generate_frame() call), not the frame's
   // own clone.
