@@ -275,9 +275,11 @@ private:
   std::unique_ptr<QUICStreamManager>  _stream_manager  = nullptr;
   std::unique_ptr<QUICApplicationMap> _application_map = nullptr;
 
+#if TS_HAS_QUICHE
   // Writable-stream count from the previous _handle_write_ready() call, used to size
   // this event's per-stream send budget (see QUICStream::compute_fair_send_budget()).
   size_t _last_writable_stream_count = 1;
+#endif
 
   bool _is_verifying_cert = false;
   bool _is_cert_verified  = false;

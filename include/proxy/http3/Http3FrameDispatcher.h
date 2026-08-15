@@ -58,6 +58,6 @@ private:
   Http3FrameFactory           _frame_factory;
   std::shared_ptr<Http3Frame> _current_frame = nullptr;
 
-  std::array<Http3FrameHandler *, MAX_HANDLERS_PER_TYPE> _handlers[256];
+  std::array<Http3FrameHandler *, MAX_HANDLERS_PER_TYPE> _handlers[256]      = {};
   uint8_t                                                _handler_count[256] = {};
 };
