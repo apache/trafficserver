@@ -14,83 +14,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, wait_for_file_lines
 
 
-def test_quic_poll_timeout(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class QuicPollTimeoutScenario:
+    """Start a QUIC listener and verify its configured UDP poll timeout."""
 
-    from typing import Optional
+    def __init__(self, ats_factory: ATSFactory, configured_timeout: int | None) -> None:
+        self._configured_timeout = configured_timeout
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = 'Checks records.proxy.config.udp.poll_timeout'
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable QUIC debug output and optionally override the timeout."""
 
-    urtest.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'))
+        ats = ats_factory.create("ts", enable_quic=True, enable_tls=True)
+        if not ats.has_feature("TS_HAS_QUICHE"):
+            pytest.skip("ATS with QUICHE is required")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "net|v_quic|quic|socket|inactivity_cop|v_iocore_net_poll",
+            })
+        if self._configured_timeout is not None:
+            ats.records.update({"proxy.config.udp.poll_timeout": self._configured_timeout})
+        return ats
 
-    class TestPollTimeout:
-        """Configure a test for poll_timeout."""
+    def run(self) -> None:
+        """Start ATS and require the effective timeout in traffic.out."""
 
-        ts_counter: int = 0
+        expected = 100 if self._configured_timeout is None else self._configured_timeout
+        self._ats.start()
+        wait_for_file_lines(self._ats.traffic_out, rf"ET_UDP.*timeout: {expected},", 1)
 
-        def __init__(self, name: str, udp_poll_timeout_in: Optional[int] = None) -> None:
-            """Initialize the test.
 
-            :param name: The name of the test.
-            :param udp_poll_timeout_in: Configuration value for proxy.config.udp.poll_timeout
-            """
-            self.name = name
-            self.udp_poll_timeout_in = udp_poll_timeout_in
-            self.expected_udp_poll_timeout = 100
-            if udp_poll_timeout_in is not None:
-                self.expected_udp_poll_timeout = udp_poll_timeout_in
+@pytest.mark.parametrize("configured_timeout", (None, 10), ids=("default", "override"))
+def test_quic_poll_timeout(ats_factory: ATSFactory, configured_timeout: int | None) -> None:
+    """The QUIC poller uses the default or explicitly configured timeout."""
 
-        def _configure_traffic_server(self, tr: 'TestRun'):
-            """Configure Traffic Server.
-
-            :param tr: The TestRun object to associate the ts process with.
-            """
-            ts = tr.MakeATSProcess(f"ts-{TestPollTimeout.ts_counter}", enable_quic=True, enable_tls=True)
-
-            TestPollTimeout.ts_counter += 1
-            self._ts = ts
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'net|v_quic|quic|socket|inactivity_cop|v_iocore_net_poll',
-                })
-
-            if self.udp_poll_timeout_in is not None:
-                self._ts.Disk.records_config.update({'proxy.config.udp.poll_timeout': self.udp_poll_timeout_in})
-
-        def run(self):
-            """Run the test."""
-            tr = urtest.AddTestRun(self.name)
-            self._configure_traffic_server(tr)
-
-            tr.Processes.Default.Command = "echo 'testing records.proxy.config.udp.poll_timeout'"
-            tr.Processes.Default.StartBefore(self._ts)
-
-            self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-                f"ET_UDP.*timeout: {self.expected_udp_poll_timeout},", "Verify UDP poll timeout.")
-
-    # Tests start.
-
-    test0 = TestPollTimeout("Test records.proxy.config.udp.poll_timeout with default value.")
-    test0.run()
-
-    test1 = TestPollTimeout("Test records.proxy.config.udp.poll_timeout with value of 10.", udp_poll_timeout_in=10)
-    test1.run()
-    urtest.execute()
+    QuicPollTimeoutScenario(ats_factory, configured_timeout).run()

@@ -19,10 +19,11 @@
 # before sending subsequent chunks. This triggers the xdebug transform bug
 # when the transform is called but no body data is available yet.
 #
-# Usage: slow-body-server.sh <port> <outfile>
+# Usage: slow-body-server.sh <port> <outfile> [ready-file]
 
 PORT=$1
 OUTFILE=$2
+READY_FILE=$3
 
 # Create a named pipe for the response
 FIFO=$(mktemp -u)
@@ -34,6 +35,10 @@ NC_PID=$!
 
 # Open the fifo for writing
 exec 3>"$FIFO"
+
+if [[ -n "$READY_FILE" ]]; then
+    touch "$READY_FILE"
+fi
 
 # Wait for the request to arrive (look for empty line ending headers)
 while true; do

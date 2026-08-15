@@ -14,121 +14,75 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, ServiceFactory, VerifierServer
 
 
-def test_forward_proxy(urtest: UraniumTest) -> None:
-    """
-    """
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ForwardProxyScenario:
+    """Send an HTTP URL through an HTTPS connection to ATS as a forward proxy."""
 
-    from typing import Union
+    def __init__(self, policy: int | None, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._policy = policy
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = 'Verify ATS can function as a forward proxy'
-    urtest.ContinueOnFail = True
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> VerifierServer:
+        """Provide the HTTP origin selected by forward proxying."""
 
-    class ForwardProxyTest:
-        _scheme_proto_mismatch_policy: Union[int, None]
-        _ts_counter: int = 0
-        _server_counter: int = 0
+        return services.verifier_server("origin", "forward_proxy.replay.yaml", https_ports=[])
 
-        def __init__(self, verify_scheme_matches_protocol: Union[int, None]):
-            """Construct a ForwardProxyTest object.
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure TLS ingress and the requested scheme/protocol mismatch policy."""
 
-            :param verify_scheme_matches_protocol: The value with which to
-            configure Traffic Server's
-            proxy.config.ssl.client.scheme_proto_mismatch_policy. A value of None
-            means that no value will be explicitly set in the records.yaml.
-            :type verify_scheme_matches_protocol: int or None
-            """
-            self._scheme_proto_mismatch_policy = verify_scheme_matches_protocol
-            self.setupOriginServer()
-            self.setupTS()
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.http_port}/")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+            })
+        if self._policy is not None:
+            ats.records.update({"proxy.config.ssl.client.scheme_proto_mismatch_policy": self._policy})
+        return ats
 
-        def setupOriginServer(self):
-            """Configure the Proxy Verifier server."""
-            proc_name = f"server{ForwardProxyTest._server_counter}"
-            self.server = urtest.MakeVerifierServerProcess(proc_name, "forward_proxy.replay.yaml")
-            ForwardProxyTest._server_counter += 1
-            if self._scheme_proto_mismatch_policy in (2, None):
-                self.server.Streams.All = Testers.ExcludesExpression(
-                    'Received an HTTP/1 request with key 1', 'Verify that the server did not receive the request.')
-            else:
-                self.server.Streams.All = Testers.ContainsExpression(
-                    'Received an HTTP/1 request with key 1', 'Verify that the server received the request.')
+    def verify(self, result: CommandResult) -> None:
+        """Require rejection under strict policies and forwarding otherwise."""
 
-        def setupTS(self):
-            """Configure the Traffic Server process."""
-            proc_name = f"ts{ForwardProxyTest._ts_counter}"
-            self.ts = urtest.MakeATSProcess(proc_name, enable_tls=True, enable_cache=False)
-            ForwardProxyTest._ts_counter += 1
-            self.ts.addDefaultSSLFiles()
-            self.ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
+        assert result.returncode == 0, result.output
+        origin_output = self._origin.output
+        if self._policy in (None, 2):
+            assert "< HTTP/1.1 400 Invalid HTTP Request" in result.output
+            assert "Received an HTTP/1 request with key 1" not in origin_output
+        else:
+            assert "< HTTP/1.1 200 OK" in result.output
+            assert "Received an HTTP/1 request with key 1" in origin_output
 
-            self.ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': self.ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': self.ts.Variables.SSLDir,
-                    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': "http",
-                })
+    def run(self) -> None:
+        """Start the origin and ATS, then issue the HTTPS-proxy request."""
 
-            if self._scheme_proto_mismatch_policy is not None:
-                self.ts.Disk.records_config.update(
-                    {
-                        'proxy.config.ssl.client.scheme_proto_mismatch_policy': self._scheme_proto_mismatch_policy,
-                    })
+        self._origin.start()
+        self._ats.start()
+        result = self._curl.run_for(
+            self._ats,
+            "--proxy-insecure",
+            "--verbose",
+            "--header",
+            "uuid: 1",
+            "--proxy",
+            f"https://127.0.0.1:{self._ats.https_port}/",
+            "http://example.com/",
+        )
+        self.verify(result)
 
-        def addProxyHttpsToHttpCase(self):
-            """Test ATS as an HTTPS forward proxy behind an HTTP server."""
-            tr = urtest.AddTestRun()
-            tr.Processes.Default.StartBefore(self.server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.MakeCurlCommand(
-                f'--proxy-insecure -v -H "uuid: 1" '
-                f'--proxy "https://127.0.0.1:{self.ts.Variables.ssl_port}/" '
-                f'http://example.com/',
-                ts=self.ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
 
-            if self._scheme_proto_mismatch_policy in (2, None):
-                tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                    '< HTTP/1.1 400 Invalid HTTP Request', 'Verify that the request was rejected.')
-            else:
-                tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                    '< HTTP/1.1 200 OK', 'Verify that curl received a 200 OK response.')
+@pytest.mark.parametrize("policy", (None, 0, 1, 2), ids=("default", "permissive", "enforced", "strict"))
+def test_forward_proxy(policy: int | None, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS applies its configured scheme/protocol mismatch policy as a forward proxy."""
 
-        def run(self):
-            """Configure the TestRun instances for this set of tests."""
-            self.addProxyHttpsToHttpCase()
-
-    ForwardProxyTest(verify_scheme_matches_protocol=None).run()
-    ForwardProxyTest(verify_scheme_matches_protocol=0).run()
-    ForwardProxyTest(verify_scheme_matches_protocol=1).run()
-    ForwardProxyTest(verify_scheme_matches_protocol=2).run()
-    urtest.execute()
+    if curl.uses_uds:
+        pytest.skip("the HTTPS proxy requires a TCP listener")
+    ForwardProxyScenario(policy, ats_factory, services, curl).run()

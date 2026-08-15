@@ -28,9 +28,9 @@ def test_all_migrated_replays_are_valid() -> None:
 
     uranium_tests = Path(__file__).parents[3] / "uranium_tests"
     replay_files = list(uranium_tests.rglob("*.test.yaml"))
-    assert len(replay_files) >= 96
+    assert len(replay_files) >= 119
     for path in replay_files:
-        ReplaySpec.load(path)
+        ReplaySpec.load_all(path)
 
 
 def test_no_uranium_test_registers_an_uranium_replay() -> None:
@@ -42,10 +42,10 @@ def test_no_uranium_test_registers_an_uranium_replay() -> None:
 
 
 def test_all_bespoke_tests_are_available_to_pytest() -> None:
-    """Keep the compatibility inventory explicit while definitions migrate."""
+    """Keep the native procedural-test inventory explicit."""
 
     uranium_tests = Path(__file__).parents[3] / "uranium_tests"
-    assert len(list(uranium_tests.rglob("test_*.py"))) == 505
+    assert len(list(uranium_tests.rglob("test_*.py"))) == 303
 
 
 def test_replay_requires_urtest_metadata(tmp_path: Path) -> None:
@@ -58,7 +58,7 @@ def test_replay_requires_urtest_metadata(tmp_path: Path) -> None:
 
 
 def test_replay_accepts_summary_as_description(tmp_path: Path) -> None:
-    """Keep compatibility with the replay-only AuTest YAML format."""
+    """Accept summary as an alternative replay description."""
 
     path = tmp_path / "summary.test.yaml"
     path.write_text(
@@ -72,6 +72,114 @@ def test_replay_accepts_summary_as_description(tmp_path: Path) -> None:
             "sessions": [],
         }))
     assert ReplaySpec.load(path).description == "Summary-only replay"
+
+
+def test_replay_requires_ats_environment_mapping(tmp_path: Path) -> None:
+    """Reject ATS environment metadata that cannot become process variables."""
+
+    path = tmp_path / "environment.test.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "urtest":
+                    {
+                        "description": "Invalid ATS environment",
+                        "server": {},
+                        "client": {},
+                        "ats": {
+                            "environment": ["ATS_TEST_HOOK=1"]
+                        },
+                    },
+                "sessions": [],
+            }))
+    with pytest.raises(ReplayConfigError, match="ats.environment"):
+        ReplaySpec.load(path)
+
+
+def test_replay_manifest_resolves_traffic_file(tmp_path: Path) -> None:
+    """Resolve a manifest's traffic replay relative to the manifest."""
+
+    traffic = tmp_path / "traffic.yaml"
+    traffic.write_text("meta: {version: '1.0'}\nsessions: []\n")
+    path = tmp_path / "manifest.test.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {"urtest": {
+                "description": "Replay manifest",
+                "replay": traffic.name,
+                "server": {},
+                "client": {},
+                "ats": {},
+            }}))
+
+    assert ReplaySpec.load(path).replay_path == traffic
+
+
+def test_replay_manifest_requires_traffic_file(tmp_path: Path) -> None:
+    """Reject a manifest whose traffic replay is missing."""
+
+    path = tmp_path / "manifest.test.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {"urtest": {
+                "description": "Missing replay",
+                "replay": "missing.yaml",
+                "server": {},
+                "client": {},
+                "ats": {},
+            }}))
+
+    with pytest.raises(ReplayConfigError, match="replay file does not exist"):
+        ReplaySpec.load(path)
+
+
+def test_replay_manifest_variants_are_merged(tmp_path: Path) -> None:
+    """Collect named variants with recursively merged ATS metadata."""
+
+    traffic = tmp_path / "traffic.yaml"
+    traffic.write_text("meta: {version: '1.0'}\nsessions: []\n")
+    path = tmp_path / "variants.test.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "urtest":
+                    {
+                        "description": "Variant replay",
+                        "replay": traffic.name,
+                        "server": {},
+                        "client": {},
+                        "ats": {
+                            "records_config": {
+                                "one": 1
+                            }
+                        },
+                        "variants":
+                            [
+                                {
+                                    "name": "two",
+                                    "ats": {
+                                        "records_config": {
+                                            "two": 2
+                                        }
+                                    },
+                                },
+                                {
+                                    "name": "three",
+                                    "ats": {
+                                        "records_config": {
+                                            "two": 3
+                                        }
+                                    },
+                                },
+                            ],
+                    }
+            }))
+
+    specs = ReplaySpec.load_all(path)
+
+    assert [spec.variant_name for spec in specs] == ["two", "three"]
+    assert specs[0].urtest["ats"]["records_config"] == {"one": 1, "two": 2}
+    assert specs[1].urtest["ats"]["records_config"] == {"one": 1, "two": 3}
 
 
 def test_flat_records_merge_with_nested_defaults() -> None:

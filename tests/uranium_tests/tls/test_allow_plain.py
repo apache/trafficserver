@@ -14,114 +14,108 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory, VerifierServer
 
 
-def test_allow_plain(urtest: UraniumTest) -> None:
-    '''
-    Test the allow-plain attribute of the ssl port
-    Clients sending non-tls request to ssl port should get passed to
-    non-tls processing in ATS if the allow-plain attibute is present
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class AllowPlainScenario:
+    """Serve TLS and clear-text HTTP on one `ssl:allow-plain` listener."""
 
-    import os
+    _replay = "replay/allow-plain.replay.yaml"
 
-    urtest.Summary = '''
-    Test allow-plain attributed
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._server = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.ContinueOnFail = False
+    def configure_server(self, services: ServiceFactory) -> VerifierServer:
+        """Create the GET and POST verifier origin."""
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+        return services.verifier_server("server", self._replay, https_ports=[])
 
-    # ----
-    # Setup Origin Server
-    # ----
-    replay_file = "replay/allow-plain.replay.yaml"
-    server = urtest.MakeVerifierServerProcess("server", replay_file)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the TLS listener to recognize clear-text requests."""
 
-    ts.addDefaultSSLFiles()
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.http.server_ports": f"{ats.https_port}:ssl:allow-plain",
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "ssl|http",
+            })
+        ats.remap_config.add_lines(
+            (
+                f"map / http://127.0.0.1:{self._server.http_port}",
+                f"map /post http://127.0.0.1:{self._server.http_port}/post",
+            ))
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        return ats
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.http.server_ports': '{0}:ssl:allow-plain'.format(ts.Variables.ssl_port),
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'ssl|http',
-        })
+    def run(self) -> None:
+        """Verify TLS, plain GET, and repeated large plain POST requests."""
 
-    ts.Disk.remap_config.AddLines(
-        [
-            'map / http://127.0.0.1:{0}'.format(server.Variables.http_port),
-            'map /post http://127.0.0.1:{0}/post'.format(server.Variables.http_port),
-        ])
+        self._server.start()
+        self._ats.start()
+        resolve = f"www.example.com:{self._ats.https_port}:127.0.0.1"
+        tls = self._curl.run_for(
+            self._ats,
+            "--output",
+            "/dev/null",
+            "--insecure",
+            "--verbose",
+            "--header",
+            "uuid: get",
+            "--ipv4",
+            "--http1.1",
+            "--resolve",
+            resolve,
+            f"https://www.example.com:{self._ats.https_port}/",
+        )
+        assert tls.returncode == 0, tls.output
+        assert "TLS" in tls.stderr
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        plain = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--ipv4",
+            "--http1.1",
+            "--header",
+            "uuid: get",
+            "--resolve",
+            resolve,
+            f"http://www.example.com:{self._ats.https_port}",
+        )
+        assert plain.returncode == 0, plain.output
+        assert "TLS" not in plain.stderr
 
-    big_post_body = "0123456789" * 50000
-    big_post_body_file = open(os.path.join(urtest.RunDirectory, "big_post_body"), "w")
-    big_post_body_file.write(big_post_body)
-    big_post_body_file.close()
+        body = self._ats.run_directory / "big_post_body"
+        body.write_text("0123456789" * 50000)
+        post = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--data",
+            f"@{body}",
+            "--header",
+            "uuid: post",
+            "--ipv4",
+            "--http1.1",
+            "--resolve",
+            resolve,
+            f"http://www.example.com:{self._ats.https_port}/post",
+            f"http://www.example.com:{self._ats.https_port}/post",
+        )
+        assert post.returncode == 0, post.output
+        assert "TLS" not in post.stderr
+        assert post.stderr.count("HTTP/1.1 200") == 2
 
-    # TLS curl should work of course
-    tr = urtest.AddTestRun()
-    # Wait for the micro server
-    tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.http_port))
-    # Delay on readiness of our ssl ports
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
 
-    tr.MakeCurlCommand(
-        '-o /dev/null -k --verbose -H "uuid: get" --ipv4 --http1.1 --resolve www.example.com:{}:127.0.0.1 https://www.example.com:{}/'
-        .format(ts.Variables.ssl_port, ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.all = Testers.ContainsExpression("TLS", "Should negiotiate TLS")
+def test_allow_plain(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """An allow-plain TLS port accepts encrypted and clear-text clients."""
 
-    # non-TLS curl should also work to the same port
-    tr2 = urtest.AddTestRun()
-    tr2.MakeCurlCommand(
-        '--verbose --ipv4 --http1.1 -H "uuid: get" --resolve www.example.com:{}:127.0.0.1 http://www.example.com:{}'.format(
-            ts.Variables.ssl_port, ts.Variables.ssl_port),
-        ts=ts)
-    tr2.Processes.Default.ReturnCode = 0
-    tr2.StillRunningAfter = server
-    tr2.StillRunningAfter = ts
-    tr2.Processes.Default.Streams.all = Testers.ExcludesExpression("TLS", "Should not negiotiate TLS")
-
-    # Make sure a post > 32K works.  Early version forgot to free a reader which caused a stall once the initial buffer filled
-    # Seems like we needed to make a second resquest to trigger the issue
-    tr3 = urtest.AddTestRun()
-    tr3.MakeCurlCommand(
-        '--verbose -d @big_post_body -H "uuid: post" --ipv4 --http1.1 --resolve www.example.com:{}:127.0.0.1 http://www.example.com:{}/post http://www.example.com:{}/post'
-        .format(ts.Variables.ssl_port, ts.Variables.ssl_port, ts.Variables.ssl_port),
-        ts=ts)
-    tr3.Processes.Default.ReturnCode = 0
-    tr3.StillRunningAfter = server
-    tr3.StillRunningAfter = ts
-    tr3.Processes.Default.Streams.all = Testers.ExcludesExpression("TLS", "Should not negiotiate TLS")
-    urtest.execute()
+    AllowPlainScenario(ats_factory, services, curl).run()

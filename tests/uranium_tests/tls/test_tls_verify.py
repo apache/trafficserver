@@ -14,173 +14,126 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
 
-def test_tls_verify(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsVerifyScenario:
+    """Exercise permissive defaults and enforced origin hostname checks."""
 
-    urtest.Summary = '''
-    Test tls server certificate verification options
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._foo = self.configure_origin(services, "server_foo", "foo")
+        self._bar = self.configure_origin(services, "server_bar", "bar")
+        self._wild = self.configure_origin(services, "server_wild", "wild", hosts=("bar.com",))
+        self._default = services.origin("server", ssl=True)
+        self._ats = self.configure_ats(ats_factory)
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server_foo = urtest.MakeOriginServer(
-        "server_foo",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed-foo.pem".format(urtest.RunDirectory)
-        })
-    server_bar = urtest.MakeOriginServer(
-        "server_bar",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-bar.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed-bar.pem".format(urtest.RunDirectory)
-        })
-    server_wild = urtest.MakeOriginServer(
-        "server_wild",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-wild.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed-wild.pem".format(urtest.RunDirectory)
-        })
-    server = urtest.MakeOriginServer("server", ssl=True)
+    @staticmethod
+    def configure_origin(
+        services: ServiceFactory,
+        name: str,
+        certificate_name: str,
+        *,
+        hosts: tuple[str, ...] | None = None,
+    ) -> OriginServer:
+        """Create one HTTPS origin using a signed certificate."""
 
-    request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: badfoo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bad_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: badbar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server_foo.addResponse("sessionlog.json", request_foo_header, response_header)
-    server_foo.addResponse("sessionlog.json", request_bad_foo_header, response_header)
-    server_bar.addResponse("sessionlog.json", request_bar_header, response_header)
-    server_bar.addResponse("sessionlog.json", request_bad_bar_header, response_header)
-    server_wild.addResponse("sessionlog.json", request_bar_header, response_header)
+        origin = services.origin(
+            name,
+            ssl=True,
+            clientkey=SSL_DIRECTORY / f"signed-{certificate_name}.key",
+            clientcert=SSL_DIRECTORY / f"signed-{certificate_name}.pem",
+        )
+        response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"}
+        for host in hosts or (f"{certificate_name}.com", f"bad{certificate_name}.com"):
+            origin.add_response({"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"}, response)
+        return origin
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signed-bar.pem")
-    ts.addSSLfile("ssl/signed-bar.key")
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
-    ts.addSSLfile("ssl/signer.key")
-    ts.addSSLfile("ssl/signed-wild.key")
-    ts.addSSLfile("ssl/signed-wild.pem")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure global signature checks and stricter SNI policies."""
 
-    ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map https://foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map https://bad_foo.com/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map https://bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map https://bad_bar.com/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map https://foo.wild.com/ https://127.0.0.1:{0}'.format(server_wild.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map https://foo_bar.wild.com/ https://127.0.0.1:{0}'.format(server_wild.Variables.SSL_Port))
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "signed-foo.pem",
+            SSL_DIRECTORY / "signed-foo.key",
+            SSL_DIRECTORY / "signed-bar.pem",
+            SSL_DIRECTORY / "signed-bar.key",
+            SSL_DIRECTORY / "signed-wild.pem",
+            SSL_DIRECTORY / "signed-wild.key",
+            SSL_DIRECTORY / "server.pem",
+            SSL_DIRECTORY / "server.key",
+            SSL_DIRECTORY / "signer.pem",
+            SSL_DIRECTORY / "signer.key",
+        )
+        ats.remap_config.add_lines(
+            (
+                f"map / https://127.0.0.1:{self._default.https_port}",
+                f"map https://foo.com/ https://127.0.0.1:{self._foo.https_port}",
+                f"map https://bad_foo.com/ https://127.0.0.1:{self._foo.https_port}",
+                f"map https://bar.com/ https://127.0.0.1:{self._bar.https_port}",
+                f"map https://bad_bar.com/ https://127.0.0.1:{self._bar.https_port}",
+                f"map https://foo.wild.com/ https://127.0.0.1:{self._wild.https_port}",
+                f"map https://foo_bar.wild.com/ https://127.0.0.1:{self._wild.https_port}",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.ssl.client.verify.server.properties": "SIGNATURE",
+                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+            })
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: bar.com\n"
+            "    verify_server_policy: ENFORCED\n"
+            "    verify_server_properties: ALL\n"
+            '  - fqdn: "*.wild.com"\n'
+            "    verify_server_policy: ENFORCED\n"
+            "    verify_server_properties: ALL\n"
+            "  - fqdn: bad_bar.com\n"
+            "    verify_server_policy: ENFORCED\n"
+            "    verify_server_properties: ALL\n",
+        )
+        return ats
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def request(self, host: str) -> str:
+        """Request @a host through the ATS TLS listener."""
 
-    # Case 1, global config policy=permissive properties=signature
-    #         override for foo.com policy=enforced properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            # set global policy
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
-            'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.url_remap.pristine_host_hdr': 1
-        })
+        result = self._curl.run_for(
+            self._ats,
+            "--insecure",
+            "--header",
+            f"Host: {host}",
+            f"https://127.0.0.1:{self._ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: bar.com',
-            '  verify_server_policy: ENFORCED',
-            '  verify_server_properties: ALL',
-            '- fqdn: "*.wild.com"',
-            '  verify_server_policy: ENFORCED',
-            '  verify_server_properties: ALL',
-            '- fqdn: bad_bar.com',
-            '  verify_server_policy: ENFORCED',
-            '  verify_server_properties: ALL',
-        ])
+    def run(self) -> None:
+        """Run the permissive, exact-SNI, and wildcard-SNI cases."""
 
-    tr = urtest.AddTestRun("Permissive-Test")
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.Setup.Copy("ssl/signed-foo.pem")
-    tr.Setup.Copy("ssl/signed-bar.key")
-    tr.Setup.Copy("ssl/signed-bar.pem")
-    tr.Setup.Copy("ssl/signed-wild.pem")
-    tr.Setup.Copy("ssl/signed-wild.key")
-    tr.MakeCurlCommand("-v -k -H \"host: foo.com\" https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server_foo)
-    tr.Processes.Default.StartBefore(server_bar)
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(server_wild)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+        self._foo.start()
+        self._bar.start()
+        self._wild.start()
+        self._default.start()
+        self._ats.start()
+        for host in ("foo.com", "bar.com", "foo.wild.com", "foo_bar.wild.com"):
+            assert "Could Not Connect" not in self.request(host)
+        assert "Could Not Connect" in self.request("bad_bar.com")
 
-    tr2 = urtest.AddTestRun("Override-enforcing-Test")
-    tr2.MakeCurlCommand("-v -k -H \"host: bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr2.ReturnCode = 0
-    tr2.StillRunningAfter = server
-    tr2.StillRunningAfter = ts
-    tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+        diagnostics = self._ats.diags_log.read_text(errors="replace")
+        assert "verification failed" not in diagnostics
+        assert "WARNING: SNI (bad_bar.com) not in certificate" in diagnostics
 
-    tr3 = urtest.AddTestRun("Override-enforcing-Test-fail-name-check")
-    tr3.MakeCurlCommand("-v -k -H \"host: bad_bar.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have failed")
-    tr3.ReturnCode = 0
-    tr3.StillRunningAfter = server
-    tr3.StillRunningAfter = ts
 
-    tr4 = urtest.AddTestRun("Exercise-wildcard-cert-name-check")
-    tr4.MakeCurlCommand("-v -k -H \"host: foo.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr4.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr4.ReturnCode = 0
-    tr4.StillRunningAfter = server
-    tr4.StillRunningAfter = ts
+def test_tls_verify(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """SNI policies can tighten the global outbound certificate checks."""
 
-    tr5 = urtest.AddTestRun("Exercise-wildcard-cert-underscore-name-check")
-    tr5.MakeCurlCommand("-v -k -H \"host: foo_bar.wild.com\"  https://127.0.0.1:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr5.ReturnCode = 0
-    tr5.StillRunningAfter = server
-    tr5.StillRunningAfter = ts
-
-    # Over riding the built in ERROR check since we expect tr3 to fail
-    ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        r"WARNING: SNI \(bad_bar.com\) not in certificate", "Make sure bad_bar name checked failed.")
-    urtest.execute()
+    TlsVerifyScenario(ats_factory, services, curl).run()

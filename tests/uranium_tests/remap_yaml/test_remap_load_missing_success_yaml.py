@@ -14,41 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from remap_load import RemapLoadScenario
+from tools.uranium.services import ATSFactory
 
 
-def test_remap_load_missing_success_yaml(urtest: UraniumTest) -> None:
-    '''
-    Verify correct behavior of regex_map in remap.yaml.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+def test_remap_load_missing_success_yaml(ats_factory: ATSFactory) -> None:
+    """A missing remap.yaml is accepted when no rule is required."""
 
-    urtest.Summary = '''
-    Test minimum rules on load - succeed on missing file.
-    '''
-
-    ts = urtest.MakeATSProcess("ts")
-
-    ts.Disk.records_config.update({f'proxy.config.url_remap.min_rules_required': 0})
-
-    tr = urtest.AddTestRun("startup")
-    p = tr.Processes.Default
-    p.Command = "sh -c echo"
-    p.ReturnCode = 0
-    p.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    RemapLoadScenario(ats_factory, use_yaml=True, file_exists=False, should_start=True).run()

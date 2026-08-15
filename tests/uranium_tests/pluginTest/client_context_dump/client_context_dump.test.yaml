@@ -1,0 +1,50 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify client_context_dump reports all loaded client certificates"
+  replay: "client_context_dump.replay.yaml"
+  requires: {plugins: [client_context_dump.so]}
+  server: {name: "client-context-origin"}
+  client: {name: "client-context-client"}
+  ats:
+    name: "client-context-ts"
+    process_config: {enable_tls: true, enable_cache: false}
+    copy_to_ssl_dir: ["ssl/one.com.pem", "ssl/two.com.pem"]
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "client_context_dump"
+      proxy.config.ssl.server.cert.path: "{ATS_SSL_DIR}"
+      proxy.config.ssl.server.private_key.path: "{ATS_SSL_DIR}"
+      proxy.config.ssl.client.cert.path: "{ATS_SSL_DIR}"
+      proxy.config.ssl.client.private_key.path: "{ATS_SSL_DIR}"
+    ssl_multicert_yaml:
+      ssl_multicert:
+        - dest_ip: "*"
+          ssl_cert_name: one.com.pem
+          ssl_key_name: one.com.pem
+    sni_yaml:
+      sni:
+        - {fqdn: "*one.com", client_cert: one.com.pem}
+        - {fqdn: "*two.com", client_cert: two.com.pem}
+    plugin_config: ["client_context_dump.so"]
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    post_client_commands:
+      - "traffic_ctl plugin msg client_context_dump.t 1"
+    file_checks:
+      - {path: "{LOG_DIR}/client_context_dump.log", contains: "CN=two.com"}
+      - {path: "{LOG_DIR}/client_context_dump.log", contains: "CN=one.com"}

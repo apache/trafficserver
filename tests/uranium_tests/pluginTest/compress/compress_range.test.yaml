@@ -1,0 +1,39 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify compress plugin range-request behavior"
+  replay: "replay/compress-and-range.replay.yaml"
+  requires:
+    plugins: ["compress.so"]
+  server:
+    name: "compress-range-origin"
+  client:
+    name: "compress-range-client"
+  ats:
+    name: "compress-range-ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|compress"
+      proxy.config.http.insert_response_via_str: 2
+    copy_to_config_dir:
+      - "etc/cache-true-remove-range.config"
+      - "etc/cache-true-remove-accept-encoding.config"
+      - "etc/cache-true-no-compression.config"
+    remap_config:
+      - "map /cache-true-remove-range/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/cache-true-remove-range.config"
+      - "map /cache-true-remove-accept-encoding/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/cache-true-remove-accept-encoding.config"
+      - "map /cache-true-no-compression/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/cache-true-no-compression.config"

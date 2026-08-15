@@ -4,4 +4,4 @@
 op:
   target: puri
   regex: /orig_
-  sendto: http://127.0.0.10:$PORT/i/////////like/cheetos?.done=http://finance.yahoo.com
+  sendto: http://127.0.0.1:{SERVER_HTTP_PORT}/i/////////like/cheetos?.done=http://finance.yahoo.com

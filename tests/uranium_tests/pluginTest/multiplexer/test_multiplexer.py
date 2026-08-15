@@ -14,330 +14,137 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, DNSServer, ProcessService, ServiceFactory, VerifierServer
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_multiplexer(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class MultiplexerScenario:
+    """Send one client transaction stream to its origin and two copy targets."""
 
-    import os
+    def __init__(
+        self,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        variant: str,
+    ) -> None:
+        self._services = services
+        self._variant = variant
+        self._origin_replay, self._copy_replay = self.select_replays(variant)
+        self._origin, self._http_copy, self._https_copy = self.configure_servers(services)
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.Summary = '''
-    Test the Multiplexer plugin.
-    '''
+    @staticmethod
+    def select_replays(variant: str) -> tuple[Path, Path]:
+        """Return the original and copy-side Proxy Verifier traffic files."""
 
-    urtest.SkipUnless(Condition.PluginExists('multiplexer.so'))
+        names = {
+            "copy-post-put": ("multiplexer_original.replay.yaml", "multiplexer_copy.replay.yaml"),
+            "skip-post-put": ("multiplexer_original_skip_post.replay.yaml", "multiplexer_copy_skip_post.replay.yaml"),
+            "invalid-chunk": ("multiplexer_invalid_chunk_original.replay.yaml", "multiplexer_invalid_chunk_copy.replay.yaml"),
+        }
+        origin, copy = names[variant]
+        return TEST_DIRECTORY / "replays" / origin, TEST_DIRECTORY / "replays" / copy
 
-    class MultiplexerTestBase:
-        """
-        Encapsulates the base configuration used by each test.
-        """
+    def configure_servers(self, services: ServiceFactory) -> tuple[VerifierServer, VerifierServer, VerifierServer]:
+        """Create distinct verifier listeners for the original, HTTP copy, and HTTPS copy."""
 
-        client_counter = 0
-        dns_counter = 0
-        server_counter = 0
-        ts_counter = 0
+        return (
+            services.verifier_server("origin", self._origin_replay),
+            services.verifier_server("http-copy", self._copy_replay),
+            services.verifier_server("https-copy", self._copy_replay),
+        )
 
-        def __init__(self, replay_file, multiplexed_host_replay_file, skip_post):
-            self.replay_file = replay_file
-            self.multiplexed_host_replay_file = multiplexed_host_replay_file
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve the three logical backend names to the local listeners."""
 
-            self.setupServers()
-            self.setupDns()
-            self.setupTS(skip_post)
+        return services.dns("dns", default="127.0.0.1")
 
-        def setupDns(self):
-            counter = MultiplexerTestBase.dns_counter
-            MultiplexerTestBase.dns_counter += 1
-            self.dns = urtest.MakeDNServer(f"dns_{counter}", default='127.0.0.1')
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the remap plugin and its two multiplexed destinations."""
 
-        def setupServers(self):
-            counter = MultiplexerTestBase.server_counter
-            MultiplexerTestBase.server_counter += 1
-            self.server_origin = urtest.MakeVerifierServerProcess(f"server_origin_{counter}", self.replay_file)
-            self.server_http = urtest.MakeVerifierServerProcess(f"server_http_{counter}", self.multiplexed_host_replay_file)
-            self.server_https = urtest.MakeVerifierServerProcess(f"server_https_{counter}", self.multiplexed_host_replay_file)
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        if not ats.plugin_exists("multiplexer.so"):
+            pytest.skip("multiplexer.so is not installed")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|multiplexer",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+            })
+        skip = " @pparam=proxy.config.multiplexer.skip_post_put=1" if self._variant == "skip-post-put" else ""
+        ats.remap_config.add_line(
+            f"map https://origin.server.com https://backend.origin.server.com:{self._origin.https_port} "
+            f"@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com{skip}")
+        ats.remap_config.add_line(f"map http://nontls.server.com http://backend.nontls.server.com:{self._http_copy.http_port}")
+        ats.remap_config.add_line(f"map http://tls.server.com https://backend.tls.server.com:{self._https_copy.https_port}")
+        return ats
 
-            # The origin should never receive "X-Multiplexer: copy"
-            self.server_origin.Streams.All += Testers.ExcludesExpression(
-                'X-Multiplexer: copy', 'Verify the original server target never receives a "copy".')
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Drive the original HTTPS request stream through ATS."""
 
-            # Nor should the multiplexed hosts receive an "original" X-Multiplexer value.
-            self.server_http.Streams.All += Testers.ExcludesExpression(
-                'X-Multiplexer: original', 'Verify the HTTP multiplexed host does not receive an "original".')
-            self.server_https.Streams.All += Testers.ExcludesExpression(
-                'X-Multiplexer: original', 'Verify the HTTPS multiplexed host does not receive an "original".')
-            self.server_https.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
+        return services.verifier_client(
+            "client",
+            self._origin_replay,
+            https_ports=[self._ats.https_port],
+        )
 
-            # In addition, the original server should always receive the POST and
-            # PUT requests.
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'uuid: POST', "Verify the client's original target received the POST transaction.")
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'uuid: PUT', "Verify the client's original target received the PUT transaction.")
-            self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
-            # The chunked POST should go to the origin.
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'uuid: CHUNKED_POST', "Verify the client's original target received the chunked POST transaction.")
+    def verify_server_traffic(self) -> None:
+        """Check routing coverage beyond Proxy Verifier's field assertions."""
 
-            # Under all configurations, the GET request should be multiplexed.
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'X-Multiplexer: original', 'Verify the client\'s original target received the "original" request.')
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'uuid: GET', "Verify the client's original target received the GET request.")
+        origin = self._origin.output
+        http_copy = self._http_copy.output
+        https_copy = self._https_copy.output
+        assert "X-Multiplexer: copy" not in origin
+        assert "X-Multiplexer: original" in origin
+        assert "X-Multiplexer: original" not in http_copy + https_copy
+        assert "X-Multiplexer: copy" in http_copy
+        assert "X-Multiplexer: copy" in https_copy
+        assert "TLSSession" in https_copy
 
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'X-Multiplexer: copy', 'Verify the HTTP server received a "copy" of the request.')
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'uuid: GET', "Verify the HTTP server received the GET request.")
-            self.server_http.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
-            # Chunked POST requests are not supported for multiplexing.
-            self.server_http.Streams.All += Testers.ExcludesExpression(
-                'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
+        if self._variant == "invalid-chunk":
+            assert "uuid: INVALID_CHUNK" in origin
+            assert "uuid: INVALID_CHUNK" in http_copy
+            assert "uuid: INVALID_CHUNK" in https_copy
+            return
 
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'X-Multiplexer: copy', 'Verify the HTTPS server received a "copy" of the request.')
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'uuid: GET', "Verify the HTTPS server received the GET request.")
-            # Chunked POST requests are not supported for multiplexing.
-            self.server_https.Streams.All += Testers.ExcludesExpression(
-                'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
+        for identifier in ("GET", "POST", "PUT", "CHUNKED_POST", "MYCUSTOMMETHOD"):
+            assert f"uuid: {identifier}" in origin
+        assert "uuid: CHUNKED_POST" not in http_copy + https_copy
+        for output in (http_copy, https_copy):
+            assert "uuid: GET" in output
+            assert "uuid: MYCUSTOMMETHOD" in output
+        if self._variant == "copy-post-put":
+            for output in (http_copy, https_copy):
+                assert "uuid: POST" in output
+                assert "uuid: PUT" in output
+        else:
+            assert "uuid: POST" not in http_copy + https_copy
+            assert "uuid: PUT" not in http_copy + https_copy
 
-            # Verify that the CUSTOM_METHOD is sent to all servers.
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'uuid: MYCUSTOMMETHOD', "Verify the client's original target received the MYCUSTOMMETHOD transaction.")
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the MYCUSTOMMETHOD request.")
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'x-response: fifth', "Verify the HTTP server sent the MYCUSTOMMETHOD response.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the MYCUSTOMMETHOD request.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'x-response: fifth', "Verify the HTTPS server sent the MYCUSTOMMETHOD response.")
+    def run(self) -> None:
+        """Start all listeners, run the replay client, and verify every target."""
 
-            # Verify that the HTTPS server receives a TLS connection.
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server.")
+        self._dns.start()
+        self._origin.start()
+        self._http_copy.start()
+        self._https_copy.start()
+        self._ats.start()
+        self._client.run()
+        self.verify_server_traffic()
 
-        def setupTS(self, skip_post):
-            counter = MultiplexerTestBase.ts_counter
-            MultiplexerTestBase.ts_counter += 1
-            self.ts = urtest.MakeATSProcess(f"ts_{counter}", enable_tls=True, enable_cache=False)
-            self.ts.addDefaultSSLFiles()
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|multiplexer',
-                    'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                })
-            self.ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            skip_remap_param = ''
-            if skip_post:
-                skip_remap_param = ' @pparam=proxy.config.multiplexer.skip_post_put=1'
-            self.ts.Disk.remap_config.AddLines(
-                [
-                    f'map https://origin.server.com https://backend.origin.server.com:{self.server_origin.Variables.https_port} '
-                    f'@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com'
-                    f'{skip_remap_param}',
 
-                    # Now create remap entries for the multiplexed hosts: one that
-                    # verifies HTTP, and another that verifies HTTPS.
-                    f'map http://nontls.server.com http://backend.nontls.server.com:{self.server_http.Variables.http_port}',
-                    f'map http://tls.server.com https://backend.tls.server.com:{self.server_https.Variables.https_port}',
-                ])
+@pytest.mark.parametrize("variant", ("copy-post-put", "skip-post-put", "invalid-chunk"))
+def test_multiplexer(ats_factory: ATSFactory, services: ServiceFactory, variant: str) -> None:
+    """The multiplexer plugin copies eligible requests without disrupting the original transaction."""
 
-        def run(self):
-            tr = urtest.AddTestRun()
-            self.ts.StartBefore(self.dns)
-            tr.Processes.Default.StartBefore(self.server_origin)
-            tr.Processes.Default.StartBefore(self.server_http)
-            tr.Processes.Default.StartBefore(self.server_https)
-            tr.Processes.Default.StartBefore(self.ts)
-
-            counter = MultiplexerTestBase.client_counter
-            MultiplexerTestBase.client_counter += 1
-            client = tr.AddVerifierClientProcess(f"client_{counter}", self.replay_file, https_ports=[self.ts.Variables.ssl_port])
-            client.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
-
-    class MultiplexerTest(MultiplexerTestBase):
-        """
-        Exercise multiplexing without skip_post configuration.
-        """
-
-        replay_file = os.path.join("replays", "multiplexer_original.replay.yaml")
-        multiplexed_host_replay_file = os.path.join("replays", "multiplexer_copy.replay.yaml")
-
-        def __init__(self):
-            super().__init__(MultiplexerTest.replay_file, MultiplexerTest.multiplexed_host_replay_file, skip_post=False)
-
-        def setupServers(self):
-            super().setupServers()
-
-            # Both of the multiplexed hosts should receive the POST because skip_post
-            # is disabled.
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'uuid: POST', "Verify the HTTP server received the POST request.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'uuid: POST', "Verify the HTTPS server received the POST request.")
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'x-response: second', "Verify the HTTP server sent the POST response.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'x-response: second', "Verify the HTTPS server sent the POST response.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'x-response: fifth', "Verify the HTTPS server sent the custom method response.")
-
-            # Same with PUT
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'uuid: PUT', "Verify the HTTP server received the PUT request.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'uuid: PUT', "Verify the HTTPS server received the PUT request.")
-
-            # Same with MYCUSTOMMETHOD
-            self.server_http.Streams.All += Testers.ContainsExpression(
-                'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the custom method request.")
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the custom method request.")
-
-    class MultiplexerSkipPostTest(MultiplexerTestBase):
-        """
-        Exercise multiplexing with skip_post configuration.
-        """
-
-        replay_file = os.path.join("replays", "multiplexer_original_skip_post.replay.yaml")
-        multiplexed_host_replay_file = os.path.join("replays", "multiplexer_copy_skip_post.replay.yaml")
-
-        def __init__(self):
-            super().__init__(
-                MultiplexerSkipPostTest.replay_file, MultiplexerSkipPostTest.multiplexed_host_replay_file, skip_post=True)
-
-        def setupServers(self):
-            super().setupServers()
-
-            # Neither of the multiplexed hosts should receive the POST because skip_post
-            # is enabled.
-            self.server_http.Streams.All += Testers.ExcludesExpression(
-                'uuid: POST', "Verify the HTTP server did not receive the POST request.")
-            self.server_https.Streams.All += Testers.ExcludesExpression(
-                'uuid: POST', "Verify the HTTPS server did not receive the POST request.")
-
-            # Same with PUT.
-            self.server_http.Streams.All += Testers.ExcludesExpression(
-                'uuid: PUT', "Verify the HTTP server did not receive the PUT request.")
-            self.server_https.Streams.All += Testers.ExcludesExpression(
-                'uuid: PUT', "Verify the HTTPS server did not receive the PUT request.")
-
-    class MultiplexerInvalidChunkedResponseTest:
-        """
-        Verify a copied upstream response with an oversized chunk-size does not
-        disrupt the original client transaction.
-        """
-
-        replay_file = os.path.join("replays", "multiplexer_invalid_chunk_original.replay.yaml")
-        multiplexed_host_replay_file = os.path.join("replays", "multiplexer_invalid_chunk_copy.replay.yaml")
-
-        def __init__(self):
-            self.setupServers()
-            self.setupDns()
-            self.setupTS()
-
-        def setupDns(self):
-            counter = MultiplexerTestBase.dns_counter
-            MultiplexerTestBase.dns_counter += 1
-            self.dns = urtest.MakeDNServer(f"dns_{counter}", default='127.0.0.1')
-
-        def setupServers(self):
-            counter = MultiplexerTestBase.server_counter
-            MultiplexerTestBase.server_counter += 1
-            self.server_origin = urtest.MakeVerifierServerProcess(f"server_origin_{counter}", self.replay_file)
-            self.server_http = urtest.MakeVerifierServerProcess(f"server_http_{counter}", self.multiplexed_host_replay_file)
-            self.server_https = urtest.MakeVerifierServerProcess(f"server_https_{counter}", self.multiplexed_host_replay_file)
-
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'uuid: INVALID_CHUNK', "Verify the original server received the invalid chunk test request.")
-            self.server_origin.Streams.All += Testers.ContainsExpression(
-                'X-Multiplexer: original', 'Verify the original target received the "original" request.')
-            self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
-
-            for server in [self.server_http, self.server_https]:
-                server.Streams.All += Testers.ContainsExpression(
-                    'uuid: INVALID_CHUNK', "Verify the multiplexed server received the invalid chunk test request.")
-                server.Streams.All += Testers.ContainsExpression(
-                    'X-Multiplexer: copy', 'Verify the multiplexed server received a "copy" of the request.')
-                server.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
-
-            self.server_https.Streams.All += Testers.ContainsExpression(
-                'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server.")
-
-        def setupTS(self):
-            counter = MultiplexerTestBase.ts_counter
-            MultiplexerTestBase.ts_counter += 1
-            self.ts = urtest.MakeATSProcess(f"ts_{counter}", enable_tls=True, enable_cache=False)
-            self.ts.addDefaultSSLFiles()
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|multiplexer',
-                    'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                })
-            self.ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            self.ts.Disk.remap_config.AddLines(
-                [
-                    f'map https://origin.server.com https://backend.origin.server.com:{self.server_origin.Variables.https_port} '
-                    f'@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com',
-                    f'map http://nontls.server.com http://backend.nontls.server.com:{self.server_http.Variables.http_port}',
-                    f'map http://tls.server.com https://backend.tls.server.com:{self.server_https.Variables.https_port}',
-                ])
-
-        def run(self):
-            tr = urtest.AddTestRun("Multiplexed response with oversized chunk-size")
-            self.ts.StartBefore(self.dns)
-            tr.Processes.Default.StartBefore(self.server_origin)
-            tr.Processes.Default.StartBefore(self.server_http)
-            tr.Processes.Default.StartBefore(self.server_https)
-            tr.Processes.Default.StartBefore(self.ts)
-
-            counter = MultiplexerTestBase.client_counter
-            MultiplexerTestBase.client_counter += 1
-            client = tr.AddVerifierClientProcess(f"client_{counter}", self.replay_file, https_ports=[self.ts.Variables.ssl_port])
-            client.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
-
-    MultiplexerTest().run()
-    MultiplexerSkipPostTest().run()
-    MultiplexerInvalidChunkedResponseTest().run()
-    urtest.execute()
+    MultiplexerScenario(ats_factory, services, variant).run()

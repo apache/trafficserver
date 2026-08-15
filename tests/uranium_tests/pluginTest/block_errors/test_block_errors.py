@@ -14,184 +14,69 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, wait_for_file_lines
 
 
-def test_block_errors(urtest: UraniumTest) -> None:
-    """
-    Verify block_errors plugin message handling.
-    """
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class BlockErrorsScenario:
+    """Exercise the block_errors plugin's traffic_ctl message hook."""
 
-    urtest.Summary = '''
-    Verify block_errors plugin message handling via traffic_ctl.
-    '''
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.SkipUnless(Condition.PluginExists('block_errors.so'),)
+    @staticmethod
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Load block_errors with its default configuration."""
 
-    # Define ATS and configure it.
-    ts = urtest.MakeATSProcess("ts")
+        ats = ats_factory.create("ts")
+        if not ats.plugin_exists("block_errors.so"):
+            pytest.skip("block_errors.so is required")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "block_errors",
+        })
+        ats.plugin_config.add_line("block_errors.so")
+        return ats
 
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'block_errors',
-    })
+    def send_message(self, tag: str, value: str, expected: str) -> str:
+        """Send one plugin message and wait for its diagnostic."""
 
-    # Configure block_errors plugin with initial values.
-    ts.Disk.plugin_config.AddLine('block_errors.so')
+        result = self._ats.traffic_ctl("plugin", "msg", tag, value)
+        assert result.returncode == 0, result.output
+        assert self._ats.is_running
+        return wait_for_file_lines(self._ats.traffic_out, expected, 1)
 
-    # Verify the plugin loads.
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        "loading plugin.*block_errors.so", "Verify the block_errors plugin got loaded.")
+    def run(self) -> None:
+        """Verify defaults, updates, unknown commands, and routing."""
 
-    #
-    # Test 1: Verify the plugin starts with default values.
-    #
-    tr = urtest.AddTestRun("Verify plugin starts with default values.")
-    tr.Processes.Default.Command = "echo verifying plugin starts with default values"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = ts
+        self._ats.start()
+        diags = wait_for_file_lines(self._ats.diags_log, r"loading plugin.*block_errors\.so", 1)
+        assert "block_errors.so" in diags
+        defaults = "reset limit: 1000 per minute, timeout limit: 4 minutes, shutdown connection: 0 enabled: 1"
+        wait_for_file_lines(self._ats.traffic_out, defaults, 1)
 
-    # Verify the default values are logged at startup.
-    ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-        "reset limit: 1000 per minute, timeout limit: 4 minutes, shutdown connection: 0 enabled: 1",
-        "Verify block_errors starts with default values.")
+        output = self.send_message("block_errors.enabled", "0", "msg_hook: command=enabled data=0")
+        assert "reset limit: 1000 per minute, timeout limit: 4 minutes, shutdown connection: 0 enabled: 0" in output
+        output = self.send_message("block_errors.limit", "500", "msg_hook: command=limit data=500")
+        assert "reset limit: 500 per minute" in output
+        output = self.send_message("block_errors.cycles", "8", "msg_hook: command=cycles data=8")
+        assert "timeout limit: 8 minutes" in output
+        output = self.send_message("block_errors.shutdown", "1", "msg_hook: command=shutdown data=1")
+        assert "shutdown connection: 1" in output
+        self.send_message(
+            "block_errors.unknown_command",
+            "test",
+            "msg_hook: unknown command 'unknown_command'",
+        )
+        self.send_message(
+            "other_plugin.command",
+            "test",
+            "msg_hook: message for a different plugin: other_plugin",
+        )
 
-    #
-    # Test 2: Verify changing the 'enabled' setting via traffic_ctl.
-    #
-    tr = urtest.AddTestRun("Verify changing 'enabled' via traffic_ctl.")
-    tr.Processes.Default.Command = "traffic_ctl plugin msg block_errors.enabled 0"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
 
-    tr = urtest.AddTestRun("Await the enabled change.")
-    tr.Processes.Default.Command = "echo awaiting enabled change"
-    tr.Processes.Default.ReturnCode = 0
-    await_enabled = tr.Processes.Process('await_enabled', 'sleep 30')
-    await_enabled.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: command=enabled data=0")
-    tr.Processes.Default.StartBefore(await_enabled)
+def test_block_errors(ats_factory: ATSFactory) -> None:
+    """block_errors applies and routes runtime messages without restarting."""
 
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "msg_hook: command=enabled data=0", "Verify block_errors received the enabled command.")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "reset limit: 1000 per minute, timeout limit: 4 minutes, shutdown connection: 0 enabled: 0",
-        "Verify block_errors applied the enabled=0 setting.")
-
-    #
-    # Test 3: Verify changing the 'limit' setting via traffic_ctl.
-    #
-    tr = urtest.AddTestRun("Verify changing 'limit' via traffic_ctl.")
-    tr.Processes.Default.Command = "traffic_ctl plugin msg block_errors.limit 500"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddTestRun("Await the limit change.")
-    tr.Processes.Default.Command = "echo awaiting limit change"
-    tr.Processes.Default.ReturnCode = 0
-    await_limit = tr.Processes.Process('await_limit', 'sleep 30')
-    await_limit.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: command=limit data=500")
-    tr.Processes.Default.StartBefore(await_limit)
-
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "msg_hook: command=limit data=500", "Verify block_errors received the limit command.")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "reset limit: 500 per minute", "Verify block_errors applied the limit=500 setting.")
-
-    #
-    # Test 4: Verify changing the 'cycles' setting via traffic_ctl.
-    #
-    tr = urtest.AddTestRun("Verify changing 'cycles' via traffic_ctl.")
-    tr.Processes.Default.Command = "traffic_ctl plugin msg block_errors.cycles 8"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddTestRun("Await the cycles change.")
-    tr.Processes.Default.Command = "echo awaiting cycles change"
-    tr.Processes.Default.ReturnCode = 0
-    await_cycles = tr.Processes.Process('await_cycles', 'sleep 30')
-    await_cycles.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: command=cycles data=8")
-    tr.Processes.Default.StartBefore(await_cycles)
-
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "msg_hook: command=cycles data=8", "Verify block_errors received the cycles command.")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "timeout limit: 8 minutes", "Verify block_errors applied the cycles=8 setting.")
-
-    #
-    # Test 5: Verify changing the 'shutdown' setting via traffic_ctl.
-    #
-    tr = urtest.AddTestRun("Verify changing 'shutdown' via traffic_ctl.")
-    tr.Processes.Default.Command = "traffic_ctl plugin msg block_errors.shutdown 1"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddTestRun("Await the shutdown change.")
-    tr.Processes.Default.Command = "echo awaiting shutdown change"
-    tr.Processes.Default.ReturnCode = 0
-    await_shutdown = tr.Processes.Process('await_shutdown', 'sleep 30')
-    await_shutdown.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: command=shutdown data=1")
-    tr.Processes.Default.StartBefore(await_shutdown)
-
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "msg_hook: command=shutdown data=1", "Verify block_errors received the shutdown command.")
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "shutdown connection: 1", "Verify block_errors applied the shutdown=1 setting.")
-
-    #
-    # Test 6: Verify an unknown command is handled gracefully.
-    #
-    tr = urtest.AddTestRun("Verify unknown command is handled gracefully.")
-    tr.Processes.Default.Command = "traffic_ctl plugin msg block_errors.unknown_command test"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddTestRun("Await the unknown command response.")
-    tr.Processes.Default.Command = "echo awaiting unknown command response"
-    tr.Processes.Default.ReturnCode = 0
-    await_unknown = tr.Processes.Process('await_unknown', 'sleep 30')
-    await_unknown.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: unknown command 'unknown_command'")
-    tr.Processes.Default.StartBefore(await_unknown)
-
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "msg_hook: unknown command 'unknown_command'", "Verify block_errors logs unknown commands.")
-
-    #
-    # Test 7: Verify messages for other plugins are ignored.
-    #
-    tr = urtest.AddTestRun("Verify messages for other plugins are ignored.")
-    tr.Processes.Default.Command = "traffic_ctl plugin msg other_plugin.command test"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddTestRun("Await the other plugin message response.")
-    tr.Processes.Default.Command = "echo awaiting other plugin message response"
-    tr.Processes.Default.ReturnCode = 0
-    await_other = tr.Processes.Process('await_other', 'sleep 30')
-    await_other.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: message for a different plugin: other_plugin")
-    tr.Processes.Default.StartBefore(await_other)
-
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "msg_hook: message for a different plugin: other_plugin", "Verify block_errors ignores messages for other plugins.")
-    urtest.execute()
+    BlockErrorsScenario(ats_factory).run()

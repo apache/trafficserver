@@ -94,7 +94,7 @@ func newRequest(ctx context.Context, baseURL string, authority string, tc reques
 	}
 
 	req.Host = authority
-	req.Header.Set("User-Agent", "ats-h3-quic-go-autest")
+	req.Header.Set("User-Agent", "ats-h3-quic-go-uranium")
 	req.Header.Set("X-H3-Go-Client", "quic-go")
 	req.Header.Set("X-H3-Reused-Header", reusedHeaderValue)
 	req.Header.Set("X-H3-Test-Case", tc.name)
@@ -177,7 +177,14 @@ func runSequential(ctx context.Context, baseURL string, authority string, server
 	return nil
 }
 
-func runConcurrent(ctx context.Context, addr string, baseURL string, authority string, serverName string, cases []requestCase) error {
+func runConcurrent(
+	ctx context.Context,
+	addr string,
+	baseURL string,
+	authority string,
+	serverName string,
+	cases []requestCase,
+) error {
 	transport := &http3.Transport{}
 	defer transport.Close()
 

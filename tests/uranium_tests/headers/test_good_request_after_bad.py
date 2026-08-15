@@ -14,200 +14,144 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, assert_matches_gold, send_tcp
+
+TEST_DIRECTORY = Path(__file__).parent
+SECOND_REQUEST = "GET / HTTP/1.1\r\nHost: boa\r\n\r\n"
 
 
-def test_good_request_after_bad(urtest: UraniumTest) -> None:
-    '''
-    Verify that request following a ill-formed request is not processed
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class GoodRequestAfterBadScenario:
+    """Verify an invalid request cannot leak a following pipelined request."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._strict = self.configure_ats(ats_factory, "strict", 1)
+        self._less_strict = self.configure_ats(ats_factory, "less-strict", 2)
 
-    urtest.Summary = '''
-    Verify that request following a ill-formed request is not processed
-    '''
-    urtest.ContinueOnFail = True
-    ts = urtest.MakeATSProcess("ts")
-    urtest.ContinueOnFail = True
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.http.strict_uri_parsing': 1
-        })
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the response used by accepted requests."""
 
-    ts2 = urtest.MakeATSProcess("ts2")
+        origin = services.origin("origin")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n"
+                        "Cache-Control: max-age=1000\r\n\r\n"),
+                "body": "xxx",
+            },
+        )
+        return origin
 
-    ts2.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.http.strict_uri_parsing': 2
-        })
+    def configure_ats(self, ats_factory: ATSFactory, name: str, strictness: int) -> ATS:
+        """Configure one strict URI parsing policy."""
 
-    server = urtest.MakeOriginServer("server")
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {
-        "headers":
-            "HTTP/1.1 200 OK\r\nConnection: close\r\nLast-Modified: Tue, 08 May 2018 15:49:41 GMT\r\nCache-Control: max-age=1000\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "xxx"
-    }
-    server.addResponse("sessionlog.json", request_header, response_header)
+        ats = ats_factory.create(name)
+        ats.records.update({"proxy.config.http.strict_uri_parsing": strictness})
+        ats.remap_config.add_lines(
+            (
+                f"map / http://127.0.0.1:{self._origin.http_port}",
+                f"map /bob<> http://127.0.0.1:{self._origin.http_port}",
+            ))
+        return ats
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
-    ts.Disk.remap_config.AddLine('map /bob<> http://127.0.0.1:{0}'.format(server.Variables.Port))
-    ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
-    ts2.Disk.remap_config.AddLine('map /bob<> http://127.0.0.1:{0}'.format(server.Variables.Port))
+    @staticmethod
+    def assert_gold(response: str, filename: str) -> None:
+        """Compare one raw response with its wildcard gold file."""
 
-    trace_out = urtest.Disk.File("trace_curl.txt")
+        assert_matches_gold(response, TEST_DIRECTORY / "gold" / filename)
 
-    # Make a good request to get item in the cache for later tests
-    tr = urtest.AddTestRun("Good control")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost: bob\r\n\r\n" | nc  127.0.0.1 {}'.format(ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
+    def send_bad_requests(self) -> None:
+        """Exercise malformed headers, methods, bodies, and request lines."""
 
-    tr = urtest.AddTestRun("Good control")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts2)
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost: bob\r\n\r\n" | nc  127.0.0.1 {}'.format(ts2.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
+        cases = (
+            ("GET / HTTP/1.1\r\nHost : bob\r\n\r\n", "bad_good_request.gold"),
+            ("GET / HTTP/11.1\r\nhost: bob\r\n\r\n", "bad_protocol_number.gold"),
+            ("GET / HTTP/1.1\r\nhost: bob\r\ntransfer-encoding: random\r\n\r\n", "bad_te_value.gold"),
+            (
+                "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-encoding: \x08chunked\r\n\r\n",
+                "invalid_character_in_te_value.gold",
+            ),
+            ("GET / HTTP/1.1\r\nhost: bob\r\ncontent-length:+3\r\n\r\n", "bad_good_request_header.gold"),
+            ("GET / HTTP/1.1\r\nhost: bob\r\ncontent-length:\x0c3\r\n\r\n", "bad_good_request_header.gold"),
+            ("TRACE /foo HTTP/1.1\r\nHost: bob\r\nContent-length:2\r\n\r\nok", "bad_good_request.gold"),
+            (
+                "TRACE /foo HTTP/1.1\r\nHost: bob\r\ntransfer-encoding: chunked\r\n\r\n2\r\nokG",
+                "bad_good_request.gold",
+            ),
+            ("gET / HTTP/1.1\r\nHost:bob\r\n\r\n", "bad_method.gold"),
+            ("GET / HTTP/1.1\r\nHost:bob\r\n \r\n", "bad_good_request.gold"),
+            ("GET /bob<> HTTP/1.1\r\nhost: bob\r\n\r\n", "bad_good_request_http1.gold"),
+            ("GET /bob foo HTTP/1.1\r\nhost: bob\r\n\r\n", "bad_good_request_http1.gold"),
+            ("GET / HTP/1.1\r\nhost: bob\r\n\r\n", "bad_good_request_http1.gold"),
+        )
+        for request, gold in cases:
+            self.assert_gold(send_tcp(self._strict.http_port, request + SECOND_REQUEST), gold)
 
-    tr = urtest.AddTestRun("space after header name")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost : bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
+    def send_curl_trace_requests(self) -> None:
+        """Exercise TRACE body validation through curl."""
 
-    tr = urtest.AddTestRun("Bad protocol number")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/11.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_protocol_number.gold'
+        result = self._curl.run_for(
+            self._strict,
+            "--verbose",
+            "--http1.1",
+            "--header",
+            "Transfer-Encoding: chunked",
+            "--data",
+            "aaa",
+            "-X",
+            "TRACE",
+            f"http://127.0.0.1:{self._strict.http_port}/foo",
+        )
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 400 Invalid HTTP Request" in result.output
+        assert "<TITLE>Bad Request</TITLE>" in result.stdout
+        assert "Description: Could not process this request." in result.stdout
 
-    tr = urtest.AddTestRun("Unsupported Transfer Encoding value")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-encoding: random\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_te_value.gold'
+        result = self._curl.run_for(
+            self._strict,
+            "--verbose",
+            "--http1.1",
+            "-X",
+            "TRACE",
+            f"http://127.0.0.1:{self._strict.http_port}/bar",
+        )
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 501 Unsupported method ('TRACE')" in result.output
 
-    tr = urtest.AddTestRun("Another unsupported Transfer Encoding value")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ntransfer-encoding: \x08chunked\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/invalid_character_in_te_value.gold'
+    def send_less_strict_requests(self) -> None:
+        """Verify strictness level two accepts only the intended URL case."""
 
-    tr = urtest.AddTestRun("Extra characters in content-length")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ncontent-length:+3\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_header.gold'
+        accepted = send_tcp(
+            self._less_strict.http_port,
+            "GET /bob<> HTTP/1.1\r\nhost: bob\r\n\r\n" + SECOND_REQUEST,
+        )
+        assert "HTTP/1.1 200 OK" in accepted
+        for request in (
+                "GET /bob foo HTTP/1.1\r\nhost: bob\r\n\r\n",
+                "GET / HTP/1.1\r\nhost: bob\r\n\r\n",
+        ):
+            self.assert_gold(send_tcp(self._less_strict.http_port, request + SECOND_REQUEST), "bad_good_request_http1.gold")
 
-    tr = urtest.AddTestRun("Different extra characters in content-length")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nhost: bob\r\ncontent-length:\x0c3\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_header.gold'
+    def run(self) -> None:
+        """Run control traffic followed by the malformed request matrix."""
 
-    # TRACE request with a body
-    tr = urtest.AddTestRun("Trace request with a body")
-    tr.Processes.Default.Command = 'printf "TRACE /foo HTTP/1.1\r\nHost: bob\r\nContent-length:2\r\n\r\nokGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
+        self._origin.start()
+        self._strict.start()
+        self._less_strict.start()
+        assert "HTTP/1.1 200 OK" in send_tcp(self._strict.http_port, "GET / HTTP/1.1\r\nHost: bob\r\n\r\n")
+        assert "HTTP/1.1 200 OK" in send_tcp(self._less_strict.http_port, "GET / HTTP/1.1\r\nHost: bob\r\n\r\n")
+        self.send_bad_requests()
+        self.send_curl_trace_requests()
+        self.send_less_strict_requests()
 
-    tr = urtest.AddTestRun("Trace request with a chunked body")
-    tr.Processes.Default.Command = 'printf "TRACE /foo HTTP/1.1\r\nHost: bob\r\ntransfer-encoding: chunked\r\n\r\n2\r\nokGGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
 
-    tr = urtest.AddTestRun("Trace request with a chunked body via curl")
-    tr.MakeCurlCommand(
-        '-v --http1.1 --header "Transfer-Encoding: chunked" -d aaa -X TRACE -o trace_curl.txt -k http://127.0.0.1:{}/foo'.format(
-            ts.Variables.port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = 'gold/bad_good_request_header.gold'
-    trace_out.Content = Testers.ContainsExpression("<TITLE>Bad Request</TITLE>", "ATS error msg")
-    trace_out.Content += Testers.ContainsExpression("Description: Could not process this request.", "ATS error msg")
+def test_good_request_after_bad(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A malformed request terminates processing before a pipelined request."""
 
-    tr = urtest.AddTestRun("Trace request via curl")
-    tr.MakeCurlCommand('-v --http1.1 -X TRACE -k http://127.0.0.1:{}/bar'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-        r"HTTP/1.1 501 Unsupported method \('TRACE'\)", "microserver does not support TRACE")
-
-    # Methods are case sensitive. Verify that "gET" is not confused with "GET".
-    tr = urtest.AddTestRun("mixed case method")
-    tr.Processes.Default.Command = 'printf "gET / HTTP/1.1\r\nHost:bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_method.gold'
-
-    # mangled termination
-    tr = urtest.AddTestRun("mangled line termination")
-    tr.Processes.Default.Command = 'printf "GET / HTTP/1.1\r\nHost:bob\r\n \r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request.gold'
-
-    tr = urtest.AddTestRun("Catch bad URL characters")
-    tr.Processes.Default.Command = 'printf "GET /bob<> HTTP/1.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    # Since the request line is messsed up ATS will reply with HTTP/1.0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_http1.gold'
-
-    tr = urtest.AddTestRun("Catch whitespace in URL")
-    tr.Processes.Default.Command = 'printf "GET /bob foo HTTP/1.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    # Since the request line is messsed up ATS will reply with HTTP/1.0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_http1.gold'
-
-    tr = urtest.AddTestRun("Extra characters in protocol")
-    tr.Processes.Default.Command = 'printf "GET / HTP/1.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    # Since the request line is messsed up ATS will reply with HTTP/1.0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_http1.gold'
-
-    tr = urtest.AddTestRun("Characters that are strict but not case 2 bad")
-    tr.Processes.Default.Command = 'printf "GET /bob<> HTTP/1.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts2.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 200 OK", "Success")
-
-    tr = urtest.AddTestRun("Catch whitespace in URL")
-    tr.Processes.Default.Command = 'printf "GET /bob foo HTTP/1.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts2.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    # Since the request line is messsed up ATS will reply with HTTP/1.0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_http1.gold'
-
-    tr = urtest.AddTestRun("Extra characters in protocol")
-    tr.Processes.Default.Command = 'printf "GET / HTP/1.1\r\nhost: bob\r\n\r\nGET / HTTP/1.1\r\nHost: boa\r\n\r\n" | nc  127.0.0.1 {}'.format(
-        ts2.Variables.port)
-    tr.Processes.Default.ReturnCode = 0
-    # Since the request line is messsed up ATS will reply with HTTP/1.0
-    tr.Processes.Default.Streams.stdout = 'gold/bad_good_request_http1.gold'
-    urtest.execute()
+    GoodRequestAfterBadScenario(ats_factory, services, curl).run()

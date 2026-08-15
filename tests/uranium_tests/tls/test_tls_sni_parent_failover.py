@@ -14,190 +14,156 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
+
+SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
 
-def test_tls_sni_parent_failover(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SniParentFailoverScenario:
+    """Fail over between named HTTPS parents while checking certificate names."""
 
-    urtest.Summary = '''
-    Test parent failover with SNI name handling, validating that Traffic Server
-    correctly fails over between HTTPS parents (including strategy-based parents)
-    while enforcing TLS server name verification.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._foo = self.configure_origin(services, "foo", "foo.com")
+        self._bar = self.configure_origin(services, "bar", "bar.com", include_path=True)
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess(
-        "ts",
-        enable_tls=True,
-        enable_cache=False,
-    )
+    @staticmethod
+    def configure_origin(
+        services: ServiceFactory,
+        suffix: str,
+        host: str,
+        *,
+        include_path: bool = False,
+    ) -> OriginServer:
+        """Create one named HTTPS parent."""
 
-    server_foo = urtest.MakeOriginServer(
-        "server_foo",
-        ssl=True,
-        options={
-            "--key": "{0}/server-foo.key".format(urtest.RunDirectory),
-            "--cert": "{0}/server-foo.pem".format(urtest.RunDirectory),
-        },
-    )
-    server_bar = urtest.MakeOriginServer(
-        "server_bar",
-        ssl=True,
-        options={
-            "--key": "{0}/server-bar.key".format(urtest.RunDirectory),
-            "--cert": "{0}/server-bar.pem".format(urtest.RunDirectory),
-        },
-    )
+        origin = services.origin(
+            f"server-{suffix}",
+            ssl=True,
+            clientkey=SSL_DIRECTORY / f"server-{suffix}.key",
+            clientcert=SSL_DIRECTORY / f"server-{suffix}.pem",
+        )
+        origin.add_response(
+            {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": f"{suffix} ok"
+            },
+        )
+        if include_path:
+            origin.add_response(
+                {"headers": f"GET /path HTTP/1.1\r\nHost: {host}\r\n\r\n"},
+                {
+                    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                    "body": "path bar ok"
+                },
+            )
+        return origin
 
-    # default check request/response
-    request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_foo_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "foo ok"
-    }
-    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_bar_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "bar ok"
-    }
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve parent and remap names to loopback."""
 
-    server_foo.addResponse("sessionlog.json", request_foo_header, response_foo_header)
-    server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
+        dns = services.dns("dns")
+        dns.add_records(
+            {
+                "foo.com.": ["127.0.0.1"],
+                "bar.com.": ["127.0.0.1"],
+                "parent.": ["127.0.0.1"],
+                "strategy.": ["127.0.0.1"],
+            })
+        return dns
 
-    # successful request to be served by bar.com
-    request_bar_header = {"headers": "GET /path HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_bar_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "path bar ok"
-    }
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure parent.config and equivalent first-live strategy failover."""
 
-    server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ssl|parent_select|next_hop",
+                "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
+                "proxy.config.ssl.client.verify.server.properties": "NAME",
+                "proxy.config.url_remap.pristine_host_hdr": 0,
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.http.connect.down.policy": 1,
+            })
+        ats.remap_config.add_lines(
+            (
+                "map http://parent https://parent",
+                "map http://strategy https://strategy @strategy=strat",
+                "map http://parent_prist https://parent "
+                "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
+                "map http://strategy_prist https://strategy @strategy=strat "
+                "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
+            ))
+        ats.parent_config.add_line(
+            f'dest_domain=. port=443 parent="foo.com:{self._foo.https_port}|1;bar.com:{self._bar.https_port}|1" '
+            'parent_retry=simple_retry parent_is_proxy=false go_direct=false simple_server_retry_responses="404" '
+            "host_override=true")
+        ats.write_config_file(
+            "strategies.yaml",
+            "groups:\n"
+            "  - &gstrat\n"
+            "    - host: foo.com\n"
+            "      protocol:\n"
+            "        - scheme: https\n"
+            f"          port: {self._foo.https_port}\n"
+            "      weight: 1.0\n"
+            "    - host: bar.com\n"
+            "      protocol:\n"
+            "        - scheme: https\n"
+            f"          port: {self._bar.https_port}\n"
+            "      weight: 1.0\n"
+            "strategies:\n"
+            "  - strategy: strat\n"
+            "    policy: first_live\n"
+            "    go_direct: false\n"
+            "    parent_is_proxy: false\n"
+            "    ignore_self_detect: true\n"
+            "    host_override: true\n"
+            "    groups:\n"
+            "      - *gstrat\n"
+            "    scheme: https\n"
+            "    failover:\n"
+            "      ring_mode: exhaust_ring\n"
+            "      response_codes:\n"
+            "        - 404\n",
+        )
+        return ats
 
-    ts.addSSLfile("ssl/server-foo.pem")
-    ts.addSSLfile("ssl/server-foo.key")
-    ts.addSSLfile("ssl/server-bar.pem")
-    ts.addSSLfile("ssl/server-bar.key")
+    def request(self, host: str) -> str:
+        """Request one parent selection path through ATS as a forward proxy."""
 
-    dns = urtest.MakeDNServer("dns")
+        result = self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--location",
+            "--proxy",
+            f"localhost:{self._ats.http_port}",
+            f"http://{host}/path",
+        )
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|ssl|parent_select|next_hop',
-            'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
-            'proxy.config.ssl.client.verify.server.properties': 'NAME',
-            'proxy.config.url_remap.pristine_host_hdr': 0,
-            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.http.connect.down.policy': 1,  # tls failures don't mark down
-        })
+    def run(self) -> None:
+        """Verify failover for parent and strategy mappings with pristine hosts."""
 
-    dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
-    dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
-    dns.addRecords(records={"parent.": ["127.0.0.1"]})
-    dns.addRecords(records={"strategy.": ["127.0.0.1"]})
+        self._foo.start()
+        self._bar.start()
+        self._dns.start()
+        self._ats.start()
+        for host in ("parent", "strategy", "parent_prist", "strategy_prist"):
+            assert "path bar ok" in self.request(host)
 
-    ts.Disk.remap_config.AddLines(
-        [
-            "map http://parent https://parent",
-            "map http://strategy https://strategy @strategy=strat",
-            "map http://parent_prist https://parent @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
-            "map http://strategy_prist https://strategy @strategy=strat @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
-        ])
 
-    ts.Disk.parent_config.AddLine(
-        'dest_domain=. port=443 parent="foo.com:{0}|1;bar.com:{1}|1" parent_retry=simple_retry parent_is_proxy=false go_direct=false simple_server_retry_responses="404" host_override=true'
-        .format(server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port))
+def test_tls_sni_parent_failover(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """HTTPS parent failover preserves the selected parent's SNI name."""
 
-    # build strategies.yaml file
-    ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
-
-    s = ts.Disk.strategies
-    s.AddLine("groups:")
-    s.AddLines(
-        [
-            f"  - &gstrat",
-            f"    - host: foo.com",
-            f"      protocol:",
-            f"      - scheme: https",
-            f"        port: {server_foo.Variables.SSL_Port}",
-            f"      weight: 1.0",
-            f"    - host: bar.com",
-            f"      protocol:",
-            f"      - scheme: https",
-            f"        port: {server_bar.Variables.SSL_Port}",
-            f"      weight: 1.0",
-        ])
-
-    s.AddLine("strategies:")
-
-    s.AddLines(
-        [
-            f"  - strategy: strat",
-            f"    policy: first_live",
-            f"    go_direct: false",
-            f"    parent_is_proxy: false",
-            f"    ignore_self_detect: true",
-            f"    host_override: true",
-            f"    groups:",
-            f"      - *gstrat",
-            f"    scheme: https",
-            f"    failover:",
-            f"      ring_mode: exhaust_ring",
-            f"      response_codes:",
-            f"        - 404",
-        ])
-
-    curl_args = f"-s -L -o /dev/stdout -D /dev/stderr -x localhost:{ts.Variables.port} "
-
-    tr = urtest.AddTestRun("request with failover, parent.config")
-    tr.Setup.Copy("ssl/server-foo.key")
-    tr.Setup.Copy("ssl/server-foo.pem")
-    tr.Setup.Copy("ssl/server-bar.key")
-    tr.Setup.Copy("ssl/server-bar.pem")
-    tr.MakeCurlCommand(curl_args + "http://parent/path", ts=ts)
-    tr.StillRunningAfter = ts
-    ps = tr.Processes.Default
-    ps.StartBefore(server_foo)
-    ps.StartBefore(server_bar)
-    ps.StartBefore(dns)
-    ps.StartBefore(urtest.Processes.ts)
-    ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
-
-    tr = urtest.AddTestRun("request with failover, strategies.yaml")
-    tr.MakeCurlCommand(curl_args + "http://strategy/path", ts=ts)
-    tr.StillRunningAfter = ts
-    ps = tr.Processes.Default
-    ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
-
-    tr = urtest.AddTestRun("request with failover, parent.config pristine_host_hdr")
-    tr.MakeCurlCommand(curl_args + "http://parent_prist/path", ts=ts)
-    tr.StillRunningAfter = ts
-    ps = tr.Processes.Default
-    ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
-
-    tr = urtest.AddTestRun("request with failover, strategies.yaml")
-    tr.MakeCurlCommand(curl_args + "http://strategy_prist/path", ts=ts)
-    tr.StillRunningAfter = ts
-    ps = tr.Processes.Default
-    ps.Streams.stdout = Testers.ContainsExpression("path bar ok", "Expected 200 response from bar.com")
-    urtest.execute()
+    SniParentFailoverScenario(ats_factory, services, curl).run()

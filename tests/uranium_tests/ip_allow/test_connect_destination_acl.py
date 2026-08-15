@@ -14,178 +14,165 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import re
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
 
-def test_connect_destination_acl(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    '''
-    Verify outbound ip_allow filtering for CONNECT destinations.
-    '''
+class ConnectDestinationAclScenario:
+    """Apply outbound ip_allow rules to CONNECT and SNI tunnel targets."""
 
-    urtest.Summary = '''
-    Verify outbound ip_allow filtering for CONNECT destinations.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("CONNECT destination ACL coverage requires a TCP listener")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._default = self.configure_ats(ats_factory, "default")
+        self._allowed = self.configure_ats(ats_factory, "allowed", allow_loopback=True)
+        self._sni = self.configure_sni_ats(ats_factory)
 
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
-    urtest.ContinueOnFail = True
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the TLS endpoint used by permitted tunnels."""
 
-    server = urtest.MakeOriginServer("server", ssl=True)
+        origin = services.origin("origin", ssl=True)
+        origin.add_response(
+            {"headers": f"GET / HTTP/1.1\r\nHost: 127.0.0.1:{origin.https_port}\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    request = {
-        "headers": f"GET / HTTP/1.1\r\nHost: 127.0.0.1:{server.Variables.SSL_Port}\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-    response = {
-        "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-    server.addResponse("sessionlog.json", request, response)
+    def configure_ats(self, ats_factory: ATSFactory, name: str, *, allow_loopback: bool = False) -> ATS:
+        """Configure one forward proxy and optional loopback outbound allow."""
 
-    def configure_ts(name):
-        ts = urtest.MakeATSProcess(name, enable_cache=False)
-        ts.Disk.records_config.update(
+        ats = ats_factory.create(f"ts-{name}", enable_cache=False)
+        ats.records.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|ip_allow",
-                "proxy.config.http.connect_ports": f"{server.Variables.SSL_Port}",
+                "proxy.config.http.connect_ports": str(self._origin.https_port),
                 "proxy.config.url_remap.remap_required": 0,
             })
-        return ts
+        if allow_loopback:
+            ats.ip_allow_config.add_lines(
+                (
+                    "ip_allow:",
+                    "  - apply: in",
+                    "    ip_addrs: 127.0.0.1",
+                    "    action: allow",
+                    "    methods: ALL",
+                    "  - apply: out",
+                    "    ip_addrs: 127.0.0.1",
+                    "    action: allow",
+                    "    methods: CONNECT",
+                    "  - apply: out",
+                    "    ip_addrs:",
+                    "      - 0.0.0.0/8",
+                    "      - 127.0.0.0/8",
+                    '      - "::"',
+                    "      - ::1",
+                    "      - 10.0.0.0/8",
+                    "      - 172.16.0.0/12",
+                    "      - 192.168.0.0/16",
+                    "      - 169.254.0.0/16",
+                    "      - ::/96",
+                    "      - fc00::/7",
+                    "      - fe80::/10",
+                    "      - ::ffff:0:0/96",
+                    "    action: deny",
+                    "    methods: CONNECT",
+                ))
+        return ats
 
-    ts_default = configure_ts("ts-default")
-    ts_allowed = configure_ts("ts-allowed")
-    ts_allowed.Disk.ip_allow_yaml.AddLines(
-        [
-            "ip_allow:",
-            "  - apply: in",
-            "    ip_addrs: 127.0.0.1",
-            "    action: allow",
-            "    methods: ALL",
-            "  - apply: out",
-            "    ip_addrs: 127.0.0.1",
-            "    action: allow",
-            "    methods: CONNECT",
-            "  - apply: out",
-            "    ip_addrs:",
-            "      - 0.0.0.0/8",
-            "      - 127.0.0.0/8",
-            "      - \"::\"",
-            "      - ::1",
-            "      - 10.0.0.0/8",
-            "      - 172.16.0.0/12",
-            "      - 192.168.0.0/16",
-            "      - 169.254.0.0/16",
-            "      - ::/96",
-            "      - fc00::/7",
-            "      - fe80::/10",
-            "      - ::ffff:0:0/96",
-            "    action: deny",
-            "    methods: CONNECT",
-        ])
+    def configure_sni_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure an SNI tunnel route to the prohibited loopback target."""
 
-    ts_sni_default = urtest.MakeATSProcess("ts-sni-default", enable_cache=False, enable_tls=True)
-    ts_sni_default.addDefaultSSLFiles()
-    ts_sni_default.Disk.records_config.update(
-        {
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "http|ip_allow|ssl|sni",
-            "proxy.config.http.connect_ports": f"{server.Variables.SSL_Port}",
-            "proxy.config.ssl.server.cert.path": ts_sni_default.Variables.SSLDir,
-            "proxy.config.ssl.server.private_key.path": ts_sni_default.Variables.SSLDir,
-        })
-    ts_sni_default.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-    ts_sni_default.Disk.sni_yaml.AddLines(
-        [
-            "sni:",
-            "- fqdn: sni-denied.example.com",
-            f"  tunnel_route: 127.0.0.1:{server.Variables.SSL_Port}",
-        ])
-    ts_sni_default.Disk.diags_log.Content += Testers.ContainsExpression(
-        r"server '127\.0\.0\.1.*' prohibited by ip-allow policy", "SNI tunnel_route should be denied by outbound ip_allow.")
+        ats = ats_factory.create("ts-sni-default", enable_cache=False, enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ip_allow|ssl|sni",
+                "proxy.config.http.connect_ports": str(self._origin.https_port),
+            })
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: sni-denied.example.com\n"
+            f"    tunnel_route: 127.0.0.1:{self._origin.https_port}\n",
+        )
+        return ats
 
-    loopback_url = f"https://127.0.0.1:{server.Variables.SSL_Port}/"
-    unspecified_url = f"https://0.0.0.0:{server.Variables.SSL_Port}/"
-    reserved_ipv4_url = f"https://0.1.2.3:{server.Variables.SSL_Port}/"
-    unspecified_v6_url = f"https://[::]:{server.Variables.SSL_Port}/"
-    compatible_loopback_url = f"https://[::7f00:1]:{server.Variables.SSL_Port}/"
-    mapped_loopback_url = f"https://[::ffff:127.0.0.1]:{server.Variables.SSL_Port}/"
-    mapped_loopback_hex_url = f"https://[::ffff:7f00:1]:{server.Variables.SSL_Port}/"
+    def connect(self, ats: ATS, url: str) -> CommandResult:
+        """Attempt one CONNECT request and report curl's status fields."""
 
-    def add_denied_connect_run(name, url, http_connect="403"):
-        tr = urtest.AddTestRun(name)
-        tr.MakeCurlCommand(
-            f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_default.Variables.port} '
-            f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {url}',
-            ts=ts_default)
-        tr.Processes.Default.ReturnCode = Any(7, 56)
-        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            f"http_code=000 http_connect={http_connect}", "CONNECT should be rejected before tunneling.")
-        tr.StillRunningAfter = server
-        tr.StillRunningAfter = ts_default
-        return tr
+        return self._curl.run_for(
+            ats,
+            "--silent",
+            "--insecure",
+            "--noproxy",
+            "does-not-match",
+            "--proxy",
+            f"http://127.0.0.1:{ats.http_port}",
+            "--output",
+            "/dev/null",
+            "--write-out",
+            "http_code=%{http_code} http_connect=%{http_connect}\n",
+            url,
+        )
 
-    tr = urtest.AddTestRun("Default policy denies CONNECT to loopback")
-    tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
-    tr.Processes.Default.StartBefore(ts_default)
-    tr.MakeCurlCommand(
-        f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_default.Variables.port} '
-        f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {loopback_url}',
-        ts=ts_default)
-    tr.Processes.Default.ReturnCode = Any(7, 56)
-    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        "http_code=000 http_connect=403", "CONNECT to loopback should be rejected by the default outbound policy.")
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts_default
+    def verify_denied_targets(self) -> None:
+        """Verify prohibited and syntactically invalid CONNECT targets."""
 
-    add_denied_connect_run("ATS rejects CONNECT to unspecified IPv4 before outbound policy", unspecified_url, http_connect="400")
-    add_denied_connect_run("Default policy denies CONNECT to 0.0.0.0/8", reserved_ipv4_url)
-    add_denied_connect_run("ATS rejects CONNECT to unspecified IPv6 before outbound policy", unspecified_v6_url, http_connect="400")
-    add_denied_connect_run("Default policy denies CONNECT to IPv4-compatible loopback", compatible_loopback_url)
-    add_denied_connect_run("Default policy denies CONNECT to IPv4-mapped loopback", mapped_loopback_url)
-    add_denied_connect_run("Default policy denies CONNECT to hex IPv4-mapped loopback", mapped_loopback_hex_url)
+        port = self._origin.https_port
+        cases = (
+            (f"https://127.0.0.1:{port}/", "403"),
+            (f"https://0.0.0.0:{port}/", "400"),
+            (f"https://0.1.2.3:{port}/", "403"),
+            (f"https://[::]:{port}/", "400"),
+            (f"https://[::7f00:1]:{port}/", "403"),
+            (f"https://[::ffff:127.0.0.1]:{port}/", "403"),
+            (f"https://[::ffff:7f00:1]:{port}/", "403"),
+        )
+        for url, status in cases:
+            result = self.connect(self._default, url)
+            assert result.returncode in (7, 56), result.output
+            assert f"http_code=000 http_connect={status}" in result.stdout
 
-    tr = urtest.AddTestRun("Default policy denies SNI tunnel_route to loopback")
-    tr.Processes.Default.StartBefore(ts_sni_default)
-    tr.MakeCurlCommand(
-        f"-skv --resolve sni-denied.example.com:{ts_sni_default.Variables.ssl_port}:127.0.0.1 "
-        f"https://sni-denied.example.com:{ts_sni_default.Variables.ssl_port}/",
-        ts=ts_sni_default)
-    tr.Processes.Default.ReturnCode = Any(35, 52, 56)
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts_sni_default
+    def verify_sni_denial(self) -> None:
+        """Verify outbound policy also applies to SNI tunnel routes."""
 
-    tr = urtest.AddTestRun("Explicit outbound allow permits CONNECT to loopback")
-    tr.Processes.Default.StartBefore(ts_allowed)
-    tr.MakeCurlCommand(
-        f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_allowed.Variables.port} '
-        f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {loopback_url}',
-        ts=ts_allowed)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        "http_code=200 http_connect=200", "Explicit outbound allow should permit the CONNECT tunnel.")
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts_allowed
-    urtest.execute()
+        result = self._curl.run_for(
+            self._sni,
+            "--silent",
+            "--insecure",
+            "--verbose",
+            "--resolve",
+            f"sni-denied.example.com:{self._sni.https_port}:127.0.0.1",
+            f"https://sni-denied.example.com:{self._sni.https_port}/",
+        )
+        assert result.returncode in (35, 52, 56), result.output
+        diagnostics = self._sni.diags_log.read_text(errors="replace")
+        assert re.search(r"server '127\.0\.0\.1.*' prohibited by ip-allow policy", diagnostics)
+
+    def run(self) -> None:
+        """Exercise default denials and an explicit outbound allow."""
+
+        self._origin.start()
+        self._default.start()
+        self._allowed.start()
+        self._sni.start()
+        self.verify_denied_targets()
+        self.verify_sni_denial()
+
+        result = self.connect(self._allowed, f"https://127.0.0.1:{self._origin.https_port}/")
+        assert result.returncode == 0, result.output
+        assert "http_code=200 http_connect=200" in result.stdout
+
+
+def test_connect_destination_acl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Outbound ip_allow protects CONNECT and SNI tunnel destinations."""
+
+    ConnectDestinationAclScenario(ats_factory, services, curl).run()

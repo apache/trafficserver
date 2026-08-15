@@ -14,166 +14,118 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+SLICE_BLOCK_SIZE = 10
+LARGE_BODY = "large object sliced!"
 
 
-def test_slice_conditional(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ConditionalSliceScenario:
+    """Slice only objects larger than the configured minimum size."""
 
-    urtest.Summary = '''
-    Conditional Slicing test
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    # Test description:
-    # Preload the cache with the entire asset to be range requested.
-    # Reload remap rule with slice plugin
-    # Request content through the slice plugin
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create small, unsliced-large, and ranged-large responses."""
 
-    urtest.SkipUnless(
-        Condition.PluginExists('slice.so'),
-        Condition.PluginExists('cache_range_requests.so'),
-        Condition.PluginExists('xdebug.so'),
-    )
-    urtest.ContinueOnFail = False
+        origin = services.origin("server", lookup_key="{PATH}{%Range}", options={"-v": None})
+        origin.add_response(
+            {"headers": "GET /small HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
+                "body": "smol",
+            },
+        )
+        origin.add_response(
+            {"headers": "GET /large HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=10,public\r\n\r\n",
+                "body": "unsliced large object!",
+            },
+        )
+        for begin in range(0, len(LARGE_BODY), SLICE_BLOCK_SIZE):
+            requested_end = begin + SLICE_BLOCK_SIZE - 1
+            actual_end = min(begin + SLICE_BLOCK_SIZE, len(LARGE_BODY))
+            origin.add_response(
+                {"headers": "GET /large HTTP/1.1\r\n"
+                            "Host: www.example.com\r\n"
+                            f"Range: bytes={begin}-{requested_end}\r\n\r\n"},
+                {
+                    "headers":
+                        "HTTP/1.1 206 Partial Content\r\n"
+                        "Connection: close\r\n"
+                        "Accept-Ranges: bytes\r\n"
+                        f"Content-Range: bytes {begin}-{actual_end - 1}/{len(LARGE_BODY)}\r\n"
+                        "Cache-Control: max-age=10,public\r\n\r\n",
+                    "body": LARGE_BODY[begin:actual_end],
+                },
+            )
+        return origin
 
-    # configure origin server
-    server = urtest.MakeOriginServer("server", lookup_key="{PATH}{%Range}", options={'-v': None})
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure conditional slicing with cache range support."""
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts")
+        ats = ats_factory.create("ts")
+        required = ("slice.so", "cache_range_requests.so", "xdebug.so")
+        missing = [plugin for plugin in required if not ats.plugin_exists(plugin)]
+        if missing:
+            pytest.skip("Missing plugins: " + ", ".join(missing))
+        ats.remap_config.add_line(
+            f"map http://slice/ http://127.0.0.1:{self._origin.port}/ "
+            f"@plugin=slice.so @pparam=--blockbytes-test={SLICE_BLOCK_SIZE} "
+            "@pparam=--minimum-size=8 @pparam=--metadata-cache-size=4 "
+            "@plugin=cache_range_requests.so")
+        ats.plugin_config.add_line("xdebug.so --enable=x-cache")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "http|cache|slice|xdebug|cache_range_requests",
+            })
+        return ats
 
-    # small object, should not be sliced
-    req_small = {
-        "headers": "GET /small HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
-        "body": "",
-    }
-    res_small = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=10,public\r\n" + "\r\n",
-        "body": "smol",
-    }
-    server.addResponse("sessionlog.json", req_small, res_small)
+    def request(self, path: str, *, byte_range: str | None = None) -> str:
+        """Request one object and include response headers in the result."""
 
-    # large object, all in one slice
-    req_large = {
-        "headers": "GET /large HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
-        "body": "",
-    }
-    res_large = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=10,public\r\n" + "\r\n",
-        "body": "unsliced large object!"
-    }
-    server.addResponse("sessionlog.json", req_large, res_large)
+        arguments = [
+            "--silent",
+            "--include",
+            "--proxy",
+            f"localhost:{self._ats.http_port}",
+            "--header",
+            "x-debug: x-cache",
+        ]
+        if byte_range is not None:
+            arguments.extend(("--range", byte_range))
+        arguments.append(f"http://slice/{path}")
+        result = self._curl.run_for(self._ats, *arguments)
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-    # large object, this populates the individual slices in the server
+    def run(self) -> None:
+        """Verify small-object caching and the large-object slice transition."""
 
-    large_body = "large object sliced!"
-    body_len = len(large_body)
-    slice_begin = 0
-    slice_block_size = 10
-    while (slice_begin < body_len):
-        slice_end = slice_begin + slice_block_size
-        req_large_slice = {
-            "headers":
-                "GET /large HTTP/1.1\r\n" + "Host: www.example.com\r\n" + f"Range: bytes={slice_begin}-{slice_end - 1}" + "\r\n",
-            "body": "",
-        }
-        if slice_end > body_len:
-            slice_end = body_len
-        res_large_slice = {
-            "headers":
-                "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Accept-Ranges: bytes\r\n" +
-                f"Content-Range: bytes {slice_begin}-{slice_end - 1}/{body_len}\r\n" + "Cache-Control: max-age=10,public\r\n" +
-                "\r\n",
-            "body": large_body[slice_begin:slice_end]
-        }
-        server.addResponse("sessionlog.json", req_large_slice, res_large_slice)
-        slice_begin += slice_block_size
+        self._origin.start()
+        self._ats.start()
+        small_miss = self.request("small")
+        assert "smol" in small_miss and "X-Cache: miss" in small_miss
+        small_hit = self.request("small")
+        assert "smol" in small_hit and "X-Cache: hit-fresh" in small_hit
+        small_range = self.request("small", byte_range="1-2")
+        assert "mo" in small_range and "X-Cache: hit-fresh" in small_range
+        large_unsliced = self.request("large")
+        assert "unsliced large object!" in large_unsliced and "X-Cache: miss" in large_unsliced
+        large_sliced = self.request("large")
+        assert LARGE_BODY in large_sliced and "X-Cache: miss" in large_sliced
+        large_hit = self.request("large")
+        assert LARGE_BODY in large_hit and "X-Cache: hit-fresh" in large_hit
 
-    # set up slice plugin with remap host into cache_range_requests
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
-            f' @plugin=slice.so @pparam=--blockbytes-test={slice_block_size} @pparam=--minimum-size=8 @pparam=--metadata-cache-size=4 @plugin=cache_range_requests.so'
-        ])
 
-    ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': '0',
-            'proxy.config.diags.debug.tags': 'http|cache|slice|xdebug|cache_range_requests',
-        })
+def test_slice_conditional(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """slice changes behavior only after an object exceeds the minimum size."""
 
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
-
-    # Test case: first request of small object
-    tr = urtest.AddTestRun("Small request 1")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/small', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression('smol', 'expected smol')
-    ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
-    tr.StillRunningAfter = ts
-
-    # Test case: second request of small object - expect cache hit
-    tr = urtest.AddTestRun("Small request 2")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/small', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression('smol', 'expected smol')
-    ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
-    tr.StillRunningAfter = ts
-
-    # Test case: range request of small object - expect cache hit (proxy.config.http.cache.range.lookup = 1)
-    tr = urtest.AddTestRun("Small request - ranged")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -r 1-2 http://slice/small', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression('mo', 'expected mo')
-    ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
-    tr.StillRunningAfter = ts
-
-    # Test case: first request of large object - expect unsliced, cache write disabled
-    tr = urtest.AddTestRun("Large request 1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/large', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression('unsliced large object!', 'expected large object')
-    ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
-    tr.StillRunningAfter = ts
-
-    # Test case: first request of large object - expect sliced, cache miss
-    tr = urtest.AddTestRun("Large request 2")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/large', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression('large object sliced!', 'expected large object')
-    ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: miss', 'expected cache miss')
-    tr.StillRunningAfter = ts
-
-    ## Test case: first request of large object - expect cache hit
-    tr = urtest.AddTestRun("Large request 3")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/large', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr.Content = Testers.ContainsExpression('large object sliced!', 'expected large object')
-    ps.Streams.stdout.Content = Testers.ContainsExpression('X-Cache: hit-fresh', 'expected cache hit-fresh')
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    ConditionalSliceScenario(ats_factory, services, curl).run()

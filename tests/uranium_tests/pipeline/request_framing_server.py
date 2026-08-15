@@ -156,7 +156,7 @@ def handle_connection(sock: socket.socket) -> None:
 
 def main() -> int:
     """Run the recording origin server until terminated by the test harness."""
-    # AuTest terminates long-running processes with SIGINT. Register the handler
+    # The test harness terminates long-running processes with SIGINT. Register the handler
     # explicitly because SIGINT may be inherited as ignored from the launcher.
     signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))

@@ -14,63 +14,46 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import stat
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_uds_socket_perm(urtest: UraniumTest) -> None:
-    '''Verify the listening UDS socket mode honors uds-perm and defaults to 0666.'''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class UdsSocketPermissionScenario:
+    """Verify default and explicitly configured UDS listener modes."""
 
-    urtest.Summary = '''
-    Verify proxy.config.http.server_ports honors the uds-perm option on UDS
-    listeners and defaults to 0666.
-    '''
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats_factory = ats_factory
 
-    def assert_socket_mode(socket_path: str, expected_octal: str) -> str:
-        return (
-            f'python3 -c "import os, stat, sys; '
-            f'sys.exit(0 if stat.S_IMODE(os.stat(sys.argv[1]).st_mode) == int(sys.argv[2], 8) else 1)" '
-            f'{socket_path} {expected_octal}')
+    def configure_ats(self, name: str, permission: str | None) -> ATS:
+        """Create an ATS instance with one TCP and one UDS listener."""
 
-    #
-    # Default UDS permission should be 0666 (no uds-perm option specified).
-    #
-    ts_default = urtest.MakeATSProcess("ts_default")
-    ts_default.Disk.records_config.update(
-        {
-            'proxy.config.http.server_ports': f"{ts_default.Variables.port} {ts_default.Variables.uds_path}",
-        })
+        ats = self._ats_factory.create(name)
+        uds_listener = ats.uds_path if permission is None else f"{ats.uds_path}:uds-perm={permission}"
+        ats.records.update({"proxy.config.http.server_ports": f"{ats.http_port} {uds_listener}"})
+        return ats
 
-    tr = urtest.AddTestRun("UDS default permission is 0666")
-    tr.Processes.Default.Command = assert_socket_mode(ts_default.Variables.uds_path, '0666')
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts_default)
+    @staticmethod
+    def assert_mode(ats: ATS, expected: int) -> None:
+        """Assert the materialized socket has exactly @a expected permissions."""
 
-    #
-    # uds-perm=0660 should be honored.
-    #
-    ts_custom = urtest.MakeATSProcess("ts_custom")
-    ts_custom.Disk.records_config.update(
-        {
-            'proxy.config.http.server_ports': f"{ts_custom.Variables.port} {ts_custom.Variables.uds_path}:uds-perm=0660",
-        })
+        actual = stat.S_IMODE(Path(ats.uds_path).stat().st_mode)
+        assert actual == expected, f"{ats.uds_path} mode is {actual:#o}, expected {expected:#o}"
 
-    tr = urtest.AddTestRun("UDS custom permission 0660 honored")
-    tr.Processes.Default.Command = assert_socket_mode(ts_custom.Variables.uds_path, '0660')
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts_custom)
-    urtest.execute()
+    def run(self) -> None:
+        """Start and inspect default and custom listeners independently."""
+
+        default = self.configure_ats("ts-default", None)
+        default.start()
+        self.assert_mode(default, 0o666)
+
+        custom = self.configure_ats("ts-custom", "0660")
+        custom.start()
+        self.assert_mode(custom, 0o660)
+
+
+def test_uds_socket_perm(ats_factory: ATSFactory) -> None:
+    """UDS listeners default to 0666 and honor uds-perm."""
+
+    UdsSocketPermissionScenario(ats_factory).run()

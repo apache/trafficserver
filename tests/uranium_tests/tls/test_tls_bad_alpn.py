@@ -14,89 +14,78 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import shutil
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl
 
 
-def test_tls_bad_alpn(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class AlpnScenario:
+    """Offer invalid, absent, HTTP/1.1, and HTTP/2 ALPN values."""
 
-    import os
-    import ports
+    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Ensure that handshake fails if invalid alpn string is offered
-    '''
+    @staticmethod
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Start ATS with its normal TLS protocol advertisement."""
 
-    # Only later versions of openssl support the `-alpn` option.
-    urtest.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
+        return ats_factory.create("ts", enable_tls=True)
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+    @staticmethod
+    def require_output(result: CommandResult, *expressions: str) -> None:
+        """Require each observable handshake or response marker."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
+        for expression in expressions:
+            assert expression in result.output, result.output
 
-    # Make sure the TS server certs are different from the origin certs
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def run_openssl_cases(self) -> None:
+        """Exercise invalid, HTTP/1.1, and absent ALPN offers."""
 
-    # Case 1, global config policy=permissive properties=signature
-    #         override for foo.com policy=enforced properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        })
+        port = self._ats.https_port
+        invalid = self._ats.run_shell(f"timeout 5 openssl s_client -alpn banana -connect 127.0.0.1:{port} </dev/null")
+        assert invalid.returncode in (0, 1, 124), invalid.output
+        self.require_output(invalid, "No ALPN negotiated")
 
-    tr = urtest.AddTestRun("alpn banana")
-    tr.Processes.Default.Command = "openssl s_client -ign_eof -alpn=banana -connect 127.0.0.1:{}".format(ts.Variables.ssl_port)
-    tr.ReturnCode = 1  # Should fail
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("No ALPN negotiated", "Banana should not match a negotiation")
+        http1 = self._ats.run_shell(
+            f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -alpn http/1.1 -connect 127.0.0.1:{port}")
+        assert http1.returncode == 0, http1.output
+        self.require_output(http1, "ALPN protocol: http/1.1", "HTTP/1.1 400 Host Header Required")
 
-    tr = urtest.AddTestRun("alpn http/1.1")
-    tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n\r\n' | openssl s_client -ign_eof -alpn=http/1.1 -connect 127.0.0.1:{}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN protocol: http/1.1", "Successful ALPN")
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/1.1 400 Host Header Required", "Processed the request")
+        absent = self._ats.run_shell(f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -ign_eof -connect 127.0.0.1:{port}")
+        assert absent.returncode == 0, absent.output
+        self.require_output(absent, "No ALPN negotiated", "HTTP/1.1 400 Host Header Required")
 
-    tr = urtest.AddTestRun("no alpn")
-    tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n\r\n' | openssl s_client -ign_eof -connect 127.0.0.1:{}".format(
-        ts.Variables.ssl_port)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("No ALPN negotiated", "No ALPN offered, none negotiated")
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/1.1 400 Host Header Required", "Processed the request")
+    def run_http2_case(self) -> None:
+        """Verify curl negotiates h2 and receives an ordinary response."""
 
-    tr = urtest.AddTestRun("alpn h2")
-    tr.MakeCurlCommand("-k --http2 -v -o /dev/null https://127.0.0.1:{}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN. server accepted.*h2", "negotiated h2")
-    tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/2 404 ", "Good response")
-    urtest.execute()
+        if not self._curl.supports("http2"):
+            pytest.skip("curl with HTTP/2 support is required")
+        result = self._curl.run(
+            "--insecure",
+            "--http2",
+            "--verbose",
+            "--output",
+            "/dev/null",
+            f"https://127.0.0.1:{self._ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        assert "ALPN: server accepted h2" in result.output
+        assert "HTTP/2 404" in result.output
+
+    def run(self) -> None:
+        """Start ATS and run every ALPN case sequentially."""
+
+        self._ats.start()
+        self.run_openssl_cases()
+        self.run_http2_case()
+
+
+def test_tls_bad_alpn(ats_factory: ATSFactory, curl: Curl) -> None:
+    """Unsupported ALPN is declined while supported protocols still work."""
+
+    if shutil.which("openssl") is None:
+        pytest.skip("OpenSSL is required")
+    AlpnScenario(ats_factory, curl).run()

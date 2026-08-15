@@ -14,184 +14,106 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, ProcessService, ServiceFactory, VerifierServer
+
+REPLAY_FILE = Path(__file__).parent / "replay" / "tls_cert_compression.replay.yaml"
 
 
-def test_tls_cert_comp(urtest: UraniumTest) -> None:
-    '''
-    Verify TLS Certificate Compression (RFC 8879) between two ATS processes.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CertificateCompressionScenario:
+    """Negotiate RFC 8879 compression between edge and mid-tier ATS."""
 
-    urtest.Summary = '''
-    Verify TLS Certificate Compression (RFC 8879) works between two ATS
-    instances. An edge ATS (client) connects via HTTPS to a mid ATS (server)
-    with cert compression enabled. The test verifies compression and
-    decompression succeed by checking the ssl cert compression metrics.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        if not ats_factory.has_feature("TS_HAS_CERT_COMPRESSION_CALLBACKS"):
+            pytest.skip("ATS was built without certificate compression callbacks")
 
-    urtest.SkipUnless(Condition.HasATSFeature('TS_HAS_CERT_COMPRESSION_CALLBACKS'))
+    def configure_server(self, algorithm: str) -> VerifierServer:
+        """Create the clear-text verifier origin."""
 
-    REPLAY_FILE = 'replay/tls_cert_compression.replay.yaml'
+        return self._services.verifier_server(f"server-{algorithm}", REPLAY_FILE)
 
-    class TestCertCompression:
-        server_counter: int = 0
-        ts_counter: int = 0
-        client_counter: int = 0
+    def configure_mid(self, algorithm: str, server: VerifierServer) -> ATS:
+        """Configure the TLS server that compresses its certificate."""
 
-        def __init__(self, algorithm: str) -> None:
-            self._algorithm = algorithm
-            self._server = self._configure_server()
-            self._ts_mid = self._configure_ts_mid()
-            self._ts_edge = self._configure_ts_edge()
+        ats = self._ats_factory.create(f"mid-{algorithm}", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}/")
+        ats.records.update(
+            {
+                "proxy.config.ssl.server.cert_compression.algorithms": algorithm,
+                "proxy.config.ssl.server.cert_compression.cache": 0,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl_cert_compress",
+            })
+        return ats
 
-        def _configure_server(self) -> 'Process':
-            name = f'server-{TestCertCompression.server_counter}'
-            TestCertCompression.server_counter += 1
-            server = urtest.MakeVerifierServerProcess(name, REPLAY_FILE)
-            return server
+    def configure_edge(self, algorithm: str, mid: ATS) -> ATS:
+        """Configure the TLS client that decompresses the mid-tier certificate."""
 
-        def _configure_ts_mid(self) -> 'Process':
-            """Mid-tier ATS that terminates TLS and forwards to origin."""
-            name = f'm{TestCertCompression.ts_counter}'
-            TestCertCompression.ts_counter += 1
-            ts = urtest.MakeATSProcess(name, enable_tls=True, enable_cache=False)
+        ats = self._ats_factory.create(f"edge-{algorithm}", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.remap_config.add_line(f"map / https://127.0.0.1:{mid.https_port}/")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.ssl.client.cert_compression.algorithms": algorithm,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl_cert_compress",
+            })
+        return ats
 
-            ts.addDefaultSSLFiles()
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def configure_client(self, algorithm: str, edge: ATS) -> ProcessService:
+        """Create the verifier client that drives one exchange."""
 
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}/')
+        return self._services.verifier_client(
+            f"client-{algorithm}",
+            REPLAY_FILE,
+            http_ports=[edge.http_port],
+        )
 
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.cert_compression.algorithms': self._algorithm,
-                    'proxy.config.ssl.server.cert_compression.cache': 0,
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'ssl_cert_compress',
-                })
+    @staticmethod
+    def metric(ats: ATS, name: str) -> int:
+        """Read one integer ATS metric."""
 
-            return ts
+        result = ats.traffic_ctl("metric", "get", name)
+        assert result.returncode == 0, result.output
+        return int(result.stdout.split()[-1])
 
-        def _configure_ts_edge(self) -> 'Process':
-            """Edge ATS that connects to mid-tier via HTTPS."""
-            name = f'e{TestCertCompression.ts_counter}'
-            TestCertCompression.ts_counter += 1
-            ts = urtest.MakeATSProcess(name, enable_tls=True, enable_cache=False)
+    def run_algorithm(self, algorithm: str) -> None:
+        """Run one compression algorithm and verify success metrics."""
 
-            ts.addDefaultSSLFiles()
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        server = self.configure_server(algorithm)
+        mid = self.configure_mid(algorithm, server)
+        edge = self.configure_edge(algorithm, mid)
+        client = self.configure_client(algorithm, edge)
+        server.start()
+        mid.start()
+        edge.start()
+        client.run()
 
-            ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._ts_mid.Variables.ssl_port}/')
+        assert self.metric(mid, f"proxy.process.ssl.cert_compress.{algorithm}") == 1
+        assert self.metric(edge, f"proxy.process.ssl.cert_decompress.{algorithm}") == 1
+        assert self.metric(mid, f"proxy.process.ssl.cert_compress.{algorithm}_failure") == 0
+        assert self.metric(edge, f"proxy.process.ssl.cert_decompress.{algorithm}_failure") == 0
 
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                    'proxy.config.ssl.client.cert_compression.algorithms': self._algorithm,
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'ssl_cert_compress',
-                })
+    def run(self) -> None:
+        """Exercise every compression algorithm compiled into ATS."""
 
-            return ts
+        algorithms = ["zlib"]
+        if self._ats_factory.has_feature("TS_HAS_BROTLI"):
+            algorithms.append("brotli")
+        if self._ats_factory.has_feature("TS_HAS_ZSTD"):
+            algorithms.append("zstd")
+        for algorithm in algorithms:
+            self.run_algorithm(algorithm)
 
-        def run(self) -> None:
-            # Test run 1: Send traffic through the proxy chain.
-            tr = urtest.AddTestRun(f'Send request through edge->mid with {self._algorithm} cert compression')
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts_mid)
-            tr.Processes.Default.StartBefore(self._ts_edge)
 
-            name = f'client-{TestCertCompression.client_counter}'
-            TestCertCompression.client_counter += 1
-            tr.AddVerifierClientProcess(name, REPLAY_FILE, http_ports=[self._ts_edge.Variables.port])
+def test_tls_cert_comp(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Edge and mid-tier ATS negotiate every supported certificate compressor."""
 
-            # Test run 2: Check compression metric on the mid-tier (server side).
-            tr = urtest.AddTestRun(f'Verify {self._algorithm} compression metric on mid-tier')
-            tr.Processes.Default.Command = (f'traffic_ctl metric get'
-                                            f' proxy.process.ssl.cert_compress.{self._algorithm}')
-            tr.Processes.Default.Env = self._ts_mid.Env
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'proxy.process.ssl.cert_compress.{self._algorithm} 1',
-                f'Certificate should have been compressed with {self._algorithm}')
-            tr.StillRunningAfter = self._ts_mid
-            tr.StillRunningAfter = self._ts_edge
-            tr.StillRunningAfter = self._server
-
-            # Test run 3: Check decompression metric on the edge (client side).
-            tr = urtest.AddTestRun(f'Verify {self._algorithm} decompression metric on edge')
-            tr.Processes.Default.Command = (f'traffic_ctl metric get'
-                                            f' proxy.process.ssl.cert_decompress.{self._algorithm}')
-            tr.Processes.Default.Env = self._ts_edge.Env
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'proxy.process.ssl.cert_decompress.{self._algorithm} 1',
-                f'Certificate should have been decompressed with {self._algorithm}')
-            tr.StillRunningAfter = self._ts_mid
-            tr.StillRunningAfter = self._ts_edge
-            tr.StillRunningAfter = self._server
-
-            # Test run 4: Verify no failures on either side.
-            tr = urtest.AddTestRun(f'Verify no {self._algorithm} compression failures on mid-tier')
-            tr.Processes.Default.Command = (
-                f'traffic_ctl metric get'
-                f' proxy.process.ssl.cert_compress.{self._algorithm}_failure')
-            tr.Processes.Default.Env = self._ts_mid.Env
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'proxy.process.ssl.cert_compress.{self._algorithm}_failure 0',
-                f'There should be no {self._algorithm} compression failures')
-            tr.StillRunningAfter = self._ts_mid
-            tr.StillRunningAfter = self._ts_edge
-            tr.StillRunningAfter = self._server
-
-            tr = urtest.AddTestRun(f'Verify no {self._algorithm} decompression failures on edge')
-            tr.Processes.Default.Command = (
-                f'traffic_ctl metric get'
-                f' proxy.process.ssl.cert_decompress.{self._algorithm}_failure')
-            tr.Processes.Default.Env = self._ts_edge.Env
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'proxy.process.ssl.cert_decompress.{self._algorithm}_failure 0',
-                f'There should be no {self._algorithm} decompression failures')
-            tr.StillRunningAfter = self._ts_mid
-            tr.StillRunningAfter = self._ts_edge
-            tr.StillRunningAfter = self._server
-
-    algorithms = ['zlib']
-    if Condition.HasATSFeature('TS_HAS_BROTLI'):
-        algorithms.append('brotli')
-    if Condition.HasATSFeature('TS_HAS_ZSTD'):
-        algorithms.append('zstd')
-    for algorithm in algorithms:
-        TestCertCompression(algorithm).run()
-    urtest.execute()
+    CertificateCompressionScenario(ats_factory, services).run()

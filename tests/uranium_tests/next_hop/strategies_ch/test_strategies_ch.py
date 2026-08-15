@@ -14,147 +14,127 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+NUM_OBJECTS = 32
+NUM_NEXT_HOPS = 8
+EXPECTED_TRACE_COUNTS = (18, 21, 9, 24, 3, 12, 3, 6)
 
 
-def test_strategies_ch(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ConsistentHashStrategyScenario:
+    """Distribute objects across next hops using the request path hash."""
 
-    urtest.Summary = '''
-    Test next hop selection using strategies.yaml with consistent hashing.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._dns = services.dns("dns")
+        self._next_hops = [self.configure_next_hop(ats_factory, index) for index in range(NUM_NEXT_HOPS)]
+        self._ats = self.configure_front_ats(ats_factory)
 
-    # Define and populate MicroServer.
-    #
-    server = urtest.MakeOriginServer("server")
-    response_header = {
-        "headers": "HTTP/1.1 200 OK\r\n"
-                   "Connection: close\r\n"
-                   "Cache-control: max-age=85000\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "This is the body.\n"
-    }
-    num_objects = 32
-    for i in range(num_objects):
-        request_header = {
-            "headers":
-                f"GET /obj{i} HTTP/1.1\r\n"
-                "Host: does.not.matter\r\n"  # But cannot be omitted.
-                "\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create all objects served behind the next-hop proxies."""
+
+        origin = services.origin("server")
+        response = {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
+            "body": "This is the body.\n",
         }
-        server.addResponse("sessionlog.json", request_header, response_header)
+        for index in range(NUM_OBJECTS):
+            origin.add_response(
+                {"headers": f"GET /obj{index} HTTP/1.1\r\nHost: does.not.matter\r\n\r\n"},
+                response,
+            )
+        return origin
 
-    dns = urtest.MakeDNServer("dns")
+    def configure_next_hop(self, ats_factory: ATSFactory, index: int) -> ATS:
+        """Create one parent proxy and its DNS hostname."""
 
-    # Define next hop trafficserver instances.
-    #
-    num_nh = 8
-    ts_nh = []
-    for i in range(num_nh):
-        ts = urtest.MakeATSProcess(f"ts_nh{i}", use_traffic_out=False, command=f"traffic_server 2>nh_trace{i}.log")
-        ts.Disk.records_config.update(
+        ats = ats_factory.create(f"ts_nh{index}", return_code=(0, -2))
+        ats.records.update(
             {
-                'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'http|dns',
-                'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
-                'proxy.config.dns.resolv_conf': "NULL",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|dns",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
             })
-        ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}")
-        ts.ReturnCode = Any(0, -2)
-        ts_nh.append(ts)
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        self._dns.add_records({f"next_hop{index}": ["127.0.0.1"]})
+        return ats
 
-    ts = urtest.MakeATSProcess("ts")
+    def configure_front_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the consistent-hash strategy under test."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|dns|parent|next_hop|host_statuses|hostdb',
-            'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",  # Only nameservers if resolv_conf NULL.
-            'proxy.config.dns.resolv_conf': "NULL",  # This defaults to /etc/resvolv.conf (OS namesevers) if not NULL.
-            'proxy.config.http.cache.http': 0,
-            'proxy.config.http.uncacheable_requests_bypass_parent': 0,
-            'proxy.config.http.no_dns_just_forward_to_parent': 1,
-            'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
-            'proxy.config.http.parent_proxy.self_detect': 0,
-        })
+        ats = ats_factory.create("ts")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|dns|parent|next_hop|host_statuses|hostdb",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.http.cache.http": 0,
+                "proxy.config.http.uncacheable_requests_bypass_parent": 0,
+                "proxy.config.http.no_dns_just_forward_to_parent": 1,
+                "proxy.config.http.parent_proxy.mark_down_hostdb": 0,
+                "proxy.config.http.parent_proxy.self_detect": 0,
+            })
+        groups = ["groups:", "  - &g1"]
+        for index, next_hop in enumerate(self._next_hops):
+            groups.extend(
+                (
+                    f"    - host: next_hop{index}",
+                    "      protocol:",
+                    "        - scheme: http",
+                    f"          port: {next_hop.http_port}",
+                    "      weight: 1.0",
+                ))
+        strategies = (
+            "strategies:\n"
+            "  - strategy: the-strategy\n"
+            "    policy: consistent_hash\n"
+            "    hash_key: path\n"
+            "    go_direct: false\n"
+            "    parent_is_proxy: true\n"
+            "    ignore_self_detect: true\n"
+            "    groups:\n"
+            "      - *g1\n"
+            "    scheme: http\n")
+        ats.write_config_file("strategies.yaml", "\n".join(groups) + "\n" + strategies)
+        ats.remap_config.add_line("map http://dummy.com http://not_used @strategy=the-strategy")
+        return ats
 
-    ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
-    s = ts.Disk.strategies
-    s.AddLine("groups:")
-    s.AddLine("  - &g1")
-    for i in range(num_nh):
-        dns.addRecords(records={f"next_hop{i}": ["127.0.0.1"]})
-        s.AddLine(f"    - host: next_hop{i}")
-        s.AddLine(f"      protocol:")
-        s.AddLine(f"        - scheme: http")
-        s.AddLine(f"          port: {ts_nh[i].Variables.port}")
-        # The health check URL does not seem to be used currently.
-        # s.AddLine(f"          health_check_url: http://next_hop{i}:{ts_nh[i].Variables.port}")
-        s.AddLine(f"      weight: 1.0")
-    s.AddLines(
-        [
-            "strategies:",
-            "  - strategy: the-strategy",
-            "    policy: consistent_hash",
-            "    hash_key: path",
-            "    go_direct: false",
-            "    parent_is_proxy: true",
-            "    ignore_self_detect: true",
-            "    groups:",
-            "      - *g1",
-            "    scheme: http",
-        ])
+    def request_all_objects(self) -> None:
+        """Send every path through the front proxy."""
 
-    # Fallover not currently tested.
-    #
-    # s.AddLines([
-    # "    fallover:",
-    # "      max_simple_retries: 2",
-    # "      ring_mode: exhaust_ring",
-    # "      response_codes:",
-    # "        - 404",
-    # "      health_check:",
-    # "        - passive",])
+        for index in range(NUM_OBJECTS):
+            result = self._curl.run_for(
+                self._ats,
+                "--verbose",
+                "--proxy",
+                f"127.0.0.1:{self._ats.http_port}",
+                f"http://dummy.com/obj{index}",
+            )
+            assert result.returncode == 0, result.output
+            assert result.stdout == "This is the body.\n"
 
-    ts.Disk.remap_config.AddLine("map http://dummy.com http://not_used @strategy=the-strategy")
+    def check_distribution(self) -> None:
+        """Compare each parent proxy's handled-response count with the gold ring."""
 
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(dns)
-    for i in range(num_nh):
-        tr.Processes.Default.StartBefore(ts_nh[i])
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.Command = 'echo start TS, HTTP server, DNS server and next hop TSes'
-    tr.Processes.Default.ReturnCode = 0
+        actual = tuple(next_hop.traffic_out.read_text(errors="replace").count("HTTP/1.1 200 OK") for next_hop in self._next_hops)
+        assert actual == EXPECTED_TRACE_COUNTS
 
-    for i in range(num_objects):
-        tr = urtest.AddTestRun()
-        tr.MakeCurlCommand(f'--verbose --proxy 127.0.0.1:{ts.Variables.port} http://dummy.com/obj{i}', ts=ts)
-        tr.Processes.Default.Streams.stdout = "body.gold"
-        tr.Processes.Default.ReturnCode = 0
+    def run(self) -> None:
+        """Start the topology, send the objects, and verify the hash ring."""
 
-    tr = urtest.AddTestRun()
-    # For some reason, the * won't be expanded when the command is executed, if stdout is not piped through "cat".
-    tr.Processes.Default.Command = "grep -F '200 OK' nh_trace*.log | cat"
-    tr.Processes.Default.Streams.stdout = "trace.gold"
-    tr.Processes.Default.ReturnCode = 0
-    urtest.execute()
+        self._origin.start()
+        self._dns.start()
+        for next_hop in self._next_hops:
+            next_hop.start()
+        self._ats.start()
+        self.request_all_objects()
+        self.check_distribution()
+
+
+def test_strategies_ch(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Consistent hashing selects the same parent distribution for known paths."""
+
+    ConsistentHashStrategyScenario(ats_factory, services, curl).run()

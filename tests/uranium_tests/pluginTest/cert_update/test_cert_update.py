@@ -14,157 +14,162 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_cert_update(urtest: UraniumTest) -> None:
-    '''
-    Test the cert_update plugin.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CertUpdateScenario:
+    """Update inbound and outbound TLS certificates through cert_update."""
 
-    import ports
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._services = services
+        self._curl = curl
+        self._update_count = 0
+        self._openssl_port = services.allocate_port()
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        if not self._ats.plugin_exists("cert_update.so"):
+            pytest.skip("cert_update.so is not installed")
 
-    urtest.Summary = '''
-    Test cert_update plugin.
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the clear-text origin used by the inbound certificate case."""
 
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
-    urtest.SkipUnless(
-        Condition.HasProgram("openssl", "Openssl need to be installed on system for this test to work"),
-        Condition.PluginExists('cert_update.so'))
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    # Set up origin server
-    server = urtest.MakeOriginServer("server")
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the plugin and certificate mappings."""
 
-    # Set up ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "server1.pem",
+            SSL_DIRECTORY / "server2.pem",
+            SSL_DIRECTORY / "client1.pem",
+            SSL_DIRECTORY / "client2.pem",
+        )
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "cert_update|ssl_cert_update",
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.verify.server.policy": "DISABLED",
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+            })
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server1.pem",
+                "    ssl_key_name: server1.pem",
+            ))
+        ats.remap_config.add_lines(
+            (
+                f"map https://bar.com http://127.0.0.1:{self._origin.http_port}",
+                f"map https://foo.com https://127.0.0.1:{self._openssl_port}",
+            ))
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            '  - fqdn: "*foo.com"\n'
+            '    client_cert: "client1.pem"\n',
+        )
+        ats.plugin_config.add_line("cert_update.so")
+        return ats
 
-    # Set up ssl files
-    ts.addSSLfile("ssl/server1.pem")
-    ts.addSSLfile("ssl/server2.pem")
-    ts.addSSLfile("ssl/client1.pem")
-    ts.addSSLfile("ssl/client2.pem")
+    def inbound_request(self) -> str:
+        """Return curl's TLS diagnostics for ATS's current server certificate."""
 
-    # reserve port, attach it to 'ts' so it is released later
-    ports.get_port(ts, 's_server_port')
+        result = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--insecure",
+            "--resolve",
+            f"bar.com:{self._ats.https_port}:127.0.0.1",
+            f"https://bar.com:{self._ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        return result.stderr
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'cert_update',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.url_remap.pristine_host_hdr': 1
-        })
+    def update_certificate(self, target: str, path: Path) -> None:
+        """Send one cert_update plugin message."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server1.pem
-        ssl_key_name: server1.pem
-    """.split("\n"))
+        result = self._ats.traffic_ctl("plugin", "msg", f"cert_update.{target}", str(path))
+        assert result.returncode == 0, result.output
+        self._update_count += 1
+        wait_for_file_lines(self._ats.traffic_out, "Successfully updated", self._update_count, timeout=10)
 
-    ts.Disk.remap_config.AddLines(
-        [
-            'map https://bar.com http://127.0.0.1:{0}'.format(server.Variables.Port),
-            'map https://foo.com https://127.0.0.1:{0}'.format(ts.Variables.s_server_port),
-        ])
+    def openssl_server(self, name: str, trusted_client: Path) -> ProcessService:
+        """Create a one-shot TLS origin that requires an ATS client certificate."""
 
-    ts.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: "*foo.com"',
-        '  client_cert: "client1.pem"',
-    ])
+        certificate = self._ats.ssl_directory / "server1.pem"
+        return self._services.process(
+            name,
+            (
+                "openssl",
+                "s_server",
+                "-www",
+                "-key",
+                certificate,
+                "-cert",
+                certificate,
+                "-CAfile",
+                trusted_client,
+                "-accept",
+                str(self._openssl_port),
+                "-Verify",
+                "1",
+                "-msg",
+            ),
+            ready_port=self._openssl_port,
+        )
 
-    # Set up plugin
-    urtest.PrepareInstalledPlugin('cert_update.so', ts)
+    def outbound_request(self, server: ProcessService) -> str:
+        """Request the OpenSSL origin and return its handshake diagnostics."""
 
-    # Server-Cert-Pre
-    # curl should see that Traffic Server presents bar.com cert from alice
-    tr = urtest.AddTestRun("Server-Cert-Pre")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(
-        '--verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.Streams.stderr = "gold/server-cert-pre.gold"
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = server
+        server.start()
+        result = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--insecure",
+            "--header",
+            "Host: foo.com",
+            f"https://localhost:{self._ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        server.stop()
+        return server.output
 
-    # Server-Cert-Update
-    tr = urtest.AddTestRun("Server-Cert-Update")
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.Command = (
-        '{0}/traffic_ctl plugin msg cert_update.server {1}/server2.pem'.format(ts.Variables.BINDIR, ts.Variables.SSLDir))
-    ts.Disk.traffic_out.Content = "gold/update.gold"
-    ts.StillRunningAfter = server
+    def run(self) -> None:
+        """Verify both certificate contexts change without restarting ATS."""
 
-    # Server-Cert-After
-    # after use traffic_ctl to update server cert, curl should see bar.com cert from bob
-    tr = urtest.AddTestRun("Server-Cert-After")
-    tr.Processes.Default.Env = ts.Env
-    tr.MakeCurlCommand(
-        '--verbose --insecure --ipv4 --resolve bar.com:{0}:127.0.0.1 https://bar.com:{0}'.format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.Streams.stderr = "gold/server-cert-after.gold"
-    tr.Processes.Default.ReturnCode = 0
-    ts.StillRunningAfter = server
+        self._origin.start()
+        self._ats.start()
+        assert "alice@bar.com" in self.inbound_request()
+        self.update_certificate("server", self._ats.ssl_directory / "server2.pem")
+        assert "bob@bar.com" in self.inbound_request()
 
-    # Client-Cert-Pre
-    # s_server should see client (Traffic Server) as alice.com
-    tr = urtest.AddTestRun("Client-Cert-Pre")
-    s_server = tr.Processes.Process(
-        "s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept {1} -Verify 1 -msg".format(
-            ts.Variables.SSLDir, ts.Variables.s_server_port))
-    s_server.Ready = When.PortReady(ts.Variables.s_server_port)
-    tr.MakeCurlCommand(
-        '--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{}'.format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.StartBefore(s_server)
-    s_server.Streams.all = "gold/client-cert-pre.gold"
-    tr.Processes.Default.ReturnCode = 0
-    ts.StillRunningAfter = server
+        assert "alice.com" in self.outbound_request(self.openssl_server("s_server_before", SSL_DIRECTORY / "client1.pem"))
+        (self._ats.ssl_directory / "client2.pem").replace(self._ats.ssl_directory / "client1.pem")
+        self.update_certificate("client", self._ats.ssl_directory / "client1.pem")
+        assert "bob.com" in self.outbound_request(self.openssl_server("s_server_after", SSL_DIRECTORY / "client2.pem"))
+        assert "Successfully updated" in self._ats.traffic_out.read_text(errors="replace")
 
-    # Client-Cert-Update
-    tr = urtest.AddTestRun("Client-Cert-Update")
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.Command = (
-        'mv {0}/client2.pem {0}/client1.pem && {1}/traffic_ctl plugin msg cert_update.client {0}/client1.pem'.format(
-            ts.Variables.SSLDir, ts.Variables.BINDIR))
-    ts.Disk.traffic_out.Content = "gold/update.gold"
-    ts.StillRunningAfter = server
 
-    # Client-Cert-After
-    # after use traffic_ctl to update client cert, s_server should see client (Traffic Server) as bob.com
-    tr = urtest.AddTestRun("Client-Cert-After")
-    s_server = tr.Processes.Process(
-        "s_server", "openssl s_server -www -key {0}/server1.pem -cert {0}/server1.pem -accept {1} -Verify 1 -msg".format(
-            ts.Variables.SSLDir, ts.Variables.s_server_port))
-    s_server.Ready = When.PortReady(ts.Variables.s_server_port)
-    tr.Processes.Default.Env = ts.Env
-    # Move client2.pem to replace client1.pem since cert path matters in client context mapping
-    tr.MakeCurlCommand(
-        '--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{0}'.format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.StartBefore(s_server)
-    s_server.Streams.all = "gold/client-cert-after.gold"
-    tr.Processes.Default.ReturnCode = 0
-    ts.StillRunningAfter = server
-    urtest.execute()
+def test_cert_update(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """cert_update replaces server and client certificates at runtime."""
+
+    CertUpdateScenario(ats_factory, services, curl).run()
