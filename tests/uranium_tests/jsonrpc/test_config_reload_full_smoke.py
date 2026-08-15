@@ -14,174 +14,107 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_config_reload_full_smoke(urtest: UraniumTest) -> None:
-    '''
-    Full reload smoke test.
+class ConfigReloadFullSmokeScenario:
+    """Reload every file handler and representative record handlers."""
 
-    Verifies that ALL registered config handlers complete properly by:
-      Part A: Touching every registered config file, triggering a reload with a
-              named token, and verifying all deferred handlers reach a terminal
-              state (no in_progress after a delay).
-      Part B: Changing one record per module via traffic_ctl config set, waiting,
-              then verifying no terminal-state conflicts appear in diags.log.
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    Registered configs at time of writing:
-      Files: ip_allow.yaml, parent.config, cache.config, hosting.config,
-             splitdns.config, logging.yaml, sni.yaml, ssl_multicert.yaml
-      Record-only: ssl_ticket_key (proxy.config.ssl.server.ticket_key.filename)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Create valid content for handlers that reject empty files."""
 
-    The key assertion is that diags.log does NOT contain:
-      "ignoring transition from" — means two code paths disagree about task outcome
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+        ats = ats_factory.create("ts", enable_cache=True)
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config|reload",
+        })
+        ats.write_config_file(
+            "ip_allow.yaml",
+            "ip_allow:\n"
+            "  - apply: in\n"
+            "    ip_addrs: 0/0\n"
+            "    action: allow\n"
+            "    methods: ALL\n",
+        )
+        ats.set_logging_yaml({"logging": {
+            "formats": [{
+                "name": "smoke",
+                "format": "%<cqtq>",
+            }]
+        }})
+        ats.write_config_file(
+            "sni.yaml",
+            'sni:\n  - fqdn: "*.example.com"\n    verify_client: NONE\n',
+        )
+        return ats
 
-    urtest.Summary = 'Full reload smoke test: all config files + record triggers'
-    urtest.ContinueOnFail = True
+    def touch_all_config_files(self) -> None:
+        """Bump every registered file handler's mtime."""
 
-    # --- Setup ---
-    ts = urtest.MakeATSProcess("ts", enable_cache=True)
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'rpc|config|reload',
-    })
+        filenames = (
+            "ip_allow.yaml",
+            "parent.config",
+            "cache.config",
+            "hosting.config",
+            "splitdns.config",
+            "logging.yaml",
+            "sni.yaml",
+            "ssl_multicert.yaml",
+        )
+        for filename in filenames:
+            path = self._ats.config_directory / filename
+            path.touch(exist_ok=True)
 
-    # ============================================================================
-    # Part A: File-based full reload
-    #
-    # ATS starts with valid config content (written via AddLines before start).
-    # We then touch every file to bump mtime and trigger a reload — this exercises
-    # the full parse path of each handler.
-    # ============================================================================
+    def file_reload(self) -> None:
+        """Reload records and every file handler under one named token."""
 
-    # Provide valid content for files whose handlers reject empty input.
-    ts.Disk.ip_allow_yaml.AddLines([
-        'ip_allow:',
-        '- apply: in',
-        '  ip_addrs: 0/0',
-        '  action: allow',
-        '  methods: ALL',
-    ])
-    ts.Disk.logging_yaml.AddLines([
-        'logging:',
-        '  formats:',
-        '    - name: smoke',
-        '      format: "%<cqtq>"',
-    ])
-    ts.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: "*.example.com"',
-        '  verify_client: NONE',
-    ])
-    # parent.config, cache.config, hosting.config, splitdns.config,
-    # ssl_multicert.yaml are fine empty — handlers accept empty/comment-only files.
+        cold = self._ats.traffic_ctl(
+            "config",
+            "set",
+            "proxy.config.diags.debug.tags",
+            "rpc|config|reload|upd",
+            "--cold",
+        )
+        assert cold.returncode == 0, cold.output
+        self.touch_all_config_files()
+        reload_result = self._ats.traffic_ctl("config", "reload", "-t", "full_reload_smoke")
+        assert reload_result.returncode == 0, reload_result.output
+        time.sleep(15)
+        status = self._ats.traffic_ctl("config", "status", "-t", "full_reload_smoke")
+        assert status.returncode == 0, status.output
+        assert "in_progress" not in status.stdout
 
-    # All registered config files whose mtime we'll bump to trigger reload.
-    files_to_touch = [
-        ts.Disk.ip_allow_yaml,
-        ts.Disk.parent_config,
-        ts.Disk.cache_config,
-        ts.Disk.hosting_config,
-        ts.Disk.splitdns_config,
-        ts.Disk.logging_yaml,
-        ts.Disk.sni_yaml,
-        ts.Disk.ssl_multicert_yaml,
-    ]
-    touch_cmd = "touch " + " ".join([f.AbsRunTimePath for f in files_to_touch])
-    # Modify records.yaml via traffic_ctl --cold to trigger a real records reload.
-    records_cmd = 'traffic_ctl config set proxy.config.diags.debug.tags "rpc|config|reload|upd" --cold'
+    def record_reloads(self) -> None:
+        """Exercise one live trigger record from logging and SSL."""
 
-    # Test 1: Start ATS, wait for it to settle, update records.yaml on disk
-    tr = urtest.AddTestRun("Update records.yaml via --cold")
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.Command = f"sleep 3 && {records_cmd}"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+        for name, value in (
+            ("proxy.config.log.sampling_frequency", "2"),
+            ("proxy.config.ssl.server.session_ticket.enable", "0"),
+        ):
+            time.sleep(2)
+            result = self._ats.traffic_ctl("config", "set", name, value)
+            assert result.returncode == 0, result.output
+        time.sleep(10)
+        history = self._ats.traffic_ctl("config", "status", "-c", "all")
+        assert history.returncode == 0, history.output
 
-    # Test 2: Touch all other config files to bump mtime
-    tr = urtest.AddTestRun("Touch all registered config files")
-    tr.Processes.Default.Command = touch_cmd
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+    def run(self) -> None:
+        """Run full file and record reload smoke coverage."""
 
-    # Test 3: Reload with token — all handlers re-read from disk
-    tr = urtest.AddTestRun("Reload with token - show details")
-    tr.Processes.Default.Command = "traffic_ctl config reload -t full_reload_smoke"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+        self._ats.start()
+        time.sleep(3)
+        self.file_reload()
+        self.record_reloads()
+        diagnostics = self._ats.diags_log.read_text(errors="replace")
+        assert "ignoring transition from" not in diagnostics
 
-    # Test 4: Query status after delay — all deferred handlers (e.g. logging) should have
-    # reached a terminal state by now.
-    tr = urtest.AddTestRun("Verify no tasks stuck in progress after delay")
-    tr.DelayStart = 15
-    tr.Processes.Default.Command = "traffic_ctl config status -t full_reload_smoke"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("in_progress", "No task should remain in progress after 15s")
-    tr.StillRunningAfter = ts
 
-    # ============================================================================
-    # Part B: Record-triggered reloads (tracing ENABLED — default)
-    #
-    # Change one record per module to exercise the RecordTriggeredReloadContinuation path.
-    # With proxy.config.admin.reload.trace_record_triggers=1 (default), each
-    # record-triggered reload creates a "rec-" parent task visible in status/history.
-    # ============================================================================
+def test_config_reload_full_smoke(ats_factory: ATSFactory) -> None:
+    """All registered reload paths finish without terminal-state conflicts."""
 
-    # One safe record per module:
-    records_to_change = [
-        # (record_name, new_value) — pick values that won't break ATS
-        ("proxy.config.log.sampling_frequency", "2"),  # logging
-        ("proxy.config.ssl.server.session_ticket.enable", "0"),  # ssl_client_coordinator
-    ]
-
-    for record_name, new_value in records_to_change:
-        tr = urtest.AddTestRun(f"Set {record_name}={new_value}")
-        tr.DelayStart = 2
-        tr.Processes.Default.Command = f"traffic_ctl config set {record_name} {new_value}"
-        tr.Processes.Default.Env = ts.Env
-        tr.Processes.Default.ReturnCode = 0
-        tr.StillRunningAfter = ts
-
-    # Wait for record-triggered reloads to complete
-    tr = urtest.AddTestRun("Wait for record-triggered reloads")
-    tr.DelayStart = 10
-    tr.Processes.Default.Command = "echo 'Waiting for record-triggered reloads to settle'"
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    # Final dump of all reload history
-    tr = urtest.AddTestRun("Fetch all reload history")
-    tr.Processes.Default.Command = "traffic_ctl config status -c all"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Global assertions on diags.log
-    # ============================================================================
-
-    # No handler should have conflicting terminal state transitions.
-    # This catches bugs where e.g. evaluate_config() calls fail() and then
-    # change_configuration() calls complete() — the guard rejects the second call.
-    ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-        "ignoring transition from", "No handler should fight over terminal states")
-    urtest.execute()
+    ConfigReloadFullSmokeScenario(ats_factory).run()

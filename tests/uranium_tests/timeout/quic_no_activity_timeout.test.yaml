@@ -1,0 +1,81 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify QUIC max_idle_timeout configuration"
+  replay: "replay/quic_no_activity_timeout.replay.yaml"
+  requires:
+    ats_features: ["TS_USE_QUIC"]
+  server:
+    name: "quic-inactivity-origin"
+  client:
+    name: "quic-inactivity-client"
+    process_config:
+      http_ports: []
+      https_ports: []
+  ats:
+    name: "quic-inactivity-ts"
+    process_config:
+      enable_tls: true
+      enable_quic: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "ssl|net|v_quic|quic|http|socket|inactivity_cop"
+      proxy.config.quic.qlog.file_base: "{LOG_DIR}/qlog"
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+  variants:
+    - name: "disabled"
+      client:
+        process_config:
+          keys: "nodelays"
+      ats:
+        records_config:
+          proxy.config.quic.no_activity_timeout_in: 0
+    - name: "idle-timeout"
+      requires:
+        ats_features: ["TS_USE_QUIC", "TS_HAS_QUICHE"]
+      client:
+        return_code: 1
+        process_config:
+          keys: "delay5s"
+          allow_errors: true
+        log_validation:
+          gold_file: "gold/quic_no_activity_timeout.gold"
+      ats:
+        records_config:
+          proxy.config.quic.no_activity_timeout_in: 3000
+        log_validation:
+          traffic_out:
+            contains:
+              - {expression: "QUIC Idle timeout detected", description: "ATS must detect the QUIC idle timeout"}
+    - name: "ignores-default"
+      requires:
+        ats_features: ["TS_USE_QUIC", "TS_HAS_QUICHE"]
+      client:
+        return_code: 1
+        process_config:
+          keys: "delay5s"
+          allow_errors: true
+      ats:
+        records_config:
+          proxy.config.quic.no_activity_timeout_in: 3000
+          proxy.config.net.default_inactivity_timeout: 1
+        log_validation:
+          traffic_out:
+            contains:
+              - {expression: "QUIC Idle timeout detected", description: "QUIC must use its own timeout"}

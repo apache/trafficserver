@@ -1,0 +1,55 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify ESI include URLs are validated against SSRF"
+  replay: "esi_ssrf_validate.replay.yaml"
+  requires:
+    plugins: ["esi.so"]
+  server:
+    name: "esi-ssrf-origin"
+    process_config:
+      other_args: '--format "{url}"'
+    log_validation:
+      contains:
+        - {expression: "GET /allowed.php", description: "The allowed top-level request must reach the origin"}
+        - {expression: "GET /snippet.html", description: "The allowed include must reach the origin"}
+  client:
+    name: "esi-ssrf-client"
+    process_config:
+      other_args: '--format "{url}"'
+      keys: ["/metadata.php", "/loopback.php", "/badscheme.php", "/varinject.php", "/allowed.php"]
+  ats:
+    name: "esi-ssrf-ts"
+    process_config:
+      disable_log_checks: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|plugin_esi"
+    plugin_config:
+      - "esi.so"
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}"
+    log_validation:
+      diags_log:
+        contains:
+          - {expression: 'Rejecting include URL.*169\.254\.169\.254.*private-host', description: "Cloud metadata addresses must be rejected"}
+          - {expression: 'Rejecting include URL.*127\.0\.0\.1/admin.*private-host', description: "Loopback addresses must be rejected"}
+          - {expression: 'Rejecting include URL.*gopher://internal\.svc/x.*bad-scheme', description: "Non-HTTP schemes must be rejected"}
+          - {expression: 'Rejecting include URL.*10\.0\.0\.5/secret.*private-host', description: "Expanded private addresses must be rejected"}
+        excludes:
+          - {expression: 'Rejecting include URL.*www\.example\.com/snippet\.html', description: "The legitimate include must be allowed"}

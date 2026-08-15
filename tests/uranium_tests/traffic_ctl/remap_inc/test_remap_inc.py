@@ -14,68 +14,84 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, ServiceFactory
 
 
-def test_remap_inc(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class RemapIncludeScenario:
+    """Verify a remap.config include is reread during configuration reload."""
 
-    urtest.Summary = '''
-    Test traffic_ctl config reload with remap.config .include directive
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.ContinueOnFail = False
+    def configure_dns(self, services: ServiceFactory) -> DNSServer:
+        """Provide deterministic resolution for the initial remap targets."""
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
-    nameserver = urtest.MakeDNServer("dns", default='127.0.0.1')
+        return services.dns("dns", default="127.0.0.1")
 
-    ts.Disk.File(ts.Variables.CONFIGDIR + "/test.inc", id="test_cfg", typename="ats:config")
-    ts.Disk.test_cfg.AddLine(
-        "map http://example.two/ http://yada.com/ " + "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure a remap file whose middle rule comes from test.inc."""
 
-    ts.Disk.remap_config.AddLine("map http://example.one/ http://yada.com/")
-    ts.Disk.remap_config.AddLine(".include test.inc")
-    ts.Disk.remap_config.AddLine("map http://example.three/ http://yada.com/")
+        ats = ats_factory.create("ts", enable_cache=False)
+        ats.write_config_file(
+            "test.inc",
+            "map http://example.two/ http://yada.com/ "
+            "@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1\n",
+        )
+        ats.remap_config.add_lines(
+            (
+                "map http://example.one/ http://yada.com/",
+                ".include test.inc",
+                "map http://example.three/ http://yada.com/",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "regex_remap|url_rewrite|plugin_factory",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+            })
+        return ats
 
-    # minimal configuration
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'regex_remap|url_rewrite|plugin_factory',
-            'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        })
+    def update_include_and_reload(self) -> None:
+        """Replace the included mapping and wait for the reload to complete."""
 
-    tr = urtest.AddTestRun("Start TS, then update test.inc")
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(nameserver)
-    test_inc_path = ts.Variables.CONFIGDIR + "/test.inc"
-    tr.Processes.Default.Command = (
-        f"rm -f {test_inc_path} ; " + f"echo 'map http://example.four/ http://localhost/ @plugin=generator.so' > {test_inc_path}")
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
+        include = self._ats.config_directory / "test.inc"
+        include.write_text("map http://example.four/ http://localhost/ @plugin=generator.so\n")
+        result = self._ats.traffic_ctl(
+            "config",
+            "reload",
+            "--monitor",
+            "--token",
+            "remap-include",
+            "--initial-wait",
+            "0.2",
+            "--refresh-int",
+            "0.1",
+            "--timeout",
+            "30s",
+        )
+        assert result.returncode == 0, result.output
 
-    tr = urtest.AddConfigReload(ts, expect_tasks=["remap.config"], description="Reload remap.config")
-    tr.StillRunningAfter = ts
+    def verify_new_mapping(self) -> None:
+        """Verify the new include rule reaches the generator plugin."""
 
-    tr = urtest.AddTestRun("Get response from generator")
-    tr.MakeCurlCommand(f'--proxy 127.0.0.1:{ts.Variables.port} http://example.four/nocache/5', ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("xxxxx", "Contains generated text")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("xxxxxx", "Not too much data")
-    urtest.execute()
+        result = self._curl.get(self._ats, "/nocache/5", headers={"Host": "example.four"})
+        assert result.returncode == 0, result.output
+        assert "xxxxx" in result.output
+        assert "xxxxxx" not in result.output
+
+    def run(self) -> None:
+        """Start the services, reload the include, and request its new mapping."""
+
+        self._dns.start()
+        self._ats.start()
+        self.update_include_and_reload()
+        self.verify_new_mapping()
+
+
+def test_remap_inc(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A remap include update is visible after traffic_ctl config reload."""
+
+    RemapIncludeScenario(ats_factory, services, curl).run()

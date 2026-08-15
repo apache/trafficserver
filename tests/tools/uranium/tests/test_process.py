@@ -17,6 +17,7 @@
 
 from pathlib import Path
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -44,7 +45,7 @@ def test_managed_process_reports_unexpected_status(tmp_path: Path) -> None:
 
 
 def test_gold_file_wildcards_match_variable_text(tmp_path: Path) -> None:
-    """Preserve AuTest's `` and {} wildcard tokens in migrated gold files."""
+    """Preserve the established `` and {} wildcard tokens in migrated gold files."""
 
     expected = tmp_path / "expected.gold"
     actual = tmp_path / "actual.log"
@@ -62,3 +63,37 @@ def test_gold_file_difference_fails(tmp_path: Path) -> None:
     actual.write_text("actual\n")
     with pytest.raises(AssertionError, match="did not match"):
         ReplayTest._validate_gold(actual, expected)
+
+
+def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path) -> None:
+    """Render listener placeholders nested in structured ATS configuration."""
+
+    replay = object.__new__(ReplayTest)
+    replay.server_http_port = 12345
+    replay.server_extra_http_port = 12346
+    replay.server_https_port = 12347
+    replay.http_port = 12348
+    replay.https_port = 12349
+    replay.proxy_protocol_port = 12350
+    replay.proxy_protocol_https_port = 12351
+    replay.dns_port = 12352
+    replay.unused_port = 12353
+    replay.spec = SimpleNamespace(path=tmp_path / "example.test.yaml")
+    paths = {
+        "root": tmp_path / "root",
+        "config": tmp_path / "config",
+        "log": tmp_path / "log",
+        "rpc_runtime": tmp_path / "rpc",
+        "storage": tmp_path / "storage",
+        "ssl": tmp_path / "ssl",
+    }
+    sni_yaml = {
+        "sni": [{
+            "fqdn": "proxy.test",
+            "proxy_protocol_port": "{ATS_PROXY_PROTOCOL_PORT}",
+        }]
+    }
+
+    rendered = replay._replace_runtime_placeholders(sni_yaml, paths)
+
+    assert rendered["sni"][0]["proxy_protocol_port"] == "12350"

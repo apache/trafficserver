@@ -14,147 +14,107 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_tls_verify_ca_override(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsVerifyCaOverrideScenario:
+    """Override the outbound CA path and bundle through conf_remap."""
 
-    urtest.Summary = '''
-    Test tls server certificate verification options. Exercise conf_remap for ca bundle path and file.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._server1 = self.configure_origin(services, "server1", "signed-foo.pem")
+        self._server2 = self.configure_origin(services, "server2", "signed2-foo.pem")
+        self._ats = self.configure_ats(ats_factory)
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts")
-    server1 = urtest.MakeOriginServer(
-        "server1",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed-foo.pem".format(urtest.RunDirectory)
-        })
-    server2 = urtest.MakeOriginServer(
-        "server2",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed2-foo.pem".format(urtest.RunDirectory)
-        })
+    def configure_origin(self, services: ServiceFactory, name: str, certificate: str) -> OriginServer:
+        """Create an HTTPS origin signed by one of the two test CAs."""
 
-    request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bad_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server1.addResponse("sessionlog.json", request_foo_header, response_header)
-    server1.addResponse("sessionlog.json", request_bad_foo_header, response_header)
-    server2.addResponse("sessionlog.json", request_bar_header, response_header)
-    server2.addResponse("sessionlog.json", request_bad_bar_header, response_header)
+        origin = services.origin(
+            name,
+            ssl=True,
+            clientkey=SSL_DIRECTORY / "signed-foo.key",
+            clientcert=SSL_DIRECTORY / certificate,
+        )
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed2-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
-    ts.addSSLfile("ssl/signer.key")
-    ts.addSSLfile("ssl/signer2.pem")
-    ts.addSSLfile("ssl/signer2.key")
+    def ca_overrides(self, ats: ATS, filename: str) -> str:
+        """Build the conf_remap CA record overrides."""
 
-    def ca_cert_overrides(filename):
         return (
-            f'@pparam=proxy.config.ssl.client.CA.cert.path={ts.Variables.SSLDir} '
-            f'@pparam=proxy.config.ssl.client.CA.cert.filename={filename}')
+            f"@pparam=proxy.config.ssl.client.CA.cert.path={ats.ssl_directory} "
+            f"@pparam=proxy.config.ssl.client.CA.cert.filename={filename}")
 
-    ts.Disk.remap_config.AddLine(
-        f'map /case1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
-        f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
-    ts.Disk.remap_config.AddLine(
-        f'map /badcase1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
-        f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
-    ts.Disk.remap_config.AddLine(
-        f'map /case2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
-        f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
-    ts.Disk.remap_config.AddLine(
-        f'map /badcase2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
-        f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Map success and failure paths to each origin CA."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        ats = ats_factory.create("ts")
+        if not ats.plugin_exists("conf_remap.so"):
+            pytest.skip("conf_remap.so is not installed")
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "signed-foo.pem",
+            SSL_DIRECTORY / "signed2-foo.pem",
+            SSL_DIRECTORY / "signed-foo.key",
+            SSL_DIRECTORY / "server.pem",
+            SSL_DIRECTORY / "server.key",
+            SSL_DIRECTORY / "signer.pem",
+            SSL_DIRECTORY / "signer.key",
+            SSL_DIRECTORY / "signer2.pem",
+            SSL_DIRECTORY / "signer2.key",
+        )
+        ats.remap_config.add_lines(
+            (
+                f"map /case1 https://127.0.0.1:{self._server1.https_port}/ "
+                f"@plugin=conf_remap.so {self.ca_overrides(ats, 'signer.pem')}",
+                f"map /badcase1 https://127.0.0.1:{self._server1.https_port}/ "
+                f"@plugin=conf_remap.so {self.ca_overrides(ats, 'signer2.pem')}",
+                f"map /case2 https://127.0.0.1:{self._server2.https_port}/ "
+                f"@plugin=conf_remap.so {self.ca_overrides(ats, 'signer2.pem')}",
+                f"map /badcase2 https://127.0.0.1:{self._server2.https_port}/ "
+                f"@plugin=conf_remap.so {self.ca_overrides(ats, 'signer.pem')}",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "ENFORCED",
+                "proxy.config.ssl.client.verify.server.properties": "SIGNATURE",
+                "proxy.config.ssl.client.CA.cert.path": "/tmp",
+                "proxy.config.ssl.client.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+            })
+        return ats
 
-    # Case 1, global config policy=permissive properties=signature
-    #         override for foo.com policy=enforced properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            # set global policy
-            'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
-            'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
-            'proxy.config.ssl.client.CA.cert.path': '/tmp',
-            'proxy.config.ssl.client.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.url_remap.pristine_host_hdr': 1
-        })
+    def request(self, path: str, host: str) -> str:
+        """Request one CA override case and return the response body."""
 
-    # Should succeed
-    tr = urtest.AddTestRun("Use correct ca bundle for server 1")
-    tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port), ts=ts)
-    tr.ReturnCode = 0
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.Setup.Copy("ssl/signed-foo.pem")
-    tr.Setup.Copy("ssl/signed2-foo.pem")
-    tr.Processes.Default.StartBefore(server1)
-    tr.Processes.Default.StartBefore(server2)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = server1
-    tr.StillRunningAfter = ts
-    # Should succeed.  No message
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+        result = self._curl.get(self._ats, path, headers={"Host": host})
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-    tr2 = urtest.AddTestRun("Use incorrect ca  bundle for server 1")
-    tr2.MakeCurlCommand("-k -H \"host: bar.com\"  http://127.0.0.1:{0}/badcase1".format(ts.Variables.port), ts=ts)
-    tr2.ReturnCode = 0
-    tr2.StillRunningAfter = server1
-    tr2.StillRunningAfter = ts
-    # Should succeed, but will be message in log about name mismatch
-    tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
+    def run(self) -> None:
+        """Verify each matching CA succeeds and each mismatched CA fails."""
 
-    tr2 = urtest.AddTestRun("Use correct ca bundle for server 2")
-    tr2.MakeCurlCommand("-k -H \"host: random.com\"  http://127.0.0.1:{0}/case2".format(ts.Variables.port), ts=ts)
-    tr2.ReturnCode = 0
-    tr2.StillRunningAfter = server2
-    tr2.StillRunningAfter = ts
-    # Should succeed, but will be message in log about signature
-    tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+        self._server1.start()
+        self._server2.start()
+        self._ats.start()
+        first = self.request("/case1", "foo.com")
+        assert "Could Not Connect" not in first, self._ats.diags_log.read_text(errors="replace")
+        assert "Could Not Connect" in self.request("/badcase1", "bar.com")
+        assert "Could Not Connect" not in self.request("/case2", "random.com")
+        assert "Could Not Connect" in self.request("/badcase2", "foo.com")
 
-    tr3 = urtest.AddTestRun("User incorrect ca bundle for server 2")
-    tr3.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/badcase2".format(ts.Variables.port), ts=ts)
-    tr3.ReturnCode = 0
-    tr3.StillRunningAfter = server2
-    tr3.StillRunningAfter = ts
-    # Should succeed.  No error messages
-    tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should have succeeded")
-    urtest.execute()
+
+def test_tls_verify_ca_override(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """conf_remap selects the correct CA bundle for each outbound TLS origin."""
+
+    TlsVerifyCaOverrideScenario(ats_factory, services, curl).run()

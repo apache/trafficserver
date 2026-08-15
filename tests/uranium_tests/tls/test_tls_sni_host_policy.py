@@ -14,318 +14,151 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import time
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_tls_sni_host_policy(urtest: UraniumTest) -> None:
-    '''
-    Test exercising host and SNI mismatch controls
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsSniHostPolicyScenario:
+    """Exercise client-certificate and Host/SNI mismatch policy together."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test exercising host and SNI mismatch controls
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the origin used after accepted inbound connections."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    cafile = "{0}/signer.pem".format(urtest.RunDirectory)
-    cafile2 = "{0}/signer2.pem".format(urtest.RunDirectory)
-    server = urtest.MakeOriginServer("server")
+        origin = services.origin("origin")
+        for path in ("/case1", "/warnonly"):
+            origin.add_response(
+                {"headers": f"GET {path} HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+                {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+            )
+        return origin
 
-    request_header = {"headers": "GET /case1 HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
-    request_header = {"headers": "GET /  HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure strict global Host/SNI policy with per-name exceptions."""
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key", SSL_DIRECTORY / "signer.pem")
+        ats.records.update(
+            {
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.http.host_sni_policy": 2,
+                "proxy.config.ssl.TLSv1_3.enabled": 0,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: boBliTe\n"
+            "    verify_client: STRICT\n"
+            "    host_sni_policy: PERMISSIVE\n"
+            "  - fqdn: bOb\n"
+            "    verify_client: STRICT\n"
+            "  - fqdn: bob.bar.com\n"
+            "    verify_client: STRICT\n"
+            "  - fqdn: dave.bob\n"
+            "    verify_client: STRICT\n"
+            "  - fqdn: noipallow.example.com\n"
+            "    http2: off\n"
+            "  - fqdn: ipallow_nomatch.example.com\n"
+            "    ip_allow: 192.168.1.1\n",
+        )
+        return ats
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.http.host_sni_policy': 2,
-            'proxy.config.ssl.TLSv1_3.enabled': 0,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl',
-        })
+    def request(self, sni: str, host: str, *, certificate: bool = False, path: str = "/case1") -> CommandResult:
+        """Send one TLS 1.2 request with independently selected SNI and Host."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        arguments = ["--verbose", "--tls-max", "1.2", "--insecure", "--http1.1"]
+        if certificate:
+            arguments.extend(("--cert", str(SSL_DIRECTORY / "signed-foo.pem"), "--key", str(SSL_DIRECTORY / "signed-foo.key")))
+        arguments.extend(
+            (
+                "--header",
+                f"Host: {host}",
+                "--resolve",
+                f"{sni}:{self._ats.https_port}:127.0.0.1",
+                f"https://{sni}:{self._ats.https_port}{path}",
+            ))
+        return self._curl.run_for(self._ats, *arguments)
 
-    # Just map everything through to origin.  This test is concentrating on the user-agent side
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
+    def verify_matrix(self) -> None:
+        """Run handshake failures, terminating mismatches, and permissive mismatches."""
 
-    # Scenario 1:  Default no client cert required.  cert required for bar.com.
-    # Make boblite and bob mixed case to verify that we can match hostnames case
-    # insensitively.
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: boBliTe',
-            '  verify_client: STRICT',
-            '  host_sni_policy: PERMISSIVE',
-            '- fqdn: bOb',
-            '  verify_client: STRICT',
-            '- fqdn: bob.bar.com',
-            '  verify_client: STRICT',
-            '- fqdn: dave.bob',
-            '  verify_client: STRICT',
-            '- fqdn: noipallow.example.com',
-            '  http2: off',
-            '- fqdn: ipallow_nomatch.example.com',
-            '  ip_allow: 192.168.1.1',
-        ])
+        cases = (
+            ("Bob", "dave", False, "/case1", "handshake"),
+            ("Bob", "dave", True, "/case1", "allowed"),
+            ("dave", "Bob", False, "/case1", "denied"),
+            ("dave", "bob", True, "/case1", "denied"),
+            ("Bob", "boB", True, "/case1", "allowed"),
+            ("ellen", "Boblite", False, "/warnonly", "allowed"),
+            ("ellen", "Boblite", True, "/warnonly", "allowed"),
+            ("ellen", "fran", False, "/warnonly", "allowed"),
+            ("ellen", "fran", True, "/warnonly", "allowed"),
+            ("bob.bar.com", "bob", True, "/case1", "denied"),
+            ("bob", "bob.bar.com", True, "/case1", "denied"),
+            ("bob", "dave.bob", True, "/case1", "denied"),
+            ("dave.bob", "bob", True, "/case1", "denied"),
+            ("other.example.com", "ipallow_nomatch.example.com", False, "/case1", "denied"),
+            ("other.example.com", "noipallow.example.com", False, "/case1", "allowed"),
+        )
+        for sni, host, certificate, path, outcome in cases:
+            result = self.request(sni, host, certificate=certificate, path=path)
+            if outcome == "handshake":
+                assert result.returncode == 35, result.output
+            else:
+                assert result.returncode == 0, result.output
+                if outcome == "denied":
+                    assert "Access Denied" in result.output
+                else:
+                    assert "Access Denied" not in result.output
 
-    # case 1
-    # sni=Bob and host=dave.  Do not provide client cert.  This should match fqdn bOb which has
-    # verify_client: STRICT and thus should fail.
-    tr = urtest.AddTestRun("Connect to bob without cert")
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 35
+    def verify_diagnostics(self) -> None:
+        """Verify terminating, permissive, prefix, suffix, and no-policy diagnostics."""
 
-    # case 2
-    # sni=Bob and host=dave.  Do provide client cert.  This should match fqdn bOb which has
-    # verify_client: STRICT, but since the cert is good it should succeed.
-    tr = urtest.AddTestRun("Connect to bob with good cert")
-    tr.Setup.Copy("ssl/signed-foo.pem")
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
+        diagnostics = self._ats.diags_log.read_text(errors="replace")
+        for expression in (
+                "SNI/hostname mismatch sni=dave host=bob action=terminate",
+                "SNI/hostname mismatch sni=ellen host=Boblite action=continue",
+                "SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate",
+                "SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate",
+                "SNI/hostname mismatch sni=bob host=dave.bob action=terminate",
+                "SNI/hostname mismatch sni=dave.bob host=bob action=terminate",
+        ):
+            assert expression in diagnostics
+        assert "SNI/hostname mismatch sni=ellen host=fran" not in diagnostics
+        assert "SNI/hostname mismatch sni=other.example.com host=noipallow.example.com" not in diagnostics
 
-    # case 3
-    # sni=dave and host=bob.  Do not provide client cert.  This should not need a cert, but should still
-    # fail due to sni-host mismatch.
-    tr = urtest.AddTestRun("Connect to dave without cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k -H 'host:Bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
+        expected_error = "for host='bob' sni='dave', returning a 403"
+        for _ in range(200):
+            errors = self._ats.error_log.read_text(errors="replace") if self._ats.error_log.exists() else ""
+            if expected_error in errors:
+                return
+            time.sleep(0.05)
+        raise AssertionError(f"Expected Host/SNI mismatch error:\n{errors}")
 
-    # case 4
-    # sni=dave and host=bob.  Do provide client cert.  Again, this should not need a cert, but provide
-    # one anyway and verify it fails due to sni-host mismatch.
-    tr = urtest.AddTestRun("Connect to dave with cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
+    def run(self) -> None:
+        """Start the native services and verify the complete policy matrix."""
 
-    # case 5
-    # sni=Bob and host=boB.  Do provide client cert.  Should succeed because the hosts match and the cert is provided.
-    tr = urtest.AddTestRun("Connect to bob with cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:boB' --resolve 'Bob:{0}:127.0.0.1' https://bob:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
+        self._origin.start()
+        self._ats.start()
+        self.verify_matrix()
+        self.verify_diagnostics()
 
-    # case 6
-    # sni=ellen and host=Boblite.  Do not provide client cert.  Should warn due to sni-host mismatch,
-    # but should note get an Access Denied because boblite has host_sni_policy: PERMISSIVE configured.
-    tr = urtest.AddTestRun("Connect to ellen without cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
-            ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
-    # case 7
-    # sni=ellen and host=Boblite.  Do provide client cert.  This should behave the same as above because
-    # providing a client cert does not mean SNI and hostname will not be compared.
-    tr = urtest.AddTestRun("Connect to ellen with cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
+def test_tls_sni_host_policy(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Host/SNI policy is case-insensitive and applies only to configured actions."""
 
-    # case 8
-    # sni=ellen and host=fran.  Do not provide client cert.  No warning since neither name is mentioned in sni.yaml
-    tr = urtest.AddTestRun("Connect to ellen without cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
-            ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
-
-    # case 9
-    # sni=ellen and host=fran.  Do provide client cert.  No warning since neither name is mentioned in sni.yaml
-    tr = urtest.AddTestRun("Connect to ellen with cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
-
-    # case 10
-    # sni=bob.bar.com and host=bob.  Do provide client cert.  SNI is longer than host but shares the
-    # same prefix.  Should fail due to sni-host mismatch.
-    tr = urtest.AddTestRun("Connect with SNI longer than host sharing prefix")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
-
-    # case 11
-    # sni=bob and host=bob.bar.com.  Do provide client cert.  Host is longer than SNI but shares the
-    # same prefix.  Should fail due to sni-host mismatch.
-    tr = urtest.AddTestRun("Connect with host longer than SNI sharing prefix")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob.bar.com' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
-
-    # case 12
-    # sni=bob and host=dave.bob.  Do provide client cert.  Host ends with the SNI value but is a
-    # different hostname.  Should fail due to sni-host mismatch.
-    tr = urtest.AddTestRun("Connect with host ending with SNI value")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave.bob' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
-
-    # case 13
-    # sni=dave.bob and host=bob.  Do provide client cert.  SNI ends with the host value but is a
-    # different hostname.  Should fail due to sni-host mismatch.
-    tr = urtest.AddTestRun("Connect with SNI ending with host value")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave.bob:{0}:127.0.0.1' https://dave.bob:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
-
-    # case 14
-    # sni=other.example.com and host=ipallow_nomatch.example.com. Host header matches SNI entry but
-    # client IP is NOT in ip_allow list. TestClientSNIAction should still return true (because ip_addrs is
-    # non-empty), which means host_sni_policy IS enforced and the mismatch triggers "Access Denied".
-    tr = urtest.AddTestRun("Connect with ip_allow SNI entry not matching client IP should still enforce host_sni_policy")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k -H 'host:ipallow_nomatch.example.com' --resolve 'other.example.com:{0}:127.0.0.1' https://other.example.com:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-        "Access Denied", "Should get 403 due to host_sni_policy enforcement")
-
-    # case 15
-    # sni=other.example.com and host=noipallow.example.com.  Host header matches SNI
-    # entry that only has http2: off configured (no verify_client, no ip_allow).  This should
-    # NOT trigger host_sni_policy enforcement because the only action is a no-op.
-    tr = urtest.AddTestRun("Connect with SNI entry having no ip_allow should not enforce host_sni_policy")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "-v --tls-max 1.2 -k -H 'host:noipallow.example.com' --resolve 'other.example.com:{0}:127.0.0.1' https://other.example.com:{0}/case1"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "No 403 for non-ip_allow SNI entry")
-
-    # Wait for the error.log entry to be written.
-    test_run = urtest.AddAwaitFileContainsTestRun(
-        'Await SNI mismatch error log entry.',
-        os.path.join(ts.Variables.LOGDIR, 'error.log'),
-        "SNI/hostname mismatch: connecting to .* for host='bob' sni='dave', returning a 403",
-    )
-
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate", "Should have warning on prefix mismatch")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate", "Should have warning on prefix mismatch")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: SNI/hostname mismatch sni=bob host=dave.bob action=terminate", "Should have warning on suffix mismatch")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "WARNING: SNI/hostname mismatch sni=dave.bob host=bob action=terminate", "Should have warning on suffix mismatch")
-    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-        "WARNING: SNI/hostname mismatch sni=ellen host=fran", "Should not have warning on mismatch with non-policy host")
-    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-        "WARNING: SNI/hostname mismatch sni=other.example.com host=noipallow.example.com",
-        "Should not have warning for SNI entry with no ip_allow")
-
-    test_run.Processes.Default.ReturnCode = 0
-    ts.Disk.error_log.Content += Testers.ContainsExpression(
-        "SNI/hostname mismatch: connecting to .* for host='bob' sni='dave', returning a 403",
-        "error.log should contain information about the 403 response.")
-    urtest.execute()
+    TlsSniHostPolicyScenario(ats_factory, services, curl).run()

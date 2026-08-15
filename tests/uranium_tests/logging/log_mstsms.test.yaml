@@ -1,0 +1,58 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Verify the mstsms milestone list log field"
+  server: {name: "origin"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|log"
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    logging_yaml:
+      logging:
+        formats:
+          - {name: "custom", format: "mstsms:%<mstsms>"}
+        logs:
+          - {filename: "field-mstsms", format: "custom"}
+    file_checks:
+      - path: "{LOG_DIR}/field-mstsms.log"
+        line_count_min: 3
+        timeout: 10
+        matches:
+          - expression: '^mstsms:(?:[^,\n]*,){19}[^,\n]*\d$'
+            min: 3
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, mstsms-1]]}}
+        client-request: {method: GET, url: /test-1, version: "1.1", headers: {fields: [[Host, test-1]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 6]]}, content: {data: "Test 1", size: 6}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, mstsms-2]]}}
+        client-request: {method: GET, url: /test-2, version: "1.1", headers: {fields: [[Host, test-2]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 6]]}, content: {data: "Test 2", size: 6}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, mstsms-3]]}}
+        client-request: {method: GET, url: /test-3, version: "1.1", headers: {fields: [[Host, test-3]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 6]]}, content: {data: "Test 3", size: 6}}
+        proxy-response: {status: 200}

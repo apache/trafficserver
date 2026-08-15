@@ -1,0 +1,90 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Exercise HTTPS remapping to HTTP and HTTPS origins"
+  template_replay: true
+  server: {name: "origin"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    process_config:
+      enable_tls: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "lm|ssl"
+      proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
+  variants:
+    - name: "classic"
+      ats:
+        remap_config:
+          - "map https://www.example.com http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map https://www.example.com:{ATS_HTTPS_PORT} http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map_with_recv_port https://www.example3.com:{ATS_HTTPS_PORT} http://127.0.0.1:{SERVER_HTTP_PORT}"
+          - "map https://www.anotherexample.com https://127.0.0.1:{SERVER_HTTPS_PORT}"
+    - name: "yaml"
+      ats:
+        remap_yaml_lines:
+          - "remap:"
+          - "  - type: map"
+          - "    from: {url: 'https://www.example.com'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "  - type: map"
+          - "    from: {url: 'https://www.example.com:{ATS_HTTPS_PORT}'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "  - type: map_with_recv_port"
+          - "    from: {url: 'https://www.example3.com:{ATS_HTTPS_PORT}'}"
+          - "    to: {url: 'http://127.0.0.1:{SERVER_HTTP_PORT}'}"
+          - "  - type: map"
+          - "    from: {url: 'https://www.anotherexample.com'}"
+          - "    to: {url: 'https://127.0.0.1:{SERVER_HTTPS_PORT}'}"
+
+sessions:
+  - protocol:
+      stack: https
+      tls: {sni: example.com}
+    transactions:
+      - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 127.0.0.1], [uuid, no-map]]}}
+        server-response: {status: 599}
+        proxy-response: {status: 404}
+      - all: {headers: {fields: [[uuid, https-basic]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.example.com]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, https-default-port]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:443']]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, https-listener-port]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:{ATS_HTTPS_PORT}']]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, https-recv-port]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.example3.com]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}
+      - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.test.com], [uuid, missing-rule]]}}
+        server-response: {status: 599}
+        proxy-response: {status: 404}
+      - client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, 'www.example.com:1234'], [uuid, bad-port]]}}
+        server-response: {status: 599}
+        proxy-response: {status: 404}
+      - all: {headers: {fields: [[uuid, https-origin]]}}
+        client-request: {method: GET, url: /, version: "1.1", headers: {fields: [[Host, www.anotherexample.com]]}}
+        server-response: {status: 200, headers: {fields: [[Content-Length, 0]]}}
+        proxy-response: {status: 200}

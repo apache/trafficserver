@@ -14,286 +14,150 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_tls_sni_ticket(urtest: UraniumTest) -> None:
-    '''
-    Test sni.yaml session ticket overrides.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsSniTicketScenario:
+    """Override process-wide TLS session ticket policy for individual SNI names."""
 
-    import os
-    import re
-    from typing import Any
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._enabled = self.configure_ats(
+            ats_factory,
+            "tickets-enabled",
+            "tickets-on.com",
+            global_enabled=0,
+            global_count=0,
+            sni_enabled=1,
+            sni_count=3,
+        )
+        self._disabled = self.configure_ats(
+            ats_factory,
+            "tickets-disabled",
+            "tickets-off.com",
+            global_enabled=1,
+            global_count=2,
+            sni_enabled=0,
+        )
 
-    urtest.Summary = '''
-    Test sni.yaml session ticket overrides
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the response endpoint used by every ticket handshake."""
 
-    urtest.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
-    urtest.Setup.Copy('file.ticket')
+        origin = services.origin("origin")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: tickets.example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": "ticket test",
+            },
+        )
+        return origin
 
-    class TlsSniTicketTest:
-        _server_is_started = False
-        _ts_on_started = False
-        _ts_off_started = False
+    def configure_ats(
+        self,
+        ats_factory: ATSFactory,
+        name: str,
+        sni: str,
+        *,
+        global_enabled: int,
+        global_count: int,
+        sni_enabled: int,
+        sni_count: int | None = None,
+    ) -> ATS:
+        """Configure one process-wide policy and its per-SNI override."""
 
-        def __init__(self) -> None:
-            """
-            Initialize shared test state and configure the ATS processes.
-            """
-            self.ticket_file = os.path.join(urtest.RunDirectory, 'file.ticket')
-            self.setupOriginServer()
-            self.setupEnabledTS()
-            self.setupDisabledTS()
+        ats = ats_factory.create(name, enable_tls=True)
+        ats.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key")
+        ats.copy_to_config(TEST_DIRECTORY / "file.ticket")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl|http",
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.ssl.server.session_ticket.enable": global_enabled,
+                "proxy.config.ssl.server.session_ticket.number": global_count,
+                "proxy.config.ssl.server.ticket_key.filename": str(ats.config_directory / "file.ticket"),
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        document = "sni:\n" f"  - fqdn: {sni}\n" f"    ssl_ticket_enabled: {sni_enabled}\n"
+        if sni_count is not None:
+            document += f"    ssl_ticket_number: {sni_count}\n"
+        ats.write_config_file("sni.yaml", document)
+        return ats
 
-        def setupOriginServer(self) -> None:
-            """
-            Configure the origin server with a simple response for all requests.
-            """
-            request_header = {
-                'headers': 'GET / HTTP/1.1\r\nHost: tickets.example.com\r\n\r\n',
-                'timestamp': '1469733493.993',
-                'body': ''
-            }
-            response_header = {
-                'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
-                'timestamp': '1469733493.993',
-                'body': 'ticket test'
-            }
-            self.server = urtest.MakeOriginServer('server')
-            self.server.addResponse('sessionlog.json', request_header, response_header)
+    @staticmethod
+    def tls12_reuse(ats: ATS, servername: str) -> str:
+        """Create one session and attempt to resume it five times."""
 
-        def setupTS(
-                self,
-                name: str,
-                sni_name: str,
-                global_ticket_enabled: int,
-                global_ticket_number: int,
-                sni_ticket_enabled: int,
-                sni_ticket_number: int | None = None) -> Any:
-            """
-            Configure an ATS process for one SNI ticket override scenario.
+        session = ats.run_directory / "session.pem"
+        request = f"GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n"
+        first = (
+            f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
+            f"-servername {servername} -sess_out '{session}' -tls1_2")
+        reuse = (
+            f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
+            f"-servername {servername} -sess_in '{session}' -tls1_2")
+        result = ats.run_shell(" && ".join((first, reuse, reuse, reuse, reuse, reuse)), timeout=45)
+        assert result.returncode == 0, result.output
+        return result.output
 
-            :param name: ATS process name.
-            :param sni_name: SNI hostname matched in sni.yaml.
-            :param global_ticket_enabled: Process-wide session ticket enable setting.
-            :param global_ticket_number: Process-wide TLSv1.3 ticket count.
-            :param sni_ticket_enabled: Per-SNI session ticket enable override.
-            :param sni_ticket_number: Per-SNI TLSv1.3 ticket count override.
-            :return: Configured ATS process.
-            """
-            ts = urtest.MakeATSProcess(name, enable_tls=True)
+    @staticmethod
+    def tls13_messages(ats: ATS, servername: str) -> str:
+        """Return OpenSSL's TLSv1.3 protocol-message trace for one connection."""
 
-            ts.addSSLfile('ssl/server.pem')
-            ts.addSSLfile('ssl/server.key')
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.Port}')
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        request = f"GET / HTTP/1.1\\r\\nHost: {servername}\\r\\nConnection: close\\r\\n\\r\\n"
+        command = (
+            f"printf '{request}' | openssl s_client -connect 127.0.0.1:{ats.https_port} "
+            f"-servername {servername} -tls1_3 -msg -ign_eof")
+        result = ats.run_shell(command, timeout=30)
+        assert result.returncode == 0, result.output
+        return result.output
 
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'ssl|http',
-                    'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.exec_thread.autoconfig.scale': 1.0,
-                    'proxy.config.ssl.server.session_ticket.enable': global_ticket_enabled,
-                    'proxy.config.ssl.server.session_ticket.number': global_ticket_number,
-                    'proxy.config.ssl.server.ticket_key.filename': self.ticket_file,
-                })
+    @staticmethod
+    def tls12_reconnect(ats: ATS, servername: str) -> str:
+        """Ask OpenSSL to reconnect repeatedly when no session tickets are issued."""
 
-            sni_lines = [
-                'sni:',
-                f'- fqdn: {sni_name}',
-                f'  ssl_ticket_enabled: {sni_ticket_enabled}',
-            ]
-            if sni_ticket_number is not None:
-                sni_lines.append(f'  ssl_ticket_number: {sni_ticket_number}')
-            ts.Disk.sni_yaml.AddLines(sni_lines)
+        command = (
+            f"openssl s_client -connect 127.0.0.1:{ats.https_port} "
+            f"-servername {servername} -tls1_2 -reconnect </dev/null")
+        result = ats.run_shell(command, timeout=30)
+        assert result.returncode == 0, result.output
+        return result.output
 
-            return ts
+    def run(self) -> None:
+        """Verify TLSv1.2 resumption and TLSv1.3 ticket counts for both overrides."""
 
-        def setupEnabledTS(self) -> None:
-            """
-            Create the ATS process whose SNI rule enables tickets.
-            """
-            self.ts_on = self.setupTS('ts_on', 'tickets-on.com', 0, 0, 1, 3)
+        version = subprocess.run(("openssl", "version"), capture_output=True, text=True, check=False).stdout
+        if "OpenSSL" not in version and "BoringSSL" not in version:
+            pytest.skip("OpenSSL-compatible s_client is required")
 
-        def setupDisabledTS(self) -> None:
-            """
-            Create the ATS process whose SNI rule disables tickets.
-            """
-            self.ts_off = self.setupTS('ts_off', 'tickets-off.com', 1, 2, 0)
+        self._origin.start()
+        self._enabled.start()
+        self._disabled.start()
 
-        def start_processes_if_needed(
-                self, tr: Any, start_server: bool = False, start_ts_on: bool = False, start_ts_off: bool = False) -> None:
-            """
-            Register one-time StartBefore hooks for the processes needed by a test run.
+        enabled12 = self.tls12_reuse(self._enabled, "tickets-on.com")
+        assert enabled12.count("Reused, TLSv1.2") == 5
+        disabled12 = self.tls12_reconnect(self._disabled, "tickets-off.com")
+        assert "Reused" not in disabled12
+        assert "TLSv1.2" in disabled12
 
-            :param tr: The AuTest run definition being configured.
-            :param start_server: Whether the origin server should be started for this run.
-            :param start_ts_on: Whether the tickets-enabled ATS process should be started for this run.
-            :param start_ts_off: Whether the tickets-disabled ATS process should be started for this run.
-            """
-            if start_server and not TlsSniTicketTest._server_is_started:
-                tr.Processes.Default.StartBefore(self.server)
-                TlsSniTicketTest._server_is_started = True
+        enabled13 = self.tls13_messages(self._enabled, "tickets-on.com")
+        expected_tickets = 0 if "BoringSSL" in version else 3
+        assert enabled13.count("NewSessionTicket") == expected_tickets
+        disabled13 = self.tls13_messages(self._disabled, "tickets-off.com")
+        assert "NewSessionTicket" not in disabled13
 
-            if start_ts_on and not TlsSniTicketTest._ts_on_started:
-                tr.Processes.Default.StartBefore(self.ts_on)
-                TlsSniTicketTest._ts_on_started = True
 
-            if start_ts_off and not TlsSniTicketTest._ts_off_started:
-                tr.Processes.Default.StartBefore(self.ts_off)
-                TlsSniTicketTest._ts_off_started = True
+def test_tls_sni_ticket(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Per-SNI ticket overrides take precedence over process-wide TLS ticket settings."""
 
-        @staticmethod
-        def check_regex_count(output_path: str, pattern: str, expected_count: int, description: str) -> tuple[bool, str, str]:
-            """
-            Count regex matches in a process output file.
-
-            :param output_path: Path to the output file to inspect.
-            :param pattern: Regex pattern to count.
-            :param expected_count: Expected number of matches.
-            :param description: Description reported by the tester.
-            :return: AuTest lambda result tuple.
-            """
-            with open(output_path, 'r') as f:
-                content = f.read()
-
-            matches = re.findall(pattern, content)
-            if len(matches) == expected_count:
-                return (True, description, f'Found {len(matches)} matches for {pattern}')
-            return (False, description, f'Expected {expected_count} matches for {pattern}, found {len(matches)}')
-
-        @staticmethod
-        def session_reuse_command(port: int, servername: str) -> str:
-            """
-            Build a TLSv1.2 resumption command for a specific SNI name.
-
-            :param port: ATS TLS listening port.
-            :param servername: SNI hostname to send with the connection.
-            :return: Shell command for repeated TLSv1.2 session reuse attempts.
-            """
-            return (
-                f'session_path=`mktemp` && '
-                f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_out "$$session_path" -tls1_2 && '
-                f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-                f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-                f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-                f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
-                f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2')
-
-        def add_tls12_enabled_run(self) -> None:
-            """
-            Register the TLSv1.2 resumption test for the enabled SNI case.
-            """
-            tr = urtest.AddTestRun('sni.yaml enables TLSv1.2 ticket resumption')
-            tr.Command = TlsSniTicketTest.session_reuse_command(self.ts_on.Variables.ssl_port, 'tickets-on.com')
-            tr.ReturnCode = 0
-            self.start_processes_if_needed(tr, start_server=True, start_ts_on=True)
-            tr.Processes.Default.Streams.All.Content = Testers.Lambda(
-                lambda info, tester: TlsSniTicketTest.check_regex_count(
-                    tr.Processes.Default.Streams.All.AbsPath, r'Reused, TLSv1\.2', 5,
-                    'Check that tickets-on.com reuses TLSv1.2 sessions'))
-            tr.StillRunningAfter += self.server
-            tr.StillRunningAfter += self.ts_on
-
-        def add_tls13_enabled_run(self) -> None:
-            """
-            Register the TLSv1.3 ticket count test for the enabled SNI case.
-            """
-            tr = urtest.AddTestRun('sni.yaml sets TLSv1.3 ticket count')
-            tr.Command = (
-                f'printf "GET / HTTP/1.1\\r\\nHost: tickets-on.com\\r\\nConnection: close\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{self.ts_on.Variables.ssl_port} -servername tickets-on.com -tls1_3 -msg -ign_eof'
-            )
-            tr.ReturnCode = 0
-            self.start_processes_if_needed(tr, start_server=True, start_ts_on=True)
-
-            # BoringSSL only exposes SSL_CTX_set_num_tickets() (context-level),
-            # not SSL_set_num_tickets() (per-connection), so the per-SNI
-            # ssl_ticket_number override cannot change the ticket count. The
-            # CTX-level value for ts_on is 0, so expect 0 tickets.
-            if Condition.IsBoringSSL():
-                expected_count = 0
-                description = 'Check that tickets-on.com receives no TLSv1.3 tickets (BoringSSL ignores per-SNI ticket count)'
-            else:
-                expected_count = 3
-                description = 'Check that tickets-on.com receives three TLSv1.3 tickets'
-
-            tr.Processes.Default.Streams.All.Content = Testers.Lambda(
-                lambda info, tester: TlsSniTicketTest.check_regex_count(
-                    tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', expected_count, description))
-            tr.StillRunningAfter += self.server
-            tr.StillRunningAfter += self.ts_on
-
-        def add_tls12_disabled_run(self) -> None:
-            """
-            Register the TLSv1.2 non-resumption test for the disabled SNI case.
-            """
-            tr = urtest.AddTestRun('sni.yaml disables TLSv1.2 ticket resumption')
-            tr.Command = TlsSniTicketTest.session_reuse_command(self.ts_off.Variables.ssl_port, 'tickets-off.com')
-            self.start_processes_if_needed(tr, start_server=True, start_ts_off=True)
-            tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
-                'Reused', 'tickets-off.com should not reuse TLSv1.2 sessions')
-            tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'TLSv1.2', 'tickets-off.com should still negotiate TLSv1.2')
-            tr.StillRunningAfter += self.server
-            tr.StillRunningAfter += self.ts_off
-
-        def add_tls13_disabled_run(self) -> None:
-            """
-            Register the TLSv1.3 no-ticket test for the disabled SNI case.
-            """
-            tr = urtest.AddTestRun('sni.yaml disables TLSv1.3 ticket issuance')
-            tr.Command = (
-                f'printf "GET / HTTP/1.1\\r\\nHost: tickets-off.com\\r\\nConnection: close\\r\\n\\r\\n" | '
-                f'openssl s_client -connect 127.0.0.1:{self.ts_off.Variables.ssl_port} -servername tickets-off.com -tls1_3 -msg -ign_eof'
-            )
-            self.start_processes_if_needed(tr, start_server=True, start_ts_off=True)
-            tr.Processes.Default.Streams.All.Content = Testers.Lambda(
-                lambda info, tester: TlsSniTicketTest.check_regex_count(
-                    tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', 0,
-                    'Check that tickets-off.com receives no TLSv1.3 tickets'))
-            tr.StillRunningAfter += self.server
-            tr.StillRunningAfter += self.ts_off
-
-        def run(self) -> None:
-            """
-            Register all AuTest runs for the SNI ticket override coverage.
-            """
-            self.add_tls12_enabled_run()
-            self.add_tls13_enabled_run()
-            self.add_tls12_disabled_run()
-            self.add_tls13_disabled_run()
-
-    TlsSniTicketTest().run()
-    urtest.execute()
+    TlsSniTicketScenario(ats_factory, services).run()

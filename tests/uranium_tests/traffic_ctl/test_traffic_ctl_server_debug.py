@@ -14,88 +14,71 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, CommandResult
 
 
-def test_traffic_ctl_server_debug(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ServerDebugScenario:
+    """Exercise traffic_ctl's runtime debug enable and disable operations."""
 
-    import sys
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    # To include util classes
-    sys.path.insert(0, f'{urtest.TestDirectory}')
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Start with debug output disabled and a recognizable tag value."""
 
-    from traffic_ctl_test_utils import Make_traffic_ctl
+        ats = ats_factory.create("ts")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 0,
+            "proxy.config.diags.debug.tags": "xyz",
+        })
+        return ats
 
-    urtest.Summary = '''
-    Test traffic_ctl server debug enable/disable commands.
-    '''
+    def traffic_ctl(self, *arguments: str, expected: int = 0) -> CommandResult:
+        """Run traffic_ctl and validate its status."""
 
-    urtest.ContinueOnFail = True
+        result = self._ats.traffic_ctl(*arguments)
+        assert result.returncode == expected, result.output
+        return result
 
-    records_yaml = '''
-    diags:
-      debug:
-        enabled: 0
-        tags: xyz
-    '''
+    def assert_record(self, record: str, value: str) -> None:
+        """Verify one runtime record value."""
 
-    traffic_ctl = Make_traffic_ctl(urtest, records_yaml)
+        result = self.traffic_ctl("config", "get", record)
+        assert f"{record}: {value}" in result.stdout
 
-    ######
-    # Test 1: Enable debug with tags
-    traffic_ctl.server().debug().enable(tags="http").exec()
-    # Test 2: Verify debug is enabled and tags are set
-    traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 1")
-    # Test 3: Verify tags are set
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http")
+    def enable(self, tags: str, *, append: bool = False) -> None:
+        """Enable debug output with replacement or append semantics."""
 
-    # Test 4: Disable debug
-    traffic_ctl.server().debug().disable().exec()
-    # Test 5: Verify debug is disabled
-    traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 0")
+        arguments = ["server", "debug", "enable", "--tags", tags]
+        if append:
+            arguments.append("--append")
+        self.traffic_ctl(*arguments)
 
-    # Test 6: Enable debug with new tags (replace mode)
-    traffic_ctl.server().debug().enable(tags="cache").exec()
-    # Test 7: Verify tags are replaced
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: cache")
+    def run(self) -> None:
+        """Verify replacement, append, disable, and invalid option handling."""
 
-    # Test 8: Enable debug with append mode - should combine with existing tags
-    traffic_ctl.server().debug().enable(tags="http", append=True).exec()
-    # Test 9: Verify tags are appended
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: cache|http")
+        self._ats.start()
+        self.enable("http")
+        self.assert_record("proxy.config.diags.debug.enabled", "1")
+        self.assert_record("proxy.config.diags.debug.tags", "http")
 
-    # Test 10: Append another tag
-    traffic_ctl.server().debug().enable(tags="dns", append=True).exec()
-    # Test 11: Verify all tags are present
-    traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: cache|http|dns")
+        self.traffic_ctl("server", "debug", "disable")
+        self.assert_record("proxy.config.diags.debug.enabled", "0")
 
-    # Test 12: Disable and verify
-    traffic_ctl.server().debug().disable().exec()
-    # Test 13: Verify debug is disabled
-    traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 0")
+        self.enable("cache")
+        self.assert_record("proxy.config.diags.debug.tags", "cache")
+        self.enable("http", append=True)
+        self.assert_record("proxy.config.diags.debug.tags", "cache|http")
+        self.enable("dns", append=True)
+        self.assert_record("proxy.config.diags.debug.tags", "cache|http|dns")
 
-    # Test 14: Verify --append requires --tags (should fail with error)
-    # This tests the ArgParser requires() functionality
-    tr = urtest.AddTestRun("test --append without --tags")
-    tr.Processes.Default.Env = traffic_ctl._ts.Env
-    tr.Processes.Default.Command = "traffic_ctl server debug enable --append"
-    tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-        "Option \'--append\' requires \'--tags\' to be specified", "Should show error that --append requires --tags")
-    tr.StillRunningAfter = traffic_ctl._ts
-    urtest.execute()
+        self.traffic_ctl("server", "debug", "disable")
+        self.assert_record("proxy.config.diags.debug.enabled", "0")
+        result = self.traffic_ctl("server", "debug", "enable", "--append", expected=64)
+        assert "Option '--append' requires '--tags' to be specified" in result.output
+
+
+def test_traffic_ctl_server_debug(ats_factory: ATSFactory) -> None:
+    """traffic_ctl updates debug records and enforces its option contract."""
+
+    ServerDebugScenario(ats_factory).run()

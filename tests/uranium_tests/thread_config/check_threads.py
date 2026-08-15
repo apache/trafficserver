@@ -33,9 +33,9 @@ def _count_threads_once(ts_path, etnet_threads, accept_threads, task_threads, ai
     """
     for p in psutil.process_iter():
         try:
-            # Find the pid corresponding to the ats process we started in autest.
+            # Find the pid corresponding to the ATS process started by the test.
             # It needs to match the process name and the binary path.
-            # If autest can expose the pid of the process this is not needed anymore.
+            # This lookup can go away if the harness exposes the process PID here.
             # Match by CWD or command line containing ts_path, since under
             # ASAN the CWD may differ from the expected path.
             process_name = p.name()

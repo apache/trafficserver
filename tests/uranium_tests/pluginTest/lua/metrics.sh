@@ -22,7 +22,7 @@ do
     traffic_ctl metric match '^plugin\.lua\.' > metrics.out
     sleep 1
     sed 's/ [0-9][0-9]*//' metrics.out > metrics.txt
-    if diff metrics.txt ${AUTEST_TEST_DIR}/gold/metrics.gold
+    if diff metrics.txt ${URTEST_TEST_DIR}/gold/metrics.gold
     then
         exit 0
     fi

@@ -1,0 +1,155 @@
+# Testing dynamic SNI - set outbound SNI based on the request for specific inbound requests.
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+    - when: post-remap
+      do:
+      - with: ua-req-path
+        select:
+        - match: "no-cert"
+          do:
+          - txn-conf<proxy.config.ssl.client.cert.filename>: ""
+        - match: "null-cert"
+          do:
+          - txn-conf<proxy.config.ssl.client.cert.filename>: "NULL"
+    - when: proxy-req
+      do:
+      - proxy-req-field<ts-cert-subject>: inbound-cert-local-issuer-field<CN>
+    - when: proxy-rsp
+      do:
+      - proxy-rsp-field<target-cert-subject>: outbound-cert-remote-subject-field<CN>
+      - proxy-rsp-field<local-cert-issuer>: "Organization='{outbound-cert-local-issuer-field<O>}' Country='{outbound-cert-local-issuer-field<C>}'"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      content:
+        size: 96
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol:
+    stack: https
+    tls:
+      sni: "alpha.ex"
+  transactions:
+  - all: { headers: { fields: [[ uuid, 101 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/v1/video/search/channel/delain"
+      headers:
+        fields:
+        - [ "Host", "alpha.ex" ]
+    proxy-request:
+      <<: *base-req
+      headers:
+        fields:
+        - [ "ts-cert-subject", { value: "random.server.com", as: equal } ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "target-cert-subject", { value: "server_cn", as: equal } ]
+
+- protocol:
+    stack: http
+  transactions:
+  # Verify the outbound client cert is there with the expected values.
+  - all: { headers: { fields: [[ uuid, outbound-TLS ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ "Host", "alpha.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "target-cert-subject", { value: "server_cn", as: equal } ]
+        - [ "local-cert-issuer", { value: "Organization='TxnBox' Country='S3'", as: equal } ]
+
+  # Test that an string for the outbound client cert disables the cert.
+  - all: { headers: { fields: [[ uuid, outbound-no-client-cert ]]}}
+    client-request:
+      <<: *base-req
+      url: "/no-cert"
+      headers:
+        fields:
+        - [ "Host", "charlie.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "local-cert-issuer", { value: "Organization='' Country=''", as: equal } ]
+
+  # Test the string "NULL" for the outbound client cert disables the cert.
+  - all: { headers: { fields: [[ uuid, outbound-nulll-client-cert ]]}}
+    client-request:
+      <<: *base-req
+      url: "/null-cert"
+      headers:
+        fields:
+        - [ "Host", "charlie.ex" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ "local-cert-issuer", { value: "Organization='' Country=''", as: equal } ]
+
+urtest:
+  description: Verify txn_box certificate handling
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-tls-cert-origin}
+  dns: {name: txn-box-tls-cert-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-tls-cert-client}
+  ats:
+    name: txn-box-tls-cert-ts
+    process_config: {enable_tls: true}
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box|http|ssl
+      proxy.config.http.cache.http: 0
+      proxy.config.ssl.server.cert.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.server.private_key.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.client.certification_level: 0
+      proxy.config.ssl.client.verify.server.policy: DISABLED
+      proxy.config.ssl.client.cert.path: '{ATS_ROOT}/ssl'
+      proxy.config.ssl.client.cert.filename: bravo-signed.cert
+    copy_to_config_dir: [tls-cert.test.yaml]
+    copy_to_ssl_dir: [../ssl/server.key, ../ssl/server.pem, ../ssl/bravo-signed.cert]
+    ssl_multicert_yaml:
+      ssl_multicert:
+      - dest_ip: '*'
+        ssl_cert_name: server.pem
+        ssl_key_name: server.key
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key meta.txn_box.global {CONFIG_DIR}/tls-cert.test.yaml
+    remap_config:
+    - map https://alpha.ex/ https://alpha.ex:{SERVER_HTTPS_PORT}/
+    - map http://alpha.ex/ https://alpha.ex:{SERVER_HTTPS_PORT}/
+    - map http://charlie.ex/ https://charlie.ex:{SERVER_HTTPS_PORT}/

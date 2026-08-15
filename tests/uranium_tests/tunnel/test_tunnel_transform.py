@@ -14,202 +14,135 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory, wait_for_metric
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tunnel_transform(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TunnelTransformScenario:
+    """Compare a tunnel transform's byte metrics with an external observer."""
 
-    import os
-    import subprocess
-    import sys
-    from ports import get_port
-    import re
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("Tunnel byte accounting requires a TCP client connection")
+        self._services = services
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._proxy = self.configure_proxy(services)
 
-    urtest.Summary = '''
-    Test the reported type of HTTP transactions and tunnels
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the TLS origin behind the blind tunnel."""
 
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
+        origin = services.origin("origin", ssl=True)
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"},
+        )
+        return origin
 
-    # Define default ATS. Disable the cache to simplify the test.
-    ts = urtest.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
-    ts.addSSLfile("../tls/ssl/server.pem")
-    ts.addSSLfile("../tls/ssl/server.key")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the SNI tunnel and byte-counting transform plugin."""
 
-    server = urtest.MakeOriginServer("server", ssl=True)
-    server2 = urtest.MakeOriginServer("server2")
+        ats = ats_factory.create("ts", enable_cache=False, enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY.parent / "tls" / "ssl" / "server.pem")
+        ats.copy_to_ssl(TEST_DIRECTORY.parent / "tls" / "ssl" / "server.key")
+        ats.copy_custom_plugin("{AtsTestPluginsDir}/tunnel_transform.so")
+        ats.plugin_config.add_line("tunnel_transform.so")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.http.connect_ports": str(self._origin.https_port),
+            })
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: tunnel-test\n"
+            f"    tunnel_route: localhost:{self._origin.https_port}\n",
+        )
+        ats.allow_private_connect()
+        return ats
 
-    urtest.testName = ""
-    request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    # expected response from the origin server
-    response_tunnel_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+    def configure_proxy(self, services: ServiceFactory) -> ProcessService:
+        """Create a byte-counting TCP forwarder in front of ATS."""
 
-    urtest.PrepareTestPlugin(os.path.join(urtest.Variables.AtsTestPluginsDir, 'tunnel_transform.so'), ts)
+        port = services.allocate_port()
+        self._proxy_port = port
+        return services.process(
+            "dumb-proxy",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "dumb_proxy.py",
+                "--listening_port",
+                str(port),
+                "--forwarding_port",
+                str(self._ats.https_port),
+            ),
+            ready_port=port,
+        )
 
-    # add response to the server dictionary
-    server.addResponse("sessionfile.log", request_tunnel_header, response_tunnel_header)
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'http|test',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
-        })
+    @staticmethod
+    def observed_bytes(output: str, key: str) -> int:
+        """Extract one direction's byte count from the proxy transcript."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        match = re.search(rf"{re.escape(key)}:\s+(\d+)", output)
+        assert match is not None, output
+        return int(match.group(1))
 
-    ts.Disk.sni_yaml.AddLines([
-        'sni:',
-        '- fqdn: tunnel-test',
-        "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
-    ])
-    ts.addPrivateConnectAllowYaml()
+    @staticmethod
+    def metric(ats: ATS, name: str) -> int:
+        """Read one integer ATS metric."""
 
-    # Set up simple forwarding proxy to keep track of TLS bytes for both
-    # directions
-    tr = urtest.AddTestRun("Run dumb proxy and send tunnel request.")
-    tr.Setup.CopyAs('dumb_proxy.py', tr.RunDirectory)
-    dumb_proxy = tr.Processes.Process(f'dumb-proxy')
-    proxy_port = get_port(dumb_proxy, "listening_port")
-    dumb_proxy.Command = f'{sys.executable} dumb_proxy.py --listening_port {proxy_port} --forwarding_port {ts.Variables.ssl_port}'
-    dumb_proxy.StartBefore(urtest.Processes.ts)
-    dumb_proxy.Ready = When.PortOpenv4(proxy_port)
-    dumb_proxy.ReturnCode = 0
-    # Record the log file path for later verification.
-    proxy_output = dumb_proxy.Streams.stdout.AbsPath
+        result = ats.traffic_ctl("metric", "get", name)
+        assert result.returncode == 0, result.output
+        return int(result.stdout.split()[-1])
 
-    # Add connection close to ensure that the client connection closes promptly after completing the transaction
-    cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
-        proxy_port)
+    def run(self) -> None:
+        """Drive one tunnel and compare plugin and wire-observer byte counts."""
 
-    # Send the tunnel request
-    tr.Processes.Default.Env = ts.Env
-    tr.MakeCurlCommand(cmd_tunnel, ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.TimeOut = 10
-    tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.SSL_Port))
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(dumb_proxy)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
+        self._origin.start()
+        self._ats.start()
+        self._proxy.start()
+        result = self._curl.run_for(
+            self._ats,
+            "--insecure",
+            "--http1.1",
+            "--header",
+            "Connection: close",
+            "--verbose",
+            "--silent",
+            "--resolve",
+            f"tunnel-test:{self._proxy_port}:127.0.0.1",
+            f"https://tunnel-test:{self._proxy_port}/",
+        )
+        assert result.returncode == 0, result.output
+        proxy_result = self._proxy.wait(timeout=10)
 
-    # Signal that all the curl processes have completed
-    tr = urtest.AddTestRun("Curl Done")
-    tr.DelayStart = 2  # Delaying a couple seconds to make sure the global continuation's lock contention resolves.
-    tr.Processes.Default.Command = "traffic_ctl plugin msg done done"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
+        done = self._ats.traffic_ctl("plugin", "msg", "done", "done")
+        assert done.returncode == 0, done.output
+        wait_for_metric(self._ats, "tunnel_transform.test.done", 1)
+        wait_for_metric(self._ats, "tunnel_transform.error", 0)
+        assert self.metric(self._ats,
+                           "tunnel_transform.ua.bytes_sent") == self.observed_bytes(proxy_result.output, "client-to-server")
+        assert self.metric(self._ats,
+                           "tunnel_transform.os.bytes_sent") == self.observed_bytes(proxy_result.output, "server-to-client")
 
-    # Parking this as a ready tester on a meaningless process
-    # To stall the test runs that check for the stats until the
-    # stats have propagated and are ready to read.
 
-    def make_done_stat_ready(tsenv):
+def test_tunnel_transform(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Tunnel transforms report the exact encrypted byte counts on the wire."""
 
-        def done_stat_ready(process, hasRunFor, **kw):
-            retval = subprocess.run(
-                "traffic_ctl metric get tunnel_transform.test.done",
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                env=tsenv)
-            return b'1' in retval.stdout
-
-        return done_stat_ready
-
-    # number of sessions/transactions opened and closed are equal
-    tr = urtest.AddTestRun("Check type errors")
-    server2.StartupTimeout = 60
-    # Again, here the important thing is the ready function not the server2 process
-    tr.Processes.Default.StartBefore(server2, ready=make_done_stat_ready(ts.Env))
-    tr.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.error'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-        'tunnel_transform.error 0', 'incorrect statistic return, or possible error.')
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    def get_expected_bytes(path_to_proxy_output, key):
-        # Construct the regex pattern.
-        pattern = re.compile(rf'{re.escape(key)}:\s+(\d+)')
-        with open(path_to_proxy_output, 'r') as file:
-            log_content = file.read()
-        bytes_transferred = 0
-        match = pattern.search(log_content)
-        if match:
-            bytes_transferred = int(match.group(1))
-        return bytes_transferred
-
-    def check_byte_count(plugin_metric_path, proxy_output_path, key):
-        expected_bytes = get_expected_bytes(proxy_output_path, key)
-        f = open(plugin_metric_path, 'r')
-        content = f.read()
-        values = content.split()
-        f.close()
-        if len(values) == 2:
-            val = int(values[1])
-            return val == expected_bytes, "Check byte count", "Byte count does not match the expected value"
-        else:
-            return False, "Check byte count", "Unexpected metrics output format"
-
-    tr = urtest.AddTestRun("Fetch bytes sent")
-    tr.Processes.Default.Command = "traffic_ctl metric get tunnel_transform.ua.bytes_sent"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    path1 = tr.Processes.Default.Streams.stdout.AbsPath
-
-    tr2 = urtest.AddTestRun("Check the input bytes sent and fetch outptut bytes sent")
-    tr2.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.os.bytes_sent'
-    tr2.Processes.Default.ReturnCode = 0
-    tr2.Processes.Default.Env = ts.Env
-    tr2.StillRunningAfter = ts
-    tr2.StillRunningAfter = server
-    tr2.Processes.Default.Streams.stdout = Testers.Lambda(
-        lambda info, tester: check_byte_count(path1, proxy_output, 'client-to-server'))
-
-    path2 = tr2.Processes.Default.Streams.stdout.AbsPath
-
-    tr = urtest.AddTestRun("Check that output bytes sent")
-    tr.Processes.Default.Command = 'echo foo'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Env = ts.Env
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.Processes.Default.Streams.stdout = Testers.Lambda(
-        lambda info, tester: check_byte_count(path2, proxy_output, 'server-to-client'))
-    urtest.execute()
+    TunnelTransformScenario(ats_factory, services, curl).run()

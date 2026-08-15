@@ -17,15 +17,32 @@
 from tools.uranium.services import ATSFactory, Curl
 
 
-def test_multiple_traffic_servers_run_concurrently(ats_factory: ATSFactory, curl: Curl) -> None:
+class ConcurrentTrafficServersScenario:
     """Verify that two independently configured Traffic Servers can run together."""
 
-    servers = [ats_factory.create("ts1"), ats_factory.create("ts2")]
-    for server in servers:
-        server.start()
+    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
+        self.ats_factory = ats_factory
+        self.curl = curl
 
-    for server in servers:
-        result = curl.get(server)
+    def _configure_traffic_servers(self) -> None:
+        self.servers = [self.ats_factory.create("ts1"), self.ats_factory.create("ts2")]
 
-        assert result.returncode == 0, result.output
-        assert all(instance.is_running for instance in servers)
+    def _start_traffic_servers(self) -> None:
+        for server in self.servers:
+            server.start()
+
+    def _verify_traffic_servers_accept_requests(self) -> None:
+        for server in self.servers:
+            result = self.curl.get(server)
+
+            assert result.returncode == 0, result.output
+            assert all(instance.is_running for instance in self.servers)
+
+    def run(self) -> None:
+        self._configure_traffic_servers()
+        self._start_traffic_servers()
+        self._verify_traffic_servers_accept_requests()
+
+
+def test_multiple_traffic_servers_run_concurrently(ats_factory: ATSFactory, curl: Curl) -> None:
+    ConcurrentTrafficServersScenario(ats_factory, curl).run()

@@ -14,173 +14,130 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_ssl_multicert_loader(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SslMulticertLoaderScenario:
+    """Exercise failed reload retention, startup failure, and parallel loading."""
 
-    urtest.Summary = '''
-    Test reloading ssl_multicert.yaml with errors and keeping around the old ssl config structure
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        self._curl = curl
 
-    sni_domain = 'example.com'
+    @staticmethod
+    def configure_origin(services: ServiceFactory, name: str) -> OriginServer:
+        """Create an origin for the TLS listener smoke requests."""
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, disable_log_checks=True)
-    server = urtest.MakeOriginServer("server")
-    server2 = urtest.MakeOriginServer("server2")
-    request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+        origin = services.origin(name)
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+    @staticmethod
+    def configure_valid_ats(ats_factory: ATSFactory, name: str, origin: OriginServer) -> ATS:
+        """Configure a TLS listener with the default certificate."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-            'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-            'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
-        })
+        ats = ats_factory.create(name, enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.multicert.exit_on_load_fail": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.http_port}")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        return ats
 
-    ts.addDefaultSSLFiles()
+    def request(self, ats: ATS) -> None:
+        """Require the configured example.com certificate and a good response."""
 
-    ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
+        result = self._curl.run_for(
+            ats,
+            "--silent",
+            "--verbose",
+            "--insecure",
+            "--resolve",
+            f"example.com:{ats.https_port}:127.0.0.1",
+            f"https://example.com:{ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        assert "Could Not Connect" not in result.stdout
+        assert "CN=example.com" in result.stderr
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def check_failed_reload_retains_old_context(self) -> None:
+        """Fail a certificate reload and verify the old context still serves."""
 
-    tr = urtest.AddTestRun("ensure we can connect for SNI $sni_domain")
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-    tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+        origin = self.configure_origin(self._services, "server")
+        ats = self.configure_valid_ats(self._ats_factory, "ts", origin)
+        origin.start()
+        ats.start()
+        self.request(ats)
 
-    tr2 = urtest.AddTestRun("Update config files")
-    # Update the configs - overwrite the ssl_multicert.yaml file with an invalid config
-    sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
+        ats.write_config_file(
+            "ssl_multicert.yaml",
+            "ssl_multicert:\n"
+            "  - ssl_cert_name: server_does_not_exist.pem\n"
+            "    ssl_key_name: server_does_not_exist.key\n"
+            '  - dest_ip: "*"\n'
+            "    ssl_cert_name: server.pem_doesnotexist\n"
+            "    ssl_key_name: server.key\n",
+        )
+        reload_result = ats.traffic_ctl("config", "reload", "-t", "invalid_multicert")
+        assert reload_result.returncode == 0, reload_result.output
+        time.sleep(3)
+        self.request(ats)
+        diagnostics = ats.diags_log.read_text(errors="replace")
+        assert "(quic)" not in "\n".join(line for line in diagnostics.splitlines() if "ssl_multicert" in line)
 
-    tr2.Disk.File(sslcertpath, id="ssl_multicert_update", typename="ats:config")
-    tr2.Disk.ssl_multicert_update.AddLines(
-        """
-    ssl_multicert:
-      - ssl_cert_name: server_does_not_exist.pem
-        ssl_key_name: server_does_not_exist.key
-      - dest_ip: "*"
-        ssl_cert_name: server.pem_doesnotexist
-        ssl_key_name: server.key
-    """.split("\n"))
-    tr2.StillRunningAfter = ts
-    tr2.StillRunningAfter = server
-    tr2.Processes.Default.Command = 'echo Updated configs'
-    tr2.Processes.Default.Env = ts.Env
-    tr2.Processes.Default.ReturnCode = 0
+    def check_invalid_startup_fails(self) -> None:
+        """Require the default exit-on-load-failure behavior."""
 
-    tr2reload = urtest.AddConfigReload(ts, expect="fail", expect_tasks=["ssl_multicert.yaml"], description="Reload config")
-    tr2reload.StillRunningAfter = server
+        ats = self._ats_factory.create("ts2", enable_tls=True)
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem_doesnotexist",
+                "    ssl_key_name: server.key",
+            ))
+        ats.expect_start_failure("EMERGENCY: failed to load SSL certificate file", return_code=33)
+        ats.start()
 
-    # Reload of ssl_multicert.yaml should fail, BUT the old config structure
-    # should be in place to successfully answer for the test domain
-    tr3 = urtest.AddTestRun("Make request again for $sni_domain")
-    tr3.Processes.Default.StartBefore(server2)
-    tr3.StillRunningAfter = ts
-    tr3.StillRunningAfter = server
-    tr3.MakeCurlCommand(
-        f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
-        ts=ts)
-    tr3.Processes.Default.ReturnCode = 0
-    tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-    tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
-    ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-        r'\(quic\).*ssl_multicert', 'QUIC certificates should not load without a configured QUIC listener')
+    def check_parallel_loading(self) -> None:
+        """Load multiple certificate entries during startup."""
 
-    ##########################################################################
-    # Ensure ATS fails/exits when non-existent cert is specified
-    # Also, not explicitly setting proxy.config.ssl.server.multicert.exit_on_load_fail
-    # to catch if the current default (1) changes in the future
+        origin = self.configure_origin(self._services, "server3")
+        ats = self.configure_valid_ats(self._ats_factory, "ts3", origin)
+        ats.ssl_multicert_config.add_lines((
+            "  - ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        ))
+        origin.start()
+        ats.start()
+        self.request(ats)
+        assert "loaded 2 certs" in ats.diags_log.read_text(errors="replace")
 
-    ts2 = urtest.MakeATSProcess("ts2", enable_tls=True)
-    ts2.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem_doesnotexist
-        ssl_key_name: server.key
-    """.split("\n"))
+    def run(self) -> None:
+        """Run every ssl_multicert loader behavior."""
 
-    tr4 = urtest.AddTestRun()
-    tr4.Processes.Default.Command = 'echo Waiting'
-    tr4.Processes.Default.ReturnCode = 0
-    tr4.Processes.Default.StartBefore(ts2)
+        self.check_failed_reload_retains_old_context()
+        self.check_invalid_startup_fails()
+        self.check_parallel_loading()
 
-    ts2.ReturnCode = 33  # ink_emergency will exit with UNRECOVERABLE_EXIT.
-    ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
-    ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
-        'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
-    ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to load SSL certificate file', 'check diags.log"')
 
-    ##########################################################################
-    # Verify parallel cert loading on startup (firstLoad uses hardware_concurrency,
-    # not the configured concurrency value, so the thread count is host-dependent)
+def test_ssl_multicert_loader(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Certificate reload failures retain old contexts and startup remains strict."""
 
-    ts3 = urtest.MakeATSProcess("ts3", enable_tls=True)
-    server3 = urtest.MakeOriginServer("server3")
-    server3.addResponse("sessionlog.json", request_header, response_header)
-
-    ts3.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': f'{ts3.Variables.SSLDir}',
-            'proxy.config.ssl.server.private_key.path': f'{ts3.Variables.SSLDir}',
-        })
-
-    ts3.addDefaultSSLFiles()
-
-    ts3.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server3.Variables.Port}')
-
-    # Need at least 2 certs for multi-threading to kick in
-    ts3.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-      - ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-    tr5 = urtest.AddTestRun("Verify parallel cert loading")
-    tr5.Processes.Default.StartBefore(ts3)
-    tr5.Processes.Default.StartBefore(server3)
-    tr5.StillRunningAfter = ts3
-    tr5.StillRunningAfter = server3
-    tr5.MakeCurlCommand(
-        f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts3.Variables.ssl_port}",
-        ts=ts3)
-    tr5.Processes.Default.ReturnCode = 0
-    tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
-    tr5.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
-    ts3.Disk.diags_log.Content = Testers.IncludesExpression('loaded 2 certs', 'verify certs were loaded successfully')
-    urtest.execute()
+    SslMulticertLoaderScenario(ats_factory, services, curl).run()

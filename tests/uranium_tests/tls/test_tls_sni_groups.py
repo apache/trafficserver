@@ -14,122 +14,108 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_sni_groups(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+def openssl_at_least(required: tuple[int, ...]) -> bool:
+    """Return whether the runtime OpenSSL version is at least @a required."""
 
-    urtest.Summary = '''
-    Test SNI configuration server_groups_list
-    '''
-    # The groups function was added in OpenSSL 1.1.1
-    urtest.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
+    output = subprocess.check_output(("openssl", "version"), text=True)
+    match = re.search(r"\d+(?:\.\d+)+", output)
+    return match is not None and tuple(int(part) for part in match.group().split(".")) >= required
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server", ssl=True)
 
-    request_header = {"headers": "GET / HTTP/1.1\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
-    server.addResponse("sessionlog.json", request_header, response_header)
+class TlsSniGroupsScenario:
+    """Verify per-SNI TLS group selection and invalid-group rejection."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
+    def __init__(self, ats_factory: ATSFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("TLS SNI handshake coverage requires a TCP listener")
+        if not openssl_at_least((1, 1, 1)):
+            pytest.skip("OpenSSL 1.1.1 or newer is required")
+        self._curl = curl
+        self._ats = self.configure_ats(ats_factory)
 
-    # Need no remap rules.  Everything should be processed by sni
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure TLS group and cipher policy for three SNI names."""
 
-    # Make sure the TS server certs are different from the origin certs
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl_sni',
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "ssl_sni",
         })
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "- fqdn: aaa.com\n"
+            "  server_groups_list: X25519MLKEM768\n"
+            "  valid_tls_versions_in: [ TLSv1_3 ]\n"
+            "  server_TLSv1_3_cipher_suites: TLS_AES_256_GCM_SHA384\n"
+            "- fqdn: bbb.com\n"
+            "  server_groups_list: x25519\n"
+            "  valid_tls_versions_in: [ TLSv1_2 ]\n"
+            "  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384\n"
+            "- fqdn: ccc.com\n"
+            "  server_groups_list: ABC123\n"
+            "  valid_tls_versions_in: [ TLSv1_2 ]\n"
+            "  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384\n",
+        )
+        return ats
 
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: aaa.com',
-            '  server_groups_list: X25519MLKEM768',
-            '  valid_tls_versions_in: [ TLSv1_3 ]',
-            '  server_TLSv1_3_cipher_suites: TLS_AES_256_GCM_SHA384',
-            '- fqdn: bbb.com',
-            '  server_groups_list: x25519',
-            '  valid_tls_versions_in: [ TLSv1_2 ]',
-            '  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384',
-            '- fqdn: ccc.com',
-            '  server_groups_list: ABC123',
-            '  valid_tls_versions_in: [ TLSv1_2 ]',
-            '  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384',
-        ])
+    def request(self, hostname: str, *cipher_options: str) -> str:
+        """Run curl with @a hostname and selected cipher options."""
 
-    tr = urtest.AddTestRun("Test 0: x25519")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(
-        "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'bbb.com:{0}:127.0.0.1' -k  https://bbb.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
-    tr.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Setting groups list from server_groups_list to x25519", "Should log setting the server groups")
-    tr.Processes.Default.Streams.all = Testers.IncludesExpression(
-        f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519",
-        "Curl should log using x25519 in the SSL connection")
+        result = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            *cipher_options,
+            "--resolve",
+            f"{hostname}:{self._ats.https_port}:127.0.0.1",
+            "--insecure",
+            f"https://{hostname}:{self._ats.https_port}",
+        )
+        if hostname == "ccc.com":
+            assert result.returncode == 35, result.output
+        else:
+            assert result.returncode == 0, result.output
+        return result.output
 
-    tr = urtest.AddTestRun("Test 1: fail")
-    tr.MakeCurlCommand(
-        "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'ccc.com:{0}:127.0.0.1' -k  https://ccc.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
-    # The error code is 35, which indicates there was a ssl connection error
-    tr.ReturnCode = 35
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        "ERROR: Invalid server_groups_list: ABC123", "Curl attempt should have failed")
+    def run(self) -> None:
+        """Exercise a valid TLS 1.2 group, an invalid group, and PQ support."""
 
-    # Hybrid ECDH PQ key exchange TLS groups were added in OpenSSL 3.5
-    if Condition.HasOpenSSLVersion("3.5.0"):
-        tr = urtest.AddTestRun("Test 2: X25519MLKEM768")
-        tr.MakeCurlCommand(
-            "-v --tls13-ciphers TLS_AES_256_GCM_SHA384 --resolve 'aaa.com:{0}:127.0.0.1' -k  https://aaa.com:{0}".format(
-                ts.Variables.ssl_port),
-            ts=ts)
-        tr.ReturnCode = 0
-        tr.StillRunningAfter = ts
-        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups")
-        tr.Processes.Default.Streams.all = Testers.IncludesExpression(
-            f"SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768",
-            f"Curl should log using X25519MLKEM768 in the SSL connection")
-    urtest.execute()
+        self._ats.start()
+        output = self.request("bbb.com", "--ciphers", "ECDHE-RSA-AES256-GCM-SHA384")
+        assert "SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519" in output
+        self.request("ccc.com", "--ciphers", "ECDHE-RSA-AES256-GCM-SHA384")
+
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        assert "Setting groups list from server_groups_list to x25519" in traffic_out
+        assert "ERROR: Invalid server_groups_list: ABC123" in self._ats.diags_log.read_text(errors="replace")
+
+        if openssl_at_least((3, 5, 0)):
+            output = self.request("aaa.com", "--tls13-ciphers", "TLS_AES_256_GCM_SHA384")
+            assert "SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768" in output
+            traffic_out = self._ats.traffic_out.read_text(errors="replace")
+            assert "Setting groups list from server_groups_list to X25519MLKEM768" in traffic_out
+
+
+def test_tls_sni_groups(ats_factory: ATSFactory, curl: Curl) -> None:
+    """SNI policy selects supported TLS groups and rejects invalid ones."""
+
+    TlsSniGroupsScenario(ats_factory, curl).run()

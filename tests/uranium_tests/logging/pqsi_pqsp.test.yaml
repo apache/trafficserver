@@ -1,0 +1,71 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Verify pqsi and pqsp fields on cache miss and hit"
+  server: {name: "origin"}
+  client: {name: "client"}
+  ats:
+    name: "ts"
+    records_config:
+      proxy.config.http.cache.http: 1
+      proxy.config.http.cache.required_headers: 0
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    logging_yaml:
+      logging:
+        formats:
+          - {name: "custom", format: "%<pqsi> %<pqsp>"}
+        logs:
+          - {filename: "field-test", format: "custom"}
+    file_checks:
+      - path: "{LOG_DIR}/field-test.log"
+        line_count_min: 2
+        timeout: 10
+        matches:
+          - {expression: '^127\.0\.0\.1 [1-6][0-9]*$', min: 1, max: 1}
+          - {expression: '^0 0$', min: 1, max: 1}
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, pqsi-miss]]}}
+        client-request:
+          method: GET
+          url: /test
+          version: "1.1"
+          headers: {fields: [[Host, whatever]]}
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [Cache-Control, "max-age=3600"]
+              - [Content-Length, 5]
+          content: {data: "body\n", size: 5}
+        proxy-response: {status: 200}
+      - all: {headers: {fields: [[uuid, pqsi-hit]]}}
+        client-request:
+          delay: 500ms
+          method: GET
+          url: /test
+          version: "1.1"
+          headers: {fields: [[Host, whatever]]}
+        server-response: {status: 503}
+        proxy-response:
+          status: 200
+          content: {data: "body\n", size: 5}

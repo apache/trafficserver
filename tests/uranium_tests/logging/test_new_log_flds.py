@@ -14,129 +14,113 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import subprocess
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, HttpBinServer, ServiceFactory, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_new_log_flds(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class NewLogFieldsScenario:
+    """Validate process, connection, transaction, and SNI log fields."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if not Curl.supports("http2"):
+            pytest.skip("curl with HTTP/2 support is required")
+        self._curl = curl
+        self._httpbin = self.configure_httpbin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test new log fields
-    '''
+    def configure_httpbin(self, services: ServiceFactory) -> HttpBinServer:
+        """Create the common `/ip` origin."""
 
-    urtest.SkipUnless(Condition.HasCurlFeature('http2'))
+        return services.httpbin("httpbin")
 
-    # ----
-    # Setup httpbin Origin Server
-    # ----
-    httpbin = urtest.MakeHttpBinServer("httpbin")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure HTTP/TLS routes and the four-field access log."""
 
-    # ----
-    # Setup ATS
-    # ----
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-
-    ts.addDefaultSSLFiles()
-
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'snowflake|http',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "snowflake|http",
         })
-
-    ts.Disk.remap_config.AddLine(
-        'map http://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.port, httpbin.Variables.Port))
-
-    ts.Disk.remap_config.AddLine(
-        'map https://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port))
-
-    ts.Disk.remap_config.AddLine(
-        'map https://reallyreallyreallyreallylong.com http://127.0.0.1:{1}/ip'.format(
-            ts.Variables.ssl_port, httpbin.Variables.Port))
-
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-    ts.Disk.logging_yaml.AddLines(
-        '''
-    logging:
-      formats:
-        - name: custom
-          format: "%<psfid> %<ccid> %<ctid> %<cssn>"
-      logs:
-        - filename: test_new_log_flds
-          format: custom
-    '''.split("\n"))
-
-    tr = urtest.AddTestRun()
-    # Delay on readiness of ssl port
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(httpbin)
-    #
-    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-
-    tr = urtest.AddTestRun()
-    tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-
-    tr = urtest.AddTestRun()
-    tr.MakeCurlCommand('"http://127.0.0.1:{0}" "http://127.0.0.1:{0}" --http1.1 --verbose'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-
-    if not Condition.CurlUsingUnixDomainSocket():
-        tr = urtest.AddTestRun()
-        tr.MakeCurlCommand(
-            '"https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port), ts=ts)
-        tr.Processes.Default.ReturnCode = 0
-
-        tr = urtest.AddTestRun()
-        tr.MakeCurlCommand(
+        ats.remap_config.add_lines(
             (
-                '"https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
-                ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1').format(ts.Variables.ssl_port),
-            ts=ts)
-        tr.Processes.Default.ReturnCode = 0
+                f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{self._httpbin.port}/ip",
+                f"map https://127.0.0.1:{ats.https_port} http://127.0.0.1:{self._httpbin.port}/ip",
+                f"map https://reallyreallyreallyreallylong.com http://127.0.0.1:{self._httpbin.port}/ip",
+            ))
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats": [{
+                            "name": "custom",
+                            "format": "%<psfid> %<ccid> %<ctid> %<cssn>"
+                        }],
+                        "logs": [{
+                            "filename": "test_new_log_flds",
+                            "format": "custom"
+                        }],
+                    }
+            })
+        return ats
 
-    # Wait for the final log line to be written.
-    #
-    urtest.AddAwaitFileContainsTestRun(
-        'Await new log field output.',
-        os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'),
-        r'reallyreallyreallyreallylong\.com$',
-    )
+    def request(self, *arguments: str) -> None:
+        """Run curl and require a successful transaction."""
 
-    # Validate generated log.
-    #
-    tr = urtest.AddTestRun()
-    observer_script = os.path.join(urtest.TestDirectory, 'new_log_flds_observer.py')
-    log_path = os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log')
-    tr.Processes.Default.Command = f'{sys.executable} {observer_script} < {log_path}'
-    tr.Processes.Default.ReturnCode = 0
-    urtest.execute()
+        result = self._curl.run_for(self._ats, *arguments)
+        assert result.returncode == 0, result.output
+
+    def run(self) -> None:
+        """Generate the expected connection patterns and run the observer."""
+
+        self._httpbin.start()
+        self._ats.start()
+        http_url = f"http://127.0.0.1:{self._ats.http_port}"
+        self.request("--verbose", http_url)
+        self.request("--verbose", http_url)
+        self.request("--http1.1", "--verbose", http_url, http_url)
+        expected_lines = 4
+        if not self._curl.uses_uds:
+            https_url = f"https://127.0.0.1:{self._ats.https_port}"
+            self.request("--http2", "--insecure", "--verbose", https_url, https_url)
+            hostname = "reallyreallyreallyreallylong.com"
+            self.request(
+                "--http2",
+                "--insecure",
+                "--verbose",
+                "--resolve",
+                f"{hostname}:{self._ats.https_port}:127.0.0.1",
+                f"https://{hostname}:{self._ats.https_port}",
+            )
+            expected_lines = 7
+
+        log_path = self._ats.log_directory / "test_new_log_flds.log"
+        content = wait_for_file_lines(log_path, r"^\S+ \d+ \d+ \S+$", expected_lines, timeout=10)
+        observer = subprocess.run(
+            (sys.executable, TEST_DIRECTORY / "new_log_flds_observer.py"),
+            input=content,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert observer.returncode == 0, observer.stdout + observer.stderr
+
+
+def test_new_log_flds(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """The new log fields describe process, connection, transaction, and SNI state."""
+
+    NewLogFieldsScenario(ats_factory, services, curl).run()

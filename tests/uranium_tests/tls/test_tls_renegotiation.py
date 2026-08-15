@@ -14,139 +14,114 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import ssl
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_renegotiation(urtest: UraniumTest) -> None:
-    '''
-    With client renegotiation disallowed (the default), a TLSv1.2 client that asks to
-    renegotiate must have its connection refused without taking down the server.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsRenegotiationRefusedScenario:
+    """Verify refused client renegotiation does not crash ATS."""
 
-    import os
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        version = re.search(r"\d+(?:\.\d+)+", ssl.OPENSSL_VERSION)
+        if version is None or tuple(int(part) for part in version.group().split(".")) < (1, 1, 1):
+            pytest.skip("OpenSSL 1.1.1 or newer is required")
+        if curl.uses_uds:
+            pytest.skip("TLS renegotiation requires a TCP listener")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.Summary = __doc__
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the normal response used after renegotiation is refused."""
 
-    # Renegotiation only exists in TLS 1.2 and earlier.
-    urtest.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"), Condition.HasLegacyTLSSupport())
-
-    class TestRenegotiationRefused:
-        '''Verify a refused client-initiated renegotiation does not crash ATS.'''
-
-        _server_counter: int = 0
-        _ts_counter: int = 0
-
-        def __init__(self) -> None:
-            '''Declare the test Processes.'''
-            self._server = self._configure_server()
-            self._ts = self._configure_trafficserver()
-
-        def _configure_server(self) -> 'Process':
-            '''Configure the origin server.
-
-            :return: The origin server Process.
-            '''
-            server = urtest.MakeOriginServer(f'server-{TestRenegotiationRefused._server_counter}')
-            TestRenegotiationRefused._server_counter += 1
-
-            request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-            response_header = {
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+            {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "timestamp": "1469733493.993",
                 "body": "ok"
-            }
-            server.addResponse("sessionlog.json", request_header, response_header)
-            return server
+            },
+        )
+        return origin
 
-        def _configure_trafficserver(self) -> 'Process':
-            '''Configure Traffic Server to refuse client renegotiation (the default).
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Disable client renegotiation while retaining TLS 1.2."""
 
-            :return: The Traffic Server Process.
-            '''
-            ts = urtest.MakeATSProcess(f'ts-{TestRenegotiationRefused._ts_counter}', enable_tls=True)
-            TestRenegotiationRefused._ts_counter += 1
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(TEST_DIRECTORY / "ssl" / "server.pem", TEST_DIRECTORY / "ssl" / "server.key")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.ssl.allow_client_renegotiation": 0,
+                "proxy.config.ssl.TLSv1_3.enabled": 0,
+                "proxy.config.ssl.TLSv1_2": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl_load",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        return ats
 
-            ts.addSSLfile("ssl/server.pem")
-            ts.addSSLfile("ssl/server.key")
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-                    # The secure default: never honor a client-initiated renegotiation.
-                    'proxy.config.ssl.allow_client_renegotiation': 0,
-                    # Renegotiation requires a sub-TLS1.3 protocol.
-                    'proxy.config.ssl.TLSv1_3.enabled': 0,
-                    'proxy.config.ssl.TLSv1_2': 1,
-                    # So the renegotiation-detection log line below is emitted.
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'ssl_load',
-                })
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the TLS 1.2 client that requests renegotiation."""
 
-            # The refused renegotiation must not abort the process.
-            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-                "received signal|failed assertion", "ATS must refuse the renegotiation without crashing")
-            # ...and, on OpenSSL, it must actually reach ATS's renegotiation-detection
-            # path (otherwise a no-crash pass could mean the client never managed to
-            # renegotiate at all). BoringSSL rejects a peer-initiated renegotiation inside
-            # the library before ATS's info callback runs -- SSL_get_state() there only
-            # ever returns SSL_ST_INIT or SSL_ST_OK, never SSL_ST_RENEGOTIATE -- so the
-            # detection line is never logged. The no-crash check above still covers it.
-            if Condition.IsOpenSSL():
-                ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                    "trying to renegotiate from the client", "ATS must detect the client-initiated renegotiation")
-            return ts
+        return services.process(
+            "renegotiation-client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "tls_renegotiation_client.py",
+                "-p",
+                str(self._ats.https_port),
+                "-s",
+                "example.com",
+            ),
+        )
 
-        def run(self) -> None:
-            '''Configure and run the TestRuns.'''
-            # Complete a TLSv1.2 handshake, then ask to renegotiate. ATS must detect
-            # and refuse the renegotiation without aborting the process.
-            tr = urtest.AddTestRun("client renegotiation is refused without crashing ATS")
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.Processes.Default.Command = (
-                f'{sys.executable} {os.path.join(urtest.TestDirectory, "tls_renegotiation_client.py")} '
-                f'-p {self._ts.Variables.ssl_port} -s example.com')
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+    def run(self) -> None:
+        """Refuse renegotiation, then serve an ordinary request."""
 
-            # ATS survived, so a normal request still succeeds.
-            tr = urtest.AddTestRun("server still serves requests after the refused renegotiation")
-            tr.MakeCurlCommand(
-                (
-                    "-v --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 -k "
-                    f"--resolve 'example.com:{self._ts.Variables.ssl_port}:127.0.0.1' "
-                    f"https://example.com:{self._ts.Variables.ssl_port}/"),
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            # curl -v writes the response status line to stderr.
-            tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-                "HTTP/1.1 200 OK", "request after renegotiation should succeed")
-            tr.StillRunningAfter = self._ts
+        self._origin.start()
+        self._ats.start()
+        renegotiation = self._client.run(timeout=20)
+        assert renegotiation.returncode == 0, renegotiation.output
 
-    TestRenegotiationRefused().run()
-    urtest.execute()
+        result = self._curl.run_for(
+            self._ats,
+            "--verbose",
+            "--http1.1",
+            "--tls-max",
+            "1.2",
+            "--tlsv1.2",
+            "--ciphers",
+            "DEFAULT@SECLEVEL=0",
+            "--insecure",
+            "--resolve",
+            f"example.com:{self._ats.https_port}:127.0.0.1",
+            f"https://example.com:{self._ats.https_port}/",
+        )
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 200 OK" in result.stderr
+        traffic_out = self._ats.traffic_out.read_text(errors="replace")
+        assert "received signal" not in traffic_out and "failed assertion" not in traffic_out
+        if "BoringSSL" not in ssl.OPENSSL_VERSION:
+            assert "trying to renegotiate from the client" in traffic_out
+
+
+def test_tls_renegotiation(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Disallowed client renegotiation is refused without taking down ATS."""
+
+    TlsRenegotiationRefusedScenario(ats_factory, services, curl).run()

@@ -1,0 +1,108 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify ip_allow across HTTP methods, Proxy Protocol, and HTTP/3"
+  replay: replays/https_multiple_methods.replay.yaml
+  server:
+    name: origin
+  client:
+    name: client
+  ats:
+    name: ts
+    process_config:
+      enable_tls: true
+      enable_cache: true
+      enable_proxy_protocol: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: v_quic|quic|http|ip_allow|proxyprotocol
+      proxy.config.http.push_method_enabled: 1
+      proxy.config.ssl.client.verify.server.policy: PERMISSIVE
+      proxy.config.http.connect_ports: "{SERVER_HTTP_PORT}"
+      proxy.config.acl.subjects: PROXY,PEER
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}"
+
+  variants:
+    - name: methods-unspecified
+      ats:
+        ip_allow_yaml:
+          ip_allow:
+            - apply: in
+              ip_addrs: 0/0
+              action: allow
+
+    - name: proxy-protocol-source
+      replay: replays/http_proxy_protocol.replay.yaml
+      client:
+        process_config:
+          http_ports: ["{ATS_PROXY_PROTOCOL_PORT}"]
+          https_ports: []
+      ats:
+        ip_allow_yaml:
+          ip_allow:
+            - apply: in
+              ip_addrs: 1.2.3.4
+              action: allow
+            - apply: in
+              ip_addrs: 0/0
+              action: deny
+
+    - name: h3-allow
+      replay: replays/h3.replay.yaml
+      requires:
+        ats_features: [TS_USE_QUIC]
+        curl_features: [http3]
+      ats:
+        process_config:
+          enable_quic: true
+        records_config:
+          proxy.config.quic.no_activity_timeout_in: 0
+        ip_allow_yaml: &allow-all
+          ip_allow:
+            - apply: in
+              ip_addrs: 0/0
+              action: allow
+              methods: ALL
+
+    - name: h3-deny
+      replay: replays/h3.replay.yaml
+      requires:
+        ats_features: [TS_USE_QUIC]
+        curl_features: [http3]
+      client:
+        return_code: 1
+        process_config:
+          allow_errors: true
+      ats:
+        process_config:
+          enable_quic: true
+        records_config:
+          proxy.config.quic.no_activity_timeout_in: 0
+        ip_allow_yaml:
+          ip_allow:
+            - apply: in
+              ip_addrs: 0/0
+              action: deny
+              methods: ALL
+        log_validation:
+          diags_log:
+            contains:
+              - expression: "client.*prohibited by ip-allow policy"

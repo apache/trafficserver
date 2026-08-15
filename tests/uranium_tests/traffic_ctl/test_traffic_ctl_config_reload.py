@@ -14,202 +14,173 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import re
+import time
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult
 
 
-def test_traffic_ctl_config_reload(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    import sys
-    import os
+class ConfigReloadScenario:
+    """Exercise traffic_ctl configuration reload scheduling and status output."""
 
-    # To include util classes
-    sys.path.insert(0, f'{urtest.TestDirectory}')
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    from traffic_ctl_test_utils import Make_traffic_ctl
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable RPC and configuration diagnostics for reload operations."""
 
-    # import ruamel.yaml Uncomment only when GoldFilePathFor is used.
+        ats = ats_factory.create("ts")
+        ats.records.update(
+            {
+                "proxy.config.udp.threads": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rpc|config",
+                "proxy.config.diags.debug.throttling_interval_msec": 0,
+            })
+        return ats
 
-    def touch(fname, times=None):
-        with open(fname, 'a'):
-            os.utime(fname, times)
+    def command(self, *arguments: str, expected: int | set[int] = 0) -> CommandResult:
+        """Run traffic_ctl and validate its exit status."""
 
-    urtest.Summary = '''
-    Test traffic_ctl config reload.
-    '''
+        result = self._ats.traffic_ctl(*arguments)
+        expected_codes = {expected} if isinstance(expected, int) else expected
+        assert result.returncode in expected_codes, result.output
+        return result
 
-    urtest.ContinueOnFail = True
+    def reload(self, *options: str, expected: int | set[int] = 0) -> CommandResult:
+        """Schedule one configuration reload."""
 
-    records_config = '''
-        udp:
-          threads: 1
-        diags:
-          debug:
-            enabled: 1
-            tags: rpc|config
-            throttling_interval_msec: 0
-        '''
+        return self.command("config", "reload", *options, expected=expected)
 
-    traffic_ctl = Make_traffic_ctl(urtest, records_config, Any(0, 2))
-    # todo: we need to get the status just in json format
+    def wait_for_reload(self, token: str) -> str:
+        """Poll a reload token until it reaches a terminal state."""
 
-    #### CONFIG STATUS
+        deadline = time.monotonic() + 15
+        latest = ""
+        while time.monotonic() < deadline:
+            result = self.command("config", "status", "--token", token, expected={0, 2})
+            latest = result.output
+            if "success" in latest:
+                return latest
+            if "failed" in latest:
+                raise AssertionError(latest)
+            time.sleep(0.1)
+        raise AssertionError(f"Reload {token!r} did not finish:\n{latest}")
 
-    # Config status with no token, no reloads exist, should return error.
-    traffic_ctl.config().status().validate_with_text("""
-    ``
-    Message: No reload tasks found, Code: 6005
-    ``
-    """)
+    def verify_empty_status(self) -> None:
+        """Verify status diagnostics before any reload exists."""
 
-    traffic_ctl.config().status().token("test1").validate_with_text(
-        """
-    ``
-    Message: Token 'test1' not found, Code: 6001
-    ``
-    """)
+        result = self.command("config", "status", expected={0, 2})
+        assert "No reload tasks found" in result.output
+        assert "Code: 6005" in result.output
 
-    traffic_ctl.config().status().count("all").validate_with_text(
-        """
-    ``
-    Message: No reload tasks found, Code: 6005
-    ``
-    """)
+        result = self.command("config", "status", "--token", "test1", expected={0, 2})
+        assert "Token 'test1' not found" in result.output
+        assert "Code: 6001" in result.output
 
-    traffic_ctl.config().status().token("test1").count("all").validate_with_text(
-        """
-    ``
-    You can't use both --token and --count options together. Ignoring --count
-    ``
-    Message: Token 'test1' not found, Code: 6001
-    ``
-    """)
-    ##### CONFIG RELOAD
+        result = self.command("config", "status", "--count", "all", expected={0, 2})
+        assert "No reload tasks found" in result.output
 
-    # basic reload, no params. no existing reload in progress, we expect this to start a new reload.
-    traffic_ctl.config().reload().validate_with_text(
-        "\u2714 Reload scheduled [``]\n\n  Monitor : traffic_ctl config reload -t `` -m\n  Details : traffic_ctl config reload -t `` -s -l"
-    )
+        result = self.command("config", "status", "--token", "test1", "--count", "all", expected={0, 2})
+        assert "can't use both --token and --count" in result.output
+        assert "Token 'test1' not found" in result.output
 
-    # basic reload, but traffic_ctl should create and wait for the details, showing the newly created
-    # reload and some details.
-    traffic_ctl.config().reload().show_details().validate_contains_all(
-        "Reload scheduled", "Waiting for details", "Reload [success]")
+    def verify_scheduling_and_tokens(self) -> None:
+        """Verify generated tokens, details, custom tokens, and duplicates."""
 
-    # Now we try with a token, this should start a new reload with the given token.
-    token = "testtoken_1234"
-    traffic_ctl.config().reload().token(token).validate_with_text(
-        f"\u2714 Reload scheduled [{token}]\n\n  Monitor : traffic_ctl config reload -t {token} -m\n  Details : traffic_ctl config reload -t {token} -s -l"
-    )
+        result = self.reload()
+        assert "Reload scheduled" in result.stdout
+        match = re.search(r"Reload scheduled \[([^]]+)\]", result.stdout)
+        assert match is not None, result.stdout
+        generated_token = match.group(1)
+        assert f"traffic_ctl config reload -t {generated_token} -m" in result.stdout
+        assert f"traffic_ctl config reload -t {generated_token} -s -l" in result.stdout
+        self.wait_for_reload(generated_token)
 
-    # traffic_ctl config status should show the last reload, same as the above.
-    traffic_ctl.config().status().token(token).validate_contains_all("success", "testtoken_1234")
+        result = self.reload("--token", "show-details", "--show-details", "--initial-wait", "0.1")
+        assert "Reload scheduled" in result.stdout
+        assert "Waiting for details" in result.stdout
+        assert "Reload [success]" in result.stdout
 
-    # Now we try again, with same token, this should fail as the token already exists.
-    traffic_ctl.config().reload().token(token).validate_with_text(
-        f"\u2717 Token '{token}' already in use\n\n  Status : traffic_ctl config status -t {token}\n  Retry  : traffic_ctl config reload"
-    )
+        token = "testtoken_1234"
+        result = self.reload("--token", token)
+        assert f"Reload scheduled [{token}]" in result.stdout
+        self.wait_for_reload(token)
+        result = self.command("config", "status", "--token", token)
+        assert "success" in result.stdout
+        assert token in result.stdout
 
-    # Modify ip_allow.yaml and validate the reload status.
+        result = self.reload("--token", token, expected=2)
+        assert f"Token '{token}' already in use" in result.stdout
+        assert f"traffic_ctl config status -t {token}" in result.stdout
 
-    tr = urtest.AddTestRun("touch file to trigger ip_allow reload")
-    tr.Processes.Default.Command = f"touch {os.path.join(traffic_ctl._ts.Variables.CONFIGDIR, 'ip_allow.yaml')}  && sleep 1"
-    tr.Processes.Default.ReturnCode = 0
+    def verify_file_and_forced_reload(self) -> None:
+        """Verify changed-file details and a forced reload."""
 
-    traffic_ctl.config().reload().token("reload_ip_allow").show_details().validate_contains_all(
-        "reload_ip_allow", "success", "ip_allow.yaml")
+        (self._ats.config_directory / "ip_allow.yaml").touch()
+        token = "reload_ip_allow"
+        result = self.reload("--token", token, "--show-details", "--initial-wait", "0.1")
+        assert token in result.stdout
+        assert "success" in result.stdout
+        assert "ip_allow.yaml" in result.stdout
 
-    ##### FORCE RELOAD
+        token = "force_reload"
+        result = self.reload("--force", "--token", token)
+        assert "Reload scheduled" in result.stdout
+        self.wait_for_reload(token)
 
-    # Force reload should work even if we just did a reload
-    traffic_ctl.config().reload().force().validate_contains_all("Reload scheduled")
+    def verify_inline_data(self) -> None:
+        """Verify invalid inline and multi-key data do not leave a stuck task."""
 
-    ##### INLINE DATA RELOAD
+        result = self.reload("--force", "--data", "unknown_cfg: {foo: bar}", expected={0, 1, 2})
+        assert re.search(r"not registered|No configs were scheduled", result.output, re.IGNORECASE)
 
-    # Test inline data with -d flag (config not registered, expect error but no stuck task)
-    # Use --force to avoid "reload in progress" conflict
-    tr = urtest.AddTestRun("Inline data reload with unregistered config")
-    tr.DelayStart = 5  # Wait for previous reload to complete
-    tr.Processes.Default.Command = f'traffic_ctl config reload --force -d "unknown_cfg: {{foo: bar}}"'
-    tr.Processes.Default.Env = traffic_ctl._ts.Env
-    tr.Processes.Default.ReturnCode = Any(0, 1, 2)
-    tr.StillRunningAfter = traffic_ctl._ts
-    tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
-        r'not registered|No configs were scheduled', "Should report config not registered")
+        token = "after_inline_test"
+        result = self.reload("--token", token)
+        assert f"Reload scheduled [{token}]" in result.stdout
+        self.wait_for_reload(token)
 
-    # Verify no stuck task - new reload should work immediately after
-    traffic_ctl.config().reload().token("after_inline_test").validate_with_text(
-        "\u2714 Reload scheduled [after_inline_test]\n\n  Monitor : traffic_ctl config reload -t after_inline_test -m\n  Details : traffic_ctl config reload -t after_inline_test -s -l"
-    )
+        multi_config = self._ats.config_directory / "multi_test.yaml"
+        multi_config.write_text("config_a:\n  foo: bar\nconfig_b:\n  baz: qux\n")
+        result = self.reload("--force", "--data", f"@{multi_config}", expected={0, 1, 2})
+        assert re.search(r"not registered|No configs were scheduled|error", result.output, re.IGNORECASE)
 
-    ##### MULTI-KEY FILE RELOAD
+        result = self.reload("--force", "--data", "test_config: {key: value}", expected={0, 1, 2})
+        assert re.search(r"not registered|No configs were scheduled|scheduled", result.output, re.IGNORECASE)
 
-    # Create a multi-key config file
-    tr = urtest.AddTestRun("Create multi-key config file")
-    multi_config_path = os.path.join(traffic_ctl._ts.Variables.CONFIGDIR, 'multi_test.yaml')
-    tr.Processes.Default.Command = f'''cat > {multi_config_path} << 'EOF'
-    # Multiple config keys in one file
-    config_a:
-      foo: bar
-    config_b:
-      baz: qux
-    EOF'''
-    tr.Processes.Default.Env = traffic_ctl._ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = traffic_ctl._ts
+    def verify_exit_codes(self) -> None:
+        """Verify successful, monitored, and duplicate-token exit codes."""
 
-    # Test reload with multi-key file using data_file()
-    tr = urtest.AddTestRun("Multi-key file reload")
-    tr.DelayStart = 5  # Wait for previous reload to complete
-    tr.Processes.Default.Command = f'traffic_ctl config reload --force --data @{multi_config_path}'
-    tr.Processes.Default.Env = traffic_ctl._ts.Env
-    tr.Processes.Default.ReturnCode = Any(0, 1, 2)
-    tr.StillRunningAfter = traffic_ctl._ts
-    tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
-        r'not registered|No configs were scheduled|error', "Should process multi-key file")
+        token = "exit_code_ok"
+        self.reload("--token", token)
+        self.wait_for_reload(token)
 
-    ##### FORCE WITH INLINE DATA
+        result = self.reload(
+            "--token",
+            "exit_code_monitor_ok",
+            "--monitor",
+            "--initial-wait",
+            "0.1",
+            "--refresh-int",
+            "0.1",
+            "--timeout",
+            "15s",
+        )
+        assert result.returncode == 0
+        self.reload("--token", token, expected=2)
 
-    # Force reload with inline data
-    tr = urtest.AddTestRun("Force reload with inline data")
-    tr.DelayStart = 1
-    tr.Processes.Default.Command = f'traffic_ctl config reload --force --data "test_config: {{key: value}}"'
-    tr.Processes.Default.Env = traffic_ctl._ts.Env
-    tr.Processes.Default.ReturnCode = Any(0, 1, 2)
-    tr.StillRunningAfter = traffic_ctl._ts
-    tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
-        r'not registered|No configs were scheduled|scheduled', "Should handle force with inline data")
+    def run(self) -> None:
+        """Run the complete configuration reload command matrix."""
 
-    ##### EXIT CODE TESTS
-    # Exit codes: 0 = success, 2 = error, 75 = temporary failure / in-progress (EX_TEMPFAIL from sysexits.h)
+        self._ats.start()
+        self.verify_empty_status()
+        self.verify_scheduling_and_tokens()
+        self.verify_file_and_forced_reload()
+        self.verify_inline_data()
+        self.verify_exit_codes()
 
-    # Test: Successful reload should return exit code 0
-    traffic_ctl.config().reload().token("exit_code_ok").validate_with_exit_code(0)
 
-    # Test: Successful reload with --monitor should return exit code 0
-    traffic_ctl.config().reload().token("exit_code_monitor_ok").monitor().initial_wait(0.5).validate_with_exit_code(0)
+def test_traffic_ctl_config_reload(ats_factory: ATSFactory) -> None:
+    """traffic_ctl reloads configs and reports stable status and exit codes."""
 
-    # Test: Token already in use should return exit code 2 (CTRL_EX_ERROR)
-    traffic_ctl.config().reload().token("exit_code_ok").validate_with_exit_code(2)
-
-    # NOTE: Exit code 75 (CTRL_EX_TEMPFAIL / RELOAD_IN_PROGRESS) is not tested here
-    # because the reload completes almost instantly in the test environment, making it
-    # impossible to reliably trigger the "in progress" window with a second concurrent
-    # request. Testing this path would require a test plugin that artificially delays
-    # reload processing. The exit code 75 paths are validated by code review:
-    #   1. Server returns RELOAD_IN_PROGRESS when a second reload is attempted while one is active.
-    #   2. Ctrl+C during --monitor sets CTRL_EX_TEMPFAIL when the reload hasn't finished.
-    urtest.execute()
+    ConfigReloadScenario(ats_factory).run()

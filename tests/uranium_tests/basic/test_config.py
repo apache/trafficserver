@@ -17,12 +17,29 @@
 from tools.uranium.services import ATS, Curl
 
 
-def test_traffic_server_starts_with_custom_listener(ats: ATS, curl: Curl) -> None:
+class CustomListenerScenario:
     """Verify that records.yaml can replace the default listener configuration."""
 
-    ats.records.update({"proxy.config.http.server_ports": f"{ats.http_port} {ats.uds_path}"})
-    ats.start()
+    def __init__(self, ats: ATS, curl: Curl) -> None:
+        self.ats = ats
+        self.curl = curl
 
-    result = curl.get(ats)
+    def _configure_traffic_server(self) -> None:
+        self.ats.records.update({"proxy.config.http.server_ports": f"{self.ats.http_port} {self.ats.uds_path}"})
 
-    assert result.returncode == 0, result.output
+    def _start_traffic_server(self) -> None:
+        self.ats.start()
+
+    def _verify_custom_listener_accepts_requests(self) -> None:
+        result = self.curl.get(self.ats)
+
+        assert result.returncode == 0, result.output
+
+    def run(self) -> None:
+        self._configure_traffic_server()
+        self._start_traffic_server()
+        self._verify_custom_listener_accepts_requests()
+
+
+def test_traffic_server_starts_with_custom_listener(ats: ATS, curl: Curl) -> None:
+    CustomListenerScenario(ats, curl).run()

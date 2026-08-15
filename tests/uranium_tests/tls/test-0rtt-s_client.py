@@ -30,7 +30,7 @@ def main():
     parser.add_argument('-p', '--ats-port', type=int, dest='ats_port', required=True, help='ATS port number')
     parser.add_argument('-v', '--http-version', type=str, dest='http_ver', choices=['h1', 'h2'], required=True, help='HTTP version')
     parser.add_argument('-t', '--test-name', type=str, dest='test_name', required=True, help='Name of the test to run')
-    parser.add_argument('-r', '--run-dir', type=str, dest='run_dir', required=True, help='Path to the autest run directory')
+    parser.add_argument('-r', '--run-dir', type=str, dest='run_dir', required=True, help='Path to the test run directory')
     parser.add_argument('-s', '--server-name', type=str, dest='sni', required=False, help='Server Name')
     args = parser.parse_args()
 
@@ -50,8 +50,8 @@ def main():
     s_client_cmd_1 = shlex.split(
         f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_out {sess_file_path} {sni_str} {alpn_str}')
     s_client_cmd_2 = shlex.split(
-        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_in {sess_file_path} -early_data {early_data_file_path} {sni_str} {alpn_str}'
-    )
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet '
+        f'-sess_in {sess_file_path} -early_data {early_data_file_path} {sni_str} {alpn_str}')
 
     create_sess_proc = subprocess.Popen(
         s_client_cmd_1, env=os.environ.copy(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

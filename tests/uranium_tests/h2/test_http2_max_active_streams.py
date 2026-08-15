@@ -14,92 +14,80 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, ServiceFactory, VerifierServer
 
 
-def test_http2_max_active_streams(urtest: UraniumTest) -> None:
-    '''
-    Verify proxy.config.http2.max_active_streams_policy_in enforces the global
-    active-streams cap and that HPACK stays in sync across refused streams.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class Http2MaxActiveStreamsScenario:
+    """Drive concurrent inbound streams past the configured active-stream cap."""
 
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        self._directory = Path(__file__).parent
 
-    urtest.Summary = '''
-    HTTP/2 max_active_streams_policy_in enforcement and HPACK sync test.
-    '''
+    def configure_server(self, name: str, replay: Path) -> VerifierServer:
+        """Create the verifier origin for one policy case."""
 
-    CLIENT_SCRIPT = 'h2_max_active_streams.py'
+        return self._services.verifier_server(f"server-{name}", replay)
 
-    class Http2MaxActiveStreamsTest:
-        """Drive concurrent inbound streams past max_active_streams_in."""
+    def configure_ats(self, name: str, policy: int, server: VerifierServer) -> ATS:
+        """Configure the stream cap and enforcement policy."""
 
-        def __init__(self, name: str, replay_file: str, policy: int):
-            self._name = name
-            self._replay_file = replay_file
-            self._policy = policy
+        ats = self._ats_factory.create(f"ts-{name}", enable_tls=True, enable_cache=False)
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http2",
+                "proxy.config.http2.max_active_streams_in": 2,
+                "proxy.config.http2.max_active_streams_policy_in": policy,
+                "proxy.config.http2.max_concurrent_streams_in": 100,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}")
+        return ats
 
-        def run(self) -> None:
-            tr = urtest.AddTestRun(self._name)
-            server = tr.AddVerifierServerProcess(f'server-{self._name}', self._replay_file)
-            ts = tr.MakeATSProcess(f'ts-{self._name}', enable_tls=True, enable_cache=False)
+    def run_client(self, name: str, ats: ATS) -> CommandResult:
+        """Run the bespoke HTTP/2 client with four simultaneous streams."""
 
-            ts.addDefaultSSLFiles()
-            ts.Setup.CopyAs(f'clients/{CLIENT_SCRIPT}', urtest.RunDirectory)
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http2',
-                    'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.http2.max_active_streams_in': 2,
-                    'proxy.config.http2.max_active_streams_policy_in': self._policy,
-                    'proxy.config.http2.max_concurrent_streams_in': 100,
-                })
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split('\n'))
+        return self._services.process(
+            f"client-{name}",
+            [
+                sys.executable,
+                self._directory / "clients/h2_max_active_streams.py",
+                str(ats.https_port),
+                "--streams",
+                "4",
+                "--probe-from",
+                "5",
+            ],
+        ).run()
 
-            tr.Processes.Default.StartBefore(server)
-            tr.Processes.Default.StartBefore(ts)
-            tr.Processes.Default.Command = (f'{sys.executable} {CLIENT_SCRIPT} {ts.Variables.ssl_port} --streams 4 --probe-from 5')
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-                'GOAWAY', 'ATS must not tear down the connection; HPACK dynamic table must stay in sync.')
+    def run_case(self, name: str, replay_name: str, policy: int) -> None:
+        """Execute and validate one active-stream policy."""
 
-            if self._policy == 1:
-                tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                    r'stream 5: RST_STREAM error_code=7', 'stream 5 must be refused with REFUSED_STREAM under enforce policy.')
-                tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                    r'stream 7: RST_STREAM error_code=7',
-                    'stream 7 must also be refused with REFUSED_STREAM, proving HPACK decode happened on stream 5.')
-                ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                    r'HTTP/2 stream error code=0x07.*active streams cap reached',
-                    'ATS should log the cap-reached stream error under enforce policy.')
-            else:
-                tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-                    r'RST_STREAM error_code=7', 'No stream should be refused under advisory policy.')
+        server = self.configure_server(name, self._directory / "replay" / replay_name)
+        ats = self.configure_ats(name, policy, server)
+        server.start()
+        ats.start()
+        result = self.run_client(name, ats)
+        assert "GOAWAY" not in result.stdout
+        if policy == 1:
+            assert "stream 5: RST_STREAM error_code=7" in result.stdout
+            assert "stream 7: RST_STREAM error_code=7" in result.stdout
+            assert "active streams cap reached" in ats.traffic_out.read_text(errors="replace")
+        else:
+            assert "RST_STREAM error_code=7" not in result.stdout
 
-    Http2MaxActiveStreamsTest('enforce', 'replay/http2_max_active_streams_enforce.replay.yaml', policy=1).run()
-    Http2MaxActiveStreamsTest('advisory', 'replay/http2_max_active_streams_advisory.replay.yaml', policy=0).run()
-    urtest.execute()
+    def run(self) -> None:
+        """Exercise enforce and advisory policies."""
+
+        self.run_case("enforce", "http2_max_active_streams_enforce.replay.yaml", 1)
+        self.run_case("advisory", "http2_max_active_streams_advisory.replay.yaml", 0)
+
+
+def test_http2_max_active_streams(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """The active-stream cap refuses streams without desynchronizing HPACK."""
+
+    Http2MaxActiveStreamsScenario(ats_factory, services).run()
