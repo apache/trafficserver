@@ -126,6 +126,9 @@ TEST_CASE("Store HEADERS Frame", "[http3]")
     CHECK(len == 6);
     CHECK(memcmp(buf, expected1, len) == 0);
 
+    // The frame holds a reader cloned from header_block; it must be torn down before the
+    // source MIOBuffer is freed, or its destructor dealloc()s a reader into freed memory.
+    frame.reset();
     free_MIOBuffer(header_block);
   }
 }
