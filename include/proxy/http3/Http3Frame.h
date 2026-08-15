@@ -103,7 +103,7 @@ public:
   // Safe as long as the source MIOBuffer outlives this frame, which holds for the qmux/quic
   // write path: the frame is created, serialized via to_io_buffer_block(), and destroyed, all
   // synchronously, well within the lifetime of the Http3HeaderFramer that owns the source buffer.
-  Http3HeadersFrame(IOBufferReader *header_block_reader, size_t header_block_len);
+  Http3HeadersFrame(IOBufferReader &header_block_reader, size_t header_block_len);
   ~Http3HeadersFrame();
 
   Ptr<IOBufferBlock> to_io_buffer_block() const override;
