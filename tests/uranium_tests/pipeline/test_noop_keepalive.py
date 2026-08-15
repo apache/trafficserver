@@ -14,98 +14,74 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_noop_keepalive(urtest: UraniumTest) -> None:
-    '''Non-idempotency audit: a NOOP self-response drains its body exactly once and keeps the connection alive.'''
+class NoopKeepAliveScenario:
+    """Verify the NOOP body drain preserves the next request on the connection."""
 
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    _hostname = "www.example.com"
 
-    from ports import get_port
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin_port = services.allocate_port()
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.Summary = 'A cache-miss/NOOP DELETE self-response drains its body once and preserves keep-alive for the next request.'
-    urtest.ContinueOnFail = False
+    def configure_origin(self, services: ServiceFactory) -> ProcessService:
+        """Start the purpose-built keep-alive origin."""
 
-    class TestNoopKeepAlive:
-        """Audit that the NOOP self-response drain runs exactly once.
+        return services.process(
+            "origin",
+            (sys.executable, TEST_DIRECTORY / "desync_server.py", "127.0.0.1", str(self._origin_port)),
+            ready_port=self._origin_port,
+        )
 
-        On one keep-alive connection, a NOOP self-response (a DELETE to an uncached
-        path) with a benign body must drain that body exactly once; a following GET
-        must then still be served. A double-drain would consume into the next request
-        and close the connection.
-        """
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable the cache path used by the DELETE self-response."""
 
-        _server_script: str = 'desync_server.py'
-        _client_script: str = 'noop_keepalive_client.py'
-        _hostname: str = 'www.example.com'
+        ats = ats_factory.create("ts", enable_cache=True)
+        ats.remap_config.add_line(f"map http://{self._hostname}/ http://127.0.0.1:{self._origin_port}/")
+        ats.records.update({"proxy.config.http.cache.http": 1})
+        return ats
 
-        def __init__(self) -> None:
-            tr = urtest.AddTestRun('A NOOP self-response must drain the body exactly once (keep-alive preserved).')
-            tr.TimeOut = 40
-            self._configure_server(tr)
-            self._configure_traffic_server(tr)
-            self._configure_client(tr)
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Send the DELETE and subsequent GET on one connection."""
 
-        def _configure_server(self, tr: 'TestRun') -> 'Process':
-            """Configure the origin server.
+        return services.process(
+            "client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "noop_keepalive_client.py",
+                "127.0.0.1",
+                str(self._ats.http_port),
+                self._hostname,
+            ),
+        )
 
-            :param tr: The test run to associate the origin server with.
-            :return: The origin server process.
-            """
-            server = tr.Processes.Process('server')
-            tr.Setup.Copy(self._server_script)
-            port = get_port(server, 'http_port')
-            server.Command = f'{sys.executable} {self._server_script} 127.0.0.1 {port}'
-            server.Ready = When.PortOpenv4(port)
-            self._server = server
-            return server
+    @staticmethod
+    def verify(result: CommandResult) -> None:
+        """Require the NOOP path and a successfully preserved next request."""
 
-        def _configure_traffic_server(self, tr: 'TestRun') -> 'Process':
-            """Configure ATS.
+        assert result.returncode == 0, result.output
+        assert "DELETE_STATUS=404" in result.output
+        assert "SECOND_REQUEST_STATUS=200" in result.output
+        assert "KEEPALIVE_PRESERVED=yes" in result.output
 
-            :param tr: The test run to associate the ATS process with.
-            :return: The ATS process.
-            """
-            ts = tr.MakeATSProcess('ts', enable_cache=True)
-            self._ts = ts
-            ts.Disk.remap_config.AddLine(f'map http://{self._hostname}/ http://127.0.0.1:{self._server.Variables.http_port}/')
-            ts.Disk.records_config.update({'proxy.config.http.cache.http': 1})
-            return ts
+    def run(self) -> None:
+        """Start the topology and execute the custom client."""
 
-        def _configure_client(self, tr: 'TestRun') -> 'Process':
-            """Configure the client.
+        self._origin.start()
+        self._ats.start()
+        self.verify(self._client.run(timeout=40))
 
-            :param tr: The test run to associate the client process with.
-            :return: The client process.
-            """
-            client = tr.Processes.Default
-            tr.Setup.Copy(self._client_script)
-            client.Command = f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} {self._hostname}'
-            client.ReturnCode = 0
-            client.Streams.All += Testers.ContainsExpression(
-                'DELETE_STATUS=404', 'the DELETE to an uncached path must self-answer 404 (NOOP path)')
-            client.Streams.All += Testers.ContainsExpression(
-                'SECOND_REQUEST_STATUS=200', 'the following GET / must be served (keep-alive preserved, drained exactly once)')
-            client.Streams.All += Testers.ContainsExpression(
-                'KEEPALIVE_PRESERVED=yes', 'the connection must not be closed by a spurious double-drain')
-            client.StartBefore(self._server)
-            client.StartBefore(self._ts)
 
-    TestNoopKeepAlive()
-    urtest.execute()
+def test_noop_keepalive(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A NOOP self-response drains exactly once and preserves keep-alive."""
+
+    NoopKeepAliveScenario(ats_factory, services).run()

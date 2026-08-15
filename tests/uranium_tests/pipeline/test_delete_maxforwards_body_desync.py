@@ -14,96 +14,83 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_delete_maxforwards_body_desync(urtest: UraniumTest) -> None:
-    '''Verify a DELETE self-answered from cache drains its request body.'''
+class DeleteCacheHitDrainScenario:
+    """Verify a cache-hit DELETE self-response drains its request body."""
 
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    _hostname = "www.example.com"
 
-    from ports import get_port
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin_port = services.allocate_port()
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._client = self.configure_client(services)
 
-    urtest.Summary = '''
-    Verify that a DELETE (Max-Forwards: 0) answered from the cache drains its request
-    body instead of leaving it to be parsed as the next request on the keep-alive
-    connection.
-    '''
+    def configure_origin(self, services: ServiceFactory) -> ProcessService:
+        """Start the purpose-built origin that records received paths."""
 
-    urtest.ContinueOnFail = False
+        return services.process(
+            "origin",
+            (sys.executable, TEST_DIRECTORY / "desync_server.py", "127.0.0.1", str(self._origin_port)),
+            ready_port=self._origin_port,
+        )
 
-    class TestDeleteBodyDrain:
-        """A DELETE with Max-Forwards: 0 is answered directly from cache. If the
-        request body is not drained, its bytes are parsed as the next request on the
-        keep-alive connection (a CL.0 desync). This drives that path and asserts the
-        smuggled request never reaches the origin nor produces a second response."""
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable caching so the client can warm and exercise the hit path."""
 
-        _server_script: str = 'desync_server.py'
-        _client_script: str = 'desync_client.py'
-        _hostname: str = 'www.example.com'
+        ats = ats_factory.create("ts", enable_cache=True)
+        ats.remap_config.add_line(f"map http://{self._hostname}/ http://127.0.0.1:{self._origin_port}/")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.http.cache.http": 1,
+                "proxy.config.http.insert_age_in_response": 1,
+            })
+        return ats
 
-        def __init__(self) -> None:
-            tr = urtest.AddTestRun('DELETE self-response must drain the request body.')
-            tr.TimeOut = 60
-            self._configure_server(tr)
-            self._configure_traffic_server(tr)
-            self._configure_client(tr)
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Warm the cache and send the body-desynchronization probe."""
 
-        def _configure_server(self, tr: 'TestRun') -> 'Process':
-            server = tr.Processes.Process('server')
-            tr.Setup.Copy(self._server_script)
-            port = get_port(server, 'http_port')
-            server.Command = f'{sys.executable} {self._server_script} 127.0.0.1 {port}'
-            server.Ready = When.PortOpenv4(port)
-            # The origin must serve the warmed path, and must never see the smuggled one.
-            server.Streams.All += Testers.ContainsExpression(r'ORIGIN_RECV path=\[/\]', 'origin should serve the warmed GET /')
-            server.Streams.All += Testers.ExcludesExpression('poisoned', 'the smuggled request must never reach the origin')
-            self._server = server
-            return server
+        return services.process(
+            "client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "desync_client.py",
+                "127.0.0.1",
+                str(self._ats.http_port),
+                self._hostname,
+            ),
+        )
 
-        def _configure_traffic_server(self, tr: 'TestRun') -> 'Process':
-            ts = tr.MakeATSProcess('ts', enable_cache=True)
-            self._ts = ts
-            ts.Disk.remap_config.AddLine(f'map http://{self._hostname}/ http://127.0.0.1:{self._server.Variables.http_port}/')
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 0,
-                    'proxy.config.diags.debug.tags': 'http',
-                    'proxy.config.http.cache.http': 1,
-                    'proxy.config.http.insert_age_in_response': 1,
-                })
-            return ts
+    @staticmethod
+    def verify(result: CommandResult, origin_output: str) -> None:
+        """Require the cache-hit path and reject all desynchronization signatures."""
 
-        def _configure_client(self, tr: 'TestRun') -> 'Process':
-            client = tr.Processes.Default
-            tr.Setup.Copy(self._client_script)
-            client.Command = f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} {self._hostname}'
-            client.ReturnCode = 0
-            # The DELETE must self-answer 200 from a warm cache, or the hit path was
-            # never exercised and the test would pass vacuously.
-            client.Streams.All += Testers.ContainsExpression(
-                'DELETE_STATUS=200', 'the DELETE must self-answer 200 from a warm cache')
-            # The desync signatures: a second (smuggled) response, or smuggled bytes.
-            client.Streams.All += Testers.ExcludesExpression(
-                'SECOND_RESPONSE_RECEIVED=True', 'the client must not receive a smuggled second response')
-            client.Streams.All += Testers.ExcludesExpression('poisoned', 'no smuggled response bytes should reach the client')
-            client.StartBefore(self._server)
-            client.StartBefore(self._ts)
+        assert result.returncode == 0, result.output
+        assert "DELETE_STATUS=200" in result.output
+        assert "SECOND_RESPONSE_RECEIVED=True" not in result.output
+        assert "poisoned" not in result.output
+        assert "ORIGIN_RECV path=[/]" in origin_output
+        assert "poisoned" not in origin_output
 
-    TestDeleteBodyDrain()
-    urtest.execute()
+    def run(self) -> None:
+        """Start the topology and execute the custom client."""
+
+        self._origin.start()
+        self._ats.start()
+        result = self._client.run(timeout=60)
+        self.verify(result, self._origin.output)
+
+
+def test_delete_maxforwards_body_desync(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """A cached DELETE self-response does not leave request bytes queued."""
+
+    DeleteCacheHitDrainScenario(ats_factory, services).run()

@@ -14,98 +14,83 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, ProceduralContext, ServiceFactory, wait_for_file_lines
 
 
-def test_test_TSHttpTxnServerAddrSet_retry(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    '''
-    Tests for TSHttpTxnServerAddrSet() retry behavior with and without cache enabled.
-    '''
+class ServerAddrSetRetryScenario:
+    """Select retry addresses through TSHttpTxnServerAddrSet from the OS_DNS hook."""
 
-    import os
-    from ports import get_port
+    def __init__(
+        self,
+        enable_cache: bool,
+        context: ProceduralContext,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        curl: Curl,
+    ) -> None:
+        self._enable_cache = enable_cache
+        self._curl = curl
+        self._bogus_port = services.allocate_port()
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(context, ats_factory)
 
-    urtest.Summary = '''
-    Verify TSHttpTxnServerAddrSet() retry works with and without cache enabled
-    '''
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve every name to loopback for deterministic retries."""
 
-    plugin_name = "test_TSHttpTxnServerAddrSet_retry"
+        return services.dns("dns", default="127.0.0.1")
 
-    class TestServerAddrSetRetry:
-        """Verify retry behavior for TSHttpTxnServerAddrSet() with and without cache."""
+    def configure_ats(self, context: ProceduralContext, ats_factory: ATSFactory) -> ATS:
+        """Load the test plugin and permit several connection retries."""
 
-        def _configure_dns(self, tr: 'TestRun', name: str) -> 'Process':
-            """Configure the DNS process for a TestRun."""
-            return tr.MakeDNServer(name, default=['127.0.0.1'])
+        ats = ats_factory.create("ts", enable_cache=self._enable_cache)
+        plugin = context.runtime.resolve_artifact(
+            context.test_directory,
+            "{AtsBuildUraniumTestsDir}/pluginTest/tsapi/.libs/test_TSHttpTxnServerAddrSet_retry.so",
+        )
+        ats.copy_custom_plugin(plugin)
+        ats.plugin_config.add_line(plugin.name)
+        ats.records.update(
+            {
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|dns|test_TSHttpTxnServerAddrSet_retry",
+                "proxy.config.http.connect_attempts_max_retries": 3,
+                "proxy.config.http.connect_attempts_timeout": 1,
+            })
+        ats.remap_config.add_line(f"map / http://non.existent.server.com:{self._bogus_port}")
+        return ats
 
-        def _configure_traffic_server(self, tr: 'TestRun', name: str, dns: 'Process', enable_cache: bool) -> 'Process':
-            """Configure the Traffic Server process for a TestRun."""
-            ts = tr.MakeATSProcess(name, enable_cache=enable_cache)
+    def run(self) -> None:
+        """Issue a failing request and verify the plugin supplied retry addresses."""
 
-            plugin_path = os.path.join(
-                urtest.Variables.AtsBuildUraniumTestsDir, 'pluginTest', 'tsapi', '.libs', f'{plugin_name}.so')
-            ts.Setup.Copy(plugin_path, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
-            ts.Disk.plugin_config.AddLine(f"{plugin_path}")
+        self._dns.start()
+        self._ats.start()
+        self._curl.get(
+            self._ats,
+            "/",
+            options=("--silent", "--verbose", "--connect-timeout", "5", "--output", "/dev/null"),
+            timeout=15,
+        )
+        diags = wait_for_file_lines(self._ats.diags_log, "SUCCESS: OS_DNS hook was called", 1)
+        assert "OS_DNS hook called, count=1" in diags
+        if self._enable_cache:
+            traffic_out = self._ats.traffic_out.read_text(errors="replace")
+            assert "failed assertion" not in traffic_out
+            assert "received signal 6" not in traffic_out
 
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|dns|test_TSHttpTxnServerAddrSet_retry',
-                    # Enable retries so we can see if OS_DNS is called multiple times
-                    'proxy.config.http.connect_attempts_max_retries': 3,
-                    'proxy.config.http.connect_attempts_timeout': 1,
-                })
 
-            # Remap to a nonexisting server - the plugin will set addresses
-            bogus_port = get_port(ts, "bogus_port")
-            ts.Disk.remap_config.AddLine(f'map / http://non.existent.server.com:{bogus_port}')
-            return ts
+@pytest.mark.parametrize("enable_cache", (False, True), ids=("no-cache", "cache"))
+def test_test_TSHttpTxnServerAddrSet_retry(
+    enable_cache: bool,
+    procedural_context: ProceduralContext,
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    curl: Curl,
+) -> None:
+    """TSHttpTxnServerAddrSet retries safely with and without cache enabled."""
 
-        def run(self, enable_cache: bool, description: str, name_suffix: str) -> None:
-            """Configure a TestRun."""
-            tr = urtest.AddTestRun(description)
-            dns = self._configure_dns(tr, f"dns_{name_suffix}")
-            ts = self._configure_traffic_server(tr, f"ts_{name_suffix}", dns, enable_cache)
-
-            # Make a simple request - it should fail since first address is non-routable
-            # but the plugin should log whether OS_DNS was called multiple times
-            tr.Processes.Default.Command = f'curl -vs --connect-timeout 5 http://127.0.0.1:{ts.Variables.port}/ -o /dev/null 2>&1; true'
-            tr.Processes.Default.ReturnCode = 0
-
-            tr.Processes.Default.StartBefore(dns)
-            tr.Processes.Default.StartBefore(ts)
-
-            # Override the default diags.log error check - we use TSError() for test output
-            # Using '=' instead of '+=' replaces the default "no errors" check
-            ts.Disk.diags_log.Content = Testers.ContainsExpression("OS_DNS hook called, count=1", "First OS_DNS call logged")
-
-            ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "SUCCESS: OS_DNS hook was called", "Plugin was able to retry with different address")
-
-            if enable_cache:
-                ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-                    "failed assertion", "ATS should not hit the redirect write-lock assertion")
-                ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-                    "received signal 6", "ATS should not abort while retrying origin selection")
-
-    test = TestServerAddrSetRetry()
-    test.run(enable_cache=False, description="Reproduce issue #12611 without cache", name_suffix="nocache")
-    test.run(enable_cache=True, description="Verify TSHttpTxnServerAddrSet retry is safe with cache enabled", name_suffix="cache")
-    urtest.execute()
+    ServerAddrSetRetryScenario(enable_cache, procedural_context, ats_factory, services, curl).run()

@@ -14,274 +14,194 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from collections.abc import Mapping
+import json
+import re
+import socket
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, DNSServer, OriginServer, ServiceFactory, send_tcp
+
+ACTION_STATUS = {
+    "return": "HTTP/1.1 307 Temporary Redirect",
+    "reject": "HTTP/1.1 403 Forbidden",
+    "follow": "HTTP/1.1 204 No Content",
+    "break": "HTTP/1.1 500 Cannot find server.",
+}
+
+SCENARIOS: tuple[dict[str, str], ...] = (
+    {
+        "private": "reject",
+        "loopback": "follow",
+        "multicast": "reject",
+        "linklocal": "return",
+        "routable": "reject",
+        "self": "return",
+        "default": "reject",
+    },
+    {
+        "private": "return",
+        "loopback": "follow",
+        "multicast": "return",
+        "linklocal": "reject",
+        "routable": "return",
+        "self": "reject",
+        "default": "return",
+    },
+    {
+        "loopback": "return",
+        "default": "reject"
+    },
+    {
+        "loopback": "reject",
+        "default": "return"
+    },
+    {
+        "default": "return"
+    },
+)
 
 
-def test_redirect_actions(urtest: UraniumTest) -> None:
-    '''
-    Test redirection behavior to invalid addresses
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class RedirectActionsScenario:
+    """Apply one redirect action table to every address class."""
 
-    from enum import Enum
-    import re
-    import os
-    import socket
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, scenario: Mapping[str, str]) -> None:
+        self._scenario = scenario
+        self._targets = self.discover_targets()
+        self._origin = services.origin("origin", ip="0.0.0.0")
+        self._dns = self.configure_dns(services)
+        self.configure_origin()
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test redirection behavior to invalid addresses
-    '''
+    @staticmethod
+    def discover_targets() -> dict[str, tuple[str, ...]]:
+        """Return representative IPv4/IPv6 addresses, including this test host."""
 
-    urtest.ContinueOnFail = False
-
-    urtest.Setup.Copy(os.path.join(urtest.Variables.AtsTestToolsDir, 'tcp_client.py'))
-
-    dns = urtest.MakeDNServer('dns')
-    # This record is used in each test case to get the initial redirect response from the origin that we will handle.
-    dnsRecords = {'iwillredirect.test': ['127.0.0.1']}
-
-    host = socket.gethostname()
-    ipv4addrs = set()
-    try:
-        ipv4addrs = set([ip for (family, _, _, _, (ip, *_)) in socket.getaddrinfo(host, port=None) if socket.AF_INET == family])
-    except socket.gaierror:
-        pass
-
-    ipv6addrs = set()
-    try:
-        ipv6addrs = set(
-            [
-                "[{0}]".format(ip.split('%')[0])
-                for (family, _, _, _, (ip, *_)) in socket.getaddrinfo(host, port=None)
-                if socket.AF_INET6 == family and 'fe80' != ip[0:4]
-            ])  # Skip link-local addresses.
-    except socket.gaierror:
-        pass
-
-    # If the hostname is set to a loopback address, use the ip command to obtain a non-loopback IP address.
-    if any(ip.startswith('127.') for ip in ipv4addrs):
-        import json
-        from subprocess import check_output
-
-        data = json.loads(check_output(['ip', '-json', 'address', 'show']))
-
-        ipv4addrs = set(
-            [
-                addr["local"] for iface in data if iface["link_type"] != "loopback" for addr in iface.get("addr_info", [])
-                if addr["family"] == "inet"
-            ])
-        ipv6addrs = set(
-            [
-                addr["local"] for iface in data if iface["link_type"] != "loopback" for addr in iface.get("addr_info", [])
-                if addr["family"] == "inet6" and addr["scope"] != "link"
-            ])
-
-    origin = urtest.MakeOriginServer('origin', ip='0.0.0.0')
-    ArbitraryTimestamp = '12345678'
-
-    # This is for cases when the content is actually fetched from the invalid address.
-    request_header = {
-        'headers': ('GET / HTTP/1.1\r\n'
-                    'Host: *\r\n\r\n'),
-        'timestamp': ArbitraryTimestamp,
-        'body': ''
-    }
-    response_header = {
-        'headers': ('HTTP/1.1 204 No Content\r\n'
-                    'Connection: close\r\n\r\n'),
-        'timestamp': ArbitraryTimestamp,
-        'body': ''
-    }
-    origin.addResponse('sessionfile.log', request_header, response_header)
-
-    # Map scenarios to trafficserver processes.
-    trafficservers = {}
-
-    data_dirname = 'redirect_actions_generated_test_data'
-    data_path = os.path.join(urtest.TestDirectory, data_dirname)
-    os.makedirs(data_path, exist_ok=True)
-
-    def normalizeForAutest(value):
-        '''
-        autest uses "test run" names to build file and directory names, so we must transform them in case there are incompatible or
-        annoying characters.
-        This means we can also use them in URLs.
-        '''
-        if not value:
-            return None
-        return re.sub(r'[^a-z0-9-]', '_', value, flags=re.I)
-
-    def makeTestCase(redirectTarget, expectedAction, scenario):
-        '''
-        Helper method that creates a "meta-test" from which autest generates a test case.
-
-        :param redirectTarget: The target address of a redirect from origin to be handled.
-        :param scenario: Defines the ACL to configure and the addresses to test.
-        '''
-
-        config = ','.join(
-            ':'.join(t) for t in sorted((addr.name.lower(), action.name.lower()) for (addr, action) in scenario.items()))
-
-        normRedirectTarget = normalizeForAutest(redirectTarget)
-        normConfig = normalizeForAutest(config)
-        tr = urtest.AddTestRun('With_Config_{0}_Redirect_to_{1}'.format(normConfig, normRedirectTarget))
-
-        if trafficservers:
-            tr.StillRunningAfter = origin
-            tr.StillRunningAfter = dns
-        else:
-            tr.Processes.Default.StartBefore(origin)
-            tr.Processes.Default.StartBefore(dns)
-
-        if config not in trafficservers:
-            trafficservers[config] = urtest.MakeATSProcess('ts_{0}'.format(normConfig), enable_cache=False)
-            trafficservers[config].Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|dns|redirect',
-                    'proxy.config.http.number_of_redirections': 1,
-                    'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.url_remap.remap_required': 0,
-                    'proxy.config.http.redirect.actions': config,
-                    'proxy.config.http.connect_attempts_timeout': 5,
-                    'proxy.config.http.connect_attempts_max_retries': 0,
-                })
-            tr.Processes.Default.StartBefore(trafficservers[config])
-        else:
-            tr.StillRunningAfter = trafficservers[config]
-
-        testDomain = 'testdomain{0}.test'.format(normRedirectTarget)
-        # The micro DNS server can't tell us whether it has a record of the domain already, so we use a dictionary to avoid duplicates.
-        # We remove any surrounding brackets that are common to IPv6 addresses.
-        if redirectTarget:
-            dnsRecords[testDomain] = [redirectTarget.strip('[]')]
-
-        # A GET request parameterized on the config and on the target.
-        request_header = {
-            'headers': ('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
-                        'Host: *\r\n\r\n').format(normConfig, normRedirectTarget),
-            'timestamp': ArbitraryTimestamp,
-            'body': ''
+        host = socket.gethostname()
+        ipv4 = {
+            address for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
+            if family == socket.AF_INET and not address.startswith("127.")
         }
-        # Returns a redirect to the test domain for the given target & the port number for the TS of the given config.
-        response_header = {
-            'headers':
-                ('HTTP/1.1 307 Temporary Redirect\r\n'
-                 'Location: http://{0}:{1}/\r\n'
-                 'Connection: close\r\n\r\n').format(testDomain, origin.Variables.Port),
-            'timestamp': ArbitraryTimestamp,
-            'body': ''
+        ipv6 = {
+            f"[{address.split('%')[0]}]" for family, _, _, _, (address, *_) in socket.getaddrinfo(host, None)
+            if family == socket.AF_INET6 and not address.lower().startswith("fe80")
         }
-        origin.addResponse('sessionfile.log', request_header, response_header)
+        if not ipv4:
+            result = subprocess.run(("ip", "-json", "address", "show"), capture_output=True, text=True, check=False)
+            if result.returncode == 0:
+                for interface in json.loads(result.stdout):
+                    if interface.get("link_type") == "loopback":
+                        continue
+                    for address in interface.get("addr_info", []):
+                        if address.get("family") == "inet":
+                            ipv4.add(address["local"])
+                        elif address.get("family") == "inet6" and address.get("scope") != "link":
+                            ipv6.add(f"[{address['local']}]")
+        return {
+            "private": ("10.0.0.1", "[fc00::1]"),
+            "loopback": ("127.1.2.3",),
+            "multicast": ("224.1.2.3", "[ff42::]"),
+            "linklocal": ("169.254.0.1", "[fe80::]"),
+            "routable": ("72.30.35.10", "[2001:4998:58:1836::10]"),
+            "self": tuple(sorted(ipv4 | ipv6)),
+        }
 
-        # Generate the request data file.
-        command_path = os.path.join(data_path, tr.Name)
-        with open(command_path, 'w') as f:
-            f.write(
-                ('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
-                 'Host: iwillredirect.test:{2}\r\n\r\n').format(normConfig, normRedirectTarget, origin.Variables.Port))
-        # Set the command with the appropriate URL.
-        port = trafficservers[config].Variables.port
-        dir_path = os.path.join(data_dirname, tr.Name)
-        tr.Processes.Default.Command = \
-            (f"bash -o pipefail -c '{sys.executable} tcp_client.py 127.0.0.1 {port} "
-             f"{dir_path} | head -n 1'")
-        tr.Processes.Default.ReturnCode = 0
-        # Generate and set the 'gold file' to check stdout
-        goldFilePath = os.path.join(data_path, '{0}.gold'.format(tr.Name))
-        with open(goldFilePath, 'w') as f:
-            f.write(expectedAction.value['expectedStatusLine'])
-        tr.Processes.Default.Streams.stdout = goldFilePath
+    def configure_dns(self, services: ServiceFactory) -> DNSServer:
+        """Map the initial origin and every redirect hostname to its target address."""
 
-    class AddressE(Enum):
-        '''
-        Classes of addresses are mapped to example addresses.
-        '''
-        Private = ('10.0.0.1', '[fc00::1]')
-        Loopback = (
-            ['127.1.2.3'])  # [::1] is omitted here because it is likely overwritten by Self, and there are no others in IPv6.
-        Multicast = ('224.1.2.3', '[ff42::]')
-        Linklocal = ('169.254.0.1', '[fe80::]')
-        Routable = ('72.30.35.10', '[2001:4998:58:1836::10]')  # Do not Follow redirects to these in an automated test.
-        Self = ipv4addrs | ipv6addrs  # Addresses of this host.
-        Default = None  # All addresses apply, nothing in particular to test.
+        dns = services.dns("dns")
+        records: dict[str, list[str]] = {"iwillredirect.test": ["127.0.0.1"]}
+        for category, addresses in self._targets.items():
+            for index, address in enumerate(addresses):
+                records[self.domain(category, index)] = [address.strip("[]")]
+        dns.add_records(records)
+        return dns
 
-    class ActionE(Enum):
-        # Title case because 'return' is a Python keyword.
-        Return = {'config': 'return', 'expectedStatusLine': 'HTTP/1.1 307 Temporary Redirect\r\n'}
-        Reject = {'config': 'reject', 'expectedStatusLine': 'HTTP/1.1 403 Forbidden\r\n'}
-        Follow = {'config': 'follow', 'expectedStatusLine': 'HTTP/1.1 204 No Content\r\n'}
+    @staticmethod
+    def domain(category: str, index: int) -> str:
+        """Return a stable redirect hostname for one representative address."""
 
-        # Added to test failure modes.
-        Break = {'expectedStatusLine': 'HTTP/1.1 500 Cannot find server.\r\n'}
+        return f"redirect-{category}-{index}.test"
 
-    scenarios = [
-        {
-            # Follow to loopback, but alternately reject/return others.
-            AddressE.Private: ActionE.Reject,
-            AddressE.Loopback: ActionE.Follow,
-            AddressE.Multicast: ActionE.Reject,
-            AddressE.Linklocal: ActionE.Return,
-            AddressE.Routable: ActionE.Reject,
-            AddressE.Self: ActionE.Return,
-            AddressE.Default: ActionE.Reject,
-        },
-        {
-            # Follow to loopback, but alternately reject/return others, flipped from the previous scenario.
-            AddressE.Private: ActionE.Return,
-            AddressE.Loopback: ActionE.Follow,
-            AddressE.Multicast: ActionE.Return,
-            AddressE.Linklocal: ActionE.Reject,
-            AddressE.Routable: ActionE.Return,
-            AddressE.Self: ActionE.Reject,
-            AddressE.Default: ActionE.Return,
-        },
-        {
-            # Return loopback, but reject everything else.
-            AddressE.Loopback: ActionE.Return,
-            AddressE.Default: ActionE.Reject,
-        },
-        {
-            # Reject loopback, but return everything else.
-            AddressE.Loopback: ActionE.Reject,
-            AddressE.Default: ActionE.Return,
-        },
-        {
-            # Return everything.
-            AddressE.Default: ActionE.Return,
-        },
-    ]
+    def configure_origin(self) -> None:
+        """Return redirects for every target and content for followed loopback redirects."""
 
-    for scenario in scenarios:
-        for addressClass in AddressE:
-            if not addressClass.value:
-                # Default has no particular addresses to test.
-                continue
-            for address in addressClass.value:
-                expectedAction = scenario[addressClass] if addressClass in scenario else scenario[AddressE.Default]
-                makeTestCase(redirectTarget=address, expectedAction=expectedAction, scenario=scenario)
+        self._origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+            {"headers": "HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n"},
+        )
+        for category, addresses in self._targets.items():
+            for index, address in enumerate(addresses):
+                path = f"/redirect/{category}/{index}"
+                self._origin.add_response(
+                    {"headers": f"GET {path} HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+                    {
+                        "headers":
+                            (
+                                "HTTP/1.1 307 Temporary Redirect\r\n"
+                                f"Location: http://{self.domain(category, index)}:{self._origin.port}/\r\n"
+                                "Connection: close\r\n\r\n")
+                    },
+                )
+        self._origin.add_response(
+            {"headers": "GET /redirect/unresolved HTTP/1.1\r\nHost: ignored\r\n\r\n"},
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 307 Temporary Redirect\r\n"
+                        f"Location: http://redirect-unresolved.test:{self._origin.port}/\r\n"
+                        "Connection: close\r\n\r\n")
+            },
+        )
 
-        # Test redirects to names that cannot be resolved.
-        makeTestCase(redirectTarget=None, expectedAction=ActionE.Break, scenario=scenario)
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure ATS with the selected class-to-action mapping."""
 
-    dns.addRecords(records=dnsRecords)
+        ats = ats_factory.create("ts", enable_cache=False)
+        config = ",".join(f"{category}:{action}" for category, action in sorted(self._scenario.items()))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|dns|redirect",
+                "proxy.config.http.number_of_redirections": 1,
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.url_remap.remap_required": 0,
+                "proxy.config.http.redirect.actions": config,
+                "proxy.config.http.connect_attempts_timeout": 5,
+                "proxy.config.http.connect_attempts_max_retries": 0,
+            })
+        return ats
 
-    # Make sure this runs only after local files have been created.
-    urtest.Setup.Copy(data_path)
-    urtest.execute()
+    def request(self, path: str) -> str:
+        """Send one raw request so the exact HTTP/1 status line remains visible."""
+
+        return send_tcp(
+            self._ats.http_port,
+            f"GET {path} HTTP/1.1\r\nHost: iwillredirect.test:{self._origin.port}\r\nConnection: close\r\n\r\n",
+            address="127.0.0.1",
+            timeout=10,
+        )
+
+    def run(self) -> None:
+        """Verify the configured result for every address class and an unresolved name."""
+
+        self._dns.start()
+        self._origin.start()
+        self._ats.start()
+        for category, addresses in self._targets.items():
+            action = self._scenario.get(category, self._scenario["default"])
+            for index, _ in enumerate(addresses):
+                response = self.request(f"/redirect/{category}/{index}")
+                assert response.startswith(ACTION_STATUS[action]), response
+        unresolved = self.request("/redirect/unresolved")
+        assert unresolved.startswith(ACTION_STATUS["break"]), unresolved
+
+
+@pytest.mark.parametrize("scenario", SCENARIOS)
+def test_redirect_actions(ats_factory: ATSFactory, services: ServiceFactory, scenario: Mapping[str, str]) -> None:
+    """Redirect actions return, reject, or follow targets according to address class."""
+
+    RedirectActionsScenario(ats_factory, services, scenario).run()

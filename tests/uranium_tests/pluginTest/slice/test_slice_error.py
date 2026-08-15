@@ -13,329 +13,121 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify slice reports inconsistent or missing internal blocks."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
 
-def test_slice_error(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SliceErrorScenario:
+    """Create four malformed block sequences and inspect slice diagnostics."""
 
-    urtest.Summary = '''
-    Slice plugin error.log test
-    '''
+    BODY = "the quick brown fox"
+    BLOCK_BYTES = 9
 
-    # Test description:
-    # Preload the cache with the entire asset to be range requested.
-    # Reload remap rule with slice plugin
-    # Request content through the slice plugin
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-    urtest.SkipUnless(Condition.PluginExists('slice.so'),)
-    urtest.ContinueOnFail = False
+    @classmethod
+    def add_block(
+        cls,
+        origin: OriginServer,
+        path: str,
+        index: int,
+        *,
+        etag: str | None = None,
+        last_modified: str | None = None,
+        total_length: int = 19,
+        status: str = "206 Partial Content",
+    ) -> None:
+        """Add one internal range response for a malformed object."""
 
-    # configure origin server
-    server = urtest.MakeOriginServer("server", lookup_key="{%Range}{PATH}")
+        begin = index * cls.BLOCK_BYTES
+        end = begin + cls.BLOCK_BYTES - 1
+        body = cls.BODY[begin:end + 1]
+        fields = [f"HTTP/1.1 {status}", "Connection: close"]
+        if etag is not None:
+            fields.append(f"Etag: {etag}")
+        if last_modified is not None:
+            fields.append(f"Last-Modified: {last_modified}")
+        if status.startswith("206"):
+            fields.extend((f"Content-Range: bytes {begin}-{end}/{total_length}", "Cache-Control: max-age=500"))
+        origin.add_response(
+            {
+                "headers":
+                    (
+                        f"GET /{path} HTTP/1.1\r\nHost: ats\r\nRange: bytes={begin}-{end}\r\n"
+                        "X-Slicer-Info: full content request\r\n\r\n")
+            },
+            {
+                "headers": "\r\n".join(fields) + "\r\n\r\n",
+                "body": body
+            },
+        )
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
+    @classmethod
+    def configure_server(cls, services: ServiceFactory) -> OriginServer:
+        """Create ETag, Last-Modified, Content-Range, and 404 failures."""
 
-    body = "the quick brown fox"  # len 19
+        origin = services.origin("origin", lookup_key="{%Range}{PATH}")
+        cls.add_block(origin, "etag", 0, etag='"etag0"')
+        cls.add_block(origin, "etag", 1, etag='"etag1"')
+        cls.add_block(origin, "lastmodified", 0, last_modified="Tue, 08 May 2018 15:49:41 GMT")
+        cls.add_block(origin, "lastmodified", 1, last_modified="Tue, 08 Apr 2019 18:00:00 GMT")
+        cls.add_block(origin, "crr", 0, etag="crr")
+        cls.add_block(origin, "crr", 1, etag="crr", total_length=18)
+        cls.add_block(
+            origin,
+            "internal404",
+            0,
+            etag='"etag"',
+            last_modified="Tue, 08 May 2018 15:49:41 GMT",
+        )
+        return origin
 
-    # default root
-    request_header_chk = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes=0-\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure slice with nine-byte test blocks and no cache."""
 
-    response_header_chk = {
-        "headers": "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body,
-    }
+        ats = ats_factory.create("ats", enable_cache=False)
+        if not ats.plugin_exists("slice.so"):
+            pytest.skip("slice.so is not installed")
+        ats.remap_config.add_line(
+            f"map / http://127.0.0.1:{self._origin.port} @plugin=slice.so @pparam=--blockbytes-test={self.BLOCK_BYTES}")
+        return ats
 
-    server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
+    def request(self, path: str) -> str:
+        """Request one malformed object and return headers plus partial body."""
 
-    blockbytes = 9
+        result = self._curl.get(
+            self._ats,
+            f"/{path}",
+            headers={"Host": "ats"},
+            options=("--silent", "--show-error", "--dump-header", "-"),
+        )
+        assert "HTTP/1.1 200 OK" in result.stdout, result.output
+        assert self.BODY[:self.BLOCK_BYTES] in result.stdout, result.output
+        return result.output
 
-    range0 = "{}-{}".format(0, blockbytes - 1)
-    range1 = "{}-{}".format(blockbytes, (2 * blockbytes) - 1)
+    def run(self) -> None:
+        """Issue each malformed sequence and wait for its diagnostic."""
 
-    body0 = body[0:blockbytes]
-    body1 = body[blockbytes:2 * blockbytes]
+        self._origin.start()
+        self._ats.start()
+        cases = (
+            ("etag", "Mismatch block Etag"),
+            ("lastmodified", "Mismatch block Last-Modified"),
+            ("crr", "Mismatch/Bad block Content-Range"),
+            ("internal404", "404 internal block response"),
+        )
+        for path, diagnostic in cases:
+            self.request(path)
+            wait_for_file_lines(self._ats.diags_log, diagnostic, 1)
 
-    # Mismatch etag
 
-    request_header_etag0 = {
-        "headers":
-            "GET /etag HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+def test_slice_error(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Slice logs the reason it aborts an inconsistent block stream."""
 
-    response_header_etag0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag0"\r\n' +
-            "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body0,
-    }
-
-    server.addResponse("sessionlog.json", request_header_etag0, response_header_etag0)
-
-    request_header_etag1 = {
-        "headers":
-            "GET /etag HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_etag1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag1"\r\n' +
-            "Content-Range: bytes {}/{}\r\n".format(range1, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body1,
-    }
-
-    server.addResponse("sessionlog.json", request_header_etag1, response_header_etag1)
-
-    # mismatch Last-Modified
-
-    request_header_lm0 = {
-        "headers":
-            "GET /lastmodified HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_lm0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" +
-            "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body0,
-    }
-
-    server.addResponse("sessionlog.json", request_header_lm0, response_header_lm0)
-
-    request_header_lm1 = {
-        "headers":
-            "GET /lastmodified HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_lm1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Last-Modified: Tue, 08 Apr 2019 18:00:00 GMT\r\n" +
-            "Content-Range: bytes {}/{}\r\n".format(range1, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body1,
-    }
-
-    server.addResponse("sessionlog.json", request_header_lm1, response_header_lm1)
-
-    # non 206 slice block
-
-    request_header_n206_0 = {
-        "headers":
-            "GET /non206 HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_n206_0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag"\r\n' +
-            "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" + "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-            "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body0,
-    }
-
-    server.addResponse("sessionlog.json", request_header_n206_0, response_header_n206_0)
-
-    request_header_n206_1 = {
-        "headers":
-            "GET /non206 HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_n206_1 = {
-        "headers": "HTTP/1.1 502 Bad Gateway\r\n" + "Connection: close\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body1,
-    }
-
-    server.addResponse("sessionlog.json", request_header_n206_1, response_header_n206_1)
-
-    # mismatch content-range
-
-    request_header_crr0 = {
-        "headers":
-            "GET /crr HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_crr0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Etag: crr\r\n" +
-            "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body0,
-    }
-
-    server.addResponse("sessionlog.json", request_header_crr0, response_header_crr0)
-
-    request_header_crr1 = {
-        "headers":
-            "GET /crr HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range1) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_crr1 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Etag: crr\r\n" +
-            "Content-Range: bytes {}/{}\r\n".format(range1,
-                                                    len(body) - 1) + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body1,
-    }
-
-    server.addResponse("sessionlog.json", request_header_crr1, response_header_crr1)
-
-    # 404 internal block
-
-    request_header_internal404_0 = {
-        "headers":
-            "GET /internal404 HTTP/1.1\r\n" + "Host: ats\r\n" + "Range: bytes={}\r\n".format(range0) +
-            "X-Slicer-Info: full content request\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
-
-    response_header_internal404_0 = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "etag"\r\n' +
-            "Last-Modified: Tue, 08 May 2018 15:49:41 GMT\r\n" + "Content-Range: bytes {}/{}\r\n".format(range0, len(body)) +
-            "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body0,
-    }
-
-    server.addResponse("sessionlog.json", request_header_internal404_0, response_header_internal404_0)
-
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
-
-    # set up whole asset fetch into cache
-    ts.Disk.remap_config.AddLine(
-        'map / http://127.0.0.1:{}'.format(server.Variables.Port) +
-        ' @plugin=slice.so @pparam=--blockbytes-test={}'.format(blockbytes))
-
-    # minimal configuration
-    ts.Disk.records_config.update({
-        #  'proxy.config.diags.debug.enabled': 1,
-        #  'proxy.config.diags.debug.tags': 'slice',
-    })
-
-    # Override builtin error check as these cases will fail
-    # taken from the slice plug code
-    ts.Disk.diags_log.Content = Testers.ContainsExpression('reason="Mismatch block Etag', "Mismatch block etag")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="Mismatch block Last-Modified', "Mismatch block Last-Modified")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        'reason="Mismatch/Bad block Content-Range', "Mismatch/Bad block Content-Range")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression('reason="404 internal block response', "404 internal block response")
-
-    # 0 Test - Etag mismatch test
-    tr = urtest.AddTestRun("Etag test")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/etag', ts=ts)
-    # ps.ReturnCode = 0 # curl will return fail status
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
-    ps.Streams.stderr = "gold_error/contents.stderr.gold"
-    tr.StillRunningAfter = ts
-
-    # 1 Check - diags.log message
-    tr = urtest.AddTestRun("Etag error check")
-    ps = tr.Processes.Default
-    ps.Command = "grep 'Mismatch block Etag' {}".format(ts.Disk.diags_log.Name)
-    ps.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    # 2 Test - Last Modified mismatch test
-    tr = urtest.AddTestRun("Last-Modified test")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/lastmodified', ts=ts)
-    # ps.ReturnCode = 0 # curl will return fail status
-    ps.Streams.stderr = "gold_error/contents.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
-    tr.StillRunningAfter = ts
-
-    # 3 Check - diags.log message
-    tr = urtest.AddTestRun("Last-Modified error check")
-    ps = tr.Processes.Default
-    ps.Command = "grep 'Mismatch block Last-Modified' {}".format(ts.Disk.diags_log.Name)
-    ps.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    # 4 Test - Block content-range
-    tr = urtest.AddTestRun("Content-Range test")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/crr', ts=ts)
-    # ps.ReturnCode = 0 # curl will return fail status
-    ps.Streams.stderr = "gold_error/contents.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
-    tr.StillRunningAfter = ts
-
-    # 5 Check - diags.log message
-    tr = urtest.AddTestRun("Content-Range error check")
-    ps = tr.Processes.Default
-    ps.Command = "grep 'Mismatch/Bad block Content-Range' {}".format(ts.Disk.diags_log.Name)
-    ps.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    # 6 Test - 404 internal test
-    tr = urtest.AddTestRun("Internal 404 test")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/internal404', ts=ts)
-    # ps.ReturnCode = 0 # curl will return fail status
-    ps.Streams.stderr = "gold_error/contents.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
-    tr.StillRunningAfter = ts
-
-    # 7 Check - diags.log message
-    tr = urtest.AddTestRun("Internal 404 check")
-    ps = tr.Processes.Default
-    ps.Command = "grep '404 internal block response' {}".format(ts.Disk.diags_log.Name)
-    ps.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    SliceErrorScenario(ats_factory, services).run()

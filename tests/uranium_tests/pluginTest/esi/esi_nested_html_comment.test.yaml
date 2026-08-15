@@ -1,0 +1,72 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify ESI HTML comment nesting validation"
+  replay: "esi_nested_html_comment.replay.yaml"
+  requires:
+    plugins: ["esi.so"]
+  server:
+    name: "esi-comment-origin"
+    process_config:
+      other_args: '--format "{url}"'
+  client:
+    name: "esi-comment-client"
+    process_config:
+      other_args: '--format "{url}"'
+  ats:
+    name: "esi-comment-ts"
+    process_config:
+      disable_log_checks: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|plugin_esi|plugin_esi_procesor"
+    plugin_config:
+      - "esi.so"
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}"
+  variants:
+    - name: "single-level"
+      server:
+        log_validation:
+          contains:
+            - {expression: "GET /esi-html-comment.php", description: "The origin must receive the ESI document request"}
+      client:
+        process_config:
+          keys: ["/esi-html-comment.php"]
+        log_validation:
+          contains:
+            - {expression: "www.example.com", description: "The client must receive the expanded ESI body"}
+      ats:
+        log_validation:
+          diags_log:
+            excludes:
+              - {expression: 'Nested <!--esi \.\.\.--> inside <!--esi \.\.\.-->', description: "A single wrapper must not trip the nested guard"}
+    - name: "nested-rejected"
+      replay: "esi_nested_html_comment_reject.replay.yaml"
+      server:
+        log_validation:
+          contains:
+            - {expression: "GET /esi-nested-reject.php", description: "The origin must receive the nested-wrapper request"}
+      client:
+        process_config:
+          keys: ["/esi-nested-reject.php"]
+      ats:
+        log_validation:
+          diags_log:
+            contains:
+              - {expression: 'Nested <!--esi \.\.\.--> inside <!--esi \.\.\.--> is not allowed', description: "The nested-wrapper guard must reject nested ESI comments"}

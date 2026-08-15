@@ -13,408 +13,261 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify caching complete responses to normalized and raw range requests."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import re
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
 
-def test_cache_range_requests_cache_complete_responses(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class CacheCompleteResponsesScenario:
+    """Exercise complete-response range caching through three ordered rounds."""
 
-    urtest.Summary = '''
-    cache_range_requests cache-complete-responses test
-    '''
+    SMALL_BODY = "x" * 10_000
+    SLICE_BODY_LENGTH = 4 * 1024 * 1024
+    SLICE_BODY = "x" * SLICE_BODY_LENGTH
 
-    # Test description:
-    # Three rounds of testing:
-    #  Round 1:
-    #   - seed the cache with an object that is smaller than the slice block size
-    #   - issue requests with various ranges and validate responses are 200s
-    #  Round 2:
-    #   - seed the cache with an object that is larger than the slice block size
-    #   - issue requests with various ranges and validate responses are 206s
-    # The first two rounds test cache miss, cache hit, and refresh hit scenarios
-    #   - uses the cachekey plugin to add the `Range` request header to the cache key
-    #   - requests content through the slice and cache_range_requests plugin with a 4MB slice block size
-    #   - demonstrates how one might normalize the `Range` header to avoid cache pollution
-    # The third round tests cache miss, hit, and refresh hit scenarios without any other plugins
-    #   - tests cache misses, then hits, using the same object but two different ranges
-    #   - demonstrates why normalization of the `Range` header is required to prevent pollution
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-    urtest.SkipUnless(
-        Condition.PluginExists('cachekey.so'),
-        Condition.PluginExists('cache_range_requests.so'),
-        Condition.PluginExists('slice.so'),
-        Condition.PluginExists('xdebug.so'),
-    )
-    urtest.ContinueOnFail = False
-    urtest.testName = "cache_range_requests_cache_200s"
+    @staticmethod
+    def add_response(
+        origin: OriginServer,
+        uid: str,
+        *,
+        status: str,
+        cache_control: str,
+        etag: str,
+        body: str = "",
+        content_range: str | None = None,
+    ) -> None:
+        """Add one UID-selected origin response."""
 
-    # Generate bodies for our responses
-    small_body_len = 10000
-    small_body = 'x' * small_body_len
+        fields = [f"HTTP/1.1 {status}", f"Cache-Control: {cache_control}", "Connection: close", f"Etag: {etag}"]
+        if content_range is not None:
+            fields.append(f"Content-Range: bytes {content_range}")
+        origin.add_response(
+            {"headers": f"GET {{PATH}} HTTP/1.1\r\nHost: www.example.com\r\nUID: {uid}\r\n\r\n"},
+            {
+                "headers": "\r\n".join(fields) + "\r\n\r\n",
+                "body": body
+            },
+        )
 
-    slice_body_len = 4 * 1024 * 1024
-    slice_body = 'x' * slice_body_len
+    @classmethod
+    def configure_server(cls, services: ServiceFactory) -> OriginServer:
+        """Create small, sliced, and conditional origin responses."""
 
-    # Define and configure ATS
-    ts = urtest.MakeATSProcess("ts")
+        origin = services.origin("origin", lookup_key="{%UID}")
+        cls.add_response(
+            origin,
+            "SMALL",
+            status="200 OK",
+            cache_control="max-age=1",
+            etag='"772102f4-56f4bc1e6d417"',
+            body=cls.SMALL_BODY,
+        )
+        cls.add_response(
+            origin,
+            "SMALL-INM",
+            status="304 Not Modified",
+            cache_control="max-age=10",
+            etag='"772102f4-56f4bc1e6d417"',
+        )
+        cls.add_response(
+            origin,
+            "SLICE",
+            status="206 Partial Content",
+            cache_control="max-age=1",
+            etag='"872104f4-d6bcaa1e6f979"',
+            content_range=f"0-{cls.SLICE_BODY_LENGTH - 1}/{cls.SLICE_BODY_LENGTH * 2}",
+            body=cls.SLICE_BODY,
+        )
+        cls.add_response(
+            origin,
+            "SLICE-INM",
+            status="304 Not Modified",
+            cache_control="max-age=10",
+            etag='"872104f4-d6bcaa1e6f979"',
+        )
+        cls.add_response(
+            origin,
+            "NAIEVE",
+            status="200 OK",
+            cache_control="max-age=1",
+            etag='"cad04ff4-56f4bc197ceda"',
+            body=cls.SMALL_BODY,
+        )
+        cls.add_response(
+            origin,
+            "NAIEVE-INM",
+            status="304 Not Modified",
+            cache_control="max-age=10",
+            etag='"cad04ff4-56f4bc197ceda"',
+        )
+        return origin
 
-    # Define and configure origin server
-    server = urtest.MakeOriginServer("server", lookup_key="{%UID}")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure normalized and raw complete-response range mappings."""
 
-    # default root
-    req_chk = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+        ats = ats_factory.create("ats")
+        required = ("cachekey.so", "cache_range_requests.so", "slice.so", "xdebug.so")
+        if not all(ats.plugin_exists(plugin) for plugin in required):
+            pytest.skip("cachekey.so, cache_range_requests.so, slice.so, and xdebug.so are required")
+        origin = f"http://127.0.0.1:{self._origin.port}"
+        ats.remap_config.add_lines(
+            (
+                f"map http://example.com/naieve {origin}/naieve @plugin=cache_range_requests.so "
+                "@pparam=--cache-complete-responses",
+                f"map http://example.com {origin} @plugin=slice.so @pparam=--blockbytes=4m "
+                "@plugin=cachekey.so @pparam=--key-type=cache_key @pparam=--include-headers=Range "
+                "@pparam=--remove-all-params=true @plugin=cache_range_requests.so "
+                "@pparam=--no-modify-cachekey @pparam=--cache-complete-responses",
+            ))
+        ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "cachekey|cache_range_requests|slice",
+            })
+        return ats
 
-    res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
+    def request(self, path: str, byte_range: str, uid: str) -> CommandResult:
+        """Issue one debug-enabled range request."""
 
-    server.addResponse("sessionlog.json", req_chk, res_chk)
+        return self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--show-error",
+            "--dump-header",
+            "-",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+            "--header",
+            "x-debug: x-cache, x-cache-key",
+            "--header",
+            f"UID: {uid}",
+            "--range",
+            byte_range,
+            f"http://example.com{path}",
+        )
 
-    small_req = {
-        "headers": "GET /obj HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "UID: SMALL\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+    @staticmethod
+    def assert_response(
+        result: CommandResult,
+        *,
+        status: str,
+        cache: str,
+        cache_key: str,
+        content_range: str | None = None,
+    ) -> None:
+        """Verify status, cache state, cache key, and optional range."""
 
-    small_resp = {
-        "headers":
-            "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-            'Etag: "772102f4-56f4bc1e6d417"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": small_body
-    }
+        assert result.returncode == 0, result.output
+        assert status in result.stdout, result.output
+        assert f"X-Cache: {cache}" in result.stdout, result.output
+        assert re.search(cache_key, result.stdout), result.output
+        if content_range is None:
+            assert "Content-Range:" not in result.stdout, result.output
+        else:
+            assert f"Content-Range: bytes {content_range}" in result.stdout, result.output
 
-    small_reval_req = {
-        "headers": "GET /obj HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "UID: SMALL-INM\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+    def run_small_object_round(self) -> None:
+        """Verify normalized ranges share a complete 200 response."""
 
-    small_reval_resp = {
-        "headers":
-            "HTTP/1.1 304 Not Modified\r\n" + "Cache-Control: max-age=10\r\n" + "Connection: close\r\n" +
-            'Etag: "772102f4-56f4bc1e6d417"\r\n' + "\r\n",
-        "timestamp": "1469733493.993"
-    }
+        key = r"X-Cache-Key: /.*?/Range:bytes=0-4194303/obj"
+        self.assert_response(self.request("/obj", "0-5000", "SMALL"), status="200 OK", cache="miss, none", cache_key=key)
+        self.assert_response(self.request("/obj", "5001-5999", "SMALL"), status="200 OK", cache="hit-fresh, none", cache_key=key)
+        time.sleep(2)
+        self.assert_response(self.request("/obj", "0-403", "SMALL-INM"), status="200 OK", cache="hit-stale, none", cache_key=key)
+        self.assert_response(self.request("/obj", "0-3999", "SMALL"), status="200 OK", cache="hit-fresh, none", cache_key=key)
 
-    slice_req = {
-        "headers":
-            "GET /slice HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Range: bytes=0-4194303\r\n" + "Accept: */*\r\n" +
-            "UID: SLICE\r\n"
-            "\r\n",
-        "timestamp": "1469733493.993",
-    }
+    def run_sliced_object_round(self) -> None:
+        """Verify normalized ranges share a cached four-megabyte slice."""
 
-    slice_resp = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Cache-Control: max-age=1\r\n" +
-            "Content-Range: bytes 0-{}/{}\r\n".format(slice_body_len - 1, slice_body_len * 2) + "\r\n" +
-            "Content-Length: {}\r\n".format(slice_body_len) + "\r\n" + "Connection: close\r\n" +
-            'Etag: "872104f4-d6bcaa1e6f979"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": slice_body
-    }
+        key = r"X-Cache-Key: /.*?/Range:bytes=0-4194303/slice"
+        self.assert_response(
+            self.request("/slice", "0-5000", "SLICE"),
+            status="206 Partial Content",
+            cache="miss, none",
+            cache_key=key,
+            content_range="0-5000/8388608",
+        )
+        self.assert_response(
+            self.request("/slice", "5001-5999", "SLICE"),
+            status="206 Partial Content",
+            cache="hit-fresh, none",
+            cache_key=key,
+            content_range="5001-5999/8388608",
+        )
+        time.sleep(2)
+        self.assert_response(
+            self.request("/slice", "0-403", "SLICE-INM"),
+            status="206 Partial Content",
+            cache="hit-stale, none",
+            cache_key=key,
+            content_range="0-403/8388608",
+        )
+        self.assert_response(
+            self.request("/slice", "0-3999", "SLICE"),
+            status="206 Partial Content",
+            cache="hit-fresh, none",
+            cache_key=key,
+            content_range="0-3999/8388608",
+        )
 
-    slice_reval_req = {
-        "headers": "GET /slice HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "UID: SLICE-INM\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+    def run_raw_range_round(self) -> None:
+        """Show that unnormalized Range values create separate cache objects."""
 
-    slice_reval_resp = {
-        "headers":
-            "HTTP/1.1 304 Not Modified\r\n" + "Cache-Control: max-age=10\r\n" + "Connection: close\r\n" +
-            'Etag: "872104f4-d6bcaa1e6f979"\r\n' + "\r\n",
-        "timestamp": "1469733493.993"
-    }
+        original_key = r"X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000"
+        alternate_key = r"X-Cache-Key: http://.*?/naieve/obj-bytes=444-777"
+        self.assert_response(self.request("/naieve/obj", "0-5000", "NAIEVE"), status="200 OK", cache="miss", cache_key=original_key)
+        self.assert_response(
+            self.request("/naieve/obj", "0-5000", "NAIEVE"),
+            status="200 OK",
+            cache="hit-fresh",
+            cache_key=original_key,
+        )
+        time.sleep(2)
+        self.assert_response(
+            self.request("/naieve/obj", "0-5000", "NAIEVE-INM"),
+            status="200 OK",
+            cache="hit-stale",
+            cache_key=original_key,
+        )
+        self.assert_response(
+            self.request("/naieve/obj", "0-5000", "NAIEVE"),
+            status="200 OK",
+            cache="hit-fresh",
+            cache_key=original_key,
+        )
+        self.assert_response(
+            self.request("/naieve/obj", "444-777", "NAIEVE"), status="200 OK", cache="miss", cache_key=alternate_key)
+        self.assert_response(
+            self.request("/naieve/obj", "444-777", "NAIEVE"), status="200 OK", cache="hit", cache_key=alternate_key)
+        self.assert_response(
+            self.request("/naieve/obj", "0-5000", "NAIEVE"),
+            status="200 OK",
+            cache="hit-fresh",
+            cache_key=original_key,
+        )
 
-    naieve_req = {
-        "headers": "GET /naieve/obj HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "UID: NAIEVE\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+    def run(self) -> None:
+        """Run all rounds against one persistent cache."""
 
-    naieve_resp = {
-        "headers":
-            "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-            'Etag: "cad04ff4-56f4bc197ceda"\r\n' + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": small_body
-    }
+        self._origin.start()
+        self._ats.start()
+        self.run_small_object_round()
+        self.run_sliced_object_round()
+        self.run_raw_range_round()
 
-    naieve_reval_req = {
-        "headers": "GET /naieve/obj HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "UID: NAIEVE-INM\r\n"
-                   "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
 
-    naieve_reval_resp = {
-        "headers":
-            "HTTP/1.1 304 Not Modified\r\n" + "Cache-Control: max-age=10\r\n" + "Connection: close\r\n" +
-            'Etag: "cad04ff4-56f4bc197ceda"\r\n' + "\r\n",
-        "timestamp": "1469733493.993"
-    }
+def test_cache_range_requests_cache_complete_responses(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Complete responses remain cacheable while normalized ranges share keys."""
 
-    server.addResponse("sessionlog.json", small_req, small_resp)
-    server.addResponse("sessionlog.json", small_reval_req, small_reval_resp)
-    server.addResponse("sessionlog.json", slice_req, slice_resp)
-    server.addResponse("sessionlog.json", slice_reval_req, slice_reval_resp)
-    server.addResponse("sessionlog.json", naieve_req, naieve_resp)
-    server.addResponse("sessionlog.json", naieve_reval_req, naieve_reval_resp)
-
-    # remap with the cache range requests plugin only
-    # this is a "naieve" configuration due to the lack of range normalization performed at remap time by slice
-    # this config should only be used if ranges have been reliably normalized by the requestor (either the client itself or a cache)
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://example.com/naieve http://127.0.0.1:{server.Variables.Port}/naieve \\' +
-            ' @plugin=cache_range_requests.so @pparam=--cache-complete-responses',
-        ])
-
-    # remap with slice, cachekey, and the cache range requests plugin to ensure range normalization and cache keys are correct
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://example.com http://127.0.0.1:{server.Variables.Port} \\' + ' @plugin=slice.so @pparam=--blockbytes=4m \\',
-            ' @plugin=cachekey.so @pparam=--key-type=cache_key @pparam=--include-headers=Range @pparam=--remove-all-params=true \\',
-            ' @plugin=cache_range_requests.so @pparam=--no-modify-cachekey @pparam=--cache-complete-responses',
-        ])
-
-    # cache debug
-    ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key')
-
-    # enable debug
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'cachekey|cache_range_requests|slice',
-        })
-
-    # base cURL command
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache, x-cache-key"'.format(ts.Variables.port)
-
-    # Test round 1: ensure we fetch and cache objects that are returned with a
-    # 200 OK and no Content-Range when the object is smaller than the slice
-    # block size
-
-    # 0 Test - Fetch /obj with a Range header but less than 4MB
-    tr = urtest.AddTestRun("cache miss on /obj")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # 1 Test - Fetch /obj with a different range but less than 4MB
-    tr = urtest.AddTestRun("cache hit-fresh on /obj")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 5001-5999', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # 2 Test - Revalidate /obj with a different range but less than 4MB
-    tr = urtest.AddTestRun("cache hit-stale on /obj")
-    tr.DelayStart = 2
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL-INM" http://example.com/obj -r 0-403', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # 3 Test - Fetch /obj with a different range but less than 4MB
-    tr = urtest.AddTestRun("cache hit on /obj post revalidation")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SMALL" http://example.com/obj -r 0-3999', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/obj", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # Test round 2: repeat, but ensure we have 206s and matching Content-Range
-    # headers due to a base object that exceeds the slice block size
-
-    # 4 Test - Fetch /slice with a Range header but less than 4MB
-    tr = urtest.AddTestRun("cache miss on /slice")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "Content-Range: bytes 0-5000/8388608", "expected Content-Range: bytes 0-5000/8388608")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss, none", "expected cache miss")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # 5 Test - Fetch /slice with a different range but less than 4MB
-    tr = urtest.AddTestRun("cache hit-fresh on /slice")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 5001-5999', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "Content-Range: bytes 5001-5999/8388608", "expected Content-Range: bytes 5001-5999/8388608")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # 6 Test - Revalidate /slice with a different range but less than 4MB
-    tr = urtest.AddTestRun("cache hit-stale on /slice")
-    tr.DelayStart = 2
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE-INM" http://example.com/slice -r 0-403', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "Content-Range: bytes 0-403/8388608", "expected Content-Range: bytes 0-403/8388608")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale, none", "expected cache hit stale")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # 7 Test - Fetch /slice with a different range but less than 4MB
-    tr = urtest.AddTestRun("cache hit on /slice post revalidation")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: SLICE" http://example.com/slice -r 0-3999', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 Partial Content")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "Content-Range: bytes 0-3999/8388608", "expected Content-Range: bytes 0-3999/8388608")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh, none", "expected cache hit-fresh")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: /.*?/Range:bytes=0-4194303/slice", "expected cache key with bytes 0-4194303")
-    tr.StillRunningAfter = ts
-
-    # Test round 3: test behavior of the cache range requests plugin when caching complete ranges *without* the slice and cachekey plugins
-    # this tests the "naieve" case that requires range normalization to be
-    # performed by the requestor and demonstrates how the cache can be
-    # polluted without normalization
-
-    # 8 Test - Fetch /naieve/obj with a Range header
-    tr = urtest.AddTestRun("cache miss on /naieve/obj")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000", "expected cache key with bytes 0-5000")
-    tr.StillRunningAfter = ts
-
-    # 9 Test - Fetch /naieve/obj with the same Range header
-    tr = urtest.AddTestRun("cache hit-fresh on /naieve/obj")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000", "expected cache key with bytes 0-5000")
-    tr.StillRunningAfter = ts
-
-    # 10 Test - Revalidate /naieve/obj with the same Range header
-    tr = urtest.AddTestRun("cache hit-stale on /naieve/obj")
-    tr.DelayStart = 2
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE-INM" http://example.com/naieve/obj -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000", "expected cache key with bytes 0-5000")
-    tr.StillRunningAfter = ts
-
-    # 11 Test - Fetch /naieve/obj with the same Range header
-    tr = urtest.AddTestRun("cache hit on /naieve/obj post revalidation")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000", "expected cache key with bytes 0-5000")
-    tr.StillRunningAfter = ts
-
-    # 12 Test - Fetch /naieve/obj with a *different* Range header; note the cache key changes and is a miss for the same object
-    tr = urtest.AddTestRun("cache miss on /naieve/obj")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=444-777", "expected cache key with bytes 444-777")
-    tr.StillRunningAfter = ts
-
-    # 13 Test - Fetch /naieve/obj with the prior Range header; now a cache hit but we've effectively cached /naieve/obj twice
-    # this is why a Range normalization strategy should _always_ be employed when using `--cache-complete-responses`
-    tr = urtest.AddTestRun("cache hit on /naieve/obj")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 444-777', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit", "expected cache hit-fresh")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=444-777", "expected cache key with bytes 444-777")
-    tr.StillRunningAfter = ts
-
-    # 14 Test - Fetch /naieve/obj with the original Range header (0-5000); still a cache hit
-    tr = urtest.AddTestRun("cache hit on /naieve/obj after requesting with a different Range")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' -H "UID: NAIEVE" http://example.com/naieve/obj -r 0-5000', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK")
-    ps.Streams.stdout.Content = Testers.ExcludesExpression("Content-Range:", "expected no Content-Range header")
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit-fresh")
-    ps.Streams.stdout.Content = Testers.ContainsExpression(
-        "X-Cache-Key: http://.*?/naieve/obj-bytes=0-5000", "expected cache key with bytes 0-5000")
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    CacheCompleteResponsesScenario(ats_factory, services).run()

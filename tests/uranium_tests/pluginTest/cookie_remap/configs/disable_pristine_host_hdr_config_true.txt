@@ -5,7 +5,6 @@ op:
   cookie: SessionID
   operation: bucket
   bucket: 30/100
-  sendto: http://canary.com:$CANARY_PORT/app/test
+  sendto: http://canary.com:{SERVER_EXTRA_HTTP_PORT}/app/test
   disable_pristine_host_hdr: true
-  else: http://stable.com:$STABLE_PORT/app/test
-
+  else: http://stable.com:{SERVER_HTTP_PORT}/app/test

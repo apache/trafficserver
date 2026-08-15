@@ -13,387 +13,194 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify ESI transformation, gzip, cache-control, and size options."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from dataclasses import dataclass
+import gzip
+from pathlib import Path
+import re
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory, wait_for_file_lines
+
+ESI_BODY = """<?php   header('X-Esi: 1'); ?>
+<html>
+<body>
+Hello, <esi:include src="http://www.example.com/date.php"/>
+</body>
+</html>
+"""
+DATE_BODY = """<?php
+header ("Cache-control: no-cache");
+echo date('l jS \\of F Y h:i:s A');
+?>
+"""
+TRANSFORMED_BODY = ESI_BODY.replace('<esi:include src="http://www.example.com/date.php"/>', DATE_BODY)
 
 
-def test_esi(urtest: UraniumTest) -> None:
-    '''
-    Test the ESI plugin.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+@dataclass(frozen=True)
+class EsiVariant:
+    """Describe one ESI plugin option combination."""
 
-    import os
-    import re
+    name: str
+    plugin_config: str
+    behavior: str
+    private_response: bool = False
 
-    urtest.Summary = '''
-    Test the ESI plugin.
-    '''
 
-    urtest.SkipUnless(Condition.PluginExists('esi.so'),)
+VARIANTS = (
+    EsiVariant("vanilla", "esi.so", "gzip"),
+    EsiVariant("private-response", "esi.so --private-response", "gzip", private_response=True),
+    EsiVariant("first-byte-flush", "esi.so --first-byte-flush", "gzip"),
+    EsiVariant("disable-gzip", "esi.so --disable-gzip-output", "no-gzip"),
+    EsiVariant("max-doc-100", "esi.so --max-doc-size 100", "too-small"),
+    EsiVariant("max-doc-2k", "esi.so --max-doc-size 2K", "gzip"),
+    EsiVariant("max-doc-20m", "esi.so --max-doc-size 20M", "gzip"),
+    EsiVariant("allowed-200", "esi.so --allowed-response-codes 200", "gzip"),
+    EsiVariant("allowed-304", "esi.so --allowed-response-codes 304", "no-transform"),
+)
 
-    # An enum of expected plugin behaviors for Cache-Control headers.
-    class CcBehaviorT():
-        REMOVE_CC = 0
-        MAKE_PRIVATE = 1
 
-    class EsiTest():
-        """
-        A class that encapsulates the configuration and execution of a set of EPI
-        test cases.
-        """
-        """ static: The same server Process is used across all tests. """
-        _server = None
-        """ static: A counter to keep the ATS process names unique across tests. """
-        _ts_counter = 0
-        """ static: A counter to keep any output file names unique across tests. """
-        _output_counter = 0
-        """ The ATS process for this set of test cases. """
-        _ts = None
+class EsiScenario:
+    """Configure one ESI option variant and run its client checks."""
 
-        def __init__(self, plugin_config, cc_behavior=CcBehaviorT.REMOVE_CC):
-            """
-            Args:
-                plugin_config (str): The base config line to place in plugin.config for
-                    the ATS process.
-                cc_behavior (CcBehaviorT): The expected behavior of the ESI plugin
-                    with respect to the Cache-Control header.
-            """
-            if EsiTest._server is None:
-                EsiTest._server = EsiTest._create_server()
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, variant: EsiVariant) -> None:
+        self._variant = variant
+        self._run_directory = ats_factory.run_directory
+        self._origin = self.configure_server(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._curl = Curl(ats_factory.run_directory)
 
-            self._plugin_config = plugin_config
-            self._cc_behavior = cc_behavior
-            self._ts = EsiTest._create_ats(self, plugin_config)
+    @staticmethod
+    def configure_server(services: ServiceFactory) -> OriginServer:
+        """Create the document, include fragment, and empty response."""
 
-        @staticmethod
-        def _create_server():
-            """
-            Create and start a server process.
-            """
-            # Configure our server.
-            server = urtest.MakeOriginServer("server")
-
-            # Generate the set of ESI responses derived right from our ESI docs.
-            # See:
-            #   doc/admin-guide/plugins/esi.en.rst
-            request_header = {
-                "headers": ("GET /esi.php HTTP/1.1\r\n"
-                            "Host: www.example.com\r\n"
-                            "Content-Length: 0\r\n\r\n"),
-                "timestamp": "1469733493.993",
-                "body": ""
-            }
-            esi_body = r'''<?php   header('X-Esi: 1'); ?>
-    <html>
-    <body>
-    Hello, <esi:include src="http://www.example.com/date.php"/>
-    </body>
-    </html>
-    '''
-            response_header = {
+        origin = services.origin("origin")
+        origin.add_response(
+            {"headers": "GET /esi.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
+            {
                 "headers":
                     (
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: text/html\r\n"
-                        "X-Esi: 1\r\n"
-                        "Connection: close\r\n"
-                        "Content-Length: {}\r\n"
-                        "Cache-Control: max-age=300\r\n"
-                        "\r\n".format(len(esi_body))),
-                "timestamp": "1469733493.993",
-                "body": esi_body
-            }
-            server.addResponse("sessionfile.log", request_header, response_header)
-            request_header = {
-                "headers": ("GET /date.php HTTP/1.1\r\n"
-                            "Host: www.example.com\r\n"
-                            "Content-Length: 0\r\n\r\n"),
-                "timestamp": "1469733493.993",
-                "body": ""
-            }
-            date_body = r'''<?php
-    header ("Cache-control: no-cache");
-    echo date('l jS \of F Y h:i:s A');
-    ?>
-    '''
-            response_header = {
+                        "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\nConnection: close\r\n"
+                        f"Content-Length: {len(ESI_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
+                "body": ESI_BODY,
+            },
+        )
+        origin.add_response(
+            {"headers": "GET /date.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
+            {
                 "headers":
                     (
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: text/html\r\n"
-                        "Connection: close\r\n"
-                        "Content-Length: {}\r\n"
-                        "Cache-Control: max-age=300\r\n"
-                        "\r\n".format(len(date_body))),
-                "timestamp": "1469733493.993",
-                "body": date_body
-            }
-            server.addResponse("sessionfile.log", request_header, response_header)
-            # Verify correct functionality with an empty body.
-            request_header = {
-                "headers": ("GET /expect_empty_body HTTP/1.1\r\n"
-                            "Host: www.example.com\r\n"
-                            "Content-Length: 0\r\n\r\n"),
-                "timestamp": "1469733493.993",
-                "body": ""
-            }
-            response_header = {
+                        "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n"
+                        f"Content-Length: {len(DATE_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
+                "body": DATE_BODY,
+            },
+        )
+        origin.add_response(
+            {"headers": "GET /expect_empty_body HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
+            {
                 "headers":
                     (
-                        "HTTP/1.1 200 OK\r\n"
-                        "X-ESI: On\r\n"
-                        "Content-Length: 0\r\n"
-                        "Connection: close\r\n"
-                        "Content-Type: text/html; charset=UTF-8\r\n"
-                        "\r\n"),
-                "timestamp": "1469733493.993",
-                "body": ""
-            }
-            server.addResponse("sessionfile.log", request_header, response_header)
+                        "HTTP/1.1 200 OK\r\nX-ESI: On\r\nContent-Length: 0\r\nConnection: close\r\n"
+                        "Content-Type: text/html; charset=UTF-8\r\n\r\n")
+            },
+        )
+        return origin
 
-            # Create a run to start the server.
-            tr = urtest.AddTestRun("Start the server.")
-            tr.Processes.Default.StartBefore(server)
-            tr.Processes.Default.Command = "echo starting the server"
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = server
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Load the selected ESI configuration globally."""
 
-            return server
+        ats = ats_factory.create("ats")
+        if not ats.plugin_exists("esi.so"):
+            pytest.skip("esi.so is not installed")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|plugin_esi",
+        })
+        ats.remap_config.add_line(f"map http://www.example.com/ http://127.0.0.1:{self._origin.port}")
+        ats.plugin_config.add_line(self._variant.plugin_config)
+        return ats
 
-        @staticmethod
-        def _create_ats(self, plugin_config):
-            """
-            Create and start an ATS process.
-            """
-            EsiTest._ts_counter += 1
+    def request(self, path: str, *options: str) -> CommandResult:
+        """Issue a verbose ESI request with the required host headers."""
 
-            # Configure ATS with a vanilla ESI plugin configuration.
-            ts = urtest.MakeATSProcess("ts{}".format(EsiTest._ts_counter))
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|plugin_esi',
-                })
-            ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{EsiTest._server.Variables.Port}')
-            ts.Disk.plugin_config.AddLine(plugin_config)
+        return self._curl.get(
+            self._ats,
+            path,
+            headers={
+                "Host": "www.example.com",
+                "Accept": "*/*"
+            },
+            options=("--verbose", *options),
+        )
 
-            # Create a run to start the ATS process.
-            tr = urtest.AddTestRun("Start the ATS process.")
-            tr.Processes.Default.StartBefore(ts)
-            tr.Processes.Default.Command = "echo starting ATS"
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = ts
-            return ts
+    def assert_transformed(self, result: CommandResult) -> None:
+        """Verify transformed content and cache-control behavior."""
 
-        def _configure_client_output_expectations(self, client_process):
-            client_process.Streams.stderr = "gold/esi_headers.gold"
-            client_process.Streams.stdout = "gold/esi_body.gold"
-            if self._cc_behavior == CcBehaviorT.REMOVE_CC:
-                client_process.Streams.stderr += Testers.ExcludesExpression(
-                    'cache-control:', 'The Cache-Control field should not be present in the response', reflags=re.IGNORECASE)
-                client_process.Streams.stderr += Testers.ExcludesExpression(
-                    'expires:', 'The Expires field should not be present in the response', reflags=re.IGNORECASE)
-            if self._cc_behavior == CcBehaviorT.MAKE_PRIVATE:
-                client_process.Streams.stderr += Testers.ContainsExpression(
-                    'cache-control:.*max-age=0, private',
-                    'The private response directive should be present in the response',
-                    reflags=re.IGNORECASE)
-                client_process.Streams.stderr += Testers.ContainsExpression(
-                    'expires: -1', 'The Expires field should be set to -1', reflags=re.IGNORECASE)
+        assert result.returncode == 0, result.output
+        assert "< HTTP/1.1 200 OK" in result.stderr, result.output
+        assert "< Content-Type: text/html" in result.stderr, result.output
+        assert TRANSFORMED_BODY in result.stdout, result.output
+        headers = result.stderr.lower()
+        if self._variant.private_response:
+            assert re.search(r"cache-control:.*max-age=0, private", headers), result.output
+            assert "expires: -1" in headers, result.output
+        else:
+            assert "cache-control:" not in headers, result.output
+            assert "expires:" not in headers, result.output
 
-        def run_cases_expecting_gzip(self):
-            # Test 1: Verify basic ESI functionality.
-            tr = urtest.AddTestRun(f"First request for esi.php: not cached: {self._plugin_config}")
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-                '-H"Accept: */*" --verbose',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            self._configure_client_output_expectations(tr.Processes.Default)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
+    def assert_gzip(self, path: str, output_name: str, *, empty: bool = False) -> None:
+        """Download and decompress a gzip response."""
 
-            # Test 2: Repeat the above, should now be cached.
-            tr = urtest.AddTestRun(f"Second request for esi.php: will be cached: {self._plugin_config}")
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-                '-H"Accept: */*" --verbose',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            self._configure_client_output_expectations(tr.Processes.Default)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
+        output_path = self._run_directory / output_name
+        result = self.request(path, "--header", "Accept-Encoding: gzip", "--output", str(output_path))
+        assert result.returncode == 0, result.output
+        assert "< Content-Encoding: gzip" in result.stderr, result.output
+        decompressed = gzip.decompress(output_path.read_bytes())
+        assert decompressed == (b"" if empty else TRANSFORMED_BODY.encode())
 
-            # Test 3: Verify the ESI plugin can gzip a response when the client accepts it.
-            tr = urtest.AddTestRun(f"Verify the ESI plugin can gzip a response: {self._plugin_config}")
-            EsiTest._output_counter += 1
-            unzipped_body_file = os.path.join(tr.RunDirectory, f"non_empty_curl_output_{EsiTest._output_counter}")
-            gzipped_body_file = unzipped_body_file + ".gz"
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-                f'-H "Accept-Encoding: gzip" -H"Accept: */*" --verbose --output {gzipped_body_file}',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Ready = When.FileExists(gzipped_body_file)
-            tr.Processes.Default.Streams.stderr = "gold/esi_gzipped.gold"
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-            zipped_body_disk_file = tr.Disk.File(gzipped_body_file)
-            zipped_body_disk_file.Exists = True
+    def run_gzip_cases(self) -> None:
+        """Verify uncached, cached, compressed, and compressed-empty output."""
 
-            # Now, unzip the file and make sure its size is the expected body.
-            tr = urtest.AddTestRun(f"Verify the file unzips to the expected body: {self._plugin_config}")
-            tr.Processes.Default.Command = f"gunzip {gzipped_body_file}"
-            tr.Processes.Default.Ready = When.FileExists(unzipped_body_file)
-            tr.Processes.Default.ReturnCode = 0
-            unzipped_body_disk_file = tr.Disk.File(unzipped_body_file)
-            unzipped_body_disk_file.Content = "gold/esi_body.gold"
+        self.assert_transformed(self.request("/esi.php"))
+        self.assert_transformed(self.request("/esi.php"))
+        self.assert_gzip("/esi.php", "esi-body.gz")
+        self.assert_gzip("/expect_empty_body", "empty.gz", empty=True)
 
-            # Test 4: Verify correct handling of a gzipped empty response body.
-            tr = urtest.AddTestRun(f"Verify we can handle an empty response: {self._plugin_config}")
-            EsiTest._output_counter += 1
-            empty_body_file = os.path.join(tr.RunDirectory, f"empty_curl_output_{EsiTest._output_counter}")
-            gzipped_empty_body = empty_body_file + ".gz"
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/expect_empty_body '
-                '-H"Host: www.example.com" -H"Accept-Encoding: gzip" -H"Accept: */*" '
-                f'--verbose --output {gzipped_empty_body}',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Ready = When.FileExists(gzipped_empty_body)
-            tr.Processes.Default.Streams.stderr = "gold/empty_response_body.gold"
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-            # The gzipped output file should be greater than 0, even though 0 bytes are
-            # compressed.
-            gz_disk_file = tr.Disk.File(gzipped_empty_body)
-            gz_disk_file.Size = Testers.GreaterThan(0)
+    def run_no_gzip_cases(self) -> None:
+        """Verify gzip output remains disabled when the client accepts it."""
 
-            # Now, unzip the file and make sure its size is the original 0 size body.
-            tr = urtest.AddTestRun(f"Verify the file unzips to a zero sized file: {self._plugin_config}")
-            tr.Processes.Default.Command = f"gunzip {gzipped_empty_body}"
-            tr.Processes.Default.Ready = When.FileExists(empty_body_file)
-            tr.Processes.Default.ReturnCode = 0
-            unzipped_disk_file = tr.Disk.File(empty_body_file)
-            unzipped_disk_file.Size = 0
+        self.assert_transformed(self.request("/esi.php"))
+        result = self.request("/esi.php", "--header", "Accept-Encoding: gzip")
+        self.assert_transformed(result)
+        assert "Content-Encoding: gzip" not in result.stderr
 
-        def run_case_max_doc_size_too_small(self):
-            tr = urtest.AddTestRun(f"Max doc size too small: {self._plugin_config}")
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-                '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    def run(self) -> None:
+        """Dispatch the checks appropriate for this plugin configuration."""
+
+        self._origin.start()
+        self._ats.start()
+        if self._variant.behavior == "gzip":
+            self.run_gzip_cases()
+        elif self._variant.behavior == "no-gzip":
+            self.run_no_gzip_cases()
+        elif self._variant.behavior == "too-small":
+            result = self.request("/esi.php")
+            assert result.returncode == 0, result.output
+            wait_for_file_lines(
+                self._ats.diags_log,
                 r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100 for URL \[.*esi\.php.*\]",
-                "max doc size test should have doc size error log")
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
+                1,
+            )
+        else:
+            result = self.request("/esi.php")
+            assert result.returncode == 0, result.output
+            assert 'Hello, <esi:include src="http://www.example.com/date.php"/>' in result.stdout
 
-        def run_cases_expecting_no_gzip(self):
-            # Test 1: Run an ESI test where the client does not accept gzip.
-            tr = urtest.AddTestRun(f"First request for esi.php: gzip not accepted: {self._plugin_config}")
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-                '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            self._configure_client_output_expectations(tr.Processes.Default)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
 
-            # Test 2: Verify the ESI plugin does not gzip the response even if the
-            # client accepts the gzip encoding.
-            tr = urtest.AddTestRun(f"Verify the ESI plugin refuses to gzip responses with: {self._plugin_config}")
-            tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-                '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            self._configure_client_output_expectations(tr.Processes.Default)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
+@pytest.mark.parametrize("variant", VARIANTS, ids=lambda value: value.name)
+def test_esi(ats_factory: ATSFactory, services: ServiceFactory, variant: EsiVariant) -> None:
+    """ESI options preserve their documented transformation behavior."""
 
-        def run_cases_expecting_no_transformation(self):
-            tr = urtest.AddTestRun(f"Verify the ESI plugin does not transform responses: {self._plugin_config}")
-            client = tr.MakeCurlCommand(
-                f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-                '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-                ts=self._ts)
-            client.ReturnCode = 0
-
-            # Expect no transformation: the tag should be present without any transformation.
-            client.Streams.stdout += Testers.ContainsExpression(
-                'Hello, <esi:include src="http://www.example.com/date.php"/>',
-                'The response should not be transformed',
-                reflags=re.IGNORECASE)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-
-    #
-    # Configure and run the test cases.
-    #
-
-    # Run the tests with ESI configured with no parameters.
-    vanilla_test = EsiTest(plugin_config='esi.so', cc_behavior=CcBehaviorT.REMOVE_CC)
-    vanilla_test.run_cases_expecting_gzip()
-
-    private_response_test = EsiTest(plugin_config='esi.so --private-response', cc_behavior=CcBehaviorT.MAKE_PRIVATE)
-    private_response_test.run_cases_expecting_gzip()
-
-    # For these test cases, the behavior should remain the same with
-    # --first-byte-flush set.
-    first_byte_flush_test = EsiTest(plugin_config='esi.so --first-byte-flush')
-    first_byte_flush_test.run_cases_expecting_gzip()
-
-    # For these test cases, the behavior should remain the same with
-    # --packed-node-support set.
-    #
-    # Packed node support is incomplete and the following test does not work. Our
-    # documentation advises users not to use the --packed-node-support feature.
-    # This test is left here, commented out, so that it is conveniently available
-    # for and potential future development on this feature if desired.
-    #
-    # packed_node_support_test = EsiTest(plugin_config='esi.so --packed-node-support')
-    # packed_node_support_test.run_cases_expecting_gzip()
-
-    # Run a set of cases verifying that the plugin does not zip content if
-    # --disable-gzip-output is set.
-    gzip_disabled_test = EsiTest(plugin_config='esi.so --disable-gzip-output')
-    gzip_disabled_test.run_cases_expecting_no_gzip()
-
-    # Run the tests with too small max doc size.
-    max_doc_100_test = EsiTest(plugin_config='esi.so --max-doc-size 100')
-    max_doc_100_test.run_case_max_doc_size_too_small()
-
-    # Run the tests with no default, but sufficient, max doc size.
-    max_doc_2K_test = EsiTest(plugin_config='esi.so --max-doc-size 2K')
-    max_doc_2K_test.run_cases_expecting_gzip()
-    max_doc_20M_test = EsiTest(plugin_config='esi.so --max-doc-size 20M')
-    max_doc_20M_test.run_cases_expecting_gzip()
-
-    # The test doesn't use 304 redirect, so restricting the allowed response codes to 200
-    # should not affect the test.
-    allowed_response_codes_test = EsiTest(plugin_config='esi.so --allowed-response-codes 200')
-    allowed_response_codes_test.run_cases_expecting_gzip()
-
-    # Do not allow transforming the 200 OK response. Since the test uses a 200 OK response,
-    # the plugin should not transform it.
-    response_not_allowed_test = EsiTest(plugin_config='esi.so --allowed-response-codes 304')
-    response_not_allowed_test.run_cases_expecting_no_transformation()
-    urtest.execute()
+    EsiScenario(ats_factory, services, variant).run()

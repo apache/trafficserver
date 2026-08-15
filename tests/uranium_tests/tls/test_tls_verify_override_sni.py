@@ -14,167 +14,130 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
+
+SSL_DIRECTORY = Path(__file__).parent / "ssl"
 
 
-def test_tls_verify_override_sni(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsVerifyConfRemapScenario:
+    """Override outbound verification properties with conf_remap."""
 
-    urtest.Summary = '''
-    Test tls server certificate verification options. Exercise conf_remap
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._dns = self.configure_dns(services)
+        self._foo = self.configure_origin(services, "server_foo", "foo.com")
+        self._bar = self.configure_origin(services, "server_bar", "bar.com")
+        self._ats = self.configure_ats(ats_factory)
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts")
-    cafile = "{0}/signer.pem".format(urtest.RunDirectory)
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve all origin names to the loopback services."""
 
-    server_foo = urtest.MakeOriginServer(
-        "server_foo",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed-foo.pem".format(urtest.RunDirectory),
-            "--clientCA": cafile,
-            "--clientverify": ""
-        },
-        clientcert="{0}/signed-bar.pem".format(urtest.RunDirectory),
-        clientkey="{0}/signed-bar.key".format(urtest.RunDirectory))
-    server_bar = urtest.MakeOriginServer(
-        "server_bar",
-        ssl=True,
-        options={
-            "--key": "{0}/signed-foo.key".format(urtest.RunDirectory),
-            "--cert": "{0}/signed-foo.pem".format(urtest.RunDirectory),
-            "--clientCA": cafile,
-            "--clientverify": ""
-        },
-        clientcert="{0}/signed-bar.pem".format(urtest.RunDirectory),
-        clientkey="{0}/signed-bar.key".format(urtest.RunDirectory))
-
-    dns = urtest.MakeDNServer("dns")
-
-    request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    request_bad_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server_foo.addResponse("sessionlog.json", request_foo_header, response_header)
-    server_foo.addResponse("sessionlog.json", request_bad_foo_header, response_header)
-    server_bar.addResponse("sessionlog.json", request_bar_header, response_header)
-    server_bar.addResponse("sessionlog.json", request_bad_bar_header, response_header)
-
-    server_bar.Setup.Copy("ssl/signer.pem")
-    server_bar.Setup.Copy("ssl/signer2.pem")
-    server_foo.Setup.Copy("ssl/signer.pem")
-    server_foo.Setup.Copy("ssl/signer2.pem")
-
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signed-bar.pem")
-    ts.addSSLfile("ssl/signed-bar.key")
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
-    ts.addSSLfile("ssl/signer.key")
-
-    ts.Disk.remap_config.AddLine('map http://foo.com/defaultbar https://bar.com:{0}'.format(server_bar.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine('map http://foo.com/default https://foo.com:{0}'.format(server_foo.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine(
-        'map http://foo.com/overridepolicy https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'
-        .format(server_foo.Variables.SSL_Port))
-    ts.Disk.remap_config.AddLine(
-        'map http://foo.com/overrideproperties https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE'
-        .format(server_foo.Variables.SSL_Port))
-
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-    # global config policy=permissive properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            # set global policy
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.ssl.client.verify.server.properties': 'ALL',
-            'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-            'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.ssl.client.sni_policy': 'remap'
+        dns = services.dns("dns")
+        dns.add_records({
+            "foo.com.": ["127.0.0.1"],
+            "bar.com.": ["127.0.0.1"],
+            "random.com.": ["127.0.0.1"],
         })
+        return dns
 
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: bar.com',
-            '  client_cert: "{0}/signed-foo.pem"'.format(ts.Variables.SSLDir),
-            '  client_key: "{0}/signed-foo.key"'.format(ts.Variables.SSLDir),
-        ])
+    @staticmethod
+    def configure_origin(services: ServiceFactory, name: str, host: str) -> OriginServer:
+        """Create a mutually authenticated origin using the foo certificate."""
 
-    dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
-    dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
-    dns.addRecords(records={"random.com.": ["127.0.0.1"]})
+        origin = services.origin(
+            name,
+            ssl=True,
+            clientkey=SSL_DIRECTORY / "signed-foo.key",
+            clientcert=SSL_DIRECTORY / "signed-foo.pem",
+            options={
+                "--clientCA": SSL_DIRECTORY / "signer.pem",
+                "--clientverify": "",
+            },
+        )
+        origin.add_response(
+            {"headers": f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    # Should succeed with message
-    # exercise default settings
-    tr = urtest.AddTestRun("default-permissive-success")
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.Setup.Copy("ssl/signed-foo.pem")
-    tr.Setup.Copy("ssl/signed-bar.key")
-    tr.Setup.Copy("ssl/signed-bar.pem")
-    tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/defaultbar'.format(ts.Variables.port), ts=ts)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(dns)
-    tr.Processes.Default.StartBefore(server_foo)
-    tr.Processes.Default.StartBefore(server_bar)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = ts
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure permissive defaults and per-remap verification overrides."""
 
-    # should fail.  Exercise the override
-    tr2 = urtest.AddTestRun("policy-override-fail")
-    tr2.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/overridepolicy".format(ts.Variables.port), ts=ts)
-    tr2.ReturnCode = 0
-    tr2.StillRunningAfter = ts
-    tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Connect", "Curl attempt should fail")
+        ats = ats_factory.create("ts")
+        ats.copy_to_ssl(
+            SSL_DIRECTORY / "signed-foo.pem",
+            SSL_DIRECTORY / "signed-foo.key",
+            SSL_DIRECTORY / "signed-bar.pem",
+            SSL_DIRECTORY / "signed-bar.key",
+            SSL_DIRECTORY / "server.pem",
+            SSL_DIRECTORY / "server.key",
+            SSL_DIRECTORY / "signer.pem",
+            SSL_DIRECTORY / "signer.key",
+        )
+        ats.remap_config.add_lines(
+            (
+                f"map http://foo.com/defaultbar https://bar.com:{self._bar.https_port}",
+                f"map http://foo.com/default https://foo.com:{self._foo.https_port}",
+                f"map http://foo.com/overridepolicy https://bar.com:{self._foo.https_port} "
+                "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED",
+                f"map http://foo.com/overrideproperties https://bar.com:{self._foo.https_port} "
+                "@plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.ssl.client.verify.server.properties": "ALL",
+                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.ssl.client.sni_policy": "remap",
+            })
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: bar.com\n"
+            f'    client_cert: "{ats.ssl_directory}/signed-foo.pem"\n'
+            f'    client_key: "{ats.ssl_directory}/signed-foo.key"\n',
+        )
+        return ats
 
-    # should succeed with an error message
-    tr2 = urtest.AddTestRun("properties-override-permissive")
-    tr2.MakeCurlCommand("-k -H \"host: foo.com\"  http://127.0.0.1:{0}/overrideproperties".format(ts.Variables.port), ts=ts)
-    tr2.ReturnCode = 0
-    tr2.StillRunningAfter = ts
-    tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+    def request(self, path: str) -> str:
+        """Request one remap case through the clear-text ATS listener."""
 
-    # Over riding the built in ERROR check since we expect some cases to fail
-    ts.Disk.diags_log.Content = Testers.ContainsExpression(
-        r"WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing")
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        r" WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch")
-    urtest.execute()
+        result = self._curl.run_for(
+            self._ats,
+            "--header",
+            "Host: foo.com",
+            f"http://127.0.0.1:{self._ats.http_port}/{path}",
+        )
+        assert result.returncode == 0, result.output
+        return result.stdout
+
+    def run(self) -> None:
+        """Exercise the default, enforced, and signature-only remap policies."""
+
+        self._dns.start()
+        self._foo.start()
+        self._bar.start()
+        self._ats.start()
+        assert "Could Not Connect" not in self.request("defaultbar")
+        assert "Could Not Connect" in self.request("overridepolicy")
+        assert "Could Not Connect" not in self.request("overrideproperties")
+
+        diagnostics = self._ats.diags_log.read_text(errors="replace")
+        assert "WARNING: SNI (bar.com) not in certificate. Action=Continue server=bar.com" in diagnostics
+        assert "WARNING: SNI (bar.com) not in certificate. Action=Terminate server=bar.com" in diagnostics
+
+
+def test_tls_verify_override_sni(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """conf_remap can change outbound server verification per mapping."""
+
+    TlsVerifyConfRemapScenario(ats_factory, services, curl).run()

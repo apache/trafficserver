@@ -38,6 +38,7 @@ class ReplaySpec:
     path: Path
     document: dict[str, Any]
     urtest: dict[str, Any]
+    variant_name: str | None = None
 
     @property
     def description(self) -> str:
@@ -46,9 +47,25 @@ class ReplaySpec:
         key = "description" if "description" in self.urtest else "summary"
         return str(self.urtest[key])
 
+    @property
+    def replay_path(self) -> Path:
+        """Return the Proxy Verifier traffic file used by this test."""
+
+        replay = self.urtest.get("replay")
+        return self.path if replay is None else self.path.parent / str(replay)
+
     @classmethod
     def load(cls, path: Path) -> "ReplaySpec":
-        """Load and minimally validate @a path without starting test programs."""
+        """Load a manifest that describes exactly one replay scenario."""
+
+        specs = cls.load_all(path)
+        if len(specs) != 1:
+            raise ReplayConfigError(f"{path} contains variants; use ReplaySpec.load_all()")
+        return specs[0]
+
+    @classmethod
+    def load_all(cls, path: Path) -> list["ReplaySpec"]:
+        """Load every independently collected variant declared by @a path."""
 
         try:
             document = yaml.safe_load(path.read_text())
@@ -59,6 +76,35 @@ class ReplaySpec:
         urtest = document.get("urtest")
         if not isinstance(urtest, dict):
             raise ReplayConfigError(f"{path} must contain a 'urtest' mapping")
+        variants = urtest.get("variants")
+        if variants is None:
+            return [cls._validated(path, document, urtest)]
+        if not isinstance(variants, list) or not variants:
+            raise ReplayConfigError(f"{path}: 'urtest.variants' must be a non-empty list")
+        base = {key: value for key, value in urtest.items() if key != "variants"}
+        specs = []
+        names = set()
+        for variant in variants:
+            if not isinstance(variant, dict) or not isinstance(variant.get("name"), str):
+                raise ReplayConfigError(f"{path}: every replay variant requires a string name")
+            name = variant["name"]
+            if name in names:
+                raise ReplayConfigError(f"{path}: duplicate replay variant name: {name}")
+            names.add(name)
+            overlay = {key: value for key, value in variant.items() if key != "name"}
+            specs.append(cls._validated(path, document, _deep_merge(base, overlay), name))
+        return specs
+
+    @classmethod
+    def _validated(
+        cls,
+        path: Path,
+        document: dict[str, Any],
+        urtest: dict[str, Any],
+        variant_name: str | None = None,
+    ) -> "ReplaySpec":
+        """Validate one fully merged scenario."""
+
         if "description" not in urtest and "summary" not in urtest:
             raise ReplayConfigError(f"{path} is missing 'urtest.description' or 'urtest.summary'")
         for required in ("server", "client", "ats"):
@@ -67,7 +113,25 @@ class ReplaySpec:
         for process in ("server", "client", "ats"):
             if not isinstance(urtest[process], dict):
                 raise ReplayConfigError(f"{path}: 'urtest.{process}' must be a mapping")
-        return cls(path=path, document=document, urtest=urtest)
+        environment = urtest["ats"].get("environment", {})
+        if not isinstance(environment, dict):
+            raise ReplayConfigError(f"{path}: 'urtest.ats.environment' must be a mapping")
+        spec = cls(path=path, document=document, urtest=urtest, variant_name=variant_name)
+        if not spec.replay_path.exists():
+            raise ReplayConfigError(f"{path}: replay file does not exist: {spec.replay_path}")
+        return spec
+
+
+def _deep_merge(base: Mapping[str, Any], overlay: Mapping[str, Any]) -> dict[str, Any]:
+    """Recursively merge one replay variant over its manifest defaults."""
+
+    result = copy.deepcopy(dict(base))
+    for key, value in overlay.items():
+        if isinstance(value, Mapping) and isinstance(result.get(key), Mapping):
+            result[key] = _deep_merge(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
 
 
 def merge_flat_records(records: Mapping[str, Any], defaults: Mapping[str, Any] | None = None) -> dict[str, Any]:

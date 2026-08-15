@@ -14,99 +14,91 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_redirect_post(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class RedirectPostScenario:
+    """Replay a large POST body across two internally followed redirects."""
 
-    urtest.Summary = '''
-    Test basic post redirection
-    '''
+    _body_size = 50 * 1024 * 1024
 
-    # TODO figure out how to use this
-    MAX_REDIRECT = 99
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._redirect1, self._redirect2, self._destination = self.configure_origins(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.SkipUnless(Condition.HasProgram("truncate", "truncate need to be installed on system for this test to work"))
+    def configure_origins(self, services: ServiceFactory) -> tuple[OriginServer, OriginServer, OriginServer]:
+        """Create the two redirect hops and final 204 response."""
 
-    urtest.ContinueOnFail = True
+        redirect1 = services.origin("redirect1")
+        redirect2 = services.origin("redirect2")
+        destination = services.origin("destination")
+        request = lambda path: {
+            "headers": f"POST /{path} HTTP/1.1\r\nHost: *\r\nContent-Length: {self._body_size}\r\n\r\n",
+            "body": "",
+        }
+        redirect1.add_response(
+            request("redirect1"),
+            {
+                "headers": f"HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{redirect2.port}/redirect2\r\n\r\n",
+                "body": "",
+            },
+        )
+        redirect2.add_response(
+            request("redirect2"),
+            {
+                "headers": f"HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{destination.port}/redirectDest\r\n\r\n",
+                "body": "",
+            },
+        )
+        destination.add_response(
+            request("redirectDest"),
+            {
+                "headers": "HTTP/1.1 204 No Content\r\n\r\n",
+                "body": ""
+            },
+        )
+        return redirect1, redirect2, destination
 
-    ts = urtest.MakeATSProcess("ts", enable_cache=False)
-    redirect_serv1 = urtest.MakeOriginServer("re_server1")
-    redirect_serv2 = urtest.MakeOriginServer("re_server2")
-    dest_serv = urtest.MakeOriginServer("dest_server")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Retain large POST bodies while following self redirects."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.http.number_of_redirections': MAX_REDIRECT,
-            'proxy.config.http.post_copy_size': 919430601,
-            'proxy.config.http.redirect.actions': 'self:follow',  # redirects to self are not followed by default
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-        })
+        ats = ats_factory.create("ts", enable_cache=False)
+        ats.records.update(
+            {
+                "proxy.config.http.number_of_redirections": 99,
+                "proxy.config.http.post_copy_size": 919430601,
+                "proxy.config.http.redirect.actions": "self:follow",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+            })
+        ats.remap_config.add_line(f"map http://127.0.0.1:{ats.http_port} http://127.0.0.1:{self._redirect1.port}")
+        return ats
 
-    redirect_request_header = {
-        "headers": "POST /redirect1 HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n",
-        "timestamp": "5678",
-        "body": ""
-    }
-    redirect_response_header = {
-        "headers": "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{0}/redirect2\r\n\r\n".format(redirect_serv2.Variables.Port),
-        "timestamp": "5678",
-        "body": ""
-    }
+    def run(self) -> None:
+        """Upload the sparse file and require the final response."""
 
-    redirect_request_header2 = {
-        "headers": "POST /redirect2 HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n",
-        "timestamp": "5678",
-        "body": ""
-    }
-    redirect_response_header2 = {
-        "headers": "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{0}/redirectDest\r\n\r\n".format(dest_serv.Variables.Port),
-        "timestamp": "5678",
-        "body": ""
-    }
+        for origin in (self._redirect1, self._redirect2, self._destination):
+            origin.start()
+        self._ats.start()
+        upload = self._ats.run_directory / "largefile.txt"
+        with upload.open("wb") as stream:
+            stream.truncate(self._body_size)
+        result = self._curl.run_for(
+            self._ats,
+            "--header",
+            "Expect:",
+            "--include",
+            "--form",
+            f"filename=@{upload}",
+            f"http://127.0.0.1:{self._ats.http_port}/redirect1",
+            timeout=20,
+        )
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 204 No Content" in result.stdout
 
-    dest_request_header = {
-        "headers": "POST /redirectDest HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n",
-        "timestamp": "11",
-        "body": ""
-    }
-    dest_response_header = {"headers": "HTTP/1.1 204 No Content\r\n\r\n", "timestamp": "22", "body": ""}
 
-    redirect_serv1.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
-    redirect_serv2.addResponse("sessionfile.log", redirect_request_header2, redirect_response_header2)
-    dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_header)
+def test_redirect_post(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS replays a large POST body while following multiple redirects."""
 
-    ts.Disk.remap_config.AddLine(
-        'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv1.Variables.Port))
-
-    tr = urtest.AddTestRun()
-    tr.MakeCurlCommandMulti(
-        'touch largefile.txt && truncate -s 50M largefile.txt && {{curl}} -H "Expect: " -i http://127.0.0.1:{0}/redirect1 -F "filename=@./largefile.txt" && rm -f largefile.txt'
-        .format(ts.Variables.port),
-        ts=ts)
-    tr.TimeOut = 10
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.StartBefore(redirect_serv1)
-    tr.Processes.Default.StartBefore(redirect_serv2)
-    tr.Processes.Default.StartBefore(dest_serv)
-    tr.Processes.Default.Streams.stdout = "gold/redirect_post.gold"
-    tr.Processes.Default.ReturnCode = 0
-    urtest.execute()
+    RedirectPostScenario(ats_factory, services, curl).run()

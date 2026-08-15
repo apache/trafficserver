@@ -14,234 +14,147 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory, VerifierServer
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_bad_chunked_encoding(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class UnsupportedTransferEncodingScenario:
+    """Reject non-chunked HTTP/1.1 Transfer-Encoding request fields."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test unsupported values for chunked_encoding
-    '''
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the origin that must not receive either rejected request."""
 
-    urtest.ContinueOnFail = True
+        origin = services.origin("server")
+        origin.add_response(
+            {
+                "headers": "POST /case1 HTTP/1.1\r\nHost: www.example.com\r\nuuid:1\r\n\r\n",
+                "body": "stuff"
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
+                "body": "more stuff",
+            },
+        )
+        return origin
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts1")
-    server = urtest.MakeOriginServer("server")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Map the rejected requests to the otherwise valid origin."""
 
-    testName = ""
-    request_header = {
-        "headers": "POST /case1 HTTP/1.1\r\nHost: www.example.com\r\nuuid:1\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "stuff"
-    }
-    response_header = {
-        "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "more stuff"
-    }
+        ats = ats_factory.create("ts-unsupported")
+        ats.records.update({"proxy.config.diags.debug.enabled": 0, "proxy.config.diags.debug.tags": "http"})
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        return ats
 
-    server.addResponse("sessionlog.json", request_header, response_header)
+    def request(self, transfer_headers: tuple[str, ...]) -> str:
+        """Send one request with the specified Transfer-Encoding field values."""
 
-    ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 0, 'proxy.config.diags.debug.tags': 'http'})
+        arguments = ["--header", "host: example.com"]
+        for value in transfer_headers:
+            arguments.extend(("--header", f"transfer-encoding: {value}"))
+        arguments.extend(("--data", "stuff", f"http://127.0.0.1:{self._ats.http_port}/case1", "--verbose"))
+        result = self._curl.run_for(self._ats, *arguments, timeout=10)
+        assert result.returncode == 0, result.output
+        return result.output
 
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+    def run(self) -> None:
+        """Reject gzip alone and gzip preceding chunked."""
 
-    # HTTP1.1 POST: www.example.com/case1 with gzip transfer-encoding
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        '-H "host: example.com" -H "transfer-encoding: gzip" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'.format(
-            ts.Variables.port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("501 Field not implemented", "Should fail")
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("200 OK", "Should not succeed")
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
+        self._origin.start()
+        self._ats.start()
+        for headers in (("gzip",), ("gzip", "chunked")):
+            output = self.request(headers)
+            assert "501 Field not implemented" in output
+            assert "200 OK" not in output
 
-    # HTTP1.1 POST: www.example.com/case1 with gzip and chunked transfer-encoding
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        '-H "host: example.com" -H "transfer-encoding: gzip" -H "transfer-encoding: chunked" -d "stuff" http://127.0.0.1:{0}/case1  --verbose'
-        .format(ts.Variables.port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ContainsExpression("501 Field not implemented", "Should fail")
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("200 OK", "Should not succeed")
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
 
-    class HTTP10Test:
-        chunkedReplayFile = "replays/chunked_in_http_1_0.replay.yaml"
+class VerifierChunkErrorScenario:
+    """Run one replay covering invalid chunking on HTTP/1.0 or malformed chunk headers."""
 
-        def __init__(self):
-            self.setupOriginServer()
-            self.setupTS()
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, *, malformed: bool) -> None:
+        self._malformed = malformed
+        replay_name = "malformed_chunked_header.replay.yaml" if malformed else "chunked_in_http_1_0.replay.yaml"
+        self._replay = TEST_DIRECTORY / "replays" / replay_name
+        suffix = "malformed" if malformed else "http10"
+        self._server = services.verifier_server(f"server-{suffix}", self._replay)
+        self._ats = self.configure_ats(ats_factory, suffix)
+        self._client = self.configure_client(services, suffix)
 
-        def setupOriginServer(self):
-            self.server = urtest.MakeVerifierServerProcess("verifier-server1", self.chunkedReplayFile)
+    def configure_ats(self, ats_factory: ATSFactory, suffix: str) -> ATS:
+        """Configure a clear-text and TLS ingress for the replay."""
 
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess("ts2", enable_tls=True, enable_cache=False)
-            self.ts.addDefaultSSLFiles()
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.diags.debug.enabled": 1,
-                    "proxy.config.diags.debug.tags": "http",
-                    "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-                })
-            self.ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+        ats = ats_factory.create(f"ts-{suffix}", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}/")
+        return ats
 
-        def runChunkedTraffic(self):
-            tr = urtest.AddTestRun()
-            tr.AddVerifierClientProcess(
-                "client1", self.chunkedReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
-            tr.Processes.Default.StartBefore(self.server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
+    def configure_client(self, services: ServiceFactory, suffix: str) -> ProcessService:
+        """Create the verifier client with the expected aggregate return code."""
 
-        def run(self):
-            self.runChunkedTraffic()
+        return services.verifier_client(
+            f"client-{suffix}",
+            self._replay,
+            http_ports=[self._ats.http_port],
+            https_ports=[self._ats.https_port],
+            return_code=1 if self._malformed else 0,
+            allow_errors=self._malformed,
+        )
 
-    HTTP10Test().run()
+    def validate_malformed_output(self, client_output: str, server_output: str) -> None:
+        """Validate every aborted malformed request and response."""
 
-    class MalformedChunkHeaderTest:
-        chunkedReplayFile = "replays/malformed_chunked_header.replay.yaml"
+        for key in (1, 3, 8):
+            assert f"Unexpected chunked content for key {key}: too small" in server_output
+        assert "chunked body of 3 bytes for key 2 with chunk stream" not in server_output
+        assert "abcwxyz" not in server_output
+        for key in (101, 102, 103):
+            assert re.search(
+                rf"(Unexpected chunked content for key {key}: too small|Failed HTTP/1 transaction with key: {key})",
+                client_output,
+            )
+        for key in range(1, 8):
+            assert f"Received an HTTP/1 400 response for key {key} with headers" in client_output
+        assert "def" not in client_output
+        assert "user agent post chunk decoding error" in self._ats.traffic_out.read_text(errors="replace")
 
-        def __init__(self):
-            self.setupOriginServer()
-            self.setupTS()
+    def run(self) -> None:
+        """Run the replay and validate malformed connection handling when applicable."""
 
-        def setupOriginServer(self):
-            self.server = urtest.MakeVerifierServerProcess("verifier-server2", self.chunkedReplayFile)
+        self._server.start()
+        self._ats.start()
+        result = self._client.run()
+        if self._malformed:
+            self.validate_malformed_output(result.output, self._server.output)
 
-            # The server's responses will fail the first three transactions
-            # because ATS will close the connection due to the malformed
-            # chunk headers.
-            self.server.Streams.stdout += Testers.ContainsExpression(
-                "Unexpected chunked content for key 1: too small", "Verify that writing the first response failed.")
-            self.server.Streams.stdout += Testers.ExcludesExpression(
-                "chunked body of 3 bytes for key 2 with chunk stream", "Verify that writing the second response failed.")
-            self.server.Streams.stdout += Testers.ContainsExpression(
-                "Unexpected chunked content for key 3: too small", "Verify that writing the third response failed.")
-            self.server.Streams.stdout += Testers.ContainsExpression(
-                "Unexpected chunked content for key 8: too small", "Verify that writing the sixth response failed.")
 
-            # ATS should close the connection before any body gets through. "abcwxyz"
-            # is the body sent by the client for each of these chunked cases.
-            self.server.Streams.stdout += Testers.ExcludesExpression("abcwxyz", "Verify that the body never got through.")
+def test_unsupported_transfer_encoding(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS returns 501 for unsupported request Transfer-Encoding values."""
 
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess("ts3", enable_tls=True, enable_cache=False)
-            self.ts.addDefaultSSLFiles()
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.diags.debug.enabled": 1,
-                    "proxy.config.diags.debug.tags": "http",
-                    "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-                    "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-                })
-            self.ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
-            self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                "user agent post chunk decoding error", "Verify that ATS detected a problem parsing a chunk.")
+    UnsupportedTransferEncodingScenario(ats_factory, services, curl).run()
 
-        def runChunkedTraffic(self):
-            tr = urtest.AddTestRun()
-            tr.AddVerifierClientProcess(
-                "client2", self.chunkedReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
-            tr.Processes.Default.StartBefore(self.server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.StillRunningAfter = self.server
-            tr.StillRunningAfter = self.ts
 
-            # The aborted connections will result in errors and a non-zero return
-            # code from the verifier client.
-            tr.Processes.Default.ReturnCode = 1
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"(Unexpected chunked content for key 101: too small|Failed HTTP/1 transaction with key: 101)",
-                "Verify that ATS closed the forth transaction.")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"(Unexpected chunked content for key 102: too small|Failed HTTP/1 transaction with key: 102)",
-                "Verify that ATS closed the fifth transaction.")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"(Unexpected chunked content for key 103: too small|Failed HTTP/1 transaction with key: 103)",
-                "Verify that ATS closed the sixth transaction.")
+def test_chunked_in_http_1_0(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Chunked encoding is rejected where HTTP/1.0 cannot carry it."""
 
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 1 with headers",
-                "Verify that ATS returns a response for uuid:1 transaction.")
+    VerifierChunkErrorScenario(ats_factory, services, malformed=False).run()
 
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 2 with headers",
-                "Verify that ATS returns a response for uuid:2 transaction.")
 
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 3 with headers",
-                "Verify that ATS returns a response for uuid:3 transaction.")
+def test_malformed_chunked_header(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Malformed chunk headers abort before request or response bodies leak through."""
 
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 4 with headers",
-                "Verify that ATS returns a response for uuid:4 transaction.")
-
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 5 with headers",
-                "Verify that ATS returns a response for uuid:5 transaction.")
-
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 6 with headers",
-                "Verify that ATS returns a response for uuid:6 transaction.")
-
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r"Received an HTTP/1 400 response for key 7 with headers",
-                "Verify that ATS returns a response for uuid:7 transaction.")
-
-            # ATS should close the connection before any body gets through. "def"
-            # is the body sent by the server for each of these chunked cases.
-            tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("def", "Verify that the body never got through.")
-
-        def run(self):
-            self.runChunkedTraffic()
-
-    MalformedChunkHeaderTest().run()
-    urtest.execute()
+    VerifierChunkErrorScenario(ats_factory, services, malformed=True).run()

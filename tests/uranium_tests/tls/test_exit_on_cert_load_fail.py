@@ -14,131 +14,76 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import re
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_exit_on_cert_load_fail(urtest: UraniumTest) -> None:
-    '''
-    Test the exit_on_load_fail behavior for the SSL cert loading.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ExitOnCertLoadFailScenario:
+    """Verify startup policy after server or client certificate load failures."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, side: str, exit_on_failure: bool) -> None:
+        self._side = side
+        self._exit_on_failure = exit_on_failure
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test the exit_on_load_fail behavior for the SSL cert loading.
-    '''
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the selected certificate load failure and exit policy."""
 
-    class Test_exit_on_cert_load_fail:
-        """Configure a test to verify behavior of SSL cert load failures."""
+        ats = ats_factory.create("ts", enable_tls=True)
+        if self._side == "client":
+            ats.add_default_ssl_files()
+            ats.ssl_multicert_config.add_lines(
+                (
+                    "ssl_multicert:",
+                    '  - dest_ip: "*"',
+                    "    ssl_cert_name: server.pem",
+                    "    ssl_key_name: server.key",
+                ))
+        else:
+            ats.set_ssl_multicert_yaml(
+                {"ssl_multicert": [{
+                    "dest_ip": "*",
+                    "ssl_cert_name": "server.pem",
+                    "ssl_key_name": "server.key"
+                }]})
+        client_cert = "NULL" if self._side == "server" else str(ats.ssl_directory / "non-existent-cert.pem")
+        ats.records.update(
+            {
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.cert.filename": client_cert,
+                "proxy.config.ssl.server.multicert.exit_on_load_fail": int(self._exit_on_failure and self._side == "server"),
+                "proxy.config.ssl.client.cert.exit_on_load_fail": int(self._exit_on_failure and self._side == "client"),
+            })
+        ats.remap_config.add_line("map / https://127.0.0.1:12345/")
+        if self._exit_on_failure:
+            ats.expect_start_failure("EMERGENCY:", return_code=33)
+        return ats
 
-        ts_counter: int = 0
+    def run(self) -> None:
+        """Start ATS and verify its diagnostics and resulting process state."""
 
-        def __init__(self, name: str, is_testing_server_side: bool, enable_exit_on_load=False):
-            """
-            Initialize the test.
-            :param name: The name of the test.
-            :param is_testing_server_side: Whether to test the server side or client side cert loading.
-            enable_exit_on_load: Whether to enable the exit_on_load_fail config.
-            """
-            self.name = name
-            self.is_testing_server_side = is_testing_server_side
-            self.enable_exit_on_load = enable_exit_on_load
+        self._ats.start()
+        diags = self._ats.diags_log.read_text(errors="replace")
+        assert "ERROR:" in diags
+        if self._exit_on_failure:
+            assert "EMERGENCY:" in diags
+            assert "Traffic Server is fully initialized" not in diags
+        else:
+            assert "Traffic Server is fully initialized" in diags
+        if self._side == "server":
+            assert re.search(r"ERROR:.*failed to load", diags), diags
+        else:
+            assert "ERROR: failed to access cert" in diags
+            assert "Can't initialize the SSL client, HTTPS in remap rules will not function" in diags
 
-        def _configure_traffic_server(self, tr: 'TestRun'):
-            """Configure Traffic Server.
 
-            :param tr: The TestRun object to associate the ts process with.
-            """
-            ts = tr.MakeATSProcess(f"ts-{Test_exit_on_cert_load_fail.ts_counter}", enable_tls=True)
-            Test_exit_on_cert_load_fail.ts_counter += 1
-            self._ts = ts
-            client_cert_path = 'NULL'
-            enable_exit_on_server_cert_load_failure = 1 if self.enable_exit_on_load and self.is_testing_server_side else 0
-            enable_exit_on_client_cert_load_failure = 1 if self.enable_exit_on_load and not self.is_testing_server_side else 0
+@pytest.mark.parametrize("side", ("server", "client"))
+@pytest.mark.parametrize("exit_on_failure", (False, True), ids=("continue", "exit"))
+def test_exit_on_cert_load_fail(ats_factory: ATSFactory, side: str, exit_on_failure: bool) -> None:
+    """Certificate load failures either log and continue or abort as configured."""
 
-            if not self.is_testing_server_side:
-                # Point to a non-existent cert to force a load failure.
-                client_cert_path = f'{ts.Variables.SSLDir}/non-existent-cert.pem'
-                # Also setup the server certs so that issues are limited to client
-                # cert loading.
-                self._ts.addDefaultSSLFiles()
-            self._ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
-                    'proxy.config.ssl.client.cert.filename': client_cert_path,
-                    'proxy.config.ssl.server.multicert.exit_on_load_fail': enable_exit_on_server_cert_load_failure,
-                    'proxy.config.ssl.client.cert.exit_on_load_fail': enable_exit_on_client_cert_load_failure,
-                })
-            # The cert loading happen on startup, so the remap rule is not
-            # triggered.
-            RANDOM_PORT = 12345
-            self._ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{RANDOM_PORT}/')
-
-        def run(self):
-            """Run the test."""
-            tr = urtest.AddTestRun(self.name)
-            self._configure_traffic_server(tr)
-
-            # The client process can be anything.
-            tr.Processes.Default.Command = "echo"
-            tr.Processes.Default.StartAfter(self._ts, ready=When.FileExists(self._ts.Disk.diags_log))
-
-            # Override the default exclusion of error log.
-            self._ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR:", "These tests should have error logs.")
-
-            if self.enable_exit_on_load:
-                self._ts.ReturnCode = 33
-                self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                    "EMERGENCY: ", "Failure loading the certs results in an emergency error.")
-                self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                    "Traffic Server is fully initialized", "Traffic Server should exit upon the load failure.")
-            else:
-                self._ts.ReturnCode = 0
-                self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                    "Traffic Server is fully initialized", "Traffic Server should start up successfully.")
-
-            if self.is_testing_server_side:
-                self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                    "ERROR:.*failed to load", "Verify that there is a cert loading issue.")
-            else:
-                self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                    "ERROR: failed to access cert", "Verify that there is a cert loading issue.")
-                self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                    "Can't initialize the SSL client, HTTPS in remap rules will not function",
-                    "There should be an error loading the cert.")
-
-    # Test server cert loading.
-    Test_exit_on_cert_load_fail(
-        "load server cert with exit on load disabled", is_testing_server_side=True, enable_exit_on_load=False).run()
-    Test_exit_on_cert_load_fail(
-        "load server cert with exit on load enabled", is_testing_server_side=True, enable_exit_on_load=True).run()
-
-    # Test client cert loading.
-    Test_exit_on_cert_load_fail(
-        "load client cert with exit on load disabled", is_testing_server_side=False, enable_exit_on_load=False).run()
-    Test_exit_on_cert_load_fail(
-        "load client cert with exit on load enabled", is_testing_server_side=False, enable_exit_on_load=True).run()
-    urtest.execute()
+    ExitOnCertLoadFailScenario(ats_factory, side, exit_on_failure).run()

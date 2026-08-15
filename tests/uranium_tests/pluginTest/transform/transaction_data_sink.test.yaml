@@ -1,0 +1,54 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify transaction data sink body selection"
+  replay: "transaction-with-body.replays.yaml"
+  requires:
+    plugins: ["txn_data_sink.so"]
+  dns:
+    name: "txn-data-sink-dns"
+    process_config:
+      default: "127.0.0.1"
+  server:
+    name: "txn-data-sink-origin"
+  client:
+    name: "txn-data-sink-client"
+  ats:
+    name: "txn-data-sink-ts"
+    process_config:
+      enable_cache: false
+      enable_tls: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|txn_data_sink"
+      proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
+    plugin_config:
+      - "txn_data_sink.so"
+    remap_config:
+      - from: "/"
+        to: "http://localhost:{SERVER_HTTP_PORT}/"
+    log_validation:
+      traffic_out:
+        contains:
+          - {expression: "http1.1_cl_response_body_dumped", description: "The HTTP/1.1 Content-Length response body must be dumped"}
+          - {expression: "http1.1_chunked_response_body_dumped", description: "The HTTP/1.1 chunked response body must be dumped"}
+          - {expression: "http1.1_cl_request_body_dumped", description: "The HTTP/1.1 Content-Length request body must be dumped"}
+          - {expression: "http1.1_chunked_request_body_dumped", description: "The HTTP/1.1 chunked request body must be dumped"}
+          - {expression: '"http2_response_body_dumped"', description: "The HTTP/2 response body must be dumped"}
+          - {expression: "http2_request_body_dumped", description: "The HTTP/2 request body must be dumped"}
+        excludes:
+          - {expression: "body_not_dumped", description: "Unselected bodies must not be dumped"}

@@ -14,109 +14,106 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import time
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_crash_test(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    """
-    Test that crash logs are generated with backtraces when traffic_server crashes.
+class CrashLogScenario:
+    """Crash ATS deliberately and verify traffic_crashlog's thread report."""
 
-    This test intentionally crashes traffic_server using a plugin that dereferences
-    a null pointer when it receives a specific header. It then verifies that:
-    1. A crash log file was created
-    2. The crash log contains thread information
-    """
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    import os
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the origin used to establish a healthy baseline request."""
 
-    urtest.Summary = '''
-    Test crash log generation with backtrace.
-    '''
+        origin = services.origin("origin")
+        origin.add_response(
+            {
+                "headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n",
+                "body": "Hello",
+            },
+        )
+        return origin
 
-    # Create an origin server for the test.
-    server = urtest.MakeOriginServer("server")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Load the intentional crash plugin and enable the crash-log helper."""
 
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "Hello"}
-    server.addResponse("sessionlog.json", request_header, response_header)
+        ats = ats_factory.create("ts", return_code=-11, enable_cache=False)
+        ats.records.update(
+            {
+                "proxy.config.proxy_name": "test_proxy",
+                "proxy.config.url_remap.remap_required": 0,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "crash_test",
+                "proxy.config.crash_log_helper": "traffic_crashlog",
+            })
+        ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/pluginTest/crash_test/.libs/crash_test.so")
+        ats.plugin_config.add_line("crash_test.so")
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        return ats
 
-    ts = urtest.MakeATSProcess("ts")
+    def verify_healthy_request(self) -> None:
+        """Prove ATS is serving traffic before triggering the fault."""
 
-    # We expect ATS to crash with SIGSEGV, allowing us to test crash logging.
-    ts.ReturnCode = -11
+        response = self._curl.get(
+            self._ats,
+            headers={"Host": "example.com"},
+            options=("--silent", "--output", "/dev/null", "--write-out", "%{http_code}"),
+        )
+        assert response.returncode == 0, response.output
+        assert response.stdout == "200"
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.proxy_name': 'test_proxy',
-            'proxy.config.url_remap.remap_required': 0,
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'crash_test',
-            # Enable the crash log helper.
-            'proxy.config.crash_log_helper': 'traffic_crashlog',
-        })
+    def trigger_crash(self) -> None:
+        """Send the header that makes crash_test dereference a null pointer."""
 
-    # Copy the crash_test plugin.
-    plugin_path = os.path.join(urtest.Variables.AtsBuildUraniumTestsDir, 'pluginTest', 'crash_test', '.libs', 'crash_test.so')
-    ts.Setup.Copy(plugin_path, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
+        response = self._curl.get(
+            self._ats,
+            headers={
+                "Host": "example.com",
+                "X-Crash-Test": "now"
+            },
+            options=("--silent", "--output", "/dev/null"),
+        )
+        assert response.returncode in (52, 56), response.output
+        self._ats.wait()
 
-    ts.Disk.plugin_config.AddLine("crash_test.so")
+    def wait_for_crash_log(self) -> Path:
+        """Wait until traffic_crashlog has finished writing its report."""
 
-    ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}/")
+        deadline = time.monotonic() + 60
+        while time.monotonic() < deadline:
+            matches = list(self._ats.log_directory.glob("crash-*.log"))
+            if matches and "Other Non-Crashing Threads:" in matches[0].read_text(errors="replace"):
+                return matches[0]
+            time.sleep(0.1)
+        raise AssertionError("traffic_crashlog did not produce a complete crash report")
 
-    ts.Disk.diags_log.Content += Testers.ContainsExpression(
-        "Received crash trigger header - crashing now!", "Expect the log indicating the intentional crash.")
-    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-        "This should never be reached.", "Expect to not see the log after the crash.")
+    def run(self) -> None:
+        """Exercise the healthy and crashing transactions, then inspect the report."""
 
-    # Test 1: Make a normal request to verify the server is running.
-    tr = urtest.AddTestRun("Verify server is running")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.MakeCurlCommand(f'-s -o /dev/null -w "%{{http_code}}" http://127.0.0.1:{ts.Variables.port}/', ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("200", "Expected 200 OK response")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
+        self._origin.start()
+        self._ats.start()
+        self.verify_healthy_request()
+        self.trigger_crash()
+        diagnostics = self._ats.diags_log.read_text(errors="replace")
+        assert "Received crash trigger header - crashing now!" in diagnostics
+        assert "This should never be reached." not in diagnostics
+        crash_log = self.wait_for_crash_log().read_text(errors="replace")
+        assert "Segmentation fault" in crash_log
+        assert "Crashing Thread" in crash_log
+        assert "Other Non-Crashing Threads:" in crash_log
 
-    # Test 2: Send the crash trigger header.
-    tr = urtest.AddTestRun("Trigger crash")
-    # The curl command should fail since ATS will crash.
-    tr.MakeCurlCommand(f'-s -o /dev/null -H "X-Crash-Test: now" http://127.0.0.1:{ts.Variables.port}/', ts=ts)
-    tr.Processes.Default.ReturnCode = 52
 
-    # Test 3: Wait for a crash log to be created.
-    tr = urtest.AddTestRun("Wait for crash log")
-    crash_log_glob = f'{ts.Variables.LOGDIR}/crash-*.log'
-    # Wait up to 60 seconds for a crash log file to appear, then 1 extra second for it to be written.
-    tr.Processes.Default.Command = (f"{os.path.join(urtest.Variables.AtsTestToolsDir, 'condwait')} 60 1 -f '{crash_log_glob}'")
-    tr.Processes.Default.ReturnCode = 0
+def test_crash_test(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """An ATS crash produces a complete, ordered crash-log backtrace."""
 
-    # Test 4: Verify crash log contains expected content.
-    tr = urtest.AddTestRun("Check crash log content")
-    tr.Processes.Default.Command = (f'cat {ts.Variables.LOGDIR}/crash-*.log 2>&1')
-    tr.Processes.Default.ReturnCode = 0
-    # The crash log should contain signal information (always present).
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-        "Segmentation fault", "Expected crash log to show segmentation fault signal")
-    # The crash log should contain the crashing thread information first.
-    # The crashing thread should be listed first.
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("Crashing Thread", "Expected crashing thread backtrace first")
-    # The other threads should be listed after.
-    tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-        "Other Non-Crashing Threads:", "Expected other non-crashing threads section")
-    urtest.execute()
+    CrashLogScenario(ats_factory, services, curl).run()

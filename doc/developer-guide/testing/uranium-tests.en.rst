@@ -24,12 +24,12 @@ Writing Uranium Tests
 
 |TS| uses Catch2 for unit tests and pytest for Uranium tests. Catch2 tests
 reside next to the associated source code. Uranium tests are under
-``tests/uranium_tests/``. Replay-driven tests execute natively. Existing bespoke
-Python definitions are also pytest items, with AuTest retained as a pinned
-compatibility backend while those definitions migrate.
+``tests/uranium_tests/``. Direct Proxy Verifier replays and native Python
+scenarios are both collected and executed by pytest.
 
 * For catch test framework documentation, see: https://github.com/catchorg/Catch2
-* For AuTest framework documentation, see: https://autestsuite.bitbucket.io/index.html
+* For pytest documentation, see: https://docs.pytest.org/
+* For Proxy Verifier documentation, see: https://github.com/yahoo/proxy-verifier
 
 This document focuses on Uranium tests because Catch2 documentation is
 available elsewhere.
@@ -55,16 +55,10 @@ The Uranium test runners use distinct filename conventions:
   etc.)
 - Replay-driven pytest files have a descriptive ``.test.yaml`` extension. The
   file is both the test registration and the Proxy Verifier replay.
-- Bespoke compatibility files have a descriptive ``.test.py`` extension.
-  Pytest reports and schedules each as one item, then delegates its process
-  definition to the pinned AuTest backend. Do not add new compatibility files
-  when the direct replay runner can express the test.
-- ``tests/uranium_tests/autest-site`` is a special directory. AuTest, a general
-  testing framework, is extended to add domain specific support, |TS| in this
-  case, via ``.test.ext`` extension files. The files in here customize the
-  command line arguments recognized by the ``autest`` command, the functions
-  availabe to the ``Test`` and ``TestRun`` AuTest objects, specific ``Process``
-  objects available to test, ``Skip`` conditions for individual tests, etc.
+- Native scenarios use pytest's ``test_*.py`` convention. Prefer a scenario
+  class whose methods configure its server, ATS process, and client and whose
+  ``run()`` method names the ordered steps. Use this form only when a direct
+  replay cannot express the required client, server, or runtime mutation.
 
 Running Uranium Tests
 =====================
@@ -76,7 +70,7 @@ runs the complete pytest-owned inventory:
 
    cmake --build build --target urtest
 
-Run only the pytest replay suite with:
+Run only the replay suite with:
 
 .. code-block:: bash
 
@@ -86,7 +80,7 @@ Pass pytest selection or concurrency options at configure time. For example:
 
 .. code-block:: bash
 
-   cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache-control"
+   cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache_control"
    cmake --build build --target urtest-replay
 
 Use ``urtest.sh`` directly for the shortest single-test workflow:
@@ -96,25 +90,25 @@ Use ``urtest.sh`` directly for the shortest single-test workflow:
    cmake --build build
    cmake --install build
    cd build/tests
-   ./urtest.sh -f <test_name_without_extension>
+   ./urtest.sh -q -k <pytest_expression>
 
-For example, to run ``cache-auth.test.py``:
-
-.. code-block:: bash
-
-   ./urtest.sh -f cache-auth
-
-The filter works for both ``.test.yaml`` and ``.test.py`` items and accepts
-globs. Pytest's ``-k`` expressions are also available.
-
-To run tests in parallel, pass ``-j N`` where ``N`` is the number of worker
-processes. Each worker gets an isolated port range to avoid conflicts:
+For example, to run items whose names contain ``cache_auth``:
 
 .. code-block:: bash
 
-   ./urtest.sh -j 10 --sandbox /tmp/sbcursor -f cache-auth -f cache-control
+   ./urtest.sh -q -k cache_auth
 
-Without ``-j``, tests run sequentially. Compatibility tests listed in
+The ``-k`` expression works for both ``.test.yaml`` and ``test_*.py`` items.
+It is pytest's ordinary substring and boolean-expression selector.
+
+To run tests in parallel, pass pytest-xdist's ``-n N`` option. Each worker gets
+an isolated sandbox and dynamically allocated listeners:
+
+.. code-block:: bash
+
+   ./urtest.sh -n 10 --sandbox /tmp/sbcursor -k "cache_auth or cache_control"
+
+Without ``-n``, tests run sequentially. Tests listed in
 ``tests/serial_tests.txt`` acquire an exclusive lock and never overlap other
 Uranium test items.
 
@@ -150,9 +144,10 @@ as one pytest item. ATS readiness is based on the fully-initialized log message,
 not merely an open port.
 
 The YAML format is parseable without executing Python and keeps the test
-topology, ATS configuration, traffic, and validation together. Existing tests
-requiring ad-hoc clients or servers remain supported through the ``.test.py``
-compatibility layer.
+topology, ATS configuration, traffic, and validation together. Use a native
+pytest scenario when the test requires an ad-hoc client or server, multiple ATS
+instances, or ordered runtime mutations that the replay lifecycle cannot
+express.
 
 The traffic portion of each ``.test.yaml`` file specifies Proxy Verifier HTTP
 traffic behavior and follows the replay and verification syntax described
@@ -163,8 +158,9 @@ Test File Structure
 -------------------
 
 Name the replay itself ``<scenario>.test.yaml``. No companion ``.test.py``
-registration is needed. If a feature has multiple configurations, keep each
-configuration in a separate file:
+registration is needed. If a feature has multiple configurations, use named
+``urtest.variants`` when they share traffic and topology, or separate files
+when that is clearer:
 
 .. code-block:: text
 
@@ -176,6 +172,61 @@ Each file is an independent pytest item and therefore has its own result,
 sandbox, ports, and failure artifacts. Keep multiple sessions in one file when
 they intentionally share ATS state, such as a cache prime followed by a cache
 hit.
+
+Native Pytest Scenarios
+-----------------------
+
+Use a native ``test_*.py`` module when the test needs behavior outside the
+direct replay lifecycle, such as a custom curl or OpenSSL invocation, a raw
+socket client, several ATS instances, or a configuration reload between
+requests. The fixtures in ``tests/tools/uranium`` own process cleanup, allocate
+ports, and isolate each item's files.
+
+Organize a procedural test around a scenario class. Give configuration and
+test phases descriptive method names, and make ``run()`` the obvious entry
+point:
+
+.. code-block:: python
+
+   from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+
+   class ExampleScenario:
+       def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+           self._origin = self.configure_origin(services)
+           self._ats = self.configure_ats(ats_factory)
+           self._curl = curl
+
+       @staticmethod
+       def configure_origin(services: ServiceFactory) -> OriginServer:
+           origin = services.origin("origin")
+           origin.add_response(
+               {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+               {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+           )
+           return origin
+
+       def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+           ats = ats_factory.create("ats", enable_cache=False)
+           ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+           return ats
+
+       def run(self) -> None:
+           self._origin.start()
+           self._ats.start()
+           result = self._curl.get(self._ats, headers={"Host": "example.com"})
+           assert result.returncode == 0, result.output
+
+
+   def test_example(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+       ExampleScenario(ats_factory, services, curl).run()
+
+Use ``ServiceFactory.verifier_server()`` and
+``ServiceFactory.verifier_client()`` when a procedural scenario still benefits
+from Proxy Verifier traffic. Launch Python helpers with ``sys.executable`` so
+they use the same environment as pytest. Avoid fixed ports and global temporary
+paths; allocated listeners and the fixture run directory keep ``-n`` runs
+independent.
 
 Replay File Structure
 ----------------------
@@ -238,6 +289,10 @@ YAML node) and the traffic replay and verification specification (in the
          proxy.config.diags.debug.enabled: 1
          proxy.config.diags.debug.tags: 'http|cache'
          proxy.config.http.cache.http: 1
+
+       # Optional environment variables for the ATS process.
+       environment:
+         ATS_TEST_HOOK: "1"
 
        # Remap configuration (list format)
        remap_config:
@@ -365,6 +420,12 @@ The ``urtest`` section configures the test environment:
 - **description** or **summary** (one required): A brief description of what
   this test scenario validates. This documents the intention for human readers
   and is included in test reports and failure output.
+- **replay** (optional): Path, relative to a collected manifest, to an existing
+  Proxy Verifier traffic file. Omit this when the collected file contains the
+  traffic sessions itself.
+- **variants** (optional): Named metadata overlays collected as independent
+  pytest items. Nested ATS, client, and server mappings merge with the manifest
+  defaults.
 - **dns** (optional): DNS server configuration with ``name`` and optional
   records. Including DNS allows remap entries to contain hostnames rather than
   localhost IP addresses.
@@ -385,9 +446,18 @@ The ``urtest`` section configures the test environment:
   - **records_config**: Dictionary of records.config settings
   - **remap_config**: List of remap rules (string or dict format)
   - **cache_config**: List of cache.config rules
+  - **hosting_config**: List of hosting.config rules
+  - **environment**: Dictionary of environment variables for the ATS process
   - **copy_to_config_dir**: List of files/directories to copy to ATS config directory
   - **log_validation**: Log validation rules for ``traffic_out`` and ``diags_log``
   - **metric_checks**: List of metric name/value pairs to verify after traffic completes
+  - **file_checks**: Paths whose presence, absence, or text content is verified after traffic completes
+
+String values in ATS metadata may use ``{SERVER_HTTP_PORT}``,
+``{SERVER_HTTPS_PORT}``, ``{ATS_HTTP_PORT}``, ``{ATS_HTTPS_PORT}``,
+``{ATS_ROOT}``, ``{CONFIG_DIR}``, ``{LOG_DIR}``, ``{RUNTIME_DIR}``, and
+``{STORAGE_DIR}`` placeholders. Uranium replaces them after allocating the
+test sandbox and listeners.
 
 Log Validation
 ~~~~~~~~~~~~~~

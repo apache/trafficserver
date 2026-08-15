@@ -1,10 +1,10 @@
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not use
+#  this file except in compliance with the License.  You may obtain
+#  a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -14,149 +14,129 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import re
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_h3_curl(urtest: UraniumTest) -> None:
-    '''
-    Verify HTTP/3 client interop with curl.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information regarding
-    #  copyright ownership.  The ASF licenses this file to you under
-    #  the Apache License, Version 2.0 (the "License"); you may not
-    #  use this file except in compliance with the License.  You may
-    #  obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class H3CurlScenario:
+    """Verify HTTP/3 interoperability with curl."""
 
-    import os
+    _response_body = "0123456789" * 30000
 
-    urtest.Summary = '''
-    This test is written specifically to verify that an HTTP/3 curl client can
-    complete a request through ATS.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        curl_help = subprocess.check_output(("curl", "--help", "all"), text=True)
+        if not ats_factory.has_feature("TS_USE_QUIC") or not Curl.supports("http3") or "--http3-only" not in curl_help:
+            pytest.skip("ATS QUIC and curl HTTP/3 support are required")
+        if curl.uses_uds:
+            pytest.skip("HTTP/3 requires a UDP listener")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.SkipUnless(
-        Condition.HasATSFeature('TS_USE_QUIC'),
-        Condition.HasCurlFeature('http3'),
-        Condition.HasCurlOption('--http3-only'),
-    )
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the large HTTP/3 response body."""
 
-    class TestHttp3Curl:
-        """Configure a test to verify HTTP/3 curl client interoperability."""
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET /h3-curl HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+            {
+                "headers": f"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {len(self._response_body)}\r\n\r\n",
+                "body": self._response_body,
+            },
+        )
+        return origin
 
-        response_body = "0123456789" * 30000
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure QUIC, the foo.com certificate, and access logging."""
 
-        def __init__(self, name: str):
-            """Initialize the test.
+        ats = ats_factory.create("ts", enable_tls=True, enable_quic=True, enable_cache=False)
+        ats.set_startup_timeout(60)
+        ats.add_default_ssl_files()
+        ats.copy_to_ssl(
+            TEST_DIRECTORY.parent / "tls" / "ssl" / "signed-foo.pem",
+            TEST_DIRECTORY.parent / "tls" / "ssl" / "signed-foo.key",
+        )
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                "  - ssl_cert_name: signed-foo.pem",
+                "    ssl_key_name: signed-foo.key",
+                "  - ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+                '    dest_ip: "*"',
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "quic|http3",
+                "proxy.config.quic.server.stateless_retry_enabled": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats":
+                            [
+                                {
+                                    "name": "h3_access",
+                                    "format":
+                                        (
+                                            "c_alpn=%<cqssa> client_version=%<cqpv> c_ssl_version=%<cqssv> "
+                                            "c_method=%<cqhm> c_url=%<cquuc>"),
+                                }
+                            ],
+                        "logs": [{
+                            "filename": "h3_access",
+                            "format": "h3_access"
+                        }],
+                    }
+            })
+        return ats
 
-            :param name: The name of the test.
-            """
-            self.name = name
-            self._body_path = os.path.join(urtest.RunDirectory, "h3_curl_body.txt")
-            self._configure_server()
-            self._configure_traffic_server()
-            self._configure_client()
+    def run(self) -> None:
+        """Fetch the full object over HTTP/3 and inspect its access log."""
 
-        def _configure_server(self):
-            """Configure the origin server."""
-            server = urtest.MakeOriginServer("server")
-            server.addResponse(
-                "sessionlog.json", {
-                    "headers": "GET /h3-curl HTTP/1.1\r\nHost: localhost\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                }, {
-                    "headers": f"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {len(self.response_body)}\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": self.response_body
-                })
+        self._origin.start()
+        self._ats.start()
+        body = self._ats.run_directory.parent / "h3_curl_body.txt"
+        result = self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--show-error",
+            "--fail",
+            "--ipv4",
+            "--http3-only",
+            "--insecure",
+            "--resolve",
+            f"foo.com:{self._ats.https_port}:127.0.0.1",
+            "--output",
+            str(body),
+            "--write-out",
+            "\nhttp_version=%{http_version}\nsize_download=%{size_download}\n",
+            f"https://foo.com:{self._ats.https_port}/h3-curl",
+            timeout=30,
+        )
+        assert result.returncode == 0, result.output
+        assert f"size_download={len(self._response_body)}" in result.stdout
+        assert "http_version=3" in result.stdout
+        assert body.read_text() == self._response_body
+        content = wait_for_file_lines(self._ats.log_directory / "h3_access.log", r"c_alpn=h3", 1, timeout=10)
+        assert re.search(
+            r"c_alpn=h3 client_version=http/3 c_ssl_version=[^ ]+ c_method=GET "
+            r"c_url=https://foo\.com:[0-9]+/h3-curl",
+            content,
+        )
 
-            self._server = server
 
-        def _configure_traffic_server(self):
-            """Configure Traffic Server."""
-            ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_quic=True, enable_cache=False)
-            ts.StartupTimeout = 60
-            ts.addDefaultSSLFiles()
-            ts.addSSLfile("../tls/ssl/signed-foo.pem")
-            ts.addSSLfile("../tls/ssl/signed-foo.key")
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                '''
-    ssl_multicert:
-      - ssl_cert_name: signed-foo.pem
-        ssl_key_name: signed-foo.key
-      - ssl_cert_name: server.pem
-        ssl_key_name: server.key
-        dest_ip: "*"
-    '''.split('\n'))
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'quic|http3',
-                    'proxy.config.quic.server.stateless_retry_enabled': 0,
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                })
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
-            ts.Disk.logging_yaml.AddLines(
-                '''
-    logging:
-      formats:
-        - name: h3_access
-          format: 'c_alpn=%<cqssa> client_version=%<cqpv> c_ssl_version=%<cqssv> c_method=%<cqhm> c_url=%<cquuc>'
+def test_h3_curl(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """curl completes a forced HTTP/3 request through ATS."""
 
-      logs:
-        - filename: h3_access
-          format: h3_access
-    '''.split("\n"))
-
-            self._access_log = urtest.Disk.File(os.path.join(ts.Variables.LOGDIR, 'h3_access.log'), exists=True)
-            self._access_log.Content = Testers.ContainsExpression(
-                r'c_alpn=h3 client_version=http/3 c_ssl_version=[^ ]+ c_method=GET c_url=https://foo.com:[0-9]+/h3-curl',
-                "ATS should log the curl request as HTTP/3")
-
-            self._ts = ts
-
-        def _check_curl_response(self, tr):
-            """Verify that curl received the response over HTTP/3."""
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-                f"size_download={len(self.response_body)}", "curl should receive the complete HTTP/3 response body")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("http_version=3", "curl should report HTTP/3")
-
-        def _configure_client(self):
-            """Configure the curl client test runs."""
-            tr = urtest.AddTestRun(self.name)
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.MakeCurlCommand(
-                '--silent --show-error --fail --ipv4 --http3-only --insecure '
-                f'--resolve "foo.com:{self._ts.Variables.ssl_port}:127.0.0.1" '
-                f'--output "{self._body_path}" '
-                '--write-out "\\nhttp_version=%{http_version}\\nsize_download=%{size_download}\\n" '
-                f'https://foo.com:{self._ts.Variables.ssl_port}/h3-curl',
-                ts=self._ts)
-            self._check_curl_response(tr)
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-
-            tr = urtest.AddTestRun("Wait for HTTP/3 access log")
-            tr.Processes.Default.Command = (
-                os.path.join(urtest.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-                os.path.join(self._ts.Variables.LOGDIR, 'h3_access.log'))
-            tr.Processes.Default.ReturnCode = 0
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
-
-    TestHttp3Curl("curl forced HTTP/3 request")
-    urtest.execute()
+    H3CurlScenario(ats_factory, services, curl).run()

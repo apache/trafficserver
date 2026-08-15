@@ -1,0 +1,44 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+urtest:
+  description: "Verify statichit response bodies and options"
+  replay: "statichit.replay.yaml"
+  requires:
+    plugins: ["statichit.so"]
+  server:
+    name: "statichit-unused-origin"
+  client:
+    name: "statichit-client"
+  ats:
+    name: "statichit-ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|statichit"
+    copy_to_config_dir:
+      - "small_body.txt"
+      - "story_16.json"
+      - "empty.txt"
+    remap_config:
+      - "map http://fqdn1 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/small_body.txt"
+      - "map http://fqdn2 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/small_body.txt @pparam=--max-age=123"
+      - "map http://fqdn3 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/small_body.txt @pparam=--success-code=200 @pparam=--disable-exact @pparam=--failure-code=222"
+      - "map http://fqdn4 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path=invalid @pparam=--success-code=200 @pparam=--failure-code=412"
+      - "map http://fqdn5 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/story_16.json @pparam=--success-code=200 @pparam=--failure-code=412 @pparam=--mime-type=application/json"
+      - "map http://fqdn6 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/empty.txt @pparam=--success-code=200 @pparam=--failure-code=222"
+      - "map http://fqdn7 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/small_body.txt @pparam=--success-code @pparam=200 @pparam=--disable-exact @pparam=--failure-code @pparam=222"
+      - "map http://fqdn8 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}/small_body.txt @pparam=-s @pparam=200 @pparam=-d @pparam=-c @pparam=222"
+      - "map http://fqdn9 http://127.0.0.1/ @plugin=statichit.so @pparam=--file-path={CONFIG_DIR}"

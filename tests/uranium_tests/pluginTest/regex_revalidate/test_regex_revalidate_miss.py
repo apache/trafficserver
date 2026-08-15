@@ -13,259 +13,151 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Verify regex_revalidate MISS rules and rule-type transitions."""
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import os
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines, wait_for_metric
 
 
-def test_regex_revalidate_miss(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class RegexRevalidateMissScenario:
+    """Drive cache state across MISS and STALE rule reloads."""
 
-    import os
-    import time
-    from jsonrpc import Request
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
+        self._origin = self.configure_server()
+        self._ats = self.configure_ats()
+        self._curl = Curl(ats_factory.run_directory)
+        self._rule = f"path1 {int(time.time()) + 600}"
+        self._mtime = int(time.time()) + 1
+        self._reload_counts = {"MISS": 0, "STALE": 0}
 
-    urtest.Summary = '''
-    regex_revalidate plugin test, MISS (refetch) functionality
-    '''
+    def configure_server(self) -> OriginServer:
+        """Create a cacheable origin resource."""
 
-    # Test description:
-    # If MISS tag encountered, should load rule as refetch instead of IMS.
-    # If rule switched from MISS to IMS or vice versa, rule should reset.
+        origin = self._services.origin("origin")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=300\r\n\r\n",
+                "body": "xxx",
+            },
+        )
+        origin.add_response(
+            {"headers": "GET /path1 HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
+            {
+                "headers":
+                    ('HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "path1"\r\n'
+                     "Cache-Control: max-age=600,public\r\n\r\n"),
+                "body": "abc",
+            },
+        )
+        return origin
 
-    urtest.SkipUnless(Condition.PluginExists('regex_revalidate.so'), Condition.PluginExists('xdebug.so'))
-    urtest.ContinueOnFail = False
+    def configure_ats(self) -> ATS:
+        """Enable xdebug and regex_revalidate with an initially empty rule file."""
 
-    # configure origin server
-    server = urtest.MakeOriginServer("server")
+        ats = self._ats_factory.create("ats")
+        if not ats.plugin_exists("regex_revalidate.so") or not ats.plugin_exists("xdebug.so"):
+            pytest.skip("regex_revalidate.so and xdebug.so are required")
+        ats.write_config_file("regex_revalidate.conf", "# Empty\n")
+        ats.plugin_config.add_lines(
+            (
+                "xdebug.so --enable=x-cache",
+                "regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log -m reval",
+            ))
+        ats.remap_config.add_line(f"map http://ats/ http://127.0.0.1:{self._origin.port}")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "regex_revalidate",
+                "proxy.config.http.insert_age_in_response": 0,
+                "proxy.config.http.response_via_str": 3,
+                "proxy.config.http.cache.http": 1,
+                "proxy.config.http.wait_for_cache": 1,
+            })
+        return ats
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts")
+    @property
+    def rules_path(self) -> Path:
+        """Return the live plugin rule path."""
 
-    urtest.testName = "regex_revalidate_miss"
-    urtest.Setup.Copy("metrics_miss.sh")
+        return self._ats.config_directory / "regex_revalidate.conf"
 
-    # default root
-    request_header_0 = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+    def request(self, expected_cache: str) -> None:
+        """Request the cached resource and verify its x-cache state."""
 
-    response_header_0 = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=300\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "xxx",
-    }
+        result = self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--dump-header",
+            "-",
+            "--output",
+            "/dev/null",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+            "--header",
+            "x-debug: x-cache",
+            "http://ats/path1",
+        )
+        assert result.returncode == 0, result.output
+        assert f"X-Cache: {expected_cache}" in result.stdout, result.output
 
-    # cache item path1
-    request_header_1 = {
-        "headers": "GET /path1 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
-    response_header_1 = {
-        "headers":
-            "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path1"\r\n' + "Cache-Control: max-age=600,public\r\n" +
-            "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "abc"
-    }
+    def reload_rule(self, mode: str) -> None:
+        """Replace the active rule and wait for a full configuration reload."""
 
-    server.addResponse("sessionlog.json", request_header_0, response_header_0)
-    server.addResponse("sessionlog.json", request_header_1, response_header_1)
+        self._mtime = max(self._mtime, int(self.rules_path.stat().st_mtime) + 2, int(time.time()) + 2)
+        self.rules_path.write_text(f"{self._rule} {mode}\n")
+        os.utime(self.rules_path, (self._mtime, self._mtime))
+        self._mtime += 1
+        result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+        assert result.returncode == 0, result.output
+        self._reload_counts[mode] += 1
+        wait_for_file_lines(
+            self._ats.traffic_out,
+            f"result: {mode}",
+            self._reload_counts[mode],
+            timeout=15,
+        )
 
-    # Configure ATS server
-    ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
-    ts.Disk.plugin_config.AddLine('regex_revalidate.so -d -c regex_revalidate.conf -l revalidate.log -m reval')
+    def reload_unchanged(self) -> None:
+        """Reload the unchanged rule file without resetting plugin state."""
 
-    regex_revalidate_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_revalidate.conf')
-    #curl_and_args = '-s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
+        result = self._ats.traffic_ctl("config", "reload", "-m", "-T", "30s")
+        assert result.returncode == 0, result.output
 
-    path1_rule = 'path1 {}'.format(int(time.time()) + 600)
+    def run(self) -> None:
+        """Exercise rule additions, type changes, and unchanged reloads."""
 
-    # Define first revision for when trafficserver starts
-    ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine("# Empty")
+        self._origin.start()
+        self._ats.start()
+        self.request("miss")
+        self.request("hit-fresh")
+        self.reload_rule("MISS")
+        self.request("miss")
+        self.request("hit-fresh")
+        self.reload_rule("STALE")
+        self.request("hit-stale")
+        self.reload_rule("MISS")
+        self.request("miss")
+        self.request("hit-fresh")
+        self.reload_unchanged()
+        self.request("hit-fresh")
+        self.rules_path.touch()
+        os.utime(self.rules_path, (self._mtime, self._mtime))
+        self._mtime += 1
+        self.reload_unchanged()
+        self.request("hit-fresh")
+        wait_for_metric(self._ats, "plugin.regex_revalidate.stale", 1, timeout=30)
+        wait_for_metric(self._ats, "plugin.regex_revalidate.miss", 2, timeout=30)
 
-    ts.Disk.remap_config.AddLine('map http://ats/ http://127.0.0.1:{}'.format(server.Variables.Port))
 
-    # minimal configuration
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'regex_revalidate',
-            'proxy.config.http.insert_age_in_response': 0,
-            'proxy.config.http.response_via_str': 3,
-            'proxy.config.http.cache.http': 1,
-            'proxy.config.http.wait_for_cache': 1,
-        })
+def test_regex_revalidate_miss(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """MISS rules refetch and reset correctly when changed to or from STALE."""
 
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
-
-    # 0 Request, cache miss expected
-    tr = urtest.AddTestRun("Cache miss path1")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
-    tr.StillRunningAfter = ts
-
-    # 1 Request, cache hit expected
-    tr = urtest.AddTestRun("Cache hit fresh path1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
-    tr.StillRunningAfter = ts
-
-    # 2 Reload, populated config
-    tr = urtest.AddTestRun("Reload config add path1")
-    ps = tr.Processes.Default
-    tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
-    # keep this for debug
-    tr.Disk.File(regex_revalidate_conf_path + "_tr2", typename="ats:config").AddLine(path1_rule + ' MISS')
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-    ps.ReturnCode = 0
-    ps.TimeOut = 5
-    tr.TimeOut = 5
-    # Delay it so the reload can catch up the diff between config files timestamps.
-    tr.DelayStart = 1
-
-    # 3 Request, cache miss expected
-    tr = urtest.AddTestRun("Revalidate MISS path1")
-    ps = tr.Processes.Default
-    tr.DelayStart = 7
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
-    tr.StillRunningAfter = ts
-
-    # 4 Request, cache hit (path1)
-    tr = urtest.AddTestRun("Cache hit fresh path1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit fresh response")
-    tr.StillRunningAfter = ts
-
-    # 5 Reload, change MISS to STALE (resets rule)
-    tr = urtest.AddTestRun("Reload config path1 STALE")
-    ps = tr.Processes.Default
-    tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' STALE')
-    tr.Disk.File(regex_revalidate_conf_path + "_tr5", typename="ats:config").AddLine(path1_rule + ' STALE')
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-    ps.ReturnCode = 0
-    ps.TimeOut = 5
-    tr.TimeOut = 5
-    # Delay it so the reload can catch up the diff between config files timestamps.
-    tr.DelayStart = 1
-
-    # 6 Request, cache stale expected
-    tr = urtest.AddTestRun("Cache stale path1")
-    ps = tr.Processes.Default
-    tr.DelayStart = 7
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-stale", "expected cache hit stale response")
-    tr.StillRunningAfter = ts
-
-    # 7 Reload, change STALE to MISS (resets rule)
-    tr = urtest.AddTestRun("Reload config path1 MISS")
-    ps = tr.Processes.Default
-    tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLine(path1_rule + ' MISS')
-    tr.Disk.File(regex_revalidate_conf_path + "_tr7", typename="ats:config").AddLine(path1_rule + ' MISS')
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-    ps.ReturnCode = 0
-    ps.TimeOut = 5
-    tr.TimeOut = 5
-    # Delay it so the reload can catch up the diff between config files timestamps.
-    tr.DelayStart = 1
-
-    # 8 Request, cache miss expected
-    tr = urtest.AddTestRun("Cache mis path1")
-    ps = tr.Processes.Default
-    tr.DelayStart = 7
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss response")
-    tr.StillRunningAfter = ts
-
-    # 9 Request, cache hit expected
-    tr = urtest.AddTestRun("Cache hit path1")
-    ps = tr.Processes.Default
-    tr.DelayStart = 5
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
-    tr.StillRunningAfter = ts
-
-    # 10 Reload, no changes
-    tr = urtest.AddTestRun("Reload no changes")
-    ps = tr.Processes.Default
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-    ps.ReturnCode = 0
-    ps.TimeOut = 5
-    tr.TimeOut = 5
-    # Delay it so the reload can catch up the diff between config files timestamps.
-    tr.DelayStart = 1
-
-    # 11 Request again, cache hit expected
-    tr = urtest.AddTestRun("Cache hit path1")
-    ps = tr.Processes.Default
-    tr.DelayStart = 7
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
-    tr.StillRunningAfter = ts
-
-    # 12 Stage - Touch the rules file to trigger reload detection
-    tr = urtest.AddTestRun("Touch regex_revalidate config")
-    tr.Processes.Default.Command = f'touch {regex_revalidate_conf_path}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-
-    tr = urtest.AddConfigReload(ts, description="Reload same config")
-    tr.StillRunningAfter = server
-
-    # 13 Request, Cache hit expected
-    tr = urtest.AddTestRun("Cache hit path1")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://ats/path1', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit response")
-    tr.StillRunningAfter = ts
-
-    # 14 Stats check
-    tr = urtest.AddTestRun("Check stats")
-    tr.DelayStart = 5
-    tr.Processes.Default.Command = f"bash -c ./metrics_miss.sh"
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    RegexRevalidateMissScenario(ats_factory, services).run()

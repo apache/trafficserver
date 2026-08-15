@@ -14,116 +14,130 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory, assert_matches_gold
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_partial_blind_tunnel(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class PartialBlindTunnelScenario:
+    """Terminate client TLS and partially blind-route bytes to a TLS origin."""
 
-    urtest.Summary = 'Testing partial_blind_tunnel'
+    _metrics = (
+        "proxy.process.http.total_incoming_connections",
+        "proxy.process.http.total_client_connections",
+        "proxy.process.http.total_client_connections_ipv4",
+        "proxy.process.http.total_client_connections_ipv6",
+        "proxy.process.http.total_server_connections",
+        "proxy.process.http2.total_client_connections",
+        "proxy.process.http.connect_requests",
+        "proxy.process.tunnel.total_client_connections_blind_tcp",
+        "proxy.process.tunnel.current_client_connections_blind_tcp",
+        "proxy.process.tunnel.total_server_connections_blind_tcp",
+        "proxy.process.tunnel.current_server_connections_blind_tcp",
+        "proxy.process.tunnel.total_client_connections_tls_tunnel",
+        "proxy.process.tunnel.current_client_connections_tls_tunnel",
+        "proxy.process.tunnel.total_client_connections_tls_forward",
+        "proxy.process.tunnel.current_client_connections_tls_forward",
+        "proxy.process.tunnel.total_client_connections_tls_partial_blind",
+        "proxy.process.tunnel.current_client_connections_tls_partial_blind",
+        "proxy.process.tunnel.total_client_connections_tls_http",
+        "proxy.process.tunnel.current_client_connections_tls_http",
+        "proxy.process.tunnel.total_server_connections_tls",
+        "proxy.process.tunnel.current_server_connections_tls",
+    )
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server_bar = urtest.MakeOriginServer("server_bar", ssl=True)
-    nameserver = urtest.MakeDNServer("dns", default='127.0.0.1')
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_bar_header = {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "ok bar"
-    }
-    server_bar.addResponse("sessionlog_bar.json", request_bar_header, response_bar_header)
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the TLS origin reached through the partial blind route."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signed-bar.pem")
-    ts.addSSLfile("ssl/signed-bar.key")
-    ts.addSSLfile("ssl/signer.pem")
+        origin = services.origin("origin", ssl=True)
+        origin.add_response(
+            {
+                "headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+                "body": "ok bar"
+            },
+        )
+        return origin
 
-    # Need no remap rules. Everything should be processed by sni
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve partial-blind route names to loopback."""
 
-    # Make sure the TS server certs are different from the origin certs
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: signed-foo.pem
-        ssl_key_name: signed-foo.key
-    """.split("\n"))
+        return services.dns("dns", default="127.0.0.1")
 
-    # Case 1, global config policy=permissive properties=signature
-    #         override for foo.com policy=enforced properties=all
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.http.connect_ports': '{0} {1}'.format(ts.Variables.ssl_port, server_bar.Variables.SSL_Port),
-            'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-            'proxy.config.dns.resolv_conf': 'NULL'
-        })
-    ts.addPrivateConnectAllowYaml()
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure `foo.com` as a partial blind route to the TLS origin."""
 
-    # foo.com should terminate. and reconnect via TLS upstream to bar.com
-    ts.Disk.sni_yaml.AddLines(
-        [
-            "sni:",
-            "- fqdn: 'foo.com'",
-            "  partial_blind_route: 'localhost:{0}'".format(server_bar.Variables.SSL_Port),
-        ])
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(
+            TEST_DIRECTORY / "ssl" / "signed-foo.pem",
+            TEST_DIRECTORY / "ssl" / "signed-foo.key",
+            TEST_DIRECTORY / "ssl" / "signed-bar.pem",
+            TEST_DIRECTORY / "ssl" / "signed-bar.key",
+            TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: signed-foo.pem",
+                "    ssl_key_name: signed-foo.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.http.connect_ports": f"{ats.https_port} {self._origin.https_port}",
+                "proxy.config.ssl.client.CA.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+            })
+        ats.allow_private_connect()
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: foo.com\n"
+            f"    partial_blind_route: localhost:{self._origin.https_port}\n",
+        )
+        return ats
 
-    tr = urtest.AddTestRun("Partial Blind Route")
-    tr.MakeCurlCommand("--http1.1 -v --resolve 'foo.com:{0}:127.0.0.1' -k https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
-    tr.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server_bar)
-    tr.Processes.Default.StartBefore(nameserver)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.StillRunningAfter = ts
+    def run(self) -> None:
+        """Verify traffic and all tunnel classification metrics."""
 
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
-    tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-        "Not Found on Accelerato", "Should not try to remap on Traffic Server")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
-    tr.Processes.Default.Streams.All += Testers.ContainsExpression("ok bar", "Body is expected")
+        self._origin.start()
+        self._dns.start()
+        self._ats.start()
+        response = self._curl.run_for(
+            self._ats,
+            "--http1.1",
+            "--verbose",
+            "--resolve",
+            f"foo.com:{self._ats.https_port}:127.0.0.1",
+            "--insecure",
+            f"https://foo.com:{self._ats.https_port}",
+        )
+        assert response.returncode == 0, response.output
+        assert "HTTP/1.1 200 OK" in response.stderr
+        assert response.stdout == "ok bar"
 
-    tr = urtest.AddTestRun("Test Metrics")
-    tr.Processes.Default.Command = (
-        f"{urtest.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
-        " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
-        " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
-        " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
-        " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
-        " proxy.process.tunnel.current_client_connections_blind_tcp" + " proxy.process.tunnel.total_server_connections_blind_tcp" +
-        " proxy.process.tunnel.current_server_connections_blind_tcp" + " proxy.process.tunnel.total_client_connections_tls_tunnel" +
-        " proxy.process.tunnel.current_client_connections_tls_tunnel" +
-        " proxy.process.tunnel.total_client_connections_tls_forward" +
-        " proxy.process.tunnel.current_client_connections_tls_forward" +
-        " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
-        " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
-        " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
-        " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
-        f" {urtest.TestDirectory}/gold/tls-partial-blind-tunnel-metrics.gold")
-    # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-    tr.Processes.Default.Env = ts.Env
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-    urtest.execute()
+        metrics = self._ats.traffic_ctl("metric", "get", *self._metrics)
+        assert metrics.returncode == 0, metrics.output
+        assert_matches_gold(metrics.stdout, TEST_DIRECTORY / "gold" / "tls-partial-blind-tunnel-metrics.gold")
+
+
+def test_tls_partial_blind_tunnel(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Partial blind routing forwards TLS and updates only its metrics."""
+
+    PartialBlindTunnelScenario(ats_factory, services, curl).run()

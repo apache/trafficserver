@@ -1,0 +1,102 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "PURGE traverses slice gaps, respects ranges, and stops on real failures"
+  requires:
+    plugins: [slice.so, cache_range_requests.so, header_rewrite.so]
+  replay: replay/slice_purge_gaps_client.replay.yaml
+  server:
+    name: origin
+    replay: replay/slice_purge_gaps_server.replay.yaml
+    process_config:
+      other_args: '--format "{url}{field.range}{field.uuid}"'
+    log_validation:
+      excludes:
+        - expression: "PURGE"
+        - expression: "HEAD /"
+  client:
+    name: client
+  ats:
+    name: ts
+    process_config:
+      enable_cache: true
+      disable_log_checks: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: slice|cache_range_requests
+
+  variants:
+    - name: gap-range-and-failure-walks
+      client:
+        process_config:
+          keys: >-
+            hole-fill-0 hole-fill-2 hole-purge hole-check-0 hole-check-2
+            nofirst-fill-1 nofirst-purge nofirst-check-1
+            mixed-fill-0 mixed-fill-1 mixed-fill-4 mixed-purge mixed-check-4
+            ranged-fill-0 ranged-fill-2 ranged-purge ranged-check-0 ranged-check-2
+            openend-fill-0 openend-fill-2 openend-purge openend-check-2 openend-check-0
+            outside-fill-1 outside-purge outside-check-1
+            endbytes-fill-0 endbytes-fill-2 endbytes-purge endbytes-check-0 endbytes-check-2
+            badrange-fill-0 badrange-purge badrange-check-0
+            failblock-fill-0 failblock-fill-3 failblock-purge failblock-check-0 failblock-check-3
+            denied-fill-0 denied-purge denied-check-0
+      ats:
+        copy_to_config_dir:
+          - source: rules/purge_block_failure.conf
+            destination: purge_block_failure.conf
+        remap_config:
+          - >-
+            map http://slice/ http://127.0.0.1:{SERVER_HTTP_PORT}/
+            @plugin=header_rewrite.so @pparam={CONFIG_DIR}/purge_block_failure.conf
+            @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--ref-relative
+            @plugin=cache_range_requests.so
+        log_validation:
+          traffic_out:
+            contains:
+              - expression: "Purge suffix range widened to the whole object"
+            excludes:
+              - expression: "only-if-cached"
+          diags_log:
+            contains:
+              - expression: "Refusing PURGE with an unparseable range"
+              - expression: "Purge of block 1 failed"
+              - expression: "Purge of block 0 failed"
+
+    - name: miss-bound-and-request-override
+      client:
+        process_config:
+          keys: >-
+            sparse-fill-4 sparse-purge-narrow sparse-check-alive
+            sparse-purge-wide sparse-check-gone
+      ats:
+        remap_config:
+          - >-
+            map http://slice/ http://127.0.0.1:{SERVER_HTTP_PORT}/
+            @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--ref-relative
+            @pparam=--purge-probe-blocks=2 @plugin=cache_range_requests.so
+        log_validation:
+          traffic_out:
+            contains:
+              - expression: "gave up after 2 consecutive uncached block"
+            excludes:
+              - expression: "only-if-cached"
+          diags_log:
+            contains:
+              - expression: "Ignoring invalid X-Slice-Purge-Probe"

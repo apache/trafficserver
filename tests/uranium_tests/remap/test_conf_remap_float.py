@@ -14,51 +14,41 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_conf_remap_float(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ConfRemapFloatScenario:
+    """Load an explicitly tagged float through the conf_remap plugin."""
 
-    urtest.Summary = '''
-    Test command: traffic_ctl config describe proxy.config.http.background_fill_completed_threshold (YTSATS-3309)
-    '''
-    urtest.testName = 'Float in conf_remap Config Test'
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._ats = self.configure_ats(ats_factory)
 
-    ts = urtest.MakeATSProcess("ts")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure classic remap syntax with the float override file."""
 
-    ts.Disk.MakeConfigFile('conf_remap.yaml').update(
-        '''
-    records:
-      http:
-        background_fill_completed_threshold: !!float '0.5'
-    ''')
+        ats = ats_factory.create("ts")
+        if not ats.plugin_exists("conf_remap.so"):
+            pytest.skip("conf_remap.so is required")
+        ats.write_config_file(
+            "conf_remap.yaml",
+            "records:\n  http:\n    background_fill_completed_threshold: !!float '0.5'\n",
+        )
+        ats.remap_config.add_line(
+            "map http://cdn.example.com/ http://origin.example.com/ "
+            f"@plugin=conf_remap.so @pparam={ats.config_directory}/conf_remap.yaml")
+        return ats
 
-    ts.Disk.remap_config.AddLine(
-        f"map http://cdn.example.com/ http://origin.example.com/ @plugin=conf_remap.so @pparam={urtest.RunDirectory}/ts/config/conf_remap.yaml"
-    )
+    def run(self) -> None:
+        """Start ATS and verify traffic_ctl can describe the overridden float."""
 
-    tr = urtest.AddTestRun("traffic_ctl command")
-    tr.Env = ts.Env
-    tr.TimeOut = 5
-    tr.StillRunningAfter = ts
+        self._ats.start()
+        result = self._ats.traffic_ctl("config", "describe", "proxy.config.http.background_fill_completed_threshold")
+        assert result.returncode == 0, result.output
 
-    p = tr.Processes.Default
-    p.Command = f"traffic_ctl config describe proxy.config.http.background_fill_completed_threshold"
-    p.ReturnCode = 0
-    p.StartBefore(urtest.Processes.ts)
-    urtest.execute()
+
+def test_conf_remap_float(ats_factory: ATSFactory) -> None:
+    """conf_remap accepts a YAML float record with classic remap syntax."""
+
+    ConfRemapFloatScenario(ats_factory).run()

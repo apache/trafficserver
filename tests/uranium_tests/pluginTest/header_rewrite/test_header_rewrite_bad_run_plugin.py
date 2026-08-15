@@ -14,165 +14,144 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_header_rewrite_bad_run_plugin(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
-    '''
-    Verify header_rewrite rejects a run-plugin operator whose target plugin fails to
-    load. The failure must be caught at config load time, not aborted at request time.
-    '''
+class BadRunPluginScenario:
+    """Reject failed run-plugin initialization at startup and during reload."""
 
-    urtest.Summary = '''
-    header_rewrite must reject a run-plugin whose target plugin fails to load, at
-    config load time, rather than aborting the server on the first request.
-    '''
+    ERROR_MARKER = "run-plugin unable to load"
+    BAD_RULE = """\
+cond %{REMAP_PSEUDO_HOOK}
+  run-plugin conf_remap.so no_such_conf_remap_file.yaml
+"""
+    NESTED_BAD_RULE = """\
+cond %{REMAP_PSEUDO_HOOK}
+  if
+    cond %{TRUE}
+      run-plugin conf_remap.so no_such_conf_remap_file.yaml
+  endif
+"""
 
-    # Reproduce the reported crash: run-plugin against a plugin whose instance-init fails
-    # (conf_remap + a missing file) hands header_rewrite a null instance, which old code aborted on.
-    urtest.SkipUnless(
-        Condition.PluginExists('header_rewrite.so'),
-        Condition.PluginExists('conf_remap.so'),
-    )
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._ats_factory = ats_factory
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_reload_ats()
 
-    class TestBadRunPlugin:
-        '''Verify failed run-plugin initialization is rejected safely.'''
+    def require_plugins(self) -> None:
+        """Skip when either installed plugin needed by the scenario is absent."""
 
-        ERROR_MARKER: str = 'run-plugin unable to load'
-        BAD_RULE_LINES: list[str] = [
-            'cond %{REMAP_PSEUDO_HOOK}',
-            '  run-plugin conf_remap.so no_such_conf_remap_file.yaml',
-        ]
-        NESTED_BAD_RULE_LINES: list[str] = [
-            'cond %{REMAP_PSEUDO_HOOK}',
-            '  if',
-            '    cond %{TRUE}',
-            '      run-plugin conf_remap.so no_such_conf_remap_file.yaml',
-            '  endif',
-        ]
+        if not self._ats.plugin_exists("header_rewrite.so") or not self._ats.plugin_exists("conf_remap.so"):
+            pytest.skip("header_rewrite.so and conf_remap.so are required")
 
-        def __init__(self) -> None:
-            '''Configure startup and reload rejection scenarios.'''
-            self._configure_startup_rejection()
-            self._server = self._configure_origin_server()
-            self._ts = self._configure_traffic_server()
-            self._configure_baseline_request()
-            self._configure_bad_remap_install()
-            self._configure_failed_reload()
-            self._configure_post_reload_request()
-            self._ts.Disk.diags_log.Content = Testers.IncludesExpression(
-                self.ERROR_MARKER, 'the rejected reload should log the run-plugin failure')
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the origin used before and after the rejected reload."""
 
-        def _configure_startup_rejection(self) -> None:
-            '''Verify a bad top-level run-plugin fails startup cleanly.'''
-            ts = urtest.MakeATSProcess("ts-startup", disable_log_checks=True)
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'header_rewrite',
-                })
-            ts.Disk.MakeConfigFile('bad_run_plugin.conf').AddLines(self.BAD_RULE_LINES)
-            ts.Disk.remap_config.AddLine(
-                'map http://startup.example.com/ http://127.0.0.1/ '
-                '@plugin=header_rewrite.so @pparam=bad_run_plugin.conf')
-
-            # Invalid remap.config triggers a controlled exit rather than SIGABRT.
-            ts.ReturnCode = 33
-            ts.Ready = 0
-            ts.Disk.diags_log.Content = Testers.IncludesExpression(
-                self.ERROR_MARKER, 'header_rewrite must report the failed run-plugin load')
-            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-                'Traffic Server is fully initialized', 'ATS must not initialize with a bad run-plugin config')
-
-            tr = urtest.AddTestRun("Bad run-plugin config fails startup instead of crashing")
-            tr.Processes.Default.Command = 'echo verifying startup rejection'
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.StartBefore(ts)
-
-        def _configure_origin_server(self) -> 'Process':
-            '''Configure the origin used to verify reload behavior.'''
-            server = urtest.MakeOriginServer("server")
-            request_header = {
+        origin = services.origin("origin")
+        origin.add_response(
+            {
                 "headers": "GET / HTTP/1.1\r\nHost: reload.example.com\r\n\r\n",
-                "timestamp": "1469733493.993",
                 "body": ""
-            }
-            response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-            server.addResponse("sessionfile.log", request_header, response_header)
-            return server
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+                "body": ""
+            },
+        )
+        return origin
 
-        def _configure_traffic_server(self) -> 'Process':
-            '''Configure ATS with a valid initial remap table.'''
-            ts = urtest.MakeATSProcess("ts-reload", disable_log_checks=True)
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'header_rewrite',
-                })
-            ts.Disk.MakeConfigFile('nested_bad_run_plugin.conf').AddLines(self.NESTED_BAD_RULE_LINES)
-            ts.Disk.remap_config.AddLine(f'map http://reload.example.com http://127.0.0.1:{self._server.Variables.Port}')
-            return ts
+    def configure_startup_ats(self) -> ATS:
+        """Configure an invalid top-level run-plugin rule."""
 
-        def _configure_curl_run(self, name: str, expectation: str) -> 'TestRun':
-            '''Configure a request that verifies ATS still serves traffic.'''
-            tr = urtest.AddTestRun(name)
-            tr.MakeCurlCommand(
-                f'--proxy 127.0.0.1:{self._ts.Variables.port} "http://reload.example.com" '
-                '-H "Proxy-Connection: keep-alive" --verbose',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stderr = Testers.IncludesExpression('200 OK', expectation)
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
-            return tr
+        ats = self._ats_factory.create("ts-startup", enable_cache=False)
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "header_rewrite",
+        })
+        ats.write_config_file("bad_run_plugin.conf", self.BAD_RULE)
+        ats.remap_config.add_line(
+            "map http://startup.example.com/ http://127.0.0.1/ "
+            "@plugin=header_rewrite.so @pparam=bad_run_plugin.conf")
+        ats.expect_start_failure(self.ERROR_MARKER)
+        return ats
 
-        def _configure_baseline_request(self) -> None:
-            '''Verify the valid initial configuration serves requests.'''
-            tr = self._configure_curl_run("Baseline request is served before reload", 'baseline request should be served')
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
+    def configure_reload_ats(self) -> ATS:
+        """Configure the valid remap generation used by the live server."""
 
-        def _configure_bad_remap_install(self) -> None:
-            '''Replace remap.config with one containing a bad nested run-plugin.'''
-            tr = urtest.AddTestRun("Install a remap.config with a bad run-plugin")
-            remap_path = self._ts.Disk.remap_config.AbsPath
-            tr.Disk.File(remap_path, id="remap_bad", typename="ats:config")
-            tr.Disk.remap_bad.AddLine(
-                f'map http://reload.example.com http://127.0.0.1:{self._server.Variables.Port} '
-                '@plugin=header_rewrite.so @pparam=nested_bad_run_plugin.conf')
-            tr.Processes.Default.Command = 'echo installed bad remap.config'
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+        ats = self._ats_factory.create("ts-reload", enable_cache=False)
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "header_rewrite",
+        })
+        ats.write_config_file("nested_bad_run_plugin.conf", self.NESTED_BAD_RULE)
+        ats.remap_config.add_line(f"map http://reload.example.com http://127.0.0.1:{self._origin.port}")
+        return ats
 
-        def _configure_failed_reload(self) -> None:
-            '''Verify the bad remap table is rejected without stopping ATS.'''
-            tr = urtest.AddConfigReload(
-                self._ts, expect="fail", delay_start=2, description="Reload with bad run-plugin must be rejected, not fatal")
-            tr.StillRunningAfter = self._ts
-            tr.StillRunningAfter = self._server
+    def verify_startup_rejection(self) -> None:
+        """Confirm invalid startup configuration exits cleanly rather than aborting."""
 
-        def _configure_post_reload_request(self) -> None:
-            '''Verify the rejected reload leaves the old configuration active.'''
-            self._configure_curl_run(
-                "Server still serves the old config after the rejected reload",
-                'old config should still serve after a rejected reload')
+        ats = self.configure_startup_ats()
+        ats.start()
+        assert self.ERROR_MARKER in ats.diags_log.read_text(errors="replace")
+        assert "Traffic Server is fully initialized" not in ats.traffic_out.read_text(errors="replace")
 
-    TestBadRunPlugin()
-    urtest.execute()
+    def request(self) -> None:
+        """Verify the currently active remap generation still serves traffic."""
+
+        result = self._curl.get(self._ats, headers={"Host": "reload.example.com"}, options=("--verbose",))
+        assert result.returncode == 0, result.output
+        assert "200 OK" in result.stderr
+
+    def install_invalid_remap(self) -> None:
+        """Replace remap.config with a nested run-plugin whose instance cannot load."""
+
+        self._ats.remap_config.path.write_text(
+            f"map http://reload.example.com http://127.0.0.1:{self._origin.port} "
+            "@plugin=header_rewrite.so @pparam=nested_bad_run_plugin.conf\n")
+
+    def reject_reload(self) -> None:
+        """Reload the invalid table and wait until ATS reports the failure."""
+
+        token = "bad-run-plugin"
+        result = self._ats.traffic_ctl("config", "reload", "--token", token)
+        assert result.returncode == 0, result.output
+        deadline = time.monotonic() + 15
+        latest = ""
+        while time.monotonic() < deadline:
+            status = self._ats.traffic_ctl("config", "status", "--token", token)
+            latest = status.output.lower()
+            if "failed" in latest:
+                return
+            if "success" in latest:
+                break
+            time.sleep(0.1)
+        raise AssertionError(f"Invalid remap reload was not rejected:\n{latest}")
+
+    def run(self) -> None:
+        """Exercise startup rejection and atomic live-reload rejection."""
+
+        self.require_plugins()
+        self.verify_startup_rejection()
+        self._origin.start()
+        self._ats.start()
+        self.request()
+        self.install_invalid_remap()
+        self.reject_reload()
+        self.request()
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline:
+            if self.ERROR_MARKER in self._ats.diags_log.read_text(errors="replace"):
+                return
+            time.sleep(0.1)
+        raise AssertionError("The rejected reload did not log the run-plugin initialization failure")
+
+
+def test_header_rewrite_bad_run_plugin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Failed run-plugin initialization is rejected without losing the prior remap generation."""
+
+    BadRunPluginScenario(ats_factory, services, curl).run()

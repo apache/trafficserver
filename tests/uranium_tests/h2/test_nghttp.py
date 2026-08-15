@@ -14,105 +14,91 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import shutil
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, HttpBinServer, ServiceFactory, assert_matches_gold, wait_for_file_lines
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_nghttp(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class NghttpScenario:
+    """Exercise HTTP/2 trailers and graceful shutdown with nghttp."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._httpbin = self.configure_httpbin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test with nghttp
-    '''
+    @staticmethod
+    def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
+        """Start the HTTP behavior origin used by both requests."""
 
-    urtest.SkipUnless(Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),)
-    urtest.ContinueOnFail = True
+        return services.httpbin("httpbin")
 
-    # ----
-    # Setup Origin Server
-    # ----
-    httpbin = urtest.MakeHttpBinServer("httpbin")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Terminate h2 and trigger graceful shutdown on the drip request."""
 
-    # 128KB
-    post_body = "0123456789abcdef" * 8192
-    post_body_file = open(os.path.join(urtest.RunDirectory, "post_body"), "w")
-    post_body_file.write(post_body)
-    post_body_file.close()
-
-    # ----
-    # Setup ATS
-    # ----
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
-
-    # add ssl materials like key, certificates for the server
-    ts.addDefaultSSLFiles()
-
-    ts.Setup.CopyAs('rules/graceful_shutdown.conf', urtest.RunDirectory)
-
-    ts.Disk.remap_config.AddLines(
-        [
-            'map /httpbin/ http://127.0.0.1:{0}/ @plugin=header_rewrite.so @pparam={1}/graceful_shutdown.conf'.format(
-                httpbin.Variables.Port, urtest.RunDirectory)
-        ])
-
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http2_cs',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        rule = TEST_DIRECTORY / "rules" / "graceful_shutdown.conf"
+        ats.copy_to_config(rule)
+        ats.remap_config.add_line(
+            f"map /httpbin/ http://127.0.0.1:{self._httpbin.port}/ "
+            f"@plugin=header_rewrite.so @pparam={ats.config_directory / rule.name}")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2_cs",
         })
+        return ats
 
-    # ----
-    # Test Cases
-    # ----
+    def run(self) -> None:
+        """Send a trailer-bearing POST, then observe both GOAWAY frames."""
 
-    # Test Case 0: Trailer
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 10
-    tr.Processes.Default.Command = f"nghttp -vn --no-dep 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/post' --trailer 'foo: bar' -d 'post_body'"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(httpbin)
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.Streams.stdout = "gold/nghttp_0_stdout.gold"
-    tr.StillRunningAfter = httpbin
-    tr.StillRunningAfter = ts
+        if shutil.which("nghttp") is None:
+            pytest.skip("nghttp is required")
+        post_body = self._ats.run_directory / "post_body"
+        post_body.parent.mkdir(parents=True, exist_ok=True)
+        post_body.write_text("0123456789abcdef" * 8192)
+        self._httpbin.start()
+        self._ats.start()
 
-    # Test Case 1: Graceful Shutdown
-    #   - This test takes 3 seconds to make sure receiving 2 GOAWAY frames
-    #   - TODO: add a test case of a client keeps the connection open ( -e.g. keep sending PING frame)
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 10
-    tr.Processes.Default.Command = f"nghttp -vn --no-dep 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/drip?duration=3'"
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = "gold/nghttp_1_stdout.gold"
-    tr.StillRunningAfter = httpbin
-    tr.StillRunningAfter = ts
+        trailer = self._ats.run(
+            "nghttp",
+            "-vn",
+            "--no-dep",
+            f"https://127.0.0.1:{self._ats.https_port}/httpbin/post",
+            "--trailer",
+            "foo: bar",
+            "-d",
+            post_body.name,
+            timeout=10,
+        )
+        assert trailer.returncode == 0, trailer.output
+        assert_matches_gold(trailer.stdout, TEST_DIRECTORY / "gold" / "nghttp_0_stdout.gold")
 
-    ts.Disk.traffic_out.Content = "gold/nghttp_ts_stderr.gold"
-    urtest.execute()
+        shutdown = self._ats.run(
+            "nghttp",
+            "-vn",
+            "--no-dep",
+            f"https://127.0.0.1:{self._ats.https_port}/httpbin/drip?duration=3",
+            timeout=10,
+        )
+        assert shutdown.returncode == 0, shutdown.output
+        assert_matches_gold(shutdown.stdout, TEST_DIRECTORY / "gold" / "nghttp_1_stdout.gold")
+        traffic_out = wait_for_file_lines(self._ats.traffic_out, "session free", 2)
+        assert_matches_gold(traffic_out, TEST_DIRECTORY / "gold" / "nghttp_ts_stderr.gold")
+
+
+def test_nghttp(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """ATS forwards h2 trailers and performs a two-stage graceful shutdown."""
+
+    NghttpScenario(ats_factory, services).run()

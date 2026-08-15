@@ -14,249 +14,147 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    CommandResult,
+    Curl,
+    OriginServer,
+    ServiceFactory,
+    assert_matches_gold,
+    wait_for_file_lines,
+)
+
+TEST_DIRECTORY = Path(__file__).parent
+SSL_DIRECTORY = TEST_DIRECTORY / "ssl"
 
 
-def test_tls_client_verify(urtest: UraniumTest) -> None:
-    '''
-    Test requiring certificate from user agent
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsClientVerifyScenario:
+    """Require client certificates by default and override the policy by SNI."""
 
-    urtest.Summary = '''
-    Test various options for requiring certificate from client for mutual authentication TLS
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    cafile = "{0}/signer.pem".format(urtest.RunDirectory)
-    cafile2 = "{0}/signer2.pem".format(urtest.RunDirectory)
-    server = urtest.MakeOriginServer("server")
-    server2 = urtest.MakeOriginServer("server2")
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the clear-text origin used after successful handshakes."""
 
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    ts.addSSLfile("ssl/server.pem")
-    ts.addSSLfile("ssl/server.key")
-    ts.addSSLfile("ssl/signer.pem")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure strict global verification and the SNI exception matrix."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.url_remap.pristine_host_hdr': 1,
-            'proxy.config.ssl.client.certification_level': 2,
-            'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
-            'proxy.config.exec_thread.autoconfig.scale': 1.0,
-            'proxy.config.ssl.TLSv1_3.enabled': 0
-        })
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.copy_to_ssl(SSL_DIRECTORY / "server.pem", SSL_DIRECTORY / "server.key", SSL_DIRECTORY / "signer.pem")
+        ats.set_ssl_multicert_yaml(
+            {"ssl_multicert": [{
+                "dest_ip": "*",
+                "ssl_cert_name": "server.pem",
+                "ssl_key_name": "server.key"
+            }]})
+        ats.records.update(
+            {
+                "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
+                "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
+                "proxy.config.url_remap.pristine_host_hdr": 1,
+                "proxy.config.ssl.client.certification_level": 2,
+                "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
+                "proxy.config.exec_thread.autoconfig.scale": 1.0,
+                "proxy.config.ssl.TLSv1_3.enabled": 0,
+                "proxy.config.log.max_secs_per_buffer": 1,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        ats.write_config_file(
+            "sni.yaml",
+            "sni:\n"
+            "  - fqdn: bob.bar.com\n"
+            "    verify_client: NONE\n"
+            "  - fqdn: bob.com\n"
+            "    verify_client: STRICT\n"
+            "  - fqdn: '*.foo.com'\n"
+            "    verify_client: NONE\n"
+            "  - fqdn: '*.bar.com'\n"
+            "    verify_client: STRICT\n",
+        )
+        ats.set_logging_yaml(
+            {
+                "logging":
+                    {
+                        "formats": [{
+                            "name": "testformat",
+                            "format": "%<pssc> %<pquc> %<pscert> %<cscert>"
+                        }],
+                        "logs": [{
+                            "mode": "ascii",
+                            "format": "testformat",
+                            "filename": "squid"
+                        }],
+                    }
+            })
+        return ats
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def request(
+        self,
+        host: str,
+        case_number: int,
+        certificate: str | None = None,
+        key: str | None = None,
+    ) -> CommandResult:
+        """Connect to one SNI name with optional client certificate material."""
 
-    # Just map everything through to origin.  This test is concentrating on the user-agent side
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
+        arguments = ["--tls-max", "1.2", "--insecure"]
+        if certificate is not None and key is not None:
+            arguments.extend(("--cert", str(SSL_DIRECTORY / certificate), "--key", str(SSL_DIRECTORY / key)))
+        arguments.extend(
+            (
+                "--resolve",
+                f"{host}:{self._ats.https_port}:127.0.0.1",
+                f"https://{host}:{self._ats.https_port}/case{case_number}",
+            ))
+        return self._curl.run_for(self._ats, *arguments)
 
-    # Scenario 1:  Default no client cert required.  cert required for bar.com
-    ts.Disk.sni_yaml.AddLines(
-        [
-            'sni:',
-            '- fqdn: bob.bar.com',
-            '  verify_client: NONE',
-            '- fqdn: "bob.com"',
-            '  verify_client: STRICT',
-            '- fqdn: "*.foo.com"',
-            '  verify_client: NONE',
-            '- fqdn: "*.bar.com"',
-            '  verify_client: STRICT',
-        ])
+    def run(self) -> None:
+        """Run the policy matrix and verify certificate-presence access-log fields."""
 
-    ts.Disk.logging_yaml.AddLines(
-        '''
-    logging:
-      formats:
-        - name: testformat
-          format: '%<pssc> %<pquc> %<pscert> %<cscert>'
-      logs:
-        - mode: ascii
-          format: testformat
-          filename: squid
-    '''.split("\n"))
+        self._origin.start()
+        self._ats.start()
+        cases = (
+            ("foo.com", 1, None, None, False),
+            ("foo.com", 2, "server.pem", "server.key", False),
+            ("foo.com", 3, "signed-foo.pem", "signed-foo.key", True),
+            ("bob.bar.com", 4, None, None, True),
+            ("bob.bar.com", 5, "signed-bob-bar.pem", "signed-bar.key", True),
+            ("bob.bar.com", 6, "server.pem", "server.key", True),
+            ("bob.foo.com", 7, None, None, True),
+            ("bob.foo.com", 8, "signed-bob-foo.pem", "signed-foo.key", True),
+            ("bob.foo.com", 9, "server.pem", "server.key", True),
+            ("bar.com", 10, None, None, False),
+            ("bar.com", 11, "signed-bar.pem", "signed-bar.key", True),
+            ("bar.com", 12, "server.pem", "server.key", False),
+            ("bob.com", 13, None, None, False),
+            ("bob.foo.com", 14, None, None, True),
+        )
+        for host, case_number, certificate, key, should_succeed in cases:
+            result = self.request(host, case_number, certificate, key)
+            if should_succeed:
+                assert result.returncode == 0, result.output
+            else:
+                assert result.returncode != 0, result.output
 
-    # to foo.com w/o client cert.  Should fail
-    tr = urtest.AddTestRun("Connect to foo.com without cert")
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 35
+        access_log = wait_for_file_lines(self._ats.log_directory / "squid.log", r"^404 ", 9)
+        assert_matches_gold(access_log, TEST_DIRECTORY / "gold" / "clientcert-accesslog.gold")
 
-    tr = urtest.AddTestRun("Connect to foo.com with bad cert")
-    tr.Setup.Copy("ssl/server.pem")
-    tr.Setup.Copy("ssl/server.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case2"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    # Should fail with badly signed certs
-    tr.Processes.Default.ReturnCode = 35
 
-    tr = urtest.AddTestRun("Connect to foo.com with cert")
-    tr.Setup.Copy("ssl/signed-foo.pem")
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case3"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
+def test_tls_client_verify(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """Global and SNI client-certificate policies produce the expected handshakes and logs."""
 
-    tr = urtest.AddTestRun("Connect to bob.bar.com without cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case4".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("alert", "TLS handshake should succeed")
-
-    tr = urtest.AddTestRun("Connect to bob.bar.com with cert")
-    tr.Setup.Copy("ssl/signed-bob-bar.pem")
-    tr.Setup.Copy("ssl/signed-bar.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./signed-bob-bar.pem --key ./signed-bar.key --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case5"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    tr = urtest.AddTestRun("Connect to bob.bar.com with bad cert")
-    tr.Setup.Copy("ssl/server.pem")
-    tr.Setup.Copy("ssl/server.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case6"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    tr = urtest.AddTestRun("Connect to bob.foo.com without cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/case7".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("alert", "TLS handshake should succeed")
-
-    tr = urtest.AddTestRun("Connect to bob.foo.com with cert")
-    tr.Setup.Copy("ssl/signed-bob-foo.pem")
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./signed-bob-foo.pem --key ./signed-foo.key --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/case8"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    tr = urtest.AddTestRun("Connect to bob.foo.com with bad cert")
-    tr.Setup.Copy("ssl/server.pem")
-    tr.Setup.Copy("ssl/server.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/case9"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
-
-    tr = urtest.AddTestRun("Connect to bar.com without cert")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case10".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 35
-
-    tr = urtest.AddTestRun("Connect to bar.com with cert")
-    tr.Setup.Copy("ssl/signed-bar.pem")
-    tr.Setup.Copy("ssl/signed-bar.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./signed-bar.pem --key ./signed-bar.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case11"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "TLS handshake should succeed")
-
-    tr = urtest.AddTestRun("Connect to bar.com with bad cert")
-    tr.Setup.Copy("ssl/server.pem")
-    tr.Setup.Copy("ssl/server.key")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/case12"
-        .format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 35
-
-    # Test that the fqdn's match completely.  bob.com should require client certificate. bob.com.com should not
-    tr = urtest.AddTestRun("Connect to bob.com without cert, should fail")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --resolve 'bob.com:{0}:127.0.0.1' https://bob.com:{0}/case13".format(ts.Variables.ssl_port), ts=ts)
-    tr.Processes.Default.ReturnCode = 35
-
-    tr = urtest.AddTestRun("Connect to bob.foo.com without cert, should succeed")
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        "--tls-max 1.2 -k --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}/case14".format(ts.Variables.ssl_port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-
-    tr = urtest.AddTestRun("Wait for the access log to write out")
-    tr.Processes.Default.StartBefore(server2, ready=When.FileExists(ts.Disk.squid_log))
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = server2
-    tr.Processes.Default.Command = 'echo "Log file exists"'
-    tr.Processes.Default.ReturnCode = 0
-
-    ts.Disk.squid_log.Content = "gold/clientcert-accesslog.gold"
-    urtest.execute()
+    TlsClientVerifyScenario(ats_factory, services, curl).run()

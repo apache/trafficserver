@@ -1,408 +1,104 @@
-
 # Uranium Tests
 
-This directory contains Apache Traffic Server's Uranium test suite and its
+This directory contains Apache Traffic Server's Uranium system tests and their
 supporting tools. See the
 [developer guide](../doc/developer-guide/testing/uranium-tests.en.rst) for the
-name's intentionally tongue-in-cheek origin and the complete authoring guide.
+complete authoring guide.
 
 ## Layout
-The current layout is:
 
-**uranium_tests/** - contains Uranium tests collected by pytest. Replay YAML
-files run natively; bespoke Python definitions use the AuTest compatibility
-backend while they are migrated.
+- `uranium_tests/` contains tests collected by pytest. Direct Proxy Verifier
+  tests use the `<scenario>.test.yaml` suffix. Native procedural tests use
+  pytest's `test_*.py` convention.
+- `tools/uranium/` is the native pytest testkit: replay collection, isolated
+  ATS processes, support services, curl, and runtime helpers.
+- `include/` contains headers used by test plugins and unit tests.
 
-**tools/** - contains programs used to help with testing.
+## Basic setup
 
-**include/** - contains headers used for unit testing.
+Enable the suite when configuring ATS:
 
-
-# Basic setup
-
-To enable Uranium tests, set the `ENABLE_URTEST` CMake variable:
-
-    $ cmake -B build -DENABLE_URTEST=ON
-
-This builds the required plugins and helper tools and creates the Uranium test targets.
-
-# Running tests
-
-Pytest owns the complete Uranium test inventory. Run it with the `urtest` target:
-
-    $ cmake --build build -t urtest
-
-This builds and installs ATS, sets up the virtual environment via uv, and runs
-native replay items plus bespoke compatibility items under one scheduler. To
-run only replay tests, use:
-
-    $ cmake --build build -t urtest-replay
-
-Replay tests are Proxy Verifier files named `<scenario>.test.yaml`. Pytest
-collects each file directly, so no companion `.test.py` registration is needed.
-Configure `URTEST_OPTIONS` to pass selection or concurrency arguments:
-
-    $ cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache"
-
-## The urtest.sh entry point
-
-`tests/urtest.sh` is the portable entry point. On a normal host it starts the
-official `ci.trafficserver.apache.org/ats/fedora:44` image, incrementally builds
-ATS in `build-urtest-container`, and runs the tests there. In a Fedora 44
-container it detects that it is already in the official environment and runs
-directly, which is also the Jenkins CI behavior.
-
-The container uses a short `/tmp` sandbox so ATS Unix socket paths remain
-portable. When the run finishes, regular files are copied back to
-`build-urtest-container/sandbox` for inspection on the host.
-
-Force either behavior when needed:
-
-    $ ./tests/urtest.sh --run-in-docker
-    $ ./tests/urtest.sh --no-run-in-docker
-
-Docker mode matches CI's relevant permissions: `--init`, host networking, and
-`SYS_PTRACE`. It does not use a privileged container and does not mount the
-Docker socket. Set `ATS_URTEST_DOCKER_IMAGE` to test another image or
-`ATS_URTEST_DOCKER_ARGS` to append site-specific Docker arguments.
-
-The CMake build also generates `<build>/tests/urtest.sh`. This is the fastest
-entry point when ATS is already built and installed in the current environment.
-Use `--no-run-in-docker` outside the official container when that is
-intentional.
-
-## Running one test
-
-The `-f` and `--filter` options select either a native `.test.yaml` item or a
-bespoke `.test.py` item by basename. They preserve the familiar
-basename-filter workflow:
-
-    $ ./build/tests/urtest.sh -f cache-auth
-    $ ./build/tests/urtest.sh --filter='cache-*'
-
-Pytest selection remains available for advanced cases:
-
-    $ ./build/tests/urtest.sh -k cache_control
-
-# Running tests in parallel
-
-Pytest-xdist distributes both kinds of Uranium test item across isolated workers:
-
-    $ ./build/tests/urtest.sh -j 16
-
-Key options:
-
-* `-j N` - Number of parallel pytest workers
-* `-f NAME` - Run one name or glob; multiple names may follow one `-f`
-* `--sandbox` - Directory for test sandboxes
-* `-v` - Verbose pytest output
-* `--list` - List all tests and exit
-
-The pytest runtime uses isolated sandboxes and port ranges. Tests listed in
-`serial_tests.txt` take an exclusive execution lock, so they cannot overlap any
-other Uranium test item.
-
-## Adding serial tests
-
-If a test cannot run in parallel (e.g., it uses hardcoded global resources),
-add its path relative to `uranium_tests/` to `serial_tests.txt`.
-
-# AuTest compatibility definitions
-
-New tests should use native replay YAML whenever possible. Existing bespoke
-`.test.py` definitions are collected and reported by pytest but still execute
-through the pinned AuTest dependency. The APIs below document that migration
-boundary. See the [AuTest documentation](https://autestsuite.bitbucket.io/) and
-the [CurlHeader README](uranium_tests/autest-site/readme.md) when maintaining one
-of those definitions.
-
-## Documentation of the AuTest compatibility extension for ATS
-
-The pinned AuTest backend supports extensions that specialize test writing for
-an application domain. The ATS extension adds this command-line argument:
-
---ats-bin < path to bin directory >
-
-This command line argument will point to your build of ATS you want to test. At this time v6.0 or newer of Trafficserver should work.
-
-### MakeATSProcess(name,command=[traffic_server], select_ports=[True], enable_tls=[False])
- * name - A name for this instance of ATS
- * command - optional argument defining what process to use. Defaults to traffic_server.
- * select_ports - have the testing system automatically select a nonSSL port to use for this instance of ATS
- * enable_tls - have the testing system also auto-select a SSL port to use (NOTE: This does not set up certs and other TLS-related configs.)
-
-This function will define a sandbox for an instance of trafficserver to run under. The function will return a AuTest process object that will have a number of files and variables define for making it easier to define a test. If both *select_ports* and *enable_tls* are toggled to **False**, then the test writer will be responsible for setting up the ports and the ready condition for an instance of ATS.
-
-#### Environment
-The environment of the process will have a number of added environment variables to control trafficserver running the in the sandbox location correctly. This can be used to easily setup other commands that should run under same environment.
-
-##### Example
-
-```python
-# Define default ATS
-ts=Test.MakeATSProcess("ts")
-# Call traffic_ctrl to set new generation
-tr=Test.AddTestRun()
-tr.Processes.Default.Command='traffic_ctl'
-tr.Processes.Default.ReturnCode=0
-# set the environment for traffic_control to run in to be the same as the "ts" ATS instance
-tr.Processes.Default.Env=ts.Env
+```console
+cmake -B build -DENABLE_URTEST=ON
 ```
 
-#### Variables
-These are the current variables that are defined dynamically for Trafficserver
+This builds the required plugins and helper tools and creates the Uranium test
+targets.
 
-port - the ipv4 port to listen on
-portv6 - the ipv6 port to listen on
-admin_port - the admin port used. This is set even is select_port is False
+## Running tests
 
-#### File objects
-A number of file objects are defined to help with adding values to a given configuration value to for a test, or testing a value exists in a log file. File that are defined currently are:
+Pytest owns the complete inventory. Run it with:
 
-##### log files
- * squid.log
- * error.log
- * diags.log
-
-##### config files
- * records.yaml
- * cache.config
- * hosting.config
- * ip_allow.yaml
- * logging.yaml
- * parent.config
- * plugin.config
- * remap.config
- * sni.yaml
- * socks.config
- * splitdns.config
- * ssl_multicert.config
- * storage.yaml
-
-#### Examples
-
-Create a server
-
-```python
-# don't set ports because a config file will set them
-ts1 = Test.MakeATSProcess("ts1",select_ports=False)
-ts1.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml')
+```console
+cmake --build build -t urtest
 ```
 
-Create a server and get the dynamic port value
+To run only direct replay tests:
 
-```python
-# Define default ATS
-ts=Test.MakeATSProcess("ts")
-#first test is a miss for default
-tr=Test.AddTestRun()
-# get port for command from Variables
-tr.MakeCurlCommand('"http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
-
+```console
+cmake --build build -t urtest-replay
 ```
 
-Add value to a configuration file
-```python
-# setup some config file for this server
-ts.Disk.records_config.update({
-            'proxy.config.body_factory.enable_customizations': 3,  # enable domain specific body factory
-            'proxy.config.http.cache.generation':-1, # Start with cache turned off
-            'proxy.config.config_update_interval_ms':1,
-        })
-ts.Disk.plugin_config.AddLine('xdebug.so')
-ts.Disk.remap_config.AddLines([
-            'map /default/ http://127.0.0.1/ @plugin=generator.so',
-            #line 2
-            'map /generation1/ http://127.0.0.1/' +
-            ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=1' +
-            ' @plugin=generator.so',
-            #line 3
-            'map /generation2/ http://127.0.0.1/' +
-            ' @plugin=conf_remap.so @pparam=proxy.config.http.cache.generation=2' +
-            ' @plugin=generator.so'
-        ])
+Set `URTEST_OPTIONS` when configuring to pass ordinary pytest selection and
+concurrency arguments:
+
+```console
+cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache"
 ```
 
-### CopyConfig(file, targetname=None, process=None)
-* file - name of the file to copy. Relative paths are relative from the test file location
-* targetname - the name name of the file when copied to the correct configuration location
-* process - optional process object to use for getting path location to copy to. Only needed if the Setup object call is not in the scope of the process object created with the MakeATSProcess(...) API.
+### The `urtest.sh` entry point
 
-This function copies a given configuration file the location of a given trafficserver sandbox used in a test. Given a test might have more than on trafficserver instance, it can be difficult to understand the correct location to copy to. This function will deal with the details correctly.
+`tests/urtest.sh` is the portable source-tree entry point. On a normal host it
+starts the official `ci.trafficserver.apache.org/ats/fedora:44` image, builds
+incrementally in `build-urtest-container`, and runs the tests there. In a
+Fedora 44 container it runs directly, which is also the Jenkins CI behavior.
 
-#### Examples
+Force either mode when needed:
 
-Copy a file over
-
-```python
-ts1 = Test.MakeATSProcess("ts1",select_ports=False)
-# uses the setup object in the scope of the process object
-ts1.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml')
-```
-```python
-ts1 = Test.MakeATSProcess("ts1",select_ports=False)
-# uses the Setup in the global process via a variable passing
-Test.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml',ts1)
-# same as above, but uses the dynamic object model form
-Test.Setup.ts.CopyConfig('config/records_8090.yaml','records.yaml',Test.Processes.ts1)
+```console
+./tests/urtest.sh --run-in-docker
+./tests/urtest.sh --no-run-in-docker
 ```
 
-## Setting up Origin Server
-### Test.MakeOriginServer(Name)
- * name - A name for this instance of Origin Server.
+The generated `<build>/tests/urtest.sh` entry point is fastest when ATS is
+already built and installed in the current environment.
 
- This function returns a AuTest process object that launches the python-based microserver. Micro-Server is a mock server which responds to client http requests. Microserver needs to be setup for the tests that require an origin server behind ATS. The server reads a JSON-formatted data file that contains request headers and the corresponding response headers. Microserver responds with payload if the response header contains Content-Length or Transfer-Enconding specified.
+### Selecting tests
 
-### addResponse(filename, request_header, response_header)
-* filename - name of the file where the request header and response header will be written to in JSON format
-* request_header - dictionary of request header
-* response_header - dictionary of response header corresponding to the request header.
+Pass pytest's `-k` expression through the wrapper:
 
-This function adds the request header and response header to a file which is then read by the microserver to populate request-response map. The key-fields required for the header dictionary are 'headers', 'timestamp' and 'body'.
-
-### Example
-```python
-#create the origin server process
-server=Test.MakeOriginServer("server")
-#define the request header and the desired response header
-request_header={"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-#desired response form the origin server
-response_header={"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-#addResponse adds the transaction to a file which is used by the server
-server.addResponse("sessionlog.json", request_header, response_header)
-#add remap rule to traffic server
-ts.Disk.remap_config.AddLine(
-    'map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port)
-)
+```console
+./tests/urtest.sh -q -k cache_auth
+./tests/urtest.sh -q -k "cache_auth or cache_control"
 ```
 
-## Setting up DNS
-### Test.MakeDNServer(name, default=None)
- * name - A name for this instance of the DNS.
- * default - if a list argument is provided, uDNS will reply with the list contents instead of NXDOMAIN if a DNS can't be found for a particular entry
+The expression selects direct `.test.yaml` items and native Python items the
+same way.
 
- This function returns a AuTest process object that launches the python-based microDNS (uDNS). uDNS is a mock DNS which responds to DNS queries. uDNS needs to be setup for the tests that require made-up domains. The server reads a JSON-formatted data file that contains mappings of domain to IP addresses. uDNS responds with the appropriate IP addresses if the requested domain is in uDNS' mappings.
+### Running in parallel
 
- * addRecords(records=None, jsonFile=None)
+Use pytest-xdist's `-n` option:
 
- This function adds records using either a dictionary, *records*, or a json file, *jsonFile*.
-
- The supplied dictionary must be in the form of ```{ 'domain A': [IP1, IP2], 'domain B': [IP3, IP4] }```.
-
- The supplied json file must take the form of
- ```
- {
-     "mappings": [
-         {domain A: [IP1, IP2]},
-         {domain B: [IP3, IP4]}
-     ]
- }
- ```
-
- ### Examples
- There are 3 ways to utilize uDNS -
-
- Easy way if everything is done on localhost - by adding default option to Test.MakeDNServer:
- *uDNS by default returns NXDOMAIN for any unknown mappings*
-
- ```python
-    # create TrafficServer and uDNS processes
-    ts = Test.MakeATSProcess("ts")
-    dns = Test.MakeDNServer("dns", default=['127.0.0.1'])
-
-    ts.Disk.records_config.update({
-        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), # let TrafficServer know where the DNS is located
-        'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.url_remap.remap_required': 0  # need this so TrafficServer won't return error upon not finding the domain in its remap file
-    })
- ```
-
- Using the *addRecords* method:
- ```python
-    # create TrafficServer and uDNS processes
-    ts = Test.MakeATSProcess("ts")
-    dns = Test.MakeDNServer("dns")
-
-    ts.Disk.records_config.update({
-        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port), # let TrafficServer know where the DNS is located
-        'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.url_remap.remap_required': 0  # need this so TrafficServer won't return error upon not finding the domain in its remap file
-    })
-
-    dns.addRecords(records={"foo.com.":["127.0.0.1", "127.0.1.1"]})
-    # AND/OR
-    dns.addRecords(jsonFile="zone.json") # where zone.json is in the format described above
- ```
-
- Without disabling remap_required:
- ```python
-    # create TrafficServer and uDNS processes
-    ts = Test.MakeATSProcess("ts")
-    dns = Test.MakeDNServer("dns")
-
-    ts.Disk.records_config.update({
-        'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port) # let TrafficServer know where the DNS is located
-    })
-
-    # if we don't disable remap_required, we can also just remap a domain to a domain recognized by DNS
-    ts.Disk.remap_config.AddLine(
-        'map http://example.com http://foo.com'
-    )
-
-    dns.addRecords(records={"foo.com.":["127.0.0.1", "127.0.1.1"]})
- ```
-
-## Condition Testing
-### Condition.HasATSFeature(feature)
- * feature - The feature to test for
-
- This function tests for Traffic server for possible feature it has been compiled with. Current Features you can test for are:
- * TS_HAS_LZMA
- * TS_HAS_PIPE_BUFFER_SIZE_CONFIG
- * TS_HAS_JEMALLOC
- * TS_HAS_MIMALLOC
- * TS_HAS_IN6_IS_ADDR_UNSPECIFIED
- * TS_HAS_BACKTRACE
- * TS_HAS_PROFILER
- * TS_USE_FAST_SDK
- * TS_USE_DIAGS
- * TS_USE_EPOLL
- * TS_USE_KQUEUE
- * TS_USE_POSIX_CAP
- * TS_USE_TPROXY
- * TS_HAS_SO_MARK
- * TS_HAS_IP_TOS
- * TS_USE_HWLOC
- * TS_USE_TLS13
- * TS_USE_QUIC
- * TS_HAS_QUICHE
- * TS_HAS_SO_PEERCRED
- * TS_USE_REMOTE_UNWINDING
- * TS_HAS_128BIT_CAS
- * TS_HAS_TESTS
-
-### Condition.HasCurlFeature(feature)
- * feature - The feature to test for
-
- This function tests for Curl for possible feature it has been compiled with. Consult Curl documentation for feature set.
-
-### Example
-```python
-#create the origin server process
-Test.SkipUnless(
-    Condition.HasCurlFeature('http2'),
-)
+```console
+./tests/urtest.sh -q -n 8
 ```
 
-### Condition.PluginExists(pluginname)
- * pluginname - The plugin to test for
+Each worker uses an isolated sandbox and dynamically allocated listeners.
+Tests listed in `serial_tests.txt` take an exclusive execution lock and cannot
+overlap any other Uranium item.
 
- This function tests for existence of a certain plugin in TrafficServer.
+## Writing tests
 
-### Example
-```python
-Test.SkipUnless(
-    Condition.PluginExists('a-plugin.so'),
-)
-```
+Prefer a direct replay test when Proxy Verifier can provide both client and
+server behavior. A `.test.yaml` file keeps ATS configuration, traffic, and
+validation together and is independently schedulable.
+
+Use a native `test_*.py` scenario when the test needs a custom curl, OpenSSL,
+raw-socket, or Python client; a specialized server; multiple ATS instances; or
+ordered runtime mutations. Structure these tests around a scenario class with
+named configuration and phase methods and an explicit `run()` entry point.
+
+The native fixtures are imported from `tools.uranium.services`. The most common
+ones are `ATSFactory`, `ServiceFactory`, and `Curl`. They own process cleanup,
+port allocation, and item sandboxes. Do not use fixed ports or global temporary
+paths, because the full suite is expected to work with `-n`.

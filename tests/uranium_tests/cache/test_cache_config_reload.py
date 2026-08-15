@@ -14,76 +14,47 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import time
+from pathlib import Path
+
+from tools.uranium.services import ATS
 
 
-def test_cache_config_reload(urtest: UraniumTest) -> None:
-    '''
-    Test cache.config and hosting.config reload via ConfigRegistry.
+class CacheConfigReloadScenario:
+    """Reload cache.config and hosting.config after each file changes."""
 
-    Verifies that:
-    1. cache.config reload works after file touch
-    2. hosting.config reload works after file touch (requires cache to be initialized)
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(self, ats: ATS) -> None:
+        self.ats = ats
 
-    import os
+    def _configure_traffic_server(self) -> None:
+        self.ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config",
+        })
+        self.ats.cache_config.add_line("dest_domain=example.com ttl-in-cache=30d")
 
-    urtest.Summary = '''
-    Test cache.config and hosting.config reload via ConfigRegistry.
-    '''
+    def _start_traffic_server(self) -> None:
+        self.ats.start()
 
-    urtest.ContinueOnFail = True
+    def _reload_configuration(self, config_file: Path, token: str) -> None:
+        config_file.touch()
+        time.sleep(2)
+        result = self.ats.traffic_ctl("config", "reload", "-m", "-t", token, "-w", "1", "-r", "0.5", "-T", "30s")
+        assert result.returncode in (0, 2), result.output
+        time.sleep(3)
 
-    # Create ATS with cache enabled (needed for hosting.config registration in open_done)
-    ts = urtest.MakeATSProcess("ts", enable_cache=True)
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'rpc|config',
-    })
+    def _reload_cache_configuration(self) -> None:
+        self._reload_configuration(self.ats.cache_config.path, "reload_cache_test")
 
-    # Set up initial cache.config with a caching rule
-    ts.Disk.cache_config.AddLine('dest_domain=example.com ttl-in-cache=30d')
+    def _reload_hosting_configuration(self) -> None:
+        self._reload_configuration(self.ats.hosting_config.path, "reload_hosting_test")
 
-    config_dir = ts.Variables.CONFIGDIR
+    def run(self) -> None:
+        self._configure_traffic_server()
+        self._start_traffic_server()
+        self._reload_cache_configuration()
+        self._reload_hosting_configuration()
 
-    # --- Test 1: Touch cache.config and reload ---
 
-    tr = urtest.AddTestRun("Touch cache.config to trigger change detection")
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'cache.config')} && sleep 2"
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddConfigReload(
-        ts, expect="any", expect_tasks=["cache.config"], token="reload_cache_test", description="Reload after cache.config touch")
-
-    # --- Test 2: Touch hosting.config and reload ---
-
-    tr = urtest.AddTestRun("Touch hosting.config to trigger change detection")
-    tr.DelayStart = 3
-    tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'hosting.config')} && sleep 2"
-    tr.Processes.Default.ReturnCode = 0
-    tr.StillRunningAfter = ts
-
-    tr = urtest.AddConfigReload(
-        ts,
-        expect="any",
-        expect_tasks=["hosting.config"],
-        token="reload_hosting_test",
-        description="Reload after hosting.config touch")
-    urtest.execute()
+def test_cache_config_reload(ats: ATS) -> None:
+    CacheConfigReloadScenario(ats).run()

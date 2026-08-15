@@ -1,10 +1,10 @@
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
-#  distributed with this work for additional information
-#  regarding copyright ownership.  The ASF licenses this file
-#  to you under the Apache License, Version 2.0 (the
-#  "License"); you may not use this file except in compliance
-#  with the License.  You may obtain a copy of the License at
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not use
+#  this file except in compliance with the License.  You may obtain
+#  a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -14,146 +14,111 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import subprocess
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 
-def test_h3_range_cache(urtest: UraniumTest) -> None:
-    '''
-    Verify HTTP/3 range requests over cached content.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information regarding
-    #  copyright ownership.  The ASF licenses this file to you under
-    #  the Apache License, Version 2.0 (the "License"); you may not
-    #  use this file except in compliance with the License.  You may
-    #  obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class H3RangeCacheScenario:
+    """Populate cache over HTTP/3 and serve a range from the cached object."""
 
-    import os
+    _response_body = "0123456789" * 30000
+    _range_body = "6789012345678901"
 
-    urtest.Summary = '''
-    Verify that HTTP/3 clients can populate cache and receive range responses from
-    cached objects.
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        curl_help = subprocess.check_output(("curl", "--help", "all"), text=True)
+        if not ats_factory.has_feature("TS_USE_QUIC") or not Curl.supports("http3") or "--http3-only" not in curl_help:
+            pytest.skip("ATS QUIC and curl HTTP/3 support are required")
+        if curl.uses_uds:
+            pytest.skip("HTTP/3 requires a UDP listener")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.SkipUnless(
-        Condition.HasATSFeature('TS_USE_QUIC'),
-        Condition.HasCurlFeature('http3'),
-        Condition.HasCurlOption('--http3-only'),
-    )
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the cacheable large response."""
 
-    def add_default_ssl_multicert(ts):
-        """Configure the default server certificate."""
-        if hasattr(ts.Disk, "ssl_multicert_yaml"):
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-        else:
-            ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        origin = services.origin("server-h3-range-cache")
+        origin.add_response(
+            {"headers": "GET /h3-range-cache HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+            {
+                "headers":
+                    (
+                        "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: public, max-age=60\r\n"
+                        f"Content-Length: {len(self._response_body)}\r\n\r\n"),
+                "body": self._response_body,
+            },
+        )
+        return origin
 
-    class TestHttp3RangeCache:
-        """Configure an HTTP/3 range-over-cache test."""
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure cached HTTP/3 ingress."""
 
-        response_body = "0123456789" * 30000
-        range_body = "6789012345678901"
+        ats = ats_factory.create("ts-h3-range-cache", enable_tls=True, enable_quic=True, enable_cache=True)
+        ats.set_startup_timeout(60)
+        ats.add_default_ssl_files()
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "quic|http3|http",
+                "proxy.config.quic.server.stateless_retry_enabled": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        return ats
 
-        def __init__(self):
-            """Initialize the test."""
-            self._configure_server()
-            self._configure_traffic_server()
-            self._configure_clients()
+    def request(self, output: str, *extra: str) -> str:
+        """Run a common HTTP/3 request and return curl's write-out text."""
 
-        def _configure_server(self):
-            """Configure the origin server."""
-            server = urtest.MakeOriginServer("server-h3-range-cache")
-            server.addResponse(
-                "sessionlog.json", {
-                    "headers": "GET /h3-range-cache HTTP/1.1\r\nHost: localhost\r\n\r\n",
-                    "timestamp": "1469733493.993",
-                    "body": ""
-                }, {
-                    "headers":
-                        (
-                            "HTTP/1.1 200 OK\r\n"
-                            "Connection: close\r\n"
-                            "Cache-Control: public, max-age=60\r\n"
-                            f"Content-Length: {len(self.response_body)}\r\n\r\n"),
-                    "timestamp": "1469733493.993",
-                    "body": self.response_body
-                })
-            self._server = server
+        result = self._curl.run_for(
+            self._ats,
+            "--silent",
+            "--show-error",
+            "--fail",
+            "--ipv4",
+            "--http3-only",
+            "--insecure",
+            "--resolve",
+            f"range.example.com:{self._ats.https_port}:127.0.0.1",
+            *extra,
+            "--output",
+            output,
+            "--write-out",
+            "\nhttp_code=%{http_code}\nsize_download=%{size_download}\n",
+            f"https://range.example.com:{self._ats.https_port}/h3-range-cache",
+            timeout=30,
+        )
+        assert result.returncode == 0, result.output
+        return result.stdout
 
-        def _configure_traffic_server(self):
-            """Configure Traffic Server."""
-            ts = urtest.MakeATSProcess("ts-h3-range-cache", enable_tls=True, enable_quic=True, enable_cache=True)
-            ts.StartupTimeout = 60
-            ts.addDefaultSSLFiles()
-            add_default_ssl_multicert(ts)
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'quic|http3|http',
-                    'proxy.config.quic.server.stateless_retry_enabled': 0,
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                })
-            ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
-            self._ts = ts
+    def run(self) -> None:
+        """Verify full cache fill and a sixteen-byte cached range."""
 
-        def _curl_base(self):
-            """Build the shared curl arguments."""
-            return (
-                '--silent --show-error --fail --ipv4 --http3-only --insecure '
-                f'--resolve "range.example.com:{self._ts.Variables.ssl_port}:127.0.0.1" '
-                f'https://range.example.com:{self._ts.Variables.ssl_port}/h3-range-cache')
+        self._origin.start()
+        self._ats.start()
+        sandbox = self._ats.run_directory.parent
+        full_body = sandbox / "h3-range-full.txt"
+        fill = self.request(str(full_body))
+        assert "http_code=200" in fill
+        assert f"size_download={len(self._response_body)}" in fill
+        assert full_body.read_text() == self._response_body
 
-        def _configure_clients(self):
-            """Configure the cache fill and range request clients."""
-            full_body_path = os.path.join(urtest.RunDirectory, "h3-range-full.txt")
-            range_body_path = os.path.join(urtest.RunDirectory, "h3-range-part.txt")
+        range_body = sandbox / "h3-range-part.txt"
+        ranged = self.request(str(range_body), "--header", "Range: bytes=16-31")
+        assert "http_code=206" in ranged
+        assert "size_download=16" in ranged
+        assert range_body.read_text() == self._range_body
 
-            tr = urtest.AddTestRun("HTTP/3 cache fill")
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-            tr.MakeCurlCommand(
-                f'{self._curl_base()} --output "{full_body_path}" '
-                '--write-out "\\nhttp_code=%{http_code}\\nsize_download=%{size_download}\\n"',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("http_code=200", "The fill request should return 200.")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                f"size_download={len(self.response_body)}", "The fill request should receive the full object.")
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
 
-            tr = urtest.AddTestRun("HTTP/3 cached range request")
-            tr.MakeCurlCommand(
-                f'{self._curl_base()} --header "Range: bytes=16-31" --output "{range_body_path}" '
-                '--write-out "\\nhttp_code=%{http_code}\\nsize_download=%{size_download}\\n"',
-                ts=self._ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-                "http_code=206", "The range request should return 206.")
-            tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                "size_download=16", "The range request should receive 16 bytes.")
-            urtest.Disk.File(
-                range_body_path, exists=True).Content = Testers.ContainsExpression(
-                    self.range_body, "The cached range response body should match the requested byte range.")
-            tr.StillRunningAfter = self._server
-            tr.StillRunningAfter = self._ts
+def test_h3_range_cache(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """HTTP/3 range requests are served correctly from cached content."""
 
-    TestHttp3RangeCache()
-    urtest.execute()
+    H3RangeCacheScenario(ats_factory, services, curl).run()

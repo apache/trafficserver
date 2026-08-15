@@ -14,124 +14,82 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import sys
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_compress_cache_untransformed(urtest: UraniumTest) -> None:
-    '''
-    Regression test for https://github.com/apache/trafficserver/issues/12244
+class CompressCacheUntransformedScenario:
+    """Exercise a cached compress transform after an origin 100 response."""
 
-    The crash requires two conditions in the same transaction:
-    1. An intermediate response (100 Continue) is forwarded to the client, which
-       sets client_response_hdr_bytes to the intermediate header size via
-       setup_100_continue_transfer().
-    2. The final response goes through a compress transform with untransformed
-       cache writing (cache=true), which calls setup_server_transfer_to_transform().
-       For non-chunked responses, client_response_hdr_bytes is NOT reset to 0.
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin_port = services.allocate_port()
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    perform_cache_write_action() then passes the stale client_response_hdr_bytes
-    as skip_bytes to the cache-write consumer, but the server-to-transform tunnel
-    buffer contains only body data (no headers). The assertion in
-    HttpTunnel::producer_run fires:
+    def configure_origin(self, services: ServiceFactory) -> ProcessService:
+        """Start the origin that sends 100 Continue before its final response."""
 
-      c->skip_bytes <= c->buffer_reader->read_avail()
+        return services.process(
+            "origin",
+            (sys.executable, TEST_DIRECTORY / "compress_100_continue_origin.py", "--port", str(self._origin_port)),
+            ready_port=self._origin_port,
+        )
 
-    This test uses a custom origin that sends "100 Continue" followed by a
-    compressible, non-chunked 200 OK to trigger the exact crash path.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Enable POST caching and untransformed cache writes in compress.so."""
 
-    import sys
+        ats = ats_factory.create("ts", enable_cache=True)
+        if not ats.plugin_exists("compress.so"):
+            pytest.skip("compress.so is required")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|compress|http_tunnel",
+                "proxy.config.http.send_100_continue_response": 0,
+                "proxy.config.http.cache.post_method": 1,
+            })
+        config = TEST_DIRECTORY / "etc" / "compress-cache-false.config"
+        ats.copy_to_config(config)
+        ats.remap_config.add_line(
+            f"map / http://127.0.0.1:{self._origin_port}/ @plugin=compress.so "
+            f"@pparam={ats.config_directory / config.name}")
+        return ats
 
-    from ports import get_port
+    def run(self) -> None:
+        """Send the triggering POST and require ATS to survive it."""
 
-    urtest.Summary = '''
-    Regression test for compress plugin with cache=true causing assertion failure
-    when origin sends 100 Continue before a compressible response (#12244)
-    '''
+        self._origin.start()
+        self._ats.start()
+        result = self._curl.run_for(
+            self._ats,
+            "--http1.1",
+            "--silent",
+            "--output",
+            "/dev/null",
+            "--request",
+            "POST",
+            "--header",
+            "Accept-Encoding: gzip",
+            "--header",
+            "Expect: 100-continue",
+            "--expect100-timeout",
+            "0",
+            "--data",
+            "test body data",
+            f"http://127.0.0.1:{self._ats.http_port}/test/resource.js",
+        )
+        assert result.returncode == 0, result.output
+        assert self._ats.is_running
 
-    urtest.SkipUnless(Condition.PluginExists('compress.so'))
 
-    class CompressCacheUntransformedTest:
+def test_compress_cache_untransformed(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """A 100 response must not leave stale header bytes in the cache tunnel."""
 
-        def __init__(self):
-            self.setupTS()
-            self.run()
-
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess("ts", enable_cache=True)
-
-        def run(self):
-            tr = urtest.AddTestRun()
-
-            # Copy scripts into the test run directory.
-            tr.Setup.CopyAs("compress_100_continue_origin.py")
-            tr.Setup.Copy("etc/compress-cache-false.config")
-
-            # Create and configure the custom origin server process.
-            origin = tr.Processes.Process("origin")
-            origin_port = get_port(origin, 'http_port')
-            origin.Command = (f'{sys.executable} compress_100_continue_origin.py'
-                              f' --port {origin_port}')
-            origin.Ready = When.PortOpenv4(origin_port)
-            origin.ReturnCode = 0
-
-            # Configure ATS.
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.diags.debug.enabled": 1,
-                    "proxy.config.diags.debug.tags": "http|compress|http_tunnel",
-                    # Do NOT send 100 Continue from ATS - let the origin send it.
-                    # This ensures ATS processes the origin's 100 via
-                    # handle_100_continue_response -> setup_100_continue_transfer,
-                    # which sets client_response_hdr_bytes.
-                    "proxy.config.http.send_100_continue_response": 0,
-                    # Enable POST caching so that the 200 OK is cached, triggering
-                    # the cache write path where the stale client_response_hdr_bytes
-                    # causes the crash.
-                    "proxy.config.http.cache.post_method": 1,
-                })
-
-            self.ts.Disk.remap_config.AddLine(
-                f'map / http://127.0.0.1:{origin_port}/'
-                f' @plugin=compress.so'
-                f' @pparam={urtest.RunDirectory}/compress-cache-false.config')
-
-            # Client sends a POST with Expect: 100-continue but does not wait for
-            # the 100 response before sending the body (--expect100-timeout 0).
-            # The crash is triggered by ATS processing the origin's 100 Continue,
-            # not by the client's behaviour during the handshake.
-            client = tr.Processes.Default
-            client.Command = (
-                f'curl --http1.1 -s -o /dev/null'
-                f' -X POST'
-                f' -H "Accept-Encoding: gzip"'
-                f' -H "Expect: 100-continue"'
-                f' --expect100-timeout 0'
-                f' --data "test body data"'
-                f' http://127.0.0.1:{self.ts.Variables.port}/test/resource.js')
-            client.ReturnCode = 0
-            client.StartBefore(origin)
-            client.StartBefore(self.ts)
-
-            # The key assertion: ATS must still be running after the test.
-            # Without the fix, ATS would have crashed with a failed assertion
-            # in HttpTunnel::producer_run.
-            tr.StillRunningAfter = self.ts
-
-    CompressCacheUntransformedTest()
-    urtest.execute()
+    CompressCacheUntransformedScenario(ats_factory, services, curl).run()

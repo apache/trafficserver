@@ -1,4 +1,0 @@
-GET /argh HTTP/1.1
-Host: two
-X-Debug: x-cache-info
-

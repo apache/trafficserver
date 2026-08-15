@@ -1,0 +1,55 @@
+meta:
+  version: "1.0"
+
+  txn_box:
+    global:
+
+    remap:
+      alpha:
+      - ua-req-port: pre-remap-port
+
+      bravo:
+
+  blocks:
+  - base_request: &base_request
+      version: "1.1"
+      method: "GET"
+
+sessions:
+- protocol:
+    stack: http
+  transactions:
+
+  - client-request:
+      <<: *base_request
+      url: "/1"
+      headers:
+        fields:
+        - [ Host, example.one ]
+        - [ uuid, 'alpha' ]
+    proxy-request:
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 234 ]
+        - [ uuid, 'alpha' ]
+    proxy-response:
+
+urtest:
+  description: Verify txn_box smoke-test remap directives
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-smoke-2-origin}
+  dns: {name: txn-box-smoke-2-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-smoke-2-client}
+  ats:
+    name: txn-box-smoke-2-ts
+    copy_to_config_dir: [smoke-2.test.yaml]
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key meta.txn_box.global {CONFIG_DIR}/smoke-2.test.yaml
+    remap_config:
+    - map http://alpha.ex/ http://alpha.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam=--key=meta.txn_box.remap.alpha @pparam={CONFIG_DIR}/smoke-2.test.yaml
+    - map http://bravo.ex/ http://bravo.ex:{SERVER_HTTP_PORT}/ @plugin=txn_box.so @pparam=--key=meta.txn_box.remap.bravo @pparam={CONFIG_DIR}/smoke-2.test.yaml

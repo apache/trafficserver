@@ -14,83 +14,69 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
 
-def test_splitdns(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SplitDNSScenario:
+    """Verify a split DNS rule resolves its selected origin hostname."""
 
-    urtest.Summary = 'Test Split DNS'
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._dns = self.configure_dns(services)
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    class SplitDNSTest:
+    def configure_dns(self, services: ServiceFactory) -> DNSServer:
+        """Resolve the hostname selected by splitdns.config."""
 
-        def __init__(self):
-            self.setupDNSServer()
-            self.setupOriginServer()
-            self.setupTS()
+        dns = services.dns("dns")
+        dns.add_records({"foo.ts.a.o.": ["127.0.0.1"]})
+        return dns
 
-        def setupDNSServer(self):
-            self.dns = urtest.MakeDNServer("dns")
-            self.dns.addRecords(records={'foo.ts.a.o.': ['127.0.0.1']})
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Configure the shared origin response."""
 
-        def setupOriginServer(self):
-            self.origin_server = urtest.MakeOriginServer("origin_server")
-            self.origin_server.addResponse(
-                "sessionlog.json", {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
-                {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"})
+        origin = services.origin("origin")
+        origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-        def setupTS(self):
-            self.ts = urtest.MakeATSProcess("ts", enable_cache=False)
-            self.ts.Disk.records_config.update(
-                {
-                    "proxy.config.dns.splitDNS.enabled": 1,
-                    "proxy.config.diags.debug.enabled": 1,
-                    "proxy.config.diags.debug.tags": "dns|splitdns",
-                })
-            self.ts.Disk.splitdns_config.AddLine(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self.dns.Variables.Port}")
-            self.ts.Disk.remap_config.AddLine(f"map /foo/ http://foo.ts.a.o:{self.origin_server.Variables.Port}/")
-            self.ts.Disk.remap_config.AddLine(f"map /bar/ http://127.0.0.1:{self.origin_server.Variables.Port}/")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure split and literal-address remap rules."""
 
-        def addTestCase0(self):
-            tr = urtest.AddTestRun()
-            tr.MakeCurlCommand(f"-v http://localhost:{self.ts.Variables.port}/foo/", ts=self.ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stderr = "gold/test_case_0_stderr.gold"
-            tr.Processes.Default.StartBefore(self.dns)
-            tr.Processes.Default.StartBefore(self.origin_server)
-            tr.Processes.Default.StartBefore(self.ts)
-            tr.StillRunningAfter = self.dns
-            tr.StillRunningAfter = self.origin_server
-            tr.StillRunningAfter = self.ts
+        ats = ats_factory.create("ts", enable_cache=False)
+        ats.records.update(
+            {
+                "proxy.config.dns.splitDNS.enabled": 1,
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "dns|splitdns",
+            })
+        ats.splitdns_config.add_line(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self._dns.port}")
+        ats.remap_config.add_line(f"map /foo/ http://foo.ts.a.o:{self._origin.port}/")
+        ats.remap_config.add_line(f"map /bar/ http://127.0.0.1:{self._origin.port}/")
+        return ats
 
-        def addTestCase1(self):
-            tr = urtest.AddTestRun()
-            tr.MakeCurlCommand(f"-v http://localhost:{self.ts.Variables.port}/bar/", ts=self.ts)
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Streams.stderr = "gold/test_case_1_stderr.gold"
-            tr.StillRunningAfter = self.dns
-            tr.StillRunningAfter = self.origin_server
-            tr.StillRunningAfter = self.ts
+    def request(self, path: str) -> None:
+        """Verify one remap path reaches the origin."""
 
-        def run(self):
-            self.addTestCase0()
-            self.addTestCase1()
+        result = self._curl.get(self._ats, path, options=("--verbose",))
+        assert result.returncode == 0, result.output
+        assert "HTTP/1.1 200 OK" in result.output
+        assert "Server: ATS/" in result.output
 
-    SplitDNSTest().run()
-    urtest.execute()
+    def run(self) -> None:
+        """Compare split-DNS and literal-address origin routing."""
+
+        self._dns.start()
+        self._origin.start()
+        self._ats.start()
+        self.request("/foo/")
+        self.request("/bar/")
+
+
+def test_splitdns(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """splitdns.config selects its DNS server without affecting literal remaps."""
+
+    SplitDNSScenario(ats_factory, services, curl).run()

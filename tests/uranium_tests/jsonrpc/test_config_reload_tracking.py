@@ -14,290 +14,107 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from typing import Any
+import json
+import time
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_config_reload_tracking(urtest: UraniumTest) -> None:
-    '''
-    Test config reload tracking functionality.
+class ConfigReloadTrackingScenario:
+    """Exercise generated, custom, duplicate, and overlapping reload tokens."""
 
-    Tests the following features:
-    1. Basic reload with token generation
-    2. Querying reload status while in progress
-    3. Reload history tracking
-    4. Force reload while one is in progress
-    5. Custom token names
-    6. Duplicate token prevention
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(self, ats_factory: ATSFactory) -> None:
+        self._request_id = 0
+        self._ats = self.configure_ats(ats_factory)
 
-    from jsonrpc import Request, Response
-    import time
+    @staticmethod
+    def configure_ats(ats_factory: ATSFactory) -> ATS:
+        """Enable reload diagnostics."""
 
-    urtest.Summary = 'Test config reload tracking with tokens and status'
-    urtest.ContinueOnFail = True
+        ats = ats_factory.create("ts")
+        ats.records.update({
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "rpc|config",
+        })
+        return ats
 
-    ts = urtest.MakeATSProcess('ts', dump_runroot=True)
+    def rpc(self, method: str, params: object | None = None) -> dict[str, Any]:
+        """Invoke one JSON-RPC method and decode its response."""
 
-    urtest.testName = 'config_reload_tracking'
+        self._request_id += 1
+        request: dict[str, object] = {
+            "jsonrpc": "2.0",
+            "id": str(self._request_id),
+            "method": method,
+        }
+        if params is not None:
+            request["params"] = params
+        command = self._ats.rpc(request)
+        assert command.returncode == 0, command.output
+        return json.loads(command.stdout)
 
-    # Initial configuration
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'rpc|config',
-    })
+    def reload(self, **params: object) -> dict[str, Any]:
+        """Start a reload with optional tracking parameters."""
 
-    # Store tokens for later tests
-    stored_tokens = []
+        return self.rpc("admin_config_reload", params or None)
 
-    # ============================================================================
-    # Test 1: Basic reload - verify token is returned
-    # ============================================================================
-    tr = urtest.AddTestRun("Basic reload with auto-generated token")
-    tr.Processes.Default.StartBefore(ts)
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
+    @staticmethod
+    def token(response: dict[str, Any]) -> str:
+        """Extract and validate a successful reload token."""
 
-    def validate_basic_reload(resp: Response):
-        '''Verify reload returns a token'''
-        if resp.is_error():
-            return (False, f"Error: {resp.error_as_str()}")
+        assert "error" not in response, response
+        token = response["result"].get("token", "")
+        assert token, response
+        return token
 
-        result = resp.result
-        token = result.get('token', '')
-        created_time = result.get('created_time', '')
-        messages = result.get('message', [])
+    def check_generated_and_custom_tokens(self) -> str:
+        """Verify automatic token generation and a caller-supplied token."""
 
-        if not token:
-            return (False, "No token returned")
+        generated = self.token(self.reload())
+        assert generated.startswith("rldtk-"), generated
+        time.sleep(2)
 
-        if not token.startswith('rldtk-'):
-            return (False, f"Token should start with 'rldtk-', got: {token}")
+        custom = f"uranium-custom-{time.time_ns()}"
+        assert self.token(self.reload(token=custom)) == custom
+        time.sleep(2)
+        return generated
 
-        # Store for later tests
-        stored_tokens.append(token)
+    def check_force_and_duplicate(self, first_token: str) -> None:
+        """Force a reload, then verify reusing a token is not ambiguous."""
 
-        return (True, f"Reload started: token={token}, created={created_time}, messages={messages}")
+        forced = self.reload(force=True)
+        self.token(forced)
+        time.sleep(2)
 
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_basic_reload)
-    tr.StillRunningAfter = ts
+        duplicate = self.reload(token=first_token)
+        if "error" not in duplicate:
+            assert duplicate["result"].get("token") != first_token, duplicate
 
-    # ============================================================================
-    # Test 2: Query status of completed reload
-    # ============================================================================
-    tr = urtest.AddTestRun("Query status of completed reload")
-    tr.DelayStart = 2  # Give time for reload to complete
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload_status())
+    def check_overlapping_and_queries(self) -> None:
+        """Exercise rapid reloads and optional tracking query methods."""
 
-    def validate_status_query(resp: Response):
-        '''Check reload status after completion'''
-        if resp.is_error():
-            # If method doesn't exist, that's OK - we're testing the main reload
-            return (True, f"Status query: {resp.error_as_str()}")
+        first = self.reload()
+        assert "result" in first or "error" in first, first
+        second = self.reload()
+        assert "result" in second or "error" in second, second
+        time.sleep(2)
 
-        result = resp.result
-        return (True, f"Reload status: {result}")
+        for method in ("admin_config_reload_status", "admin_config_reload_history"):
+            response = self.rpc(method)
+            assert response.get("jsonrpc") == "2.0", response
+            assert "result" in response or "error" in response, response
 
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_status_query)
-    tr.StillRunningAfter = ts
+    def run(self) -> None:
+        """Run all token-tracking behaviors."""
 
-    # ============================================================================
-    # Test 3: Reload with custom token
-    # ============================================================================
-    tr = urtest.AddTestRun("Reload with custom token")
-    tr.DelayStart = 1
-    custom_token = f"my-custom-token-{int(time.time())}"
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(token=custom_token))
+        self._ats.start()
+        first_token = self.check_generated_and_custom_tokens()
+        self.check_force_and_duplicate(first_token)
+        self.check_overlapping_and_queries()
 
-    def validate_custom_token(resp: Response):
-        '''Verify custom token is accepted'''
-        if resp.is_error():
-            # Check if it's a "reload in progress" error
-            error_str = resp.error_as_str()
-            if 'in progress' in error_str.lower():
-                return (True, f"Reload in progress (expected): {error_str}")
-            return (False, f"Error: {error_str}")
 
-        result = resp.result
-        token = result.get('token', '')
+def test_config_reload_tracking(ats_factory: ATSFactory) -> None:
+    """Configuration reload tokens remain unique and queryable."""
 
-        if token != custom_token:
-            return (False, f"Expected custom token '{custom_token}', got '{token}'")
-
-        stored_tokens.append(token)
-        return (True, f"Custom token accepted: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_custom_token)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 4: Force reload while previous might still be processing
-    # ============================================================================
-    tr = urtest.AddTestRun("Force reload")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
-
-    def validate_force_reload(resp: Response):
-        '''Verify force reload works'''
-        if resp.is_error():
-            return (False, f"Force reload failed: {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        if token:
-            stored_tokens.append(token)
-
-        return (True, f"Force reload succeeded: token={token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_force_reload)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 5: Try duplicate token (should fail)
-    # ============================================================================
-    tr = urtest.AddTestRun("Duplicate token rejection")
-    tr.DelayStart = 2  # Wait for previous reload to complete
-
-    def make_duplicate_test():
-        # Use the first token we stored
-        if stored_tokens:
-            return Request.admin_config_reload(token=stored_tokens[0])
-        return Request.admin_config_reload(token="rldtk-duplicate-test")
-
-    tr.AddJsonRPCClientRequest(ts, make_duplicate_test())
-
-    def validate_duplicate_rejection(resp: Response):
-        '''Verify duplicate tokens are rejected'''
-        if resp.is_error():
-            return (True, f"Duplicate rejected (expected): {resp.error_as_str()}")
-
-        result = resp.result
-        errors = result.get('error', [])
-        if errors:
-            return (True, f"Duplicate token rejected: {errors}")
-
-        # If no error, check if token was actually reused
-        token = result.get('token', '')
-        return (True, f"Reload result: token={token}, errors={errors}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_duplicate_rejection)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 6: Rapid succession reloads
-    # ============================================================================
-    tr = urtest.AddTestRun("Rapid succession reloads - first")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_rapid_first(resp: Response):
-        '''First rapid reload'''
-        if resp.is_error():
-            return (True, f"First rapid: {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        return (True, f"First rapid reload: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_rapid_first)
-    tr.StillRunningAfter = ts
-
-    # Second rapid reload (should see in-progress or succeed)
-    tr = urtest.AddTestRun("Rapid succession reloads - second")
-    tr.DelayStart = 0  # No delay - immediately after first
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_rapid_second(resp: Response):
-        '''Second rapid reload - may see in-progress'''
-        if resp.is_error():
-            return (True, f"Second rapid (may be in progress): {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        error = result.get('error', [])
-
-        if error:
-            # In-progress is expected
-            return (True, f"Second rapid - in progress or error: {error}")
-
-        return (True, f"Second rapid reload: {token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_rapid_second)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 7: Get reload history
-    # ============================================================================
-    tr = urtest.AddTestRun("Get reload history")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload_history())
-
-    def validate_history(resp: Response):
-        '''Check reload history'''
-        if resp.is_error():
-            # Method may not exist
-            return (True, f"History query: {resp.error_as_str()}")
-
-        result = resp.result
-        history = result.get('history', [])
-        return (True, f"Reload history: {len(history)} entries")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_history)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 8: Trigger reload and verify new config is loaded
-    # ============================================================================
-    tr = urtest.AddTestRun("Reload after config change")
-    tr.DelayStart = 1
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
-
-    def validate_reload_after_change(resp: Response):
-        '''Verify reload after config change'''
-        if resp.is_error():
-            return (False, f"Reload after change failed: {resp.error_as_str()}")
-
-        result = resp.result
-        token = result.get('token', '')
-        return (True, f"Reload after config change: token={token}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_reload_after_change)
-    tr.StillRunningAfter = ts
-
-    # ============================================================================
-    # Test 10: Final status check
-    # ============================================================================
-    tr = urtest.AddTestRun("Final reload status")
-    tr.DelayStart = 2
-    tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
-
-    def validate_final_status(resp: Response):
-        '''Final status verification'''
-        if resp.is_error():
-            error_str = resp.error_as_str()
-            if 'in progress' in error_str.lower():
-                return (True, f"Reload still in progress: {error_str}")
-            return (True, f"Final status: {error_str}")
-
-        result = resp.result
-        token = result.get('token', '')
-        created = result.get('created_time', '')
-
-        return (True, f"Final reload: token={token}, created={created}")
-
-    tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_final_status)
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    ConfigReloadTrackingScenario(ats_factory).run()

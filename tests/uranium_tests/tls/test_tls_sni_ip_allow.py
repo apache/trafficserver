@@ -14,191 +14,130 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from enum import Enum, auto
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, DNSServer, ProcessService, ServiceFactory, VerifierServer
+
+REPLAY_DIRECTORY = Path(__file__).parent / "replay"
 
 
-def test_tls_sni_ip_allow(urtest: UraniumTest) -> None:
-    '''
-    Test exercising ip_allow configuration of sni.yaml
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ConnectionType(Enum):
+    """Inbound connection modes covered by the SNI ACL scenario."""
 
-    import os
+    GET = auto()
+    TUNNEL = auto()
+    PROXY = auto()
 
-    urtest.Summary = '''Test sni.yaml ip_allow.'''
 
-    class ConnectionType:
-        GET = 0
-        TUNNEL = 1
-        PROXY = 2
+class SniIpAllowScenario:
+    """Verify SNI access control for remapped, tunneled, and Proxy Protocol traffic."""
 
-    class TestSniIpAllow:
-        '''Verify ip_allow of sni.yaml.'''
-        _dns_counter: int = 0
-        _server_counter: int = 0
-        _ts_counter: int = 0
-        _client_counter: int = 0
+    def __init__(
+        self,
+        ats_factory: ATSFactory,
+        services: ServiceFactory,
+        connection_type: ConnectionType,
+    ) -> None:
+        self._services = services
+        self._connection_type = connection_type
+        suffix = connection_type.name.lower()
+        replay_name = {
+            ConnectionType.GET: "ip_allow.replay.yaml",
+            ConnectionType.TUNNEL: "ip_allow_tunnel.replay.yaml",
+            ConnectionType.PROXY: "ip_allow_proxy.replay.yaml",
+        }[connection_type]
+        self._replay_file = REPLAY_DIRECTORY / replay_name
+        self._dns = self.configure_dns(suffix)
+        self._server = self.configure_server(suffix)
+        self._ats = self.configure_ats(ats_factory, suffix)
+        self._client = self.configure_client(suffix)
 
-        def __init__(self, connect_type: int) -> None:
-            """Configure a test run.
-            :param connect_type: The type of connection to use.
-            """
-            tr = urtest.AddTestRun(f'Verify ip_allow of sni.yaml ({connect_type})')
+    def configure_dns(self, suffix: str) -> DNSServer:
+        """Resolve all replay hostnames to the local verifier server."""
 
-            if connect_type == ConnectionType.GET:
-                self._replay_file: str = "replay/ip_allow.replay.yaml"
-            elif connect_type == ConnectionType.TUNNEL:
-                self._replay_file: str = "replay/ip_allow_tunnel.replay.yaml"
-            elif connect_type == ConnectionType.PROXY:
-                self._replay_file: str = "replay/ip_allow_proxy.replay.yaml"
-            else:
-                raise ValueError(f'Invalid connect_type: {connect_type}')
+        return self._services.dns(f"dns-{suffix}", default="127.0.0.1")
 
-            self._dns = self._configure_dns(tr)
-            self._server = self._configure_server(tr)
-            self._ts = self._configure_trafficserver(tr, connect_type, self._dns, self._server)
-            self._configure_client(tr, self._dns, self._server, self._ts, connect_type)
+    def configure_server(self, suffix: str) -> VerifierServer:
+        """Create the verifier origin for one connection mode."""
 
-        def _configure_dns(self, tr: 'TestRun') -> 'Process':
-            """Configure a DNS for the TestRun.
-            :param tr: The TestRun to configure with the DNS.
-            :return: The DNS Process.
-            """
-            name = f'dns{TestSniIpAllow._dns_counter}'
-            dns = tr.MakeDNServer(name, default='127.0.0.1')
-            TestSniIpAllow._dns_counter += 1
-            return dns
+        return self._services.verifier_server(f"server-{suffix}", self._replay_file)
 
-        def _configure_server(self, tr: 'TestRun') -> 'Process':
-            """Configure an Origin Server for the TestRun.
-            :param tr: The TestRun to configure with the Origin Server.
-            :return: The Origin Server Process.
-            """
-            name = f'server{TestSniIpAllow._server_counter}'
-            server = tr.AddVerifierServerProcess(name, self._replay_file)
-            TestSniIpAllow._server_counter += 1
-            server.Streams.All += Testers.ContainsExpression('allowed-request', 'The allowed request should be recieved.')
-            server.Streams.All += Testers.ExcludesExpression(
-                'blocked-request', 'The blocked request should not have been recieved.')
-            server.Streams.All += Testers.ExcludesExpression(
-                'block.me.com', 'Nothing about the block.me.com sni should have been recieved.')
+    def configure_ats(self, ats_factory: ATSFactory, suffix: str) -> ATS:
+        """Configure SNI ACLs and routing for one connection mode."""
 
-            return server
+        ats = ats_factory.create(f"ts-{suffix}", enable_tls=True, enable_cache=False, enable_proxy_protocol=True)
+        ats.add_default_ssl_files()
+        sni_lines = [
+            "sni:",
+            "  - fqdn: block.me.com",
+            "    ip_allow: 192.168.10.1",
+        ]
+        if self._connection_type is ConnectionType.TUNNEL:
+            sni_lines.append(f"    tunnel_route: backend.server.com:{self._server.https_port}")
+        if self._connection_type is ConnectionType.PROXY:
+            sni_lines.extend(("  - fqdn: pp.block.me.com", "    ip_allow: 192.168.10.1"))
+        sni_lines.extend(("  - fqdn: allow.me.com", "    ip_allow: 127.0.0.1"))
+        if self._connection_type is ConnectionType.TUNNEL:
+            sni_lines.append(f"    tunnel_route: backend.server.com:{self._server.https_port}")
+        if self._connection_type is ConnectionType.PROXY:
+            sni_lines.extend(("  - fqdn: pp.allow.me.com", "    ip_allow: 1.2.3.4"))
+        ats.write_config_file("sni.yaml", "\n".join(sni_lines) + "\n")
+        ats.remap_config.add_line(f"map / http://remapped.backend.server.com:{self._server.http_port}/")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|ssl|proxyprotocol",
+                "proxy.config.acl.subjects": "PROXY,PEER",
+            })
+        if self._connection_type is ConnectionType.TUNNEL:
+            ats.records.update({"proxy.config.http.connect_ports": str(self._server.https_port)})
+            ats.allow_private_connect()
+        return ats
 
-        def _configure_trafficserver(self, tr: 'TestRun', connect_type: int, dns: 'Process', server: 'Process') -> 'Process':
-            """Configure Traffic Server for the TestRun.
-            :param tr: The TestRun to configure with Traffic Server.
-            :param connect_type: The type of connection to use.
-            :param dns: The DNS Process.
-            :param server: The Origin Server Process.
-            :return: The Traffic Server Process.
-            """
-            name = f'ts{TestSniIpAllow._ts_counter}'
-            ts = tr.MakeATSProcess(name, enable_tls=True, enable_cache=False, enable_proxy_protocol=True)
-            TestSniIpAllow._ts_counter += 1
-            ts.Disk.sni_yaml.AddLines(
-                [
-                    'sni:',
-                    '- fqdn: block.me.com',
-                    '  ip_allow: 192.168.10.1',  # Therefore 127.0.0.1 should be blocked.
-                ])
-            if connect_type == ConnectionType.TUNNEL:
-                ts.Disk.sni_yaml.AddLines([
-                    f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
-                ])
-            if connect_type == ConnectionType.PROXY:
-                ts.Disk.sni_yaml.AddLines(
-                    [
-                        '- fqdn: pp.block.me.com',
-                        '  ip_allow: 192.168.10.1',  # Therefore 1.2.3.4 should be blocked.
-                    ])
-            ts.Disk.sni_yaml.AddLines([
-                '- fqdn: allow.me.com',
-                '  ip_allow: 127.0.0.1',
-            ])
-            if connect_type == ConnectionType.TUNNEL:
-                ts.Disk.sni_yaml.AddLines([
-                    f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
-                ])
-            if connect_type == ConnectionType.PROXY:
-                ts.Disk.sni_yaml.AddLines([
-                    '- fqdn: pp.allow.me.com',
-                    '  ip_allow: 1.2.3.4',
-                ])
-            ts.addDefaultSSLFiles()
-            ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
-            ts.Disk.remap_config.AddLine(f'map / http://remapped.backend.server.com:{server.Variables.http_port}/')
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                    'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
-                    'proxy.config.acl.subjects': 'PROXY,PEER',
-                })
-            if connect_type == ConnectionType.TUNNEL:
-                ts.Disk.records_config.update({
-                    'proxy.config.http.connect_ports': f"{server.Variables.https_port}",
-                })
-                ts.addPrivateConnectAllowYaml()
-            return ts
+    def configure_client(self, suffix: str) -> ProcessService:
+        """Create a verifier client whose first blocked connection is expected to fail."""
 
-        def _configure_client(
-                self, tr: 'TestRun', dns: 'Process', server: 'Process', ts: 'Process', connect_type: ConnectionType.GET) -> None:
-            """Configure the client for the TestRun.
-            :param tr: The TestRun to configure with the client.
-            :param dns: The DNS Process.
-            :param server: The Origin Server Process.
-            :param ts: The Traffic Server Process.
-            """
-            name = f'client{TestSniIpAllow._client_counter}'
-            if connect_type == ConnectionType.PROXY:
-                p = tr.AddVerifierClientProcess(
-                    name,
-                    self._replay_file,
-                    http_ports=[ts.Variables.proxy_protocol_port],
-                    https_ports=[ts.Variables.proxy_protocol_ssl_port])
-            else:
-                p = tr.AddVerifierClientProcess(
-                    name, self._replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
-            TestSniIpAllow._client_counter += 1
-            ts.StartBefore(server)
-            ts.StartBefore(dns)
-            p.StartBefore(ts)
+        if self._connection_type is ConnectionType.PROXY:
+            http_ports = [self._ats.proxy_protocol_port]
+            https_ports = [self._ats.proxy_protocol_https_port]
+        else:
+            http_ports = [self._ats.http_port]
+            https_ports = [self._ats.https_port]
+        return self._services.verifier_client(
+            f"client-{suffix}",
+            self._replay_file,
+            http_ports=http_ports,
+            https_ports=https_ports,
+            return_code=1,
+            allow_errors=True,
+        )
 
-            # Because the first connection will be aborted, the client will have a
-            # non-zero return code.
-            p.ReturnCode = 1
+    def run(self) -> None:
+        """Run the blocked and allowed replay transactions and inspect both endpoints."""
 
-            p.Streams.All += Testers.ContainsExpression(
-                'allowed-response', 'The response to the allowed request should be recieved.')
-            p.Streams.All += Testers.ExcludesExpression(
-                'blocked-response', 'The response to the blocked request should not have been recieved.')
+        self._server.start()
+        self._dns.start()
+        self._ats.start()
+        result = self._client.run()
+        assert "allowed-response" in result.output
+        assert "blocked-response" not in result.output
+        assert "allowed-request" in self._server.output
+        assert "blocked-request" not in self._server.output
+        assert "block.me.com" not in self._server.output
 
-    TestSniIpAllow(ConnectionType.GET)
-    TestSniIpAllow(ConnectionType.TUNNEL)
-    TestSniIpAllow(ConnectionType.PROXY)
-    urtest.execute()
+
+@pytest.mark.parametrize("connection_type", tuple(ConnectionType), ids=lambda value: value.name.lower())
+def test_tls_sni_ip_allow(
+    ats_factory: ATSFactory,
+    services: ServiceFactory,
+    connection_type: ConnectionType,
+) -> None:
+    """sni.yaml rejects disallowed peers before forwarding their traffic."""
+
+    SniIpAllowScenario(ats_factory, services, connection_type).run()

@@ -110,8 +110,8 @@ namespace
     }
     return observed;
 #else
-    // SO_MARK is Linux-only. On other platforms the accompanying AuTest is
-    // skipped via Test.SkipUnless, so this readback path is never exercised;
+    // SO_MARK is Linux-only. On other platforms the accompanying Uranium test
+    // is skipped, so this readback path is never exercised;
     // keep it compilable so the plugins still build everywhere.
     return std::nullopt;
 #endif

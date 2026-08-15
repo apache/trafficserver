@@ -14,270 +14,226 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import time
+
+import pytest
+
+from tools.uranium.services import (
+    ATS,
+    ATSFactory,
+    Curl,
+    DNSServer,
+    OriginServer,
+    ProcessService,
+    ServiceFactory,
+    VerifierServer,
+    assert_matches_gold,
+)
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_chunked_encoding(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class ChunkedEncodingScenario:
+    """Exercise chunked response conversion and a request-smuggling regression."""
 
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._services = services
+        self._curl = curl
+        if not curl.supports("http2"):
+            pytest.skip("curl HTTP/2 support is required")
+        self._smuggle_port = services.allocate_port()
+        self._server = self.configure_origin(services, "server", ssl=False, body="", host="www.example.com")
+        self._tls_server = self.configure_origin(
+            services,
+            "server-tls",
+            ssl=True,
+            body="12345678901234567890",
+            host="www.anotherexample.com",
+        )
+        self._post_server = self.configure_origin(
+            services,
+            "server-post",
+            ssl=False,
+            body="",
+            host="www.yetanotherexample.com",
+        )
+        self._smuggle_server = self.configure_smuggle_server(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    urtest.Summary = '''
-    Test chunked encoding processing
-    '''
+    @staticmethod
+    def configure_origin(
+        services: ServiceFactory,
+        name: str,
+        *,
+        ssl: bool,
+        body: str,
+        host: str,
+    ) -> OriginServer:
+        """Create one origin that emits a chunked response."""
 
-    urtest.SkipUnless(Condition.HasCurlFeature('http2'))
-    urtest.ContinueOnFail = True
+        origin = services.origin(name, ssl=ssl)
+        method = "GET" if host == "www.example.com" else "POST"
+        request_body = "" if method == "GET" else "knock knock"
+        request = {"headers": f"{method} / HTTP/1.1\r\nHost: {host}\r\n\r\n", "body": request_body}
+        origin.add_response(
+            request,
+            {
+                "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
+                "body": body,
+            },
+        )
+        return origin
 
-    urtest.GetTcpPort("upstream_port")
+    def configure_smuggle_server(self, services: ServiceFactory) -> ProcessService:
+        """Create the one-shot origin that captures any smuggled bytes."""
 
-    # Define default ATS
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
-    server = urtest.MakeOriginServer("server")
-    server2 = urtest.MakeOriginServer("server2", ssl=True)
-    server3 = urtest.MakeOriginServer("server3")
+        return services.process(
+            "smuggle-server",
+            ["bash", TEST_DIRECTORY / "server4.sh", str(self._smuggle_port), "outserver4"],
+        )
 
-    server4 = urtest.Processes.Process(
-        "server4", "bash -c '" + urtest.TestDirectory + "/server4.sh {} outserver4'".format(urtest.Variables.upstream_port))
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure clear-text, TLS-origin, and smuggling remaps."""
 
-    testName = ""
-    request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    response_header = {
-        "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }
+        ats = ats_factory.create("ts", enable_tls=True)
+        ats.add_default_ssl_files()
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+            })
+        ats.remap_config.add_lines(
+            (
+                f"map http://www.example.com http://127.0.0.1:{self._server.port}",
+                f"map http://www.yetanotherexample.com http://127.0.0.1:{self._post_server.port}",
+                f"map https://www.anotherexample.com https://127.0.0.1:{self._tls_server.https_port}",
+                f"map / http://127.0.0.1:{self._smuggle_port}",
+            ))
+        return ats
 
-    request_header2 = {
-        "headers":
-            "POST / HTTP/1.1\r\nHost: www.anotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
-        "timestamp": "1415926535.898",
-        "body": "knock knock"
-    }
-    response_header2 = {
-        "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-        "timestamp": "1415926535.898",
-        "body": "12345678901234567890"
-    }
+    def curl_request(self, *arguments: str, gold: str) -> None:
+        """Run curl and compare its protocol diagnostics with a gold file."""
 
-    request_header3 = {
-        "headers":
-            "POST / HTTP/1.1\r\nHost: www.yetanotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
-        "timestamp": "1415926535.898",
-        "body": "knock knock"
-    }
-    response_header3 = {
-        "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
-        "timestamp": "1415926535.898",
-        "body": ""
-    }
+        result = self._curl.run_for(self._ats, *arguments, timeout=10)
+        assert result.returncode == 0, result.output
+        assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / gold)
 
-    server.addResponse("sessionlog.json", request_header, response_header)
-    server2.addResponse("sessionlog.json", request_header2, response_header2)
-    server3.addResponse("sessionlog.json", request_header3, response_header3)
+    def run(self) -> None:
+        """Run chunked GET/POST conversions followed by the smuggling probe."""
 
-    # add ssl materials like key, certificates for the server
-    ts.addDefaultSSLFiles()
+        self._server.start()
+        self._tls_server.start()
+        self._post_server.start()
+        self._ats.start()
+        if self._curl.uses_uds:
+            first_args = ("--http1.1", "--header", "Host: www.example.com", f"http://127.0.0.1:{self._ats.http_port}", "--verbose")
+            first_gold = "chunked_GET_200_uds.gold"
+        else:
+            first_args = (
+                "--http1.1",
+                "--proxy",
+                f"127.0.0.1:{self._ats.http_port}",
+                "http://www.example.com",
+                "--verbose",
+            )
+            first_gold = "chunked_GET_200.gold"
+        self.curl_request(*first_args, gold=first_gold)
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-            'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        })
+        if not self._curl.uses_uds:
+            self.curl_request(
+                "--http2",
+                "--insecure",
+                f"https://127.0.0.1:{self._ats.https_port}",
+                "--verbose",
+                "--header",
+                "Host: www.anotherexample.com",
+                "--data",
+                "Knock knock",
+                gold="h2_chunked_POST_200.gold",
+            )
+        for extra in ((), ("--header", "Transfer-Encoding: chunked")):
+            self.curl_request(
+                f"http://127.0.0.1:{self._ats.http_port}",
+                "--header",
+                "Host: www.yetanotherexample.com",
+                "--verbose",
+                *extra,
+                "--data",
+                "Knock knock",
+                gold="chunked_POST_200.gold",
+            )
 
-    ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
-    ts.Disk.remap_config.AddLine('map http://www.yetanotherexample.com http://127.0.0.1:{0}'.format(server3.Variables.Port))
-    ts.Disk.remap_config.AddLine(
-        'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port))
-    ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(urtest.Variables.upstream_port))
+        self._smuggle_server.start()
+        time.sleep(0.1)
+        smuggle_client = self._services.resolve_path("smuggle-client")
+        result = self._services.process(
+            "smuggle-client",
+            [smuggle_client, "127.0.0.1", str(self._ats.https_port)],
+        ).run(timeout=10)
+        assert "content-length:" not in result.output.lower()
+        self._smuggle_server.wait(timeout=10)
+        captured = (self._smuggle_server.run_directory / "outserver4").read_text(errors="replace")
+        assert "sneaky" not in captured
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
 
-    # smuggle-client is built via `make`. Here we copy the built binary down to the
-    # test directory so that the test runs in this file can use it.
-    urtest.Setup.Copy(os.path.join(urtest.Variables.AtsBuildUraniumTestsDir, 'chunked_encoding', 'smuggle-client'))
+class ChunkedTrailersScenario:
+    """Verify the default dropped and explicitly proxied trailer policies."""
 
-    # HTTP1.1 GET: www.example.com
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 5
-    if Condition.CurlUsingUnixDomainSocket():
-        tr.MakeCurlCommand('--http1.1 -H "Host: www.example.com" "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port), ts=ts)
-    else:
-        tr.MakeCurlCommand('--http1.1 --proxy 127.0.0.1:{0} http://www.example.com --verbose'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(server2)
-    tr.Processes.Default.StartBefore(server3)
-    # Delay on readiness of our ssl ports
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    if Condition.CurlUsingUnixDomainSocket():
-        tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200_uds.gold"
-    else:
-        tr.Processes.Default.Streams.stderr = "gold/chunked_GET_200.gold"
-    tr.StillRunningAfter = server
-    tr.StillRunningAfter = ts
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._ats_factory = ats_factory
+        self._services = services
 
-    if not Condition.CurlUsingUnixDomainSocket():
-        # HTTP2 POST: www.example.com Host, chunked body
-        tr = urtest.AddTestRun()
-        tr.TimeOut = 5
-        tr.MakeCurlCommand(
-            '--http2 -k https://127.0.0.1:{0} --verbose -H "Host: www.anotherexample.com" -d "Knock knock"'.format(
-                ts.Variables.ssl_port),
-            ts=ts)
-        tr.Processes.Default.ReturnCode = 0
-        tr.Processes.Default.Streams.stderr = "gold/h2_chunked_POST_200.gold"
+    def run_case(self, *, drop_trailers: bool) -> None:
+        """Run one trailer policy through Proxy Verifier."""
 
-    # HTTP1.1 POST: www.yetanotherexample.com Host, explicit size
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port), ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
-    tr.StillRunningAfter = server
+        suffix = "drop" if drop_trailers else "proxy"
+        replay_name = "chunked_trailer_dropped.replay.yaml" if drop_trailers else "chunked_trailer_proxied.replay.yaml"
+        replay = TEST_DIRECTORY / "replays" / replay_name
+        dns: DNSServer = self._services.dns(f"dns-{suffix}", default="127.0.0.1")
+        server: VerifierServer = self._services.verifier_server(f"server-{suffix}", replay)
+        ats = self._ats_factory.create(f"ts-{suffix}", enable_cache=False)
+        ats.remap_config.add_line(f"map / http://backend.example.com:{server.http_port}/")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+            })
+        if not drop_trailers:
+            ats.records.update({"proxy.config.http.drop_chunked_trailers": 0})
+        client = self._services.verifier_client(f"client-{suffix}", replay, http_ports=[ats.http_port])
+        dns.start()
+        server.start()
+        ats.start()
+        result = client.run()
+        if drop_trailers:
+            assert "Client: ATS" not in server.output
+            assert 'ETag: "abc"' not in server.output
+            assert "Sever: ATS" not in result.output
+            assert 'ETag: "def"' not in result.output
+        else:
+            assert "Client: ATS" in server.output
+            assert 'ETag: "abc"' in server.output
+            assert "Sever: ATS" in result.output
+            assert 'ETag: "def"' in result.output
 
-    # HTTP1.1 POST: www.example.com Host, chunked body
-    tr = urtest.AddTestRun()
-    tr.TimeOut = 5
-    tr.MakeCurlCommand(
-        'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -H "Transfer-Encoding: chunked" -d "Knock knock"'
-        .format(ts.Variables.port),
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
-    tr.StillRunningAfter = server
+    def run(self) -> None:
+        """Run both supported trailer policies."""
 
-    server4_out = urtest.Disk.File("outserver4")
-    server4_out.Content = Testers.ExcludesExpression("sneaky", "Extra body bytes should not be delivered")
+        self.run_case(drop_trailers=True)
+        self.run_case(drop_trailers=False)
 
-    # HTTP/1.1 Try to smuggle another request to the origin
-    tr = urtest.AddTestRun()
-    tr.Processes.Default.StartBefore(server4)
-    tr.TimeOut = 5
-    tr.Processes.Default.Command = "./smuggle-client 127.0.0.1 {0}".format(ts.Variables.ssl_port)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.All = Testers.ExcludesExpression("content-length:", "Response should not include content length")
 
-    # Transfer encoding to origin, but no content-length
-    # No extra bytes in body seen by origin
+def test_chunked_encoding(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS processes chunked bodies without permitting request smuggling."""
 
-    class TestChunkedTrailers:
-        """Verify chunked trailer proxy behavior."""
+    ChunkedEncodingScenario(ats_factory, services, curl).run()
 
-        _chunked_dropped_replay: str = "replays/chunked_trailer_dropped.replay.yaml"
-        _proxied_dropped_replay: str = "replays/chunked_trailer_proxied.replay.yaml"
 
-        def __init__(self, configure_drop_trailers: bool):
-            """Create a test to verify chunked trailer behavior.
+def test_chunked_trailers(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """Chunked trailers are dropped by default and proxied when enabled."""
 
-            :param configure_drop_trailers: Whether to configure ATS to drop
-            trailers or not.
-            """
-            self._configure_drop_trailers = configure_drop_trailers
-            self._replay_file = self._chunked_dropped_replay if configure_drop_trailers else self._proxied_dropped_replay
-            behavior_description = "drop" if configure_drop_trailers else "proxy"
-            tr = urtest.AddTestRun(f'Verify chunked tailers behavior: {behavior_description}')
-            self._configure_dns(tr)
-            self._configure_server(tr)
-            self._configure_ts(tr)
-            self._configure_client(tr)
-
-        def _configure_dns(self, tr: 'TestRun') -> "Process":
-            """Configure DNS for the test run.
-
-            :param tr: The TestRun to configure DNS for.
-            :return: The DNS process.
-            """
-            name = 'dns-drop-trailers' if self._configure_drop_trailers else 'dns-proxy-trailers'
-            self._dns = tr.MakeDNServer(name, default='127.0.0.1')
-            return self._dns
-
-        def _configure_server(self, tr: 'TestRun') -> 'Process':
-            """Configure the origin server for the test run.
-
-            :param tr: The TestRun to configure the server for.
-            :return: The origin server process.
-            """
-            name = 'server-drop-trailers' if self._configure_drop_trailers else 'server-proxy-trailers'
-            self._server = tr.AddVerifierServerProcess(name, self._replay_file)
-            if self._configure_drop_trailers:
-                self._server.Streams.All += Testers.ExcludesExpression('Client: ATS', 'Verify the Client trailer was dropped.')
-                self._server.Streams.All += Testers.ExcludesExpression('ETag: "abc"', 'Verify the ETag trailer was dropped.')
-            else:
-                self._server.Streams.All += Testers.ContainsExpression('Client: ATS', 'Verify the Client trailer was proxied.')
-                self._server.Streams.All += Testers.ContainsExpression('ETag: "abc"', 'Verify the ETag trailer was proxied.')
-            return self._server
-
-        def _configure_ts(self, tr: 'TestRun') -> 'Process':
-            """Configure ATS for the test run.
-
-            :param tr: The TestRun to configure ATS for.
-            :return: The ATS process.
-            """
-            name = 'ts-drop-trailers' if self._configure_drop_trailers else 'ts-proxy-trailers'
-            ts = tr.MakeATSProcess(name, enable_cache=False)
-            self._ts = ts
-            port = self._server.Variables.http_port
-            ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{port}/')
-            ts.Disk.records_config.update(
-                {
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http',
-                    'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
-                    'proxy.config.dns.resolv_conf': 'NULL'
-                })
-            if not self._configure_drop_trailers:
-                ts.Disk.records_config.update({
-                    'proxy.config.http.drop_chunked_trailers': 0,
-                })
-            return ts
-
-        def _configure_client(self, tr: 'TestRun') -> 'Process':
-            """Configure the client for the test run.
-
-            :param tr: The TestRun to configure the client for.
-            :return: The client process.
-            """
-            name = 'client-drop-trailers' if self._configure_drop_trailers else 'client-proxy-trailers'
-            self._client = tr.AddVerifierClientProcess(name, self._replay_file, http_ports=[self._ts.Variables.port])
-            self._client.StartBefore(self._dns)
-            self._client.StartBefore(self._server)
-            self._client.StartBefore(self._ts)
-
-            if self._configure_drop_trailers:
-                self._client.Streams.All += Testers.ExcludesExpression('Sever: ATS', 'Verify the Server trailer was dropped.')
-                self._client.Streams.All += Testers.ExcludesExpression('ETag: "def"', 'Verify the ETag trailer was dropped.')
-            else:
-                self._client.Streams.All += Testers.ContainsExpression('Sever: ATS', 'Verify the Server trailer was proxied.')
-                self._client.Streams.All += Testers.ContainsExpression('ETag: "def"', 'Verify the ETag trailer was proxied.')
-            return self._client
-
-    TestChunkedTrailers(configure_drop_trailers=True)
-    TestChunkedTrailers(configure_drop_trailers=False)
-    urtest.execute()
+    ChunkedTrailersScenario(ats_factory, services).run()

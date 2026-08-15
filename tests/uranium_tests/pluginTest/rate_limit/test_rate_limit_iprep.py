@@ -14,128 +14,94 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
 
-def test_rate_limit_iprep(urtest: UraniumTest) -> None:
-    '''
-    Test rate_limit plugin: IP reputation initialization (Finding #108).
+class RateLimitIpReputationScenario:
+    """Exercise SNI IP-reputation buckets through repeated TLS handshakes."""
 
-    Validates that ip-rep buckets are properly initialized. The bug used
-    vector::reserve() instead of resize(), causing UB on indexed writes.
-    With the fix, ATS starts cleanly and processes TLS connections through
-    the ip-rep logic without crashing.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    import os
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Serve the request used to increment the reputation buckets."""
 
-    urtest.Summary = '''
-    Test rate_limit ip-rep initialization: reserve() vs resize() regression (Finding #108).
-    '''
+        origin = services.origin("origin")
+        origin.add_response(
+            {
+                "headers": "GET /test HTTP/1.1\r\nHost: iprep.example.com\r\n\r\n",
+                "body": ""
+            },
+            {
+                "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n",
+                "body": "OK"
+            },
+        )
+        return origin
 
-    urtest.ContinueOnFail = True
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure five IP-reputation buckets and the SNI selector."""
 
-    server = urtest.MakeOriginServer("server")
-    ts = urtest.MakeATSProcess("ts", enable_tls=True)
+        ats = ats_factory.create("ts", enable_tls=True)
+        if not ats.plugin_exists("rate_limit.so"):
+            pytest.skip("rate_limit.so is required")
+        ats.write_config_file(
+            "rate_limit.yaml",
+            "ip-rep:\n"
+            "  - name: test-iprep\n"
+            "    buckets: 5\n"
+            "    size: 10\n"
+            "    percentage: 90\n"
+            "    max_age: 300\n"
+            "selector:\n"
+            "  - sni: iprep.example.com\n"
+            "    limit: 100\n"
+            "    ip-rep: test-iprep\n",
+        )
+        ats.plugin_config.add_line(f"rate_limit.so {ats.config_directory}/rate_limit.yaml")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rate_limit",
+                "proxy.config.http.insert_response_via_str": 0,
+                "proxy.config.url_remap.remap_required": 0,
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}/")
+        return ats
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /test HTTP/1.1\r\nHost: iprep.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\n"
-                       "Content-Length: 2\r\n"
-                       "Connection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "OK"
-        })
+    def request(self) -> CommandResult:
+        """Open a fresh TLS connection with the selector's SNI."""
 
-    ts.addDefaultSSLFiles()
+        return self._curl.run(
+            "--silent",
+            "--insecure",
+            "--output",
+            "/dev/null",
+            "--write-out",
+            "%{http_code}",
+            "--resolve",
+            f"iprep.example.com:{self._ats.https_port}:127.0.0.1",
+            f"https://iprep.example.com:{self._ats.https_port}/test",
+        )
 
-    # Write the rate_limit YAML config with ip-rep enabled
-    rate_limit_yaml = os.path.join(ts.Variables.CONFIGDIR, 'rate_limit.yaml')
-    ts.Disk.File(
-        rate_limit_yaml, typename="ats:config").AddLines(
-            [
-                'ip-rep:',
-                '  - name: test-iprep',
-                '    buckets: 5',
-                '    size: 10',
-                '    percentage: 90',
-                '    max_age: 300',
-                '',
-                'selector:',
-                '  - sni: iprep.example.com',
-                '    limit: 100',
-                '    ip-rep: test-iprep',
-                '',
-            ])
+    def run(self) -> None:
+        """Start the topology and increment the buckets several times."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'rate_limit',
-            'proxy.config.http.insert_response_via_str': 0,
-            'proxy.config.url_remap.remap_required': 0,
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-        })
+        self._origin.start()
+        self._ats.start()
+        for _ in range(6):
+            result = self.request()
+            assert result.returncode == 0, result.output
+            assert result.stdout == "200", result.output
+        assert "FATAL" not in self._ats.diags_log.read_text(errors="replace")
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
 
-    ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
+def test_rate_limit_iprep(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """IP-reputation buckets are sized before indexed initialization and updates."""
 
-    ts.Disk.plugin_config.AddLine(f'rate_limit.so {rate_limit_yaml}')
-
-    # Test 1: ATS starts with ip-rep config and handles a TLS request.
-    # With the reserve() bug, this would crash or produce UB on startup.
-    tr = urtest.AddTestRun("IP reputation init: TLS request through ip-rep selector")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.Command = (
-        f"curl -sk -o /dev/null -w '%{{http_code}}' "
-        f"'https://iprep.example.com:{ts.Variables.ssl_port}/test' "
-        f"--resolve 'iprep.example.com:{ts.Variables.ssl_port}:127.0.0.1'")
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "200", "TLS request through ip-rep selector should succeed")
-
-    # Test 2: Make multiple requests to exercise the ip-rep increment path.
-    # Each TLS handshake from the same IP increments the reputation counter.
-    # If buckets were not properly initialized, this triggers the crash.
-    tr2 = urtest.AddTestRun("IP reputation: multiple requests increment counters")
-    tr2.Processes.Default.Command = (
-        f'for i in 1 2 3 4 5; do '
-        f'  curl -sk -o /dev/null -w "%{{http_code}} " '
-        f'    "https://iprep.example.com:{ts.Variables.ssl_port}/test" '
-        f'    --resolve "iprep.example.com:{ts.Variables.ssl_port}:127.0.0.1"; '
-        f'done; echo ""')
-    tr2.Processes.Default.ReturnCode = 0
-    tr2.Processes.Default.Streams.stdout.Content = Testers.ExcludesExpression(
-        "000", "No request should get a connection failure (code 000)")
-
-    # Verify ATS didn't crash
-    ts.Disk.diags_log.Content = Testers.ExcludesExpression("FATAL", "ATS should not crash with ip-rep enabled")
-    urtest.execute()
+    RateLimitIpReputationScenario(ats_factory, services, curl).run()

@@ -17,11 +17,25 @@
 from tools.uranium.services import ATS, Curl
 
 
-def test_traffic_server_starts(ats: ATS, curl: Curl) -> None:
+class TrafficServerStartsScenario:
     """Verify that Traffic Server starts with its default test configuration."""
 
-    ats.start()
+    def __init__(self, ats: ATS, curl: Curl) -> None:
+        self.ats = ats
+        self.curl = curl
 
-    result = curl.get(ats)
+    def _start_traffic_server(self) -> None:
+        self.ats.start()
 
-    assert result.returncode == 0, result.output
+    def _verify_traffic_server_accepts_requests(self) -> None:
+        result = self.curl.get(self.ats)
+
+        assert result.returncode == 0, result.output
+
+    def run(self) -> None:
+        self._start_traffic_server()
+        self._verify_traffic_server_accepts_requests()
+
+
+def test_traffic_server_starts(ats: ATS, curl: Curl) -> None:
+    TrafficServerStartsScenario(ats, curl).run()

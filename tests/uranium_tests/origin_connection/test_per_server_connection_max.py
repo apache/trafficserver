@@ -14,190 +14,151 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+import re
+import time
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, DNSServer, HttpBinServer, ServiceFactory, VerifierServer
+
+TEST_DIRECTORY = Path(__file__).parent
+REPLAY_FILE = TEST_DIRECTORY / "slow_servers.replay.yaml"
 
 
-def test_per_server_connection_max(urtest: UraniumTest) -> None:
-    '''
-    Verify the behavior of proxy.config.http.per_server.connection.max.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class PerServerConnectionMaxScenario:
+    """Exercise origin connection limits for replay and CONNECT traffic."""
 
-    urtest.Summary = __doc__
-    import os
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("Connection limit coverage requires TCP client connections")
+        self._ats_factory = ats_factory
+        self._services = services
+        self._curl = curl
 
-    urtest.SkipIf(Condition.CurlUsingUnixDomainSocket())
+    def configure_replay_server(self) -> VerifierServer:
+        """Create the delayed verifier origin."""
 
-    class PerServerConnectionMaxTest:
-        """Define an object to test our max origin connection behavior."""
+        return self._services.verifier_server("replay-server", REPLAY_FILE)
 
-        _replay_file: str = 'slow_servers.replay.yaml'
-        _origin_max_connections: int = 3
+    @staticmethod
+    def configure_replay_ats(ats_factory: ATSFactory, server: VerifierServer) -> ATS:
+        """Configure a three-connection per-port origin limit."""
 
-        def __init__(self) -> None:
-            """Configure the test processes in preparation for the TestRun."""
-            self._configure_dns()
-            self._configure_server()
-            self._configure_trafficserver()
+        ats = ats_factory.create("replay-ts")
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{server.http_port}")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|conn_track",
+                "proxy.config.http.per_server.connection.max": 3,
+                "proxy.config.http.per_server.connection.metric_enabled": 1,
+                "proxy.config.http.per_server.connection.metric_prefix": "foo",
+                "proxy.config.http.per_server.connection.match": "port",
+            })
+        return ats
 
-        def _configure_dns(self) -> None:
-            """Configure a nameserver for the test."""
-            self._dns = urtest.MakeDNServer("dns", default='127.0.0.1')
+    def run_replay_case(self) -> None:
+        """Verify a fourth concurrent origin request is tracked as blocked."""
 
-        def _configure_server(self) -> None:
-            """Configure the server to be used in the test."""
-            self._server = urtest.MakeVerifierServerProcess('server', self._replay_file)
+        server = self.configure_replay_server()
+        ats = self.configure_replay_ats(self._ats_factory, server)
+        client = self._services.verifier_client("replay-client", REPLAY_FILE, http_ports=[ats.http_port])
+        server.start()
+        ats.start()
+        client.run()
+        metrics = ats.traffic_ctl("metric", "match", "per_server")
+        assert metrics.returncode == 0, metrics.output
+        suffix = f"foo.127.0.0.1:{server.http_port}"
+        assert f"per_server.total_connection.{suffix} 4" in metrics.stdout
+        assert f"per_server.blocked_connection.{suffix} 1" in metrics.stdout
+        assert re.search(r"WARNING:.*too many connections:.*limit=3", ats.diags_log.read_text(errors="replace"))
 
-        def _configure_trafficserver(self) -> None:
-            """Configure Traffic Server to be used in the test."""
-            self._ts = urtest.MakeATSProcess("ts1")
-            self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|conn_track',
-                    'proxy.config.http.per_server.connection.max': self._origin_max_connections,
-                    'proxy.config.http.per_server.connection.metric_enabled': 1,
-                    'proxy.config.http.per_server.connection.metric_prefix': 'foo',
-                    'proxy.config.http.per_server.connection.match': 'port',
-                })
-            self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                f'WARNING:.*too many connections:.*limit={self._origin_max_connections}',
-                'Verify the user is warned about the connection limit being hit.')
+    def configure_connect_services(self, suffix: str) -> tuple[DNSServer, HttpBinServer]:
+        """Create DNS and delayed HTTP origin services for a CONNECT case."""
 
-        def _test_metrics(self) -> None:
-            """Use traffic_ctl to test metrics."""
-            tr = urtest.AddTestRun("Check connection metrics")
-            tr.Processes.Default.Command = 'traffic_ctl metric match per_server'
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'per_server.total_connection.foo.127.0.0.1:{self._server.Variables.http_port} 4',
-                'incorrect statistic return, or possible error.')
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'per_server.blocked_connection.foo.127.0.0.1:{self._server.Variables.http_port} 1',
-                'incorrect statistic return, or possible error.')
+        dns = self._services.dns(f"dns-{suffix}", default="127.0.0.1")
+        origin = self._services.httpbin(f"httpbin-{suffix}")
+        return dns, origin
 
-        def run(self) -> None:
-            """Configure the TestRun."""
-            tr = urtest.AddTestRun('Verify we enforce proxy.config.http.per_server.connection.max')
-            tr.Processes.Default.StartBefore(self._dns)
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
+    @staticmethod
+    def configure_connect_ats(
+        ats_factory: ATSFactory,
+        suffix: str,
+        maximum: int,
+        dns: DNSServer,
+        origin: HttpBinServer,
+    ) -> ATS:
+        """Configure a connection limit for tunneled requests."""
 
-            tr.AddVerifierClientProcess('client', self._replay_file, http_ports=[self._ts.Variables.port])
+        ats = ats_factory.create(f"connect-ts-{suffix}")
+        ats.records.update(
+            {
+                "proxy.config.dns.nameservers": f"127.0.0.1:{dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|dns|hostdb|conn_track",
+                "proxy.config.http.connect_ports": str(origin.port),
+                "proxy.config.http.per_server.connection.metric_enabled": 1,
+                "proxy.config.http.per_server.connection.max": maximum,
+            })
+        ats.remap_config.add_line(f"map http://foo.com/ http://www.this.origin.com:{origin.port}/")
+        ats.allow_private_connect()
+        return ats
 
-            self._test_metrics()
+    def connect_request(self, ats: ATS, path: str) -> CommandResult:
+        """Send one proxied request using curl's CONNECT tunnel mode."""
 
-    class ConnectMethodTest:
-        """Test our max origin connection behavior with CONNECT traffic."""
+        return self._curl.run_for(
+            ats,
+            "--verbose",
+            "--fail",
+            "--silent",
+            "--proxytunnel",
+            "--proxy",
+            f"127.0.0.1:{ats.http_port}",
+            f"http://foo.com/{path}",
+        )
 
-        _process_counter: int = 0
-        _client_counter: int = 0
+    def run_connect_case(self, maximum: int, blocked: int) -> None:
+        """Hold three connections while testing two additional requests."""
 
-        def __init__(self, max_conn) -> None:
-            """Configure the server processes in preparation for the TestRun."""
-            self._configure_dns()
-            self._configure_origin_server()
-            self._configure_trafficserver(max_conn)
-            ConnectMethodTest._process_counter += 1
+        suffix = f"max-{maximum}"
+        dns, origin = self.configure_connect_services(suffix)
+        ats = self.configure_connect_ats(self._ats_factory, suffix, maximum, dns, origin)
+        dns.start()
+        origin.start()
+        ats.start()
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            slow = [executor.submit(self.connect_request, ats, "delay/2") for _ in range(3)]
+            time.sleep(1)
+            quick = [self.connect_request(ats, "get") for _ in range(2)]
+            slow_results = [future.result(timeout=5) for future in slow]
 
-        def _configure_dns(self) -> None:
-            """Configure a nameserver for the test."""
-            self._dns = urtest.MakeDNServer(f"dns_{ConnectMethodTest._process_counter}", default='127.0.0.1')
+        for result in slow_results:
+            assert result.returncode == 0, result.output
+        expected_code = 22 if blocked else 0
+        expected_status = "503" if blocked else "200"
+        for result in quick:
+            assert result.returncode == expected_code, result.output
+            assert f"HTTP/1.1 {expected_status}" in result.stderr
 
-        def _configure_origin_server(self) -> None:
-            """Configure the httpbin origin server."""
-            self._server = urtest.MakeHttpBinServer(f"server_{ConnectMethodTest._process_counter}")
+        metrics = ats.traffic_ctl("metric", "match", "per_server")
+        assert metrics.returncode == 0, metrics.output
+        suffix = f"www.this.origin.com.127.0.0.1:{origin.port}"
+        assert f"per_server.total_connection.{suffix} 5" in metrics.stdout
+        assert f"per_server.blocked_connection.{suffix} {blocked}" in metrics.stdout
 
-        def _configure_trafficserver(self, max_conn) -> None:
-            self._ts = urtest.MakeATSProcess("ts2_" + str(max_conn))
+    def run(self) -> None:
+        """Run ordinary origin and CONNECT connection-limit cases."""
 
-            self._ts.Disk.records_config.update(
-                {
-                    'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-                    'proxy.config.dns.resolv_conf': 'NULL',
-                    'proxy.config.diags.debug.enabled': 1,
-                    'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
-                    'proxy.config.http.server_ports': f"{self._ts.Variables.port} {self._ts.Variables.uds_path}",
-                    'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
-                    'proxy.config.http.per_server.connection.metric_enabled': 1,
-                    'proxy.config.http.per_server.connection.max': max_conn,
-                })
+        self.run_replay_case()
+        self.run_connect_case(3, 2)
+        self.run_connect_case(0, 0)
 
-            self._ts.Disk.remap_config.AddLines(
-                [
-                    f"map http://foo.com/ http://www.this.origin.com:{self._server.Variables.Port}/",
-                ])
-            self._ts.addPrivateConnectAllowYaml()
 
-        def _configure_client_with_slow_response(self, tr) -> 'Test.Process':
-            """Configure a client to perform a CONNECT request with a slow response from the server."""
-            p = tr.Processes.Process(f'slow_client_{ConnectMethodTest._client_counter}')
-            ConnectMethodTest._client_counter += 1
-            tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/delay/2'", p=p, ts=self._ts)
-            return p
+def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """ATS enforces and reports per-origin connection limits."""
 
-        def _test_metrics(self, blocked) -> None:
-            """Use traffic_ctl to test metrics."""
-            tr = urtest.AddTestRun("Check connection metrics")
-            tr.Processes.Default.Command = 'traffic_ctl metric match per_server; sleep 2'
-            tr.Processes.Default.ReturnCode = 0
-            tr.Processes.Default.Env = self._ts.Env
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'per_server.total_connection.www.this.origin.com.127.0.0.1:{self._server.Variables.Port} 5',
-                'incorrect statistic return, or possible error.')
-            tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                f'per_server.blocked_connection.www.this.origin.com.127.0.0.1:{self._server.Variables.Port} {blocked}',
-                'incorrect statistic return, or possible error.')
-
-        def run(self, blocked, gold_file) -> None:
-            """Verify per_server.connection.max with CONNECT traffic."""
-            tr = urtest.AddTestRun()
-            tr.Processes.Default.StartBefore(self._dns)
-            tr.Processes.Default.StartBefore(self._server)
-            tr.Processes.Default.StartBefore(self._ts)
-
-            slow0 = self._configure_client_with_slow_response(tr)
-            slow1 = self._configure_client_with_slow_response(tr)
-            slow2 = self._configure_client_with_slow_response(tr)
-
-            tr.Processes.Default.StartBefore(slow0)
-            tr.Processes.Default.StartBefore(slow1)
-            tr.Processes.Default.StartBefore(slow2)
-
-            # With those three slow transactions going on in the background, do a
-            # couple quick transactions and make sure they both reply with a 503
-            # response.
-            tr.MakeCurlCommandMulti(
-                f"sleep 1; {{curl}} -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
-                f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'",
-                ts=self._ts)
-            # Curl will have a 22 exit code if it receives a 5XX response (and we
-            # expect a 503).
-            tr.Processes.Default.ReturnCode = 22 if blocked else 0
-            tr.Processes.Default.Streams.stderr = gold_file
-            tr.Processes.Default.TimeOut = 3
-
-            self._test_metrics(blocked)
-
-    PerServerConnectionMaxTest().run()
-    ConnectMethodTest(3).run(blocked=2, gold_file="gold/two_503_congested.gold")
-    ConnectMethodTest(0).run(blocked=0, gold_file="gold/two_200_ok.gold")
-    urtest.execute()
+    PerServerConnectionMaxScenario(ats_factory, services, curl).run()

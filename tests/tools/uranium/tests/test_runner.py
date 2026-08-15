@@ -139,7 +139,7 @@ def test_docker_launch_forwards_ci_sharding(monkeypatch: pytest.MonkeyPatch, tmp
 
 
 def test_source_runner_keeps_a_short_stable_sandbox(tmp_path: Path) -> None:
-    """Leave enough path space for ATS and AuTest Unix sockets."""
+    """Leave enough path space for ATS Unix sockets."""
 
     assert _short_sandbox(tmp_path) == _short_sandbox(tmp_path)
     assert _short_sandbox(tmp_path).parent == Path("/tmp")

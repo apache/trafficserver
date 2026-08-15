@@ -14,193 +14,120 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory, assert_matches_gold
+
+TEST_DIRECTORY = Path(__file__).parent
+BODY = "lets go surfin now"
 
 
-def test_slice(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class SliceScenario:
+    """Verify basic slice-plugin range assembly from a cached complete object."""
 
-    urtest.Summary = '''
-    Basic slice plugin test
-    '''
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        if not self._ats.plugin_exists("slice.so"):
+            pytest.skip("slice.so is required")
 
-    # Test description:
-    # Preload the cache with the entire asset to be range requested.
-    # Reload remap rule with slice plugin
-    # Request content through the slice plugin
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Create the cacheable object split into seven-byte blocks by the plugin."""
 
-    urtest.SkipUnless(Condition.PluginExists('slice.so'),)
-    urtest.ContinueOnFail = False
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": "GET /path HTTP/1.1\r\nHost: origin\r\n\r\n"},
+            {
+                "headers": ('HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "path"\r\n'
+                            "Cache-Control: max-age=500\r\n\r\n"),
+                "body": BODY,
+            },
+        )
+        return origin
 
-    # configure origin server
-    server = urtest.MakeOriginServer("server")
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure preload, sliced, and skip-header remap targets."""
 
-    # Define ATS and configure
-    ts = urtest.MakeATSProcess("ts")
+        ats = ats_factory.create("ts")
+        ats.records.update({"proxy.config.diags.debug.enabled": 0, "proxy.config.diags.debug.tags": "slice"})
+        plugin = " @plugin=slice.so @pparam=--blockbytes-test=7"
+        ats.remap_config.add_lines(
+            (
+                f"map http://preload/ http://127.0.0.1:{self._origin.port}",
+                f"map http://slice_only/ http://127.0.0.1:{self._origin.port}",
+                f"map http://slice/ http://127.0.0.1:{self._origin.port}{plugin}",
+                f"map http://slicehdr/ http://127.0.0.1:{self._origin.port}{plugin} @pparam=--skip-header=SkipSlice",
+            ))
+        return ats
 
-    # default root
-    request_header_chk = {
-        "headers": "GET / HTTP/1.1\r\n" + "Host: ats\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+    def request(self, host: str, byte_range: str | None = None) -> CommandResult:
+        """Fetch one object while separating headers from its response body."""
 
-    response_header_chk = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+        arguments = [
+            "--silent",
+            "--dump-header",
+            "/dev/stdout",
+            "--output",
+            "/dev/stderr",
+            "--proxy",
+            f"http://127.0.0.1:{self._ats.http_port}",
+        ]
+        if byte_range is not None:
+            arguments.extend(("--range", byte_range))
+        arguments.append(f"http://{host}/path")
+        result = self._curl.run_for(self._ats, *arguments)
+        assert result.returncode == 0, result.output
+        return result
 
-    server.addResponse("sessionlog.json", request_header_chk, response_header_chk)
+    @staticmethod
+    def assert_response(
+        result: CommandResult,
+        status: str,
+        body_gold: str | None = None,
+        content_range: str | None = None,
+    ) -> None:
+        """Validate one response status, range, and exact body."""
 
-    block_bytes = 7
-    body = "lets go surfin now"
+        assert status in result.stdout
+        if content_range is not None:
+            assert content_range in result.stdout
+        if body_gold is not None:
+            assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / body_gold)
 
-    request_header = {
-        "headers": "GET /path HTTP/1.1\r\n" + "Host: origin\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": "",
-    }
+    def run(self) -> None:
+        """Run the complete, aligned, truncated, and unsatisfiable range matrix."""
 
-    response_header = {
-        "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path"\r\n' + "Cache-Control: max-age=500\r\n" + "\r\n",
-        "timestamp": "1469733493.993",
-        "body": body,
-    }
+        self._origin.start()
+        self._ats.start()
+        self.assert_response(self.request("preload"), "200 OK", "slice_200.stderr.gold")
+        cases = (
+            ("0-6", "slice_first.stderr.gold", "Content-Range: bytes 0-6/18"),
+            ("14-", "slice_last.stderr.gold", "Content-Range: bytes 14-17/18"),
+            ("14-17", "slice_last.stderr.gold", "Content-Range: bytes 14-17/18"),
+            ("14-20", "slice_last.stderr.gold", "Content-Range: bytes 14-17/18"),
+            ("0-", "slice_206.stderr.gold", "Content-Range: bytes 0-17/18"),
+            ("5-16", "slice_mid.stderr.gold", "Content-Range: bytes 5-16/18"),
+        )
+        for byte_range, body_gold, content_range in cases[:4]:
+            self.assert_response(self.request("slice", byte_range), "206 Partial Content", body_gold, content_range)
+        self.assert_response(self.request("slice"), "200 OK", "slice_200.stderr.gold")
+        for byte_range, body_gold, content_range in cases[4:]:
+            self.assert_response(self.request("slice", byte_range), "206 Partial Content", body_gold, content_range)
+        invalid_begin = len(BODY) + 1
+        self.assert_response(self.request("slice", f"{invalid_begin}-{invalid_begin + 7}"), "416 Requested Range Not Satisfiable")
+        self.assert_response(
+            self.request("slicehdr", "0-6"),
+            "206 Partial Content",
+            "slice_first.stderr.gold",
+            "Content-Range: bytes 0-6/18",
+        )
 
-    server.addResponse("sessionlog.json", request_header, response_header)
 
-    curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{}'.format(ts.Variables.port)
+def test_slice(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """The slice plugin reconstructs complete and partial responses correctly."""
 
-    # set up whole asset fetch into cache
-    ts.Disk.remap_config.AddLines(
-        [
-            f'map http://preload/ http://127.0.0.1:{server.Variables.Port}',
-            f'map http://slice_only/ http://127.0.0.1:{server.Variables.Port}',
-            f'map http://slice/ http://127.0.0.1:{server.Variables.Port}' +
-            f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
-            f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}' +
-            f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}' + ' @pparam=--skip-header=SkipSlice',
-        ])
-
-    ts.Disk.records_config.update({
-        'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'slice',
-    })
-
-    # 0 Test - Prefetch entire asset into cache
-    tr = urtest.AddTestRun("Fetch first slice range")
-    ps = tr.Processes.Default
-    ps.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
-    ps.StartBefore(urtest.Processes.ts)
-    tr.MakeCurlCommand(curl_and_args + ' http://preload/path', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_200.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
-    tr.StillRunningAfter = ts
-
-    # 1 Test - First complete slice
-    tr = urtest.AddTestRun("Fetch first slice range")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r 0-6', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_first.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-6/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-
-    # 2 Test - Last slice auto
-    tr = urtest.AddTestRun("Last slice -- 14-")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r 14-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_last.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 14-17/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-
-    # 3 Test - Last slice exact
-    tr = urtest.AddTestRun("Last slice 14-17")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r 14-17', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_last.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 14-17/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-
-    # 4 Test - Last slice truncated
-    tr = urtest.AddTestRun("Last truncated slice 14-20")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r 14-20', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_last.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 14-17/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-
-    # 5 Test - Whole asset via slices
-    tr = urtest.AddTestRun("Whole asset via slices")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_200.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("200 OK", "expected 200 OK response")
-    tr.StillRunningAfter = ts
-
-    # 6 Test - Whole asset via range
-    tr = urtest.AddTestRun("Whole asset via range")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r 0-', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_206.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-17/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-
-    # 7 Test - Non aligned slice request
-    tr = urtest.AddTestRun("Non aligned slice request")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r 5-16', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_mid.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 5-16/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-
-    # 8 Test - special case, begin inside last slice block but outside asset len
-    tr = urtest.AddTestRun("Invalid end range request, 416")
-    beg = len(body) + 1
-    end = beg + block_bytes
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slice/path' + ' -r {}-{}'.format(beg, end), ts=ts)
-    ps.Streams.stdout.Content = Testers.ContainsExpression("416 Requested Range Not Satisfiable", "expected 416 response")
-    tr.StillRunningAfter = ts
-
-    # 9 Test - First complete slice using override header
-    # if this fails it will infinite loop
-    tr = urtest.AddTestRun("Fetch first slice range")
-    ps = tr.Processes.Default
-    tr.MakeCurlCommand(curl_and_args + ' http://slicehdr/path' + ' -r 0-6', ts=ts)
-    ps.ReturnCode = 0
-    ps.Streams.stderr = "gold/slice_first.stderr.gold"
-    ps.Streams.stdout.Content = Testers.ContainsExpression("206 Partial Content", "expected 206 response")
-    ps.Streams.stdout.Content += Testers.ContainsExpression("Content-Range: bytes 0-6/18", "mismatch byte content response")
-    tr.StillRunningAfter = ts
-    urtest.execute()
+    SliceScenario(ats_factory, services, curl).run()

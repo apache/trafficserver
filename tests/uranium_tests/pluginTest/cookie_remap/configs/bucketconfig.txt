@@ -5,5 +5,5 @@ op:
   cookie: fpbeta
   operation: bucket
   bucket: 30/100
-  sendto: http://127.0.0.10:$PORT/cookiematches
-  else: http://127.0.0.11:$ALTPORT/cookiedoesntmatch
+  sendto: http://127.0.0.1:{SERVER_HTTP_PORT}/cookiematches
+  else: http://127.0.0.1:{SERVER_EXTRA_HTTP_PORT}/cookiedoesntmatch

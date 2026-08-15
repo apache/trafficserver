@@ -14,131 +14,119 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_tls_sni_yaml_reload(urtest: UraniumTest) -> None:
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class TlsSniYamlReloadScenario:
+    """Verify that a failed sni.yaml reload leaves the active policy intact."""
 
-    urtest.Summary = '''
-    Test reloading sni.yaml behaves as expected
-    '''
+    _hostname = "example.com"
 
-    sni_domain = 'example.com'
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        if curl.uses_uds:
+            pytest.skip("SNI client-certificate coverage requires a TCP listener")
+        self._curl = curl
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
 
-    ts = urtest.MakeATSProcess("ts", enable_tls=True, disable_log_checks=True)
-    server = urtest.MakeOriginServer("server")
-    server2 = urtest.MakeOriginServer("server3")
-    request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
+    def configure_origin(self, services: ServiceFactory) -> OriginServer:
+        """Create the reusable empty-response origin."""
 
-    response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
-    server.addResponse("sessionlog.json", request_header, response_header)
+        origin = services.origin("server")
+        origin.add_response(
+            {"headers": f"GET / HTTP/1.1\r\nHost: {self._hostname}\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"},
+        )
+        return origin
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/signer.pem',
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl|http',
-            'proxy.config.diags.output.debug': 'L',
-        })
+    def sni_document(self, *, valid: bool) -> str:
+        """Render the valid initial or intentionally invalid replacement policy."""
 
-    ts.addDefaultSSLFiles()
-    ts.addSSLfile("ssl/signed-foo.pem")
-    ts.addSSLfile("ssl/signed-foo.key")
-    ts.addSSLfile("ssl/signer.pem")
+        suffix = "foo" if valid else "notexist"
+        http2 = "off" if valid else "on"
+        return (
+            "sni:\n"
+            f"- fqdn: {self._hostname}\n"
+            f"  http2: {http2}\n"
+            f"  client_cert: {self._ats.ssl_directory}/signed-{suffix}.pem\n"
+            f"  client_key: {self._ats.ssl_directory}/signed-{suffix}.key\n"
+            "  verify_client: STRICT\n")
 
-    ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure the initial valid SNI policy and trust store."""
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+        ats = ats_factory.create("ts", enable_tls=True, disable_log_checks=True)
+        self._ats = ats
+        ats.add_default_ssl_files()
+        ats.copy_to_ssl(
+            TEST_DIRECTORY / "ssl" / "signed-foo.pem",
+            TEST_DIRECTORY / "ssl" / "signed-foo.key",
+            TEST_DIRECTORY / "ssl" / "signer.pem",
+        )
+        ats.records.update(
+            {
+                "proxy.config.ssl.CA.cert.filename": str(ats.ssl_directory / "signer.pem"),
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "ssl|http",
+                "proxy.config.diags.output.debug": "L",
+            })
+        ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
+        ats.ssl_multicert_config.add_lines(
+            (
+                "ssl_multicert:",
+                '  - dest_ip: "*"',
+                "    ssl_cert_name: server.pem",
+                "    ssl_key_name: server.key",
+            ))
+        ats.write_config_file("sni.yaml", self.sni_document(valid=True))
+        return ats
 
-    ts.Disk.ssl_multicert_yaml.AddLines(
-        """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def request(self, certificate: str, key: str) -> str:
+        """Send one TLS 1.2 request with a trusted client certificate."""
 
-    ts.Disk.sni_yaml.AddLines(
-        f"""
-          sni:
-          - fqdn: {sni_domain}
-            http2: off
-            client_cert: {ts.Variables.SSLDir}/signed-foo.pem
-            client_key: {ts.Variables.SSLDir}/signed-foo.key
-            verify_client: STRICT
-          """.split('\n'))
+        result = self._curl.run_for(
+            self._ats,
+            "--tls-max",
+            "1.2",
+            "--silent",
+            "--verbose",
+            "--insecure",
+            "--cert",
+            str(TEST_DIRECTORY / "ssl" / certificate),
+            "--key",
+            str(TEST_DIRECTORY / "ssl" / key),
+            "--resolve",
+            f"{self._hostname}:{self._ats.https_port}:127.0.0.1",
+            f"https://{self._hostname}:{self._ats.https_port}",
+        )
+        assert result.returncode == 0, result.output
+        return result.output
 
-    tr = urtest.AddTestRun(f'ensure we can connect for SNI {sni_domain}')
-    tr.Setup.Copy("ssl/signed-foo.pem")
-    tr.Setup.Copy("ssl/signed-foo.key")
-    tr.Processes.Default.StartBefore(urtest.Processes.ts)
-    tr.Processes.Default.StartBefore(server)
-    tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
-    tr.MakeCurlCommand(
-        f"-q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
-        ts=ts)
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Verify curl could successfully connect")
-    tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", f"Verify curl used the {sni_domain} SNI")
+    def run(self) -> None:
+        """Reject the bad reload and prove the previous HTTP/1.1 policy remains."""
 
-    # This config reload should fail because it references non-existent TLS key files
-    trupd = urtest.AddTestRun("Update config file")
-    # Update the configs - this will overwrite the sni.yaml file
-    sniyamlpath = ts.Disk.sni_yaml.AbsPath
-    trupd.Disk.File(sniyamlpath, id="sni_yaml", typename="ats:config")
-    trupd.Disk.sni_yaml.AddLines(
-        f"""
-          sni:
-          - fqdn: {sni_domain}
-            http2: on
-            client_cert: {ts.Variables.SSLDir}/signed-notexist.pem
-            client_key: {ts.Variables.SSLDir}/signed-notexist.key
-            verify_client: STRICT
-          """.split('\n'))
+        self._origin.start()
+        self._ats.start()
+        initial = self.request("signed-foo.pem", "signed-foo.key")
+        assert "Could Not Connect" not in initial
+        assert self._hostname in initial
 
-    trupd.StillRunningAfter = ts
-    trupd.StillRunningAfter = server
-    trupd.Processes.Default.Command = 'echo Updated configs'
-    trupd.Processes.Default.Env = ts.Env
-    trupd.Processes.Default.ReturnCode = 0
+        (self._ats.config_directory / "sni.yaml").write_text(self.sni_document(valid=False))
+        reload_result = self._ats.traffic_ctl(
+            "config", "reload", "-m", "-t", "invalid-sni-reload", "-w", "1", "-r", "0.5", "-T", "30s")
+        assert reload_result.returncode == 2, reload_result.output
 
-    tr2reload = urtest.AddConfigReload(ts, expect="fail", expect_tasks=["sni.yaml"], description="Reload config")
-    tr2reload.StillRunningAfter = server
+        final = self.request("signed-bar.pem", "signed-bar.key")
+        assert "GET / HTTP/2" not in final
 
-    tr3 = urtest.AddTestRun(f"Make request again for {sni_domain} that should still work")
-    tr3.Setup.Copy("ssl/signed-bar.pem")
-    tr3.Setup.Copy("ssl/signed-bar.key")
-    tr3.Processes.Default.StartBefore(server2)
-    tr3.StillRunningAfter = ts
-    tr3.StillRunningAfter = server
-    tr3.MakeCurlCommand(
-        f"-q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
-        ts=ts)
-    tr3.Processes.Default.ReturnCode = 0
-    # since the 2nd config with http2 turned on should have failed and used the prior config, verify http2 was not used
-    tr3.Processes.Default.Streams.stderr = Testers.ExcludesExpression("GET / HTTP/2", "Confirm that HTTP2 is still not used")
-    urtest.execute()
+
+def test_tls_sni_yaml_reload(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+    """An invalid sni.yaml reload rolls back without changing active policy."""
+
+    TlsSniYamlReloadScenario(ats_factory, services, curl).run()

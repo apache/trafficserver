@@ -14,170 +14,129 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+import os
+import subprocess
+import sys
+
+from tools.uranium.services import ATS, ATSFactory, DNSServer, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
+TOOLS_SSL_DIRECTORY = TEST_DIRECTORY.parents[2] / "tools" / "ssl"
 
 
-def test_grpc(urtest: UraniumTest) -> None:
-    """Test basic gRPC traffic."""
+class GrpcScenario:
+    """Proxy concurrent TLS gRPC requests over HTTP/2."""
 
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+    CLIENT_CONNECTIONS = 50
 
-    import os
-    from ports import get_port
-    import sys
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._services = services
+        self._server_port = services.allocate_port()
+        self._dns = self.configure_dns(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._generated_directory = self._ats.run_directory / "grpc_generated"
+        self.compile_protobuf()
+        self._server = self.configure_server(services)
+        self._client = self.configure_client(services)
 
-    class TestGrpc():
-        """Test basic gRPC traffic."""
+    @staticmethod
+    def configure_dns(services: ServiceFactory) -> DNSServer:
+        """Resolve the certificate hostname to the local gRPC server."""
 
-        num_client_connections = 50
+        dns = services.dns("dns", default=["127.0.0.1"])
+        return dns
 
-        def __init__(self, description: str):
-            """Configure a TestRun for gRPC traffic.
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure TLS ingress and HTTP/2 origin traffic."""
 
-            :param description: The description for the test runs.
-            """
-            self._description = description
+        ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
+        ats.add_default_ssl_files()
+        ats.remap_config.add_line(f"map / https://example.com:{self._server_port}/")
+        ats.records.update(
+            {
+                "proxy.config.ssl.client.alpn_protocols": "h2,http/1.1",
+                "proxy.config.http.server_session_sharing.pool": "thread",
+                "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
+                "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.port}",
+                "proxy.config.dns.resolv_conf": "NULL",
+                "proxy.config.diags.debug.enabled": 0,
+                "proxy.config.diags.debug.tags": "http",
+                "proxy.config.http2.min_avg_window_update": 0,
+            })
+        return ats
 
-        def _configure_dns(self, tr: 'TestRun') -> 'Process':
-            """Configure a locally running MicroDNS server.
+    def compile_protobuf(self) -> None:
+        """Generate the Python protobuf modules in the scenario sandbox."""
 
-            :param tr: The TestRun with which to associate the MicroDNS server.
-            :return: The MicroDNS server process.
-            """
-            self._dns = tr.MakeDNServer("dns", default=['127.0.0.1'])
-            return self._dns
+        self._generated_directory.mkdir(parents=True)
+        command = (
+            sys.executable,
+            "-m",
+            "grpc_tools.protoc",
+            f"-I{TEST_DIRECTORY}",
+            f"--python_out={self._generated_directory}",
+            f"--grpc_python_out={self._generated_directory}",
+            str(TEST_DIRECTORY / "simple.proto"),
+        )
+        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert (self._generated_directory / "simple_pb2.py").is_file()
+        assert (self._generated_directory / "simple_pb2_grpc.py").is_file()
 
-        def _configure_traffic_server(self, tr: 'TestRun', dns_port: int, server_port: int) -> 'Process':
-            """Configure the traffic server process.
+    def process_environment(self) -> dict[str, str]:
+        """Expose generated modules while preserving the test environment."""
 
-            :param tr: The TestRun with which to associate the traffic server.
-            :param dns_port: The MicroDNS server port that traffic server should connect to.
-            :param server_port: The gRPC server port that traffic server should connect to.
-            :return: The traffic server process.
-            """
-            self._ts = tr.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
+        environment = os.environ.copy()
+        environment["PYTHONPATH"] = str(self._generated_directory)
+        return environment
 
-            self._ts.addDefaultSSLFiles()
-            self._ts.Disk.ssl_multicert_yaml.AddLines(
-                """
-    ssl_multicert:
-      - dest_ip: "*"
-        ssl_cert_name: server.pem
-        ssl_key_name: server.key
-    """.split("\n"))
+    def configure_server(self, services: ServiceFactory) -> ProcessService:
+        """Create the finite TLS gRPC origin."""
 
-            self._ts.Disk.remap_config.AddLine(f"map / https://example.com:{server_port}/")
+        return services.process(
+            "server",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "grpc_server.py",
+                str(self._server_port),
+                TOOLS_SSL_DIRECTORY / "server.pem",
+                TOOLS_SSL_DIRECTORY / "server.key",
+                str(self.CLIENT_CONNECTIONS * 2),
+            ),
+            environment=self.process_environment(),
+            ready_port=self._server_port,
+        )
 
-            self._ts.Disk.records_config.update(
-                {
-                    "proxy.config.ssl.server.cert.path": self._ts.Variables.SSLDir,
-                    "proxy.config.ssl.server.private_key.path": self._ts.Variables.SSLDir,
-                    'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-                    'proxy.config.http.server_session_sharing.pool': 'thread',
-                    'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-                    'proxy.config.dns.nameservers': f"127.0.0.1:{dns_port}",
-                    'proxy.config.dns.resolv_conf': "NULL",
+    def configure_client(self, services: ServiceFactory) -> ProcessService:
+        """Create the concurrent gRPC client."""
 
-                    # Disable debug logging to avoid excessive log file size. I keep
-                    # it here for convenience of use during manual debugging.
-                    "proxy.config.diags.debug.enabled": 0,
-                    "proxy.config.diags.debug.tags": "http",
+        return services.process(
+            "client",
+            (
+                sys.executable,
+                TEST_DIRECTORY / "grpc_client.py",
+                "example.com",
+                str(self._ats.https_port),
+                self._ats.ssl_directory / "server.pem",
+                str(self.CLIENT_CONNECTIONS),
+            ),
+            environment=self.process_environment(),
+        )
 
-                    # The Python gRPC module uses many WINDO_UPDATE frames of small
-                    # sizes, so we have to disable the min_avg_window_update to
-                    # avoid ATS generating ERRORS logs and GOAWAY frames for them.
-                    "proxy.config.http2.min_avg_window_update": 0,
-                })
-            return self._ts
+    def run(self) -> None:
+        """Run the DNS, origin, ATS, and client topology."""
 
-        def _configure_grpc_server(self, tr: 'TestRun') -> 'Process':
-            """Start the gRPC server.
+        self._dns.start()
+        self._server.start()
+        self._ats.start()
+        client_result = self._client.run(timeout=30)
+        assert "Got the expected 50 responses" in client_result.output
+        server_result = self._server.wait(timeout=60)
+        assert server_result.returncode == 0, server_result.output
 
-            :param tr: The TestRun with which to associate the gRPC server.
-            :return: The gRPC server process.
-            """
-            tr.Setup.Copy('grpc_server.py')
-            self._server = tr.Processes.Process('server')
 
-            server_pem = os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.pem")
-            server_key = os.path.join(urtest.Variables.AtsTestToolsDir, "ssl", "server.key")
-            self._server.Setup.Copy(server_pem)
-            self._server.Setup.Copy(server_key)
+def test_grpc(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """ATS proxies concurrent TLS gRPC traffic over HTTP/2."""
 
-            port = get_port(self._server, 'port')
-            # Each connection performs two requests, so multiply the number of
-            # connections by 2 to get the expected number of transactions.
-            command = (
-                f'{sys.executable} {tr.RunDirectory}/grpc_server.py {port} '
-                f'server.pem server.key {TestGrpc.num_client_connections * 2}')
-            self._server.Command = command
-            self._server.ReturnCode = 0
-            return self._server
-
-        def _configure_grpc_client(self, tr: 'TestRun', proxy_port: int) -> None:
-            """Start the gRPC client.
-
-            :param tr: The TestRun with which to associate the gRPC client.
-            :param proxy_port: The proxy_port to which to connect.
-            """
-            tr.Setup.Copy('grpc_client.py')
-            ts_cert = os.path.join(self._ts.Variables.SSLDir, 'server.pem')
-            # The cert is for example.com, so we must use that domain.
-            hostname = 'example.com'
-            command = (
-                f'{sys.executable} {tr.RunDirectory}/grpc_client.py '
-                f'{hostname} {proxy_port} {ts_cert} {TestGrpc.num_client_connections}')
-            tr.Processes.Default.Command = command
-            tr.Processes.Default.ReturnCode = 0
-            tr.TimeOut = 10
-
-        def _compile_protobuf_files(self) -> None:
-            """Compile the protobuf files."""
-            tr = urtest.AddTestRun(f'{self._description}: compile the protobuf files.')
-            tr.Setup.Copy('simple.proto')
-            command = (
-                f'{sys.executable} -m grpc_tools.protoc -I{tr.RunDirectory} '
-                f'--python_out={tr.RunDirectory} --grpc_python_out={tr.RunDirectory} simple.proto')
-            tr.Processes.Default.Command = command
-            pb2_file = os.path.join(tr.RunDirectory, 'simple_pb2.py')
-            tr.Disk.File(pb2_file, id='pb2', exists=True)
-
-            pb2_grpc_file = os.path.join(tr.RunDirectory, 'simple_pb2_grpc.py')
-            tr.Disk.File(pb2_grpc_file, id='pb2_grpc', exists=True)
-
-        def _run_test_traffic(self) -> None:
-            """Configure the TestRun for the client and servers."""
-            tr = urtest.AddTestRun(f'{self._description}: run the gRPC traffic.')
-
-            dns = self._configure_dns(tr)
-            server = self._configure_grpc_server(tr)
-            ts = self._configure_traffic_server(tr, dns.Variables.Port, server.Variables.port)
-
-            tr.Processes.Default.StartBefore(dns)
-            tr.Processes.Default.StartBefore(server)
-            tr.Processes.Default.StartBefore(ts)
-
-            self._configure_grpc_client(tr, ts.Variables.ssl_port)
-
-        def run(self) -> None:
-            """Configure the various test runs for the gRPC test."""
-            self._compile_protobuf_files()
-            self._run_test_traffic()
-
-    test = TestGrpc("Test basic gRPC traffic")
-    test.run()
-    urtest.execute()
+    GrpcScenario(ats_factory, services).run()

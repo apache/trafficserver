@@ -14,140 +14,101 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+from pathlib import Path
+
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory, OriginServer, ProcessService, ServiceFactory
+
+TEST_DIRECTORY = Path(__file__).parent
 
 
-def test_rate_limit(urtest: UraniumTest) -> None:
-    '''
-    Test rate_limit plugin: connection limit enforcement, queue drain, and 429 rejection.
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class RateLimitScenario:
+    """Exercise rejection, queueing, and independent remap limiters."""
 
-    urtest.Summary = '''
-    Test rate_limit plugin: concurrent limit enforcement, queue drain, and independent limiters.
-    '''
+    _drivers = (
+        ("concurrent-reject", "concurrent_reject.sh", "fast=429"),
+        ("sequential", "sequential_pass.sh", "first=200", "second=200"),
+        ("retry-after", "retry_after.sh", "Retry-After: 1"),
+        ("queue-drain", "queue_drain.sh", "queued=200"),
+        ("independent", "independent_limiters.sh", "independent=200"),
+        ("queue-bypass", "queue_bypass_regression.sh", "timing=correct"),
+    )
 
-    urtest.ContinueOnFail = True
+    def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
+        self._origin = self.configure_origin(services)
+        self._ats = self.configure_ats(ats_factory)
+        self._clients = self.configure_clients(services)
 
-    server = urtest.MakeOriginServer("server", delay=3)
-    ts = urtest.MakeATSProcess("ts")
+    @staticmethod
+    def configure_origin(services: ServiceFactory) -> OriginServer:
+        """Delay responses so concurrent requests overlap at the limiter."""
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /slow HTTP/1.1\r\nHost: limit.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\n"
-                       "Content-Length: 4\r\n"
-                       "Connection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "SLOW"
-        })
+        origin = services.origin("origin", delay=3)
+        for path, body in (("slow", "SLOW"), ("fast", "FAST")):
+            origin.add_response(
+                {
+                    "headers": f"GET /{path} HTTP/1.1\r\nHost: limit.example.com\r\n\r\n",
+                    "body": ""
+                },
+                {
+                    "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
+                    "body": body,
+                },
+            )
+        return origin
 
-    server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /fast HTTP/1.1\r\nHost: limit.example.com\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\n"
-                       "Content-Length: 4\r\n"
-                       "Connection: close\r\n\r\n",
-            "timestamp": "1469733493.993",
-            "body": "FAST"
-        })
+    def configure_ats(self, ats_factory: ATSFactory) -> ATS:
+        """Configure rejecting, queued, and independent remap-plugin instances."""
 
-    ts.Disk.records_config.update(
-        {
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'rate_limit',
-            'proxy.config.http.insert_response_via_str': 0,
-            'proxy.config.url_remap.remap_required': 1,
-        })
+        ats = ats_factory.create("ts")
+        if not ats.plugin_exists("rate_limit.so"):
+            pytest.skip("rate_limit.so is required")
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "rate_limit",
+                "proxy.config.http.insert_response_via_str": 0,
+                "proxy.config.url_remap.remap_required": 1,
+            })
+        common = f"http://127.0.0.1:{self._origin.port}/ @plugin=rate_limit.so"
+        ats.remap_config.add_line(
+            f"map http://limit.example.com/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=0 "
+            "@pparam=--error @pparam=429 @pparam=--retry @pparam=1")
+        ats.remap_config.add_line(
+            f"map http://queued.example.com/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=5 "
+            "@pparam=--maxage @pparam=10000 @pparam=--error @pparam=429")
+        for hostname in ("limit-a.example.com", "limit-b.example.com"):
+            ats.remap_config.add_line(
+                f"map http://{hostname}/ {common} @pparam=--limit @pparam=1 @pparam=--queue @pparam=0 "
+                "@pparam=--error @pparam=429")
+        return ats
 
-    # Rule 1: limit=1, no queue — immediate rejection
-    ts.Disk.remap_config.AddLine(
-        f'map http://limit.example.com/ http://127.0.0.1:{server.Variables.Port}/'
-        f' @plugin=rate_limit.so @pparam=--limit @pparam=1 @pparam=--queue @pparam=0'
-        f' @pparam=--error @pparam=429 @pparam=--retry @pparam=1')
+    def configure_clients(self, services: ServiceFactory) -> list[tuple[ProcessService, tuple[str, ...]]]:
+        """Create the shell drivers and their expected output markers."""
 
-    # Rule 2: limit=1, queue=5 — queues excess, resumes when slot freed
-    ts.Disk.remap_config.AddLine(
-        f'map http://queued.example.com/ http://127.0.0.1:{server.Variables.Port}/'
-        f' @plugin=rate_limit.so @pparam=--limit @pparam=1 @pparam=--queue @pparam=5'
-        f' @pparam=--maxage @pparam=10000 @pparam=--error @pparam=429')
+        clients = []
+        for name, script, *markers in self._drivers:
+            client = services.process(
+                name,
+                ("/bin/sh", TEST_DIRECTORY / script, str(self._ats.http_port)),
+            )
+            clients.append((client, tuple(markers)))
+        return clients
 
-    # Rules 3 & 4: two independent limiters (limit=1 each)
-    ts.Disk.remap_config.AddLine(
-        f'map http://limit-a.example.com/ http://127.0.0.1:{server.Variables.Port}/'
-        f' @plugin=rate_limit.so @pparam=--limit @pparam=1 @pparam=--queue @pparam=0'
-        f' @pparam=--error @pparam=429')
+    def run(self) -> None:
+        """Run every limiter behavior against one shared ATS instance."""
 
-    ts.Disk.remap_config.AddLine(
-        f'map http://limit-b.example.com/ http://127.0.0.1:{server.Variables.Port}/'
-        f' @plugin=rate_limit.so @pparam=--limit @pparam=1 @pparam=--queue @pparam=0'
-        f' @pparam=--error @pparam=429')
+        self._origin.start()
+        self._ats.start()
+        for client, markers in self._clients:
+            result = client.run(timeout=30)
+            assert result.returncode == 0, result.output
+            for marker in markers:
+                assert marker in result.stdout, result.output
 
-    # Test 1: Concurrent rejection — second request gets 429
-    tr = urtest.AddTestRun("Concurrent requests: second gets 429")
-    tr.Processes.Default.StartBefore(server)
-    tr.Processes.Default.StartBefore(ts)
-    tr.Processes.Default.Command = f'sh {urtest.TestDirectory}/concurrent_reject.sh {ts.Variables.port}'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "fast=429", "Second concurrent request should be rejected with 429")
 
-    # Test 2: Sequential requests both pass
-    tr2 = urtest.AddTestRun("Sequential requests: both get 200")
-    tr2.Processes.Default.Command = f'sh {urtest.TestDirectory}/sequential_pass.sh {ts.Variables.port}'
-    tr2.Processes.Default.ReturnCode = 0
-    tr2.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("first=200", "First sequential request should pass")
-    tr2.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression(
-        "second=200", "Second sequential request should also pass")
+def test_rate_limit(ats_factory: ATSFactory, services: ServiceFactory) -> None:
+    """The remap limiter rejects, queues, drains, and isolates instances correctly."""
 
-    # Test 3: Retry-After header on 429 rejection
-    tr3 = urtest.AddTestRun("429 response includes Retry-After header")
-    tr3.Processes.Default.Command = f'sh {urtest.TestDirectory}/retry_after.sh {ts.Variables.port}'
-    tr3.Processes.Default.ReturnCode = 0
-    tr3.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "Retry-After: 1", "429 response should include Retry-After header")
-
-    # Test 4: Queue drain — exercises the fixed reserve() loop
-    tr4 = urtest.AddTestRun("Queue drain: queued request resumes with 200")
-    tr4.Processes.Default.Command = f'sh {urtest.TestDirectory}/queue_drain.sh {ts.Variables.port}'
-    tr4.Processes.Default.ReturnCode = 0
-    tr4.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "queued=200", "Queued request should eventually succeed after slot freed")
-
-    # Test 5: Independent limiters — saturating one rule doesn't block the other
-    tr5 = urtest.AddTestRun("Independent limiters: rule B passes while rule A is full")
-    tr5.Processes.Default.Command = f'sh {urtest.TestDirectory}/independent_limiters.sh {ts.Variables.port}'
-    tr5.Processes.Default.ReturnCode = 0
-    tr5.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "independent=200", "Request to rule B should pass despite rule A being full")
-
-    # Test 6: Regression for Finding #106 — queue bypass via incorrect reserve() check.
-    # With the bug, queued requests are resumed without a valid slot reservation,
-    # allowing all 3 requests to run concurrently (~3s). With the fix, they serialize
-    # through the single slot (~9s). We check wall time >= 6s as the pass criterion.
-    tr6 = urtest.AddTestRun("Regression #106: queue does not bypass limit")
-    tr6.Processes.Default.Command = f'sh {urtest.TestDirectory}/queue_bypass_regression.sh {ts.Variables.port}'
-    tr6.Processes.Default.ReturnCode = 0
-    tr6.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-        "timing=correct", "Queued requests must serialize through the limiter, not bypass it")
-    urtest.execute()
+    RateLimitScenario(ats_factory, services).run()

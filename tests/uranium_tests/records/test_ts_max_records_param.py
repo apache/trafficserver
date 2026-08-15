@@ -14,64 +14,42 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from tools.uranium.scenario import All, Any, Condition, Testers, UraniumTest, When
+import pytest
+
+from tools.uranium.services import ATS, ATSFactory
 
 
-def test_ts_max_records_param(urtest: UraniumTest) -> None:
-    '''
-    '''
-    #  Licensed to the Apache Software Foundation (ASF) under one
-    #  or more contributor license agreements.  See the NOTICE file
-    #  distributed with this work for additional information
-    #  regarding copyright ownership.  The ASF licenses this file
-    #  to you under the Apache License, Version 2.0 (the
-    #  "License"); you may not use this file except in compliance
-    #  with the License.  You may obtain a copy of the License at
-    #
-    #      http://www.apache.org/licenses/LICENSE-2.0
-    #
-    #  Unless required by applicable law or agreed to in writing, software
-    #  distributed under the License is distributed on an "AS IS" BASIS,
-    #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    #  See the License for the specific language governing permissions and
-    #  limitations under the License.
+class MaxRecordsScenario:
+    """Verify traffic_server's maxRecords argument parsing and lower bound."""
 
-    from jsonrpc import Notification, Request, Response
+    def __init__(self, ats_factory: ATSFactory, value: str, expected: str) -> None:
+        self._ats_factory = ats_factory
+        self._value = value
+        self._expected = expected
 
-    urtest.Summary = 'Basic test for traffic_server --maxRecords behavior when setting different values.'
+    def configure_ats(self) -> ATS:
+        """Pass the selected maxRecords value to traffic_server."""
 
-    maxRecords = 1000
+        return self._ats_factory.create("ts", server_args=["--maxRecords", self._value])
 
-    # 0  - maxRecords below the default value(2048). Traffic server should warn about this and use the default value.
-    ts = urtest.MakeATSProcess(f"ts{maxRecords}", command=f"traffic_server --maxRecords {maxRecords}")
-    tr = urtest.AddTestRun(f"--maxRecords {maxRecords}")
-    tr.Processes.Default.Command = 'echo 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = ts
-    ts.Streams.All = Testers.ContainsExpression(
-        f"Passed maxRecords value={maxRecords} is lower than the default value 2048. Default will be used.",
-        "It should use the default value")
+    def run(self) -> None:
+        """Start ATS and validate its parsing diagnostic."""
 
-    # 1  - maxRecords with just invalid number. Traffic server should warn about this and use the default value.
-    maxRecords = "abc"
-    ts = urtest.MakeATSProcess(f"ts{maxRecords}", command=f"traffic_server --maxRecords {maxRecords}")
-    tr = urtest.AddTestRun(f"--maxRecords {maxRecords}")
-    tr.Processes.Default.Command = 'echo 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = ts
-    ts.Streams.All = Testers.ContainsExpression(
-        f"Invalid 0 value for maxRecords. Default  2048 will be used.", "It should use the default value")
+        ats = self.configure_ats()
+        ats.start()
+        output = ats.process_output + ats.traffic_out.read_text(errors="replace")
+        assert self._expected in output
 
-    # 2  - maxRecords over the default value
-    maxRecords = 5000
-    ts = urtest.MakeATSProcess(f"ts{maxRecords}", command=f"traffic_server --maxRecords {maxRecords}")
-    tr = urtest.AddTestRun(f"--maxRecords {maxRecords}")
-    tr.Processes.Default.Command = 'echo 1'
-    tr.Processes.Default.ReturnCode = 0
-    tr.Processes.Default.StartBefore(ts)
-    tr.StillRunningAfter = ts
-    # At least it should not crash.
-    ts.Disk.traffic_out.Content = Testers.ContainsExpression(f"NOTE: records parsing completed", "should all be good")
-    urtest.execute()
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("1000", "Passed maxRecords value=1000 is lower than the default value 2048. Default will be used."),
+        ("abc", "Invalid 0 value for maxRecords. Default  2048 will be used."),
+        ("5000", "NOTE: records parsing completed"),
+    ],
+)
+def test_ts_max_records_param(ats_factory: ATSFactory, value: str, expected: str) -> None:
+    """maxRecords accepts large values and safely handles small or invalid ones."""
+
+    MaxRecordsScenario(ats_factory, value, expected).run()
