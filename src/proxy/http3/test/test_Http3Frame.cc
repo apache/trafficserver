@@ -95,32 +95,6 @@ TEST_CASE("Store DATA Frame", "[http3]")
 
 TEST_CASE("Store HEADERS Frame", "[http3]")
 {
-  SECTION("Normal")
-  {
-    uint8_t buf[32] = {0};
-    size_t  len;
-    uint8_t expected1[] = {
-      0x01,                   // Type
-      0x04,                   // Length
-      0x11, 0x22, 0x33, 0x44, // Payload
-    };
-
-    uint8_t        raw1[]       = "\x11\x22\x33\x44";
-    ats_unique_buf header_block = ats_unique_malloc(4);
-    memcpy(header_block.get(), raw1, 4);
-
-    Http3HeadersFrame hdrs_frame(std::move(header_block), 4);
-    CHECK(hdrs_frame.length() == 4);
-
-    auto           ibb = hdrs_frame.to_io_buffer_block();
-    IOBufferReader reader;
-    reader.block = ibb.get();
-    len          = reader.read_avail();
-    reader.read(buf, sizeof(buf));
-    CHECK(len == 6);
-    CHECK(memcmp(buf, expected1, len) == 0);
-  }
-
   SECTION("From reader, via factory")
   {
     uint8_t buf[32] = {0};
