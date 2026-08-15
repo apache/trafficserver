@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "tscore/Diags.h"
+#include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 #include "tsutil/ts_errata.h"
 #include "tsutil/PostScript.h"
@@ -388,9 +389,12 @@ parse_map_referer(const YAML::Node &node, url_mapping *url_mapping)
       !strcasecmp(url.c_str(), "<default_redirect_url>") || !strcasecmp(url.c_str(), "default_redirect_url")) {
     url_mapping->default_redirect_url = true;
   }
-  // parse_format_redirect_url() copies what it needs out of the buffer, so hand it the local
-  // string's storage rather than a fresh allocation that nothing would own.
-  url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(url.data());
+  // parse_format_redirect_url() nul terminates each chunk in place before copying it out, and for a
+  // url with no format specifier that write lands on the terminating nul, which std::string does not
+  // allow a caller to assign. Give it a buffer we own instead, and release it once it returns; the
+  // chunk list holds copies.
+  ats_scoped_str redirect_url(ats_strdup(url.c_str()));
+  url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(redirect_url.get());
 
   if (!node["regex"] || !node["regex"].IsSequence()) {
     return swoc::Errata("'regex' field must be sequence");
