@@ -42,7 +42,31 @@ _STAT_SYNC_RECORDS: dict = {
 
 # NOTE: assigning to a Streams attribute REPLACES any tester already set for that stream
 # (TesterSet.Assign), so every assertion after the first on the same stream must use '+=' or it
-# silently discards the earlier ones.
+# silently discards the earlier ones. The same applies to StillRunningAfter and the other process
+# state checks: they are TesterSets too.
+
+# One microDNS server shared by every ATS instance here. All of them want the same thing, a
+# wildcard answer of 127.0.0.1, and each extra process costs about five seconds when the test tears
+# down, so this file uses a single server rather than one per test class.
+_dns = Test.MakeDNServer("dns", default='127.0.0.1')
+_dns_started: bool = False
+
+
+def _use_shared_dns(tr) -> None:
+    """Make the shared nameserver available to a TestRun.
+
+    Only the first run may start it: StartBefore is tracked per TestRun, so asking twice would try
+    to start an already running process. Later runs just assert it is still alive.
+    """
+    global _dns_started
+
+    if _dns_started:
+        # '+=': StillRunningAfter is a TesterSet like Streams, so '=' would discard any
+        # process check the caller has already set on this run.
+        tr.StillRunningAfter += _dns
+    else:
+        tr.Processes.Default.StartBefore(_dns)
+        _dns_started = True
 
 
 class PerServerConnectionMaxTest:
@@ -59,7 +83,7 @@ class PerServerConnectionMaxTest:
 
     def _configure_dns(self) -> None:
         """Configure a nameserver for the test."""
-        self._dns = Test.MakeDNServer("dns", default='127.0.0.1')
+        self._dns = _dns
 
     def _configure_server(self) -> None:
         """Configure the server to be used in the test."""
@@ -114,7 +138,7 @@ class PerServerConnectionMaxTest:
     def run(self) -> None:
         """Configure the TestRun."""
         tr = Test.AddTestRun('Verify we enforce proxy.config.http.per_server.connection.max')
-        tr.Processes.Default.StartBefore(self._dns)
+        _use_shared_dns(tr)
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
 
@@ -150,7 +174,7 @@ class ConnectMethodTest:
 
     def _configure_dns(self) -> None:
         """Configure a nameserver for the test."""
-        self._dns = Test.MakeDNServer(f"dns_{ConnectMethodTest._process_counter}", default='127.0.0.1')
+        self._dns = _dns
 
     def _configure_origin_server(self) -> None:
         """Configure the httpbin origin server."""
@@ -230,7 +254,7 @@ class ConnectMethodTest:
     def run(self, blocked, gold_file) -> None:
         """Verify per_server.connection.max with CONNECT traffic."""
         tr = Test.AddTestRun()
-        tr.Processes.Default.StartBefore(self._dns)
+        _use_shared_dns(tr)
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
 
@@ -295,7 +319,7 @@ class MultiGroupAggregateTest:
 
     def _configure_dns(self) -> None:
         """Configure a nameserver for the test."""
-        self._dns = Test.MakeDNServer(f"magg_dns_{MultiGroupAggregateTest._process_counter}", default='127.0.0.1')
+        self._dns = _dns
 
     def _configure_origin_servers(self) -> None:
         """Configure the two httpbin origins which stand in for two groups of one hostname."""
@@ -380,7 +404,7 @@ class MultiGroupAggregateTest:
     def run(self) -> None:
         """Drive concurrent traffic through both groups, then check the aggregate metrics."""
         tr = Test.AddTestRun()
-        tr.Processes.Default.StartBefore(self._dns)
+        _use_shared_dns(tr)
         tr.Processes.Default.StartBefore(self._server_a)
         tr.Processes.Default.StartBefore(self._server_b)
         tr.Processes.Default.StartBefore(self._ts)
@@ -410,7 +434,7 @@ class MetricOverrideTest:
 
     def __init__(self) -> None:
         """Configure the test processes in preparation for the TestRun."""
-        self._dns = Test.MakeDNServer("dns_metric_override", default='127.0.0.1')
+        self._dns = _dns
         self._server_on = Test.MakeHttpBinServer("server_metric_on")
         self._server_off = Test.MakeHttpBinServer("server_metric_off")
         self._configure_trafficserver()
@@ -466,7 +490,7 @@ class MetricOverrideTest:
     def run(self) -> None:
         """Configure the TestRun."""
         tr = Test.AddTestRun('Verify metric_enabled is overridable per remap rule')
-        tr.Processes.Default.StartBefore(self._dns)
+        _use_shared_dns(tr)
         tr.Processes.Default.StartBefore(self._server_on)
         tr.Processes.Default.StartBefore(self._server_off)
         tr.Processes.Default.StartBefore(self._ts)
@@ -475,7 +499,7 @@ class MetricOverrideTest:
             f" --next -v -s -H 'Host: metric-off.com' http://127.0.0.1:{self._ts.Variables.port}/get")
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 30
-        tr.StillRunningAfter = self._ts
+        tr.StillRunningAfter += self._ts
 
         self._test_metrics()
 
