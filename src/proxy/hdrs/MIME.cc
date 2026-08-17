@@ -2595,13 +2595,12 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create(heap, mh);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
-    // A well-known name whose presence bit is clear cannot already be in this
-    // header, so attach can skip its O(n) duplicate search: a clear bit is
-    // exactly the first negative test mime_hdr_field_find performs for an
-    // interned name, which makes check_for_dups=0 byte-for-byte equivalent to
-    // the null find attach would have reached. Mask-zero well-known names have no
-    // presence bit, and non-well-known names have none either, so both keep the
-    // search on.
+
+    // A well-known name with a presence bit needs no duplicate search when that
+    // bit is clear: a clear bit is exactly the first negative test
+    // mime_hdr_field_find performs for an interned name, so skipping the walk is
+    // byte-for-byte equivalent to a null find. Mask-zero well-known names, and
+    // every non-well-known name, keep the search on.
     int check_for_dups = 1;
     if (field_name_wks_idx >= 0) {
       uint64_t const mask = hdrtoken_index_to_mask(field_name_wks_idx);
@@ -2609,7 +2608,61 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
         check_for_dups = 0;
       }
     }
-    mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+
+    // O(1) tail append for a duplicate of the immediately-preceding field (e.g.
+    // consecutive Set-Cookie). Under the "one chain per name, in slot order"
+    // invariant, a duplicate of the previous field belongs at that field's dup
+    // chain tail, so splice it directly instead of running attach's O(n)
+    // duplicate search.
+    //
+    // The previous field is DERIVED from mh, never cached in the parser:
+    // mime_field_create hands out m_field_slots[m_freetop] and then increments,
+    // so `field` sits at m_freetop - 1 and its predecessor at m_freetop - 2.
+    // Deriving it is what makes this safe. A cached MIMEField* would outlive the
+    // header that owned it -- the parser is a member of Http2Stream while
+    // reset_send_headers destroys and recreates the header before re-parsing the
+    // trailer block with that same parser -- and a freed HdrHeap comes back from
+    // the allocator at the same address, so a stale slot can still read live.
+    //
+    // Require m_freetop >= 2 so the predecessor is in this same block. When
+    // `field` is slot 0 of a fresh block, skip the fast path and let attach run:
+    // that is one field in MIME_FIELD_BLOCK_SLOTS, and it avoids walking the
+    // block list to find the previous block, keeping this genuinely O(1).
+    bool                      fast_tail_append = false;
+    MIMEFieldBlockImpl *const tail_fblock      = mh->m_fblock_list_tail;
+
+    if (tail_fblock->m_freetop >= 2 && &tail_fblock->m_field_slots[tail_fblock->m_freetop - 1] == field) {
+      MIMEField *const last = &tail_fblock->m_field_slots[tail_fblock->m_freetop - 2];
+
+      if (last->is_live() && last->m_next_dup == nullptr) {
+        bool name_matches;
+
+        if (field_name_wks_idx >= 0) {
+          name_matches = (last->m_wks_idx == field_name_wks_idx);
+        } else {
+          name_matches =
+            (last->m_wks_idx < 0) &&
+            ts::iequals(std::string_view{last->m_ptr_name, static_cast<std::string_view::size_type>(last->m_len_name)}, field_name);
+        }
+
+        if (name_matches) {
+          field->m_readiness = MIME_FIELD_SLOT_READINESS_LIVE;
+          field->m_flags     = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
+          field->m_next_dup  = nullptr;
+          last->m_next_dup   = field;
+          // Presence bit and slot accelerator were set by the chain head; a tail
+          // dup leaves them untouched, matching attach's patch-after-prev branch.
+          if (field->m_ptr_value && field->is_cooked()) {
+            mh->recompute_cooked_stuff(field);
+          }
+          fast_tail_append = true;
+        }
+      }
+    }
+
+    if (!fast_tail_append) {
+      mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+    }
   }
 }
 
