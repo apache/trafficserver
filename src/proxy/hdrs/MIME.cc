@@ -2651,6 +2651,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
 
     MIMEField *field = mime_field_create_for_name(heap, mh, field_name);
     mime_field_name_value_set(heap, mh, field, field_name_wks_idx, field_name, field_value, raw_print_field, parsed.size(), false);
+
     // A clear presence bit guarantees no duplicate exists. Skip the lookup.
     // Names without a presence bit still need the normal duplicate check.
     //
@@ -2664,7 +2665,53 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
         check_for_dups = 0;
       }
     }
-    mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+
+    // Append an adjacent duplicate in O(1), without searching its chain.
+    // The previous field must have the same name and be the chain's tail.
+    // Duplicate chains follow slot order, so the new field belongs after it.
+    //
+    // The pointer check below is required: mime_field_create_for_name() can
+    // reuse an older slot. Only use this shortcut when the new field occupies
+    // the last allocated slot in the tail block and has a predecessor there.
+    // Otherwise, fall back to normal attachment.
+    //
+    // Get the previous field from the current header. Do not cache it in the
+    // parser: the parser can be reused after its previous header is destroyed.
+    bool                      fast_tail_append = false;
+    MIMEFieldBlockImpl *const tail_fblock      = mh->m_fblock_list_tail;
+
+    if (tail_fblock->m_freetop >= 2 && &tail_fblock->m_field_slots[tail_fblock->m_freetop - 1] == field) {
+      MIMEField *const last = &tail_fblock->m_field_slots[tail_fblock->m_freetop - 2];
+
+      if (last->is_live() && last->m_next_dup == nullptr) {
+        bool name_matches;
+
+        if (field_name_wks_idx >= 0) {
+          name_matches = (last->m_wks_idx == field_name_wks_idx);
+        } else {
+          name_matches =
+            (last->m_wks_idx < 0) &&
+            ts::iequals(std::string_view{last->m_ptr_name, static_cast<std::string_view::size_type>(last->m_len_name)}, field_name);
+        }
+
+        if (name_matches) {
+          field->m_readiness = MIME_FIELD_SLOT_READINESS_LIVE;
+          field->m_flags     = (field->m_flags & ~MIME_FIELD_SLOT_FLAGS_DUP_HEAD);
+          field->m_next_dup  = nullptr;
+          last->m_next_dup   = field;
+          // Presence bit and slot accelerator were set by the chain head; a tail
+          // dup leaves them untouched, matching attach's patch-after-prev branch.
+          if (field->m_ptr_value && field->is_cooked()) {
+            mh->recompute_cooked_stuff(field);
+          }
+          fast_tail_append = true;
+        }
+      }
+    }
+
+    if (!fast_tail_append) {
+      mime_hdr_field_attach(mh, field, check_for_dups, nullptr);
+    }
   }
 }
 
