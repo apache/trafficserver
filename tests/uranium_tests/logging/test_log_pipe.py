@@ -70,7 +70,7 @@ class LogPipeScenario:
         """Read the pipe while one denied request emits an access entry."""
 
         reader.start()
-        result = self._curl.get(ats, "/", options=("--verbose",))
+        result = self._curl.get(ats, "/", options=f"--verbose")
         assert result.returncode == 0, result.output
         wait_for_file_lines(output_path, "127.0.0.1", 1)
 

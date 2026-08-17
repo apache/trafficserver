@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import re
 import subprocess
 
@@ -83,12 +84,9 @@ class TlsSniGroupsScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            *cipher_options,
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            "--insecure",
-            f"https://{hostname}:{self._ats.https_port}",
+            (
+                f"--verbose {shlex.join(cipher_options)} --resolve '{hostname}:{self._ats.https_port}:127.0.0.1' "
+                f"--insecure 'https://{hostname}:{self._ats.https_port}'"),
         )
         if hostname == "ccc.com":
             assert result.returncode == 35, result.output

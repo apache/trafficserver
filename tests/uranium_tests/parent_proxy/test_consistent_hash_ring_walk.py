@@ -69,14 +69,9 @@ class ParentDownRingWalkScenario:
         self.mark_parents_down()
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--output",
-            "/dev/null",
-            "--write-out",
-            "%{http_code}",
-            "--proxy",
-            f"127.0.0.1:{self._ats.http_port}",
-            "http://example.com/ring-walk-probe",
+            (
+                f"--silent --output /dev/null --write-out '%{{http_code}}' --proxy '127.0.0.1:{self._ats.http_port}' "
+                f"http://example.com/ring-walk-probe"),
         )
         self.verify_response(result)
         traffic_out = wait_for_file_lines(self._ats.traffic_out, rf"getHostStatus calls: {NUM_PARENTS}\b", 1)

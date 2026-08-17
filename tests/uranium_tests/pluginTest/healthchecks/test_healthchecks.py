@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from concurrent.futures import ThreadPoolExecutor
+import shlex
 from pathlib import Path
 import time
 
@@ -67,7 +68,10 @@ class HealthchecksScenario:
         if discard:
             options.extend(("--output", "/dev/null"))
         options.append(f"{scheme}://127.0.0.1:{port}/{path}")
-        return self._curl.run_for(self._ats, *options)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(options),
+        )
 
     def wait_for(self, path: str, status: str, *, tls: bool = False, body_length: int | None = None) -> str:
         """Poll until the watched file produces the expected response."""

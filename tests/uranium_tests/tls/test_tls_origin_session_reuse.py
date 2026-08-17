@@ -92,8 +92,7 @@ class OriginSessionReuseScenario:
         for _ in range(2):
             result = self._curl.run_for(
                 ats,
-                "--insecure",
-                f"https://127.0.0.1:{ats.https_port}/{path}",
+                f"--insecure 'https://127.0.0.1:{ats.https_port}/{path}'",
             )
             assert result.returncode == 0, result.output
             assert "curl test" in result.stdout

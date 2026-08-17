@@ -16,6 +16,7 @@
 """Verify slice repairs inconsistent cached blocks."""
 
 from datetime import UTC, datetime, timedelta
+import shlex
 from email.utils import format_datetime
 import time
 
@@ -140,7 +141,10 @@ class SliceSelfHealingScenario:
         if show_download_size:
             arguments.extend(("--write-out", "SENT: '%{size_download}'"))
         arguments.append(f"http://{host}/{path}")
-        return self._curl.run_for(self._ats, *arguments)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
 
     @staticmethod
     def assert_contains(result: CommandResult, *values: str) -> None:

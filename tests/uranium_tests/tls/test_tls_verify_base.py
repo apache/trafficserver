@@ -109,11 +109,7 @@ class TlsVerifyBaseScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--insecure",
-            "--header",
-            f"Host: {host}",
-            f"https://127.0.0.1:{self._ats.https_port}/",
+            f"--verbose --insecure --header 'Host: {host}' 'https://127.0.0.1:{self._ats.https_port}/'",
         )
         assert result.returncode == 0, result.output
         return result.stdout

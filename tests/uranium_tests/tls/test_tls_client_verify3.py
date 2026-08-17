@@ -97,18 +97,10 @@ class TlsClientVerifyCaScenario:
         """Connect with @a certificate_name while requesting @a hostname."""
 
         result = self._curl.run(
-            "--verbose",
-            "--insecure",
-            "--tls-max",
-            "1.2",
-            "--cert",
-            str(SSL_DIRECTORY / f"{certificate_name}.pem"),
-            "--key",
-            str(SSL_DIRECTORY / f"{certificate_name}.key"),
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            f"https://{hostname}:{self._ats.https_port}/xyz",
-        )
+            (
+                f"--verbose --insecure --tls-max 1.2 --cert '{str(SSL_DIRECTORY / f'{certificate_name}.pem')}' --key "
+                f"'{str(SSL_DIRECTORY / f'{certificate_name}.key')}' --resolve "
+                f"'{hostname}:{self._ats.https_port}:127.0.0.1' 'https://{hostname}:{self._ats.https_port}/xyz'"),)
         return result.returncode, result.output
 
     def run(self) -> None:

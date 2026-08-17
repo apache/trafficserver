@@ -143,11 +143,7 @@ class SniParentFailoverScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--location",
-            "--proxy",
-            f"localhost:{self._ats.http_port}",
-            f"http://{host}/path",
+            f"--silent --location --proxy 'localhost:{self._ats.http_port}' 'http://{host}/path'",
         )
         assert result.returncode == 0, result.output
         return result.stdout

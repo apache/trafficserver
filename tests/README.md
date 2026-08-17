@@ -68,8 +68,8 @@ already built and installed in the current environment.
 Pass pytest's `-k` expression through the wrapper:
 
 ```console
-./tests/urtest.sh -q -k cache_auth
-./tests/urtest.sh -q -k "cache_auth or cache_control"
+./tests/urtest.sh -q -k header_rewrite
+./tests/urtest.sh -q -k "header_rewrite or cache_control"
 ```
 
 The expression selects direct `.test.yaml` items and native Python items the
@@ -87,6 +87,20 @@ Each worker uses an isolated sandbox and dynamically allocated listeners.
 Tests listed in `serial_tests.txt` take an exclusive execution lock and cannot
 overlap any other Uranium item.
 
+### Running manual tests
+
+Native tests marked `@pytest.mark.manual` and replay tests with a true or
+reason-string `urtest.manual` value are visible as skipped items in ordinary
+runs but execute only when explicitly requested. Select the intended test while
+enabling them:
+
+```console
+./tests/urtest.sh --run-manual -k ats_probe
+```
+
+Manual tests may still skip when their runtime requirements are unavailable,
+such as root privileges, bpftrace, QUIC, or network-namespace support.
+
 ## Writing tests
 
 Prefer a direct replay test when Proxy Verifier can provide both client and
@@ -102,3 +116,8 @@ The native fixtures are imported from `tools.uranium.services`. The most common
 ones are `ATSFactory`, `ServiceFactory`, and `Curl`. They own process cleanup,
 port allocation, and item sandboxes. Do not use fixed ports or global temporary
 paths, because the full suite is expected to work with `-n`.
+
+`Curl.run()` and `Curl.run_for()` accept one shell-style argument string;
+`Curl.get()` uses the same form for `options`. Values containing whitespace can
+be quoted normally. The string is parsed with `shlex.split` and passed directly
+to curl without invoking a shell.

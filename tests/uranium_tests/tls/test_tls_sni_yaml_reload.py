@@ -92,18 +92,11 @@ class TlsSniYamlReloadScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--tls-max",
-            "1.2",
-            "--silent",
-            "--verbose",
-            "--insecure",
-            "--cert",
-            str(TEST_DIRECTORY / "ssl" / certificate),
-            "--key",
-            str(TEST_DIRECTORY / "ssl" / key),
-            "--resolve",
-            f"{self._hostname}:{self._ats.https_port}:127.0.0.1",
-            f"https://{self._hostname}:{self._ats.https_port}",
+            (
+                f"--tls-max 1.2 --silent --verbose --insecure --cert '{str(TEST_DIRECTORY / 'ssl' / certificate)}' "
+                f"--key '{str(TEST_DIRECTORY / 'ssl' / key)}' --resolve "
+                f"'{self._hostname}:{self._ats.https_port}:127.0.0.1' "
+                f"'https://{self._hostname}:{self._ats.https_port}'"),
         )
         assert result.returncode == 0, result.output
         return result.output

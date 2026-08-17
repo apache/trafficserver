@@ -81,7 +81,7 @@ class WebpBufferOverrideScenario:
             self._ats,
             "/two_mib.jpg",
             headers={"Accept": "image/webp"},
-            options=("--silent", "--show-error", "--dump-header", "-", "--output", "/dev/null"),
+            options=f"--silent --show-error --dump-header - --output /dev/null",
         )
         self.verify(result)
         wait_for_file_lines(self._ats.traffic_out, "exceeds cap 1048576", 1)

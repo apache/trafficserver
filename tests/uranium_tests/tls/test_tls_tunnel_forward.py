@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory, assert_matches_gold
 
@@ -126,7 +127,10 @@ class TlsTunnelForwardScenario:
         else:
             arguments.extend(("--resolve", f"{host}:{self._ats.https_port}:127.0.0.1"))
             url = f"https://{host}:{self._ats.https_port}/"
-        result = self._curl.run_for(self._ats, *arguments, url)
+        result = self._curl.run_for(
+            self._ats,
+            f"{shlex.join(arguments)} '{url}'",
+        )
         assert result.returncode == 0, result.output
         assert "Could Not Connect" not in result.output
         assert "Not Found on Accelerato" not in result.output
