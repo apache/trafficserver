@@ -117,6 +117,11 @@ ones are `ATSFactory`, `ServiceFactory`, and `Curl`. They own process cleanup,
 port allocation, and item sandboxes. Do not use fixed ports or global temporary
 paths, because the full suite is expected to work with `-n`.
 
+`tools.uranium.services` is the stable public import facade. Its implementations
+are separated by responsibility under `tests/tools/uranium/services/` into
+`ats.py`, `curl.py`, `origin.py`, `dns.py`, `httpbin.py`, `verifier.py`,
+`process_service.py`, and `service_factory.py`.
+
 `Curl.run()` and `Curl.run_for()` accept one shell-style argument string;
 `Curl.get()` uses the same form for `options`. Values containing whitespace can
 be quoted normally. The string is parsed with `shlex.split` and passed directly

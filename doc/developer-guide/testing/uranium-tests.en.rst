@@ -247,6 +247,12 @@ they use the same environment as pytest. Avoid fixed ports and global temporary
 paths; allocated listeners and the fixture run directory keep ``-n`` runs
 independent.
 
+``tools.uranium.services`` is the stable scenario-facing import facade. The
+service implementations are split by responsibility under
+``tests/tools/uranium/services`` so harness internals can depend directly on
+ATS, curl, origin, DNS, HTTPBin, Proxy Verifier, or generic process support
+without reintroducing a monolithic module.
+
 ``Curl.run()`` and ``Curl.run_for()`` take one shell-style argument string, and
 ``Curl.get()`` accepts the same syntax in its ``options`` parameter. Quote
 values containing whitespace just as in a shell command. Uranium parses the
