@@ -28,7 +28,10 @@ from .config import ReplayConfigError, ReplaySpec
 from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
 from .runtime import TestRuntime
-from .services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
+from .services.ats import ATS, ATSFactory
+from .services.context import ProceduralContext
+from .services.curl import Curl
+from .services.service_factory import ServiceFactory
 
 
 class MarkableItem(Protocol):

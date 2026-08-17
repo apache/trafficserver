@@ -21,12 +21,26 @@ class LogFilenamesScenario:
     """Verify system and custom logs honor configured destinations."""
 
     def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        """Create the log-filename scenario.
+
+        :param ats_factory: Factory that owns the Traffic Server processes.
+        :param services: Factory used to reserve closed listener ports.
+        :param curl: Curl client used to generate test transactions.
+        """
+
         self._ats_factory = ats_factory
         self._services = services
         self._curl = curl
 
     def configure_ats(self, suffix: str, system_destination: str, custom_destination: str) -> ATS:
-        """Configure system logs, a sentinel log, and one custom log."""
+        """Configure system logs, a sentinel log, and one custom log.
+
+        :param suffix: Unique suffix for the Traffic Server process name.
+        :param system_destination: Filename or stream for diagnostics and
+            errors.
+        :param custom_destination: Filename or stream for the custom access
+            log.
+        """
 
         ats = self._ats_factory.create(
             f"ts-{suffix}",
@@ -72,7 +86,10 @@ class LogFilenamesScenario:
         return ats
 
     def send_traffic(self, ats: ATS) -> None:
-        """Generate one denied transaction and one failed origin connection."""
+        """Generate one denied transaction and one failed origin connection.
+
+        :param ats: Traffic Server instance that receives the transactions.
+        """
 
         ats.start()
         result = self._curl.run_for(
@@ -86,27 +103,53 @@ class LogFilenamesScenario:
 
     @staticmethod
     def assert_logs(ats: ATS, system_destination: str, custom_destination: str) -> None:
-        """Verify expected system diagnostics and access entries."""
+        """Verify expected system diagnostics and access entries.
+
+        :param ats: Traffic Server instance whose output is inspected.
+        :param system_destination: Filename or stream receiving diagnostics
+            and errors.
+        :param custom_destination: Filename or stream receiving the custom
+            access log.
+        """
 
         if system_destination in ("stdout", "stderr"):
             system_content = ats.process_output
             error_content = system_content
         else:
-            system_content = (ats.log_directory / system_destination).read_text(errors="replace")
+            system_content = wait_for_file_lines(
+                ats.log_directory / system_destination,
+                "logging.yaml finished loading",
+                1,
+            )
             error_filename = system_destination.replace("diags", "error")
-            error_content = (ats.log_directory / error_filename).read_text(errors="replace")
+            error_content = wait_for_file_lines(
+                ats.log_directory / error_filename,
+                "CONNECT: attempt fail",
+                1,
+            )
 
         if custom_destination in ("stdout", "stderr"):
             custom_content = ats.process_output
         else:
-            custom_content = (ats.log_directory / f"{custom_destination}.log").read_text(errors="replace")
+            custom_content = wait_for_file_lines(
+                ats.log_directory / f"{custom_destination}.log",
+                "https://trafficserver.apache.org/some/path: 403",
+                1,
+            )
 
         assert "logging.yaml finished loading" in system_content
         assert "CONNECT: attempt fail" in error_content
         assert "https://trafficserver.apache.org/some/path: 403" in custom_content
 
     def run_case(self, suffix: str, system_destination: str, custom_destination: str) -> None:
-        """Run and verify one destination combination."""
+        """Run and verify one destination combination.
+
+        :param suffix: Unique suffix for the Traffic Server process name.
+        :param system_destination: Filename or stream receiving diagnostics
+            and errors.
+        :param custom_destination: Filename or stream receiving the custom
+            access log.
+        """
 
         ats = self.configure_ats(suffix, system_destination, custom_destination)
         self.send_traffic(ats)
@@ -124,6 +167,11 @@ class LogFilenamesScenario:
 
 
 def test_log_filenames(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """ATS writes system and custom logs to configured files or streams."""
+    """ATS writes system and custom logs to configured files or streams.
+
+    :param ats_factory: Fixture that owns the Traffic Server processes.
+    :param services: Fixture used to reserve closed listener ports.
+    :param curl: Fixture that sends curl requests to Traffic Server.
+    """
 
     LogFilenamesScenario(ats_factory, services, curl).run()
