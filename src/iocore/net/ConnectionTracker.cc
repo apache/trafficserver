@@ -72,14 +72,20 @@ const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
     }
   }};
 
-// Clamp on store so a plugin cannot leave an out of range level in the transaction config; the
-// records reload path does its own clamping in Config_Update_Conntrack_Metric_Enabled.
+// Both of these clamp on store so a plugin cannot leave an out of range value in the transaction
+// config; the records reload path clamps separately in its own update callbacks.
 const MgmtConverter ConnectionTracker::METRIC_ENABLED_CONV{
-  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const ConnectionTracker::MetricLevel *>(data)); },
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::metric_enabled) *>(data)); },
   [](void *data, MgmtInt i) -> void {
-    auto level = std::clamp(static_cast<int>(i), static_cast<int>(ConnectionTracker::METRIC_LEVEL_NONE),
-                            static_cast<int>(ConnectionTracker::METRIC_LEVEL_GROUP));
-    *static_cast<ConnectionTracker::MetricLevel *>(data) = static_cast<ConnectionTracker::MetricLevel>(level);
+    *static_cast<decltype(TxnConfig::metric_enabled) *>(data) = std::clamp(static_cast<int>(i), 0, 1);
+  }};
+
+const MgmtConverter ConnectionTracker::METRIC_AGGREGATE_CONV{
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const ConnectionTracker::MetricAggregate *>(data)); },
+  [](void *data, MgmtInt i) -> void {
+    auto level = std::clamp(static_cast<int>(i), static_cast<int>(ConnectionTracker::AGGREGATE_NONE),
+                            static_cast<int>(ConnectionTracker::AGGREGATE_ONLY));
+    *static_cast<ConnectionTracker::MetricAggregate *>(data) = static_cast<ConnectionTracker::MetricAggregate>(level);
   }};
 
 const std::array<std::string_view, static_cast<int>(ConnectionTracker::MATCH_BOTH) + 1> ConnectionTracker::MATCH_TYPE_NAME{
@@ -167,9 +173,21 @@ Config_Update_Conntrack_Metric_Enabled(const char * /* name ATS_UNUSED */, RecDa
   auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
-    auto level             = std::clamp(static_cast<int>(data.rec_int), static_cast<int>(ConnectionTracker::METRIC_LEVEL_NONE),
-                                        static_cast<int>(ConnectionTracker::METRIC_LEVEL_GROUP));
-    config->metric_enabled = static_cast<ConnectionTracker::MetricLevel>(level);
+    config->metric_enabled = std::clamp(static_cast<int>(data.rec_int), 0, 1);
+    return true;
+  }
+  return false;
+}
+
+bool
+Config_Update_Conntrack_Metric_Aggregate(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
+{
+  auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
+
+  if (RECD_INT == dtype) {
+    auto level               = std::clamp(static_cast<int>(data.rec_int), static_cast<int>(ConnectionTracker::AGGREGATE_NONE),
+                                          static_cast<int>(ConnectionTracker::AGGREGATE_ONLY));
+    config->metric_aggregate = static_cast<ConnectionTracker::MetricAggregate>(level);
     return true;
   }
   return false;
@@ -324,6 +342,7 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
   Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Server_Alert_Delay, config_cb, global);
   Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_ENABLED, &Config_Update_Conntrack_Metric_Enabled, config_cb, txn);
+  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_AGGREGATE, &Config_Update_Conntrack_Metric_Aggregate, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_PREFIX, &Config_Update_Conntrack_Metric_Prefix, config_cb, global);
 }
 
@@ -432,7 +451,8 @@ ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fq
   if (loc != _outbound_table._table.end()) {
     zret._g = loc->second;
   } else {
-    zret._g = std::make_shared<Group>(Group::DirectionType::OUTBOUND, key, fqdn, txn_cnf.server_min, txn_cnf.metric_enabled);
+    zret._g = std::make_shared<Group>(Group::DirectionType::OUTBOUND, key, fqdn, txn_cnf.server_min, txn_cnf.metric_enabled,
+                                      txn_cnf.metric_aggregate);
     // Note that we must use zret._g's key, not the above key, because Key's
     // members are references to the Group's members. Thus the above key's
     // members are invalid after this function.
@@ -442,7 +462,7 @@ ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fq
 }
 
 ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive,
-                                MetricLevel metric_enabled)
+                                int metric_enabled, MetricAggregate metric_aggregate)
   : _direction{direction},
     _hash(key._hash),
     _match_type(key._match_type),
@@ -452,17 +472,19 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
 {
   Metrics::Gauge::increment(net_rsb.connection_tracker_table_size);
   // only add metrics for server connections
-  if (metric_enabled != METRIC_LEVEL_NONE && direction == DirectionType::OUTBOUND) {
+  if (metric_enabled && direction == DirectionType::OUTBOUND) {
     std::string _metric_name = metric_name(key, fqdn, _global_config->metric_prefix);
-    // Per group metrics always live in the hidden store. metric_enabled controls what is published
-    // from them (see MetricLevel), not whether they exist.
+    // Per group metrics always live in the hidden store. metric_aggregate controls what is
+    // published from them (see MetricAggregate), not whether they exist.
     _count_metric       = Metrics::Gauge::createHiddenPtr("proxy.process.http.per_server.current_connection.", _metric_name);
     _count_total_metric = Metrics::Counter::createHiddenPtr("proxy.process.http.per_server.total_connection.", _metric_name);
     _blocked_metric     = Metrics::Counter::createHiddenPtr("proxy.process.http.per_server.blocked_connection.", _metric_name);
 
     // Only MATCH_BOTH groups have siblings sharing a hostname to aggregate across.
     std::string _host_metric_name = host_metric_name(key, fqdn, _global_config->metric_prefix);
-    if (!_host_metric_name.empty()) {
+    bool const  has_aggregate     = !_host_metric_name.empty();
+
+    if (has_aggregate && metric_aggregate != AGGREGATE_NONE) {
       Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _host_metric_name,
                                    Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
       Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _host_metric_name,
@@ -476,7 +498,10 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
                                    Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
     }
 
-    if (metric_enabled >= METRIC_LEVEL_GROUP) {
+    // AGGREGATE_ONLY suppresses the per group metrics to keep the published count proportional to
+    // hostnames. Without an aggregate to stand in for them there would be nothing at all reported
+    // for this group, so in that case publish them regardless.
+    if (metric_aggregate != AGGREGATE_ONLY || !has_aggregate) {
       // Mirror the per group metrics into the published store under their own name. A single
       // source SUM is an identity: the published value always equals the hidden source.
       Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _metric_name, Metrics::MetricType::GAUGE,

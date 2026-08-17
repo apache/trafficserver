@@ -1,6 +1,7 @@
 '''
 Verify the behavior of proxy.config.http.per_server.connection.max and the per server
-connection metrics (proxy.config.http.per_server.connection.metric_enabled).
+connection metrics (proxy.config.http.per_server.connection.metric_enabled and
+proxy.config.http.per_server.connection.metric_aggregate).
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -101,10 +102,10 @@ class PerServerConnectionMaxTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|conn_track',
                 'proxy.config.http.per_server.connection.max': self._origin_max_connections,
-                # Level 2 (METRIC_LEVEL_GROUP): the match here is 'port', which never has more than
-                # one group per hostname, so there is no aggregate to read and the per group
-                # metrics themselves have to be published to be checked below.
-                'proxy.config.http.per_server.connection.metric_enabled': 2,
+                # The match here is 'port', which has no hostname aggregate, so the per group
+                # metrics themselves are what gets checked below. That is what the default
+                # metric_aggregate of 0 publishes, so only metric_enabled is needed.
+                'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.metric_prefix': 'foo',
                 'proxy.config.http.per_server.connection.match': 'port',
             })
@@ -117,8 +118,8 @@ class PerServerConnectionMaxTest:
         group_name = f'foo.127.0.0.1:{self._server.Variables.http_port}'
 
         tr = Test.AddTestRun("Check connection metrics")
-        # At level 2 the per group metrics are published by mirroring the hidden ones through a
-        # derived metric, so a sync tick has to pass before they carry a value.
+        # The per group metrics are published by mirroring the hidden ones through a derived
+        # metric, so a sync tick has to pass before they carry a value.
         tr.Processes.Default.Command = f'sleep {_STAT_SYNC_WAIT_SECONDS}; traffic_ctl metric match per_server'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Env = self._ts.Env
@@ -150,10 +151,11 @@ class PerServerConnectionMaxTest:
 class ConnectMethodTest:
     """Test our max origin connection behavior with CONNECT traffic.
 
-    Also covers the two publication levels of proxy.config.http.per_server.connection.metric_enabled:
-      - 1 (METRIC_LEVEL_HOST): only the per hostname aggregate is published; the per group metrics
+    Also covers the two aggregate-publishing modes of
+    proxy.config.http.per_server.connection.metric_aggregate:
+      - 2 (AGGREGATE_ONLY): only the per hostname aggregate is published; the per group metrics
         stay hidden and are visible only with --include-hidden.
-      - 2 (METRIC_LEVEL_GROUP): the per hostname aggregate is published, and the per group metrics
+      - 1 (AGGREGATE_GROUP): the per hostname aggregate is published, and the per group metrics
         are also mirrored into the published store.
 
     The match here defaults to 'both' and there is exactly one group for this hostname, so the
@@ -164,12 +166,12 @@ class ConnectMethodTest:
     _process_counter: int = 0
     _client_counter: int = 0
 
-    def __init__(self, max_conn, metric_level=1) -> None:
+    def __init__(self, max_conn, metric_aggregate=2) -> None:
         """Configure the server processes in preparation for the TestRun."""
-        self._metric_level = metric_level
+        self._metric_aggregate = metric_aggregate
         self._configure_dns()
         self._configure_origin_server()
-        self._configure_trafficserver(max_conn, metric_level)
+        self._configure_trafficserver(max_conn, metric_aggregate)
         ConnectMethodTest._process_counter += 1
 
     def _configure_dns(self) -> None:
@@ -180,8 +182,8 @@ class ConnectMethodTest:
         """Configure the httpbin origin server."""
         self._server = Test.MakeHttpBinServer(f"server_{ConnectMethodTest._process_counter}")
 
-    def _configure_trafficserver(self, max_conn, metric_level) -> None:
-        self._ts = Test.MakeATSProcess(f"ts2_{max_conn}_{metric_level}")
+    def _configure_trafficserver(self, max_conn, metric_aggregate) -> None:
+        self._ts = Test.MakeATSProcess(f"ts2_{max_conn}_{metric_aggregate}")
 
         self._ts.Disk.records_config.update(
             {
@@ -192,7 +194,8 @@ class ConnectMethodTest:
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
                 'proxy.config.http.server_ports': f"{self._ts.Variables.port} {self._ts.Variables.uds_path}",
                 'proxy.config.http.connect_ports': f"{self._server.Variables.Port}",
-                'proxy.config.http.per_server.connection.metric_enabled': metric_level,
+                'proxy.config.http.per_server.connection.metric_enabled': 1,
+                'proxy.config.http.per_server.connection.metric_aggregate': metric_aggregate,
                 'proxy.config.http.per_server.connection.max': max_conn,
             })
 
@@ -219,23 +222,23 @@ class ConnectMethodTest:
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
 
-        # The per hostname aggregate is published at every non-zero level.
+        # The per hostname aggregate is published in both modes under test.
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
             f'per_server.total_connection.{host_name} 5', 'incorrect statistic return, or possible error.')
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             f'per_server.blocked_connection.{host_name} {blocked}', 'incorrect statistic return, or possible error.')
 
-        if self._metric_level >= 2:
-            # METRIC_LEVEL_GROUP additionally mirrors the per group metrics into the published store.
+        if self._metric_aggregate == 1:
+            # AGGREGATE_GROUP additionally mirrors the per group metrics into the published store.
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                f'per_server.total_connection.{group_name} 5', 'The per group metric should be published at METRIC_LEVEL_GROUP.')
+                f'per_server.total_connection.{group_name} 5', 'The per group metric should be published at AGGREGATE_GROUP.')
         else:
-            # METRIC_LEVEL_HOST keeps the per group metrics hidden, so none of the three per group
+            # AGGREGATE_ONLY keeps the per group metrics hidden, so none of the three per group
             # names may appear in a normal query. current_connection_max is not among them: it only
             # ever exists as a hostname aggregate, never per group.
             for counter in ('current_connection', 'total_connection', 'blocked_connection'):
                 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-                    f'per_server.{counter}.{group_name} ', f'per_server.{counter}.{group_name} must stay hidden at level 1.')
+                    f'per_server.{counter}.{group_name} ', f'per_server.{counter}.{group_name} must stay hidden at AGGREGATE_ONLY.')
 
         # The per group metrics must be visible with --include-hidden at either level. This is also
         # the end to end test for that traffic_ctl option.
@@ -337,6 +340,9 @@ class MultiGroupAggregateTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
+                # Aggregates only: the per group metrics stay hidden, which is what this test is
+                # about reading through the aggregate.
+                'proxy.config.http.per_server.connection.metric_aggregate': 2,
                 'proxy.config.http.per_server.connection.match': 'both',
             })
         self._ts.Disk.remap_config.AddLines(
@@ -427,7 +433,7 @@ class MultiGroupAggregateTest:
 class MetricOverrideTest:
     """Verify proxy.config.http.per_server.connection.metric_enabled is overridable per remap rule.
 
-    Metrics are enabled globally at level 2 and one of the two remap rules turns them off with
+    Metrics are enabled globally and one of the two remap rules turns them off with
     conf_remap. The two rules point at different origin ports and the match is 'port', so each gets
     its own group and the two decisions cannot influence each other.
     """
@@ -450,7 +456,7 @@ class MetricOverrideTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|conn_track',
                 # Enabled globally; the second remap rule below opts out.
-                'proxy.config.http.per_server.connection.metric_enabled': 2,
+                'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.match': 'port',
             })
         self._ts.Disk.remap_config.AddLines(
@@ -505,7 +511,7 @@ class MetricOverrideTest:
 
 
 PerServerConnectionMaxTest().run()
-ConnectMethodTest(3, metric_level=1).run(blocked=2, gold_file="gold/two_503_congested.gold")
-ConnectMethodTest(0, metric_level=2).run(blocked=0, gold_file="gold/two_200_ok.gold")
+ConnectMethodTest(3, metric_aggregate=2).run(blocked=2, gold_file="gold/two_503_congested.gold")
+ConnectMethodTest(0, metric_aggregate=1).run(blocked=0, gold_file="gold/two_200_ok.gold")
 MultiGroupAggregateTest().run()
 MetricOverrideTest().run()

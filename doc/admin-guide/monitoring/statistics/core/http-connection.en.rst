@@ -208,9 +208,9 @@ Per Server Connection Metrics
 
 Unlike the metrics above these do not have fixed names. They are created dynamically, one set per
 upstream server group as defined by :ts:cv:`proxy.config.http.per_server.connection.match`, and,
-when the match type is ``both``, one aggregate set per hostname. Whether any of them are published,
-and at what granularity, is controlled by
-:ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. An optional
+when the match type is ``both``, one aggregate set per hostname. Whether they are collected at all is
+controlled by :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`, and which of them are
+published by :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate`. An optional
 :ts:cv:`proxy.config.http.per_server.connection.metric_prefix` can be inserted into the names.
 
 Per group names are ``proxy.process.http.per_server.<counter>.<group>``, where ``<group>`` depends on
@@ -246,14 +246,14 @@ current_connection_max
 
 Every published per server metric is recomputed periodically, currently every 5 seconds, rather than
 on every connection event, so a reader sees a value up to that interval old. This is true of the
-hostname aggregates and, at level ``2``, of the published per group metrics as well: those are
+hostname aggregates and of the published per group metrics alike: those are
 mirrored from the internal ones by the same periodic mechanism, not written as connections open and
 close. It applies to ``current_connection_max`` too, which reports the maximum across groups as of
 the last sample rather than a running peak. To obtain the peak over a longer window, compute a
 maximum over time from this gauge in the monitoring system.
 
-At :ts:cv:`metric_enabled <proxy.config.http.per_server.connection.metric_enabled>` level ``1`` the
-per group metrics still exist internally, since the aggregates are computed from them, but are not
+At :ts:cv:`metric_aggregate <proxy.config.http.per_server.connection.metric_aggregate>` value ``2``
+the per group metrics still exist internally, since the aggregates are computed from them, but are not
 published. They can be listed with ``traffic_ctl metric match per_server --include-hidden``, which
 reads them directly and so is not subject to the sampling delay above. That visibility is intended
 for debugging and is not a stable interface: the existence, granularity and naming of the per group

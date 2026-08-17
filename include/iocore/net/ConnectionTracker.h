@@ -75,32 +75,38 @@ public:
   /// String equivalents for @c MatchType.
   static const std::array<std::string_view, static_cast<int>(MATCH_BOTH) + 1> MATCH_TYPE_NAME;
 
-  /** Levels for the @c metric_enabled configuration.
+  /** Whether, and how, the per hostname aggregate metrics are published.
    *
-   * The per group metrics are always created, in the hidden metric store, whenever metrics are
-   * enabled at all. What varies by level is what gets published:
-   *   - @c METRIC_LEVEL_NONE: no per group metrics are created and nothing is published.
-   *   - @c METRIC_LEVEL_HOST: the per group metrics stay hidden; the per hostname aggregates
-   *     (computed across the groups of a hostname by a @c Derived metric) are published.
-   *   - @c METRIC_LEVEL_GROUP: as above, plus the per group metrics are also mirrored into the
-   *     published store.
+   * This is independent of @c TxnConfig::metric_enabled, which decides only whether per server
+   * metrics exist for a group at all. The per group metrics are always created in the hidden metric
+   * store; what varies here is what gets published from them:
+   *   - @c AGGREGATE_NONE: no aggregate. The per group metrics are published under their own names.
+   *     This is the default and matches the behavior of releases that had no aggregate support.
+   *   - @c AGGREGATE_GROUP: the per hostname aggregates are published, and so are the per group
+   *     metrics they are computed from.
+   *   - @c AGGREGATE_ONLY: the per hostname aggregates are published and the per group metrics stay
+   *     hidden, which keeps the published metric count proportional to hostnames rather than to
+   *     groups. Where a group has no aggregate to belong to -- see @c Group::host_metric_name, which
+   *     only yields a name for match type @c MATCH_BOTH -- the per group metrics are published
+   *     anyway, since otherwise nothing at all would be reported for that group.
    *
-   * Keeping the per group metrics in the hidden store at every level means changing the level at
-   * runtime is only a change of what is registered for publication, with no metric to migrate
-   * between the two stores.
+   * Keeping the per group metrics in the hidden store in every case means changing this at runtime
+   * is only a change of what is registered for publication, with no metric to migrate between the
+   * two stores.
    */
-  enum MetricLevel {
-    METRIC_LEVEL_NONE  = 0, ///< No per server metrics.
-    METRIC_LEVEL_HOST  = 1, ///< Only the per hostname aggregate metrics are published.
-    METRIC_LEVEL_GROUP = 2, ///< The per hostname aggregates and the per group metrics are published.
+  enum MetricAggregate {
+    AGGREGATE_NONE  = 0, ///< No hostname aggregate; the per group metrics are published.
+    AGGREGATE_GROUP = 1, ///< Hostname aggregates published, along with the per group metrics.
+    AGGREGATE_ONLY  = 2, ///< Hostname aggregates published, per group metrics kept hidden.
   };
 
   /// Per transaction configuration values.
   struct TxnConfig {
-    int         server_max{0};                     ///< Maximum concurrent server connections.
-    int         server_min{0};                     ///< Minimum keepalive server connections.
-    MatchType   server_match{MATCH_IP};            ///< Server match type.
-    MetricLevel metric_enabled{METRIC_LEVEL_NONE}; ///< Which per server metrics to publish.
+    int             server_max{0};                    ///< Maximum concurrent server connections.
+    int             server_min{0};                    ///< Minimum keepalive server connections.
+    MatchType       server_match{MATCH_IP};           ///< Server match type.
+    int             metric_enabled{0};                ///< Whether per server metrics exist for a group.
+    MetricAggregate metric_aggregate{AGGREGATE_NONE}; ///< What is published, see @c MetricAggregate.
   };
 
   /** Static configuration values. */
@@ -126,6 +132,7 @@ public:
   static constexpr std::string_view CONFIG_SERVER_VAR_MATCH{"proxy.config.http.per_server.connection.match"};
   static constexpr std::string_view CONFIG_SERVER_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"};
   static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_ENABLED{"proxy.config.http.per_server.connection.metric_enabled"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_AGGREGATE{"proxy.config.http.per_server.connection.metric_aggregate"};
   static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_PREFIX{"proxy.config.http.per_server.connection.metric_prefix"};
 
   /// A record for the outbound connection count.
@@ -166,7 +173,7 @@ public:
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
     // Recording data as metrics. These are always in the hidden metric store when created; see
-    // @c MetricLevel for how they are published.
+    // @c MetricAggregate for how they are published.
     ts::Metrics::Gauge::AtomicType   *_count_metric       = nullptr;
     ts::Metrics::Counter::AtomicType *_count_total_metric = nullptr;
     ts::Metrics::Counter::AtomicType *_blocked_metric     = nullptr;
@@ -176,10 +183,11 @@ public:
      * @param key A populated @c Key structure - values are copied to the @c Group.
      * @param fqdn The full FQDN.
      * @param min_keep_alive The minimum number of origin keep alive connections to maintain.
-     * @param metric_enabled The metric level of the transaction that is creating this group.
+     * @param metric_enabled Whether the transaction creating this group wants per server metrics.
+     * @param metric_aggregate What that transaction wants published, see @c MetricAggregate.
      */
-    Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive,
-          MetricLevel metric_enabled = METRIC_LEVEL_NONE);
+    Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive, int metric_enabled = 0,
+          MetricAggregate metric_aggregate = AGGREGATE_NONE);
     ~Group();
     /// Key equality checker.
     static bool equal(Key const &lhs, Key const &rhs);
@@ -385,6 +393,7 @@ public:
   static const MgmtConverter MAX_SERVER_CONV;
   static const MgmtConverter SERVER_MATCH_CONV;
   static const MgmtConverter METRIC_ENABLED_CONV;
+  static const MgmtConverter METRIC_AGGREGATE_CONV;
 
 protected:
   static GlobalConfig *_global_config; ///< Global configuration data.

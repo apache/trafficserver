@@ -7341,6 +7341,8 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::SERVER_MATCH_CONV; break;
 #define _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV(KEY, MEMBER)           \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_ENABLED_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV(KEY, MEMBER)         \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_AGGREGATE_CONV; break;
 
 // Custom converter: Parses/formats host resolution preference strings.
 #define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
@@ -7400,6 +7402,7 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 #undef _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV
 #undef _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV
 #undef _CONF_CASE_HttpTransact_HOST_RES_CONV
 #undef _CONF_CASE_TargetedCacheControlHeaders_Conv
 #undef _CONF_CASE_DISPATCH
