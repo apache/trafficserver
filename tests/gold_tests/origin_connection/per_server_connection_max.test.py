@@ -23,12 +23,22 @@ import os
 
 Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
-# The per hostname aggregates are derived metrics, recomputed once per
-# REC_RAW_STAT_SYNC_INTERVAL_MS (5000ms, src/records/P_RecDefs.h) on an ET_TASK thread. Nothing in
-# records.yaml drives that interval, so a test has to sleep comfortably longer than one sync period
-# before reading an aggregate rather than trying to configure a faster one. Reading too early
-# silently compares against zeros.
-_STAT_SYNC_WAIT_SECONDS: int = 6
+# The per hostname aggregates are derived metrics. Metrics::Derived::update_derived() runs from
+# raw_stat_sync_cont (src/iocore/eventsystem/RecProcess.cc), which is scheduled every
+# proxy.config.raw_stat_sync_interval_ms. That record defaults to 5000ms, which would force every
+# assertion here to sleep more than five seconds; each ATS instance below shortens it so the waits
+# can be short instead. The record is startup only, so it has to be set in records.yaml rather than
+# adjusted at runtime. Reading before a tick lands silently compares against zeros.
+_STAT_SYNC_INTERVAL_MS: int = 500
+
+# How long to wait before reading a derived metric. Several sync periods, to absorb ET_TASK
+# scheduling jitter and the traffic_ctl round trip rather than racing the tick.
+_STAT_SYNC_WAIT_SECONDS: int = 2
+
+# The records.yaml settings every ATS instance in this file needs for the waits above to hold.
+_STAT_SYNC_RECORDS: dict = {
+    'proxy.config.raw_stat_sync_interval_ms': _STAT_SYNC_INTERVAL_MS,
+}
 
 # NOTE: assigning to a Streams attribute REPLACES any tester already set for that stream
 # (TesterSet.Assign), so every assertion after the first on the same stream must use '+=' or it
@@ -61,6 +71,7 @@ class PerServerConnectionMaxTest:
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
         self._ts.Disk.records_config.update(
             {
+                **_STAT_SYNC_RECORDS,
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
@@ -150,6 +161,7 @@ class ConnectMethodTest:
 
         self._ts.Disk.records_config.update(
             {
+                **_STAT_SYNC_RECORDS,
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
@@ -271,9 +283,8 @@ class MultiGroupAggregateTest:
 
     # How long each request holds its connection open. Must comfortably exceed
     # _STAT_SYNC_WAIT_SECONDS so a sync tick is guaranteed to land while the connections are still
-    # open. NOTE: httpbin clamps /delay/<n> to 10 seconds, so the effective hold is min(this, 10);
-    # the waits below are derived from this value and tolerate that clamp.
-    _hold_seconds: int = 12
+    # open. Well under the 10 second cap httpbin puts on /delay/<n>, so no clamping applies.
+    _hold_seconds: int = 6
 
     def __init__(self) -> None:
         """Configure the test processes in preparation for the TestRun."""
@@ -296,6 +307,7 @@ class MultiGroupAggregateTest:
         self._ts = Test.MakeATSProcess(f"magg_ts_{MultiGroupAggregateTest._process_counter}")
         self._ts.Disk.records_config.update(
             {
+                **_STAT_SYNC_RECORDS,
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
@@ -408,6 +420,7 @@ class MetricOverrideTest:
         self._ts = Test.MakeATSProcess("ts_metric_override")
         self._ts.Disk.records_config.update(
             {
+                **_STAT_SYNC_RECORDS,
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
