@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
 
@@ -108,11 +109,17 @@ class TlsKeepaliveScenario:
         url = f"https://127.0.0.1:{self._ats.https_port}"
         arguments = self.curl_arguments(protocol)
         if same_connection:
-            result = self._curl.run_for(self._ats, *arguments, url, url)
+            result = self._curl.run_for(
+                self._ats,
+                f"{shlex.join(arguments)} '{url}' '{url}'",
+            )
             assert result.returncode == 0, result.output
         else:
             for _ in range(2):
-                result = self._curl.run_for(self._ats, *arguments, url)
+                result = self._curl.run_for(
+                    self._ats,
+                    f"{shlex.join(arguments)} '{url}'",
+                )
                 assert result.returncode == 0, result.output
 
     def run(self) -> None:

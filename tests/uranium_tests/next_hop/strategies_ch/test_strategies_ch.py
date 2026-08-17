@@ -108,10 +108,7 @@ class ConsistentHashStrategyScenario:
         for index in range(NUM_OBJECTS):
             result = self._curl.run_for(
                 self._ats,
-                "--verbose",
-                "--proxy",
-                f"127.0.0.1:{self._ats.http_port}",
-                f"http://dummy.com/obj{index}",
+                f"--verbose --proxy '127.0.0.1:{self._ats.http_port}' 'http://dummy.com/obj{index}'",
             )
             assert result.returncode == 0, result.output
             assert result.stdout == "This is the body.\n"

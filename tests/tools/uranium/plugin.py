@@ -17,9 +17,9 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 import os
 
 import pytest
@@ -29,6 +29,16 @@ from .process import ProcessError
 from .replay import ReplaySkip, ReplayTest
 from .runtime import TestRuntime
 from .services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
+
+
+class MarkableItem(Protocol):
+    """Describe the marker operations used by manual-test selection."""
+
+    def get_closest_marker(self, name: str) -> pytest.Mark | None:
+        """Return the nearest marker named @a name."""
+
+    def add_marker(self, marker: str | pytest.MarkDecorator, append: bool = True) -> None:
+        """Attach @a marker to this item."""
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -42,6 +52,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     group.addoption("--urtest-shard-index", type=int, help="Zero-based CI shard to collect")
     group.addoption("--urtest-shard-count", type=int, help="Total number of CI shards")
     group.addoption("--curl-uds", action="store_true", help="Run supported Uranium tests with curl Unix sockets")
+    group.addoption(
+        "--run-manual",
+        action="store_true",
+        help="Run Uranium tests marked manual; they are skipped by default",
+    )
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -49,6 +64,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
     config.addinivalue_line("markers", "uranium_replay: Uranium test driven by a Proxy Verifier replay file")
     config.addinivalue_line("markers", "uranium_procedural: Uranium test written as a pytest function")
+    config.addinivalue_line("markers", "manual: Uranium test run only when --run-manual is passed")
     config.addinivalue_line("markers", "serial: Uranium test that must run without parallel peers")
     if getattr(config.option, "numprocesses", None) and getattr(config.option, "dist", None) == "load":
         config.option.dist = "loadgroup"
@@ -65,6 +81,7 @@ def pytest_collect_file(file_path: Path, parent: pytest.Collector) -> pytest.Fil
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Apply serial scheduling, UDS exclusions, and zero-based CI sharding."""
 
+    _mark_manual_tests(items, enabled=config.getoption("run_manual"))
     for item in items:
         if item.path.name.startswith("test_") and "uranium_tests" in item.path.parts:
             item.add_marker("uranium_procedural")
@@ -107,6 +124,18 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     items[:] = regular_items + serial_items
 
 
+def _mark_manual_tests(items: Sequence[MarkableItem], *, enabled: bool) -> None:
+    """Skip explicitly opt-in tests unless @a enabled is true."""
+
+    if enabled:
+        return
+    for item in items:
+        if marker := item.get_closest_marker("manual"):
+            detail = marker.kwargs.get("reason") or "manual Uranium test"
+            reason = f"{detail}; pass --run-manual to execute it"
+            item.add_marker(pytest.mark.skip(reason=reason))
+
+
 class ReplayFile(pytest.File):
     """Represent one directly collected replay file."""
 
@@ -124,6 +153,9 @@ class ReplayFile(pytest.File):
                 name += f"-{spec.variant_name}"
             item = ReplayItem.from_parent(self, name=name, spec=spec)
             item.add_marker("uranium_replay")
+            if manual := spec.urtest.get("manual"):
+                marker = pytest.mark.manual if manual is True else pytest.mark.manual(reason=str(manual))
+                item.add_marker(marker)
             yield item
 
 

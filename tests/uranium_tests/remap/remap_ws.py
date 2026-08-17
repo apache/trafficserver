@@ -102,23 +102,11 @@ class RemapWebSocketScenario:
         scheme = "https" if tls else "http"
         result = self._curl.run_for(
             self._ats,
-            "--max-time",
-            "2",
-            "--verbose",
-            "--silent",
-            "--http1.1",
-            "--insecure",
-            "--header",
-            "Connection: Upgrade",
-            "--header",
-            "Upgrade: websocket",
-            "--header",
-            "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==",
-            "--header",
-            "Sec-WebSocket-Version: 13",
-            "--resolve",
-            f"www.example.com:{port}:127.0.0.1",
-            f"{scheme}://www.example.com:{port}/chat",
+            (
+                f"--max-time 2 --verbose --silent --http1.1 --insecure --header 'Connection: Upgrade' --header "
+                f"'Upgrade: websocket' --header 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' --header "
+                f"'Sec-WebSocket-Version: 13' --resolve 'www.example.com:{port}:127.0.0.1' "
+                f"'{scheme}://www.example.com:{port}/chat'"),
             timeout=10,
         )
         assert result.returncode == 28, result.output
@@ -130,18 +118,10 @@ class RemapWebSocketScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--max-time",
-            "2",
-            "--verbose",
-            "--silent",
-            "--http1.1",
-            "--header",
-            "Connection: Upgrade",
-            "--header",
-            "Upgrade: websocket",
-            "--resolve",
-            f"www.example.com:{self._ats.http_port}:127.0.0.1",
-            f"http://www.example.com:{self._ats.http_port}/chat",
+            (
+                f"--max-time 2 --verbose --silent --http1.1 --header 'Connection: Upgrade' --header "
+                f"'Upgrade: websocket' --resolve 'www.example.com:{self._ats.http_port}:127.0.0.1' "
+                f"'http://www.example.com:{self._ats.http_port}/chat'"),
             timeout=10,
         )
         assert result.returncode == 0, result.output

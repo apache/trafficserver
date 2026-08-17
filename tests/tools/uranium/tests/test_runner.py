@@ -79,6 +79,7 @@ def test_runner_help_separates_wrapper_and_pytest_options() -> None:
     assert "urtest.sh options (consumed before pytest; these spellings take precedence):" in help_text
     assert "-k for selection, -n for parallel workers" in help_text
     assert "--collect-only/--co for listing tests" in help_text
+    assert "--run-manual to include explicitly" in help_text
     assert "-j N" not in help_text
     assert "--clean" not in help_text
     assert "--list" not in help_text

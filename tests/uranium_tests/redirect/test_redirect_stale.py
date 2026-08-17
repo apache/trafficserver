@@ -75,12 +75,9 @@ class StaleRedirectScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--dump-header",
-            "/dev/stdout",
-            "--header",
-            f"Host: 127.0.0.1:{self._origin.port}",
-            f"http://127.0.0.1:{self._ats.http_port}/obj",
+            (
+                f"--silent --dump-header /dev/stdout --header 'Host: 127.0.0.1:{self._origin.port}' "
+                f"'http://127.0.0.1:{self._ats.http_port}/obj'"),
         )
         assert result.returncode == 0, result.output
         return result

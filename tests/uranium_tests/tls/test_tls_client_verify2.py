@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
 
@@ -86,7 +87,10 @@ class TlsClientVerifyOverrideScenario:
                 f"{host}:{self._ats.https_port}:127.0.0.1",
                 f"https://{host}:{self._ats.https_port}/case1",
             ))
-        return self._curl.run_for(self._ats, *arguments)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
 
     def run(self) -> None:
         """Exercise exact, wildcard, strict, and disabled client-verification policies."""

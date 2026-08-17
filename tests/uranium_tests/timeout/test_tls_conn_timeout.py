@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
+import shlex
 
 import pytest
 
@@ -102,7 +103,11 @@ class TlsOriginTimeoutScenario:
         if self._case.method == "POST":
             arguments.extend(("--data", "bob"))
         arguments.append(f"http://127.0.0.1:{self._ats.http_port}{self._case.path}")
-        return self._curl.run_for(self._ats, *arguments, timeout=20)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+            timeout=20,
+        )
 
     def verify(self, result: CommandResult) -> None:
         """Require the expected proxy status and origin delay path."""

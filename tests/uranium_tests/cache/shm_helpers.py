@@ -105,14 +105,9 @@ def get_200(curl: Curl, ats: ATS, path: str) -> None:
 
     result = curl.run_for(
         ats,
-        "--silent",
-        "--output",
-        "/dev/null",
-        "--write-out",
-        "%{http_code}\n",
-        "--header",
-        "x-debug: x-cache,via",
-        f"http://127.0.0.1:{ats.http_port}{path}",
+        (
+            f"--silent --output /dev/null --write-out '%{{http_code}}\n' --header 'x-debug: x-cache,via' "
+            f"'http://127.0.0.1:{ats.http_port}{path}'"),
     )
     assert result.returncode == 0, result.output
     assert result.stdout.strip() == "200", result.output

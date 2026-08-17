@@ -88,16 +88,10 @@ class TlsHooksClientVerifyScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--tls-max",
-            "1.2",
-            "--insecure",
-            "--cert",
-            str(TEST_DIRECTORY / "ssl" / certificate),
-            "--key",
-            str(TEST_DIRECTORY / "ssl" / key),
-            "--resolve",
-            f"foo.com:{self._ats.https_port}:127.0.0.1",
-            f"https://foo.com:{self._ats.https_port}/case1",
+            (
+                f"--tls-max 1.2 --insecure --cert '{str(TEST_DIRECTORY / 'ssl' / certificate)}' --key "
+                f"'{str(TEST_DIRECTORY / 'ssl' / key)}' --resolve 'foo.com:{self._ats.https_port}:127.0.0.1' "
+                f"'https://foo.com:{self._ats.https_port}/case1'"),
         )
         assert result.returncode == expected_code, result.output
         return result.output

@@ -119,13 +119,9 @@ class NumberOfRedirectsScenario:
         self._ats.start()
         result = self._curl.run_for(
             self._ats,
-            "--location",
-            "--verbose",
-            "--proxy",
-            f"127.0.0.1:{self._ats.http_port}",
-            "--header",
-            "uuid: redirect_test_1",
-            "http://a.test/ping",
+            (
+                f"--location --verbose --proxy '127.0.0.1:{self._ats.http_port}' --header 'uuid: redirect_test_1' "
+                f"http://a.test/ping"),
         )
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.stderr

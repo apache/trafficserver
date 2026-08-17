@@ -16,6 +16,7 @@
 """Verify regex_remap matching and compiled-rule generation sharing."""
 
 import json
+import shlex
 import os
 from pathlib import Path
 import time
@@ -123,7 +124,10 @@ class RegexRemapScenario:
         if uuid is not None:
             arguments.extend(("--header", f"uuid: {uuid}"))
         arguments.append(url)
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         return result.stdout
 

@@ -87,7 +87,7 @@ class EsiRequestSizeCapScenario:
                 "Host": "www.example.com",
                 "Accept": "*/*"
             },
-            options=("--output", "/dev/null", "--silent"),
+            options=f"--output /dev/null --silent",
         )
         self.verify_client(result)
         wait_for_file_lines(self._ats.diags_log, r"HTTP request size exceeds maximum 32768", 1)

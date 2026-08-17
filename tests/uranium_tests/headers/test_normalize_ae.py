@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
 
@@ -84,10 +85,16 @@ class NormalizeAcceptEncodingScenario:
         """Send the complete Accept-Encoding input matrix for one host."""
 
         base = ("--verbose", "--http1.1", "--proxy", f"localhost:{ats.http_port}")
-        first = self._curl.run_for(ats, *base, "--header", f"X-Au-Test: {host}", f"http://{host}")
+        first = self._curl.run_for(
+            ats,
+            f"{shlex.join(base)} --header 'X-Au-Test: {host}' 'http://{host}'",
+        )
         assert first.returncode == 0, first.output
         for value in ACCEPT_ENCODINGS:
-            result = self._curl.run_for(ats, *base, "--header", f"Accept-Encoding: {value}", f"http://{host}")
+            result = self._curl.run_for(
+                ats,
+                f"{shlex.join(base)} --header 'Accept-Encoding: {value}' 'http://{host}'",
+            )
             assert result.returncode == 0, result.output
 
     def run(self) -> None:

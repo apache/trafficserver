@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import gzip
 import shutil
 import subprocess
@@ -123,7 +124,10 @@ class CompressScenario:
         if post:
             arguments.extend(("--data", "knock knock"))
         arguments.append(f"http://ae-{index}/obj{index}")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         return result, output
 

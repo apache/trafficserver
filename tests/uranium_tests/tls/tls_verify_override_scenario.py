@@ -159,17 +159,15 @@ class TlsVerifyOverrideScenario:
         if inbound_tls:
             return self._curl.run_for(
                 self._ats,
-                "--insecure",
-                "--verbose",
-                "--resolve",
-                f"{host}:{self._ats.https_port}:127.0.0.1",
-                f"https://{host}:{self._ats.https_port}/{path}",
+                (
+                    f"--insecure --verbose --resolve '{host}:{self._ats.https_port}:127.0.0.1' "
+                    f"'https://{host}:{self._ats.https_port}/{path}'"),
             )
         return self._curl.get(
             self._ats,
             path,
             headers={"Host": host},
-            options=("--insecure", "--verbose"),
+            options=f"--insecure --verbose",
         )
 
     @staticmethod

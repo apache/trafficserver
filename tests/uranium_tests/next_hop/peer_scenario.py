@@ -180,10 +180,7 @@ class PeerStrategyScenario:
         peer = self._peers[peer_index]
         result = self._curl.run_for(
             peer,
-            "--verbose",
-            "--proxy",
-            f"127.0.0.1:{peer.http_port}",
-            self.request_url(object_index),
+            f"--verbose --proxy '127.0.0.1:{peer.http_port}' '{self.request_url(object_index)}'",
         )
         assert result.returncode == 0, result.output
         assert result.stdout == "This is the body.\n"
