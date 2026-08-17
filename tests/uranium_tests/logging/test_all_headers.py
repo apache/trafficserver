@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import time
@@ -89,7 +90,10 @@ class AllHeadersLogScenario:
         for number in range(3):
             arguments.extend(("--header", f"x-header{number}: {value}"))
         arguments.append(f"http://127.0.0.1:{self._ats.http_port}")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
 
     def sanitize_log(self) -> str:

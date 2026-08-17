@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
 
@@ -84,7 +85,10 @@ class TsapiScenario:
     def require_request(self, *arguments: str) -> None:
         """Run a curl request and require an origin success response."""
 
-        result = self._curl.run_for(self._ats, "--verbose", *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            f"--verbose {shlex.join(arguments)}",
+        )
         assert result.returncode == 0, result.output
         assert "200 OK" in result.stderr or "HTTP/2 200" in result.stderr
 

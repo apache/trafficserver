@@ -55,7 +55,7 @@ sessions:
 
 urtest:
   description: Verify txn_box transaction debug controls
-  skip: Traffic Server does not yet finish these scenarios gracefully.
+  manual: Traffic Server does not yet finish these scenarios gracefully.
   server: {name: txn-box-txn-debug-origin}
   client: {name: txn-box-txn-debug-client}
   ats: {name: txn-box-txn-debug-ts}

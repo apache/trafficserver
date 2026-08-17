@@ -16,6 +16,7 @@
 """Verify cache_range_requests identity headers control freshness."""
 
 import time
+import shlex
 
 import pytest
 
@@ -117,7 +118,10 @@ class CacheRangeIdentScenario:
             header = "CrrIdent" if host == "identheader" else "X-Crr-Ident"
             arguments.extend(("--header", f"{header}: {ident}"))
         arguments.append(f"http://{host}/{path}")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         assert f"X-Cache: {expected_cache}" in result.stdout, result.output
 

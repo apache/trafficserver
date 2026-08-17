@@ -85,7 +85,7 @@ class BasicConfRemapScenario:
 
         ats = self.configure_ats(name, filename, content)
         ats.start()
-        result = self._curl.get(ats, "/test", headers={"Host": "www.testexample.com"}, options=("--verbose",))
+        result = self._curl.get(ats, "/test", headers={"Host": "www.testexample.com"}, options=f"--verbose")
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.stderr, result.output
         if warning:

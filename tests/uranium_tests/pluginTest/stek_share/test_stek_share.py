@@ -150,12 +150,8 @@ class StekShareScenario:
         ats = self._ats_nodes[0]
         result = self._curl.run_for(
             ats,
-            "--insecure",
-            "--silent",
-            "--show-error",
-            "--header",
-            "Host: www.example.com",
-            f"https://127.0.0.1:{ats.https_port}/",
+            (f"--insecure --silent --show-error --header 'Host: www.example.com' "
+             f"'https://127.0.0.1:{ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         assert "curl test" in result.stdout

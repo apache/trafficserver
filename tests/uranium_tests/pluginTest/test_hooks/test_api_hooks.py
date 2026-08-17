@@ -88,7 +88,7 @@ class ApiHooksScenario:
     def request_cleartext(self) -> None:
         """Exercise the ordinary HTTP session and transaction hooks."""
 
-        result = self._curl.get(self._ats, "/argh", headers={"Host": "one"}, options=("--verbose",))
+        result = self._curl.get(self._ats, "/argh", headers={"Host": "one"}, options=f"--verbose")
         self.verify_response(result)
 
     def request_tls(self) -> None:
@@ -100,14 +100,9 @@ class ApiHooksScenario:
             pytest.skip("curl with HTTP/2 support is required")
         for version in ("--http2", "--http1.1"):
             result = self._curl.run(
-                "--verbose",
-                "--ipv4",
-                version,
-                "--insecure",
-                "--header",
-                "Host: one",
-                f"https://127.0.0.1:{self._ats.https_port}/argh",
-            )
+                (
+                    f"--verbose --ipv4 '{version}' --insecure --header 'Host: one' "
+                    f"'https://127.0.0.1:{self._ats.https_port}/argh'"),)
             self.verify_response(result)
 
     def verify_hooks(self) -> None:

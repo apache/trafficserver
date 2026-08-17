@@ -16,6 +16,7 @@
 """Verify the Proxy Protocol allowlist distinguishes prefaced traffic."""
 
 from pathlib import Path
+import shlex
 
 from tools.uranium.services import ATS, ATSFactory, Curl, ServiceFactory, VerifierServer
 
@@ -64,7 +65,11 @@ class ProxyProtocolAllowlistScenario:
         if uuid is not None:
             arguments.extend(("--header", f"uuid: {uuid}"))
         arguments.append(f"{'https' if tls else 'http'}://127.0.0.1:{port}/get")
-        return self._curl.run_for(self._ats, *arguments, timeout=10).returncode
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+            timeout=10,
+        ).returncode
 
     def run(self) -> None:
         """Accept ordinary connections and reject prefaced loopback connections."""

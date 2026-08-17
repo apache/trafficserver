@@ -16,6 +16,7 @@
 """Verify cache_range_requests keys, statuses, and long-key spill handling."""
 
 import re
+import shlex
 
 import pytest
 
@@ -131,7 +132,10 @@ class CacheRangeRequestsScenario:
         if uuid is not None:
             arguments.extend(("--header", f"uuid: {uuid}"))
         arguments.append(f"http://{host}{path}")
-        return self._curl.run_for(self._ats, *arguments)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
 
     @staticmethod
     def assert_range(result: CommandResult, *, cache: str, content_range: str, body: str) -> None:

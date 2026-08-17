@@ -81,12 +81,9 @@ class S3UrlEncodingScenario:
         for path, body in self._cases:
             result = self._curl.run_for(
                 self._ats,
-                "--silent",
-                "--verbose",
-                "--path-as-is",
-                "--header",
-                "Host: s3.amazonaws.com",
-                f"http://127.0.0.1:{self._ats.http_port}{path}",
+                (
+                    f"--silent --verbose --path-as-is --header 'Host: s3.amazonaws.com' "
+                    f"'http://127.0.0.1:{self._ats.http_port}{path}'"),
             )
             assert result.returncode == 0, result.output
             assert "200 OK" in result.stderr

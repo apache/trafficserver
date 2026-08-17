@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
 
@@ -78,7 +79,10 @@ class TransactionTypeScenario:
     def request(self, *arguments: str) -> None:
         """Run a curl request and require a successful exchange."""
 
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
 
     def send_traffic(self) -> None:

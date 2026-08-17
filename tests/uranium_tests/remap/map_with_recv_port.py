@@ -96,7 +96,7 @@ class MapWithRecvPortScenario:
         self._origin.start()
         self._dns.start()
         self._ats.start()
-        result = self._curl.get(self._ats, headers={"Host": "test.example.com"}, options=("--verbose",))
+        result = self._curl.get(self._ats, headers={"Host": "test.example.com"}, options=f"--verbose")
         assert result.returncode == 0, result.output
         expected = "unix" if self._curl.uses_uds else "ip"
         assert result.stdout == expected, result.output

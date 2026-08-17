@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from dataclasses import dataclass
+import shlex
 from pathlib import Path
 import os
 import re
@@ -101,13 +102,9 @@ class EarlyHintsScenario:
         port = ats.https_port if case.scheme == "https" else ats.http_port
         result = self._curl.run_for(
             ats,
-            "--verbose",
-            *case.curl_arguments,
-            "--resolve",
-            f"server.com:{port}:127.0.0.1",
-            "--header",
-            "Host: server.com",
-            f"{case.scheme}://server.com:{port}/{case.name}",
+            (
+                f"--verbose {shlex.join(case.curl_arguments)} --resolve 'server.com:{port}:127.0.0.1' --header "
+                f"'Host: server.com' '{case.scheme}://server.com:{port}/{case.name}'"),
         )
         assert result.returncode == 0, result.output
         assert re.search(r"HTTP/.* 103.*HTTP/.* 103", result.output, re.DOTALL)

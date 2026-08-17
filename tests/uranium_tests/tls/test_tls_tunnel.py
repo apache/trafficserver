@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import re
 import sys
 
@@ -172,7 +173,11 @@ class TlsTunnelScenario:
             arguments.extend(("--resolve", f"{host}:{self._ats.https_port}:127.0.0.1"))
         url_host = "127.0.0.1" if use_address else host
         arguments.append(f"https://{url_host}:{self._ats.https_port}")
-        result = self._curl.run_for(self._ats, *arguments, timeout=10)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+            timeout=10,
+        )
         assert result.returncode == expected, result.output
         return result.output
 

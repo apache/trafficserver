@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import re
 
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ProcessService, ServiceFactory, VerifierServer
@@ -62,7 +63,11 @@ class UnsupportedTransferEncodingScenario:
         for value in transfer_headers:
             arguments.extend(("--header", f"transfer-encoding: {value}"))
         arguments.extend(("--data", "stuff", f"http://127.0.0.1:{self._ats.http_port}/case1", "--verbose"))
-        result = self._curl.run_for(self._ats, *arguments, timeout=10)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+            timeout=10,
+        )
         assert result.returncode == 0, result.output
         return result.output
 
