@@ -90,16 +90,9 @@ class PostEarlyReturnScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--output",
-            "/dev/null",
-            f"--{protocol}",
-            "--header",
-            "Expect:",
-            "--data",
-            body,
-            "--insecure",
-            f"https://127.0.0.1:{self._ats.https_port}/{path}",
+            (
+                f"--verbose --output /dev/null '--{protocol}' --header Expect: --data '{body}' --insecure "
+                f"'https://127.0.0.1:{self._ats.https_port}/{path}'"),
             timeout=30,
         )
         assert result.returncode == 0, result.output

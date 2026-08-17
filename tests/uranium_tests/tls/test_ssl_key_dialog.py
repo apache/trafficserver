@@ -83,12 +83,9 @@ class SslKeyDialogScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--cacert",
-            str(TEST_DIRECTORY / "ssl" / "signer.pem"),
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            f"https://{hostname}:{self._ats.https_port}/",
+            (
+                f"--verbose --cacert '{str(TEST_DIRECTORY / 'ssl' / 'signer.pem')}' --resolve "
+                f"'{hostname}:{self._ats.https_port}:127.0.0.1' 'https://{hostname}:{self._ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         assert "200" in result.stderr

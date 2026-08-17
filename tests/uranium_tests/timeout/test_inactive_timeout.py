@@ -69,15 +69,12 @@ class InactivityTimeoutScenario:
 
         self._origin.start()
         self._ats.start()
-        self.verify_timeout(self._curl.get(self._ats, "/file", options=("--include",), timeout=20))
+        self.verify_timeout(self._curl.get(self._ats, "/file", options=f"--include", timeout=20))
         if self._curl.uses_uds:
             return
         for protocol in ("--http1.1", "--http2"):
             result = self._curl.run(
-                "--insecure",
-                "--include",
-                protocol,
-                f"https://127.0.0.1:{self._ats.https_port}/file",
+                f"--insecure --include '{protocol}' 'https://127.0.0.1:{self._ats.https_port}/file'",
                 timeout=20,
             )
             self.verify_timeout(result)

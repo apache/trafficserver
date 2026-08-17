@@ -89,7 +89,7 @@ class SlowOriginProbeScenario:
                 "Host": "example.com",
                 "X-Debug": "probe-full-json=nobody"
             },
-            options=("--silent", "--output", "/dev/null", "--write-out", "%{http_code}", "--max-time", "8"),
+            options=f"--silent --output /dev/null --write-out '%{{http_code}}' --max-time 8",
             timeout=10,
         )
         assert result.returncode == 0, result.output

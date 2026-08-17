@@ -100,14 +100,9 @@ class ChunkedEncodingH2Scenario:
         for path, expects_content_length in (("post-full", True), ("post-chunked", False)):
             result = self._curl.run_for(
                 self._ats,
-                "--http2",
-                "--insecure",
-                "--verbose",
-                "--header",
-                "Transfer-encoding: chunked",
-                "--data",
-                "Knock knock",
-                f"https://127.0.0.1:{self._ats.https_port}/{path}",
+                (
+                    f"--http2 --insecure --verbose --header 'Transfer-encoding: chunked' --data 'Knock knock' "
+                    f"'https://127.0.0.1:{self._ats.https_port}/{path}'"),
             )
             assert result.returncode == 0, result.output
             assert "HTTP/2 200" in result.output

@@ -113,6 +113,9 @@ class ReplaySpec:
         for process in ("server", "client", "ats"):
             if not isinstance(urtest[process], dict):
                 raise ReplayConfigError(f"{path}: 'urtest.{process}' must be a mapping")
+        manual = urtest.get("manual", False)
+        if not isinstance(manual, (bool, str)):
+            raise ReplayConfigError(f"{path}: 'urtest.manual' must be a boolean or reason string")
         environment = urtest["ats"].get("environment", {})
         if not isinstance(environment, dict):
             raise ReplayConfigError(f"{path}: 'urtest.ats.environment' must be a mapping")

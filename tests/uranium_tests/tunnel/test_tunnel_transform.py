@@ -119,15 +119,9 @@ class TunnelTransformScenario:
         self._proxy.start()
         result = self._curl.run_for(
             self._ats,
-            "--insecure",
-            "--http1.1",
-            "--header",
-            "Connection: close",
-            "--verbose",
-            "--silent",
-            "--resolve",
-            f"tunnel-test:{self._proxy_port}:127.0.0.1",
-            f"https://tunnel-test:{self._proxy_port}/",
+            (
+                f"--insecure --http1.1 --header 'Connection: close' --verbose --silent --resolve "
+                f"'tunnel-test:{self._proxy_port}:127.0.0.1' 'https://tunnel-test:{self._proxy_port}/'"),
         )
         assert result.returncode == 0, result.output
         proxy_result = self._proxy.wait(timeout=10)

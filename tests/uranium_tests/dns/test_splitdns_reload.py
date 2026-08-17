@@ -60,7 +60,7 @@ class SplitDNSReloadScenario:
     def verify_startup_configuration(self) -> None:
         """Verify split DNS routes a request before reload."""
 
-        result = self._curl.get(self._ats, "/foo/", options=("--verbose",))
+        result = self._curl.get(self._ats, "/foo/", options=f"--verbose")
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.output
 

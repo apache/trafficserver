@@ -78,16 +78,10 @@ class RateLimitIpReputationScenario:
         """Open a fresh TLS connection with the selector's SNI."""
 
         return self._curl.run(
-            "--silent",
-            "--insecure",
-            "--output",
-            "/dev/null",
-            "--write-out",
-            "%{http_code}",
-            "--resolve",
-            f"iprep.example.com:{self._ats.https_port}:127.0.0.1",
-            f"https://iprep.example.com:{self._ats.https_port}/test",
-        )
+            (
+                f"--silent --insecure --output /dev/null --write-out '%{{http_code}}' --resolve "
+                f"'iprep.example.com:{self._ats.https_port}:127.0.0.1' "
+                f"'https://iprep.example.com:{self._ats.https_port}/test'"),)
 
     def run(self) -> None:
         """Start the topology and increment the buckets several times."""

@@ -16,6 +16,7 @@
 """Verify Forwarded header configuration for HTTP versions and transports."""
 
 import time
+import shlex
 
 import pytest
 
@@ -102,7 +103,10 @@ class ForwardedScenario:
     def curl(self, ats: ATS, *arguments: str) -> None:
         """Run one curl request and require successful transport."""
 
-        result = self._curl.run_for(ats, "--silent", "--show-error", "--verbose", *arguments)
+        result = self._curl.run_for(
+            ats,
+            f"--silent --show-error --verbose {shlex.join(arguments)}",
+        )
         assert result.returncode == 0, result.output
 
     def run_remap_requests(self) -> None:

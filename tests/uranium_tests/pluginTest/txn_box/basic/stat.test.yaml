@@ -103,7 +103,7 @@ sessions:
 
 urtest:
   description: Verify txn_box plugin statistics
-  skip: This test needs to be revisited.
+  manual: This test needs to be revisited.
   server: {name: txn-box-stat-origin}
   client: {name: txn-box-stat-client}
   ats: {name: txn-box-stat-ts}

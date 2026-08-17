@@ -67,7 +67,7 @@ class CrashLogScenario:
         response = self._curl.get(
             self._ats,
             headers={"Host": "example.com"},
-            options=("--silent", "--output", "/dev/null", "--write-out", "%{http_code}"),
+            options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
         )
         assert response.returncode == 0, response.output
         assert response.stdout == "200"
@@ -81,7 +81,7 @@ class CrashLogScenario:
                 "Host": "example.com",
                 "X-Crash-Test": "now"
             },
-            options=("--silent", "--output", "/dev/null"),
+            options=f"--silent --output /dev/null",
         )
         assert response.returncode in (52, 56), response.output
         self._ats.wait()

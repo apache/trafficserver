@@ -84,13 +84,7 @@ class CurlConnectScenario:
         self._ats.start()
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--fail",
-            "--silent",
-            "--proxytunnel",
-            "--proxy",
-            f"127.0.0.1:{self._ats.http_port}",
-            "http://foo.com/get",
+            f"--verbose --fail --silent --proxytunnel --proxy '127.0.0.1:{self._ats.http_port}' http://foo.com/get",
             timeout=10,
         )
         assert result.returncode == 0, result.output

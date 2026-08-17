@@ -101,7 +101,7 @@ sessions:
 
 urtest:
   description: Verify txn_box transaction error hooks
-  skip: Traffic Server does not yet finish these scenarios gracefully.
+  manual: Traffic Server does not yet finish these scenarios gracefully.
   server: {name: txn-box-txn-error-origin}
   client: {name: txn-box-txn-error-client}
   ats: {name: txn-box-txn-error-ts}

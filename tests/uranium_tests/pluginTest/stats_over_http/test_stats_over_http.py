@@ -50,7 +50,7 @@ class StatsOverHttpScenario:
         """Fetch one stats representation and return its response body."""
 
         headers = {"Accept": accept} if accept is not None else None
-        result = self._curl.get(self._ats, path, headers=headers, options=("--silent", "--show-error", "--http1.1"))
+        result = self._curl.get(self._ats, path, headers=headers, options=f"--silent --show-error --http1.1")
         assert result.returncode == 0, result.output
         return result.stdout
 

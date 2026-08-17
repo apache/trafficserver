@@ -83,23 +83,19 @@ class TlsClientVersionRangeScenario:
         return ats
 
     def request(self, hostname: str, version: str, expected_code: int | None) -> int:
-        """Offer exactly @a version and return curl's status."""
+        """Offer exactly one TLS version and return curl's status.
 
+        :param hostname: SNI hostname and request authority.
+        :param version: Maximum TLS version to offer.
+        :param expected_code: Expected curl exit status, or ``None`` to accept
+            any status.
+        """
+
+        protocol_option = {"1.0": "--tlsv1", "1.1": "--tlsv1.1", "1.2": "--tlsv1.2"}[version]
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--ciphers",
-            "DEFAULT@SECLEVEL=0",
-            "--tls-max",
-            version,
-            {
-                "1.0": "--tlsv1",
-                "1.1": "--tlsv1.1",
-                "1.2": "--tlsv1.2"
-            }[version],
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            "--insecure",
+            f"--verbose --ciphers DEFAULT@SECLEVEL=0 --tls-max {version} {protocol_option} "
+            f"--resolve {hostname}:{self._ats.https_port}:127.0.0.1 --insecure "
             f"https://{hostname}:{self._ats.https_port}",
         )
         if expected_code is not None:

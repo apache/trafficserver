@@ -69,21 +69,10 @@ class CompressCacheUntransformedScenario:
         self._ats.start()
         result = self._curl.run_for(
             self._ats,
-            "--http1.1",
-            "--silent",
-            "--output",
-            "/dev/null",
-            "--request",
-            "POST",
-            "--header",
-            "Accept-Encoding: gzip",
-            "--header",
-            "Expect: 100-continue",
-            "--expect100-timeout",
-            "0",
-            "--data",
-            "test body data",
-            f"http://127.0.0.1:{self._ats.http_port}/test/resource.js",
+            (
+                f"--http1.1 --silent --output /dev/null --request POST --header 'Accept-Encoding: gzip' --header "
+                f"'Expect: 100-continue' --expect100-timeout 0 --data 'test body data' "
+                f"'http://127.0.0.1:{self._ats.http_port}/test/resource.js'"),
         )
         assert result.returncode == 0, result.output
         assert self._ats.is_running

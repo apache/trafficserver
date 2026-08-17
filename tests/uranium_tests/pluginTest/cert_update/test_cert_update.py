@@ -95,11 +95,9 @@ class CertUpdateScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--insecure",
-            "--resolve",
-            f"bar.com:{self._ats.https_port}:127.0.0.1",
-            f"https://bar.com:{self._ats.https_port}/",
+            (
+                f"--verbose --insecure --resolve 'bar.com:{self._ats.https_port}:127.0.0.1' "
+                f"'https://bar.com:{self._ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         return result.stderr
@@ -143,11 +141,7 @@ class CertUpdateScenario:
         server.start()
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--insecure",
-            "--header",
-            "Host: foo.com",
-            f"https://localhost:{self._ats.https_port}/",
+            f"--verbose --insecure --header 'Host: foo.com' 'https://localhost:{self._ats.https_port}/'",
         )
         assert result.returncode == 0, result.output
         server.stop()

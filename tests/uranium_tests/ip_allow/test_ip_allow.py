@@ -16,6 +16,7 @@
 """Verify curl-specific ip_allow method filtering and access logging."""
 
 import re
+import shlex
 
 import pytest
 
@@ -101,7 +102,10 @@ class IpAllowCurlScenario:
     def request(self, *arguments: str, status: str) -> None:
         """Run curl and verify the returned HTTP status."""
 
-        result = self._curl.run_for(self._ats, "--verbose", *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            f"--verbose {shlex.join(arguments)}",
+        )
         assert result.returncode == 0, result.output
         assert status in result.stderr, result.output
 

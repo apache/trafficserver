@@ -72,7 +72,7 @@ class MetricResponse000Scenario:
     def send_control_request(self) -> None:
         """Verify an ordinary completed transaction still succeeds."""
 
-        result = self._curl.get(self._ats, options=("-s", "-o", "/dev/null", "-w", "%{http_code}"))
+        result = self._curl.get(self._ats, options=f"-s -o /dev/null -w '%{{http_code}}'")
         assert result.returncode == 0, result.output
         assert result.stdout == "200"
 

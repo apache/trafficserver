@@ -11,7 +11,7 @@ with a sophisticated plugin system.
 **Key Technologies:**
 - Language: C++20
 - Build System: CMake (migrated from autotools in v10)
-- Testing: Catch2 (unit tests) + pytest (Uranium tests, with an AuTest compatibility backend)
+- Testing: Catch2 unit tests plus pytest Uranium replay and native scenario tests
 - Protocols: TLS, HTTP/1.1, HTTP/2, HTTP/3 (via Quiche)
 
 ## Project Structure
@@ -97,19 +97,19 @@ cmake --build build -t urtest
 **Run specific test(s):**
 ```bash
 cd build/tests
-./urtest.sh -f <test_name_without_extension>
+./urtest.sh -q -k <pytest_expression>
 ```
 
-For example, to run `cache-auth.test.py`:
+For example, to run items whose names contain `header_rewrite`:
 ```bash
-./urtest.sh -f cache-auth
+./urtest.sh -q -k header_rewrite
 ```
 
-To run multiple tests efficiently, pass the -j option.
+Use pytest-xdist's `-n` option to run selected tests in parallel.
 
 ```bash
 cd build/tests
-./urtest.sh -j4 -f 'header_rewrite*'
+./urtest.sh -q -n 4 -k "header_rewrite or cache_control"
 ```
 
 Most Uranium test coverage is in `tests/uranium_tests/`. The CI system uses the
@@ -128,17 +128,25 @@ DNS, server, client, and ATS setup, and pytest collects it without a companion
 If a direct replay test is not a good fit (say, the test needs a custom client), then
 organize the test around a test class with member functions that configure any
 servers, the ATS process, and the client. See
-`tests/uranium_tests/ats_probe/ats_probe.test.py` for an example of a test organized
-around a test class.
+`tests/uranium_tests/cache/test_host_down_range_recursion.py` for an example of a
+test organized around a scenario class and an explicit `run()` entry point.
 
-In compatibility tests, launch Python helpers with `{sys.executable}` rather than a
-hardcoded `python3`, so the test runs under the same interpreter the harness
-uses.
+In native tests, launch Python helpers with `sys.executable` rather than a
+hardcoded `python3`, so the helper uses the same interpreter as pytest.
+
+Tests that are useful only when explicitly requested, such as privileged, very
+slow, or known-flaky diagnostic scenarios, use `@pytest.mark.manual`. Direct
+replay tests set `urtest.manual` to `true` or a reason string. They are skipped
+during normal runs. Enable them explicitly with `--run-manual` and normally
+select the intended test with `-k`:
+
+```bash
+./urtest.sh --run-manual -k ats_probe
+```
 
 **For complete details on writing Uranium tests, see:**
 - `doc/developer-guide/testing/uranium-tests.en.rst` - Comprehensive Uranium test guide
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
-- AuTest framework: https://autestsuite.bitbucket.io/
 
 ## Development Workflow
 
@@ -374,6 +382,9 @@ MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
 - Python 3.11+ with proper type annotations
 - 4-space indentation, never TABs
 - Type annotations on all function signatures
+- Document every parameter in a function docstring with `:param <name>:`.
+  Include units and other constraints that are not evident from the type, such
+  as documenting timeout values in seconds.
 - Prefer f-strings over `str.format()` when building command lines, config lines,
   and `Testers` expressions.
 
@@ -412,5 +423,4 @@ scope, and vulnerability reporting process.
 - Official docs: https://trafficserver.apache.org/
 - Developer wiki: https://cwiki.apache.org/confluence/display/TS/
 - CI dashboard: https://ci.trafficserver.apache.org/
-- AuTest framework: https://autestsuite.bitbucket.io/
 - Proxy Verifier: https://github.com/yahoo/proxy-verifier

@@ -16,6 +16,7 @@
 """Unit tests for replay metadata parsing."""
 
 from pathlib import Path
+import ast
 
 import pytest
 import yaml
@@ -46,6 +47,42 @@ def test_all_bespoke_tests_are_available_to_pytest() -> None:
 
     uranium_tests = Path(__file__).parents[3] / "uranium_tests"
     assert len(list(uranium_tests.rglob("test_*.py"))) == 303
+
+
+def test_curl_call_sites_use_shell_style_strings() -> None:
+    """Keep native curl calls on the readable string-based API."""
+
+    uranium_tests = Path(__file__).parents[3] / "uranium_tests"
+    violations = []
+    for path in uranium_tests.rglob("*.py"):
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Attribute):
+                continue
+            if not _is_curl_receiver(node.func.value):
+                continue
+            if node.func.attr == "run_for" and len(node.args) != 2:
+                violations.append(f"{path}:{node.lineno}: run_for expects ATS and one argument string")
+            if node.func.attr == "run" and len(node.args) != 1:
+                violations.append(f"{path}:{node.lineno}: run expects one argument string")
+            if node.func.attr == "get":
+                options = next((keyword.value for keyword in node.keywords if keyword.arg == "options"), None)
+                if isinstance(options, (ast.List, ast.Tuple)):
+                    violations.append(f"{path}:{node.lineno}: get options must be a string")
+    assert violations == []
+
+
+def _is_curl_receiver(node: ast.expr) -> bool:
+    """Return whether an attribute chain identifies a Curl fixture.
+
+    :param node: Expression to inspect for a ``curl`` or ``_curl`` component.
+    """
+
+    while isinstance(node, ast.Attribute):
+        if node.attr in {"curl", "_curl"}:
+            return True
+        node = node.value
+    return isinstance(node, ast.Name) and node.id in {"curl", "_curl"}
 
 
 def test_replay_requires_urtest_metadata(tmp_path: Path) -> None:
@@ -93,6 +130,29 @@ def test_replay_requires_ats_environment_mapping(tmp_path: Path) -> None:
                 "sessions": [],
             }))
     with pytest.raises(ReplayConfigError, match="ats.environment"):
+        ReplaySpec.load(path)
+
+
+def test_replay_manual_metadata_requires_boolean_or_reason(tmp_path: Path) -> None:
+    """Reject manual metadata that cannot become a pytest marker.
+
+    :param tmp_path: Temporary directory in which to write the replay.
+    """
+
+    path = tmp_path / "manual.test.yaml"
+    path.write_text(
+        yaml.safe_dump(
+            {
+                "urtest": {
+                    "description": "Invalid manual metadata",
+                    "manual": ["slow"],
+                    "server": {},
+                    "client": {},
+                    "ats": {},
+                },
+                "sessions": [],
+            }))
+    with pytest.raises(ReplayConfigError, match="urtest.manual"):
         ReplaySpec.load(path)
 
 

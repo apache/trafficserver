@@ -81,14 +81,9 @@ class AsyncHandshakeScenario:
         self._origin.start()
         self._ats.start()
         result = self._curl.run(
-            "--insecure",
-            "--verbose",
-            "--header",
-            "uuid: basic",
-            "--header",
-            "Host: example.com",
-            f"https://127.0.0.1:{self._ats.https_port}/",
-        )
+            (
+                f"--insecure --verbose --header 'uuid: basic' --header 'Host: example.com' "
+                f"'https://127.0.0.1:{self._ats.https_port}/'"),)
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200" in result.output or "HTTP/2 200" in result.output
         wait_for_file_lines(self._ats.traffic_out, "resumed OpenSSL async job", 1)
