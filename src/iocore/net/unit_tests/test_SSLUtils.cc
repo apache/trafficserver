@@ -85,11 +85,29 @@ TEST_CASE("TLS signature algorithms containing only GREASE are empty")
   CHECK(SSLFormatSignatureAlgorithms(algorithms).empty());
 }
 
-TEST_CASE("TLS signature algorithms preserve an earlier non-empty capture")
+TEST_CASE("TLS signature algorithms retain non-GREASE reserved values")
+{
+  std::array<uint16_t, 1> const algorithms{0x1a2a};
+
+  CHECK(SSLFormatSignatureAlgorithms(algorithms) == "6698");
+}
+
+TEST_CASE("TLS signature algorithms preserve an earlier capture when a later capture is empty")
 {
   TestTLSBasicSupport support;
 
   support.capture_tls_offered_signature_algorithms("1027-2052");
+  support.capture_tls_offered_signature_algorithms();
+
+  CHECK(support.get_tls_offered_signature_algorithms() == "1027-2052");
+}
+
+TEST_CASE("TLS signature algorithms prefer a later non-empty capture")
+{
+  TestTLSBasicSupport support;
+
+  support.capture_tls_offered_signature_algorithms("1027");
+  support.offered_signature_algorithms = "1027-2052";
   support.capture_tls_offered_signature_algorithms();
 
   CHECK(support.get_tls_offered_signature_algorithms() == "1027-2052");

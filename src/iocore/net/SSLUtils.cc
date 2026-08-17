@@ -2554,7 +2554,7 @@ namespace
 bool
 is_grease_signature_algorithm(uint16_t algorithm)
 {
-  return (algorithm & 0x0f0f) == 0x0a0a;
+  return (algorithm & 0x0f0f) == 0x0a0a && (algorithm >> 12) == ((algorithm >> 4) & 0x0f);
 }
 
 #if HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
