@@ -48,7 +48,7 @@ class OriginOpenFailureScenario:
         result = self._curl.get(
             self._ats,
             headers={"Host": "dead.test"},
-            options=("--silent", "--output", "/dev/null", "--write-out", "%{http_code}"),
+            options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
         )
         assert result.returncode == 0, result.output
         assert re.fullmatch(r"50[02]", result.stdout)

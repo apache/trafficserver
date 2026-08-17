@@ -70,12 +70,9 @@ class TLSHookScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--insecure",
-            "--header",
-            f"host:example.com:{self._ats.https_port}",
-            "--header",
-            "uuid: tls-hook",
-            f"https://127.0.0.1:{self._ats.https_port}/",
+            (
+                f"--insecure --header 'host:example.com:{self._ats.https_port}' --header 'uuid: tls-hook' "
+                f"'https://127.0.0.1:{self._ats.https_port}/'"),
             timeout=15,
         )
         assert result.returncode == 0, result.output
@@ -183,12 +180,9 @@ class ParkedTLSCloseScenario(TLSHookScenario):
 
         result = self._curl.run_for(
             self._ats,
-            "--insecure",
-            "--max-time",
-            "1",
-            "--header",
-            f"host:example.com:{self._ats.https_port}",
-            f"https://127.0.0.1:{self._ats.https_port}/",
+            (
+                f"--insecure --max-time 1 --header 'host:example.com:{self._ats.https_port}' "
+                f"'https://127.0.0.1:{self._ats.https_port}/'"),
             timeout=15,
         )
         assert result.returncode == 28, result.output

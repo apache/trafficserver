@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import time
 
 import pytest
@@ -116,7 +117,11 @@ class ChunkedEncodingScenario:
     def curl_request(self, *arguments: str, gold: str) -> None:
         """Run curl and compare its protocol diagnostics with a gold file."""
 
-        result = self._curl.run_for(self._ats, *arguments, timeout=10)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+            timeout=10,
+        )
         assert result.returncode == 0, result.output
         assert_matches_gold(result.stderr, TEST_DIRECTORY / "gold" / gold)
 

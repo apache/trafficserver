@@ -61,7 +61,7 @@ class SplitDNSScenario:
     def request(self, path: str) -> None:
         """Verify one remap path reaches the origin."""
 
-        result = self._curl.get(self._ats, path, options=("--verbose",))
+        result = self._curl.get(self._ats, path, options=f"--verbose")
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.output
         assert "Server: ATS/" in result.output

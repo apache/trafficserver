@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import time
+import shlex
 
 import pytest
 
@@ -106,7 +107,10 @@ class CacheFillScenario:
         if byte_range:
             arguments.extend(("--range", "0-4"))
         arguments.append(f"http://www.example.com/{path}")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         return result
 

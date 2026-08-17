@@ -109,19 +109,11 @@ class H3CurlScenario:
         body = self._ats.run_directory.parent / "h3_curl_body.txt"
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--show-error",
-            "--fail",
-            "--ipv4",
-            "--http3-only",
-            "--insecure",
-            "--resolve",
-            f"foo.com:{self._ats.https_port}:127.0.0.1",
-            "--output",
-            str(body),
-            "--write-out",
-            "\nhttp_version=%{http_version}\nsize_download=%{size_download}\n",
-            f"https://foo.com:{self._ats.https_port}/h3-curl",
+            (
+                f"--silent --show-error --fail --ipv4 --http3-only --insecure --resolve "
+                f"'foo.com:{self._ats.https_port}:127.0.0.1' --output '{str(body)}' --write-out "
+                f"'\nhttp_version=%{{http_version}}\nsize_download=%{{size_download}}\n' "
+                f"'https://foo.com:{self._ats.https_port}/h3-curl'"),
             timeout=30,
         )
         assert result.returncode == 0, result.output

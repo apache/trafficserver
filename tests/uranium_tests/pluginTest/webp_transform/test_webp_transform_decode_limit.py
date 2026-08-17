@@ -92,16 +92,7 @@ class WebpDecodeLimitScenario:
             self._ats,
             "/overwide.webp",
             headers={"Accept": "image/jpeg"},
-            options=(
-                "--silent",
-                "--show-error",
-                "--dump-header",
-                "-",
-                "--output",
-                "/dev/null",
-                "--write-out",
-                "size_download=%{size_download}",
-            ),
+            options=f"--silent --show-error --dump-header - --output /dev/null --write-out 'size_download=%{{size_download}}'",
         )
         self.verify(result)
         wait_for_file_lines(self._ats.diags_log, r"ImageMagick.. error", 1)

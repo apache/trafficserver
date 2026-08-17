@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
 
@@ -72,7 +73,10 @@ class ViaHeaderScenario:
     def curl(self, *arguments: str) -> None:
         """Run one client protocol variant."""
 
-        result = self._curl.run_for(self._ats, "--verbose", *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            f"--verbose {shlex.join(arguments)}",
+        )
         assert result.returncode == 0, result.output
 
     def run_uds_requests(self) -> int:

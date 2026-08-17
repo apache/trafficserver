@@ -16,6 +16,7 @@
 """Verify slice and cache_range_requests identity coordination."""
 
 import time
+import shlex
 
 import pytest
 
@@ -135,7 +136,10 @@ class SliceCrrIdentScenario:
         for name, value in headers.items():
             arguments.extend(("--header", f"{name}: {value}"))
         arguments.append(f"http://{host}{path}")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         return result.stdout
 

@@ -86,19 +86,14 @@ class TSVConnProxyProtocolInfoScenario:
         self._ats.start()
         self.verify_request(
             self._curl.run(
-                "--haproxy-protocol",
-                "--haproxy-clientip",
-                "1.2.3.4",
-                f"http://127.0.0.1:{self._ats.proxy_protocol_port}/httpbin/get",
-            ))
+                (
+                    f"--haproxy-protocol --haproxy-clientip 1.2.3.4 "
+                    f"'http://127.0.0.1:{self._ats.proxy_protocol_port}/httpbin/get'"),))
         self.verify_request(
             self._curl.run(
-                "--haproxy-protocol",
-                "--haproxy-clientip",
-                "5.6.7.8",
-                "--insecure",
-                f"https://127.0.0.1:{self._ats.proxy_protocol_https_port}/httpbin/get",
-            ))
+                (
+                    f"--haproxy-protocol --haproxy-clientip 5.6.7.8 --insecure "
+                    f"'https://127.0.0.1:{self._ats.proxy_protocol_https_port}/httpbin/get'"),))
         log = wait_for_file_lines(self._plugin_log, r"PP Info Received", 2)
         assert log.startswith("Global: event=TS_EVENT_HTTP_SSN_START")
         assert re.search(r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", log)

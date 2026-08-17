@@ -92,11 +92,11 @@ Use ``urtest.sh`` directly for the shortest single-test workflow:
    cd build/tests
    ./urtest.sh -q -k <pytest_expression>
 
-For example, to run items whose names contain ``cache_auth``:
+For example, to run items whose names contain ``header_rewrite``:
 
 .. code-block:: bash
 
-   ./urtest.sh -q -k cache_auth
+   ./urtest.sh -q -k header_rewrite
 
 The ``-k`` expression works for both ``.test.yaml`` and ``test_*.py`` items.
 It is pytest's ordinary substring and boolean-expression selector.
@@ -106,11 +106,30 @@ an isolated sandbox and dynamically allocated listeners:
 
 .. code-block:: bash
 
-   ./urtest.sh -n 10 --sandbox /tmp/sbcursor -k "cache_auth or cache_control"
+   ./urtest.sh -n 10 --sandbox /tmp/sbcursor -k "header_rewrite or cache_control"
 
 Without ``-n``, tests run sequentially. Tests listed in
 ``tests/serial_tests.txt`` acquire an exclusive lock and never overlap other
 Uranium test items.
+
+Manual Tests
+============
+
+Mark privileged, unusually slow, or intentionally diagnostic native tests with
+``@pytest.mark.manual`` when they should remain available but must not execute
+as part of the normal suite. For a direct replay test, set ``urtest.manual`` to
+``true`` or a string explaining why it is manual. Pytest reports these tests as
+skipped by default. Pass ``--run-manual`` and select the intended item to run
+one explicitly:
+
+.. code-block:: bash
+
+   ./urtest.sh --run-manual -k ats_probe
+
+The test should retain its complete implementation and perform ordinary
+runtime capability checks after it is enabled. For example, a privileged test
+can still call ``pytest.skip`` when bpftrace or the required Linux capability
+is unavailable.
 
 Container Execution
 ===================
@@ -227,6 +246,24 @@ from Proxy Verifier traffic. Launch Python helpers with ``sys.executable`` so
 they use the same environment as pytest. Avoid fixed ports and global temporary
 paths; allocated listeners and the fixture run directory keep ``-n`` runs
 independent.
+
+``Curl.run()`` and ``Curl.run_for()`` take one shell-style argument string, and
+``Curl.get()`` accepts the same syntax in its ``options`` parameter. Quote
+values containing whitespace just as in a shell command. Uranium parses the
+string with ``shlex.split`` and executes curl directly; it does not invoke a
+shell. For example:
+
+.. code-block:: python
+
+   result = self._curl.run_for(
+       self._ats,
+       f"--verbose --header 'Host: example.com' http://127.0.0.1:{self._ats.http_port}/",
+       timeout=10,
+   )
+
+Document every function parameter with a ``:param name:`` field. State units
+for values such as timeouts rather than relying on the default value to imply
+them.
 
 Replay File Structure
 ----------------------

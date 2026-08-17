@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import json
 import shutil
 
@@ -83,12 +84,8 @@ class HttpbinH2Scenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--silent",
-            "--insecure",
-            "--http2",
-            *arguments,
-            f"https://127.0.0.1:{self._ats.https_port}{path}",
+            (f"--verbose --silent --insecure --http2 {shlex.join(arguments)} "
+             f"'https://127.0.0.1:{self._ats.https_port}{path}'"),
         )
         assert result.returncode == 0, result.output
         assert "HTTP/2 200" in result.stderr

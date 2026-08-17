@@ -85,11 +85,7 @@ class HttpSessionInfoScenario:
         if self._enable_quic:
             h3 = self._curl.run_for(
                 self._ats,
-                "--insecure",
-                "--http3",
-                "--data",
-                "post_body",
-                f"https://localhost:{self._ats.https_port}/httpbin/post",
+                f"--insecure --http3 --data post_body 'https://localhost:{self._ats.https_port}/httpbin/post'",
             )
             assert h3.returncode == 0, h3.output
             assert_matches_gold(h3.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_curl0.gold")

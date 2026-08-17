@@ -69,17 +69,9 @@ class CacheRequestBodyScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--dump-header",
-            "-",
-            "--verbose",
-            "--ipv4",
-            "--http1.1",
-            "--header",
-            "x-debug: x-cache,x-cache-key,via",
-            "--header",
-            "Host: www.example.com",
-            f"http://localhost:{self._ats.http_port}/",
+            (
+                f"--silent --dump-header - --verbose --ipv4 --http1.1 --header 'x-debug: x-cache,x-cache-key,via' "
+                f"--header 'Host: www.example.com' 'http://localhost:{self._ats.http_port}/'"),
         )
         assert result.returncode == 0, result.output
         return result.stdout

@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import time
 
 from tools.uranium.services import ATS, ATSFactory, CommandResult, Curl, OriginServer, ServiceFactory
@@ -92,7 +93,10 @@ class TlsSniHostPolicyScenario:
                 f"{sni}:{self._ats.https_port}:127.0.0.1",
                 f"https://{sni}:{self._ats.https_port}{path}",
             ))
-        return self._curl.run_for(self._ats, *arguments)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
 
     def verify_matrix(self) -> None:
         """Run handshake failures, terminating mismatches, and permissive mismatches."""

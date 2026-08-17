@@ -93,7 +93,7 @@ class RegexRevalidateScenario:
                 "x-debug": "x-cache",
                 "Host": "www.example.com"
             },
-            options=("--silent", "--dump-header", "-", "--output", "/dev/null"),
+            options=f"--silent --dump-header - --output /dev/null",
         )
         assert result.returncode == 0, result.output
         assert f"X-Cache: {expected_cache}" in result.stdout, result.output

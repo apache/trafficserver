@@ -105,13 +105,8 @@ class TlsEngineAbortScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--insecure",
-            "--verbose",
-            "--header",
-            "uuid:basic",
-            "--header",
-            "host:example.com",
-            f"https://127.0.0.1:{self._ats.https_port}/",
+            (f"--insecure --verbose --header uuid:basic --header host:example.com "
+             f"'https://127.0.0.1:{self._ats.https_port}/'"),
             timeout=15,
         )
         assert result.returncode == 0, result.output

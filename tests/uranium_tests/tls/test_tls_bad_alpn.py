@@ -63,14 +63,7 @@ class AlpnScenario:
 
         if not self._curl.supports("http2"):
             pytest.skip("curl with HTTP/2 support is required")
-        result = self._curl.run(
-            "--insecure",
-            "--http2",
-            "--verbose",
-            "--output",
-            "/dev/null",
-            f"https://127.0.0.1:{self._ats.https_port}/",
-        )
+        result = self._curl.run(f"--insecure --http2 --verbose --output /dev/null 'https://127.0.0.1:{self._ats.https_port}/'",)
         assert result.returncode == 0, result.output
         assert "ALPN: server accepted h2" in result.output
         assert "HTTP/2 404" in result.output

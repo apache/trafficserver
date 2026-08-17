@@ -81,7 +81,7 @@ class OriginServerAuthScenario:
             self._ats,
             f"/{path}",
             headers={"Host": "www.example.com"},
-            options=("--silent", "--verbose"),
+            options=f"--silent --verbose",
         )
         assert result.returncode == 0, result.output
         assert "200 OK" in result.stderr

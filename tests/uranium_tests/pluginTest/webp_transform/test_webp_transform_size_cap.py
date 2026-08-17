@@ -81,22 +81,14 @@ class WebpTransformSizeCapScenario:
             self._ats,
             "/huge.jpg",
             headers={"Accept": "image/webp"},
-            options=("--http1.1", "--silent", "--show-error", "--dump-header", "-", "--output", "/dev/null"),
+            options=f"--http1.1 --silent --show-error --dump-header - --output /dev/null",
             timeout=30,
         )
         self.verify(h1, "HTTP/1.1 200")
         h2 = self._curl.run(
-            "--http2",
-            "--insecure",
-            "--silent",
-            "--show-error",
-            "--dump-header",
-            "-",
-            "--output",
-            "/dev/null",
-            "--header",
-            "Accept: image/webp",
-            f"https://127.0.0.1:{self._ats.https_port}/huge.jpg",
+            (
+                f"--http2 --insecure --silent --show-error --dump-header - --output /dev/null --header "
+                f"'Accept: image/webp' 'https://127.0.0.1:{self._ats.https_port}/huge.jpg'"),
             timeout=30,
         )
         self.verify(h2, "HTTP/2 200")

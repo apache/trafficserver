@@ -175,7 +175,10 @@ class UrlSigScenario:
 
         proxy = f"http://127.0.0.1:{self._ats.http_port}"
         for case in self.request_cases():
-            result = self._curl.run_for(self._ats, "--verbose", "--proxy", proxy, case.url)
+            result = self._curl.run_for(
+                self._ats,
+                f"--verbose --proxy '{proxy}' '{case.url}'",
+            )
             assert result.returncode == 0, f"{case.name}: {result.output}"
             assert f"< HTTP/1.1 {case.status}" in result.stderr, f"{case.name}: {result.output}"
 
@@ -188,12 +191,7 @@ class UrlSigScenario:
         url = f"https://127.0.0.1:{self._ats.https_port}/{path}{signature}"
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--http1.1",
-            "--insecure",
-            "--header",
-            "Host: one.two.three",
-            url,
+            f"--verbose --http1.1 --insecure --header 'Host: one.two.three' '{url}'",
         )
         assert result.returncode == 0, result.output
         assert "< HTTP/1.1 200 OK" in result.stderr, result.output

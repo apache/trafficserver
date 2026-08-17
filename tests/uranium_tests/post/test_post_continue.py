@@ -68,18 +68,10 @@ class PostContinueScenario:
         expect_header = "Expect: 100-continue" if expect_continue else "Expect:"
         result = self._curl.run_for(
             ats,
-            "--verbose",
-            "--output",
-            "/dev/null",
-            f"--{protocol}",
-            "--header",
-            "uuid: post",
-            "--header",
-            expect_header,
-            "--data",
-            f"@{body}" if isinstance(body, Path) else body,
-            "--insecure",
-            f"https://127.0.0.1:{ats.https_port}/post",
+            (
+                f"--verbose --output /dev/null '--{protocol}' --header 'uuid: post' --header '{expect_header}' --data "
+                f"'{f'@{body}' if isinstance(body, Path) else body}' --insecure "
+                f"'https://127.0.0.1:{ats.https_port}/post'"),
             timeout=30,
         )
         assert result.returncode == 0, result.output

@@ -81,16 +81,10 @@ class TlsClientVersionsScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--ciphers",
-            "DEFAULT@SECLEVEL=0",
-            "--tls-max",
-            version,
-            "--tlsv1" if version == "1.0" else "--tlsv1.2",
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            "--insecure",
-            f"https://{hostname}:{self._ats.https_port}",
+            (
+                f"--verbose --ciphers DEFAULT@SECLEVEL=0 --tls-max '{version}' "
+                f"'{'--tlsv1' if version == '1.0' else '--tlsv1.2'}' --resolve "
+                f"'{hostname}:{self._ats.https_port}:127.0.0.1' --insecure 'https://{hostname}:{self._ats.https_port}'"),
         )
         if expected_code is not None:
             assert result.returncode == expected_code, result.output

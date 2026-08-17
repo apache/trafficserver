@@ -94,16 +94,9 @@ class RegexRevalidateMissScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--dump-header",
-            "-",
-            "--output",
-            "/dev/null",
-            "--proxy",
-            f"http://127.0.0.1:{self._ats.http_port}",
-            "--header",
-            "x-debug: x-cache",
-            "http://ats/path1",
+            (
+                f"--silent --dump-header - --output /dev/null --proxy 'http://127.0.0.1:{self._ats.http_port}' "
+                f"--header 'x-debug: x-cache' http://ats/path1"),
         )
         assert result.returncode == 0, result.output
         assert f"X-Cache: {expected_cache}" in result.stdout, result.output

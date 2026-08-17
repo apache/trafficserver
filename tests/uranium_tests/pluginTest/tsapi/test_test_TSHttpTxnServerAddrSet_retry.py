@@ -72,7 +72,7 @@ class ServerAddrSetRetryScenario:
         self._curl.get(
             self._ats,
             "/",
-            options=("--silent", "--verbose", "--connect-timeout", "5", "--output", "/dev/null"),
+            options=f"--silent --verbose --connect-timeout 5 --output /dev/null",
             timeout=15,
         )
         diags = wait_for_file_lines(self._ats.diags_log, "SUCCESS: OS_DNS hook was called", 1)

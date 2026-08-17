@@ -71,12 +71,9 @@ class TlsCertSelectionReloadScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--cacert",
-            str(TEST_DIRECTORY / "ssl" / ca_file),
-            "--resolve",
-            f"bar.com:{self._ats.https_port}:127.0.0.1",
-            f"https://bar.com:{self._ats.https_port}/random",
+            (
+                f"--verbose --cacert '{str(TEST_DIRECTORY / 'ssl' / ca_file)}' --resolve "
+                f"'bar.com:{self._ats.https_port}:127.0.0.1' 'https://bar.com:{self._ats.https_port}/random'"),
         )
         assert result.returncode == expected_code, result.output
         return result.output

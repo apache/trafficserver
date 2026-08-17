@@ -113,7 +113,7 @@ class IpAllowReloadScenario:
         result = self._curl.get(
             self._ats,
             "/test",
-            options=("--silent", "--output", "/dev/null", "--write-out", "%{http_code}"),
+            options=f"--silent --output /dev/null --write-out '%{{http_code}}'",
         )
         assert result.returncode == 0, result.output
         return result.stdout

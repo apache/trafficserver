@@ -98,15 +98,9 @@ class GoodRequestAfterBadScenario:
 
         result = self._curl.run_for(
             self._strict,
-            "--verbose",
-            "--http1.1",
-            "--header",
-            "Transfer-Encoding: chunked",
-            "--data",
-            "aaa",
-            "-X",
-            "TRACE",
-            f"http://127.0.0.1:{self._strict.http_port}/foo",
+            (
+                f"--verbose --http1.1 --header 'Transfer-Encoding: chunked' --data aaa -X TRACE "
+                f"'http://127.0.0.1:{self._strict.http_port}/foo'"),
         )
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 400 Invalid HTTP Request" in result.output
@@ -115,11 +109,7 @@ class GoodRequestAfterBadScenario:
 
         result = self._curl.run_for(
             self._strict,
-            "--verbose",
-            "--http1.1",
-            "-X",
-            "TRACE",
-            f"http://127.0.0.1:{self._strict.http_port}/bar",
+            f"--verbose --http1.1 -X TRACE 'http://127.0.0.1:{self._strict.http_port}/bar'",
         )
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 501 Unsupported method ('TRACE')" in result.output

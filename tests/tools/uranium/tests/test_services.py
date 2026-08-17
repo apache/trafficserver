@@ -177,11 +177,24 @@ def test_curl_targets_ats_transport(
     use_uds: bool,
     transport_arguments: tuple[str, ...],
 ) -> None:
-    """Expose curl status and output for ordinary pytest assertions."""
+    """Expose curl status and output for ordinary pytest assertions.
+
+    :param monkeypatch: Pytest fixture used to observe the subprocess command.
+    :param tmp_path: Temporary working directory for the Curl instance.
+    :param use_uds: Whether Curl should target ATS through a Unix socket.
+    :param transport_arguments: Expected curl arguments for the selected
+        transport.
+    """
 
     observed: dict[str, Any] = {}
 
     def run(command: tuple[str, ...], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        """Record the curl invocation and return a synthetic failure.
+
+        :param command: Tokenized command passed to subprocess.
+        :param kwargs: Subprocess execution options.
+        """
+
         observed["command"] = command
         observed.update(kwargs)
         return subprocess.CompletedProcess(command, 7, "response", "diagnostic")
@@ -202,3 +215,38 @@ def test_curl_targets_ats_transport(
     assert observed["cwd"] == tmp_path
     assert result.returncode == 7
     assert result.output == "responsediagnostic"
+
+
+def test_curl_parses_a_shell_style_argument_string(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Preserve quoted curl values without invoking a shell.
+
+    :param monkeypatch: Pytest fixture used to observe the subprocess command.
+    :param tmp_path: Temporary working directory for the Curl instance.
+    """
+
+    observed: dict[str, Any] = {}
+
+    def run(command: tuple[str, ...], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        """Record the parsed curl argument vector.
+
+        :param command: Tokenized command passed to subprocess.
+        :param kwargs: Subprocess execution options.
+        """
+
+        observed["command"] = command
+        observed.update(kwargs)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr("tools.uranium.services.subprocess.run", run)
+
+    result = Curl(tmp_path).run("--verbose --header 'X-Test: one two' http://example.test/path")
+
+    assert result.returncode == 0
+    assert observed["command"] == (
+        "curl",
+        "--verbose",
+        "--header",
+        "X-Test: one two",
+        "http://example.test/path",
+    )
+    assert observed["shell"] is False

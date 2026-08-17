@@ -114,9 +114,7 @@ class TlsVerifyConfRemapScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--header",
-            "Host: foo.com",
-            f"http://127.0.0.1:{self._ats.http_port}/{path}",
+            f"--header 'Host: foo.com' 'http://127.0.0.1:{self._ats.http_port}/{path}'",
         )
         assert result.returncode == 0, result.output
         return result.stdout

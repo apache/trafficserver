@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 import pytest
 
@@ -79,7 +80,10 @@ class SliceScenario:
         if byte_range is not None:
             arguments.extend(("--range", byte_range))
         arguments.append(f"http://{host}/path")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         return result
 

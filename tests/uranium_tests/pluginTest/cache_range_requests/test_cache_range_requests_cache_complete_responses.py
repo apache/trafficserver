@@ -142,19 +142,10 @@ class CacheCompleteResponsesScenario:
 
         return self._curl.run_for(
             self._ats,
-            "--silent",
-            "--show-error",
-            "--dump-header",
-            "-",
-            "--proxy",
-            f"http://127.0.0.1:{self._ats.http_port}",
-            "--header",
-            "x-debug: x-cache, x-cache-key",
-            "--header",
-            f"UID: {uid}",
-            "--range",
-            byte_range,
-            f"http://example.com{path}",
+            (
+                f"--silent --show-error --dump-header - --proxy 'http://127.0.0.1:{self._ats.http_port}' --header "
+                f"'x-debug: x-cache, x-cache-key' --header 'UID: {uid}' --range '{byte_range}' "
+                f"'http://example.com{path}'"),
         )
 
     @staticmethod

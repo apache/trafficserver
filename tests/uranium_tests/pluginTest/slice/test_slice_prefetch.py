@@ -16,6 +16,7 @@
 """Verify slice background prefetching and its cache-state log."""
 
 import re
+import shlex
 import time
 
 import pytest
@@ -124,7 +125,10 @@ class SlicePrefetchScenario:
         if byte_range is not None:
             arguments.extend(("--range", byte_range))
         arguments.append(f"http://{host}/path")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         return result.stdout
 

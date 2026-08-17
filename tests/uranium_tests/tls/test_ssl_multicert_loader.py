@@ -65,12 +65,9 @@ class SslMulticertLoaderScenario:
 
         result = self._curl.run_for(
             ats,
-            "--silent",
-            "--verbose",
-            "--insecure",
-            "--resolve",
-            f"example.com:{ats.https_port}:127.0.0.1",
-            f"https://example.com:{ats.https_port}/",
+            (
+                f"--silent --verbose --insecure --resolve 'example.com:{ats.https_port}:127.0.0.1' "
+                f"'https://example.com:{ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         assert "Could Not Connect" not in result.stdout

@@ -77,11 +77,9 @@ class LogFilenamesScenario:
         ats.start()
         result = self._curl.run_for(
             ats,
-            f"http://127.0.0.1:{ats.http_port}/some/path",
-            "--verbose",
-            "--next",
-            f"http://127.0.0.1:{ats.http_port}/server/down",
-            "--verbose",
+            (
+                f"'http://127.0.0.1:{ats.http_port}/some/path' --verbose --next "
+                f"'http://127.0.0.1:{ats.http_port}/server/down' --verbose"),
         )
         assert result.returncode == 0, result.output
         wait_for_file_lines(ats.log_directory / "sentinel.log", r"^http://127\.0\.0\.1:\d+/: 502$", 1)
