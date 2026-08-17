@@ -388,7 +388,87 @@ class MultiGroupAggregateTest:
         self._test_metrics_after_drain()
 
 
+class MetricOverrideTest:
+    """Verify proxy.config.http.per_server.connection.metric_enabled is overridable per remap rule.
+
+    Metrics are enabled globally at level 2 and one of the two remap rules turns them off with
+    conf_remap. The two rules point at different origin ports and the match is 'port', so each gets
+    its own group and the two decisions cannot influence each other.
+    """
+
+    def __init__(self) -> None:
+        """Configure the test processes in preparation for the TestRun."""
+        self._dns = Test.MakeDNServer("dns_metric_override", default='127.0.0.1')
+        self._server_on = Test.MakeHttpBinServer("server_metric_on")
+        self._server_off = Test.MakeHttpBinServer("server_metric_off")
+        self._configure_trafficserver()
+
+    def _configure_trafficserver(self) -> None:
+        """Configure Traffic Server to be used in the test."""
+        self._ts = Test.MakeATSProcess("ts_metric_override")
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|conn_track',
+                # Enabled globally; the second remap rule below opts out.
+                'proxy.config.http.per_server.connection.metric_enabled': 2,
+                'proxy.config.http.per_server.connection.match': 'port',
+            })
+        self._ts.Disk.remap_config.AddLines(
+            [
+                f'map http://metric-on.com/ http://127.0.0.1:{self._server_on.Variables.Port}/',
+                f'map http://metric-off.com/ http://127.0.0.1:{self._server_off.Variables.Port}/'
+                ' @plugin=conf_remap.so'
+                ' @pparam=proxy.config.http.per_server.connection.metric_enabled=0',
+            ])
+
+    def _test_metrics(self) -> None:
+        """Use traffic_ctl to verify which per server metrics exist."""
+        on_group = f'127.0.0.1:{self._server_on.Variables.Port}'
+        off_group = f'127.0.0.1:{self._server_off.Variables.Port}'
+
+        tr = Test.AddTestRun("Check that only the non-overridden remap has per server metrics")
+        tr.Processes.Default.Command = f'sleep {_STAT_SYNC_WAIT_SECONDS}; traffic_ctl metric match per_server'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
+        tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+            f'per_server.total_connection.{on_group} 1', 'The remap with metrics enabled should have per server metrics.')
+        # The group for the overridden remap must not exist at all, hidden or otherwise, so this
+        # also holds with --include-hidden below.
+        tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+            f'per_server.total_connection.{off_group}', 'The remap with metrics disabled should have no per server metrics.')
+
+        tr2 = Test.AddTestRun("The overridden remap has no hidden per server metrics either")
+        tr2.Processes.Default.Command = 'traffic_ctl metric match per_server --include-hidden'
+        tr2.Processes.Default.ReturnCode = 0
+        tr2.Processes.Default.Env = self._ts.Env
+        tr2.Processes.Default.Streams.All = Testers.ContainsExpression(
+            f'per_server.total_connection.{on_group} 1', 'The enabled remap group should be present in the hidden store.')
+        tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(
+            f'per_server.total_connection.{off_group}', 'No group should be created at all for the overridden remap.')
+
+    def run(self) -> None:
+        """Configure the TestRun."""
+        tr = Test.AddTestRun('Verify metric_enabled is overridable per remap rule')
+        tr.Processes.Default.StartBefore(self._dns)
+        tr.Processes.Default.StartBefore(self._server_on)
+        tr.Processes.Default.StartBefore(self._server_off)
+        tr.Processes.Default.StartBefore(self._ts)
+        tr.MakeCurlCommandMulti(
+            f"{{curl}} -v -s -H 'Host: metric-on.com' http://127.0.0.1:{self._ts.Variables.port}/get"
+            f" --next -v -s -H 'Host: metric-off.com' http://127.0.0.1:{self._ts.Variables.port}/get")
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.TimeOut = 30
+        tr.StillRunningAfter = self._ts
+
+        self._test_metrics()
+
+
 PerServerConnectionMaxTest().run()
 ConnectMethodTest(3, metric_level=1).run(blocked=2, gold_file="gold/two_503_congested.gold")
 ConnectMethodTest(0, metric_level=2).run(blocked=0, gold_file="gold/two_200_ok.gold")
 MultiGroupAggregateTest().run()
+MetricOverrideTest().run()

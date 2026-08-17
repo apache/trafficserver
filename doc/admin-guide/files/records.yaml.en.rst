@@ -2009,6 +2009,7 @@ Origin Server Connect Attempts
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_enabled INT 0
    :reloadable:
+   :overridable:
 
    Publish per upstream server connection metrics. These metrics are dynamically named, one set per
    upstream server group or hostname, so the number of them scales with the number of distinct
@@ -2026,6 +2027,18 @@ Origin Server Connect Attempts
    Level ``2`` can produce a very large number of metrics when the
    :ts:cv:`match type <proxy.config.http.per_server.connection.match>` includes the address or
    port, since there is then one set per address and port rather than one per hostname.
+
+   Because this is overridable, metrics can be enabled for the upstreams of interest and left off
+   for the rest, for example with :ref:`admin-plugins-conf-remap` on a specific mapping.
+
+   The value is applied when a connection group is created. Where two mappings that disagree about
+   this setting resolve to the same group -- that is, the same key under
+   :ts:cv:`proxy.config.http.per_server.connection.match` -- the transaction that creates the group
+   determines its metrics, and later transactions do not change them. A group is discarded once its
+   connection count reaches zero, so the choice is made again the next time that upstream is
+   reopened. This affects only which metrics exist; enforcement of
+   :ts:cv:`proxy.config.http.per_server.connection.max` uses the group's own connection count and is
+   unaffected.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_prefix STRING NULL
    :reloadable:

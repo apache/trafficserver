@@ -72,10 +72,19 @@ const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
     }
   }};
 
+// Clamp on store so a plugin cannot leave an out of range level in the transaction config; the
+// records reload path does its own clamping in Config_Update_Conntrack_Metric_Enabled.
+const MgmtConverter ConnectionTracker::METRIC_ENABLED_CONV{
+  [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const ConnectionTracker::MetricLevel *>(data)); },
+  [](void *data, MgmtInt i) -> void {
+    auto level = std::clamp(static_cast<int>(i), static_cast<int>(ConnectionTracker::METRIC_LEVEL_NONE),
+                            static_cast<int>(ConnectionTracker::METRIC_LEVEL_GROUP));
+    *static_cast<ConnectionTracker::MetricLevel *>(data) = static_cast<ConnectionTracker::MetricLevel>(level);
+  }};
+
 const std::array<std::string_view, static_cast<int>(ConnectionTracker::MATCH_BOTH) + 1> ConnectionTracker::MATCH_TYPE_NAME{
   {"ip"sv, "port"sv, "host"sv, "both"sv}
 };
-
 // Make sure the clock is millisecond resolution or finer.
 static_assert(ConnectionTracker::Group::Clock::period::num == 1);
 static_assert(ConnectionTracker::Group::Clock::period::den >= 1000);
@@ -155,7 +164,7 @@ Config_Update_Conntrack_Client_Alert_Delay(const char *name, RecDataT dtype, Rec
 bool
 Config_Update_Conntrack_Metric_Enabled(const char * /* name ATS_UNUSED */, RecDataT dtype, RecData data, void *cookie)
 {
-  auto config = static_cast<ConnectionTracker::GlobalConfig *>(cookie);
+  auto config = static_cast<ConnectionTracker::TxnConfig *>(cookie);
 
   if (RECD_INT == dtype) {
     auto level             = std::clamp(static_cast<int>(data.rec_int), static_cast<int>(ConnectionTracker::METRIC_LEVEL_NONE),
@@ -272,7 +281,6 @@ ConnectionTracker::GlobalConfig::GlobalConfig(GlobalConfig const &other)
 {
   this->client_alert_delay = other.client_alert_delay;
   this->server_alert_delay = other.server_alert_delay;
-  this->metric_enabled     = other.metric_enabled;
   this->metric_prefix      = other.metric_prefix;
 
   // Lock the source to safely copy the exempt list.
@@ -290,7 +298,6 @@ ConnectionTracker::GlobalConfig::operator=(GlobalConfig const &other)
   if (this != &other) {
     this->client_alert_delay = other.client_alert_delay;
     this->server_alert_delay = other.server_alert_delay;
-    this->metric_enabled     = other.metric_enabled;
     this->metric_prefix      = other.metric_prefix;
     // Lock both source and destination to safely copy the exempt list.
     // Lock in a consistent order to avoid deadlock (lock 'other' first, then 'this').
@@ -316,7 +323,7 @@ ConnectionTracker::config_init(GlobalConfig *global, TxnConfig *txn, RecConfigUp
   Enable_Config_Var(CONFIG_SERVER_VAR_MAX, &Config_Update_Conntrack_Max, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_MATCH, &Config_Update_Conntrack_Match, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_ALERT_DELAY, &Config_Update_Conntrack_Server_Alert_Delay, config_cb, global);
-  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_ENABLED, &Config_Update_Conntrack_Metric_Enabled, config_cb, global);
+  Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_ENABLED, &Config_Update_Conntrack_Metric_Enabled, config_cb, txn);
   Enable_Config_Var(CONFIG_SERVER_VAR_METRIC_PREFIX, &Config_Update_Conntrack_Metric_Prefix, config_cb, global);
 }
 
@@ -425,7 +432,7 @@ ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fq
   if (loc != _outbound_table._table.end()) {
     zret._g = loc->second;
   } else {
-    zret._g = std::make_shared<Group>(Group::DirectionType::OUTBOUND, key, fqdn, txn_cnf.server_min);
+    zret._g = std::make_shared<Group>(Group::DirectionType::OUTBOUND, key, fqdn, txn_cnf.server_min, txn_cnf.metric_enabled);
     // Note that we must use zret._g's key, not the above key, because Key's
     // members are references to the Group's members. Thus the above key's
     // members are invalid after this function.
@@ -434,7 +441,8 @@ ConnectionTracker::obtain_outbound(TxnConfig const &txn_cnf, std::string_view fq
   return zret;
 }
 
-ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive)
+ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive,
+                                MetricLevel metric_enabled)
   : _direction{direction},
     _hash(key._hash),
     _match_type(key._match_type),
@@ -444,7 +452,7 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
 {
   Metrics::Gauge::increment(net_rsb.connection_tracker_table_size);
   // only add metrics for server connections
-  if (_global_config->metric_enabled != METRIC_LEVEL_NONE && direction == DirectionType::OUTBOUND) {
+  if (metric_enabled != METRIC_LEVEL_NONE && direction == DirectionType::OUTBOUND) {
     std::string _metric_name = metric_name(key, fqdn, _global_config->metric_prefix);
     // Per group metrics always live in the hidden store. metric_enabled controls what is published
     // from them (see MetricLevel), not whether they exist.
@@ -468,7 +476,7 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
                                    Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
     }
 
-    if (_global_config->metric_enabled >= METRIC_LEVEL_GROUP) {
+    if (metric_enabled >= METRIC_LEVEL_GROUP) {
       // Mirror the per group metrics into the published store under their own name. A single
       // source SUM is an identity: the published value always equals the hidden source.
       Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _metric_name, Metrics::MetricType::GAUGE,

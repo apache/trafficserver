@@ -5891,7 +5891,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
   // See if the outbound connection tracker data is needed. If so, get it here for consistency.
   if (t_state.txn_conf->connection_tracker_config.server_max > 0 || t_state.txn_conf->connection_tracker_config.server_min > 0 ||
-      t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+      t_state.txn_conf->connection_tracker_config.metric_enabled) {
     t_state.outbound_conn_track_state =
       ConnectionTracker::obtain_outbound(t_state.txn_conf->connection_tracker_config,
                                          std::string_view{t_state.current.server->name}, t_state.current.server->dst_addr);
@@ -5919,7 +5919,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
     ct_state.update_max_count(ccount);
   } else if (t_state.txn_conf->connection_tracker_config.server_min > 0 ||
-             t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+             t_state.txn_conf->connection_tracker_config.metric_enabled) {
     auto &ct_state = t_state.outbound_conn_track_state;
     // Feed the count through as well, otherwise the group's peak stays at zero whenever metrics
     // are enabled without a configured maximum.

@@ -75,13 +75,6 @@ public:
   /// String equivalents for @c MatchType.
   static const std::array<std::string_view, static_cast<int>(MATCH_BOTH) + 1> MATCH_TYPE_NAME;
 
-  /// Per transaction configuration values.
-  struct TxnConfig {
-    int       server_max{0};          ///< Maximum concurrent server connections.
-    int       server_min{0};          ///< Minimum keepalive server connections.
-    MatchType server_match{MATCH_IP}; ///< Server match type.
-  };
-
   /** Levels for the @c metric_enabled configuration.
    *
    * The per group metrics are always created, in the hidden metric store, whenever metrics are
@@ -102,16 +95,23 @@ public:
     METRIC_LEVEL_GROUP = 2, ///< The per hostname aggregates and the per group metrics are published.
   };
 
+  /// Per transaction configuration values.
+  struct TxnConfig {
+    int         server_max{0};                     ///< Maximum concurrent server connections.
+    int         server_min{0};                     ///< Minimum keepalive server connections.
+    MatchType   server_match{MATCH_IP};            ///< Server match type.
+    MetricLevel metric_enabled{METRIC_LEVEL_NONE}; ///< Which per server metrics to publish.
+  };
+
   /** Static configuration values. */
   struct GlobalConfig {
     GlobalConfig() = default;
     GlobalConfig(GlobalConfig const &);
     GlobalConfig &operator=(GlobalConfig const &);
 
-    std::chrono::seconds            client_alert_delay{60};            ///< Alert delay in seconds.
-    std::chrono::seconds            server_alert_delay{60};            ///< Alert delay in seconds.
-    MetricLevel                     metric_enabled{METRIC_LEVEL_NONE}; ///< Which per server metrics to publish.
-    std::string                     metric_prefix;                     ///< Per server metric prefix.
+    std::chrono::seconds            client_alert_delay{60}; ///< Alert delay in seconds.
+    std::chrono::seconds            server_alert_delay{60}; ///< Alert delay in seconds.
+    std::string                     metric_prefix;          ///< Per server metric prefix.
     swoc::IPRangeSet                client_exempt_list; ///< The set of IP addresses to not block due client connection counting.
     mutable ts::bravo::shared_mutex client_exempt_list_mutex; ///< Protects client_exempt_list from concurrent access.
   };
@@ -176,8 +176,10 @@ public:
      * @param key A populated @c Key structure - values are copied to the @c Group.
      * @param fqdn The full FQDN.
      * @param min_keep_alive The minimum number of origin keep alive connections to maintain.
+     * @param metric_enabled The metric level of the transaction that is creating this group.
      */
-    Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive);
+    Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive,
+          MetricLevel metric_enabled = METRIC_LEVEL_NONE);
     ~Group();
     /// Key equality checker.
     static bool equal(Key const &lhs, Key const &rhs);
@@ -382,6 +384,7 @@ public:
   static const MgmtConverter MIN_SERVER_CONV;
   static const MgmtConverter MAX_SERVER_CONV;
   static const MgmtConverter SERVER_MATCH_CONV;
+  static const MgmtConverter METRIC_ENABLED_CONV;
 
 protected:
   static GlobalConfig *_global_config; ///< Global configuration data.
