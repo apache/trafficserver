@@ -137,6 +137,32 @@ Example::
         ts.debug('ATS shutting down, cleaning up resources')
     end
 
+Because ``__shutdown__`` commonly releases process global resources, no Lua code
+runs in any of the plugin's Lua states while the ``__shutdown__`` functions are
+invoked: the plugin waits for every state to become idle first, and no Lua
+callback enters a state after that. If a state is still executing Lua after five
+seconds, the ``__shutdown__`` functions are skipped rather than run concurrently
+with it, and that is reported in the error log. Once every state is idle, the
+plugin retains all state mutexes until process exit, including after the
+``__shutdown__`` functions return. Requests waiting to enter those states remain
+blocked until process exit. Each ``__shutdown__`` function should return promptly
+so that |ATS| can finish shutting down.
+
+This covers the states used by remap instances of the plugin as well, since
+global and remap scripts can share process global resources through native
+libraries. It means that once ``__shutdown__`` has run, a remap instance is left
+in place rather than torn down: its ``__clean__`` function is not called during
+shutdown.
+|TS| already skips that teardown whenever a transaction still holds a lease on
+the remap configuration at shutdown, so ``__clean__`` should not be relied on as
+a shutdown hook in any case.
+
+Note that with ``proxy.config.plugin.dynamic_reload_mode`` enabled, which is the
+default, a remap instance of this plugin is loaded from a private copy of the
+plugin with Lua states of its own. Those states are not covered by a global
+plugin's ``__shutdown__``, so resources shared between a global script and a
+remap script should not be released from ``__shutdown__``.
+
 We can write this in plugin.config:
 
 ::
