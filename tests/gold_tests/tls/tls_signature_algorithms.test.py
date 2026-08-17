@@ -29,7 +29,7 @@ Test.SkipUnless(Condition.HasOpenSSLVersion('1.1.1'))
 class TestTLSSignatureAlgorithms:
     '''Verify TLS signature-algorithm access log fields.'''
 
-    _paths = ('/tls12-full', '/tls12-resumed', '/tls13-full', '/tls13-resumed')
+    _paths = ('/tls12-full', '/tls12-resumed', '/tls13-full', '/tls13-resumed', '/tls13-ecdsa')
 
     def __init__(self):
         '''Configure the test processes and handshake runs.'''
@@ -51,12 +51,10 @@ class TestTLSSignatureAlgorithms:
             'Log a full TLS 1.3 handshake', '/tls13-full', '-tls1_3', 'rsa_pss_rsae_sha256:rsa_pkcs1_sha256',
             f'-sess_out {self._tls13_session}')
         self._add_handshake_run(
-            'Log a resumed TLS 1.3 handshake',
-            '/tls13-resumed',
-            '-tls1_3',
-            'rsa_pss_rsae_sha256:rsa_pkcs1_sha256',
-            f'-sess_in {self._tls13_session}',
-            keep_processes_running=False)
+            'Log a resumed TLS 1.3 handshake', '/tls13-resumed', '-tls1_3', 'rsa_pss_rsae_sha256:rsa_pkcs1_sha256',
+            f'-sess_in {self._tls13_session}')
+        self._add_handshake_run('Log an ECDSA TLS 1.3 handshake', '/tls13-ecdsa', '-tls1_3', 'ecdsa_secp256r1_sha256', '')
+        self._add_log_flush_run()
 
     def _configure_server(self) -> 'Process':
         '''Configure the origin server.
@@ -86,13 +84,15 @@ class TestTLSSignatureAlgorithms:
         ts = Test.MakeATSProcess('ts', enable_tls=True)
         ts.addSSLfile('ssl/server.pem')
         ts.addSSLfile('ssl/server.key')
+        ts.addSSLfile('ssl/signed-foo-ec.pem')
+        ts.addSSLfile('ssl/signed-foo-ec.key')
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         ts.Disk.ssl_multicert_yaml.AddLines(
             '''
 ssl_multicert:
   - dest_ip: "*"
-    ssl_cert_name: server.pem
-    ssl_key_name: server.key
+    ssl_cert_name: signed-foo-ec.pem,server.pem
+    ssl_key_name: signed-foo-ec.key,server.key
 '''.split('\n'))
         ts.Disk.records_config.update(
             {
@@ -100,6 +100,7 @@ ssl_multicert:
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.session_ticket.enable': 1,
                 'proxy.config.ssl.server.session_ticket.number': 2,
+                'proxy.config.log.max_secs_per_buffer': 1,
             })
         ts.Disk.logging_yaml.AddLines(
             '''
@@ -126,7 +127,7 @@ logging:
         '''
         request = f'GET {path} HTTP/1.1\\r\\nHost: example.com\\r\\nConnection: close\\r\\n\\r\\n'
         return (
-            f'printf "{request}" | openssl s_client -quiet -connect 127.0.0.1:{self._ts.Variables.ssl_port} '
+            f"printf '%b' '{request}' | openssl s_client -quiet -connect 127.0.0.1:{self._ts.Variables.ssl_port} "
             f'-servername example.com {tls_option} -sigalgs {sigalgs} {session_option}')
 
     def _add_handshake_run(
@@ -159,6 +160,13 @@ logging:
             tr.StillRunningAfter = self._server
             tr.StillRunningAfter += self._ts
         return tr
+
+    def _add_log_flush_run(self) -> None:
+        '''Wait until all handshake transactions have reached the access log.'''
+        log_path = os.path.join(self._ts.Variables.LOGDIR, 'tls_signature_algorithms.log')
+        tr = Test.AddAwaitFileContainsTestRun('Await TLS signature algorithm log entries', log_path, r'^tls', len(self._paths))
+        tr.StillRunningBefore = self._server
+        tr.StillRunningBefore += self._ts
 
 
 TestTLSSignatureAlgorithms()

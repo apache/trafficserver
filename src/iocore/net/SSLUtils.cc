@@ -57,6 +57,7 @@
 #include <openssl/bio.h>
 #include <openssl/conf.h>
 #ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
+#include <openssl/core_names.h>
 #include <openssl/evp.h>
 #endif
 #include <openssl/dh.h>
@@ -74,6 +75,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <optional>
 #include <thread>
 #include <utility>
 #include <string>
@@ -2554,7 +2556,7 @@ namespace
 bool
 is_grease_signature_algorithm(uint16_t algorithm)
 {
-  return (algorithm & 0x0f0f) == 0x0a0a;
+  return (algorithm & 0x0f0f) == 0x0a0a && (algorithm >> 12) == ((algorithm >> 4) & 0x0f);
 }
 
 #if HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
@@ -2610,12 +2612,21 @@ signature_algorithm_matches_private_key(SSL *ssl, uint16_t algorithm)
     }
 
     if (expected_curve != NID_undef) {
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
+      char   group_name[80];
+      size_t group_name_length = 0;
+
+      return EVP_PKEY_get_utf8_string_param(private_key, OSSL_PKEY_PARAM_GROUP_NAME, group_name, sizeof(group_name),
+                                            &group_name_length) == 1 &&
+             OBJ_txt2nid(group_name) == expected_curve;
+#else
       EC_KEY const *ec_key = EVP_PKEY_get0_EC_KEY(private_key);
 
       if (ec_key != nullptr) {
         EC_GROUP const *group = EC_KEY_get0_group(ec_key);
         return group != nullptr && EC_GROUP_get_curve_name(group) == expected_curve;
       }
+#endif
     }
   }
 #endif
@@ -2683,6 +2694,8 @@ SSLGetNegotiatedSignatureAlgorithm([[maybe_unused]] SSL *ssl)
 
   return algorithm == 0 ? "" : std::to_string(algorithm);
 #elif HAVE_SSL_GET_LOCAL_SIGNATURE_NIDS && HAVE_SSL_GET_SHARED_SIGALGS
+  // When the TLS library does not expose the exact IANA scheme, derive it from the local signature type and digest, the
+  // shared list, and the certificate key. Return no value if more than one compatible code point remains.
   int signature_type = NID_undef;
   int hash           = NID_undef;
 
@@ -2690,7 +2703,8 @@ SSLGetNegotiatedSignatureAlgorithm([[maybe_unused]] SSL *ssl)
     return {};
   }
 
-  int const count = SSL_get_shared_sigalgs(ssl, 0, nullptr, nullptr, nullptr, nullptr, nullptr);
+  std::optional<uint16_t> matched_algorithm;
+  int const               count = SSL_get_shared_sigalgs(ssl, 0, nullptr, nullptr, nullptr, nullptr, nullptr);
   for (int index = 0; index < count; ++index) {
     int           shared_signature_type = NID_undef;
     int           shared_hash           = NID_undef;
@@ -2704,11 +2718,14 @@ SSLGetNegotiatedSignatureAlgorithm([[maybe_unused]] SSL *ssl)
 
     uint16_t const algorithm = static_cast<uint16_t>(raw_hash) << 8 | signature;
     if (signature_algorithm_matches_private_key(ssl, algorithm)) {
-      return std::to_string(algorithm);
+      if (matched_algorithm.has_value() && *matched_algorithm != algorithm) {
+        return {};
+      }
+      matched_algorithm = algorithm;
     }
   }
 
-  return {};
+  return matched_algorithm.has_value() ? std::to_string(*matched_algorithm) : "";
 #else
   return {};
 #endif
