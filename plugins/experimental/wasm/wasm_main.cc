@@ -484,6 +484,7 @@ http_event_handler(TSCont contp, TSEvent event, void *data)
     }
 
     delete context;
+    context = nullptr;
 
     TSContDestroy(contp);
     result = 0;
