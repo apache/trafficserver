@@ -209,14 +209,9 @@ class Http2CurlScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--show-error",
-            "--insecure",
-            "--header",
-            "Transfer-Encoding: chunked",
-            "--data-binary",
-            data,
-            f"https://127.0.0.1:{self._ats.https_port}{path}",
+            (
+                f"--silent --show-error --insecure --header 'Transfer-Encoding: chunked' --data-binary '{data}' "
+                f"'https://127.0.0.1:{self._ats.https_port}{path}'"),
             timeout=30,
         )
         assert result.returncode == 0, result.output
@@ -227,11 +222,7 @@ class Http2CurlScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--silent",
-            "--insecure",
-            "--http2",
-            f"https://127.0.0.1:{self._ats.https_port}/huge_resp_hdrs",
+            f"--verbose --silent --insecure --http2 'https://127.0.0.1:{self._ats.https_port}/huge_resp_hdrs'",
             timeout=30,
         )
         assert result.returncode == 0, result.output

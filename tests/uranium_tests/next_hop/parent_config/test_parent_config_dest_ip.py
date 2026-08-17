@@ -102,15 +102,9 @@ class ParentConfigDestIpScenario:
         self._mid.start()
         self._edge.start()
         result = self._curl.run(
-            "--silent",
-            "--dump-header",
-            "/dev/stdout",
-            "--output",
-            "/dev/stderr",
-            "--proxy",
-            f"http://127.0.0.1:{self._edge.http_port}",
-            "http://foo.bar/foo.txt",
-        )
+            (
+                f"--silent --dump-header /dev/stdout --output /dev/stderr --proxy "
+                f"'http://127.0.0.1:{self._edge.http_port}' http://foo.bar/foo.txt"),)
         assert result.returncode == 0, result.output
         assert re.search(r"Via:.* ts1 .* ts0 ", result.stdout), result.output
 

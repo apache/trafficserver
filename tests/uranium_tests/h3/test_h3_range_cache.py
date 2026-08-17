@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 import subprocess
+import shlex
 
 import pytest
 
@@ -80,20 +81,11 @@ class H3RangeCacheScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--show-error",
-            "--fail",
-            "--ipv4",
-            "--http3-only",
-            "--insecure",
-            "--resolve",
-            f"range.example.com:{self._ats.https_port}:127.0.0.1",
-            *extra,
-            "--output",
-            output,
-            "--write-out",
-            "\nhttp_code=%{http_code}\nsize_download=%{size_download}\n",
-            f"https://range.example.com:{self._ats.https_port}/h3-range-cache",
+            (
+                f"--silent --show-error --fail --ipv4 --http3-only --insecure --resolve "
+                f"'range.example.com:{self._ats.https_port}:127.0.0.1' {shlex.join(extra)} --output '{output}' "
+                f"--write-out '\nhttp_code=%{{http_code}}\nsize_download=%{{size_download}}\n' "
+                f"'https://range.example.com:{self._ats.https_port}/h3-range-cache'"),
             timeout=30,
         )
         assert result.returncode == 0, result.output

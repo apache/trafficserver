@@ -96,12 +96,9 @@ class TlsVerifyWildcardScenario:
         """Request @a hostname through the ATS TLS listener."""
 
         result = self._curl.run(
-            "--verbose",
-            "--insecure",
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            f"https://{hostname}:{self._ats.https_port}/",
-        )
+            (
+                f"--verbose --insecure --resolve '{hostname}:{self._ats.https_port}:127.0.0.1' "
+                f"'https://{hostname}:{self._ats.https_port}/'"),)
         assert result.returncode == 0, result.output
         return result.stdout
 

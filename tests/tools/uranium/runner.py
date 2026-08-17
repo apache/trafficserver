@@ -188,7 +188,8 @@ urtest.sh options (consumed before pytest; these spellings take precedence):
 Docker is the default unless urtest.sh is already running inside the official
 Fedora 44 test container. Any argument not consumed above is passed to pytest.
 Common pytest options include -k for selection, -n for parallel workers, and
---collect-only/--co for listing tests; they are documented below.
+--collect-only/--co for listing tests. Pass --run-manual to include explicitly
+opt-in Uranium tests; pytest documents these options below.
 
 pytest options (passed through after urtest.sh processing):"""
 

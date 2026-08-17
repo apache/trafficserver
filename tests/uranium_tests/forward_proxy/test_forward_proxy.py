@@ -68,13 +68,9 @@ class ForwardProxyScenario:
         self._ats.start()
         result = self._curl.run_for(
             self._ats,
-            "--proxy-insecure",
-            "--verbose",
-            "--header",
-            "uuid: 1",
-            "--proxy",
-            f"https://127.0.0.1:{self._ats.https_port}/",
-            "http://example.com/",
+            (
+                f"--proxy-insecure --verbose --header 'uuid: 1' --proxy 'https://127.0.0.1:{self._ats.https_port}/' "
+                f"http://example.com/"),
         )
         self.verify(result)
 

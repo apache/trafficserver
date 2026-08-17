@@ -16,6 +16,7 @@
 """Verify remap plugins can select and clear next-hop strategies."""
 
 import pytest
+import shlex
 
 from tools.uranium.services import ATS, ATSFactory, Curl, DNSServer, OriginServer, ServiceFactory
 
@@ -198,7 +199,10 @@ class StrategyPluginsScenario:
         if strategy is not None:
             arguments.extend(("--header", f"Strategy: {strategy}"))
         arguments.append(f"http://{host}{path}")
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
         assert result.stdout == expected_origin, result.output
 

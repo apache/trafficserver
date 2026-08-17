@@ -16,6 +16,7 @@
 """Verify ESI transformation, gzip, cache-control, and size options."""
 
 from dataclasses import dataclass
+import shlex
 import gzip
 from pathlib import Path
 import re
@@ -132,7 +133,7 @@ class EsiScenario:
                 "Host": "www.example.com",
                 "Accept": "*/*"
             },
-            options=("--verbose", *options),
+            options=f"--verbose {shlex.join(options)}",
         )
 
     def assert_transformed(self, result: CommandResult) -> None:

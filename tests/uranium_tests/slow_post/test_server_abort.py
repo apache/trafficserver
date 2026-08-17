@@ -67,14 +67,9 @@ class OriginAbortScenario:
         self._origin.start()
         self._ats.start()
         result = self._curl.run(
-            "--verbose",
-            "--insecure",
-            "--http1.1",
-            "--max-time",
-            "10",
-            "--header",
-            "Host: foo.com",
-            f"https://127.0.0.1:{self._ats.https_port}/",
+            (
+                f"--verbose --insecure --http1.1 --max-time 10 --header 'Host: foo.com' "
+                f"'https://127.0.0.1:{self._ats.https_port}/'"),
             timeout=15,
         )
         assert result.returncode in (0, 28), result.output

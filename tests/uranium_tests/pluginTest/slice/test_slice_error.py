@@ -105,7 +105,7 @@ class SliceErrorScenario:
             self._ats,
             f"/{path}",
             headers={"Host": "ats"},
-            options=("--silent", "--show-error", "--dump-header", "-"),
+            options=f"--silent --show-error --dump-header -",
         )
         assert "HTTP/1.1 200 OK" in result.stdout, result.output
         assert self.BODY[:self.BLOCK_BYTES] in result.stdout, result.output

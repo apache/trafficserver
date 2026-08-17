@@ -103,7 +103,7 @@ cond %{REMAP_PSEUDO_HOOK}
     def request(self) -> None:
         """Verify the currently active remap generation still serves traffic."""
 
-        result = self._curl.get(self._ats, headers={"Host": "reload.example.com"}, options=("--verbose",))
+        result = self._curl.get(self._ats, headers={"Host": "reload.example.com"}, options=f"--verbose")
         assert result.returncode == 0, result.output
         assert "200 OK" in result.stderr
 

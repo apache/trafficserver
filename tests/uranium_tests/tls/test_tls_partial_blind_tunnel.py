@@ -121,12 +121,9 @@ class PartialBlindTunnelScenario:
         self._ats.start()
         response = self._curl.run_for(
             self._ats,
-            "--http1.1",
-            "--verbose",
-            "--resolve",
-            f"foo.com:{self._ats.https_port}:127.0.0.1",
-            "--insecure",
-            f"https://foo.com:{self._ats.https_port}",
+            (
+                f"--http1.1 --verbose --resolve 'foo.com:{self._ats.https_port}:127.0.0.1' --insecure "
+                f"'https://foo.com:{self._ats.https_port}'"),
         )
         assert response.returncode == 0, response.output
         assert "HTTP/1.1 200 OK" in response.stderr

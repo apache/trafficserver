@@ -76,7 +76,10 @@ class Sigusr2LogRotationScenario:
     def request(self, ats: ATS, path: str) -> None:
         """Issue one request that must be written to the configured log."""
 
-        result = self._curl.run_for(ats, "--fail", "--silent", f"http://127.0.0.1:{ats.http_port}{path}")
+        result = self._curl.run_for(
+            ats,
+            f"--fail --silent 'http://127.0.0.1:{ats.http_port}{path}'",
+        )
         assert result.returncode == 0, result.output
 
     def check_configured_log(self) -> None:

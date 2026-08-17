@@ -63,18 +63,9 @@ class SliceContentShrinkScenario:
 
         return self._curl.run_for(
             self._ats,
-            "--silent",
-            "--dump-header",
-            "/dev/stdout",
-            "--output",
-            "/dev/stderr",
-            "--proxy",
-            f"localhost:{self._ats.http_port}",
-            f"http://slice/{path}",
-            "--range",
-            byte_range,
-            "--write-out",
-            "\nSIZE:%{size_download}",
+            (
+                f"--silent --dump-header /dev/stdout --output /dev/stderr --proxy 'localhost:{self._ats.http_port}' "
+                f"'http://slice/{path}' --range '{byte_range}' --write-out '\nSIZE:%{{size_download}}'"),
         )
 
     @staticmethod

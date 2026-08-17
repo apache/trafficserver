@@ -16,6 +16,7 @@
 """Verify CMCD next-object prefetch across a two-tier ATS topology."""
 
 import urllib.parse
+import shlex
 import time
 
 import pytest
@@ -147,7 +148,10 @@ class PrefetchCmcdScenario:
         if cmcd is not None:
             arguments.extend(("--header", f"Cmcd-Request: {cmcd}"))
         arguments.append(f"http://ts0{path}")
-        result = self._curl.run_for(self._front, *arguments)
+        result = self._curl.run_for(
+            self._front,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
 
     def validate_logs(self) -> None:

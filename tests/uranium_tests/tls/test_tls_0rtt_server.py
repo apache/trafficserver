@@ -178,12 +178,9 @@ class TlsEarlyDataScenario:
         ats = self._enabled
         result = self._curl.run_for(
             ats,
-            "--insecure",
-            "--silent",
-            "--show-error",
-            "--resolve",
-            f"example.com:{ats.https_port}:127.0.0.1",
-            f"https://example.com:{ats.https_port}/",
+            (
+                f"--insecure --silent --show-error --resolve 'example.com:{ats.https_port}:127.0.0.1' "
+                f"'https://example.com:{ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         self.assert_output(result, contains=("curl test",), excludes=("early data accepted",))

@@ -51,12 +51,7 @@ class SimplePostBufferScenario:
         self._ats.start()
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--header",
-            "Expect: 100-continue",
-            "--data",
-            "abc",
-            f"http://127.0.0.1:{self._ats.http_port}/post",
+            f"--verbose --header 'Expect: 100-continue' --data abc 'http://127.0.0.1:{self._ats.http_port}/post'",
         )
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.stderr, result.output

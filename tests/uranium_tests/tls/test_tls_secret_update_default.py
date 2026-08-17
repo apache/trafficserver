@@ -91,12 +91,8 @@ class DefaultTlsSecretUpdateScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--insecure",
-            "--verbose",
-            "--http1.1",
-            "--header",
-            "Host: doesnotmatter",
-            f"https://127.0.0.1:{self._ats.https_port}/",
+            (f"--insecure --verbose --http1.1 --header 'Host: doesnotmatter' "
+             f"'https://127.0.0.1:{self._ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         return result.output

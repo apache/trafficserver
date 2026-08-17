@@ -83,7 +83,7 @@ class JsonLogFieldScenario:
         """Send the four header-byte cases with curl's argument fidelity."""
 
         for path, host, value in self.REQUESTS:
-            result = self._curl.get(self._ats, path, headers={"Host": host, "Foo": value}, options=("--verbose",))
+            result = self._curl.get(self._ats, path, headers={"Host": host, "Foo": value}, options=f"--verbose")
             assert result.returncode == 0, result.output
 
     def run(self) -> None:
