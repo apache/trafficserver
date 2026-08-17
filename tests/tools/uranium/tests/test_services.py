@@ -15,6 +15,7 @@
 #  limitations under the License.
 """Unit tests for procedural Uranium service objects."""
 
+from importlib import import_module
 from pathlib import Path
 import os
 import subprocess
@@ -22,6 +23,7 @@ from typing import Any
 
 import pytest
 
+from tools.uranium import services as service_api
 from tools.uranium.runtime import TestRuntime as UraniumRuntime
 from tools.uranium.services import ATS, ATSFactory, Curl, ProceduralContext
 
@@ -70,6 +72,34 @@ def attach_process(ats: ATS) -> FakeProcess:
     process = FakeProcess()
     ats._runner._start_ats = lambda: process  # type: ignore[method-assign,return-value]
     return process
+
+
+def test_services_facade_reexports_focused_implementations() -> None:
+    """Keep the existing scenario import surface stable after the split."""
+
+    implementations = {
+        "ATS": "tools.uranium.services.ats",
+        "ATSFactory": "tools.uranium.services.ats",
+        "CommandResult": "tools.uranium.services.context",
+        "ConfigFile": "tools.uranium.services.ats",
+        "Curl": "tools.uranium.services.curl",
+        "DNSServer": "tools.uranium.services.dns",
+        "HttpBinServer": "tools.uranium.services.httpbin",
+        "OriginServer": "tools.uranium.services.origin",
+        "ProceduralContext": "tools.uranium.services.context",
+        "ProcessService": "tools.uranium.services.process_service",
+        "RecordsConfig": "tools.uranium.services.ats",
+        "ServiceFactory": "tools.uranium.services.service_factory",
+        "VerifierServer": "tools.uranium.services.verifier",
+        "assert_matches_gold": "tools.uranium.services.service_utils",
+        "send_tcp": "tools.uranium.services.service_utils",
+        "wait_for_file_lines": "tools.uranium.services.service_utils",
+        "wait_for_metric": "tools.uranium.services.service_utils",
+    }
+
+    assert set(service_api.__all__) == set(implementations)
+    for name, module_name in implementations.items():
+        assert getattr(service_api, name) is getattr(import_module(module_name), name)
 
 
 def test_procedural_sandbox_leaves_room_for_ats_rpc_socket(tmp_path: Path) -> None:
@@ -199,7 +229,7 @@ def test_curl_targets_ats_transport(
         observed.update(kwargs)
         return subprocess.CompletedProcess(command, 7, "response", "diagnostic")
 
-    monkeypatch.setattr("tools.uranium.services.subprocess.run", run)
+    monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
     ats = ATS(make_context(tmp_path))
 
     result = Curl(tmp_path, use_uds=use_uds).get(ats, "status", headers={"X-Test": "value"})
@@ -237,7 +267,7 @@ def test_curl_parses_a_shell_style_argument_string(monkeypatch: pytest.MonkeyPat
         observed.update(kwargs)
         return subprocess.CompletedProcess(command, 0, "", "")
 
-    monkeypatch.setattr("tools.uranium.services.subprocess.run", run)
+    monkeypatch.setattr("tools.uranium.services.curl.subprocess.run", run)
 
     result = Curl(tmp_path).run("--verbose --header 'X-Test: one two' http://example.test/path")
 
