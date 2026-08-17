@@ -100,14 +100,9 @@ class SliceIdentScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--silent",
-            "--dump-header",
-            "/dev/stdout",
-            "--output",
-            "/dev/null",
-            "--proxy",
-            f"localhost:{self._ats.http_port}",
-            f"http://{host}/{path}",
+            (
+                f"--silent --dump-header /dev/stdout --output /dev/null --proxy 'localhost:{self._ats.http_port}' "
+                f"'http://{host}/{path}'"),
         )
         assert result.returncode == 0, result.output
         assert expected_status in result.stdout

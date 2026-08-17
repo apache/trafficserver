@@ -110,17 +110,9 @@ class ConnectDestinationAclScenario:
 
         return self._curl.run_for(
             ats,
-            "--silent",
-            "--insecure",
-            "--noproxy",
-            "does-not-match",
-            "--proxy",
-            f"http://127.0.0.1:{ats.http_port}",
-            "--output",
-            "/dev/null",
-            "--write-out",
-            "http_code=%{http_code} http_connect=%{http_connect}\n",
-            url,
+            (
+                f"--silent --insecure --noproxy does-not-match --proxy 'http://127.0.0.1:{ats.http_port}' --output "
+                f"/dev/null --write-out 'http_code=%{{http_code}} http_connect=%{{http_connect}}\n' '{url}'"),
         )
 
     def verify_denied_targets(self) -> None:
@@ -146,12 +138,9 @@ class ConnectDestinationAclScenario:
 
         result = self._curl.run_for(
             self._sni,
-            "--silent",
-            "--insecure",
-            "--verbose",
-            "--resolve",
-            f"sni-denied.example.com:{self._sni.https_port}:127.0.0.1",
-            f"https://sni-denied.example.com:{self._sni.https_port}/",
+            (
+                f"--silent --insecure --verbose --resolve 'sni-denied.example.com:{self._sni.https_port}:127.0.0.1' "
+                f"'https://sni-denied.example.com:{self._sni.https_port}/'"),
         )
         assert result.returncode in (35, 52, 56), result.output
         diagnostics = self._sni.diags_log.read_text(errors="replace")

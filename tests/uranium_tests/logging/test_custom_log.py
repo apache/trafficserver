@@ -67,7 +67,7 @@ class CustomLogAddressScenario:
         """Address the same listener through distinct Linux loopback IPs."""
 
         for address in self.ADDRESSES:
-            result = self._curl.run(f"http://{address}:{self._ats.http_port}", "--verbose")
+            result = self._curl.run(f"'http://{address}:{self._ats.http_port}' --verbose",)
             assert result.returncode == 0, result.output
 
     def run(self) -> None:

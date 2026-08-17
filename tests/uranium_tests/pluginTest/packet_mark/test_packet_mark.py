@@ -82,11 +82,7 @@ class PacketMarkScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--ipv4",
-            "--header",
-            f"{set_header}: 0x{SET_MARK:08x}",
-            f"http://localhost:{self._ats.http_port}/",
+            f"--verbose --ipv4 --header '{set_header}: 0x{SET_MARK:08x}' 'http://localhost:{self._ats.http_port}/'",
         )
         assert result.returncode == 0, result.output
         assert f"X-{self._side.title()}-Packet-Mark: 0x{SET_MARK:08x}".lower() in result.output.lower()

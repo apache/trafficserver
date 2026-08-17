@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from concurrent.futures import ThreadPoolExecutor
+import shlex
 import re
 import time
 
@@ -95,7 +96,10 @@ class ContinuationMetricsScenario:
             options.extend(["--insecure", "--http2"])
 
         def request(_index: int) -> None:
-            result = self._curl.run_for(self._ats, *options, url)
+            result = self._curl.run_for(
+                self._ats,
+                f"{shlex.join(options)} '{url}'",
+            )
             assert result.returncode in (0, 2), result.output
 
         with ThreadPoolExecutor(max_workers=min(32, self._request_count)) as executor:
@@ -207,7 +211,10 @@ class SessionIdScenario:
         """Run one protocol's independent client sessions in parallel."""
 
         def request(_index: int) -> None:
-            result = self._curl.run_for(self._ats, *options, url)
+            result = self._curl.run_for(
+                self._ats,
+                f"{shlex.join(options)} '{url}'",
+            )
             assert result.returncode in (0, 2), result.output
 
         with ThreadPoolExecutor(max_workers=32) as executor:

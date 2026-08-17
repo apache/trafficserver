@@ -102,7 +102,7 @@ class RemapIpResolveScenario:
     def request(self, host: str, expected: str) -> None:
         """Send one hostname case and verify the selected address family."""
 
-        result = self._curl.get(self._ats, headers={"Host": host}, options=("--verbose",))
+        result = self._curl.get(self._ats, headers={"Host": host}, options=f"--verbose")
         assert result.returncode == 0, result.output
         assert result.stdout == expected, result.output
 

@@ -46,12 +46,9 @@ class CacheGenerationClearScenario:
     def _request_object(self, gold_name: str) -> None:
         result = self.curl.run_for(
             self.ats,
-            "--verbose",
-            "--output",
-            "/dev/null",
-            "--header",
-            f"x-debug: {XDEBUG_HEADER}",
-            f"http://127.0.0.1:{self.ats.http_port}/default/cache/10/{self.object_id}",
+            (
+                f"--verbose --output /dev/null --header 'x-debug: {XDEBUG_HEADER}' "
+                f"'http://127.0.0.1:{self.ats.http_port}/default/cache/10/{self.object_id}'"),
         )
         assert result.returncode == 0, result.output
         assert_matches_gold(result.output, GOLD_DIRECTORY / gold_name)

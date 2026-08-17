@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 
 from tools.uranium.services import (
     ATS,
@@ -120,7 +121,10 @@ class TlsClientVerifyScenario:
                 f"{host}:{self._ats.https_port}:127.0.0.1",
                 f"https://{host}:{self._ats.https_port}/case{case_number}",
             ))
-        return self._curl.run_for(self._ats, *arguments)
+        return self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
 
     def run(self) -> None:
         """Run the policy matrix and verify certificate-presence access-log fields."""

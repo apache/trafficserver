@@ -87,12 +87,9 @@ class H2SniPolicyScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--insecure",
-            "--ipv4",
-            "--resolve",
-            f"{hostname}:{self._ats.https_port}:127.0.0.1",
-            f"https://{hostname}:{self._ats.https_port}/",
+            (
+                f"--verbose --insecure --ipv4 --resolve '{hostname}:{self._ats.https_port}:127.0.0.1' "
+                f"'https://{hostname}:{self._ats.https_port}/'"),
             timeout=10,
         )
         assert result.returncode == 0, result.output

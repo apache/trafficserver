@@ -70,14 +70,8 @@ class SlowOriginPostScenario:
         self._ats.start()
         result = self._curl.run_for(
             self._ats,
-            "--request",
-            "POST",
-            "--http1.1",
-            "--verbose",
-            "--silent",
-            f"http://127.0.0.1:{self._ats.http_port}/",
-            "--data",
-            "key=value",
+            (f"--request POST --http1.1 --verbose --silent 'http://127.0.0.1:{self._ats.http_port}/' --data "
+             f"key=value"),
             timeout=10,
         )
         assert result.returncode == 0, result.output

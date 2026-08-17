@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 
@@ -81,7 +82,10 @@ class NewLogFieldsScenario:
     def request(self, *arguments: str) -> None:
         """Run curl and require a successful transaction."""
 
-        result = self._curl.run_for(self._ats, *arguments)
+        result = self._curl.run_for(
+            self._ats,
+            shlex.join(arguments),
+        )
         assert result.returncode == 0, result.output
 
     def run(self) -> None:

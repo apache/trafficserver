@@ -101,10 +101,7 @@ class StaleNextHopScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--proxy",
-            f"127.0.0.1:{self._ats.http_port}",
-            "http://dummy.com/obj0",
+            f"--verbose --proxy '127.0.0.1:{self._ats.http_port}' http://dummy.com/obj0",
         )
         assert result.returncode == 0, result.output
         assert result.stdout == "This is the body.\n"

@@ -56,7 +56,7 @@ class FieldNameSpaceScenario:
         result = self._curl.get(
             self._ats,
             headers={"Host": "www.example.com"},
-            options=("--dump-header", "-", "--verbose", "--http1.1"),
+            options=f"--dump-header - --verbose --http1.1",
         )
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.stdout, result.output

@@ -112,13 +112,7 @@ class PerServerConnectionMaxScenario:
 
         return self._curl.run_for(
             ats,
-            "--verbose",
-            "--fail",
-            "--silent",
-            "--proxytunnel",
-            "--proxy",
-            f"127.0.0.1:{ats.http_port}",
-            f"http://foo.com/{path}",
+            f"--verbose --fail --silent --proxytunnel --proxy '127.0.0.1:{ats.http_port}' 'http://foo.com/{path}'",
         )
 
     def run_connect_case(self, maximum: int, blocked: int) -> None:

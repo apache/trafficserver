@@ -38,7 +38,7 @@ class ParentRetryScenario:
         """Start ATS and exercise the parsed parent configuration."""
 
         self._ats.start()
-        result = self._curl.get(self._ats, options=("--verbose",))
+        result = self._curl.get(self._ats, options=f"--verbose")
         assert result.returncode == 0, result.output
 
 

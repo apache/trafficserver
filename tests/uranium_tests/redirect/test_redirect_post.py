@@ -86,12 +86,8 @@ class RedirectPostScenario:
             stream.truncate(self._body_size)
         result = self._curl.run_for(
             self._ats,
-            "--header",
-            "Expect:",
-            "--include",
-            "--form",
-            f"filename=@{upload}",
-            f"http://127.0.0.1:{self._ats.http_port}/redirect1",
+            (f"--header Expect: --include --form 'filename=@{upload}' "
+             f"'http://127.0.0.1:{self._ats.http_port}/redirect1'"),
             timeout=20,
         )
         assert result.returncode == 0, result.output

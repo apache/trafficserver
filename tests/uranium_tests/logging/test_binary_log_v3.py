@@ -100,7 +100,7 @@ class BinaryLogV3Scenario:
         self._origin.start()
         self._ats.start()
         for _ in range(3):
-            result = self._curl.get(self._ats, "/get", options=("--http1.1",))
+            result = self._curl.get(self._ats, "/get", options=f"--http1.1")
             assert result.returncode == 0, result.output
         wait_for_file_lines(self._ats.log_directory / "ascii.log", r"/get", 3)
 

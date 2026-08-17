@@ -101,17 +101,9 @@ class TlsRenegotiationRefusedScenario:
 
         result = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--http1.1",
-            "--tls-max",
-            "1.2",
-            "--tlsv1.2",
-            "--ciphers",
-            "DEFAULT@SECLEVEL=0",
-            "--insecure",
-            "--resolve",
-            f"example.com:{self._ats.https_port}:127.0.0.1",
-            f"https://example.com:{self._ats.https_port}/",
+            (
+                f"--verbose --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 --insecure --resolve "
+                f"'example.com:{self._ats.https_port}:127.0.0.1' 'https://example.com:{self._ats.https_port}/'"),
         )
         assert result.returncode == 0, result.output
         assert "HTTP/1.1 200 OK" in result.stderr

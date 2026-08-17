@@ -82,14 +82,10 @@ class OcspStaplingScenario:
         self._origin.start()
         self._ats.start()
         result = self._curl.run(
-            "--verbose",
-            "--cacert",
-            str(self._ats.ssl_directory / "ca.ocsp.pem"),
-            "--cert-status",
-            "--resolve",
-            f"server.example.com:{self._ats.https_port}:127.0.0.1",
-            f"https://server.example.com:{self._ats.https_port}/",
-        )
+            (
+                f"--verbose --cacert '{str(self._ats.ssl_directory / 'ca.ocsp.pem')}' --cert-status --resolve "
+                f"'server.example.com:{self._ats.https_port}:127.0.0.1' "
+                f"'https://server.example.com:{self._ats.https_port}/'"),)
         assert result.returncode == 0, result.output
 
 

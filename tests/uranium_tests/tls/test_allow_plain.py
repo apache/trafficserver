@@ -65,31 +65,18 @@ class AllowPlainScenario:
         resolve = f"www.example.com:{self._ats.https_port}:127.0.0.1"
         tls = self._curl.run_for(
             self._ats,
-            "--output",
-            "/dev/null",
-            "--insecure",
-            "--verbose",
-            "--header",
-            "uuid: get",
-            "--ipv4",
-            "--http1.1",
-            "--resolve",
-            resolve,
-            f"https://www.example.com:{self._ats.https_port}/",
+            (
+                f"--output /dev/null --insecure --verbose --header 'uuid: get' --ipv4 --http1.1 --resolve '{resolve}' "
+                f"'https://www.example.com:{self._ats.https_port}/'"),
         )
         assert tls.returncode == 0, tls.output
         assert "TLS" in tls.stderr
 
         plain = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--ipv4",
-            "--http1.1",
-            "--header",
-            "uuid: get",
-            "--resolve",
-            resolve,
-            f"http://www.example.com:{self._ats.https_port}",
+            (
+                f"--verbose --ipv4 --http1.1 --header 'uuid: get' --resolve '{resolve}' "
+                f"'http://www.example.com:{self._ats.https_port}'"),
         )
         assert plain.returncode == 0, plain.output
         assert "TLS" not in plain.stderr
@@ -98,17 +85,10 @@ class AllowPlainScenario:
         body.write_text("0123456789" * 50000)
         post = self._curl.run_for(
             self._ats,
-            "--verbose",
-            "--data",
-            f"@{body}",
-            "--header",
-            "uuid: post",
-            "--ipv4",
-            "--http1.1",
-            "--resolve",
-            resolve,
-            f"http://www.example.com:{self._ats.https_port}/post",
-            f"http://www.example.com:{self._ats.https_port}/post",
+            (
+                f"--verbose --data '@{body}' --header 'uuid: post' --ipv4 --http1.1 --resolve '{resolve}' "
+                f"'http://www.example.com:{self._ats.https_port}/post' "
+                f"'http://www.example.com:{self._ats.https_port}/post'"),
         )
         assert post.returncode == 0, post.output
         assert "TLS" not in post.stderr

@@ -16,6 +16,7 @@
 """Verify URI signing token extraction and validation."""
 
 from dataclasses import dataclass
+import shlex
 
 import pytest
 
@@ -137,7 +138,10 @@ class UriSigningScenario:
             if case.cookie is not None:
                 arguments.extend(["--header", f"Cookie: {case.cookie}"])
             arguments.append(f"http://somehost{case.url}")
-            result = self._curl.run_for(self._ats, *arguments)
+            result = self._curl.run_for(
+                self._ats,
+                shlex.join(arguments),
+            )
             assert result.returncode == 0, f"{case.name}: {result.output}"
             assert f"< HTTP/1.1 {case.status}" in result.stderr, f"{case.name}: {result.output}"
 
