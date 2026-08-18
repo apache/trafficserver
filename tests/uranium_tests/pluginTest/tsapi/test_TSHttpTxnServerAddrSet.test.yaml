@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+    version: '1.0'
+
 urtest:
   description: "Verify TSHttpTxnServerAddrSet redirects the origin connection"
-  replay: "test_TSHttpTxnServerAddrSet.replay.yaml"
   dns:
     name: "server-addr-dns"
     process_config:
@@ -43,3 +45,36 @@ urtest:
     remap_config:
       - from: "/"
         to: "http://non.existent.server.com:{UNUSED_PORT}"
+
+
+sessions:
+
+- transactions:
+
+  - client-request:
+      method: GET
+      url: /pictures/flower.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, first-request ]
+
+    server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+          - [ Content-Type, image/jpeg ]
+          - [ Transfer-Encoding, chunked ]
+          - [ Connection, keep-alive ]
+          - [ X-Response, redirect-succeeded ]
+        content:
+          size: 45
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: redirect-succeeded, as: equal } ]

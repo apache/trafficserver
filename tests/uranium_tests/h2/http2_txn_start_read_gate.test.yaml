@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: '1.0'
+
 urtest:
   description: "Verify HTTP/2 reads do not bypass an asynchronous TXN_START hook"
-  replay: "replay/http2_txn_start_read_gate.replay.yaml"
 
   requires:
     proxy_verifier: "2.8.0"
@@ -58,3 +60,48 @@ urtest:
         excludes:
           - expression: "READ_REQUEST_HDR before delayed TXN_START reenable"
             description: "READ_REQUEST_HDR must wait for TXN_START reenable"
+
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: delay-txn-start.test
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", POST]
+            - [":scheme", https]
+            - [":authority", delay-txn-start.test]
+            - [":path", /read-gate]
+            - [Content-Length, '12']
+            - [uuid, '1']
+      - DATA:
+          content:
+            encoding: plain
+            data: request-body
+            size: 12
+
+    proxy-request:
+      content:
+        encoding: plain
+        data: request-body
+        verify: {as: equal}
+
+    server-response:
+      status: 200
+      reason: OK
+      content:
+        encoding: plain
+        data: response-body
+        size: 13
+
+    proxy-response:
+      status: 200
+      content:
+        encoding: plain
+        data: response-body
+        verify: {as: equal}

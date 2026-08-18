@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify slice accepts PURGE requests"
-  replay: "replay/slice_purge.replay.yaml"
   requires:
     plugins: ["slice.so", "cache_range_requests.so"]
   server:
@@ -47,3 +49,121 @@ urtest:
       ats:
         remap_config:
           - "map /ref/block http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--ref-relative @plugin=cache_range_requests.so"
+
+sessions:
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ref/block
+      headers:
+        fields:
+          - [ Host, example.com ]
+          - [ uuid, 1 ]
+          - [ Range, bytes=0-9 ]
+    server-response:
+      status: 206
+      reason: OK
+      headers:
+        fields:
+          - [ Content-Length, 10 ]
+          - [ Content-Range, { value: "bytes 0-9/16", as: equal}]
+          - [ Cache-Control, max-age=300 ]
+          - [ X-Response, cached_response ]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+          - [ Content-Length, { value: "10", as: equal} ]
+          - [ Content-Range, { value: "bytes 0-9/16", as: equal}]
+          - [ X-Response, { value: cached_response, as: equal} ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ref/block
+      headers:
+        fields:
+          - [ Host, example.com ]
+          - [ uuid, 2 ]
+          - [ Range, bytes=10-19 ]
+    server-response:
+      status: 206
+      reason: OK
+      headers:
+        fields:
+          - [ Content-Length, 6 ]
+          - [ Content-Range, { value: "bytes 10-15/16", as: equal}]
+          - [ Cache-Control, max-age=300 ]
+          - [ X-Response, cached_response ]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+          - [ Content-Length, { value: "6", as: equal} ]
+          - [ Content-Range, { value: "bytes 10-15/16", as: equal}]
+          - [ X-Response, { value: cached_response, as: equal} ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ref/block
+      headers:
+        fields:
+          - [ Host, example.com ]
+          - [ Range, bytes=10-15 ]
+          - [ uuid, 3 ]
+    server-response:
+      status: 500
+      headers:
+        fields:
+          - [ Content-Length, 0 ]
+          - [ X-Response, internal_server_error ]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+          - [ Content-Range, { value: "bytes 10-15/16", as: equal}]
+          - [ X-Response, { value: cached_response, as: equal} ]
+
+  - client-request:
+      method: "PURGE"
+      version: "1.1"
+      url: /ref/block
+      headers:
+        fields:
+          - [ Host, example.com ]
+          - [ uuid, 4 ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+          - [ Content-Length, 0 ]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Length, { value: "0", as: equal} ]
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ref/block
+      headers:
+        fields:
+          - [ Host, example.com ]
+          - [ Range, bytes=10-15 ]
+          - [ uuid, 5 ]
+    server-response:
+      status: 404
+      headers:
+        fields:
+          - [ Content-Length, 0 ]
+          - [ X-Response, internal_server_error ]
+    proxy-response:
+      status: 404
+      headers:
+        fields:
+          - [ Content-Length, { value: "0", as: equal} ]
+          - [ X-Response, { value: internal_server_error, as: equal} ]

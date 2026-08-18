@@ -15,11 +15,10 @@
 #  limitations under the License.
 
 meta:
-  version: "1.0"
+  version: '1.0'
 
 urtest:
   description: "Proxy an empty HTTP/2 POST with Expect: 100-continue"
-  replay: "expect_100_continue.yaml"
   server:
     name: "expect-origin"
   client:
@@ -37,4 +36,45 @@ urtest:
       - from: "/expect"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}"
 
-sessions: []
+
+sessions:
+  - protocol:
+      stack: http2
+      tls:
+        version: TLSv1.3
+        sni: data.brian.example.com
+    transactions:
+      - client-request:
+          headers:
+            encoding: esc_json
+            fields:
+              - [ ":method", POST ]
+              - [ ":scheme", https ]
+              - [ ":authority", data.brian.example.com ]
+              - [ ":path", /expect/post ]
+              - [ uuid, 100-continue ]
+              - [ Expect, 100-continue ]
+              - [ Content-Length, 0 ]
+          content:
+            encoding: plain
+            size: 0
+
+        proxy-request:
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Expect, { value: 100-continue, as: equal } ]
+
+        server-response:
+          status: 200
+          headers:
+            encoding: esc_json
+            fields:
+              - [ Content-Length, 32 ]
+              - [ X-Response, response_to_post ]
+          content:
+            encoding: plain
+            size: 32
+
+        proxy-response:
+          status: 200

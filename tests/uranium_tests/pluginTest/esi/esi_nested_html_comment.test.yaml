@@ -16,7 +16,6 @@
 
 urtest:
   description: "Verify ESI HTML comment nesting validation"
-  replay: "esi_nested_html_comment.replay.yaml"
   requires:
     plugins: ["esi.so"]
   server:
@@ -70,3 +69,32 @@ urtest:
           diags_log:
             contains:
               - {expression: 'Nested <!--esi \.\.\.--> inside <!--esi \.\.\.--> is not allowed', description: "The nested-wrapper guard must reject nested ESI comments"}
+
+sessions:
+
+- transactions:
+
+  # Origin returns an HTML comment wrapper (<!--esi ... -->) around an
+  # <esi:vars> tag. The ESI processor must strip the wrapper, expand the
+  # inner ESI markup, and produce the expanded body.
+  - client-request:
+      method: GET
+      url: /esi-html-comment.php
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Accept, "*/*" ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Esi, "1" ]
+        - [ Cache-Control, "private" ]
+        - [ Content-Type, "text/html" ]
+        - [ Connection, "close" ]
+        - [ Transfer-Encoding, "chunked" ]
+      content:
+        encoding: plain
+        data: "<body>start-<!--esi <esi:vars>$(HTTP_HOST)</esi:vars> -->-end</body>"

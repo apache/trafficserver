@@ -14,9 +14,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#
+# Perform a response with a long delay to verify default_inactivity_timeout.
+#
+
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify the default network inactivity timeout"
-  replay: "replay/default_inactivity_timeout.replay.yaml"
   server:
     name: "default-inactivity-origin"
   client:
@@ -57,3 +63,54 @@ urtest:
             plugins:
               - name: "conf_remap.so"
                 args: ["proxy.config.net.default_inactivity_timeout=2"]
+
+
+sessions:
+- transactions:
+
+  # Perform a transaction with no timeout.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/item1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, timeout1 ]
+        - [ Content-Length, 0 ]
+
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 300 ]
+
+    proxy-response:
+      status: 200
+
+  # Perform a transaction with 4s delay. This may timeout if
+  # default_inactivity_timeout is below 4s.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/item2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, timeout2 ]
+        - [ Content-Length, 0 ]
+
+    server-response:
+      # This is large, but bear in mind that the default inactivity timeout
+      # should kill the connection before this delay finishes. So this should
+      # not slow down the test as much as it seems.
+      delay: 8s
+
+      status: 200
+      reason: "OK"
+
+    proxy-response:
+      status: 200

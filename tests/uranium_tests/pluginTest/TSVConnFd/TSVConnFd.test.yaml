@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify TSVConnFdCreate wraps and exchanges data over an existing socket"
-  replay: "TSVConnFd.replay.yaml"
   server: {name: "vconn-fd-origin"}
   client: {name: "vconn-fd-client"}
   ats:
@@ -36,3 +37,20 @@ urtest:
       - 'touch "{ATS_ROOT}/in_progress"'
     post_client_commands:
       - 'for i in $(seq 1 15); do test ! -e "{ATS_ROOT}/in_progress" && exit 0; sleep 1; done; exit 1'
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, vconn-fd]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, myhost.test]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 6], [Connection, close]]}
+          content: {data: "112233", size: 6}
+        proxy-response:
+          status: 200
+          content: {data: "112233", size: 6}
