@@ -888,6 +888,16 @@ HttpSM::wait_for_full_body()
   tunnel.tunnel_run(p);
 }
 
+void
+HttpSM::generate_cache_key(HttpCacheKey *key, URL *url, bool compat)
+{
+  if (compat) {
+    Cache::generate_key92(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  } else {
+    Cache::generate_key(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  }
+}
+
 int
 HttpSM::state_watch_for_client_abort(int event, void *data)
 {
@@ -5327,11 +5337,7 @@ HttpSM::do_cache_lookup_and_read()
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
-    Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
-  } else {
-    Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
-  }
+  generate_cache_key(&key, c_url, compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92);
 
   t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
   HttpTransactHeaders::normalize_accept_encoding(t_state.txn_conf, &t_state.hdr_info.cache_request);
@@ -5358,8 +5364,7 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                      t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, t_state.cache_info.lookup_url);
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -5436,7 +5441,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   SMDbg(dbg_ctl_http_cache_write, "writing to cache with URL %s", s_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, s_url);
 
   pending_action =
     c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
