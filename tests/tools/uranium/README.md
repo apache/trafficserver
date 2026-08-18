@@ -81,6 +81,12 @@ procedural tests.
 
 ## Top-level modules
 
+### `assertions.py`
+
+Defines assertions shared by direct replay and procedural tests. Gold-file
+matching lives here, including the optional `cdifflib` acceleration and the
+standard-library fallback.
+
 ### `config.py`
 
 Defines `ReplaySpec` and `ReplayConfigError`. It loads replay manifests,
@@ -121,6 +127,11 @@ environment. It discovers ATS and helper programs, reads build features and
 layout, allocates ports, creates worker-specific sandboxes, resolves generated
 artifacts, and coordinates execution that must be exclusive.
 
+### `utils.py`
+
+Defines small address, TCP-readiness, and version helpers shared by the replay
+engine and procedural services.
+
 ## `services/` package
 
 [`services/__init__.py`](services/__init__.py) is the stable public facade used
@@ -143,8 +154,7 @@ The implementations are divided by responsibility:
 | [`httpbin.py`](services/httpbin.py) | `go-httpbin` lifecycle and readiness. |
 | [`verifier.py`](services/verifier.py) | Proxy Verifier server lifecycle and violation checks. |
 | [`service_factory.py`](services/service_factory.py) | Creation and cleanup of non-ATS services and arbitrary support processes. |
-| [`service_utils.py`](services/service_utils.py) | Gold matching, file polling, TCP requests, and metric polling. |
-| [`_service_helpers.py`](services/_service_helpers.py) | Private TCP, address, and version helpers shared by service implementations. |
+| [`service_utils.py`](services/service_utils.py) | File polling, TCP requests, and metric polling. |
 
 The distinction between the two process layers is intentional:
 
@@ -168,9 +178,9 @@ Contains fast framework tests rather than Traffic Server scenarios:
 
 - `test_config.py` covers metadata parsing, variants, replay inventory, and
   configuration transformations.
+- `test_assertions.py` covers shared gold-file comparison and diff selection.
 - `test_plugin.py` covers pytest marker and manual-test behavior.
-- `test_process.py` covers subprocess handling, gold matching, and placeholder
-  replacement.
+- `test_process.py` covers subprocess handling and placeholder replacement.
 - `test_runner.py` covers wrapper arguments, containers, sharding, builds, and
   sandbox copying.
 - `test_services.py` covers the public service facade, ATS ownership, cleanup,
