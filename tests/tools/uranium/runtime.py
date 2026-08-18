@@ -32,10 +32,10 @@ import subprocess
 
 import fcntl
 
-from .config import version_tuple
+from .utils import version_tuple
 
 
-class RuntimeError(ValueError):
+class RuntimeConfigError(ValueError):
     """Report an invalid Uranium test runtime."""
 
 
@@ -72,13 +72,13 @@ class TestRuntime:
         ]
         missing = [str(path) for path in required if not path.is_file()]
         if missing:
-            raise RuntimeError("Missing required test programs: " + ", ".join(missing))
+            raise RuntimeConfigError("Missing required test programs: " + ", ".join(missing))
 
         try:
             layout = json.loads(subprocess.check_output([traffic_layout, "--json"], text=True))
             features = json.loads(subprocess.check_output([traffic_layout, "--features", "--json"], text=True))
         except (subprocess.CalledProcessError, json.JSONDecodeError) as error:
-            raise RuntimeError(f"Could not query {traffic_layout}: {error}") from error
+            raise RuntimeConfigError(f"Could not query {traffic_layout}: {error}") from error
 
         return cls(
             repository_root=repository_root.resolve(),
@@ -135,7 +135,7 @@ class TestRuntime:
                 fcntl.flock(state, fcntl.LOCK_UN)
                 return candidate
             fcntl.flock(state, fcntl.LOCK_UN)
-        raise RuntimeError("Could not allocate a test port")
+        raise RuntimeConfigError("Could not allocate a test port")
 
     @contextmanager
     def execution_lock(self, is_exclusive: bool) -> Iterator[None]:
@@ -174,7 +174,7 @@ class TestRuntime:
 
         resolved = path.resolve()
         if resolved.parent != self.sandbox_root or resolved == self.sandbox_root:
-            raise RuntimeError(f"Refusing to clean unsafe sandbox path: {resolved}")
+            raise RuntimeConfigError(f"Refusing to clean unsafe sandbox path: {resolved}")
         if resolved.exists():
             shutil.rmtree(resolved)
         resolved.mkdir(parents=True)

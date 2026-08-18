@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import difflib
 import re
 import socket
 import time
@@ -26,23 +25,6 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .ats import ATS
-
-
-def assert_matches_gold(actual: str, expected: Path) -> None:
-    """Assert that output matches a Uranium wildcard gold file.
-
-    :param actual: Captured output to compare.
-    :param expected: Gold-file path containing literal text and wildcards.
-    """
-
-    expected_text = expected.read_text(errors="replace").replace("\r\n", "\n")
-    expected_text = expected_text.replace("\n``\n", "``")
-    actual_text = actual.replace("\r\n", "\n")
-    pattern = "\\A" + ".*?".join(re.escape(part) for part in re.split(r"(?:\{\}|``)", expected_text)) + "\\Z"
-    if re.match(pattern, actual_text, re.DOTALL) is None:
-        difference = "".join(
-            difflib.unified_diff(expected_text.splitlines(True), actual_text.splitlines(True), str(expected), "actual"))
-        raise AssertionError(f"Output did not match gold file:\n{difference}")
 
 
 def wait_for_file_lines(path: Path, expression: str, count: int, timeout: float = 10) -> str:

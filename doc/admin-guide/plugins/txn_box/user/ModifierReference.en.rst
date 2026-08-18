@@ -118,7 +118,7 @@ Modifiers
    This can be used to append separated strings even on empty fields. For instance, to make sure the
    list of rock bands contains "Delain", it would be
 
-   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/mod.replay.yaml
+   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/mod.test.yaml
      :start-after: doc-concat-empty-<
      :end-before: doc-concat-empty->
 
@@ -213,13 +213,13 @@ Modifiers
 
    The following example shows how a particular field can be encoded.
 
-   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/mod.replay.yaml
+   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/mod.test.yaml
      :start-after: doc-url-encode-<
      :end-before: doc-url-encode->
 
    Perform a redirect and apply the :mod:`url-encode` to :ex:`pre-remap-query` in combination with :mod:`concat`.
 
-   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/redirect.replay.yaml
+   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/redirect.test.yaml
      :start-after: doc-redirect-url-encode-form-<
      :end-before: doc-redirect-url-encode-form->
 
@@ -232,13 +232,13 @@ Modifiers
 
    The following example shows how a particular field can be encoded.
 
-   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/mod.replay.yaml
+   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/mod.test.yaml
      :start-after: doc-url-decode-<
      :end-before: doc-url-decode->
 
    Perform a redirect and apply the :mod:`url-decode` to :ex:`pre-remap-query` in combination with :mod:`concat`.
 
-   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/redirect.replay.yaml
+   .. literalinclude:: ../../../../../tests/uranium_tests/pluginTest/txn_box/basic/redirect.test.yaml
      :start-after: doc-redirect-url-decode-form-<
      :end-before: doc-redirect-url-decode-form->
 

@@ -48,7 +48,7 @@ urtest:
 
   variants:
     - name: generate
-      replay: replays/https.replay.yaml
+      replay: https.replay.yaml
       ats:
         post_client_commands:
           - >-
@@ -64,14 +64,14 @@ urtest:
             contains: "creating shadow certs"
 
     - name: reuse
-      replay: replays/https-two-sessions.replay.yaml
+      replay: https-two-sessions.replay.yaml
       ats:
         file_checks:
           - path: "{LOG_DIR}/traffic.out"
             contains: "reusing existing cert and context for www.tls.com"
 
     - name: reject-unsafe-sni
-      replay: replays/https-path-traversal.replay.yaml
+      replay: https-path-traversal.replay.yaml
       ats:
         file_checks:
           - path: "{CONFIG_DIR}/certifier-certs/certifier-escaped.crt"
@@ -80,7 +80,7 @@ urtest:
             contains: "rejecting unsafe SNI for certificate storage"
 
     - name: no-sni-uses-default
-      replay: replays/https-no-sni.replay.yaml
+      replay: https-no-sni.replay.yaml
       ats:
         file_checks:
           - path: "{LOG_DIR}/traffic.out"

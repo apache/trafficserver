@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from ..process import ManagedProcess
-from ._service_helpers import tcp_open
+from ..utils import tcp_open
 from .process_service import ProcessService
 
 
