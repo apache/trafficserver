@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify TLS session secrets are written when configured"
-  replay: "tls_session_key_logging.replay.yaml"
   server:
     name: "keylog-enabled-origin"
   client:
@@ -42,3 +44,29 @@ urtest:
     file_checks:
       - path: "{LOG_DIR}/tls_secrets.txt"
         exists: true
+
+
+sessions:
+- protocol:
+    stack: https
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /for/tls
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Connection, keep-alive ]
+        - [ Content-Length, 16 ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 32 ]
+
+    proxy-response:
+      status: 200

@@ -14,12 +14,14 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# This replay file executes a single https transaction. ATS has PROXY protocol
+# out configured and is expected to send out a PROXY header to the origin
+# server.
 meta:
   version: "1.0"
 
 urtest:
   description: "Verify outgoing Proxy Protocol for HTTP, TLS, and blind tunnels"
-  replay: replay/proxy_protocol_out.replay.yaml
   dns: {name: proxy-protocol-dns, process_config: {default: 127.0.0.1}}
   server: {name: proxy-protocol-origin}
   client: {name: proxy-protocol-client}
@@ -110,3 +112,27 @@ urtest:
         log_validation:
           traffic_out:
             contains: [{expression: "CONNECT tunnel://backend.pp.origin.com"}]
+
+
+sessions:
+  # Basic https transaction
+  - protocol:
+      stack: https
+      tls:
+        sni: pp.origin.com
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /get/request
+          headers:
+            fields:
+              - [uuid, 1]
+              - [Host, pp.origin.com]
+
+        server-response:
+          status: 200
+          reason: OK
+
+        proxy-response:
+          status: 200

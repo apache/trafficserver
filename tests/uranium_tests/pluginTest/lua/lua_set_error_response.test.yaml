@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+    version: '1.0'
+
 urtest:
   description: "Verify Lua can replace an error response"
-  replay: "set_error_response.replay.yaml"
   requires:
     plugins: ["tslua.so"]
   dns:
@@ -42,3 +44,36 @@ urtest:
       - "set_error_response.lua"
     remap_config:
       - "map / http://backend.example.com:{SERVER_HTTP_PORT}/ @plugin=tslua.so @pparam={CONFIG_DIR}/set_error_response.lua"
+
+
+sessions:
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /some/path/flower.jpeg
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ Content-Type, image/jpeg ]
+        - [ Content-Length, '0' ]
+        - [ uuid, first-request ]
+
+    server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Date, "Sat, 16 Mar 2019 03:11:36 GMT" ]
+          - [ Content-Type, image/jpeg ]
+          - [ Transfer-Encoding, chunked ]
+          - [ Connection, keep-alive ]
+        content:
+          size: 3432
+
+    # The lua script modifies the response to be a 418.
+    proxy-response:
+      status: 418
+      content:
+        verify: {value: 'bad luck :(', as: equal}

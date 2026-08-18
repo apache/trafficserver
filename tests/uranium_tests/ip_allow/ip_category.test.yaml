@@ -14,12 +14,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Assume everything is allowed by default.
+
 meta:
   version: "1.0"
 
+  blocks:
+  - standard_response: &standard_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 20 ]
+
 urtest:
   description: "Apply inbound method policy through named IP categories"
-  replay: replays/https_categories_internal.replay.yaml
   server:
     name: origin
     replay: replays/https_categories_server.replay.yaml
@@ -60,8 +70,6 @@ urtest:
 
   variants:
     - name: internal-and-external
-      client:
-        replay: replays/https_categories_internal.replay.yaml
       ats:
         inline_config_files:
           categories.yaml: |
@@ -125,3 +133,79 @@ urtest:
           - >-
             map / http://127.0.0.1:{SERVER_HTTP_PORT}
             @action=set_deny @src_ip_category=ACME_REMAP_EXTERNAL @method=GET
+
+sessions:
+- protocol:
+    stack: https
+    tls:
+      sni: test_sni
+  transactions:
+
+  # GET allowed
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test/ip_allow/test_get
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ uuid, get ]
+        - [ X-Request, get ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 200
+
+  # POST allowed
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: /test/ip_allow/test_post
+      headers:
+        fields:
+        - [Content-Length, 10]
+        - [ uuid, post ]
+        - [ X-Request, post ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 200
+
+  # PUSH allowed
+  - client-request:
+      method: "PUSH"
+      version: "1.1"
+      url: /test/ip_allow/test_push
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, push ]
+        - [ X-Request, push ]
+        - [ Content-Length, 113 ]
+      content:
+        encoding: plain
+        data: "HTTP/1.1 200 OK\nServer: ATS/10.0.0\nAccept-Ranges: bytes\nContent-Length: 6\nCache-Control: public,max-age=2\n\nCACHED"
+
+    <<: *standard_response
+
+    # Cacching is off, but a 400 still indicates that ATS processed it.
+    proxy-response:
+      status: 400
+
+  # DELETE is not allowed even for internal.
+  - client-request:
+      method: "DELETE"
+      version: "1.1"
+      url: /test/ip_allow/test_delete
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ uuid, delete ]
+        - [ X-Request, delete ]
+
+    <<: *standard_response
+
+    proxy-response:
+      status: 403
