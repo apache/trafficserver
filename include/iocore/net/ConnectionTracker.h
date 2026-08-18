@@ -93,8 +93,12 @@ public:
    * Keeping the per group metrics in the hidden store in every case means changing this at runtime
    * is only a change of what is registered for publication, with no metric to migrate between the
    * two stores.
+   *
+   * The records layer validates and clamps this to 0..2. A plugin setting the overridable config
+   * directly is not clamped, see @c METRIC_AGGREGATE_CONV; any other value behaves as
+   * @c AGGREGATE_GROUP, publishing both the aggregate and the per group metrics.
    */
-  enum MetricAggregate {
+  enum MetricAggregate : int {
     AGGREGATE_NONE  = 0, ///< No hostname aggregate; the per group metrics are published.
     AGGREGATE_GROUP = 1, ///< Hostname aggregates published, along with the per group metrics.
     AGGREGATE_ONLY  = 2, ///< Hostname aggregates published, per group metrics kept hidden.

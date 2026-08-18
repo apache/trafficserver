@@ -72,20 +72,23 @@ const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
     }
   }};
 
-// Both of these clamp on store so a plugin cannot leave an out of range value in the transaction
-// config; the records reload path clamps separately in its own update callbacks.
+// Neither of these clamps, for the same reason as SERVER_MATCH_CONV above: the InkAPITest
+// regression test requires an arbitrary integer to round trip through the setter and getter. The
+// records paths do the range checking instead -- records.yaml validates the value and the reload
+// callbacks below clamp -- so an out of range value is only reachable by a plugin that sets one
+// deliberately. Both settings degrade safely if that happens: any non-zero metric_enabled enables
+// metrics, and any metric_aggregate outside 0..2 publishes both the aggregate and the per group
+// metrics, the same as AGGREGATE_GROUP.
 const MgmtConverter ConnectionTracker::METRIC_ENABLED_CONV{
   [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::metric_enabled) *>(data)); },
   [](void *data, MgmtInt i) -> void {
-    *static_cast<decltype(TxnConfig::metric_enabled) *>(data) = std::clamp(static_cast<int>(i), 0, 1);
+    *static_cast<decltype(TxnConfig::metric_enabled) *>(data) = static_cast<decltype(TxnConfig::metric_enabled)>(i);
   }};
 
 const MgmtConverter ConnectionTracker::METRIC_AGGREGATE_CONV{
   [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const ConnectionTracker::MetricAggregate *>(data)); },
   [](void *data, MgmtInt i) -> void {
-    auto level = std::clamp(static_cast<int>(i), static_cast<int>(ConnectionTracker::AGGREGATE_NONE),
-                            static_cast<int>(ConnectionTracker::AGGREGATE_ONLY));
-    *static_cast<ConnectionTracker::MetricAggregate *>(data) = static_cast<ConnectionTracker::MetricAggregate>(level);
+    *static_cast<ConnectionTracker::MetricAggregate *>(data) = static_cast<ConnectionTracker::MetricAggregate>(i);
   }};
 
 const std::array<std::string_view, static_cast<int>(ConnectionTracker::MATCH_BOTH) + 1> ConnectionTracker::MATCH_TYPE_NAME{
