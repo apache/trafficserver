@@ -521,7 +521,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
   auto         it      = metrics.find(name);
 
   if (it != metrics.end()) {
-    RecRecord r;
+    RecRecord r{};
     auto &&[name, type, val] = *it;
 
     r.rec_type     = RECT_PLUGIN;
@@ -554,7 +554,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
       auto &strings = ts::Metrics::StaticString::instance();
 
       if (auto m = strings.lookup(std::string{name}); m) {
-        RecRecord r;
+        RecRecord r{};
         r.rec_type                = RECT_PLUGIN;
         r.data_type               = RECD_STRING;
         r.name                    = name;
@@ -585,7 +585,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // librecords callback with a "pseudo" record.
     for (auto &&[name, type, val] : ts::Metrics::instance()) {
       if (regex.exec(name.data())) {
-        RecRecord tmp;
+        RecRecord tmp{};
 
         tmp.rec_type = RECT_PROCESS;
 
@@ -598,7 +598,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // Finally check string metrics
     ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
       if (regex.exec(name)) {
-        RecRecord tmp;
+        RecRecord tmp{};
 
         tmp.rec_type = RECT_PROCESS;
 
@@ -610,6 +610,36 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
         callback(&tmp, data);
       }
     });
+  }
+
+  if (rec_type & RECT_HIDDEN_METRIC) {
+    // Opt-in only: hidden metrics are never reachable through RECT_ALL, see RecDefs.h.
+    auto &hidden = ts::Metrics::hidden_instance();
+    // Slot 0 of every Storage is the reserved bad_id placeholder, so it exists under the same name
+    // in both stores. Skip it here, otherwise a query matching it returns two identically named
+    // records that differ only in value.
+    auto it = hidden.begin();
+
+    ++it;
+    for (; it != hidden.end(); ++it) {
+      auto &&[name, type, val] = *it;
+
+      if (regex.exec(name.data())) {
+        RecRecord tmp{};
+
+        // Tag both bits so that a caller asking only for RECT_HIDDEN_METRIC passes the rec_type
+        // check the lookup callback applies to every record it is handed. Note this combination
+        // satisfies neither REC_TYPE_IS_STAT nor REC_TYPE_IS_CONFIG (both compare for equality),
+        // so the YAML encoder emits no stat_meta block for hidden metrics. That is intentional:
+        // the meta fields of this synthetic record were never populated.
+        tmp.rec_type = static_cast<RecT>(RECT_PROCESS | RECT_HIDDEN_METRIC);
+
+        tmp.name         = name.data();
+        tmp.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
+        tmp.data.rec_int = val;
+        callback(&tmp, data);
+      }
+    }
   }
 
   int num_records = g_num_records;
