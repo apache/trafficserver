@@ -14,9 +14,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+
+meta:
+  version: '1.0'
+
 urtest:
   description: "Verify graceful HTTP/2 shutdown sends both GOAWAY frames"
-  replay: "http2_close_connection.yaml"
 
   requires:
     proxy_verifier: "2.8.0"
@@ -63,3 +72,69 @@ urtest:
     remap_config:
       - from: "/"
         to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: test_sni
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.data.com]
+            - [":path", /a/path]
+            - [Content-Type, text/html]
+            - [uuid, 1]
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":status", 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '13']
+      - DATA:
+          delay: 4s
+          content:
+            encoding: plain
+            data: server_test_1
+            size: 13
+
+    proxy-response:
+      content:
+        encoding: plain
+        data: server_test_1
+        verify: {as: equal}
+
+  - client-request:
+      delay: 4s
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.data.com]
+            - [":path", /b/path]
+            - [Content-Type, text/html]
+            - [uuid, 2]
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":status", 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '13']
+      - DATA:
+          content:
+            encoding: plain
+            data: server_test_2
+            size: 13

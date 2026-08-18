@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify xdebug cache-info and effective-URL response headers"
-  replay: "xdebug_headers.replay.yaml"
   requires: {plugins: [xdebug.so]}
   server: {name: "xdebug-header-origin"}
   client: {name: "xdebug-header-client"}
@@ -45,4 +46,109 @@ urtest:
       ats:
         plugin_config: ["xdebug.so --enable=x-effective-url"]
 
-sessions: []
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, cache-none]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, none], [X-Debug, X-Cache-Info]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 500
+          headers: {fields: [[X-Cache-Info, {as: absent}]]}
+
+      - all: {headers: {fields: [[uuid, cache-one]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, one], [X-Debug, X-Cache-Info]]}
+        server-response: &ok
+          status: 200
+          headers: {fields: [[Content-Length, 0], [Connection, close]]}
+        proxy-response: &cache-info
+          status: 200
+          headers:
+            fields:
+              - [X-Cache-Info, {value: "path=", as: contains}]
+              - [X-Cache-Info, {value: "volume=0", as: contains}]
+
+      - all: {headers: {fields: [[uuid, cache-two]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, two], [X-Debug, x-cache-info]]}
+        server-response: *ok
+        proxy-response: *cache-info
+
+      - all: {headers: {fields: [[uuid, cache-three]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, three123], [X-Debug, x-cACHE-iNFO]]}
+        server-response: *ok
+        proxy-response: *cache-info
+
+      - all: {headers: {fields: [[uuid, effective-none]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, none], [X-Debug, X-Effective-URL]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 500
+          headers: {fields: [[X-Effective-URL, {value: "http://none/argh", as: contains}]]}
+
+      - all: {headers: {fields: [[uuid, effective-one]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, one], [X-Debug, x-effective-url]]}
+        proxy-request: {url: /argh}
+        server-response: *ok
+        proxy-response:
+          status: 200
+          headers: {fields: [[X-Effective-URL, {value: "/argh", as: contains}]]}
+
+      - all: {headers: {fields: [[uuid, effective-two]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, two], [X-Debug, X-EFFECTIVE-URL]]}
+        proxy-request: {url: /two/argh}
+        server-response: *ok
+        proxy-response:
+          status: 200
+          headers: {fields: [[X-Effective-URL, {value: "/two/argh", as: contains}]]}
+
+      - all: {headers: {fields: [[uuid, effective-three]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, three123], [X-Debug, X-effective-url]]}
+        proxy-request: {url: /argh}
+        server-response: *ok
+        proxy-response:
+          status: 200
+          headers: {fields: [[X-Effective-URL, {value: "/argh", as: contains}]]}
+
+      - all: {headers: {fields: [[uuid, effective-four]]}}
+        client-request:
+          method: GET
+          url: /argh,urgh
+          version: "1.1"
+          headers: {fields: [[Host, four], [X-Debug, X-effective-url]]}
+        proxy-request: {url: "/four/argh,urgh"}
+        server-response: *ok
+        proxy-response:
+          status: 200
+          headers: {fields: [[X-Effective-URL, {value: "/four/argh,urgh", as: contains}]]}
