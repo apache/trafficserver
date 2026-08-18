@@ -926,7 +926,7 @@ inline static bool
 does_method_effect_cache(int method)
 {
   return ((method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUT ||
-           method == HTTP_WKSIDX_POST));
+           method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_QUERY));
 }
 
 inline static HttpTransact::StateMachineAction_t
@@ -1708,7 +1708,11 @@ HttpTransact::HandleRequest(State *s)
         }
       }
     }
-    if (s->txn_conf->request_buffer_enabled && s->http_config_param->post_copy_size > 0 &&
+    // Caching QUERY requires the request content, since it is part of the cache
+    // key. Buffer the whole body up front so the key is known before the lookup.
+    bool const buffer_for_query_cache_key = s->txn_conf->cache_query_method == 1 && s->method == HTTP_WKSIDX_QUERY;
+
+    if ((s->txn_conf->request_buffer_enabled || buffer_for_query_cache_key) && s->http_config_param->post_copy_size > 0 &&
         s->state_machine->get_ua_txn()->has_request_body(s->hdr_info.request_content_length,
                                                          s->client_info.transfer_encoding == TransferEncoding_t::CHUNKED)) {
       TRANSACT_RETURN(StateMachineAction_t::WAIT_FOR_FULL_BODY, nullptr);
@@ -2190,13 +2194,14 @@ HttpTransact::OSDNSLookup(State *s)
       } else if (s->cache_lookup_result == CacheLookupResult_t::MISS || s->cache_info.action == CacheAction_t::NO_ACTION) {
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadMiss);
         // DNS lookup is done if the lookup failed and need to call Handle Cache Open Read Miss
-      } else if (s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE && s->txn_conf->cache_post_method == 1 &&
-                 s->method == HTTP_WKSIDX_POST) {
+      } else if (s->cache_info.action == CacheAction_t::PREPARE_TO_WRITE &&
+                 ((s->txn_conf->cache_post_method == 1 && s->method == HTTP_WKSIDX_POST) ||
+                  (s->txn_conf->cache_query_method == 1 && s->method == HTTP_WKSIDX_QUERY))) {
         // By virtue of being here, we are intending to forward the request on
         // to the server. If we marked this as CacheAction_t::PREPARE_TO_WRITE and this
-        // is a POST request whose response we intend to write, then we have to
-        // proceed from here by calling the function that handles this as a
-        // miss.
+        // is a POST or QUERY request whose response we intend to write, then we
+        // have to proceed from here by calling the function that handles this
+        // as a miss.
         TRANSACT_RETURN(StateMachineAction_t::API_OS_DNS, HandleCacheOpenReadMiss);
       } else {
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Invalid Cache Lookup result", "default");
@@ -3220,7 +3225,7 @@ HttpTransact::build_response_from_cache(State *s, HTTPWarningCode warning_code)
   default:
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_HIT_SERVED);
     if (s->method == HTTP_WKSIDX_GET || (s->txn_conf->cache_post_method == 1 && s->method == HTTP_WKSIDX_POST) ||
-        s->api_resp_cacheable == true) {
+        (s->txn_conf->cache_query_method == 1 && s->method == HTTP_WKSIDX_QUERY) || s->api_resp_cacheable == true) {
       // send back the full document to the client.
       TxnDbg(dbg_ctl_http_trans, "Match! Serving full document.");
       s->cache_info.action = CacheAction_t::SERVE;
@@ -6892,6 +6897,17 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
       TxnDbg(dbg_ctl_http_trans, "POST method with a TTL");
     } else {
       TxnDbg(dbg_ctl_http_trans, "NO POST w/o Expires or CC");
+      return false;
+    }
+  }
+
+  // A QUERY response is only cacheable with explicit freshness information,
+  // since heuristic freshness is not defined for it.
+  if (req_method == HTTP_WKSIDX_QUERY) {
+    if (s->cache_control.ttl_in_cache > 0) {
+      TxnDbg(dbg_ctl_http_trans, "QUERY method with a TTL");
+    } else {
+      TxnDbg(dbg_ctl_http_trans, "NO QUERY w/o Expires or CC");
       return false;
     }
   }

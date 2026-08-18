@@ -3143,6 +3143,30 @@ Cache Control
 
    Enables (``1``) or disables (``0``) caching of HTTP POST requests.
 
+.. ts:cv:: CONFIG proxy.config.http.cache.query_method INT 0
+   :reloadable:
+   :overridable:
+
+   Enables (``1``) or disables (``0``) caching of HTTP QUERY requests.
+
+   The content of a QUERY request is part of the resource it identifies, so
+   |TS| folds a digest of the request body into the cache key. This requires
+   the entire request body to be buffered before the cache lookup can happen,
+   the same buffering that :ts:cv:`proxy.config.http.request_buffer_enabled`
+   performs, and it is subject to :ts:cv:`proxy.config.http.post_copy_size`.
+   Requests with a body larger than that limit are not buffered and therefore
+   not cached.
+
+   A QUERY response is only cached when it carries explicit freshness
+   information, either from the origin (``Cache-Control`` or ``Expires``) or
+   from a :file:`cache.config` ``ttl-in-cache`` rule. Heuristic freshness is
+   never applied to QUERY.
+
+   Note that the digest covers the body bytes as they arrive on the wire. A
+   chunked request body therefore keys on its chunk framing, so the same
+   logical body sent with different chunk boundaries produces a cache miss
+   rather than a false hit.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.generation INT -1
    :reloadable:
    :overridable:

@@ -890,16 +890,60 @@ HttpSM::wait_for_full_body()
   tunnel.tunnel_run(p);
 }
 
+// The content of a QUERY request is part of the resource it identifies, so it
+// has to take part in the cache key. The full body has been buffered by
+// wait_for_full_body() at this point, so digest it and hand the digest to
+// generate_cache_key().
+void
+HttpSM::compute_request_body_digest()
+{
+  t_state.cache_info.request_body_digest_valid = false;
+
+  if (t_state.method != HTTP_WKSIDX_QUERY || t_state.txn_conf->cache_query_method != 1 || !this->_postbuf.is_valid()) {
+    return;
+  }
+
+  CryptoContext   ctx;
+  IOBufferReader *reader = this->get_postbuf_clone_reader();
+
+  for (int64_t avail = reader->block_read_avail(); avail > 0; avail = reader->block_read_avail()) {
+    ctx.update(reader->start(), static_cast<int>(avail));
+    reader->consume(avail);
+  }
+  reader->dealloc();
+
+  ctx.finalize(t_state.cache_info.request_body_digest);
+  t_state.cache_info.request_body_digest_valid = true;
+
+  SMDbg(dbg_ctl_http_cache_write, "request body digest folded into the cache key");
+}
+
+// Mixes the request body digest, when compute_request_body_digest() made one,
+// into a cache key that was built from the URL.
+void
+HttpSM::fold_request_body_digest(HttpCacheKey *key)
+{
+  if (t_state.cache_info.request_body_digest_valid) {
+    CryptoContext ctx;
+
+    ctx.update(key->hash.u8, sizeof(key->hash.u8));
+    ctx.update(t_state.cache_info.request_body_digest.u8, sizeof(t_state.cache_info.request_body_digest.u8));
+    ctx.finalize(key->hash);
+  }
+}
+
 void
 HttpSM::generate_cache_key(HttpCacheKey *key, URL *url)
 {
   Cache::generate_key(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  fold_request_body_digest(key);
 }
 
 void
 HttpSM::generate_cache_key92(HttpCacheKey *key, URL *url)
 {
   Cache::generate_key92(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  fold_request_body_digest(key);
 }
 
 int
@@ -3090,6 +3134,7 @@ HttpSM::tunnel_handler_post(int event, void *data)
       is_buffering_request_body = true;
       client_request_body_bytes = this->postbuf_buffer_avail();
 
+      compute_request_body_digest();
       call_transact_and_set_next_state(HttpTransact::HandleRequestBufferDone);
       break;
     }

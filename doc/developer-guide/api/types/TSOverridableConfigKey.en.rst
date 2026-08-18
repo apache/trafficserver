@@ -171,6 +171,7 @@ Enumeration Members
 .. enumerator:: TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE_PERCENT
 .. enumerator:: TS_CONFIG_HTTP_BYPASS_PARENT
 .. enumerator:: TS_CONFIG_HTTP_REJECT_HEAD_WITH_CONTENT
+.. enumerator:: TS_CONFIG_HTTP_CACHE_QUERY_METHOD
 
 
 Description

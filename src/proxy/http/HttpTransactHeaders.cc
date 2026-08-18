@@ -57,16 +57,17 @@ bool
 HttpTransactHeaders::is_method_cacheable(const OverridableHttpConfigParams *http_config_param, const int method)
 {
   return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD ||
-          (http_config_param->cache_post_method == 1 && method == HTTP_WKSIDX_POST));
+          (http_config_param->cache_post_method == 1 && method == HTTP_WKSIDX_POST) ||
+          (http_config_param->cache_query_method == 1 && method == HTTP_WKSIDX_QUERY));
 }
 
 bool
 HttpTransactHeaders::is_method_cache_lookupable(int method)
 {
-  // responses to GET, HEAD, and POST are cacheable
+  // responses to GET, HEAD, POST, and QUERY are cacheable
   // URL's requested in DELETE and PUT are looked up to remove cached copies
-  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_DELETE ||
-          method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUSH);
+  return (method == HTTP_WKSIDX_GET || method == HTTP_WKSIDX_HEAD || method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_QUERY ||
+          method == HTTP_WKSIDX_DELETE || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_PURGE || method == HTTP_WKSIDX_PUSH);
 }
 
 bool

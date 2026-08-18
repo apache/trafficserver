@@ -257,6 +257,7 @@
   X(HTTP_PER_SERVER_CONNECTION_METRIC_ENABLED,      connection_tracker_config.metric_enabled,   ConnectionTracker::CONFIG_SERVER_VAR_METRIC_ENABLED,              INT,    ConnectionTracker_METRIC_ENABLED_CONV) \
   X(HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,    connection_tracker_config.metric_aggregate, ConnectionTracker::CONFIG_SERVER_VAR_METRIC_AGGREGATE,            INT,    ConnectionTracker_METRIC_AGGREGATE_CONV) \
   X(HTTP_BYPASS_PARENT,                             bypass_parent,                              "proxy.config.http.bypass_parent",                                INT,    GENERIC) \
-  X(HTTP_REJECT_HEAD_WITH_CONTENT,                  reject_head_with_content,                   "proxy.config.http.reject_head_with_content",                     INT,    GENERIC)
+  X(HTTP_REJECT_HEAD_WITH_CONTENT,                  reject_head_with_content,                   "proxy.config.http.reject_head_with_content",                     INT,    GENERIC) \
+  X(HTTP_CACHE_QUERY_METHOD,                        cache_query_method,                         "proxy.config.http.cache.query_method",                           INT,    GENERIC)
 
 // clang-format on

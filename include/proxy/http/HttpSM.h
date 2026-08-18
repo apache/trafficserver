@@ -465,8 +465,10 @@ private:
   void do_drain_request_body(HTTPHdr &response);
 
   void wait_for_full_body();
+  void compute_request_body_digest();
   void generate_cache_key(HttpCacheKey *key, URL *url);
   void generate_cache_key92(HttpCacheKey *key, URL *url);
+  void fold_request_body_digest(HttpCacheKey *key);
 
   virtual void        handle_api_return();
   void                handle_server_setup_error(int event, void *data);
