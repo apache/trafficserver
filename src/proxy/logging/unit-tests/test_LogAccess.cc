@@ -215,23 +215,31 @@ TEST_CASE("LogAccess non-HttpSM client host port is null-safe", "[LogAccess]")
   CHECK(marshal_int_value([&](char *buf) { return access.marshal_client_host_port(buf); }) == 4321);
 }
 
-TEST_CASE("LogAccess unmarshal_http_version keeps the minor version", "[LogAccess]")
+TEST_CASE("LogAccess marshals response HTTP versions as compact strings", "[LogAccess]")
 {
-  auto render = [](int64_t major, int64_t minor) -> std::string {
-    char marshalled[2 * INK_MIN_ALIGN];
-    LogAccess::marshal_int(marshalled, major);
-    LogAccess::marshal_int(marshalled + INK_MIN_ALIGN, minor);
+  NonHttpSmLogData data;
+  populate_non_http_sm_data(data, "GET", "https"sv, "example.com", "/version"sv);
+  TransactionLogData log_data(data);
+  LogAccess          access(log_data);
+
+  access.init();
+
+  auto check = [](auto marshal) {
+    CHECK(marshal(nullptr) == INK_MIN_ALIGN);
+    CHECK(marshal_string(marshal) == "0.0");
+
+    char marshalled[INK_MIN_ALIGN] = {};
+    marshal(marshalled);
 
     char  dest[64] = {};
     char *src      = marshalled;
     int   len      = LogAccess::unmarshal_http_version(&src, dest, sizeof(dest));
+
     REQUIRE(len > 0);
-    return std::string(dest, len);
+    CHECK(std::string(dest, len) == "HTTP/0.0");
+    CHECK(src == marshalled + INK_MIN_ALIGN);
   };
 
-  CHECK(render(1, 1) == "HTTP/1.1");
-  CHECK(render(1, 0) == "HTTP/1.0");
-  // known bug of `.0` suffix for HTTP/2 and HTTP/3
-  CHECK(render(2, 0) == "HTTP/2.0");
-  CHECK(render(3, 0) == "HTTP/3.0");
+  check([&](char *buf) { return access.marshal_server_resp_http_version(buf); });
+  check([&](char *buf) { return access.marshal_cache_resp_http_version(buf); });
 }
