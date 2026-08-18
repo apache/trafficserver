@@ -1109,7 +1109,6 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
-  HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age_percent, "proxy.config.http.cache.max_stale_age_percent");
 
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
@@ -1457,8 +1456,7 @@ HttpConfig::reconfigure()
   params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
   params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;
 
-  params->oride.cache_max_stale_age         = m_master.oride.cache_max_stale_age;
-  params->oride.cache_max_stale_age_percent = m_master.oride.cache_max_stale_age_percent;
+  params->oride.cache_max_stale_age = m_master.oride.cache_max_stale_age;
 
   params->oride.srv_enabled = m_master.oride.srv_enabled;
 

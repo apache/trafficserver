@@ -43,7 +43,7 @@ urtest:
             - {expression: "MAX_CONCURRENT_STREAMS:100"}
 
     - name: default-in-http1-chunked
-      server: {replay: http2_flow_control_chunked.replay.yaml}
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
       client: *default_client
 
     - name: default-in-http2
@@ -69,7 +69,7 @@ urtest:
           proxy.config.http2.max_concurrent_streams_in: 53
 
     - name: max-streams-in-http1-chunked
-      server: {replay: http2_flow_control_chunked.replay.yaml}
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
       client: *max_streams_client
       ats: *max_streams_in
 
@@ -102,7 +102,7 @@ urtest:
           proxy.config.http2.initial_window_size_in: 100123
 
     - name: large-window-in-http1-chunked
-      server: {replay: http2_flow_control_chunked.replay.yaml}
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
       client: *large_window_client
       ats: *large_window_in
 
@@ -140,7 +140,7 @@ urtest:
           proxy.config.http2.flow_control.policy_in: 0
 
     - name: policy0-small-in-http1-chunked
-      server: {replay: http2_flow_control_chunked.replay.yaml}
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
       client: *policy0_client
       ats: *policy0_in
 
@@ -184,7 +184,7 @@ urtest:
           proxy.config.http2.flow_control.policy_in: 1
 
     - name: policy1-in-http1-chunked
-      server: {replay: http2_flow_control_chunked.replay.yaml}
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
       client: *policy1_client
       ats: *policy1_in
 
@@ -233,7 +233,7 @@ urtest:
           proxy.config.http2.flow_control.policy_in: 2
 
     - name: policy2-in-http1-chunked
-      server: {replay: http2_flow_control_chunked.replay.yaml}
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
       client: *policy2_client
       ats: *policy2_in
 

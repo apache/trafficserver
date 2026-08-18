@@ -13,16 +13,16 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Private utilities shared by Uranium service implementations."""
+"""Small utilities shared by direct and procedural Uranium tests."""
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable
 import re
 import socket
 
 
-def addresses(ports: Sequence[int]) -> str:
+def loopback_addresses(ports: Iterable[int]) -> str:
     """Format loopback listener addresses for Proxy Verifier.
 
     :param ports: TCP port numbers to format.
@@ -51,4 +51,5 @@ def version_tuple(value: str) -> tuple[int, ...]:
     :param value: Version string containing numeric components.
     """
 
-    return tuple(int(part) for part in re.findall(r"\d+", value))
+    match = re.search(r"\d+(?:\.\d+)+", value)
+    return tuple(int(part) for part in match.group(0).split(".")) if match else ()

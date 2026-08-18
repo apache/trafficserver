@@ -61,10 +61,14 @@ dependencies = [
 dev = [
     { name = "pyflakes" },
 ]
+fast-diff = [
+    { name = "cdifflib" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "aioquic", specifier = "==1.3.0" },
+    { name = "cdifflib", marker = "extra == 'fast-diff'", specifier = ">=1.2.9" },
     { name = "charset-normalizer" },
     { name = "colorama" },
     { name = "dnslib" },
@@ -88,7 +92,7 @@ requires-dist = [
     { name = "requests" },
     { name = "traffic-replay" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["fast-diff", "dev"]
 
 [[package]]
 name = "attrs"
@@ -97,6 +101,17 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9a/8e/82a0fe20a541c03148528be8cac2408564a6c9a0cc7e9171802bc1d26985/attrs-26.1.0.tar.gz", hash = "sha256:d03ceb89cb322a8fd706d4fb91940737b6642aa36998fe130a9bc96c985eff32", size = 952055, upload-time = "2026-03-19T14:22:25.026Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl", hash = "sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309", size = 67548, upload-time = "2026-03-19T14:22:23.645Z" },
+]
+
+[[package]]
+name = "cdifflib"
+version = "1.2.9"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/aa/daefb1236e47561ca53f469f4832f625b38ad6db4e5c68e589dd72928d61/cdifflib-1.2.9.tar.gz", hash = "sha256:6286da08f72b7ddb5b40145dcb8f214ad913a86d72b1f62cc8d6cf7a92029590", size = 12323, upload-time = "2025-01-13T22:18:04.625Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ba/35/161f137709a77ae861dfdebb478a7dad323b3a7fd3c24b97799ccf48a2b7/cdifflib-1.2.9-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:32c56f7895253b0734f42ba023a9c181b52d72f3d51afacc29d5ea8ee72e4643", size = 11046, upload-time = "2025-01-13T22:17:58.077Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/94/caf01d3efe4aa31086217d20538ad9a8ef8a925b49771d34d4dab0295de8/cdifflib-1.2.9-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:75a81d8a5e2b0ca055d3f7850fd0a29b488b086c91445841fa3113ac328410e0", size = 11028, upload-time = "2025-01-13T22:17:59.168Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/05/5071e0757237e7aa79a6256c1ddddebebab500e1807a1603739f777f37b1/cdifflib-1.2.9-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:c7113c018e1d8190ce6c00318ae5afe7e99c8e4e0b4b631ee79acde74949c2e8", size = 11039, upload-time = "2025-01-13T22:18:01.439Z" },
 ]
 
 [[package]]

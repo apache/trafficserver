@@ -19,7 +19,7 @@ meta:
 
 urtest:
   description: "Proxy HTTP/1 and HTTP/2 clients to an HTTP/2 origin"
-  replay: "replay_h2origin"
+  replay: "../replay_h2origin"
   server:
     name: "h2-origin"
   client:

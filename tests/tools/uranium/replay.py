@@ -20,7 +20,6 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
-import difflib
 import glob
 import grp
 import json
@@ -38,9 +37,11 @@ import time
 from dnslib import DNSRecord
 import yaml
 
+from .assertions import assert_matches_gold
 from .config import ReplayConfigError, ReplaySpec, format_plugin_entry, merge_flat_records, write_yaml
 from .process import ManagedProcess
 from .runtime import TestRuntime
+from .utils import loopback_addresses, tcp_open
 
 
 class ReplaySkip(RuntimeError):
@@ -164,7 +165,7 @@ class ReplayTest:
             self.runtime.verifier_bin / "verifier-server",
             "run",
             "--listen-http",
-            self._address_argument(http_ports),
+            loopback_addresses(http_ports),
             "--listen-https",
             f"127.0.0.1:{self.server_https_port}",
             "--server-cert",
@@ -187,9 +188,9 @@ class ReplayTest:
         process.start()
         self.processes.append(process)
         process.wait_until(
-            lambda: all(self._tcp_open(port) for port in http_ports),
+            lambda: all(tcp_open(port) for port in http_ports),
             10,
-            f"HTTP listeners on {self._address_argument(http_ports)}",
+            f"HTTP listeners on {loopback_addresses(http_ports)}",
         )
         return process
 
@@ -314,7 +315,7 @@ class ReplayTest:
             lambda: (
                 any(
                     path.exists() and "NOTE: Traffic Server is fully initialized" in path.read_text(errors="replace")
-                    for path in readiness_paths) or (diags_name in ("stdout", "stderr") and self._tcp_open(self.http_port))),
+                    for path in readiness_paths) or (diags_name in ("stdout", "stderr") and tcp_open(self.http_port))),
             startup_timeout,
             "the fully initialized log message",
         )
@@ -335,15 +336,15 @@ class ReplayTest:
         http3_ports = process_config.pop("http3_ports", [self.https_port] if enable_quic else [])
         command: list[str | Path] = [self.runtime.verifier_bin / "verifier-client", "run", self._process_replay_path(config)]
         if http_ports:
-            command.extend(["--connect-http", self._replace_port_placeholders(self._address_argument(http_ports))])
+            command.extend(["--connect-http", self._replace_port_placeholders(loopback_addresses(http_ports))])
         if https_ports:
-            command.extend(["--connect-https", self._replace_port_placeholders(self._address_argument(https_ports))])
+            command.extend(["--connect-https", self._replace_port_placeholders(loopback_addresses(https_ports))])
         if http3_ports:
             qlog = directory / "qlog_directory"
             qlog.mkdir()
             command.extend(
                 ["--connect-http3",
-                 self._replace_port_placeholders(self._address_argument(http3_ports)), "--qlog-dir", qlog])
+                 self._replace_port_placeholders(loopback_addresses(http3_ports)), "--qlog-dir", qlog])
         if https_ports or http3_ports:
             client_cert = self._resolve_test_path(process_config.get("ssl_cert"), ssl_dir / "client.pem")
             ca_certs = self._resolve_test_path(process_config.get("ca_cert"), ssl_dir / "ca.pem")
@@ -654,24 +655,45 @@ class ReplayTest:
         return value
 
     def _check_metrics(self) -> None:
+        """Poll until each expected ATS metric reaches its declared value."""
+
         checks = self.spec.urtest["ats"].get("metric_checks", [])
         for check in checks:
-            time.sleep(float(check.get("delay", 2)))
             metric = str(check["metric"])
-            command = [self.ats_paths["bin"] / "traffic_ctl", "metric", "get", metric]
-            result = subprocess.run(command, env=self.ats_environment, capture_output=True, text=True, timeout=10)
-            if result.returncode != 0:
-                raise AssertionError(f"Could not read metric {metric}:\n{result.stdout}{result.stderr}")
-            fields = result.stdout.split()
-            if len(fields) < 2:
-                raise AssertionError(f"Metric {metric} was absent: {result.stdout!r}")
-            actual_text = fields[-1]
-            if "value" in check and re.fullmatch(str(check["value"]), actual_text) is None:
-                raise AssertionError(f"Metric {metric} was {actual_text}, expected {check['value']}")
-            if "min" in check and float(actual_text) < float(check["min"]):
-                raise AssertionError(f"Metric {metric} was {actual_text}, expected at least {check['min']}")
             if "value" not in check and "min" not in check:
                 raise ReplayConfigError(f"metric_checks entry for {metric} must specify value or min")
+            time.sleep(float(check.get("delay", 2)))
+            command = [self.ats_paths["bin"] / "traffic_ctl", "metric", "get", metric]
+            deadline = time.monotonic() + float(check.get("timeout", 10))
+            failure = f"Metric {metric} did not reach its expected value"
+            while True:
+                try:
+                    result = subprocess.run(command, env=self.ats_environment, capture_output=True, text=True, timeout=10)
+                except subprocess.TimeoutExpired:
+                    failure = f"Timed out reading metric {metric}"
+                else:
+                    fields = result.stdout.split()
+                    if result.returncode != 0:
+                        failure = f"Could not read metric {metric}:\n{result.stdout}{result.stderr}"
+                    elif len(fields) < 2:
+                        failure = f"Metric {metric} was absent: {result.stdout!r}"
+                    else:
+                        actual_text = fields[-1]
+                        matches_value = "value" not in check or re.fullmatch(str(check["value"]), actual_text) is not None
+                        try:
+                            matches_minimum = "min" not in check or float(actual_text) >= float(check["min"])
+                        except ValueError:
+                            matches_minimum = False
+                        if matches_value and matches_minimum:
+                            break
+                        if not matches_value:
+                            failure = f"Metric {metric} was {actual_text}, expected {check['value']}"
+                        else:
+                            failure = f"Metric {metric} was {actual_text}, expected at least {check['min']}"
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise AssertionError(failure)
+                time.sleep(min(0.1, remaining))
 
     def _check_files(self) -> None:
         """Validate files produced or intentionally omitted by ATS."""
@@ -746,6 +768,8 @@ class ReplayTest:
         if diags_name in ("stdout", "stderr"):
             diags_path = self.ats_paths["log"] / "traffic.out"
         if not config.get("process_config", {}).get("disable_log_checks", False):
+            if not diags_path.is_file():
+                raise AssertionError(f"ATS diagnostic log does not exist: {diags_path}")
             diags = diags_path.read_text(errors="replace")
             for expression in ("ERROR:", "FATAL:", "Unrecognized configuration value"):
                 if expression in diags:
@@ -765,7 +789,7 @@ class ReplayTest:
         if access:
             access_path = self.ats_paths["log"] / access["filename"]
             if "gold_file" in access:
-                self._validate_gold(access_path, self.test_directory / access["gold_file"])
+                assert_matches_gold(access_path, self.test_directory / access["gold_file"])
             else:
                 self._validate_text(
                     access_path.read_text(errors="replace") if access_path.exists() else "", access, access_path.name)
@@ -784,17 +808,7 @@ class ReplayTest:
         if "gold_file" in rules:
             actual_path = self.sandbox / f"{label}.actual"
             actual_path.write_text(content)
-            self._validate_gold(actual_path, self.test_directory / rules["gold_file"])
-
-    @staticmethod
-    def _validate_gold(actual_path: Path, expected_path: Path) -> None:
-        actual = (actual_path.read_text(errors="replace") if actual_path.exists() else "").replace("\r\n", "\n")
-        expected = expected_path.read_text(errors="replace").replace("\r\n", "\n")
-        pattern = "\\A" + ".*?".join(re.escape(part) for part in re.split(r"(?:\{\}|``)", expected)) + "\\Z"
-        if re.match(pattern, actual, re.DOTALL) is None:
-            difference = "".join(
-                difflib.unified_diff(expected.splitlines(True), actual.splitlines(True), str(expected_path), str(actual_path)))
-            raise AssertionError(f"Output did not match gold file:\n{difference}")
+            assert_matches_gold(actual_path, self.test_directory / rules["gold_file"])
 
     def _server_ports(
         self,
@@ -819,18 +833,6 @@ class ReplayTest:
     def _return_codes(config: Mapping[str, Any]) -> Iterable[int]:
         codes = config.get("return_code", 0)
         return codes if isinstance(codes, list) else [codes]
-
-    @staticmethod
-    def _address_argument(ports: Iterable[int]) -> str:
-        return ",".join(f"127.0.0.1:{port}" for port in ports)
-
-    @staticmethod
-    def _tcp_open(port: int) -> bool:
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
-                return True
-        except OSError:
-            return False
 
     @staticmethod
     def _link_directory(source: Path, destination: Path) -> None:
