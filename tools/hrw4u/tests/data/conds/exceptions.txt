@@ -7,3 +7,9 @@ implicit-cmp.input: u4wrh
 double-negation.input: hrw4u
 # Old format without explicit hook defaults to REMAP; hrw4u always emits explicit sections
 no-hook.input: u4wrh
+# Legacy raw HRW uses bare %{CLIENT-URL}; forward emits the canonical %{CLIENT-URL:URL} form
+bare-client-url.input: u4wrh
+# Legacy raw HRW uses bare %{CLIENT-CERT:...}; forward emits the canonical %{INBOUND:CLIENT-CERT:...} form
+bare-client-cert-aprn.input: u4wrh
+# Multi-colon bare %{CLIENT-CERT:SAN:DNS} exercises longest-match FALLBACK_TAG_MAP path
+bare-client-cert-san-dns.input: u4wrh
