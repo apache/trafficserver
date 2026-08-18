@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify quiche qlog generation"
-  replay: "replay/basic1.replay.yaml"
   requires:
     ats_features: ["TS_USE_QUIC", "TS_HAS_QUICHE"]
   server:
@@ -50,3 +52,31 @@ urtest:
       ats:
         file_checks:
           - {glob: "{LOG_DIR}/test_qlog-*.sqlog", exists: false}
+
+
+sessions:
+- protocol:
+    stack: http3
+    tls:
+      sni: test_sni
+  transactions:
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.com]
+        - [":path", /path/test1]
+        - [ uuid, generate_qlog1 ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200

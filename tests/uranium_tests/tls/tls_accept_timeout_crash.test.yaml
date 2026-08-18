@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify stale TLS accept timeouts do not crash a deferred SSN_START hook"
-  replay: "tls_accept_timeout_crash.replay.yaml"
   server:
     name: "accept-timeout-origin"
   client:
@@ -47,3 +49,49 @@ urtest:
         excludes:
           - expression: "FATAL.*Assertion"
             description: "ATS must not abort on the stale timeout"
+
+
+sessions:
+- protocol:
+    stack: https
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+- protocol:
+    stack: http2
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", / ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200

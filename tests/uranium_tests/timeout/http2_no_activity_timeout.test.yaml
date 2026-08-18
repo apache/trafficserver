@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify HTTP/2 inbound and outbound inactivity timeouts"
-  replay: "replay/http2_no_activity_timeout.replay.yaml"
   server:
     name: "http2-inactivity-origin"
   client:
@@ -67,3 +69,76 @@ urtest:
           traffic_out:
             contains:
               - {expression: "http2_cs.*Closing event:.*TIMEOUT", description: "ATS must detect the server-side timeout"}
+
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: example.com
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET]
+        - [ ":scheme", https]
+        - [ ":authority", example.com]
+        - [ ":path", /path/test1]
+        - [ uuid, no_delay ]
+        - [ X-Request-Delay, 0seconds ]
+
+    server-response:
+      headers:
+        fields:
+        - [ ":status", 200]
+        - [ X-Response-Delay, 0seconds ]
+      content:
+        data: had_no_delay
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      delay: 3s
+      headers:
+        fields:
+        - [ ":method", GET]
+        - [ ":scheme", https]
+        - [ ":authority", example.com]
+        - [ ":path", /path/test2]
+        - [ uuid, 3_second_request_delay ]
+        - [ X-Request-Delay, 3seconds ]
+
+    server-response:
+      headers:
+        fields:
+        - [ ":status", 200]
+        - [ X-Response-Delay, 0seconds ]
+      content:
+        data: 3_second_request_delay
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET]
+        - [ ":scheme", https]
+        - [ ":authority", example.com]
+        - [ ":path", /path/test3]
+        - [ uuid, 3_second_response_delay ]
+        - [ X-Request-Delay, 0seconds ]
+
+    server-response:
+      delay: 3s
+      headers:
+        fields:
+        - [ ":status", 200]
+        - [ X-Response-Delay, 3seconds ]
+      content:
+        data: 3_second_response_delay
+
+    proxy-response:
+      status: 200

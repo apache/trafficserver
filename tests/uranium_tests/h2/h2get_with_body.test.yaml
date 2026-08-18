@@ -14,9 +14,18 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+
+meta:
+  version: '1.0'
+
 urtest:
   description: "Verify an HTTP/2 GET request can carry a body"
-  replay: "h2get_with_body.yaml"
   requires:
     proxy_verifier: "2.8.0"
   server:
@@ -52,3 +61,54 @@ urtest:
     remap_config:
       - from: "/"
         to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: test_sni
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", GET]
+            - [":scheme", https]
+            - [":authority", example.data.com]
+            - [":path", /a/path]
+            - [Content-Type, text/html]
+            - [uuid, 1]
+      - DATA:
+          delay: 1s
+          content:
+            encoding: plain
+            data: client_test
+            size: 11
+
+    proxy-request:
+      content:
+        encoding: plain
+        data: client_test
+        verify: {as: equal}
+
+    server-response:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":status", 200]
+            - [Content-Type, text/html]
+            - [Content-Length, '11']
+      - DATA:
+          delay: 2s
+          content:
+            encoding: plain
+            data: server_test
+            size: 11
+
+    proxy-response:
+      content:
+        encoding: plain
+        data: server_test
+        verify: {as: equal}

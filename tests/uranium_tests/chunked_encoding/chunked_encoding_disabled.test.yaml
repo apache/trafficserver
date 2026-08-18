@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify ATS can disable chunked client responses"
-  replay: "replays/chunked.replay.yaml"
   server:
     name: "chunking-disabled-origin"
   client:
@@ -38,3 +40,65 @@ urtest:
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
       - from: "/for/tls"
         to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
+
+
+sessions:
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /for/http
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Connection, keep-alive ]
+      content:
+        size: 32
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Transfer-Encoding, { as: absent } ]
+      content:
+        size: 32
+
+- protocol:
+    stack: https
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /for/tls
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Connection, keep-alive ]
+      content:
+        size: 32
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Transfer-Encoding, { as: absent } ]
+      content:
+        size: 32

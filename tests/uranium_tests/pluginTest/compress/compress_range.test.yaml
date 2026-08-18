@@ -14,9 +14,33 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+  blocks:
+  - origin-server-response-200: &origin-server-response-200
+      status: 200
+      headers:
+        fields:
+          - [ Cache-Control, public;max-age=3600 ]
+          - [ Content-Type, application/json ]
+          - [ Content-Length, 1024 ]
+        content:
+          encoding: plain
+          size: 1024
+
+  - origin-server-response-206: &origin-server-response-206
+      status: 206
+      headers:
+        fields:
+          - [ Cache-Control, public;max-age=3600 ]
+          - [ Content-Type, application/json ]
+          - [ Content-Length, 10 ]
+        content:
+          encoding: plain
+          size: 10
+
 urtest:
   description: "Verify compress plugin range-request behavior"
-  replay: "replay/compress-and-range.replay.yaml"
   requires:
     plugins: ["compress.so"]
   server:
@@ -37,3 +61,153 @@ urtest:
       - "map /cache-true-remove-range/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/cache-true-remove-range.config"
       - "map /cache-true-remove-accept-encoding/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/cache-true-remove-accept-encoding.config"
       - "map /cache-true-no-compression/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/cache-true-no-compression.config"
+
+
+sessions:
+- transactions:
+  # Test Case 1
+  #
+  # ```
+  # cache true
+  # range-request remove-range
+  #```
+  #
+  # 1-1: Accept-Encoding only
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-true-remove-range/
+      headers:
+        fields:
+          - [ uuid, 1-1]
+          - [ Host, example.com ]
+          - [ Accept-Encoding, gzip ]
+
+    server-response:
+      <<: *origin-server-response-200
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Encoding, { value: gzip, as: equal } ]
+          - [ Content-Length, { value: 223, as: equal } ]
+
+  # 1-2: Range only
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-true-remove-range/
+      headers:
+        fields:
+          - [ uuid, 1-2]
+          - [ Host, example.com ]
+          - [ Range, 0-9 ]
+
+    proxy-request:
+      headers:
+        fields:
+          - [ Range, { as: present } ]
+
+    server-response:
+      <<: *origin-server-response-206
+
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+          - [ Content-Length, { value: 10, as: equal } ]
+
+  # 1-3: Range and Accept-Encoding
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-true-remove-range/
+      headers:
+        fields:
+          - [ uuid, 1-3]
+          - [ Host, example.com ]
+          - [ Range, 0-9 ]
+          - [ Accept-Encoding, gzip ]
+
+    proxy-request:
+      headers:
+        fields:
+          - [ Range, { as: absent } ]
+
+    server-response:
+      <<: *origin-server-response-200
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Encoding, { value: gzip, as: equal } ]
+          - [ Content-Length, { value: 223, as: equal } ]
+
+  # Test Case 2
+  #
+  # ```
+  # cache true
+  # range-request remove-accept-encoding
+  #```
+  #
+  # 2-1: Range and Accept-Encoding
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-true-remove-accept-encoding/
+      headers:
+        fields:
+          - [ uuid, 2-1]
+          - [ Host, example.com ]
+          - [ Range, 0-9 ]
+          - [ Accept-Encoding, gzip ]
+
+    proxy-request:
+      headers:
+        fields:
+          - [ Range, { as: present } ]
+
+    server-response:
+      <<: *origin-server-response-206
+
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+          - [ Content-Length, { value: 10, as: equal } ]
+
+  # Test Case 3
+  #
+  # ```
+  # cache true
+  # range-request no-compression
+  #```
+  #
+  # 3-1: Range and Accept-Encoding
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /cache-true-no-compression/
+      headers:
+        fields:
+          - [ uuid, 3-1]
+          - [ Host, example.com ]
+          - [ Range, 0-9 ]
+          - [ Accept-Encoding, gzip ]
+
+    proxy-request:
+      headers:
+        fields:
+          - [ Range, { as: present } ]
+          - [ Accept-Encoding, { as: present } ]
+
+    server-response:
+      <<: *origin-server-response-206
+
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+          - [ Content-Length, { value: 10, as: equal } ]

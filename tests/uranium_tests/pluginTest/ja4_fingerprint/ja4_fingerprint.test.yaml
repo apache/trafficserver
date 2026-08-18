@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify the JA4 fingerprint plugin"
-  replay: "ja4_fingerprint_client.replay.yaml"
   requires: {plugins: [ja4_fingerprint.so]}
   server:
     name: "ja4-origin"
@@ -49,3 +51,58 @@ urtest:
       server: {replay: "ja4_fingerprint.replay.yaml"}
       ats:
         plugin_config: ["ja4_fingerprint.so --preserve"]
+
+sessions:
+  - protocol:
+      stack: https
+      tls:
+        sni: localhost
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /resource
+          headers:
+            fields:
+              - [Host, localhost]
+              - [Content-Length, 0]
+              - [uuid, no-existing-headers]
+        proxy-response:
+          status: 200
+
+  - protocol:
+      stack: https
+      tls:
+        sni: localhost
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /resource-with-headers
+          headers:
+            fields:
+              - [Host, localhost]
+              - [Content-Length, 0]
+              - [uuid, existing-ja4-headers]
+              - [ja4, upstream-fingerprint]
+              - [x-ja4-via, upstream.proxy.com]
+        proxy-response:
+          status: 200
+
+  - protocol:
+      stack: https
+      tls:
+        sni: localhost
+    transactions:
+      - client-request:
+          method: GET
+          version: "1.1"
+          url: /resource-via-only
+          headers:
+            fields:
+              - [Host, localhost]
+              - [Content-Length, 0]
+              - [uuid, existing-via-only]
+              - [x-ja4-via, upstream.proxy.com]
+        proxy-response:
+          status: 200
