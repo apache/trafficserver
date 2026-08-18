@@ -451,23 +451,23 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "New instance for client matching %s to %s", argv[0], argv[1]);
-  auto config         = std::make_unique<PluginConfig>();
-  config->plugin_type = PluginType::REMAP;
+  auto owned_config         = std::make_unique<PluginConfig>();
+  owned_config->plugin_type = PluginType::REMAP;
 
   // Parse parameters
-  if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *config)) {
+  if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *owned_config)) {
     Dbg(dbg_ctl, "Bad arguments");
     return TS_ERROR;
   }
 
-  if (!config->log_symbol.empty()) {
+  if (!owned_config->log_symbol.empty()) {
     TSError("[%s] --log-field is not supported in remap.config. Use it in plugin.config instead.", PLUGIN_NAME);
     return TS_ERROR;
   }
 
   // Create a log file
-  if (!config->log_filename.empty()) {
-    if (!create_log_file(config->log_filename, config->log_handle)) {
+  if (!owned_config->log_filename.empty()) {
+    if (!create_log_file(owned_config->log_filename, owned_config->log_handle)) {
       TSError("[%s] Failed to create log.", PLUGIN_NAME);
       return TS_ERROR;
     } else {
@@ -475,30 +475,30 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  if (reserve_user_arg(*config) == TS_ERROR) {
+  if (reserve_user_arg(*owned_config) == TS_ERROR) {
     TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
     return TS_ERROR;
   }
 
   // Past here the instance handle owns the configuration and TSRemapDeleteInstance releases it.
-  PluginConfig *instance = config.release();
+  PluginConfig *config = owned_config.release();
 
   // Create continuation
-  if (instance->standalone) {
+  if (config->standalone) {
     Dbg(dbg_ctl, "Standalone mode. Adding hooks.");
-    instance->handler = TSContCreate(main_handler, nullptr);
-    if (instance->method.on_client_hello) {
-      TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, instance->handler);
+    config->handler = TSContCreate(main_handler, nullptr);
+    if (config->method.on_client_hello) {
+      TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, config->handler);
     }
-    if (instance->method.type == Method::Type::CONNECTION_BASED) {
-      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, instance->handler);
+    if (config->method.type == Method::Type::CONNECTION_BASED) {
+      TSHttpHookAdd(TS_VCONN_CLOSE_HOOK, config->handler);
     } else {
-      TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, instance->handler);
+      TSHttpHookAdd(TS_HTTP_TXN_CLOSE_HOOK, config->handler);
     }
-    TSContDataSet(instance->handler, instance);
+    TSContDataSet(config->handler, config);
   }
 
-  *ih = static_cast<void *>(instance);
+  *ih = static_cast<void *>(config);
 
   return TS_SUCCESS;
 }

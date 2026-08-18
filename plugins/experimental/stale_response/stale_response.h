@@ -49,7 +49,7 @@ struct LogInfo {
   bool            all                    = false;
   bool            stale_if_error         = false;
   bool            stale_while_revalidate = false;
-  char const     *filename               = PLUGIN_TAG;
+  char           *filename               = nullptr;
 };
 
 struct ConfigInfo {
@@ -65,9 +65,7 @@ struct ConfigInfo {
     if (this->body_data_mutex) {
       TSMutexDestroy(this->body_data_mutex);
     }
-    if (this->log_info.filename != PLUGIN_TAG) {
-      free(const_cast<char *>(this->log_info.filename));
-    }
+    free(this->log_info.filename);
   }
   UintBodyMap *body_data = nullptr;
   TSMutex      body_data_mutex;

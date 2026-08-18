@@ -1071,9 +1071,7 @@ parse_args(int argc, char const *argv[])
       break;
     case 'd':
       // The option may be repeated; release the previously duplicated name first.
-      if (plugin_config->log_info.filename != PLUGIN_TAG) {
-        free(const_cast<char *>(plugin_config->log_info.filename));
-      }
+      free(plugin_config->log_info.filename);
       plugin_config->log_info.filename = strdup(optarg);
       break;
 
@@ -1112,8 +1110,9 @@ parse_args(int argc, char const *argv[])
   }
 
   if (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate || plugin_config->log_info.stale_if_error) {
-    SRDBG(TAG, "[%s] Logging to %s", __FUNCTION__, plugin_config->log_info.filename);
-    TSTextLogObjectCreate(plugin_config->log_info.filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
+    char const *const log_filename = plugin_config->log_info.filename ? plugin_config->log_info.filename : PLUGIN_TAG;
+    SRDBG(TAG, "[%s] Logging to %s", __FUNCTION__, log_filename);
+    TSTextLogObjectCreate(log_filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
   }
 
   SRDBG(TAG, "[%s] global stale if error override = %" PRIdMAX, __FUNCTION__,
