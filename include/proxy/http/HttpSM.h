@@ -429,6 +429,7 @@ private:
   void do_drain_request_body(HTTPHdr &response);
 
   void wait_for_full_body();
+  void generate_cache_key(HttpCacheKey *key, URL *url, bool compat = false);
 
   virtual void        handle_api_return();
   void                handle_server_setup_error(int event, void *data);
