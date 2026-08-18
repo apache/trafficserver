@@ -39,6 +39,7 @@ Synopsis
 
 .. function:: int TSStatCreate(const char * name, TSRecordDataType type, TSStatPersistence persistence, TSStatSync sync_style)
 .. function:: TSReturnCode TSStatFindName(const char * name, int * idx_ptr)
+.. function:: bool TSStatIdIsValid(int idx)
 
 .. function:: TSMgmtInt TSStatIntGet(int idx)
 .. function:: void TSStatIntSet(int idx, TSMgmtInt value)
@@ -62,6 +63,11 @@ are created as part of or based on configuration files and |TS| is reloaded.
 :func:`TSStatFindName` locates a statistic by :arg:`name`. If found the function returns
 :const:`TS_SUCCESS` and the value pointed at by :arg:`idx_ptr` is updated to be the index of the
 statistic. Otherwise it returns ``TS_ERROR``.
+
+:func:`TSStatIdIsValid` returns :code:`true` if :arg:`idx` is the index of an existing statistic and
+:code:`false` otherwise. The functions that manipulate a statistic assert on an invalid index, so a
+plugin that obtains an index from an external source, such as a WebAssembly module, should validate
+it with :func:`TSStatIdIsValid` before using it.
 
 The values in statistics are manipulated by :func:`TSStatIntSet` to set the statistic directly,
 :func:`TSStatIntIncrement` to increase it by :arg:`value`, and :func:`TSStatIntDecrement` to
