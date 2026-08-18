@@ -255,6 +255,7 @@ struct OriginStats {
     StatsCounter trace;
     StatsCounter connect;
     StatsCounter purge;
+    StatsCounter query;
     StatsCounter none;
     StatsCounter other;
   } methods;
@@ -788,6 +789,7 @@ enum HTTPMethod {
   METHOD_TRACE,
   METHOD_CONNECT,
   METHOD_PURGE,
+  METHOD_QUERY,
   METHOD_NONE,
   METHOD_OTHER
 };
@@ -1171,6 +1173,10 @@ update_methods(OriginStats *stat, int method, int size)
     update_counter(stat->methods.purge, size);
     break;
 
+  case METHOD_QUERY:
+    update_counter(stat->methods.query, size);
+    break;
+
   case METHOD_NONE:
     update_counter(stat->methods.none, size);
     break;
@@ -1399,6 +1405,8 @@ parse_log_buff(LogBufferHeader *buf_header, bool summary = false, bool aggregate
           tok_len = strlen(read_from);
           if ((5 == tok_len) && (0 == strncmp(read_from, "PURGE", 5))) {
             method = METHOD_PURGE;
+          } else if ((5 == tok_len) && (0 == strncmp(read_from, "QUERY", 5))) {
+            method = METHOD_QUERY;
           } else if ((6 == tok_len) && (0 == strncmp(read_from, "DELETE", 6))) {
             method = METHOD_DELETE;
           } else if ((7 == tok_len) && (0 == strncmp(read_from, "OPTIONS", 7))) {
@@ -2183,6 +2191,7 @@ print_detail_stats(const OriginStats *stat, bool json, bool concise)
   format_line(json ? "method.trace" : "TRACE", stat->methods.trace, stat->total, json, concise);
   format_line(json ? "method.connect" : "CONNECT", stat->methods.connect, stat->total, json, concise);
   format_line(json ? "method.purge" : "PURGE", stat->methods.purge, stat->total, json, concise);
+  format_line(json ? "method.query" : "QUERY", stat->methods.query, stat->total, json, concise);
   format_line(json ? "method.none" : "none (-)", stat->methods.none, stat->total, json, concise);
   format_line(json ? "method.other" : "other", stat->methods.other, stat->total, json, concise);
 
