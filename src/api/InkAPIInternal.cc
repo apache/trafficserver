@@ -285,6 +285,7 @@ const char *TS_HTTP_METHOD_PURGE;
 const char *TS_HTTP_METHOD_PUT;
 const char *TS_HTTP_METHOD_TRACE;
 const char *TS_HTTP_METHOD_PUSH;
+const char *TS_HTTP_METHOD_QUERY;
 
 /* HTTP methods string lengths */
 int TS_HTTP_LEN_CONNECT;
@@ -297,6 +298,7 @@ int TS_HTTP_LEN_PURGE;
 int TS_HTTP_LEN_PUT;
 int TS_HTTP_LEN_TRACE;
 int TS_HTTP_LEN_PUSH;
+int TS_HTTP_LEN_QUERY;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -730,6 +732,7 @@ api_init()
     TS_HTTP_METHOD_PUT     = HTTP_METHOD_PUT.c_str();
     TS_HTTP_METHOD_TRACE   = HTTP_METHOD_TRACE.c_str();
     TS_HTTP_METHOD_PUSH    = HTTP_METHOD_PUSH.c_str();
+    TS_HTTP_METHOD_QUERY   = HTTP_METHOD_QUERY.c_str();
 
     TS_HTTP_LEN_CONNECT = static_cast<int>(HTTP_METHOD_CONNECT.length());
     TS_HTTP_LEN_DELETE  = static_cast<int>(HTTP_METHOD_DELETE.length());
@@ -741,6 +744,7 @@ api_init()
     TS_HTTP_LEN_PUT     = static_cast<int>(HTTP_METHOD_PUT.length());
     TS_HTTP_LEN_TRACE   = static_cast<int>(HTTP_METHOD_TRACE.length());
     TS_HTTP_LEN_PUSH    = static_cast<int>(HTTP_METHOD_PUSH.length());
+    TS_HTTP_LEN_QUERY   = static_cast<int>(HTTP_METHOD_QUERY.length());
 
     /* HTTP miscellaneous values */
     TS_HTTP_VALUE_BYTES            = HTTP_VALUE_BYTES.c_str();

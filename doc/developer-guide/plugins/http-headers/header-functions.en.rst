@@ -71,6 +71,9 @@ the methods defined in the HTTP 1.1 specification
 ``TS_HTTP_METHOD_PUSH``
    "PUSH"
 
+``TS_HTTP_METHOD_QUERY``
+   "QUERY"
+
 Traffic Server also defines several common values that appear in HTTP
 headers.
 
