@@ -395,7 +395,7 @@ Http2Stream::increment_data_length(uint64_t length)
 inline bool
 Http2Stream::payload_length_is_valid() const
 {
-  uint32_t content_length = _receive_header.get_content_length();
+  int64_t  content_length = _receive_header.get_content_length();
   uint64_t mask           = (MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
                    MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
 
@@ -405,9 +405,17 @@ Http2Stream::payload_length_is_valid() const
                                        (_send_header.method_get_wksidx() == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
                                         _receive_header.status_get() == HTTP_STATUS_NOT_MODIFIED));
 
-  if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
-    Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
-            static_cast<int>(data_length), _proxy_ssn->connection_id());
+  // Both diagnostics below are driven by peer-supplied framing, so a peer could
+  // otherwise emit one log line per stream. Throttle them per call site.
+  if (content_length < 0) {
+    SiteThrottledWarning("Negative payload length content_length=%" PRId64 " session_id=%" PRId64, content_length,
+                         _proxy_ssn->connection_id());
+    return false;
+  }
+
+  if (content_length != 0 && !is_payload_precluded && static_cast<uint64_t>(content_length) != data_length) {
+    SiteThrottledWarning("Bad payload length content_length=%" PRId64 " data_length=%" PRIu64 " session_id=%" PRId64,
+                         content_length, data_length, _proxy_ssn->connection_id());
     return false;
   }
   return true;
