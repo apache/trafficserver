@@ -6036,6 +6036,15 @@ Sockets
    Turn on or off support for connection half open for client side. Default is on, so
    after client sends FIN, the connection is still there.
 
+   When this is enabled and the client aborts before the origin server has sent its response header, |TS| keeps the transaction
+   alive so that the response can still be fetched and cached, which is known as a **background fill**. This is done even for
+   transports such as TLS and HTTP/2 that have no way to half close a connection.
+
+   When this is disabled, a client abort ends the transaction: the connection to the origin server is closed rather than held
+   open for a client that is no longer there. See :ts:cv:`proxy.config.http.background_fill_completed_threshold` and
+   :ts:cv:`proxy.config.http.background_fill_active_timeout` for controlling background fills that have already started
+   delivering the response to the client.
+
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 
    Accepting inbound connections and starting the cache are independent
