@@ -284,8 +284,7 @@ read_config_from_json(json_t *const issuer_json)
         if (id) {
           /* An earlier issuer may have set an id; free it so it is not leaked. Last issuer wins. */
           free(cfg->id);
-          cfg->id = static_cast<char *>(malloc(strlen(id) + 1));
-          strcpy(cfg->id, id);
+          cfg->id = strdup(id);
           PluginDebug("Found Id in the config: %s", cfg->id);
         }
       }

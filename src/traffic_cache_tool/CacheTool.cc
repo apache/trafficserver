@@ -208,7 +208,7 @@ struct Cache {
   std::map<int, Volume>              _volumes;
   std::vector<StripeSM *>            globalVec_stripe;
   std::unordered_set<ts::CacheURL *> URLset;
-  unsigned short                    *stripes_hash_table = nullptr;
+  ats_scoped_mem<unsigned short>     stripes_hash_table;
 };
 
 Errata
@@ -687,11 +687,10 @@ Cache::calcTotalSpanPhysicalSize()
 
 Cache::~Cache()
 {
-  // The URL set and the stripe hash table are owned solely by this instance.
+  // The URL set is owned solely by this instance; the stripe hash table owns itself.
   for (auto *url : URLset) {
     delete url;
   }
-  ats_free(stripes_hash_table);
 }
 
 Errata
@@ -1014,8 +1013,7 @@ Cache::build_stripe_hash_table()
   for (int i = 0; i < num_stripes; i++) {
     printf("build_vol_hash_table index %d mapped to %d requested %d got %d\n", i, i, forvol[i], gotvol[i]);
   }
-  // The destructor owns this table, so release any table a previous call installed.
-  ats_free(stripes_hash_table);
+  // Assigning releases any table a previous call installed.
   stripes_hash_table = ttable;
 
   ats_free(forvol);
