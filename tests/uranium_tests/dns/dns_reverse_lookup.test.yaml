@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify reverse DNS lookup does not poison a hostdb record"
-  replay: "replay/reverse_lookup.replay.yaml"
   server:
     name: "reverse-lookup-origin"
   client:
@@ -49,3 +51,40 @@ urtest:
     parent_config:
       - "dest_domain=. parent=parent_host:{ATS_HTTP_PORT} round_robin=consistent_hash go_direct=false"
       - 'dest_host=other_host scheme=http parent="parent_host:8080"'
+
+
+sessions:
+- transactions:
+  - client-request:
+      # Delay to allow hostdb to sync external host file
+      delay: 1s
+      method: "GET"
+      version: "1.1"
+      url: /test1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ X-Request, request ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /test2
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ X-Request, request ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+
+    proxy-response:
+      status: 200

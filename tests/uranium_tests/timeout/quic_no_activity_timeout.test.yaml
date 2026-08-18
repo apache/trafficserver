@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify QUIC max_idle_timeout configuration"
-  replay: "replay/quic_no_activity_timeout.replay.yaml"
   requires:
     ats_features: ["TS_USE_QUIC"]
   server:
@@ -79,3 +81,73 @@ urtest:
           traffic_out:
             contains:
               - {expression: "QUIC Idle timeout detected", description: "QUIC must use its own timeout"}
+
+
+sessions:
+- protocol:
+    stack: http3
+    tls:
+      sni: test_sni
+  transactions:
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.com]
+        - [":path", /path/test1]
+        - [ uuid, nodelays ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      delay: 5s
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.com]
+        - [":path", /path/test2]
+        - [ uuid, delay5s ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      delay: 1500ms
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", example.com]
+        - [":path", /path/test3]
+        - [ uuid, delay1500ms ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200

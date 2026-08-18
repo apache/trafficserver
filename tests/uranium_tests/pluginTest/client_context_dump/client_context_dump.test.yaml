@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify client_context_dump reports all loaded client certificates"
-  replay: "client_context_dump.replay.yaml"
   requires: {plugins: [client_context_dump.so]}
   server: {name: "client-context-origin"}
   client: {name: "client-context-client"}
@@ -48,3 +49,17 @@ urtest:
     file_checks:
       - {path: "{LOG_DIR}/client_context_dump.log", contains: "CN=two.com"}
       - {path: "{LOG_DIR}/client_context_dump.log", contains: "CN=one.com"}
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, client-context-dump]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 0], [Connection, close]]}
+        proxy-response: {status: 200}
