@@ -91,7 +91,7 @@ def test_services_facade_reexports_focused_implementations() -> None:
         "RecordsConfig": "tools.uranium.services.ats",
         "ServiceFactory": "tools.uranium.services.service_factory",
         "VerifierServer": "tools.uranium.services.verifier",
-        "assert_matches_gold": "tools.uranium.services.service_utils",
+        "assert_matches_gold": "tools.uranium.assertions",
         "send_tcp": "tools.uranium.services.service_utils",
         "wait_for_file_lines": "tools.uranium.services.service_utils",
         "wait_for_metric": "tools.uranium.services.service_utils",

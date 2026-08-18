@@ -18,6 +18,7 @@
 Implementations live in focused modules; this facade keeps scenario imports stable.
 """
 
+from ..assertions import assert_matches_gold
 from .ats import ATS, ATSFactory, ConfigFile, RecordsConfig
 from .context import CommandResult, ProceduralContext
 from .curl import Curl
@@ -26,7 +27,7 @@ from .httpbin import HttpBinServer
 from .origin import OriginServer
 from .process_service import ProcessService
 from .service_factory import ServiceFactory
-from .service_utils import assert_matches_gold, send_tcp, wait_for_file_lines, wait_for_metric
+from .service_utils import send_tcp, wait_for_file_lines, wait_for_metric
 from .verifier import VerifierServer
 
 __all__ = [

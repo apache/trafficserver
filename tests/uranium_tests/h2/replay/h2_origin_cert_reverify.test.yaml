@@ -21,7 +21,7 @@ urtest:
   description: "Verify H2 origin reuse re-checks the certificate hostname"
   server:
     name: "h2-origin"
-    replay: "replay_h2_origin_cert_reverify.yaml"
+    replay: "../replay_h2_origin_cert_reverify.yaml"
     process_config:
       ssl_cert: "../tls/ssl/signed-foo.pem"
       ca_cert: "../tls/ssl/signer.pem"

@@ -30,7 +30,7 @@ from typing import Any
 import pytest
 
 from ..process import ManagedProcess
-from ._service_helpers import addresses, version_tuple
+from ..utils import loopback_addresses, version_tuple
 from .context import ProceduralContext
 from .dns import DNSServer
 from .httpbin import HttpBinServer
@@ -202,9 +202,9 @@ class ServiceFactory:
         ssl_dir = self._context.runtime.test_tools / "proxy-verifier" / "ssl"
         command: list[str | Path | int] = [self._context.runtime.verifier_bin / "verifier-server", "run"]
         if http_ports:
-            command.extend(["--listen-http", addresses(http_ports)])
+            command.extend(["--listen-http", loopback_addresses(http_ports)])
         if https_ports:
-            command.extend(["--listen-https", addresses(https_ports)])
+            command.extend(["--listen-https", loopback_addresses(https_ports)])
             command.extend(
                 [
                     "--server-cert",
@@ -237,11 +237,11 @@ class ServiceFactory:
             self._context.resolve_path(replay_path),
         ]
         if http_ports:
-            command.extend(["--connect-http", addresses(http_ports)])
+            command.extend(["--connect-http", loopback_addresses(http_ports)])
         if https_ports:
-            command.extend(["--connect-https", addresses(https_ports)])
+            command.extend(["--connect-https", loopback_addresses(https_ports)])
         if http3_ports:
-            command.extend(["--connect-http3", addresses(http3_ports)])
+            command.extend(["--connect-http3", loopback_addresses(http3_ports)])
         if https_ports or http3_ports:
             ssl_dir = self._context.runtime.test_tools / "proxy-verifier" / "ssl"
             command.extend(

@@ -36,7 +36,7 @@ urtest:
         remap_config:
           - "map /ref/block http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=slice.so @pparam=--blockbytes-test=10 @plugin=cache_range_requests.so"
     - name: "absolute-reference"
-      replay: "replay/slice_purge_ref.replay.yaml"
+      replay: "slice_purge_ref.replay.yaml"
       ats:
         remap_config:
           - "map /ref/block http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=slice.so @pparam=--blockbytes-test=10 @plugin=cache_range_requests.so"
@@ -45,7 +45,7 @@ urtest:
         remap_config:
           - "map /ref/block http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--ref-relative @plugin=cache_range_requests.so"
     - name: "relative-no-reference"
-      replay: "replay/slice_purge_no_ref.replay.yaml"
+      replay: "slice_purge_no_ref.replay.yaml"
       ats:
         remap_config:
           - "map /ref/block http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=slice.so @pparam=--blockbytes-test=10 @pparam=--ref-relative @plugin=cache_range_requests.so"
