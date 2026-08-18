@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify remap_stats counts response classes by remap host"
-  replay: "remap_stats.replay.yaml"
   requires: {plugins: [remap_stats.so]}
   server: {name: "remap-stats-origin"}
   client: {name: "remap-stats-client"}
@@ -41,3 +42,28 @@ urtest:
         metric_checks:
           - {metric: plugin.remap_stats.127.0.0.1.status_2xx, value: "1", delay: 0}
           - {metric: plugin.remap_stats.127.0.0.1.status_4xx, value: "1", delay: 0}
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, remap-stats-one]]}}
+        client-request:
+          method: GET
+          url: /argh
+          version: "1.1"
+          headers: {fields: [[Host, one]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 0], [Connection, close]]}
+        proxy-response: {status: 200}
+
+      - all: {headers: {fields: [[uuid, remap-stats-two]]}}
+        client-request:
+          method: GET
+          url: /badpath
+          version: "1.1"
+          headers: {fields: [[Host, two]]}
+        server-response:
+          status: 404
+          headers: {fields: [[Content-Length, 0], [Connection, close]]}
+        proxy-response: {status: 404}

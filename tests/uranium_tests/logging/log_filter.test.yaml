@@ -14,9 +14,29 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
+  blocks:
+  - request_base: &request_base
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      headers:
+        fields:
+        - [ Host, example.com ]
+  - 200_response: &200_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 0 ]
+      proxy-response:
+        status: 200
+
 urtest:
   description: "Verify access-log filters and query parameter wiping"
-  replay: "log-filter.replays.yaml"
   dns:
     name: "log-filter-dns"
     process_config:
@@ -64,3 +84,36 @@ urtest:
       access_log:
         filename: "filter-test.log"
         gold_file: "gold/filter-test.gold"
+
+
+sessions:
+- transactions:
+  - all: { headers: { fields: [[ uuid, test-1 ]]}}
+    client-request:
+      url: "/test-1?name=value&email=123@gmail.com"
+      <<: *request_base
+    <<: *200_response
+
+  - all: { headers: { fields: [[ uuid, test-2 ]]}}
+    client-request:
+      url: "/test-2?email=123@gmail.com&name=password"
+      <<: *request_base
+    <<: *200_response
+
+  - all: { headers: { fields: [[ uuid, test-3 ]]}}
+    client-request:
+      url: "/test-3?trivial=password&name1=val1&email=123@gmail.com"
+      <<: *request_base
+    <<: *200_response
+
+  - all: { headers: { fields: [[ uuid, test-4 ]]}}
+    client-request:
+      url: "/test-4?trivial=password&email=&name=handle&session_redirect=wiped_string"
+      <<: *request_base
+    <<: *200_response
+
+  - all: { headers: { fields: [[ uuid, test-5 ]]}}
+    client-request:
+      url: "/test-5?trivial=password&email=123@gmail.com&email=456@gmail.com&session_redirect=wiped_string&email=789@gmail.com&name=value"
+      <<: *request_base
+    <<: *200_response

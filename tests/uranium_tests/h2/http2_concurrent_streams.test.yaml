@@ -14,9 +14,17 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify concurrent HTTP/2 stream handling"
-  replay: "replay/http2_concurrent_streams.replay.yaml"
   server:
     name: "concurrent-streams-origin"
   client:
@@ -33,3 +41,70 @@ urtest:
     remap_config:
       - from: "/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+
+sessions:
+- protocol:
+    stack: http2
+    tls:
+      sni: test_sni
+  transactions:
+  # Stream 1
+  - client-request:
+      frames:
+        - HEADERS:
+            headers:
+              fields:
+              - [ ":method", GET ]
+              - [ ":scheme", https ]
+              - [ ":authority", www.example.com ]
+              - [ ":path", /path/1 ]
+              - [ Content-Type, image/jpeg ]
+              - [ uuid, 1 ]
+        - RST_STREAM:
+            delay: 1s
+            error-code: CANCEL
+
+    server-response:
+      delay: 2s
+      headers:
+        fields:
+        - [ ":status", 200 ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, first-response ]
+        - [ Cache-Control, "private" ]
+      content:
+        size: 1024
+
+  # Stream 3
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /path/3 ]
+        - [ Content-Type, image/jpeg ]
+        - [ uuid, 3]
+
+    server-response:
+      delay: 1s
+
+      headers:
+        fields:
+        - [ ":status", 200 ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, second-response ]
+        - [ Cache-Control, "private" ]
+      content:
+        size: 1024
+
+    proxy-response:
+      headers:
+        fields:
+        - [ ":status", 200 ]
+        - [ Content-Type, image/jpeg ]
+        - [ X-Response, second-response ]
+        - [ Cache-Control, "private" ]
+      content:
+        size: 1024

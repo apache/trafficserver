@@ -14,9 +14,22 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+  blocks:
+  - origin-server-response-200-json-charset: &origin-server-response-200-json-charset
+      status: 200
+      headers:
+        fields:
+          - [ Cache-Control, public;max-age=3600 ]
+          - [ Content-Type, application/json; charset=utf-8 ]
+          - [ Content-Length, 1024 ]
+        content:
+          encoding: plain
+          size: 1024
+
 urtest:
   description: "Verify compress content-type parameter matching"
-  replay: "replay/compress-content-type-params.replay.yaml"
   requires:
     plugins: ["compress.so"]
   server:
@@ -35,3 +48,76 @@ urtest:
     remap_config:
       - "map /ignore-params-false/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/ignore-params-false.config"
       - "map /ignore-params-true/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/ignore-params-true.config"
+
+
+sessions:
+- transactions:
+  # A: content_type_ignore_parameters = false (no compression)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ignore-params-false/
+      headers:
+        fields:
+          - [ uuid, A-1]
+          - [ Host, example.com ]
+          - [ Accept-Encoding, gzip ]
+
+    server-response:
+      <<: *origin-server-response-200-json-charset
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Encoding, { as: absent } ]
+          - [ Content-Length, { value: 1024, as: equal } ]
+
+  # B: content_type_ignore_parameters = true (compression enabled)
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ignore-params-true/
+      headers:
+        fields:
+          - [ uuid, B-1]
+          - [ Host, example.com ]
+          - [ Accept-Encoding, gzip ]
+
+    server-response:
+      <<: *origin-server-response-200-json-charset
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Encoding, { value: gzip, as: equal } ]
+          - [ Content-Length, { value: 223, as: equal } ]
+
+  # C: Verify the compress plugin handles a character with a high bit set correctly.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ignore-params-true/
+      headers:
+        fields:
+          - [ uuid, C-1]
+          - [ Host, example.com ]
+          - [ Accept-Encoding, gzip ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ Cache-Control, public;max-age=3600 ]
+          - [ Content-Type, "application/json\xfe; charset=utf-8" ]
+          - [ Content-Length, 1024 ]
+        content:
+          encoding: plain
+          size: 1024
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Type, { value: "application/json\xfe; charset=utf-8", as: equal } ]

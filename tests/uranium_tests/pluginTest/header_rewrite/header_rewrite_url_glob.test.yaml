@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify global header_rewrite set-redirect rules at read- and send-response hooks"
-  replay: "header_rewrite_url_glob.replay.yaml"
   template_replay: true
   requires: {plugins: [header_rewrite.so]}
   server: {name: "header-rewrite-glob-origin"}
@@ -34,3 +35,28 @@ urtest:
       - "header_rewrite.so {CONFIG_DIR}/rules/glob_set_redirect.conf"
     file_checks:
       - {path: "{LOG_DIR}/traffic.out", contains: "header_rewrite"}
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, redirect-read-response]]}}
+        client-request:
+          method: HEAD
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response: &origin-response
+          status: 200
+          headers: {fields: [[Content-Length, 0], [Connection, close]]}
+        proxy-response: &redirect
+          status: 301
+          headers: {fields: [[Location, "http://redirect.com/here"]]}
+
+      - all: {headers: {fields: [[uuid, redirect-send-response]]}}
+        client-request:
+          method: HEAD
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response: *origin-response
+        proxy-response: *redirect

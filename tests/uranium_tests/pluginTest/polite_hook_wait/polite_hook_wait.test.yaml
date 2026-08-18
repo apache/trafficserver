@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify a transaction hook can wait for worker-thread results without blocking an event thread"
-  replay: "polite_hook_wait.replay.yaml"
   server: {name: "polite-hook-origin"}
   client: {name: "polite-hook-client"}
   ats:
@@ -32,3 +33,30 @@ urtest:
     plugin_config: ["polite_hook_wait.so"]
     remap_config:
       - "map http://myhost.test http://127.0.0.1:{SERVER_HTTP_PORT}"
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, polite-hook-first]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, myhost.test]]}
+        server-response: &response
+          status: 200
+          headers: {fields: [[Content-Length, 6], [Connection, close]]}
+          content: {data: "112233", size: 6}
+        proxy-response: &expected
+          status: 200
+          content: {data: "112233", size: 6}
+
+  - transactions:
+      - all: {headers: {fields: [[uuid, polite-hook-second]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, myhost.test]]}
+        server-response: {status: 599}
+        proxy-response: {status: 403}
