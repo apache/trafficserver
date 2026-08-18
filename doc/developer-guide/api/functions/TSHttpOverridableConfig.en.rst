@@ -201,6 +201,7 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE`           :ts:cv:`proxy.config.body_factory.response_suppression_mode`
 :enumerator:`TS_CONFIG_HTTP_CACHE_POST_METHOD`                           :ts:cv:`proxy.config.http.cache.post_method`
 :enumerator:`TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS`        :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
+:enumerator:`TS_CONFIG_HTTP_REJECT_HEAD_WITH_CONTENT`                    :ts:cv:`proxy.config.http.reject_head_with_content`
 ======================================================================== ====================================================================
 
 Examples

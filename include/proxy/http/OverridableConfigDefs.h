@@ -254,6 +254,7 @@
   X(HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS,      targeted_cache_control_headers,             "proxy.config.http.cache.targeted_cache_control_headers",         STRING, TargetedCacheControlHeaders_Conv) \
   X(SSL_CLIENT_CA_CERT_PATH,                        ssl_client_ca_cert_path,                    "proxy.config.ssl.client.CA.cert.path",                           STRING, NONE) \
   X(HTTP_PER_SERVER_CONNECTION_METRIC_ENABLED,      connection_tracker_config.metric_enabled,   ConnectionTracker::CONFIG_SERVER_VAR_METRIC_ENABLED,              INT,    ConnectionTracker_METRIC_ENABLED_CONV) \
-  X(HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,    connection_tracker_config.metric_aggregate, ConnectionTracker::CONFIG_SERVER_VAR_METRIC_AGGREGATE,            INT,    ConnectionTracker_METRIC_AGGREGATE_CONV)
+  X(HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,    connection_tracker_config.metric_aggregate, ConnectionTracker::CONFIG_SERVER_VAR_METRIC_AGGREGATE,            INT,    ConnectionTracker_METRIC_AGGREGATE_CONV) \
+  X(HTTP_REJECT_HEAD_WITH_CONTENT,                  reject_head_with_content,                   "proxy.config.http.reject_head_with_content",                     INT,    GENERIC)
 
 // clang-format on
