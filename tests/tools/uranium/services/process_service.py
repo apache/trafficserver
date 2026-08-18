@@ -21,7 +21,7 @@ from pathlib import Path
 import re
 
 from ..process import ManagedProcess
-from ._service_helpers import tcp_open
+from ..utils import tcp_open
 from .context import CommandResult
 
 

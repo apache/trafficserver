@@ -252,7 +252,6 @@
   X(HTTP_NEGATIVE_REVALIDATING_LIST,                negative_revalidating_list,                 "proxy.config.http.negative_revalidating_list",                   STRING, HttpStatusCodeList_Conv) \
   X(HTTP_CACHE_POST_METHOD,                         cache_post_method,                          "proxy.config.http.cache.post_method",                            INT,    GENERIC) \
   X(HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS,      targeted_cache_control_headers,             "proxy.config.http.cache.targeted_cache_control_headers",         STRING, TargetedCacheControlHeaders_Conv) \
-  X(SSL_CLIENT_CA_CERT_PATH,                        ssl_client_ca_cert_path,                    "proxy.config.ssl.client.CA.cert.path",                           STRING, NONE) \
-  X(HTTP_CACHE_MAX_STALE_AGE_PERCENT,               cache_max_stale_age_percent,                "proxy.config.http.cache.max_stale_age_percent",                  INT,    GENERIC)
+  X(SSL_CLIENT_CA_CERT_PATH,                        ssl_client_ca_cert_path,                    "proxy.config.ssl.client.CA.cert.path",                           STRING, NONE)
 
 // clang-format on

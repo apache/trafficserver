@@ -34,7 +34,7 @@ urtest:
     plugins: [slice.so, cache_range_requests.so, header_rewrite.so]
   server:
     name: origin
-    replay: replay/slice_purge_gaps_server.replay.yaml
+    replay: slice_purge_gaps_server.replay.yaml
     process_config:
       other_args: '--format "{url}{field.range}{field.uuid}"'
     log_validation:

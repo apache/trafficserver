@@ -6396,20 +6396,8 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   time_t current_age = HttpTransactCache::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
                                                                  s->cache_info.object_read->response_received_time_get(),
                                                                  cached_response, cached_response->get_date(), s->current.now);
-
-  MgmtInt max_age       = get_max_age(cached_response);
-  MgmtInt max_stale_age = s->txn_conf->cache_max_stale_age;
-  MgmtInt max_stale_percentage =
-    std::clamp(s->txn_conf->cache_max_stale_age_percent, static_cast<MgmtInt>(0), static_cast<MgmtInt>(100));
-
-  if (max_stale_percentage > 0 && max_age >= 0) {
-    MgmtInt percent_max_stale_age = max_age * max_stale_percentage / 100;
-
-    max_stale_age = std::min(max_stale_age, percent_max_stale_age);
-  }
-
   // Negative age is overflow
-  if ((current_age < 0) || (current_age > max_age + max_stale_age)) {
+  if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age + get_max_age(cached_response))) {
     TxnDbg(dbg_ctl_http_trans, "document age is too large %" PRId64, (int64_t)current_age);
     return false;
   }

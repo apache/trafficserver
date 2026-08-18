@@ -633,8 +633,8 @@ static constexpr RecordElement RecordsConfig[] =
   //       #
   //       #  0 - default. disable cache and goto origin
   //       #  1 - return error if cache miss
-  //       #  2 - serve stale within the configured stale age limits, then goto origin, if revalidate
-  //       #  3 - return error if cache miss or serve stale within the configured stale age limits, then goto origin, if revalidate
+  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
+  //       #  3 - return error if cache miss or serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
   //       #  4 - return error if cache miss or if revalidate
   //       #  5 - retry cache read (read-while-writer) on write lock failure, goto origin if retries exhausted
   //       #  6 - retry cache read on write lock failure, if retries exhausted serve stale if allowed, otherwise goto origin
@@ -659,8 +659,6 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.cache.required_headers", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_stale_age", RECD_INT, "604800", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
-  ,
-  {RECT_CONFIG, "proxy.config.http.cache.max_stale_age_percent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.range.lookup", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,

@@ -42,7 +42,7 @@ urtest:
 
   variants:
     - name: "client-after-data"
-      replay: "replay_rst_stream/http2_rst_stream_client_after_data.yaml"
+      replay: "../replay_rst_stream/http2_rst_stream_client_after_data.yaml"
       client:
         log_validation:
           contains:
@@ -64,7 +64,7 @@ urtest:
               - {expression: "Parsed RST_STREAM frame: Error Code: 2", description: "ATS must parse INTERNAL_ERROR"}
 
     - name: "client-after-headers"
-      replay: "replay_rst_stream/http2_rst_stream_client_after_headers.yaml"
+      replay: "../replay_rst_stream/http2_rst_stream_client_after_headers.yaml"
       client:
         log_validation:
           contains:
@@ -87,7 +87,7 @@ urtest:
               - {expression: "Received DATA frame", description: "ATS must not receive DATA after the headers reset"}
 
     - name: "server-after-headers"
-      replay: "replay_rst_stream/http2_rst_stream_server_after_headers.yaml"
+      replay: "../replay_rst_stream/http2_rst_stream_server_after_headers.yaml"
       client:
         log_validation:
           contains:
