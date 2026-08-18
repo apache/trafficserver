@@ -23,6 +23,11 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+#include <vector>
+
 #include "ts_lua_util.h"
 
 extern "C" {
@@ -54,6 +59,10 @@ static char const *const ts_lua_mgmt_state_regex = "^[1-9][0-9]*$";
 
 // this is set the first time global configuration is probed.
 static int ts_lua_max_state_count = 0;
+
+// Set once the shutdown barrier owns every Lua state mutex and keeps them. Read by
+// TSRemapDeleteInstance, on the event thread that continues shutting ATS down.
+static std::atomic<bool> shutdown_barrier_engaged{false};
 
 // lifecycle message tag
 static char const *const print_tag = "stats_print";
@@ -487,6 +496,18 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char *errbuf, int errbuf_s
 void
 TSRemapDeleteInstance(void *ih)
 {
+  // Once the shutdown barrier owns the Lua state mutexes it never gives them back,
+  // so ts_lua_del_module() would block here for good, on the event thread that
+  // still has the rest of ATS shutdown to run. ATS as it stands does not get here
+  // during shutdown -- it leaks the remap configuration instead, deliberately,
+  // because plugin teardown after shutdown is unsafe -- but a hung restart is a bad
+  // enough outcome to guard against that changing. The process is exiting, so
+  // leaving the instance alone costs nothing but a __clean__ call.
+  if (shutdown_barrier_engaged.load(std::memory_order_acquire)) {
+    Dbg(dbg_ctl, "shutdown barrier engaged, skipping remap instance teardown for '%s'", ((ts_lua_instance_conf *)ih)->script);
+    return;
+  }
+
   int states = ((ts_lua_instance_conf *)ih)->states;
   ts_lua_del_module((ts_lua_instance_conf *)ih, ts_lua_main_ctx_array, states);
   ts_lua_del_instance(static_cast<ts_lua_instance_conf *>(ih));
@@ -830,43 +851,153 @@ globalHookHandler(TSCont contp, TSEvent event ATS_UNUSED, void *edata)
   return 0;
 }
 
-static int
-shutdownHookHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+// Longest time the shutdown barrier waits for the Lua states to go idle. A Lua
+// callback is expected to run for microseconds, so exceeding this means a script
+// is stuck rather than merely busy.
+constexpr std::chrono::milliseconds shutdown_barrier_timeout{5000};
+constexpr std::chrono::milliseconds shutdown_barrier_poll{5};
+
+// The scripts with a __shutdown__ function, in plugin.config order. A single
+// continuation runs all of them, so the barrier is taken exactly once.
+static std::vector<ts_lua_instance_conf *> shutdown_confs;
+static TSCont                              shutdown_contp = nullptr;
+
+static bool
+lockStates(ts_lua_main_ctx *const ctx_array, std::chrono::steady_clock::time_point const deadline, std::vector<TSMutex> &locked)
 {
-  ts_lua_instance_conf *const conf = (ts_lua_instance_conf *)TSContDataGet(contp);
+  if (nullptr == ctx_array) {
+    return true;
+  }
 
-  for (int index = 0; index < conf->states; ++index) {
-    ts_lua_main_ctx *const main_ctx = &ts_lua_g_main_ctx_array[index];
+  // Ascending index order, matching every other multi-state walk in the plugin.
+  for (int index = 0; index < ts_lua_max_state_count; ++index) {
+    TSMutex const mutexp = ctx_array[index].mutexp;
 
-    TSMutexLock(main_ctx->mutexp);
-
-    lua_State *const L = main_ctx->lua;
-
-    // Restore the conf-specific global table so lua_getglobal resolves
-    // functions from the loaded script, matching ts_lua_reload_module.
-    lua_pushlightuserdata(L, conf);
-    lua_rawget(L, LUA_REGISTRYINDEX);
-    lua_replace(L, LUA_GLOBALSINDEX);
-
-    lua_getglobal(L, TS_LUA_FUNCTION_G_SHUT_DOWN);
-
-    if (lua_type(L, -1) == LUA_TFUNCTION) {
-      if (lua_pcall(L, 0, 0, 0) != 0) {
-        TSError("[ts_lua][%s] lua_pcall failed for script '%s' state %d: %s", __FUNCTION__, conf->script, index,
-                lua_tostring(L, -1));
-        lua_pop(L, 1);
+    while (TS_SUCCESS != TSMutexLockTry(mutexp)) {
+      if (deadline <= std::chrono::steady_clock::now()) {
+        return false;
       }
-    } else {
-      lua_pop(L, 1);
+      std::this_thread::sleep_for(shutdown_barrier_poll);
     }
 
-    // Restore LUA_GLOBALSINDEX to an empty table, matching the resting state
-    // established by ts_lua_add_module and ts_lua_reload_module.
-    lua_newtable(L);
-    lua_replace(L, LUA_GLOBALSINDEX);
-
-    TSMutexUnlock(main_ctx->mutexp);
+    locked.push_back(mutexp);
   }
+
+  return true;
+}
+
+static void
+unlockStates(std::vector<TSMutex> &locked)
+{
+  for (auto mutexp = locked.rbegin(); mutexp != locked.rend(); ++mutexp) {
+    TSMutexUnlock(*mutexp);
+  }
+
+  locked.clear();
+}
+
+// Invoke every __shutdown__ function with no Lua code running anywhere else in
+// the process.
+//
+// A __shutdown__ function typically releases process global resources, often in
+// a native library reached through FFI. Each Lua execution path locks only the
+// one main state it was assigned, so locking a single state is not enough: the
+// callback running in state 0 can tear those resources down while a request
+// callback is still using them in state 1. Holding every main state mutex is
+// what makes __shutdown__ exclusive with all Lua code.
+//
+// This runs on a thread of its own rather than on the event thread that
+// dispatched TS_LIFECYCLE_SHUTDOWN_HOOK because ProxyMutex is recursive per
+// thread: an event thread that holds these mutexes can still enter Lua itself,
+// and the dispatching event thread does exactly that when it returns to its
+// event loop for the last time.
+static void *
+runShutdownCallbacks(void * /* data ATS_UNUSED */)
+{
+  auto const deadline = std::chrono::steady_clock::now() + shutdown_barrier_timeout;
+
+  std::vector<TSMutex> global_states;
+  std::vector<TSMutex> remap_states;
+
+  global_states.reserve(ts_lua_max_state_count);
+  remap_states.reserve(ts_lua_max_state_count);
+
+  // The remap states are only in this image when a remap instance was loaded
+  // without proxy.config.plugin.dynamic_reload_mode; with dynamic reload the
+  // remap instance is a private copy of the plugin with states of its own, which
+  // this barrier cannot reach.
+  if (!lockStates(ts_lua_g_main_ctx_array, deadline, global_states) || !lockStates(ts_lua_main_ctx_array, deadline, remap_states)) {
+    // A partial barrier excludes nothing that matters and stalls the states it
+    // did lock, so give them all back.
+    unlockStates(remap_states);
+    unlockStates(global_states);
+    TSError("[ts_lua][%s] Lua states still active after %lld ms, skipping %s", __FUNCTION__,
+            static_cast<long long>(shutdown_barrier_timeout.count()), TS_LUA_FUNCTION_G_SHUT_DOWN);
+    return nullptr;
+  }
+
+  Dbg(dbg_ctl, "[%s] shutdown barrier acquired for %zu Lua states", __FUNCTION__, global_states.size() + remap_states.size());
+
+  // Published while every state mutex is owned here, so TSRemapDeleteInstance
+  // cannot see it change while it is entering Lua.
+  shutdown_barrier_engaged.store(true, std::memory_order_release);
+
+  for (ts_lua_instance_conf *const conf : shutdown_confs) {
+    for (int index = 0; index < conf->states; ++index) {
+      ts_lua_main_ctx *const main_ctx = &ts_lua_g_main_ctx_array[index];
+
+      lua_State *const L = main_ctx->lua;
+
+      // Restore the conf-specific global table so lua_getglobal resolves
+      // functions from the loaded script, matching ts_lua_reload_module.
+      lua_pushlightuserdata(L, conf);
+      lua_rawget(L, LUA_REGISTRYINDEX);
+      lua_replace(L, LUA_GLOBALSINDEX);
+
+      lua_getglobal(L, TS_LUA_FUNCTION_G_SHUT_DOWN);
+
+      if (lua_type(L, -1) == LUA_TFUNCTION) {
+        if (lua_pcall(L, 0, 0, 0) != 0) {
+          TSError("[ts_lua][%s] lua_pcall failed for script '%s' state %d: %s", __FUNCTION__, conf->script, index,
+                  lua_tostring(L, -1));
+          lua_pop(L, 1);
+        }
+      } else {
+        lua_pop(L, 1);
+      }
+
+      // Restore LUA_GLOBALSINDEX to an empty table, matching the resting state
+      // established by ts_lua_add_module and ts_lua_reload_module.
+      lua_newtable(L);
+      lua_replace(L, LUA_GLOBALSINDEX);
+    }
+  }
+
+  // Every state mutex is deliberately kept, by a thread that is about to exit.
+  // TS_LIFECYCLE_SHUTDOWN_HOOK is terminal and no event thread is joined before
+  // the process exits, so releasing any of them would only let a callback that is
+  // already queued behind one enter Lua after __shutdown__ freed what that
+  // callback uses. An event thread blocked on one of these mutexes does not keep
+  // the process from exiting. TSRemapDeleteInstance, which ATS runs later in
+  // shutdown and which would otherwise block on the remap mutexes, is what
+  // shutdown_barrier_engaged is for.
+  return nullptr;
+}
+
+static int
+shutdownHookHandler(TSCont /* contp ATS_UNUSED */, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_UNUSED */)
+{
+  TSThread const barrier = TSThreadCreate(runShutdownCallbacks, nullptr);
+
+  if (nullptr == barrier) {
+    TSError("[ts_lua][%s] could not create the shutdown barrier thread, skipping %s", __FUNCTION__, TS_LUA_FUNCTION_G_SHUT_DOWN);
+    return 0;
+  }
+
+  // ATS continues shutting down as soon as this returns, so wait for the
+  // callbacks. The thread itself is not destroyed: the mutexes it still holds
+  // record it as their owner.
+  TSThreadWait(barrier);
 
   return 0;
 }
@@ -1110,17 +1241,22 @@ TSPluginInit(int argc, const char *argv[])
 
   lua_getglobal(sl, TS_LUA_FUNCTION_G_SHUT_DOWN);
   if (lua_type(sl, -1) == LUA_TFUNCTION) {
-    TSMutex shutdown_mutex = TSMutexCreate();
-    TSCont  shutdown_contp = TSContCreate(shutdownHookHandler, shutdown_mutex);
-    if (!shutdown_contp) {
-      TSError("[ts_lua][%s] could not create shutdown continuation", __FUNCTION__);
-      if (shutdown_mutex) {
-        TSMutexDestroy(shutdown_mutex);
+    shutdown_confs.push_back(conf);
+
+    // One continuation invokes every script's __shutdown__, so that the shutdown
+    // barrier is taken once for the whole process.
+    if (nullptr == shutdown_contp) {
+      TSMutex shutdown_mutex = TSMutexCreate();
+      shutdown_contp         = TSContCreate(shutdownHookHandler, shutdown_mutex);
+      if (!shutdown_contp) {
+        TSError("[ts_lua][%s] could not create shutdown continuation", __FUNCTION__);
+        if (shutdown_mutex) {
+          TSMutexDestroy(shutdown_mutex);
+        }
+      } else {
+        TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, shutdown_contp);
+        Dbg(dbg_ctl, "shutdown_hook added");
       }
-    } else {
-      TSContDataSet(shutdown_contp, conf);
-      TSLifecycleHookAdd(TS_LIFECYCLE_SHUTDOWN_HOOK, shutdown_contp);
-      Dbg(dbg_ctl, "shutdown_hook added");
     }
   }
   lua_pop(sl, 1);
