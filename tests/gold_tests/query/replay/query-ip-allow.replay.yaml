@@ -1,0 +1,105 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify ip_allow.yaml can deny the QUERY method'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: false
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'ip_allow'
+    ip_allow_yaml:
+      ip_allow:
+        - apply: in
+          ip_addrs: 0/0
+          action: deny
+          methods:
+            - QUERY
+        - apply: in
+          ip_addrs: "::/0"
+          action: deny
+          methods:
+            - QUERY
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  # QUERY is denied by ip_allow, so it never reaches the origin.
+  - client-request:
+      method: QUERY
+      url: /denied
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [Content-Type, application/sql]
+        - [Content-Length, "8"]
+        - [uuid, ip-allow-denied]
+      content:
+        data: "select-a"
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "0"]
+
+    proxy-response:
+      status: 403
+
+  # Methods other than QUERY are unaffected.
+  - client-request:
+      method: GET
+      url: /allowed
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, example.com]
+        - [uuid, ip-allow-permitted]
+
+    proxy-request:
+      method: GET
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [Content-Length, "2"]
+      content:
+        data: "ok"
+
+    proxy-response:
+      status: 200

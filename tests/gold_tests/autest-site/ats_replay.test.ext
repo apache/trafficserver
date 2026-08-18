@@ -162,6 +162,11 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
     if logging_yaml != None:
         ts.Disk.logging_yaml.AddLines(yaml.dump(logging_yaml).split('\n'))
 
+    # Configure ip_allow.yaml if specified.
+    ip_allow_yaml = ats_config.get('ip_allow_yaml')
+    if ip_allow_yaml is not None:
+        ts.Disk.ip_allow_yaml.AddLines(yaml.dump(ip_allow_yaml).split('\n'))
+
     # Configure storage.yaml if specified.
     storage_yaml = ats_config.get('storage_yaml')
     if storage_yaml is not None:

@@ -785,7 +785,8 @@ HttpSM::state_read_client_request_header(int event, void *data)
 
     if (t_state.hdr_info.client_request.version_get() == HTTP_1_1 &&
         (t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_POST ||
-         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT)) {
+         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_PUT ||
+         t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_QUERY)) {
       auto expect{t_state.hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
       if (ts::iequals(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE))) {
         // When receive an "Expect: 100-continue" request from client, ATS sends a "100 Continue" response to client
@@ -5891,7 +5892,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     will_be_private_ss = true;
   }
 
-  if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT) {
+  if (t_state.method == HTTP_WKSIDX_POST || t_state.method == HTTP_WKSIDX_PUT || t_state.method == HTTP_WKSIDX_QUERY) {
     // don't share the session if keep-alive for post is not on
     if (t_state.txn_conf->keep_alive_post_out == 0) {
       SMDbg(dbg_ctl_http_ss, "Setting server session to private because of keep-alive post out");
