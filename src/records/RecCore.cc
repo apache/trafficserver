@@ -521,7 +521,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
   auto         it      = metrics.find(name);
 
   if (it != metrics.end()) {
-    RecRecord r;
+    RecRecord r{};
     auto &&[name, type, val] = *it;
 
     r.rec_type     = RECT_PLUGIN;
@@ -554,7 +554,7 @@ RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), v
       auto &strings = ts::Metrics::StaticString::instance();
 
       if (auto m = strings.lookup(std::string{name}); m) {
-        RecRecord r;
+        RecRecord r{};
         r.rec_type                = RECT_PLUGIN;
         r.data_type               = RECD_STRING;
         r.name                    = name;
@@ -585,7 +585,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // librecords callback with a "pseudo" record.
     for (auto &&[name, type, val] : ts::Metrics::instance()) {
       if (regex.exec(name.data())) {
-        RecRecord tmp;
+        RecRecord tmp{};
 
         tmp.rec_type = RECT_PROCESS;
 
@@ -598,7 +598,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // Finally check string metrics
     ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
       if (regex.exec(name)) {
-        RecRecord tmp;
+        RecRecord tmp{};
 
         tmp.rec_type = RECT_PROCESS;
 
@@ -616,7 +616,7 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     // Opt-in only: hidden metrics are never reachable through RECT_ALL, see RecDefs.h.
     for (auto &&[name, type, val] : ts::Metrics::hidden_instance()) {
       if (regex.exec(name.data())) {
-        RecRecord tmp;
+        RecRecord tmp{};
 
         // Tag both bits so that a caller asking only for RECT_HIDDEN_METRIC passes the rec_type
         // check the lookup callback applies to every record it is handed. Note this combination
