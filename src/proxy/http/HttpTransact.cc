@@ -5819,9 +5819,9 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return RequestError_t::UNACCEPTABLE_TE_REQUIRED;
     }
 
-    // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
+    // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT/QUERY
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
-        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
+        (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT || method == HTTP_WKSIDX_QUERY) &&
         s->client_info.transfer_encoding != TransferEncoding_t::CHUNKED) {
       // In normal operation there will always be a get_ua_txn() at this point, but in one of the -R1  regression tests a request is
       // createdindependent of a transaction and this method is called, so we must null check
@@ -6204,6 +6204,8 @@ HttpTransact::update_method_stat(int method)
     Metrics::Counter::increment(http_rsb.delete_requests);
   } else if (method == HTTP_WKSIDX_PURGE) {
     Metrics::Counter::increment(http_rsb.purge_requests);
+  } else if (method == HTTP_WKSIDX_QUERY) {
+    Metrics::Counter::increment(http_rsb.query_requests);
   } else if (method == HTTP_WKSIDX_TRACE) {
     Metrics::Counter::increment(http_rsb.trace_requests);
   } else if (method == HTTP_WKSIDX_PUSH) {
@@ -6945,11 +6947,15 @@ HttpTransact::is_request_retryable(State *s)
     return false;
   }
 
-  // If safe requests are  retryable, it should be safe to retry safe requests irrespective of bytes sent or connection state
-  // according to RFC the following methods are safe (https://tools.ietf.org/html/rfc7231#section-4.2.1)
+  // Safe methods (RFC 9110, section 9.2.1) can be retried irrespective of bytes sent or connection state. QUERY
+  // (draft-ietf-httpbis-safe-method-w-body) is safe too, but its content is not kept for replay on this path, so once
+  // any part of its request has been sent it is treated like an unsafe method, whether or not the content itself went
+  // out. A buffered QUERY can still be retried when the origin reports it was not processed, see
+  // HttpSM::prepare_for_origin_retry.
   // Otherwise, if there was no error establishing the connection (and we sent bytes)-- we cannot retry
-  if (!HttpTransactHeaders::is_method_safe(s->method) && s->current.state != CONNECTION_ERROR &&
-      s->state_machine->server_request_hdr_bytes > 0) {
+  bool const retry_only_before_sending = !HttpTransactHeaders::is_method_safe(s->method) || s->method == HTTP_WKSIDX_QUERY;
+
+  if (retry_only_before_sending && s->current.state != CONNECTION_ERROR && s->state_machine->server_request_hdr_bytes > 0) {
     return false;
   }
 
