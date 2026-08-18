@@ -363,6 +363,7 @@ extern c_str_view HTTP_METHOD_PURGE;
 extern c_str_view HTTP_METHOD_PUT;
 extern c_str_view HTTP_METHOD_TRACE;
 extern c_str_view HTTP_METHOD_PUSH;
+extern c_str_view HTTP_METHOD_QUERY;
 
 extern int HTTP_WKSIDX_CONNECT;
 extern int HTTP_WKSIDX_DELETE;
@@ -374,6 +375,7 @@ extern int HTTP_WKSIDX_PURGE;
 extern int HTTP_WKSIDX_PUT;
 extern int HTTP_WKSIDX_TRACE;
 extern int HTTP_WKSIDX_PUSH;
+extern int HTTP_WKSIDX_QUERY;
 extern int HTTP_WKSIDX_METHODS_CNT;
 
 extern c_str_view HTTP_VALUE_BYTES;
