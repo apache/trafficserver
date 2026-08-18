@@ -7,3 +7,8 @@ qsa.input: u4wrh
 header_value_context.input: u4wrh
 # HTTP-CNTL valid bools can not reverse back to the original input
 http_cntl_valid_bools.input: hrw4u
+# set-config with HRW type hint (INT/STRING/FLOAT) is a reverse-only form;
+# hrw4u never emits the type token.
+set-conf-type-int.input: u4wrh
+set-conf-type-string.input: u4wrh
+set-conf-type-float.input: u4wrh
