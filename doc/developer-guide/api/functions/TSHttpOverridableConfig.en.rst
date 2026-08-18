@@ -153,6 +153,7 @@ TSOverridableConfigKey Value                                              Config
 :enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX`                  :ts:cv:`proxy.config.http.per_server.connection.max`
 :enumerator:`TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED`          :ts:cv:`proxy.config.http.post.check.content_length.enabled`
 :enumerator:`TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY`                :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
+:enumerator:`TS_CONFIG_HTTP_REJECT_HEAD_WITH_CONTENT`                   :ts:cv:`proxy.config.http.reject_head_with_content`
 :enumerator:`TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED`                     :ts:cv:`proxy.config.http.request_buffer_enabled`
 :enumerator:`TS_CONFIG_HTTP_REQUEST_HEADER_MAX_SIZE`                    :ts:cv:`proxy.config.http.request_header_max_size`
 :enumerator:`TS_CONFIG_HTTP_RESPONSE_HEADER_MAX_SIZE`                   :ts:cv:`proxy.config.http.response_header_max_size`

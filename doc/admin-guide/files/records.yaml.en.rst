@@ -1859,6 +1859,20 @@ Origin Server Connect Attempts
 
     Enables (``1``) or disables (``0``) checking the Content-Length: Header for a POST request.
 
+.. ts:cv:: CONFIG proxy.config.http.reject_head_with_content INT 1
+   :reloadable:
+   :overridable:
+
+   Rejects (``1``) HEAD requests that carry non-empty content, declared via a
+   non-zero ``Content-Length`` or a chunked ``Transfer-Encoding``, with a
+   ``400 Bad Request`` response.
+
+   RFC 9110 § 9.3.2 states that a client *SHOULD NOT* send content in a HEAD
+   request.  Enabling this setting enforces that recommendation.
+
+   Setting this to ``0`` allows HEAD requests with a body to be forwarded to
+   the origin.  Disabling this setting may introduce security risks.
+
 .. ts:cv:: CONFIG proxy.config.http.down_server.cache_time INT 60
    :reloadable:
    :overridable:
