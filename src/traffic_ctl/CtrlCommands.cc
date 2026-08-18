@@ -224,12 +224,12 @@ ConfigCommand::ConfigCommand(ts::Arguments *args) : RecordCommand(args)
 }
 
 shared::rpc::JSONRPCResponse
-RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType)
+RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType, bool includeHidden)
 {
   shared::rpc::RecordLookupRequest request;
+  auto const &metricTypes = includeHidden ? shared::rpc::METRIC_REC_TYPES_INCLUDE_HIDDEN : shared::rpc::METRIC_REC_TYPES;
   for (auto &&it : argData) {
-    request.emplace_rec(it, isRegex,
-                        recQueryType == RecordQueryType::CONFIG ? shared::rpc::CONFIG_REC_TYPES : shared::rpc::METRIC_REC_TYPES);
+    request.emplace_rec(it, isRegex, recQueryType == RecordQueryType::CONFIG ? shared::rpc::CONFIG_REC_TYPES : metricTypes);
   }
   return invoke_rpc(request);
 }
@@ -784,7 +784,9 @@ MetricCommand::metric_get()
 void
 MetricCommand::metric_match()
 {
-  _printer->write_output(record_fetch(get_parsed_arguments()->get(MATCH_STR), shared::rpc::REGEX, RecordQueryType::METRIC));
+  bool const include_hidden = get_parsed_arguments()->get(INCLUDE_HIDDEN_STR);
+  _printer->write_output(
+    record_fetch(get_parsed_arguments()->get(MATCH_STR), shared::rpc::REGEX, RecordQueryType::METRIC, include_hidden));
 }
 
 void
