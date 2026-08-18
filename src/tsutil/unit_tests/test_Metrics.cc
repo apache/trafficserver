@@ -607,3 +607,36 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
   std::sort(sorted_ptrs.begin(), sorted_ptrs.end());
   REQUIRE(std::adjacent_find(sorted_ptrs.begin(), sorted_ptrs.end()) == sorted_ptrs.end());
 }
+
+TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]")
+{
+  // A span has to be contiguous, so createSpan(MAX_SIZE) always starts a fresh blob and then fills
+  // it completely, whatever the current offset was. That makes this the one span size that reaches
+  // the boundary case deterministically: the offset ends up at MAX_SIZE, and unlike create(),
+  // createSpan used not to grow a new blob afterwards. The next create() then indexed one past the
+  // end of the blob's name array, and end() became an id that iterator::next() can never reach
+  // because it wraps at ++offset == MAX_SIZE.
+  //
+  // createSpan only ever targets the published store, so this necessarily allocates there.
+  Metrics::IdType span_id = Metrics::NOT_FOUND;
+  auto            span    = Metrics::Counter::createSpan(Metrics::MAX_SIZE, &span_id);
+
+  REQUIRE(span.size() == Metrics::MAX_SIZE);
+  REQUIRE(span_id != Metrics::NOT_FOUND);
+  REQUIRE(span_id != 0); // 0 is the reserved bad_id, returned only when the store cannot grow.
+
+  // The store must still be usable, and the new metric must be a real, resolvable entry rather
+  // than something written past the end of a blob.
+  auto p = Metrics::Counter::createPtr("span.boundary.after");
+  REQUIRE(p != nullptr);
+
+  auto &m  = Metrics::instance();
+  auto  id = m.lookup("span.boundary.after");
+  REQUIRE(id != Metrics::NOT_FOUND);
+  REQUIRE(m.valid(id));
+
+  // And it must behave like any other metric.
+  Metrics::Counter::increment(p, 7);
+  REQUIRE(Metrics::Counter::load(p) == 7);
+  REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
+}

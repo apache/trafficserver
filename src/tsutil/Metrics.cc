@@ -187,6 +187,17 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
   release_assert(size <= MAX_SIZE);
   ts::lock_guard lock(_mutex);
 
+  // On the final blob there is nowhere left to grow, so refuse a span that would fill or overflow
+  // it rather than letting addBlob() assert. Same intent as the guard in create(), and the same
+  // cost: some slots of the last blob go unused.
+  if (_cur_blob >= MAX_BLOBS - 1 && _cur_off + size >= MAX_SIZE) {
+    if (id) {
+      *id = 0; // Slot 0 is the reserved bad_id.
+    }
+    return {};
+  }
+
+  // A span has to be contiguous, so one that does not fit in the current blob starts a new one.
   if (_cur_off + size > MAX_SIZE) {
     addBlob();
   }
@@ -201,6 +212,14 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
   }
 
   _cur_off += size;
+
+  // create() grows as soon as it consumes the last slot; do the same here. Otherwise a span ending
+  // exactly on the boundary leaves _cur_off at MAX_SIZE, and the next create() writes one past the
+  // end of the blob's name array. It also makes end() unreachable for iterator::next(), which
+  // wraps on ++offset == MAX_SIZE.
+  if (_cur_off >= MAX_SIZE) {
+    addBlob();
+  }
 
   return span;
 }
