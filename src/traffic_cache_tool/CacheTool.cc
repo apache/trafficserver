@@ -1014,6 +1014,8 @@ Cache::build_stripe_hash_table()
   for (int i = 0; i < num_stripes; i++) {
     printf("build_vol_hash_table index %d mapped to %d requested %d got %d\n", i, i, forvol[i], gotvol[i]);
   }
+  // The destructor owns this table, so release any table a previous call installed.
+  ats_free(stripes_hash_table);
   stripes_hash_table = ttable;
 
   ats_free(forvol);

@@ -1071,8 +1071,8 @@ parse_args(int argc, char const *argv[])
       break;
     case 'd':
       // The option may be repeated; release the previously duplicated name first.
-      free(plugin_config->log_info.filename);
-      plugin_config->log_info.filename = strdup(optarg);
+      TSfree(plugin_config->log_info.filename);
+      plugin_config->log_info.filename = TSstrdup(optarg);
       break;
 
     case 'e':

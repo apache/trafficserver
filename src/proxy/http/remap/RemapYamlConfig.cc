@@ -389,10 +389,9 @@ parse_map_referer(const YAML::Node &node, url_mapping *url_mapping)
       !strcasecmp(url.c_str(), "<default_redirect_url>") || !strcasecmp(url.c_str(), "default_redirect_url")) {
     url_mapping->default_redirect_url = true;
   }
-  // parse_format_redirect_url() nul terminates each chunk in place before copying it out, and for a
-  // url with no format specifier that write lands on the terminating nul, which std::string does not
-  // allow a caller to assign. Give it a buffer we own instead, and release it once it returns; the
-  // chunk list holds copies.
+  // parse_format_redirect_url() nul terminates each chunk in place before copying it out, so it
+  // needs a mutable buffer. It keeps no pointer into that buffer, only ats_strdup copies, so the
+  // duplicate can be released as soon as it returns. Previously nothing owned it and it leaked.
   ats_scoped_str redirect_url(ats_strdup(url.c_str()));
   url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(redirect_url.get());
 

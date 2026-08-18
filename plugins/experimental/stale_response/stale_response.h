@@ -65,7 +65,7 @@ struct ConfigInfo {
     if (this->body_data_mutex) {
       TSMutexDestroy(this->body_data_mutex);
     }
-    free(this->log_info.filename);
+    TSfree(this->log_info.filename);
   }
   UintBodyMap *body_data = nullptr;
   TSMutex      body_data_mutex;
