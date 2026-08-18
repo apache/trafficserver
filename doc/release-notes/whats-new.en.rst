@@ -73,6 +73,8 @@ TS API
 * Add ``TSVConnPPInfoGet`` to get Proxy Protocol information.
 * Add ``TSContScheduleOnEntirePool`` and ``TSContScheduleEveryOnEntirePool`` to
   schedule continuations on every thread in a pool.
+* Add ``TS_HTTP_METHOD_QUERY`` and ``TS_HTTP_LEN_QUERY`` for the HTTP ``QUERY``
+  method, along with the corresponding cripts and C++ API constants.
 
 Features
 --------

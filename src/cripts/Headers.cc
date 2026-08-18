@@ -38,6 +38,7 @@ namespace Method
   const cripts::Header::Method OPTIONS(TS_HTTP_METHOD_OPTIONS, TS_HTTP_LEN_OPTIONS);
   const cripts::Header::Method CONNECT(TS_HTTP_METHOD_CONNECT, TS_HTTP_LEN_CONNECT);
   const cripts::Header::Method TRACE(TS_HTTP_METHOD_TRACE, TS_HTTP_LEN_TRACE);
+  const cripts::Header::Method QUERY(TS_HTTP_METHOD_QUERY, TS_HTTP_LEN_QUERY);
   // This is a special feature of ATS
   const cripts::Header::Method PURGE(TS_HTTP_METHOD_PURGE, TS_HTTP_LEN_PURGE);
 } // namespace Method
