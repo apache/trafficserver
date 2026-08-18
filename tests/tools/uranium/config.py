@@ -22,7 +22,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import copy
-import re
 
 import yaml
 
@@ -178,10 +177,3 @@ def replace_server_ports(value: str, http_port: int, https_port: int) -> str:
     """Replace server port placeholders in an ATS configuration value."""
 
     return value.replace("{SERVER_HTTP_PORT}", str(http_port)).replace("{SERVER_HTTPS_PORT}", str(https_port))
-
-
-def version_tuple(value: str) -> tuple[int, ...]:
-    """Return the numeric portion of a program version for minimum checks."""
-
-    match = re.search(r"\d+(?:\.\d+)+", value)
-    return tuple(int(part) for part in match.group(0).split(".")) if match else ()

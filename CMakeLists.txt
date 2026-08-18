@@ -163,6 +163,9 @@ if(ENABLE_DISK_FAILURE_TESTS)
 endif()
 option(ENABLE_URTEST "Set up Uranium tests (default OFF)")
 option(ENABLE_URTEST_UDS "Set up Uranium tests with curl using UDS (default OFF)")
+if(DEFINED ENABLE_AUTEST OR DEFINED ENABLE_AUTEST_UDS)
+  message(FATAL_ERROR "ENABLE_AUTEST and ENABLE_AUTEST_UDS were removed; use ENABLE_URTEST and ENABLE_URTEST_UDS")
+endif()
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
@@ -800,21 +803,18 @@ if(ENABLE_URTEST)
       "/tmp/urtest_${_build_dir_hash}"
       CACHE STRING "Location for Uranium test output (default /tmp/urtest_<hash>)"
   )
-  if(AUTEST_SANDBOX)
-    message(DEPRECATION "AUTEST_SANDBOX is deprecated; use URTEST_SANDBOX")
-    set(URTEST_SANDBOX "${AUTEST_SANDBOX}")
-  endif()
   set(URTEST_OPTIONS
       ""
       CACHE STRING "Additional options for Uranium tests (default \"\")"
   )
-  if(AUTEST_OPTIONS)
-    message(DEPRECATION "AUTEST_OPTIONS is deprecated; use URTEST_OPTIONS")
-    string(PREPEND URTEST_OPTIONS "${AUTEST_OPTIONS} ")
-  endif()
-  if(PYTEST_OPTIONS)
-    message(DEPRECATION "PYTEST_OPTIONS is deprecated; use URTEST_OPTIONS")
-    string(APPEND URTEST_OPTIONS " ${PYTEST_OPTIONS}")
+  if(DEFINED AUTEST_SANDBOX
+     OR DEFINED AUTEST_OPTIONS
+     OR DEFINED PYTEST_OPTIONS
+  )
+    message(
+      FATAL_ERROR
+        "AUTEST_SANDBOX, AUTEST_OPTIONS, and PYTEST_OPTIONS were removed; use URTEST_SANDBOX and URTEST_OPTIONS"
+    )
   endif()
   file(READ "${CMAKE_SOURCE_DIR}/tests/proxy-verifier-version.txt" PROXY_VERIFIER_VERSION)
   string(STRIP "${PROXY_VERIFIER_VERSION}" PROXY_VERIFIER_VERSION)

@@ -89,13 +89,11 @@ run_tests() {
   if [ -n "$URTEST" ]; then
     local filter_args=()
     if [ "$URTEST" != all ]; then
-      # Quote the pattern: the runner matches it against each test's basename
-      # (e.g. 'tls_*'), so it must reach urtest verbatim rather than be
-      # glob-expanded by the shell first.
-      filter_args=(-f "$URTEST")
+      # Quote the pytest expression so the shell does not reinterpret it.
+      filter_args=(-k "$URTEST")
     fi
     # Match ctest's parallelism while retaining a per-build-tree sandbox.
-    (cd "$BUILDDIR/tests" && ./urtest.sh -j "$NPROCS" "${filter_args[@]}")
+    (cd "$BUILDDIR/tests" && ./urtest.sh -n "$NPROCS" "${filter_args[@]}")
   fi
 }
 

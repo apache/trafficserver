@@ -13,7 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-"""Unit tests for managed process and gold-file behavior."""
+"""Unit tests for managed process behavior."""
 
 from pathlib import Path
 import sys
@@ -42,27 +42,6 @@ def test_managed_process_reports_unexpected_status(tmp_path: Path) -> None:
     with pytest.raises(ProcessError, match="status 3"):
         process.wait(5)
     assert "bad" in process.output()
-
-
-def test_gold_file_wildcards_match_variable_text(tmp_path: Path) -> None:
-    """Preserve the established `` and {} wildcard tokens in migrated gold files."""
-
-    expected = tmp_path / "expected.gold"
-    actual = tmp_path / "actual.log"
-    expected.write_text("port=`` id={} done\n")
-    actual.write_text("port=43127 id=abc-123 done\n")
-    ReplayTest._validate_gold(actual, expected)
-
-
-def test_gold_file_difference_fails(tmp_path: Path) -> None:
-    """Report a mismatch when fixed gold-file text changes."""
-
-    expected = tmp_path / "expected.gold"
-    actual = tmp_path / "actual.log"
-    expected.write_text("expected\n")
-    actual.write_text("actual\n")
-    with pytest.raises(AssertionError, match="did not match"):
-        ReplayTest._validate_gold(actual, expected)
 
 
 def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path) -> None:

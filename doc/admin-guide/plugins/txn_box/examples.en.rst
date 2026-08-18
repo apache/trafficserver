@@ -39,7 +39,7 @@ Goal
    Force all proxy requests to have a value for the "Accept-Encoding" field. If not already set, it
    should be set to "identity".
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/example/accept-encoding.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/example/accept-encoding.test.yaml
    :start-after: doc.start
    :end-before: doc.end
 
@@ -104,7 +104,7 @@ Goal
 
 Example configuration
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-1-->
    :end-before: doc-1--<
 
@@ -112,7 +112,7 @@ This checks on the upstream response. If the status is 404 (not found) and the p
 "security.txt" then change the response to a 200 and provide a hard wired default for the content.
 The text is retrieved via a YAML reference to an anchor.
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-secure-text-->
    :end-before: doc-secure-text--<
 
@@ -123,7 +123,7 @@ the anchor and reference in the previous configuration, to make sure the exact s
 both cases. Note this is done during YAML parsing, not at runtime, and is identical to using literal
 strings in both cases.
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-proxy-rsp-->
    :end-before: doc-proxy-rsp--<
 
@@ -147,14 +147,14 @@ that pushes default tokens to the file "/var/www/jwt/default-token.jwt", a text 
 to load that file and check it for changes every 12 hours. If the file is missing, a special marker
 "N/A" that signals this problem to the upstream.
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-jwt-->
    :end-before: doc-jwt--<
 
 To use this, the proxy request is checked for the "Author-i-tay" field. If set it is passed through
 on the presumption it is a valid token. If not, then the default token is added.
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box//static_file/static_file.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/static_file/static_file.test.yaml
    :start-after: doc-jwt-apply-->
    :end-before: doc-jwt-apply--<
 
@@ -172,7 +172,7 @@ discarded. If the parameter "ma=0" is present, then the base file name must have
 attached. If the parameter "mc=1" is present, then the base filename must have the string "_mac"
 attached. If both are present then both strings are added.
 
-.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/prod/vznith-1.replay.yaml
+.. literalinclude:: ../../../../tests/uranium_tests/pluginTest/txn_box/prod/vznith-1.test.yaml
    :start-after: doc-start
    :end-before: doc-end
 
