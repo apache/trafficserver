@@ -76,7 +76,11 @@ def main(arguments: Sequence[str] | None = None) -> int:
 
 
 def run_from_source(source_root: Path, arguments: Sequence[str]) -> int:
-    """Build ATS in the official environment, then invoke the configured runner."""
+    """Build ATS in the official environment, then invoke the configured runner.
+
+    :param source_root: ATS source-tree root.
+    :param arguments: Wrapper and pytest arguments from the command line.
+    """
 
     source_root = source_root.resolve()
     should_use_docker, test_arguments = choose_docker_mode(arguments)
@@ -85,7 +89,7 @@ def run_from_source(source_root: Path, arguments: Sequence[str]) -> int:
 
     build_root = Path(os.environ.get("ATS_URTEST_CONTAINER_BUILD", source_root / "build-urtest-container")).resolve()
     install_prefix = build_root / "install"
-    sandbox = _short_sandbox(source_root)
+    sandbox = Path(os.environ.get("ATS_URTEST_SANDBOX", _short_sandbox(source_root))).resolve()
     default_build_jobs = str(min(8, os.cpu_count() or 4))
     build_jobs = os.environ.get("ATS_URTEST_BUILD_JOBS", default_build_jobs)
     configure_command = [
@@ -137,10 +141,7 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
     if config.curl_uds and "--curl-uds" not in pytest_arguments:
         pytest_arguments.append("--curl-uds")
     command = [
-        "uv",
-        "--project",
-        str(config.project_directory),
-        "run",
+        *_uv_run_prefix(config.project_directory, is_official_test_container()),
         "pytest",
         "--import-mode=importlib",
         "-p",
@@ -175,6 +176,19 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
     return result.returncode
 
 
+def _uv_run_prefix(project_directory: Path, use_accelerated_diff: bool) -> list[str]:
+    """Build the uv prefix used to launch pytest.
+
+    :param project_directory: Directory containing the Uranium Python project.
+    :param use_accelerated_diff: Whether to install the optional C diff extra.
+    """
+
+    command = ["uv", "--project", str(project_directory), "run"]
+    if use_accelerated_diff:
+        command.extend(["--extra", "fast-diff"])
+    return command
+
+
 def runner_help() -> str:
     """Describe wrapper-owned options before pytest renders its own help."""
 
@@ -185,8 +199,8 @@ urtest.sh options (consumed before pytest; these spellings take precedence):
   --run-in-docker               Run in {DEFAULT_IMAGE}.
   --no-run-in-docker            Run in the current environment.
 
-Docker is the default unless urtest.sh is already running inside the official
-Fedora 44 test container. Any argument not consumed above is passed to pytest.
+Docker is the default unless urtest.sh is already running inside a container.
+Any argument not consumed above is passed to pytest.
 Common pytest options include -k for selection, -n for parallel workers, and
 --collect-only/--co for listing tests. Pass --run-manual to include explicitly
 opt-in Uranium tests; pytest documents these options below.
@@ -194,8 +208,12 @@ opt-in Uranium tests; pytest documents these options below.
 pytest options (passed through after urtest.sh processing):"""
 
 
-def choose_docker_mode(arguments: Sequence[str]) -> tuple[bool, list[str]]:
-    """Apply explicit Docker flags, then the official-container default."""
+def choose_docker_mode(arguments: Sequence[str], root: Path = Path("/")) -> tuple[bool, list[str]]:
+    """Apply explicit Docker flags, then avoid nested container execution.
+
+    :param arguments: Wrapper and pytest arguments from the command line.
+    :param root: Filesystem root to inspect for container markers.
+    """
 
     requested: bool | None = None
     remaining = []
@@ -213,7 +231,7 @@ def choose_docker_mode(arguments: Sequence[str]) -> tuple[bool, list[str]]:
 
     if requested is not None:
         return requested, remaining
-    return not is_official_test_container(), remaining
+    return not is_container(root), remaining
 
 
 def is_official_test_container(root: Path = Path("/")) -> bool:
@@ -257,7 +275,11 @@ def read_os_release(path: Path) -> dict[str, str]:
 
 
 def launch_docker(source_root: Path, arguments: Sequence[str]) -> int:
-    """Run the source entry point once in the official Fedora test image."""
+    """Run the source entry point once in the official Fedora test image.
+
+    :param source_root: ATS source-tree root to bind mount.
+    :param arguments: Pytest arguments to pass through the container.
+    """
 
     docker = shutil.which("docker")
     if docker is None:
@@ -284,7 +306,7 @@ def launch_docker(source_root: Path, arguments: Sequence[str]) -> int:
         "--env",
         f"ATS_URTEST_HOST_OS={sys.platform}",
     ]
-    for variable in ("ATS_URTEST_BUILD_JOBS", "RUN_CACHE_CONTENTION_TEST", "SHARD", "SHARDCNT"):
+    for variable in ("ATS_URTEST_BUILD_JOBS", "ATS_URTEST_SANDBOX", "RUN_CACHE_CONTENTION_TEST", "SHARD", "SHARDCNT"):
         if variable in os.environ:
             command.extend(["--env", f"{variable}={os.environ[variable]}"])
     if extra_arguments := os.environ.get("ATS_URTEST_DOCKER_ARGS"):

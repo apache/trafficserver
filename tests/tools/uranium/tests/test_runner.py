@@ -26,6 +26,7 @@ from tools.uranium.runner import (
     _cmake_cache_value,
     _copy_sandbox_artifacts,
     _short_sandbox,
+    _uv_run_prefix,
     choose_docker_mode,
     is_official_test_container,
     launch_docker,
@@ -63,12 +64,32 @@ def test_official_container_requires_fedora_44_and_container_marker(tmp_path: Pa
     assert not is_official_test_container(tmp_path)
 
 
+def test_any_container_runs_directly_by_default(tmp_path: Path) -> None:
+    """Avoid nested Docker when the container image is not the official one.
+
+    :param tmp_path: Stand-in filesystem root for container markers.
+    """
+
+    (tmp_path / ".dockerenv").touch()
+    assert choose_docker_mode(["-q"], tmp_path) == (False, ["-q"])
+
+
 def test_pytest_arguments_pass_through_unchanged() -> None:
     """Leave selection, parallelism, collection, and sandbox options to pytest."""
 
     arguments = ["-n", "2", "-v", "--sandbox", "/tmp/sb", "--collect-only", "-k", "cache or tls"]
 
     assert translate_arguments(arguments, {}) == arguments
+
+
+def test_fedora_runner_installs_the_accelerated_diff_extra(tmp_path: Path) -> None:
+    """Request cdifflib only in the supported Fedora environment.
+
+    :param tmp_path: Stand-in path for the configured Python project.
+    """
+
+    assert _uv_run_prefix(tmp_path, True) == ["uv", "--project", str(tmp_path), "run", "--extra", "fast-diff"]
+    assert _uv_run_prefix(tmp_path, False) == ["uv", "--project", str(tmp_path), "run"]
 
 
 def test_runner_help_separates_wrapper_and_pytest_options() -> None:
@@ -83,7 +104,7 @@ def test_runner_help_separates_wrapper_and_pytest_options() -> None:
     assert "-j N" not in help_text
     assert "--clean" not in help_text
     assert "--list" not in help_text
-    assert "Docker is the default" in help_text
+    assert "Docker is the default unless urtest.sh is already running inside a container" in help_text
     assert help_text.endswith("pytest options (passed through after urtest.sh processing):")
 
 

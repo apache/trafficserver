@@ -61,7 +61,7 @@ urtest:
               action: allow
 
     - name: proxy-protocol-source
-      replay: replays/http_proxy_protocol.replay.yaml
+      replay: ../replays/http_proxy_protocol.replay.yaml
       client:
         process_config:
           http_ports: ["{ATS_PROXY_PROTOCOL_PORT}"]
@@ -77,7 +77,7 @@ urtest:
               action: deny
 
     - name: h3-allow
-      replay: replays/h3.replay.yaml
+      replay: ../replays/h3.replay.yaml
       requires:
         ats_features: [TS_USE_QUIC]
         curl_features: [http3]
@@ -94,7 +94,7 @@ urtest:
               methods: ALL
 
     - name: h3-deny
-      replay: replays/h3.replay.yaml
+      replay: ../replays/h3.replay.yaml
       requires:
         ats_features: [TS_USE_QUIC]
         curl_features: [http3]

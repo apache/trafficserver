@@ -32,7 +32,7 @@ urtest:
   description: "Apply inbound method policy through named IP categories"
   server:
     name: origin
-    replay: replays/https_categories_server.replay.yaml
+    replay: ../replays/https_categories_server.replay.yaml
   client:
     name: client
   ats:
@@ -85,7 +85,7 @@ urtest:
 
     - name: external
       client:
-        replay: replays/https_categories_external.replay.yaml
+        replay: ../replays/https_categories_external.replay.yaml
       ats:
         inline_config_files: &external-categories
           categories.yaml: |
@@ -103,7 +103,7 @@ urtest:
 
     - name: denied-before-http
       client:
-        replay: replays/https_categories_all.replay.yaml
+        replay: ../replays/https_categories_all.replay.yaml
         return_code: 1
         process_config:
           allow_errors: true
@@ -126,7 +126,7 @@ urtest:
 
     - name: remap-denies-external-get
       client:
-        replay: replays/https_categories_external_remap.replay.yaml
+        replay: ../replays/https_categories_external_remap.replay.yaml
       ats:
         inline_config_files: *external-categories
         remap_config:
