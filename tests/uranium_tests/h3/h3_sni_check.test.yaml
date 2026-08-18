@@ -14,9 +14,11 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta:
+  version: "1.0"
+
 urtest:
   description: "Verify HTTP/3 SNI checking"
-  replay: "replays/h3_sni.replay.yaml"
   requires:
     ats_features: ["TS_USE_QUIC"]
   server:
@@ -60,3 +62,55 @@ urtest:
           traffic_out:
             contains:
               - {expression: "SNI not found", description: "ATS must reject a connection without SNI"}
+
+
+sessions:
+- protocol:
+    stack: http3
+    tls:
+      sni: foo.com
+  transactions:
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", foo.com]
+        - [":path", /path/test1]
+        - [ uuid, has_sni ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200
+
+- protocol:
+    # Note that the SNI is not specified for this connection.
+    stack: http3
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [":method", GET]
+        - [":scheme", https]
+        - [":authority", foo.com]
+        - [":path", /path/test1]
+        - [ uuid, no_sni ]
+    server-response:
+      status: 200
+      reason: "OK"
+      headers:
+        fields:
+        - [ Content-Length, 20 ]
+
+    proxy-response:
+      status: 200

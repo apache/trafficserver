@@ -34,6 +34,25 @@ def test_all_migrated_replays_are_valid() -> None:
         ReplaySpec.load_all(path)
 
 
+def test_default_replays_are_self_contained() -> None:
+    """Keep default Proxy Verifier traffic in its collected manifest."""
+
+    uranium_tests = Path(__file__).parents[3] / "uranium_tests"
+    violations = []
+    for path in uranium_tests.rglob("*.test.yaml"):
+        document = yaml.safe_load(path.read_text())
+        urtest = document["urtest"]
+        replay = urtest.get("replay")
+        if not isinstance(replay, str):
+            continue
+
+        base_replay_path = (path.parent / replay).resolve()
+        if base_replay_path.is_file():
+            violations.append(f"{path}: merge {base_replay_path} into the collected manifest")
+
+    assert violations == []
+
+
 def test_no_uranium_test_registers_an_uranium_replay() -> None:
     """Keep replay ownership out of legacy Python wrappers."""
 

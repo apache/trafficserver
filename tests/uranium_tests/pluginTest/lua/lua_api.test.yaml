@@ -18,7 +18,6 @@ meta: {version: "1.0"}
 
 urtest:
   description: "Verify focused Lua remap APIs"
-  replay: "lua_api.replay.yaml"
   requires: {plugins: [tslua.so]}
   server: {name: "origin"}
   client: {name: "client"}
@@ -126,4 +125,200 @@ urtest:
           - {path: "{LOG_DIR}/traffic.out", contains: "PP-SocketType: 1"}
           - {path: "{LOG_DIR}/traffic.out", contains: "PP-Version: 0"}
 
-sessions: []
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, lua-watermark]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 0]]}
+        proxy-response: {status: 200}
+
+      - all: {headers: {fields: [[uuid, lua-client-hook]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 4]]}
+          content: {data: "AAAA", size: 4}
+        proxy-response:
+          status: 200
+          content: {data: "AAAA", size: 4}
+
+      - all: {headers: {fields: [[uuid, lua-remap-after-hook]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 2]]}
+          content: {data: "ok", size: 2}
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Remap-From-Host, www.example.com]
+              - [Hook-From-Host, "<nil>"]
+
+      - all: {headers: {fields: [[uuid, lua-fetch-outer]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 5]]}
+          content: {data: "outer", size: 5}
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Sub-Status, "200"]
+              - [Sub-Body-Len, "5"]
+
+      - all: {headers: {fields: [[uuid, lua-fetch-inner]]}}
+        client-request:
+          method: GET
+          url: /inner.txt
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 5]]}
+          content: {data: "AAAAA", size: 5}
+        proxy-response: {status: 200}
+
+      - all: {headers: {fields: [[uuid, lua-header-table]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, example.com]
+              - [X-Test, test1]
+              - [X-Test, test2]
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content: {data: "test1test2", size: 10}
+
+      - all: {headers: {fields: [[uuid, lua-verified-v4]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, example.com], [X-Real-IP, 192.0.2.100]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content: {data: "initial:nil;set:success;get:192.0.2.100:2;", size: 42}
+
+      - all: {headers: {fields: [[uuid, lua-verified-v6]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, example.com], [X-Real-IP-V6, "2001:db8::1"]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content: {data: "initial:nil;setv6:success;getv6:2001:db8::1:10;", size: 47}
+
+      - all: {headers: {fields: [[uuid, lua-verified-invalid]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, example.com], [X-Invalid-IP, not.a.valid.ip]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content: {data: "initial:nil;invalid:rejected;", size: 29}
+
+      - all: {headers: {fields: [[uuid, lua-verified-both]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, example.com]
+              - [X-Real-IP, 203.0.113.42]
+              - [X-Real-IP-V6, "2001:db8::42"]
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content:
+            data: "initial:nil;set:success;get:203.0.113.42:2;setv6:success;getv6:2001:db8::42:10;"
+            size: 79
+
+      - all: {headers: {fields: [[uuid, lua-debug-tags]]}}
+        client-request:
+          method: GET
+          url: /test.html
+          version: "1.1"
+          headers: {fields: [[Host, test]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content: {data: " default foo ts_lua", size: 19}
+
+      - all: {headers: {fields: [[uuid, lua-states-stats]]}}
+        client-request:
+          method: GET
+          url: /hello
+          version: "1.1"
+          headers: {fields: [[Host, hello]]}
+        server-response: {status: 599}
+        proxy-response:
+          status: 200
+          content: {data: "Hello, World", size: 12}
+
+  - protocol:
+      stack: http
+      proxy-protocol:
+        version: 1
+        src-addr: "192.168.1.100:12345"
+        dst-addr: "127.0.0.1:80"
+    transactions:
+      - all: {headers: {fields: [[uuid, lua-proxy-present]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 4]]}
+          content: {data: "TEST", size: 4}
+        proxy-response:
+          status: 200
+          content: {data: "TEST", size: 4}
+
+  - protocol: {stack: http}
+    transactions:
+      - all: {headers: {fields: [[uuid, lua-proxy-absent]]}}
+        client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers: {fields: [[Host, www.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 4]]}
+          content: {data: "TEST", size: 4}
+        proxy-response:
+          status: 200
+          content: {data: "TEST", size: 4}

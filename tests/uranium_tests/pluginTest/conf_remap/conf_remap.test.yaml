@@ -14,9 +14,43 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#
+# This replay file assumes a negative caching configuration in which 400
+# responses, and only 400 responses, are cached. This is done via
+# `proxy.config.http.negative_caching_list`.
+#
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - 200_response: &200_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ Cache-Control, max-age=10 ]
+
+  - 404_response: &404_response
+      server-response:
+        status: 404
+        reason: "Not Found"
+        headers:
+          fields:
+          - [ Content-Length, 0 ]
+
+  - 503_response: &503_response
+      server-response:
+        status: 503
+        reason: "Service Unavailable"
+        headers:
+          fields:
+          - [ Content-Length, 0 ]
+
 urtest:
   description: "Verify per-remap negative caching configuration"
-  replay: "replay/conf_remap.replay.yaml"
   requires:
     plugins: ["conf_remap.so"]
   server:
@@ -35,3 +69,106 @@ urtest:
     remap_config:
       - "map /default_negative_caching_list/ http://127.0.0.1:{SERVER_HTTP_PORT}/default_negative_caching_list/ @plugin=conf_remap.so @pparam=proxy.config.http.negative_caching_enabled=1"
       - "map /custom_negative_caching_list/ http://127.0.0.1:{SERVER_HTTP_PORT}/custom_negative_caching_list/ @plugin=conf_remap.so @pparam={CONFIG_DIR}/etc/negative_caching_list.yaml"
+
+
+sessions:
+- transactions:
+
+  #
+  # Test 1: Verify that a 503 response is cached with default `negative_caching_list` config
+  #
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /default_negative_caching_list/
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    <<: *503_response
+
+    proxy-response:
+      status: 503
+
+  # Request the same item again. It should be cached
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url:  /default_negative_caching_list/
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous transaction.
+      delay: 100ms
+
+    # By negative caching, the 503 will be cached and this will not go through.
+    <<: *200_response
+
+    # Expect the cached 503 response
+    proxy-response:
+      status: 503
+
+  #
+  # Test 2: Verify that a 503 response is not cached with custom `negative_caching_list` config
+  #
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /custom_negative_caching_list/
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    <<: *503_response
+
+    proxy-response:
+      status: 503
+
+  # Request the same item again. It should not be cached
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url:  /custom_negative_caching_list/
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous transaction.
+      delay: 100ms
+
+    # By custom `negative_caching_list` config, the 503 is not cached
+    <<: *404_response
+
+    # Expect the server's 404 response.
+    proxy-response:
+      status: 404
+
+  # Request the same item again. It should be cached by negative caching
+  - all: { headers: { fields: [[ uuid, 5 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url:  /custom_negative_caching_list/
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+      # Add a delay so ATS has time to finish any caching IO for the previous transaction.
+      delay: 100ms
+
+    # By customization, the 404 will be cached and this will not go through.
+    <<: *200_response
+
+    # Expect the cached 404 response.
+    proxy-response:
+      status: 404

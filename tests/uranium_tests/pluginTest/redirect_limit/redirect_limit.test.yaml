@@ -14,9 +14,10 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+meta: {version: "1.0"}
+
 urtest:
   description: "Verify plugin-initiated redirects honor number_of_redirections"
-  replay: "redirect_limit.replay.yaml"
   template_replay: true
   server:
     name: "redirect-limit-origin"
@@ -37,3 +38,99 @@ urtest:
     plugin_config: ["redirect_rearm.so"]
     remap_config:
       - "map http://127.0.0.1:{SERVER_HTTP_PORT}/ http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, long-r1]]}}
+        client-request:
+          method: GET
+          url: /r1
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 302
+          headers:
+            fields:
+              - [Location, "http://127.0.0.1:{SERVER_HTTP_PORT}/r2"]
+              - [Content-Length, 0]
+        proxy-response:
+          status: 302
+          headers: {fields: [[Location, {value: /r4, as: contains}]]}
+
+      - all: {headers: {fields: [[uuid, long-r2]]}}
+        client-request: &r2
+          method: GET
+          url: /r2
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 302
+          headers:
+            fields:
+              - [Location, "http://127.0.0.1:{SERVER_HTTP_PORT}/r3"]
+              - [Content-Length, 0]
+
+      - all: {headers: {fields: [[uuid, long-r3]]}}
+        client-request:
+          method: GET
+          url: /r3
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 302
+          headers:
+            fields:
+              - [Location, "http://127.0.0.1:{SERVER_HTTP_PORT}/r4"]
+              - [Content-Length, 0]
+
+      - all: {headers: {fields: [[uuid, long-r4]]}}
+        client-request:
+          method: GET
+          url: /r4
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 302
+          headers:
+            fields:
+              - [Location, "http://127.0.0.1:{SERVER_HTTP_PORT}/r5"]
+              - [Content-Length, 0]
+
+      - all: {headers: {fields: [[uuid, long-r5]]}}
+        client-request:
+          method: GET
+          url: /r5
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 5]]}
+          content: {data: final, size: 5}
+
+      - all: {headers: {fields: [[uuid, short-s1]]}}
+        client-request:
+          method: GET
+          url: /s1
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 302
+          headers:
+            fields:
+              - [Location, "http://127.0.0.1:{SERVER_HTTP_PORT}/s2"]
+              - [Content-Length, 0]
+        proxy-response:
+          status: 200
+          content: {data: shortfinal, size: 10}
+
+      - all: {headers: {fields: [[uuid, short-s2]]}}
+        client-request:
+          method: GET
+          url: /s2
+          version: "1.1"
+          headers: {fields: [[Host, "127.0.0.1:{SERVER_HTTP_PORT}"]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 10]]}
+          content: {data: shortfinal, size: 10}

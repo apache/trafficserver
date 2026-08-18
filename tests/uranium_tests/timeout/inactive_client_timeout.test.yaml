@@ -14,9 +14,28 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+#
+# This replay file assumes that caching is enabled and
+# proxy.config.http.cache.ignore_client_cc_max_age is set to 0 so that we can
+# test max-age in the client requests.
+#
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - delayed_response: &delayed_response
+        delay: 3s
+
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ Connection, close ]
+
 urtest:
   description: "Verify a slow origin does not trigger the client inactivity timeout"
-  replay: "slow_server.yaml"
   server:
     name: "inactive-client-origin"
   client:
@@ -45,3 +64,157 @@ urtest:
         to: "https://127.0.0.1:{SERVER_HTTPS_PORT}/"
       - from: "/"
         to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+
+sessions:
+
+#
+# An HTTP GET request.
+#
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/path/1"
+      headers:
+        fields:
+        - [ Host, www.no_tls.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 1 ]
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTP POST request.
+#
+- transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/path/2"
+      headers:
+        fields:
+        - [ Host, www.no_tls.com ]
+        - [ Content-Length, 10 ]
+        - [ uuid, 2 ]
+
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 2 ]
+
+    proxy-response:
+      status: 200
+
+
+#
+# An HTTPS GET request.
+#
+- protocol:
+    stack: https
+
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: "/path/3"
+      headers:
+        fields:
+        - [ Host, www.tls.com ]
+        - [ uuid, 3 ]
+
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 3 ]
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTPS POST request.
+#
+- protocol:
+    stack: https
+
+  transactions:
+  - client-request:
+      method: "POST"
+      version: "1.1"
+      url: "/path/4"
+      headers:
+        fields:
+        - [ Host, www.tls.com ]
+        - [ Content-Length, 10 ]
+        - [ uuid, 4 ]
+
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 4 ]
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTP/2 GET request.
+#
+- protocol:
+    stack: http2
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.tls.com ]
+        - [ ":path", '/path/5' ]
+        - [ uuid, 5 ]
+
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 5 ]
+
+    proxy-response:
+      status: 200
+
+#
+# An HTTP/2 POST request.
+#
+- protocol:
+    stack: http2
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.tls.com ]
+        - [ ":path", '/path/6' ]
+        - [ uuid, 6 ]
+      content:
+        size: 10
+
+    server-response:
+      <<: *delayed_response
+      headers:
+        fields:
+        - [ X-Response, 6 ]
+
+    proxy-response:
+      status: 200
