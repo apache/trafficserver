@@ -144,6 +144,7 @@ if(BUILD_TESTING)
     test_net
     libinknet_stub.cc
     NetVCTest.cc
+    unit_tests/test_NetHandler.cc
     unit_tests/test_ProxyProtocol.cc
     unit_tests/test_SSLCertLookup.cc
     unit_tests/test_SSLNetVConnectionAsyncEp.cc
