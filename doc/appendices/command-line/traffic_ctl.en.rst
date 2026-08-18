@@ -956,6 +956,7 @@ traffic_ctl metric
    Display the current values of all statistics whose names match
    the given regular expression.
 
+.. program:: traffic_ctl metric match
 .. option:: --include-hidden
 
    Also match hidden metrics. Hidden metrics are internal metrics that are stored but never

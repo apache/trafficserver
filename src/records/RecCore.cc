@@ -614,7 +614,16 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
 
   if (rec_type & RECT_HIDDEN_METRIC) {
     // Opt-in only: hidden metrics are never reachable through RECT_ALL, see RecDefs.h.
-    for (auto &&[name, type, val] : ts::Metrics::hidden_instance()) {
+    auto &hidden = ts::Metrics::hidden_instance();
+    // Slot 0 of every Storage is the reserved bad_id placeholder, so it exists under the same name
+    // in both stores. Skip it here, otherwise a query matching it returns two identically named
+    // records that differ only in value.
+    auto it = hidden.begin();
+
+    ++it;
+    for (; it != hidden.end(); ++it) {
+      auto &&[name, type, val] = *it;
+
       if (regex.exec(name.data())) {
         RecRecord tmp{};
 

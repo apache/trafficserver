@@ -251,7 +251,7 @@ main([[maybe_unused]] int argc, const char **argv)
                              Command_Execute); // not implemented
   metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
     .add_option("--include-hidden", "", "Also match hidden (internal, normally unpublished) metrics")
-    .add_example_usage("traffic_ctl metric match METRIC [--include-hidden]");
+    .add_example_usage("traffic_ctl metric match [--include-hidden] METRIC [METRIC ...]");
   metric_command
     .add_command(
       "monitor",
