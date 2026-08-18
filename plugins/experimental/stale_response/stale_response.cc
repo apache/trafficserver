@@ -1070,9 +1070,8 @@ parse_args(int argc, char const *argv[])
       plugin_config->log_info.stale_if_error = true;
       break;
     case 'd':
-      // The option may be repeated; release the previously duplicated name first.
-      TSfree(plugin_config->log_info.filename);
-      plugin_config->log_info.filename = TSstrdup(optarg);
+      // Assigning replaces any name from an earlier occurrence of this option.
+      plugin_config->log_info.filename_override = optarg;
       break;
 
     case 'e':
@@ -1110,7 +1109,8 @@ parse_args(int argc, char const *argv[])
   }
 
   if (plugin_config->log_info.all || plugin_config->log_info.stale_while_revalidate || plugin_config->log_info.stale_if_error) {
-    char const *const log_filename = plugin_config->log_info.filename ? plugin_config->log_info.filename : PLUGIN_TAG;
+    char const *const log_filename =
+      plugin_config->log_info.filename_override.empty() ? PLUGIN_TAG : plugin_config->log_info.filename_override.c_str();
     SRDBG(TAG, "[%s] Logging to %s", __FUNCTION__, log_filename);
     TSTextLogObjectCreate(log_filename, TS_LOG_MODE_ADD_TIMESTAMP, &(plugin_config->log_info.object));
   }
