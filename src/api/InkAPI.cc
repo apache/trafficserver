@@ -6503,6 +6503,12 @@ TSStatFindName(const char *name, int *idp)
   }
 }
 
+bool
+TSStatIdIsValid(int the_stat)
+{
+  return sdk_sanity_check_stat_id(the_stat) == TS_SUCCESS;
+}
+
 /**************************   Logging API   ****************************/
 
 TSReturnCode

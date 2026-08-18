@@ -32,6 +32,7 @@
 #include <arpa/inet.h> /* For htonl */
 
 #include <cerrno>
+#include <climits>
 #include <pthread.h>
 #include <unistd.h>
 #include <cstdio>
@@ -9239,6 +9240,10 @@ REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int
     id = TSStatCreate(name, TS_RECORDDATATYPE_COUNTER, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
     box.check(id != TS_ERROR, "TSStatCreate(%s) failed with %d", name, id);
   }
+
+  box.check(TSStatIdIsValid(id), "TSStatIdIsValid(%d) failed for %s", id, name);
+  box.check(!TSStatIdIsValid(-1), "TSStatIdIsValid(-1) unexpectedly succeeded");
+  box.check(!TSStatIdIsValid(INT_MAX), "TSStatIdIsValid(INT_MAX) unexpectedly succeeded");
 
   TSStatIntSet(id, getpid());
   TSStatIntIncrement(id, 1);
