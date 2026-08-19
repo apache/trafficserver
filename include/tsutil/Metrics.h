@@ -320,11 +320,20 @@ private:
 
   class Storage
   {
-    BlobStorage        _blobs;
-    uint16_t           _cur_blob = 0;
-    uint16_t           _cur_off  = 0;
-    LookupTable        _lookups;
-    mutable std::mutex _mutex;
+    /* _cur_blob and _cur_off are the two publication points. Each is written last, with a release
+     * store, after whatever it makes visible: the blob pointer and the reset of _cur_off for
+     * _cur_blob, the slot's name for _cur_off. A reader loads them with acquire, _cur_blob first --
+     * see _is_allocated(). That is what makes the pair consistent without reading it as one word,
+     * and it is why _blobs itself needs no atomic: it is only ever read at an index no greater than
+     * _cur_blob, and that write is sequenced before the release store the reader acquired.
+     *
+     * Writers all hold _mutex, so they load these relaxed; there is no other writer to race with.
+     */
+    BlobStorage           _blobs;
+    std::atomic<uint16_t> _cur_blob{0};
+    std::atomic<uint16_t> _cur_off{0};
+    LookupTable           _lookups;
+    mutable std::mutex    _mutex;
 
   public:
     Storage(const Storage &)            = delete;
@@ -354,7 +363,7 @@ private:
     current() const
     {
       std::lock_guard lock(_mutex);
-      return {_cur_blob, _cur_off};
+      return {_cur_blob.load(std::memory_order_relaxed), _cur_off.load(std::memory_order_relaxed)};
     }
 
     /** Whether @a id names a slot that has actually been allocated.
@@ -375,12 +384,16 @@ private:
 
       auto [blob_ix, offset] = _splitID(id);
 
+      // Load the outer publication point first: seeing a value for _cur_blob means everything
+      // addBlob() wrote before releasing it -- the blob pointer, and the reset of _cur_off -- is
+      // visible here too. Reading _cur_off first would defeat that.
+      auto const cur_blob = _cur_blob.load(std::memory_order_acquire);
+      auto const cur_off  = _cur_off.load(std::memory_order_acquire);
+
       // The blob comparison is against <= / <, not a test for "not the current blob", because
-      // addBlob() stores a new blob before advancing _cur_blob: for those two instructions
-      // _blobs[_cur_blob + 1] is non-null while still holding nothing. Requiring the index to be no
-      // greater than _cur_blob, and the offset to be below _cur_off in that blob, is correct
-      // whichever of the two the reader happens to observe first.
-      return offset < MAX_SIZE && blob_ix <= _cur_blob && _blobs[blob_ix] != nullptr && (blob_ix < _cur_blob || offset < _cur_off);
+      // addBlob() stores a new blob before advancing _cur_blob: until it does, _blobs[cur_blob + 1]
+      // is non-null while still holding nothing.
+      return offset < MAX_SIZE && blob_ix <= cur_blob && _blobs[blob_ix] != nullptr && (blob_ix < cur_blob || offset < cur_off);
     }
 
     bool
