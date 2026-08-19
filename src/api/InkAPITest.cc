@@ -6656,6 +6656,9 @@ REGRESSION_TEST(SDK_API_TSMgmtGet)(RegressionTest *test, int /* atype ATS_UNUSED
     SDK_RPRINT(test, "TSMgmtStringGet", "TestCase1.4", TC_PASS, "ok");
   }
 
+  // TSMgmtStringGet() hands back a copy the caller owns.
+  TSfree(svalue);
+
   {
     TSRecordDataType result;
     auto             ret = TSMgmtDataTypeGet(CONFIG_PARAM_STRING_NAME, &result);
