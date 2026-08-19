@@ -58,19 +58,6 @@ char const Dns_error_body[] = "connect#dns_failed";
 /// Buffer for some error logs.
 thread_local std::string error_bw_buffer;
 
-char const *
-get_at_header_source_name(HttpTransact::AtHeaderSource source)
-{
-  switch (source) {
-  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
-    return "client request";
-  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
-    return "origin response";
-  }
-
-  return "unknown source";
-}
-
 int
 get_at_header_source_stat(HttpTransact::AtHeaderSource source)
 {
@@ -83,13 +70,26 @@ get_at_header_source_stat(HttpTransact::AtHeaderSource source)
 
   return -1;
 }
+
+void
+log_stripped_at_headers(HttpTransact::AtHeaderSource source, std::int64_t sm_id, std::uint64_t stripped_count)
+{
+  switch (source) {
+  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from client request", sm_id, stripped_count);
+    break;
+  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from origin response", sm_id, stripped_count);
+    break;
+  }
+}
 } // namespace
 
 void
 HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, int64_t sm_id)
 {
-  char const *source_name = get_at_header_source_name(source);
-  int stat_id             = get_at_header_source_stat(source);
+  int stat_id = get_at_header_source_stat(source);
+  std::uint64_t stripped_count{0};
 
   for (auto field = header.begin(); field != header.end();) {
     MIMEField *current = &*field;
@@ -98,13 +98,16 @@ HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, int64_t s
     ++field;
 
     if (!name.empty() && name[0] == '@') {
-      if (stat_id >= 0) {
-        RecIncrRawStat(http_rsb, this_ethread(), stat_id, 1);
-      }
-      Error("[%" PRId64 "] stripped internal @ header from %s: %.*s", sm_id, source_name, static_cast<int>(name.size()),
-            name.data());
+      ++stripped_count;
       header.field_delete(current, false);
     }
+  }
+
+  if (stripped_count > 0) {
+    if (stat_id >= 0) {
+      RecIncrRawStat(http_rsb, this_ethread(), stat_id, static_cast<int64_t>(stripped_count));
+    }
+    log_stripped_at_headers(source, sm_id, stripped_count);
   }
 }
 
