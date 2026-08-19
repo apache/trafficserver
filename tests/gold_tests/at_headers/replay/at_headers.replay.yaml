@@ -27,6 +27,7 @@ sessions:
             fields:
               - [Host, example.com]
               - [&global_request_probe "@Client-Test", spoofed-value]
+              - [&global_request_extra "@Client-Extra", spoofed-extra-value]
               - [X-Normal, keep-me]
               - [uuid, at-header-global-client]
 
@@ -36,6 +37,7 @@ sessions:
           headers:
             fields:
               - [*global_request_probe, {as: absent}]
+              - [*global_request_extra, {as: absent}]
               - [&request_added "@Plugin-Request", {as: absent}]
               - [X-Normal, {value: keep-me, as: equal}]
 
@@ -45,6 +47,7 @@ sessions:
           headers:
             fields:
               - [&response_probe "@Origin-Test", spoofed-response]
+              - [&response_extra "@Origin-Extra", spoofed-extra-response]
               - [Content-Length, "0"]
 
         proxy-response:
@@ -52,9 +55,10 @@ sessions:
           headers:
             fields:
               - [*response_probe, {as: absent}]
+              - [*response_extra, {as: absent}]
               - [&response_added "@Plugin-Response", {as: absent}]
-              - [&client_stripped_header X-Client-At-Headers-Stripped, {value: "1", as: equal}]
-              - [&origin_stripped_header X-Origin-At-Headers-Stripped, {value: "1", as: equal}]
+              - [&client_stripped_header X-Client-At-Headers-Stripped, {value: "2", as: equal}]
+              - [&origin_stripped_header X-Origin-At-Headers-Stripped, {value: "2", as: equal}]
 
       - client-request:
           method: "GET"
@@ -90,5 +94,5 @@ sessions:
             fields:
               - [*response_probe, {as: absent}]
               - [*response_added, {as: absent}]
-              - [*client_stripped_header, {value: "2", as: equal}]
-              - [*origin_stripped_header, {value: "2", as: equal}]
+              - [*client_stripped_header, {value: "3", as: equal}]
+              - [*origin_stripped_header, {value: "3", as: equal}]

@@ -82,21 +82,6 @@ DbgCtl dbg_ctl_parent_down{"parent_down"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_ip_allow{"ip_allow"};
 
-std::string_view
-get_at_header_source_name(HttpTransact::AtHeaderSource source)
-{
-  using AtHeaderSource = HttpTransact::AtHeaderSource;
-
-  switch (source) {
-  case AtHeaderSource::CLIENT_REQUEST:
-    return "client request";
-  case AtHeaderSource::ORIGIN_RESPONSE:
-    return "origin response";
-  }
-
-  return "unknown source";
-}
-
 Metrics::Counter::AtomicType *
 get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 {
@@ -111,6 +96,19 @@ get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 
   return nullptr;
 }
+
+void
+log_stripped_at_headers(HttpTransact::AtHeaderSource source, std::int64_t sm_id, std::uint64_t stripped_count)
+{
+  switch (source) {
+  case HttpTransact::AtHeaderSource::CLIENT_REQUEST:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from client request", sm_id, stripped_count);
+    break;
+  case HttpTransact::AtHeaderSource::ORIGIN_RESPONSE:
+    SiteThrottledWarning("[%" PRId64 "] stripped %" PRIu64 " internal @ headers from origin response", sm_id, stripped_count);
+    break;
+  }
+}
 } // namespace
 
 /**
@@ -123,19 +121,22 @@ get_at_header_source_metric(HttpTransact::AtHeaderSource source)
 void
 HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int64_t sm_id)
 {
-  auto const metric      = get_at_header_source_metric(source);
-  auto const source_name = get_at_header_source_name(source);
+  auto const    metric = get_at_header_source_metric(source);
+  std::uint64_t stripped_count{0};
 
   for (auto field = header.begin(); field != header.end();) {
     auto current = field++;
     auto name    = current->name_get();
 
     if (!name.empty() && name[0] == '@') {
-      Metrics::Counter::increment(metric);
-      Error("[%" PRId64 "] stripped internal @ header from %.*s: %.*s", sm_id, static_cast<int>(source_name.size()),
-            source_name.data(), static_cast<int>(name.size()), name.data());
+      ++stripped_count;
       header.field_delete(&*current, false);
     }
+  }
+
+  if (stripped_count > 0) {
+    Metrics::Counter::increment(metric, stripped_count);
+    log_stripped_at_headers(source, sm_id, stripped_count);
   }
 }
 

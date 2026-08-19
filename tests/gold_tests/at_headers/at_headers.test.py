@@ -23,7 +23,9 @@ Verify that @ headers are stripped before global plugin and remap hooks run.
 replay_file = "replay/at_headers.replay.yaml"
 plugin_name = "at_header_probe.so"
 global_request_probe = "@Client-Test"
+global_request_extra = "@Client-Extra"
 response_probe = "@Origin-Test"
+response_extra = "@Origin-Extra"
 request_added = "@Plugin-Request"
 response_added = "@Plugin-Response"
 remap_request_probe = "@Client-Remap-Test"
@@ -46,12 +48,23 @@ ts.Disk.remap_config.AddLine(
     f"@plugin={plugin_name} @pparam={remap_request_probe}")
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "stripped internal @ header from client request: @client-test", "Client-side @ header removals should be logged.")
+    "stripped 2 internal @ headers from client request",
+    "Client-side @ header removals should be logged as a per-transaction summary.")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "stripped internal @ header from origin response: @origin-test", "Origin-side @ header removals should be logged.")
-ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "stripped internal @ header from client request: @client-remap-test",
-    "Client-side @ header removals should be logged before remap plugins run.")
+    "stripped 2 internal @ headers from origin response",
+    "Origin-side @ header removals should be logged as a per-transaction summary.")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "stripped internal @ header from client request:", "Client-side @ header removals should not be logged one line per header.")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    "stripped internal @ header from origin response:", "Origin-side @ header removals should not be logged one line per header.")
+for header_name in (global_request_probe, global_request_extra, remap_request_probe):
+    ts.Disk.diags_log.Content += Testers.ExcludesExpression(header_name, "Client-side stripped header names should not be logged.")
+    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+        header_name.lower(), "Client-side stripped header names should not be logged.")
+for header_name in (response_probe, response_extra):
+    ts.Disk.diags_log.Content += Testers.ExcludesExpression(header_name, "Origin-side stripped header names should not be logged.")
+    ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+        header_name.lower(), "Origin-side stripped header names should not be logged.")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
     "saw unexpected request header", "Plugins should not see client-supplied @ headers.")
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
