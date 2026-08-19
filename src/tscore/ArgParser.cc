@@ -518,23 +518,56 @@ ArgParser::Command::output_option() const
   }
 }
 
+bool
+ArgParser::Command::is_registered_option(std::string const &token) const
+{
+  if (_option_list.find(token) != _option_list.end() || _option_map.find(token) != _option_map.end()) {
+    return true;
+  }
+  // The --option=value form.
+  if (token.size() > 2 && token[0] == '-' && token[1] == '-') {
+    if (auto const pos = token.find_first_of('='); pos != std::string::npos) {
+      return _option_list.find(token.substr(0, pos)) != _option_list.end();
+    }
+  }
+  return false;
+}
+
 // helper method to handle the arguments and put them nicely in arguments
 // can be switched to ts::errata
-static std::string
-handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index)
+std::string
+ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index) const
 {
   ArgumentData data;
   ret.append(name, data);
   // handle the args
   if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
-    // infinite arguments
-    if (arg_num == MORE_THAN_ONE_ARG_N && args.size() <= index + 1) {
+    // Variable number of arguments. Stop collecting at a token that names another option
+    // of this command, so that following options and this command's own positional
+    // arguments are left in place for the caller. A "--" token ends option recognition,
+    // which is how a value that starts with '-' can be passed.
+    unsigned j{index + 1};
+    unsigned collected{0};
+    bool     recognize_options{true};
+
+    for (; j < args.size(); j++) {
+      if (recognize_options) {
+        if (args[j] == "--") {
+          recognize_options = false;
+          continue;
+        }
+        if (is_registered_option(args[j])) {
+          break;
+        }
+      }
+      ret.append_arg(name, args[j]);
+      ++collected;
+    }
+    if (arg_num == MORE_THAN_ONE_ARG_N && collected == 0) {
       return "at least one argument expected by " + name;
     }
-    for (unsigned j = index + 1; j < args.size(); j++) {
-      ret.append_arg(name, args[j]);
-    }
-    args.erase(args.begin() + index, args.end());
+    args.erase(args.begin() + index, args.begin() + j);
+    index -= 1;
     return "";
   }
   // finite number of argument handling
@@ -658,7 +691,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
     if (args[i][0] == '-' && args[i][1] == '-' && args[i].find('=') != std::string::npos) {
       // deal with --args=
       std::string option_name = args[i].substr(0, args[i].find_first_of('='));
-      std::string value       = args[i].substr(args[i].find_last_of('=') + 1);
+      std::string value       = args[i].substr(args[i].find_first_of('=') + 1);
       if (value.empty()) {
         help_message("missing argument for '" + option_name + "'");
       }

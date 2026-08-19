@@ -217,3 +217,74 @@ TEST_CASE("with_required does not trigger on default values", "[parse]")
   REQUIRE(parsed.get("threshold").value() == "300");
   REQUIRE(parsed.get("verbose") == true);
 }
+
+TEST_CASE("Variable argument option stops at a following option", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--token", "-t", "a token", "", 1, "");
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // A flag after a variable argument option is not swallowed as a value.
+  const char   *argv1[] = {"test_prog", "reload", "-D", "a.id=1", "b.id=2", "-m", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+  REQUIRE(parsed.get("monitor") == true);
+
+  // A following option keeps its own argument.
+  const char *argv2[] = {"test_prog", "reload", "-D", "a.id=1", "-t", "my_token", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("token").value() == "my_token");
+
+  // The long form of the following option is recognized too.
+  const char *argv3[] = {"test_prog", "reload", "-D", "a.id=1", "--monitor", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("monitor") == true);
+
+  // So is its --option=value form.
+  const char *argv4[] = {"test_prog", "reload", "-D", "a.id=1", "--token=my_token", nullptr};
+  parsed              = parser.parse(argv4);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("token").value() == "my_token");
+}
+
+TEST_CASE("Double dash ends option recognition for variable argument options", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // After "--" a token that looks like an option is taken as a value instead.
+  const char   *argv[] = {"test_prog", "reload", "-D", "--", "-m", "a.id=1", nullptr};
+  ts::Arguments parsed = parser.parse(argv);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "-m");
+  REQUIRE(parsed.get("directive")[1] == "a.id=1");
+  REQUIRE(parsed.get("monitor") == false);
+}
+
+TEST_CASE("Option value keeps embedded equal signs", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+
+  // Only the first '=' separates the option from its value.
+  const char   *argv[] = {"test_prog", "reload", "--directive=ip_allow.id=foo", nullptr};
+  ts::Arguments parsed = parser.parse(argv);
+  REQUIRE(parsed.get("directive").size() == 1);
+  REQUIRE(parsed.get("directive")[0] == "ip_allow.id=foo");
+}
