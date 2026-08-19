@@ -183,10 +183,8 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
         return {};
       }
     }
-    if (ipi) {
-      rule->src_ip_cnt++;
-      rule->src_ip_valid = 1;
-    }
+    rule->src_ip_cnt++;
+    rule->src_ip_valid = 1;
     return {};
   };
 
@@ -239,10 +237,8 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
         return {};
       }
     }
-    if (ipi) {
-      rule->src_ip_category_cnt++;
-      rule->src_ip_category_valid = 1;
-    }
+    rule->src_ip_category_cnt++;
+    rule->src_ip_category_valid = 1;
     return {};
   };
 
@@ -284,10 +280,8 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
         return {};
       }
     }
-    if (ipi) {
-      rule->in_ip_cnt++;
-      rule->in_ip_valid = 1;
-    }
+    rule->in_ip_cnt++;
+    rule->in_ip_valid = 1;
     return {};
   };
 
