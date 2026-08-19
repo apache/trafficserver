@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{CIDR} ="10.0.0.0"
+    set-header X-Bare "matched"
