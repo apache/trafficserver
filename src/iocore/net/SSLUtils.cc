@@ -2121,7 +2121,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
   for (const char *keyname = key_tok.getNext(); keyname; keyname = key_tok.getNext()) {
     std::string completeServerKeyPath = Layout::get()->relative_to(params->serverKeyPathOnly, keyname);
-    data.key_list.push_back(completeServerKeyPath);
+    data.key_list.push_back(std::move(completeServerKeyPath));
   }
 
   for (const char *caname = ca_tok.getNext(); caname; caname = ca_tok.getNext()) {
@@ -2136,7 +2136,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   int  cert_index = 0;
   for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
     std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-    data.cert_names_list.push_back(completeServerCertPath);
+    data.cert_names_list.push_back(std::move(completeServerCertPath));
   }
 
   for (size_t i = 0; i < data.cert_names_list.size(); i++) {
@@ -2231,7 +2231,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     if (first_pass) {
       first_pass   = false;
-      common_names = name_set;
+      common_names = std::move(name_set);
     } else {
       // Check that all elements in common_names are in name_set
       auto common_iter = common_names.begin();

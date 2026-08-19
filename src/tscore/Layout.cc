@@ -161,7 +161,7 @@ Layout::Layout(std::string_view const _prefix)
       if ((len + 1) > PATH_NAME_MAX) {
         ink_fatal("TS_ROOT environment variable is too big: %d, max %d\n", len, PATH_NAME_MAX - 1);
       }
-      path = env_path;
+      path = std::move(env_path);
       while (path.back() == '/') {
         path.pop_back();
       }
@@ -169,7 +169,7 @@ Layout::Layout(std::string_view const _prefix)
       // Use compile time --prefix
       path = TS_BUILD_PREFIX;
     }
-    prefix = path;
+    prefix = std::move(path);
   }
   exec_prefix   = layout_relative(prefix, TS_BUILD_EXEC_PREFIX);
   bindir        = layout_relative(prefix, TS_BUILD_BINDIR);
