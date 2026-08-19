@@ -357,12 +357,36 @@ private:
       return {_cur_blob, _cur_off};
     }
 
+    /** Whether @a id names a slot that has actually been allocated.
+     *
+     * The single gate for every id based accessor. Ids arriving through the @c TSStat* API are
+     * plugin supplied and untrusted, so three things have to hold: the id is not negative, the
+     * offset is one @c _makeId could have produced -- the offset field is 16 bits wide but a real
+     * offset is always below @c MAX_SIZE, so a larger one is malformed rather than merely stale --
+     * and the slot has been handed out. Blobs are filled in increasing order and never freed, so
+     * that last part means either an earlier blob, or below the allocation point in the current one.
+     */
+    bool
+    _is_allocated(IdType id) const
+    {
+      if (id < 0) {
+        return false;
+      }
+
+      auto [blob_ix, offset] = _splitID(id);
+
+      // The blob comparison is against <= / <, not a test for "not the current blob", because
+      // addBlob() stores a new blob before advancing _cur_blob: for those two instructions
+      // _blobs[_cur_blob + 1] is non-null while still holding nothing. Requiring the index to be no
+      // greater than _cur_blob, and the offset to be below _cur_off in that blob, is correct
+      // whichever of the two the reader happens to observe first.
+      return offset < MAX_SIZE && blob_ix <= _cur_blob && _blobs[blob_ix] != nullptr && (blob_ix < _cur_blob || offset < _cur_off);
+    }
+
     bool
     valid(IdType id) const
     {
-      auto [blob, entry] = _splitID(id);
-
-      return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+      return _is_allocated(id);
     }
   };
 

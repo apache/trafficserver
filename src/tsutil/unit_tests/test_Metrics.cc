@@ -640,3 +640,27 @@ TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]"
   REQUIRE(Metrics::Counter::load(p) == 7);
   REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
 }
+
+TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]")
+{
+  // The offset field of an id is 16 bits, but a real offset is always below MAX_SIZE. Ids reaching
+  // the id based accessors come from plugins via TSStat*, so a malformed offset must not index past
+  // the end of a blob's 1024 entry arrays. Force a second blob first: with only one blob every
+  // blob_ix != 0 is unallocated and would be caught by the null check alone.
+  auto &h = Metrics::hidden_instance();
+
+  for (int i = 0; i < Metrics::MAX_SIZE + 8; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr("f1.fill." + std::to_string(i)) != nullptr);
+  }
+
+  auto const *bad = h.lookup(Metrics::IdType{0}); // the reserved bad_id slot
+  REQUIRE(bad != nullptr);
+
+  // blob 0 is allocated, so the null check does not fire; only the MAX_SIZE test stands between
+  // this and atomics[65535].
+  for (Metrics::IdType id : {Metrics::IdType{0x0000FFFF}, Metrics::IdType{0x00000400}, Metrics::IdType{0x0001FFFF}}) {
+    REQUIRE(h.valid(id) == false);
+    REQUIRE(h.lookup(id) == bad);
+    REQUIRE(h.name(id) == h.name(Metrics::IdType{0}));
+  }
+}
