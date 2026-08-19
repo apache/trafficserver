@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -50,13 +51,11 @@ public:
   ~VirtualHostConfig() = default;
 
   struct Entry : public RefCountObjInHeap {
-    std::string              id;
-    std::vector<std::string> exact_domains;
-    std::vector<std::string> wildcard_domains;
-    Ptr<UrlRewrite>          remap_table;
+    std::string                 id;
+    std::vector<std::string>    exact_domains;
+    std::vector<std::string>    wildcard_domains;
+    std::shared_ptr<UrlRewrite> remap_table;
 
-    Entry      *acquire() const;
-    void        release() const;
     std::string get_id() const;
   };
 

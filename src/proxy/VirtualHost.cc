@@ -32,6 +32,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include "proxy/VirtualHost.h"
+#include "proxy/ReverseProxy.h"
 #include "mgmt/config/ConfigRegistry.h"
 #include "records/RecCore.h"
 #include "tscore/Filenames.h"
@@ -43,25 +44,6 @@ DbgCtl dbg_ctl_virtualhost("virtualhost");
 }
 
 int VirtualHost::_configid = 0;
-
-VirtualHostConfig::Entry *
-VirtualHostConfig::Entry::acquire() const
-{
-  auto *self = const_cast<Entry *>(this);
-  if (self) {
-    self->refcount_inc();
-  }
-  return self;
-}
-
-void
-VirtualHostConfig::Entry::release() const
-{
-  auto *self = const_cast<Entry *>(this);
-  if (self && self->refcount_dec() == 0) {
-    self->free();
-  }
-}
 
 std::string
 VirtualHostConfig::Entry::get_id() const
@@ -83,14 +65,15 @@ template <> struct YAML::convert<VirtualHostConfig::Entry> {
     }
 
     if (!node["id"]) {
-      Dbg(dbg_ctl_virtualhost, "Virtual host entry must provide `id`");
+      Error("Virtualhost entry at line %d must provide `id`", node.Mark().line + 1);
       return false;
     }
     item.id = node["id"].as<std::string>();
 
     auto domains = node["domains"];
     if (!domains || !domains.IsSequence() || domains.size() == 0) {
-      Dbg(dbg_ctl_virtualhost, "Virtual host entry must provide at least one domain in `domains` sequence");
+      Error("Virtualhost '%s' must provide at least one domain in a `domains` sequence (line %d)", item.id.c_str(),
+            node.Mark().line + 1);
       return false;
     }
     item.exact_domains.clear();
@@ -99,7 +82,7 @@ template <> struct YAML::convert<VirtualHostConfig::Entry> {
     for (const auto &it : domains) {
       auto domain_entry = it.as<std::string>();
       if (domain_entry.empty()) {
-        Dbg(dbg_ctl_virtualhost, "Virtual host entry can't have empty domain entry");
+        Error("Virtualhost '%s' has an empty entry in `domains` (line %d)", item.id.c_str(), it.Mark().line + 1);
         return false;
       }
       char domain[TS_MAX_HOST_NAME_LEN + 1];
@@ -108,7 +91,8 @@ template <> struct YAML::convert<VirtualHostConfig::Entry> {
       // Check if domain is wildcard, prefixed with *
       if (domain[0] == '*') {
         if (domain[1] != '.' || domain[2] == '\0' || domain[2] == '.' || strchr(domain + 2, '*') != nullptr) {
-          Dbg(dbg_ctl_virtualhost, "Virtual host wildcard '%s' must match '*.[domain]' format", domain);
+          Error("Virtualhost '%s' wildcard '%s' must match '*.[domain]' format (line %d)", item.id.c_str(), domain,
+                it.Mark().line + 1);
           return false;
         }
         item.wildcard_domains.emplace_back(domain + 2);
@@ -118,7 +102,7 @@ template <> struct YAML::convert<VirtualHostConfig::Entry> {
     }
 
     if (item.exact_domains.empty() && item.wildcard_domains.empty()) {
-      Dbg(dbg_ctl_virtualhost, "Virtual host entry must have at least one domain defined");
+      Error("Virtualhost '%s' must have at least one domain defined (line %d)", item.id.c_str(), node.Mark().line + 1);
       return false;
     }
 
@@ -137,7 +121,7 @@ build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &e
       return false;
     }
   } catch (YAML::Exception const &ex) {
-    Dbg(dbg_ctl_virtualhost, "Failed to parse virtualhost entry");
+    Error("Failed to parse virtualhost entry at line %d: %s", node.Mark().line + 1, ex.what());
     return false;
   }
 
@@ -146,10 +130,10 @@ build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &e
   if (remap_node) {
     auto table = std::make_unique<UrlRewrite>();
     if (!table->load_table(conf.id, &remap_node)) {
-      Dbg(dbg_ctl_virtualhost, "Failed to load remap rules for virtualhost entry");
+      Error("Failed to load remap rules for virtualhost '%s' at line %d", conf.id.c_str(), remap_node.Mark().line + 1);
       return false;
     }
-    conf.remap_table = make_ptr(table.release());
+    conf.remap_table = make_managed_url_rewrite(std::move(table));
   }
   entry = std::move(vhost);
   return true;
@@ -176,7 +160,7 @@ VirtualHostConfig::load()
 
     config = config["virtualhost"];
     if (config.IsNull() || !config.IsSequence()) {
-      Dbg(dbg_ctl_virtualhost, "Expected toplevel 'virtualhost' key to be a sequence");
+      Error("%s: expected toplevel 'virtualhost' key to be a sequence", config_path.c_str());
       return false;
     }
 
@@ -188,13 +172,14 @@ VirtualHostConfig::load()
 
       std::string vhost_id{entry->id};
       if (_entries.contains(vhost_id)) {
-        Dbg(dbg_ctl_virtualhost, "Duplicate virtualhost id: %s", vhost_id.c_str());
+        Error("%s: duplicate virtualhost id '%s' (line %d)", config_path.c_str(), vhost_id.c_str(), node.Mark().line + 1);
         return false;
       }
 
       for (auto const &domain : entry->exact_domains) {
         if (_exact_domains_to_id.contains(domain)) {
-          Dbg(dbg_ctl_virtualhost, "Exact domain (%s) already in another virtualhost config", domain.c_str());
+          Error("%s: domain '%s' in virtualhost '%s' is already claimed by virtualhost '%s'", config_path.c_str(), domain.c_str(),
+                vhost_id.c_str(), _exact_domains_to_id.at(domain).c_str());
           return false;
         }
         _exact_domains_to_id.emplace(domain, vhost_id);
@@ -202,7 +187,8 @@ VirtualHostConfig::load()
 
       for (auto const &domain_suffix : entry->wildcard_domains) {
         if (_wildcard_domains_to_id.contains(domain_suffix)) {
-          Dbg(dbg_ctl_virtualhost, "Wildcard domain (%s) already in another virtualhost config", domain_suffix.c_str());
+          Error("%s: wildcard domain '*.%s' in virtualhost '%s' is already claimed by virtualhost '%s'", config_path.c_str(),
+                domain_suffix.c_str(), vhost_id.c_str(), _wildcard_domains_to_id.at(domain_suffix).c_str());
           return false;
         }
         _wildcard_domains_to_id.emplace(domain_suffix, vhost_id);
@@ -212,7 +198,7 @@ VirtualHostConfig::load()
     }
 
   } catch (std::exception &ex) {
-    Dbg(dbg_ctl_virtualhost, "Failed to load %s: %s", config_path.c_str(), ex.what());
+    Error("Failed to load %s: %s", config_path.c_str(), ex.what());
     return false;
   }
   return true;
@@ -233,7 +219,7 @@ VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry)
 
     config = config["virtualhost"];
     if (config.IsNull() || !config.IsSequence()) {
-      Dbg(dbg_ctl_virtualhost, "Expected toplevel 'virtualhost' key to be a sequence");
+      Error("%s: expected toplevel 'virtualhost' key to be a sequence", config_path.c_str());
       return false;
     }
 
@@ -252,10 +238,11 @@ VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry)
     }
 
   } catch (std::exception &ex) {
-    Dbg(dbg_ctl_virtualhost, "Failed to load virtualhost entry (%s) in %s: %s", id.data(), config_path.c_str(), ex.what());
+    Error("Failed to load virtualhost entry '%.*s' in %s: %s", static_cast<int>(id.size()), id.data(), config_path.c_str(),
+          ex.what());
     return false;
   }
-  Dbg(dbg_ctl_virtualhost, "Virtualhost with id (%s) not found", id.data());
+  Error("%s: virtualhost with id '%.*s' not found", config_path.c_str(), static_cast<int>(id.size()), id.data());
   return false;
 }
 
@@ -279,7 +266,8 @@ VirtualHostConfig::set_entry(std::string_view id, Ptr<Entry> &entry)
   if (entry) {
     for (auto const &domain : entry->exact_domains) {
       if (_exact_domains_to_id.contains(domain)) {
-        Dbg(dbg_ctl_virtualhost, "Exact domain (%s) already in another virtualhost config", domain.c_str());
+        Error("Domain '%s' in virtualhost '%s' is already claimed by virtualhost '%s'", domain.c_str(), vhost_id.c_str(),
+              _exact_domains_to_id.at(domain).c_str());
         return false;
       }
       _exact_domains_to_id.emplace(domain, vhost_id);
@@ -287,7 +275,8 @@ VirtualHostConfig::set_entry(std::string_view id, Ptr<Entry> &entry)
 
     for (auto const &domain_suffix : entry->wildcard_domains) {
       if (_wildcard_domains_to_id.contains(domain_suffix)) {
-        Dbg(dbg_ctl_virtualhost, "Wildcard domain (%s) already in another virtualhost config", domain_suffix.c_str());
+        Error("Wildcard domain '*.%s' in virtualhost '%s' is already claimed by virtualhost '%s'", domain_suffix.c_str(),
+              vhost_id.c_str(), _wildcard_domains_to_id.at(domain_suffix).c_str());
         return false;
       }
       _wildcard_domains_to_id.emplace(domain_suffix, vhost_id);
@@ -347,6 +336,52 @@ VirtualHostConfig::find_by_domain(std::string_view domain) const
   return Ptr<VirtualHostConfig::Entry>();
 }
 
+namespace
+{
+/** Reload handler for the `virtualhost` config.
+
+    Registered as FileAndRpc so that `admin_config_reload` can carry `_reload` directives (currently
+    just `id`, for a single-entry reload). Pushed config *content* is deliberately not supported:
+    both reload paths re-read the on-disk file, so silently dropping a supplied body would report
+    success for a change that never took effect.
+ */
+void
+virtualhost_reload(ConfigContext ctx)
+{
+  ctx.in_progress();
+
+  if (ctx.supplied_yaml()) {
+    ctx.fail("virtualhost does not accept config content over rpc; only '_reload' directives are supported. "
+             "Update " +
+             std::string{ts::filename::VIRTUALHOST} + " and reload without a body.");
+    return;
+  }
+
+  // Single-entry reload requested via -D virtualhost.id=<id>
+  if (auto directives = ctx.reload_directives(); directives) {
+    if (const auto id_dir = directives["id"]; id_dir) {
+      if (!id_dir.IsScalar()) {
+        ctx.fail("virtualhost '_reload' directive 'id' must be a scalar");
+        return;
+      }
+      std::string id = id_dir.as<std::string>();
+      if (VirtualHost::reconfigure(id)) {
+        ctx.complete("Reloaded virtualhost entry: " + id);
+      } else {
+        ctx.fail("Failed to reload virtualhost entry: " + id);
+      }
+      return;
+    }
+  }
+
+  if (VirtualHost::reconfigure()) {
+    ctx.complete("Finished loading virtualhost config");
+  } else {
+    ctx.fail("Failed to load virtualhost config");
+  }
+}
+} // namespace
+
 void
 VirtualHost::startup()
 {
@@ -355,35 +390,13 @@ VirtualHost::startup()
   }
   RecRegisterConfigUpdateCb("proxy.config.virtualhost.filename", &VirtualHost::config_callback, nullptr);
 
-  config::ConfigRegistry::Get_Instance().register_config("virtualhost",                       // registry key
-                                                         ts::filename::VIRTUALHOST,           // default filename
-                                                         "proxy.config.virtualhost.filename", // record holding the filename
-                                                         [](ConfigContext ctx) {
-                                                           ctx.in_progress();
-
-                                                           // Single-entry reload requested via -D virtualhost.id=<id>
-                                                           if (auto directives = ctx.reload_directives(); directives) {
-                                                             const auto id_dir = directives["id"];
-                                                             if (id_dir && id_dir.IsScalar()) {
-                                                               std::string id = id_dir.as<std::string>();
-                                                               if (VirtualHost::reconfigure(id)) {
-                                                                 ctx.complete("Reloaded virtualhost entry: " + id);
-                                                               } else {
-                                                                 ctx.fail("Failed to reload virtualhost entry: " + id);
-                                                               }
-                                                               return;
-                                                             }
-                                                           }
-
-                                                           // Full reload (file-based or no supplied content)
-                                                           if (VirtualHost::reconfigure()) {
-                                                             ctx.complete("Finished loading virtualhost config");
-                                                           } else {
-                                                             ctx.fail("Failed to load virtualhost config");
-                                                           }
-                                                         },
-                                                         config::ConfigSource::FileAndRpc,       // supports RPC content
-                                                         {"proxy.config.virtualhost.filename"}); // trigger records
+  config::ConfigRegistry::Get_Instance().register_config(
+    "virtualhost",                          // registry key
+    ts::filename::VIRTUALHOST,              // default filename
+    "proxy.config.virtualhost.filename",    // record holding the filename
+    virtualhost_reload,                     // reload handler
+    config::ConfigSource::FileAndRpc,       // rpc may supply '_reload' directives; content is rejected
+    {"proxy.config.virtualhost.filename"}); // trigger records
 }
 
 int

@@ -1054,7 +1054,11 @@ remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, Config
       }
     }
 
-    IpAllow::enableAcceptCheck(bti->accept_check_p);
+    // Deliberately do NOT call IpAllow::enableAcceptCheck() here. accept_check_p is a single
+    // process-wide flag owned by the global remap table; the accept-time fast-deny decision is made
+    // before any host is known, so a per-domain rule set cannot meaningfully influence it. Writing it
+    // from here would let the last inline config parsed silently override a `deactivate_filter:
+    // ip_allow` in the global remap config.
 
     Dbg(dbg_ctl_remap_yaml, "Successfully parsed inline remap YAML rules");
     return true;

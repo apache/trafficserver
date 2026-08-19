@@ -82,6 +82,12 @@ struct UrlRewriteDeleter {
 AtomicSharedPtr<UrlRewrite>       rewrite_table;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
 
+std::shared_ptr<UrlRewrite>
+make_managed_url_rewrite(std::unique_ptr<UrlRewrite> table)
+{
+  return std::shared_ptr<UrlRewrite>(table.release(), UrlRewriteDeleter{});
+}
+
 void
 shutdown_url_rewrite()
 {
@@ -145,7 +151,7 @@ init_reverse_proxy()
     init_table_volume_host_records(*initial_table);
   }
 
-  rewrite_table.store(std::shared_ptr<UrlRewrite>(initial_table.release(), UrlRewriteDeleter{}), std::memory_order_release);
+  rewrite_table.store(make_managed_url_rewrite(std::move(initial_table)), std::memory_order_release);
   ink_assert(0 == config_reg.attach("remap", "proxy.config.url_remap.filename"));
   ink_assert(0 == config_reg.attach("remap", "proxy.config.proxy_name"));
   ink_assert(0 == config_reg.attach("remap", "proxy.config.http.referer_default_redirect"));
@@ -211,7 +217,7 @@ reloadUrlRewrite(ConfigContext ctx)
   if (status) {
     swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
-    rewrite_table.exchange(std::shared_ptr<UrlRewrite>(newTable.release(), UrlRewriteDeleter{}), std::memory_order_acq_rel);
+    rewrite_table.exchange(make_managed_url_rewrite(std::move(newTable)), std::memory_order_acq_rel);
 
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
     CfgLoadComplete(ctx, "%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
