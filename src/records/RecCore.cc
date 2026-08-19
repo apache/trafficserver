@@ -516,18 +516,20 @@ RecGetRecordCounter(const char *name, bool lock)
 RecErrT
 RecLookupRecord(const char *name, void (*callback)(const RecRecord *, void *), void *data, bool lock)
 {
-  RecErrT      err     = REC_ERR_FAIL;
-  ts::Metrics &metrics = ts::Metrics::instance();
-  auto         it      = metrics.find(name);
+  RecErrT             err     = REC_ERR_FAIL;
+  ts::Metrics        &metrics = ts::Metrics::instance();
+  ts::Metrics::IdType metric_id;
 
-  if (it != metrics.end()) {
+  // A metric's storage is stable after creation. Avoid find()/end() here because end() is the current insertion position and
+  // can advance between those two calls while another thread registers a metric.
+  if (auto *metric = metrics.lookup(name, &metric_id); metric != nullptr) {
     RecRecord r{};
-    auto &&[name, type, val] = *it;
 
     r.rec_type     = RECT_PLUGIN;
-    r.data_type    = type == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
-    r.name         = name.data();
-    r.data.rec_int = val;
+    r.data_type    = metrics.type(metric_id) == ts::Metrics::MetricType::COUNTER ? RECD_COUNTER : RECD_INT;
+    r.name         = name;
+    r.data.rec_int = metric->load();
+    r.registered   = true;
 
     callback(&r, data);
     err = REC_ERR_OKAY;
