@@ -15,6 +15,7 @@
 #  limitations under the License.
 
 from pathlib import Path
+import re
 import shutil
 
 import pytest
@@ -91,7 +92,8 @@ class HttpSessionInfoScenario:
             assert_matches_gold(h3.stdout, TEST_DIRECTORY / "test_TSHttpSsnInfo_curl0.gold")
 
         log = wait_for_file_lines(self._log, "H2 Frames Received:", 1)
-        assert "H2 Frames Received:D1,H1,PR.,RS0,S2,PP0,P0,G1,WU0,C1,U0" in log
+        expected_frames = r"H2 Frames Received:D1,H1,PR\d+,RS0,S2,PP0,P0,G1,WU0,C1,U0"
+        assert re.search(expected_frames, log), log
         assert "H2 OOB(11)=0,OOB(1000)=0" in log
         assert_matches_gold(log, TEST_DIRECTORY / "test_TSHttpSsnInfo_plugin_log.gold")
 
