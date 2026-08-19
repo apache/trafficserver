@@ -944,6 +944,8 @@ TEST_CASE("HttpTransact", "[http]")
       http_rsb.origin_response_at_headers_stripped =
         Metrics::Counter::createPtr("proxy.process.http.origin_response_at_headers_stripped");
     }
+    auto const client_request_stripped_before  = Metrics::Counter::load(http_rsb.client_request_at_headers_stripped);
+    auto const origin_response_stripped_before = Metrics::Counter::load(http_rsb.origin_response_at_headers_stripped);
 
     hdr.create(HTTPType::REQUEST);
     http_parser_init(&parser);
@@ -962,6 +964,8 @@ TEST_CASE("HttpTransact", "[http]")
     REQUIRE(err == ParseResult::DONE);
     HttpTransact::strip_at_headers(hdr, HttpTransact::AtHeaderSource::CLIENT_REQUEST, 1);
 
+    CHECK(Metrics::Counter::load(http_rsb.client_request_at_headers_stripped) == client_request_stripped_before + 3);
+    CHECK(Metrics::Counter::load(http_rsb.origin_response_at_headers_stripped) == origin_response_stripped_before);
     CHECK(hdr.field_find("@Ats-Internal"sv) == nullptr);
     CHECK(hdr.field_find("@Another"sv) == nullptr);
     CHECK(hdr.field_find("Host"sv) != nullptr);
