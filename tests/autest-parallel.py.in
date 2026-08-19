@@ -227,6 +227,37 @@ def strip_ansi(text: str) -> str:
     return ansi_escape.sub('', text)
 
 
+def parse_test_completion(line: str) -> Optional[Tuple[str, str]]:
+    """Extract a completed test name and status from an autest progress line."""
+    clean = strip_ansi(line).strip()
+    marker = 'Running Test '
+    marker_pos = clean.rfind(marker)
+
+    if marker_pos < 0:
+        return None
+
+    completion = clean[marker_pos + len(marker):]
+    match = re.match(r'([^:\s]+):.*\b(Passed|Failed|Skipped)\s*$', completion, re.IGNORECASE)
+    if not match:
+        return None
+
+    return match.group(1), match.group(2).upper()
+
+
+def parse_test_start(line: str) -> Optional[str]:
+    """Extract the test name from an autest progress line."""
+    clean = strip_ansi(line)
+    matches = re.findall(r'Running Test ([^:\s]+):', clean)
+    return matches[-1] if matches else None
+
+
+def parse_detached_test_status(line: str) -> Optional[str]:
+    """Extract a status that autest printed separately from its test name."""
+    clean = strip_ansi(line).strip()
+    match = re.fullmatch(r'[.FWE]*\s*(Passed|Failed|Skipped)', clean, re.IGNORECASE)
+    return match.group(1).upper() if match else None
+
+
 def parse_autest_output(output: str) -> dict:
     """
     Parse autest output to extract pass/fail counts and per-test timings.
@@ -433,7 +464,7 @@ def run_single_test(test: str, script_dir: Path, sandbox: Path, ats_bin: str, bu
     cmd = [
         'uv', 'run', 'autest', 'run', '--directory', '${CMAKE_GOLD_DIR}', '--ats-bin', ats_bin, '--proxy-verifier-bin',
         '${PROXY_VERIFIER_PATH}', '--build-root', build_root, '--sandbox',
-        str(sandbox / test), '--filters', test
+        str(sandbox / test), '--filters', f'/{test}'
     ]
     cmd.extend(extra_args)
 
@@ -492,7 +523,7 @@ def run_worker(
         extra_args: Additional arguments to pass to autest
         port_offset_step: Port offset between workers
         verbose: Whether to print verbose output
-        collect_timings: If True, run tests one at a time to collect accurate timing
+        collect_timings: If True, time test completions within the worker batch
 
     Returns:
         TestResult with pass/fail counts and per-test timings
@@ -517,151 +548,150 @@ def run_worker(
     existing = env.get('PYTHONPATH', '')
     env['PYTHONPATH'] = ':'.join(pythonpath_dirs + ([existing] if existing else []))
 
-    if collect_timings:
-        # Run tests one at a time to collect accurate timing
-        all_output = []
-        total_tests = len(tests)
-        try:
-            for idx, test in enumerate(tests, 1):
-                test_name, duration, status, output = run_single_test(
-                    test, script_dir, sandbox, ats_bin, build_root, extra_args, env)
-                result.test_timings[test_name] = duration
-                all_output.append(output)
+    # Keep all tests in one autest process so its shared port queue is not
+    # reset between tests. This is both faster and avoids reusing ports that a
+    # recently completed test may still hold.
+    cmd = [
+        'uv',
+        'run',
+        'autest',
+        'run',
+        '--directory',
+        '${CMAKE_GOLD_DIR}',
+        '--ats-bin',
+        ats_bin,
+        '--proxy-verifier-bin',
+        '${PROXY_VERIFIER_PATH}',
+        '--build-root',
+        build_root,
+        '--sandbox',
+        str(sandbox),
+        '--filters',
+    ]
+    cmd.extend(f'/{test}' for test in tests)
+    cmd.extend(extra_args)
 
-                if status == "PASS":
-                    result.passed += 1
-                elif status == "SKIP":
-                    result.skipped += 1
-                else:
-                    result.failed += 1
-                    result.failed_tests.append(test_name)
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"{timestamp} Worker:{worker_id:2d} Starting batch of {len(tests)} tests (port offset {port_offset})", flush=True)
+    if verbose:
+        print(
+            f"             Worker:{worker_id:2d} Tests: {', '.join(tests[:5])}"
+            f"{'...' if len(tests) > 5 else ''}",
+            flush=True)
 
-                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                # Fixed-width format: date time status duration worker progress test_name
-                print(
-                    f"{timestamp} {status:4s} {duration:6.1f}s Worker:{worker_id:2d} {idx:2d}/{total_tests:2d} {test}", flush=True)
-        except KeyboardInterrupt:
-            result.return_code = 130
+    try:
+        if verbose or collect_timings:
+            # Autest flushes each completed test line. Observe those lines to
+            # collect timings without changing how autest executes the batch.
+            proc = subprocess.Popen(
+                cmd,
+                cwd=script_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=env,
+            )
+            output_lines = []
+            last_completion = time.monotonic()
+            completed_count = 0
+            pending_test = None
+            try:
+                for line in proc.stdout:
+                    output_lines.append(line)
+                    started_test = parse_test_start(line)
+                    if started_test is not None:
+                        pending_test = started_test
+                    completion = parse_test_completion(line)
+                    if completion is None and pending_test is not None:
+                        status = parse_detached_test_status(line)
+                        if status is not None:
+                            completion = pending_test, status
+                    if completion is None:
+                        continue
 
-        result.output = "\n".join(all_output)
-        if result.return_code != 130:
-            result.return_code = 0 if result.failed == 0 else 1
-    else:
-        # Run all tests in batch (faster but no per-test timing)
-        cmd = [
-            'uv',
-            'run',
-            'autest',
-            'run',
-            '--directory',
-            '${CMAKE_GOLD_DIR}',
-            '--ats-bin',
-            ats_bin,
-            '--proxy-verifier-bin',
-            '${PROXY_VERIFIER_PATH}',
-            '--build-root',
-            build_root,
-            '--sandbox',
-            str(sandbox),
-        ]
+                    test_name, status = completion
+                    pending_test = None
+                    now = time.monotonic()
+                    duration = now - last_completion
+                    last_completion = now
+                    completed_count += 1
+                    result.test_timings[test_name] = duration
 
-        # Add test filters
-        cmd.append('--filters')
-        cmd.extend(tests)
+                    ts = datetime.now().strftime("%H:%M:%S")
+                    if collect_timings:
+                        short_status = {'PASSED': 'PASS', 'FAILED': 'FAIL', 'SKIPPED': 'SKIP'}[status]
+                        print(
+                            f"  [{ts}] {short_status:4s} {duration:6.1f}s Worker:{worker_id:2d} "
+                            f"{completed_count:2d}/{len(tests):2d} {test_name}",
+                            flush=True)
+                    elif verbose:
+                        print(f"  [{ts}] Worker:{worker_id:2d} {strip_ansi(line).strip()}", flush=True)
 
-        # Add any extra arguments
-        cmd.extend(extra_args)
-
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"{timestamp} Worker:{worker_id:2d} Starting batch of {len(tests)} tests (port offset {port_offset})", flush=True)
-        if verbose:
-            print(
-                f"             Worker:{worker_id:2d} Tests: {', '.join(tests[:5])}"
-                f"{'...' if len(tests) > 5 else ''}",
-                flush=True)
-
-        try:
-            if verbose:
-                # Stream output in real-time so the user sees test progress.
-                # We use Popen + line-by-line read so partial results are visible
-                # even if the overall run takes a long time.
-                proc = subprocess.Popen(
-                    cmd,
-                    cwd=script_dir,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    env=env,
-                )
-                output_lines = []
                 try:
-                    for line in proc.stdout:
-                        output_lines.append(line)
-                        # Print lines that show test progress
-                        clean = strip_ansi(line).strip()
-                        if clean.startswith('Running Test') or 'Passed' in clean or 'Failed' in clean:
-                            if clean.startswith('Running Test'):
-                                ts = datetime.now().strftime("%H:%M:%S")
-                                print(f"  [{ts}] Worker:{worker_id:2d} {clean}", flush=True)
-                    # stdout is exhausted, wait for process to finish
+                    proc.wait(timeout=60)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+            finally:
+                if proc.poll() is None:
+                    proc.terminate()
                     try:
-                        proc.wait(timeout=60)
+                        proc.wait(timeout=5)
                     except subprocess.TimeoutExpired:
                         proc.kill()
                         proc.wait()
-                finally:
-                    # Ensure the subprocess is always cleaned up.
-                    if proc.poll() is None:
-                        proc.terminate()
-                        try:
-                            proc.wait(timeout=5)
-                        except subprocess.TimeoutExpired:
-                            proc.kill()
-                            proc.wait()
-                result.output = ''.join(output_lines)
-                result.return_code = proc.returncode
-            else:
-                proc = subprocess.run(
-                    cmd,
-                    cwd=script_dir,
-                    capture_output=True,
-                    text=True,
-                    env=env,
-                    timeout=3600  # 1 hour timeout per worker
-                )
-                result.output = proc.stdout + proc.stderr
-                result.return_code = proc.returncode
+            result.output = ''.join(output_lines)
+            result.return_code = proc.returncode
+        else:
+            proc = subprocess.run(
+                cmd,
+                cwd=script_dir,
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=3600  # 1 hour timeout per worker
+            )
+            result.output = proc.stdout + proc.stderr
+            result.return_code = proc.returncode
 
-            # Parse results
-            parsed = parse_autest_output(result.output)
-            result.passed = parsed['passed']
-            result.failed = parsed['failed']
-            result.skipped = parsed['skipped']
-            result.warnings = parsed['warnings']
-            result.exceptions = parsed['exceptions']
-            result.unknown = parsed['unknown']
-            result.failed_tests = parsed['failed_tests']
+        # Parse results
+        parsed = parse_autest_output(result.output)
+        result.passed = parsed['passed']
+        result.failed = parsed['failed']
+        result.skipped = parsed['skipped']
+        result.warnings = parsed['warnings']
+        result.exceptions = parsed['exceptions']
+        result.unknown = parsed['unknown']
+        result.failed_tests = parsed['failed_tests']
 
-            # If no tests ran at all (passed + failed + skipped == 0),
-            # autest likely errored at setup (e.g., missing proxy verifier).
-            # Count all tests as failed to avoid false positives.
-            total_ran = result.passed + result.failed + result.skipped
-            if total_ran == 0 and (hasattr(proc, 'returncode') and proc.returncode != 0):
-                result.failed = len(tests)
-                result.failed_tests = list(tests)
+        # If no tests ran at all (passed + failed + skipped == 0),
+        # autest likely errored at setup (e.g., missing proxy verifier).
+        # Count all tests as failed to avoid false positives.
+        total_ran = result.passed + result.failed + result.skipped
+        if total_ran == 0 and proc.returncode != 0:
+            result.failed = len(tests)
+            result.failed_tests = list(tests)
 
-        except KeyboardInterrupt:
-            result.output = "INTERRUPTED by user"
-            result.return_code = 130
-            result.failed = len(tests)
-        except subprocess.TimeoutExpired:
-            result.output = "TIMEOUT: Worker exceeded 1 hour timeout"
-            result.return_code = -1
-            result.failed = len(tests)
-        except Exception as e:
-            result.output = f"ERROR: {str(e)}"
-            result.return_code = -1
-            result.failed = len(tests)
+        if collect_timings:
+            missing_timings = sorted(set(tests) - result.test_timings.keys())
+            if missing_timings:
+                print(
+                    f"Warning: Worker {worker_id} did not report timings for: {', '.join(missing_timings)}",
+                    file=sys.stderr,
+                    flush=True)
+
+    except KeyboardInterrupt:
+        result.output = "INTERRUPTED by user"
+        result.return_code = 130
+        result.failed = len(tests)
+    except subprocess.TimeoutExpired:
+        result.output = "TIMEOUT: Worker exceeded 1 hour timeout"
+        result.return_code = -1
+        result.failed = len(tests)
+    except Exception as e:
+        result.output = f"ERROR: {str(e)}"
+        result.return_code = -1
+        result.failed = len(tests)
 
     result.duration = time.time() - start_time
     return result
@@ -831,7 +861,7 @@ Examples:
     parser.add_argument('-v', '--verbose', action='store_true', help='Verbose output')
     parser.add_argument('--test-dir', default='${CMAKE_GOLD_DIR}', help='Path to gold_tests directory (default: ${CMAKE_GOLD_DIR})')
     parser.add_argument(
-        '--collect-timings', action='store_true', help='Run tests one at a time to collect accurate per-test timing data')
+        '--collect-timings', action='store_true', help='Collect per-test timing data from each worker batch')
     parser.add_argument(
         '--timings-file', type=Path, default=None, help='Path to timing data JSON file (default: <sandbox>/test-timings.json)')
     parser.add_argument(
@@ -941,7 +971,7 @@ Examples:
     print(f"Port offset step: {args.port_offset_step}")
     print(f"Sandbox: {args.sandbox}")
     if args.collect_timings:
-        print("Collecting per-test timing data (tests run sequentially per worker)")
+        print("Collecting per-test timing data from worker batches")
     print()
 
     # Create sandbox base directory
