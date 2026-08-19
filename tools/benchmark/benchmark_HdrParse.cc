@@ -83,6 +83,11 @@ struct Corpus {
   std::vector<HeaderCase>  cases;
   std::vector<std::string> urls; // bare request targets for the url target
   std::vector<std::string> wks;  // field names (owned) for the wks target
+  // The same names lowercased. HTTP/2 mandates lowercase field names while the
+  // well-known-string table holds canonical mixed case, so roughly half of real
+  // edge traffic reaches the well-known lookup folded. Without this the wks
+  // target only ever measures the canonical-case path.
+  std::vector<std::string> wks_lower;
 };
 
 // A representative modern browser request and typical responses, alongside the
@@ -445,7 +450,7 @@ drive_wks(const std::vector<std::string> &names)
 // Profiling mode
 // ----------------------------------------------------------------------------
 
-enum class Target { Request, Response, Mime, Url, Wks, Unknown };
+enum class Target { Request, Response, Mime, Url, Wks, WksLower, Unknown };
 
 Target
 parse_target(std::string_view s)
@@ -465,6 +470,9 @@ parse_target(std::string_view s)
   if (s == "wks") {
     return Target::Wks;
   }
+  if (s == "wkslower" || s == "wks-lower") {
+    return Target::WksLower;
+  }
   return Target::Unknown;
 }
 
@@ -480,6 +488,8 @@ profile_target_name(Target t)
     return "mime";
   case Target::Url:
     return "url";
+  case Target::WksLower:
+    return "wks-lower";
   case Target::Wks:
     return "wks";
   default:
@@ -530,12 +540,17 @@ run_profile(Target target, uint64_t iters)
       bytes_per_pass += n.size();
     }
     break;
+  case Target::WksLower:
+    for (const auto &n : g_corpus.wks_lower) {
+      bytes_per_pass += n.size();
+    }
+    break;
   default:
     std::fprintf(stderr, "unknown --profile target\n");
     return 2;
   }
 
-  if (target != Target::Wks && inputs.empty()) {
+  if (target != Target::Wks && target != Target::WksLower && inputs.empty()) {
     std::fprintf(stderr, "no inputs for the requested target\n");
     return 2;
   }
@@ -544,9 +559,10 @@ run_profile(Target target, uint64_t iters)
   auto              t0    = std::chrono::steady_clock::now();
   uint64_t          count = 0;
 
-  if (target == Target::Wks) {
+  if (target == Target::Wks || target == Target::WksLower) {
+    auto const &names = (target == Target::Wks) ? g_corpus.wks : g_corpus.wks_lower;
     for (uint64_t i = 0; i < iters; ++i) {
-      sink += drive_wks(g_corpus.wks);
+      sink += drive_wks(names);
     }
     count = iters; // one full pass over all names per iter
   } else {
@@ -581,8 +597,9 @@ run_profile(Target target, uint64_t iters)
   // One "op" is one parse for the parse targets, or one full pass over the name
   // list for wks. Throughput is over the header bytes actually processed.
   double avg_in      = inputs.empty() ? 0.0 : static_cast<double>(bytes_per_pass) / static_cast<double>(inputs.size());
-  double total_bytes = (target == Target::Wks) ? static_cast<double>(bytes_per_pass) * static_cast<double>(iters) :
-                                                 avg_in * static_cast<double>(iters);
+  double total_bytes = (target == Target::Wks || target == Target::WksLower) ?
+                         static_cast<double>(bytes_per_pass) * static_cast<double>(iters) :
+                         avg_in * static_cast<double>(iters);
   double mibps       = (total_bytes / (ns / 1e9)) / (1024.0 * 1024.0);
 
   std::printf("target=%s iters=%llu  %.2f ns/op  %.2f Mops/s  %.0f MiB/s  sink=%llu\n", profile_target_name(target),
@@ -719,6 +736,11 @@ TEST_CASE("hdr parse: wks tokenize", "[bench][wks]")
   {
     return drive_wks(g_corpus.wks);
   };
+
+  BENCHMARK("wks: tokenize all field names, lowercased (H2 form)")
+  {
+    return drive_wks(g_corpus.wks_lower);
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -758,6 +780,14 @@ main(int argc, char *argv[])
   }
 
   g_corpus = build_corpus(corpus_files, corpus_dirs);
+
+  for (auto const &n : g_corpus.wks) {
+    std::string lower = n;
+    for (char &c : lower) {
+      c = (c >= 'A' && c <= 'Z') ? static_cast<char>(c + 32) : c;
+    }
+    g_corpus.wks_lower.push_back(std::move(lower));
+  }
 
   if (!profile_target.empty()) {
     Target t = parse_target(profile_target);
