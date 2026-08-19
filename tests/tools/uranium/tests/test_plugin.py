@@ -16,11 +16,12 @@
 """Unit tests for pytest collection behavior."""
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import pytest
 
-from tools.uranium.plugin import _mark_manual_tests
+from tools.uranium.plugin import _mark_manual_tests, _update_sandbox_retention
 
 
 @dataclass
@@ -76,3 +77,59 @@ def test_run_manual_enables_manual_tests() -> None:
     _mark_manual_tests([manual], enabled=True)
 
     assert manual.markers == []
+
+
+@pytest.mark.parametrize(("did_fail", "is_retained"), [(False, False), (True, True)])
+def test_only_failed_procedural_sandboxes_are_retained(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    did_fail: bool,
+    is_retained: bool,
+) -> None:
+    """Keep CI artifacts focused on failed Uranium tests.
+
+    :param monkeypatch: Pytest fixture used to provide a synthetic runtime.
+    :param tmp_path: Temporary directory containing the item sandbox.
+    :param did_fail: Whether the synthetic call phase failed.
+    :param is_retained: Whether the sandbox should remain after teardown.
+    """
+
+    sandbox = tmp_path / "sandbox"
+    sandbox.mkdir()
+
+    class Runtime:
+        """Return the sandbox owned by the synthetic item."""
+
+        @staticmethod
+        def procedural_sandbox(_nodeid: str) -> Path:
+            """Return the procedural sandbox for one node identifier.
+
+            :param _nodeid: Synthetic pytest node identifier.
+            """
+
+            return sandbox
+
+    class Item:
+        """Provide the pytest item attributes used by retention handling."""
+
+        config = object()
+        nodeid = "uranium_tests/example/test_example.py::test_example"
+
+        @staticmethod
+        def get_closest_marker(name: str) -> pytest.Mark | None:
+            """Return the procedural marker requested by the hook.
+
+            :param name: Marker name being queried.
+            """
+
+            return pytest.mark.uranium_procedural.mark if name == "uranium_procedural" else None
+
+    monkeypatch.setattr("tools.uranium.plugin.get_runtime", lambda _config: Runtime())
+    item = Item()
+    call = type("Report", (), {"failed": did_fail, "when": "call"})()
+    teardown = type("Report", (), {"failed": False, "when": "teardown"})()
+
+    _update_sandbox_retention(item, call)  # type: ignore[arg-type]
+    _update_sandbox_retention(item, teardown)  # type: ignore[arg-type]
+
+    assert sandbox.exists() is is_retained
