@@ -2187,19 +2187,39 @@ TSReturnCode TSPluginDescriptorAccept(TSCont contp);
 */
 TSReturnCode TSNetAcceptNamedProtocol(TSCont contp, const char *protocol);
 
-/**
-  Create a new port from the string specification used by the
-  proxy.config.http.server_ports configuration value.
+/** Create a port descriptor.
+ *
+ * Parse the string specification used by the
+ * @c proxy.config.http.server_ports configuration value. The returned handle
+ * must be released with TSPortDescriptorDestroy().
+ *
+ * @param[in] descriptor Port descriptor string to parse.
+ * @return A port descriptor handle, or @c nullptr if @a descriptor is invalid
+ * or cannot be used by TSPortDescriptorAccept().
  */
 TSPortDescriptor TSPortDescriptorParse(const char *descriptor);
 
-/**
-   Start listening on the given port descriptor. If a connection is
-   successfully accepted, the TS_EVENT_NET_ACCEPT is delivered to the
-   continuation. The event data will be a valid TSVConn bound to the accepted
-   connection.
+/** Start listening on a parsed port descriptor.
+ *
+ * If a connection is successfully accepted, @c TS_EVENT_NET_ACCEPT is
+ * delivered to @a contp. The event data will be a valid @c TSVConn bound to
+ * the accepted connection. The descriptor is not retained and can be
+ * destroyed immediately after this function returns.
+ *
+ * @param[in] descriptor Parsed port descriptor.
+ * @param[in] contp Continuation that accepts connections on the port.
+ * @return @c TS_SUCCESS if the port was opened, @c TS_ERROR otherwise.
  */
-TSReturnCode TSPortDescriptorAccept(TSPortDescriptor, TSCont);
+TSReturnCode TSPortDescriptorAccept(TSPortDescriptor descriptor, TSCont contp);
+
+/** Destroy a port descriptor.
+ *
+ * This does not stop a listener previously opened with
+ * TSPortDescriptorAccept(). Passing @c nullptr has no effect.
+ *
+ * @param[in] descriptor Port descriptor to destroy.
+ */
+void TSPortDescriptorDestroy(TSPortDescriptor descriptor);
 
 /* --------------------------------------------------------------------------
    DNS Lookups */
