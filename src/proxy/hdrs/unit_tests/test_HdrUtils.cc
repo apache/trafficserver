@@ -22,6 +22,7 @@
 #include <cstring>
 #include <cctype>
 #include <bitset>
+#include <climits>
 #include <initializer_list>
 #include <new>
 #include <vector>
@@ -425,6 +426,11 @@ TEST_CASE("Cache-Control Valid Cooking", "[proxy][hdrutils]")
      "Cache-Control: max-stale=100\r\n\r\n",
      MIME_COOKED_MASK_CC_MAX_STALE,
      0, 0, 100, 0},
+
+    {"max-stale without a value",
+     "Cache-Control: max-stale\r\n\r\n",
+     MIME_COOKED_MASK_CC_MAX_STALE,
+     0, 0, INT_MAX, 0},
 
     {"min-fresh=60",
      "Cache-Control: min-fresh=60\r\n\r\n",
