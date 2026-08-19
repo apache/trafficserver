@@ -4393,15 +4393,18 @@ SSL Termination
    When set to ``1``, a live ``traffic_ctl config reload`` that encounters one or more
    certificate load failures will still commit the partial ``SSLCertLookup``
    (containing all certificates that did load cleanly) instead of discarding the entire
-   new configuration and keeping the old one.
+   new configuration and keeping the old one, provided at least one
+   certificate-bearing entry loaded successfully.  If every entry fails, the reload
+   is rejected regardless of this setting.
 
    By default (``0``), the reload is strict and all-or-nothing: any failure causes the
    entire new configuration to be rejected and the previous configuration to remain active.
 
-   When the knob is on, any skipped certificate still produces an ``ERROR`` entry in
-   :file:`diags.log` and increments the
-   ``proxy.process.ssl.ssl_multicert_load_failures`` metric, so degraded state
-   is never silent.  The metric is also incremented in strict mode (``0``) and can
+   When the knob is on, a partial commit emits a ``Warning`` message naming
+   the count of certificate entries that loaded, any skipped certificate
+   produces an ``ERROR`` entry in :file:`diags.log`, and the
+   ``proxy.process.ssl.ssl_multicert_load_failures`` metric is incremented,
+   so degraded state is never silent.  The metric is also incremented in strict mode (``0``) and can
    be used as an alert signal in both configurations.  Note that the counter only
    covers live reloads via :program:`traffic_ctl`; failures during the initial
    startup load are not counted because the statistics subsystem is not yet
@@ -4418,13 +4421,18 @@ SSL Termination
 
    .. note::
 
-      When a partial reload is committed, any hostname whose certificate failed to load
-      will immediately fall back to the bare TLS bootstrap context (no certificate) rather
-      than continuing to serve its previously-loaded certificate.  Strict mode (``0``) is
-      safer in this regard, all hostnames continue serving their old certificates until
-      a fully-successful reload, but at the cost of blocking all certificate updates
-      whenever any single certificate fails.  Enabling ``partial_reload`` trades per-hostname
-      reliability for reduced blast radius across the certificate set.
+      When a partial reload is committed, any hostname whose certificate failed
+      to load is removed from the new lookup table and is no longer matched by
+      SNI.  The connection falls back to the default context: the wildcard
+      certificate if a ``dest_ip: "*"`` entry loaded successfully, or the bare
+      TLS bootstrap context (no X.509 certificate) if no wildcard entry loaded.
+      In either case the hostname's previously-loaded certificate is not retained
+      across the reload boundary.  Strict mode (``0``) is safer in this regard:
+      all hostnames continue serving their old certificates until a
+      fully-successful reload, but at the cost of blocking all certificate
+      updates whenever any single certificate fails.  Enabling
+      ``partial_reload`` trades per-hostname reliability for reduced blast
+      radius across the certificate set.
 
    .. note::
 

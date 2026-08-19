@@ -704,7 +704,7 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
   }
 
   // Use user_cert_count, not count(RSA|EC): load() guarantees a default context in ssl_storage
-  // (inserting a bare bootstrap when no wildcard cert loaded), so count(RSA) >= 1 even when
+  // (inserting a bare bootstrap when no wildcard cert loaded), so count() >= 1 even when
   // all user certs fail, which would spuriously trigger a partial commit.
   const bool hasAnyCert    = lookup->user_cert_count > 0;
   const bool partialCommit = !retStatus && params->configPartialReload && hasAnyCert;
@@ -713,6 +713,8 @@ SSLCertificateConfig::reconfigure(ConfigContext ctx)
     configid = configProcessor.set(configid, lookup);
     // Only flip retStatus on live reloads, startup must preserve false to honour configExitOnLoadError.
     if (partialCommit && !initialLoad) {
+      CfgLoadLog(ctx, DL_Warning, "(ssl) %s: partial reload committed %u certificate entries; see diags.log for skipped entries",
+                 params->configFilePath, lookup->user_cert_count);
       retStatus = true;
     }
   } else {

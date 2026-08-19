@@ -127,9 +127,11 @@ SSL/TLS
 
    .. note::
 
-      This counter does not include failures from the initial startup load.
-      The statistics subsystem is not yet initialized when startup cert loading
-      runs, so those failures are only visible in :file:`diags.log`.
+      This counter does not include failures from the initial startup load,
+      nor from the QUIC certificate loader (``QUICCertConfig``).  The QUIC
+      loader uses the same :file:`ssl_multicert.yaml` but tracks its own
+      load state independently and does not increment this counter.
+      TLS startup failures are only visible in :file:`diags.log`.
 
 .. ts:stat:: global proxy.process.ssl.total_handshake_time integer
    :type: counter

@@ -511,12 +511,8 @@ tr_e_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "Failure counter must be incremented for each cert that could not be loaded")
 
 # ---------------------------------------------------------------------------
-# Scenario F - EC certificate (prime256v1): partial_reload=1 with a good EC
-# cert alongside a bad RSA entry. On BoringSSL the EC cert lands in ec_storage.
-# count(SSLCertContextType::EC) > 0 makes hasAnyCert true so the partial commit
-# proceeds. On vanilla OpenSSL, EC certs fall through to ssl_storage, so
-# count(SSLCertContextType::RSA) > 0 achieves the same result. This scenario
-# exercises the ec_storage code path that all-RSA scenarios leave uncovered.
+# Scenario F - EC certificate (prime256v1): partial_reload=1 with a good EC cert
+# alongside a bad entry.
 # ---------------------------------------------------------------------------
 
 ts_f = Test.MakeATSProcess("ts_f", enable_tls=True, disable_log_checks=True)
@@ -568,9 +564,9 @@ ec_key_f = f"{ssl_dir_f}/ecgood.key"
 sni_rsa_f = 'rsa-f.example.com'
 rsa_cert_f = f"{ssl_dir_f}/rsagood.pem"
 rsa_key_f = f"{ssl_dir_f}/rsagood.key"
-# Generate both EC and RSA certs. On BoringSSL ec_storage and ssl_storage are
-# each populated by one cert; on vanilla OpenSSL both land in ssl_storage.
-# user_cert_count == 2 after both load, making hasAnyCert true regardless of build.
+# Generate both EC and RSA certs. user_cert_count == 2 after both load
+# successfully (one increment per cert in _load_items), making hasAnyCert
+# true regardless of SSL library or storage routing.
 gen_ec_cmd = (
     f"openssl ecparam -name prime256v1 -genkey -noout -out {ec_key_f} 2>/dev/null && "
     f"openssl req -new -x509 -key {ec_key_f} -out {ec_cert_f} "
@@ -641,7 +637,7 @@ tr_f_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
 # ---------------------------------------------------------------------------
 # Scenario G - previously-good SNI host stops serving its cert after it fails
 # on partial reload. After a partial commit, a hostname whose cert failed
-# falls back to the bare TLS bootstrap context instead of continuing to serve
+# falls back to the default context instead of continuing to serve
 # its previously-loaded certificate. This pins the 'stale cert not retained'
 # behavior that Bryan's review requested to verify.
 # ---------------------------------------------------------------------------
@@ -806,3 +802,103 @@ tr_g_metric.Processes.Default.ReturnCode = 0
 tr_g_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
     "Failure counter must be incremented for the alpha cert that failed to reload")
+
+# ---------------------------------------------------------------------------
+# Scenarios H and I: startup with partial_reload=1
+#
+# These scenarios verify the safety-critical interaction between partial_reload
+# and exit_on_load_fail at startup. The !initialLoad guard in reconfigure()
+# ensures retStatus is NOT flipped to true on the initial load, preserving
+# the startup() -> Emergency path even when partial_reload=1.
+#
+# Scenario H: partial_reload=1 + exit_on_load_fail=0 - ATS starts normally.
+# Scenario I: partial_reload=1 + exit_on_load_fail=1 - ATS exits (Emergency).
+#
+# Modeled on tests/gold_tests/tls/exit_on_cert_load_fail.test.py.
+# ---------------------------------------------------------------------------
+
+
+class Test_startup_partial_reload:
+    """Verify startup behavior when partial_reload=1 and a cert fails to load."""
+
+    ts_counter: int = 0
+
+    def __init__(self, name: str, enable_exit_on_load: bool):
+        """
+        Initialize the test.
+
+        :param name: Human-readable name for the test run.
+        :param enable_exit_on_load: When True, sets exit_on_load_fail=1 so
+            ATS should raise Emergency and exit. When False, ATS should start
+            normally despite the cert failure.
+        """
+        self.name = name
+        self.enable_exit_on_load = enable_exit_on_load
+
+    def _configure_traffic_server(self, tr: 'TestRun'):
+        """Configure Traffic Server with a bad cert entry and partial_reload=1.
+
+        :param tr: The TestRun object to associate the ts process with.
+        """
+        ts = tr.MakeATSProcess(f"ts-startup-partial-{Test_startup_partial_reload.ts_counter}", enable_tls=True)
+        Test_startup_partial_reload.ts_counter += 1
+        self._ts = ts
+
+        ts.addDefaultSSLFiles()
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+  - ssl_cert_name: does_not_exist.pem
+    ssl_key_name: does_not_exist.key
+""".split("\n"))
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.ssl.server.multicert.exit_on_load_fail': 1 if self.enable_exit_on_load else 0,
+                'proxy.config.ssl.server.multicert.partial_reload': 1,
+            })
+        RANDOM_PORT = 12345
+        ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{RANDOM_PORT}/')
+
+    def run(self):
+        """Run the test."""
+        tr = Test.AddTestRun(self.name)
+        self._configure_traffic_server(tr)
+
+        # The client process can be anything; we only care about ATS behavior.
+        tr.Processes.Default.Command = "echo"
+        tr.Processes.Default.StartAfter(self._ts, ready=When.FileExists(self._ts.Disk.diags_log))
+
+        # Override the default exclusion of error log; we expect cert errors.
+        self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
+            "ERROR:", "A cert load failure must be logged as ERROR in diags.log")
+
+        if self.enable_exit_on_load:
+            # Scenario I: exit_on_load_fail=1 + partial_reload=1.
+            # The !initialLoad guard keeps retStatus=false, so startup() sees
+            # false and raises Emergency.
+            self._ts.ReturnCode = 33
+            self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+                "EMERGENCY: ", "startup() must raise Emergency when retStatus is false")
+            self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+                "Traffic Server is fully initialized", "ATS must exit before reaching fully initialized with exit_on_load_fail=1")
+        else:
+            # Scenario H: exit_on_load_fail=0 + partial_reload=1.
+            # retStatus stays false (initialLoad guard), but exit_on_load_fail=0
+            # means startup() does not raise Emergency. ATS starts normally.
+            self._ts.ReturnCode = 0
+            self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+                "Traffic Server is fully initialized", "ATS must start normally when exit_on_load_fail=0 even with a bad cert")
+
+
+# Scenario H: partial_reload=1, exit_on_load_fail=0 - ATS starts normally.
+Test_startup_partial_reload(
+    "Startup H: partial_reload=1 + exit_on_load_fail=0 - ATS starts normally", enable_exit_on_load=False).run()
+
+# Scenario I: partial_reload=1, exit_on_load_fail=1 - ATS raises Emergency.
+Test_startup_partial_reload(
+    "Startup I: partial_reload=1 + exit_on_load_fail=1 - ATS raises Emergency", enable_exit_on_load=True).run()
