@@ -47,9 +47,12 @@ urtest:
       enable_cache: false
 
     copy_to_config_dir:
-      - 'files/bundle_headers.cript'
-      - 'files/direct_headers.cript'
-      - 'files/server_bundle_headers.cript'
+      - source: 'files/bundle_headers.cript'
+        destination: 'bundle_headers.cript'
+      - source: 'files/direct_headers.cript'
+        destination: 'direct_headers.cript'
+      - source: 'files/server_bundle_headers.cript'
+        destination: 'server_bundle_headers.cript'
 
     records_config:
       proxy.config.diags.debug.enabled: 1

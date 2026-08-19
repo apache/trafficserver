@@ -2120,9 +2120,10 @@ Origin Server Connect Attempts
    :overridable:
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
-   During this window, if a stale cached response exists and its age is within the cached response's ``max-age`` plus
-   :ts:cv:`proxy.config.http.cache.max_stale_age`, |TS| serves the stale content directly
-   without attempting to contact the origin server.
+   During this window, if a stale cached response exists and its age is within the limits configured by
+   :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent`, |TS| serves the stale content directly without attempting
+   to contact the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
@@ -2216,8 +2217,8 @@ Negative Response Caching
    current stale content is preserved and served. Note this is considered only on a revalidation of
    already cached content. A revalidation failure means a connection failure or a 50x response code.
    When considering replying with a stale response in these negative revalidating circumstances,
-   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
-   use a cached response older than ``max_stale_age`` seconds plus ``max-age`` of cached content.
+   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
@@ -2243,7 +2244,8 @@ Negative Response Caching
    behavior with regard to whether it considers a stale object to be fresh enough to serve out of
    cache when revalidation fails. As mentioned above in
    :ts:cv:`proxy.config.http.negative_revalidating_enabled`,
-   :ts:cv:`proxy.config.http.cache.max_stale_age` is used for that determination.
+   :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent` are used for that determination.
 
    This configuration defaults to 1,800 seconds (30 minutes).
 
@@ -3357,13 +3359,15 @@ Dynamic Content & Content Negotiation
    ===== ======================================================================
    ``0`` Default. Disable cache and go to origin server.
    ``1`` Return a ``502`` error on a cache miss.
-   ``2`` Serve stale if object's age is under ``max-age`` +
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
+   ``2`` Serve stale if the object's age is within the
+         :ts:cv:`proxy.config.http.cache.max_stale_age` and
+         :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
+         Otherwise, go to the origin server.
    ``3`` Return a ``502`` error on a cache miss or serve stale on a cache
-         revalidate if object's age is under ``max-age`` +
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
+         revalidate if the object's age is within the
+         :ts:cv:`proxy.config.http.cache.max_stale_age` and
+         :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
+         Otherwise, go to the origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
    ``5`` Retry Cache Read on a Cache Write Lock failure. This option together
          with :ts:cv:`proxy.config.cache.enable_read_while_writer` configuration
