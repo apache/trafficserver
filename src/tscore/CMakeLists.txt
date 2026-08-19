@@ -127,6 +127,10 @@ if(TS_HAS_128BIT_CAS AND TS_NEEDS_MCX16_FOR_CAS)
   target_compile_options(tscore PUBLIC "-mcx16")
 endif()
 
+if(TS_NEEDS_LIBATOMIC_FOR_CAS)
+  target_link_libraries(tscore PUBLIC atomic)
+endif()
+
 if(BUILD_SHARED_LIBS)
   install(
     TARGETS tscore
@@ -146,6 +150,7 @@ if(BUILD_TESTING)
     unit_tests/test_HKDF.cc
     unit_tests/test_Histogram.cc
     unit_tests/test_History.cc
+    unit_tests/test_InkAtomicList.cc
     unit_tests/test_IntrusivePtr.cc
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc

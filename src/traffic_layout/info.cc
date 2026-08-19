@@ -169,6 +169,7 @@ produce_features(bool json)
   print_feature("SIZEOF_VOIDP", SIZEOF_VOIDP, json);
   print_feature("TS_IP_TRANSPARENT", TS_IP_TRANSPARENT, json);
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
+  print_feature("TS_HAS_128BIT_CAS_LIBATOMIC", TS_HAS_128BIT_CAS_LIBATOMIC, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
