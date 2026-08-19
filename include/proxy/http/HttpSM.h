@@ -313,8 +313,8 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  std::shared_ptr<UrlRewrite> m_remap;
-  VirtualHostConfig::Entry *m_virtualhost_entry = nullptr;
+  std::shared_ptr<UrlRewrite>   m_remap;
+  Ptr<VirtualHostConfig::Entry> m_virtualhost_entry;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
