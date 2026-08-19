@@ -101,6 +101,7 @@ private:
         cripts::IntConfig   max_open_write_retries{"proxy.config.http.cache.max_open_write_retries"};
         cripts::IntConfig   max_open_write_retry_timeout{"proxy.config.http.cache.max_open_write_retry_timeout"};
         cripts::IntConfig   max_stale_age{"proxy.config.http.cache.max_stale_age"};
+        cripts::IntConfig   max_stale_age_percent{"proxy.config.http.cache.max_stale_age_percent"};
         cripts::IntConfig   open_read_retry_time{"proxy.config.http.cache.open_read_retry_time"};
         cripts::IntConfig   open_write_fail_action{"proxy.config.http.cache.open_write_fail_action"};
 
