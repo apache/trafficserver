@@ -38,7 +38,6 @@
 #include "swoc/MemSpan.h"
 
 #include "tsutil/Assert.h"
-#include "tsutil/TsMutex.h"
 
 namespace ts
 {
@@ -321,17 +320,17 @@ private:
 
   class Storage
   {
-    BlobStorage _blobs   TS_GUARDED_BY(_mutex);
-    uint16_t _cur_blob   TS_GUARDED_BY(_mutex) = 0;
-    uint16_t _cur_off    TS_GUARDED_BY(_mutex) = 0;
-    LookupTable _lookups TS_GUARDED_BY(_mutex);
-    mutable ts::mutex    _mutex;
+    BlobStorage        _blobs;
+    uint16_t           _cur_blob = 0;
+    uint16_t           _cur_off  = 0;
+    LookupTable        _lookups;
+    mutable std::mutex _mutex;
 
   public:
     Storage(const Storage &)            = delete;
     Storage &operator=(const Storage &) = delete;
 
-    Storage() TS_NO_THREAD_SAFETY_ANALYSIS // single-threaded construction; not yet shared
+    Storage()
     {
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
@@ -342,7 +341,7 @@ private:
     ~Storage() {}
 
     IdType           create(const std::string_view name, const MetricType type = MetricType::COUNTER);
-    void             addBlob() TS_REQUIRES(_mutex);
+    void             addBlob();
     IdType           lookup(const std::string_view name) const;
     AtomicType      *lookup(const std::string_view name, IdType *out_id, MetricType *out_type = nullptr) const;
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
@@ -354,7 +353,7 @@ private:
     std::pair<int16_t, int16_t>
     current() const
     {
-      ts::lock_guard lock(_mutex);
+      std::lock_guard lock(_mutex);
       return {_cur_blob, _cur_off};
     }
 
@@ -363,7 +362,6 @@ private:
     {
       auto [blob, entry] = _splitID(id);
 
-      ts::lock_guard lock(_mutex);
       return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
     }
   };
