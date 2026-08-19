@@ -64,6 +64,12 @@ void ink_queue_load_64(void *dst, void *src);
     const volatile __int128_t iqld0 = 0;                                                           \
     *(__int128_t *)&(dst)           = __sync_val_compare_and_swap((__int128_t *)&(src), 0, iqld0); \
   } while (0)
+#elif TS_HAS_128BIT_CAS_LIBATOMIC
+// On targets with no inline 128-bit CAS (e.g. riscv64) libatomic may implement
+// the 16-byte __atomic builtins with internal locks. That is only correct
+// because every access to a shared head_p goes through INK_QUEUE_LD and
+// ink_atomic_cas, so all of them serialize on the same libatomic lock.
+#define INK_QUEUE_LD(dst, src) __atomic_load((__int128_t *)&(src), (__int128_t *)&(dst), __ATOMIC_SEQ_CST)
 #else
 #define INK_QUEUE_LD(dst, src) INK_QUEUE_LD64(dst, src)
 #endif
@@ -79,7 +85,7 @@ union head_p {
 #if (defined(__i386__) || defined(__arm__) || defined(__mips__)) && (SIZEOF_VOIDP == 4)
   typedef int32_t version_type;
   typedef int64_t data_type;
-#elif TS_HAS_128BIT_CAS
+#elif TS_HAS_128BIT_CAS || TS_HAS_128BIT_CAS_LIBATOMIC
   typedef int64_t    version_type;
   typedef __int128_t data_type;
 #else
@@ -124,7 +130,7 @@ union head_p {
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
   (_x).s.pointer = _p;                           \
   (_x).s.version = _v
-#elif TS_HAS_128BIT_CAS
+#elif TS_HAS_128BIT_CAS || TS_HAS_128BIT_CAS_LIBATOMIC
 #define FREELIST_POINTER(_x) (_x).s.pointer
 #define FREELIST_VERSION(_x) (_x).s.version
 #define SET_FREELIST_POINTER_VERSION(_x, _p, _v) \
@@ -218,12 +224,7 @@ struct InkAtomicList {
   uint32_t    offset = 0;
 };
 
-#if !defined(INK_QUEUE_NT)
 #define INK_ATOMICLIST_EMPTY(_x) (!(TO_PTR(FREELIST_POINTER((_x.head)))))
-#else
-/* ink_queue_nt.c doesn't do the FROM/TO pointer swizzling */
-#define INK_ATOMICLIST_EMPTY(_x) (!((FREELIST_POINTER((_x.head)))))
-#endif
 
 // WARNING: the "name" string is not copied, it has to be a statically-stored constant string.
 //
