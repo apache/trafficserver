@@ -191,7 +191,13 @@ QUICStream::send_data(QUICStreamIO &stream_io, size_t max_bytes_this_event)
     }
 
     Ptr<IOBufferBlock> block = this->_pending_send_block;
-    fin                      = this->_pending_send_fin;
+    // A pending block may have been carried over from a previous event, sized under
+    // that event's (possibly larger) budget. Cap what we submit here to what's left
+    // of this event's budget, and only claim fin if the whole remaining block is
+    // included in this submission.
+    size_t remaining_budget = max_bytes_this_event - written_this_event;
+    size_t to_write         = std::min(static_cast<size_t>(block->size()), remaining_budget);
+    fin                     = this->_pending_send_fin && to_write == static_cast<size_t>(block->size());
     if (block->size() == 0 && !fin) {
       this->_pending_send_block = nullptr;
       this->_pending_send_fin   = false;
@@ -199,19 +205,19 @@ QUICStream::send_data(QUICStreamIO &stream_io, size_t max_bytes_this_event)
       continue;
     }
 
-    if (block->size() > 0 || fin) {
+    if (to_write > 0 || fin) {
       ssize_t written_len =
-        stream_io.write_stream(this->_id, reinterpret_cast<uint8_t *>(block->start()), block->size(), fin, error_code);
+        stream_io.write_stream(this->_id, reinterpret_cast<uint8_t *>(block->start()), to_write, fin, error_code);
       if (written_len >= 0) {
         this->_adapter->consume(written_len);
         this->_sent_bytes  += written_len;
         written_this_event += static_cast<size_t>(written_len);
-        if (written_len >= block->size()) {
+        block->consume(written_len);
+        if (block->size() == 0) {
           this->_pending_send_block = nullptr;
           this->_pending_send_fin   = false;
           this->_sent_fin           = fin;
         } else {
-          block->consume(written_len);
           return written_this_event;
         }
         if (!this->has_data_to_send()) {
