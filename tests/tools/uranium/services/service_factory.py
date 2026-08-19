@@ -134,8 +134,11 @@ class ServiceFactory:
             raise TypeError(f"Unsupported origin options: {', '.join(sorted(options))}")
         process = ManagedProcess(name, command, directory)
         service = OriginServer(process, port, https_port, data_directory, address)
+        lookup_headers = re.findall(r"{%([^}]+)}", lookup_key)
+        healthcheck_headers = ["GET /ruok HTTP/1.1", "Host: 127.0.0.1"]
+        healthcheck_headers.extend(f"{header}: uranium-healthcheck" for header in lookup_headers)
         service.add_response(
-            {"headers": "GET /ruok HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n"},
+            {"headers": "\r\n".join((*healthcheck_headers, "", ""))},
             {
                 "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
                 "body": "imok",

@@ -17,6 +17,7 @@
 
 from importlib import import_module
 from pathlib import Path
+import json
 import os
 import subprocess
 from typing import Any
@@ -25,7 +26,7 @@ import pytest
 
 from tools.uranium import services as service_api
 from tools.uranium.runtime import TestRuntime as UraniumRuntime
-from tools.uranium.services import ATS, ATSFactory, Curl, ProceduralContext
+from tools.uranium.services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
 
 
 class FakeRuntime:
@@ -192,6 +193,22 @@ def test_ats_factory_closes_all_processes_after_validation_failure(tmp_path: Pat
 
     assert first_process.was_stopped
     assert second_process.was_stopped
+
+
+def test_origin_healthcheck_has_a_distinct_header_lookup_key(tmp_path: Path) -> None:
+    """Keep the internal response from claiming a test's missing-header key.
+
+    :param tmp_path: Temporary directory containing the generated replay data.
+    """
+
+    factory = ServiceFactory(make_context(tmp_path))
+
+    factory.origin("origin", lookup_key="{%uuid}")
+
+    healthcheck = tmp_path / "run/origin/data/healthcheck.json"
+    document = json.loads(healthcheck.read_text())
+    fields = document["sessions"][0]["transactions"][0]["client-request"]["headers"]["fields"]
+    assert ["uuid", "uranium-healthcheck"] in fields
 
 
 @pytest.mark.parametrize(
