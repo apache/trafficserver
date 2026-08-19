@@ -104,9 +104,8 @@ Code Name      Wire encoding
                meets it -- or any code it does not recognize -- cannot
                determine the field length and must stop decoding the entry.
 1    sINT      A single ``int64_t``, fixed 8 bytes, **host byte order**.
-2    dINT      Two ``int64_t`` (16 bytes), host byte order. Used for
-               values stored as two integers, e.g. HTTP version
-               major/minor.
+2    dINT      Two ``int64_t`` (16 bytes), host byte order. Used for values
+               stored as two integers.
 3    STRING    NUL-terminated bytes, then padded to an 8-byte boundary.
 4    IP        ``uint16_t`` address family followed by a family-sized
                address, then padded to an 8-byte boundary (see below).
@@ -116,8 +115,8 @@ The code reflects how the value is *framed* on disk, i.e. how a reader walks
 (or skips) it -- not what the value means. (The ``sINT``/``dINT`` names are an
 ATS-internal distinction; on the wire ``sINT`` is one 8-byte integer and
 ``dINT`` is two consecutive ones.) How a consumer *renders* a value -- mapping
-a cache-result integer to ``TCP_HIT``, or a ``dINT`` to ``1.1`` -- is layered
-on top by the consumer and is not part of the wire format.
+a cache-result integer to ``TCP_HIT``, for example -- is layered on top by the
+consumer and is not part of the wire format.
 
 Value encodings
 ===============
@@ -129,10 +128,9 @@ sINT
     portability is future work.
 
 dINT
-    Two consecutive ``sINT`` values: 16 bytes total, in host byte order. Used
-    where one log field is stored as two integers, such as an HTTP version
-    (major then minor). The reference decoder renders it as a JSON array, e.g.
-    ``[1,1]``; turning that into ``1.1`` is a consumer concern.
+    Two consecutive ``sINT`` values: 16 bytes total, in host byte order. The
+    reference decoder renders them as a JSON array, e.g. ``[1,1]``; interpreting
+    that pair is a consumer concern.
 
 STRING
     The string bytes followed by a single NUL, then zero padding up to the next

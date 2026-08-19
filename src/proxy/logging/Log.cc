@@ -900,7 +900,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ssql", field);
 
-  field = new LogField("server_resp_http_version", "sshv", LogField::Type::dINT, &LogAccess::marshal_server_resp_http_version,
+  field = new LogField("server_resp_http_version", "sshv", LogField::Type::STRING, &LogAccess::marshal_server_resp_http_version,
                        &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sshv", field);
@@ -975,7 +975,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cssql", field);
 
-  field = new LogField("cached_resp_http_version", "csshv", LogField::Type::dINT, &LogAccess::marshal_cache_resp_http_version,
+  field = new LogField("cached_resp_http_version", "csshv", LogField::Type::STRING, &LogAccess::marshal_cache_resp_http_version,
                        &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("csshv", field);

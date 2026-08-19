@@ -295,7 +295,7 @@ TEST_CASE("v3 generic decode rejects field_count not matching the symbol list", 
 TEST_CASE("v3 generic decode reads a dINT field (16 bytes)", "[logcat][v3]")
 {
   V3Segment seg;
-  init_segment(seg, "sshv", {LogField::Type::dINT});
+  init_segment(seg, "pair", {LogField::Type::dINT});
 
   auto *entry = reinterpret_cast<LogEntryHeader *>(seg.storage + DATA_OFF);
   char *w     = reinterpret_cast<char *>(entry) + sizeof(LogEntryHeader);
@@ -309,13 +309,13 @@ TEST_CASE("v3 generic decode reads a dINT field (16 bytes)", "[logcat][v3]")
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"sshv":[1,1]})");
+  CHECK(std::string(out, n) == R"({"pair":[1,1]})");
 }
 
 TEST_CASE("v3 generic decode rejects a truncated dINT field", "[logcat][v3]")
 {
   V3Segment seg;
-  init_segment(seg, "sshv", {LogField::Type::dINT});
+  init_segment(seg, "pair", {LogField::Type::dINT});
 
   auto *entry = reinterpret_cast<LogEntryHeader *>(seg.storage + DATA_OFF);
   char *w     = reinterpret_cast<char *>(entry) + sizeof(LogEntryHeader);

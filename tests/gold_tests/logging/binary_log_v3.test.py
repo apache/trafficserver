@@ -43,7 +43,7 @@ class BinaryLogV3Test:
     #   chi  = client IP         -> IP     -> "127.0.0.1"
     #   cqu  = request URL       -> STRING -> "http://127.0.0.1:<port>/get"
     #   pssc = response status   -> sINT   -> "200"
-    #   sshv = resp HTTP version -> dINT   -> "HTTP/1.1" (ASCII) / [1,1] (JSON)
+    #   sshv = resp HTTP version -> STRING -> "HTTP/1.1" (ASCII) / "1.1" (JSON)
     # The dynamic listen port in cqu is masked with `` in the gold files.
     log_format = '%<chi> %<cqu> %<pssc> %<sshv>'
 
@@ -151,7 +151,7 @@ class BinaryLogV3Test:
         stdout += Testers.ContainsExpression(r'chi\s+IP', 'chi is framed as an IP.')
         stdout += Testers.ContainsExpression(r'cqu\s+STRING', 'cqu is framed as a STRING.')
         stdout += Testers.ContainsExpression(r'pssc\s+sINT', 'pssc is framed as an sINT.')
-        stdout += Testers.ContainsExpression(r'sshv\s+dINT', 'sshv is framed as a dINT.')
+        stdout += Testers.ContainsExpression(r'sshv\s+STRING', 'sshv is framed as a STRING.')
 
         # traffic_logcat -H also prints the v2 header, but v2 segments carry no
         # field-type schema.

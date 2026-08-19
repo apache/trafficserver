@@ -46,9 +46,9 @@ TEST_CASE("LogField::Type reflects each field's on-wire framing", "[logging][v3]
   Log::init_fields();
 
   // Each field's declared type must match its on-wire framing, since the schema
-  // serializes Type directly: pssc/crc single ints, cqu string, chi IP, sshv a
-  // pair (HTTP version), ppv a string (after the sINT/dINT type fixes).
-  LogFormat fmt("v3wt", "%<pssc> %<crc> %<cqu> %<chi> %<sshv> %<ppv>");
+  // serializes Type directly: pssc/crc single ints, cqu/sshv/csshv/ppv
+  // strings, and chi an IP.
+  LogFormat fmt("v3wt", "%<pssc> %<crc> %<cqu> %<chi> %<sshv> %<csshv> %<ppv>");
   REQUIRE(fmt.valid());
 
   std::vector<LogField::Type> types;
@@ -56,8 +56,9 @@ TEST_CASE("LogField::Type reflects each field's on-wire framing", "[logging][v3]
     types.push_back(f->type());
   }
 
-  REQUIRE(types == (std::vector<LogField::Type>{LogField::Type::sINT, LogField::Type::sINT, LogField::Type::STRING,
-                                                LogField::Type::IP, LogField::Type::dINT, LogField::Type::STRING}));
+  REQUIRE(types ==
+          (std::vector<LogField::Type>{LogField::Type::sINT, LogField::Type::sINT, LogField::Type::STRING, LogField::Type::IP,
+                                       LogField::Type::STRING, LogField::Type::STRING, LogField::Type::STRING}));
 }
 
 TEST_CASE("marshal_int / unmarshal_int round-trip", "[logging][v3]")
