@@ -22,13 +22,19 @@ import time
 
 import pytest
 
-from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
+from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory
 
 TEST_DIRECTORY = Path(__file__).parent
 
 
 class StekShareScenario:
     """Build a five-node STEK cluster and resume one session on every node."""
+
+    _LEADER_STEK = re.compile(r"Using (?:initial|new) STEK: ([0-9A-F]+)")
+    _FOLLOWER_STEK = re.compile(
+        r"Received new STEK: ([0-9A-F]+).*?Update SSL Ticket Key succeeded\.",
+        re.DOTALL,
+    )
 
     CIPHER_SUITE = (
         "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:"
@@ -137,12 +143,34 @@ class StekShareScenario:
         ats.remap_config.add_line(f"map / http://127.0.0.1:{self._origin.port}")
         return ats
 
-    def wait_for_cluster(self) -> None:
-        """Wait until every plugin reports successful initial key generation."""
+    @classmethod
+    def _active_stek(cls, content: str) -> str | None:
+        """Return the latest cluster key that a node has activated.
 
-        for ats in self._ats_nodes:
-            wait_for_file_lines(ats.traffic_out, "Generate initial STEK succeeded", 1, timeout=20)
-        time.sleep(10)
+        :param content: Complete stek_share diagnostic output for one node.
+        """
+
+        events = [(match.start(), match.group(1)) for match in cls._LEADER_STEK.finditer(content)]
+        events.extend((match.start(), match.group(1)) for match in cls._FOLLOWER_STEK.finditer(content))
+        return max(events)[1] if events else None
+
+    def wait_for_cluster(self, timeout: float = 30) -> None:
+        """Wait until every node has activated the same shared key.
+
+        :param timeout: Maximum number of seconds to wait for cluster convergence.
+        """
+
+        deadline = time.monotonic() + timeout
+        observed: dict[str, str | None] = {}
+        while time.monotonic() < deadline:
+            for ats in self._ats_nodes:
+                content = ats.traffic_out.read_text(errors="replace") if ats.traffic_out.exists() else ""
+                observed[ats.name] = self._active_stek(content)
+            active_keys = list(observed.values())
+            if all(active_keys) and len(set(active_keys)) == 1:
+                return
+            time.sleep(0.1)
+        raise AssertionError(f"STEK cluster did not converge within {timeout} seconds: {observed}")
 
     def verify_basic_request(self) -> None:
         """Confirm the first TLS endpoint still proxies ordinary requests."""
