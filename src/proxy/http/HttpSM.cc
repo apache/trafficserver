@@ -2145,6 +2145,17 @@ HttpSM::state_read_server_response_header(int event, void *data)
     // If there is a post body in transit, give up on it
     if (tunnel.is_tunnel_alive()) {
       tunnel.abort_tunnel();
+      // abort_tunnel() does not clean up vc_table entries.  If a request
+      // transform is present, post_transform_info.entry still points at the
+      // TransformVConnection whose chain will be freed by the abort cascade.
+      // Clean it up now so cleanup_all() in kill_this() does not call
+      // do_io_close() on freed memory.
+      if (post_transform_info.entry != nullptr) {
+        post_transform_info.entry->in_tunnel = false;
+        vc_table.cleanup_entry(post_transform_info.entry);
+        post_transform_info.entry = nullptr;
+      }
+      // ink_release_assert(post_transform_info.entry == nullptr);
       // Make sure client connection is closed when we are done in case there is cruft left over
       t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       // Similarly the server connection should also be closed
