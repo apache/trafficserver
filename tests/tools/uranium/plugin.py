@@ -17,10 +17,11 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from pathlib import Path
 from typing import Any, Protocol
 import os
+import shutil
 
 import pytest
 
@@ -125,6 +126,43 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         key=lambda item: ("tls_conn_timeout" not in item.name, item.nodeid),
     )
     items[:] = regular_items + serial_items
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item,
+    call: pytest.CallInfo[None],
+) -> Generator[None, pytest.TestReport, pytest.TestReport]:
+    """Discard successful Uranium sandboxes after fixture teardown.
+
+    :param item: Pytest item whose phase just completed.
+    :param call: Result information for the completed pytest phase.
+    """
+
+    report = yield
+    _update_sandbox_retention(item, report)
+    return report
+
+
+def _update_sandbox_retention(item: pytest.Item, report: pytest.TestReport) -> None:
+    """Retain one Uranium sandbox only when any test phase failed.
+
+    :param item: Pytest item that owns the sandbox.
+    :param report: Report for the item's current setup, call, or teardown phase.
+    """
+
+    is_replay = isinstance(item, ReplayItem)
+    is_procedural = item.get_closest_marker("uranium_procedural") is not None
+    if not is_replay and not is_procedural:
+        return
+    if report.failed:
+        setattr(item, "_uranium_sandbox_failed", True)
+    if report.when != "teardown" or getattr(item, "_uranium_sandbox_failed", False):
+        return
+
+    runtime = get_runtime(item.config)
+    sandbox = runtime.item_sandbox(item.spec.path, item.nodeid) if is_replay else runtime.procedural_sandbox(item.nodeid)
+    shutil.rmtree(sandbox, ignore_errors=True)
 
 
 def _mark_manual_tests(items: Sequence[MarkableItem], *, enabled: bool) -> None:
