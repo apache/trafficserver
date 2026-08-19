@@ -23,6 +23,7 @@
 
 #include "P_SSLCertLookup.h"
 #include "iocore/net/SSLTypes.h"
+#include "swoc/MemSpan.h"
 #include "tscore/Diags.h"
 
 #ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
@@ -35,6 +36,7 @@
 #endif
 #include <openssl/ssl.h>
 #include <memory>
+#include <string>
 
 class SSLNetVConnection;
 
@@ -45,6 +47,18 @@ ssl_curve_id SSLGetCurveNID(SSL *ssl);
 
 /// Return the TLS Group Name associated with the specified SSL connection.
 std::string_view SSLGetGroupName(SSL *ssl);
+
+/// Format TLS signature-scheme code points as dash-separated decimal values, excluding GREASE.
+std::string SSLFormatSignatureAlgorithms(swoc::MemSpan<uint16_t const> algorithms);
+
+/// Return the peer's offered TLS signature schemes in wire order.
+std::string SSLGetOfferedSignatureAlgorithms(SSL *ssl);
+
+/// Return the TLS signature scheme used locally to authenticate the current handshake.
+std::string SSLGetNegotiatedSignatureAlgorithm(SSL *ssl);
+
+/// Capture TLS signature information while the TLS library still exposes the selected scheme.
+void SSLHandshakeInfoCallback(const SSL *ssl, int where, int ret);
 
 SSL_SESSION *SSLSessionDup(SSL_SESSION *sess);
 

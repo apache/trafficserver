@@ -2453,6 +2453,34 @@ LogAccess::marshal_client_security_group(char *buf)
 }
 
 int
+LogAccess::marshal_client_offered_signature_algorithms(char *buf)
+{
+  const char *offered_signature_algorithms = m_data->get_client_offered_signature_algorithms();
+  const char *value                        = offered_signature_algorithms ? offered_signature_algorithms : DEFAULT_STR;
+  int         round_len                    = LogAccess::padded_strlen(value);
+
+  if (buf) {
+    marshal_str(buf, value, round_len);
+  }
+
+  return round_len;
+}
+
+int
+LogAccess::marshal_client_negotiated_signature_algorithm(char *buf)
+{
+  const char *negotiated_signature_algorithm = m_data->get_client_negotiated_signature_algorithm();
+  const char *value                          = negotiated_signature_algorithm ? negotiated_signature_algorithm : DEFAULT_STR;
+  int         round_len                      = LogAccess::padded_strlen(value);
+
+  if (buf) {
+    marshal_str(buf, value, round_len);
+  }
+
+  return round_len;
+}
+
+int
 LogAccess::marshal_client_security_alpn(char *buf)
 {
   const char *alpn    = "-";
