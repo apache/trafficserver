@@ -24,6 +24,8 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <sys/types.h>
 #include "tscore/ink_assert.h"
 #include "tscore/ink_atomic.h"
@@ -99,6 +101,19 @@ struct HdrTokenHeapPrefix {
   HdrTokenTypeSpecific wks_type_specific;
 };
 
+// Storage reserved per well-known string, including the NUL terminator. The size is fixed here
+// rather than computed from the longest string because hdrtoken_wks_to_prefix() needs
+// sizeof(HdrTokenWksEntry) to recover an entry index from a string pointer; HdrToken.cc statically
+// asserts that every string fits.
+constexpr size_t HDRTOKEN_WKS_STORAGE = 32;
+
+struct HdrTokenWksEntry {
+  HdrTokenHeapPrefix prefix;
+  char               str[HDRTOKEN_WKS_STORAGE];
+};
+
+extern const HdrTokenWksEntry *const hdrtoken_wks_entries;
+
 extern int hdrtoken_num_wks;
 
 extern const char       *hdrtoken_strs[];
@@ -152,7 +167,14 @@ inline const HdrTokenHeapPrefix *
 hdrtoken_wks_to_prefix(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  return reinterpret_cast<const HdrTokenHeapPrefix *>(wks - sizeof(HdrTokenHeapPrefix));
+
+  // Recover the entry index through integer arithmetic. Subtracting sizeof(HdrTokenHeapPrefix)
+  // from wks directly would form a pointer outside the str array member, which is undefined
+  // behavior even though the prefix is physically adjacent.
+  uintptr_t const offset = reinterpret_cast<uintptr_t>(wks) - reinterpret_cast<uintptr_t>(hdrtoken_wks_entries);
+
+  ink_assert(offset % sizeof(HdrTokenWksEntry) == offsetof(HdrTokenWksEntry, str));
+  return &hdrtoken_wks_entries[offset / sizeof(HdrTokenWksEntry)].prefix;
 }
 
 /*-------------------------------------------------------------------------

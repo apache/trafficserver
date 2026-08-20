@@ -30,7 +30,6 @@
 #include <array>
 #include <algorithm>
 #include <cstddef>
-#include <cstdio>
 #include <iterator>
 #include <string_view>
 
@@ -42,6 +41,16 @@ DbgCtl dbg_ctl_hdr_token{"hdr_token"};
  WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
  avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
 */
+struct HdrTokenFrozen {
+  size_t   count;
+  uint32_t fingerprint;
+};
+
+// When you append strings to _hdrtoken_strs, also append an entry to _hdrtoken_strs_frozen.
+// This ledger ensures that WKS strings are append-only.
+constexpr HdrTokenFrozen _hdrtoken_strs_frozen[] = {
+  {135, 0x9ea577a9u},
+};
 
 constexpr std::string_view _hdrtoken_strs[] = {
   // MIME Field names
@@ -314,22 +323,66 @@ hdrtoken_ascii_toupper(unsigned char c)
 
 constexpr uint32_t HDRTOKEN_HASH_SEED = 0x811c9dc5u; // FNV-1a 32-bit offset basis
 
+// One raw FNV-1a step. hdrtoken_hash() folds case on top of it; the frozen-ledger fingerprint
+// deliberately does not.
 constexpr uint32_t
 hdrtoken_hash_step(uint32_t hval, unsigned char c)
 {
-  return (hval ^ hdrtoken_ascii_toupper(c)) * 0x01000193u;
+  return (hval ^ c) * 0x01000193u;
 }
 
+// The one hash function, shared by compile-time table construction and hdrtoken_tokenize(), so the
+// two can never disagree.
 constexpr uint32_t
-hdrtoken_hash(const unsigned char *string, unsigned int length)
+hdrtoken_hash(std::string_view s)
 {
   uint32_t hval = HDRTOKEN_HASH_SEED;
 
-  for (unsigned int i = 0; i < length; i++) {
-    hval = hdrtoken_hash_step(hval, string[i]);
+  for (char const c : s) {
+    hval = hdrtoken_hash_step(hval, hdrtoken_ascii_toupper(static_cast<unsigned char>(c)));
   }
   return hval;
 }
+
+constexpr uint32_t
+hdrtoken_frozen_fingerprint(size_t count)
+{
+  // Hashes the raw bytes, without case folding, because case is significant for frozen entries:
+  // hdrtoken_method_tokenize() matches methods case-sensitively against the stored bytes.
+  uint32_t hval = HDRTOKEN_HASH_SEED;
+
+  for (size_t i = 0; i < count; ++i) {
+    for (char const c : _hdrtoken_strs[i]) {
+      hval = hdrtoken_hash_step(hval, static_cast<unsigned char>(c));
+    }
+    hval = hdrtoken_hash_step(hval, '\0'); // fold in a terminator so entry boundaries matter
+  }
+  return hval;
+}
+
+constexpr bool
+hdrtoken_frozen_rows_valid()
+{
+  size_t prev_count = 0;
+
+  for (auto const &f : _hdrtoken_strs_frozen) {
+    if (f.count <= prev_count || f.count > std::size(_hdrtoken_strs)) {
+      return false;
+    }
+    if (hdrtoken_frozen_fingerprint(f.count) != f.fingerprint) {
+      return false;
+    }
+    prev_count = f.count;
+  }
+  return true;
+}
+
+static_assert(hdrtoken_frozen_rows_valid(),
+              "A frozen well-known string changed. Indexes are stored in cached objects, so entries may only be appended, "
+              "never inserted, reordered, removed, or edited");
+static_assert(_hdrtoken_strs_frozen[std::size(_hdrtoken_strs_frozen) - 1].count == std::size(_hdrtoken_strs),
+              "The well-known string table grew without being re-frozen; append a {count, fingerprint} row to "
+              "_hdrtoken_strs_frozen");
 
 constexpr size_t
 hdrtoken_max_literal_length()
@@ -339,14 +392,8 @@ hdrtoken_max_literal_length()
   return longest->length();
 }
 
-constexpr size_t HDRTOKEN_WKS_STORAGE = hdrtoken_max_literal_length() + 1;
-
-struct WksEntry {
-  HdrTokenHeapPrefix prefix;
-  char               str[HDRTOKEN_WKS_STORAGE];
-};
-
-static_assert(offsetof(WksEntry, str) == sizeof(HdrTokenHeapPrefix), "hdrtoken_wks_to_prefix() depends on this offset!");
+static_assert(hdrtoken_max_literal_length() + 1 <= HDRTOKEN_WKS_STORAGE,
+              "a well-known string does not fit its entry; raise HDRTOKEN_WKS_STORAGE");
 
 constexpr bool
 hdrtoken_literals_equal_nocase(std::string_view a, std::string_view b)
@@ -402,16 +449,80 @@ static_assert(hdrtoken_names_resolve_uniquely(_hdrtoken_strs_field_initializers)
 static_assert(hdrtoken_names_resolve_uniquely(_hdrtoken_strs_cc_initializers),
               "a Cache-Control initializer names a string that is missing from _hdrtoken_strs or already claimed");
 
-constexpr uint32_t
-hdrtoken_literal_slot(std::string_view s)
-{
-  uint32_t hval = HDRTOKEN_HASH_SEED;
+// Resolution folds ASCII case and matches whole strings only. Exact-length matching is what allows
+// a string to be appended to the table even when an existing entry is its prefix.
+static_assert(hdrtoken_index_of_literal("cache-control") == hdrtoken_index_of_literal("Cache-Control"),
+              "resolution must be ASCII case-insensitive");
+static_assert(hdrtoken_index_of_literal("Content-Len") == -1, "a prefix of a well-known string must not resolve");
+static_assert(hdrtoken_index_of_literal("Accept") >= 0 &&
+                hdrtoken_index_of_literal("Accept") != hdrtoken_index_of_literal("Accept-Encoding"),
+              "a well-known string that is a prefix of another must resolve to its own entry");
 
-  for (char const c : s) {
-    hval = hdrtoken_hash_step(hval, static_cast<unsigned char>(c));
+// The field rows feed the fast MIME slot and presence-bit machinery, so each non-NONE slot id must
+// be a valid, unclaimed slot and each nonzero presence mask must be a distinct single bit.
+constexpr bool
+hdrtoken_field_init_semantics_ok()
+{
+  std::array<bool, 32> slot_seen{}; // MIME_SLOTID_* values are 0..31
+  uint64_t             mask_seen = 0;
+
+  for (auto const &f : _hdrtoken_strs_field_initializers) {
+    if (f.name == nullptr) {
+      continue;
+    }
+    if (f.slotid != MIME_SLOTID_NONE) {
+      if (f.slotid < 0 || f.slotid >= static_cast<int32_t>(slot_seen.size()) || slot_seen[f.slotid]) {
+        return false;
+      }
+      slot_seen[f.slotid] = true;
+    }
+    if (f.mask != 0) {
+      if ((f.mask & (f.mask - 1)) != 0 || (mask_seen & f.mask) != 0) {
+        return false;
+      }
+      mask_seen |= f.mask;
+    }
   }
-  return hash_to_slot(hval);
+  return true;
 }
+
+static_assert(hdrtoken_field_init_semantics_ok(),
+              "a field initializer has an out-of-range or duplicate slot id, or a multi-bit or duplicate presence mask");
+
+// Every Cache-Control row must carry a distinct single-bit cooked mask, and its string must be
+// typed CACHE_CONTROL to satisfy HTTPHdr::is_cache_control_set(), which asserts that type for any
+// directive whose mask it consults.
+constexpr bool
+hdrtoken_cc_init_semantics_ok()
+{
+  uint32_t mask_seen = 0;
+
+  for (auto const &c : _hdrtoken_strs_cc_initializers) {
+    if (c.name == nullptr) {
+      continue;
+    }
+    if (c.mask == 0 || (c.mask & (c.mask - 1)) != 0 || (mask_seen & c.mask) != 0) {
+      return false;
+    }
+    mask_seen |= c.mask;
+
+    bool cc_typed = false;
+
+    for (auto const &b : _hdrtoken_strs_type_initializers) {
+      if (b.name != nullptr && hdrtoken_literals_equal_nocase(b.name, c.name)) {
+        cc_typed = (b.type == HdrTokenType::CACHE_CONTROL);
+        break;
+      }
+    }
+    if (!cc_typed) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static_assert(hdrtoken_cc_init_semantics_ok(),
+              "a Cache-Control initializer has a zero, multi-bit, or duplicate mask, or its entry is not typed CACHE_CONTROL");
 
 constexpr bool
 hdrtoken_wks_slots_unique()
@@ -420,7 +531,7 @@ hdrtoken_wks_slots_unique()
   std::array<bool, HDRTOKEN_HASH_TABLE_SIZE> seen{};
 
   for (std::string_view const s : _hdrtoken_strs) {
-    uint32_t const slot = hdrtoken_literal_slot(s);
+    uint32_t const slot = hash_to_slot(hdrtoken_hash(s));
 
     if (seen[slot]) {
       return false;
@@ -432,13 +543,13 @@ hdrtoken_wks_slots_unique()
 
 static_assert(hdrtoken_wks_slots_unique(), "Two well-known strings hash to the same slot.  Change the table or the hash!");
 
-constexpr std::array<WksEntry, std::size(_hdrtoken_strs)>
+constexpr std::array<HdrTokenWksEntry, std::size(_hdrtoken_strs)>
 hdrtoken_build_wks_table()
 {
-  std::array<WksEntry, std::size(_hdrtoken_strs)> table{};
+  std::array<HdrTokenWksEntry, std::size(_hdrtoken_strs)> table{};
 
   for (size_t i = 0; i < std::size(_hdrtoken_strs); ++i) {
-    WksEntry              &e    = table[i];
+    HdrTokenWksEntry      &e    = table[i];
     std::string_view const name = _hdrtoken_strs[i];
 
     for (size_t k = 0; k < name.size(); ++k) {
@@ -477,9 +588,40 @@ hdrtoken_build_wks_table()
   return table;
 }
 
-constexpr std::array<WksEntry, std::size(_hdrtoken_strs)> hdrtoken_wks_table = hdrtoken_build_wks_table();
+constexpr std::array<HdrTokenWksEntry, std::size(_hdrtoken_strs)> hdrtoken_wks_table = hdrtoken_build_wks_table();
+
+/***********************************************************************
+ *                                                                     *
+ *                        H A S H    T A B L E                         *
+ *                                                                     *
+ ***********************************************************************/
+
+struct HdrTokenHashBucket {
+  uint32_t wks_idx_plus_one; // biased by one so that a value-initialized bucket reads as empty
+  uint32_t hash;
+};
+
+constexpr std::array<HdrTokenHashBucket, HDRTOKEN_HASH_TABLE_SIZE>
+hdrtoken_build_hash_table()
+{
+  std::array<HdrTokenHashBucket, HDRTOKEN_HASH_TABLE_SIZE> table{};
+
+  // static_assert(hdrtoken_wks_slots_unique()) proves no two strings share a slot, so no bucket is
+  // assigned twice here.
+  for (size_t i = 0; i < std::size(_hdrtoken_strs); i++) {
+    uint32_t const hash = hdrtoken_hash(_hdrtoken_strs[i]);
+
+    table[hash_to_slot(hash)] = {static_cast<uint32_t>(i) + 1, hash};
+  }
+  return table;
+}
+
+constexpr std::array<HdrTokenHashBucket, HDRTOKEN_HASH_TABLE_SIZE> hdrtoken_hash_table = hdrtoken_build_hash_table();
 
 } // end anonymous namespace
+
+// hdrtoken_wks_to_prefix() maps a string pointer back to its entry through this table.
+const HdrTokenWksEntry *const hdrtoken_wks_entries = hdrtoken_wks_table.data();
 
 // Header string pointers in this range are well-known.
 const char *_hdrtoken_strs_heap_f = &hdrtoken_wks_table[0].str[0]; // storage first byte
@@ -493,41 +635,6 @@ HdrTokenType      hdrtoken_str_token_types[std::size(_hdrtoken_strs)]; // wks_id
 int32_t           hdrtoken_str_slotids[std::size(_hdrtoken_strs)];     // wks_idx -> slot id
 uint64_t          hdrtoken_str_masks[std::size(_hdrtoken_strs)];       // wks_idx -> presence mask
 HdrTokenInfoFlags hdrtoken_str_flags[std::size(_hdrtoken_strs)];       // wks_idx -> flags
-
-/***********************************************************************
- *                                                                     *
- *                        H A S H    T A B L E                         *
- *                                                                     *
- ***********************************************************************/
-
-struct HdrTokenHashBucket {
-  const char *wks;
-  uint32_t    hash;
-};
-
-HdrTokenHashBucket hdrtoken_hash_table[HDRTOKEN_HASH_TABLE_SIZE];
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-void
-hdrtoken_hash_init()
-{
-  memset(hdrtoken_hash_table, 0, sizeof(hdrtoken_hash_table));
-
-  // static_assert(hdrtoken_wks_slots_unique()) proves no two strings share a slot, so no bucket is
-  // assigned twice here.
-  for (size_t i = 0; i < std::size(_hdrtoken_strs); i++) {
-    const char *wks = hdrtoken_wks_table[i].str;
-
-    uint32_t hash = hdrtoken_hash(reinterpret_cast<const unsigned char *>(wks),
-                                  static_cast<unsigned int>(hdrtoken_wks_table[i].prefix.wks_length));
-    uint32_t slot = hash_to_slot(hash);
-
-    hdrtoken_hash_table[slot].wks  = wks;
-    hdrtoken_hash_table[slot].hash = hash;
-  }
-}
 
 /***********************************************************************
  *                                                                     *
@@ -546,7 +653,7 @@ hdrtoken_init()
     inited = 1;
 
     // hdrtoken_wks_table already holds every string with its prefix, resolved at compile time.
-    // Copy the hot fields out into the parallel arrays and build the hash table.
+    // Copy the hot fields out into the parallel arrays.
     for (int i = 0; i < static_cast<int>(std::size(_hdrtoken_strs)); i++) {
       HdrTokenHeapPrefix const &prefix = hdrtoken_wks_table[i].prefix;
 
@@ -557,8 +664,6 @@ hdrtoken_init()
       hdrtoken_str_masks[i]       = prefix.wks_info.mask;
       hdrtoken_str_flags[i]       = prefix.wks_info.flags;
     }
-
-    hdrtoken_hash_init();
   }
 }
 
@@ -592,29 +697,31 @@ hdrtoken_method_tokenize(const char *string, int string_len)
 int
 hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out)
 {
-  int                 wks_idx;
-  HdrTokenHashBucket *bucket;
-
   ink_assert(string != nullptr);
 
   if (hdrtoken_is_wks(string)) {
-    wks_idx = hdrtoken_wks_to_index(string);
+    int const wks_idx = hdrtoken_wks_to_index(string);
+
     if (wks_string_out) {
       *wks_string_out = string;
     }
     return wks_idx;
   }
 
-  uint32_t hash = hdrtoken_hash(reinterpret_cast<const unsigned char *>(string), static_cast<unsigned int>(string_len));
-  uint32_t slot = hash_to_slot(hash);
+  uint32_t const hash = hdrtoken_hash(std::string_view{string, static_cast<size_t>(string_len)});
 
-  bucket = &(hdrtoken_hash_table[slot]);
-  if ((bucket->wks != nullptr) && (bucket->hash == hash) && (hdrtoken_wks_to_length(bucket->wks) == string_len)) {
-    wks_idx = hdrtoken_wks_to_index(bucket->wks);
-    if (wks_string_out) {
-      *wks_string_out = bucket->wks;
+  HdrTokenHashBucket const &bucket = hdrtoken_hash_table[hash_to_slot(hash)];
+
+  if ((bucket.wks_idx_plus_one != 0) && (bucket.hash == hash)) {
+    int const               wks_idx = static_cast<int>(bucket.wks_idx_plus_one - 1);
+    HdrTokenWksEntry const &entry   = hdrtoken_wks_table[wks_idx];
+
+    if (entry.prefix.wks_length == string_len) {
+      if (wks_string_out) {
+        *wks_string_out = entry.str;
+      }
+      return wks_idx;
     }
-    return wks_idx;
   }
 
   Dbg(dbg_ctl_hdr_token, "Did not find a WKS for '%.*s'", string_len, string);
