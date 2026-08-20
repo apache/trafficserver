@@ -1349,6 +1349,46 @@ TSStringPercentEncode(const char *str, int str_len, char *dst, size_t dst_size, 
 }
 
 TSReturnCode
+TSStringHtmlEscape(const char *str, int str_len, char *dst, size_t dst_size, size_t *length, bool use_attribute_mode)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)dst) == TS_SUCCESS);
+
+  if (str_len < -1) {
+    if (length) {
+      *length = 0;
+    }
+    return TS_ERROR;
+  }
+  size_t input_length = str_len == -1 ? strlen(str) : static_cast<size_t>(str_len);
+
+  if (!Encoding::html_escape(std::string_view{str, input_length}, dst, dst_size, length, use_attribute_mode)) {
+    return TS_ERROR;
+  }
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSStringHtmlUnescape(const char *str, int str_len, char *dst, size_t dst_size, size_t *length)
+{
+  sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)dst) == TS_SUCCESS);
+
+  if (str_len < -1) {
+    if (length) {
+      *length = 0;
+    }
+    return TS_ERROR;
+  }
+  size_t input_length = str_len == -1 ? strlen(str) : static_cast<size_t>(str_len);
+
+  if (!Encoding::html_unescape(std::string_view{str, input_length}, dst, dst_size, length)) {
+    return TS_ERROR;
+  }
+  return TS_SUCCESS;
+}
+
+TSReturnCode
 TSStringPercentDecode(const char *str, size_t str_len, char *dst, size_t dst_size, size_t *length)
 {
   sdk_assert(sdk_sanity_check_null_ptr((void *)str) == TS_SUCCESS);
