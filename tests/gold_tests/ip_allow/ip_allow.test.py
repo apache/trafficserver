@@ -310,7 +310,7 @@ ssl_multicert:
                 "client.*allowed by ip-allow policy", "Request should be allowed by ip_allow")
 
         if self.gold_file:
-            tr.Processes.Default.Streams.all = self.gold_file
+            tr.Processes.Default.Streams.All = self.gold_file
 
 
 # ip_allow tests for h3.
