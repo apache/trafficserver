@@ -28,51 +28,85 @@ import sys
 
 Test.Summary = __doc__
 
-_partial_post_client = 'partial_post_client.py'
-_quick_server = 'quick_server.py'
-_init_file = '__init__.py'
-_http_utils = 'http_utils.py'
 
-# Set up DNS.
-dns = Test.MakeDNServer('dns', default='127.0.0.1')
+class PostEarlyResponseTransformTest:
+    """Verify abort_tunnel with a request transform does not crash ATS."""
 
-# Set up the quick-responding origin server (responds before reading body).
-server = Test.Processes.Process('server')
-server_port = get_port(server, 'http_port')
-server.Command = f'{sys.executable} {_quick_server} 127.0.0.1 {server_port}'
-server.Ready = When.PortOpenv4(server_port)
+    _partial_post_client = 'partial_post_client.py'
+    _quick_server = 'quick_server.py'
+    _init_file = '__init__.py'
+    _http_utils = 'http_utils.py'
 
-# Set up ATS with the null_transform_request plugin.
-ts = Test.MakeATSProcess('ts')
-ts.Disk.remap_config.AddLine(f'map / http://quick.server.com:{server_port}')
-ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'http',
-        'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
-        'proxy.config.dns.resolv_conf': 'NULL',
-    })
-Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'null_transform_request.so'), ts)
+    def __init__(self):
+        """Configure and run the test."""
+        tr = Test.AddTestRun('Partial POST with request transform and early server response')
+        self._configure_dns(tr)
+        self._configure_server(tr)
+        self._configure_traffic_server(tr)
+        self._configure_client(tr)
 
-# The test: send a partial POST (large Content-Length, small body) through ATS
-# with a request transform active. The quick server responds immediately.
-# ATS must handle the abort_tunnel without crashing.
-tr = Test.AddTestRun('Partial POST with request transform and early server response')
+    def _configure_dns(self, tr: 'TestRun') -> None:
+        """Configure the DNS process.
 
-tools_dir = ts.Variables.AtsTestToolsDir
-http_utils = os.path.join(tools_dir, 'http_utils.py')
-tr.Setup.CopyAs(_init_file, Test.RunDirectory)
-tr.Setup.CopyAs(http_utils, Test.RunDirectory)
-tr.Setup.CopyAs(_quick_server, Test.RunDirectory)
-tr.Setup.CopyAs(_partial_post_client, Test.RunDirectory)
+        :param tr: The test run to associate the DNS process with.
+        """
+        self._dns = tr.MakeDNServer('dns', default='127.0.0.1')
 
-p = tr.Processes.Default
-p.Command = (f'{sys.executable} {_partial_post_client} '
-             f'127.0.0.1 {ts.Variables.port}')
-p.ReturnCode = 0
-p.Streams.All += Testers.ContainsExpression('Got response', 'Verify client received a response from ATS')
+    def _configure_server(self, tr: 'TestRun') -> None:
+        """Configure the quick-responding origin server.
 
-ts.StartBefore(dns)
-ts.StartBefore(server)
-p.StartBefore(ts)
-tr.Timeout = 10
+        The server responds immediately after receiving the request headers,
+        before the full POST body arrives.
+
+        :param tr: The test run to associate the server process with.
+        """
+        server = tr.Processes.Process('server')
+        server_port = get_port(server, 'http_port')
+        server.Command = f'{sys.executable} {self._quick_server} 127.0.0.1 {server_port}'
+        server.Ready = When.PortOpenv4(server_port)
+        self._server = server
+
+    def _configure_traffic_server(self, tr: 'TestRun') -> None:
+        """Configure ATS with the null_transform_request plugin.
+
+        :param tr: The test run to associate the ATS process with.
+        """
+        self._ts = tr.MakeATSProcess('ts')
+        self._ts.Disk.remap_config.AddLine(f'map / http://quick.server.com:{self._server.Variables.http_port}')
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+            })
+        Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'null_transform_request.so'), self._ts)
+
+    def _configure_client(self, tr: 'TestRun') -> None:
+        """Configure the partial POST client.
+
+        Sends a POST with a large Content-Length but only a small body,
+        triggering abort_tunnel when the origin responds early.
+
+        :param tr: The test run to associate the client process with.
+        """
+        tools_dir = self._ts.Variables.AtsTestToolsDir
+        http_utils = os.path.join(tools_dir, 'http_utils.py')
+        tr.Setup.CopyAs(self._init_file, Test.RunDirectory)
+        tr.Setup.CopyAs(http_utils, Test.RunDirectory)
+        tr.Setup.CopyAs(self._quick_server, Test.RunDirectory)
+        tr.Setup.CopyAs(self._partial_post_client, Test.RunDirectory)
+
+        p = tr.Processes.Default
+        p.Command = (f'{sys.executable} {self._partial_post_client} '
+                     f'127.0.0.1 {self._ts.Variables.port}')
+        p.ReturnCode = 0
+        p.Streams.All += Testers.ContainsExpression('Got response', 'Verify client received a response from ATS')
+
+        self._ts.StartBefore(self._dns)
+        self._ts.StartBefore(self._server)
+        p.StartBefore(self._ts)
+        tr.Timeout = 10
+
+
+PostEarlyResponseTransformTest()
