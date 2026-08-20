@@ -62,9 +62,9 @@ public:
   // Guaranteed per-stream send budget for one write event when many streams are
   // contending for the connection's write path this round.
   static constexpr size_t MIN_STREAM_SEND_BYTES_PER_EVENT = 16 * 1024;
-  // Ceiling on how much a single stream can send in one write event; only reached
-  // when few streams are contending, per compute_fair_send_budget().
-  static constexpr size_t MAX_STREAM_SEND_BYTES_PER_EVENT = 256 * 1024;
+  // Total send budget for one connection's write event, divided across its writable
+  // streams by compute_fair_send_budget(). A lone writable stream gets it all.
+  static constexpr size_t MAX_CONNECTION_SEND_BYTES_PER_EVENT = 256 * 1024;
 
   QUICStream() {}
   QUICStream(QUICConnectionInfoProvider *cinfo, QUICStreamId sid);
@@ -86,9 +86,9 @@ public:
   int64_t send_data(QUICStreamIO &stream_io, size_t max_bytes_this_event);
 
   // Computes the per-stream send budget for one write event given how many streams
-  // were writable in the previous event on this connection. Scales down toward
+  // are writable this event on this connection. Scales down toward
   // MIN_STREAM_SEND_BYTES_PER_EVENT under contention, up toward
-  // MAX_STREAM_SEND_BYTES_PER_EVENT when a stream has the write path to itself.
+  // MAX_CONNECTION_SEND_BYTES_PER_EVENT when a stream has the write path to itself.
   static size_t compute_fair_send_budget(size_t num_writable_streams);
 
   /*
