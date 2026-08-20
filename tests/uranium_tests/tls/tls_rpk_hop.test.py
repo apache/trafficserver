@@ -152,6 +152,40 @@ parent_mtls_badpin = make_parent(
     "parent_mtls_badpin", rpk_enabled=True, client_rpk_ca_file="server.wrongpubkey.pem", client_cert_level=2)
 edge_mtls_badpin = make_edge("edge_mtls_badpin", parent_mtls_badpin, "server.pubkey.pem", offer_client_rpk=True)
 
+# 7. Per-entry scoping: the parent has two multicert entries -- the default ("dest_ip: *") entry
+#    stays plain X.509 mTLS, while a more specific ("dest_ip: 127.0.0.1") entry pins the edge's raw
+#    public key. Every connection here lands on the specific entry (IP match beats wildcard), so
+#    this only succeeds if that entry's own client_rpk_ca config reaches the connection -- not the
+#    default entry's classic X.509-only verify path SSL_new() started the connection from.
+parent_scoped = Test.MakeATSProcess("parent_scoped", enable_tls=True)
+parent_scoped.addSSLfile("ssl/server.pem")
+parent_scoped.addSSLfile("ssl/server.key")
+parent_scoped.addSSLfile("ssl/server.pubkey.pem")
+parent_scoped.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
+parent_scoped.Disk.ssl_multicert_yaml.AddLines(
+    [
+        'ssl_multicert:',
+        '  - dest_ip: "*"',
+        '    ssl_cert_name: server.pem',
+        '    ssl_key_name: server.key',
+        '  - dest_ip: "127.0.0.1"',
+        '    ssl_cert_name: server.pem',
+        '    ssl_key_name: server.key',
+        '    ssl_rpk_enabled: 1',
+        '    ssl_client_rpk_ca_name: server.pubkey.pem',
+    ])
+parent_scoped.Disk.records_config.update(
+    {
+        'proxy.config.http.cache.http': 0,
+        'proxy.config.ssl.server.cert.path': '{0}'.format(parent_scoped.Variables.SSLDir),
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(parent_scoped.Variables.SSLDir),
+        'proxy.config.ssl.client.certification_level': 2,
+        'proxy.config.ssl.CA.cert.path': '{0}'.format(parent_scoped.Variables.SSLDir),
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ssl_verify|ssl_load',
+    })
+edge_scoped = make_edge("edge_scoped", parent_scoped, "server.pubkey.pem", offer_client_rpk=True)
+
 tr = Test.AddTestRun("RPK negotiated and pin matches")
 tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_ok.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -228,3 +262,19 @@ parent_mtls_badpin.Disk.diags_log.Content = Testers.ContainsExpression(
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_mtls_badpin
 tr.StillRunningAfter += edge_mtls_badpin
+
+tr = Test.AddTestRun("per-entry scoping: a specific entry's client_rpk_ca reaches the connection")
+tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_scoped.Variables.ssl_port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(parent_scoped)
+tr.Processes.Default.StartBefore(edge_scoped)
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'origin response', 'the request should succeed on the specific entry, not the default entry')
+# Confirms the RPK-aware verify path from the *matched* entry actually ran on this connection --
+# the default entry has no client_rpk_ca, so if settings leaked from it instead, this would never
+# appear and the classic X.509-only path would reject the edge's raw public key outright.
+parent_scoped.Disk.traffic_out.Content = Testers.ContainsExpression(
+    'Callback: custom verify client cert', 'the matched entry, not the default entry, must drive verification')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += parent_scoped
+tr.StillRunningAfter += edge_scoped
