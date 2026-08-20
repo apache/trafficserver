@@ -115,15 +115,11 @@ class H3GoClientScenario:
         result = self._client.run(timeout=120)
         assert result.returncode == 0, result.output
         assert "completed 13 HTTP/3 requests" in result.stdout
-        content = wait_for_file_lines(self._ats.log_directory / "h3_go_access.log", r"c_alpn=h3", 2, timeout=10)
-        assert re.search(
-            r"c_alpn=h3 client_version=http/3 c_method=GET c_url=https://go\.example\.com:[0-9]+/go-get-empty",
-            content,
-        )
-        assert re.search(
-            r"c_alpn=h3 client_version=http/3 c_method=POST c_url=https://go\.example\.com:[0-9]+/go-post-large",
-            content,
-        )
+        get_pattern = r"c_alpn=h3 client_version=http/3 c_method=GET c_url=https://go\.example\.com:[0-9]+/go-get-empty"
+        post_pattern = r"c_alpn=h3 client_version=http/3 c_method=POST c_url=https://go\.example\.com:[0-9]+/go-post-large"
+        content = wait_for_file_lines(self._ats.log_directory / "h3_go_access.log", post_pattern, 1, timeout=10)
+        assert re.search(get_pattern, content)
+        assert re.search(post_pattern, content)
 
 
 def test_h3_go_client(ats_factory: ATSFactory, services: ServiceFactory) -> None:
