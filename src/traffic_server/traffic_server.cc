@@ -772,6 +772,19 @@ initialize_records()
 
   check_config_directories();
 
+  // Established as soon as records are readable, so the policy is in effect before
+  // cache.config, parent.config, splitdns.config, remap.config and the plugins
+  // compile their patterns. tsutil depends on neither librecords nor diags.
+  RecEstablishStaticConfigInt32(Regex::policy_gate_anchoring, "proxy.config.regex.anchor_policy_rules");
+  Regex::policy_gate_report_handler = [](Regex::PolicyGateReport kind, std::string_view message) {
+    // Enforced patterns are safe, so that report is a record rather than a problem.
+    if (kind == Regex::PolicyGateReport::ENFORCED) {
+      Note("%.*s", static_cast<int>(message.size()), message.data());
+    } else {
+      Warning("%.*s", static_cast<int>(message.size()), message.data());
+    }
+  };
+
   //
   // Define version info records
   //

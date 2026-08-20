@@ -75,6 +75,143 @@ patterns may behave one way today and another way after future
 changes; the only durable approach is to write patterns whose intent
 is unambiguous from the pattern itself.
 
+Requiring whole-subject matches
+===============================
+
+:ts:cv:`proxy.config.regex.anchor_policy_rules` controls whether |TS|
+enforces whole-subject matching at the sites listed below, rather than
+leaving it to each pattern.
+
+``0`` (the default)
+    Matching is unchanged. Each of these patterns that is not anchored to the
+    whole subject is reported at config load with a ``[regex-anchor]`` warning
+    naming the site and the pattern::
+
+        WARNING: [regex-anchor] url_sig excl_regex pattern '\.pdf' is not
+        anchored to the whole subject. See
+        admin-guide/configuration/regex-best-practices.
+
+    A pattern already written as ``^...$`` or ``^...\z`` is **not** reported, so
+    the report is a worklist: rewrite what it names, reload, and it shrinks. It
+    reaches empty when every gate rule is anchored, which is when enforcement
+    can be enabled without changing what any rule matches.
+
+    Anchors are counted per alternative, not per pattern. In
+    ``^a\.example\.com|^b\.example\.com$`` only the last branch is end-anchored,
+    so the rule still matches ``a.example.com.other.net`` even though the
+    pattern ends in ``$`` — that one is reported. Anything the check cannot
+    account for, such as a ``(?i)`` preamble or a ``(*...)`` verb, is reported
+    rather than assumed safe.
+
+``1``
+    The pattern must consume the entire subject. A rule can no longer be
+    satisfied by a pattern that matches only part of it. Each pattern the policy
+    had to anchor is named at config load at ``NOTE`` severity, so a rule added
+    long after the migration is visible instead of silently becoming inert. An
+    already-anchored rule is not named, since the policy changed nothing for it.
+
+Covered call sites
+------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 20 50
+
+   * - Site
+     - Takes effect on
+     - Notes
+   * - ``map_with_referer`` (:file:`remap.config`)
+     - ``remap.config`` reload
+     -
+   * - ``*_regex`` in :file:`cache.config`, :file:`parent.config`,
+       :file:`splitdns.config`
+     - that file's reload
+     - The report names the module, directive, file and line, since ``host_regex``
+       and ``url_regex`` match different subjects.
+   * - ``url_sig`` ``excl_regex``
+     - ``remap.config`` reload
+     -
+   * - ``access_control`` URI path scope
+     - ``remap.config`` reload
+     - An excluded path that matched as a substring stops being excluded, so
+       access control begins applying to it.
+   * - ``geoip_acl``, ``maxmind_acl`` country regex
+     - ``remap.config`` reload
+     - ``geoip_acl`` **inverts** rather than going inert — see below.
+   * - ``tls_bridge`` service regex
+     - **restart only**
+     - ``BridgeConfig`` loads once from plugin init with no reload hook.
+
+``regex_map`` always requires a whole-host match and is unaffected.
+
+.. note::
+
+   Patterns compile when a configuration is *loaded*, and this record moves no
+   file's modification time. :program:`traffic_ctl` ``config reload`` therefore
+   recompiles nothing on its own: touch each affected configuration file as
+   well, or restart. ``tls_bridge`` requires a restart either way.
+
+.. warning::
+
+   ``geoip_acl`` does not merely go inert when its pattern stops matching. With
+   no regex matching, it applies ``!allow`` — the inverse of the rule's own
+   default — rather than leaving the request alone. Enabling enforcement can
+   therefore flip that plugin's outcome instead of neutralising the rule, so
+   rewrite its patterns before enabling, or leave the setting off where
+   ``geoip_acl`` is in use.
+
+.. important::
+
+   Enabling enforcement changes what deployed rules match, so work through the
+   ``[regex-anchor]`` warnings and rewrite the patterns they name first. The
+   report shrinks as you go, and an empty report means enforcement can be
+   enabled without changing what any rule matches.
+
+   Two rules make a rewrite behavior preserving:
+
+   **Leave the deployed pattern's own text alone.** Whatever it already says
+   keeps its meaning. Only add anchoring around it.
+
+   **Add** ``.*`` **at each end that was not anchored.** A pattern that relied
+   on substring matching, such as ``\.pdf`` or ``\.internal\.corp\.com``,
+   otherwise stops matching entirely under enforcement and its rule becomes
+   inert — which for an ACL or a signature exclusion is itself a policy change.
+   Note that ``^.*\.pdf$`` is *not* the rewrite of ``\.pdf``: it means "ends
+   with ``.pdf``" and silently stops matching ``/report.pdf?v=2``. Both sides
+   need ``.*``.
+
+   ==============================  ======================================
+   Pattern in the report           Behavior-preserving rewrite
+   ==============================  ======================================
+   ``\.pdf``                       ``^.*\.pdf.*$``
+   ``^cdn\.example\.com``          ``^cdn\.example\.com.*$``
+   ``cdn\.example\.com$``          ``^.*cdn\.example\.com$``
+   ``^a\.example\.com|^b\.ex…$``   anchor **every** alternative
+   ==============================  ======================================
+
+   A pattern already anchored at both ends, such as ``^cdn\.example\.com$`` or
+   ``^https?://ex\.com/priv/.*$``, is not reported and needs no change:
+   enforcement is what makes what it already says hold.
+
+   These rewrites preserve behavior for any subject that does not contain a
+   newline. A subject can contain one — a percent-encoded ``%0A`` in a request
+   URL is decoded before the ``*_regex`` rules in :file:`cache.config`,
+   :file:`parent.config` and :file:`splitdns.config` are matched — and because
+   neither ``.`` nor ``$`` treats a newline as an ordinary byte, a rule can
+   still match such a subject differently once enforcement is on. Rules whose
+   subjects may contain one are worth checking individually.
+
+.. note::
+
+   On PCRE2 older than 10.30, |TS| implements end-of-subject anchoring by
+   rewriting the pattern as ``(?:pattern)\z``, because ``PCRE2_ENDANCHORED``
+   does not exist there. A pattern that begins with a *verb* such as ``(*UTF)``
+   or ``(*LIMIT_MATCH=100)`` becomes invalid under that rewrite, since a verb is
+   only legal at the very start of a pattern — so enabling enforcement can turn
+   a pattern that loads today into a compile error, reported differently at each
+   call site. Check for leading ``(*`` in gate patterns before enabling on such
+   a build.
+
 Subjects by call site
 =====================
 
