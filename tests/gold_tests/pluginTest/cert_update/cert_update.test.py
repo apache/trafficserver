@@ -96,7 +96,8 @@ tr = Test.AddTestRun("Server-Cert-Update")
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = (
     '{0}/traffic_ctl plugin msg cert_update.server {1}/server2.pem'.format(ts.Variables.BINDIR, ts.Variables.SSLDir))
-ts.Disk.traffic_out.Content = "gold/update.gold"
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    "Successfully updated server cert", "The server certificate context should be updated")
 ts.StillRunningAfter = server
 
 # Server-Cert-After
@@ -118,7 +119,8 @@ s_server = tr.Processes.Process(
 s_server.Ready = When.PortReady(ts.Variables.s_server_port)
 tr.MakeCurlCommand('--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{}'.format(ts.Variables.ssl_port), ts=ts)
 tr.Processes.Default.StartBefore(s_server)
-s_server.Streams.all = "gold/client-cert-pre.gold"
+s_server.Streams.all = Testers.ContainsExpression(
+    "alice.com", "The initial outbound connection should use the original client certificate")
 tr.Processes.Default.ReturnCode = 0
 ts.StillRunningAfter = server
 
@@ -128,7 +130,8 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Command = (
     'mv {0}/client2.pem {0}/client1.pem && {1}/traffic_ctl plugin msg cert_update.client {0}/client1.pem'.format(
         ts.Variables.SSLDir, ts.Variables.BINDIR))
-ts.Disk.traffic_out.Content = "gold/update.gold"
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    "Successfully updated client cert", "The client certificate context should be updated")
 ts.StillRunningAfter = server
 
 # Client-Cert-After
@@ -143,6 +146,7 @@ tr.Processes.Default.Env = ts.Env
 tr.MakeCurlCommand(
     '--verbose --insecure --ipv4 --header "Host: foo.com" https://localhost:{0}'.format(ts.Variables.ssl_port), ts=ts)
 tr.Processes.Default.StartBefore(s_server)
-s_server.Streams.all = "gold/client-cert-after.gold"
+s_server.Streams.all = Testers.ContainsExpression(
+    "bob.com", "The next outbound connection should use the replacement client certificate")
 tr.Processes.Default.ReturnCode = 0
 ts.StillRunningAfter = server
