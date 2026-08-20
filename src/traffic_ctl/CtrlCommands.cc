@@ -555,6 +555,14 @@ ConfigCommand::config_reload()
     _printer->write_output("");
   }
 
+  // Without content the request would silently degrade to a full reload of every handler,
+  // which is the opposite of the scoped reload the operator asked for.
+  if (data_args && data_args.size() == 0) {
+    _printer->write_output("Error: --data (-d) requires content: @file, @- or a YAML string");
+    App_Exit_Status_Code = CTRL_EX_ERROR;
+    return;
+  }
+
   // Parse inline config data if provided (supports multiple -d arguments)
   YAML::Node configs;
   for (auto const &data_arg : data_args) {
@@ -587,16 +595,14 @@ ConfigCommand::config_reload()
 
   // Parse --directive (-D) arguments into configs[key]["_reload"][directive] = value
   auto dir_args = get_parsed_arguments()->get("directive");
+  if (dir_args && dir_args.size() == 0) {
+    _printer->write_output("Error: --directive (-D) requires at least one config_key.directive_key=value");
+    App_Exit_Status_Code = CTRL_EX_ERROR;
+    return;
+  }
   for (auto const &dir : dir_args) {
     if (dir.empty()) {
       continue;
-    }
-    if (dir[0] == '-') {
-      _printer->write_output("Error: '" + dir +
-                             "' looks like a flag, not a directive. "
-                             "Place -D as the last option on the command line.");
-      App_Exit_Status_Code = CTRL_EX_ERROR;
-      return;
     }
     std::string err;
     if (!parse_directive(dir, configs, err)) {

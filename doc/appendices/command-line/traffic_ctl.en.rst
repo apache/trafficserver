@@ -456,11 +456,17 @@ Display the current value of a configuration record.
 
       .. note::
 
-         ``-D`` uses variable-argument parsing and must appear as the **last option**
-         on the command line. Any flags placed after ``-D`` will be consumed as directive
-         values. ``-D`` and ``-d`` cannot be combined in the same invocation due to this
-         same constraint. Use ``-d`` with full YAML when you need both directives and
-         inline content in a single reload request.
+         ``-D`` accepts values until the next option or the end of the command line, so it
+         may appear anywhere among the options and can be combined with ``-d`` — directives
+         and inline content merge under the same config key:
+
+         .. code-block:: bash
+
+            $ traffic_ctl config reload -D myconfig.id=foo --monitor
+            $ traffic_ctl config reload -D myconfig.id=foo -d 'myconfig: {rules: [a]}'
+
+         To pass a directive value that begins with ``-``, place ``--`` before it; every
+         token after ``--`` is taken as a value rather than an option.
 
       .. note::
 
