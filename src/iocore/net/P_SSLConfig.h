@@ -138,7 +138,7 @@ struct SSLConfigParams : public ConfigInfo {
 
   // Client contexts are held by 2-level map:
   // The first level maps from CA bundle file&path to next level map;
-  // The second level maps from cert&key to actual SSL_CTX;
+  // The second level maps from the resolved certificate path to the actual SSL_CTX;
   // The second level map owns the client SSL_CTX objects and is responsible for cleaning them up
   using CTX_MAP = std::unordered_map<std::string, shared_SSL_CTX>;
   mutable std::unordered_map<std::string, CTX_MAP> top_level_ctx_map;
