@@ -108,10 +108,13 @@ extern HdrTokenInfoFlags hdrtoken_str_flags[];
 //
 ////////////////////////////////////////////////////////////////////////////
 
-extern void        hdrtoken_init();
-extern int         hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
-extern int         hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
-extern int         hdrtoken_method_tokenize(const char *string, int string_len);
+extern void hdrtoken_init();
+extern int  hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
+extern int  hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr,
+                              uint32_t *hash_out = nullptr);
+extern int  hdrtoken_tokenize_prehashed(const char *string, int string_len, uint32_t hash, const char **wks_string_out = nullptr);
+extern int  hdrtoken_field_name_scan(const char *string, int maxlen, uint32_t *hash_out, bool *all_valid_out);
+extern int  hdrtoken_method_tokenize(const char *string, int string_len);
 extern const char *hdrtoken_string_to_wks(const char *string);
 extern const char *hdrtoken_string_to_wks(const char *string, int length);
 extern c_str_view  hdrtoken_string_to_wks_sv(const char *string);
