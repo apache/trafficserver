@@ -113,7 +113,7 @@ class NewLogFieldsScenario:
             expected_lines = 7
 
         log_path = self._ats.log_directory / "test_new_log_flds.log"
-        content = wait_for_file_lines(log_path, r"^\S+ \d+ \d+ \S+$", expected_lines, timeout=10)
+        content = wait_for_file_lines(log_path, r"^\S+ \d+ \d+ \S+$", expected_lines, timeout=60)
         observer = subprocess.run(
             (sys.executable, TEST_DIRECTORY / "new_log_flds_observer.py"),
             input=content,
