@@ -149,7 +149,7 @@ TEST_CASE("QUICStream::send_data caps a carried-over pending block to the curren
   // Event 1: generous budget, but the connection only accepts part of the write --
   // leaves a pending block that was sized under this (large) budget.
   io.accept_up_to  = 100 * 1024;
-  int64_t written1 = stream.send_data(io, QUICStream::MAX_STREAM_SEND_BYTES_PER_EVENT);
+  int64_t written1 = stream.send_data(io, QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT);
   REQUIRE(written1 == 100 * 1024);
 
   // Event 2: contention spikes and the budget drops to the floor. The connection no
@@ -168,8 +168,8 @@ TEST_CASE("QUICStream::compute_fair_send_budget")
 {
   SECTION("No contention (0 or 1 writable streams) returns the max budget")
   {
-    CHECK(QUICStream::compute_fair_send_budget(0) == QUICStream::MAX_STREAM_SEND_BYTES_PER_EVENT);
-    CHECK(QUICStream::compute_fair_send_budget(1) == QUICStream::MAX_STREAM_SEND_BYTES_PER_EVENT);
+    CHECK(QUICStream::compute_fair_send_budget(0) == QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT);
+    CHECK(QUICStream::compute_fair_send_budget(1) == QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT);
   }
 
   SECTION("Heavy contention clamps to the min budget")
@@ -179,13 +179,13 @@ TEST_CASE("QUICStream::compute_fair_send_budget")
 
   SECTION("Mid-range contention divides the max budget evenly")
   {
-    CHECK(QUICStream::compute_fair_send_budget(8) == QUICStream::MAX_STREAM_SEND_BYTES_PER_EVENT / 8);
+    CHECK(QUICStream::compute_fair_send_budget(8) == QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT / 8);
   }
 
   SECTION("Floor-transition boundary")
   {
     // MAX / MIN is the exact stream count at which the division result equals the floor.
-    const size_t boundary = QUICStream::MAX_STREAM_SEND_BYTES_PER_EVENT / QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT;
+    const size_t boundary = QUICStream::MAX_CONNECTION_SEND_BYTES_PER_EVENT / QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT;
 
     CHECK(QUICStream::compute_fair_send_budget(boundary) == QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT);
     CHECK(QUICStream::compute_fair_send_budget(boundary + 1) == QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT);

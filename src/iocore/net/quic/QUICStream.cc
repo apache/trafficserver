@@ -36,10 +36,10 @@ size_t
 QUICStream::compute_fair_send_budget(size_t num_writable_streams)
 {
   if (num_writable_streams <= 1) {
-    return MAX_STREAM_SEND_BYTES_PER_EVENT;
+    return MAX_CONNECTION_SEND_BYTES_PER_EVENT;
   }
-  return std::clamp(MAX_STREAM_SEND_BYTES_PER_EVENT / num_writable_streams, MIN_STREAM_SEND_BYTES_PER_EVENT,
-                    MAX_STREAM_SEND_BYTES_PER_EVENT);
+  return std::clamp(MAX_CONNECTION_SEND_BYTES_PER_EVENT / num_writable_streams, MIN_STREAM_SEND_BYTES_PER_EVENT,
+                    MAX_CONNECTION_SEND_BYTES_PER_EVENT);
 }
 
 QUICStreamId

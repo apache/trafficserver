@@ -129,8 +129,4 @@ private:
   MIOBuffer      *_write_buf      = nullptr;
   VIO            *_write_vio      = nullptr;
   Event          *_quiche_timeout = nullptr;
-
-  // Writable-stream count from the previous _handle_write_streams() call, used to
-  // size this event's per-stream send budget (see QUICStream::compute_fair_send_budget()).
-  size_t _last_writable_stream_count = 1;
 };
