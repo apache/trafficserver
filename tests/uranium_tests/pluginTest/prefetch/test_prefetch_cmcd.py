@@ -15,9 +15,9 @@
 #  limitations under the License.
 """Verify CMCD next-object prefetch across a two-tier ATS topology."""
 
-import urllib.parse
+import re
 import shlex
-import time
+import urllib.parse
 
 import pytest
 
@@ -30,6 +30,7 @@ from tools.uranium.services import (
     ServiceFactory,
     assert_matches_gold,
     wait_for_file_lines,
+    wait_for_metric,
 )
 
 
@@ -154,6 +155,16 @@ class PrefetchCmcdScenario:
         )
         assert result.returncode == 0, result.output
 
+    def wait_for_next_hop_cache_fill(self, path: str) -> None:
+        """Wait for a next-hop transaction to finish writing its cache entry.
+
+        :param path: Request path expected in the next-hop transaction log.
+        """
+
+        transaction_log = self._next_hop.log_directory / "transaction.log"
+        wait_for_file_lines(transaction_log, rf"^{re.escape(path)} 200 TCP_MISS FIN ", 1, timeout=30)
+        wait_for_metric(self._next_hop, "proxy.process.cache.write.active", 0, timeout=30)
+
     def validate_logs(self) -> None:
         """Wait for and compare both cache transaction logs."""
 
@@ -173,16 +184,18 @@ class PrefetchCmcdScenario:
         self._front.start()
         request_cmcd = 'foo=12,nor="prefetch.txt",bar=42'
         self.request("/tests/request.txt")
-        time.sleep(1)
+        self.wait_for_next_hop_cache_fill("/tests/request.txt")
         self.request("/tests/request.txt", request_cmcd)
-        time.sleep(1)
+        self.wait_for_next_hop_cache_fill("/tests/prefetch.txt")
         self.request("/tests/prefetch.txt")
         self.request("/tests/request.txt", request_cmcd)
         self.request("/tests/prefetch.txt")
         query_cmcd = f'nor="{urllib.parse.quote("query?bar=baz")}"'
         self.request("/tests/query?this=foo&that", query_cmcd)
+        self.wait_for_next_hop_cache_fill("/tests/query?bar=baz")
         self.request("/tests/query?bar=baz")
         self.request("/root.txt", 'nor="rooted"')
+        self.wait_for_next_hop_cache_fill("/rooted")
         self.request("/crr.txt", 'foo=12,nor="crr.txt",bar=42,nrr="0-"')
         self.validate_logs()
 
