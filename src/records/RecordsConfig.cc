@@ -1130,6 +1130,21 @@ static constexpr RecordElement RecordsConfig[] =
 
   //##############################################################################
   //#
+  //# Operator Regex Rules
+  //#
+  //##############################################################################
+  // Require operator regex rules that drive policy to match the whole subject.
+  // Covers map_with_referer, the *_regex rules in cache.config / parent.config /
+  // splitdns.config, and url_sig, access_control, geoip_acl, maxmind_acl, tls_bridge.
+  // When 0 those rules match as before and any pattern not anchored at both ends gets a
+  // "[regex-anchor]" warning at config load; when 1 each pattern the policy anchors is
+  // noted instead. Patterns compile on config load, so a reload also needs the config
+  // files touched, and tls_bridge needs a restart. regex_map is always anchored.
+  {RECT_CONFIG, "proxy.config.regex.anchor_policy_rules", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+
+  //##############################################################################
+  //#
   //# Reverse Proxy
   //#
   //##############################################################################

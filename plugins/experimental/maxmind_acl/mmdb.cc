@@ -407,7 +407,8 @@ Acl::parseregex(const YAML::Node &regex, bool allow)
           std::string error;
           int         erroroffset = 0;
 
-          if (!temp._rex.compile(temp._regex_s, error, erroroffset)) {
+          if (!temp._rex.compile(temp._regex_s, error, erroroffset, 0,
+                                 allow ? "maxmind_acl allow country regex" : "maxmind_acl deny country regex")) {
             TSError("[%s] Failed to compile regular expression in %s, err: %s(%d)", PLUGIN_NAME, temp._regex_s.c_str(),
                     error.c_str(), erroroffset);
             return;

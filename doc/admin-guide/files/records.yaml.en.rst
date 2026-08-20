@@ -4249,6 +4249,42 @@ Reverse Proxy
    The URL to which to redirect requests with no host headers (reverse
    proxy).
 
+Operator Regex Rules
+====================
+
+.. ts:cv:: CONFIG proxy.config.regex.anchor_policy_rules INT 0
+   :reloadable:
+
+   Require operator-authored regex rules that drive policy decisions to match
+   the whole subject, instead of matching any subject that merely contains a
+   match.
+
+   Applies to ``map_with_referer``, the ``*_regex`` rules in
+   :file:`cache.config`, :file:`parent.config` and :file:`splitdns.config`, and
+   to the ``url_sig``, ``access_control``, ``geoip_acl``, ``maxmind_acl`` and
+   ``tls_bridge`` plugins. ``regex_map`` always requires a whole-host match and
+   is unaffected.
+
+   With the default of ``0``, matching is unchanged and each rule not anchored to
+   the whole subject is reported at config load with a ``[regex-anchor]``
+   warning. A rule already written as ``^...$`` is not reported, so the report
+   shrinks as patterns are rewritten and reaches empty when enforcement is safe
+   to enable. With ``1`` each pattern the policy had to anchor is reported at
+   ``NOTE`` severity instead, so a rule added later is not silent.
+
+   Patterns compile when a configuration is loaded and this record moves no
+   file's modification time, so :program:`traffic_ctl` ``config reload``
+   recompiles nothing by itself — touch the affected configuration files too, or
+   restart. ``tls_bridge`` picks the setting up only on restart.
+
+   Enabling this makes substring-style patterns such as ``\.pdf`` match nothing,
+   which turns their rule into a no-op. It also affects patterns already written
+   as ``^...$``, because a trailing ``$`` still permits a final newline while
+   enforcement does not. ``geoip_acl`` inverts its ACL rather than going inert.
+   Audit the warnings first.
+
+   .. seealso:: :ref:`admin-regex-best-practices`
+
 URL Remap Rules
 ===============
 
