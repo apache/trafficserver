@@ -367,3 +367,9 @@ QUICMultiCertConfigLoader::_debug_tag() const
 {
   return "quic";
 }
+
+bool
+QUICMultiCertConfigLoader::_should_track_load_metrics() const
+{
+  return false;
+}
