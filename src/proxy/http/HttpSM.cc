@@ -2155,7 +2155,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
         vc_table.cleanup_entry(post_transform_info.entry);
         post_transform_info.entry = nullptr;
       }
-      // ink_release_assert(post_transform_info.entry == nullptr);
+      ink_release_assert(post_transform_info.entry == nullptr);
       // Make sure client connection is closed when we are done in case there is cruft left over
       t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
       // Similarly the server connection should also be closed
