@@ -58,7 +58,6 @@ fifo="${fifo_dir}/fifo"
 mkfifo "$fifo"
 ${OSSL} <"$fifo" >/dev/null 2>&1 &
 exec 3<>"$fifo"
-rm -rf "$fifo_dir"
 sleep 3 # let the holder reserve the one slot
 
 # 2. One queued connection: enqueues because the slot is full, then closes while still parked
@@ -68,6 +67,7 @@ sleep 2 # >= 2 sweep periods (300ms each), so the sweep runs while the connectio
 
 # 4. End the holder, releasing its slot.
 exec 3>&- # close the FIFO write end -> holder sees EOF -> clean TLS close (FIN)
+rm -rf "$fifo_dir"
 sleep 2
 
 # 5. Probe: reserve() must succeed against a balanced counter rather than tripping the
