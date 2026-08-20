@@ -497,6 +497,34 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
   }
 #endif
 
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+  if (retval == 1) {
+    // BoringSSL's select_certificate_cb (which drives this callback) runs before any ClientHello
+    // extension is evaluated, so switching ctx above is early enough to affect RPK negotiation.
+    // But SSL_set_SSL_CTX() only duplicates the cert/credential list; it never refreshes
+    // accepted_peer_cert_types or the custom_verify callback, both of which BoringSSL still caches
+    // on the SSL object from whichever ctx SSL_new() started with (the default "*" entry).
+    // Re-apply both from the now-matched ctx, or ssl_client_rpk_ca_name on any non-default
+    // multicert entry is silently inert.
+    SSL_CTX *matched_ctx = SSL_get_SSL_CTX(ssl);
+    auto    *trusted     = static_cast<SSLRPKUtils::TrustedKeySet *>(SSL_CTX_get_ex_data(matched_ctx, ssl_client_rpk_ca_index));
+    int      mode        = SSL_CTX_get_verify_mode(matched_ctx);
+    if (trusted != nullptr) {
+      static const unsigned char accepted_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
+      if (!SSL_set1_accepted_peer_cert_types(ssl, accepted_types, sizeof(accepted_types))) {
+        SSLError("failed to reapply RPK client cert type acceptance for the matched entry");
+        retval = 0;
+      } else if (mode != SSL_VERIFY_NONE) {
+        SSL_set_custom_verify(ssl, mode, ssl_custom_verify_client_callback);
+      }
+    } else if (mode != SSL_VERIFY_NONE) {
+      // This entry didn't configure ssl_client_rpk_ca_name -- make sure the connection isn't left
+      // on a custom_verify callback inherited from an RPK-enabled default ctx.
+      SSL_set_verify(ssl, mode, ssl_verify_client_callback);
+    }
+  }
+#endif
+
   // Return 1 for success, 0 for error, or -1 to pause
   return retval;
 }
