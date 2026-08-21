@@ -8243,6 +8243,19 @@ HttpSM::set_next_state()
   case HttpTransact::SM_ACTION_SERVER_READ: {
     t_state.source = HttpTransact::SOURCE_HTTP_ORIGIN_SERVER;
 
+    // The origin may answer before it has read the request body, for instance a POST carrying
+    // Expect: 100-continue that is answered immediately. Whatever the origin never read is still
+    // queued on the client connection and would otherwise be framed as the next request, so drain
+    // it here, or drop keep-alive when it cannot be drained.
+    bool const    is_chunked_body     = t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING;
+    int64_t const declared_body_bytes = t_state.hdr_info.client_request.get_content_length();
+    bool const    was_body_forwarded =
+      is_chunked_body ? client_request_body_bytes > 0 : client_request_body_bytes >= declared_body_bytes;
+
+    if (_ua.get_txn() != nullptr && (is_chunked_body || declared_body_bytes > 0) && !was_body_forwarded) {
+      do_drain_request_body(transform_info.vc ? t_state.hdr_info.transform_response : t_state.hdr_info.client_response);
+    }
+
     if (transform_info.vc) {
       ink_assert(t_state.hdr_info.client_response.valid() == 0);
       ink_assert((t_state.hdr_info.transform_response.valid() ? true : false) == true);
