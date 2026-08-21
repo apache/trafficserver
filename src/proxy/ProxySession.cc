@@ -47,6 +47,24 @@ ProxySession::~ProxySession()
 }
 
 void
+ProxySession::_increment_total_client_connections_stat(NetVConnection *new_vc)
+{
+  switch (new_vc->get_remote_addr()->sa_family) {
+  case AF_INET:
+    Metrics::Counter::increment(http_rsb.total_client_connections_ipv4);
+    break;
+  case AF_INET6:
+    Metrics::Counter::increment(http_rsb.total_client_connections_ipv6);
+    break;
+  case AF_UNIX:
+    Metrics::Counter::increment(http_rsb.total_client_connections_uds);
+    break;
+  default:
+    break;
+  }
+}
+
+void
 ProxySession::set_session_active()
 {
   if (!m_active) {

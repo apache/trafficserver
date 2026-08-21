@@ -129,6 +129,7 @@ void
 HQSession::new_connection(NetVConnection *new_vc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
   this->con_id = new_vc->get_service<QUICSupport>()->get_quic_connection()->connection_id();
+  this->_increment_total_client_connections_stat(new_vc);
   this->_handle_if_ssl(new_vc);
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);
