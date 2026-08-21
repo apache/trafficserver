@@ -56,7 +56,7 @@ int ssl_server_rpk_index = -1;
 void
 ssl_server_rpk_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  delete static_cast<SSLRPKUtils::TrustedKeySet *>(ptr);
+  delete static_cast<std::shared_ptr<const SSLRPKUtils::TrustedKeySet> *>(ptr);
 }
 
 const SSLRPKUtils::TrustedKeySet *
@@ -65,7 +65,9 @@ ssl_get_trusted_rpk(const SSL *ssl)
   if (ssl_server_rpk_index < 0) {
     return nullptr;
   }
-  return static_cast<const SSLRPKUtils::TrustedKeySet *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
+  auto *trusted =
+    static_cast<const std::shared_ptr<const SSLRPKUtils::TrustedKeySet> *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
+  return trusted != nullptr ? trusted->get() : nullptr;
 }
 #endif
 
@@ -489,11 +491,12 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 
 #if TS_USE_RPK
 bool
-ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, const std::string &trusted_key_file)
+ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set)
 {
-  if (!offer_rpk && trusted_key_file.empty()) {
+  if (!offer_rpk && trusted_key_set == nullptr) {
     return true;
   }
+  [[maybe_unused]] bool const has_trusted_keys = trusted_key_set != nullptr;
 
   static std::once_flag rpk_index_once;
   std::call_once(rpk_index_once, []() {
@@ -504,15 +507,12 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, const std::string &trusted_key_fi
     return false;
   }
 
-  if (!trusted_key_file.empty()) {
-    auto *trusted = new SSLRPKUtils::TrustedKeySet();
-    if (!SSLRPKUtils::loadTrustedKeys(trusted_key_file.c_str(), *trusted)) {
-      delete trusted;
-      return false;
-    }
-    // ssl_server_rpk_ex_free() releases `trusted` when ssl is freed.
-    if (!SSL_set_ex_data(ssl, ssl_server_rpk_index, trusted)) {
-      delete trusted;
+  if (trusted_key_set != nullptr) {
+    // ssl_server_rpk_ex_free() releases this holder (and, via it, the shared TrustedKeySet from
+    // the SNI config the caller parsed it from) when ssl is freed.
+    auto *holder = new std::shared_ptr<const SSLRPKUtils::TrustedKeySet>(std::move(trusted_key_set));
+    if (!SSL_set_ex_data(ssl, ssl_server_rpk_index, holder)) {
+      delete holder;
       SSLError("failed to attach trusted next-hop raw public keys to the connection");
       return false;
     }
@@ -567,7 +567,7 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, const std::string &trusted_key_fi
   // connection. Only next hops actually prepared to accept/pin an RPK server key take this path
   // -- an offer-only connection (client_rpk_enabled with no server_rpk_ca) never advertises RPK
   // acceptance above, so the peer will always present X.509 and the classic callback suffices.
-  if (!trusted_key_file.empty()) {
+  if (has_trusted_keys) {
     SSL_set_custom_verify(ssl, SSL_VERIFY_PEER, ssl_client_custom_verify_callback);
   }
 #endif

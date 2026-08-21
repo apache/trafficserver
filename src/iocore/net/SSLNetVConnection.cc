@@ -1287,8 +1287,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Offer and/or pin RFC 7250 raw public keys when this next hop is configured for them.
       // Both are advertised alongside X.509, so a next hop that doesn't (yet) support RPK -- a
       // normal state during a rolling upgrade -- negotiates down to a certificate exchange.
-      if (nps && (nps->client_rpk_enabled || !nps->server_rpk_ca_file.empty())) {
-        if (!ssl_client_setup_rpk(this->ssl, nps->client_rpk_enabled, nps->server_rpk_ca_file)) {
+      if (nps && (nps->client_rpk_enabled || nps->server_rpk_ca)) {
+        if (!ssl_client_setup_rpk(this->ssl, nps->client_rpk_enabled, nps->server_rpk_ca)) {
           SSLErrorVC(this, "failed to configure raw public keys for the outbound connection");
           return EVENT_ERROR;
         }
