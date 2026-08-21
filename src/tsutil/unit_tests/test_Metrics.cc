@@ -24,6 +24,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <iterator>
 #include <memory>
@@ -662,5 +663,73 @@ TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]
     REQUIRE(h.valid(id) == false);
     REQUIRE(h.lookup(id) == bad);
     REQUIRE(h.name(id) == h.name(Metrics::IdType{0}));
+  }
+}
+
+TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][Metrics]")
+{
+  // Storage has no lock on the id based read paths, so a reader resolving an id races a writer
+  // registering a new metric -- a plugin TSStatCreate or a config reload against live traffic.
+  // Safety rests on _cur_blob and _cur_off being atomic, release stored after whatever they
+  // publish, and acquire loaded with _cur_blob first. Driving both sides at once is what makes a
+  // regression visible: under the tsan preset, making either counter non-atomic again reports a
+  // data race here.
+  //
+  // What this does NOT catch is a downgrade of those stores and loads to relaxed. Atomics are
+  // race free at any ordering, so TSAN stays quiet and the assertions below still hold; only a
+  // weakly ordered machine would ever observe the difference, and not reliably. Treat the memory
+  // orders in Storage as reviewed rather than tested.
+  //
+  // Enough metrics to cross several blob boundaries, which is where the publication order matters.
+  constexpr int     N_READERS = 4;
+  constexpr int     N_CREATE  = Metrics::MAX_SIZE * 2 + 64;
+  auto             &h         = Metrics::hidden_instance();
+  std::atomic<bool> stop{false};
+  std::atomic<int>  mismatches{0};
+
+  std::vector<std::thread> readers;
+
+  for (int t = 0; t < N_READERS; ++t) {
+    readers.emplace_back([&]() {
+      while (!stop.load(std::memory_order_relaxed)) {
+        for (Metrics::IdType id = 0; id < N_CREATE; ++id) {
+          if (!h.valid(id)) {
+            continue;
+          }
+
+          // valid() said this id names an allocated slot, so lookup() must agree and hand back a
+          // real metric rather than clamping to the reserved bad_id slot. A publication ordering
+          // mistake shows up here as a name that is still empty.
+          std::string_view    name;
+          Metrics::MetricType type;
+          auto               *m = h.lookup(id, &name, &type);
+
+          if (m == nullptr || (id != 0 && name.empty())) {
+            mismatches.fetch_add(1, std::memory_order_relaxed);
+          }
+        }
+      }
+    });
+  }
+
+  for (int i = 0; i < N_CREATE; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr("pub.order." + std::to_string(i)) != nullptr);
+  }
+
+  stop.store(true, std::memory_order_relaxed);
+  for (auto &r : readers) {
+    r.join();
+  }
+
+  CHECK(mismatches.load() == 0);
+
+  // Everything the writer created must be resolvable by name and by id afterwards.
+  for (int i = 0; i < N_CREATE; ++i) {
+    auto const nm = "pub.order." + std::to_string(i);
+    auto const id = h.lookup(nm);
+
+    REQUIRE(id != Metrics::NOT_FOUND);
+    REQUIRE(h.valid(id));
+    REQUIRE(h.name(id) == nm);
   }
 }

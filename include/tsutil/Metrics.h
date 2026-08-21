@@ -308,7 +308,7 @@ private:
   static constexpr MetricType
   _extractType(IdType value)
   {
-    return MetricType{value >> METRIC_TYPE_BITS};
+    return MetricType{static_cast<int>((static_cast<uint32_t>(value) >> METRIC_TYPE_BITS) & 0x1)};
   }
 
   static constexpr IdType
