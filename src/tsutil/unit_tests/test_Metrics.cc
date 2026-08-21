@@ -24,6 +24,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <iterator>
 #include <memory>
@@ -610,14 +611,9 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
 
 TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]")
 {
-  // A span has to be contiguous, so createSpan(MAX_SIZE) always starts a fresh blob and then fills
-  // it completely, whatever the current offset was. That makes this the one span size that reaches
-  // the boundary case deterministically: the offset ends up at MAX_SIZE, and unlike create(),
-  // createSpan used not to grow a new blob afterwards. The next create() then indexed one past the
-  // end of the blob's name array, and end() became an id that iterator::next() can never reach
-  // because it wraps at ++offset == MAX_SIZE.
-  //
-  // createSpan only ever targets the published store, so this necessarily allocates there.
+  // A span of MAX_SIZE always lands at offset 0 of an empty blob and fills it, whatever the current
+  // offset was, so it reaches the blob boundary deterministically. createSpan only targets the
+  // published store, so this allocates there.
   Metrics::IdType span_id = Metrics::NOT_FOUND;
   auto            span    = Metrics::Counter::createSpan(Metrics::MAX_SIZE, &span_id);
 
@@ -639,4 +635,86 @@ TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]"
   Metrics::Counter::increment(p, 7);
   REQUIRE(Metrics::Counter::load(p) == 7);
   REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
+}
+
+TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]")
+{
+  // An id's offset field is 16 bits but a real offset is below MAX_SIZE, so a malformed one must
+  // not index past a blob's arrays. Two blobs are needed for the offset check to be what rejects
+  // it; with one, the null blob check would.
+  auto &h = Metrics::hidden_instance();
+
+  for (int i = 0; i < Metrics::MAX_SIZE + 8; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr("f1.fill." + std::to_string(i)) != nullptr);
+  }
+
+  auto const *bad = h.lookup(Metrics::IdType{0}); // the reserved bad_id slot
+  REQUIRE(bad != nullptr);
+
+  // blob 0 is allocated, so the null check does not fire; only the MAX_SIZE test stands between
+  // this and atomics[65535].
+  for (Metrics::IdType id : {Metrics::IdType{0x0000FFFF}, Metrics::IdType{0x00000400}, Metrics::IdType{0x0001FFFF}}) {
+    REQUIRE(h.valid(id) == false);
+    REQUIRE(h.lookup(id) == bad);
+    REQUIRE(h.name(id) == h.name(Metrics::IdType{0}));
+  }
+}
+
+TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][Metrics]")
+{
+  // The id based read paths take no lock, so resolving an id races a concurrent create. Run both
+  // sides at once, across enough metrics to cross several blob boundaries. Under the tsan preset a
+  // non-atomic allocation counter reports a data race here; relaxing the memory orders does not,
+  // since atomics are race free at any ordering.
+  constexpr int     N_READERS = 4;
+  constexpr int     N_CREATE  = Metrics::MAX_SIZE * 2 + 64;
+  auto             &h         = Metrics::hidden_instance();
+  std::atomic<bool> stop{false};
+  std::atomic<int>  mismatches{0};
+
+  std::vector<std::thread> readers;
+
+  for (int t = 0; t < N_READERS; ++t) {
+    readers.emplace_back([&]() {
+      while (!stop.load(std::memory_order_relaxed)) {
+        for (Metrics::IdType id = 0; id < N_CREATE; ++id) {
+          if (!h.valid(id)) {
+            continue;
+          }
+
+          // valid() said this id names an allocated slot, so lookup() must agree and hand back a
+          // real metric rather than clamping to the reserved bad_id slot. A publication ordering
+          // mistake shows up here as a name that is still empty.
+          std::string_view    name;
+          Metrics::MetricType type;
+          auto               *m = h.lookup(id, &name, &type);
+
+          if (m == nullptr || (id != 0 && name.empty())) {
+            mismatches.fetch_add(1, std::memory_order_relaxed);
+          }
+        }
+      }
+    });
+  }
+
+  for (int i = 0; i < N_CREATE; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr("pub.order." + std::to_string(i)) != nullptr);
+  }
+
+  stop.store(true, std::memory_order_relaxed);
+  for (auto &r : readers) {
+    r.join();
+  }
+
+  CHECK(mismatches.load() == 0);
+
+  // Everything the writer created must be resolvable by name and by id afterwards.
+  for (int i = 0; i < N_CREATE; ++i) {
+    auto const nm = "pub.order." + std::to_string(i);
+    auto const id = h.lookup(nm);
+
+    REQUIRE(id != Metrics::NOT_FOUND);
+    REQUIRE(h.valid(id));
+    REQUIRE(h.name(id) == nm);
+  }
 }

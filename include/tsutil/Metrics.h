@@ -308,7 +308,7 @@ private:
   static constexpr MetricType
   _extractType(IdType value)
   {
-    return MetricType{value >> METRIC_TYPE_BITS};
+    return MetricType{static_cast<int>((static_cast<uint32_t>(value) >> METRIC_TYPE_BITS) & 0x1)};
   }
 
   static constexpr IdType
@@ -320,11 +320,16 @@ private:
 
   class Storage
   {
-    BlobStorage        _blobs;
-    uint16_t           _cur_blob = 0;
-    uint16_t           _cur_off  = 0;
-    LookupTable        _lookups;
-    mutable std::mutex _mutex;
+    /* _cur_blob and _cur_off are release stored last, after whatever they publish: the blob pointer
+     * for _cur_blob, the slot's name for _cur_off. Readers acquire load them, _cur_blob first.
+     * _blobs needs no atomic because it is only read at an index no greater than _cur_blob.
+     * Writers hold _mutex and load relaxed.
+     */
+    BlobStorage           _blobs;
+    std::atomic<uint16_t> _cur_blob{0};
+    std::atomic<uint16_t> _cur_off{0};
+    LookupTable           _lookups;
+    mutable std::mutex    _mutex;
 
   public:
     Storage(const Storage &)            = delete;
@@ -354,15 +359,37 @@ private:
     current() const
     {
       std::lock_guard lock(_mutex);
-      return {_cur_blob, _cur_off};
+      return {_cur_blob.load(std::memory_order_relaxed), _cur_off.load(std::memory_order_relaxed)};
+    }
+
+    /** Whether @a id names an allocated slot.
+     *
+     * The gate for every id based accessor, since ids from the @c TSStat* API are untrusted. An id
+     * qualifies when it is non-negative, its offset is one @c _makeId could produce, and its slot
+     * has been handed out.
+     */
+    bool
+    _is_allocated(IdType id) const
+    {
+      if (id < 0) {
+        return false;
+      }
+
+      auto [blob_ix, offset] = _splitID(id);
+
+      // _cur_blob first: acquiring it also makes visible everything published under it.
+      auto const cur_blob = _cur_blob.load(std::memory_order_acquire);
+      auto const cur_off  = _cur_off.load(std::memory_order_acquire);
+
+      // A non-null blob past cur_blob is allocated but not yet published, hence <= and < rather
+      // than a test for "not the current blob".
+      return offset < MAX_SIZE && blob_ix <= cur_blob && _blobs[blob_ix] != nullptr && (blob_ix < cur_blob || offset < cur_off);
     }
 
     bool
     valid(IdType id) const
     {
-      auto [blob, entry] = _splitID(id);
-
-      return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+      return _is_allocated(id);
     }
   };
 
