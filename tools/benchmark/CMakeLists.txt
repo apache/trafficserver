@@ -33,6 +33,9 @@ target_link_libraries(benchmark_ProxyAllocator PRIVATE Catch2::Catch2WithMain ts
 add_executable(benchmark_SharedMutex benchmark_SharedMutex.cc)
 target_link_libraries(benchmark_SharedMutex PRIVATE Catch2::Catch2 ts::tscore libswoc::libswoc)
 
+add_executable(benchmark_Metrics benchmark_Metrics.cc)
+target_link_libraries(benchmark_Metrics PRIVATE Catch2::Catch2 ts::tsutil libswoc::libswoc)
+
 add_executable(benchmark_Random benchmark_Random.cc)
 target_link_libraries(benchmark_Random PRIVATE Catch2::Catch2WithMain ts::tscore)
 
