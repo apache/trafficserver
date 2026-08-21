@@ -85,14 +85,33 @@ public:
   static bool match(PoolableSession *ss, sockaddr const *addr, CryptoHash const &host_hash,
                     TSServerSessionSharingMatchMask match_style);
 
-  /** Get a session from the pool.
-
-      The session is selected based on @a match_style equivalently to @a match. If found the session
-      is removed from the pool.
-
-      @return A pointer to the session or @c NULL if not matching session was found.
-  */
-  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &host_hash, TSServerSessionSharingMatchMask match_style,
+  /** Search the pool for a server session compatible with the given address, hostname, and state machine.
+   *
+   * The selection criteria are controlled by @p match_style. At least one of
+   * @c TS_SERVER_SESSION_SHARING_MATCH_MASK_IP or @c TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY
+   * must be set for a match to be possible; if neither is set, @c HSMresult_t::NOT_FOUND is
+   * returned unconditionally.
+   *
+   * When a compatible session is found and does not support multiplexed streams, it is removed from
+   * the pool and ownership transfers to the caller. A session that supports multiplexed streams is
+   * not removed and remains available for subsequent acquisitions.
+   *
+   * @param[in]  addr           Remote address and port to match.
+   * @param[in]  hostname_hash  Cryptographic hash of the target hostname.
+   * @param[in]  match_style    Bitmask of @c TSServerSessionSharingMatchMask values specifying which
+   *                            attributes must agree between the candidate session and the request.
+   * @param[in]  sm             The requesting HTTP state machine; consulted for SNI and certificate
+   *                            validation when the corresponding bits are set in @p match_style.
+   * @param[out] server_session Set to the matched session when @c HSMresult_t::DONE is returned;
+   *                            @c nullptr otherwise.
+   *
+   * @return @c HSMresult_t::DONE if a matching session was found;
+   *         @c HSMresult_t::NOT_FOUND otherwise.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
+  HSMresult_t acquireSession(sockaddr const *addr, CryptoHash const &hostname_hash, TSServerSessionSharingMatchMask match_style,
                              HttpSM *sm, PoolableSession *&server_session);
   /** Release a session to the pool.
 
