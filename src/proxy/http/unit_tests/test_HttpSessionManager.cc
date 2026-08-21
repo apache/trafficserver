@@ -126,13 +126,15 @@ private:
   std::vector<std::unique_ptr<TestPoolableSession>> _sessions;
 };
 
-/// The pool bookkeeping updates this gauge, which the test binary never registers.
+/// The pool bookkeeping updates this gauge, which is normally initialized via HttpConfig.
+/// Create it here (when needed) and reset it between Catch2 runs so tests don't leak state.
 void
 init_metrics()
 {
   if (http_rsb.pooled_server_connections == nullptr) {
     http_rsb.pooled_server_connections = Metrics::Gauge::createPtr("proxy.process.http.pooled_server_connections");
   }
+  Metrics::Gauge::store(http_rsb.pooled_server_connections, 0);
 }
 
 CryptoHash
