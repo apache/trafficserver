@@ -1,0 +1,135 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Exercise cache freshness logging for writes, hits, and non-cacheable responses'
+
+  dns:
+    name: dns
+
+  server:
+    name: server
+
+  client:
+    name: client
+
+  ats:
+    name: ts
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.http.cache.http: 1
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.log.max_secs_per_buffer: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    logging_yaml:
+      logging:
+        formats:
+          - name: cache_freshness_fields
+            format: '%<{uuid}cqh> %<cfl> %<cca> %<crc>'
+        logs:
+          - filename: cache_freshness_fields
+            format: cache_freshness_fields
+            mode: ascii
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          url: /cacheable
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, cache-write]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Cache-Control, "max-age=60"]
+              - [Age, 7]
+          content:
+            encoding: plain
+            data: body
+
+        proxy-response:
+          status: 200
+          content:
+            encoding: plain
+            data: body
+            verify: {as: equal}
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          url: /cacheable
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, cache-hit]
+
+        proxy-request:
+          expect: absent
+
+        server-response:
+          status: 500
+          reason: Not Used
+
+        proxy-response:
+          status: 200
+          content:
+            encoding: plain
+            data: body
+            verify: {as: equal}
+
+      - client-request:
+          method: GET
+          url: /uncacheable
+          version: '1.1'
+          headers:
+            fields:
+              - [Host, example.com]
+              - [uuid, uncacheable]
+
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Content-Length, 4]
+              - [Cache-Control, no-store]
+          content:
+            encoding: plain
+            data: body
+
+        proxy-response:
+          status: 200
+          content:
+            encoding: plain
+            data: body
+            verify: {as: equal}
