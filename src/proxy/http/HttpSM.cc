@@ -439,10 +439,10 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   t_state.api_skip_all_remapping = netvc->get_is_unmanaged_request();
 
   ink_assert(_ua.get_txn()->get_proxy_ssn());
-  ink_assert(_ua.get_txn()->get_proxy_ssn()->accept_options);
+  ink_assert(_ua.get_txn()->get_proxy_ssn()->acceptor);
 
   // default the upstream IP style host resolution order from inbound
-  t_state.my_txn_conf().host_res_data.order = _ua.get_txn()->get_proxy_ssn()->accept_options->host_res_preference;
+  t_state.my_txn_conf().host_res_data.order = _ua.get_txn()->get_proxy_ssn()->acceptor->options().host_res_preference;
 
   start_sub_sm();
 

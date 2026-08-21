@@ -75,7 +75,6 @@ Http2Stream::Http2Stream(ProxySession *session, Http2StreamId sid, ssize_t initi
     _receive_header.create(HTTPType::RESPONSE);
     _send_header.create(HTTPType::REQUEST, HTTP_2_0);
   } else {
-    this->upstream_outbound_options = *(session->accept_options);
     _receive_header.create(HTTPType::REQUEST);
     _send_header.create(HTTPType::RESPONSE, HTTP_2_0);
   }
