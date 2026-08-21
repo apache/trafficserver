@@ -151,9 +151,9 @@ ssl_client_rpk_ca_name: FILENAME (optional)
   planned key rotation.
 
   A client authenticating with a raw public key has no certificate chain to verify, so this
-  trusted set takes the place of the usual client-certificate verification for that connection;
-  whether the client certificate level configuration is set to fail closed or only log applies
-  here in the same way it does for a failed certificate check.
+  trusted set takes the place of the usual client-certificate verification for that connection.
+  An unmatched pin is always fatal to the connection, the same as a failed certificate check --
+  there is no separate log-only mode.
 
   Only available in builds linked against a TLS library with RFC 7250 support; see
   ``ssl_rpk_enabled`` above.

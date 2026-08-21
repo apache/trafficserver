@@ -77,9 +77,11 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
     EVP_PKEY *pkey = nullptr;
     if (is_pubkey) {
       const unsigned char *p = data;
-      // The PEM payload for a PUBLIC KEY block is already a DER SubjectPublicKeyInfo, which is
-      // exactly what gets pinned -- but decode it anyway so a corrupt key is rejected at config
-      // load rather than silently pinned as opaque bytes.
+      // Decode the PEM payload so a corrupt key is rejected at config load rather than silently
+      // pinned as opaque bytes -- and so the pin is the canonical re-encoding of the key rather
+      // than the payload as received: d2i_PUBKEY() doesn't reject trailing bytes after a valid
+      // DER structure, so a non-canonically-encoded payload would otherwise get pinned including
+      // whatever garbage follows the key, and could never match a peer's cleanly-encoded SPKI.
       pkey = d2i_PUBKEY(nullptr, &p, len);
       if (pkey == nullptr) {
         SSLError("SSLRPKUtils: failed to parse a raw public key from %s", path);
@@ -93,10 +95,20 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
       OPENSSL_free(data);
       return false;
     }
+    OPENSSL_free(data);
+
+    int canonical_len = i2d_PUBKEY(pkey, nullptr);
+    if (canonical_len <= 0) {
+      SSLError("SSLRPKUtils: failed to re-encode a raw public key from %s", path);
+      EVP_PKEY_free(pkey);
+      return false;
+    }
+    TrustedKey     canonical(canonical_len);
+    unsigned char *cp = canonical.data();
+    i2d_PUBKEY(pkey, &cp);
     EVP_PKEY_free(pkey);
 
-    out.emplace_back(data, data + len);
-    OPENSSL_free(data);
+    out.push_back(std::move(canonical));
   }
 
   return true;
