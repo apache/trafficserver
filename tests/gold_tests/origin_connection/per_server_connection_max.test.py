@@ -510,8 +510,79 @@ class MetricOverrideTest:
         self._test_metrics()
 
 
+class AggregateOnlyWithoutHostAggregateTest:
+    """Verify metric_aggregate 2 still publishes per group metrics when there is no aggregate.
+
+    metric_aggregate 2 (AGGREGATE_ONLY) normally leaves the per group metrics hidden and publishes
+    only the per hostname aggregate. That aggregate exists only under match 'both', which is the
+    only match type with more than one group per hostname (Group::host_metric_name returns empty
+    for the others). With match 'port' there is therefore nothing for the aggregate to stand in
+    for, so the per group metrics have to be published regardless, or level 2 would report nothing
+    at all for this group.
+
+    Every other test in this file that sets metric_aggregate 2 uses match 'both', so without this
+    case a regression that dropped the fallback would leave the suite green.
+    """
+
+    def __init__(self) -> None:
+        """Configure the test processes in preparation for the TestRun."""
+        self._dns = _dns
+        self._server = Test.MakeHttpBinServer("agg_only_no_host_server")
+        self._configure_trafficserver()
+
+    def _configure_trafficserver(self) -> None:
+        """Configure Traffic Server for aggregates only against a match type with no aggregate."""
+        self._ts = Test.MakeATSProcess("ts_agg_only_no_host")
+        self._ts.Disk.records_config.update(
+            {
+                **_STAT_SYNC_RECORDS,
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|conn_track',
+                'proxy.config.http.per_server.connection.metric_enabled': 1,
+                'proxy.config.http.per_server.connection.metric_aggregate': 2,
+                # 'port' has no per hostname aggregate, which is the point of this test.
+                'proxy.config.http.per_server.connection.match': 'port',
+            })
+        self._ts.Disk.remap_config.AddLine(f'map http://agg-only.com/ http://127.0.0.1:{self._server.Variables.Port}/')
+
+    def _test_metrics(self) -> None:
+        """Verify the per group metrics are published despite metric_aggregate 2."""
+        group = f'127.0.0.1:{self._server.Variables.Port}'
+
+        tr = Test.AddTestRun("Check the per group metrics are published when no aggregate exists")
+        tr.Processes.Default.Command = f'sleep {_STAT_SYNC_WAIT_SECONDS}; traffic_ctl metric match per_server'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
+        # Published, not just hidden: this query does not pass --include-hidden.
+        tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+            f'per_server.total_connection.{group} 1',
+            'At metric_aggregate 2 with a match type that has no aggregate, the per group metric '
+            'must still be published.')
+        # The hostname never appears in a metric name under match 'port', so its absence confirms
+        # the published metric came from the per group fallback and not from an aggregate.
+        tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+            'per_server.total_connection.agg-only.com', 'No per hostname aggregate should exist for match "port".')
+
+    def run(self) -> None:
+        """Drive one request through the origin, then check the metrics."""
+        tr = Test.AddTestRun('Verify metric_aggregate 2 falls back to per group metrics')
+        _use_shared_dns(tr)
+        tr.Processes.Default.StartBefore(self._server)
+        tr.Processes.Default.StartBefore(self._ts)
+        tr.MakeCurlCommand(f"-v -s -H 'Host: agg-only.com' http://127.0.0.1:{self._ts.Variables.port}/get", ts=self._ts)
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.TimeOut = 30
+        tr.StillRunningAfter += self._ts
+
+        self._test_metrics()
+
+
 PerServerConnectionMaxTest().run()
 ConnectMethodTest(3, metric_aggregate=2).run(blocked=2, gold_file="gold/two_503_congested.gold")
 ConnectMethodTest(0, metric_aggregate=1).run(blocked=0, gold_file="gold/two_200_ok.gold")
 MultiGroupAggregateTest().run()
 MetricOverrideTest().run()
+AggregateOnlyWithoutHostAggregateTest().run()
