@@ -273,8 +273,10 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 # Confirms the RPK-aware verify path from the *matched* entry actually ran on this connection --
 # the default entry has no client_rpk_ca, so if settings leaked from it instead, this would never
 # appear and the classic X.509-only path would reject the edge's raw public key outright.
+# BoringSSL takes the custom_verify path; OpenSSL's classic callback logs the RPK branch directly.
 parent_scoped.Disk.traffic_out.Content = Testers.ContainsExpression(
-    'Callback: custom verify client cert', 'the matched entry, not the default entry, must drive verification')
+    'Callback: custom verify client cert|Client authenticated with a raw public key',
+    'the matched entry, not the default entry, must drive verification')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_scoped
 tr.StillRunningAfter += edge_scoped
