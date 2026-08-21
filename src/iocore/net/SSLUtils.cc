@@ -401,6 +401,44 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     if (ret != SSL_TLSEXT_ERR_OK) {
       return CLIENT_HELLO_ERROR;
     }
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+    // Unlike BoringSSL's select_certificate_cb (the #elif branch above, which runs early enough
+    // that ssl_cert_callback's selectCertificate() call, below, already matters), OpenSSL locks in
+    // ClientHello extension negotiation -- including RFC 7250's
+    // server_certificate_type/client_certificate_type -- inside tls_process_client_hello(), before
+    // SSL_CTX_set_cert_cb()'s callback ever runs. Switch ctx here instead, using the SNI name
+    // on_client_hello() just extracted from the raw ClientHello -- SSL_get_servername() doesn't
+    // return anything yet at this point on OpenSSL. ssl_cert_callback's later call becomes a no-op
+    // repeat of the same lookup, since SSL_set_SSL_CTX() no-ops once already on the matched ctx.
+    TLSCertSwitchSupport *tcss = TLSCertSwitchSupport::getInstance(s);
+    if (tcss) {
+      if (tcss->selectCertificate(s, SSLCertContextType::GENERIC, snis->get_sni_server_name()) != 1) {
+        return CLIENT_HELLO_ERROR;
+      }
+#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
+      // SSL_set_SSL_CTX() (inside selectCertificate() above) never touches server_cert_type/
+      // client_cert_type -- those are copied onto the connection only once, at SSL_new(), from
+      // whichever ctx was active then (the default "*" entry). Re-apply both from the now-matched
+      // ctx's own config, or ssl_rpk_enabled/ssl_client_rpk_ca_name on any non-default multicert
+      // entry negotiates using the default entry's (usually empty) cert-type list instead.
+      SSL_CTX       *matched_ctx   = SSL_get_SSL_CTX(s);
+      unsigned char *cert_type     = nullptr;
+      size_t         cert_type_len = 0;
+      // The server's own offered identity type (ssl_rpk_enabled).
+      if (SSL_CTX_get0_server_cert_type(matched_ctx, &cert_type, &cert_type_len) && cert_type != nullptr &&
+          !SSL_set1_server_cert_type(s, cert_type, cert_type_len)) {
+        SSLError("failed to reapply RPK server cert type negotiation for the matched entry");
+        return CLIENT_HELLO_ERROR;
+      }
+      // The client cert type accepted from the peer (ssl_client_rpk_ca_name).
+      if (SSL_CTX_get0_client_cert_type(matched_ctx, &cert_type, &cert_type_len) && cert_type != nullptr &&
+          !SSL_set1_client_cert_type(s, cert_type, cert_type_len)) {
+        SSLError("failed to reapply RPK client cert type acceptance for the matched entry");
+        return CLIENT_HELLO_ERROR;
+      }
+#endif
+    }
+#endif
   } else {
     // This error suggests either of these:
     // 1) Call back on unsupported netvc -- Don't register callback unnecessarily
