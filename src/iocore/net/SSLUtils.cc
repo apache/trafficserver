@@ -1372,7 +1372,20 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
   }
 
   Dbg(dbg_ctl_ssl_load, "setting cert level to %d", server_verify_client);
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+  // Mirror _setup_client_cert_verification()'s choice for this connection's ctx: BoringSSL rejects
+  // raw public keys outright unless a custom_verify callback is installed, and installing the
+  // classic callback here unconditionally would silently override that ctx's own RPK-aware setup
+  // (or lack of it, if global clientCertLevel is 0, which skips installing anything at ctx-build
+  // time) whenever a per-SNI verify_client action fires.
+  if (SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_client_rpk_ca_index) != nullptr) {
+    SSL_set_custom_verify(ssl, server_verify_client, ssl_custom_verify_client_callback);
+  } else {
+    SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
+  }
+#else
   SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
+#endif
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
 
@@ -2688,7 +2701,11 @@ SSLMultiCertConfigLoader::load_certs(SSL_CTX *ctx, const std::vector<std::string
       return false;
     }
     // ssl_client_rpk_ca_ex_free() releases `trusted` when ctx is freed.
-    SSL_CTX_set_ex_data(ctx, ssl_client_rpk_ca_index, trusted);
+    if (!SSL_CTX_set_ex_data(ctx, ssl_client_rpk_ca_index, trusted)) {
+      delete trusted;
+      SSLError("failed to attach trusted client RPK keys to %s", completeClientRPKCAPath.c_str());
+      return false;
+    }
 
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
     static const unsigned char client_cert_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
