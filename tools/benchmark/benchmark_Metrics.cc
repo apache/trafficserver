@@ -2,18 +2,17 @@
 
   Micro benchmark tool for ts::Metrics
 
-  The metric values are lock free atomics, but reaching one from an id is not free, and the read
-  paths that get there have very different costs. Four cases, all scaled by thread count because
-  contention is the interesting axis:
+  Metric values are lock free atomics; reaching one from an id is not. Four cases, scaled by thread
+  count:
 
-    increment(id)     what TSStatIntIncrement does: valid() then lookup(id) then fetch_add
-    increment(ptr)    what core, cripts and a few plugins do: a bare fetch_add on a cached pointer
-    lookup(id)        the lock free id resolution on its own
-    lookup(name)      the same resolution by name, which still takes Storage's mutex
+    increment(id)     valid() then lookup(id) then fetch_add, as TSStatIntIncrement does
+    increment(ptr)    a bare fetch_add on a cached pointer, as core does
+    lookup(id)        lock free id resolution
+    lookup(name)      the same resolution through the mutex guarded name map
 
-  increment(id) against increment(ptr) is the cost a plugin pays for having only an id. lookup(id)
-  against lookup(name) isolates the mutex: the two do comparable work, so a gap that widens with
-  thread count is contention rather than instructions.
+  increment(id) against increment(ptr) is what an id costs a plugin. lookup(id) against
+  lookup(name) isolates the mutex, and serves as a control: it must degrade with thread count, or
+  the harness is not loading the machine.
 
   @section license License
 
@@ -60,7 +59,7 @@ struct Conf {
 
 Conf conf;
 
-/// The metrics every case operates on, created once so no case pays for creation.
+/// The metrics every case operates on, created once.
 struct Fixture {
   std::vector<Metrics::IdType>                ids;
   std::vector<Metrics::Counter::AtomicType *> ptrs;
@@ -77,8 +76,7 @@ struct Fixture {
     for (int i = 0; i < conf.nmetrics; ++i) {
       names.push_back("benchmark.metrics." + std::to_string(i));
 
-      // createPtr is what core and cripts do: create once at init and keep the pointer. It also
-      // registers the name, so the id and name lookups below resolve to the same metric.
+      // Registers the name too, so the id and name lookups resolve to the same metric.
       ptrs.push_back(Metrics::Counter::createPtr(names.back()));
       ids.push_back(m.lookup(names.back()));
     }
@@ -87,10 +85,7 @@ struct Fixture {
 
 Fixture *fixture = nullptr;
 
-/** Run @a op on every thread, @c nops times each, and return a value derived from the results.
- *
- * The return value exists so nothing can be optimized away; it is not meaningful.
- */
+/// Run @a op on every thread, @c nops times each. The return value only defeats optimization.
 template <typename F>
 int64_t
 run(F &&op)
@@ -105,8 +100,7 @@ run(F &&op)
       int64_t local = 0;
 
       for (int i = 0; i < conf.nops; ++i) {
-        // Stride the starting point per thread so they are not all hammering one metric, which
-        // would measure cacheline ping-pong on that one atomic rather than the lookup path.
+        // Stride per thread, or this measures cacheline ping-pong on one atomic.
         local += op((t + i) % conf.nmetrics);
       }
       sink.fetch_add(local, std::memory_order_relaxed);
@@ -128,7 +122,6 @@ TEST_CASE("Micro benchmark of ts::Metrics", "")
 
   SECTION("increment by id")
   {
-    // The TSStatIntIncrement path: validation, then id resolution, then the add.
     BENCHMARK("increment(id)")
     {
       return run([&m](int i) -> int64_t {
@@ -141,7 +134,7 @@ TEST_CASE("Micro benchmark of ts::Metrics", "")
 
   SECTION("increment by cached pointer")
   {
-    // What core does. This is the floor: no resolution at all.
+    // The floor: no resolution at all.
     BENCHMARK("increment(ptr)")
     {
       return run([](int i) -> int64_t {
@@ -154,7 +147,6 @@ TEST_CASE("Micro benchmark of ts::Metrics", "")
 
   SECTION("lookup by id")
   {
-    // Lock free resolution.
     BENCHMARK("lookup(id)")
     {
       return run([&m](int i) -> int64_t { return m.lookup(fixture->ids[i]) != nullptr; });
@@ -163,7 +155,6 @@ TEST_CASE("Micro benchmark of ts::Metrics", "")
 
   SECTION("lookup by name")
   {
-    // The same resolution, but through the mutex guarded name map.
     BENCHMARK("lookup(name)")
     {
       return run([&m](int i) -> int64_t { return m.lookup(fixture->names[i]) != Metrics::NOT_FOUND; });

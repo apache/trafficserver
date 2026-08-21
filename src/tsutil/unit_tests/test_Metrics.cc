@@ -611,14 +611,9 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
 
 TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]")
 {
-  // A span has to be contiguous, so createSpan(MAX_SIZE) always starts a fresh blob and then fills
-  // it completely, whatever the current offset was. That makes this the one span size that reaches
-  // the boundary case deterministically: the offset ends up at MAX_SIZE, and unlike create(),
-  // createSpan used not to grow a new blob afterwards. The next create() then indexed one past the
-  // end of the blob's name array, and end() became an id that iterator::next() can never reach
-  // because it wraps at ++offset == MAX_SIZE.
-  //
-  // createSpan only ever targets the published store, so this necessarily allocates there.
+  // A span of MAX_SIZE always lands at offset 0 of an empty blob and fills it, whatever the current
+  // offset was, so it reaches the blob boundary deterministically. createSpan only targets the
+  // published store, so this allocates there.
   Metrics::IdType span_id = Metrics::NOT_FOUND;
   auto            span    = Metrics::Counter::createSpan(Metrics::MAX_SIZE, &span_id);
 
@@ -644,10 +639,9 @@ TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]"
 
 TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]")
 {
-  // The offset field of an id is 16 bits, but a real offset is always below MAX_SIZE. Ids reaching
-  // the id based accessors come from plugins via TSStat*, so a malformed offset must not index past
-  // the end of a blob's 1024 entry arrays. Force a second blob first: with only one blob every
-  // blob_ix != 0 is unallocated and would be caught by the null check alone.
+  // An id's offset field is 16 bits but a real offset is below MAX_SIZE, so a malformed one must
+  // not index past a blob's arrays. Two blobs are needed for the offset check to be what rejects
+  // it; with one, the null blob check would.
   auto &h = Metrics::hidden_instance();
 
   for (int i = 0; i < Metrics::MAX_SIZE + 8; ++i) {
@@ -668,19 +662,10 @@ TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]
 
 TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][Metrics]")
 {
-  // Storage has no lock on the id based read paths, so a reader resolving an id races a writer
-  // registering a new metric -- a plugin TSStatCreate or a config reload against live traffic.
-  // Safety rests on _cur_blob and _cur_off being atomic, release stored after whatever they
-  // publish, and acquire loaded with _cur_blob first. Driving both sides at once is what makes a
-  // regression visible: under the tsan preset, making either counter non-atomic again reports a
-  // data race here.
-  //
-  // What this does NOT catch is a downgrade of those stores and loads to relaxed. Atomics are
-  // race free at any ordering, so TSAN stays quiet and the assertions below still hold; only a
-  // weakly ordered machine would ever observe the difference, and not reliably. Treat the memory
-  // orders in Storage as reviewed rather than tested.
-  //
-  // Enough metrics to cross several blob boundaries, which is where the publication order matters.
+  // The id based read paths take no lock, so resolving an id races a concurrent create. Run both
+  // sides at once, across enough metrics to cross several blob boundaries. Under the tsan preset a
+  // non-atomic allocation counter reports a data race here; relaxing the memory orders does not,
+  // since atomics are race free at any ordering.
   constexpr int     N_READERS = 4;
   constexpr int     N_CREATE  = Metrics::MAX_SIZE * 2 + 64;
   auto             &h         = Metrics::hidden_instance();

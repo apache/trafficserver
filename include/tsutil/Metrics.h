@@ -320,14 +320,10 @@ private:
 
   class Storage
   {
-    /* _cur_blob and _cur_off are the two publication points. Each is written last, with a release
-     * store, after whatever it makes visible: the blob pointer and the reset of _cur_off for
-     * _cur_blob, the slot's name for _cur_off. A reader loads them with acquire, _cur_blob first --
-     * see _is_allocated(). That is what makes the pair consistent without reading it as one word,
-     * and it is why _blobs itself needs no atomic: it is only ever read at an index no greater than
-     * _cur_blob, and that write is sequenced before the release store the reader acquired.
-     *
-     * Writers all hold _mutex, so they load these relaxed; there is no other writer to race with.
+    /* _cur_blob and _cur_off are release stored last, after whatever they publish: the blob pointer
+     * for _cur_blob, the slot's name for _cur_off. Readers acquire load them, _cur_blob first.
+     * _blobs needs no atomic because it is only read at an index no greater than _cur_blob.
+     * Writers hold _mutex and load relaxed.
      */
     BlobStorage           _blobs;
     std::atomic<uint16_t> _cur_blob{0};
@@ -366,14 +362,11 @@ private:
       return {_cur_blob.load(std::memory_order_relaxed), _cur_off.load(std::memory_order_relaxed)};
     }
 
-    /** Whether @a id names a slot that has actually been allocated.
+    /** Whether @a id names an allocated slot.
      *
-     * The single gate for every id based accessor. Ids arriving through the @c TSStat* API are
-     * plugin supplied and untrusted, so three things have to hold: the id is not negative, the
-     * offset is one @c _makeId could have produced -- the offset field is 16 bits wide but a real
-     * offset is always below @c MAX_SIZE, so a larger one is malformed rather than merely stale --
-     * and the slot has been handed out. Blobs are filled in increasing order and never freed, so
-     * that last part means either an earlier blob, or below the allocation point in the current one.
+     * The gate for every id based accessor, since ids from the @c TSStat* API are untrusted. An id
+     * qualifies when it is non-negative, its offset is one @c _makeId could produce, and its slot
+     * has been handed out.
      */
     bool
     _is_allocated(IdType id) const
@@ -384,15 +377,12 @@ private:
 
       auto [blob_ix, offset] = _splitID(id);
 
-      // Load the outer publication point first: seeing a value for _cur_blob means everything
-      // addBlob() wrote before releasing it -- the blob pointer, and the reset of _cur_off -- is
-      // visible here too. Reading _cur_off first would defeat that.
+      // _cur_blob first: acquiring it also makes visible everything published under it.
       auto const cur_blob = _cur_blob.load(std::memory_order_acquire);
       auto const cur_off  = _cur_off.load(std::memory_order_acquire);
 
-      // The blob comparison is against <= / <, not a test for "not the current blob", because
-      // addBlob() stores a new blob before advancing _cur_blob: until it does, _blobs[cur_blob + 1]
-      // is non-null while still holding nothing.
+      // A non-null blob past cur_blob is allocated but not yet published, hence <= and < rather
+      // than a test for "not the current blob".
       return offset < MAX_SIZE && blob_ix <= cur_blob && _blobs[blob_ix] != nullptr && (blob_ix < cur_blob || offset < cur_off);
     }
 

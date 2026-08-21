@@ -67,8 +67,7 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
   _blobs[cur_blob + 1] = std::move(blob);
   _cur_off.store(0, std::memory_order_relaxed);
 
-  // Publishes the new blob. Both writes above are sequenced before this, so a reader that acquires
-  // this value sees the blob pointer and the reset offset.
+  // Publishes the blob; both writes above are sequenced before it.
   _cur_blob.store(cur_blob + 1, std::memory_order_release);
 }
 
@@ -99,8 +98,7 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   names[cur_off] = std::make_tuple(std::string(name), id);
   _lookups.emplace(std::get<0>(names[cur_off]), id);
 
-  // Publishes the slot. The name write above is sequenced before this, so a reader that acquires
-  // this value can read the name.
+  // Publishes the slot; the name write above is sequenced before it.
   _cur_off.store(cur_off + 1, std::memory_order_release);
 
   if (cur_off + 1 >= MAX_SIZE) {
@@ -128,8 +126,7 @@ Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics
 {
   auto [blob_ix, offset] = _splitID(id);
 
-  // Anything that does not name an allocated slot resolves to the reserved bad_id slot rather than
-  // indexing out of range.
+  // Anything not naming an allocated slot resolves to the reserved bad_id slot.
   if (!_is_allocated(id)) {
     blob_ix = 0;
     offset  = 0;
@@ -176,8 +173,7 @@ Metrics::Storage::name(Metrics::IdType id) const
 {
   auto [blob_ix, offset] = _splitID(id);
 
-  // Anything that does not name an allocated slot resolves to the reserved bad_id slot rather than
-  // indexing out of range.
+  // Anything not naming an allocated slot resolves to the reserved bad_id slot.
   if (!_is_allocated(id)) {
     blob_ix = 0;
     offset  = 0;
@@ -230,8 +226,7 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
     *id = span_start;
   }
 
-  // Publishes the span's slots. Unlike create() there are no names to make visible, but a reader
-  // still must not see the offset advance before the blob it advanced within.
+  // Publishes the span's slots.
   _cur_off.store(cur_off + size, std::memory_order_release);
 
   // create() grows as soon as it consumes the last slot; do the same here. Otherwise a span ending
