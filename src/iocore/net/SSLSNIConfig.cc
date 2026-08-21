@@ -196,15 +196,19 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
     }
   }
 
+#if TS_USE_RPK
   if (!item.server_rpk_ca.empty()) {
     SSLConfig::scoped_config params;
     nps.prop.server_rpk_ca_file = Layout::get()->relative_to(params->clientCACertPath, item.server_rpk_ca.data());
-    // Fail the config load now rather than at handshake time if the pinned keys are unreadable.
-    SSLRPKUtils::TrustedKeySet probe;
-    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.server_rpk_ca_file.c_str(), probe)) {
+    // Parsed once here rather than re-parsed from disk on every outbound handshake to this next
+    // hop; also fails the config load now rather than at handshake time if the keys are unreadable.
+    auto trusted = std::make_shared<SSLRPKUtils::TrustedKeySet>();
+    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.server_rpk_ca_file.c_str(), *trusted)) {
       return false;
     }
+    nps.prop.server_rpk_ca = std::move(trusted);
   }
+#endif
 
   return true;
 }
