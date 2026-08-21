@@ -772,25 +772,37 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 }
 
 static void
-add_vary_header_for_compressible_content(TSHttpTxn txnp, bool server, HostConfiguration * /* hc ATS_UNUSED */)
+add_vary_header_for_compressible_content(TSHttpTxn txnp)
 {
   TSMBuffer resp_buf;
   TSMLoc    resp_loc;
 
-  // Get the response headers
-  if (server) {
-    if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
-      return;
-    }
-  } else {
-    if (TS_SUCCESS != TSHttpTxnCachedRespGet(txnp, &resp_buf, &resp_loc)) {
-      return;
-    }
+  if (TS_SUCCESS != TSHttpTxnServerRespGet(txnp, &resp_buf, &resp_loc)) {
+    return;
   }
 
-  // Add Vary: Accept-Encoding header
+  // Add Vary: Accept-Encoding header to the origin response before caching.
   if (vary_header(resp_buf, resp_loc) != TS_SUCCESS) {
     error("failed to add Vary header for compressible content");
+    TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
+    return;
+  }
+
+  TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
+}
+
+static void
+add_vary_header_to_client_response(TSHttpTxn txnp)
+{
+  TSMBuffer resp_buf;
+  TSMLoc    resp_loc;
+
+  if (TS_SUCCESS != TSHttpTxnClientRespGet(txnp, &resp_buf, &resp_loc)) {
+    return;
+  }
+
+  if (vary_header(resp_buf, resp_loc) != TS_SUCCESS) {
+    error("failed to add Vary header to client response");
     TSHandleMLocRelease(resp_buf, TS_NULL_MLOC, resp_loc);
     return;
   }
@@ -824,7 +836,7 @@ compress_transform_add(TSHttpTxn txnp, HostConfiguration *hc, int compress_type,
 }
 
 static void
-handle_compression_and_vary(TSHttpTxn txnp, bool server, HostConfiguration *hc, int *compress_type, int *algorithms)
+handle_compression_and_vary(TSCont contp, TSHttpTxn txnp, bool server, HostConfiguration *hc, int *compress_type, int *algorithms)
 {
   // Check if content is compressible and add compression if client accepts it
   bool content_is_compressible;
@@ -834,7 +846,11 @@ handle_compression_and_vary(TSHttpTxn txnp, bool server, HostConfiguration *hc, 
 
   // Add Vary: Accept-Encoding for all compressible content to ensure proper HTTP caching
   if (content_is_compressible) {
-    add_vary_header_for_compressible_content(txnp, server, hc);
+    if (server) {
+      add_vary_header_for_compressible_content(txnp);
+    } else {
+      TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
+    }
   }
 }
 
@@ -882,7 +898,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
         }
       }
 
-      handle_compression_and_vary(txnp, true, hc, &compress_type, &algorithms);
+      handle_compression_and_vary(contp, txnp, true, hc, &compress_type, &algorithms);
     }
     break;
 
@@ -908,7 +924,7 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
     if (TS_ERROR != TSHttpTxnCacheLookupStatusGet(txnp, &obj_status) && (TS_CACHE_LOOKUP_HIT_FRESH == obj_status)) {
       if (hc != nullptr) {
         info("handling compression of cached object");
-        handle_compression_and_vary(txnp, false, hc, &compress_type, &algorithms);
+        handle_compression_and_vary(contp, txnp, false, hc, &compress_type, &algorithms);
       }
     } else {
       // Prepare for going to origin
@@ -916,6 +932,10 @@ transform_plugin(TSCont contp, TSEvent event, void *edata)
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_REQUEST_HDR_HOOK, contp);
     }
   } break;
+
+  case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
+    add_vary_header_to_client_response(txnp);
+    break;
 
   case TS_EVENT_HTTP_TXN_CLOSE:
     // Release the ocnif lease, and destroy this continuation
