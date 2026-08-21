@@ -282,42 +282,17 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     return ssl_verify_ok;
   }
 
-  // X.509 fallback: BoringSSL hands back the raw chain as CRYPTO_BUFFERs, not X509 objects, so
-  // rebuild it and run the same verification SSL_CTX_set_verify() would otherwise do for us.
-  const STACK_OF(CRYPTO_BUFFER) *chain = SSL_get0_peer_certificates(ssl);
-  if (chain == nullptr || sk_CRYPTO_BUFFER_num(chain) == 0) {
+  // X.509 fallback: BoringSSL parses the peer's certificate chain into X509 objects as soon as it
+  // receives the Certificate message, regardless of whether a custom verify callback is
+  // installed -- SSL_get_peer_full_cert_chain() exposes that already-parsed chain (leaf included),
+  // so there's no need to redo the CRYPTO_BUFFER-to-X509 decoding SSL_get0_peer_certificates()
+  // would otherwise require here.
+  STACK_OF(X509) *chain = SSL_get_peer_full_cert_chain(ssl);
+  if (chain == nullptr || sk_X509_num(chain) == 0) {
     *out_alert = SSL_AD_CERTIFICATE_REQUIRED;
     return ssl_verify_invalid;
   }
-
-  X509 *leaf                    = nullptr;
-  STACK_OF(X509) *intermediates = sk_X509_new_null();
-  if (intermediates == nullptr) {
-    *out_alert = SSL_AD_INTERNAL_ERROR;
-    return ssl_verify_invalid;
-  }
-  for (size_t i = 0; i < sk_CRYPTO_BUFFER_num(chain); i++) {
-    const CRYPTO_BUFFER *buf  = sk_CRYPTO_BUFFER_value(chain, i);
-    const uint8_t       *data = CRYPTO_BUFFER_data(buf);
-    X509                *cert = d2i_X509(nullptr, &data, CRYPTO_BUFFER_len(buf));
-    if (cert == nullptr) {
-      SSLError("failed to parse a client certificate offered to a RPK-enabled context");
-      X509_free(leaf);
-      sk_X509_pop_free(intermediates, X509_free);
-      *out_alert = SSL_AD_BAD_CERTIFICATE;
-      return ssl_verify_invalid;
-    }
-    if (i == 0) {
-      leaf = cert;
-    } else if (!sk_X509_push(intermediates, cert)) {
-      SSLError("failed to append an intermediate certificate offered to a RPK-enabled context");
-      X509_free(cert);
-      X509_free(leaf);
-      sk_X509_pop_free(intermediates, X509_free);
-      *out_alert = SSL_AD_INTERNAL_ERROR;
-      return ssl_verify_invalid;
-    }
-  }
+  X509 *leaf = sk_X509_value(chain, 0);
 
   // A per-SNI verify_client action (VerifyClient::SNIAction) may have pinned a CA file/dir onto
   // this connection via setClientCertCACerts()/SSL_set0_verify_cert_store() -- that call only
@@ -345,7 +320,7 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   }
 
   X509_STORE_CTX *store_ctx   = X509_STORE_CTX_new();
-  bool            initialized = store_ctx != nullptr && X509_STORE_CTX_init(store_ctx, verify_store, leaf, intermediates);
+  bool            initialized = store_ctx != nullptr && X509_STORE_CTX_init(store_ctx, verify_store, leaf, chain);
   bool            verified    = false;
   if (initialized) {
     X509_STORE_CTX_set_depth(store_ctx, SSL_CTX_get_verify_depth(ctx));
@@ -368,8 +343,6 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   if (owns_store) {
     X509_STORE_free(verify_store);
   }
-  X509_free(leaf);
-  sk_X509_pop_free(intermediates, X509_free);
 
   if (!initialized || !verified || !hook_ok) {
     *out_alert = initialized ? SSL_AD_CERTIFICATE_UNKNOWN : SSL_AD_INTERNAL_ERROR;
