@@ -100,8 +100,10 @@ public:
    * @param[in]  hostname_hash  Cryptographic hash of the target hostname.
    * @param[in]  match_style    Bitmask of @c TSServerSessionSharingMatchMask values specifying which
    *                            attributes must agree between the candidate session and the request.
-   * @param[in]  sm             The requesting HTTP state machine; consulted for SNI and certificate
-   *                            validation when the corresponding bits are set in @p match_style.
+   * @param[in]  sm             The requesting HTTP state machine. Must be non-null when any SNI,
+   *                            HOSTSNISYNC, or CERT bit is set in @p match_style, or when the pool
+   *                            may contain multiplexing sessions; when non-null, @c t_state.scheme
+   *                            and @c t_state.hdr_info.server_request must be initialized.
    * @param[out] server_session Set to the matched session when @c HSMresult_t::DONE is returned;
    *                            @c nullptr otherwise.
    *
