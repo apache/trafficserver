@@ -26,6 +26,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <cstring>
 #include <memory>
 #include <vector>
 
@@ -142,7 +143,8 @@ hash_of(char const *hostname)
 {
   CryptoHash hash;
 
-  CryptoContext().hash_immediate(hash, static_cast<unsigned char const *>(static_cast<void const *>(hostname)), strlen(hostname));
+  CryptoContext().hash_immediate(hash, static_cast<unsigned char const *>(static_cast<void const *>(hostname)),
+                                 std::strlen(hostname));
   return hash;
 }
 
