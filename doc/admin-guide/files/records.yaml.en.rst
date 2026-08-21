@@ -2007,6 +2007,80 @@ Origin Server Connect Attempts
    the connection. Useful when the origin supports keep-alive, removing the time needed to set up a
    new connection from the next request at the expense of added (inactive) connections.
 
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_enabled INT 0
+   :reloadable:
+   :overridable:
+
+   Enable per upstream server connection metrics. These metrics are dynamically named, one set per
+   upstream server group, so the number of them scales with the number of distinct upstream servers
+   seen. See :ref:`per-server-connection-metrics`.
+
+   ===== ======================================================================================
+   Value Effect
+   ===== ======================================================================================
+   ``0`` No per server connection metrics.
+   ``1`` Per server connection metrics are collected for each upstream server group.
+   ===== ======================================================================================
+
+   What is published from them is controlled separately by
+   :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate`, which by default publishes the
+   per group metrics themselves.
+
+   Because this is overridable, metrics can be enabled for the upstreams of interest and left off
+   for the rest, for example with :ref:`admin-plugins-conf-remap` on a specific mapping.
+
+   The value is applied when a connection group is created. Where two mappings that disagree about
+   this setting resolve to the same group -- that is, the same key under
+   :ts:cv:`proxy.config.http.per_server.connection.match` -- the transaction that creates the group
+   determines its metrics, and later transactions do not change them. A group is discarded once its
+   connection count reaches zero, so the choice is made again the next time that upstream is
+   reopened. This affects only which metrics exist; enforcement of
+   :ts:cv:`proxy.config.http.per_server.connection.max` uses the group's own connection count and is
+   unaffected.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_aggregate INT 0
+   :reloadable:
+   :overridable:
+
+   Control what is published from the per server connection metrics enabled by
+   :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. Has no effect when that setting
+   is ``0``.
+
+   A per hostname aggregate sums a counter across every group belonging to that hostname, and exists
+   only for :ts:cv:`match type <proxy.config.http.per_server.connection.match>` ``both``, since that
+   is the only match type with more than one group per hostname. See
+   :ref:`per-server-connection-metrics`.
+
+   ===== ======================================================================================
+   Value Effect
+   ===== ======================================================================================
+   ``0`` No aggregates. The per group metrics are published under their own names.
+   ``1`` Publish the per hostname aggregates and the per group metrics.
+   ``2`` Publish only the per hostname aggregates. The per group metrics from which they are
+         computed are collected but not published, which keeps the number of published metrics
+         proportional to hostnames rather than to groups.
+   ===== ======================================================================================
+
+   With value ``2``, a group that has no aggregate to belong to -- any match type other than
+   ``both`` -- has its per group metrics published anyway, since otherwise nothing at all would be
+   reported for it.
+
+   Values ``0`` and ``1`` can produce a very large number of metrics when the match type includes the
+   address or port, since there is then one set per address and port rather than one per hostname.
+
+   Like :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`, this is applied when a
+   connection group is created, with the same consequence for mappings that disagree and resolve to
+   the same group.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_prefix STRING NULL
+   :reloadable:
+
+   An optional prefix inserted into the per server connection metric names, between the fixed
+   ``proxy.process.http.per_server.<counter>.`` portion of the name and the upstream server group
+   or hostname. Useful to distinguish metrics from separate
+   :ts:cv:`match <proxy.config.http.per_server.connection.match>` configurations sharing the same
+   upstream. See :ref:`per-server-connection-metrics`.
+
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
    :reloadable:
    :overridable:

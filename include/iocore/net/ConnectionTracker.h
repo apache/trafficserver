@@ -75,11 +75,42 @@ public:
   /// String equivalents for @c MatchType.
   static const std::array<std::string_view, static_cast<int>(MATCH_BOTH) + 1> MATCH_TYPE_NAME;
 
+  /** Whether, and how, the per hostname aggregate metrics are published.
+   *
+   * This is independent of @c TxnConfig::metric_enabled, which decides only whether per server
+   * metrics exist for a group at all. The per group metrics are always created in the hidden metric
+   * store; what varies here is what gets published from them:
+   *   - @c AGGREGATE_NONE: no aggregate. The per group metrics are published under their own names.
+   *     This is the default and matches the behavior of releases that had no aggregate support.
+   *   - @c AGGREGATE_GROUP: the per hostname aggregates are published, and so are the per group
+   *     metrics they are computed from.
+   *   - @c AGGREGATE_ONLY: the per hostname aggregates are published and the per group metrics stay
+   *     hidden, which keeps the published metric count proportional to hostnames rather than to
+   *     groups. Where a group has no aggregate to belong to -- see @c Group::host_metric_name, which
+   *     only yields a name for match type @c MATCH_BOTH -- the per group metrics are published
+   *     anyway, since otherwise nothing at all would be reported for that group.
+   *
+   * Keeping the per group metrics in the hidden store in every case means changing this at runtime
+   * is only a change of what is registered for publication, with no metric to migrate between the
+   * two stores.
+   *
+   * The records layer validates and clamps this to 0..2. A plugin setting the overridable config
+   * directly is not clamped, see @c METRIC_AGGREGATE_CONV; any other value behaves as
+   * @c AGGREGATE_GROUP, publishing both the aggregate and the per group metrics.
+   */
+  enum MetricAggregate : int {
+    AGGREGATE_NONE  = 0, ///< No hostname aggregate; the per group metrics are published.
+    AGGREGATE_GROUP = 1, ///< Hostname aggregates published, along with the per group metrics.
+    AGGREGATE_ONLY  = 2, ///< Hostname aggregates published, per group metrics kept hidden.
+  };
+
   /// Per transaction configuration values.
   struct TxnConfig {
-    int       server_max{0};          ///< Maximum concurrent server connections.
-    int       server_min{0};          ///< Minimum keepalive server connections.
-    MatchType server_match{MATCH_IP}; ///< Server match type.
+    int             server_max{0};                    ///< Maximum concurrent server connections.
+    int             server_min{0};                    ///< Minimum keepalive server connections.
+    MatchType       server_match{MATCH_IP};           ///< Server match type.
+    int             metric_enabled{0};                ///< Whether per server metrics exist for a group.
+    MetricAggregate metric_aggregate{AGGREGATE_NONE}; ///< What is published, see @c MetricAggregate.
   };
 
   /** Static configuration values. */
@@ -90,7 +121,6 @@ public:
 
     std::chrono::seconds            client_alert_delay{60}; ///< Alert delay in seconds.
     std::chrono::seconds            server_alert_delay{60}; ///< Alert delay in seconds.
-    bool                            metric_enabled{false};  ///< Enabling per server metrics.
     std::string                     metric_prefix;          ///< Per server metric prefix.
     swoc::IPRangeSet                client_exempt_list; ///< The set of IP addresses to not block due client connection counting.
     mutable ts::bravo::shared_mutex client_exempt_list_mutex; ///< Protects client_exempt_list from concurrent access.
@@ -106,6 +136,7 @@ public:
   static constexpr std::string_view CONFIG_SERVER_VAR_MATCH{"proxy.config.http.per_server.connection.match"};
   static constexpr std::string_view CONFIG_SERVER_VAR_ALERT_DELAY{"proxy.config.http.per_server.connection.alert_delay"};
   static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_ENABLED{"proxy.config.http.per_server.connection.metric_enabled"};
+  static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_AGGREGATE{"proxy.config.http.per_server.connection.metric_aggregate"};
   static constexpr std::string_view CONFIG_SERVER_VAR_METRIC_PREFIX{"proxy.config.http.per_server.connection.metric_prefix"};
 
   /// A record for the outbound connection count.
@@ -145,7 +176,8 @@ public:
     std::atomic<int>    _in_queue{0};   ///< # of connections queued, waiting for a connection.
     std::atomic<Ticker> _last_alert{0}; ///< Absolute time of the last alert.
 
-    // Recording data as metrics
+    // Recording data as metrics. These are always in the hidden metric store when created; see
+    // @c MetricAggregate for how they are published.
     ts::Metrics::Gauge::AtomicType   *_count_metric       = nullptr;
     ts::Metrics::Counter::AtomicType *_count_total_metric = nullptr;
     ts::Metrics::Counter::AtomicType *_blocked_metric     = nullptr;
@@ -155,8 +187,11 @@ public:
      * @param key A populated @c Key structure - values are copied to the @c Group.
      * @param fqdn The full FQDN.
      * @param min_keep_alive The minimum number of origin keep alive connections to maintain.
+     * @param metric_enabled Whether the transaction creating this group wants per server metrics.
+     * @param metric_aggregate What that transaction wants published, see @c MetricAggregate.
      */
-    Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive);
+    Group(DirectionType direction, Key const &key, std::string_view fqdn, int min_keep_alive, int metric_enabled = 0,
+          MetricAggregate metric_aggregate = AGGREGATE_NONE);
     ~Group();
     /// Key equality checker.
     static bool equal(Key const &lhs, Key const &rhs);
@@ -170,6 +205,20 @@ public:
     /// Time of the last alert in epoch seconds.
     std::time_t        get_last_alert_epoch_time() const;
     static std::string metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix);
+
+    /** Name of the metric which aggregates a value across all groups of a hostname.
+     *
+     * Only @c MATCH_BOTH groups have more than one group per hostname. For @c MATCH_HOST there is
+     * exactly one group per hostname, so an aggregate would be over a set of one, and
+     * @c Group::metric_name already returns the FQDN alone for that match type - identical to what
+     * this would return, so publishing both would collide on one name.
+     *
+     * @param key The group key.
+     * @param fqdn The full FQDN.
+     * @param metric_prefix The configured metric prefix.
+     * @return The metric name, or an empty string if @a key is not @c MATCH_BOTH.
+     */
+    static std::string host_metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix);
 
     /// Release the reference count to this group and remove it from the
     /// group table if it is no longer referenced.
@@ -347,6 +396,8 @@ public:
   static const MgmtConverter MIN_SERVER_CONV;
   static const MgmtConverter MAX_SERVER_CONV;
   static const MgmtConverter SERVER_MATCH_CONV;
+  static const MgmtConverter METRIC_ENABLED_CONV;
+  static const MgmtConverter METRIC_AGGREGATE_CONV;
 
 protected:
   static GlobalConfig *_global_config; ///< Global configuration data.
@@ -433,6 +484,15 @@ ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std
   return metric_prefix.empty() ? std::move(metric_name) : metric_prefix + "." + metric_name;
 }
 
+inline std::string
+ConnectionTracker::Group::host_metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix)
+{
+  if (MATCH_BOTH != key._match_type) {
+    return {}; // Only MATCH_BOTH has more than one group per hostname to aggregate across.
+  }
+  return metric_prefix.empty() ? std::string(fqdn) : metric_prefix + "." + std::string(fqdn);
+}
+
 inline bool
 ConnectionTracker::TxnState::is_active() const
 {
@@ -489,9 +549,13 @@ ConnectionTracker::TxnState::clear()
 inline void
 ConnectionTracker::TxnState::update_max_count(int count)
 {
-  auto cmax = _g->_count_max.load();
-  if (count > cmax) {
-    _g->_count_max.compare_exchange_weak(cmax, count);
+  auto cmax = _g->_count_max.load(std::memory_order_relaxed);
+
+  while (count > cmax) {
+    if (_g->_count_max.compare_exchange_weak(cmax, count, std::memory_order_relaxed, std::memory_order_relaxed)) {
+      break;
+    }
+    // cmax was reloaded by the failed exchange; retry if we are still larger.
   }
 }
 
