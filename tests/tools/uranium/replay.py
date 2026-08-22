@@ -747,10 +747,10 @@ class ReplayTest:
 
         if ats.return_code is not None:
             raise AssertionError(f"ATS exited unexpectedly with status {ats.return_code}.\n{ats.output()}")
-        if server is not None and server.return_code is not None and server.return_code not in server.expected_return_codes:
+        if server is not None and server.return_code is not None and server.return_code not in server.return_codes:
             raise AssertionError(
                 f"Proxy Verifier server exited with status {server.return_code}; expected "
-                f"{sorted(server.expected_return_codes)}.\n{server.output()}")
+                f"{sorted(server.return_codes)}.\n{server.output()}")
 
     def _validate_process_output(self, process: ManagedProcess, config: Mapping[str, Any], default_excludes: str) -> None:
         output = ""
@@ -832,7 +832,7 @@ class ReplayTest:
     @staticmethod
     def _return_codes(config: Mapping[str, Any]) -> Iterable[int]:
         codes = config.get("return_code", 0)
-        return codes if isinstance(codes, list) else [codes]
+        return codes if isinstance(codes, Sequence) and not isinstance(codes, str) else [codes]
 
     @staticmethod
     def _link_directory(source: Path, destination: Path) -> None:

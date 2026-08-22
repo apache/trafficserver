@@ -72,12 +72,12 @@ class OriginAbortScenario:
         )
         assert result.returncode in (0, 28), result.output
         deadline = time.monotonic() + 5
-        origin_error = self._origin.stderr
+        origin_error = self._origin.stderr_text
         while not re.search(r"UnicodeDecodeError|IndexError: list index out of range", origin_error):
             if time.monotonic() >= deadline:
                 break
             time.sleep(0.05)
-            origin_error = self._origin.stderr
+            origin_error = self._origin.stderr_text
         assert re.search(
             r"UnicodeDecodeError|IndexError: list index out of range", origin_error), result.output + self._origin.output
 

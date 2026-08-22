@@ -247,6 +247,28 @@ they use the same environment as pytest. Avoid fixed ports and global temporary
 paths; allocated listeners and the fixture run directory keep ``-n`` runs
 independent.
 
+Declare expectations for a managed service's standard streams with explicit
+methods. Regular-expression expectations require an explanation, which is
+included in failure output. Gold paths are relative to the test module:
+
+.. code-block:: python
+
+   server.stdout.contains(
+       "Ready with 3 transactions",
+       "The server should parse all three transactions.",
+   )
+   server.stderr.excludes(
+       "Violation:",
+       "The server should not report verification errors.",
+   )
+   client.stdout.matches_gold("gold/client.gold")
+   client.expect_return_codes(0, 1)
+
+``stdout`` and ``stderr`` are read-only expectation objects; do not assign to
+them or use ``+=``. Use ``reset()`` to discard declarations intentionally.
+When a scenario must inspect output while a process is running, read
+``stdout_text``, ``stderr_text``, or their combined ``output`` property.
+
 ``tools.uranium.services`` is the stable scenario-facing import facade. The
 service implementations are split by responsibility under
 ``tests/tools/uranium/services`` so harness internals can depend directly on
