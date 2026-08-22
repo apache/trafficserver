@@ -17,7 +17,7 @@
 
 include(add_atsplugin)
 
-function(ADD_AUTEST_PLUGIN _NAME)
+function(ADD_URTEST_PLUGIN _NAME)
   add_library(${_NAME} MODULE ${ARGN})
   if(LINK_PLUGINS AND BUILD_SHARED_LIBS)
     target_link_libraries(${_NAME} PRIVATE ts::tsapi ts::tsutil)
@@ -36,65 +36,59 @@ function(ADD_AUTEST_PLUGIN _NAME)
 endfunction()
 
 add_subdirectory(tools/plugins)
-add_subdirectory(gold_tests/chunked_encoding)
-add_subdirectory(gold_tests/at_headers/plugins)
-add_subdirectory(gold_tests/continuations/plugins)
-add_subdirectory(gold_tests/jsonrpc/plugins)
-add_subdirectory(gold_tests/pluginTest/crash_test)
-add_subdirectory(gold_tests/pluginTest/polite_hook_wait)
-add_subdirectory(gold_tests/pluginTest/tsapi)
-add_subdirectory(gold_tests/pluginTest/TSVConnFd)
-add_subdirectory(gold_tests/timeout)
-add_subdirectory(gold_tests/tls)
+add_subdirectory(uranium_tests/chunked_encoding)
+add_subdirectory(uranium_tests/at_headers/plugins)
+add_subdirectory(uranium_tests/continuations/plugins)
+add_subdirectory(uranium_tests/jsonrpc/plugins)
+add_subdirectory(uranium_tests/pluginTest/crash_test)
+add_subdirectory(uranium_tests/pluginTest/polite_hook_wait)
+add_subdirectory(uranium_tests/pluginTest/tsapi)
+add_subdirectory(uranium_tests/pluginTest/TSVConnFd)
+add_subdirectory(uranium_tests/timeout)
+add_subdirectory(uranium_tests/tls)
 
-set(RUNUV ${UV} --project ${CMAKE_CURRENT_BINARY_DIR})
-
-set(CMAKE_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gold_tests")
-set(CMAKE_SKIP_GOLD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/_skipped_uds_gold_tests")
 set(CURL_UDS_FLAG "")
-if(ENABLE_AUTEST_UDS)
+if(ENABLE_URTEST_UDS)
   set(CURL_UDS_FLAG "--curl-uds")
 endif()
 
 configure_file(pyproject.toml pyproject.toml COPYONLY)
-configure_file(autest.sh.in autest.sh)
-configure_file(autest-parallel.py.in autest-parallel.py)
+configure_file(urtest.sh.in urtest.sh @ONLY USE_SOURCE_PERMISSIONS)
 
 add_custom_target(
-  autest
+  urtest-replay
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-  COMMAND ${RUNUV} sync
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNUV} run autest --directory
-          ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
-          --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS_LIST}
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker -m uranium_replay
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
 
 add_custom_target(
-  autest_no_install
-  COMMAND ${RUNUV} sync
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNUV} run autest --directory
-          ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
-          --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS_LIST}
+  urtest-replay-no-install
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker -m uranium_replay
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
 
-# autest uds specific target that skips tests and runs with curl flag
 add_custom_target(
-  autest-uds
+  urtest
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-  COMMAND ${RUNUV} sync
-  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/h2 ${CMAKE_SKIP_GOLD_DIR}/h2
-  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/tls ${CMAKE_SKIP_GOLD_DIR}/tls
-  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_GOLD_DIR}/tls_hooks ${CMAKE_SKIP_GOLD_DIR}/tls_hooks
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_GOLD_DIR}/remap:$ENV{PYTHONPATH} ${RUNUV} run autest --directory
-          ${CMAKE_GOLD_DIR} --ats-bin=${CMAKE_INSTALL_PREFIX}/bin --proxy-verifier-bin ${PROXY_VERIFIER_PATH}
-          --build-root ${CMAKE_BINARY_DIR} --sandbox ${AUTEST_SANDBOX} ${CURL_UDS_FLAG} ${AUTEST_OPTIONS_LIST}
-  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_SKIP_GOLD_DIR}/h2 ${CMAKE_GOLD_DIR}/h2
-  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_SKIP_GOLD_DIR}/tls ${CMAKE_GOLD_DIR}/tls
-  COMMAND ${CMAKE_COMMAND} -E rename ${CMAKE_SKIP_GOLD_DIR}/tls_hooks ${CMAKE_GOLD_DIR}/tls_hooks
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
+
+add_custom_target(
+  urtest-no-install
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  USES_TERMINAL
+)
+
+add_custom_target(
+  urtest-uds
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker --curl-uds
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )

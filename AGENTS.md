@@ -11,15 +11,15 @@ with a sophisticated plugin system.
 **Key Technologies:**
 - Language: C++20
 - Build System: CMake (migrated from autotools in v10)
-- Testing: Catch2 (unit tests) + AuTest Python framework (end-to-end tests)
+- Testing: Catch2 unit tests plus pytest Uranium replay and native scenario tests
 - Protocols: TLS, HTTP/1.1, HTTP/2, HTTP/3 (via Quiche)
 
 ## Project Structure
 
 Core sources live in `src/` (for example `src/proxy`, `src/iocore`,
 `src/traffic_server`). Public headers are in `include/`. Built-in plugins are
-in `plugins/` and `plugins/experimental/`. End-to-end tests are in `tests/`,
-especially `tests/gold_tests/`. Build system files are in `cmake/` plus the
+in `plugins/` and `plugins/experimental/`. Uranium tests are in `tests/`,
+especially `tests/uranium_tests/`. Build system files are in `cmake/` plus the
 top-level `CMakeLists.txt`, and docs are in `doc/`. Third party libraries that
 we include locally are in `lib/`.
 
@@ -80,63 +80,73 @@ Unit tests are built into executables. Find the test binary and run it directly:
 ./build/src/tscore/test_tscore
 ```
 
-### End-to-End Tests (AuTest)
+### Uranium Tests (pytest)
 
-**Enable autests during configuration:**
+**Enable Uranium tests during configuration:**
 ```bash
-cmake -B build -DENABLE_AUTEST=ON
+cmake -B build -DENABLE_URTEST=ON
 cmake --build build
 cmake --install build
 ```
 
-**Run all autests:**
+**Run all Uranium tests:**
 ```bash
-cmake --build build -t autest
+cmake --build build -t urtest
 ```
 
 **Run specific test(s):**
 ```bash
 cd build/tests
-./autest.sh --sandbox /tmp/sbcodex --clean=none -f <test_name_without_test_py>
+./urtest.sh -q -k <pytest_expression>
 ```
 
-For example, to run `cache-auth.test.py`:
+For example, to run items whose names contain `header_rewrite`:
 ```bash
-./autest.sh --sandbox /tmp/sbcursor --clean=none -f cache-auth
+./urtest.sh -q -k header_rewrite
 ```
 
-To run multiple tests efficiently, pass the -j option.
+Use pytest-xdist's `-n` option to run selected tests in parallel.
 
 ```bash
 cd build/tests
-./autest.sh -j4 --sandbox /tmp/sbcodex --clean=none -f 'header_rewrite*'
+./urtest.sh -q -n 4 -k "header_rewrite or cache_control"
 ```
 
-Most end-to-end test coverage is in `tests/gold_tests/`. The CI system uses the
-Docker image `ci.trafficserver.apache.org/ats/fedora:43` (Fedora version updated
-regularly).
+Most Uranium test coverage is in `tests/uranium_tests/`. The CI system uses the
+Docker image `ci.trafficserver.apache.org/ats/fedora:44` (Fedora version updated
+regularly). The source-tree `tests/urtest.sh` defaults to this image. It runs
+directly instead when it detects that it is already inside a Fedora 44
+container. Use `--run-in-docker` or `--no-run-in-docker` to override.
 
-### Writing Autests
+### Writing Uranium Tests
 
-**New tests should use the `Test.ATSReplayTest()` approach**, which references a
-`replay.yaml` file that describes the test configuration and traffic patterns
-using the Proxy Verifier format. This is simpler, more maintainable, and
-parseable by tools.
+**New tests should normally be direct pytest replay tests.** Name the Proxy
+Verifier replay `<scenario>.test.yaml`; the file's `urtest` section describes
+DNS, server, client, and ATS setup, and pytest collects it without a companion
+`.test.py` wrapper. Run these with `cmake --build build -t urtest-replay`.
 
-If `ATSReplayTest` is not a good fit (say, the test needs a custom client), then
+If a direct replay test is not a good fit (say, the test needs a custom client), then
 organize the test around a test class with member functions that configure any
 servers, the ATS process, and the client. See
-`tests/gold_tests/ats_probe/ats_probe.test.py` for an example of a test organized
-around a test class.
+`tests/uranium_tests/cache/test_host_down_range_recursion.py` for an example of a
+test organized around a scenario class and an explicit `run()` entry point.
 
-In autests, launch Python helpers with `{sys.executable}` rather than a
-hardcoded `python3`, so the test runs under the same interpreter the harness
-uses.
+In native tests, launch Python helpers with `sys.executable` rather than a
+hardcoded `python3`, so the helper uses the same interpreter as pytest.
 
-**For complete details on writing autests, see:**
-- `doc/developer-guide/testing/autests.en.rst` - Comprehensive guide to autest
+Tests that are useful only when explicitly requested, such as privileged, very
+slow, or known-flaky diagnostic scenarios, use `@pytest.mark.manual`. Direct
+replay tests set `urtest.manual` to `true` or a reason string. They are skipped
+during normal runs. Enable them explicitly with `--run-manual` and normally
+select the intended test with `-k`:
+
+```bash
+./urtest.sh --run-manual -k ats_probe
+```
+
+**For complete details on writing Uranium tests, see:**
+- `doc/developer-guide/testing/uranium-tests.en.rst` - Comprehensive Uranium test guide
 - Proxy Verifier format: https://github.com/yahoo/proxy-verifier
-- AuTest framework: https://autestsuite.bitbucket.io/
 
 ## Development Workflow
 
@@ -372,6 +382,9 @@ MIOBuffer *buffer = (MIOBuffer*)malloc(sizeof(MIOBuffer));
 - Python 3.11+ with proper type annotations
 - 4-space indentation, never TABs
 - Type annotations on all function signatures
+- Document every parameter in a function docstring with `:param <name>:`.
+  Include units and other constraints that are not evident from the type, such
+  as documenting timeout values in seconds.
 - Prefer f-strings over `str.format()` when building command lines, config lines,
   and `Testers` expressions.
 
@@ -410,5 +423,4 @@ scope, and vulnerability reporting process.
 - Official docs: https://trafficserver.apache.org/
 - Developer wiki: https://cwiki.apache.org/confluence/display/TS/
 - CI dashboard: https://ci.trafficserver.apache.org/
-- AuTest framework: https://autestsuite.bitbucket.io/
 - Proxy Verifier: https://github.com/yahoo/proxy-verifier

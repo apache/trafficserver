@@ -8236,8 +8236,8 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
   shared_SSL_CTX   client_ctx = nullptr;
   SSLConfigParams *params     = SSLConfig::acquire();
 
-  // Generate second level key for client context lookup
-  swoc::bwprint(key, "{}:{}", cert_path, key_path);
+  // The client context map is keyed by the resolved certificate path.
+  key.assign(cert_path);
   Dbg(dbg_ctl_ssl_cert_update, "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
 
   if (nullptr != params) {

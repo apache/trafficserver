@@ -1,0 +1,369 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+"""Collect ``*.test.yaml`` Proxy Verifier files as pytest items."""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Generator, Iterator, Sequence
+from pathlib import Path
+from typing import Any, Protocol
+import os
+import shutil
+
+import pytest
+
+from .config import ReplayConfigError, ReplaySpec
+from .process import ProcessError
+from .replay import ReplaySkip, ReplayTest
+from .runtime import TestRuntime
+from .services.ats import ATS, ATSFactory
+from .services.context import ProceduralContext
+from .services.curl import Curl
+from .services.service_factory import ServiceFactory
+
+
+class MarkableItem(Protocol):
+    """Describe the marker operations used by manual-test selection."""
+
+    def get_closest_marker(self, name: str) -> pytest.Mark | None:
+        """Return the nearest marker named @a name."""
+
+    def add_marker(self, marker: str | pytest.MarkDecorator, append: bool = True) -> None:
+        """Attach @a marker to this item."""
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    """Register ATS Uranium test runtime paths."""
+
+    group = parser.getgroup("ATS Uranium tests")
+    group.addoption("--ats-bin", help="Directory containing installed ATS executables")
+    group.addoption("--proxy-verifier-bin", help="Directory containing verifier-client and verifier-server")
+    group.addoption("--build-root", help="ATS build directory containing test plugins")
+    group.addoption("--sandbox", help="Directory for isolated test process trees")
+    group.addoption("--urtest-shard-index", type=int, help="Zero-based CI shard to collect")
+    group.addoption("--urtest-shard-count", type=int, help="Total number of CI shards")
+    group.addoption("--curl-uds", action="store_true", help="Run supported Uranium tests with curl Unix sockets")
+    group.addoption(
+        "--run-manual",
+        action="store_true",
+        help="Run Uranium tests marked manual; they are skipped by default",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Register the replay marker used for selection."""
+
+    config.addinivalue_line("markers", "uranium_replay: Uranium test driven by a Proxy Verifier replay file")
+    config.addinivalue_line("markers", "uranium_procedural: Uranium test written as a pytest function")
+    config.addinivalue_line("markers", "manual: Uranium test run only when --run-manual is passed")
+    config.addinivalue_line("markers", "serial: Uranium test that must run without parallel peers")
+    if getattr(config.option, "numprocesses", None) and getattr(config.option, "dist", None) == "load":
+        config.option.dist = "loadgroup"
+
+
+def pytest_collect_file(file_path: Path, parent: pytest.Collector) -> pytest.File | None:
+    """Collect direct replay files; pytest collects procedural Python normally."""
+
+    if file_path.name.endswith((".test.yaml", ".test.yml")):
+        return ReplayFile.from_parent(parent, path=file_path)
+    return None
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Apply serial scheduling, UDS exclusions, and zero-based CI sharding."""
+
+    _mark_manual_tests(items, enabled=config.getoption("run_manual"))
+    for item in items:
+        if item.path.name.startswith("test_") and "uranium_tests" in item.path.parts:
+            item.add_marker("uranium_procedural")
+        if _is_serial_test(Path(item.path)):
+            item.add_marker("serial")
+            item.add_marker(pytest.mark.xdist_group("ats_serial"))
+
+    selected = items
+    deselected: list[pytest.Item] = []
+    if config.getoption("curl_uds"):
+        unsupported = {"h2", "tls", "tls_hooks"}
+        selected, rejected = _partition_items(
+            selected,
+            lambda item: not _is_below_uranium_directory(item, unsupported),
+        )
+        deselected.extend(rejected)
+
+    shard_index = config.getoption("urtest_shard_index")
+    shard_count = config.getoption("urtest_shard_count")
+    if (shard_index is None) != (shard_count is None):
+        raise pytest.UsageError("--urtest-shard-index and --urtest-shard-count must be provided together")
+    if shard_count is not None:
+        if shard_count <= 0 or shard_index < 0 or shard_index >= shard_count:
+            raise pytest.UsageError("ATS shard values must satisfy 0 <= index < count")
+        shard_nodeids = {
+            item.nodeid
+            for position, item in enumerate(sorted(selected, key=lambda candidate: candidate.nodeid))
+            if position % shard_count == shard_index
+        }
+        selected, rejected = _partition_items(selected, lambda item: item.nodeid in shard_nodeids)
+        deselected.extend(rejected)
+
+    if deselected:
+        config.hook.pytest_deselected(items=deselected)
+    regular_items = [item for item in selected if item.get_closest_marker("serial") is None]
+    serial_items = sorted(
+        (item for item in selected if item.get_closest_marker("serial") is not None),
+        key=lambda item: ("tls_conn_timeout" not in item.name, item.nodeid),
+    )
+    items[:] = regular_items + serial_items
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(
+    item: pytest.Item,
+    call: pytest.CallInfo[None],
+) -> Generator[None, pytest.TestReport, pytest.TestReport]:
+    """Discard successful Uranium sandboxes after fixture teardown.
+
+    :param item: Pytest item whose phase just completed.
+    :param call: Result information for the completed pytest phase.
+    """
+
+    report = yield
+    _update_sandbox_retention(item, report)
+    return report
+
+
+def _update_sandbox_retention(item: pytest.Item, report: pytest.TestReport) -> None:
+    """Retain one Uranium sandbox only when any test phase failed.
+
+    :param item: Pytest item that owns the sandbox.
+    :param report: Report for the item's current setup, call, or teardown phase.
+    """
+
+    is_replay = isinstance(item, ReplayItem)
+    is_procedural = item.get_closest_marker("uranium_procedural") is not None
+    if not is_replay and not is_procedural:
+        return
+    if report.failed:
+        setattr(item, "_uranium_sandbox_failed", True)
+    if report.when != "teardown" or getattr(item, "_uranium_sandbox_failed", False):
+        return
+
+    runtime = get_runtime(item.config)
+    sandbox = runtime.item_sandbox(item.spec.path, item.nodeid) if is_replay else runtime.procedural_sandbox(item.nodeid)
+    shutil.rmtree(sandbox, ignore_errors=True)
+
+
+def _mark_manual_tests(items: Sequence[MarkableItem], *, enabled: bool) -> None:
+    """Skip explicitly opt-in tests unless @a enabled is true."""
+
+    if enabled:
+        return
+    for item in items:
+        if marker := item.get_closest_marker("manual"):
+            detail = marker.kwargs.get("reason") or "manual Uranium test"
+            reason = f"{detail}; pass --run-manual to execute it"
+            item.add_marker(pytest.mark.skip(reason=reason))
+
+
+class ReplayFile(pytest.File):
+    """Represent one directly collected replay file."""
+
+    def collect(self) -> Iterator[pytest.Item]:
+        """Load collection metadata and yield one test item."""
+
+        try:
+            specs = ReplaySpec.load_all(Path(self.path))
+        except ReplayConfigError as error:
+            raise self.CollectError(str(error)) from error
+        for spec in specs:
+            suffix = ".test.yaml" if spec.path.name.endswith(".test.yaml") else ".test.yml"
+            name = spec.path.name.removesuffix(suffix)
+            if spec.variant_name is not None:
+                name += f"-{spec.variant_name}"
+            item = ReplayItem.from_parent(self, name=name, spec=spec)
+            item.add_marker("uranium_replay")
+            if manual := spec.urtest.get("manual"):
+                marker = pytest.mark.manual if manual is True else pytest.mark.manual(reason=str(manual))
+                item.add_marker(marker)
+            yield item
+
+
+class ReplayItem(pytest.Item):
+    """Execute one replay file as a pytest test item."""
+
+    def __init__(self, *, spec: ReplaySpec, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.spec = spec
+
+    def runtest(self) -> None:
+        """Run this item's replay lifecycle."""
+
+        runtime = get_runtime(self.config)
+        with runtime.execution_lock(is_exclusive=False):
+            try:
+                ReplayTest(self.spec, runtime, self.nodeid).run()
+            except ReplaySkip as reason:
+                pytest.skip(str(reason))
+
+    def repr_failure(self, excinfo: pytest.ExceptionInfo[BaseException], style: str | None = None) -> str:
+        """Present system-test failures without pytest's internal collector frames."""
+
+        if isinstance(excinfo.value, (AssertionError, ProcessError, ReplayConfigError)):
+            return str(excinfo.value)
+        return super().repr_failure(excinfo, style=style)
+
+    def reportinfo(self) -> tuple[Path, int, str]:
+        """Identify the replay file in pytest reports."""
+
+        return self.spec.path, 0, self.spec.description
+
+
+def get_runtime(config: pytest.Config) -> TestRuntime:
+    """Build and cache the runtime selected by pytest command-line options."""
+
+    cache_name = "_uranium_test_runtime"
+    cached = getattr(config, cache_name, None)
+    if cached is not None:
+        return cached
+
+    repository_root = Path(__file__).resolve().parents[3]
+    values = {
+        "ats_bin": config.getoption("ats_bin") or os.environ.get("ATS_BIN"),
+        "verifier_bin": config.getoption("proxy_verifier_bin") or os.environ.get("PROXY_VERIFIER_BIN"),
+        "build_root": config.getoption("build_root") or os.environ.get("ATS_BUILD_ROOT"),
+        "sandbox": config.getoption("sandbox") or os.environ.get("ATS_URTEST_SANDBOX"),
+    }
+    missing = [name for name, value in values.items() if not value]
+    if missing:
+        raise pytest.UsageError("ATS Uranium tests require " + ", ".join(f"--{name.replace('_', '-')}" for name in missing))
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
+    runtime = TestRuntime.create(
+        repository_root=repository_root,
+        build_root=Path(values["build_root"]),
+        ats_bin=Path(values["ats_bin"]),
+        verifier_bin=Path(values["verifier_bin"]),
+        sandbox_root=Path(values["sandbox"]) / worker,
+    )
+    setattr(config, cache_name, runtime)
+    return runtime
+
+
+@pytest.fixture(scope="session")
+def uranium_test_runtime(pytestconfig: pytest.Config) -> TestRuntime:
+    """Provide installed ATS paths and capabilities to handwritten tests."""
+
+    return get_runtime(pytestconfig)
+
+
+@pytest.fixture
+def uranium_replay(uranium_test_runtime: TestRuntime, request: pytest.FixtureRequest) -> Callable[[Path], None]:
+    """Return a helper that executes a replay file from a handwritten pytest test."""
+
+    def run(path: Path) -> None:
+        for spec in ReplaySpec.load_all(path):
+            ReplayTest(spec, uranium_test_runtime, request.node.nodeid).run()
+
+    return run
+
+
+@pytest.fixture
+def procedural_context(
+    uranium_test_runtime: TestRuntime,
+    request: pytest.FixtureRequest,
+) -> Iterator[ProceduralContext]:
+    """Own the execution lock and sandbox for a native procedural test."""
+
+    is_serial = request.node.get_closest_marker("serial") is not None
+    with uranium_test_runtime.execution_lock(is_exclusive=is_serial):
+        yield ProceduralContext.create(
+            uranium_test_runtime,
+            request.node.nodeid,
+            Path(request.node.path),
+            use_uds=request.config.getoption("curl_uds"),
+        )
+
+
+@pytest.fixture
+def ats_factory(procedural_context: ProceduralContext) -> Iterator[ATSFactory]:
+    """Create Traffic Server instances with fixture-owned cleanup."""
+
+    factory = ATSFactory(procedural_context)
+    try:
+        yield factory
+    finally:
+        factory.close()
+
+
+@pytest.fixture
+def ats(ats_factory: ATSFactory) -> ATS:
+    """Provide one configured Traffic Server with fixture-owned cleanup."""
+
+    return ats_factory.create("ats")
+
+
+@pytest.fixture
+def curl(procedural_context: ProceduralContext) -> Curl:
+    """Provide a curl client rooted in this test's sandbox."""
+
+    return Curl(
+        procedural_context.run_directory,
+        use_uds=procedural_context.use_uds,
+    )
+
+
+@pytest.fixture
+def services(procedural_context: ProceduralContext) -> Iterator[ServiceFactory]:
+    """Create support processes with fixture-owned cleanup."""
+
+    factory = ServiceFactory(procedural_context)
+    try:
+        yield factory
+    finally:
+        factory.close()
+
+
+def _partition_items(items: list[pytest.Item], predicate: Callable[[pytest.Item],
+                                                                   bool]) -> tuple[list[pytest.Item], list[pytest.Item]]:
+    """Split collected items while preserving their order."""
+
+    selected = []
+    rejected = []
+    for item in items:
+        (selected if predicate(item) else rejected).append(item)
+    return selected, rejected
+
+
+def _is_below_uranium_directory(item: pytest.Item, directories: set[str]) -> bool:
+    """Return whether an item is in a curl-UDS-incompatible directory."""
+
+    parts = item.path.parts
+    try:
+        uranium_index = parts.index("uranium_tests")
+    except ValueError:
+        return False
+    return uranium_index + 1 < len(parts) and parts[uranium_index + 1] in directories
+
+
+def _is_serial_test(test_path: Path) -> bool:
+    """Read the existing list of tests that require exclusive execution."""
+
+    tests_root = Path(__file__).resolve().parents[2]
+    try:
+        relative = test_path.resolve().relative_to(tests_root / "uranium_tests").as_posix()
+    except ValueError:
+        return False
+    serial_file = tests_root / "serial_tests.txt"
+    entries = {line.strip() for line in serial_file.read_text().splitlines() if line.strip() and not line.lstrip().startswith("#")}
+    return relative in entries

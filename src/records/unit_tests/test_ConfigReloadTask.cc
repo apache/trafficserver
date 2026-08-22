@@ -27,7 +27,7 @@
 #include "mgmt/config/ReloadCoordinator.h"
 
 // Note: These tests verify the default values and basic logic.
-// Full integration testing with records is done via autest.
+// Full integration testing with records is done via Uranium tests.
 
 TEST_CASE("ConfigReloadProgress default timeout", "[config][reload][timeout]")
 {

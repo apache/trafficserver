@@ -1,0 +1,97 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Proxy HTTP/1 and HTTP/2 clients to an HTTP/2 origin"
+  replay: "../replay_h2origin"
+  server:
+    name: "h2-origin"
+  client:
+    name: "client"
+    timeout: 60
+  ats:
+    name: "ts"
+    process_config:
+      enable_tls: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http"
+      proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
+      proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
+    remap_config:
+      - from: "/"
+        to: "https://127.0.0.1:{SERVER_HTTPS_PORT}"
+    logging_yaml:
+      logging:
+        formats:
+          - name: "testformat"
+            format: "%<cqtq> %<ttms> %<crc> %<pssc> %<{uuid}cqh> %<cqpv> %<sqpv> %<cqssl> %<cqtr> %<pqssl> %<sstc>"
+        logs:
+          - mode: "ascii"
+            format: "testformat"
+            filename: "squid"
+    file_checks:
+      - path: "{LOG_DIR}/squid.log"
+        contains: " 16 http/2 http/2"
+        timeout: 30
+  variants:
+    - name: "multi-thread"
+      ats:
+        records_config:
+          proxy.config.exec_thread.limit: 4
+          proxy.config.http.server_session_sharing.pool: "thread"
+          proxy.config.http.server_session_sharing.match: "ip,sni,cert"
+        metric_checks:
+          - {metric: "proxy.process.http.get_requests", value: 4}
+          - {metric: "proxy.process.http.post_requests", value: 10}
+          - {metric: "proxy.process.http.put_requests", value: 1}
+        log_validation:
+          access_log:
+            filename: "squid.log"
+            contains:
+              - {expression: " [1-4] http/1.1 http/2"}
+              - {expression: " 1[2-4] http/1.1 http/2"}
+              - {expression: " [5-9] http/2 http/2"}
+              - {expression: " 1[0-1] http/2 http/2"}
+              - {expression: " 1[5-6] http/2 http/2"}
+            excludes:
+              - {expression: " [1-4] http/2 http/2"}
+              - {expression: " 1[2-4] http/2 http/2"}
+              - {expression: " [5-9] http/1.1 http/2"}
+              - {expression: " 1[0-1] http/1.1 http/2"}
+              - {expression: " 1[5-6] http/1.1 http/2"}
+    - name: "single-thread-reuse"
+      ats:
+        records_config:
+          proxy.config.exec_thread.limit: 1
+          proxy.config.http.server_session_sharing.pool: "hybrid"
+          proxy.config.http.server_session_sharing.match: "hostonly"
+        log_validation:
+          access_log:
+            filename: "squid.log"
+            contains:
+              - {expression: " [1-4] http/1.1 http/2"}
+              - {expression: " [5-9] http/2 http/2"}
+              - {expression: " http/2 1 1 1 [2-9]"}
+            excludes:
+              - {expression: " [1-4] http/2 http/2"}
+              - {expression: " [5-9] http/1.1 http/2"}
+
+sessions: []

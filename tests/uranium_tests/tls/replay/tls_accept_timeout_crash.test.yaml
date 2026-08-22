@@ -1,0 +1,97 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Verify stale TLS accept timeouts do not crash a deferred SSN_START hook"
+  server:
+    name: "accept-timeout-origin"
+  client:
+    name: "accept-timeout-client"
+  ats:
+    name: "accept-timeout-ts"
+    process_config:
+      enable_tls: true
+      enable_cache: false
+    records_config:
+      proxy.config.ssl.handshake_timeout_in: 1
+      proxy.config.http.accept_no_activity_timeout: 1
+      proxy.config.http2.accept_no_activity_timeout: 1
+      proxy.config.url_remap.remap_required: 0
+    copy_custom_plugin:
+      - "{AtsTestPluginsDir}/hook_add_plugin.so"
+    plugin_config:
+      - "hook_add_plugin.so -delay-ms=3000"
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    log_validation:
+      traffic_out:
+        excludes:
+          - expression: 'failed assertion `event == NET_EVENT_ACCEPT'
+            description: "Session acceptors must ignore stale inactivity timeouts"
+      diags_log:
+        excludes:
+          - expression: "FATAL.*Assertion"
+            description: "ATS must not abort on the stale timeout"
+
+
+sessions:
+- protocol:
+    stack: https
+  transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+- protocol:
+    stack: http2
+  transactions:
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", / ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
