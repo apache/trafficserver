@@ -22,6 +22,7 @@ add_executable(
   test_ChunkedHandler.cc
   test_error_page_selection.cc
   test_ForwardedConfig.cc
+  test_HttpConfig.cc
   test_HttpTransact.cc
   test_HttpTransactHeaders.cc
   test_HttpUserAgent.cc

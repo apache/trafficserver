@@ -17,6 +17,8 @@
 
 .. include:: ../../common.defs
 
+.. _admin-mtls:
+
 Mututal TLS
 ***********
 
@@ -149,7 +151,29 @@ starts with /pci will use the pci.pem certificate. ::
 
    map /case1 https://server.com/case1 @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=customer-case1.pem
    map /case2 https://server.com/case2 @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=customer-case2.pem
-   map https://bank.example.com/pci https://pci.server.com/ @plugin=conf_remap.so @param=proxy.config.ss.client.cert.filename=pci.pem
+   map https://bank.example.com/pci https://pci.server.com/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename=pci.pem
+
+Outbound session reuse and client certificates
+----------------------------------------------
+Two remap rules that present different client certificates can reach the same
+origin, so a pooled outbound session has to be matched on the certificate as
+well as the address and hostname.  Otherwise a keep-alive session that
+authenticated with one certificate can serve a transaction configured for
+another, and the origin continues to authorize it as the first identity because
+reuse performs no second handshake.
+
+:ts:cv:`proxy.config.http.server_session_sharing.match` covers this by default:
+its default value of ``both`` includes ``cert``.  If you set that record
+explicitly, include ``cert`` whenever a remap rule or a plugin overrides
+:ts:cv:`proxy.config.ssl.client.cert.filename`, for example ``ip,host,cert``.  A
+value that omits ``cert``, such as ``ip`` or ``ip,host``, disables the check.
+
+``cert`` tracks only :ts:cv:`proxy.config.ssl.client.cert.filename` and its
+per-transaction overrides.  It does not see a client certificate selected by a
+:file:`sni.yaml` ``client_cert`` entry, because that path picks the outbound
+context directly rather than through the overridable record.  Those entries are
+keyed on the outbound SNI, so ``sni`` is the value that separates the identities
+they select; include it when :file:`sni.yaml` chooses the certificate.
 
 Guidance for testing
 --------------------
