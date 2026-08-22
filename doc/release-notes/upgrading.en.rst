@@ -240,6 +240,14 @@ The following :file:`records.yaml` changes have been made:
   allocating iobuffers and cache volumes from hugepages if configured in the
   system.
 - The records.yaml entry ``proxy.config.plugin.compiler_path`` has been added to specify an optional compiler tool path for compiling plugins.
+- The default value of :ts:cv:`proxy.config.http.server_session_sharing.match` is unchanged at
+  ``both``, but ``both`` now selects ``cert`` in addition to ``ip`` and ``host``.  A pooled
+  outbound TLS session is only reused for a transaction that would present the same client
+  certificate, because the origin authorizes the connection on the certificate sent during the
+  handshake and reuse performs no second handshake.  Deployments that override
+  :ts:cv:`proxy.config.ssl.client.cert.filename` per remap rule or from a plugin will see
+  outbound sessions pool per certificate, and so more outbound handshakes.  Set ``ip,host``
+  explicitly to select what ``both`` selected before.
 
 The ``ssl_multicert.config`` file has been replaced with
 :file:`ssl_multicert.yaml`. The new file uses YAML format with a top-level
