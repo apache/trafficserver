@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from pathlib import Path
 import json
 import re
@@ -132,7 +132,7 @@ class ServiceFactory:
                 command.append(str(value))
         if options:
             raise TypeError(f"Unsupported origin options: {', '.join(sorted(options))}")
-        process = ManagedProcess(name, command, directory)
+        process = ManagedProcess(name, command, directory, test_directory=self._context.test_directory)
         service = OriginServer(process, port, https_port, data_directory, address)
         lookup_headers = re.findall(r"{%([^}]+)}", lookup_key)
         healthcheck_headers = ["GET /ruok HTTP/1.1", "Host: 127.0.0.1"]
@@ -171,7 +171,12 @@ class ServiceFactory:
         otherwise = [default] if isinstance(default, str) else default
         zone_file = directory / "dns_file.json"
         zone_file.write_text(json.dumps({"mappings": [], **({"otherwise": otherwise} if otherwise else {})}))
-        process = ManagedProcess(name, ["microdns", "INADDR_LOOPBACK", port, zone_file], directory)
+        process = ManagedProcess(
+            name,
+            ["microdns", "INADDR_LOOPBACK", port, zone_file],
+            directory,
+            test_directory=self._context.test_directory,
+        )
         return self._remember(DNSServer(process, port, zone_file))
 
     def httpbin(self, name: str, **options: Any) -> HttpBinServer:
@@ -188,7 +193,7 @@ class ServiceFactory:
         command = ["go-httpbin", "-host", options.pop("ip", "127.0.0.1"), "-port", port]
         for flag, value in options.pop("options", {}).items():
             command.extend([str(flag), str(value)])
-        process = ManagedProcess(name, command, directory)
+        process = ManagedProcess(name, command, directory, test_directory=self._context.test_directory)
         return self._remember(HttpBinServer(process, port))
 
     def verifier_server(self, name: str, replay_path: str | Path, **options: Any) -> VerifierServer:
@@ -219,7 +224,7 @@ class ServiceFactory:
         if options.pop("verbose", True):
             command.extend(["--verbose", "diag"])
         command.extend(shlex.split(str(options.pop("other_args", ""))))
-        process = ManagedProcess(name, command, directory)
+        process = ManagedProcess(name, command, directory, test_directory=self._context.test_directory)
         return self._remember(VerifierServer(process, http_ports[0] if http_ports else 0, https_ports[0] if https_ports else 0))
 
     def verifier_client(self, name: str, replay_path: str | Path, **options: Any) -> ProcessService:
@@ -269,16 +274,17 @@ class ServiceFactory:
             command.extend(["--thread-limit", "1"])
         return_code = options.pop("return_code", 0)
         return_codes = return_code if isinstance(return_code, Sequence) and not isinstance(return_code, str) else [return_code]
-        process = ManagedProcess(name, command, directory, expected_return_codes=return_codes)
+        process = ManagedProcess(name, command, directory, test_directory=self._context.test_directory)
         reject = "" if options.pop("allow_errors", False) else "Violation|Invalid status"
-        return self._remember(ProcessService(process, reject_expression=reject))
+        service = ProcessService(process, reject_expression=reject)
+        service.expect_return_codes(*return_codes)
+        return self._remember(service)
 
     def process(
         self,
         name: str,
         command: Sequence[str | Path],
         *,
-        expected_return_codes: Iterable[int] = (0,),
         environment: dict[str, str] | None = None,
         ready_port: int = 0,
         ready_address: str = "127.0.0.1",
@@ -287,7 +293,6 @@ class ServiceFactory:
 
         :param name: Unique support-process name within the scenario.
         :param command: Executable followed by its command-line arguments.
-        :param expected_return_codes: Process return codes treated as success.
         :param environment: Complete or augmented process environment.
         :param ready_port: TCP port that must accept connections after start,
             or zero to skip listener readiness checks.
@@ -295,7 +300,13 @@ class ServiceFactory:
         """
 
         directory = self._directory(name)
-        process = ManagedProcess(name, command, directory, environment, expected_return_codes)
+        process = ManagedProcess(
+            name,
+            command,
+            directory,
+            environment,
+            test_directory=self._context.test_directory,
+        )
         return self._remember(ProcessService(process, ready_port=ready_port, ready_address=ready_address))
 
     def proxy_verifier_at_least(self, version: str) -> bool:

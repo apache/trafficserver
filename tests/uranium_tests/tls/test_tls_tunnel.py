@@ -199,8 +199,8 @@ class TlsTunnelScenario:
                 "2",
                 "--https",
             ],
-            expected_return_codes=(expected,),
         )
+        client.expect_return_codes(expected)
         return client.run(timeout=10).output
 
     def split_client_hello(self, name: str, split_size: int | None = None) -> None:

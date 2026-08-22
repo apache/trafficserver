@@ -19,10 +19,13 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
+from typing import Any
 import os
 import signal
 import subprocess
 import time
+
+from .expectations import StreamExpectations
 
 
 class ProcessError(RuntimeError):
@@ -39,17 +42,106 @@ class ManagedProcess:
             run_directory: Path,
             environment: dict[str, str] | None = None,
             expected_return_codes: Iterable[int] = (0,),
+            test_directory: Path | None = None,
     ) -> None:
+        """Create a managed process and its explicit expectations.
+
+        :param name: Process name used in diagnostics and captured filenames.
+        :param command: Executable followed by its command-line arguments.
+        :param run_directory: Working directory for the process.
+        :param environment: Complete process environment, or ``None`` to
+            inherit the current environment.
+        :param expected_return_codes: Initial process exit statuses treated as
+            success.
+        :param test_directory: Source directory for relative gold-file paths,
+            or ``None`` to use the run directory.
+        """
+
         self.name = name
         self.command = [str(argument) for argument in command]
         self.run_directory = run_directory
         self.environment = environment
-        self.expected_return_codes = set(expected_return_codes)
         self.stdout_path = run_directory / f"{name}.stdout"
         self.stderr_path = run_directory / f"{name}.stderr"
-        self._stdout = None
-        self._stderr = None
+        expectation_directory = test_directory or run_directory
+        self._stdout = StreamExpectations(name, "stdout", self.stdout_path, expectation_directory)
+        self._stderr = StreamExpectations(name, "stderr", self.stderr_path, expectation_directory)
+        self._return_codes: tuple[int, ...] = (0,)
+        self.expect_return_codes(*tuple(expected_return_codes))
+        self._stdout_file = None
+        self._stderr_file = None
         self._process: subprocess.Popen[bytes] | None = None
+
+    @property
+    def stdout(self) -> StreamExpectations:
+        """Return the read-only standard-output expectation API."""
+
+        return self._stdout
+
+    @stdout.setter
+    def stdout(self, _value: Any) -> None:
+        """Reject replacement of the stdout expectation object.
+
+        :param _value: Value supplied by an unsupported assignment.
+        """
+
+        raise AttributeError("stdout is read-only; use stdout.contains(), stdout.excludes(), or stdout.matches_gold()")
+
+    @property
+    def stderr(self) -> StreamExpectations:
+        """Return the read-only standard-error expectation API."""
+
+        return self._stderr
+
+    @stderr.setter
+    def stderr(self, _value: Any) -> None:
+        """Reject replacement of the stderr expectation object.
+
+        :param _value: Value supplied by an unsupported assignment.
+        """
+
+        raise AttributeError("stderr is read-only; use stderr.contains(), stderr.excludes(), or stderr.matches_gold()")
+
+    @property
+    def return_codes(self) -> tuple[int, ...]:
+        """Return the acceptable process exit statuses."""
+
+        return self._return_codes
+
+    @return_codes.setter
+    def return_codes(self, _values: Any) -> None:
+        """Reject direct assignment of acceptable exit statuses.
+
+        :param _values: Value supplied by an unsupported assignment.
+        """
+
+        raise AttributeError("return_codes is read-only; use expect_return_codes()")
+
+    def expect_return_codes(self, *codes: int) -> None:
+        """Set the acceptable process exit statuses.
+
+        :param codes: One or more integer exit statuses treated as success.
+        """
+
+        if not codes:
+            raise ValueError("expect_return_codes() requires at least one status")
+        if not all(isinstance(code, int) for code in codes):
+            raise TypeError("expect_return_codes() statuses must be integers")
+        self._return_codes = codes
+
+    @property
+    def stdout_text(self) -> str:
+        """Return captured standard output."""
+
+        self._flush_streams()
+        return self.stdout_path.read_text(errors="replace") if self.stdout_path.exists() else ""
+
+    @property
+    def stderr_text(self) -> str:
+        """Return captured standard error."""
+
+        self._flush_streams()
+        return self.stderr_path.read_text(errors="replace") if self.stderr_path.exists() else ""
 
     @property
     def return_code(self) -> int | None:
@@ -61,14 +153,14 @@ class ManagedProcess:
         """Start the process in a new process group."""
 
         self.run_directory.mkdir(parents=True, exist_ok=True)
-        self._stdout = self.stdout_path.open("wb")
-        self._stderr = self.stderr_path.open("wb")
+        self._stdout_file = self.stdout_path.open("wb")
+        self._stderr_file = self.stderr_path.open("wb")
         self._process = subprocess.Popen(
             self.command,
             cwd=self.run_directory,
             env=self.environment,
-            stdout=self._stdout,
-            stderr=self._stderr,
+            stdout=self._stdout_file,
+            stderr=self._stderr_file,
             start_new_session=True,
         )
 
@@ -101,10 +193,16 @@ class ManagedProcess:
         finally:
             self._close_streams()
 
-        if return_code not in self.expected_return_codes:
+        if return_code not in self.return_codes:
             raise ProcessError(
                 f"{self.name} exited with status {return_code}; expected "
-                f"{sorted(self.expected_return_codes)}.\n{self.output()}")
+                f"{sorted(self.return_codes)}.\n{self.output()}")
+
+    def validate_output(self) -> None:
+        """Apply registered stdout and stderr expectations."""
+
+        self.stdout.validate(self.stdout_text)
+        self.stderr.validate(self.stderr_text)
 
     def send_signal(self, signal_number: int) -> None:
         """Send @a signal_number to the process group leader."""
@@ -143,11 +241,11 @@ class ManagedProcess:
         return "\n".join(sections)
 
     def _flush_streams(self) -> None:
-        for stream in (self._stdout, self._stderr):
+        for stream in (self._stdout_file, self._stderr_file):
             if stream is not None and not stream.closed:
                 stream.flush()
 
     def _close_streams(self) -> None:
-        for stream in (self._stdout, self._stderr):
+        for stream in (self._stdout_file, self._stderr_file):
             if stream is not None and not stream.closed:
                 stream.close()

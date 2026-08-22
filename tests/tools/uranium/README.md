@@ -18,7 +18,7 @@ The framework has five layers:
 | Pytest integration | [`plugin.py`](plugin.py) | Collect replay files, create pytest items, apply markers, and provide fixtures. |
 | Test specification | [`config.py`](config.py) | Parse and validate replay metadata into `ReplaySpec` objects. |
 | Test execution | [`replay.py`](replay.py) | Materialize a sandbox, run the declared processes, and validate results. |
-| Runtime primitives | [`runtime.py`](runtime.py), [`process.py`](process.py), and [`services/`](services/) | Discover programs, own processes, and provide procedural-test APIs. |
+| Runtime primitives | [`runtime.py`](runtime.py), [`process.py`](process.py), [`expectations.py`](expectations.py), and [`services/`](services/) | Discover programs, own processes, express expected output, and provide procedural-test APIs. |
 
 The short distinction between the three replay-facing modules is:
 
@@ -94,6 +94,14 @@ validates required metadata, expands variants, resolves replay paths, merges
 flat ATS records, formats plugin entries, substitutes ports, and writes YAML.
 It does not start processes.
 
+### `expectations.py`
+
+Defines the explicit process-stream expectation API shared by managed
+procedural services. It accumulates ``contains()``, ``excludes()``, and
+``matches_gold()`` declarations, supports intentional ``reset()``, and rejects
+the legacy ``+=`` registration form. ``process.py`` owns each stream object and
+``ProcessService`` validates it after a process completes or is stopped.
+
 ### `plugin.py`
 
 Defines pytest hooks, custom replay collectors and items, markers, sharding,
@@ -104,7 +112,8 @@ connects pytest to `ReplaySpec`, `ReplayTest`, and the procedural services.
 
 Defines the low-level `ManagedProcess` primitive and `ProcessError`.
 `ManagedProcess` owns subprocess startup, readiness polling, signals, captured
-stdout and stderr, timeouts, expected return codes, and cleanup.
+stdout and stderr, explicit stream and return-code expectations, timeouts, and
+cleanup.
 
 ### `replay.py`
 

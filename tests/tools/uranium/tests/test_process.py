@@ -16,6 +16,7 @@
 """Unit tests for managed process behavior."""
 
 from pathlib import Path
+import re
 import sys
 from types import SimpleNamespace
 
@@ -23,6 +24,7 @@ import pytest
 
 from tools.uranium.process import ManagedProcess, ProcessError
 from tools.uranium.replay import ReplayTest
+from tools.uranium.services.process_service import ProcessService
 
 
 def test_managed_process_captures_output(tmp_path: Path) -> None:
@@ -42,6 +44,114 @@ def test_managed_process_reports_unexpected_status(tmp_path: Path) -> None:
     with pytest.raises(ProcessError, match="status 3"):
         process.wait(5)
     assert "bad" in process.output()
+
+
+def test_explicit_stream_expectations_accumulate_and_validate(tmp_path: Path) -> None:
+    """Apply multiple explicit regex expectations with caller-supplied flags."""
+
+    process = ManagedProcess(
+        "client",
+        [sys.executable, "-c", "print('READY=42')"],
+        tmp_path,
+        test_directory=tmp_path,
+    )
+    service = ProcessService(process)
+    service.stdout.contains(
+        r"^ready=[0-9]+$",
+        "The client should report its numeric ready marker.",
+        reflags=re.IGNORECASE | re.MULTILINE,
+    )
+    service.stdout.excludes("failure", "The client should not report a failure.")
+
+    result = service.run(5)
+
+    assert result.returncode == 0
+    assert len(service.stdout.expectations) == 2
+
+
+def test_explicit_stream_expectation_failure_reports_explanation(tmp_path: Path) -> None:
+    """Report the author-supplied explanation when an expectation fails."""
+
+    process = ManagedProcess("client", [sys.executable, "-c", "print('actual')"], tmp_path)
+    service = ProcessService(process)
+    service.stdout.contains("expected", "The expected marker should be present.")
+
+    with pytest.raises(AssertionError, match="The expected marker should be present"):
+        service.run(5)
+
+
+def test_regex_stream_expectations_require_explanations(tmp_path: Path) -> None:
+    """Reject contains and excludes declarations without useful explanations."""
+
+    service = ProcessService(ManagedProcess("client", ["true"], tmp_path))
+
+    with pytest.raises(ValueError, match="contains.*non-empty explanation"):
+        service.stdout.contains("value", "")
+    with pytest.raises(ValueError, match="excludes.*non-empty explanation"):
+        service.stderr.excludes("value", "   ")
+
+
+def test_gold_expectation_and_reset_preserve_stream_identity(tmp_path: Path) -> None:
+    """Match wildcard gold output after resetting an earlier expectation."""
+
+    (tmp_path / "output.gold").write_text("prefix``suffix\n")
+    process = ManagedProcess(
+        "client",
+        [sys.executable, "-c", "print('prefix variable suffix')"],
+        tmp_path / "run",
+        test_directory=tmp_path,
+    )
+    service = ProcessService(process)
+    stream = service.stdout
+    stream_path = stream.path
+    stream.contains("discarded", "This expectation should be removed.")
+
+    stream.reset()
+    stream.matches_gold("output.gold")
+    service.run(5)
+
+    assert service.stdout is stream
+    assert service.stdout.path == stream_path
+    assert len(service.stdout.expectations) == 1
+
+
+def test_process_expectation_properties_are_read_only(tmp_path: Path) -> None:
+    """Fail loudly when assignment tries to replace expectation state."""
+
+    service = ProcessService(ManagedProcess("client", ["true"], tmp_path))
+
+    with pytest.raises(AttributeError, match=r"stdout\.contains"):
+        service.stdout = object()
+    with pytest.raises(AttributeError, match=r"stderr\.contains"):
+        service.stderr = object()
+    with pytest.raises(TypeError, match=r"stdout\.contains"):
+        service.stdout += object()
+
+
+def test_expected_return_codes_use_explicit_api(tmp_path: Path) -> None:
+    """Validate explicit exit statuses and reject direct assignment."""
+
+    process = ManagedProcess("client", [sys.executable, "-c", "raise SystemExit(7)"], tmp_path)
+    service = ProcessService(process)
+
+    assert service.return_codes == (0,)
+    service.expect_return_codes(0, 7)
+    result = service.run(5)
+    assert result.returncode == 7
+    assert service.return_codes == (0, 7)
+
+    with pytest.raises(AttributeError, match="expect_return_codes"):
+        service.return_codes = (7,)
+    with pytest.raises(ValueError, match="at least one"):
+        service.expect_return_codes()
+    with pytest.raises(TypeError, match="integers"):
+        service.expect_return_codes("7")  # type: ignore[arg-type]
+
+
+def test_replay_return_codes_accept_procedural_sequences() -> None:
+    """Preserve tuple return-code options supplied by procedural ATS tests."""
+
+    assert tuple(ReplayTest._return_codes({"return_code": (0, -2)})) == (0, -2)
 
 
 def test_runtime_placeholders_are_replaced_in_structured_metadata(tmp_path: Path) -> None:

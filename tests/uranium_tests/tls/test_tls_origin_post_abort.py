@@ -35,7 +35,7 @@ class TlsOriginPostAbortScenario:
         """Create the raw TLS origin that sends an RST mid-body."""
 
         certificate = TEST_DIRECTORY.parents[1] / "tools" / "ssl" / "server.pem"
-        return services.process(
+        origin = services.process(
             "origin",
             (
                 sys.executable,
@@ -49,6 +49,15 @@ class TlsOriginPostAbortScenario:
             ),
             ready_port=self._origin_port,
         )
+        origin.stdout.contains(
+            "request headers received",
+            "The origin should receive the POST headers before resetting the connection.",
+        )
+        origin.stdout.contains(
+            "connection reset sent",
+            "The origin should reset the connection while ATS sends the request body.",
+        )
+        return origin
 
     def configure_ats(self, ats_factory: ATSFactory) -> ATS:
         """Configure a TLS origin with timeouts much longer than the test limit."""
@@ -93,8 +102,6 @@ class TlsOriginPostAbortScenario:
         assert client.returncode == 0, client.output
         assert "PASS: transaction failed promptly" in client.output
         assert "status-code: 5" in client.output
-        assert "request headers received" in self._origin.stdout
-        assert "connection reset sent" in self._origin.stdout
         traffic_out = self._ats.traffic_out.read_text(errors="replace")
         assert "received signal" not in traffic_out
         assert "failed assertion" not in traffic_out
