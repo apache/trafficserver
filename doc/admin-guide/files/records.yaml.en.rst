@@ -1159,18 +1159,42 @@ uds-group
    ``host``      Re-use server sessions, checking that the fully qualified
                  domain name matches. In addition, if the session uses TLS, it also
                  checks that the current transaction's host header value matches the session's SNI.
-   ``both``      Equivalent to ``host,ip``.
+   ``both``      Equivalent to ``host,ip,cert``.
    ``hostonly``  Check that the fully qualified domain name matches.
    ``sni``       Check that the SNI of the session matches the SNI that would be used to
                  create a new session.  Only applicable for TLS sessions.
-   ``cert``      Check that the certificate file name used for the server session matches the
-                 certificate file name that would be used for the new server session.  Only
-                 applicable for TLS sessions.
+   ``cert``      Check that the client certificate |TS| would present when opening a
+                 new connection to the origin matches the one the pooled session
+                 authenticated with, as selected by
+                 :ts:cv:`proxy.config.ssl.client.cert.filename`.  This is the certificate
+                 |TS| sends to the origin, not the certificate the origin sends back.
+                 Only applicable for TLS sessions.
    ============= ===================================================================
 
    The setting must contain at least one of ``ip``, ``host``, ``hostonly`` or ``both``
    for session reuse to operate.  The other values may be used for greater control
    with TLS session reuse.
+
+   ``both`` includes ``cert`` because the outbound client certificate is
+   overridable per transaction, so a pooled TLS session that authenticated with
+   one client certificate must not be reused for a transaction configured to
+   present a different one.  The origin authorizes the connection on the
+   certificate presented during the handshake, and reuse performs no second
+   handshake.  See :ref:`admin-mtls` for the configurations this applies to.
+
+   ``cert`` compares only the value of
+   :ts:cv:`proxy.config.ssl.client.cert.filename`, including its per-transaction
+   overrides.  A certificate selected by a :file:`sni.yaml` ``client_cert`` entry
+   is not visible to it, and because those entries are keyed on the outbound SNI,
+   ``sni`` is the value that separates the identities they select.
+
+   Including ``cert`` makes sessions less shareable for deployments that
+   configure a client certificate, which increases the number of outbound
+   handshakes.  Deployments that configure no client certificate are unaffected,
+   because the comparison is skipped entirely for non-TLS origins and compares
+   two empty values otherwise.  A deployment that needs the previous behavior can
+   set ``ip,host`` explicitly, which selects the same validators ``both`` did
+   before ``cert`` was added.
 
 .. note::
 
