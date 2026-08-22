@@ -19,7 +19,9 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+from typing import Any
 
+from ..expectations import StreamExpectations
 from ..process import ManagedProcess
 from ..utils import tcp_open
 from .context import CommandResult
@@ -65,18 +67,73 @@ class ProcessService:
         return self._process.return_code is None if self._was_started else False
 
     @property
-    def stdout(self) -> str:
-        self._process._flush_streams()
-        return self._process.stdout_path.read_text(errors="replace") if self._process.stdout_path.exists() else ""
+    def stdout(self) -> StreamExpectations:
+        """Return the read-only standard-output expectation API."""
+
+        return self._process.stdout
+
+    @stdout.setter
+    def stdout(self, _value: Any) -> None:
+        """Reject replacement of the stdout expectation object.
+
+        :param _value: Value supplied by an unsupported assignment.
+        """
+
+        raise AttributeError("stdout is read-only; use stdout.contains(), stdout.excludes(), or stdout.matches_gold()")
 
     @property
-    def stderr(self) -> str:
-        self._process._flush_streams()
-        return self._process.stderr_path.read_text(errors="replace") if self._process.stderr_path.exists() else ""
+    def stderr(self) -> StreamExpectations:
+        """Return the read-only standard-error expectation API."""
+
+        return self._process.stderr
+
+    @stderr.setter
+    def stderr(self, _value: Any) -> None:
+        """Reject replacement of the stderr expectation object.
+
+        :param _value: Value supplied by an unsupported assignment.
+        """
+
+        raise AttributeError("stderr is read-only; use stderr.contains(), stderr.excludes(), or stderr.matches_gold()")
+
+    @property
+    def return_codes(self) -> tuple[int, ...]:
+        """Return the acceptable process exit statuses."""
+
+        return self._process.return_codes
+
+    @return_codes.setter
+    def return_codes(self, _values: Any) -> None:
+        """Reject direct assignment of acceptable exit statuses.
+
+        :param _values: Value supplied by an unsupported assignment.
+        """
+
+        raise AttributeError("return_codes is read-only; use expect_return_codes()")
+
+    def expect_return_codes(self, *codes: int) -> None:
+        """Set the acceptable process exit statuses.
+
+        :param codes: One or more integer exit statuses treated as success.
+        """
+
+        self._process.expect_return_codes(*codes)
+
+    @property
+    def stdout_text(self) -> str:
+        """Return captured standard output."""
+
+        return self._process.stdout_text
+
+    @property
+    def stderr_text(self) -> str:
+        """Return captured standard error."""
+
+        return self._process.stderr_text
 
     @property
     def output(self) -> str:
-        return self.stdout + self.stderr
+        return self.stdout_text + self.stderr_text
 
     def start(self) -> None:
         self._process.start()
@@ -94,10 +151,10 @@ class ProcessService:
         :param timeout: Maximum number of seconds to wait for completion.
         """
 
+        self._was_validated = True
         self._process.wait(timeout)
         self._validate_output()
-        self._was_validated = True
-        return CommandResult(tuple(self._process.command), int(self._process.return_code or 0), self.stdout, self.stderr)
+        return CommandResult(tuple(self._process.command), int(self._process.return_code or 0), self.stdout_text, self.stderr_text)
 
     def run(self, timeout: float = 60) -> CommandResult:
         """Start the process and wait for completion.
@@ -119,3 +176,4 @@ class ProcessService:
     def _validate_output(self) -> None:
         if self._reject_expression and re.search(self._reject_expression, self.output):
             raise AssertionError(f"Unexpected diagnostic in {self.name}:\n{self.output}")
+        self._process.validate_output()
