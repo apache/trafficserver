@@ -362,6 +362,13 @@ private:
       return {_cur_blob.load(std::memory_order_relaxed), _cur_off.load(std::memory_order_relaxed)};
     }
 
+    bool
+    valid(IdType id) const
+    {
+      return _is_allocated(id);
+    }
+
+  private:
     /** Whether @a id names an allocated slot.
      *
      * The gate for every id based accessor, since ids from the @c TSStat* API are untrusted. An id
@@ -384,12 +391,6 @@ private:
       // A non-null blob past cur_blob is allocated but not yet published, hence <= and < rather
       // than a test for "not the current blob".
       return offset < MAX_SIZE && blob_ix <= cur_blob && _blobs[blob_ix] != nullptr && (blob_ix < cur_blob || offset < cur_off);
-    }
-
-    bool
-    valid(IdType id) const
-    {
-      return _is_allocated(id);
     }
   };
 

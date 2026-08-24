@@ -201,7 +201,10 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
   // On the final blob there is nowhere left to grow, so refuse a span that would fill or overflow
   // it rather than letting addBlob() assert. Same intent as the guard in create(), and the same
   // cost: some slots of the last blob go unused.
-  if (_cur_blob.load(std::memory_order_relaxed) >= MAX_BLOBS - 1 && _cur_off.load(std::memory_order_relaxed) + size >= MAX_SIZE) {
+  auto cur_blob = _cur_blob.load(std::memory_order_relaxed);
+  auto cur_off  = _cur_off.load(std::memory_order_relaxed);
+
+  if (cur_blob >= MAX_BLOBS - 1 && cur_off + size >= MAX_SIZE) {
     if (id) {
       *id = 0; // Slot 0 is the reserved bad_id.
     }
@@ -209,13 +212,11 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
   }
 
   // A span has to be contiguous, so one that does not fit in the current blob starts a new one.
-  if (_cur_off.load(std::memory_order_relaxed) + size > MAX_SIZE) {
+  if (cur_off + size > MAX_SIZE) {
     addBlob();
+    cur_blob = _cur_blob.load(std::memory_order_relaxed);
+    cur_off  = _cur_off.load(std::memory_order_relaxed);
   }
-
-  // Re-read: addBlob() above may have moved both.
-  auto const cur_blob = _cur_blob.load(std::memory_order_relaxed);
-  auto const cur_off  = _cur_off.load(std::memory_order_relaxed);
 
   Metrics::IdType           span_start = _makeId(cur_blob, cur_off, type);
   Metrics::NamesAndAtomics *blob       = _blobs[cur_blob].get();
