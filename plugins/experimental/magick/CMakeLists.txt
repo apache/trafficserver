@@ -15,7 +15,7 @@
 #
 #######################
 
-add_atsplugin(magick magick.cc)
+add_atsplugin(magick magick.cc magick_args.cc)
 
 # This creates the magic import target if necessary (older cmake)
 include(magick_target)
