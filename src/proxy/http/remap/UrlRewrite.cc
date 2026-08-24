@@ -101,10 +101,6 @@ UrlRewrite::load(ConfigContext ctx)
 bool
 UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node, ConfigContext ctx)
 {
-  if (remap_node) {
-    this->_remap_yaml = true;
-  }
-
   this->ts_name = nullptr;
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
     this->ts_name = ats_stringdup(rec_str);
