@@ -27,6 +27,7 @@ add_library(
   CacheHttp.cc
   CacheProcessor.cc
   CacheRead.cc
+  CacheShm.cc
   CacheVC.cc
   CacheWrite.cc
   HttpTransactCache.cc
@@ -93,6 +94,11 @@ if(BUILD_TESTING)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
   add_cache_test(RamCacheCopy unit_tests/test_RamCacheCopy.cc)
+  # Only the shutdown test attaches a live segment; the rest need no shm syscall.
+  add_cache_test(CacheShm unit_tests/test_CacheShm.cc)
+  if(TS_USE_CACHE_SHM)
+    add_cache_test(CacheShmShutdown unit_tests/test_CacheShmShutdown.cc)
+  endif()
 
   # Unit Tests without unit_tests/main.cc
   add_executable(test_ConfigVolumes unit_tests/test_ConfigVolumes.cc)

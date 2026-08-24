@@ -1,0 +1,586 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Origin side of slice_purge_gaps.test.py.
+#
+# Keyed on "{url}{field.range}{field.uuid}", so one transaction answers one block
+# of one phase. Blocks are 10 bytes: block 0 is "a", 1 is "b", 2 is "c", 4 is "e".
+#
+# PURGE is answered by ATS and the plugin issues no other request kind, so neither
+# appears here.
+#
+# A check phase for a block expected to SURVIVE its purge is deliberately absent:
+# if such a block were wrongly purged, ATS would ask for an unregistered key and
+# the client's own expectation would fail too.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /hole
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, hole-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /hole
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, hole-fill-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /hole
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, hole-check-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /hole
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, hole-check-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /nofirst
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, nofirst-fill-1]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 10-19/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'bbbbbbbbbb', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /nofirst
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, nofirst-check-1]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 10-19/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'bbbbbbbbbb', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, mixed-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, mixed-fill-1]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 10-19/50]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'bbbbbbbbbb', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=40-49]
+        - [uuid, mixed-fill-4]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 40-49/50]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'eeeeeeeeee', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=40-49]
+        - [uuid, mixed-check-4]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 40-49/50]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'eeeeeeeeee', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /ranged
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, ranged-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /ranged
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, ranged-fill-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /ranged
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, ranged-check-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /ranged
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, ranged-check-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /openend
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, openend-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /openend
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, openend-fill-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /openend
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, openend-check-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /outside
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=10-19]
+        - [uuid, outside-fill-1]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 10-19/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'bbbbbbbbbb', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /endbytes
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, endbytes-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /endbytes
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, endbytes-fill-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /endbytes
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, endbytes-check-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /endbytes
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=20-29]
+        - [uuid, endbytes-check-2]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 20-29/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'cccccccccc', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /sparse
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=40-49]
+        - [uuid, sparse-fill-4]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 40-49/50]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'eeeeeeeeee', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /sparse
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=40-49]
+        - [uuid, sparse-check-gone]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 40-49/50]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'eeeeeeeeee', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /badrange
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, badrange-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, failblock-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/40]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=30-39]
+        - [uuid, failblock-fill-3]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 30-39/40]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'dddddddddd', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /failblock
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, failblock-check-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/40]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}
+
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /denied
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=0-9]
+        - [uuid, denied-fill-0]
+    server-response:
+      status: 206
+      reason: Partial Content
+      headers:
+        fields:
+        - [Content-Range, bytes 0-9/30]
+        - [Content-Length, '10']
+        - [Cache-Control, 'public, max-age=86400']
+      content: {encoding: plain, data: 'aaaaaaaaaa', size: 10}

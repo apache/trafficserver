@@ -26,7 +26,11 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
+#include <sys/wait.h>
+#include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
 
@@ -38,6 +42,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <functional>
 
 #include "swoc/swoc_file.h"
 
@@ -335,6 +340,10 @@ private:
   }
 };
 
+struct TestableIPCSocketClient : shared::rpc::IPCSocketClient {
+  using shared::rpc::IPCSocketClient::_safe_write;
+};
+
 // helper function to send a request and update the promise when the response is done.
 // This is to be used in a multithread test.
 void
@@ -343,6 +352,72 @@ send_request(std::string json, std::promise<std::string> p)
   ScopedLocalSocket rpc_client;
   auto              resp = rpc_client.query(json);
   p.set_value(resp);
+}
+
+TEST_CASE("IPCSocketClient write returns when the peer stops reading", "[socket][client]")
+{
+  int fds[2];
+  REQUIRE(::socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == 0);
+
+  int const flags = ::fcntl(fds[0], F_GETFL, 0);
+  REQUIRE(flags >= 0);
+  REQUIRE(::fcntl(fds[0], F_SETFL, flags | O_NONBLOCK) == 0);
+
+  std::vector<char> fill(4096, 'x');
+  while (true) {
+    ssize_t const ret = ::write(fds[0], fill.data(), fill.size());
+    if (ret < 0) {
+      REQUIRE((errno == EAGAIN || errno == EWOULDBLOCK));
+      break;
+    }
+    REQUIRE(ret > 0);
+  }
+
+  TestableIPCSocketClient rpc_client;
+  pid_t const             pid = ::fork();
+  REQUIRE(pid >= 0);
+  if (pid == 0) {
+    ::close(fds[1]);
+    char const byte = 'x';
+    auto const ret  = rpc_client._safe_write(fds[0], &byte, 1);
+    auto const err  = errno;
+    ::close(fds[0]);
+    _exit(ret == -1 && err == ETIMEDOUT ? 0 : 1);
+  }
+
+  int        status         = 0;
+  bool       child_exited   = false;
+  auto const child_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+  while (std::chrono::steady_clock::now() < child_deadline) {
+    auto const wait_ret = ::waitpid(pid, &status, WNOHANG);
+    if (wait_ret == pid) {
+      child_exited = true;
+      break;
+    }
+    REQUIRE(wait_ret == 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+
+  if (!child_exited) {
+    auto const wait_ret = ::waitpid(pid, &status, WNOHANG);
+    if (wait_ret == pid) {
+      child_exited = true;
+    } else {
+      REQUIRE(wait_ret == 0);
+    }
+  }
+
+  if (!child_exited) {
+    ::kill(pid, SIGKILL);
+    REQUIRE(::waitpid(pid, &status, 0) == pid);
+    FAIL("_safe_write did not return when the nonblocking socket stayed unwritable");
+  }
+
+  ::close(fds[0]);
+  ::close(fds[1]);
+
+  REQUIRE(WIFEXITED(status));
+  REQUIRE(WEXITSTATUS(status) == 0);
 }
 } // namespace
 TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
@@ -420,6 +495,44 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
   REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
+TEST_CASE("JSONRPC socket inode permissions reflect restricted_api config", "[socket][permissions]")
+{
+  SECTION("restricted_api=true yields mode 0700 on the socket inode")
+  {
+    auto confStr{
+      R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" + sockPath +
+      R"(",  "backlog": 5, "max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000, "restricted_api": true }}})"};
+    YAML::Node n = YAML::Load(confStr);
+    restart_json_rpc_server(n);
+
+    // Restore the default test server configuration on scope exit, even if an
+    // assertion below fails (REQUIRE throws), so subsequent test cases are not
+    // left running against the restricted-api server.
+    struct ConfigRestorer {
+      std::function<void()> restore;
+      ~ConfigRestorer()
+      {
+        try {
+          restore();
+        } catch (...) {
+        }
+      }
+    } config_restorer{[&]() {
+      auto       restoreStr{R"({"rpc": { "enabled": true, "unix": { "lock_path_name": ")" + lockPath + R"(", "sock_path_name": ")" +
+                      sockPath +
+                      R"(",  "backlog": 5, "max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000 }}})"};
+      YAML::Node restoreN = YAML::Load(restoreStr);
+      restart_json_rpc_server(restoreN);
+    }};
+
+    struct stat st {
+    };
+    REQUIRE(::stat(sockPath.c_str(), &st) == 0);
+    CHECK(S_ISSOCK(st.st_mode));
+    CHECK((st.st_mode & 0777) == 0700);
+  }
+}
+
 TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
 {
   REQUIRE(rpc::add_method_handler("do_nothing32000", &do_nothing));
@@ -445,6 +558,15 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
       ScopedLocalSocket rpc_client;
       auto              resp = rpc_client.query(json);
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": "32000"}, "id": "32k_1"})");
+    }());
+
+    const int oversized_message_size{64000};
+    auto      oversized_json{R"({"jsonrpc": "2.0", "method": "do_nothing32000", "params": {"msg":")" +
+                        random_string(oversized_message_size) + R"("}, "id":"over-limit"})"};
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      auto              resp = rpc_client.query(oversized_json);
+      REQUIRE(resp.empty());
     }());
   }
   REQUIRE(rpc::test_remove_handler("do_nothing32000"));

@@ -20,8 +20,6 @@
 TSHttpTxnServerPacketMarkSet
 ****************************
 
-Change packet firewall mark for the server side connection.
-
 Synopsis
 ========
 
@@ -34,13 +32,25 @@ Synopsis
 Description
 ===========
 
+Change the packet firewall :arg:`mark` for the server side (origin) connection.
+The entire firewall mark is replaced with :arg:`mark`, which is interpreted as a
+32-bit unsigned bit pattern.
+
+Always returns :const:`TS_SUCCESS`, including when no server connection has been
+established yet.
+
 .. note::
 
-   The change takes effect immediately. If no OS connection has been
-   made, then this sets the mark that will be used. If an OS connection
-   is established
+   The firewall mark is only honored on platforms whose OS supports it,
+   specifically Linux via ``SO_MARK``. On platforms without ``SO_MARK`` support
+   the call still returns :const:`TS_SUCCESS`, but setting the mark has no effect
+   at the OS layer (it is a safe no-op).
 
-.. XXX Third sentence above needs to be completed.
+.. note::
+
+   If a live server connection exists, the mark is applied to it immediately; the
+   mark is also recorded on the transaction so that any subsequent server
+   connection for this transaction uses it.
 
 See Also
 ========

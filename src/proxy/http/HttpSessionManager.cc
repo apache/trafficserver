@@ -31,10 +31,12 @@
  ****************************************************************************/
 
 #include "../../iocore/net/P_UnixNetVConnection.h"
+#include "../../iocore/net/P_SSLClientUtils.h"
 #include "proxy/http/HttpSessionManager.h"
 #include "proxy/ProxySession.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
+#include "iocore/eventsystem/IOBuffer.h"
 #include "iocore/net/TLSSNISupport.h"
 #include "ts/ats_probe.h"
 #include <iterator>
@@ -42,6 +44,13 @@
 namespace
 {
 DbgCtl dbg_ctl_http_ss{"http_ss"};
+
+bool
+validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
+{
+  return !session->is_multiplexing() ||
+         validate_server_certificate_hostname(session->get_netvc(), sm->get_outbound_sni_for_cert_verification());
+}
 
 } // end anonymous namespace
 
@@ -100,7 +109,7 @@ ServerSessionPool::validate_host_sni(HttpSM *sm, NetVConnection *netvc)
         // TS-4468: If the connection matches, make sure the SNI server
         // name (if present) matches the request hostname
         auto req_host{sm->t_state.hdr_info.server_request.host_get()};
-        retval = strncasecmp(session_sni, req_host.data(), req_host.length()) == 0;
+        retval = strlen(session_sni) == req_host.length() && strncasecmp(session_sni, req_host.data(), req_host.length()) == 0;
         Dbg(dbg_ctl_http_ss, "validate_host_sni host=%*.s, sni=%s", static_cast<int>(req_host.length()), req_host.data(),
             session_sni);
       }
@@ -177,7 +186,8 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
       if (port == ats_ip_port_cast(iter->get_remote_addr()) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, iter->get_netvc())) &&
           (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, iter->get_netvc())) &&
-          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc()))) {
+          (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc())) &&
+          validate_session_origin_cert(sm, &*iter)) {
         zret = HSMresult_t::DONE;
         break;
       }
@@ -204,14 +214,21 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
         if ((!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY) || iter->hostname_hash == hostname_hash) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_SNI) || validate_sni(sm, iter->get_netvc())) &&
             (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) || validate_host_sni(sm, iter->get_netvc())) &&
-            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc()))) {
+            (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) || validate_cert(sm, iter->get_netvc())) &&
+            validate_session_origin_cert(sm, &*iter)) {
           zret = HSMresult_t::DONE;
           break;
         }
         ++iter;
       }
-    } else if (iter != end) {
-      zret = HSMresult_t::DONE;
+    } else {
+      while (iter != end) {
+        if (validate_session_origin_cert(sm, &*iter)) {
+          zret = HSMresult_t::DONE;
+          break;
+        }
+        ++iter;
+      }
     }
     if (zret == HSMresult_t::DONE) {
       to_return = &*iter;
@@ -223,9 +240,16 @@ ServerSessionPool::acquireSession(sockaddr const *addr, CryptoHash const &hostna
   return zret;
 }
 
-void
+bool
 ServerSessionPool::releaseSession(PoolableSession *ss)
 {
+  IOBufferReader *remote_reader = ss->get_remote_reader();
+  if (remote_reader->read_avail() > 0) {
+    // The caller is responsible for closing when this returns false.
+    Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [release session] origin sent unexpected bytes; not pooling", ss->connection_id());
+    return false;
+  }
+
   ss->state = PoolableSession::PooledState::KA_POOLED;
   // Now we need to issue a read on the connection to detect
   //  if it closes on us.  We will get called back in the
@@ -233,7 +257,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
   //  to remove the connection from our lists
   //  Actually need to have a buffer here, otherwise the vc is
   //  disabled
-  ss->do_io_read(this, INT64_MAX, ss->get_remote_reader()->mbuf);
+  ss->do_io_read(this, INT64_MAX, remote_reader->mbuf);
 
   // Transfer control of the write side as well
   ss->do_io_write(this, 0, nullptr);
@@ -248,6 +272,7 @@ ServerSessionPool::releaseSession(PoolableSession *ss)
       "[%" PRId64 "] [release session] "
       "session placed into shared pool",
       ss->connection_id());
+  return true;
 }
 
 //   Called from the NetProcessor to let us know that a
@@ -378,7 +403,8 @@ HttpSessionManager::acquire_session(HttpSM *sm, sockaddr const *ip, const char *
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC) ||
          ServerSessionPool::validate_host_sni(sm, to_return->get_netvc())) &&
         (!(match_style & TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT) ||
-         ServerSessionPool::validate_cert(sm, to_return->get_netvc()))) {
+         ServerSessionPool::validate_cert(sm, to_return->get_netvc())) &&
+        validate_session_origin_cert(sm, to_return)) {
       Dbg(dbg_ctl_http_ss, "[%" PRId64 "] [acquire session] returning attached session ", to_return->connection_id());
       to_return->state = PoolableSession::PooledState::SSN_IN_USE;
       sm->create_server_txn(to_return);
@@ -536,8 +562,12 @@ HttpSessionManager::release_session(PoolableSession *to_release)
     bool const   locked = lockSessionPool(pool->mutex, ethread, this->get_pool_type(), &mlock, &tlock);
 
     if (locked) {
-      pool->releaseSession(to_release);
-      ATS_PROBE2(http_ss_release_session_global, to_release->connection_id(), to_release->get_netvc()->get_socket());
+      bool const pooled = pool->releaseSession(to_release);
+      ATS_PROBE3(http_ss_release_session_global, to_release->connection_id(), to_release->get_netvc()->get_socket(), pooled);
+      if (!pooled) {
+        // close & free session
+        to_release->do_io_close();
+      }
     } else if (this->get_pool_type() == TS_SERVER_SESSION_SHARING_POOL_HYBRID) {
       // Try again with the thread pool
       to_release->sharing_pool = TS_SERVER_SESSION_SHARING_POOL_THREAD;

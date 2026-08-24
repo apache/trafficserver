@@ -159,8 +159,12 @@ CB_Update_Secret(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata AT
     }
   }
   for (auto name : updates) {
-    Dbg(dbg_ctl, "update cert for secret %s", name.c_str());
-    TSSslSecretUpdate(name.c_str(), name.length());
+    TSReturnCode result = TSSslSecretUpdate(name.c_str(), name.length());
+    if (result == TS_SUCCESS) {
+      Dbg(dbg_ctl, "updated cert for secret %s", name.c_str());
+    } else {
+      TSError("[%s] failed to update cert for secret %s", PN, name.c_str());
+    }
   }
   TSContScheduleOnPool(cont, 3000, TS_THREAD_POOL_TASK);
   return TS_SUCCESS;

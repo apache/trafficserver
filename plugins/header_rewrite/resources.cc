@@ -87,7 +87,8 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 
   case TS_HTTP_READ_REQUEST_HDR_HOOK:
   case TS_HTTP_PRE_REMAP_HOOK:
-    // Read request from client
+  case TS_HTTP_POST_REMAP_HOOK:
+    // Read request from client (post-remap this is the remapped request)
     if (ids & RSRC_CLIENT_REQUEST_HEADERS) {
       bufp    = client_bufp;
       hdr_loc = client_hdr_loc;

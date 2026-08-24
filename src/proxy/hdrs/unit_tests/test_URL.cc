@@ -323,6 +323,44 @@ std::vector<url_parse_test_case> url_parse_test_cases = {
     IS_VALID
   },
   {
+    // Maximum value that fits in the 16-bit port field; preserved verbatim.
+    "https://www.example.com:65535/",
+    "https://www.example.com:65535/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com:65535/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    // One past the 16-bit boundary: the port is rejected and the URL is
+    // emitted with no explicit port so default-port logic applies.
+    "https://www.example.com:65536/",
+    "https://www.example.com/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    // Five-digit value above the 16-bit range.
+    "https://www.example.com:99999/",
+    "https://www.example.com/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
+    // Six-digit value whose low 16 bits coincide with a well-known port (80);
+    // must not be silently retained as if the user had asked for that port.
+    "https://www.example.com:131152/",
+    "https://www.example.com/",
+    VERIFY_HOST_CHARACTERS,
+    "https://www.example.com/",
+    IS_VALID,
+    IS_VALID
+  },
+  {
     "https://www.example.com/a/path",
     "https://www.example.com/a/path",
     VERIFY_HOST_CHARACTERS,
@@ -569,6 +607,74 @@ TEST_CASE("UrlParse", "[proxy][parseurl]")
   test_parse(test_case, URL_PARSE_REGEX);
 }
 
+TEST_CASE("UrlParsePortStorage", "[proxy][parseurl]")
+{
+  // Validate the underlying URLImpl port storage rather than the printed form,
+  // so the rejection path cannot leave the parsed text behind even when other
+  // serialization paths only inspect m_ptr_port.
+  struct Case {
+    std::string input_uri;
+    int         expected_port;    // numeric m_port value
+    bool        expect_port_text; // true if m_ptr_port should be non-null
+  };
+
+  // clang-format off
+  static const std::vector<Case> cases = {
+    // In-range ports keep both the numeric value and the parsed text.
+    {"https://www.example.com:8080/",   8080,  true },
+    {"https://www.example.com:65535/",  65535, true },
+    // Out-of-range ports clear both.
+    {"https://www.example.com:65536/",  0,     false},
+    {"https://www.example.com:99999/",  0,     false},
+    {"https://www.example.com:131152/", 0,     false},
+  };
+  // clang-format on
+
+  auto c = GENERATE(from_range(cases));
+  CAPTURE(c.input_uri, c.expected_port, c.expect_port_text);
+
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse(c.input_uri) == ParseResult::DONE);
+
+  CHECK(url.m_url_impl->m_port == c.expected_port);
+  if (c.expect_port_text) {
+    CHECK(url.m_url_impl->m_ptr_port != nullptr);
+    CHECK(url.m_url_impl->m_len_port > 0);
+  } else {
+    CHECK(url.m_url_impl->m_ptr_port == nullptr);
+    CHECK(url.m_url_impl->m_len_port == 0);
+  }
+
+  heap->destroy();
+}
+
+TEST_CASE("UrlPrintLowerCaseSchemeHostHandlesHighBitBytes", "[proxy][urlprint]")
+{
+  constexpr auto HIGH_ORDER_BIT = static_cast<char>(0x80);
+
+  std::string input_uri{"HTTP://High"};
+  input_uri.push_back(HIGH_ORDER_BIT);
+  input_uri.append(".Example/path");
+
+  std::string expected_url{"http://high"};
+  expected_url.push_back(HIGH_ORDER_BIT);
+  expected_url.append(".example/path");
+
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse_no_host_check(input_uri) == ParseResult::DONE);
+
+  int   length      = 0;
+  char *printed_url = url.string_get_ref(&length, URLNormalize::LC_SCHEME_HOST);
+  REQUIRE(printed_url != nullptr);
+  CHECK(std::string_view{printed_url, static_cast<std::string_view::size_type>(length)} == expected_url);
+
+  heap->destroy();
+}
+
 struct get_hash_test_case {
   const std::string description;
   const std::string uri_1;
@@ -744,4 +850,40 @@ TEST_CASE("UrlPathGet", "[url][path_get]")
       heap->destroy();
     }
   }
+}
+
+// URL getters must not construct std::string_view from a nullptr pointer
+// (which is UB). Parts that are not present in the URL should return an
+// empty string_view with data() == nullptr.
+TEST_CASE("UrlMissingParts", "[url][missing_parts]")
+{
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+
+  // A freshly created URL with no parse has no components set.
+  auto scheme{url.scheme_get()};
+  auto user{url.user_get()};
+  auto password{url.password_get()};
+  auto host{url.host_get()};
+  auto path{url.path_get()};
+  auto query{url.query_get()};
+  auto fragment{url.fragment_get()};
+
+  CHECK(scheme.empty());
+  CHECK(scheme.data() == nullptr);
+  CHECK(user.empty());
+  CHECK(user.data() == nullptr);
+  CHECK(password.empty());
+  CHECK(password.data() == nullptr);
+  CHECK(host.empty());
+  CHECK(host.data() == nullptr);
+  CHECK(path.empty());
+  CHECK(path.data() == nullptr);
+  CHECK(query.empty());
+  CHECK(query.data() == nullptr);
+  CHECK(fragment.empty());
+  CHECK(fragment.data() == nullptr);
+
+  heap->destroy();
 }

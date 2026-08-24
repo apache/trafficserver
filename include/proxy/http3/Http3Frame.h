@@ -98,6 +98,9 @@ private:
   // Head of IOBufferBlock chain to send
   Ptr<IOBufferBlock> _whole_frame;
   uint64_t           _payload_len = 0;
+
+protected:
+  bool _parse() override;
 };
 
 //

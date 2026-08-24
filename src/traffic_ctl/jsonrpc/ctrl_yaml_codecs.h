@@ -26,6 +26,8 @@
 
 #include "CtrlRPCRequests.h"
 
+#include <utility>
+
 // traffic_ctl jsonrpc request/response YAML codec implementation.
 
 namespace YAML
@@ -107,7 +109,7 @@ template <> struct convert<ConfigReloadResponse> {
           ConfigReloadResponse::LogEntry entry;
           entry.level = static_cast<DiagsLevel>(log["level"].as<int>(DL_Undefined));
           entry.text  = log["text"].as<std::string>();
-          info.logs.push_back(entry);
+          info.logs.push_back(std::move(entry));
         } else {
           info.logs.push_back({DL_Undefined, log.as<std::string>()});
         }

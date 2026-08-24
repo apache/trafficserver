@@ -438,9 +438,10 @@ http2_encode_header_blocks(HTTPHdr *in, uint8_t *out, uint32_t out_len, uint32_t
  */
 Http2ErrorCode
 http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_t buf_len, uint32_t *len_read, HpackHandle &handle,
-                           bool is_trailing_header, uint32_t maximum_table_size, bool is_outbound)
+                           bool is_trailing_header, uint32_t maximum_table_size, uint32_t header_field_max_size, bool is_outbound)
 {
-  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size);
+  int64_t result = hpack_decode_header_block(handle, hdr, buf_start, buf_len, Http2::max_header_list_size, maximum_table_size,
+                                             header_field_max_size);
 
   if (result < 0) {
     if (result == HPACK_ERROR_COMPRESSION_ERROR) {
@@ -459,16 +460,17 @@ http2_decode_header_blocks(HTTPHdr *hdr, const uint8_t *buf_start, const uint32_
 }
 
 // Initialize this subsystem with librecords configs (for now)
-uint32_t               Http2::max_concurrent_streams_in = 100;
-uint32_t               Http2::min_concurrent_streams_in = 10;
-uint32_t               Http2::max_active_streams_in     = 0;
-bool                   Http2::throttling                = false;
-uint32_t               Http2::stream_priority_enabled   = 0;
-uint32_t               Http2::initial_window_size_in    = 65535;
-Http2FlowControlPolicy Http2::flow_control_policy_in    = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
-uint32_t               Http2::max_frame_size            = 16384;
-uint32_t               Http2::header_table_size         = 4096;
-uint32_t               Http2::max_header_list_size      = 4294967295;
+uint32_t               Http2::max_concurrent_streams_in    = 100;
+uint32_t               Http2::min_concurrent_streams_in    = 10;
+uint32_t               Http2::max_active_streams_in        = 200000;
+uint32_t               Http2::max_active_streams_policy_in = 0;
+bool                   Http2::throttling                   = false;
+uint32_t               Http2::stream_priority_enabled      = 0;
+uint32_t               Http2::initial_window_size_in       = 65535;
+Http2FlowControlPolicy Http2::flow_control_policy_in       = Http2FlowControlPolicy::STATIC_SESSION_AND_STATIC_STREAM;
+uint32_t               Http2::max_frame_size               = 16384;
+uint32_t               Http2::header_table_size            = 4096;
+uint32_t               Http2::max_header_list_size         = 4294967295;
 
 uint32_t Http2::accept_no_activity_timeout   = 120;
 uint32_t Http2::no_activity_timeout_in       = 120;
@@ -486,8 +488,8 @@ uint32_t               Http2::no_activity_timeout_out    = 120;
 
 float    Http2::stream_error_rate_threshold        = 0.1;
 uint32_t Http2::stream_error_sampling_threshold    = 10;
-int32_t  Http2::max_settings_per_frame             = 7;
-int32_t  Http2::max_settings_per_minute            = 14;
+int32_t  Http2::max_settings_per_frame             = 16;
+int32_t  Http2::max_settings_per_minute            = 32;
 int32_t  Http2::max_settings_frames_per_minute     = 14;
 int32_t  Http2::max_ping_frames_per_minute         = 60;
 int32_t  Http2::max_priority_frames_per_minute     = 120;
@@ -513,6 +515,7 @@ Http2::init()
   RecEstablishStaticConfigUInt32(min_concurrent_streams_out, "proxy.config.http2.min_concurrent_streams_out");
 
   RecEstablishStaticConfigUInt32(max_active_streams_in, "proxy.config.http2.max_active_streams_in");
+  RecEstablishStaticConfigUInt32(max_active_streams_policy_in, "proxy.config.http2.max_active_streams_policy_in");
   RecEstablishStaticConfigUInt32(stream_priority_enabled, "proxy.config.http2.stream_priority_enabled");
 
   RecEstablishStaticConfigUInt32(initial_window_size_in, "proxy.config.http2.initial_window_size_in");
@@ -616,17 +619,18 @@ Http2::init()
     Metrics::Counter::createPtr("proxy.process.http2.max_concurrent_streams_exceeded_in");
   http2_rsb.max_concurrent_streams_exceeded_out =
     Metrics::Counter::createPtr("proxy.process.http2.max_concurrent_streams_exceeded_out");
-  http2_rsb.data_frames_in          = Metrics::Counter::createPtr("proxy.process.http2.data_frames_in"),
-  http2_rsb.headers_frames_in       = Metrics::Counter::createPtr("proxy.process.http2.headers_frames_in"),
-  http2_rsb.priority_frames_in      = Metrics::Counter::createPtr("proxy.process.http2.priority_frames_in"),
-  http2_rsb.rst_stream_frames_in    = Metrics::Counter::createPtr("proxy.process.http2.rst_stream_frames_in"),
-  http2_rsb.settings_frames_in      = Metrics::Counter::createPtr("proxy.process.http2.settings_frames_in"),
-  http2_rsb.push_promise_frames_in  = Metrics::Counter::createPtr("proxy.process.http2.push_promise_frames_in"),
-  http2_rsb.ping_frames_in          = Metrics::Counter::createPtr("proxy.process.http2.ping_frames_in"),
-  http2_rsb.goaway_frames_in        = Metrics::Counter::createPtr("proxy.process.http2.goaway_frames_in"),
-  http2_rsb.window_update_frames_in = Metrics::Counter::createPtr("proxy.process.http2.window_update_frames_in"),
-  http2_rsb.continuation_frames_in  = Metrics::Counter::createPtr("proxy.process.http2.continuation_frames_in"),
-  http2_rsb.unknown_frames_in       = Metrics::Counter::createPtr("proxy.process.http2.unknown_frames_in"),
+  http2_rsb.max_active_streams_exceeded_in = Metrics::Counter::createPtr("proxy.process.http2.max_active_streams_exceeded_in");
+  http2_rsb.data_frames_in                 = Metrics::Counter::createPtr("proxy.process.http2.data_frames_in"),
+  http2_rsb.headers_frames_in              = Metrics::Counter::createPtr("proxy.process.http2.headers_frames_in"),
+  http2_rsb.priority_frames_in             = Metrics::Counter::createPtr("proxy.process.http2.priority_frames_in"),
+  http2_rsb.rst_stream_frames_in           = Metrics::Counter::createPtr("proxy.process.http2.rst_stream_frames_in"),
+  http2_rsb.settings_frames_in             = Metrics::Counter::createPtr("proxy.process.http2.settings_frames_in"),
+  http2_rsb.push_promise_frames_in         = Metrics::Counter::createPtr("proxy.process.http2.push_promise_frames_in"),
+  http2_rsb.ping_frames_in                 = Metrics::Counter::createPtr("proxy.process.http2.ping_frames_in"),
+  http2_rsb.goaway_frames_in               = Metrics::Counter::createPtr("proxy.process.http2.goaway_frames_in"),
+  http2_rsb.window_update_frames_in        = Metrics::Counter::createPtr("proxy.process.http2.window_update_frames_in"),
+  http2_rsb.continuation_frames_in         = Metrics::Counter::createPtr("proxy.process.http2.continuation_frames_in"),
+  http2_rsb.unknown_frames_in              = Metrics::Counter::createPtr("proxy.process.http2.unknown_frames_in"),
 
   http2_frame_metrics_in[0]  = http2_rsb.data_frames_in;
   http2_frame_metrics_in[1]  = http2_rsb.headers_frames_in;

@@ -28,6 +28,8 @@ limitations under the License.
 #include <unistd.h>
 #include <inttypes.h>
 #include <atomic>
+#include <memory>
+#include <utility>
 
 /* ToDo: Linux specific */
 #include <sys/inotify.h>
@@ -42,9 +44,8 @@ static const char SEPARATORS[]  = " \t\n";
 
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
-#define MAX_PATH_LEN     4096
-#define MAX_BODY_LEN     16384
-#define FREELIST_TIMEOUT 300
+#define MAX_PATH_LEN 4096
+#define MAX_BODY_LEN 16384
 
 /* Directories that we are watching for inotify IN_CREATE events. */
 typedef struct HCDirEntry_t {
@@ -53,66 +54,100 @@ typedef struct HCDirEntry_t {
   struct HCDirEntry_t *_next;               /* Linked list */
 } HCDirEntry;
 
-/* Information about a status file. This is never modified (only replaced, see HCFileInfo_t) */
-typedef struct HCFileData_t {
-  int                  exists;             /* Does this file exist */
-  char                 body[MAX_BODY_LEN]; /* Body from fname. Empty string means file is missing */
-  int                  b_len;              /* Length of data */
-  time_t               remove;             /* Used for deciding when the old object can be permanently removed */
-  struct HCFileData_t *_next;              /* Only used when these guys end up on the freelist */
-} HCFileData;
+/* Information about a status file. This is never modified (only replaced, see HCFileInfo) */
+struct HCFileData {
+  int  exists             = 0;  /* Does this file exist */
+  int  b_len              = 0;  /* Length of data */
+  char body[MAX_BODY_LEN] = {}; /* Body from fname. Empty string means file is missing */
+};
 
-/* The only thing that should change in this struct is data, atomically swapping ptrs */
-typedef struct HCFileInfo_t {
-  char                      fname[MAX_PATH_LEN]; /* Filename */
-  char                     *basename;            /* The "basename" of the file */
-  unsigned                  basename_len = 0;    /* The length of the basename */
-  char                      path[PATH_NAME_MAX]; /* URL path for this HC */
-  int                       p_len;               /* Length of path */
-  const char               *ok;                  /* Header for an OK result */
-  int                       o_len;               /* Length of OK header */
-  const char               *miss;                /* Header for miss results */
-  int                       m_len;               /* Length of miss header */
-  std::atomic<HCFileData *> data;                /* Holds the current data for this health check file */
-  int                       wd;                  /* Watch descriptor */
-  HCDirEntry               *dir;                 /* Reference to the directory this file resides in */
-  struct HCFileInfo_t      *_next;               /* Linked list */
-} HCFileInfo;
+using HCFileDataPtr = std::shared_ptr<HCFileData>;
+
+/* The only thing that should change in this struct is data, which is replaced (never modified) by
+   the inotify thread. Readers take a reference to the current data via get_data(), which keeps
+   that snapshot alive for as long as the transaction needs it. */
+struct HCFileInfo {
+  char        fname[MAX_PATH_LEN] = {};      /* Filename */
+  char       *basename            = nullptr; /* The "basename" of the file */
+  unsigned    basename_len        = 0;       /* The length of the basename */
+  char        path[PATH_NAME_MAX] = {};      /* URL path for this HC */
+  int         p_len               = 0;       /* Length of path */
+  const char *ok                  = nullptr; /* Header for an OK result */
+  int         o_len               = 0;       /* Length of OK header */
+  const char *miss                = nullptr; /* Header for miss results */
+  int         m_len               = 0;       /* Length of miss header */
+  int         wd                  = 0;       /* Watch descriptor */
+  HCDirEntry *dir                 = nullptr; /* Reference to the directory this file resides in */
+  HCFileInfo *_next               = nullptr; /* Linked list */
+
+  /* Take a reference to the current data for this health check file. */
+  HCFileDataPtr
+  get_data()
+  {
+#if defined(__cpp_lib_atomic_shared_ptr) && __cpp_lib_atomic_shared_ptr >= 201711L
+    return _data.load(std::memory_order_acquire);
+#else
+    return std::atomic_load_explicit(&_data, std::memory_order_acquire);
+#endif
+  }
+
+  /* Replace the current data for this health check file. Snapshots handed out by get_data() stay
+     valid until their last reference is dropped. */
+  void
+  set_data(HCFileDataPtr data)
+  {
+#if defined(__cpp_lib_atomic_shared_ptr) && __cpp_lib_atomic_shared_ptr >= 201711L
+    _data.store(std::move(data), std::memory_order_release);
+#else
+    std::atomic_store_explicit(&_data, std::move(data), std::memory_order_release);
+#endif
+  }
+
+private:
+#if defined(__cpp_lib_atomic_shared_ptr) && __cpp_lib_atomic_shared_ptr >= 201711L
+  std::atomic<HCFileDataPtr> _data; /* Holds the current data for this health check file */
+#else
+  HCFileDataPtr _data; /* Holds the current data for this health check file */
+#endif
+};
 
 /* Global configuration */
 HCFileInfo *g_config;
 
 /* State used for the intercept plugin. ToDo: Can this be improved ? */
-typedef struct HCState_t {
-  TSVConn net_vc;
-  TSVIO   read_vio;
-  TSVIO   write_vio;
+struct HCState {
+  TSVConn net_vc    = nullptr;
+  TSVIO   read_vio  = nullptr;
+  TSVIO   write_vio = nullptr;
 
-  TSIOBuffer       req_buffer;
-  TSIOBuffer       resp_buffer;
-  TSIOBufferReader resp_reader;
+  TSIOBuffer       req_buffer  = nullptr;
+  TSIOBuffer       resp_buffer = nullptr;
+  TSIOBufferReader resp_reader = nullptr;
 
-  int output_bytes;
+  int output_bytes = 0;
 
-  /* We actually need both here, so that our lock free switches works safely */
-  HCFileInfo *info;
-  HCFileData *data;
-} HCState;
+  /* We hold a reference to the data so that it cannot be replaced from under us mid transaction */
+  HCFileInfo   *info = nullptr;
+  HCFileDataPtr data;
+};
 
 /* Read / check the status files */
-static void
-reload_status_file(HCFileInfo *info, HCFileData *data)
+static HCFileDataPtr
+load_status_file(HCFileInfo *info)
 {
+  auto  data = std::make_shared<HCFileData>();
   FILE *fd;
 
-  memset(data, 0, sizeof(HCFileData));
   if (nullptr != (fd = fopen(info->fname, "r"))) {
     data->exists = 1;
-    do {
-      data->b_len = fread(data->body, 1, MAX_BODY_LEN, fd);
-    } while (!feof(fd)); /*  Only save the last 16KB of the file ... */
+    size_t bytes_read;
+    while ((bytes_read = fread(data->body, 1, MAX_BODY_LEN, fd)) > 0) {
+      data->b_len = static_cast<int>(bytes_read);
+    }
     fclose(fd);
   }
+
+  return data;
 }
 
 /* Find a HCDirEntry from the linked list */
@@ -198,48 +233,15 @@ event_matches_config(struct inotify_event *event, HCFileInfo *finfo)
 static void *
 hc_thread(void *data ATS_UNUSED)
 {
-  int            inotify_fd = inotify_init();
-  HCFileData    *fl_head    = nullptr;
-  char           buffer[INOTIFY_BUFLEN];
-  struct timeval last_free, now;
-
-  gettimeofday(&last_free, nullptr);
+  int  inotify_fd = inotify_init();
+  char buffer[INOTIFY_BUFLEN];
 
   /* Setup watchers for the directories, these are a one time setup */
   setup_watchers(inotify_fd); // This is a leak, but since we enter an infinite loop this is ok?
 
   while (true) {
-    HCFileData *fdata = fl_head, *fdata_prev = nullptr;
-
-    gettimeofday(&now, nullptr);
     /* Read the inotify events, blocking until we get something */
     int len = read(inotify_fd, buffer, INOTIFY_BUFLEN);
-
-    /* The fl_head is a linked list of previously released data entries. They
-       are ordered "by time", so once we find one that is scheduled for deletion,
-       we can also delete all entries after it in the linked list. */
-    while (fdata) {
-      if (now.tv_sec > fdata->remove) {
-        /* Now drop off the "tail" from the freelist */
-        if (fdata_prev) {
-          fdata_prev->_next = nullptr;
-        } else {
-          fl_head = nullptr;
-        }
-
-        /* free() everything in the "tail" */
-        do {
-          HCFileData *next = fdata->_next;
-
-          Dbg(dbg_ctl, "Cleaning up entry from freelist");
-          TSfree(fdata);
-          fdata = next;
-        } while (fdata);
-        break; /* Stop the loop, there's nothing else left to examine */
-      }
-      fdata_prev = fdata;
-      fdata      = fdata->_next;
-    }
 
     if (len >= 0) {
       int i = 0;
@@ -253,9 +255,6 @@ hc_thread(void *data ATS_UNUSED)
           finfo = finfo->_next;
         }
         if (finfo) {
-          auto       *new_data = TSRalloc<HCFileData>();
-          HCFileData *old_data;
-
           if (event->mask & (IN_CLOSE_WRITE | IN_ATTRIB)) {
             Dbg(dbg_ctl, "Modify file event (%d) on %s", event->mask, finfo->fname);
           } else if (event->mask & (IN_CREATE | IN_MOVED_TO)) {
@@ -267,16 +266,12 @@ hc_thread(void *data ATS_UNUSED)
           } else {
             Dbg(dbg_ctl, "Unhandled event (%d) on %s", event->mask, finfo->fname);
           }
-          /* Load the new data and then swap this atomically */
-          memset(new_data, 0, sizeof(HCFileData));
-          reload_status_file(finfo, new_data);
-          Dbg(dbg_ctl, "Reloaded %s, len == %d, exists == %d", finfo->fname, new_data->b_len, new_data->exists);
-          old_data = finfo->data.exchange(new_data);
+          /* Load the new data and then publish it. The previous data is released once the last
+             transaction referencing it completes. */
+          auto new_data = load_status_file(finfo);
 
-          /* Add the old data to the head of the freelist */
-          old_data->remove = now.tv_sec + FREELIST_TIMEOUT;
-          old_data->_next  = fl_head;
-          fl_head          = old_data;
+          Dbg(dbg_ctl, "Reloaded %s, len == %d, exists == %d", finfo->fname, new_data->b_len, new_data->exists);
+          finfo->set_data(std::move(new_data));
         }
         /* coverity[ -tainted_data_return] */
         i += sizeof(struct inotify_event) + event->len;
@@ -342,10 +337,9 @@ parse_configs(const char *fname)
     char *str, *save;
     char *ok = nullptr, *miss = nullptr, *mime = nullptr;
 
-    finfo = TSRalloc<HCFileInfo>();
-    memset(static_cast<void *>(finfo), 0, sizeof(HCFileInfo));
-
     if (fgets(buf, sizeof(buf) - 1, fd)) {
+      finfo = new HCFileInfo();
+
       str       = strtok_r(buf, SEPARATORS, &save);
       int state = 0;
       while (nullptr != str) {
@@ -388,9 +382,7 @@ parse_configs(const char *fname)
         Dbg(dbg_ctl, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
         finfo->ok   = gen_header(ok, mime, &finfo->o_len);
         finfo->miss = gen_header(miss, mime, &finfo->m_len);
-        finfo->data = TSRalloc<HCFileData>();
-        memset(finfo->data, 0, sizeof(HCFileData));
-        reload_status_file(finfo, finfo->data);
+        finfo->set_data(load_status_file(finfo));
 
         /* Add it the linked list */
         Dbg(dbg_ctl, "Adding path=%s to linked list", finfo->path);
@@ -401,7 +393,7 @@ parse_configs(const char *fname)
         }
         prev_finfo = finfo;
       } else {
-        TSfree(finfo);
+        delete finfo;
       }
     }
   }
@@ -434,7 +426,7 @@ cleanup(TSCont contp, HCState *my_state)
     my_state->net_vc = nullptr;
   }
 
-  TSfree(my_state);
+  delete my_state;
   TSContDestroy(contp);
 }
 
@@ -567,11 +559,10 @@ health_check_origin(TSCont contp ATS_UNUSED, TSEvent event ATS_UNUSED, void *eda
     TSHttpTxnCntlSet(txnp, TS_HTTP_CNTL_SKIP_REMAPPING, true); /* not strictly necessary, but speed is everything these days */
 
     /* This is us -- register our intercept */
-    icontp   = TSContCreate(hc_intercept, TSMutexCreate());
-    my_state = TSRalloc<HCState>();
-    memset(my_state, 0, sizeof(*my_state));
+    icontp         = TSContCreate(hc_intercept, TSMutexCreate());
+    my_state       = new HCState();
     my_state->info = info;
-    my_state->data = info->data;
+    my_state->data = info->get_data();
     TSContDataSet(icontp, my_state);
     TSHttpTxnIntercept(icontp, txnp);
   }

@@ -33,6 +33,7 @@
 
 #include <string_view>
 #include <optional>
+#include <memory>
 
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/EventSystem.h"
@@ -194,6 +195,11 @@ public:
   HttpCacheSM     &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
   std::string_view get_outbound_sni() const;
   std::string_view get_outbound_cert() const;
+  /// Return the name used by outbound TLS certificate name verification. This
+  /// usually matches @c get_outbound_sni() above, but adds fallbacks for reuse
+  /// checks that run after the original NetVCOptions are no longer being
+  /// built for those reuse situations.
+  std::string_view get_outbound_sni_for_cert_verification() const;
 
   void init(bool from_early_data = false);
 
@@ -306,7 +312,7 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  UrlRewrite *m_remap = nullptr;
+  std::shared_ptr<UrlRewrite> m_remap;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
@@ -414,7 +420,7 @@ private:
   void do_cache_prepare_write_transform();
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
-  void do_cache_delete_all_alts(Continuation *cont);
+  void do_cache_delete_all_alts();
   void do_auth_callout();
   int  do_api_callout();
   int  do_api_callout_internal();

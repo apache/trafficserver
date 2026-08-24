@@ -423,10 +423,7 @@ uint16_t
 TransactionLogData::get_client_port() const
 {
   if (likely(m_http_sm != nullptr)) {
-    if (auto txn = m_http_sm->get_ua_txn(); txn) {
-      return txn->get_client_port();
-    }
-    return 0;
+    return m_http_sm->t_state.effective_client_addr.host_order_port();
   }
   return m_non_http_sm_data->m_client_port;
 }
@@ -781,6 +778,15 @@ TransactionLogData::get_client_ssl_reused() const
     return m_http_sm->get_user_agent().get_client_ssl_reused();
   }
   return false;
+}
+
+int
+TransactionLogData::get_client_ssl_resumption_type() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_ssl_resumption_type();
+  }
+  return 0;
 }
 
 bool

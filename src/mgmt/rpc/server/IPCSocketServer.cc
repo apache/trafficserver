@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <poll.h>
 
 #include <atomic>
@@ -167,6 +168,10 @@ IPCSocketServer::init()
     return ec;
   }
 
+  // Set this before RPCServer creates the worker thread so an immediate stop
+  // cannot be overwritten when the worker eventually enters run().
+  _running.store(true);
+
   return ec;
 }
 
@@ -200,8 +205,6 @@ IPCSocketServer::poll_for_new_client(std::chrono::milliseconds timeout) const
 void
 IPCSocketServer::run()
 {
-  _running.store(true);
-
   while (_running) {
     // poll till socket it's ready.
     if (!this->poll_for_new_client()) {
@@ -304,12 +307,6 @@ IPCSocketServer::bind(std::error_code &ec)
   // remove socket file
   unlink(_conf.sockPathName.c_str());
 
-  ret = ::bind(_socket, (struct sockaddr *)&_serverAddr, sizeof(struct sockaddr_un));
-  if (ret < 0) {
-    ec = std::make_error_code(static_cast<std::errc>(errno));
-    return;
-  }
-
   // If the socket is not administratively restricted, check whether we have platform
   // support. Otherwise, default to making it restricted.
   bool restricted{true};
@@ -317,10 +314,26 @@ IPCSocketServer::bind(std::error_code &ec)
     restricted = !has_peereid();
   }
 
-  mode_t mode = restricted ? 00700 : 00777;
+  const mode_t mode = restricted ? 00700 : 00777;
+
+  // Narrow umask for the restricted socket so bind() creates the inode at the
+  // final mode. Safe: bind() runs single-threaded at startup before the thread pools.
+  const bool   narrow_umask = restricted;
+  const mode_t old_umask    = narrow_umask ? umask(0777 & ~mode) : 0;
+
+  ret                  = ::bind(_socket, (struct sockaddr *)&_serverAddr, sizeof(struct sockaddr_un));
+  const int bind_errno = errno;
+  if (narrow_umask) {
+    umask(old_umask);
+  }
+  if (ret < 0) {
+    ec = std::make_error_code(static_cast<std::errc>(bind_errno));
+    return;
+  }
+
+  // Defense in depth for filesystems that do not honor the umask on AF_UNIX socket
+  // inodes.
   if (chmod(_conf.sockPathName.c_str(), mode) < 0) {
-    // Some filesystems don't support chmod on AF_UNIX socket inodes.
-    // Keep running in that case and rely on default umask-derived permissions.
     if (errno != EINVAL && errno != ENOTSUP && errno != EOPNOTSUPP) {
       ec = std::make_error_code(static_cast<std::errc>(errno));
       return;
@@ -419,7 +432,7 @@ IPCSocketServer::Client::read_all(Buffer &bw) const
       return {false, swoc::bwprint(buff, "Peer disconnected. EOF")};
     }
     bw.save(ret);
-    if (_max_req_size - bw.stored() > 0) { // we can still read more.
+    if (bw.stored() < _max_req_size) { // we can still read more.
       using namespace std::chrono_literals;
       if (!this->poll_for_data(1ms)) {
         return {true, buff};

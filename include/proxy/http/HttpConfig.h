@@ -193,6 +193,8 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *https_total_client_connections;
   Metrics::Counter::AtomicType *incoming_requests;
   Metrics::Counter::AtomicType *incoming_responses;
+  Metrics::Counter::AtomicType *client_request_at_headers_stripped;
+  Metrics::Counter::AtomicType *origin_response_at_headers_stripped;
   Metrics::Counter::AtomicType *invalid_client_requests;
   Metrics::Counter::AtomicType *misc_count;
   Metrics::Counter::AtomicType *misc_origin_server_bytes;
@@ -343,6 +345,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_transactions_time;
   Metrics::Counter::AtomicType *total_x_redirect;
   Metrics::Counter::AtomicType *trace_requests;
+  Metrics::Counter::AtomicType *tunnel_chunked_throttle;
   Metrics::Gauge::AtomicType   *tunnel_current_active_connections;
   Metrics::Counter::AtomicType *tunnels;
   Metrics::Counter::AtomicType *ua_begin_time;
@@ -416,6 +419,18 @@ enum class CacheOpenWriteFailAction_t {
   READ_RETRY_STALE_ON_REVALIDATE    = 0x06,
   TOTAL_TYPES
 };
+
+/** Whether a cache_open_write_fail_action retries the cache read.
+ *
+ * @param[in] action A proxy.config.http.cache.open_write_fail_action value.
+ * @return Whether losing the cache write lock should retry the cache read.
+ */
+inline bool
+is_read_retry_write_fail_action(MgmtByte action)
+{
+  return action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+         action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE);
+}
 
 extern HttpStatsBlock http_rsb;
 
@@ -690,6 +705,7 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_guaranteed_min_lifetime = 0;
   MgmtInt cache_guaranteed_max_lifetime = 31536000;
   MgmtInt cache_max_stale_age           = 604800;
+  MgmtInt cache_max_stale_age_percent   = 0;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //

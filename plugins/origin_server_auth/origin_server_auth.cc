@@ -435,6 +435,12 @@ public:
   }
 
   int
+  get_conf_reload_count()
+  {
+    return _conf_reload_count;
+  }
+
+  int
   incr_invalid_file_count()
   {
     return _invalid_file_count++;
@@ -715,7 +721,7 @@ ConfigCache::get(const char *fname)
     unsigned update_status = it->second.update_status;
     if (tv.tv_sec > (it->second.load_time + _ttl)) {
       if (!(update_status & 1) && it->second.update_status.compare_exchange_strong(update_status, update_status + 1)) {
-        Dbg(dbg_ctl, "Configuration from %s is stale, reloading", config_fname.c_str());
+        Dbg(dbg_ctl, "Cached configuration from %s is stale, reloading", config_fname.c_str());
         s3 = new S3Config(false); // false == this config does not get the continuation
 
         if (s3->parse_config(config_fname)) {
@@ -744,7 +750,7 @@ ConfigCache::get(const char *fname)
         s3 = it->second.config;
       }
     } else {
-      Dbg(dbg_ctl, "Configuration from %s is fresh, reusing", config_fname.c_str());
+      Dbg(dbg_ctl, "Cached configuration from %s is fresh, reusing", config_fname.c_str());
       s3 = it->second.config;
     }
   } else {
@@ -1179,8 +1185,8 @@ config_reloader(TSCont cont, TSEvent /* event ATS_UNUSED */, void *edata)
       Dbg(dbg_ctl, "config expiration time for version: %s %s is in the past, re-checking in 1 minute", s3->versionString(),
           config_fname.c_str());
       if (s3->incr_conf_reload_count() % 10 == 0) {
-        TSError("[%s] tried to reload config automatically but failed, please try manual reloading the config file: %s",
-                PLUGIN_NAME, config_fname.c_str());
+        TSError("[%s] Reloading an expired config file has been failing (%d attempts): %s", PLUGIN_NAME,
+                s3->get_conf_reload_count(), config_fname.c_str());
       }
       s3->schedule_conf_reload(60);
     }

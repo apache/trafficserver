@@ -22,12 +22,13 @@
 
 #include <algorithm>
 #include <cctype>
+#include <csignal>
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
 #include <iomanip>
+#include <utility>
 #include <thread>
-#include <csignal>
 #include <unistd.h>
 
 #include <swoc/TextView.h>
@@ -223,12 +224,12 @@ ConfigCommand::ConfigCommand(ts::Arguments *args) : RecordCommand(args)
 }
 
 shared::rpc::JSONRPCResponse
-RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType)
+RecordCommand::record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType, bool includeHidden)
 {
   shared::rpc::RecordLookupRequest request;
+  auto const &metricTypes = includeHidden ? shared::rpc::METRIC_REC_TYPES_INCLUDE_HIDDEN : shared::rpc::METRIC_REC_TYPES;
   for (auto &&it : argData) {
-    request.emplace_rec(it, isRegex,
-                        recQueryType == RecordQueryType::CONFIG ? shared::rpc::CONFIG_REC_TYPES : shared::rpc::METRIC_REC_TYPES);
+    request.emplace_rec(it, isRegex, recQueryType == RecordQueryType::CONFIG ? shared::rpc::CONFIG_REC_TYPES : metricTypes);
   }
   return invoke_rpc(request);
 }
@@ -306,7 +307,7 @@ ConfigCommand::config_status()
       {"error",   DL_Error  },
     };
 
-    std::string lowered{min_level};
+    std::string lowered{std::move(min_level)};
     std::transform(lowered.begin(), lowered.end(), lowered.begin(),
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
@@ -736,6 +737,26 @@ ConfigCommand::config_show_file_registry()
   _printer->write_output(invoke_rpc(ConfigShowFileRegistryRequest{}));
 }
 //------------------------------------------------------------------------------------------------------------------------------------
+CacheCommand::CacheCommand(ts::Arguments *args) : CtrlCommand(args)
+{
+  auto printOpts = parse_print_opts(args);
+
+  if (get_parsed_arguments()->get(CLEAR_STR)) {
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
+    _invoked_func = [&]() { clear(); };
+  }
+}
+
+void
+CacheCommand::clear()
+{
+  CacheClearRequest request;
+
+  auto response = invoke_rpc(request);
+
+  _printer->write_output(response);
+}
+//------------------------------------------------------------------------------------------------------------------------------------
 MetricCommand::MetricCommand(ts::Arguments *args) : RecordCommand(args)
 {
   BasePrinter::Options printOpts{parse_print_opts(args)};
@@ -763,7 +784,9 @@ MetricCommand::metric_get()
 void
 MetricCommand::metric_match()
 {
-  _printer->write_output(record_fetch(get_parsed_arguments()->get(MATCH_STR), shared::rpc::REGEX, RecordQueryType::METRIC));
+  bool const include_hidden = get_parsed_arguments()->get(INCLUDE_HIDDEN_STR);
+  _printer->write_output(
+    record_fetch(get_parsed_arguments()->get(MATCH_STR), shared::rpc::REGEX, RecordQueryType::METRIC, include_hidden));
 }
 
 void
@@ -942,7 +965,7 @@ HostDBCommand::status_get()
     };
   }
 
-  HostDBGetStatusRequest request{params};
+  HostDBGetStatusRequest request{std::move(params)};
 
   auto response = invoke_rpc(request);
 

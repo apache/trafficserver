@@ -65,7 +65,7 @@ dump_context(const char *ca_path, const char *ck_path)
         // expiration date, serial number, common name, and subject alternative names
         const ASN1_TIME    *not_after    = X509_get_notAfter(cert);
         const ASN1_INTEGER *serial       = X509_get_serialNumber(cert);
-        X509_NAME          *subject_name = X509_get_subject_name(cert);
+        const X509_NAME    *subject_name = X509_get_subject_name(cert);
 
         // Subject name
         BIO *subject_bio = BIO_new(BIO_s_mem());

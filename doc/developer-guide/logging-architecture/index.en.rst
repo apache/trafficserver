@@ -26,3 +26,4 @@ Logging Architecture
    :maxdepth: 2
 
    architecture.en
+   binary-log-v3-format.en

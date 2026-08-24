@@ -356,6 +356,7 @@ The ``autest`` section configures the test environment:
   - **process_config**: Parameters passed to ``MakeATSProcess`` (e.g., ``enable_cache``)
   - **records_config**: Dictionary of records.config settings
   - **remap_config**: List of remap rules (string or dict format)
+  - **cache_config**: List of cache.config rules
   - **copy_to_config_dir**: List of files/directories to copy to ATS config directory
   - **log_validation**: Log validation rules for ``traffic_out`` and ``diags_log``
   - **metric_checks**: List of metric name/value pairs to verify after traffic completes

@@ -32,6 +32,7 @@
 #include "iocore/net/EventIO.h"
 #include "iocore/net/NetHandler.h"
 #include "tscore/ink_sys_control.h"
+#include "ts/ats_probe.h"
 
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IOUringEventIO.h"
@@ -235,6 +236,7 @@ read_disable(NetHandler *nh, NetEvent *ne)
         ne);
   }
   ne->read.enabled = 0;
+  ATS_PROBE4(net_read_disable, ne->get_fd(), ne->read.vio.ndone, ne->write.enabled, ne->read.vio.nbytes);
   nh->read_ready_list.remove(ne);
   ne->ep.modify(-EVENTIO_READ);
 }
@@ -259,6 +261,7 @@ write_disable(NetHandler *nh, NetEvent *ne)
         ne);
   }
   ne->write.enabled = 0;
+  ATS_PROBE4(net_write_disable, ne->get_fd(), ne->write.vio.ndone, ne->read.enabled, ne->write.vio.nbytes);
   nh->write_ready_list.remove(ne);
   ne->ep.modify(-EVENTIO_WRITE);
 }

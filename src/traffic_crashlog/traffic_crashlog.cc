@@ -145,14 +145,18 @@ crashlog_write_backtrace(FILE *fp, const crashlog_target &target)
   // can also happen without a debugger. Possibly in that case, there is a race with the
   // kernel locking the process information?
 
-  if (mgmterr == 0 && trace != nullptr) {
+  if (mgmterr == 0 && trace != nullptr && trace[0] != '\0') {
     // ServerBacktrace succeeded - this gives us backtraces for all threads.
     fprintf(fp, "%s", trace);
     free(trace);
     return true;
   }
+  free(trace);
 
-  // ServerBacktrace failed. Fall back to the in-process backtrace from the crashing thread.
+  // ServerBacktrace reports success but yields no frames when the target's thread list is
+  // unreadable -- e.g. a fast-aborting target has already exited by the time the forked
+  // helper attaches. Fall back to the in-process backtrace from the crashing thread rather
+  // than emitting an empty report.
   if ((target.flags & CRASHLOG_HAVE_BACKTRACE) && !target.backtrace.empty()) {
     fprintf(fp, "Crashing Thread Backtrace:\n%s", target.backtrace.c_str());
     return true;

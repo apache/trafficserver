@@ -56,6 +56,7 @@ const std::string_view IP_PROTO_TAG_HTTP_QUIC("hq"sv);        // HTTP/0.9 over Q
 const std::string_view IP_PROTO_TAG_HTTP_3("h3"sv);           // HTTP/3 over QUIC
 const std::string_view IP_PROTO_TAG_HTTP_QUIC_D29("hq-29"sv); // HTTP/0.9 over QUIC (draft-29)
 const std::string_view IP_PROTO_TAG_HTTP_3_D29("h3-29"sv);    // HTTP/3 over QUIC (draft-29)
+const std::string_view IP_PROTO_TAG_H3QX("h3qx-01"sv);        // HTTP/3 over QMux (TLS/TCP)
 
 const std::string_view UNIX_PROTO_TAG{"unix"sv};
 

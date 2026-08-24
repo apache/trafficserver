@@ -1,0 +1,142 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify TSHttpAltInfoQualitySet affects alternate selection'
+
+  dns:
+    name: 'dns_alt_quality'
+
+  server:
+    name: 'server_alt_quality'
+
+  client:
+    name: 'client_alt_quality'
+
+  ats:
+    name: 'ts_alt_quality'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.cache.select_alternate: 1
+      proxy.config.cache.limits.http.max_alts: 4
+      proxy.config.http.cache.ignore_query: 1
+
+    plugin_config:
+      - "xdebug.so --enable=x-cache"
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+  # Store the English response as the first alternate.
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/request?variant=English
+      delay: 100ms
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Accept-Language, English ]
+        - [ X-Debug, X-Cache ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Cache-Control, max-age=60 ]
+        - [ Content-Language, English ]
+        - [ X-Response-Variant, English ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Variant, { value: English, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # The language mismatch prevents reuse of the English alternate, allowing
+  # the French response to be stored as another alternate.
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/request?variant=French
+      delay: 100ms
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Accept-Language, French ]
+        - [ X-Debug, X-Cache ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+        - [ Cache-Control, max-age=60 ]
+        - [ Content-Language, French ]
+        - [ X-Response-Variant, French ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Variant, { value: French, as: equal } ]
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  # Both languages are acceptable, so the plugin's query-based quality
+  # selects the older English alternate without contacting the origin.
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /path/request?variant=English
+      delay: 100ms
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Accept-Language, "English, French" ]
+        - [ X-Debug, X-Cache ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 500
+      reason: NOT USED
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response-Variant, { value: English, as: equal } ]
+        - [ X-Cache, { value: hit-fresh, as: equal } ]

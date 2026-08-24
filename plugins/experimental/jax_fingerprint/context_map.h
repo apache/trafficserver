@@ -27,46 +27,62 @@
 
 #pragma once
 
-#include "config.h"
 #include "context.h"
 
-#include <string>
+#include "ts/ts.h"
+
+#include <array>
+#include <cstddef>
 #include <string_view>
-#include <unordered_map>
-#include <version>
+#include <utility>
+
+#ifndef JAX_FINGERPRINT_MAX_METHODS
+#define JAX_FINGERPRINT_MAX_METHODS 8
+#endif
 
 /**
  * @brief Container holding JAxContext instances for multiple methods.
  *
  * ATS has a limited number of user arg slots (~4 per type). When loading
  * many jax_fingerprint instances, we share a single slot and store all
- * contexts in this map, keyed by method name.
+ * contexts in this inline fixed-size table, keyed by method name. The
+ * table size is set at build time via JAX_FINGERPRINT_MAX_METHODS.
+ *
+ * Lookup is a linear scan over std::string_view keys (Method::name points
+ * to a string literal with static storage duration, so storing the view
+ * is safe).
  */
 class ContextMap
 {
 public:
+  static constexpr std::size_t MAX_METHODS = JAX_FINGERPRINT_MAX_METHODS;
+  static_assert(MAX_METHODS >= 1, "Must accommodate at least one fingerprinting method");
+
   ~ContextMap()
   {
-    for (auto &pair : m_contexts) {
-      delete pair.second;
+    for (std::size_t i = 0; i < _size; ++i) {
+      delete _slots[i].second;
     }
   }
 
   /**
    * @brief Store a context for a method.
-   * @param[in] method_name The method name (e.g., "JA3", "JA4").
+   * @param[in] method_name The method name (e.g., "JA3", "JA4"). Must reference
+   *   a string with lifetime >= the ContextMap (typically a string literal).
    * @param[in] ctx The context to store. Ownership is transferred.
    */
   void
   set(std::string_view method_name, JAxContext *ctx)
   {
-    auto it = find_context(method_name);
-    if (it != m_contexts.end()) {
-      delete it->second;
-      it->second = ctx;
-    } else {
-      m_contexts.emplace(std::string{method_name}, ctx);
+    for (std::size_t i = 0; i < _size; ++i) {
+      if (_slots[i].first == method_name) {
+        delete _slots[i].second;
+        _slots[i].second = ctx;
+        return;
+      }
     }
+    TSReleaseAssert(_size < MAX_METHODS);
+    _slots[_size++] = {method_name, ctx};
   }
 
   /**
@@ -75,10 +91,14 @@ public:
    * @return The context, or nullptr if not found.
    */
   JAxContext *
-  get(std::string_view method_name)
+  get(std::string_view method_name) const
   {
-    auto it = find_context(method_name);
-    return it != m_contexts.end() ? it->second : nullptr;
+    for (std::size_t i = 0; i < _size; ++i) {
+      if (_slots[i].first == method_name) {
+        return _slots[i].second;
+      }
+    }
+    return nullptr;
   }
 
   /**
@@ -88,10 +108,16 @@ public:
   void
   remove(std::string_view method_name)
   {
-    auto it = find_context(method_name);
-    if (it != m_contexts.end()) {
-      delete it->second;
-      m_contexts.erase(it);
+    for (std::size_t i = 0; i < _size; ++i) {
+      if (_slots[i].first == method_name) {
+        delete _slots[i].second;
+        --_size;
+        if (i != _size) {
+          _slots[i] = _slots[_size];
+        }
+        _slots[_size] = {};
+        return;
+      }
     }
   }
 
@@ -102,42 +128,10 @@ public:
   bool
   empty() const
   {
-    return m_contexts.empty();
+    return _size == 0;
   }
 
 private:
-  using ContextStorage = std::unordered_map<std::string, JAxContext *, StringHash, std::equal_to<>>;
-
-  /** Find context by method name with C++20 generic lookup fallback.
-   *
-   * C++20 generic unordered lookup allows finding with std::string_view in a
-   * std::unordered_map<std::string, ...> without creating a temporary string.
-   * For standard libraries without this feature, we fall back to constructing
-   * a std::string for the lookup.
-   *
-   * @param[in] method_name The method name to look up.
-   * @return Iterator to the found element, or end() if not found.
-   */
-  ContextStorage::iterator
-  find_context(std::string_view method_name)
-  {
-#ifdef __cpp_lib_generic_unordered_lookup
-    return m_contexts.find(method_name);
-#else
-    return m_contexts.find(std::string{method_name});
-#endif
-  }
-
-  /** const_iterator @overload */
-  ContextStorage::const_iterator
-  find_context(std::string_view method_name) const
-  {
-#ifdef __cpp_lib_generic_unordered_lookup
-    return m_contexts.find(method_name);
-#else
-    return m_contexts.find(std::string{method_name});
-#endif
-  }
-
-  ContextStorage m_contexts;
+  std::array<std::pair<std::string_view, JAxContext *>, MAX_METHODS> _slots{};
+  std::size_t                                                        _size{0};
 };

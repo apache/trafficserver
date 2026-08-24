@@ -43,14 +43,6 @@
 namespace
 {
 DbgCtl dbg_ctl_http_cache{"http_cache"};
-
-// Helper to check if cache_open_write_fail_action has READ_RETRY behavior
-inline bool
-is_read_retry_action(MgmtByte action)
-{
-  return action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
-         action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE);
-}
 } // end anonymous namespace
 
 ////
@@ -145,9 +137,13 @@ HttpCacheSM::state_cache_open_read(int event, void *data)
   switch (event) {
   case CACHE_EVENT_OPEN_READ:
     Metrics::Gauge::increment(http_rsb.current_cache_connections);
-    ink_assert((cache_read_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process);
+    ink_assert((cache_read_vc == nullptr) || master_sm->t_state.redirect_info.redirect_in_process ||
+               master_sm->t_state.cache_info.write_lock_state == HttpTransact::CacheWriteLock_t::READ_RETRY);
     if (cache_read_vc) {
-      // redirect follow in progress, close the previous cache_read_vc
+      // A redirect follow or a read retry after losing the cache write lock
+      // replaces the read VC. The stale object that a read retry saved as its
+      // fallback lives in the VC being closed, so it cannot outlive it.
+      master_sm->t_state.cache_info.stale_fallback = nullptr;
       close_read();
     }
     cache_read_vc = static_cast<CacheVConnection *>(data);
@@ -234,7 +230,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED: {
-    if (is_read_retry_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
+    if (is_read_retry_write_fail_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
       // fall back to open_read_tries
       // Note that when READ_RETRY actions are configured, max_cache_open_write_retries
       // is automatically ignored. Make sure to not disable max_cache_open_read_retries
@@ -282,7 +278,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       _read_retry_event = nullptr;
     }
 
-    if (is_read_retry_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
+    if (is_read_retry_write_fail_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
       Dbg(dbg_ctl_http_cache,
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "falling back to read retry...",

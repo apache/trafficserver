@@ -64,6 +64,30 @@ TEST_CASE("PROXY Protocol v1 Parser", "[ProxyProtocol][ProxyProtocolv1]")
     CHECK(pp_info.dst_addr == dst_addr);
   }
 
+  SECTION("TCP port boundaries")
+  {
+    swoc::TextView raw_data = "PROXY TCP4 192.0.2.1 198.51.100.1 65535 65535\r\n"sv;
+
+    ProxyProtocol pp_info;
+    REQUIRE(proxy_protocol_parse(&pp_info, raw_data) == raw_data.size());
+
+    REQUIRE(ats_ip_pton("192.0.2.1:65535", src_addr) == 0);
+    REQUIRE(ats_ip_pton("198.51.100.1:65535", dst_addr) == 0);
+
+    CHECK(pp_info.version == ProxyProtocolVersion::V1);
+    CHECK(pp_info.src_addr == src_addr);
+    CHECK(pp_info.dst_addr == dst_addr);
+
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 0 443\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 50000 0\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 65536 443\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 50000 65536\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 65537 443\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 50000 65537\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 131152 443\r\n"sv) == 0);
+    CHECK(proxy_protocol_parse(&pp_info, "PROXY TCP4 192.0.2.1 198.51.100.1 50000 131152\r\n"sv) == 0);
+  }
+
   SECTION("UNKNOWN connection (short form)")
   {
     swoc::TextView raw_data = "PROXY UNKNOWN\r\n"sv;

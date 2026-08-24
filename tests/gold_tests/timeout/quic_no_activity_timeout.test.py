@@ -16,7 +16,7 @@
 
 Test.Summary = 'Basic checks on QUIC max_idle_timeout set by ts.quic.no_activity_timeout_in'
 
-Test.SkipUnless(Condition.HasATSFeature('TS_HAS_QUICHE'), Condition.HasCurlFeature('http3'))
+Test.SkipUnless(Condition.HasATSFeature('TS_USE_QUIC'))
 
 
 class Test_quic_no_activity_timeout:
@@ -117,18 +117,19 @@ test0 = Test_quic_no_activity_timeout(
     replay_keys="nodelays")
 test0.run()
 
-test1 = Test_quic_no_activity_timeout(
-    "Test ts.quic.no_activity_timeout_in(quic max_idle_timeout) with a 5s delay",
-    no_activity_timeout_in=3000,  # 3s `max_idle_timeout`
-    replay_keys="delay5s",
-    gold_file="gold/quic_no_activity_timeout.gold")
-test1.run(check_for_max_idle_timeout=True)
+if Condition.HasATSFeature('TS_HAS_QUICHE'):
+    test1 = Test_quic_no_activity_timeout(
+        "Test ts.quic.no_activity_timeout_in(quic max_idle_timeout) with a 5s delay",
+        no_activity_timeout_in=3000,  # 3s `max_idle_timeout`
+        replay_keys="delay5s",
+        gold_file="gold/quic_no_activity_timeout.gold")
+    test1.run(check_for_max_idle_timeout=True)
 
-# QUIC Ignores the default_inactivity_timeout config, so the ts.quic.no_activity_timeout_in
-# should be honor
-test2 = Test_quic_no_activity_timeout(
-    "Ignoring default_inactivity_timeout and use the ts.quic.no_activity_timeout_in instead",
-    replay_keys="delay5s",
-    no_activity_timeout_in=3000,
-    extra_recs={'proxy.config.net.default_inactivity_timeout': 1})
-test2.run(check_for_max_idle_timeout=True)
+    # QUIC Ignores the default_inactivity_timeout config, so the ts.quic.no_activity_timeout_in
+    # should be honored
+    test2 = Test_quic_no_activity_timeout(
+        "Ignoring default_inactivity_timeout and use the ts.quic.no_activity_timeout_in instead",
+        replay_keys="delay5s",
+        no_activity_timeout_in=3000,
+        extra_recs={'proxy.config.net.default_inactivity_timeout': 1})
+    test2.run(check_for_max_idle_timeout=True)

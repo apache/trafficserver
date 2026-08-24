@@ -1831,12 +1831,15 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     }
 
     Dbg(dbg_ctl_logstats, "LogBuffer version %d, current = %d", header->version, LOG_SEGMENT_VERSION);
-    if (header->version != LOG_SEGMENT_VERSION) {
+    size_t header_size = log_buffer_header_size(header->version);
+    if (header_size == 0) {
+      Dbg(dbg_ctl_logstats, "Unsupported LogBuffer version %d (supported %d-%d)", header->version,
+          LOG_SEGMENT_VERSION_MIN_SUPPORTED, LOG_SEGMENT_VERSION);
       return 1;
     }
 
-    // read the rest of the header
-    unsigned second_read_size = sizeof(LogBufferHeader) - first_read_size;
+    // read the rest of the header (sized to the on-disk version, not sizeof)
+    unsigned second_read_size = header_size - first_read_size;
     nread                     = read(in_fd, &buffer[first_read_size], second_read_size);
     if (!nread || EOF == nread) {
       Dbg(dbg_ctl_logstats, "Second read of header failed (attempted %d bytes at offset %d, got nothing), errno=%d.",
@@ -1850,8 +1853,15 @@ process_file(int in_fd, off_t offset, unsigned max_age)
       return 1;
     }
 
-    buffer_bytes = header->byte_count - sizeof(LogBufferHeader);
-    if (buffer_bytes <= 0 || (unsigned int)buffer_bytes > (sizeof(buffer) - sizeof(LogBufferHeader))) {
+    // Guard the unsigned subtraction: a corrupt segment whose byte_count is
+    // smaller than its own header would otherwise wrap to a huge payload size.
+    if (header->byte_count < header_size) {
+      Dbg(dbg_ctl_logstats, "Header byte count [%d] < header size [%zu]", header->byte_count, header_size);
+      return 1;
+    }
+
+    buffer_bytes = header->byte_count - header_size;
+    if (buffer_bytes <= 0 || (unsigned int)buffer_bytes > (sizeof(buffer) - header_size)) {
       Dbg(dbg_ctl_logstats, "Buffer payload [%d] is wrong.", buffer_bytes);
       return 1;
     }
@@ -1860,7 +1870,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
     int       total_read           = 0;
     int       read_tries_remaining = MAX_READ_TRIES; // since the data will be old anyway, let's only try a few times.
     do {
-      nread = read(in_fd, &buffer[sizeof(LogBufferHeader) + total_read], buffer_bytes - total_read);
+      nread = read(in_fd, &buffer[header_size + total_read], buffer_bytes - total_read);
       if (EOF == nread || !nread) { // just bail on error
         Dbg(dbg_ctl_logstats, "Read failed while reading log buffer, wanted %d bytes, nread=%d, errno=%d",
             buffer_bytes - total_read, nread, errno);

@@ -101,6 +101,7 @@ class JaxFingerprintTest:
         # HTTP/2 always runs over TLS (h2 requires TLS).
         self._needs_tls = method in ('JA3', 'JA4') or http2
         self._replay_file = self._choose_replay_file()
+        self._fingerprint_pattern = rf'{self._method}: [a-z0-9_-]+'
 
         tr = Test.AddTestRun(name)
         self._configure_dns(tr)
@@ -108,7 +109,7 @@ class JaxFingerprintTest:
         self._configure_trafficserver()
         self._configure_client(tr)
         Test.AddAwaitFileContainsTestRun(
-            f'Await jax_fingerprint.log for: {self._name}', self._ts.Disk.jax_log.AbsPath, self._method)
+            f'Await jax_fingerprint.log for: {self._name}', self._ts.Disk.jax_log.AbsPath, self._fingerprint_pattern)
 
         if self._log_field:
             log_field_path = os.path.join(self._ts.Variables.LOGDIR, 'jax_log_field.log')
@@ -230,7 +231,7 @@ ssl_multicert:
         log_path = os.path.join(self._ts.Variables.LOGDIR, 'jax_fingerprint.log')
         self._ts.Disk.File(log_path, id='jax_log')
         self._ts.Disk.jax_log.Content += Testers.ContainsExpression(
-            rf'.*{self._method}:.*', f'Verify the log contains a {self._method} fingerprint.', reflags=re.MULTILINE)
+            self._fingerprint_pattern, f'Verify the jax_fingerprint log contains a {self._method} fingerprint.')
 
         backend = f'{scheme}://jax.backend.test:{server_port}'
         backend_no_plugin = f'{scheme}://jax.backend.test:{server_port}'

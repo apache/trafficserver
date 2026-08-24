@@ -273,8 +273,8 @@ SSLCertContext::setCtx(shared_SSL_CTX sc)
 SSLCertLookup::SSLCertLookup()
   : ssl_storage(std::make_unique<SSLContextStorage>()),
     ec_storage(std::make_unique<SSLContextStorage>()),
-    ssl_default(nullptr),
-    is_valid(true)
+    is_valid(true),
+    ssl_default(nullptr)
 {
 }
 
@@ -299,36 +299,48 @@ SSLCertLookup::find(const std::string &address, [[maybe_unused]] SSLCertContextT
 SSLCertContext *
 SSLCertLookup::find(const IpEndpoint &address) const
 {
-  SSLCertContext     *cc;
+#ifdef OPENSSL_IS_BORINGSSL
+  // If the context is EC supportable, try finding that first.
+  if (auto *cc = this->find(address, SSLCertContextType::EC)) {
+    return cc;
+  }
+#endif
+
+  return this->find(address, SSLCertContextType::RSA);
+}
+
+SSLCertContext *
+SSLCertLookup::find(const IpEndpoint &address, [[maybe_unused]] SSLCertContextType ctxType) const
+{
   SSLAddressLookupKey key(address);
 
 #ifdef OPENSSL_IS_BORINGSSL
-  // If the context is EC supportable, try finding that first.
-  if ((cc = this->ec_storage->lookup(key.get()))) {
-    return cc;
+  SSLContextStorage *storage = nullptr;
+  switch (ctxType) {
+  case SSLCertContextType::GENERIC:
+  case SSLCertContextType::RSA:
+    storage = ssl_storage.get();
+    break;
+  case SSLCertContextType::EC:
+    storage = ec_storage.get();
+    break;
+  default:
+    ink_assert(false);
+    return nullptr;
   }
-
-  // If that failed, try the address without the port.
-  if (address.network_order_port()) {
-    key.split();
-    if ((cc = this->ec_storage->lookup(key.get()))) {
-      return cc;
-    }
-  }
-
-  // reset for search across RSA
-  key = SSLAddressLookupKey(address);
+#else
+  SSLContextStorage *storage = ssl_storage.get();
 #endif
 
   // First try the full address.
-  if ((cc = this->ssl_storage->lookup(key.get()))) {
+  if (auto *cc = storage->lookup(key.get())) {
     return cc;
   }
 
   // If that failed, try the address without the port.
   if (address.network_order_port()) {
     key.split();
-    return this->ssl_storage->lookup(key.get());
+    return storage->lookup(key.get());
   }
 
   return nullptr;

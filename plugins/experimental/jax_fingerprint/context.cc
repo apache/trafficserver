@@ -59,7 +59,7 @@ JAxContext::get_fingerprint() const
 }
 
 void
-JAxContext::set_fingerprint(const std::string &fingerprint)
+JAxContext::set_fingerprint(std::string_view fingerprint)
 {
   this->_fingerprint = fingerprint;
   Dbg(dbg_ctl, "Fingerprint: %s", this->_fingerprint.c_str());

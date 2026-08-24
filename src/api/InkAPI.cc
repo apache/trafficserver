@@ -22,11 +22,12 @@
  */
 
 #include <atomic>
+#include <charconv>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
 #include <string>
-#include <charconv>
+#include <utility>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
@@ -1648,7 +1649,9 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   }
 }
 
-static void
+// Returns false when the value exceeds the uint16_t field-length limit and was
+// rejected by mime_field_value_set, so callers can surface TS_ERROR.
+static bool
 TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value, int length)
 {
   MIMEFieldSDKHandle *handle = reinterpret_cast<MIMEFieldSDKHandle *>(field_obj);
@@ -1661,10 +1664,10 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
   if (idx >= 0) {
     mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx,
                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
-  } else {
-    mime_field_value_set(heap, handle->mh, handle->field_ptr,
-                         std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
+    return true;
   }
+  return mime_field_value_set(heap, handle->mh, handle->field_ptr,
+                              std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 static void
@@ -1894,7 +1897,13 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
   HdrHeap            *heap = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
   MIMEFieldSDKHandle *h    = sdk_alloc_field_handle(bufp, mh);
   h->field_ptr = mime_field_create_named(heap, mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
-  *locp        = reinterpret_cast<TSMLoc>(h);
+  if (h->field_ptr == nullptr) {
+    // The name exceeds the uint16_t field-length limit; nothing was created.
+    sdk_free_field_handle(bufp, h);
+    *locp = nullptr;
+    return TS_ERROR;
+  }
+  *locp = reinterpret_cast<TSMLoc>(h);
   return TS_SUCCESS;
 }
 
@@ -2102,12 +2111,15 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
     mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
   }
 
-  handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
+  bool const stored =
+    handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (attached) {
     mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, nullptr);
   }
-  return TS_SUCCESS;
+  // A rejected oversized name leaves the field's prior name intact; report the
+  // failure so the plugin knows the set did not take effect.
+  return stored ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -2257,8 +2269,7 @@ TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
     length = strlen(value);
   }
 
-  TSMimeFieldValueSet(bufp, field, idx, value, length);
-  return TS_SUCCESS;
+  return TSMimeFieldValueSet(bufp, field, idx, value, length) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -5066,7 +5077,7 @@ TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap.get()) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
 
   // HttpSM has a reference count handle to UrlRewrite which has a
@@ -6740,7 +6751,8 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   sm->redirect_url       = const_cast<char *>(url);
   sm->redirect_url_len   = url_len;
   sm->enable_redirection = true;
-  sm->redirection_tries  = 0;
+  // Don't reset HttpSM::redirection_tries here: a per-hop reset defeats the number_of_redirections
+  // limit that HttpSM enforces, allowing an unbounded redirect chain.
 
   // Make sure we allow for at least one redirection.
   if (sm->t_state.txn_conf->number_of_redirections <= 0) {
@@ -8305,9 +8317,9 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     }
 
     // Extract common name
-    int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
-    X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
-    ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    const int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
+    const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     char *common_name_str = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
     if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
       // Embedded null char
@@ -9053,9 +9065,23 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
     }
   }
 
+  // TSLogType mirrors LogField::Type's values and is static_cast to it below.
+  // apidefs.h.in can't reference LogField::Type, so pin the alignment here (the
+  // only TU that sees both) -- a reorder then fails to compile.
+  static_assert(static_cast<int>(TS_LOG_TYPE_INT) == static_cast<int>(LogField::Type::sINT));
+  static_assert(static_cast<int>(TS_LOG_TYPE_STRING) == static_cast<int>(LogField::Type::STRING));
+  static_assert(static_cast<int>(TS_LOG_TYPE_ADDR) == static_cast<int>(LogField::Type::IP));
+
+  // Reject anything outside the public set before the cast, so a bad plugin
+  // value can't become an INVALID/out-of-range LogField::Type and trip the ctor.
+  if (type != TS_LOG_TYPE_INT && type != TS_LOG_TYPE_STRING && type != TS_LOG_TYPE_ADDR) {
+    return TS_ERROR;
+  }
+
   LogField *field = new LogField(
     name.data(), symbol.data(), static_cast<LogField::Type>(type),
-    [marshal_cb](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); }, unmarshal_cb);
+    [marshal_cb = std::move(marshal_cb)](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); },
+    unmarshal_cb);
   Log::global_field_list.add(field, false);
   Log::field_symbol_hash.emplace(symbol.data(), field);
 

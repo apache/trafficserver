@@ -16,6 +16,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 import os
+import re
 
 Test.Summary = '''
 slice plugin prefetch feature test
@@ -180,4 +181,34 @@ test_run = Test.AddAwaitFileContainsTestRun(
     cache_file,
     r'\*/18 hit-fresh, none$',
 )
-ts.Disk.File(cache_file).Content = "gold/slice_prefetch.gold"
+cache_log = ts.Disk.File(cache_file)
+expected_cache_entries = [
+    "bytes 0-6/18 miss",
+    "bytes 7-13/18 miss",
+    "bytes 14-17/18 miss",
+    "bytes 14-17/18 hit-fresh",
+    "- miss, none",
+    "bytes 0-6/18 hit-fresh",
+    "bytes 7-13/18 hit-fresh",
+    "bytes 14-17/18 hit-fresh",
+    "- hit-fresh, none",
+    "bytes 0-6/18 hit-stale",
+    "bytes 7-13/18 hit-stale",
+    "bytes 14-17/18 hit-stale",
+    "- hit-stale, none",
+    "bytes 0-17/18 hit-fresh, none",
+    "bytes 0-4/18 miss",
+    "bytes 5-9/18 miss",
+    "bytes 10-14/18 miss",
+    "bytes 15-17/18 miss",
+    "bytes 10-14/18 hit-fresh",
+    "bytes 15-17/18 hit-fresh",
+    "bytes 5-16/18 miss, none",
+    "*/18 hit-fresh, none",
+]
+for index, entry in enumerate(expected_cache_entries):
+    tester = Testers.ContainsExpression(f'(?m)^{re.escape(entry)}$', f'Verify cache log contains: {entry}')
+    if index == 0:
+        cache_log.Content = tester
+    else:
+        cache_log.Content += tester

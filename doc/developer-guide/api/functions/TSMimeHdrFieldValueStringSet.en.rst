@@ -47,4 +47,8 @@ non-negative it must be the index of an existing element or exactly one past the
 call will fail. In the example case :arg:`idx` must be between ``0`` and ``3`` inclusive.
 :func:`TSMimeHdrFieldValuesCount` can be used to get the current number of elements.
 
+A header field value is stored with a 16-bit length, so it is limited to ``65535`` (``UINT16_MAX``)
+bytes. A :arg:`value` longer than that is rejected: the field's existing value is left unchanged and
+the function returns :enumerator:`TS_ERROR`.
+
 This function returns :enumerator:`TS_SUCCESS` if the value was set, :enumerator:`TS_ERROR` if not.

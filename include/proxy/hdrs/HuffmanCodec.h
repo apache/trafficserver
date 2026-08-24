@@ -25,5 +25,15 @@
 
 #include <cstdint>
 
+/** Decode a Huffman-encoded string per RFC 7541 section 5.2.
+
+    @return The decoded length, or a negative value on invalid input or
+      insufficient destination space.
+
+    @note dst_len must be strictly greater than the decoded length; with an
+      exactly-sized destination the decoder may report insufficient space.
+      Huffman expands to at most 8/5 of the encoded length, so sizing dst at
+      2x src_len always suffices (see xpack_decode_string).
+ */
 int64_t huffman_decode(char *dst, uint32_t dst_len, uint8_t const *src, uint32_t src_len);
 int64_t huffman_encode(uint8_t *dst, uint32_t dst_len, uint8_t const *src, uint32_t src_len);

@@ -270,8 +270,8 @@ public:
     return this->_preserved_dirs.evac_bucket_valid(bucket);
   }
 
-  DLL<EvacuationBlock>
-  get_evac_bucket(off_t bucket) const
+  DLL<EvacuationBlock> &
+  get_evac_bucket(off_t bucket)
   {
     return this->_preserved_dirs.evacuate[bucket];
   }

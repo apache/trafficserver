@@ -151,6 +151,7 @@ produce_features(bool json)
   print_feature("TS_HAS_PROFILER", TS_HAS_PROFILER, json);
   print_feature("TS_USE_FAST_SDK", TS_USE_FAST_SDK, json);
   print_feature("TS_USE_DIAGS", TS_USE_DIAGS, json);
+  print_feature("TS_USE_CACHE_SHM", TS_USE_CACHE_SHM, json);
   print_feature("TS_USE_EPOLL", TS_USE_EPOLL, json);
   print_feature("TS_USE_KQUEUE", TS_USE_KQUEUE, json);
   print_feature("TS_USE_POSIX_CAP", TS_USE_POSIX_CAP, json);
@@ -160,6 +161,8 @@ produce_features(bool json)
   print_feature("TS_USE_HWLOC", TS_USE_HWLOC, json);
   print_feature("TS_USE_TLS13", TS_USE_TLS13, json);
   print_feature("TS_USE_QUIC", TS_USE_QUIC, json);
+  print_feature("TS_USE_QMUX", TS_USE_QMUX, json);
+  print_feature("TS_HAS_OPENSSL_QUIC", TS_HAS_OPENSSL_QUIC, json);
   print_feature("TS_HAS_QUICHE", TS_HAS_QUICHE, json);
   print_feature("TS_HAS_SO_PEERCRED", TS_HAS_SO_PEERCRED, json);
   print_feature("TS_USE_REMOTE_UNWINDING", TS_USE_REMOTE_UNWINDING, json);

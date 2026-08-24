@@ -35,6 +35,7 @@
 #include "proxy/http/HttpTunnel.h"
 #include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpDebugNames.h"
+#include "ts/ats_probe.h"
 
 // inkcache
 #include "../../iocore/cache/P_CacheInternal.h"
@@ -87,18 +88,21 @@ ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool dr
   this->strict_chunk_parsing = parse_chunk_strictly;
 
   switch (action) {
-  case Action::DOCHUNK:
-    dechunked_reader                   = buffer_in->mbuf->clone_reader(buffer_in);
-    dechunked_reader->mbuf->water_mark = min_block_transfer_bytes;
-    chunked_buffer                     = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
-    chunked_size                       = 0;
+  case Action::DOCHUNK: {
+    dechunked_reader           = buffer_in->mbuf->clone_reader(buffer_in);
+    chunked_buffer             = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
+    chunked_buffer->water_mark = buffer_in->mbuf->water_mark;
+    chunked_size               = 0;
     break;
-  case Action::DECHUNK:
-    chunked_reader   = buffer_in->mbuf->clone_reader(buffer_in);
-    dechunked_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
-    dechunked_size   = 0;
+  }
+  case Action::DECHUNK: {
+    chunked_reader               = buffer_in->mbuf->clone_reader(buffer_in);
+    dechunked_buffer             = new_MIOBuffer(BUFFER_SIZE_INDEX_256);
+    dechunked_buffer->water_mark = buffer_in->mbuf->water_mark;
+    dechunked_size               = 0;
     break;
-  case Action::PASSTHRU:
+  }
+  case Action::PASSTHRU: {
     chunked_reader = buffer_in->mbuf->clone_reader(buffer_in);
     if (drop_chunked_trailers) {
       // Note that dropping chunked trailers only applies in the passthrough
@@ -109,10 +113,12 @@ ChunkedHandler::init_by_action(IOBufferReader *buffer_in, Action action, bool dr
       // filtering out the trailers. Otherwise, a simple passthrough needs no
       // intermediary buffer as consumers will simply read directly from
       // chunked_reader.
-      chunked_buffer = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
-      chunked_size   = 0;
+      chunked_buffer             = new_MIOBuffer(CHUNK_IOBUFFER_SIZE_INDEX);
+      chunked_buffer->water_mark = buffer_in->mbuf->water_mark;
+      chunked_size               = 0;
     }
     break;
+  }
   default:
     ink_release_assert(!"Unknown action");
   }
@@ -190,12 +196,65 @@ ChunkedHandler::read_size()
             state = ChunkedState::READ_ERROR;
             done  = true;
             break;
+          } else if (*tmp == ';') {
+            // Start of a chunk extension. Parse it explicitly so that the value
+            // of a quoted-string extension is consumed up to its closing DQUOTE.
+            in_quoted_string = false;
+            in_escape        = false;
+            state            = ChunkedState::READ_EXTENSION;
           } else {
             if (ParseRules::is_cr(*tmp)) {
               ++num_cr;
             }
             state = ChunkedState::READ_SIZE_CRLF; // now look for CRLF
           }
+        }
+      } else if (state == ChunkedState::READ_EXTENSION) {
+        // Parse a chunk extension per RFC 9112 Section 7.1.1:
+        //   chunk-ext     = *( BWS ";" BWS chunk-ext-name [ BWS "=" BWS chunk-ext-val ] )
+        //   chunk-ext-val = token / quoted-string
+        // A quoted-string (RFC 9110 Section 5.6.4) cannot contain a bare CR or LF
+        // (neither qdtext nor quoted-pair permits them), so either octet inside a
+        // quoted-string is a protocol error, not a line terminator. Rejecting it
+        // keeps a request whose extension embeds CR/LF from being forwarded and
+        // framed differently by a downstream parser.
+        if (in_quoted_string) {
+          if (ParseRules::is_cr(*tmp) || ParseRules::is_lf(*tmp)) {
+            state = ChunkedState::READ_ERROR;
+            done  = true;
+            break;
+          } else if (in_escape) {
+            in_escape = false; // Consume the escaped octet of a quoted-pair.
+          } else if (*tmp == '\\') {
+            in_escape = true; // Begin a quoted-pair.
+          } else if (*tmp == '"') {
+            in_quoted_string = false; // Closing DQUOTE.
+          }
+          // Any other octet is part of the quoted-string value.
+        } else {
+          if (*tmp == '"') {
+            in_quoted_string = true; // Opening DQUOTE.
+          } else if (ParseRules::is_cr(*tmp)) {
+            // End of the chunk size line; hand off to the CRLF scanner.
+            ++num_cr;
+            state = ChunkedState::READ_SIZE_CRLF;
+          } else if (ParseRules::is_lf(*tmp)) {
+            // A bare LF (no preceding CR) ends the chunk size line. This is a
+            // protocol violation: reject it under strict parsing and tolerate it
+            // otherwise, matching how READ_SIZE_CRLF handles a bare LF.
+            Dbg(dbg_ctl_http_chunk, "Found an LF without a preceding CR (protocol violation) in chunk extension");
+            if (strict_chunk_parsing) {
+              state = ChunkedState::READ_ERROR;
+              done  = true;
+              break;
+            }
+            cur_chunk_bytes_left = (cur_chunk_size = running_sum);
+            state                = (running_sum == 0) ? ChunkedState::READ_TRAILER_BLANK : ChunkedState::READ_CHUNK;
+            done                 = true;
+            num_cr               = 0;
+            break;
+          }
+          // Any other octet is part of the extension name or unquoted value.
         }
       } else if (state == ChunkedState::READ_SIZE_CRLF) { // Scan for a linefeed
         if (ParseRules::is_lf(*tmp)) {
@@ -220,6 +279,15 @@ ChunkedHandler::read_size()
             break;
           }
           ++num_cr;
+        } else if (*tmp == ';' && num_cr == 0) {
+          // Optional whitespace (BWS) is allowed between the chunk size and the
+          // ';' that begins a chunk extension (RFC 9112 Section 7.1.1). Reaching
+          // here with num_cr == 0 means a ';' followed that whitespace, so parse
+          // the extension rather than scanning for CRLF; otherwise a quoted-string
+          // value preceded by BWS would not be handled.
+          in_quoted_string = false;
+          in_escape        = false;
+          state            = ChunkedState::READ_EXTENSION;
         }
       } else if (state == ChunkedState::READ_SIZE_START) {
         Dbg(dbg_ctl_http_chunk, "ChunkedState::READ_SIZE_START 0x%02x", *tmp);
@@ -358,10 +426,16 @@ ChunkedHandler::read_trailer()
         //  must a LF
         state = (state == ChunkedState::READ_TRAILER_BLANK) ? ChunkedState::READ_TRAILER_CR : ChunkedState::READ_TRAILER_LINE;
       } else if (ParseRules::is_lf(*tmp)) {
-        // For a LF to signal we are done reading the
-        //   trailer, the line must have either been blank
-        //   or must have only had a CR on it
-        if (state == ChunkedState::READ_TRAILER_CR || state == ChunkedState::READ_TRAILER_BLANK) {
+        // For a LF to signal we are done reading the trailer, the line must have
+        // been blank or have had only a CR on it. In RFC 9112 Section 7.1 the
+        // empty line that ends the chunked body (after the trailer section) is a
+        // full CRLF. A bare LF blank line is accepted only in non-strict mode;
+        // under strict parsing it is a protocol error, mirroring the chunk size
+        // line, so any bytes following the bare LF cannot be framed by a
+        // downstream parser as a separate request.
+        const bool valid_terminator =
+          state == ChunkedState::READ_TRAILER_CR || (state == ChunkedState::READ_TRAILER_BLANK && !strict_chunk_parsing);
+        if (valid_terminator) {
           state = ChunkedState::READ_DONE;
           Dbg(dbg_ctl_http_chunk, "completed read of trailers");
 
@@ -372,6 +446,12 @@ ChunkedHandler::read_trailer()
             chunked_size += FINAL_CRLF.size();
           }
           done = true;
+          break;
+        } else if (state == ChunkedState::READ_TRAILER_BLANK) {
+          // Strict parsing: a bare LF blank line is not a valid trailer terminator.
+          Dbg(dbg_ctl_http_chunk, "rejecting bare LF trailer terminator under strict parsing");
+          state = ChunkedState::READ_ERROR;
+          done  = true;
           break;
         } else {
           // A LF that does not terminate the trailer
@@ -398,6 +478,7 @@ ChunkedHandler::process_chunked_content()
   while (chunked_reader->is_read_avail_more_than(0) && state != ChunkedState::READ_DONE && state != ChunkedState::READ_ERROR) {
     switch (state) {
     case ChunkedState::READ_SIZE:
+    case ChunkedState::READ_EXTENSION:
     case ChunkedState::READ_SIZE_CRLF:
     case ChunkedState::READ_SIZE_START:
       bytes_read += read_size();
@@ -484,6 +565,25 @@ ChunkedHandler::generate_chunked_content()
     return std::make_pair(consumed_bytes, true);
   }
   return std::make_pair(consumed_bytes, false);
+}
+
+bool
+ChunkedHandler::is_read_avail()
+{
+  switch (action) {
+  case Action::DOCHUNK:
+    return dechunked_reader->is_read_avail_more_than(0);
+  case Action::DECHUNK:
+    return chunked_reader->is_read_avail_more_than(0);
+  case Action::PASSTHRU:
+    // Plain passthrough has no intermediate output buffer (consumers read
+    // directly from chunked_reader), so a synthetic READ_READY would only
+    // re-walk the parser pointlessly. The kick is only meaningful when we
+    // are filtering chunked trailers into chunked_buffer.
+    return drop_chunked_trailers && chunked_reader->is_read_avail_more_than(0);
+  default:
+    return false;
+  }
 }
 
 HttpTunnelProducer::HttpTunnelProducer() : consumer_list() {}
@@ -810,6 +910,7 @@ HttpTunnel::add_consumer(VConnection *vc, VConnection *producer, HttpConsumerHan
   // Register the consumer with the producer
   p->consumer_list.push(c);
   p->num_consumers++;
+  ATS_PROBE5(tunnel_add_consumer, sm->sm_id, static_cast<int>(vc_type), static_cast<int>(p->vc_type), p->num_consumers, skip_bytes);
 
   return c;
 }
@@ -892,14 +993,18 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
   if (p->vc != HTTP_TUNNEL_STATIC_PRODUCER) {
     if (action == TunnelChunkingAction_t::CHUNK_CONTENT) {
       p->do_chunking = true;
+      Dbg(dbg_ctl_http_tunnel, "chunk mode");
     } else if (action == TunnelChunkingAction_t::DECHUNK_CONTENT) {
       p->do_dechunking = true;
+      Dbg(dbg_ctl_http_tunnel, "dechunk mode");
     } else if (action == TunnelChunkingAction_t::PASSTHRU_CHUNKED_CONTENT) {
       p->do_chunked_passthru = true;
+      Dbg(dbg_ctl_http_tunnel, "passthru mode");
 
       // Dechunk the chunked content into the cache.
       if (cache_write_consumer != nullptr) {
         p->do_dechunking = true;
+        Dbg(dbg_ctl_http_tunnel, "dechunk mode is also enabled for cache write");
       }
     }
   }
@@ -1107,9 +1212,17 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     }
 
     if (c_write == 0) {
-      // Nothing to do, call back the cleanup handlers
-      c->write_vio = nullptr;
-      consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
+      // Cache writes need a VIO even when the body is empty so that closing the
+      // cache VC commits the response metadata instead of aborting the write.
+      if (c->vc_type == HttpTunnelType_t::CACHE_WRITE) {
+        c->write_vio = c->vc->do_io_write(this, 0, c->buffer_reader);
+        if (c->write_vio == nullptr) {
+          consumer_handler(VC_EVENT_ERROR, c);
+        }
+      } else {
+        c->write_vio = nullptr;
+        consumer_handler(VC_EVENT_WRITE_COMPLETE, c);
+      }
     } else {
       // In the client half close case, all the data that will be sent
       // from the client is already in the buffer.  Go ahead and set
@@ -1162,6 +1275,7 @@ HttpTunnel::producer_run(HttpTunnelProducer *p)
     // If the producer is not alive (precomplete) make sure to kick the consumers
     for (c = p->consumer_list.head; c; c = c->link.next) {
       if (c->alive && c->write_vio) {
+        Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", c->name);
         c->write_vio->reenable();
       }
     }
@@ -1242,6 +1356,8 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
   auto const [bytes_consumed, done]                     = p->chunked_handler.process_chunked_content();
   p->bytes_consumed                                    += bytes_consumed;
   body_bytes_to_copy                                    = bytes_consumed;
+  ATS_PROBE4(tunnel_chunk_decoded, sm->sm_id, event, static_cast<int64_t>(bytes_consumed),
+             static_cast<int>(p->chunked_handler.state));
 
   // If we couldn't understand the encoding, return
   //   an error
@@ -1270,6 +1386,31 @@ HttpTunnel::producer_handler_chunked(int event, HttpTunnelProducer *p)
   return event;
 }
 
+/**
+  Disable the producer read when a consumer has buffered past its high water mark.
+  Returns the tripped consumer, or nullptr if none.
+ */
+HttpTunnelConsumer *
+HttpTunnel::_throttle_chunked_producer(HttpTunnelProducer *p)
+{
+  for (HttpTunnelConsumer *ci = p->consumer_list.head; ci; ci = ci->link.next) {
+    if (!ci->alive || !ci->buffer_reader || !ci->buffer_reader->mbuf || !ci->buffer_reader->mbuf->water_mark) {
+      continue;
+    }
+
+    if (ci->buffer_reader->high_water()) {
+      if (p->read_vio) {
+        Dbg(dbg_ctl_http_tunnel, "disable %s read_vio - %s read_avail = %" PRId64 " / %" PRId64, p->name, ci->name,
+            ci->buffer_reader->read_avail(), ci->buffer_reader->mbuf->water_mark);
+        Metrics::Counter::increment(http_rsb.tunnel_chunked_throttle);
+        p->read_vio->disable();
+      }
+      return ci;
+    }
+  }
+  return nullptr;
+}
+
 //
 // bool HttpTunnel::producer_handler(int event, HttpTunnelProducer* p)
 //
@@ -1289,14 +1430,42 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   bool                sm_callback = false;
 
   Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] producer_handler [%s %s]", sm->sm_id, p->name, HttpDebugNames::get_event_name(event));
+  ATS_PROBE6(tunnel_producer_handler, sm->sm_id, event, static_cast<int>(p->vc_type), p->read_vio ? p->read_vio->ndone : 0,
+             p->bytes_consumed, p->ntodo);
 
   // Handle chunking/dechunking/chunked-passthrough if necessary.
-  if (p->do_chunking) {
+  if (p->is_handling_chunked_content()) {
+    // Chunked passthru (drop=0) lets the consumer read read_buffer directly, the
+    // same buffer chunked_reader walks; the parser must run before the throttle or
+    // chunked_reader pins read_buffer at high water and deadlocks. Buffered paths
+    // fill an output buffer, so they keep throttling before the walk.
+    bool const plain_passthru = p->do_chunked_passthru && !p->chunked_handler.drop_chunked_trailers;
+
+    // Only throttle on READ_READY. Terminal events (READ_COMPLETE / EOS / PRECOMPLETE) must fall through
+    // to the completion path below so the producer is marked !alive and the SM is notified.
+    if (event == VC_EVENT_READ_READY && !plain_passthru) {
+      if (HttpTunnelConsumer *ci = _throttle_chunked_producer(p); ci != nullptr) {
+        if (ci->write_vio) {
+          Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", ci->name);
+          ci->write_vio->reenable();
+        }
+        return false;
+      }
+    }
+
     // This will update body_bytes_to_copy with the number of bytes copied.
-    event = producer_handler_dechunked(event, p);
-  } else if (p->do_dechunking || p->do_chunked_passthru) {
-    // This will update body_bytes_to_copy with the number of bytes copied.
-    event = producer_handler_chunked(event, p);
+    if (p->do_chunking) {
+      event = producer_handler_dechunked(event, p);
+    } else { // p->do_dechunking or p->do_chunked_passthru
+      event = producer_handler_chunked(event, p);
+    }
+
+    // Passthru: throttle after the walk. chunked_reader is now drained, so
+    // high_water reflects only consumer backlog and still bounds the cache-write
+    // dechunked_buffer. Fall through so consumers are re-enabled to drain.
+    if (event == VC_EVENT_READ_READY && plain_passthru) {
+      _throttle_chunked_producer(p);
+    }
   } else {
     p->last_event = event;
   }
@@ -1343,7 +1512,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
     // Data read from producer, reenable consumers
     for (c = p->consumer_list.head; c; c = c->link.next) {
       if (c->alive && c->write_vio) {
-        Dbg(dbg_ctl_http_redirect, "Read ready alive");
+        Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", c->name);
         c->write_vio->reenable();
       }
     }
@@ -1390,6 +1559,7 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
         if (c->write_vio->nbytes == INT64_MAX) {
           c->write_vio->nbytes = p->bytes_consumed - c->skip_bytes;
         }
+        Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", c->name);
         c->write_vio->reenable();
       }
     }
@@ -1433,8 +1603,46 @@ HttpTunnel::producer_handler(int event, HttpTunnelProducer *p)
   return sm_callback;
 }
 
-void
-HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
+/**
+  Check if producer should be re-enabled based on ChunkHandler flow control.
+ */
+bool
+HttpTunnel::_should_reenable_for_chunk_handler_fc(HttpTunnelConsumer *c)
+{
+  HttpTunnelProducer *p = c->producer;
+
+  if (p == nullptr || !p->alive || !p->read_vio) {
+    return false;
+  }
+
+  if (!p->is_handling_chunked_content()) {
+    // pass this check
+    return true;
+  }
+
+  // Check high_water of consumers - re-enable producer read_vio if all consumers don't hit the high_water()
+  for (auto *ci = p->consumer_list.head; ci; ci = ci->link.next) {
+    if (!ci->alive || !ci->buffer_reader || !ci->buffer_reader->mbuf || !ci->buffer_reader->mbuf->water_mark) {
+      continue;
+    }
+
+    Dbg(dbg_ctl_http_tunnel, "check %s consumer - read_avail = %" PRId64 " / %" PRId64, ci->name, ci->buffer_reader->read_avail(),
+        ci->buffer_reader->mbuf->water_mark);
+
+    if (ci->buffer_reader->high_water()) {
+      Dbg(dbg_ctl_http_tunnel, "wait until data in the buffer is consumed");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+  Check if producer should be re-enabled based on tunnel flow control.
+ */
+bool
+HttpTunnel::_should_reenable_for_tunnel_chain_fc(HttpTunnelConsumer *c)
 {
   HttpTunnelProducer *p = c->producer;
 
@@ -1447,11 +1655,14 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
     uint64_t            backlog = (flow_state.enabled_p && p->is_source()) ? p->backlog(flow_state.high_water) : 0;
     HttpTunnelProducer *srcp    = p->flow_control_source;
 
+    ATS_PROBE5(tunnel_flow_control, sm->sm_id, static_cast<int>(c->vc_type), backlog, flow_state.high_water,
+               p->is_throttled() ? 1 : 0);
     if (backlog >= flow_state.high_water) {
       if (dbg_ctl_http_tunnel.on()) {
         Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] Throttle   %p %" PRId64 " / %" PRId64, sm->sm_id, p, backlog, p->backlog());
       }
       p->throttle(); // p becomes srcp for future calls to this method
+      return false;
     } else {
       if (srcp && srcp->alive && c->is_sink()) {
         // Check if backlog is below low water - note we need to check
@@ -1468,6 +1679,7 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           }
           srcp->unthrottle();
           if (srcp->read_vio) {
+            Dbg(dbg_ctl_http_tunnel, "re-enable %s read_vio", srcp->name);
             srcp->read_vio->reenable();
           }
           // Kick source producer to get flow ... well, flowing.
@@ -1484,11 +1696,11 @@ HttpTunnel::consumer_reenable(HttpTunnelConsumer *c)
           }
         }
       }
-      if (p->read_vio) {
-        p->read_vio->reenable();
-      }
+      return true;
     }
   }
+
+  return false;
 }
 
 //
@@ -1510,18 +1722,29 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
   HttpTunnelProducer *p = c->producer;
 
   Dbg(dbg_ctl_http_tunnel, "[%" PRId64 "] consumer_handler [%s %s]", sm->sm_id, c->name, HttpDebugNames::get_event_name(event));
+  ATS_PROBE5(tunnel_consumer_handler, sm->sm_id, event, static_cast<int>(c->vc_type), c->write_vio ? c->write_vio->ndone : 0,
+             c->write_vio ? c->write_vio->nbytes : 0);
 
   ink_assert(c->alive == true);
 
   switch (event) {
-  case VC_EVENT_WRITE_READY:
-    this->consumer_reenable(c);
+  case VC_EVENT_WRITE_READY: {
+    if (_should_reenable_for_tunnel_chain_fc(c) && _should_reenable_for_chunk_handler_fc(c) && p->read_vio) {
+      Dbg(dbg_ctl_http_tunnel, "re-enable %s read_vio", p->name);
+      p->read_vio->reenable();
+
+      // Sometimes producer needs synthetic VC_EVENT_READ_READY event to resume after hitting high water mark
+      if (p->is_handling_chunked_content() && p->chunked_handler.is_read_avail()) {
+        this->producer_handler(VC_EVENT_READ_READY, p);
+      }
+    }
+
     // Once we get a write ready from the origin, we can assume the connect to some degree succeeded
     if (c->vc_type == HttpTunnelType_t::HTTP_SERVER) {
       sm->t_state.current.server->clear_connect_fail();
     }
     break;
-
+  }
   case VC_EVENT_WRITE_COMPLETE:
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
@@ -1530,6 +1753,7 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     ink_assert(c->alive);
     ink_assert(c->buffer_reader);
     if (c->write_vio) {
+      Dbg(dbg_ctl_http_tunnel, "re-enable %s write_vio", c->name);
       c->write_vio->reenable();
     }
     c->alive = false;
@@ -1573,10 +1797,14 @@ HttpTunnel::consumer_handler(int event, HttpTunnelConsumer *c)
     //    updating the buffer state for the VConnection
     //    that is being reenabled
     if (p->alive && p->read_vio) {
-      if (p->is_throttled()) {
-        this->consumer_reenable(c);
-      } else {
+      if (_should_reenable_for_tunnel_chain_fc(c) && _should_reenable_for_chunk_handler_fc(c)) {
+        Dbg(dbg_ctl_http_tunnel, "re-enable %s read_vio", p->name);
         p->read_vio->reenable();
+
+        // Sometimes producer needs synthetic VC_EVENT_READ_READY event to resume after hitting high water mark
+        if (p->is_handling_chunked_content() && p->chunked_handler.is_read_avail()) {
+          this->producer_handler(VC_EVENT_READ_READY, p);
+        }
       }
     }
     // [amc] I don't think this happens but we'll leave a debug trap
@@ -1755,6 +1983,8 @@ HttpTunnel::chain_abort_cache_write(HttpTunnelProducer *p)
         c->write_vio = nullptr;
         c->vc->do_io_close(EHTTP_ERROR);
         c->alive = false;
+        // The cache write VC is closed now, so any prepared write lock is gone.
+        sm->t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
         Metrics::Gauge::decrement(http_rsb.current_cache_connections);
       } else if (c->self_producer) {
         chain_abort_cache_write(c->self_producer);

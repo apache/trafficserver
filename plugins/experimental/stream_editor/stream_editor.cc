@@ -565,7 +565,7 @@ struct contdata_t {
   TSIOBuffer       out_buf = nullptr;
   TSIOBufferReader out_rd  = nullptr;
   TSVIO            out_vio = nullptr;
-  ruleset_up_t     rules;
+  ruleset_up_t     rules{std::make_unique<ruleset_t>()};
   std::string      contbuf;
   size_t           contbuf_sz = 0;
   int64_t          bytes_in   = 0;

@@ -28,6 +28,7 @@ add_atsplugin(
   fetch_policy_lru.cc
   headers.cc
   pattern.cc
+  path.cc
   plugin.cc
 )
 

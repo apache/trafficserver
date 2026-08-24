@@ -35,6 +35,7 @@
 
 #include <thread>
 #include <unordered_map>
+#include <utility>
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -274,23 +275,32 @@ Directory::bucket_length(Dir *b, int s)
 }
 
 int
+Directory::check_segment(int s)
+{
+  Dir *seg = this->get_segment(s);
+
+  for (int i = 0; i < this->buckets; i++) {
+    Dir *b = dir_bucket(i, seg);
+    if (!(this->bucket_length(b, s) >= 0)) {
+      return 0;
+    }
+    if (!(!dir_next(b) || dir_offset(b))) {
+      return 0;
+    }
+    if (!(dir_bucket_loop_check(b, seg))) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+int
 Directory::check()
 {
-  int i, s;
   Dbg(dbg_ctl_cache_check_dir, "inside check dir");
-  for (s = 0; s < this->segments; s++) {
-    Dir *seg = this->get_segment(s);
-    for (i = 0; i < this->buckets; i++) {
-      Dir *b = dir_bucket(i, seg);
-      if (!(this->bucket_length(b, s) >= 0)) {
-        return 0;
-      }
-      if (!(!dir_next(b) || dir_offset(b))) {
-        return 0;
-      }
-      if (!(dir_bucket_loop_check(b, seg))) {
-        return 0;
-      }
+  for (int s = 0; s < this->segments; s++) {
+    if (!this->check_segment(s)) {
+      return 0;
     }
   }
   return 1;
@@ -932,7 +942,7 @@ sync_cache_dir_on_shutdown()
   for (auto &[disk, indices] : drive_stripe_map) {
     Dbg(dbg_ctl_cache_dir_sync, "Disk %s: syncing %zu stripe(s)", disk->path, indices.size());
     auto stripe_indices = indices;
-    threads.emplace_back([stripe_indices]() {
+    threads.emplace_back([stripe_indices = std::move(stripe_indices)]() {
       // Use a thread_local variable to give each OS thread a unique EThread* sentinel instead of 0xdeadbeef.
       thread_local char thread_sentinel;
       EThread          *t = reinterpret_cast<EThread *>(&thread_sentinel);
@@ -947,6 +957,8 @@ sync_cache_dir_on_shutdown()
     thr.join();
   }
 
+  // The event system is still up here, so the shm trust flag is not set yet -- the caller marks it clean only
+  // after shutting the event system down. See CacheShm::mark_clean_shutdown.
   Dbg(dbg_ctl_cache_dir_sync, "shutdown sync done");
 }
 

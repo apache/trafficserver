@@ -115,7 +115,7 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr.StillRunningAfter = ts
 
     # HTTP 3
-    if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
             '--verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(

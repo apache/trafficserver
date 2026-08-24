@@ -386,14 +386,15 @@ Url::Query::Erase(std::initializer_list<cripts::string_view> list, bool keep)
 
     for (auto viter = s.ordered.begin(); viter != s.ordered.end();) {
       if (list.end() == std::ranges::find(list, *viter)) {
-        auto iter = s.hashed.find(*viter);
-
-        CAssert(iter != s.hashed.end());
-        s.size -= iter->second.size(); // Size of the erased value
-        s.size -= viter->size();       // Length of the erased key
-        s.hashed.erase(iter);
-        viter      = s.ordered.erase(viter);
-        s.modified = true;
+        // Duplicate keys (?a=1&a=2) share one hashed entry, so a later occurrence may
+        // already be gone -- guard the lookup; attacker input must not abort.
+        if (auto iter = s.hashed.find(*viter); iter != s.hashed.end()) {
+          s.size -= iter->second.size(); // Size of the erased value
+          s.hashed.erase(iter);
+        }
+        s.size     -= viter->size(); // Length of the erased key
+        viter       = s.ordered.erase(viter);
+        s.modified  = true;
       } else {
         ++viter;
       }
@@ -484,9 +485,10 @@ Client::URL::_initialize()
 {
   if (_context->rriValid()) {
     super_type::_initialize();
-    _bufp    = _context->rri->requestBufp;
-    _hdr_loc = _context->rri->requestHdrp;
-    _urlp    = _context->rri->requestUrl;
+    _bufp      = _context->rri->requestBufp;
+    _hdr_loc   = _context->rri->requestHdrp;
+    _urlp      = _context->rri->requestUrl;
+    _owns_urlp = false;
   } else {
     Client::Request &req = Client::Request::_get(_context); // Repurpose / create the shared request object
 
@@ -497,6 +499,7 @@ Client::URL::_initialize()
       _context->state.error.Fail();
     } else {
       super_type::_initialize();
+      _owns_urlp = true;
     }
   }
 }

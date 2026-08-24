@@ -24,6 +24,7 @@ Test the reported type of HTTP transactions and tunnels
 '''
 
 Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
 ts.addSSLfile("../tls/ssl/server.pem")
@@ -79,6 +80,7 @@ ts.Disk.sni_yaml.AddLines([
     '- fqdn: tunnel-test',
     "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
 ])
+ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
 cmd_http = '-k --http1.1 -H "Connection: close" -vs --resolve "http-test:{0}:127.0.0.1" https://http-test:{0}/'.format(

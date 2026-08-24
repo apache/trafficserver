@@ -54,3 +54,11 @@ sni:
 - fqdn: tickets.com
   ssl_ticket_enabled: 1
   ssl_ticket_number: 3
+
+# test ip_allow filtering
+- fqdn: ipallow.example.com
+  ip_allow: 192.168.1.0/24,10.0.0.1
+
+# test entry with no ip_allow (only protocol settings)
+- fqdn: noipallow.example.com
+  http2: off

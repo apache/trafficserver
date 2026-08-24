@@ -698,7 +698,7 @@ Do_ip_space_define::load(Config &cfg, CfgStaticData const *, YAML::Node drtv_nod
       }
     } else if (cols_node.IsSequence()) {
       for (auto child : cols_node) {
-        auto errata = self->define_column(cfg, child);
+        auto errata = self->define_column(cfg, std::move(child));
         if (!errata.is_ok()) {
           errata.note(R"(While parsing "{}" key at {}.)", COLUMNS_TAG, cols_node.Mark());
           return errata;

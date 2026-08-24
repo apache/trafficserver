@@ -77,11 +77,12 @@ public:
   void do_io_close(int lerrno = -1) override;
 
   bool expect_send_trailer() const override;
+  bool can_send_h2_trailer() const override;
   void set_expect_send_trailer() override;
   bool expect_receive_trailer() const override;
   void set_expect_receive_trailer() override;
 
-  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size);
+  Http2ErrorCode decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size);
   void           send_headers(Http2ConnectionState &cstate);
   void           initiating_close();
   bool           is_outbound_connection() const;
@@ -163,6 +164,7 @@ public:
   void             increment_data_length(uint64_t length);
   bool             payload_length_is_valid() const;
   bool             is_write_vio_done() const;
+  int64_t          write_vio_ntodo() const;
   void             update_sent_count(unsigned num_bytes);
   Http2StreamId    get_id() const;
   Http2StreamState get_state() const;
@@ -174,6 +176,7 @@ public:
   void             set_receive_headers(HTTPHdr &h2_headers);
   void             reset_receive_headers();
   void             reset_send_headers();
+  void             set_sent_request_method(int method);
   MIOBuffer       *read_vio_writer() const;
   int64_t          read_vio_read_avail();
   bool             is_read_enabled() const;
@@ -214,6 +217,7 @@ private:
   Http2StreamId    _id         = -1;
   Http2StreamState _state      = Http2StreamState::HTTP2_STREAM_STATE_IDLE;
   int64_t          _http_sm_id = -1;
+  int              _sent_request_method{-1};
 
   HTTPHdr _receive_header;
 #if TS_USE_MALLOC_ALLOCATOR
@@ -221,8 +225,9 @@ private:
 #else
   MIOBuffer _receive_buffer{BUFFER_SIZE_INDEX_4K};
 #endif
-  VIO read_vio;
-  VIO write_vio;
+  VIO  read_vio;
+  VIO  write_vio;
+  bool _read_event_paused = false; ///< The read VIO is intentionally gated by a zero-byte read.
 
   History<HISTORY_DEFAULT_SIZE>                                                           _history;
   Milestones<Http2StreamMilestone, static_cast<size_t>(Http2StreamMilestone::LAST_ENTRY)> _milestones;
@@ -314,6 +319,12 @@ Http2Stream::is_write_vio_done() const
   return this->write_vio.ntodo() == 0;
 }
 
+inline int64_t
+Http2Stream::write_vio_ntodo() const
+{
+  return this->write_vio.ntodo();
+}
+
 inline void
 Http2Stream::update_sent_count(unsigned num_bytes)
 {
@@ -389,6 +400,12 @@ Http2Stream::reset_send_headers()
   this->_send_header.create(HTTPType::RESPONSE);
 }
 
+inline void
+Http2Stream::set_sent_request_method(int method)
+{
+  _sent_request_method = method;
+}
+
 // Check entire DATA payload length if content-length: header exists
 inline void
 Http2Stream::increment_data_length(uint64_t length)
@@ -405,9 +422,9 @@ Http2Stream::payload_length_is_valid() const
 
   // Skip Content-Length check on [RFC 7230] 3.3.2 conditions
   bool is_payload_precluded =
-    this->is_outbound_connection() && (_send_header.method_get_wksidx() == HTTP_WKSIDX_HEAD ||
-                                       (_send_header.method_get_wksidx() == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
-                                        _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
+    this->is_outbound_connection() &&
+    (_sent_request_method == HTTP_WKSIDX_HEAD || (_sent_request_method == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
+                                                  _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
 
   if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
     Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,
@@ -446,7 +463,7 @@ Http2Stream::read_vio_writer() const
 inline bool
 Http2Stream::is_read_enabled() const
 {
-  return !this->read_vio.is_disabled();
+  return !this->_read_event_paused && this->read_vio.nbytes != 0 && !this->read_vio.is_disabled();
 }
 
 inline void
@@ -465,5 +482,7 @@ Http2Stream::update_read_length(int count)
 inline void
 Http2Stream::set_read_done()
 {
-  read_vio.nbytes = read_vio.ndone;
+  if (!this->_read_event_paused) {
+    read_vio.nbytes = read_vio.ndone;
+  }
 }

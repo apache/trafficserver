@@ -141,8 +141,6 @@ HostStatRec::HostStatRec(std::string str)
 
 HostStatus::HostStatus()
 {
-  ink_rwlock_init(&host_status_rwlock);
-
   // register JSON-RPC methods.
   rpc::add_method_handler("admin_host_set_status", &server_set_status, &rpc::core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
@@ -155,8 +153,6 @@ HostStatus::~HostStatus()
   for (auto &&it : hosts_statuses) {
     ats_free(it.second);
   }
-  // release the read and writer locks.
-  ink_rwlock_destroy(&host_status_rwlock);
 }
 
 // loads host status persistent store file
@@ -188,8 +184,9 @@ HostStatus::loadRecord(std::string_view name, HostStatRec &h)
 {
   HostStatRec *host_stat = nullptr;
   Dbg(dbg_ctl_host_statuses, "loading host status record for %.*s", int(name.size()), name.data());
-  ink_rwlock_wrlock(&host_status_rwlock);
   {
+    std::scoped_lock lock(host_status_rwlock);
+
     auto it = hosts_statuses.find(std::string(name));
     if (it == hosts_statuses.end()) {
       host_stat  = static_cast<HostStatRec *>(ats_malloc(sizeof(HostStatRec)));
@@ -197,7 +194,6 @@ HostStatus::loadRecord(std::string_view name, HostStatRec &h)
       hosts_statuses.emplace(name, host_stat);
     }
   }
-  ink_rwlock_unlock(&host_status_rwlock);
 }
 
 void
@@ -208,8 +204,9 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
   // update / insert status.
   // using the hash table pointer to store the TSHostStatus value.
   HostStatRec *host_stat = nullptr;
-  ink_rwlock_wrlock(&host_status_rwlock);
   {
+    std::scoped_lock lock(host_status_rwlock);
+
     if (auto it = hosts_statuses.find(std::string(name)); it != hosts_statuses.end()) {
       host_stat = it->second;
     } else {
@@ -285,7 +282,6 @@ HostStatus::setHostStatus(const std::string_view name, TSHostStatus status, cons
       Dbg(dbg_ctl_host_statuses, "reasons: %d, status: %s", host_stat->reasons, HostStatusNames[host_stat->status]);
     }
   }
-  ink_rwlock_unlock(&host_status_rwlock);
 
   // log it.
   if (status == TSHostStatus::TS_HOST_STATUS_DOWN) {
@@ -304,8 +300,9 @@ HostStatus::getAllHostStatuses(std::vector<HostStatuses> &hosts)
     return;
   }
 
-  ink_rwlock_rdlock(&host_status_rwlock);
   {
+    ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(host_status_rwlock);
+
     for (std::pair<std::string, HostStatRec *> hsts : hosts_statuses) {
       std::stringstream ss;
       HostStatuses      h;
@@ -315,7 +312,6 @@ HostStatus::getAllHostStatuses(std::vector<HostStatuses> &hosts)
       hosts.push_back(h);
     }
   }
-  ink_rwlock_unlock(&host_status_rwlock);
 }
 
 // retrieve the named host status.
@@ -336,15 +332,15 @@ HostStatus::getHostStatus(const std::string_view name)
   }
 
   // the hash table value pointer has the TSHostStatus value.
-  ink_rwlock_rdlock(&host_status_rwlock);
   {
+    ts::bravo::shared_lock<ts::bravo::shared_mutex> lock(host_status_rwlock);
+
     auto it = hosts_statuses.find(std::string(name));
     lookup  = it != hosts_statuses.end();
     if (lookup) {
       _status = it->second;
     }
   }
-  ink_rwlock_unlock(&host_status_rwlock);
 
   // if the host was marked down and it's down_time has elapsed, mark it up.
   if (lookup && _status->status == TSHostStatus::TS_HOST_STATUS_DOWN) {

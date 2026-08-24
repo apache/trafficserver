@@ -32,6 +32,7 @@
 #include <mutex>
 #include <sstream>
 #include <tuple>
+#include <utility>
 #include "records/RecCore.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_config.h"
@@ -429,7 +430,7 @@ ConnectionTracker::Group::metric_name(const Key &key, std::string_view fqdn, std
   default:
     Warning("Invalid matching type to add to per_server.connections metrics");
   }
-  return metric_prefix.empty() ? metric_name : metric_prefix + "." + metric_name;
+  return metric_prefix.empty() ? std::move(metric_name) : metric_prefix + "." + metric_name;
 }
 
 inline bool
@@ -448,13 +449,13 @@ inline int
 ConnectionTracker::TxnState::reserve()
 {
   _reserved_p = true;
-  // If metric enabled, use metric as count
+  // @a _count is always the authoritative count; the metrics, if enabled, only mirror it.
+  auto count = ++_g->_count;
   if (_g->_count_metric != nullptr) {
     ts::Metrics::Gauge::increment(_g->_count_metric);
     ts::Metrics::Counter::increment(_g->_count_total_metric);
-    return _g->_count_metric->load();
   }
-  return ++_g->_count;
+  return count;
 }
 
 inline void
@@ -462,11 +463,9 @@ ConnectionTracker::TxnState::release()
 {
   if (_reserved_p) {
     _reserved_p = false;
-    // If metric enabled, use metric as count
+    --_g->_count;
     if (_g->_count_metric != nullptr) {
       ts::Metrics::Gauge::decrement(_g->_count_metric);
-    } else {
-      --_g->_count;
     }
   }
 }

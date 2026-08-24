@@ -34,6 +34,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstring>
+#include <utility>
+#include "tscore/ink_inet.h"
 
 TEST_CASE("Test SSLSNIConfig")
 {
@@ -177,6 +179,67 @@ TEST_CASE("Test SSLSNIConfig")
     REQUIRE(actions.first);
     REQUIRE(actions.first->size() == 2);
   }
+
+  SECTION("Wildcard fqdn does not match when the input has trailing content past the wildcarded suffix")
+  {
+    // *.bar.com must not match foo.bar.com.extra.com -- the regex must
+    // consume the entire SNI, not just a prefix of it.
+    auto const &actions{params.get("foo.bar.com.extra.com", 443)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("get_property_config matches an exact fqdn")
+  {
+    CHECK(params.get_property_config("foo.bar.com") != nullptr);
+  }
+
+  SECTION("get_property_config matches a wildcard fqdn")
+  {
+    CHECK(params.get_property_config("baz.bar.com") != nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has trailing content past an exact fqdn")
+  {
+    // foo.bar.com is stored as a regex in next_hop_list; the lookup must
+    // not accept foo.bar.com.extra.com as a match.
+    CHECK(params.get_property_config("foo.bar.com.extra.com") == nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has trailing content past a wildcard fqdn")
+  {
+    CHECK(params.get_property_config("baz.bar.com.extra.com") == nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has leading content before an exact fqdn")
+  {
+    // allports.com is stored as a regex in next_hop_list; RE_ANCHORED at
+    // compile time should keep the lookup from matching prefix.allports.com.
+    // Use allports.com (which has no wildcard sibling in the test config)
+    // so the lookup cannot legitimately match via *.something.
+    CHECK(params.get_property_config("prefix.allports.com") == nullptr);
+  }
+
+  SECTION("get_property_config does not match when the input has trailing content past an exact-only fqdn")
+  {
+    // Mirror of the prefix case: allports.com has no wildcard sibling, so
+    // this isolates the exact-entry path in next_hop_list.
+    CHECK(params.get_property_config("allports.com.extra.com") == nullptr);
+  }
+
+  SECTION("get for an exact fqdn does not match when the input has leading content")
+  {
+    // Exact fqdns live in sni_action_map (hash-keyed), so a prefixed
+    // input must not produce a hit.
+    auto const &actions{params.get("prefix.allports.com", 1)};
+    CHECK(!actions.first);
+  }
+
+  SECTION("get for an exact-only fqdn does not match when the input has trailing content")
+  {
+    // Mirror of the prefix case for the hash-keyed path.
+    auto const &actions{params.get("allports.com.extra.com", 1)};
+    CHECK(!actions.first);
+  }
 }
 
 TEST_CASE("SNIConfig reconfigure callback is invoked")
@@ -191,4 +254,76 @@ TEST_CASE("SNIConfig reconfigure callback is invoked")
   SNIConfig::set_on_reconfigure_callback(set_result);
   SNIConfig::reconfigure();
   CHECK(result == 42);
+}
+
+TEST_CASE("SNIConfig handles high-bit bytes while normalizing server names")
+{
+  constexpr auto HIGH_ORDER_BIT = static_cast<char>(0x80);
+
+  YamlSNIConfig::Item item;
+  item.fqdn = "High";
+  item.fqdn.push_back(HIGH_ORDER_BIT);
+  item.fqdn.append(".Example.Com");
+  item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
+
+  SNIConfigParams params;
+  params.yaml_sni.items.push_back(std::move(item));
+  REQUIRE(params.load_sni_config());
+
+  std::string servername{"hIGH"};
+  servername.push_back(HIGH_ORDER_BIT);
+  servername.append(".eXAMPLE.cOM");
+
+  auto const &actions{params.get(servername, 443)};
+  REQUIRE(actions.first);
+  CHECK(actions.first->size() == 2);
+}
+
+static IpEndpoint
+make_endpoint(const char *ip_str)
+{
+  IpEndpoint ep;
+  ats_ip_pton(ip_str, &ep.sa);
+  return ep;
+}
+
+TEST_CASE("SNI_IpAllow TestClientSNIAction")
+{
+  SNIConfigParams params;
+  REQUIRE(params.initialize(_XSTR(LIBINKNET_UNIT_TEST_DIR) "/sni_conf_test.yaml"));
+
+  SECTION("Entry with ip_allow always triggers regardless of client IP")
+  {
+    auto const &actions{params.get("ipallow.example.com", 443)};
+    REQUIRE(actions.first);
+
+    auto blocked_ep = make_endpoint("172.16.0.1");
+    int  policy     = 2;
+    bool triggered  = false;
+    for (auto &&item : *actions.first) {
+      triggered |= item->TestClientSNIAction("ipallow.example.com", blocked_ep, policy);
+    }
+    CHECK(triggered);
+
+    auto allowed_ep = make_endpoint("192.168.1.50");
+    triggered       = false;
+    for (auto &&item : *actions.first) {
+      triggered |= item->TestClientSNIAction("ipallow.example.com", allowed_ep, policy);
+    }
+    CHECK(triggered);
+  }
+
+  SECTION("Entry without ip_allow does not trigger TestClientSNIAction for any IP")
+  {
+    auto const &actions{params.get("noipallow.example.com", 443)};
+    REQUIRE(actions.first);
+
+    auto any_ep    = make_endpoint("203.0.113.1");
+    int  policy    = 2;
+    bool triggered = false;
+    for (auto &&item : *actions.first) {
+      triggered |= item->TestClientSNIAction("noipallow.example.com", any_ep, policy);
+    }
+    CHECK_FALSE(triggered);
+  }
 }

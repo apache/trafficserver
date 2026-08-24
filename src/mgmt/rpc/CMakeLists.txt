@@ -39,6 +39,7 @@ target_link_libraries(jsonrpc_server PUBLIC ts::jsonrpc_protocol)
 
 add_library(
   rpcpublichandlers STATIC
+  handlers/cache/Cache.cc
   handlers/common/ErrorUtils.cc
   handlers/common/RecordsUtils.cc
   handlers/config/Configuration.cc

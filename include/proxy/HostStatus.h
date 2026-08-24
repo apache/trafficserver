@@ -34,7 +34,7 @@
 #include "records/RecCore.h"
 #include "tscore/Filenames.h"
 #include "tscore/Layout.h"
-#include "tscore/ink_rwlock.h"
+#include "tsutil/Bravo.h"
 
 #include <ctime>
 #include <string>
@@ -252,5 +252,5 @@ private:
   // next hop status, key is hostname or ip string, data is HostStatRec
   std::unordered_map<std::string, HostStatRec *> hosts_statuses;
 
-  ink_rwlock host_status_rwlock;
+  ts::bravo::shared_mutex host_status_rwlock;
 };

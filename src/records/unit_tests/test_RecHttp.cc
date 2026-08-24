@@ -97,6 +97,47 @@ TEST_CASE("RecHttp", "[librecords][RecHttp]")
     REQUIRE(view.find(":ssl") != TextView::npos);
     REQUIRE(view.find(":proto") == TextView::npos); // it's default, should not have this.
   }
+
+  SECTION("unix-path")
+  {
+    HttpProxyPort::loadValue(ports, "/run/ats/uds.socket");
+    REQUIRE(ports.size() == 1);
+    REQUIRE(ports[0].m_family == AF_UNIX);
+    REQUIRE(std::string_view(ports[0].m_unix_path._path) == "/run/ats/uds.socket");
+  }
+
+  SECTION("unix-path-max")
+  {
+    // Exactly TS_UNIX_SIZE - 1 bytes: the longest path that fits sun_path with its terminator.
+    std::string path = "/" + std::string(TS_UNIX_SIZE - 2, 'x');
+    HttpProxyPort::loadValue(ports, path.c_str());
+    REQUIRE(ports.size() == 1);
+    REQUIRE(ports[0].m_family == AF_UNIX);
+    REQUIRE(std::string_view(ports[0].m_unix_path._path) == path);
+  }
+
+  SECTION("unix-path-too-long")
+  {
+    // One byte past what sun_path can hold.
+    std::string path = "/" + std::string(TS_UNIX_SIZE - 1, 'x');
+    HttpProxyPort::loadValue(ports, path.c_str());
+    REQUIRE(ports.size() == 0);
+    // The reject itself, then loadValue's "No valid definition" for the dropped descriptor.
+    REQUIRE(cdiag->messages.size() == 2);
+    REQUIRE(cdiag->messages[0].find("too long") != std::string::npos);
+  }
+
+  SECTION("unix-path-too-long-with-port")
+  {
+    // An over-long unix path followed by a numeric port must reject the whole descriptor,
+    // not silently fall back to an INET port listener.
+    std::string path = "/" + std::string(TS_UNIX_SIZE - 1, 'x') + ":8080";
+    HttpProxyPort::loadValue(ports, path.c_str());
+    REQUIRE(ports.size() == 0);
+    // The reject itself, then loadValue's "No valid definition" for the dropped descriptor.
+    REQUIRE(cdiag->messages.size() == 2);
+    REQUIRE(cdiag->messages[0].find("too long") != std::string::npos);
+  }
 }
 
 struct ConvertAlpnToWireFormatTestCase {

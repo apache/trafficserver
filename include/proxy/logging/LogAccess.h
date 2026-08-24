@@ -162,6 +162,7 @@ public:
   int marshal_client_req_tcp_reused(char *);         // INT
   int marshal_client_req_is_ssl(char *);             // INT
   int marshal_client_req_ssl_reused(char *);         // INT
+  int marshal_client_ssl_resumption_type(char *);    // INT
   int marshal_client_req_is_internal(char *);        // INT
   int marshal_client_req_mptcp_state(char *);        // INT
   int marshal_client_security_protocol(char *);      // STR
@@ -223,7 +224,7 @@ public:
   int marshal_server_resp_squid_len(char *);          // INT
   int marshal_server_resp_content_len(char *);        // INT
   int marshal_server_resp_header_len(char *);         // INT
-  int marshal_server_resp_http_version(char *);       // INT
+  int marshal_server_resp_http_version(char *);       // STR
   int marshal_server_resp_time_ms(char *);            // INT
   int marshal_server_resp_time_s(char *);             // INT
   int marshal_server_transact_count(char *);          // INT
@@ -239,7 +240,7 @@ public:
   int marshal_cache_resp_squid_len(char *);         // INT
   int marshal_cache_resp_content_len(char *);       // INT
   int marshal_cache_resp_header_len(char *);        // INT
-  int marshal_cache_resp_http_version(char *);      // INT
+  int marshal_cache_resp_http_version(char *);      // STR
   int marshal_cache_resp_all_header_fields(char *); // STR
 
   void set_client_req_url(char *, int);                // STR

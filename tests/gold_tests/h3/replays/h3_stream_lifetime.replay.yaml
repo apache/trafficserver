@@ -1,0 +1,198 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not
+#  use this file except in compliance with the License.  You may
+#  obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: "Verify HTTP/3 stream lifetime handling with concurrent streams"
+
+  server:
+    name: "server-h3-stream-lifetime"
+    process_config:
+      verbose: false
+
+  client:
+    name: "client-h3-stream-lifetime"
+    process_config:
+      verbose: false
+
+  ats:
+    name: "ts-h3-stream-lifetime"
+    startup_timeout: 60
+    process_config:
+      enable_tls: true
+      enable_quic: true
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "quic|http3|v_http3_trans"
+      proxy.config.quic.server.stateless_retry_enabled: 0
+
+    remap_config:
+    - from: "https://example.com/"
+      to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+        - expression: 'start HTTP/3 app \(ALPN=h3\)'
+          description: "ATS should negotiate HTTP/3"
+
+sessions:
+- protocol:
+  - name: http
+    version: 3
+  - name: tls
+    sni: example.com
+  - name: udp
+  - name: ip
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-slow ]
+        - [ uuid, h3-slow ]
+
+    server-response:
+      delay: 500ms
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "slow-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvw"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "slow-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvw"
+        verify: { as: equal }
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-empty ]
+        - [ uuid, h3-empty ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "0" ]
+      content:
+        size: 0
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "0", as: equal } ]
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-small ]
+        - [ uuid, h3-small ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "small-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuv"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "small-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuv"
+        verify: { as: equal }
+
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-post ]
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+        - [ uuid, h3-post ]
+      content:
+        encoding: plain
+        data: "post-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvw"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "post-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvw"
+        verify: { as: equal }
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "post-response-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmn"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "post-response-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmn"
+        verify: { as: equal }

@@ -25,6 +25,7 @@
 #include "P_SSLConfig.h"
 #include "iocore/net/SSLSNIConfig.h"
 #include "mgmt/config/ConfigRegistry.h"
+#include "records/RecHttp.h"
 #include "tscore/Filenames.h"
 #if TS_USE_QUIC == 1
 #include "iocore/net/QUICMultiCertConfigLoader.h"
@@ -40,7 +41,9 @@ SSLClientCoordinator::reconfigure(ConfigContext reconf_ctx)
   SNIConfig::reconfigure(reconf_ctx.add_dependent_ctx("SNIConfig", ts::filename::SNI));
   SSLCertificateConfig::reconfigure(reconf_ctx.add_dependent_ctx("SSLCertificateConfig", ts::filename::SSL_MULTICERT));
 #if TS_USE_QUIC == 1
-  QUICCertConfig::reconfigure(reconf_ctx.add_dependent_ctx("QUICCertConfig", ts::filename::SSL_MULTICERT));
+  if (HttpProxyPort::hasQUIC()) {
+    QUICCertConfig::reconfigure(reconf_ctx.add_dependent_ctx("QUICCertConfig", ts::filename::SSL_MULTICERT));
+  }
 #endif
   reconf_ctx.complete("SSL configs reloaded");
 }

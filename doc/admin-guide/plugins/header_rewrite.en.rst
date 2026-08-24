@@ -1171,6 +1171,12 @@ run-plugin
 This allows to run an existing remap plugin, conditionally, from within a
 header rewrite rule.
 
+.. note::
+    ``<plugin-argument>`` is fixed when the rule is loaded (or reloaded);
+    it behaves the same as a plugin argument in ``remap.config``. It is
+    not re-evaluated per request, so variable interpolation (e.g.
+    ``%{HEADER:bar}``) does not work here.
+
 set-body
 ~~~~~~~~
 ::
@@ -1733,6 +1739,22 @@ Because this hook is valid only within a remapping context, for configuration
 files shared by both the global :file:`plugin.config` and individual remapping
 entries in :file:`remap.config`, this hook condition will force the subsequent
 ruleset(s) to be valid only for remapped transactions.
+
+POST_REMAP_HOOK
+~~~~~~~~~~~~~~~
+
+Forces evaluation of the ruleset immediately after remapping has completed, but
+before |TS| looks the request up in the cache. There is no response data yet, so
+context-adapting conditions and operators match against the request, which at
+this point is the remapped request.
+
+For rulesets in :file:`remap.config`, `REMAP_PSEUDO_HOOK`_ already covers this
+window. This hook exists for globally-configured rulesets, which otherwise have
+no hook that sees the remapped request before the cache lookup:
+`READ_REQUEST_HDR_HOOK`_ and `READ_REQUEST_PRE_REMAP_HOOK`_ run before
+remapping, and `SEND_REQUEST_HDR_HOOK`_ runs after the lookup, only when the
+request is forwarded to an origin. Anything that has to influence the lookup
+itself belongs at this hook.
 
 SEND_REQUEST_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~

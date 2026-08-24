@@ -52,6 +52,7 @@ dependencies = [
 
     "pyOpenSSL",
     "eventlet",
+    "aioquic==1.3.0",
 
     # To test stats_over_http prometheus exporter.
     "prometheus_client",
@@ -61,5 +62,4 @@ dependencies = [
 dev = [
     "pyflakes",
 ]
-
 

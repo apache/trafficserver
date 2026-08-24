@@ -160,8 +160,22 @@ ParentRoundRobin::selectParent(bool first_call, ParentResult *result, RequestDat
         parentUp = true;
       }
     } else {
-      if ((result->wrap_around) ||
-          (((parents[cur_index].failedAt + retry_time) < request_info->xact_start) && host_stat == TS_HOST_STATUS_UP)) {
+      bool retryable = false;
+      if (result->wrap_around) {
+        // Wrap-around: force a retry of the parent regardless of the timer.
+        retryable = true;
+      } else if (host_stat == TS_HOST_STATUS_UP) {
+        // Atomically push failedAt to (xact_start - retry_time) so only one
+        // concurrent transaction with this xact_start takes the retry slot;
+        // sequential retries with a later xact_start still pass the window
+        // check.
+        time_t observed = parents[cur_index].failedAt.load();
+        if ((observed + retry_time) < request_info->xact_start &&
+            parents[cur_index].failedAt.compare_exchange_strong(observed, request_info->xact_start - retry_time)) {
+          retryable = true;
+        }
+      }
+      if (retryable) {
         Dbg(dbg_ctl_parent_select, "Parent[%d].failedAt = %u, retry = %u, xact_start = %" PRId64 " but wrap = %d", cur_index,
             static_cast<unsigned>(parents[cur_index].failedAt.load()), retry_time, static_cast<int64_t>(request_info->xact_start),
             result->wrap_around);

@@ -29,7 +29,7 @@ if(wasmedge_FOUND)
   list(APPEND WASM_RUNTIME wasmedge::wasmedge)
 endif()
 
-target_link_libraries(wasm PRIVATE ${WASM_RUNTIME})
+target_link_libraries(wasm PRIVATE OpenSSL::SSL ${WASM_RUNTIME})
 
 if(wamr_FOUND)
   target_compile_options(wasm PRIVATE -DWAMR)

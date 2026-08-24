@@ -53,6 +53,22 @@ DbgCtl dbg_ctl_log_resolve{"log-resolve"};
 DbgCtl dbg_ctl_log_unmarshal_orun{"log-unmarshal-orun"}; // Overrun of unmarshaling destination buffer.
 DbgCtl dbg_ctl_log_unmarshal_data{"log-unmarshal-data"}; // Error in txn data when unmarshalling.
 
+int
+marshal_http_version_string(char *buf, HTTPHdr *response)
+{
+  HTTPVersion version = response ? response->version_get() : HTTP_INVALID;
+  char        str[8];
+  int         str_len =
+    snprintf(str, sizeof(str), "%u.%u", static_cast<unsigned>(version.get_major()), static_cast<unsigned>(version.get_minor()));
+  int len = LogAccess::padded_length(str_len + 1);
+
+  ink_release_assert(str_len > 0 && str_len < static_cast<int>(sizeof(str)));
+  if (buf) {
+    LogAccess::marshal_str(buf, str, len);
+  }
+  return len;
+}
+
 } // end anonymous namespace
 
 #define DBG_UNMARSHAL_DEST_OVERRUN Dbg(dbg_ctl_log_unmarshal_orun, "Unmarshal destination buffer overrun.");
@@ -470,22 +486,25 @@ LogAccess::marshal_custom_field(char *buf, LogField::Type type, const LogField::
   void *sm = m_data->http_sm_for_plugins();
   if (sm == nullptr) {
     switch (type) {
-    case LogField::sINT:
-    case LogField::dINT:
+    case LogField::Type::sINT:
+      [[fallthrough]];
+    case LogField::Type::dINT:
       if (buf) {
         marshal_int(buf, 0);
       }
       return INK_MIN_ALIGN;
-    case LogField::STRING: {
+    case LogField::Type::STRING: {
       int len = LogAccess::padded_strlen(nullptr);
       if (buf) {
         marshal_str(buf, nullptr, len);
       }
       return len;
     }
-    case LogField::IP:
+    case LogField::Type::IP:
       return marshal_ip(buf, nullptr);
-    case LogField::N_TYPES:
+    case LogField::Type::N_TYPES:
+      [[fallthrough]];
+    case LogField::Type::INVALID:
       break;
     }
   }
@@ -1063,9 +1082,8 @@ LogAccess::marshal_cache_resp_all_header_fields(char *buf)
 /*-------------------------------------------------------------------------
   LogAccess::unmarshal_http_version
 
-  The http version is marshalled as two consecutive integers, the first for
-  the major number and the second for the minor number.  Retrieve both
-  numbers and return the result as "HTTP/major.minor".
+  The HTTP version is marshalled as a "major.minor" string. Prefix it with
+  "HTTP/" for the established text log representation.
   -------------------------------------------------------------------------*/
 
 int
@@ -1075,34 +1093,17 @@ LogAccess::unmarshal_http_version(char **buf, char *dest, int len)
   ink_assert(*buf != nullptr);
   ink_assert(dest != nullptr);
 
-  static const char http[]   = "HTTP/";
-  static int        http_len = static_cast<int>(sizeof(http) - 1);
+  static constexpr std::string_view prefix{"HTTP/"};
 
-  char  val_buf[128];
-  char *p = val_buf;
+  char *version     = *buf;
+  int   version_len = static_cast<int>(strlen(version));
+  int   value_len   = static_cast<int>(prefix.size()) + version_len;
 
-  auto vb_left = [&]() -> int { return sizeof(val_buf) - (p - val_buf); };
-
-  memcpy(p, http, http_len);
-  p += http_len;
-
-  int res1 = unmarshal_int_to_str(buf, p, vb_left());
-  if (res1 < 0) {
-    return -1;
-  }
-  p        += res1;
-  *p++      = '.';
-  int res2  = unmarshal_int_to_str(buf, p, vb_left());
-  if (res2 < 0) {
-    DBG_UNMARSHAL_DEST_OVERRUN
-    return -1;
-  }
-  p += res2;
-
-  int val_len = p - val_buf;
-  if (val_len < len) {
-    memcpy(dest, val_buf, val_len);
-    return val_len;
+  *buf += padded_strlen(version);
+  if (value_len <= len) {
+    memcpy(dest, prefix.data(), prefix.size());
+    memcpy(dest + prefix.size(), version, version_len);
+    return value_len;
   }
   DBG_UNMARSHAL_DEST_OVERRUN
   return -1;
@@ -2284,6 +2285,15 @@ LogAccess::marshal_client_req_ssl_reused(char *buf)
 }
 
 int
+LogAccess::marshal_client_ssl_resumption_type(char *buf)
+{
+  if (buf) {
+    marshal_int(buf, m_data->get_client_ssl_resumption_type());
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
 LogAccess::marshal_client_req_is_internal(char *buf)
 {
   if (buf) {
@@ -2910,17 +2920,7 @@ LogAccess::marshal_server_resp_squid_len(char *buf)
 int
 LogAccess::marshal_server_resp_http_version(char *buf)
 {
-  if (buf) {
-    int64_t major = 0;
-    int64_t minor = 0;
-    if (m_server_response) {
-      major = m_server_response->version_get().get_major();
-      minor = m_server_response->version_get().get_minor();
-    }
-    marshal_int(buf, major);
-    marshal_int((buf + INK_MIN_ALIGN), minor);
-  }
-  return (2 * INK_MIN_ALIGN);
+  return marshal_http_version_string(buf, m_server_response);
 }
 
 /*-------------------------------------------------------------------------
@@ -3061,17 +3061,7 @@ LogAccess::marshal_cache_resp_header_len(char *buf)
 int
 LogAccess::marshal_cache_resp_http_version(char *buf)
 {
-  if (buf) {
-    int64_t major = 0;
-    int64_t minor = 0;
-    if (m_cache_response) {
-      major = m_cache_response->version_get().get_major();
-      minor = m_cache_response->version_get().get_minor();
-    }
-    marshal_int(buf, major);
-    marshal_int((buf + INK_MIN_ALIGN), minor);
-  }
-  return (2 * INK_MIN_ALIGN);
+  return marshal_http_version_string(buf, m_cache_response);
 }
 
 int

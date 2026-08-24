@@ -29,8 +29,10 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
+#include "tscore/TSSystemState.h"
 #include <dlfcn.h>
 #include "iocore/cache/Cache.h"
+#include "iocore/eventsystem/Freer.h"
 #include "proxy/ReverseProxy.h"
 #include "mgmt/config/ConfigContextDiags.h"
 #include "mgmt/config/ConfigRegistry.h"
@@ -49,11 +51,43 @@ Ptr<ProxyMutex> reconfig_mutex;
 
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
+// Steers UrlRewriteDeleter to inline-delete; see shutdown_url_rewrite().
+std::atomic<bool> rewrite_table_shutdown{false};
+
+// Defer teardown to ET_TASK; UrlRewrite destruction can be slow.
+struct UrlRewriteDeleter {
+  void
+  operator()(UrlRewrite *p) const noexcept
+  {
+    if (!p) {
+      return;
+    }
+    if (rewrite_table_shutdown.load(std::memory_order_acquire) || TSSystemState::is_event_system_shut_down()) {
+      // Leak; plugin teardown is unsafe post-shutdown.
+      return;
+    }
+    // new_Deleter allocates; fall back to inline delete so we don't escape noexcept.
+    try {
+      new_Deleter(p, 0);
+    } catch (...) {
+      delete p;
+    }
+  }
+};
+
 } // end anonymous namespace
 
 // Global Ptrs
-std::atomic<UrlRewrite *>         rewrite_table       = nullptr;
+AtomicSharedPtr<UrlRewrite>       rewrite_table;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
+
+void
+shutdown_url_rewrite()
+{
+  // Drain before flag: this ref destructs normally; later drops leak.
+  rewrite_table.exchange(nullptr);
+  rewrite_table_shutdown.store(true, std::memory_order_release);
+}
 
 // Tokens for the Callback function
 #define FILE_CHANGED                  0
@@ -71,9 +105,9 @@ static void init_table_volume_host_records(UrlRewrite &table);
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table.load() == nullptr);
+  ink_assert(rewrite_table.load(std::memory_order_acquire) == nullptr);
   reconfig_mutex      = new_ProxyMutex();
-  auto *initial_table = new UrlRewrite();
+  auto  initial_table = std::make_unique<UrlRewrite>();
   auto &config_reg    = config::ConfigRegistry::Get_Instance();
 
   // Register with ConfigRegistry BEFORE load() so that remap.config and remap.yaml are in
@@ -93,7 +127,6 @@ init_reverse_proxy()
     [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
     config::ConfigSource::FileOnly);                  // file-based only
 
-  initial_table->acquire();
   Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
   Note("%s loading ...", ts::filename::REMAP);
   bool status  = initial_table->load();
@@ -111,7 +144,7 @@ init_reverse_proxy()
     init_table_volume_host_records(*initial_table);
   }
 
-  rewrite_table.store(initial_table, std::memory_order_release);
+  rewrite_table.store(std::shared_ptr<UrlRewrite>(initial_table.release(), UrlRewriteDeleter{}), std::memory_order_release);
   ink_assert(0 == config_reg.attach("remap", "proxy.config.url_remap.filename"));
   ink_assert(0 == config_reg.attach("remap", "proxy.config.proxy_name"));
   ink_assert(0 == config_reg.attach("remap", "proxy.config.http.referer_default_redirect"));
@@ -162,13 +195,12 @@ reloadUrlRewrite(ConfigContext ctx)
   std::string msg_buffer;
 
   msg_buffer.reserve(1024);
-  UrlRewrite *newTable, *oldTable;
 
   CfgLoadLog(ctx, DL_Note, "%s loading (checking first) ...", ts::filename::REMAP_YAML);
   CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::REMAP);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
-  newTable = new UrlRewrite();
+  auto newTable = std::make_unique<UrlRewrite>();
 
   bool status  = newTable->load(ctx);
   bool is_yaml = (newTable->is_remap_yaml());
@@ -176,16 +208,7 @@ reloadUrlRewrite(ConfigContext ctx)
   if (status) {
     swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
-    // Hold at least one lease, until we reload the configuration
-    newTable->acquire();
-
-    // Swap configurations
-    oldTable = rewrite_table.exchange(newTable);
-
-    ink_assert(oldTable != nullptr);
-
-    // Release the old one
-    oldTable->release();
+    rewrite_table.exchange(std::shared_ptr<UrlRewrite>(newTable.release(), UrlRewriteDeleter{}), std::memory_order_acq_rel);
 
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
     CfgLoadComplete(ctx, "%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
@@ -193,7 +216,6 @@ reloadUrlRewrite(ConfigContext ctx)
   } else {
     swoc::bwprint(msg_buffer, "{} failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
-    delete newTable;
     Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
     CfgLoadFail(ctx, "%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return false;
@@ -255,25 +277,23 @@ init_remap_volume_host_records()
     return;
   }
 
-  UrlRewrite *table = rewrite_table.load(std::memory_order_acquire);
+  auto table = rewrite_table.load(std::memory_order_acquire);
 
   if (!table) {
     return;
   }
 
-  table->acquire();
-
   if (table->is_valid()) {
     init_table_volume_host_records(*table);
   }
-
-  table->release();
 }
 
 int
 url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
                void * /* cookie ATS_UNUSED */)
 {
-  rewrite_table.load()->SetReverseFlag(data.rec_int);
+  if (auto table = rewrite_table.load(std::memory_order_acquire)) {
+    table->SetReverseFlag(data.rec_int);
+  }
   return 0;
 }

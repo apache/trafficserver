@@ -26,11 +26,11 @@
 #include <cstdint>
 
 // Implementation taken from LiteSpeed:
-// lshpack_dec_huff_decode_full
+// lshpack_dec_huff_decode
 int64_t
 huffman_decode(char *dst, uint32_t dst_len, const uint8_t *src, uint32_t src_len)
 {
-  return litespeed::lshpack_dec_huff_decode_full(src, src_len, dst, dst_len);
+  return litespeed::lshpack_dec_huff_decode(src, src_len, dst, dst_len);
 }
 
 // Implementation taken from LiteSpeed:

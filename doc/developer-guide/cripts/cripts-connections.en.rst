@@ -101,7 +101,7 @@ beyond string conversion:
 Method                    Description
 =======================   =========================================================================
 ``string()``              Convert IP to string with optional CIDR masking.
-``Socket()``              Convert IP to a ``sockaddr`` structure for low-level socket operations.
+``Socket()``              Convert IP to a ``swoc::IPEndpoint`` (holds IPv4 or IPv6) for low-level socket operations.
 ``Hasher()``              Generate a hash value for the IP address.
 ``Sample()``              Determine if IP should be sampled based on rate and seed.
 ``ASN()``                 Get ASN number (if Geo-IP support is available).

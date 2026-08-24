@@ -42,6 +42,16 @@ The value placed in :arg:`locp` is stable only for a single callback, as other c
 change the URL object itself (see :func:`TSHttpHdrUrlSet`), not just the data in it. That value is
 also valid only if this function return ``TS_SUCCESS``.
 
+.. note::
+
+   Not all URL components may be available at every hook stage. In early hooks
+   such as ``TS_HTTP_READ_REQUEST_HDR_HOOK``, the URL object may not yet be
+   fully parsed. In particular, the host component retrieved via
+   :func:`TSUrlHostGet` may be ``NULL`` even when a ``Host`` header is present.
+   For reliable host retrieval across all hook stages, use
+   :func:`TSHttpHdrHostGet` instead, which checks both the URL and the ``Host``
+   header field.
+
 See Also
 ========
 
@@ -49,4 +59,6 @@ See Also
 :manpage:`TSHttpTxnClientReqGet(3ts)`,
 :manpage:`TSHttpTxnServerReqGet(3ts)`,
 :manpage:`TSHttpTxnServerRespGet(3ts)`,
-:manpage:`TSHttpTxnClientRespGet(3ts)`
+:manpage:`TSHttpTxnClientRespGet(3ts)`,
+:manpage:`TSHttpHdrHostGet(3ts)`,
+:manpage:`TSUrlHostGet(3ts)`
