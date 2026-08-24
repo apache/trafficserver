@@ -215,6 +215,7 @@ SSLInitializeStatistics()
   ssl_rsb.user_agent_inappropriate_fallback = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_inappropriate_fallback");
   ssl_rsb.user_agent_no_shared_cipher       = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_no_shared_cipher");
   ssl_rsb.user_agent_other_errors           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_other_errors");
+  ssl_rsb.user_agent_resumed_cert_rejected  = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_resumed_cert_rejected");
   ssl_rsb.user_agent_revoked_cert           = Metrics::Counter::createPtr("proxy.process.ssl.user_agent_revoked_cert");
   ssl_rsb.user_agent_session_hit            = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_hit");
   ssl_rsb.user_agent_session_miss           = Metrics::Gauge::createPtr("proxy.process.ssl.user_agent_session_miss");

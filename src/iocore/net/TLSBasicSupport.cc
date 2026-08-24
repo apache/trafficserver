@@ -29,7 +29,11 @@
 #endif                    // OPENSSL_IS_BORINGSSL
 #include "tsutil/DbgCtl.h"
 
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
+
 #include <cinttypes>
+#include <memory>
 
 int TLSBasicSupport::_ex_data_index = -1;
 
@@ -69,6 +73,7 @@ TLSBasicSupport::unbind(SSL *ssl)
 void
 TLSBasicSupport::clear()
 {
+  this->set_verify_cert_store(nullptr);
   this->_tls_handshake_begin_time = 0;
   this->_tls_handshake_end_time   = 0;
 }
@@ -231,6 +236,71 @@ X509_STORE_CTX *
 TLSBasicSupport::get_tls_cert_to_verify() const
 {
   return this->_cert_to_verify;
+}
+
+void
+TLSBasicSupport::set_verify_cert_store(X509_STORE *store)
+{
+  if (this->_verify_cert_store == store) {
+    return;
+  }
+
+  if (store != nullptr) {
+    X509_STORE_up_ref(store);
+  }
+  if (this->_verify_cert_store != nullptr) {
+    X509_STORE_free(this->_verify_cert_store);
+  }
+  this->_verify_cert_store = store;
+}
+
+bool
+TLSBasicSupport::is_peer_cert_trusted_by_current_ca() const
+{
+  SSL *ssl = this->get_tls_handle();
+
+  if (ssl == nullptr) {
+    return false;
+  }
+
+  // Without a verify_client_ca_certs override for this SNI, the context's own store is what the
+  // handshake would have used.
+  X509_STORE *store = this->_verify_cert_store != nullptr ? this->_verify_cert_store : SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl));
+
+  if (store == nullptr) {
+    return false;
+  }
+
+#ifdef OPENSSL_IS_OPENSSL3
+  std::unique_ptr<X509, decltype(&X509_free)> peer_cert{SSL_get1_peer_certificate(ssl), &X509_free};
+#else
+  std::unique_ptr<X509, decltype(&X509_free)> peer_cert{SSL_get_peer_certificate(ssl), &X509_free};
+#endif
+
+  if (peer_cert == nullptr) {
+    return false;
+  }
+
+  std::unique_ptr<X509_STORE_CTX, decltype(&X509_STORE_CTX_free)> store_ctx{X509_STORE_CTX_new(), &X509_STORE_CTX_free};
+
+  if (store_ctx == nullptr) {
+    return false;
+  }
+
+  // The peer chain carries only the intermediates the client sent, and a session restored from a
+  // ticket may not carry them at all, so a client certificate issued by an intermediate CA needs
+  // that intermediate present in the CA bundle configured for this SNI.
+  if (X509_STORE_CTX_init(store_ctx.get(), store, peer_cert.get(), SSL_get_peer_cert_chain(ssl)) != 1) {
+    return false;
+  }
+
+  // Match what the TLS library itself applies to a client certificate during a full handshake.
+  if (X509_STORE_CTX_set_default(store_ctx.get(), "ssl_client") != 1 ||
+      X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(store_ctx.get()), SSL_get0_param(ssl)) != 1) {
+    return false;
+  }
+
+  return X509_verify_cert(store_ctx.get()) == 1;
 }
 
 void

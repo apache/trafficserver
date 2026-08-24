@@ -42,6 +42,7 @@
 #include "tscore/ink_config.h"
 #include "tscore/Layout.h"
 #include "tscore/InkErrno.h"
+#include "tscore/LogMessage.h"
 #include "tscore/TSSystemState.h"
 
 #include <netinet/in.h>
@@ -1390,6 +1391,34 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
 
   switch (ssl_error) {
   case SSL_ERROR_NONE:
+    // A resumed session carries forward the peer cert (or lack of one) from whichever connection
+    // originally established it; verify_client for the current SNI was already (re-)applied for
+    // this handshake, but a TLS library does not ask the peer for a certificate again on
+    // resumption. The verify result it reports is likewise the one cached by the handshake that
+    // created the session, evaluated against the CA store that applied to *that* connection's SNI,
+    // so it says nothing about whether this SNI trusts the certificate. Re-check both the presence
+    // and the trust of that certificate against the policy in force now.
+    //
+    // Gated on SSL_session_reused() only to keep the chain verification off the fresh-handshake
+    // path, where the TLS library has just done the same work against the same store; that flag is
+    // the library's own record of this handshake, so it cannot drift from the connection's state.
+    if (SSL_session_reused(ssl)) {
+      int verify_mode = SSL_get_verify_mode(ssl);
+
+      if ((verify_mode & SSL_VERIFY_PEER) != 0) {
+        bool satisfied = this->peer_provided_cert() ? this->is_peer_cert_trusted_by_current_ca() :
+                                                      (verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) == 0;
+
+        if (!satisfied) {
+          static LogMessage log_msg{IS_THROTTLED};
+          Metrics::Counter::increment(ssl_rsb.user_agent_resumed_cert_rejected);
+          log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
+          SSLVCDebug(this, "rejecting a resumed TLS session that does not satisfy verify_client");
+          return EVENT_ERROR;
+        }
+      }
+    }
+
     if (dbg_ctl_ssl.on()) {
 #ifdef OPENSSL_IS_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
