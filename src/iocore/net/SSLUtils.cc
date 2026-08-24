@@ -37,6 +37,7 @@
 #include "config/ssl_multicert.h"
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
+#include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "records/RecHttp.h"
 #include "tscore/MatcherUtils.h"
@@ -1153,6 +1154,11 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
 void
 setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 {
+  // Remembered on the connection because a resumed session's peer certificate has to be re-verified
+  // against whichever store the current SNI selected, and the TLS libraries do not uniformly expose
+  // a way to read that store back off the SSL object.
+  X509_STORE *verify_store = nullptr;
+
   if ((file != nullptr && file[0] != '\0') || (dir != nullptr && dir[0] != '\0')) {
 #if TS_HAS_VERIFY_CERT_STORE
     // The set0 version will take ownership of the X509_STORE object
@@ -1160,6 +1166,7 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
     if (ctx != nullptr &&
         X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
       SSL_set0_verify_cert_store(ssl, ctx);
+      verify_store = ctx;
     } else {
       X509_STORE_free(ctx);
     }
@@ -1172,6 +1179,10 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 #else
     ink_assert(!"Configuration checking should prevent reaching this code");
 #endif
+  }
+
+  if (auto *tbs = TLSBasicSupport::getInstance(ssl); tbs != nullptr) {
+    tbs->set_verify_cert_store(verify_store);
   }
 }
 
