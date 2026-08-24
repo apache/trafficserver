@@ -27,6 +27,7 @@
 #include <atomic>
 #include <array>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <string>
 #include <thread>
@@ -663,42 +664,63 @@ TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]
 TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][Metrics]")
 {
   // The id based read paths take no lock, so resolving an id races a concurrent create. Run both
-  // sides at once, across enough metrics to cross several blob boundaries. Under the tsan preset a
+  // sides at once, over enough metrics to cross several blob boundaries. Under the tsan preset a
   // non-atomic allocation counter reports a data race here; relaxing the memory orders does not,
   // since atomics are race free at any ordering.
-  constexpr int     N_READERS = 4;
-  constexpr int     N_CREATE  = Metrics::MAX_SIZE * 2 + 64;
-  auto             &h         = Metrics::hidden_instance();
+  //
+  // Readers take ids from what the writer has registered rather than counting integers: an id packs
+  // the blob index above the offset, so consecutive integers only ever name the first blob. The
+  // store is relaxed, so a reader can pick up an id whose slot is not published yet, which is the
+  // case of interest.
+  constexpr int N_READERS = 4;
+  constexpr int N_CREATE  = Metrics::MAX_SIZE * 2 + 64;
+
+  auto             &h = Metrics::hidden_instance();
   std::atomic<bool> stop{false};
   std::atomic<int>  mismatches{0};
+  std::atomic<int>  resolved{0};
+
+  std::vector<std::atomic<Metrics::IdType>> created(N_CREATE);
+
+  for (auto &c : created) {
+    c.store(Metrics::NOT_FOUND, std::memory_order_relaxed);
+  }
 
   std::vector<std::thread> readers;
 
   for (int t = 0; t < N_READERS; ++t) {
     readers.emplace_back([&]() {
+      int n = 0;
+
       while (!stop.load(std::memory_order_relaxed)) {
-        for (Metrics::IdType id = 0; id < N_CREATE; ++id) {
-          if (!h.valid(id)) {
+        for (int i = 0; i < N_CREATE; ++i) {
+          auto const id = created[i].load(std::memory_order_relaxed);
+
+          if (id == Metrics::NOT_FOUND || !h.valid(id)) {
             continue;
           }
 
-          // valid() said this id names an allocated slot, so lookup() must agree and hand back a
-          // real metric rather than clamping to the reserved bad_id slot. A publication ordering
-          // mistake shows up here as a name that is still empty.
+          // valid() accepted the id, so lookup() must hand back the metric with its name rather
+          // than clamping to the reserved bad_id slot.
           std::string_view    name;
           Metrics::MetricType type;
           auto               *m = h.lookup(id, &name, &type);
 
-          if (m == nullptr || (id != 0 && name.empty())) {
+          if (m == nullptr || name.empty()) {
             mismatches.fetch_add(1, std::memory_order_relaxed);
           }
+          ++n;
         }
       }
+      resolved.fetch_add(n, std::memory_order_relaxed);
     });
   }
 
   for (int i = 0; i < N_CREATE; ++i) {
-    REQUIRE(Metrics::Counter::createHiddenPtr("pub.order." + std::to_string(i)) != nullptr);
+    auto const nm = "pub.order." + std::to_string(i);
+
+    REQUIRE(Metrics::Counter::createHiddenPtr(nm) != nullptr);
+    created[i].store(h.lookup(nm), std::memory_order_relaxed);
   }
 
   stop.store(true, std::memory_order_relaxed);
@@ -707,8 +729,11 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
   }
 
   CHECK(mismatches.load() == 0);
+  CHECK(resolved.load() > 0);
 
-  // Everything the writer created must be resolvable by name and by id afterwards.
+  auto lo = std::numeric_limits<Metrics::IdType>::max();
+  auto hi = std::numeric_limits<Metrics::IdType>::min();
+
   for (int i = 0; i < N_CREATE; ++i) {
     auto const nm = "pub.order." + std::to_string(i);
     auto const id = h.lookup(nm);
@@ -716,5 +741,12 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
     REQUIRE(id != Metrics::NOT_FOUND);
     REQUIRE(h.valid(id));
     REQUIRE(h.name(id) == nm);
+
+    lo = std::min(lo, id);
+    hi = std::max(hi, id);
   }
+
+  // More metrics than fit in one blob, so the ids must span blobs. A spread no wider than a blob
+  // would mean the sweep above never left the first one.
+  REQUIRE(hi - lo > Metrics::MAX_SIZE);
 }
