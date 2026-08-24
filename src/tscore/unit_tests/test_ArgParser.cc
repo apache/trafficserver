@@ -288,3 +288,73 @@ TEST_CASE("Option value keeps embedded equal signs", "[parse]")
   REQUIRE(parsed.get("directive").size() == 1);
   REQUIRE(parsed.get("directive")[0] == "ip_allow.id=foo");
 }
+
+TEST_CASE("An option taking at most one argument leaves the positional arguments alone", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl config get [--cold [FILE]] RECORD [RECORD ...]".
+  ts::ArgParser::Command &cmd = parser.add_command("get", "get values", "", MORE_THAN_ONE_ARG_N, nullptr);
+  cmd.add_option("--cold", "-c", "read from a file", "", AT_MOST_ONE_ARG_N);
+  cmd.add_option("--records", "", "yaml output");
+
+  // The option takes its single value and stops, so the command keeps its own arguments.
+  const char   *argv1[] = {"test_prog", "get", "-c", "records.yaml", "proxy.config.x", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+  REQUIRE(parsed.get("get")[0] == "proxy.config.x");
+
+  // Several positional arguments are unaffected.
+  const char *argv2[] = {"test_prog", "get", "-c", "records.yaml", "proxy.config.x", "proxy.config.y", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 2);
+  REQUIRE(parsed.get("get")[1] == "proxy.config.y");
+
+  // Trailing placement keeps working.
+  const char *argv3[] = {"test_prog", "get", "proxy.config.x", "-c", "records.yaml", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+
+  // The --option=value form is not mistaken for a fixed arity mismatch.
+  const char *argv4[] = {"test_prog", "get", "--cold=records.yaml", "proxy.config.x", nullptr};
+  parsed              = parser.parse(argv4);
+  REQUIRE(parsed.get("cold").value() == "records.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+}
+
+TEST_CASE("An option taking at most one argument accepts no value at all", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  ts::ArgParser::Command &cmd = parser.add_command("get", "get values", "", MORE_THAN_ONE_ARG_N, nullptr);
+  cmd.add_option("--cold", "-c", "read from a file", "", AT_MOST_ONE_ARG_N);
+  cmd.add_option("--records", "", "yaml output");
+
+  // Called with no value, so the caller falls back to its own default.
+  const char   *argv1[] = {"test_prog", "get", "proxy.config.x", "-c", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("cold") == true);
+  REQUIRE(parsed.get("cold").size() == 0);
+  REQUIRE(parsed.get("cold").value().empty());
+  REQUIRE(parsed.get("get").size() == 1);
+
+  // A following option is never taken as the value.
+  const char *argv2[] = {"test_prog", "get", "-c", "--records", "proxy.config.x", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("cold").size() == 0);
+  REQUIRE(parsed.get("records") == true);
+  REQUIRE(parsed.get("get").size() == 1);
+  REQUIRE(parsed.get("get")[0] == "proxy.config.x");
+
+  // After "--" even a token shaped like an option becomes the value.
+  const char *argv3[] = {"test_prog", "get", "-c", "--", "-weird-name.yaml", "proxy.config.x", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("cold").value() == "-weird-name.yaml");
+  REQUIRE(parsed.get("get").size() == 1);
+  REQUIRE(parsed.get("get")[0] == "proxy.config.x");
+}

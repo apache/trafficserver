@@ -92,3 +92,43 @@ tr.Processes.Default.Command = f'traffic_ctl config set proxy.config.cache.limit
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'
+
+# --cold takes at most one file name, so it does not consume the record names that follow
+# it.  Before that was the case it had to be written after them, which the runs above do.
+records_file = os.path.join(ts.Variables.CONFIGDIR, "records.yaml")
+
+# 6
+tr = Test.AddTestRun("Get a value with the file name given before the record")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The record must still be parsed as a record')
+
+# 7
+tr = Test.AddTestRun("Get several values with the file name given before them")
+tr.Processes.Default.Command = (
+    f'traffic_ctl config get -c {records_file} '
+    'proxy.config.diags.debug.tags proxy.config.cache.limits.http.max_alts')
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The first record must be parsed as a record')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.cache.limits.http.max_alts: 1', 'The second record must be parsed as a record')
+
+# 8
+tr = Test.AddTestRun("Get a value using the --cold=FILE form")
+tr.Processes.Default.Command = f'traffic_ctl config get --cold={records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The record must still be parsed as a record')
+
+# 9
+file = os.path.join(ts.Variables.CONFIGDIR, "new_records3.yaml")
+tr = Test.AddTestRun("Set a value with the file name given before the record and the value")
+tr.Processes.Default.Command = f'traffic_ctl config set -c {file} proxy.config.cache.limits.http.max_alts 3'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'

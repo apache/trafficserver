@@ -418,6 +418,8 @@ ArgParser::Command::output_option() const
       return {" [<arg> ...]"};
     } else if (num == MORE_THAN_ONE_ARG_N) {
       return {" <arg> ..."};
+    } else if (num == AT_MOST_ONE_ARG_N) {
+      return {" [<arg>]"};
     } else {
       return " <arg1> ... <arg" + std::to_string(num) + ">";
     }
@@ -541,6 +543,29 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
   ArgumentData data;
   ret.append(name, data);
   // handle the args
+  if (arg_num == AT_MOST_ONE_ARG_N) {
+    // Zero or one value. A value is taken only when the following token does not name
+    // another option of this command, which leaves this command's positional arguments
+    // in place. A "--" token makes whatever follows it a value rather than an option.
+    unsigned j{index + 1};
+    bool     takes_value{false};
+
+    if (j < args.size()) {
+      if (args[j] == "--") {
+        ++j;
+        takes_value = j < args.size();
+      } else {
+        takes_value = !is_registered_option(args[j]);
+      }
+    }
+    if (takes_value) {
+      ret.append_arg(name, args[j]);
+      ++j;
+    }
+    args.erase(args.begin() + index, args.begin() + j);
+    index -= 1;
+    return "";
+  }
   if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
     // Variable number of arguments. Stop collecting at a token that names another option
     // of this command, so that following options and this command's own positional
@@ -754,7 +779,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
   // check for wrong number of arguments for --arg=...
   for (const auto &it : check_map) {
     unsigned num = _option_list.at(it.first).arg_num;
-    if (num != it.second && num < MORE_THAN_ONE_ARG_N) {
+    if (num != it.second && !is_variable_arg_num(num)) {
       help_message(std::to_string(_option_list.at(it.first).arg_num) + " arguments expected by " + it.first);
     }
   }

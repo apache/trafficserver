@@ -104,6 +104,29 @@ To add options to the parser or current command:
 
 This function call returns the new :class:`Option` instance. (0 is also number of arguments expected)
 
+.. Note::
+
+   For options, the number of arguments may also be one of the following, which mirror the
+   ``nargs`` values of Python's ``argparse``:
+
+   ================================ =======================================================
+   Value                            Meaning
+   ================================ =======================================================
+   ``AT_MOST_ONE_ARG_N``            Zero or one value (``argparse`` ``nargs='?'``)
+   ``MORE_THAN_ZERO_ARG_N``         Zero or more values (``argparse`` ``nargs='*'``)
+   ``MORE_THAN_ONE_ARG_N``          One or more values (``argparse`` ``nargs='+'``)
+   ================================ =======================================================
+
+   An option taking a variable number of values stops collecting when it reaches a token
+   naming another option of the same command, so options written afterwards keep their own
+   arguments. Use ``AT_MOST_ONE_ARG_N`` rather than ``MORE_THAN_ZERO_ARG_N`` for an option
+   whose value is optional, otherwise it also consumes the positional arguments of its
+   command.
+
+   A ``--`` token stops option recognition for the values being collected, which is how a
+   value beginning with ``-`` is passed. Note this differs from the POSIX ``--``: it does
+   not end the value list nor force the remainder to be positional arguments.
+
 We can also use the following chained way to add subcommand or option:
 
 .. code-block:: cpp

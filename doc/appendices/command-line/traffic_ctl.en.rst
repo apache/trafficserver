@@ -569,6 +569,25 @@ Display the current value of a configuration record.
    Specifying the file name is not needed as `traffic_ctl` will try to use the build(or the runroot if used) information to figure
    out the path to the `records.yaml`.
 
+   ``-c`` accepts at most one file name, so it may be written before or after the record
+   names:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config get -c records.yaml proxy.config.diags.debug.enabled
+      $ traffic_ctl config get proxy.config.diags.debug.enabled -c records.yaml
+      $ traffic_ctl config get --cold=records.yaml proxy.config.diags.debug.enabled
+
+   When no file name is given, write ``-c`` last, or use the ``--cold=`` form for the
+   explicit file. A bare ``-c`` followed by a record name is ambiguous, because the record
+   name is taken as the file name:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config get proxy.config.diags.debug.enabled -c    # default records.yaml
+      $ traffic_ctl config get -c proxy.config.diags.debug.enabled    # wrong, reads a file
+                                                                      # named for the record
+
    If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
 
    This option(only for the config file changes) lets you use the prefix `proxy.config.` or `ts.` for variable names, either would work.
