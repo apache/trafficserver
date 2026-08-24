@@ -868,12 +868,16 @@ hasXAmzPrefix(const char *name, int name_len)
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// Strip any x-amz- request header the client sent that isn't explicitly
-// allow-listed via v4-include-headers. AWS SigV4 always signs whatever
-// x-amz- headers are present at signing time, so an unsolicited client
-// x-amz- header (e.g. x-amz-acl) would otherwise reach S3 with a valid
-// signature, which can trigger bucket-policy denials that get negatively
-// cached.
+// Strip any x-amz- request header that isn't explicitly allow-listed via
+// v4-include-headers. AWS SigV4 always signs whatever x-amz- headers are
+// present at signing time, so an unsolicited x-amz- header (e.g. x-amz-acl)
+// would otherwise reach S3 with a valid signature, which can trigger
+// bucket-policy denials that get negatively cached.
+//
+// This runs at SEND_REQUEST_HDR, where a client-sent header is
+// indistinguishable from one added by another plugin earlier in the chain, so
+// both are subject to removal. A header another plugin is expected to supply
+// has to be named in v4-include-headers.
 void
 S3Request::stripUnauthorizedAmzHeaders(const StringSet &allowedHeaders)
 {
@@ -899,7 +903,7 @@ S3Request::stripUnauthorizedAmzHeaders(const StringSet &allowedHeaders)
       }
 
       if (strip) {
-        Dbg(dbg_ctl, "stripping unauthorized client header %.*s", name_len, name);
+        Dbg(dbg_ctl, "stripping unauthorized x-amz- header %.*s", name_len, name);
         TSMimeHdrFieldDestroy(_bufp, _hdr_loc, field_loc);
       }
     }
