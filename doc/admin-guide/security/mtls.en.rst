@@ -100,6 +100,29 @@ Then you would set :ts:cv:`proxy.config.ssl.CA.cert.filename` to client_CA_bundl
           verify_client_ca_certs: partners_bundle.pem
           verify_client: STRICT
 
+Session resumption across co-hosted SNIs
+----------------------------------------
+TLS session resumption never asks the client for its certificate again, so a resumed session
+carries forward whatever peer certificate the original handshake produced.  |TS| therefore
+re-evaluates that certificate against the current SNI's policy as the handshake completes, and
+rejects the handshake when it does not satisfy it: either because the session carries no client
+certificate and the current SNI requires one, or because the certificate it does carry is not
+trusted by the certificate authorities configured for that SNI.  Rejections increment
+:ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`.
+
+Note that the certificate is re-validated rather than trusted on the strength of the result
+cached when the session was created.  That cached result was reached against whichever CA bundle
+applied to the SNI that issued the session, so relying on it would let two tenants sharing a
+listener at the same ``verify_client`` level accept each other's client certificates.
+
+Two caveats follow.  First, a session restored from a ticket may not carry the intermediate
+certificates the client originally presented, so a client certificate issued by an intermediate
+CA needs that intermediate present in the applicable ``verify_client_ca_certs`` bundle (or in
+:ts:cv:`proxy.config.ssl.CA.cert.filename`) for its sessions to survive resumption.  Second,
+|TS| cannot bind a ticket to the SNI it was issued under, so resumption between two SNIs that
+both use ``verify_client: NONE`` is still accepted.  Where tenants have genuinely different
+security postures, prefer giving them separate listeners rather than co-hosting them on one.
+
 Guidance for testing
 --------------------
 If you use curl to test your SNI-based Traffic Server configuration, you must make sure the

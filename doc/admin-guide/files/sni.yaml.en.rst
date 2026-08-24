@@ -144,6 +144,16 @@ verify_client                            Inbound   One of the values :code:`NONE
 
                                                    By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
+                                                   A resumed TLS session does not re-request a client certificate, so |TS|
+                                                   enforces ``MODERATE`` and ``STRICT`` against the certificate carried over
+                                                   from the session that was resumed, rejecting the handshake if it does not
+                                                   satisfy the current SNI's policy. That carried certificate is re-validated
+                                                   against the certificate authorities in force for the current SNI rather
+                                                   than trusting the result cached by the handshake that issued the session,
+                                                   so two SNIs sharing a listener at the same ``verify_client`` level do not
+                                                   accept each other's client certificates. Disabling session tickets via
+                                                   ``ssl_ticket_enabled`` is not required as a workaround for this.
+
 verify_client_ca_certs                   Inbound   Specifies an alternate set of certificate authority certs to use to verify the
                                                    client cert.  The value must be either a file path, or a nested set of key /
                                                    value pairs.  If the value is a file path, it must specify a file containing the

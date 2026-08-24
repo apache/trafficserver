@@ -202,6 +202,15 @@ SSL/TLS
    Incoming client SSL connections which experienced otherwise uncategorized
    errors, since statistics collection began.
 
+.. ts:stat:: global proxy.process.ssl.user_agent_resumed_cert_rejected integer
+   :type: counter
+
+   Incoming client SSL connections rejected because the session they resumed did
+   not satisfy the current SNI's :file:`sni.yaml` ``verify_client`` policy, either
+   carrying no client certificate where one is required or carrying one that is
+   not trusted by the certificate authorities configured for that SNI, since
+   statistics collection began.
+
 .. ts:stat:: global proxy.process.ssl.user_agent_revoked_cert integer
    :type: counter
 
