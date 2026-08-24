@@ -32,11 +32,11 @@ def main() -> int:
     port = int(sys.argv[2]) if len(sys.argv) > 2 else 8080
 
     request = (
-        f'POST / HTTP/1.1\r\n'
-        f'Host: quick.server.com\r\n'
-        f'Content-Type: application/octet-stream\r\n'
-        f'Content-Length: 100000\r\n'
-        f'\r\n').encode()
+        'POST / HTTP/1.1\r\n'
+        'Host: quick.server.com\r\n'
+        'Content-Type: application/octet-stream\r\n'
+        'Content-Length: 100000\r\n'
+        '\r\n').encode()
 
     partial_body = b'x' * 4096
 
@@ -47,22 +47,30 @@ def main() -> int:
         sock.sendall(request + partial_body)
         print(f'Sent POST headers (Content-Length: 100000) + {len(partial_body)} bytes')
 
-        # Read whatever response ATS sends back.
         try:
             response = sock.recv(4096)
-            if response:
-                first_line = response.split(b'\r\n')[0].decode(errors='replace')
-                print(f'Got response: {first_line}')
-            else:
-                print('Got response: connection closed')
+        except ConnectionError:
+            # ATS may reset the connection after responding since the POST
+            # body is incomplete.  This is acceptable — the important thing
+            # is that ATS did not crash.
+            print('HTTP/1.1 connection reset (expected for partial POST)')
+            return 0
         except socket.timeout:
-            print('Got response: timeout (server may still be processing)')
-        except ConnectionError as e:
-            print(f'Got response: connection error ({e})')
+            print('ERROR: timeout waiting for response', file=sys.stderr)
+            return 1
+
+        if response:
+            first_line = response.split(b'\r\n')[0].decode(errors='replace')
+            print(first_line)
+            if first_line.startswith('HTTP/1.1'):
+                return 0
+            print('ERROR: unexpected response', file=sys.stderr)
+            return 1
+        else:
+            print('ERROR: connection closed with no response', file=sys.stderr)
+            return 1
     finally:
         sock.close()
-
-    return 0
 
 
 if __name__ == '__main__':
