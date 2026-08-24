@@ -110,6 +110,7 @@ struct SSLStatsBlock {
   Metrics::Counter::AtomicType *user_agent_inappropriate_fallback              = nullptr;
   Metrics::Counter::AtomicType *user_agent_no_shared_cipher                    = nullptr;
   Metrics::Counter::AtomicType *user_agent_other_errors                        = nullptr;
+  Metrics::Counter::AtomicType *user_agent_resumed_cert_rejected               = nullptr;
   Metrics::Counter::AtomicType *user_agent_revoked_cert                        = nullptr;
   Metrics::Counter::AtomicType *user_agent_unknown_ca                          = nullptr;
   Metrics::Counter::AtomicType *user_agent_unknown_cert                        = nullptr;
