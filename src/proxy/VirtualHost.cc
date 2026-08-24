@@ -129,6 +129,7 @@ build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &e
   auto remap_node = node["remap"];
   if (remap_node) {
     auto table = std::make_unique<UrlRewrite>();
+    table->set_remap_yaml(true);
     if (!table->load_table(conf.id, &remap_node)) {
       Error("Failed to load remap rules for virtualhost '%s' at line %d", conf.id.c_str(), remap_node.Mark().line + 1);
       return false;
@@ -143,6 +144,8 @@ bool
 VirtualHostConfig::load()
 {
   _entries.clear();
+  _exact_domains_to_id.clear();
+  _wildcard_domains_to_id.clear();
   std::string config_path = RecConfigReadConfigPath("proxy.config.virtualhost.filename", ts::filename::VIRTUALHOST);
 
   struct stat sbuf;
