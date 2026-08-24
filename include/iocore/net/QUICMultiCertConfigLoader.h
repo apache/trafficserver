@@ -25,6 +25,9 @@
 
 #include "iocore/net/SSLMultiCertConfigLoader.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "tscore/ink_config.h"
+
+#include <string_view>
 
 class QUICCertConfig
 {
@@ -40,6 +43,10 @@ private:
   static int _config_id;
 };
 
+#if TS_HAS_OPENSSL_QUIC
+std::string_view quic_sni_server_name(SSL *ssl);
+#endif
+
 class QUICMultiCertConfigLoader : public SSLMultiCertConfigLoader
 {
 public:
@@ -48,7 +55,12 @@ public:
   virtual SSL_CTX *default_server_ssl_ctx() override;
 
 private:
-  const char  *_debug_tag() const override;
+  const char *_debug_tag() const override;
+#if TS_HAS_OPENSSL_QUIC
+  virtual void _set_handshake_callbacks(SSL_CTX *ctx) override;
+  virtual bool _set_alpn_callback(SSL_CTX *ctx) override;
+  virtual bool _set_curves(SSL_CTX *ctx) override;
+#endif
   virtual bool _setup_session_cache(SSL_CTX *ctx) override;
   virtual bool _set_cipher_suites_for_legacy_versions(SSL_CTX *ctx) override;
   virtual bool _set_info_callback(SSL_CTX *ctx) override;

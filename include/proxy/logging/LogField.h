@@ -107,7 +107,7 @@ public:
   enum class Type : uint8_t {
     INVALID = 0, ///< Reserved: never written; a reader treats 0 (or any unknown code) as unframmable and stops.
     sINT    = 1, ///< one int64_t, 8 bytes (host byte order).
-    dINT    = 2, ///< two int64_t (16 bytes), e.g. HTTP version major/minor.
+    dINT    = 2, ///< two int64_t (16 bytes).
     STRING  = 3, ///< NUL-terminated, 8-byte padded.
     IP      = 4, ///< uint16_t family + family-sized address, 8-byte padded.
     N_TYPES = 5, ///< Internal bound (asserts / name table); NOT a wire code.

@@ -26,7 +26,6 @@
 
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/EventSystem.h"
-#include "proxy/http/remap/RemapProcessor.h"
 #include "proxy/http/remap/RemapPluginInfo.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/ReverseProxy.h"

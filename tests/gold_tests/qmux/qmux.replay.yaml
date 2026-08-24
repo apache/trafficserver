@@ -1,0 +1,126 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# This is a server-only replay file. The Go client generates the downstream
+# HTTP/3 requests, while Proxy Verifier validates ATS's origin requests and
+# generates the origin responses.
+
+meta:
+  version: '1.0'
+
+  blocks:
+  - request_base: &request_base
+      version: '1.1'
+  - empty_response: &empty_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, '0' ]
+        - [ X-QMux-Response, success ]
+      content:
+        size: 0
+  - generated_100_response: &generated_100_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, '100' ]
+        - [ X-QMux-Response, success ]
+      content:
+        size: 100
+  - generated_300k_response: &generated_300k_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, '300000' ]
+        - [ X-QMux-Response, success ]
+      content:
+        size: 300000
+
+sessions:
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /qmux-get-empty
+      headers:
+        fields:
+        - [ X-QMux-Client, qmux-go ]
+        - [ X-QMux-Test-Case, qmux-get-empty ]
+        - [ uuid, qmux-get-empty ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-QMux-Client, { value: qmux-go, as: equal } ]
+        - [ X-QMux-Test-Case, { value: qmux-get-empty, as: equal } ]
+
+    server-response:
+      <<: *empty_response
+
+  - client-request:
+      <<: *request_base
+      method: POST
+      url: /qmux-post-small
+      headers:
+        fields:
+        - [ X-QMux-Client, qmux-go ]
+        - [ X-QMux-Test-Case, qmux-post-small ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, '100' ]
+        - [ uuid, qmux-post-small ]
+      content:
+        size: 100
+        verify: { as: equal }
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-QMux-Client, { value: qmux-go, as: equal } ]
+        - [ X-QMux-Test-Case, { value: qmux-post-small, as: equal } ]
+        - [ Content-Length, { value: '100', as: equal } ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: POST
+      url: /qmux-post-large
+      headers:
+        fields:
+        - [ X-QMux-Client, qmux-go ]
+        - [ X-QMux-Test-Case, qmux-post-large ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, '300000' ]
+        - [ uuid, qmux-post-large ]
+      content:
+        size: 300000
+        verify: { as: equal }
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-QMux-Client, { value: qmux-go, as: equal } ]
+        - [ X-QMux-Test-Case, { value: qmux-post-large, as: equal } ]
+        - [ Content-Length, { value: '300000', as: equal } ]
+
+    server-response:
+      <<: *generated_300k_response

@@ -40,6 +40,8 @@
 #include "../../iocore/net/P_QUICNetProcessor.h"
 #include "../../iocore/net/P_QUICNextProtocolAccept.h"
 #include "proxy/http3/Http3SessionAccept.h"
+#elif TS_USE_QMUX == 1
+#include "proxy/http3/Http3SessionAccept.h"
 #endif
 
 #include <vector>
@@ -158,6 +160,9 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
       net.local_ip = HttpConfig::m_master.inbound.ip4().network_order();
     } else if (AF_UNIX == port->m_family) {
       net.local_path = port->m_unix_path;
+      net.unix_perm  = port->m_unix_perm;
+      net.unix_uid   = port->m_unix_uid;
+      net.unix_gid   = port->m_unix_gid;
       net.sockopt_flags &=
         ~(NetVCOptions::SOCK_OPT_NO_DELAY | NetVCOptions::SOCK_OPT_TCP_FAST_OPEN | NetVCOptions::SOCK_OPT_TCP_NOTSENT_LOWAT);
     }
@@ -220,6 +225,9 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
+#if TS_USE_QMUX
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_H3QX, new Http3SessionAccept(accept_opt));
+#endif
 
     SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);

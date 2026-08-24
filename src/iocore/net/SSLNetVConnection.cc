@@ -167,7 +167,7 @@ SSLNetVConnection::_unbindSSLObject()
 }
 
 static void
-debug_certificate_name(const char *msg, X509_NAME *name)
+debug_certificate_name(const char *msg, const X509_NAME *name)
 {
   BIO *bio;
 
@@ -391,15 +391,22 @@ SSLNetVConnection::read_raw_data()
         if (this->has_proxy_protocol(buffer, &r)) {
           Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
           if (dbg_ctl_proxyprotocol.on()) {
-            IpEndpoint src;
-            src.sa = *(this->get_proxy_protocol_src_addr());
-            IpEndpoint dst;
-            dst.sa = *(this->get_proxy_protocol_dst_addr());
-            ip_port_text_buffer src_ipb, dst_ipb;
-            ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
-            ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
-            DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
-                     static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
+            sockaddr const *src_addr = this->get_proxy_protocol_src_addr();
+            sockaddr const *dst_addr = this->get_proxy_protocol_dst_addr();
+            if (src_addr != nullptr && dst_addr != nullptr) {
+              IpEndpoint src;
+              src.sa = *src_addr;
+              IpEndpoint dst;
+              dst.sa = *dst_addr;
+              ip_port_text_buffer src_ipb, dst_ipb;
+              ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
+              ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
+              DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
+                       static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
+            } else {
+              DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed without address information",
+                       static_cast<int>(this->get_proxy_protocol_version()));
+            }
           }
         } else {
           Dbg(dbg_ctl_proxyprotocol, "proxy protocol preface was present, but Proxy Protocol header could not be parsed");
@@ -886,6 +893,14 @@ SSLNetVConnection::SSLNetVConnection()
 void
 SSLNetVConnection::do_io_close(int lerrno)
 {
+  // Stop any async-handshake eventfd before the VC is closed.
+  // If WANT_ASYNC was registered the eventfd is wired into the poller with
+  // `this` as the EventIO target. Without this stop() the SSLNetVConnection
+  // can be freed while the eventfd still has a live epoll registration; when
+  // the OpenSSL async job completes the poller wakes on freed memory.
+  if (async_ep.fd >= 0) {
+    async_ep.stop();
+  }
   if (this->ssl != nullptr) {
     if (get_context() == NET_VCONNECTION_OUT) {
       callHooks(TS_EVENT_VCONN_OUTBOUND_CLOSE);
@@ -936,7 +951,7 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
-  if (get_tunnel_type() == SNIRoutingType::BLIND) {
+  if (ssl == nullptr || get_tunnel_type() == SNIRoutingType::BLIND) {
     // we don't have TLS layer control of blind tunnel
     UnixNetVConnection::do_io_shutdown(howto);
     return;
@@ -995,6 +1010,15 @@ SSLNetVConnection::clear()
   // resetting here will decrement the ref-counter.
   client_sess.reset();
 
+  // Stop the async-handshake eventfd before SSL_free. The
+  // eventfd is owned by the SSL object, so SSL_free closes it; deregistering
+  // first keeps the EPOLL_CTL_DEL operating on a valid, owned fd. clear() runs
+  // on every free path through free_thread(), so it is the backstop in case
+  // do_io_close() did not already stop the eventfd.
+  if (async_ep.fd >= 0) {
+    async_ep.stop();
+  }
+
   if (ssl != nullptr) {
     // clear() runs from free() once per VC recycle, so this is the single chokepoint where a TLS
     // connection's SSL object is torn down -- count it as one connection close here. Blind-tunnel
@@ -1005,6 +1029,15 @@ SSLNetVConnection::clear()
     SSL_free(ssl);
     ssl = nullptr;
   }
+
+#if TS_USE_QMUX
+  // The destructor never runs (ClassAllocator<SSLNetVConnection, false>), so the
+  // QMux connection has to be released here or it leaks on every VC recycle.
+  // Clear the QUICSupport service slot too, or a recycled non-QMux VC would
+  // still report a (now null) QUIC connection to get_service<QUICSupport>().
+  _qmux_connection.reset();
+  this->_set_service(static_cast<QUICSupport *>(nullptr));
+#endif
 
   ALPNSupport::clear();
   TLSBasicSupport::clear();
@@ -1309,9 +1342,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // we get out of this callback, and then will shuffle
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
-  } else if (SslVConnOp::SSL_HOOK_OP_TERMINATE == hookOpRequested) {
-    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
-    return EVENT_DONE;
   }
 
   Dbg(dbg_ctl_ssl, "Go on with the handshake state=%s",
@@ -1410,7 +1440,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (dbg_ctl_ssl.on()) {
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1461,6 +1491,20 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
 
         Dbg(dbg_ctl_ssl, "Origin selected next protocol '%.*s'", len, proto);
+
+#if TS_USE_QMUX
+        if (this->get_negotiated_protocol_id() == TS_ALPN_PROTOCOL_INDEX_H3QX) {
+          Dbg(dbg_ctl_ssl, "ALPN h3qx-01: creating QMuxConnection");
+          _qmux_connection = std::make_unique<QMuxConnection>(this);
+          if (_qmux_connection->is_closed()) {
+            // Config or quiche_accept() failed. Don't advertise a QUIC connection that can
+            // never make progress -- fail the connection instead of completing the handshake.
+            _qmux_connection.reset();
+            return EVENT_ERROR;
+          }
+          this->_set_service(static_cast<QUICSupport *>(this));
+        }
+#endif
       } else {
         Dbg(dbg_ctl_ssl, "Origin did not select a next protocol");
       }
@@ -1592,7 +1636,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (dbg_ctl_ssl.on()) {
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -2006,8 +2050,12 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   SSLCertContext *cc = nullptr;
-  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-    ip.sa = *(this->get_proxy_protocol_dst_addr());
+  sockaddr const *proxy_protocol_dst_addr =
+    this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
+      this->get_proxy_protocol_dst_addr() :
+      nullptr;
+  if (proxy_protocol_dst_addr != nullptr) {
+    ip.sa = *proxy_protocol_dst_addr;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
     cc = lookup->find(ip);

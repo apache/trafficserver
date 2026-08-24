@@ -248,7 +248,9 @@ Http2Stream::main_event_handler(int event, void *edata)
     }
     break;
   case VC_EVENT_READ_COMPLETE:
-    read_vio.nbytes = read_vio.ndone;
+    if (!this->_read_event_paused) {
+      read_vio.nbytes = read_vio.ndone;
+    }
     /* fall through */
   case VC_EVENT_READ_READY:
     _timeout.update_inactivity();
@@ -282,11 +284,11 @@ Http2Stream::main_event_handler(int event, void *edata)
 }
 
 Http2ErrorCode
-Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size)
+Http2Stream::decode_header_blocks(HpackHandle &hpack_handle, uint32_t maximum_table_size, uint32_t header_field_max_size)
 {
-  Http2ErrorCode error =
-    http2_decode_header_blocks(&_receive_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr, hpack_handle,
-                               _trailing_header_is_possible, maximum_table_size, this->is_outbound_connection());
+  Http2ErrorCode error = http2_decode_header_blocks(&_receive_header, (const uint8_t *)header_blocks, header_blocks_length, nullptr,
+                                                    hpack_handle, _trailing_header_is_possible, maximum_table_size,
+                                                    header_field_max_size, this->is_outbound_connection());
   if (error != Http2ErrorCode::HTTP2_ERROR_NO_ERROR) {
     Http2StreamDebug("Error decoding header blocks: %u", static_cast<uint32_t>(error));
   }
@@ -356,6 +358,10 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
     return;
   }
 
+  if (!this->receive_end_stream && this->_receive_header.type_get() == HTTPType::REQUEST) {
+    this->has_body = true;
+  }
+
   // Is the _sm ready to process the header?
   if (this->read_vio.nbytes > 0) {
     if (this->receive_end_stream) {
@@ -392,7 +398,6 @@ Http2Stream::send_headers(Http2ConnectionState & /* cstate ATS_UNUSED */)
       }
     } else {
       // End of header but not end of stream, must have some body frames coming
-      this->has_body = true;
       this->signal_read_event(VC_EVENT_READ_READY);
     }
   }
@@ -506,18 +511,34 @@ Http2Stream::change_state(uint8_t type, uint8_t flags)
 VIO *
 Http2Stream::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 {
+  // DATA can arrive while HttpSM has installed a zero-byte read to pause TXN_START.
+  // Keep that byte count when the state machine resumes reading the buffered request.
+  int64_t const gated_ndone = (this->_read_event_paused && nbytes != 0) ? read_vio.ndone : 0;
+
   if (buf) {
     read_vio.set_writer(buf);
   } else {
     read_vio.buffer.clear();
   }
 
-  read_vio.mutex     = c ? c->mutex : this->mutex;
-  read_vio.cont      = c;
-  read_vio.nbytes    = nbytes;
-  read_vio.ndone     = 0;
-  read_vio.vc_server = this;
-  read_vio.op        = VIO::READ;
+  read_vio.mutex           = c ? c->mutex : this->mutex;
+  read_vio.cont            = c;
+  read_vio.nbytes          = nbytes;
+  read_vio.ndone           = gated_ndone;
+  read_vio.vc_server       = this;
+  read_vio.op              = VIO::READ;
+  this->_read_event_paused = nbytes == 0;
+
+  if (this->_read_event_paused) {
+    if (this->_read_vio_event) {
+      this->_read_vio_event->cancel();
+      this->_read_vio_event = nullptr;
+    }
+    if (this->read_event) {
+      this->read_event->cancel();
+      this->read_event = nullptr;
+    }
+  }
 
   // TODO: re-enable read_vio
 
@@ -741,7 +762,7 @@ Http2Stream::update_read_request(bool call_update)
   ink_release_assert(this->_thread == this_ethread());
 
   SCOPED_MUTEX_LOCK(lock, read_vio.mutex, this_ethread());
-  if (read_vio.nbytes == 0 || read_vio.is_disabled()) {
+  if (this->_read_event_paused || read_vio.nbytes == 0 || read_vio.is_disabled()) {
     return;
   }
 
@@ -786,12 +807,12 @@ Http2Stream::restart_sending()
     }
   }
 
-  IOBufferReader *reader = this->get_data_reader_for_send();
-  if (reader && !reader->is_read_avail_more_than(0)) {
+  if (this->write_vio.mutex && this->write_vio.ntodo() <= 0) {
     return;
   }
 
-  if (this->write_vio.mutex && this->write_vio.ntodo() == 0) {
+  IOBufferReader *reader = this->get_data_reader_for_send();
+  if (reader && !reader->is_read_avail_more_than(0)) {
     return;
   }
 
@@ -906,7 +927,8 @@ void
 Http2Stream::signal_read_event(int event)
 {
   if (this->_sm == nullptr || this->read_vio.cont == nullptr || this->read_vio.cont->mutex == nullptr ||
-      this->read_vio.op == VIO::NONE || this->terminate_stream) {
+      this->read_vio.op == VIO::NONE || this->_read_event_paused || this->read_vio.nbytes == 0 || this->read_vio.is_disabled() ||
+      this->terminate_stream) {
     return;
   }
 
@@ -948,6 +970,11 @@ Http2Stream::signal_write_event(int event, bool call_update)
         write_event = nullptr;
       }
       _timeout.update_inactivity();
+      if (event == VC_EVENT_WRITE_COMPLETE) {
+        // HttpSM owns the write buffer and may release it while handling this
+        // event. Drop the unowned alias before transferring control.
+        _send_reader = nullptr;
+      }
       this->write_vio.cont->handleEvent(event, &this->write_vio);
     } else {
       if (this->_write_vio_event) {
@@ -1252,6 +1279,12 @@ bool
 Http2Stream::expect_send_trailer() const
 {
   return this->_expect_send_trailer;
+}
+
+bool
+Http2Stream::can_send_h2_trailer() const
+{
+  return !send_end_stream;
 }
 
 void

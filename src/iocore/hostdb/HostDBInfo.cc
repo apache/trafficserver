@@ -88,7 +88,9 @@ HostDBInfo::assign(SRV const *srv, char const *name) -> self_type &
   data.srv.key          = srv->key;
   // Danger! This offset calculation assumes that name and this are with 16-bits of each
   // other.  This invariant must be upheld for every caller of this function.
-  data.srv.srv_offset = name - reinterpret_cast<char const *>(this);
+  auto offset = name - reinterpret_cast<char const *>(this);
+  ink_release_assert(offset >= 0 && offset <= UINT16_MAX);
+  data.srv.srv_offset = static_cast<unsigned int>(offset);
   return *this;
 }
 

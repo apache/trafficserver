@@ -25,6 +25,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <utility>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -239,13 +240,13 @@ TEST_CASE("SSLMultiCertMarshaller produces valid YAML", "[ssl_multicert][marshal
   entry1.ssl_cert_name = "server.pem";
   entry1.dest_ip       = "*";
   entry1.ssl_key_name  = "server.key";
-  config.push_back(entry1);
+  config.push_back(std::move(entry1));
 
   SSLMultiCertEntry entry2;
   entry2.ssl_cert_name      = "another.pem";
   entry2.dest_ip            = "[::1]:8443";
   entry2.ssl_ticket_enabled = 1;
-  config.push_back(entry2);
+  config.push_back(std::move(entry2));
 
   SSLMultiCertMarshaller marshaller;
   std::string            yaml = marshaller.to_yaml(config);
@@ -276,14 +277,14 @@ TEST_CASE("SSLMultiCertMarshaller produces valid JSON", "[ssl_multicert][marshal
   SSLMultiCertEntry entry1;
   entry1.ssl_cert_name = "server.pem";
   entry1.dest_ip       = "*";
-  config.push_back(entry1);
+  config.push_back(std::move(entry1));
 
   SSLMultiCertEntry entry2;
   entry2.ssl_cert_name      = "another.pem";
   entry2.dest_ip            = "[::1]:8443";
   entry2.ssl_ticket_enabled = 1;
   entry2.ssl_ticket_number  = 5;
-  config.push_back(entry2);
+  config.push_back(std::move(entry2));
 
   SSLMultiCertMarshaller marshaller;
   std::string            json = marshaller.to_json(config);
@@ -305,7 +306,7 @@ TEST_CASE("SSLMultiCertMarshaller handles special characters", "[ssl_multicert][
   entry.ssl_cert_name  = "server.pem";
   entry.dest_ip        = "*";
   entry.ssl_key_dialog = "exec:/path/to/script \"with quotes\"";
-  config.push_back(entry);
+  config.push_back(std::move(entry));
 
   SSLMultiCertMarshaller marshaller;
 

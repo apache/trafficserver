@@ -1,0 +1,60 @@
+/*
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+*/
+
+// Exercises cripts::Bundle::Headers across all four header hooks with every
+// dynamic substitution source the bundle's HRWBridge supports. Used as a
+// regression target for the bundle's dynamic-value plumbing — any bridge
+// subclass that depends on shared mutable state will surface here under
+// concurrent traffic (especially when run against a TSAN build).
+
+#include <cripts/Preamble.hpp>
+#include <cripts/Bundles/Headers.hpp>
+
+do_create_instance()
+{
+  cripts::Bundle::Headers::Activate()
+    .rm_headers("Client::Request",
+                {
+                  "X-Cript-Strip-CReq"
+  })
+    .rm_headers("Server::Request", {"X-Cript-Strip-SReq"})
+    .rm_headers("Server::Response", {"X-Cript-Strip-SResp"})
+    .rm_headers("Client::Response", {"X-Cript-Strip-CResp"})
+    .set_headers("Client::Request", {{"X-Cript-Req-UUID", "%{ID:UNIQUE}"},
+                                     {"X-Cript-Req-TxnID", "%{ID:REQUEST}"},
+                                     {"X-Cript-Req-ProcID", "%{ID:PROCESS}"},
+                                     {"X-Cript-Req-CIP", "%{IP:CLIENT}"},
+                                     {"X-Cript-Req-IIP", "%{IP:INBOUND}"},
+                                     {"X-Cript-Req-CIDR", "%{CIDR:24,64}"},
+                                     {"X-Cript-Req-Host", "%{CLIENT-URL:HOST}"},
+                                     {"X-Cript-Req-Path", "%{CLIENT-URL:PATH}"},
+                                     {"X-Cript-Req-Port", "%{CLIENT-URL:PORT}"},
+                                     {"X-Cript-Req-Query", "%{CLIENT-URL:QUERY}"},
+                                     {"X-Cript-Req-Scheme", "%{CLIENT-URL:SCHEME}"}})
+    .set_headers(
+      "Server::Request",
+      {{"X-Cript-SReq-UUID", "%{ID:UNIQUE}"}, {"X-Cript-SReq-CIP", "%{IP:CLIENT}"}, {"X-Cript-SReq-Path", "%{CLIENT-URL:PATH}"}})
+    .set_headers("Server::Response", {{"X-Cript-SResp-UUID", "%{ID:UNIQUE}"}, {"X-Cript-SResp-CIP", "%{IP:CLIENT}"}})
+    .set_headers("Client::Response", {{"X-Cript-Resp-UUID", "%{ID:UNIQUE}"},
+                                      {"X-Cript-Resp-ProcID", "%{ID:PROCESS}"},
+                                      {"X-Cript-Resp-CIP", "%{IP:CLIENT}"},
+                                      {"X-Cript-Resp-Host", "%{CLIENT-URL:HOST}"},
+                                      {"X-Cript-Resp-Path", "%{CLIENT-URL:PATH}"}});
+}
+
+#include <cripts/Epilogue.hpp>

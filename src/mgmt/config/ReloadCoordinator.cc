@@ -126,7 +126,7 @@ ReloadCoordinator::reserve_subtask(std::string_view config_key)
 
   auto task = std::make_shared<ConfigReloadTask>(_current_task->get_token(), config_key, false, _current_task);
   task->set_config_key(config_key);
-  _current_task->add_sub_task(task);
+  _current_task->add_sub_task(std::move(task));
 
   Dbg(dbg_ctl, "Reserved subtask for config '%.*s'", static_cast<int>(config_key.size()), config_key.data());
 }
@@ -153,7 +153,7 @@ ReloadCoordinator::create_config_context(std::string_view config_key, std::strin
       if (existing->get_state() == ConfigReloadTask::State::CREATED) {
         // Activate the reserved subtask
         Dbg(dbg_ctl, "Activating reserved subtask for config '%.*s'", static_cast<int>(config_key.size()), config_key.data());
-        return ConfigContext{existing, description, filename};
+        return ConfigContext{std::move(existing), description, filename};
       }
       // Already handled — true duplicate
       Dbg(dbg_ctl, "Duplicate reload for config '%.*s' — subtask already exists, skipping", static_cast<int>(config_key.size()),
@@ -168,7 +168,7 @@ ReloadCoordinator::create_config_context(std::string_view config_key, std::strin
   task->set_config_key(config_key);
   _current_task->add_sub_task(task);
 
-  ConfigContext ctx{task, description, filename};
+  ConfigContext ctx{std::move(task), description, filename};
   return ctx;
 }
 

@@ -108,6 +108,7 @@ struct Http2StatsBlock {
   Metrics::Counter::AtomicType *insufficient_avg_window_update;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_in;
   Metrics::Counter::AtomicType *max_concurrent_streams_exceeded_out;
+  Metrics::Counter::AtomicType *max_active_streams_exceeded_in;
   Metrics::Counter::AtomicType *data_frames_in;
   Metrics::Counter::AtomicType *headers_frames_in;
   Metrics::Counter::AtomicType *priority_frames_in;
@@ -372,8 +373,20 @@ bool http2_parse_goaway(IOVec, Http2Goaway &);
 
 bool http2_parse_window_update(IOVec, uint32_t &);
 
+// Returns true if appending `payload_length` more bytes to an
+// existing CONTINUATION header-block accumulator of `current_length` would
+// overflow a uint32_t. Used by Http2ConnectionState::rcv_continuation_frame()
+// to reject crafted CONTINUATION chains whose total payload would wrap the
+// 32-bit accumulator and pair an undersized ats_realloc() with a memcpy at
+// the pre-wrap offset.
+static inline bool
+http2_continuation_length_would_overflow(uint32_t current_length, uint32_t payload_length)
+{
+  return current_length > UINT32_MAX - payload_length;
+}
+
 Http2ErrorCode http2_decode_header_blocks(HTTPHdr *, const uint8_t *, const uint32_t, uint32_t *, HpackHandle &, bool, uint32_t,
-                                          bool is_outbound = false);
+                                          uint32_t, bool is_outbound = false);
 
 Http2ErrorCode http2_encode_header_blocks(HTTPHdr *, uint8_t *, uint32_t, uint32_t *, HpackHandle &, int32_t);
 
@@ -401,6 +414,7 @@ public:
   static uint32_t               max_concurrent_streams_in;
   static uint32_t               min_concurrent_streams_in;
   static uint32_t               max_active_streams_in;
+  static uint32_t               max_active_streams_policy_in;
   static bool                   throttling;
   static uint32_t               stream_priority_enabled;
   static uint32_t               initial_window_size_in;

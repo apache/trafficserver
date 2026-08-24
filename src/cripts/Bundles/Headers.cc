@@ -65,11 +65,11 @@ Headers::rm_headers(const cripts::string_view target, const HeaderList &headers)
     NeedCallback(cripts::Callbacks::DO_SEND_RESPONSE);
     break;
   case SERVER_REQUEST:
-    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
+    _server_request.rm_headers.insert(_server_request.rm_headers.end(), headers.begin(), headers.end());
     NeedCallback(cripts::Callbacks::DO_SEND_REQUEST);
     break;
   case SERVER_RESPONSE:
-    _client_response.rm_headers.insert(_client_response.rm_headers.end(), headers.begin(), headers.end());
+    _server_response.rm_headers.insert(_server_response.rm_headers.end(), headers.begin(), headers.end());
     NeedCallback(cripts::Callbacks::DO_READ_RESPONSE);
     break;
   default:
@@ -122,8 +122,9 @@ Headers::doRemap(cripts::Context *context)
     req[header] = "";
   }
 
+  cripts::string scratch;
   for (auto &header : _client_request.set_headers) {
-    req[header.first] = header.second->value(context);
+    req[header.first] = header.second->value(context, scratch);
   }
 }
 
@@ -136,8 +137,9 @@ Headers::doSendResponse(cripts::Context *context)
     resp[header] = "";
   }
 
+  cripts::string scratch;
   for (auto &header : _client_response.set_headers) {
-    resp[header.first] = header.second->value(context);
+    resp[header.first] = header.second->value(context, scratch);
   }
 }
 
@@ -150,8 +152,9 @@ Headers::doSendRequest(cripts::Context *context)
     req[header] = "";
   }
 
+  cripts::string scratch;
   for (auto &header : _server_request.set_headers) {
-    req[header.first] = header.second->value(context);
+    req[header.first] = header.second->value(context, scratch);
   }
 }
 
@@ -164,8 +167,9 @@ Headers::doReadResponse(cripts::Context *context)
     resp[header] = "";
   }
 
+  cripts::string scratch;
   for (auto &header : _server_response.set_headers) {
-    resp[header.first] = header.second->value(context);
+    resp[header.first] = header.second->value(context, scratch);
   }
 }
 

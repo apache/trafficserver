@@ -74,7 +74,7 @@ txn_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
   QueueTime now     = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   // Try to enable some queued txns (if any) if there are slots available
-  while (limiter->size() > 0 && limiter->reserve() != ReserveStatus::FULL) { // Can't be UNLIMITED here
+  while (limiter->size() > 0 && limiter->reserve() == ReserveStatus::RESERVED) {
     auto [txnp, contp, start_time]  = limiter->pop();
     std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 

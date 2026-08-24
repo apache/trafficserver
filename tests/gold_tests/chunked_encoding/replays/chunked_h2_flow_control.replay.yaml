@@ -1,0 +1,148 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Regression test for the chunked-dechunk high-water throttle in HttpTunnel.
+#
+# An HTTP/1.1 origin delivers a large chunked response; an HTTP/2 client
+# consumes it. With a small default_buffer_water_mark, the dechunked buffer
+# fills past high_water before the consumer drains it, which must trigger
+# producer_handler's "disable ... read_vio" throttle (HttpTunnel.cc) and
+# later a "re-enable ... read_vio" when the consumer catches up. The
+# response must still complete with the full body intact.
+#
+# Without the throttle the dechunk buffer would grow unbounded (the
+# original DoS vector). Without the terminal-event guard in producer_handler
+# the transaction would stall because VC_EVENT_READ_COMPLETE / EOS /
+# PRECOMPLETE would be dropped.
+
+autest:
+  description: 'HTTP/1.1 chunked origin -> HTTP/2 client dechunk flow-control throttle'
+
+  dns:
+    name: 'dns-chunked-h2-fc'
+
+  server:
+    name: 'server-chunked-h2-fc'
+
+  client:
+    name: 'client-chunked-h2-fc'
+
+  ats:
+    name: 'ts-chunked-h2-fc'
+    process_config:
+      enable_tls: true
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_tunnel'
+      # Small water_mark so the dechunk output buffer crosses high_water
+      # well before the HTTP/2 consumer can drain it.
+      proxy.config.http.default_buffer_water_mark: 4096
+      proxy.config.ssl.client.verify.server.policy: 'PERMISSIVE'
+
+    remap_config:
+      - from: "https://www.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      diags_log:
+        excludes:
+          # Indicator of the tunnel getting stuck on a dropped terminal event
+          # (the bug the producer_handler event guard fixes).
+          - expression: 'ERROR.*inactivity timeout'
+            description: 'Tunnel must not stall to inactivity timeout.'
+
+    metric_checks:
+      # The chunked-tunnel throttle must fire at least once: the dechunked
+      # buffer crosses high_water before the H/2 client drains it. Combined
+      # with the proxy-response size assertion below (which only passes if
+      # the producer was re-enabled), this covers both the throttle and the
+      # unwind paths.
+      - metric: proxy.process.http.tunnel.chunked_throttle
+        value: '[1-9][0-9]*'
+
+sessions:
+
+- protocol:
+    stack: http2
+    tls:
+      sni: www.example.com
+  transactions:
+
+  # A sizable chunked response. The body is large enough to exceed
+  # water_mark many times over, and larger than the default HTTP/2
+  # stream window (65535) so WINDOW_UPDATE round-trips naturally
+  # keep the consumer from draining instantly.
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", "GET" ]
+        - [ ":scheme", "https" ]
+        - [ ":authority", "www.example.com" ]
+        - [ ":path", "/large-chunked" ]
+        - [ "uuid", "large-chunked-1" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      version: '1.1'
+      headers:
+        fields:
+        - [ "Content-Type", "text/plain" ]
+        - [ "Transfer-Encoding", "chunked" ]
+      content:
+        size: 524288  # 512 KB
+
+    proxy-response:
+      headers:
+        fields:
+        - [ ":status", { value: '200', as: equal } ]
+      content:
+        size: { value: 524288, as: equal }
+
+  # A second transaction back-to-back, to exercise the re-enable path
+  # and confirm the tunnel recovers cleanly from the first throttle cycle.
+  - client-request:
+      delay: 100ms
+      headers:
+        fields:
+        - [ ":method", "GET" ]
+        - [ ":scheme", "https" ]
+        - [ ":authority", "www.example.com" ]
+        - [ ":path", "/large-chunked-2" ]
+        - [ "uuid", "large-chunked-2" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      version: '1.1'
+      headers:
+        fields:
+        - [ "Content-Type", "text/plain" ]
+        - [ "Transfer-Encoding", "chunked" ]
+      content:
+        size: 262144  # 256 KB
+
+    proxy-response:
+      headers:
+        fields:
+        - [ ":status", { value: '200', as: equal } ]
+      content:
+        size: { value: 262144, as: equal }

@@ -73,7 +73,7 @@ global_handler(TSCont /* continuation ATS_UNUSED */, TSEvent event, void *data)
 }
 
 void
-TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
+TSPluginInit(int argc, const char **argv)
 {
   TSPluginRegistrationInfo info;
 
@@ -87,5 +87,14 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
   }
 
   TSAssert(TS_SUCCESS == TSTextLogObjectCreate(plugin_name, TS_LOG_MODE_ADD_TIMESTAMP, &pluginlog));
+
+  if (argc > 1 && strcmp(argv[1], "--write-during-init") == 0) {
+    const std::string long_line(5000, 'i');
+
+    for (int i = 0; i < 2; ++i) {
+      TSAssert(TS_SUCCESS == TSTextLogObjectWrite(pluginlog, "Writing during plugin initialization: %s", long_line.c_str()));
+    }
+  }
+
   TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(global_handler, nullptr));
 }

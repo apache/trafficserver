@@ -25,4 +25,10 @@ std::string string502(int const httpver);
 
 std::string const &bodyString416();
 
+/** Fill hdrmgr with the response to a sliced PURGE, for the caller to print.
+ *
+ * The header is owned by hdrmgr and destroyed with it.
+ */
+bool form_purge_response(HdrMgr &hdrmgr, TSHttpStatus const status);
+
 void form416HeaderAndBody(HttpHeader &header, int64_t const contentlen, std::string const &bodystr);

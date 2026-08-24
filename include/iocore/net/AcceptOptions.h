@@ -26,6 +26,9 @@
 
 #include "tscore/ink_inet.h"
 
+#include <sys/stat.h>
+#include <sys/types.h>
+
 struct AcceptOptions {
   using self = AcceptOptions; ///< Self reference type.
 
@@ -36,6 +39,9 @@ struct AcceptOptions {
   /// If not set -> any address.
   IpAddr local_ip;
   UnAddr local_path;
+  mode_t unix_perm = 0666;
+  uid_t  unix_uid  = static_cast<uid_t>(-1);
+  gid_t  unix_gid  = static_cast<gid_t>(-1);
   /// IP address family.
   /// @note Ignored if an explicit incoming address is set in the
   /// the configuration (@c local_ip). If neither is set IPv4 is used.

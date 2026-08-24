@@ -31,6 +31,7 @@
 #include "tscore/signals.h"
 
 #include "CtrlCommands.h"
+#include "CacheShmCommand.h"
 #include "ConvertConfigCommand.h"
 #include "FileConfigCommand.h"
 #include "SSLMultiCertCommand.h"
@@ -94,6 +95,7 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
+  auto &cache_command      = parser.add_command("cache", "Manage the document cache").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
   auto &server_command     = parser.add_command("server", "Stop, restart and examine the server").require_commands();
   auto &storage_command    = parser.add_command("storage", "Manipulate cache storage").require_commands();
@@ -201,6 +203,10 @@ main([[maybe_unused]] int argc, const char **argv)
   config_command.add_command("registry", "Show configuration file registry", Command_Execute)
     .add_example_usage("traffic_ctl config registry");
 
+  // cache commands
+  cache_command.add_command("clear", "Advance the global cache generation", "", 0, Command_Execute)
+    .add_example_usage("traffic_ctl cache clear");
+
   // ssl-multicert subcommand
   auto &ssl_multicert_command =
     config_command.add_command("ssl-multicert", "Manage ssl_multicert configuration").require_commands();
@@ -244,7 +250,9 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl metric get METRIC [METRIC ...]");
   metric_command.add_command("describe", "Show detailed information about one or more metric values", "", MORE_THAN_ONE_ARG_N,
                              Command_Execute); // not implemented
-  metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N, Command_Execute);
+  metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
+    .add_option("--include-hidden", "", "Also match hidden (internal, normally unpublished) metrics")
+    .add_example_usage("traffic_ctl metric match [--include-hidden] METRIC [METRIC ...]");
   metric_command
     .add_command(
       "monitor",
@@ -315,6 +323,20 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--params", "-p", "Parameters to be passed in the request, YAML or JSON format", "", MORE_THAN_ONE_ARG_N, "", "")
     .add_example_usage("traffic_ctl rpc invoke foo_bar -p \"numbers: [1, 2, 3]\"");
 
+  // cache shm commands - operate directly on POSIX shared memory; no running server required.
+  auto &shm_command = cache_command.add_command("shm", "Inspect and manage cache shared-memory segments").require_commands();
+  // No parser-level default for --prefix: ArgParser injects defaults into the parsed
+  // arguments, which would make an omitted --prefix indistinguishable from an explicit
+  // one. CacheShmCommand supplies the runtime default and keys its "did you set
+  // name_prefix?" hint off the option being absent.
+  shm_command.add_option("--prefix", "-p", "shm name prefix word, framed as /<word>- (default 'ats')", "", 1, "");
+  shm_command.add_command("status", "Show the cache shared-memory control segment and stripe table", Command_Execute)
+    .add_example_usage("traffic_ctl cache shm status")
+    .add_example_usage("traffic_ctl cache shm status --prefix ats-t");
+  shm_command.add_command("clear", "Unlink the cache shared-memory control and stripe segments", Command_Execute)
+    .add_example_usage("traffic_ctl cache shm clear")
+    .add_example_usage("traffic_ctl cache shm clear --prefix ats-t");
+
   auto create_command = [](ts::Arguments &args) -> std::unique_ptr<CtrlCommand> {
     if (args.get("config")) {
       if (args.get("convert")) {
@@ -327,6 +349,14 @@ main([[maybe_unused]] int argc, const char **argv)
         return std::make_unique<FileConfigCommand>(&args);
       }
       return std::make_unique<ConfigCommand>(&args);
+    }
+
+    if (args.get("cache")) {
+      // `cache shm` reads the shm segments directly, so it must not be routed through the RPC-backed CacheCommand.
+      if (args.get("shm")) {
+        return std::make_unique<CacheShmCommand>(&args);
+      }
+      return std::make_unique<CacheCommand>(&args);
     }
 
     static const std::map<std::string, std::function<std::unique_ptr<CtrlCommand>(ts::Arguments *)>> factories = {

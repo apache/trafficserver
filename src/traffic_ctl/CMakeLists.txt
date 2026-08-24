@@ -18,6 +18,7 @@
 add_executable(
   traffic_ctl
   traffic_ctl.cc
+  CacheShmCommand.cc
   ConvertConfigCommand.cc
   CtrlCommands.cc
   CtrlPrinters.cc

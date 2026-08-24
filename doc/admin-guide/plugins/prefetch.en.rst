@@ -293,6 +293,13 @@ Plugin parameters
     * if ``true`` the fetch policy would use the **next** URL's cache key that to find out if the **next object** should be prefetched or not
 * ``--log-name`` - specifies a custom log name (if not specified a log is not created)
 
+An invalid parameter value is a configuration error. ``--fetch-count`` and ``--fetch-max`` must be
+decimal numbers that fit in an unsigned integer, ``--fetch-overflow`` must be ``32`` or ``64``, and
+``--fetch-path-pattern`` must compile and may only reference capture groups that the pattern
+defines. A remap rule with an invalid value fails to load, instead of loading with prefetch
+silently disabled. ``traffic_ctl config reload`` rejects such a configuration and keeps the running
+one.
+
 Metrics
 =======
 

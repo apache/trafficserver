@@ -477,7 +477,6 @@ public:
   };
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
@@ -560,7 +559,6 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
@@ -598,7 +596,6 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
@@ -635,7 +632,6 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool

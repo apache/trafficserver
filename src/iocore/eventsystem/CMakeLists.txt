@@ -68,6 +68,10 @@ if(BUILD_TESTING)
   target_link_libraries(test_Continuation ts::inkevent configmanager Catch2::Catch2WithMain)
   add_catch2_test(NAME test_Continuation COMMAND test_Continuation)
 
+  add_executable(test_Action unit_tests/test_Action.cc)
+  target_link_libraries(test_Action ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_Action COMMAND test_Action)
+
 endif()
 
 clang_tidy_check(inkevent)

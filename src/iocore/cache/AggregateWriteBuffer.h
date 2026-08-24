@@ -120,7 +120,7 @@ public:
    * @param write_pos The offset at which to write the buffer data.
    * @return Returns true if all bytes were flushed, otherwise false.
    */
-  bool flush(int fd, off_t write_pos) const;
+  [[nodiscard]] bool flush(int fd, off_t write_pos) const;
 
   /**
    * Copy part of the buffer.

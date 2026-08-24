@@ -525,7 +525,7 @@ TEST_CASE("bwstring std formats", "[libswoc][bwprint]") {
 
   w.print("{}", swoc::bwf::Errno(13));
   REQUIRE(w.view() == "EACCES: Permission denied [13]"sv);
-  w.clear().print("{}", swoc::bwf::Errno(134));
+  w.clear().print("{}", swoc::bwf::Errno(192));
   REQUIRE(w.view().substr(0, 22) == "Unknown: Unknown error"sv);
   w.clear().print("{:s}", swoc::bwf::Errno(13));
   REQUIRE(w.view() == "EACCES: Permission denied"sv);

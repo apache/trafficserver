@@ -792,6 +792,9 @@ HTTP Engine
    tr-pass                      Pass through enabled.
    mptcp                        Multipath TCP.
    allow-plain                  Allow failback to non-TLS for TLS ports
+   uds-perm     Value           Unix domain socket file permission mode.
+   uds-user     Value           Unix domain socket file owner name.
+   uds-group    Value           Unix domain socket file group name.
    ============ =============== ========================================
 
 *port*
@@ -894,6 +897,41 @@ allow-plain
    For TLS ports, will fall back to non-TLS processing if the TLS handshake fails. Incompatible with
    quic ports.
 
+uds-perm
+   Set the file permission mode applied to a Unix domain socket listener after
+   ``bind()``. The value is parsed as octal (e.g. ``0660`` or ``660``) and must
+   be in the range ``0`` to ``0777``. The default is ``0666`` -- read/write for
+   any local user, matching the connect access of a TCP listener under the
+   default :file:`ip_allow.yaml`. Tighten it (e.g. ``0660``) together with
+   ``uds-user`` / ``uds-group`` to restrict which local users may connect.
+
+   Only valid for Unix domain socket ports.
+
+uds-user
+   Set the owning user of a Unix domain socket listener file. The value is a
+   user name resolved via :manpage:`getpwnam(3)`. If ``uds-user`` and / or
+   ``uds-group`` is specified, |TS| performs :manpage:`chown(2)` on the socket
+   path; otherwise the ownership inherited from the running process is kept.
+
+   Only valid for Unix domain socket ports.
+
+uds-group
+   Set the owning group of a Unix domain socket listener file. The value is a
+   group name resolved via :manpage:`getgrnam(3)`. See ``uds-user``.
+
+   Only valid for Unix domain socket ports.
+
+.. important::
+
+   IP-based access controls -- :file:`ip_allow.yaml` and remap ``@src_ip`` /
+   ``@src_ip_category`` rules -- are **not** evaluated for connections that
+   arrive over a Unix domain socket, because the peer has no IP address.
+   Connections accepted on a UDS listener are subject only to the filesystem
+   permissions and ownership of the socket file. Use ``uds-perm``,
+   ``uds-user`` and ``uds-group`` (or external filesystem ACLs on the
+   containing directory) to restrict which local users may connect, unless an
+   IP source is supplied through :ts:cv:`proxy.config.acl.subjects`.
+
 .. topic:: Example
 
    Listen on port 80 on any address for IPv4 and IPv6.::
@@ -906,6 +944,14 @@ allow-plain
    Proxy Protocol
 
       /var/run/trafficserver/proxy.sock:pp
+
+.. topic:: Example
+
+   Listen on unix domain socket at /var/run/trafficserver/proxy.sock owned by
+   user ``trafficserver`` and group ``ats-clients`` with mode ``0660`` so that
+   only members of ``ats-clients`` can connect::
+
+      /var/run/trafficserver/proxy.sock:uds-perm=0660:uds-user=trafficserver:uds-group=ats-clients
 
 .. topic:: Example
 
@@ -949,6 +995,10 @@ allow-plain
 .. note::
 
    These are the ports on the *origin server*, not |TS| :ts:cv:`proxy ports <proxy.config.http.server_ports>`.
+   This setting is not a destination host or address policy. Use outbound rules in
+   :file:`ip_allow.yaml` to control which destination IP addresses may be used for ``CONNECT``
+   tunnels. The default :file:`ip_allow.yaml` denies ``CONNECT`` tunnels to unspecified,
+   loopback, private, link-local, and IPv4-mapped IPv6 destination ranges.
 
 
 .. ts:cv:: CONFIG proxy.config.http.forward_connect_method INT 0
@@ -982,7 +1032,7 @@ allow-plain
 
 .. note::
 
-   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction codes can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/via.html>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.request_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -1008,7 +1058,7 @@ allow-plain
 
 .. note::
 
-   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/tools/via>`_.
+   The ``Via`` transaction code can be decoded with the `Via Decoder Ring <https://trafficserver.apache.org/via.html>`_.
 
 .. ts:cv:: CONFIG proxy.config.http.response_via_str STRING ApacheTrafficServer/${PACKAGE_VERSION}
    :reloadable:
@@ -1108,6 +1158,10 @@ allow-plain
    <https://www.rfc-editor.org/rfc/rfc9112.html#name-chunked-trailer-section>`_
    for details about chunked trailers. By default, this option is enabled
    and therefore |TS| will drop chunked trailers.
+
+   This option controls HTTP/1.1 chunked trailer handling. HTTP/2 origin
+   response trailers are not converted to HTTP/1.1 chunked trailers, and |TS|
+   drops them when the client connection is HTTP/1.x.
 
 .. ts:cv:: CONFIG proxy.config.http.strict_chunk_parsing INT 1
    :reloadable:
@@ -1424,6 +1478,13 @@ allow-plain
    in a request with the sum of their name and value that exceed this size will cause the
    entire request to be treated as invalid and rejected by the proxy.
 
+   A header field name and value are each stored with a 16-bit length, so each is
+   limited to 65535 bytes (the maximum a 16-bit length can hold) regardless of this
+   setting. A value greater than 65535 in records.yaml fails validation and the
+   default is used; a value set at runtime via :program:`traffic_ctl` is clamped to
+   65535. Either way an individual field name or value that exceeds the limit is
+   rejected rather than truncated.
+
 .. ts:cv:: CONFIG proxy.config.http.request_header_max_size INT 32768
    :overridable:
    :reloadable:
@@ -1470,6 +1531,10 @@ Parent Proxy Configuration
    :overridable:
 
    The amount of time allowed between connection retries to a parent cache that is unavailable.
+
+   Once this time has elapsed the parent is selected again as a retry candidate. It is
+   restored to the pool only if that retry actually succeeds; if the retry fails, the parent
+   remains unavailable and a further ``retry_time`` must elapse before it is tried again.
 
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.max_trans_retries INT 2
 
@@ -1967,9 +2032,10 @@ Origin Server Connect Attempts
    :overridable:
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
-   During this window, if a stale cached response exists and its age is within the cached response's ``max-age`` plus
-   :ts:cv:`proxy.config.http.cache.max_stale_age`, |TS| serves the stale content directly
-   without attempting to contact the origin server.
+   During this window, if a stale cached response exists and its age is within the limits configured by
+   :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent`, |TS| serves the stale content directly without attempting
+   to contact the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
@@ -2063,8 +2129,8 @@ Negative Response Caching
    current stale content is preserved and served. Note this is considered only on a revalidation of
    already cached content. A revalidation failure means a connection failure or a 50x response code.
    When considering replying with a stale response in these negative revalidating circumstances,
-   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
-   use a cached response older than ``max_stale_age`` seconds plus ``max-age`` of cached content.
+   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
@@ -2090,7 +2156,8 @@ Negative Response Caching
    behavior with regard to whether it considers a stale object to be fresh enough to serve out of
    cache when revalidation fails. As mentioned above in
    :ts:cv:`proxy.config.http.negative_revalidating_enabled`,
-   :ts:cv:`proxy.config.http.cache.max_stale_age` is used for that determination.
+   :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent` are used for that determination.
 
    This configuration defaults to 1,800 seconds (30 minutes).
 
@@ -2589,7 +2656,35 @@ Cache Control
    :reloadable:
    :overridable:
 
-   The maximum age in seconds allowed for a stale response before it cannot be cached.
+   The maximum number of seconds that a stale response can be served after its ``max-age`` freshness
+   lifetime has passed.
+
+   When :ts:cv:`proxy.config.http.cache.max_stale_age_percent` is enabled, the smaller of the
+   absolute and percentage limits is used.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.max_stale_age_percent INT 0
+   :reloadable:
+   :overridable:
+
+   Limits the stale response lifetime to a percentage of its ``max-age`` freshness lifetime. The
+   valid range is ``0`` to ``100``. A value of ``0`` disables the percentage limit. When enabled,
+   |TS| uses the smaller of this limit and
+   :ts:cv:`proxy.config.http.cache.max_stale_age`.
+
+   For example, a value of ``25`` allows a response with a one-hour freshness lifetime
+   (``Cache-Control: max-age=3600``) to be served stale for up to 15 minutes (25% of one hour),
+   provided that the absolute stale age limit is at least 15 minutes.
+
+   Percentage limits are calculated in whole seconds and rounded down. If the calculated limit is
+   less than one second, no stale window is allowed. For example, a value of ``1`` with
+   ``Cache-Control: max-age=99`` produces a zero-second stale window.
+
+   A value of ``0`` applies no percentage limit. For example, with the default
+   :ts:cv:`proxy.config.http.cache.max_stale_age` of seven days, a response with a one-hour
+   freshness lifetime can be served stale for up to seven days after that freshness lifetime ends.
+
+   Responses without ``max-age`` are controlled by :ts:cv:`proxy.config.http.cache.max_stale_age`
+   alone.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_min_lifetime INT 0
    :reloadable:
@@ -3003,6 +3098,108 @@ RAM Cache
    Compression runs on task threads. To use more cores for RAM cache
    compression, increase :ts:cv:`proxy.config.task_threads`.
 
+.. _admin-cache-shm-fast-restart:
+
+Shared Memory Fast Restart
+==========================
+
+|TS| can optionally keep the cache directory -- the in-memory index that maps
+cached objects to their location on disk -- in POSIX shared memory so that it
+survives a process restart. On a normal start the directory is read from disk
+and, for a large cache, rebuilt in memory before the cache comes online. When
+this feature is enabled and the previous instance shut down cleanly, the new
+instance attaches the existing shared memory segments and skips that work,
+bringing the cache online much faster.
+
+The shared memory directory is only an optimization for restart time; the
+on-disk cache always remains the source of truth. A new instance discards the
+segments and falls back to reading the directory from disk whenever they cannot
+be trusted, including when:
+
+- the previous instance did not shut down cleanly (for example, it crashed),
+- the |TS| binary's directory structures changed (an ABI mismatch, such as
+  after an upgrade), or
+- the shared memory schema version changed.
+
+A change to the on-disk storage layout in :file:`storage.yaml` does *not*
+discard everything. Each cache stripe attaches by its own identity, so stripes
+that still exist are fast-attached, added or resized stripes are rebuilt from
+disk, and segments for stripes that no longer exist are reclaimed.
+
+Segments left over from a crash can be inspected or removed with
+``traffic_ctl cache shm status`` and ``traffic_ctl cache shm clear``, which act
+directly on the shared memory objects whether or not |TS| is running.
+
+.. note::
+
+   This is an experimental feature, disabled by default. All of its settings
+   take effect only on a restart of |TS|.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.enabled INT 0
+
+   Enables the shared memory cache directory described above. When ``0`` (the
+   default), the cache directory is always read from disk on start.
+
+   The feature requires ``shm_open()`` in libc, which |TS| checks for at build
+   time. Where it is absent -- glibc older than 2.34, which keeps it in
+   ``librt`` -- the feature is compiled out and this setting has no effect: |TS|
+   logs a warning at startup and every stripe uses a heap directory. That
+   applies to RHEL/Rocky 8, Ubuntu 20.04 and Debian 11 among others; run
+   ``traffic_layout info | grep TS_USE_CACHE_SHM`` to check a given build.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.name_prefix STRING ats
+
+   The word used to name the POSIX shared memory objects, which on Linux appear
+   under ``/dev/shm``. Set only the middle word (default ``ats``); |TS| frames it
+   as ``/<word>-`` so the leading ``/`` that POSIX requires and the trailing
+   ``-`` separator cannot be mis-typed. With the default the control segment is
+   named ``/ats-control`` and each per-stripe directory segment ``/ats-s<N>``
+   (for example ``/ats-s0``). Any stray framing characters are trimmed, so a
+   value carried over from an older release (such as ``/ats-``) still resolves to
+   the same names. Give each |TS| instance sharing a host a distinct word so
+   their segments do not collide.
+
+   Renaming this value does not remove segments created under the old prefix:
+   |TS| only manages segments under the *current* prefix, so the old ``/dev/shm``
+   objects linger until cleared manually with ``traffic_ctl cache shm clear
+   --prefix <old-word>`` (or a host reboot).
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.use_hugepages INT 0
+
+   When enabled (``1``), |TS| attempts to back the shared memory directory with
+   huge pages, which cut the cost of tearing down the large directory's page
+   tables at process exit (and ease TLB pressure). This requires the shared
+   memory to be eligible for huge pages (for example, ``/dev/shm`` mounted with
+   huge page support on Linux). When it is not, |TS| logs a debug message under
+   the ``cache_shm`` tag and transparently falls back to ordinary pages, so
+   enabling this is always safe.
+
+   This advises transparent huge pages (``MADV_HUGEPAGE``) on the mapping; the
+   reserved ``MAP_HUGETLB`` pages used by the global hugepage allocator cannot
+   back a ``tmpfs``-backed shared memory segment. To avoid silently downgrading a
+   box that already runs with :ts:cv:`proxy.config.allocator.hugepages` enabled,
+   |TS| turns this on automatically when the global allocator is enabled and this
+   record is left at its default; set it to ``0`` explicitly to opt out.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.purge_stale_on_start INT 0
+
+   When enabled (``1``) and :ts:cv:`proxy.config.cache.shm.enabled` is ``0``,
+   |TS| removes any leftover shared memory segments for
+   :ts:cv:`proxy.config.cache.shm.name_prefix` at startup (the ``<prefix>control``
+   segment and the per-stripe segments it lists). This guards against two
+   hazards of running with the feature disabled after it had been enabled:
+
+   - the leftover segments keep consuming memory (for example ``/dev/shm`` on
+     Linux) even though the disabled instance never reads them, and
+   - a later run with the feature re-enabled would otherwise fast-attach a
+     directory that went stale while |TS| ran disabled and wrote only to disk.
+
+   The purge is skipped if a live process still owns the segments (a concurrent
+   instance using the same prefix), and it never blocks startup. It has no
+   effect when the feature is enabled, when no ``<prefix>control`` segment
+   exists, or when set to ``0`` (the default). ``traffic_ctl cache shm clear``
+   performs the same cleanup on demand.
+
 .. _admin-heuristic-expiration:
 
 Heuristic Expiration
@@ -3074,13 +3271,15 @@ Dynamic Content & Content Negotiation
    ===== ======================================================================
    ``0`` Default. Disable cache and go to origin server.
    ``1`` Return a ``502`` error on a cache miss.
-   ``2`` Serve stale if object's age is under ``max-age`` +
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
+   ``2`` Serve stale if the object's age is within the
+         :ts:cv:`proxy.config.http.cache.max_stale_age` and
+         :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
+         Otherwise, go to the origin server.
    ``3`` Return a ``502`` error on a cache miss or serve stale on a cache
-         revalidate if object's age is under ``max-age`` +
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
+         revalidate if the object's age is within the
+         :ts:cv:`proxy.config.http.cache.max_stale_age` and
+         :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
+         Otherwise, go to the origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
    ``5`` Retry Cache Read on a Cache Write Lock failure. This option together
          with :ts:cv:`proxy.config.cache.enable_read_while_writer` configuration
@@ -3211,13 +3410,23 @@ DNS
    :overridable:
 
    Enables (``1``) or disables (``0``) the use of SRV records for origin server
-   lookup. |TS| will use weights found in the SRV record as a weighted round
-   robin in origin selection. Note that |TS| will lookup
-   ``_$scheme._$internet_protocol.$origin_name``. For instance, if the origin is
-   set to ``https://my.example.com``, |TS| would lookup ``_https._tcp.my.example.com``.
-   Also note that the port returned in the SRV record MUST match the port being
-   used for the origin (e.g. if the origin scheme is http and a default port, there
-   should be a SRV record with port 80).
+   lookup. |TS| constructs the service name
+   ``_$scheme._tcp.$origin_name`` from the scheme and host in the origin URL
+   (the replacement URL after remapping). For example, this rule::
+
+      map http://www.example.com/ https://origin.example.com/
+
+   causes |TS| to query ``_https._tcp.origin.example.com``. Given these records::
+
+      _https._tcp.origin.example.com. 300 IN SRV 10 1 8443 server1.example.com.
+      _https._tcp.origin.example.com. 300 IN SRV 10 1 8443 server2.example.com.
+
+   |TS| resolves the selected target and connects to its SRV port, ``8443`` in
+   this example. The selected SRV port overrides any port in the origin URL.
+   |TS| honors SRV priority and weight when selecting among records. If the SRV
+   lookup returns no usable records, |TS| falls back to resolving the origin
+   host directly. SRV results are cached in HostDB according to
+   :ts:cv:`proxy.config.hostdb.ttl_mode`.
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
@@ -3313,7 +3522,8 @@ HostDB
 
 .. ts:cv:: CONFIG proxy.config.hostdb.round_robin_max_count INT 16
 
-   The maximum count of DNS answers per round robin hostdb record. The default variable is 16.
+   The maximum count of DNS answers per round robin hostdb record. The
+   default value is ``16``. Valid range is ``1`` to ``1024``.
 
 .. ts:cv:: CONFIG proxy.config.hostdb.ttl_mode INT 0
    :reloadable:
@@ -4244,8 +4454,9 @@ SSL Termination
   This configuration specifies the maximum number of bytes to write
   into a SSL record when replying over a SSL session. In some
   circumstances this setting can improve response latency by reducing
-  buffering at the SSL layer. This setting can have a value between 0
-  and 16383 (max TLS record size).
+  buffering at the SSL layer. This setting accepts ``-1`` for dynamic
+  sizing, ``0`` for the default behavior, or a fixed maximum between
+  ``1`` and ``16383`` bytes.
 
   The default of ``0`` means to always write all available data into
   a single SSL record.
@@ -4812,14 +5023,43 @@ HTTP/2 Configuration
    This is used when :ts:cv:`proxy.config.http2.max_active_streams_out` is set
    larger than ``0``.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_in INT 0
+.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_in INT 200000
    :reloadable:
 
-   Limits the maximum number of connection wide active streams.
-   When connection wide active streams are larger than this value,
+   Limits the maximum number of process-wide active inbound streams.
+   When the process-wide active stream count reaches this value,
    SETTINGS_MAX_CONCURRENT_STREAMS will be reduced to
    :ts:cv:`proxy.config.http2.min_concurrent_streams_in`.
-   To disable, set to zero (``0``).
+   To disable, set to zero (``0``). The default bounds worst-case
+   buffered response memory while staying well above any realistic
+   legitimate stream count; size it to your available memory budget.
+
+   See :ts:cv:`proxy.config.http2.max_active_streams_policy_in` to switch
+   from this advisory behavior to hard refusal of new streams once the
+   limit is reached.
+
+.. ts:cv:: CONFIG proxy.config.http2.max_active_streams_policy_in INT 0
+   :reloadable:
+
+   Selects how :ts:cv:`proxy.config.http2.max_active_streams_in` is
+   enforced for inbound HTTP/2 streams.
+
+   ===== ===================================================================
+   Value Description
+   ===== ===================================================================
+   ``0`` When the limit is reached, the advertised
+         ``SETTINGS_MAX_CONCURRENT_STREAMS`` is reduced to
+         :ts:cv:`proxy.config.http2.min_concurrent_streams_in` for new
+         connections. Already-admitted streams are not refused.
+   ``1`` New inbound streams are refused with ``REFUSED_STREAM`` once the
+         global active-stream count reaches the limit. The advertised
+         ``SETTINGS_MAX_CONCURRENT_STREAMS`` is left unchanged and
+         :ts:cv:`proxy.config.http2.min_concurrent_streams_in` is not
+         applied.
+   ===== ===================================================================
+
+   Has no effect when :ts:cv:`proxy.config.http2.max_active_streams_in`
+   is ``0``.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_active_streams_out INT 0
    :reloadable:
@@ -4987,7 +5227,7 @@ HTTP/2 Configuration
 
    This is the threshold of sampling stream number to start checking the stream error rate.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 16
    :reloadable:
 
    Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
@@ -4995,7 +5235,7 @@ HTTP/2 Configuration
    code of ENHANCE_YOUR_CALM.
    Any negative value configures no limit to the number of settings received.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 32
    :reloadable:
 
    Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
@@ -5086,12 +5326,11 @@ HTTP/2 Configuration
    frames. Write operation will be triggered at least once every this configured
    number of millisecond regardless of pending data size.
 
-.. ts:cv:: CONFIG proxy.config.http2.default_buffer_water_mark INT -1
+.. ts:cv:: CONFIG proxy.config.http2.default_buffer_water_mark INT 32768
    :reloadable:
    :units: bytes
 
    Specifies the high water mark for all HTTP/2 frames on an outgoing connection.
-   Default is -1 to preserve existing water marking behavior.
 
    You can override this global setting on a per domain basis in the :file:`sni.yaml` file using the :ref:`http2_buffer_water_mark <override-h2-properties>` attribute.
 
@@ -5130,8 +5369,8 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.instance_id INT 0
    :reloadable:
 
-   A static key used for calculating Stateless Reset Token. All instances in a
-   cluster need to share the same value.
+   An instance identifier mixed into Stateless Reset Tokens. All instances in a
+   cluster that share token keys need to use the same value.
 
 .. ts:cv:: CONFIG proxy.config.quic.connection_table.size INT 65521
 
@@ -5145,6 +5384,20 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.server.stateless_retry_enabled INT 0
 
    Enables Stateless Retry.
+
+.. ts:cv:: CONFIG proxy.config.quic.server.token_key.filename STRING NULL
+   :reloadable:
+
+   The file containing the secret keys used to generate QUIC address-validation
+   and stateless-reset tokens. Relative paths are resolved from the |TS|
+   configuration directory. The file must contain one or more raw 32-byte keys.
+   The first key generates new tokens, while all keys validate address-validation
+   tokens to support key rotation. For example, generate a key with
+   ``head -c32 /dev/urandom > quic_token.key``.
+
+   When this is not set, |TS| generates a random per-process key at startup. Set
+   the same key file on each server that must validate tokens generated by other
+   servers. Reload configuration after changing the key file.
 
 .. ts:cv:: CONFIG proxy.config.quic.client.vn_exercise_enabled INT 0
    :reloadable:

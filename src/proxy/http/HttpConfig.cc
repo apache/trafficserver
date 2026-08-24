@@ -28,6 +28,7 @@
 #include "tscore/Filenames.h"
 #include "tscore/Tokenizer.h"
 #include <cctype>
+#include <cstdint>
 #include <cstring>
 #include "proxy/http/HttpConfig.h"
 #include "proxy/hdrs/HTTP.h"
@@ -331,24 +332,28 @@ register_stat_callbacks()
   http_rsb.https_total_client_connections    = Metrics::Counter::createPtr("proxy.process.https.total_client_connections");
   http_rsb.incoming_requests                 = Metrics::Counter::createPtr("proxy.process.http.incoming_requests");
   http_rsb.incoming_responses                = Metrics::Counter::createPtr("proxy.process.http.incoming_responses");
-  http_rsb.invalid_client_requests           = Metrics::Counter::createPtr("proxy.process.http.invalid_client_requests");
-  http_rsb.misc_count                        = Metrics::Counter::createPtr("proxy.process.http.misc_count");
-  http_rsb.misc_origin_server_bytes          = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
-  http_rsb.misc_user_agent_bytes             = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
-  http_rsb.missing_host_hdr                  = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
-  http_rsb.no_remap_matched                  = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
-  http_rsb.options_requests                  = Metrics::Counter::createPtr("proxy.process.http.options_requests");
-  http_rsb.origin_body                       = Metrics::Counter::createPtr("proxy.process.http.origin.body");
-  http_rsb.origin_close_private              = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
-  http_rsb.origin_connect_adjust_thread      = Metrics::Counter::createPtr("proxy.process.http.origin.connect.adjust_thread");
-  http_rsb.origin_connections_throttled      = Metrics::Counter::createPtr("proxy.process.http.origin_connections_throttled_out");
-  http_rsb.origin_make_new                   = Metrics::Counter::createPtr("proxy.process.http.origin.make_new");
-  http_rsb.origin_no_sharing                 = Metrics::Counter::createPtr("proxy.process.http.origin.no_sharing");
-  http_rsb.origin_not_found                  = Metrics::Counter::createPtr("proxy.process.http.origin.not_found");
-  http_rsb.origin_private                    = Metrics::Counter::createPtr("proxy.process.http.origin.private");
-  http_rsb.origin_raw                        = Metrics::Counter::createPtr("proxy.process.http.origin.raw");
-  http_rsb.origin_reuse                      = Metrics::Counter::createPtr("proxy.process.http.origin.reuse");
-  http_rsb.origin_reuse_fail                 = Metrics::Counter::createPtr("proxy.process.http.origin.reuse_fail");
+  http_rsb.client_request_at_headers_stripped =
+    Metrics::Counter::createPtr("proxy.process.http.client_request_at_headers_stripped");
+  http_rsb.origin_response_at_headers_stripped =
+    Metrics::Counter::createPtr("proxy.process.http.origin_response_at_headers_stripped");
+  http_rsb.invalid_client_requests      = Metrics::Counter::createPtr("proxy.process.http.invalid_client_requests");
+  http_rsb.misc_count                   = Metrics::Counter::createPtr("proxy.process.http.misc_count");
+  http_rsb.misc_origin_server_bytes     = Metrics::Counter::createPtr("proxy.process.http.http_misc_origin_server_bytes");
+  http_rsb.misc_user_agent_bytes        = Metrics::Counter::createPtr("proxy.process.http.misc_user_agent_bytes");
+  http_rsb.missing_host_hdr             = Metrics::Counter::createPtr("proxy.process.http.missing_host_hdr");
+  http_rsb.no_remap_matched             = Metrics::Counter::createPtr("proxy.process.http.no_remap_matched");
+  http_rsb.options_requests             = Metrics::Counter::createPtr("proxy.process.http.options_requests");
+  http_rsb.origin_body                  = Metrics::Counter::createPtr("proxy.process.http.origin.body");
+  http_rsb.origin_close_private         = Metrics::Counter::createPtr("proxy.process.http.origin.close_private");
+  http_rsb.origin_connect_adjust_thread = Metrics::Counter::createPtr("proxy.process.http.origin.connect.adjust_thread");
+  http_rsb.origin_connections_throttled = Metrics::Counter::createPtr("proxy.process.http.origin_connections_throttled_out");
+  http_rsb.origin_make_new              = Metrics::Counter::createPtr("proxy.process.http.origin.make_new");
+  http_rsb.origin_no_sharing            = Metrics::Counter::createPtr("proxy.process.http.origin.no_sharing");
+  http_rsb.origin_not_found             = Metrics::Counter::createPtr("proxy.process.http.origin.not_found");
+  http_rsb.origin_private               = Metrics::Counter::createPtr("proxy.process.http.origin.private");
+  http_rsb.origin_raw                   = Metrics::Counter::createPtr("proxy.process.http.origin.raw");
+  http_rsb.origin_reuse                 = Metrics::Counter::createPtr("proxy.process.http.origin.reuse");
+  http_rsb.origin_reuse_fail            = Metrics::Counter::createPtr("proxy.process.http.origin.reuse_fail");
   http_rsb.origin_server_request_document_total_size =
     Metrics::Counter::createPtr("proxy.process.http.origin_server_request_document_total_size");
   http_rsb.origin_server_request_header_total_size =
@@ -499,6 +504,7 @@ register_stat_callbacks()
   http_rsb.total_transactions_time           = Metrics::Counter::createPtr("proxy.process.http.total_transactions_time");
   http_rsb.total_x_redirect                  = Metrics::Counter::createPtr("proxy.process.http.total_x_redirect_count");
   http_rsb.trace_requests                    = Metrics::Counter::createPtr("proxy.process.http.trace_requests");
+  http_rsb.tunnel_chunked_throttle           = Metrics::Counter::createPtr("proxy.process.http.tunnel.chunked_throttle");
   http_rsb.tunnel_current_active_connections = Metrics::Gauge::createPtr("proxy.process.tunnel.current_active_connections");
   http_rsb.tunnels                           = Metrics::Counter::createPtr("proxy.process.http.tunnels");
   http_rsb.ua_begin_time                     = Metrics::Counter::createPtr("proxy.process.http.milestone.ua_begin");
@@ -1103,6 +1109,7 @@ HttpConfig::startup()
   HttpEstablishStaticConfigLongLong(c.oride.cache_guaranteed_max_lifetime, "proxy.config.http.cache.guaranteed_max_lifetime");
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age, "proxy.config.http.cache.max_stale_age");
+  HttpEstablishStaticConfigLongLong(c.oride.cache_max_stale_age_percent, "proxy.config.http.cache.max_stale_age_percent");
 
   HttpEstablishStaticConfigByte(c.oride.srv_enabled, "proxy.config.srv_enabled");
 
@@ -1275,6 +1282,16 @@ HttpConfig::reconfigure()
   params->http_hdr_field_max_size    = m_master.http_hdr_field_max_size;
   params->pp_hdr_max_size            = m_master.pp_hdr_max_size;
 
+  // A header field name and value are each stored with a uint16_t length, so a
+  // single field cannot exceed UINT16_MAX octets. Clamp the configured
+  // per-field limit to that ceiling: a larger value can never be honored and an
+  // oversized field is rejected at parse time regardless.
+  if (params->http_hdr_field_max_size > UINT16_MAX) {
+    Note("proxy.config.http.header_field_max_size %" PRId64 " exceeds the %d-octet storage limit; clamping to %d",
+         static_cast<int64_t>(params->http_hdr_field_max_size), UINT16_MAX, UINT16_MAX);
+    params->http_hdr_field_max_size = UINT16_MAX;
+  }
+
   if (params->oride.connection_tracker_config.server_max > 0 &&
       params->oride.connection_tracker_config.server_max < params->oride.connection_tracker_config.server_min) {
     Warning("'%s' < per_server.min_keep_alive_connections, setting min=max , please correct your %s",
@@ -1440,7 +1457,8 @@ HttpConfig::reconfigure()
   params->oride.cache_guaranteed_min_lifetime = m_master.oride.cache_guaranteed_min_lifetime;
   params->oride.cache_guaranteed_max_lifetime = m_master.oride.cache_guaranteed_max_lifetime;
 
-  params->oride.cache_max_stale_age = m_master.oride.cache_max_stale_age;
+  params->oride.cache_max_stale_age         = m_master.oride.cache_max_stale_age;
+  params->oride.cache_max_stale_age_percent = m_master.oride.cache_max_stale_age_percent;
 
   params->oride.srv_enabled = m_master.oride.srv_enabled;
 

@@ -15,7 +15,7 @@
 #
 #######################
 
-add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc SplitDNS.cc)
+add_library(inkdns STATIC DNS.cc DNSConnection.cc DNSEventIO.cc HostEnt.cc SplitDNS.cc)
 add_library(ts::inkdns ALIAS inkdns)
 
 target_include_directories(
@@ -32,3 +32,7 @@ target_link_libraries(
 )
 
 clang_tidy_check(inkdns)
+
+if(BUILD_TESTING)
+  add_subdirectory(unit_tests)
+endif()

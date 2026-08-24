@@ -53,6 +53,13 @@ handle_ssn_close(TSHttpSsn ssn)
     logFile << "H2 Frames Received:" << "D" << count[0] << "," << "H" << count[1] << "," << "PR" << count[2] << "," << "RS"
             << count[3] << "," << "S" << count[4] << "," << "PP" << count[5] << "," << "P" << count[6] << "," << "G" << count[7]
             << "," << "WU" << count[8] << "," << "C" << count[9] << "," << "U" << count[10] << std::endl;
+
+    // Verify OOB sub_key values don't crash and map to the UNKNOWN bucket
+    TSMgmtInt oob_val = -1;
+    TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &oob_val, 11);
+    logFile << "H2 OOB(11)=" << oob_val;
+    TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &oob_val, 1000);
+    logFile << ",OOB(1000)=" << oob_val << std::endl;
   } else {
     TSMgmtInt count[15];
     TSHttpSsnInfoIntGet(ssn, TS_SSN_INFO_RECEIVED_FRAME_COUNT, &count[0], 0);

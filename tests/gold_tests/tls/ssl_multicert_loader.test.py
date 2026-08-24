@@ -92,6 +92,8 @@ tr3.MakeCurlCommand(
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+ts.Disk.diags_log.Content = Testers.ExcludesExpression(
+    r'\(quic\).*ssl_multicert', 'QUIC certificates should not load without a configured QUIC listener')
 
 ##########################################################################
 # Ensure ATS fails/exits when non-existent cert is specified

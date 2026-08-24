@@ -81,38 +81,6 @@ std::array<AddWriterBranchTest, 32> add_writer_branch_test_cases = {
    }
 };
 
-static void
-init_disk(CacheDisk &disk)
-{
-  disk.path                = static_cast<char *>(ats_malloc(1));
-  disk.path[0]             = '\0';
-  disk.disk_stripes        = static_cast<DiskStripe **>(ats_malloc(sizeof(DiskStripe *)));
-  disk.disk_stripes[0]     = nullptr;
-  disk.header              = static_cast<DiskHeader *>(ats_malloc(sizeof(DiskHeader)));
-  disk.header->num_volumes = 0;
-}
-
-/* Catch test helper to provide a StripeSM with a valid file descriptor.
- *
- * The file will be deleted automatically when the application ends normally.
- * If the StripeSM already has a valid file descriptor, that file will NOT be
- * closed.
- *
- * @param stripe: A StripeSM object with no valid file descriptor.
- * @return The std::FILE* stream if successful, otherwise the Catch test will
- *   be failed at the point of error.
- */
-static std::FILE *
-attach_tmpfile_to_stripe(StripeSM &stripe)
-{
-  auto *file{std::tmpfile()};
-  REQUIRE(file != nullptr);
-  int fd{fileno(file)};
-  REQUIRE(fd != -1);
-  stripe.fd = fd;
-  return file;
-}
-
 // We can't return a stripe from this function because the copy
 // and move constructors are deleted.
 static std::FILE *
@@ -396,4 +364,34 @@ TEST_CASE("aggWrite behavior with f.evacuator set")
   }
 
   delete[] source;
+}
+
+TEST_CASE("get_evac_bucket returns a mutable reference")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+
+  EvacuationBlock b1;
+  b1.init                 = 0;
+  b1.readers              = 0;
+  b1.earliest_evacuator   = nullptr;
+  b1.evac_frags.link.next = nullptr;
+
+  EvacuationBlock b2;
+  b2.init                 = 0;
+  b2.readers              = 0;
+  b2.earliest_evacuator   = nullptr;
+  b2.evac_frags.link.next = nullptr;
+
+  REQUIRE(stripe.evac_bucket_valid(0));
+  REQUIRE(stripe.get_evac_bucket(0).empty());
+
+  stripe.get_evac_bucket(0).push(&b1);
+  CHECK_FALSE(stripe.get_evac_bucket(0).empty());
+  CHECK(stripe.get_evac_bucket(0).head == &b1);
+
+  stripe.get_evac_bucket(0).push(&b2);
+  CHECK(stripe.get_evac_bucket(0).head == &b2);
+  CHECK(stripe.get_evac_bucket(0).head->link.next == &b1);
 }

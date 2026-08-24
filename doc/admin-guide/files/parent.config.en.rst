@@ -65,7 +65,13 @@ allowed values.
 .. _parent-config-format-url-regex:
 
 ``url_regex``
-    A regular expression (regex) to be found in a URL
+    A regular expression (regex) matched against the full request URL.
+
+    .. seealso::
+       Operator-written regex rules can match more inputs than
+       intended when the pattern is unanchored. For per-site subject
+       definitions, common pitfalls, and recommended pattern shapes,
+       see :ref:`admin-regex-best-practices`.
 
 The secondary specifiers are optional in the :file:`parent.config` file. The
 following list shows the possible secondary specifiers and their allowed

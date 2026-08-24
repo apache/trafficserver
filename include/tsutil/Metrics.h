@@ -38,7 +38,6 @@
 #include "swoc/MemSpan.h"
 
 #include "tsutil/Assert.h"
-#include "tsutil/TsMutex.h"
 
 namespace ts
 {
@@ -114,6 +113,22 @@ public:
 
   // The singleton instance, owned by the Metrics class
   static Metrics &instance();
+
+  /** The hidden metrics instance.
+   *
+   * A completely separate storage from @c instance(). Metrics here are stored but never
+   * published - they are structurally unreachable from the published store, so no consumer
+   * (traffic_ctl, JSONRPC, stats_over_http) can expose them by omission.
+   *
+   * Intended for high cardinality intermediate values which feed @c Derived aggregates.
+   *
+   * @note An @c IdType from this instance is NOT interchangeable with one from @c instance().
+   *   Ids are meaningful only relative to their store: passing a hidden id to the published
+   *   store yields a silently wrong metric, with no error and no crash, since @c valid() will
+   *   accept it. Prefer @c Gauge::createHiddenPtr / @c Counter::createHiddenPtr, which return
+   *   correctly typed pointers and never hand out an id.
+   */
+  static Metrics &hidden_instance();
 
   // Yes, we don't return objects here, but rather ID's and atomic's directly. Treat
   // the std::atomic<int64_t> as the underlying class for a single metric, and be happy.
@@ -305,17 +320,17 @@ private:
 
   class Storage
   {
-    BlobStorage _blobs   TS_GUARDED_BY(_mutex);
-    uint16_t _cur_blob   TS_GUARDED_BY(_mutex) = 0;
-    uint16_t _cur_off    TS_GUARDED_BY(_mutex) = 0;
-    LookupTable _lookups TS_GUARDED_BY(_mutex);
-    mutable ts::mutex    _mutex;
+    BlobStorage        _blobs;
+    uint16_t           _cur_blob = 0;
+    uint16_t           _cur_off  = 0;
+    LookupTable        _lookups;
+    mutable std::mutex _mutex;
 
   public:
     Storage(const Storage &)            = delete;
     Storage &operator=(const Storage &) = delete;
 
-    Storage() TS_NO_THREAD_SAFETY_ANALYSIS // single-threaded construction; not yet shared
+    Storage()
     {
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
@@ -326,7 +341,7 @@ private:
     ~Storage() {}
 
     IdType           create(const std::string_view name, const MetricType type = MetricType::COUNTER);
-    void             addBlob() TS_REQUIRES(_mutex);
+    void             addBlob();
     IdType           lookup(const std::string_view name) const;
     AtomicType      *lookup(const std::string_view name, IdType *out_id, MetricType *out_type = nullptr) const;
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
@@ -338,7 +353,7 @@ private:
     std::pair<int16_t, int16_t>
     current() const
     {
-      ts::lock_guard lock(_mutex);
+      std::lock_guard lock(_mutex);
       return {_cur_blob, _cur_off};
     }
 
@@ -347,7 +362,6 @@ private:
     {
       auto [blob, entry] = _splitID(id);
 
-      ts::lock_guard lock(_mutex);
       return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
     }
   };
@@ -412,6 +426,27 @@ public:
     createPtr(const std::string_view prefix, const std::string_view name)
     {
       auto       &instance = Metrics::instance();
+      std::string tmpname  = std::string(prefix) + std::string(name);
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
+    }
+
+    /** Create a metric which is stored but never published.
+     *
+     * @see Metrics::hidden_instance()
+     */
+    static AtomicType *
+    createHiddenPtr(const std::string_view name)
+    {
+      auto &instance = Metrics::hidden_instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name, MetricType::GAUGE)));
+    }
+
+    static AtomicType *
+    createHiddenPtr(const std::string_view prefix, const std::string_view name)
+    {
+      auto       &instance = Metrics::hidden_instance();
       std::string tmpname  = std::string(prefix) + std::string(name);
 
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
@@ -514,6 +549,27 @@ public:
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));
     }
 
+    /** Create a metric which is stored but never published.
+     *
+     * @see Metrics::hidden_instance()
+     */
+    static AtomicType *
+    createHiddenPtr(const std::string_view name)
+    {
+      auto &instance = Metrics::hidden_instance();
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(name, MetricType::COUNTER)));
+    }
+
+    static AtomicType *
+    createHiddenPtr(const std::string_view prefix, const std::string_view name)
+    {
+      auto       &instance = Metrics::hidden_instance();
+      std::string tmpname  = std::string(prefix) + std::string(name);
+
+      return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));
+    }
+
     static Metrics::Counter::SpanType
     createSpan(size_t size, IdType *id = nullptr)
     {
@@ -587,11 +643,15 @@ public:
   class Derived
   {
   public:
+    /// How the sources of a derived metric are combined into its value.
+    enum class Op { SUM, MAX, MIN };
+
     struct DerivedMetricSpec {
       using MetricSpec = std::variant<Metrics::AtomicType *, Metrics::IdType, std::string_view>;
       std::string_view                  derived_name;
       Metrics::MetricType               derived_type;
       std::initializer_list<MetricSpec> derived_from;
+      Op                                op{Op::SUM};
     };
 
     /**
@@ -601,6 +661,21 @@ public:
      * be specified by name, id or a pointer to the metric.
      */
     static void derive(const std::initializer_list<DerivedMetricSpec> &metrics);
+
+    /** Add a source to a derived metric, creating the derived metric if needed.
+     *
+     * Unlike @c derive this may be called at any time, so aggregates can be built up as their
+     * sources are discovered at runtime.
+     *
+     * @param derived_name Name of the derived metric, in the published store.
+     * @param type Type of the derived metric. Ignored if the derived metric already exists.
+     * @param source The source metric. May come from either the published or the hidden store.
+     * @param op How to combine the sources. Ignored if the derived metric already exists.
+     *
+     * Adding a source which is already registered for @a derived_name is a no-op, so callers
+     * which may re-register (e.g. an object recreated for the same key) need not track this.
+     */
+    static void add_source(std::string_view derived_name, Metrics::MetricType type, Metrics::AtomicType *source, Op op = Op::SUM);
 
     /**
      * Update derived metrics.

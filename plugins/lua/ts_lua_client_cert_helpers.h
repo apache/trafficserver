@@ -18,7 +18,7 @@
 
 // Helper functions for certificate data extraction
 static std::string
-get_x509_name_string(X509_NAME *name)
+get_x509_name_string(const X509_NAME *name)
 {
   if (!name) {
     return "";
@@ -157,12 +157,15 @@ get_x509_signature_string(X509 *cert)
     return "";
   }
 
-  for (int i = 0; i < sig->length; i++) {
-    if (BIO_printf(bio, "%02x", sig->data[i]) <= 0) {
+  const unsigned char *sig_data = ASN1_STRING_get0_data(sig);
+  int                  sig_len  = ASN1_STRING_length(sig);
+
+  for (int i = 0; i < sig_len; i++) {
+    if (BIO_printf(bio, "%02x", sig_data[i]) <= 0) {
       BIO_free(bio);
       return "";
     }
-    if (i < sig->length - 1) {
+    if (i < sig_len - 1) {
       if (BIO_printf(bio, ":") <= 0) {
         BIO_free(bio);
         return "";

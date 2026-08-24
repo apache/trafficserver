@@ -24,6 +24,11 @@
 #pragma once
 
 #include <atomic>
+#include <bitset>
+#include <cstdint>
+#include <limits>
+
+#include "tscore/ink_assert.h"
 
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/EThread.h"
@@ -111,25 +116,39 @@ public:
 
   /// configuration settings for managing the active and keep-alive queues
   struct Config {
-    uint32_t max_connections_in                 = 0;
-    uint32_t max_requests_in                    = 0;
-    uint32_t inactive_threshold_in              = 0;
-    uint32_t transaction_no_activity_timeout_in = 0;
-    uint32_t keep_alive_no_activity_timeout_in  = 0;
-    uint32_t default_inactivity_timeout         = 0;
+    /// Identifies a config value, so an update can name it instead of passing a pointer.
+    /// @note The underlying type is fixed and must not be narrowed. The index arrives as
+    /// an untyped event cookie, and a value that wrapped would look like a valid index.
+    enum class Index : int {
+      MAX_CONNECTIONS_IN,
+      MAX_REQUESTS_IN,
+      DEFAULT_INACTIVITY_TIMEOUT,
+      COUNT ///< Number of config values, not a valid index.
+    };
 
-    /** Return the address of the first value in this struct.
+    uint32_t max_connections_in         = 0;
+    uint32_t max_requests_in            = 0;
+    uint32_t default_inactivity_timeout = 0;
 
-        Doing updates is much easier if we treat this config struct as an array.
-        Making it a method means the knowledge of which member is the first one
-        is localized to this struct, not scattered about.
-     */
+    /// The config value identified by @a idx.
     uint32_t &
-    operator[](int n)
+    operator[](Index idx)
     {
-      return *(&max_connections_in + n);
+      switch (idx) {
+      case Index::MAX_CONNECTIONS_IN:
+        return max_connections_in;
+      case Index::MAX_REQUESTS_IN:
+        return max_requests_in;
+      case Index::DEFAULT_INACTIVITY_TIMEOUT:
+        return default_inactivity_timeout;
+      case Index::COUNT:
+        break;
+      }
+      ink_release_assert(!"invalid NetHandler::Config index");
+      return max_connections_in;
     }
   };
+
   /** Static global config, set and updated per process.
 
       This is updated asynchronously and then events are sent to the NetHandler
@@ -146,7 +165,7 @@ public:
   uint32_t max_connections_per_thread_in = 0;
   uint32_t max_requests_per_thread_in    = 0;
   /// Number of configuration items in @c Config.
-  static constexpr int CONFIG_ITEM_COUNT = sizeof(Config) / sizeof(uint32_t);
+  static constexpr int CONFIG_ITEM_COUNT = static_cast<int>(Config::Index::COUNT);
   /// Which members of @c Config the per thread values depend on.
   /// If one of these is updated, the per thread values must also be updated.
   static const std::bitset<CONFIG_ITEM_COUNT> config_value_affects_per_thread_value;

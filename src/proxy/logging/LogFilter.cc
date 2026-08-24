@@ -27,6 +27,7 @@
 
  ***************************************************************************/
 
+#include <limits>
 #include <memory>
 
 #include "swoc/BufferWriter.h"
@@ -34,6 +35,7 @@
 #include "swoc/bwf_ip.h"
 
 #include "tscore/ink_platform.h"
+#include "tsutil/LocalBuffer.h"
 #include "tsutil/ts_errata.h"
 
 #include "proxy/logging/LogUtils.h"
@@ -54,6 +56,8 @@ namespace
 {
 DbgCtl dbg_ctl_log{"log"};
 DbgCtl dbg_ctl_log_filter_compare{"log-filter-compare"};
+
+static constexpr size_t FIELD_VALUE_LOCAL_BUFFER_SIZE = 8192;
 
 } // end anonymous namespace
 
@@ -273,30 +277,39 @@ findPatternFromParamName(const char *lookup_query_param, const char *pattern, bo
 static void
 updatePatternForFieldValue(char *field, const char *pattern_str, int /* field_pos ATS_UNUSED */, char *buf_dest)
 {
-  int   buf_dest_len = strlen(buf_dest);
-  char  buf_dest_to_field[buf_dest_len + 1];
-  char *temp_text = buf_dest_to_field;
+  size_t const buf_dest_size = strlen(buf_dest);
+  if (buf_dest_size > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    return;
+  }
 
-  memcpy(temp_text, buf_dest, (pattern_str - buf_dest));
-  temp_text += (pattern_str - buf_dest);
+  int                                                  buf_dest_len = static_cast<int>(buf_dest_size);
+  ts::LocalBuffer<char, FIELD_VALUE_LOCAL_BUFFER_SIZE> buf_dest_to_field(buf_dest_len + 1);
+  char                                                *temp_text = buf_dest_to_field.data();
+
+  const int prefix_len = pattern_str - buf_dest;
+  memcpy(temp_text, buf_dest, prefix_len);
+  temp_text += prefix_len;
 
   const char *value_str = strchr(pattern_str, '=');
 
   if (value_str) {
     value_str++;
-    memcpy(temp_text, pattern_str, (value_str - pattern_str));
-    temp_text += (value_str - pattern_str);
+    const int param_name_len = value_str - pattern_str;
+    memcpy(temp_text, pattern_str, param_name_len);
+    temp_text += param_name_len;
 
     const char *next_param_str = strchr(value_str, '&');
+    const char *buf_dest_end   = buf_dest + buf_dest_len;
 
     if (next_param_str) {
-      for (int i = 0; i < (next_param_str - value_str); i++) {
+      const int value_len = next_param_str - value_str;
+      for (int i = 0; i < value_len; i++) {
         temp_text[i] = 'X';
       }
-      temp_text += (next_param_str - value_str);
-      memcpy(temp_text, next_param_str, ((buf_dest + buf_dest_len) - next_param_str));
+      temp_text += value_len;
+      memcpy(temp_text, next_param_str, buf_dest_end - next_param_str);
     } else {
-      for (int i = 0; i < ((buf_dest + buf_dest_len) - value_str); i++) {
+      for (int i = 0; i < buf_dest_end - value_str; i++) {
         temp_text[i] = 'X';
       }
     }
@@ -304,8 +317,8 @@ updatePatternForFieldValue(char *field, const char *pattern_str, int /* field_po
     return;
   }
 
-  buf_dest_to_field[buf_dest_len] = '\0';
-  strcpy(field, buf_dest_to_field);
+  buf_dest_to_field.data()[buf_dest_len] = '\0';
+  strcpy(field, buf_dest_to_field.data());
 }
 
 /*---------------------------------------------------------------------------
@@ -476,19 +489,17 @@ LogFilterString::operator==(LogFilterString &rhs)
 bool
 LogFilterString::toss_this_entry(LogAccess *lad)
 {
-  static const unsigned BUFSIZE = 8192;
-
   if (m_num_values == 0 || m_field == nullptr || lad == nullptr) {
     return false;
   }
 
-  char   small_buf[BUFSIZE];
+  char   small_buf[FIELD_VALUE_LOCAL_BUFFER_SIZE];
   char  *big_buf        = nullptr;
   char  *buf            = small_buf;
   size_t marsh_len      = m_field->marshal_len(lad); // includes null termination
   bool   cond_satisfied = false;
 
-  if (marsh_len > BUFSIZE) {
+  if (marsh_len > FIELD_VALUE_LOCAL_BUFFER_SIZE) {
     big_buf = static_cast<char *>(ats_malloc(static_cast<unsigned int>(marsh_len)));
     ink_assert(big_buf != nullptr);
     buf = big_buf;

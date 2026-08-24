@@ -73,6 +73,9 @@ Http3HeaderFramer::generate_frame()
 
     if (this->_header_block_len == this->_header_block_wrote) {
       this->_sent_all_data = true;
+      if (this->_is_current_header_final) {
+        this->_is_final_header_sent = true;
+      }
     }
     return frame;
   } else {
@@ -84,6 +87,31 @@ bool
 Http3HeaderFramer::is_done() const
 {
   return this->_sent_all_data;
+}
+
+void
+Http3HeaderFramer::reset()
+{
+  this->_header.destroy();
+  if (this->_header_block != nullptr) {
+    free_MIOBuffer(this->_header_block);
+  }
+
+  this->_header_block            = nullptr;
+  this->_header_block_reader     = nullptr;
+  this->_header_block_len        = 0;
+  this->_header_block_wrote      = 0;
+  this->_sent_all_data           = false;
+  this->_is_current_header_final = false;
+
+  http_parser_clear(&this->_http_parser);
+  http_parser_init(&this->_http_parser);
+}
+
+bool
+Http3HeaderFramer::is_final_header_sent() const
+{
+  return this->_is_final_header_sent;
 }
 
 void
@@ -104,6 +132,8 @@ Http3HeaderFramer::_generate_header_block()
 
   switch (parse_result) {
   case ParseResult::DONE: {
+    this->_is_current_header_final =
+      this->_transaction->direction() == NET_VCONNECTION_OUT || !this->_header.expect_final_response();
     this->_hvc.convert(this->_header, 1, 3);
 
     this->_header_block        = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);

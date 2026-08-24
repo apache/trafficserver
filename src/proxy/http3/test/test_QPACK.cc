@@ -44,7 +44,8 @@ extern char pattern[256];
 constexpr int ACK_MODE_IMMEDIATE = 1;
 // constexpr int ACK_MODE_NONE      = 0;
 
-constexpr int MAX_SEQUENCE = 1024;
+constexpr int      MAX_SEQUENCE   = 1024;
+constexpr uint64_t MAX_FIELD_SIZE = 32768;
 
 class TestQUICConnection : public MockQUICConnection
 {
@@ -85,7 +86,9 @@ public:
     auto           ibb = this->_adapter->read(buf_len);
     IOBufferReader reader;
     reader.block = ibb;
-    return reader.read(buf, buf_len);
+    auto nread   = reader.read(buf, buf_len);
+    this->_adapter->consume(nread);
+    return nread;
   }
 };
 
@@ -291,7 +294,7 @@ test_encode(const char *qif_file, const char *out_file, int dts, int mbs, int am
   int      n_requests             = load_qif_file(qif_file, requests);
 
   QUICApplicationDriver driver;
-  QPACK                *qpack          = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
+  QPACK                *qpack          = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs, MAX_FIELD_SIZE);
   TestQUICStream       *encoder_stream = new TestQUICStream(0);
   TestQUICStream       *decoder_stream = new TestQUICStream(10);
   qpack->on_stream_open(*encoder_stream);
@@ -352,7 +355,7 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
   TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
 
   QUICApplicationDriver driver;
-  QPACK                *qpack          = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs);
+  QPACK                *qpack          = new QPACK(driver.get_connection(), UINT32_MAX, dts, mbs, MAX_FIELD_SIZE);
   TestQUICStream       *encoder_stream = new TestQUICStream(0);
   qpack->on_stream_open(*encoder_stream);
 

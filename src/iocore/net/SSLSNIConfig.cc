@@ -111,9 +111,9 @@ const NextHopProperty *
 SNIConfigParams::get_property_config(const std::string &servername) const
 {
   const NextHopProperty *nps = nullptr;
+  RegexMatches           matches;
   for (auto &&item : next_hop_list) {
-    if (item.match.exec(servername)) {
-      // Found a match
+    if (item.match.exec(servername, matches, RE_FULL_MATCH) >= 0) {
       nps = &item.prop;
       break;
     }
@@ -237,12 +237,11 @@ SNIConfigParams::get(std::string_view servername, in_port_t dest_incoming_port) 
 
     if (retval.match.empty() && servername.length() == 0) {
       return {&retval.actions, {}};
-    } else if (retval.match.exec(servername, matches) >= 0) {
+    } else if (retval.match.exec(servername, matches, RE_FULL_MATCH) >= 0) {
       if (!is_port_in_the_ranges(retval.inbound_port_ranges, dest_incoming_port)) {
         continue;
       }
       if (matches.size() == 1) {
-        // full match
         return {&retval.actions, {}};
       }
 
