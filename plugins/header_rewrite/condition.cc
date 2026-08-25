@@ -88,12 +88,15 @@ Condition::normalize(std::string &s, size_t start)
   size_t len     = s.size() - pos;
   size_t written = 0;
 
-  // Decoding only shrinks, so it's safe in place; the +1 is room for the NUL it appends.
-  if (TSStringPercentDecode(s.data() + pos, len, s.data() + pos, len + 1, &written) == TS_SUCCESS) {
-    s.resize(pos + written);
-  } else {
+  // Decoding shrinks, so in place is safe; the extra byte is for the NUL it appends.
+  s.push_back('\0');
+
+  if (TSStringPercentDecode(s.data() + pos, len, s.data() + pos, len + 1, &written) != TS_SUCCESS) {
+    written = len;
     Dbg(pi_dbg_ctl, "Failed to percent-decode, leaving the value untouched");
   }
+
+  s.resize(pos + written);
 }
 
 void
