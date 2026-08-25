@@ -293,6 +293,18 @@ test_parsing()
     END_TEST();
   }
 
+  {
+    ParserTest p("set-header X-Path %{CLIENT-URL:PATH [NORM]} [L]");
+
+    CHECK_EQ(p.getTokens().size(), 4UL);
+    CHECK_EQ(p.getTokens()[0], "set-header");
+    CHECK_EQ(p.getTokens()[1], "X-Path");
+    CHECK_EQ(p.getTokens()[2], "%{CLIENT-URL:PATH [NORM]}");
+    CHECK_EQ(p.getTokens()[3], "[L]");
+
+    END_TEST();
+  }
+
   /* backslash-escape */
   {
     ParserTest p(R"(add-header foo \ \=\<\>\"\#\\)");

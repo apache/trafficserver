@@ -122,9 +122,19 @@ public:
     return _qualifier;
   }
 
-  // Virtual methods, has to be implemented by each conditional;
-  void         initialize(Parser &p) override;
-  virtual void append_value(std::string &s, const Resources &res) = 0;
+  void initialize(Parser &p) override;
+
+  // Modifiers apply here, so conditions and %{} expansions in values see the same value.
+  void
+  append_value(std::string &s, const Resources &res)
+  {
+    size_t start = s.size();
+
+    do_append_value(s, res);
+    if (has_modifier(_mods, CondModifiers::MOD_NORM)) {
+      normalize(s, start);
+    }
+  }
 
 protected:
   // Evaluate the condition
@@ -136,5 +146,10 @@ protected:
   std::unique_ptr<Matcher> _matcher       = nullptr;
 
 private:
+  // Private, so a caller holding a Condition * can't skip the modifiers in append_value().
+  virtual void do_append_value(std::string &s, const Resources &res) = 0;
+
+  static void normalize(std::string &s, size_t start);
+
   CondModifiers _mods = CondModifiers::NONE;
 };
