@@ -65,8 +65,8 @@ class RegexPatterns:
 
 
 def parse_mods(raw: str | None) -> list[str]:
-    """Parse 'MOD, mod,MOD' into ['MOD', 'MOD', 'MOD']."""
-    return [mod.strip().upper() for mod in raw.split(",") if mod.strip()] if raw else []
+    """Parse 'MOD, mod,NOCASE' into ['MOD', 'NOCASE'], dropping repeats, which header_rewrite rejects."""
+    return list(dict.fromkeys(mod.strip().upper() for mod in raw.split(",") if mod.strip())) if raw else []
 
 
 def split_interpolation_mods(text: str) -> tuple[str, list[str]]:
