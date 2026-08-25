@@ -65,7 +65,7 @@ def test_all_bespoke_tests_are_available_to_pytest() -> None:
     """Keep the native procedural-test inventory explicit."""
 
     uranium_tests = Path(__file__).parents[3] / "uranium_tests"
-    assert len(list(uranium_tests.rglob("test_*.py"))) == 304
+    assert len(list(uranium_tests.rglob("test_*.py"))) == 305
 
 
 def test_curl_call_sites_use_shell_style_strings() -> None:
