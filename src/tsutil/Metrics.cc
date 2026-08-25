@@ -309,7 +309,7 @@ namespace details
     push_back(const DerivedMetric &m)
     {
       std::lock_guard l(metrics_lock);
-      metrics.push_back(std::move(m));
+      metrics.push_back(m);
     }
 
     void

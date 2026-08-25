@@ -301,8 +301,8 @@ ArgParser::Command::add_option(std::string const &long_option, std::string const
 {
   std::string lookup_key = key.empty() ? long_option.substr(2) : key;
   check_option(long_option, short_option, lookup_key);
-  _option_list[long_option] = {long_option, short_option == "-" ? "" : short_option, description, envvar, arg_num, default_value,
-                               lookup_key};
+  _option_list[long_option] = {
+    long_option, short_option == "-" ? "" : short_option, description, envvar, arg_num, default_value, std::move(lookup_key)};
   if (short_option != "-" && !short_option.empty()) {
     _option_map[short_option] = long_option;
   }

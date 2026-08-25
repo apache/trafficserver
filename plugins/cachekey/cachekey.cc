@@ -518,7 +518,7 @@ captureWholeHeaders(const ConfigHeaders &config, const String &name, const Strin
   if (config.toBeAdded(name)) {
     String header;
     header.append(name).append(":").append(value);
-    captures.insert(header);
+    captures.insert(std::move(header));
     CacheKeyDebug("adding header '%s: %s'", name.c_str(), value.c_str());
   } else {
     CacheKeyDebug("failed to find header '%s'", name.c_str());

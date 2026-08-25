@@ -27,6 +27,7 @@
 #include <ts/ts.h>
 
 #include <cctype>
+#include <utility>
 
 using std::string;
 using namespace EsiLib;
@@ -256,7 +257,7 @@ EsiParser::_processSimpleContentTag(DocNode::TYPE node_type, const char *data, i
     TSError("[%s] Could not parse simple content of [%s] node", __FUNCTION__, DocNode::type_names_[node_type]);
     return false;
   }
-  node_list.push_back(new_node);
+  node_list.push_back(std::move(new_node));
   return true;
 }
 
@@ -541,7 +542,7 @@ EsiParser::_processTryTag(const string &data, size_t curr_pos, size_t end_pos, D
     TSError("[%s] try block must contain one each of attempt and except nodes", __FUNCTION__);
     return false;
   }
-  node_list.push_back(try_node);
+  node_list.push_back(std::move(try_node));
   Dbg(dbg_ctl, "[%s] Added try node successfully", __FUNCTION__);
   return true;
 }
@@ -586,7 +587,7 @@ EsiParser::_processChooseTag(const string &data, size_t curr_pos, size_t end_pos
     }
     ++iter;
   }
-  node_list.push_back(choose_node);
+  node_list.push_back(std::move(choose_node));
   return true;
 }
 
