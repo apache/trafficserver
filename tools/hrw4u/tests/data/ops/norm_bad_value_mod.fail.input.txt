@@ -1,0 +1,3 @@
+REMAP {
+  inbound.req.X-Path = "{inbound.url.path with NOCASE}";
+}

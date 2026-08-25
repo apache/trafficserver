@@ -1,0 +1,2 @@
+:2:4: error: symbol error in {}: 'NORM' is denied by sandbox policy (modifier)
+:3:4: error: symbol error in {}: 'NORM' is denied by sandbox policy (modifier)

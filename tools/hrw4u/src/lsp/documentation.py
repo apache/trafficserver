@@ -1211,6 +1211,18 @@ LSP_MODIFIER_DOCUMENTATION: Final[dict[str, DocumentationInfo]] = {
                 "inbound.url.path == \".html\" with EXT",
                 "if (inbound.url.path == \".CC\" with EXT,NOCASE) {\n    // Case-insensitive extension match\n}"
             ]),
+    "NORM":
+        DocumentationInfo(
+            name="Normalized Value",
+            description="Normalizes the value before it is used, which today means percent-decoding it, so that an "
+            "escaped string such as pr%69vate matches the pattern private.",
+            context="Value Modifier",
+            usage="Used where a client could evade a match by escaping the pattern. Also allowed on interpolated values.",
+            examples=[
+                "if (inbound.url.path ~ /private-/ with NORM) {\n    // Also matches pr%69vate-\n}",
+                "if (inbound.url.path == \"PRIVATE-\" with MID,NOCASE,NORM) {\n    // Composes with the other modifiers\n}",
+                "inbound.req.X-Decoded-Path = \"{inbound.url.path with NORM}\";"
+            ]),
 }
 
 

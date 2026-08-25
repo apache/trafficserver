@@ -32,8 +32,8 @@ from hrw4u.hrw4uParser import hrw4uParser
 from hrw4u.hrw4uLexer import hrw4uLexer
 from hrw4u.symbols import SymbolResolver, SymbolResolutionError
 from hrw4u.errors import hrw4u_error, Hrw4uSyntaxError, ThrowingErrorListener
-from hrw4u.states import CondState, SectionType
-from hrw4u.common import RegexPatterns, SystemDefaults
+from hrw4u.states import CondState, SectionType, VALUE_MODIFIERS
+from hrw4u.common import RegexPatterns, SystemDefaults, apply_percent_mods, parse_mods, split_interpolation_mods
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.validation import Validator
 from hrw4u.procedures import resolve_use_path
@@ -195,6 +195,13 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         return args
 
+    def _check_value_mods(self, mods: list[str], ctx) -> None:
+        for mod in mods:
+            if mod not in VALUE_MODIFIERS:
+                raise SymbolResolutionError(mod, f"Not a value modifier, expected one of {', '.join(sorted(VALUE_MODIFIERS))}")
+            if warning := self._sandbox.check_modifier(mod):
+                self._add_sandbox_warning(ctx, warning)
+
     def _substitute_strings(self, s: str, ctx) -> str:
         inner = s[1:-1]
 
@@ -218,14 +225,19 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if m.group("func"):
                     func_name = m.group("func").strip()
                     arg_str = m.group("args").strip()
+                    mods = parse_mods(m.group("func_mods"))
+                    self._check_value_mods(mods, ctx)
                     args = self._parse_function_args(arg_str) if arg_str else []
-                    replacement = self.symbol_resolver.resolve_function(func_name, args, strip_quotes=False)
+                    replacement = apply_percent_mods(
+                        self.symbol_resolver.resolve_function(func_name, args, strip_quotes=False), mods)
                     self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{func_name}({arg_str})}} -> {replacement}")
                     return replacement
                 if m.group("var"):
-                    var_name = m.group("var").strip()
-                    replacement, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    var_name, mods = split_interpolation_mods(m.group("var"))
+                    self._check_value_mods(mods, ctx)
+                    resolved, _ = self.symbol_resolver.resolve_condition(var_name, self.current_section)
+                    replacement = apply_percent_mods(resolved, mods)
                     self._drain_resolver_warnings(ctx)
                     self.debug(f"substitute: {{{var_name}}} -> {replacement}")
                     return replacement

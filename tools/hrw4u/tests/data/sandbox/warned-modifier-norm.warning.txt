@@ -1,0 +1,2 @@
+:2:4: warning: 'NORM' is warned by sandbox policy (modifier)
+:3:4: warning: 'NORM' is warned by sandbox policy (modifier)

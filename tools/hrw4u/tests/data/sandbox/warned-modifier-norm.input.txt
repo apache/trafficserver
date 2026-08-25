@@ -1,0 +1,4 @@
+REMAP {
+    inbound.req.X-Path = "{inbound.url.path with NORM}";
+    inbound.req.X-Random = "{random(100) with NORM}";
+}

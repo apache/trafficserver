@@ -33,6 +33,7 @@ SUF_MOD       : 'SUF';
 PRE_MOD       : 'PRE';
 EXT_MOD       : 'EXT';
 MID_MOD       : 'MID';
+NORM_MOD      : 'NORM';
 
 REGEX         : '/' ( '\\/' | ~[/\r\n] )* '/' ;
 STRING        : '"' ( '\\' . | ~["\\\r\n] )* '"' ;
@@ -218,6 +219,7 @@ modItem
     | PRE_MOD
     | EXT_MOD
     | MID_MOD
+    | NORM_MOD
     ;
 
 // -----------------------------
