@@ -71,12 +71,18 @@ copy_savings()
 struct PolicyCase {
   RamCache *(*factory)();
   const char *name;
+  // Whether size() is derived from the same running counters the refresh
+  // adjusts, so it can be checked against the gauge. LRU recomputes size() by
+  // walking its entry list with a different per-entry formula than the counter
+  // that drives eviction, and CLFUS counts per-entry overhead in size() but
+  // not in the gauge; for both, size() cannot witness a bad refresh delta.
+  bool size_tracks_gauge;
 };
 
 const PolicyCase policy_cases[] = {
-  {new_RamCacheLRU,    "LRU"   },
-  {new_RamCacheCLFUS,  "CLFUS" },
-  {new_RamCacheS3FIFO, "S3FIFO"},
+  {new_RamCacheLRU,    "LRU",    false},
+  {new_RamCacheCLFUS,  "CLFUS",  false},
+  {new_RamCacheS3FIFO, "S3FIFO", true },
 };
 
 // Minimal CacheDisk wiring needed to construct a StripeSM. Mirrors the helper
@@ -318,6 +324,11 @@ TEST_CASE("RamCache byte accounting survives the copy=true resident refresh", "[
   const int64_t after_puts = ts::Metrics::Gauge::load(cache_rsb.ram_cache_bytes);
   CHECK(after_puts > 0);
   CHECK(rc->size() > 0);
+  if (pc.size_tracks_gauge) {
+    // Nothing has been evicted, so there are no ghosts and size() is exactly
+    // the resident accounting the gauge reports.
+    CHECK(rc->size() == after_puts);
+  }
 
   // Re-put each object with copy=true. Every policy charges block_size() for a
   // shared buffer and len for its own exact-size copy, so each refresh must
@@ -331,6 +342,11 @@ TEST_CASE("RamCache byte accounting survives the copy=true resident refresh", "[
   // The per-volume gauge is updated alongside the global one on every path.
   CHECK(ts::Metrics::Gauge::load(cache_vol.vol_rsb.ram_cache_bytes) == after_refresh);
   CHECK(rc->size() > 0);
+  if (pc.size_tracks_gauge) {
+    // The gauge alone cannot see a refresh that forgets to credit the counter
+    // eviction runs off, because the two are updated independently.
+    CHECK(rc->size() == after_refresh);
+  }
 
   // Overflow the cache so the refreshed entries are evicted: eviction has to
   // subtract what the refresh left behind, or the gauge drifts negative.
@@ -366,7 +382,7 @@ TEST_CASE("RamCacheS3FIFO honors copy on a ghost readmit", "[cache][ramcache][co
   // A ghost readmit is the one insert that lands in the main queue, so it is
   // the only way `copy` accounting reaches _m_bytes. Charging len instead of
   // block_size() there is otherwise untested.
-  const PolicyCase  s3fifo{new_RamCacheS3FIFO, "S3FIFO"};
+  const PolicyCase  s3fifo{new_RamCacheS3FIFO, "S3FIFO", true};
   constexpr int64_t cache_bytes = 128 * 1024;
   auto              rc          = make_cache(s3fifo, stripe, cache_bytes);
   auto              payload     = pattern_bytes(PAYLOAD_LEN, 'A');
@@ -431,4 +447,63 @@ TEST_CASE("RamCacheS3FIFO honors copy on a ghost readmit", "[cache][ramcache][co
   CHECK(rc->get(&key, &survived) >= 1);
   CHECK(ts::Metrics::Gauge::load(cache_rsb.ram_cache_bytes) >= 0);
   CHECK(rc->size() >= 0);
+}
+
+TEST_CASE("RamCache refresh credits the counter eviction runs off", "[cache][ramcache][copy]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  const PolicyCase pc = GENERATE(from_range(std::begin(policy_cases), std::end(policy_cases)));
+  INFO("policy: " << pc.name);
+
+  // The gauge is only reported; the refresh also has to credit the internal
+  // counter that admission and eviction are driven by, and for LRU that
+  // counter is not observable through size(). Check it by behavior instead:
+  // fill the cache to just under its budget with shared buffers, refresh every
+  // entry to a private copy, then insert more objects than there was room for
+  // beforehand. They only fit if the refresh really did give the bytes back,
+  // and if it did, nothing resident is evicted to make space.
+  constexpr int64_t cache_bytes = 128 * 1024;
+  auto              rc          = make_cache(pc, stripe, cache_bytes);
+  auto              payload     = pattern_bytes(PAYLOAD_LEN, 'A');
+
+  // n_objects shared copies just fit; the n_extra that follow fit only out of
+  // what the refreshes free (copy_savings() per object).
+  constexpr int                  n_objects = 15;
+  constexpr int                  n_extra   = 5;
+  std::vector<CryptoHash>        keys;
+  std::vector<Ptr<IOBufferData>> bufs;
+
+  for (int i = 0; i < n_objects; i++) {
+    keys.push_back(fresh_key());
+    bufs.push_back(make_buffer(payload));
+    REQUIRE(rc->put(&keys[i], bufs[i].get(), payload.size(), false) == 1);
+  }
+
+  REQUIRE(n_objects * copy_savings() > n_extra * payload_block_len());
+
+  for (int i = 0; i < n_objects; i++) {
+    REQUIRE(rc->put(&keys[i], bufs[i].get(), payload.size(), true) == 1);
+  }
+
+  for (int i = 0; i < n_extra; i++) {
+    CryptoHash k = fresh_key();
+    auto       b = make_buffer(payload);
+
+    REQUIRE(rc->put(&k, b.get(), payload.size(), false) == 1);
+  }
+
+  // Every refreshed entry is still resident. Had the refresh left the counter
+  // alone the cache would still believe it was full, and the first of the
+  // extra inserts would have evicted the oldest of these.
+  for (int i = 0; i < n_objects; i++) {
+    Ptr<IOBufferData> got;
+
+    INFO("object " << i);
+    CHECK(rc->get(&keys[i], &got) >= 1);
+  }
 }
