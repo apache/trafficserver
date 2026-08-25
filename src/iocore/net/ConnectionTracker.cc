@@ -506,7 +506,8 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
     // for this group, so in that case publish them regardless.
     if (metric_aggregate != AGGREGATE_ONLY || !has_aggregate) {
       // Mirror the per group metrics into the published store under their own name. A single
-      // source SUM is an identity: the published value always equals the hidden source.
+      // source SUM combines nothing, but the published value is still a sample: it is whatever
+      // the last derived tick read, and it reads 0 from creation until that first tick.
       Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _metric_name, Metrics::MetricType::GAUGE,
                                    _count_metric, Metrics::Derived::Op::SUM);
       Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _metric_name, Metrics::MetricType::COUNTER,

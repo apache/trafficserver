@@ -208,10 +208,18 @@ public:
 
     /** Name of the metric which aggregates a value across all groups of a hostname.
      *
-     * Only @c MATCH_BOTH groups have more than one group per hostname. For @c MATCH_HOST there is
-     * exactly one group per hostname, so an aggregate would be over a set of one, and
-     * @c Group::metric_name already returns the FQDN alone for that match type - identical to what
-     * this would return, so publishing both would collide on one name.
+     * Only @c MATCH_BOTH keys carry both a hostname and an address, so it is the only match type
+     * whose groups can be gathered by hostname at all. @c MATCH_IP and @c MATCH_PORT key on the
+     * address alone and one such group is shared by every hostname resolving to it, so there is no
+     * single hostname to aggregate it under. For @c MATCH_HOST there is exactly one group per
+     * hostname, so an aggregate would be over a set of one, and @c Group::metric_name already
+     * returns the FQDN alone for that match type - identical to what this would return, so
+     * publishing both would collide on one name.
+     *
+     * Note that reasoning holds within a single match type. @c TxnConfig::server_match is
+     * overridable, so one hostname can be @c MATCH_HOST on one mapping and @c MATCH_BOTH on
+     * another, and then that group's own published name and this aggregate name are the same
+     * string and are merged into one derived metric.
      *
      * @param key The group key.
      * @param fqdn The full FQDN.
@@ -488,7 +496,7 @@ inline std::string
 ConnectionTracker::Group::host_metric_name(const Key &key, std::string_view fqdn, std::string metric_prefix)
 {
   if (MATCH_BOTH != key._match_type) {
-    return {}; // Only MATCH_BOTH has more than one group per hostname to aggregate across.
+    return {}; // Only MATCH_BOTH keys carry the hostname needed to gather groups under it.
   }
   return metric_prefix.empty() ? std::string(fqdn) : metric_prefix + "." + std::string(fqdn);
 }

@@ -217,9 +217,10 @@ Per group names are ``proxy.process.http.per_server.<counter>.<group>``, where `
 the match type: an IP address, an ``address:port`` pair, a hostname, or, for ``both``,
 ``<hostname>.<address:port>``. Per hostname names are
 ``proxy.process.http.per_server.<counter>.<hostname>``. Aggregates exist only for match type
-``both``, because that is the only match type with more than one group per hostname; for match type
-``host`` the group name is already the bare hostname, so an aggregate would carry the same name as
-the single group it summarises.
+``both``, because that is the only match type whose group key carries the hostname. An ``ip`` or
+``port`` group is keyed on the address alone and is shared by every hostname that resolves to it, so
+there is no single hostname to aggregate it under. For match type ``host`` the group name is already
+the bare hostname, so an aggregate would carry the same name as the single group it summarises.
 
 For a group, ``<counter>`` is one of:
 
@@ -234,7 +235,7 @@ blocked_connection
    :ts:cv:`proxy.config.http.per_server.connection.max`. Never decreases.
 
 For a hostname aggregate, ``<counter>`` is one of those three, each summed across the groups of that
-hostname, plus:
+hostname which have aggregation enabled, plus:
 
 current_connection_max
    Gauge. The largest ``current_connection`` value among the groups of that hostname at the moment
@@ -243,6 +244,18 @@ current_connection_max
    per hostname, so the busiest group is what determines whether connections are about to be
    blocked. Like ``current_connection`` it rises and falls with traffic and is not a high-water
    mark. There is no per group ``current_connection_max``; it exists only as a hostname aggregate.
+
+Because :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate` is overridable, a group
+joins its hostname's aggregate only if the mapping that first opened that upstream had aggregation
+enabled. Mappings that disagree for one hostname therefore produce an aggregate over part of it: the
+sums cover a subset of the groups and ``current_connection_max`` takes its maximum over that same
+subset, with nothing in the metric to indicate it. Keeping the setting uniform across the mappings
+for a hostname avoids this.
+
+Because :ts:cv:`proxy.config.http.per_server.connection.match` is also overridable, one hostname can
+use match type ``host`` on one mapping and ``both`` on another. The ``host`` group and the hostname
+aggregate are then published under the same name and merged into a single metric that carries both,
+so a hostname should use one match type throughout.
 
 Every published per server metric is recomputed periodically, currently every 5 seconds, rather than
 on every connection event, so a reader sees a value up to that interval old. This is true of the

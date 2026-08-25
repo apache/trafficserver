@@ -2033,8 +2033,13 @@ Origin Server Connect Attempts
    this setting resolve to the same group -- that is, the same key under
    :ts:cv:`proxy.config.http.per_server.connection.match` -- the transaction that creates the group
    determines its metrics, and later transactions do not change them. A group is discarded once its
-   connection count reaches zero, so the choice is made again the next time that upstream is
-   reopened. This affects only which metrics exist; enforcement of
+   connection count reaches zero, so *raising* the level of publication is picked up the next time
+   that upstream is reopened: enabling metrics, or enabling the aggregates, takes effect as upstreams
+   reconnect. Lowering it does not. Metrics are never retired once published, so disabling this
+   setting, or switching
+   :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate` to ``2``, leaves the names that
+   are already published in place, frozen at their last sampled value, until |TS| is restarted. This
+   affects only which metrics exist; enforcement of
    :ts:cv:`proxy.config.http.per_server.connection.max` uses the group's own connection count and is
    unaffected.
 
@@ -2046,10 +2051,10 @@ Origin Server Connect Attempts
    :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. Has no effect when that setting
    is ``0``.
 
-   A per hostname aggregate sums a counter across every group belonging to that hostname, and exists
-   only for :ts:cv:`match type <proxy.config.http.per_server.connection.match>` ``both``, since that
-   is the only match type with more than one group per hostname. See
-   :ref:`per-server-connection-metrics`.
+   A per hostname aggregate sums a counter across every group belonging to that hostname that has
+   aggregation enabled, and exists only for
+   :ts:cv:`match type <proxy.config.http.per_server.connection.match>` ``both``, since that is the
+   only match type whose group key carries the hostname. See :ref:`per-server-connection-metrics`.
 
    ===== ======================================================================================
    Value Effect
@@ -2070,7 +2075,16 @@ Origin Server Connect Attempts
 
    Like :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`, this is applied when a
    connection group is created, with the same consequence for mappings that disagree and resolve to
-   the same group.
+   the same group. A group joins its hostname's aggregate only if the mapping that first opened that
+   upstream had aggregation enabled, so mappings that disagree for one hostname produce an aggregate
+   that covers only part of it.
+
+   The reload is one-directional for the same reason given under
+   :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. Raising the value takes effect
+   as upstreams reconnect, but moving to ``2`` does not hide per group metrics that are already
+   published, and moving from ``1`` to ``0`` does not stop the hostname aggregates from publishing.
+   Reducing the number of published metrics therefore requires a restart, which matters most for
+   ``2``, the value chosen specifically to bound that number.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_prefix STRING NULL
    :reloadable:
