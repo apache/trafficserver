@@ -402,8 +402,11 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
       TSfree(const_cast<char *>(toUrlStr));
     }
 
-    if (len > 0) {
+    if (len <= 0) {
+      Dbg(dbg_ctl, "skipping X-Remap header injection because snprintf returned %d", len);
+    } else {
       if (static_cast<size_t>(len) >= sizeof(buf)) {
+        Dbg(dbg_ctl, "truncating X-Remap header from %d to %zu bytes", len, sizeof(buf) - 1);
         len = sizeof(buf) - 1;
       }
       TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
