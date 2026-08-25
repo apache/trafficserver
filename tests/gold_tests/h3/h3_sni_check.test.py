@@ -115,7 +115,7 @@ class Test_sni_check:
                 "SNI not found", "ATS should see the SNI presented by client.")
 
         if self.gold_file:
-            tr.Processes.Default.Streams.all = self.gold_file
+            tr.Processes.Default.Streams.All = self.gold_file
 
 
 # TEST 1: Client request with SNI.
