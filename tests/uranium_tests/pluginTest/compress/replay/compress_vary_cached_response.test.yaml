@@ -1,0 +1,130 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Update Vary safely when compress handles a cached response without Accept-Encoding"
+  requires:
+    plugins: ["compress.so"]
+  server:
+    name: "compress-vary-cache-origin"
+  client:
+    name: "compress-vary-cache-client"
+  ats:
+    name: "compress-vary-cache-ts"
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "compress"
+      proxy.config.diags.output.diag: "L"
+    copy_to_config_dir:
+      - "etc/compress-cache-false.config"
+    remap_config:
+      - "map http://seed.example/ http://127.0.0.1:{SERVER_HTTP_PORT}/"
+      - "map http://compress.example/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=compress.so @pparam={CONFIG_DIR}/etc/compress-cache-false.config"
+    log_validation:
+      diags_log:
+        contains:
+          - expression: "handling compression of cached object"
+            description: "The compress plugin must process the cached response"
+        excludes:
+          - expression: "cannot add/update the Vary header"
+            description: "The cached response must not be mutated"
+          - expression: "failed to add Vary header for compressible content"
+            description: "Updating the origin Vary header must succeed"
+          - expression: "failed to add Vary header to client response"
+            description: "Updating the client Vary header must succeed"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          url: /object
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, seed.example]
+              - [uuid, compress-vary-seed]
+        proxy-request:
+          headers:
+            fields:
+              - [uuid, {value: compress-vary-seed, as: equal}]
+        server-response:
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Connection, close]
+              - [Cache-Control, "public, max-age=3600"]
+              - [Content-Type, text/javascript]
+              - [Content-Length, 22]
+          content: &cached-body
+            encoding: plain
+            data: |
+              var cached_value = 1;
+        proxy-response:
+          status: 200
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          url: /object
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, compress.example]
+              - [uuid, compress-vary-first-hit]
+        proxy-request:
+          expect: absent
+        server-response:
+          status: 502
+          reason: Bad Gateway
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Vary, {value: Accept-Encoding, as: equal}]
+              - [Content-Encoding, {as: absent}]
+          content:
+            <<: *cached-body
+            verify: {as: equal}
+
+      - client-request:
+          delay: 100ms
+          method: GET
+          url: /object
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, compress.example]
+              - [uuid, compress-vary-second-hit]
+        proxy-request:
+          expect: absent
+        server-response:
+          status: 502
+          reason: Bad Gateway
+        proxy-response:
+          status: 200
+          headers:
+            fields:
+              - [Vary, {value: Accept-Encoding, as: equal}]
+              - [Content-Encoding, {as: absent}]
+          content:
+            <<: *cached-body
+            verify: {as: equal}
