@@ -1,0 +1,51 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+# agreements. See the NOTICE file distributed with this work for additional information regarding
+# copyright ownership. Licensed under the Apache License, Version 2.0 (the "License"); you may not
+# use this file except in compliance with the License. You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+
+global:
+  ip_tracking:
+    slots: 50000
+  blocking:
+    duration_seconds: 300
+  log_interval_sec: 10
+  log_file: abuse_shield
+
+rules:
+  - name: excessive_requests
+    filter:
+      max_req_rate: 100
+      req_burst_multiplier: 2.0
+    action: [log, block, close]
+
+  - name: excessive_connections
+    filter:
+      max_conn_rate: 20
+      conn_burst_multiplier: 1.5
+    action: [log, block, close]
+
+  - name: excessive_h2_errors
+    filter:
+      max_h2_error_rate: 10
+      h2_burst_multiplier: 1.0
+    action: [log, block, close]
+
+  # Values across fingerprint methods use OR logic. Add "block" if the client
+  # IP should also be denied for the global blocking duration.
+  - name: blocked_tls_clients
+    filter:
+      fingerprints:
+        JA3:
+          - "0123456789abcdef0123456789abcdef"
+        JA4:
+          - "t13d1516h2_8daaf6152771_02713d6af862"
+    action: [log, close]
+
+enabled: true
