@@ -82,6 +82,15 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.cache.persist_bad_disks", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,
+  {RECT_CONFIG, "proxy.config.cache.shm.enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.shm.name_prefix", RECD_STRING, "ats", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.shm.use_hugepages", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.cache.shm.purge_stale_on_start", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]",
+   RECA_NULL}
+  ,
   {RECT_CONFIG, "proxy.config.cache.default_volumes", RECD_STRING, "", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.output.logfile.name", RECD_STRING, "traffic.out", RECU_RESTART_TS, RR_REQUIRED, RECC_NULL, nullptr,
@@ -568,7 +577,7 @@ static constexpr RecordElement RecordsConfig[] =
 
   {RECT_CONFIG, "proxy.config.http.request_line_max_size", RECD_INT, "65535", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.header_field_max_size", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.header_field_max_size", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-65535]", RECA_NULL}
   ,
   //        ############
   //        # security #
@@ -624,8 +633,8 @@ static constexpr RecordElement RecordsConfig[] =
   //       #
   //       #  0 - default. disable cache and goto origin
   //       #  1 - return error if cache miss
-  //       #  2 - serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
-  //       #  3 - return error if cache miss or serve stale until proxy.config.http.cache.max_stale_age, then goto origin, if revalidate
+  //       #  2 - serve stale within the configured stale age limits, then goto origin, if revalidate
+  //       #  3 - return error if cache miss or serve stale within the configured stale age limits, then goto origin, if revalidate
   //       #  4 - return error if cache miss or if revalidate
   //       #  5 - retry cache read (read-while-writer) on write lock failure, goto origin if retries exhausted
   //       #  6 - retry cache read on write lock failure, if retries exhausted serve stale if allowed, otherwise goto origin
@@ -650,6 +659,8 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.http.cache.required_headers", RECD_INT, "2", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.max_stale_age", RECD_INT, "604800", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http.cache.max_stale_age_percent", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-100]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.cache.range.lookup", RECD_INT, "1", RECU_NULL, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -977,7 +988,7 @@ static constexpr RecordElement RecordsConfig[] =
   //       # in entries, may not be changed while running
   {RECT_CONFIG, "proxy.config.hostdb.max_count", RECD_INT, "-1", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.hostdb.round_robin_max_count", RECD_INT, "16", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
+  {RECT_CONFIG, "proxy.config.hostdb.round_robin_max_count", RECD_INT, "16", RECU_RESTART_TS, RR_NULL, RECC_INT, "[1-1024]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.hostdb.max_size", RECD_INT, "10M", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -1230,7 +1241,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.ssl.origin_session_cache.size", RECD_INT, "10240", RECU_RESTART_TS, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.ssl.max_record_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-16383]", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.ssl.max_record_size", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[-1-16383]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.ssl.hsts_max_age", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
@@ -1334,7 +1345,9 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http2.min_concurrent_streams_out", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http2.max_active_streams_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http2.max_active_streams_in", RECD_INT, "200000", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.http2.max_active_streams_policy_in", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-1]$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.max_active_streams_out", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
@@ -1370,9 +1383,9 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http2.stream_error_sampling_threshold", RECD_INT, "10", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http2.max_settings_per_frame", RECD_INT, "7", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http2.max_settings_per_frame", RECD_INT, "16", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http2.max_settings_per_minute", RECD_INT, "14", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http2.max_settings_per_minute", RECD_INT, "32", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http2.max_settings_frames_per_minute", RECD_INT, "14", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
   ,
@@ -1396,7 +1409,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http2.write_time_threshold", RECD_INT, "100", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-9]+$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http2.default_buffer_water_mark", RECD_INT, "-1", RECU_DYNAMIC, RR_NULL, RECC_STR, "^-?[0-9]+$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http2.default_buffer_water_mark", RECD_INT, "32768", RECU_DYNAMIC, RR_NULL, RECC_INT, "[1024-4294967295]", RECA_NULL}
   ,
 
   //############
@@ -1428,6 +1441,8 @@ static constexpr RecordElement RecordsConfig[] =
   {RECT_CONFIG, "proxy.config.quic.num_alt_connection_ids", RECD_INT, "8", RECU_RESTART_TS, RR_NULL, RECC_INT, "[8-256]", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.server.stateless_retry_enabled", RECD_INT, "0", RECU_RESTART_TS, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
+  ,
+  {RECT_CONFIG, "proxy.config.quic.server.token_key.filename", RECD_STRING, nullptr, RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.quic.client.vn_exercise_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_INT, "[0-1]", RECA_NULL}
   ,

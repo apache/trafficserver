@@ -1,0 +1,206 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Client side of slice_stale_generation.test.py. Each transaction is one phase,
+# selected with the verifier-client --keys option, and its uuid also selects
+# which generation the origin serves for the block requests that slice derives
+# from it.
+#
+# Generation 1 is 32 bytes of "a" with ETag "v1". Generation 2, which replaces
+# it under the same URL once the cache is filled, is 64 bytes of "b" with ETag
+# "v2".
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  #
+  # Fill the cache while the origin holds generation 1.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [uuid, fill]
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [Content-Length, {value: '32', as: equal}]
+        - [ETag, {value: '"v1"', as: equal}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        verify: {as: equal}
+
+  #
+  # The bug. Bytes 16-47 are entirely present in the current 64 byte object, but
+  # the cached reference block still reports the old 32 byte length, so the range
+  # is clipped to the stale object's end and served with the stale ETag as a
+  # fresh hit. Correct would be: 206, bytes 16-47/64, ETag "v2", 32 bytes of "b".
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-47]
+        - [x-debug, x-cache]
+        - [uuid, clipped]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 16-31/32, as: equal}]
+        - [Content-Length, {value: '16', as: equal}]
+        - [ETag, {value: '"v1"', as: equal}]
+        - [X-Cache, {value: hit-fresh, as: prefix}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaaaaaaaa'
+        verify: {as: equal}
+
+  #
+  # Worse: a range that starts past the stale length is refused outright, even
+  # though those bytes exist in the current object. Correct would be: 206,
+  # bytes 32-63/64.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /obj
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=32-63]
+        - [uuid, unsatisfiable]
+    proxy-response:
+      status: 416
+      headers:
+        fields:
+        - [Content-Range, {value: '*/32', as: equal}]
+        - [ETag, {as: absent}]
+
+  #
+  # Control: a path first fetched after the object was replaced is served
+  # correctly, so the two phases above are measuring the stale cached generation
+  # and not a broken plugin or harness.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /fresh
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-47]
+        - [x-debug, x-cache]
+        - [uuid, control]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 16-47/64, as: equal}]
+        - [Content-Length, {value: '32', as: equal}]
+        - [ETag, {value: '"v2"', as: equal}]
+      content:
+        encoding: plain
+        data: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+        verify: {as: equal}
+
+  #
+  # Cache an interior block of /mixed at generation 1, for
+  # SliceMixedGenerationTest. The reference block is cached with a one second
+  # lifetime and the interior block with a day, so only the reference block
+  # revalidates later.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-31]
+        - [uuid, fill-interior]
+    proxy-response:
+      status: 206
+      headers:
+        fields:
+        - [Content-Range, {value: bytes 16-31/32, as: equal}]
+        - [Content-Length, {value: '16', as: equal}]
+        - [ETag, {value: '"v1"', as: equal}]
+      content:
+        encoding: plain
+        data: 'aaaaaaaaaaaaaaaa'
+        verify: {as: equal}
+
+  #
+  # The mixed generation failure. The reference block revalidates to generation
+  # 2 while the cached interior block is still generation 1, so slice advertises
+  # the current object correctly and then cannot deliver it: the interior block's
+  # Content-Range disagrees, the self heal refetches the interior and then the
+  # reference and gets the same blocks back, and the transaction is aborted with
+  # the response header already on the wire. The client is left holding a well
+  # formed 206 that promises 16 bytes and delivers none.
+  #
+  # This is the production symptom behind the block walk's "curl exit 18":
+  # a correct looking Content-Range of .../7031250004 followed by a body that
+  # stops early.
+  #
+  # The client is left with nothing parsable: slice aborts the transaction, and
+  # the response header it had already formed from the reference block never
+  # reaches the wire. There is deliberately no proxy-response node here, because
+  # no response arrives to verify. The test asserts the failure on the
+  # verifier-client's own output and in diags.log instead.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-31]
+        - [x-debug, x-cache]
+        - [uuid, mixed]
+
+  # A second child with a completely cold cache, pointed at the same parent. It
+  # never saw the previous generation, yet it fails identically, because the two
+  # blocks it fetches come from the parent and the parent is holding one of each.
+  # This is the incident's shape: the mixed set existed in exactly one place, the
+  # parent, and every child node inherited it. It also shows slice cannot evict:
+  # the earlier abort left the mixed pair on the parent untouched.
+  #
+  - client-request:
+      method: GET
+      version: "1.1"
+      url: /mixed
+      headers:
+        fields:
+        - [Host, slice]
+        - [Range, bytes=16-31]
+        - [x-debug, x-cache]
+        - [uuid, cold-child]

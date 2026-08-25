@@ -53,5 +53,5 @@ Http3DataFramer::generate_frame()
 bool
 Http3DataFramer::is_done() const
 {
-  return this->_source_vio->ntodo() == 0;
+  return this->_transaction->is_response_header_sent() && this->_source_vio->ntodo() == 0;
 }

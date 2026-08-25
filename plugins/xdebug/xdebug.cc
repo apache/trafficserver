@@ -55,8 +55,8 @@ namespace
 atscppapi::TxnAuxMgrData mgrData;
 
 static struct {
-  const char *str;
-  int         len;
+  char *str;
+  int   len;
 } xDebugHeader = {nullptr, 0};
 
 enum {
@@ -393,7 +393,7 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
     const char *toUrlStr   = getRemapUrlStr(txn, TSRemapToUrlGet, toUrlStrLen);
 
     char buf[2048];
-    int  len = snprintf(buf, sizeof(buf), "from=%*s, to=%*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
+    int  len = snprintf(buf, sizeof(buf), "from=%.*s, to=%.*s", fromUrlStrLen, fromUrlStr, toUrlStrLen, toUrlStr);
 
     if (fromUrlStr != NotFound) {
       TSfree(const_cast<char *>(fromUrlStr));
@@ -402,7 +402,12 @@ InjectRemapHeader(TSHttpTxn txn, TSMBuffer buffer, TSMLoc hdr)
       TSfree(const_cast<char *>(toUrlStr));
     }
 
-    TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
+    if (len > 0) {
+      if (static_cast<size_t>(len) >= sizeof(buf)) {
+        len = sizeof(buf) - 1;
+      }
+      TSReleaseAssert(TSMimeHdrFieldValueStringInsert(buffer, hdr, dst, -1 /* idx */, buf, len) == TS_SUCCESS);
+    }
     TSHandleMLocRelease(buffer, hdr, dst);
   }
 }
@@ -942,6 +947,7 @@ TSPluginInit(int argc, const char *argv[])
     switch (opt) {
     case 'h':
       Dbg(dbg_ctl, "Setting header: %s", optarg);
+      TSfree(xDebugHeader.str); // The option can be repeated, so the earlier value is not leaked
       xDebugHeader.str = TSstrdup(optarg);
       break;
     case 'e':
@@ -969,7 +975,7 @@ TSPluginInit(int argc, const char *argv[])
   auto ret = TSUserArgIndexReserve(TS_USER_ARGS_GLB, "XDebugHeader", "XDebug header name", &idx);
   TSReleaseAssert(ret == TS_SUCCESS);
   TSReleaseAssert(idx >= 0);
-  TSUserArgSet(nullptr, idx, const_cast<char *>(xDebugHeader.str));
+  TSUserArgSet(nullptr, idx, xDebugHeader.str);
 
   AuxDataMgr::init("xdebug");
 

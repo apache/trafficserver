@@ -32,6 +32,7 @@
 #include "fetch_policy.h"
 #include "headers.h"
 #include "evaluate.h"
+#include "path.h"
 
 static const char *
 getEventName(TSEvent event)
@@ -348,6 +349,31 @@ getPristineUrlQuery(TSHttpTxn txnp)
   return pristineQuery;
 }
 
+/**
+ * @brief Whether a single query parameter is the configured "<key>=..." parameter.
+ */
+static bool
+isQueryKeyParam(const String &param, const String &key)
+{
+  return param.size() > key.size() && param.compare(0, key.size(), key) == 0 && param[key.size()] == '=';
+}
+
+/**
+ * @brief Whether the query string contains the configured "<key>=..." parameter.
+ */
+static bool
+hasQueryKeyParam(const String &query, const String &key)
+{
+  std::istringstream qs(query);
+  String             param;
+  while (getline(qs, param, '&')) {
+    if (isQueryKeyParam(param, key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static constexpr StringView CmcdHeader{"Cmcd-Request"};
 static constexpr StringView CmcdNorFieldPrefix{"nor="};
 static constexpr StringView CmcdNrrFieldPrefix{"nrr="};
@@ -507,7 +533,6 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
 
   // For these cases we need to access the client request
   switch (event) {
-  case TS_EVENT_HTTP_POST_REMAP:
   case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE:
   case TS_EVENT_HTTP_SEND_RESPONSE_HDR:
     if (TS_SUCCESS != TSHttpTxnClientReqGet(txnp, &reqBuffer, &reqHdrLoc)) {
@@ -521,15 +546,16 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
   }
 
   switch (event) {
-  case TS_EVENT_HTTP_POST_REMAP: {
-    /* Use the cache key since this has better lookup behavior when using plugins like the cachekey plugin,
-     * for example multiple URIs can match a single cache key */
+  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
+    /* Use the cache key (multiple URIs can map to one key). CACHE_LOOKUP_COMPLETE is
+     * the earliest hook where TSHttpTxnCacheLookupUrlGet returns a populated URL. */
     if (data->frontend() && data->secondPass()) {
       /* Create a separate cache key name space to be used only for front-end and second-pass fetch policy checks. */
       data->_cachekey.assign("/prefetch");
     }
     if (!appendCacheKey(txnp, reqBuffer, data->_cachekey)) {
       PrefetchError("failed to get the cache key");
+      TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, reqHdrLoc);
       TSHttpTxnReenable(txnp, TS_EVENT_HTTP_ERROR);
       return 0;
     }
@@ -542,17 +568,15 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           data->_fetchable = state->acquire(data->_cachekey);
           PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
         }
-      }
-    }
-  } break;
-
-  case TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE: {
-    if (data->frontend()) {
-      /* front-end instance */
-      if (data->secondPass()) {
+      } else {
         /* second-pass */
-        data->_fetchable = state->acquire(data->_cachekey);
-        data->_fetchable = data->_fetchable && state->uniqueAcquire(data->_cachekey);
+        if (state->acquire(data->_cachekey)) {
+          if (state->uniqueAcquire(data->_cachekey)) {
+            data->_fetchable = true;
+          } else {
+            state->release(data->_cachekey);
+          }
+        }
         PrefetchDebug("request is %s fetchable", data->_fetchable ? " " : " not ");
 
         if (isFetchable(txnp, data)) {
@@ -590,9 +614,9 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
       const String currentQuery  = getPristineUrlQuery(txnp);
       bool         hasValidQuery = false;
 
-      // If there is a --fetch-query defined in the config, and that string is found in the querystring, assume it is
-      // valid, and prefer the --fetch-query over the --fetch-path-pattern(s).
-      if (!config.getQueryKeyName().empty() && currentQuery.find(config.getQueryKeyName()) != String::npos) {
+      // If there is a --fetch-query defined in the config, and that parameter is present in the querystring, assume it
+      // is valid, and prefer the --fetch-query over the --fetch-path-pattern(s).
+      if (!config.getQueryKeyName().empty() && hasQueryKeyParam(currentQuery, config.getQueryKeyName())) {
         PrefetchDebug("Setting hasValidQuery to true");
         hasValidQuery = true;
       }
@@ -611,15 +635,18 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
             PrefetchDebug("Current path: '%s'", currentPath.c_str());
             PrefetchDebug("Parsed cmcd nor relpath: '%s'", relpath.c_str());
 
-            const String::size_type lsi      = currentPath.find_last_of("/");
-            const String            nextPath = currentPath.substr(0, lsi + 1) + relpath;
+            SafeRelativeFetchPath nextPath;
+            if (!makeSafeRelativeFetchPath(currentPath, relpath, nextPath)) {
+              PrefetchDebug("skipping unsafe cmcd nor path: '%s'", relpath.c_str());
+            } else {
+              PrefetchDebug("Next cmcd nor path: '%s'", nextPath.path.c_str());
 
-            PrefetchDebug("Next cmcd nor path: '%s'", nextPath.c_str());
-
-            constexpr bool askPermission = false;
-            constexpr bool removeQuery   = true;
-            BgFetch::schedule(state, config, askPermission, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(), nextPath.length(),
-                              data->_cachekey, removeQuery);
+              constexpr bool askPermission = false;
+              constexpr bool removeQuery   = true;
+              BgFetch::schedule(state, config, askPermission, reqBuffer, reqHdrLoc, txnp, nextPath.path.c_str(),
+                                nextPath.path.length(), data->_cachekey, removeQuery,
+                                nextPath.hasQuery ? nextPath.query.c_str() : nullptr, nextPath.query.length());
+            }
           }
         }
 
@@ -634,6 +661,19 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
               String expandedPath;
 
               if (config.getNextPath().replace(workingPath, expandedPath)) {
+                if (expandedPath.empty()) {
+                  /* A replacement that collapses to empty (e.g. every referenced group was optional and
+                   * absent) would otherwise be scheduled with a zero-length path, which BgFetch skips --
+                   * leaving the original request path in place and prefetching the pristine URL itself.
+                   * Stop rather than issue that self-prefetch. Report once per instance; whether the
+                   * replacement collapses depends on the request, so this recurs per transaction. */
+                  if (config.shouldReportEmptyPath()) {
+                    PrefetchError("prefetch pattern produced an empty path; check the fetch-path-pattern replacement");
+                  } else {
+                    PrefetchDebug("prefetch pattern produced an empty path");
+                  }
+                  break;
+                }
                 PrefetchDebug("replaced: %s", expandedPath.c_str());
                 expand(expandedPath, config.getFetchOverflow());
                 PrefetchDebug("expanded: %s cachekey: %s", expandedPath.c_str(), data->_cachekey.c_str());
@@ -656,25 +696,34 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
           /* Trigger all necessary background fetches based on the query string(s) */
 
           PrefetchDebug("currentQuery: %s", currentQuery.c_str());
-          const size_t       lastSlashIndex = currentPath.find_last_of("/");
-          const size_t       keyLen         = config.getQueryKeyName().size();
-          unsigned           done           = 1;
+          const String      &queryKeyName = config.getQueryKeyName();
+          const size_t       keyLen       = queryKeyName.size();
+          unsigned           done         = 1;
           std::istringstream cStringStream(currentQuery);
           String             param;
 
           while (getline(cStringStream, param, '&')) {
-            if (param.find(config.getQueryKeyName()) != 0) {
+            if (!isQueryKeyParam(param, config.getQueryKeyName())) {
+              continue;
+            }
+            String nextFile = param.substr(keyLen + 1); // +1 for the '='
+            if (nextFile.empty()) {
+              PrefetchDebug("skipping empty query prefetch path");
               continue;
             }
             if (config.getFetchCount() < done++) {
               break;
             }
-            String nextFile = param.substr(keyLen + 1); // +1 for the '='
-            String nextPath = currentPath.substr(0, lastSlashIndex + 1) + nextFile;
+            SafeRelativeFetchPath nextPath;
+            if (!makeSafeRelativeFetchPath(currentPath, nextFile, nextPath)) {
+              PrefetchDebug("skipping unsafe query prefetch path: '%s'", nextFile.c_str());
+              continue;
+            }
 
-            PrefetchDebug("nextPath %s, cacheKey %s", nextPath.c_str(), data->_cachekey.c_str());
-            BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, nextPath.c_str(),
-                              nextPath.length(), data->_cachekey);
+            PrefetchDebug("nextPath %s, cacheKey %s", nextPath.path.c_str(), data->_cachekey.c_str());
+            BgFetch::schedule(state, config, /* askPermission */ false, reqBuffer, reqHdrLoc, txnp, nextPath.path.c_str(),
+                              nextPath.path.length(), data->_cachekey, /* removeQuery */ false,
+                              nextPath.hasQuery ? nextPath.query.c_str() : nullptr, nextPath.query.length());
           }
         }
       }
@@ -734,8 +783,7 @@ contHandleFetch(const TSCont contp, TSEvent event, void *edata)
   }
 
   /* Release the request MLoc */
-  if (event == TS_EVENT_HTTP_POST_REMAP || event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE ||
-      event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
+  if (event == TS_EVENT_HTTP_CACHE_LOOKUP_COMPLETE || event == TS_EVENT_HTTP_SEND_RESPONSE_HDR) {
     TSHandleMLocRelease(reqBuffer, TS_NULL_MLOC, reqHdrLoc);
   }
 
@@ -851,8 +899,8 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
             PrefetchDebug("failed to get path to (pre)match");
           }
 
-          String queryKey = config.getQueryKeyName();
-          if (!queryKey.empty()) {
+          const String &queryKey = config.getQueryKeyName();
+          if (!handleFetch && !queryKey.empty() && hasQueryKeyParam(getPristineUrlQuery(txnp), queryKey)) {
             PrefetchDebug("handling for query-key: %s", queryKey.c_str());
             handleFetch = true;
           }
@@ -868,7 +916,6 @@ TSRemapDoRemap(void *instance, TSHttpTxn txnp, TSRemapRequestInfo *rri)
           TSCont cont = TSContCreate(contHandleFetch, TSMutexCreate());
           TSContDataSet(cont, static_cast<void *>(data));
 
-          TSHttpTxnHookAdd(txnp, TS_HTTP_POST_REMAP_HOOK, cont);
           TSHttpTxnHookAdd(txnp, TS_HTTP_CACHE_LOOKUP_COMPLETE_HOOK, cont);
           TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, cont);
           TSHttpTxnHookAdd(txnp, TS_HTTP_TXN_CLOSE_HOOK, cont);

@@ -111,6 +111,14 @@ Traffic Server recognizes three space-delimited fields: ``type``,
 
     where ``scheme`` is ``http``, ``https``, ``ws`` or ``wss``.
 
+    To select an origin host and port dynamically through DNS, enable
+    :ts:cv:`proxy.config.srv_enabled`. |TS| then queries the SRV
+    service derived from the replacement URL before resolving the replacement
+    host directly. For example, an ``https://origin.example.com/`` replacement
+    causes a query for ``_https._tcp.origin.example.com``. When a usable SRV
+    record is found, its target and port are used for the origin connection;
+    otherwise, |TS| falls back to the replacement host and port.
+
    .. note:: A remap rule for requests that upgrade from HTTP to WebSocket still require a remap rule with the ``ws`` or ``wss`` scheme.
 
 
@@ -315,6 +323,13 @@ limitations below:
    ``regex_map`` you should make sure the reverse path is clear by
    setting (:ts:cv:`proxy.config.url_remap.pristine_host_hdr`)
 
+.. seealso::
+   The ``host`` regex is matched against the request host (no scheme,
+   port, or path). Operator-written patterns can match more inputs
+   than intended when unanchored. For per-site subject definitions,
+   common pitfalls, and recommended pattern shapes, see
+   :ref:`admin-regex-best-practices`.
+
 Examples
 --------
 
@@ -368,6 +383,13 @@ which describes the content of the "Referer" header which must be
 verified. In case an actual request does not have "Referer" header or it
 does not match with referer regular expression, the HTTP request will be
 redirected to 'redirect-URL'.
+
+.. seealso::
+   Each referer regex is matched against the value of the ``Referer``
+   HTTP header (the header value only, not the field name).
+   Operator-written patterns can match more inputs than intended when
+   unanchored. For per-site subject definitions, common pitfalls, and
+   recommended pattern shapes, see :ref:`admin-regex-best-practices`.
 
 At least one regular expressions must be specified in order to activate
 'deep linking protection'.  There are limitations for the number of referer

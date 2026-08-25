@@ -49,7 +49,6 @@ AggregateWriteBuffer::flush(int fd, off_t write_pos) const
 {
   int r = pwrite(fd, this->_buffer, this->_buffer_pos, write_pos);
   if (r != this->_buffer_pos) {
-    ink_assert(!"flushing agg buffer failed");
     return false;
   }
   return true;

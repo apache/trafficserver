@@ -22,6 +22,7 @@
  */
 
 #include <string_view>
+#include <vector>
 #include <cstring>
 #include <cstdlib>
 #include <iostream>
@@ -55,6 +56,30 @@ TEST_CASE("Encoding pure escapify url", "[pure_esc_url]")
     Encoding::pure_escapify_url(nullptr, input[i], std::strlen(input[i]), &output_len, output, 128);
     CHECK(std::string_view(output) == expected[i]);
   }
+}
+
+TEST_CASE("Encoding escapify url without a terminator", "[esc_url_unterminated]")
+{
+  // The source is a counted string, not a C string, so nothing may be read past len_in.
+  // Sized exactly so that a read past the end is caught by a sanitizer.
+  constexpr std::string_view src{"abcdef"};
+
+  std::vector<char> unterminated(src.begin(), src.end());
+
+  char output[128];
+  int  output_len;
+
+  REQUIRE(Encoding::pure_escapify_url(nullptr, unterminated.data(), unterminated.size(), &output_len, output, sizeof(output)) !=
+          nullptr);
+  CHECK(output_len == static_cast<int>(src.size()));
+  CHECK(std::string_view(output, output_len) == src);
+  CHECK(output[output_len] == '\0');
+
+  REQUIRE(Encoding::escapify_url(nullptr, unterminated.data(), unterminated.size(), &output_len, output, sizeof(output)) !=
+          nullptr);
+  CHECK(output_len == static_cast<int>(src.size()));
+  CHECK(std::string_view(output, output_len) == src);
+  CHECK(output[output_len] == '\0');
 }
 
 TEST_CASE("Encoding escapify url", "[esc_url]")

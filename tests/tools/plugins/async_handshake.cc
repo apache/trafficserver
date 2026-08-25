@@ -29,6 +29,8 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <pthread.h>
 #include <unistd.h>
 
@@ -39,6 +41,7 @@ namespace
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
 char   async_hook_key;
+int    delay_ms = 100;
 
 void
 wait_cleanup(ASYNC_WAIT_CTX * /* ctx ATS_UNUSED */, const void * /* key ATS_UNUSED */, OSSL_ASYNC_FD read_fd, void *write_fd_ptr)
@@ -56,7 +59,7 @@ wake_async_job(void *arg)
   auto signal_fd = static_cast<OSSL_ASYNC_FD>(reinterpret_cast<intptr_t>(arg));
   char buf       = 'X';
 
-  usleep(100 * 1000);
+  usleep(delay_ms * 1000);
   if (write(signal_fd, &buf, sizeof(buf)) < 0) {
     fprintf(stderr, PCP "failed to send async wake signal to %d, errno=%d\n", signal_fd, errno);
   } else {
@@ -158,7 +161,7 @@ handle_ssl_cert(TSCont /* cont ATS_UNUSED */, TSEvent event, void *edata)
 } // namespace
 
 void
-TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
+TSPluginInit(int argc, const char **argv)
 {
   TSPluginRegistrationInfo info;
 
@@ -169,6 +172,19 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
   if (TS_SUCCESS != TSPluginRegister(&info)) {
     TSError(PCP "registration failed");
     return;
+  }
+
+  for (int i = 1; i < argc; ++i) {
+    if (strncmp(argv[i], "-delay-ms=", 10) == 0) {
+      const char *delay_arg = argv[i] + 10;
+      char       *end       = nullptr;
+      long        parsed    = strtol(delay_arg, &end, 10);
+      if (end == delay_arg || *end != '\0' || parsed < 0) {
+        TSError(PCP "invalid -delay-ms value '%s', keeping default %d", delay_arg, delay_ms);
+      } else {
+        delay_ms = static_cast<int>(parsed);
+      }
+    }
   }
 
   TSCont cb_cert = TSContCreate(handle_ssl_cert, TSMutexCreate());

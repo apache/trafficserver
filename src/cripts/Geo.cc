@@ -93,7 +93,7 @@ cripts::string
 get_geo_string_from_ip(const cripts::IP &ip, Qualifiers q)
 {
   auto addr = ip.Socket();
-  return get_geo_string(&addr, q);
+  return get_geo_string(addr, q);
 }
 
 // IP class Geo methods - can be used with any IP address

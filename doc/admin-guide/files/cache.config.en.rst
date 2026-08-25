@@ -82,13 +82,19 @@ which the caching rule will apply.
 .. _cache-config-format-dest-host-regex:
 
 ``host_regex``
-   A regular expression to be tested against the destination host name in the
-   request.
+   A regular expression matched against the request host name (no scheme,
+   port, or path).
 
 .. _cache-config-format-url-regex:
 
 ``url_regex``
-   A regular expression to be tested against the URL in the request.
+   A regular expression matched against the full request URL.
+
+.. seealso::
+   Operator-written regex rules can match more inputs than intended when
+   the pattern is unanchored. For per-site subject definitions, common
+   pitfalls, and recommended pattern shapes, see
+   :ref:`admin-regex-best-practices`.
 
 Secondary Specifiers
 --------------------

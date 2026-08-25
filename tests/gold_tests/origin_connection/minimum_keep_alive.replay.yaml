@@ -1,0 +1,115 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Retain the per-server minimum without a maximum or metrics'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_tls: false
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http_ss|conn_track'
+      proxy.config.http.keep_alive_no_activity_timeout_out: 1
+      proxy.config.http.per_server.connection.max: 0
+      proxy.config.http.per_server.connection.min: 1
+      proxy.config.http.per_server.connection.metric_enabled: 0
+      proxy.config.http.per_server.connection.match: 'port'
+      proxy.config.http.server_session_sharing.pool: 'global'
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+# Run three transactions concurrently and stagger their responses so that the
+# resulting pooled origin sessions reach their inactivity timeouts in order.
+# ATS should close the first two sessions and keep the final one.
+sessions:
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /first
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, first ]
+
+    server-response:
+      delay: 1s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /second
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, second ]
+
+    server-response:
+      delay: 2s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+- transactions:
+  - client-request:
+      method: GET
+      url: /third
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ uuid, third ]
+
+    server-response:
+      delay: 3s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200

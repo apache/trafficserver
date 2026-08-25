@@ -40,6 +40,29 @@ static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCR
 static_assert(RE_ERROR_NOMATCH == PCRE2_ERROR_NOMATCH, "Update RE_ERROR_NOMATCH for current PCRE2 version.");
 static_assert(RE_ERROR_NULL == PCRE2_ERROR_NULL, "Update RE_ERROR_NULL for current PCRE2 version.");
 
+// PCRE2 10.30 added PCRE2_ENDANCHORED. Older PCRE2 (e.g., CentOS 7 ships 10.23) lacks it.
+// On modern PCRE2 we pass RE_ENDANCHORED through natively (zero overhead); on old PCRE2 the
+// bit is not a valid pcre2_compile option and would be rejected with PCRE2_ERROR_BADOPTION,
+// so we transparently rewrite the pattern to "(?:pattern)\z" and strip the bit. See
+// Regex::compile() for the rewrite. This preserves alternation-with-backtracking semantics
+// (unlike a post-match length check, which stops at the first successful alternative).
+#ifdef PCRE2_ENDANCHORED
+static constexpr bool ATS_PCRE2_HAS_ENDANCHORED = true;
+static_assert(RE_ENDANCHORED == PCRE2_ENDANCHORED, "Update RE_ENDANCHORED for current PCRE2 version.");
+static_assert((RE_FULL_MATCH & PCRE2_ENDANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ENDANCHORED");
+#else
+static constexpr bool ATS_PCRE2_HAS_ENDANCHORED = false;
+#endif
+
+// RE_FULL_MATCH is an ATS-only flag; it must not collide with any PCRE2 compile or match flag.
+// We strip it before forwarding to pcre2_match, but a collision would cause spurious behavior
+// if someone OR'd it into a flag word that's also passed elsewhere.
+static_assert((RE_FULL_MATCH & PCRE2_ANCHORED) == 0, "RE_FULL_MATCH bit collides with PCRE2_ANCHORED");
+static_assert((RE_FULL_MATCH & PCRE2_NO_UTF_CHECK) == 0, "RE_FULL_MATCH bit collides with PCRE2_NO_UTF_CHECK");
+static_assert((RE_FULL_MATCH & PCRE2_CASELESS) == 0, "RE_FULL_MATCH bit collides with PCRE2_CASELESS");
+static_assert((RE_FULL_MATCH & PCRE2_MULTILINE) == 0, "RE_FULL_MATCH bit collides with PCRE2_MULTILINE");
+static_assert((RE_FULL_MATCH & PCRE2_NOTEMPTY) == 0, "RE_FULL_MATCH bit collides with PCRE2_NOTEMPTY");
+
 //----------------------------------------------------------------------------
 namespace
 {
@@ -199,12 +222,21 @@ RegexMatches::size() const
 std::string_view
 RegexMatches::operator[](size_t index) const
 {
-  // check if the index is valid
-  if (index >= pcre2_get_ovector_count(_MatchData::get(_match_data))) {
-    return std::string_view();
+  // The ovector is allocated with a fixed number of pairs, but pcre2_match() writes only as far as
+  // the highest participating group. Every pair past that keeps whatever _buffer happened to hold,
+  // so the allocated count is not a usable bound -- _size is what the match actually populated.
+  if (_size <= 0 || index >= static_cast<size_t>(_size)) {
+    return "";
   }
 
   PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(_MatchData::get(_match_data));
+
+  // Within _size a group can still have not participated, in which case PCRE2 sets both of its
+  // offsets to PCRE2_UNSET. An optional group preceding a participating one is the usual way.
+  if (PCRE2_UNSET == ovector[2 * index]) {
+    return "";
+  }
+
   return std::string_view(_subject.data() + ovector[2 * index], ovector[2 * index + 1] - ovector[2 * index]);
 }
 
@@ -373,12 +405,35 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
     return false;
   }
 
+  // On PCRE2 < 10.30 the ENDANCHORED bit is not a valid pcre2_compile option. Rewrite
+  // the pattern to "(?:pattern)\z" and strip the bit so pcre2 enforces end-of-subject
+  // natively (including proper alternation backtracking). Zero overhead on modern PCRE2
+  // where the bit is passed through unchanged.
+  std::string      rewritten_pattern;
+  std::string_view effective_pattern = pattern;
+  bool             pattern_wrapped   = false;
+  if constexpr (!ATS_PCRE2_HAS_ENDANCHORED) {
+    if ((flags & RE_ENDANCHORED) != 0) {
+      rewritten_pattern.reserve(pattern.size() + 6);
+      rewritten_pattern.append("(?:").append(pattern).append(")\\z");
+      effective_pattern  = rewritten_pattern;
+      flags             &= ~static_cast<uint32_t>(RE_ENDANCHORED);
+      pattern_wrapped    = true;
+    }
+  }
+
   PCRE2_SIZE error_offset;
   int        error_code;
-  auto       code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()), pattern.size(), flags, &error_code, &error_offset,
-                                  regex_context->get_compile_context());
+  auto code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(effective_pattern.data()), effective_pattern.size(), flags, &error_code,
+                            &error_offset, regex_context->get_compile_context());
   if (!code) {
-    erroroffset = error_offset;
+    // Compensate for the "(?:" prefix so callers see offsets into their pattern, not ours.
+    // If the offset is inside the prefix itself, clamp to 0.
+    if (pattern_wrapped && error_offset >= 3) {
+      erroroffset = static_cast<int>(error_offset - 3);
+    } else {
+      erroroffset = static_cast<int>(error_offset);
+    }
 
     // get pcre2 error message
     PCRE2_UCHAR buffer[256];
@@ -441,8 +496,11 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
     match_context = RegexMatchContext::_MatchContext::get(matchContext->_match_context);
   }
 
-  int const rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, flags,
-                             RegexMatches::_MatchData::get(matches._match_data), match_context);
+  bool const     full_match  = (flags & RE_FULL_MATCH) != 0;
+  uint32_t const pcre2_flags = flags & ~RE_FULL_MATCH;
+
+  int rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, pcre2_flags,
+                       RegexMatches::_MatchData::get(matches._match_data), match_context);
 
   matches._size = rc;
 
@@ -453,6 +511,12 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
     // match but the output vector was too small, adjust the size of the matches
     if (rc == 0) {
       matches._size = pcre2_get_ovector_count(RegexMatches::_MatchData::get(matches._match_data));
+    }
+
+    // Enforce full-subject consumption when requested.
+    if (full_match && matches[0].size() != subject.size()) {
+      matches._size = PCRE2_ERROR_NOMATCH;
+      rc            = PCRE2_ERROR_NOMATCH;
     }
   }
 
@@ -514,6 +578,11 @@ DFA::build(const std::string_view pattern, unsigned flags)
   Regex       rxp;
   std::string string{pattern};
 
+  if (flags & RE_FULL_MATCH) {
+    _full_match  = true;
+    flags       &= ~RE_FULL_MATCH;
+  }
+
   if (!(flags & RE_UNANCHORED)) {
     flags |= RE_ANCHORED;
   }
@@ -560,8 +629,10 @@ DFA::compile(const char *const *patterns, int npatterns, unsigned flags)
 int32_t
 DFA::match(std::string_view str) const
 {
+  uint32_t const exec_flags = _full_match ? static_cast<uint32_t>(RE_FULL_MATCH) : 0u;
+
   for (auto spot = _patterns.begin(), limit = _patterns.end(); spot != limit; ++spot) {
-    if (spot->_re.exec(str)) {
+    if (spot->_re.exec(str, exec_flags)) {
       return spot - _patterns.begin();
     }
   }

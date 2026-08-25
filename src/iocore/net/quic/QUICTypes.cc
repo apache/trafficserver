@@ -27,12 +27,81 @@
 #include <sstream>
 
 #include "iocore/net/quic/QUICTypes.h"
+#include "iocore/net/quic/QUICConfig.h"
 #include "iocore/net/quic/QUICIntUtil.h"
-#include "tscore/CryptoHash.h"
 #include <random>
+#include <openssl/crypto.h>
 #include <openssl/hmac.h>
 
 uint8_t QUICConnectionId::SCID_LEN = 0;
+
+namespace
+{
+bool
+token_hmac(const QUICTokenKeyConfigParams::Key &key, const uint8_t *data, size_t data_len,
+           uint8_t (&digest)[QUICAddressValidationToken::MAC_LENGTH])
+{
+  unsigned int digest_len = 0;
+  return HMAC(EVP_sha256(), key.data(), static_cast<int>(key.size()), data, data_len, digest, &digest_len) != nullptr &&
+         digest_len == sizeof(digest);
+}
+
+bool
+generate_token_hmac(const uint8_t *data, size_t data_len, uint8_t (&digest)[QUICAddressValidationToken::MAC_LENGTH])
+{
+  QUICTokenKeyConfig::scoped_config key_config;
+  return key_config && !key_config->keys().empty() && token_hmac(key_config->keys().front(), data, data_len, digest);
+}
+
+bool
+validate_token_hmac(const uint8_t *data, size_t data_len, const uint8_t *expected)
+{
+  QUICTokenKeyConfig::scoped_config key_config;
+  uint8_t                           digest[QUICAddressValidationToken::MAC_LENGTH];
+  bool                              valid = false;
+
+  if (!key_config) {
+    return false;
+  }
+
+  for (auto const &key : key_config->keys()) {
+    if (token_hmac(key, data, data_len, digest)) {
+      valid |= CRYPTO_memcmp(digest, expected, sizeof(digest)) == 0;
+    }
+  }
+  OPENSSL_cleanse(digest, sizeof(digest));
+  return valid;
+}
+
+size_t
+retry_token_data(const IpEndpoint &src, QUICConnectionId original_dcid, QUICConnectionId scid, uint8_t *data, size_t data_size)
+{
+  ats_ip_nptop(src, reinterpret_cast<char *>(data), data_size);
+  size_t data_len = strlen(reinterpret_cast<char *>(data));
+  size_t cid_len  = 0;
+
+  data[data_len++] = original_dcid.length();
+  QUICTypeUtil::write_QUICConnectionId(original_dcid, data + data_len, &cid_len);
+  data_len         += cid_len;
+  data[data_len++]  = scid.length();
+  QUICTypeUtil::write_QUICConnectionId(scid, data + data_len, &cid_len);
+  return data_len + cid_len;
+}
+
+size_t
+resumption_token_data(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time, uint8_t *data, size_t data_size)
+{
+  ats_ip_nptop(src, reinterpret_cast<char *>(data), data_size);
+  size_t data_len = strlen(reinterpret_cast<char *>(data));
+  size_t cid_len  = 0;
+  size_t ignored  = 0;
+
+  QUICTypeUtil::write_QUICConnectionId(cid, data + data_len, &cid_len);
+  data_len += cid_len;
+  QUICIntUtil::write_uint_as_nbytes(expire_time >> 30, 4, data + data_len, &ignored);
+  return data_len + 4;
+}
+} // namespace
 
 // TODO: move to somewhere in lib/ts/
 int
@@ -276,17 +345,18 @@ QUICTypeUtil::write_QUICMaxData(uint64_t max_data, uint8_t *buf, size_t *len)
 
 QUICStatelessResetToken::QUICStatelessResetToken(const QUICConnectionId &conn_id, uint32_t instance_id)
 {
-  uint64_t              data = conn_id ^ instance_id;
-  CryptoHash            _hash;
-  static constexpr char STATELESS_RESET_TOKEN_KEY[] = "stateless_token_reset_key";
-  CryptoContext         ctx;
-  ctx.update(STATELESS_RESET_TOKEN_KEY, strlen(STATELESS_RESET_TOKEN_KEY));
-  ctx.update(reinterpret_cast<void *>(&data), 8);
-  ctx.finalize(_hash);
+  uint8_t data[QUICConnectionId::MAX_LENGTH + sizeof(instance_id)];
+  uint8_t digest[QUICAddressValidationToken::MAC_LENGTH];
+  size_t  data_len = conn_id.length();
+  size_t  ignored  = 0;
 
-  size_t dummy;
-  QUICIntUtil::write_uint_as_nbytes(_hash.u64[0], 8, _token, &dummy);
-  QUICIntUtil::write_uint_as_nbytes(_hash.u64[1], 8, _token + 8, &dummy);
+  memcpy(data, static_cast<const uint8_t *>(conn_id), data_len);
+  QUICIntUtil::write_uint_as_nbytes(instance_id, sizeof(instance_id), data + data_len, &ignored);
+  data_len += sizeof(instance_id);
+
+  ink_release_assert(generate_token_hmac(data, data_len, digest));
+  memcpy(_token, digest, sizeof(_token));
+  OPENSSL_cleanse(digest, sizeof(digest));
 }
 
 uint64_t
@@ -312,29 +382,19 @@ QUICStatelessResetToken::hex() const
 
 QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId cid, ink_hrtime expire_time)
 {
-  // TODO: read cookie secret from file like SSLTicketKeyConfig
-  static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
-  size_t                dummy;
-
-  uint8_t data[1 + INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH + 4] = {0};
-  size_t  data_len                                                          = 0;
-  ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
-  data_len = strlen(reinterpret_cast<char *>(data));
-
-  size_t cid_len;
-  QUICTypeUtil::write_QUICConnectionId(cid, data + data_len, &cid_len);
-  data_len += cid_len;
-
-  QUICIntUtil::write_uint_as_nbytes(expire_time >> 30, 4, data + data_len, &dummy);
-  data_len += 4;
+  size_t  ignored                                                       = 0;
+  size_t  cid_len                                                       = 0;
+  uint8_t data[INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH + 4] = {0};
+  size_t  data_len = resumption_token_data(src, cid, expire_time, data, sizeof(data));
 
   this->_token[0] = static_cast<uint8_t>(Type::RESUMPTION);
-  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), data, data_len, this->_token + 1,
-       &this->_token_len);
-  ink_assert(this->_token_len == 20);
-  this->_token_len += 1;
+  uint8_t digest[MAC_LENGTH];
+  ink_release_assert(generate_token_hmac(data, data_len, digest));
+  memcpy(this->_token + 1, digest, sizeof(digest));
+  OPENSSL_cleanse(digest, sizeof(digest));
+  this->_token_len = 1 + MAC_LENGTH;
 
-  QUICIntUtil::write_uint_as_nbytes(expire_time >> 30, 4, this->_token + this->_token_len, &dummy);
+  QUICIntUtil::write_uint_as_nbytes(expire_time >> 30, 4, this->_token + this->_token_len, &ignored);
   this->_token_len += 4;
 
   QUICTypeUtil::write_QUICConnectionId(cid, this->_token + this->_token_len, &cid_len);
@@ -344,48 +404,49 @@ QUICResumptionToken::QUICResumptionToken(const IpEndpoint &src, QUICConnectionId
 bool
 QUICResumptionToken::is_valid(const IpEndpoint &src) const
 {
-  QUICResumptionToken x(src, this->cid(), this->expire_time() << 30);
-  return *this == x && this->expire_time() >= (ink_get_hrtime() >> 30);
+  if (this->_token_len < 1 + MAC_LENGTH + 4 || this->_token[0] != static_cast<uint8_t>(Type::RESUMPTION) ||
+      this->_token_len > 1 + MAC_LENGTH + 4 + QUICConnectionId::MAX_LENGTH) {
+    return false;
+  }
+
+  auto    token_cid                                                     = this->cid();
+  auto    token_expire_time                                             = this->expire_time();
+  uint8_t data[INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH + 4] = {0};
+  size_t  data_len = resumption_token_data(src, token_cid, token_expire_time << 30, data, sizeof(data));
+  return token_expire_time >= (ink_get_hrtime() >> 30) && validate_token_hmac(data, data_len, this->_token + 1);
 }
 
 const QUICConnectionId
 QUICResumptionToken::cid() const
 {
-  // Type uses 1 byte and output of EVP_sha1() should be 160 bits
-  return QUICTypeUtil::read_QUICConnectionId(this->_token + (1 + 20 + 4), this->_token_len - (1 + 20 + 4));
+  constexpr size_t prefix_len = 1 + MAC_LENGTH + 4;
+  if (this->_token_len < prefix_len || this->_token_len > prefix_len + QUICConnectionId::MAX_LENGTH) {
+    return QUICConnectionId::ZERO();
+  }
+  return QUICTypeUtil::read_QUICConnectionId(this->_token + prefix_len, this->_token_len - prefix_len);
 }
 
 ink_hrtime
 QUICResumptionToken::expire_time() const
 {
-  return QUICIntUtil::read_nbytes_as_uint(this->_token + (1 + 20), 4);
+  if (this->_token_len < 1 + MAC_LENGTH + 4) {
+    return 0;
+  }
+  return QUICIntUtil::read_nbytes_as_uint(this->_token + (1 + MAC_LENGTH), 4);
 }
 
 QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_dcid, QUICConnectionId scid)
 {
-  // TODO: read cookie secret from file like SSLTicketKeyConfig
-  static constexpr char stateless_retry_token_secret[] = "stateless_cookie_secret";
-
-  uint8_t data[1 + INET6_ADDRPORTSTRLEN + QUICConnectionId::MAX_LENGTH] = {0};
-  size_t  data_len                                                      = 0;
-  ats_ip_nptop(src, reinterpret_cast<char *>(data), sizeof(data));
-  data_len = strlen(reinterpret_cast<char *>(data));
-
-  size_t cid_len;
-  *(data + data_len)  = original_dcid.length();
-  data_len           += 1;
-  QUICTypeUtil::write_QUICConnectionId(original_dcid, data + data_len, &cid_len);
-  data_len           += cid_len;
-  *(data + data_len)  = scid.length();
-  data_len           += 1;
-  QUICTypeUtil::write_QUICConnectionId(scid, data + data_len, &cid_len);
-  data_len += cid_len;
+  uint8_t data[INET6_ADDRPORTSTRLEN + 2 + 2 * QUICConnectionId::MAX_LENGTH] = {0};
+  size_t  data_len = retry_token_data(src, original_dcid, scid, data, sizeof(data));
+  size_t  cid_len  = 0;
 
   this->_token[0] = static_cast<uint8_t>(Type::RETRY);
-  HMAC(EVP_sha1(), stateless_retry_token_secret, sizeof(stateless_retry_token_secret), data, data_len, this->_token + 1,
-       &this->_token_len);
-  ink_assert(this->_token_len == 20);
-  this->_token_len += 1;
+  uint8_t digest[MAC_LENGTH];
+  ink_release_assert(generate_token_hmac(data, data_len, digest));
+  memcpy(this->_token + 1, digest, sizeof(digest));
+  OPENSSL_cleanse(digest, sizeof(digest));
+  this->_token_len = 1 + MAC_LENGTH;
 
   *(this->_token + this->_token_len)  = original_dcid.length();
   this->_token_len                   += 1;
@@ -400,24 +461,57 @@ QUICRetryToken::QUICRetryToken(const IpEndpoint &src, QUICConnectionId original_
 bool
 QUICRetryToken::is_valid(const IpEndpoint &src) const
 {
-  return *this == QUICRetryToken(src, this->original_dcid(), this->scid());
+  constexpr size_t fixed_len = 1 + MAC_LENGTH + 2;
+  if (this->_token_len < fixed_len || this->_token[0] != static_cast<uint8_t>(Type::RETRY)) {
+    return false;
+  }
+
+  size_t original_dcid_len = this->_token[1 + MAC_LENGTH];
+  size_t scid_len_offset   = 1 + MAC_LENGTH + 1 + original_dcid_len;
+  if (original_dcid_len > QUICConnectionId::MAX_LENGTH || scid_len_offset >= this->_token_len) {
+    return false;
+  }
+
+  size_t scid_len = this->_token[scid_len_offset];
+  if (scid_len > QUICConnectionId::MAX_LENGTH || scid_len_offset + 1 + scid_len != this->_token_len) {
+    return false;
+  }
+
+  uint8_t data[INET6_ADDRPORTSTRLEN + 2 + 2 * QUICConnectionId::MAX_LENGTH] = {0};
+  size_t  data_len = retry_token_data(src, this->original_dcid(), this->scid(), data, sizeof(data));
+  return validate_token_hmac(data, data_len, this->_token + 1);
 }
 
 const QUICConnectionId
 QUICRetryToken::original_dcid() const
 {
-  // Type uses 1 byte and output of EVP_sha1() should be 160 bits
-  auto len   = *(this->_token + (1 + 20));
-  auto start = this->_token + (1 + 20 + 1);
+  if (this->_token_len < 1 + MAC_LENGTH + 2) {
+    return QUICConnectionId::ZERO();
+  }
+  auto len = this->_token[1 + MAC_LENGTH];
+  if (len > QUICConnectionId::MAX_LENGTH || 1 + MAC_LENGTH + 1 + len >= this->_token_len) {
+    return QUICConnectionId::ZERO();
+  }
+  auto start = this->_token + (1 + MAC_LENGTH + 1);
   return QUICTypeUtil::read_QUICConnectionId(start, len);
 }
 
 const QUICConnectionId
 QUICRetryToken::scid() const
 {
-  auto len   = *(this->_token + (1 + 20));
-  auto start = this->_token + (1 + 20 + 1 + len + 1);
-  len        = *(this->_token + (1 + 20 + 1 + len));
+  if (this->_token_len < 1 + MAC_LENGTH + 2) {
+    return QUICConnectionId::ZERO();
+  }
+  auto original_dcid_len = this->_token[1 + MAC_LENGTH];
+  auto scid_len_offset   = 1 + MAC_LENGTH + 1 + original_dcid_len;
+  if (original_dcid_len > QUICConnectionId::MAX_LENGTH || scid_len_offset >= this->_token_len) {
+    return QUICConnectionId::ZERO();
+  }
+  auto len = this->_token[scid_len_offset];
+  if (len > QUICConnectionId::MAX_LENGTH || scid_len_offset + 1 + len != this->_token_len) {
+    return QUICConnectionId::ZERO();
+  }
+  auto start = this->_token + scid_len_offset + 1;
   return QUICTypeUtil::read_QUICConnectionId(start, len);
 }
 

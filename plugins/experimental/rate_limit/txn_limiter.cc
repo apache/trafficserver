@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <cstdlib>
+#include <utility>
 
 #include "txn_limiter.h"
 
@@ -74,7 +75,7 @@ txn_queue_cont(TSCont cont, TSEvent /* event ATS_UNUSED */, void * /* edata ATS_
   QueueTime now     = std::chrono::system_clock::now(); // Only do this once per "loop"
 
   // Try to enable some queued txns (if any) if there are slots available
-  while (limiter->size() > 0 && limiter->reserve() != ReserveStatus::FULL) { // Can't be UNLIMITED here
+  while (limiter->size() > 0 && limiter->reserve() == ReserveStatus::RESERVED) {
     auto [txnp, contp, start_time]  = limiter->pop();
     std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time);
 
@@ -178,7 +179,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
   }
 
-  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP, tag, prefix);
+  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP, std::move(tag), std::move(prefix));
 
   return true;
 }

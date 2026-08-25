@@ -32,11 +32,24 @@ Synopsis
 Description
 ===========
 
-Change packet firewall :arg:`mark` for the client side connection.
+Change the packet firewall :arg:`mark` for the client side connection. The
+entire firewall mark is replaced with :arg:`mark`, which is interpreted as a
+32-bit unsigned bit pattern.
+
+Returns :const:`TS_SUCCESS` when the client connection was modified, and
+:const:`TS_ERROR` when there is no client connection to modify.
 
 .. note::
 
-   Changes take effect immediately.
+   The firewall mark is only honored on platforms whose OS supports it,
+   specifically Linux via ``SO_MARK``. On platforms without ``SO_MARK`` support
+   the call still returns :const:`TS_SUCCESS` when a client connection is
+   present, but setting the mark has no effect at the OS layer (it is a safe
+   no-op).
+
+.. note::
+
+   The change takes effect immediately on the live client connection.
 
 See Also
 ========

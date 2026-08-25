@@ -126,8 +126,13 @@ Server::listen(bool non_blocking, const NetProcessor::AcceptOptions &opt)
   }
 
   if (ats_is_unix(&accept_addr)) {
-    if (chmod(accept_addr.sun.sun_path, 0777) < 0) {
+    if (chmod(accept_addr.sun.sun_path, opt.unix_perm) < 0) {
       goto Lerror;
+    }
+    if (opt.unix_uid != static_cast<uid_t>(-1) || opt.unix_gid != static_cast<gid_t>(-1)) {
+      if (chown(accept_addr.sun.sun_path, opt.unix_uid, opt.unix_gid) < 0) {
+        goto Lerror;
+      }
     }
   }
 

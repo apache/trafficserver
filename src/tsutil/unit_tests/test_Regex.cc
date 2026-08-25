@@ -460,6 +460,61 @@ TEST_CASE("RegexMatches edge cases", "[libts][Regex][RegexMatches]")
     CHECK(count >= 2); // At least whole match + first group
     CHECK(matches[1] == "foo");
   }
+
+  SECTION("RegexMatches with a non-participating group before a participating one")
+  {
+    // pcre2_match() returns one past the highest participating group, so an earlier optional group
+    // that did not participate is still within that count. Its offsets are unset.
+    Regex r;
+    REQUIRE(r.compile("(a)?(b)"));
+
+    RegexMatches matches;
+    int          count = r.exec("b", matches);
+
+    CHECK(count == 3);
+    CHECK(matches[0] == "b");
+    CHECK(matches[1] == "");
+    CHECK(matches[2] == "b");
+    CHECK(matches[1].data() != nullptr);
+  }
+
+  SECTION("RegexMatches past what the match populated")
+  {
+    // The ovector holds a fixed number of pairs regardless of the pattern, and pcre2_match() writes
+    // no further than the highest participating group. Reading past that must not build a view over
+    // the uninitialized remainder of the buffer.
+    Regex r;
+    REQUIRE(r.compile("(.*-)(\\d+)(\\?.*)?$"));
+
+    RegexMatches matches;
+    int          count = r.exec("/img-7", matches);
+
+    // Three groups defined, but the trailing optional one did not participate.
+    CHECK(r.get_capture_count() == 3);
+    CHECK(count == 3);
+    CHECK(matches[1] == "/img-");
+    CHECK(matches[2] == "7");
+
+    // A group the pattern defines that the match did not reach, ...
+    CHECK(matches[3] == "");
+    CHECK(matches[3].data() != nullptr);
+
+    // ... and an index past the pattern's groups entirely, still inside the allocated ovector.
+    CHECK(matches[9] == "");
+    CHECK(matches[9].data() != nullptr);
+  }
+
+  SECTION("RegexMatches after a failed match")
+  {
+    Regex r;
+    REQUIRE(r.compile("(a)(b)"));
+
+    RegexMatches matches;
+    CHECK(r.exec("zz", matches) < 0);
+
+    CHECK(matches[0] == "");
+    CHECK(matches[0].data() != nullptr);
+  }
 }
 
 TEST_CASE("Regex with special characters", "[libts][Regex][special]")
@@ -882,4 +937,116 @@ TEST_CASE("RegexMatchContext", "[libts][Regex][RegexMatchContext]")
   Regex r;
   REQUIRE(r.compile(item.regex) == item.valid);
   REQUIRE(r.exec(item.str, matches, 0, &match_context) == item.rcode);
+}
+
+TEST_CASE("Regex RE_FULL_MATCH rejects trailing content", "[libts][Regex][full_match]")
+{
+  Regex re;
+  REQUIRE(re.compile(R"(example\.com)", REFlags::RE_ANCHORED));
+
+  RegexMatches matches;
+
+  SECTION("exact input matches with RE_FULL_MATCH")
+  {
+    REQUIRE(re.exec("example.com", matches, REFlags::RE_FULL_MATCH) > 0);
+  }
+
+  SECTION("trailing content rejected with RE_FULL_MATCH")
+  {
+    int rc = re.exec("example.com.evil", matches, REFlags::RE_FULL_MATCH);
+    REQUIRE(rc == RE_ERROR_NOMATCH);
+  }
+
+  SECTION("trailing content still matches without RE_FULL_MATCH")
+  {
+    REQUIRE(re.exec("example.com.evil", matches) > 0);
+  }
+
+  SECTION("bool exec overload honors RE_FULL_MATCH")
+  {
+    REQUIRE(re.exec("example.com", REFlags::RE_FULL_MATCH));
+    REQUIRE_FALSE(re.exec("example.com.evil", REFlags::RE_FULL_MATCH));
+  }
+}
+
+TEST_CASE("Regex RE_FULL_MATCH preserves capture groups and combines with other flags", "[libts][Regex][full_match]")
+{
+  RegexMatches matches;
+
+  SECTION("captures available on full match")
+  {
+    Regex re;
+    REQUIRE(re.compile(R"(^([a-z]+)\.([a-z]+)$)"));
+    REQUIRE(re.exec("foo.bar", matches, REFlags::RE_FULL_MATCH) == 3);
+    REQUIRE(matches[1] == "foo");
+    REQUIRE(matches[2] == "bar");
+  }
+
+  SECTION("RE_FULL_MATCH composes with RE_CASE_INSENSITIVE")
+  {
+    Regex re;
+    REQUIRE(re.compile(R"(example\.com)", REFlags::RE_CASE_INSENSITIVE | REFlags::RE_ANCHORED));
+    REQUIRE(re.exec("EXAMPLE.COM", matches, REFlags::RE_FULL_MATCH) > 0);
+    REQUIRE(re.exec("EXAMPLE.COM.evil", matches, REFlags::RE_FULL_MATCH) == RE_ERROR_NOMATCH);
+  }
+
+  SECTION("matches._size reflects RE_ERROR_NOMATCH on length-rejected match")
+  {
+    Regex re;
+    REQUIRE(re.compile(R"(foo)"));
+    REQUIRE(re.exec("foobar", matches, REFlags::RE_FULL_MATCH) == RE_ERROR_NOMATCH);
+    REQUIRE(matches.size() == RE_ERROR_NOMATCH);
+  }
+}
+
+TEST_CASE("DFA RE_FULL_MATCH applied at compile time", "[libts][DFA][full_match]")
+{
+  SECTION("trailing content rejected when DFA compiled with RE_FULL_MATCH")
+  {
+    DFA              dfa;
+    std::string_view pattern = R"(example\.com)";
+    REQUIRE(dfa.compile(pattern, REFlags::RE_FULL_MATCH) == 1);
+
+    REQUIRE(dfa.match("example.com") == 0);
+    REQUIRE(dfa.match("example.com.evil") == -1);
+  }
+
+  SECTION("multi-pattern DFA: RE_FULL_MATCH applies to all patterns")
+  {
+    std::vector<std::string_view> patterns = {R"(foo)", R"(bar)"};
+    DFA                           dfa;
+    REQUIRE(dfa.compile(patterns.data(), patterns.size(), REFlags::RE_FULL_MATCH) == 2);
+
+    REQUIRE(dfa.match("foo") == 0);
+    REQUIRE(dfa.match("bar") == 1);
+    REQUIRE(dfa.match("foobar") == -1);
+    REQUIRE(dfa.match("barbaz") == -1);
+  }
+
+  SECTION("DFA without RE_FULL_MATCH still permits trailing content (existing behavior)")
+  {
+    DFA dfa;
+    REQUIRE(dfa.compile(R"(foo)") == 1);
+    REQUIRE(dfa.match("foobar") == 0);
+  }
+}
+
+// Regression: RE_ANCHORED | RE_ENDANCHORED on an alternation where a shorter
+// alternative is a prefix of a longer one must backtrack to the longer alt
+// when only the longer alt spans the full subject. On modern PCRE2 this is
+// handled by the native PCRE2_ENDANCHORED flag; on PCRE2 < 10.30 the pattern
+// is rewritten to "(?:pattern)\z" so pcre2 does the same backtracking. A
+// naive post-match length check on the first successful pcre2_match would
+// stop at the shorter alt and incorrectly report no match.
+TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
+{
+  Regex r;
+  REQUIRE(r.compile(R"(cdn\.example\.com|cdn\.example\.com\.edge)", RE_ANCHORED | RE_ENDANCHORED) == true);
+
+  RegexMatches matches;
+  CHECK(r.exec("cdn.example.com", matches) > 0);      // shorter alt spans fully
+  CHECK(r.exec("cdn.example.com.edge", matches) > 0); // longer alt spans fully -- requires backtracking
+  CHECK(r.exec("cdn.example.com.evil", matches) == RE_ERROR_NOMATCH);
+  CHECK(r.exec("cdn.example.com.evil.com", matches) == RE_ERROR_NOMATCH);
+  CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
 }

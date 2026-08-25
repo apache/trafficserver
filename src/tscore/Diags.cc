@@ -238,8 +238,16 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // now, finally, output the message //
   //////////////////////////////////////
 
-  lock();
-  if (config.outputs[diags_level].to_diagslog) {
+  auto const &output = config.outputs[diags_level];
+
+  // FILE output must be serialized, but syslog provides its own thread safety.
+  bool const serialize_file_output = output.to_diagslog || output.to_stdout || output.to_stderr || regression_testing_on;
+
+  if (serialize_file_output) {
+    lock();
+  }
+
+  if (output.to_diagslog) {
     if (diags_log && diags_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
@@ -248,7 +256,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-  if (config.outputs[diags_level].to_stdout) {
+  if (output.to_stdout) {
     if (stdout_log && stdout_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
@@ -257,7 +265,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-  if (config.outputs[diags_level].to_stderr || regression_testing_on) {
+  if (output.to_stderr || regression_testing_on) {
     if (stderr_log && stderr_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
@@ -266,11 +274,11 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-#if !defined(freebsd)
-  unlock();
-#endif
+  if (serialize_file_output) {
+    unlock();
+  }
 
-  if (config.outputs[diags_level].to_syslog) {
+  if (output.to_syslog) {
     int  priority;
     char syslog_buffer[2048];
 
@@ -308,10 +316,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     vsnprintf(syslog_buffer, sizeof(syslog_buffer), format_writer.data() + timestamp_offset, ap);
     syslog(priority, "%s", syslog_buffer);
   }
-
-#if defined(freebsd)
-  unlock();
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -26,6 +26,7 @@
 #include <filesystem>
 #include <optional>
 #include <string_view>
+#include <utility>
 #include <vector>
 #include "tscore/ink_platform.h"
 #include "tscore/ink_file.h"
@@ -428,7 +429,7 @@ plugin_init(bool validateOnly)
 
     retVal = single_plugin_init(argc, argv, validateOnly);
 
-    s_plugin_load_summary.entries.push_back({plugin_name, -1, true, retVal, load_index});
+    s_plugin_load_summary.entries.push_back({std::move(plugin_name), -1, true, retVal, load_index});
 
     for (i = 0; i < argc; i++) {
       ats_free(vars[i]);

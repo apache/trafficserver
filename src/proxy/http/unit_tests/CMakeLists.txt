@@ -19,9 +19,11 @@ add_executable(
   test_http
   main.cc
   "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc"
+  test_ChunkedHandler.cc
   test_error_page_selection.cc
   test_ForwardedConfig.cc
   test_HttpTransact.cc
+  test_HttpTransactHeaders.cc
   test_HttpUserAgent.cc
   test_PreWarm.cc
 )

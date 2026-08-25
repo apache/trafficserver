@@ -185,11 +185,14 @@
       "inherits": ["ci"],
       "cacheVariables": {
         "ENABLE_PROBES": "ON",
-        "OPENSSL_ROOT_DIR": "/opt/openssl-quic",
+        "OPENSSL_ROOT_DIR": "/usr",
         "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
+        "CURL_ROOT": "/usr",
         "wamr_ROOT": "/opt",
-        "ENABLE_CRIPTS": "ON"
+        "ENABLE_OTEL_TRACER": "ON",
+        "ENABLE_WASM_WAMR": "ON",
+        "ENABLE_CRIPTS": "ON",
+        "ENABLE_OPENSSL_QUIC": "ON"
       }
     },
     {
@@ -198,27 +201,32 @@
       "description": "CI Pipeline config for Fedora Linux compiled with c++20",
       "inherits": ["ci-fedora"],
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "20"
+        "CMAKE_CXX_STANDARD": "20",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
       }
     },
     {
       "name": "ci-fedora-quiche",
       "displayName": "CI Fedora Quiche",
       "description": "CI Pipeline config for Fedora Linux (quiche build)",
-      "inherits": ["ci"],
+      "inherits": ["ci-fedora"],
       "cacheVariables": {
         "OPENSSL_ROOT_DIR": "/opt/h3-tools-boringssl/boringssl",
         "quiche_ROOT": "/opt/h3-tools-boringssl/quiche",
         "opentelemetry_ROOT": "/opt",
-        "CURL_ROOT": "/opt",
+        "CURL_ROOT": "/opt/h3-tools-boringssl",
         "wamr_ROOT": "/opt",
+        "ENABLE_OTEL_TRACER": "ON",
+        "ENABLE_WASM_WAMR": "ON",
         "CMAKE_INSTALL_PREFIX": "/tmp/ats-quiche",
+        "ENABLE_OPENSSL_QUIC": "OFF",
         "ENABLE_QUICHE": "ON"
       }
     },
     {
       "name": "ci-fedora-autest",
-      "displayName": "CI Fedora Quiche Autest",
+      "displayName": "CI Fedora Autest",
       "description": "CI Pipeline config for Fedora Linux (autest build)",
       "inherits": ["ci-fedora", "autest"]
     },

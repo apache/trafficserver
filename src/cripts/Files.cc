@@ -35,7 +35,16 @@ File::Path &
 File::Path::Rebase()
 {
   if (std::filesystem::status(*this).type() != std::filesystem::file_type::regular) {
-    *this = RecConfigReadConfigDir() + "/" + this->string();
+    auto config_dir = std::filesystem::canonical(RecConfigReadConfigDir());
+    auto rebased    = std::filesystem::weakly_canonical(config_dir / *this);
+
+    if (auto mm = std::mismatch(config_dir.begin(), config_dir.end(), rebased.begin(), rebased.end());
+        mm.first == config_dir.end()) {
+      static_cast<super_type &>(*this) = rebased;
+    } else {
+      TSError("[Cripts] File::Path::Rebase: '%s' escapes config directory, clearing path", this->c_str());
+      static_cast<super_type &>(*this).clear();
+    }
   }
 
   return *this;

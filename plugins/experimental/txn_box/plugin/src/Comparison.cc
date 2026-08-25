@@ -21,6 +21,7 @@
 */
 
 #include <string>
+#include <utility>
 #include <algorithm>
 
 #include <swoc/bwf_base.h>
@@ -1391,7 +1392,7 @@ ComboComparison::load(Config &cfg, YAML::Node const &cmp_node, TextView const &k
   } else if (value_node.IsSequence()) {
     cmps.reserve(cmp_node.size());
     for (auto child : value_node) {
-      auto errata = self_type::load_case(cfg, cmps, child);
+      auto errata = self_type::load_case(cfg, cmps, std::move(child));
       if (!errata.is_ok()) {
         errata.note("While parsing {} comparison at {}.", key, cmp_node.Mark());
         return errata;

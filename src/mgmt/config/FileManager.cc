@@ -252,6 +252,11 @@ FileManager::rereadConfig()
     ret.note(r);
   }
 
+  if (auto const &r = fileChanged("proxy.config.quic.server.token_key.filename", "proxy.config.quic.server.token_key.filename");
+      !r) {
+    ret.note(r);
+  }
+
   return ret;
 }
 

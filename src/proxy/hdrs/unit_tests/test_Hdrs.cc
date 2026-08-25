@@ -56,32 +56,37 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
   };
 
   static const std::vector<Test> http_parse_tests = {
-    {"GET /index.html HTTP/1.0\r\n",                                      ParseResult::DONE,  26},
-    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****",                       ParseResult::DONE,  28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****", ParseResult::DONE,  48},
-    {"GET",                                                               ParseResult::ERROR, 3 },
-    {"GET /index.html",                                                   ParseResult::ERROR, 15},
-    {"GET /index.html\r\n",                                               ParseResult::ERROR, 17},
-    {"GET /index.html HTTP/1.0",                                          ParseResult::ERROR, 24},
-    {"GET /index.html HTTP/1.0\r",                                        ParseResult::ERROR, 25},
-    {"GET /index.html HTTP/1.0\n",                                        ParseResult::DONE,  25},
-    {"GET /index.html HTTP/1.0\n\n",                                      ParseResult::DONE,  26},
-    {"GET /index.html HTTP/1.0\r\n\r\n",                                  ParseResult::DONE,  28},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar",                    ParseResult::ERROR, 44},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n",                  ParseResult::DONE,  45},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                ParseResult::DONE,  46},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n",            ParseResult::DONE,  48},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n",                    ParseResult::DONE,  44},
-    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n",          ParseResult::DONE,  53},
-    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                ParseResult::DONE,  46},
-    {"GET /index.html HTTP/1.0\r\n",                                      ParseResult::DONE,  26},
-    {"GET /index.html hTTP/1.0\r\n",                                      ParseResult::ERROR, 26},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n",            ParseResult::DONE,  48},
-    {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n",             ParseResult::ERROR, 47},
-    {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n",              ParseResult::ERROR, 46},
-    {"CONNECT foo.example HTTP/1.1\r\n",                                  ParseResult::DONE,  30},
-    {"GET foo.example HTTP/1.1\r\n",                                      ParseResult::ERROR, 26},
-    {"",                                                                  ParseResult::ERROR, 0 },
+    {"GET /index.html HTTP/1.0\r\n",                                              ParseResult::DONE,  26},
+    {"GET /index.html HTTP/1.0\r\n\r\n***BODY****",                               ParseResult::DONE,  28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n***BODY****",         ParseResult::DONE,  48},
+    {"GET",                                                                       ParseResult::ERROR, 3 },
+    {"GET /index.html",                                                           ParseResult::ERROR, 15},
+    {"GET /index.html\r\n",                                                       ParseResult::ERROR, 17},
+    {"GET /index.html HTTP/1.0",                                                  ParseResult::ERROR, 24},
+    {"GET /index.html HTTP/1.0\r",                                                ParseResult::ERROR, 25},
+    {"GET /index.html HTTP/1.0\n",                                                ParseResult::DONE,  25},
+    {"GET /index.html HTTP/1.0\n\n",                                              ParseResult::DONE,  26},
+    {"GET /index.html HTTP/1.0\r\n\r\n",                                          ParseResult::DONE,  28},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar",                            ParseResult::ERROR, 44},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\n",                          ParseResult::DONE,  45},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                        ParseResult::DONE,  46},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n\r\n",                    ParseResult::DONE,  48},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\n",                            ParseResult::DONE,  44},
+    {"GET /index.html HTTP/1.0\nUser-Agent: foobar\nBoo: foo\n",                  ParseResult::DONE,  53},
+    {"GET /index.html HTTP/1.0\r\nUser-Agent: foobar\r\n",                        ParseResult::DONE,  46},
+    {"GET /index.html HTTP/1.0\r\n",                                              ParseResult::DONE,  26},
+    {"GET /index.html hTTP/1.0\r\n",                                              ParseResult::ERROR, 26},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 0\r\n\r\n",                    ParseResult::DONE,  48},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 2147483648\r\n\r\n",           ParseResult::DONE,  57},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 9223372036854775807\r\n\r\n",  ParseResult::DONE,  66},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 9223372036854775808\r\n\r\n",  ParseResult::ERROR, 66},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: 99999999999999999999\r\n\r\n", ParseResult::ERROR, 67},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: -1\r\n\r\n",                   ParseResult::ERROR, 49},
+    {"POST /index.html HTTP/1.0\r\nContent-Length: \r\n\r\n",                     ParseResult::ERROR, 47},
+    {"POST /index.html HTTP/1.0\r\nContent-Length:\r\n\r\n",                      ParseResult::ERROR, 46},
+    {"CONNECT foo.example HTTP/1.1\r\n",                                          ParseResult::DONE,  30},
+    {"GET foo.example HTTP/1.1\r\n",                                              ParseResult::ERROR, 26},
+    {"",                                                                          ParseResult::ERROR, 0 },
   };
 
   auto test = GENERATE(from_range(http_parse_tests));
@@ -103,6 +108,71 @@ TEST_CASE("HdrTestHttpParse", "[proxy][hdrtest]")
   REQUIRE(ret == test.expected_result);
 
   req_hdr.destroy();
+}
+
+TEST_CASE("HTTPHdr destroy clears cached request URL", "[proxy][hdrtest]")
+{
+  constexpr swoc::TextView msg = "GET /index.html HTTP/1.1\r\nHost: example.com\r\n\r\n"sv;
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
+
+  auto start = msg.data();
+  REQUIRE(req_hdr.parse_req(&parser, &start, msg.data_end(), true) == ParseResult::DONE);
+
+  // Force population of m_url_cached so it holds a pointer into the heap.
+  URL *u = req_hdr.url_get();
+  REQUIRE(u != nullptr);
+  REQUIRE(u->valid());
+  REQUIRE(req_hdr.m_url_cached.valid());
+
+  // Force population of the target cache so m_host_mime points into the heap.
+  std::string_view host = req_hdr.host_get();
+  REQUIRE(!host.empty());
+  REQUIRE(req_hdr.m_target_cached);
+
+  req_hdr.destroy();
+
+  // After destroy(), no member should reference the freed heap.
+  REQUIRE(req_hdr.m_http == nullptr);
+  REQUIRE(req_hdr.m_mime == nullptr);
+  REQUIRE_FALSE(req_hdr.m_url_cached.valid());
+  REQUIRE(req_hdr.m_host_mime == nullptr);
+  REQUIRE_FALSE(req_hdr.m_target_cached);
+}
+
+// A single header field whose name or value exceeds the uniform UINT16_MAX
+// field-size limit must be rejected by the parser. m_len_name is uint16_t, so an
+// oversized name would truncate its stored length; m_len_value is uint32_t : 24
+// and could hold more, but the value is capped at the same limit. The caller
+// (HttpSM) turns the parse error into a 400.
+TEST_CASE("HdrTestOversizedFieldRejected", "[proxy][hdrtest]")
+{
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
+
+  // 70000-byte value: name+value stays under the default max_hdr_field_size
+  // (131070) but the value alone exceeds UINT16_MAX (65535).
+  std::string    msg = "GET /index.html HTTP/1.0\r\nX-Big: " + std::string(70000, 'a') + "\r\n\r\n";
+  swoc::TextView tv{msg};
+
+  auto start = tv.data();
+  auto ret   = req_hdr.parse_req(&parser, &start, tv.data_end(), true);
+
+  REQUIRE(ret == ParseResult::ERROR);
+
+  req_hdr.destroy();
+  http_parser_clear(&parser);
 }
 
 TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
@@ -137,6 +207,44 @@ TEST_CASE("MIMEScanner_fragments", "[proxy][mimescanner_fragments]")
   }
 
   REQUIRE(message == output);
+}
+
+TEST_CASE("MIMEScanner obs-fold single buffer", "[proxy][mimescanner_obsfold]")
+{
+  MIMEScanner    scanner;
+  swoc::TextView output;
+  bool           shares_input = true;
+
+  char buf[]  = "Foo: bar\r\n baz\r\n";
+  auto input  = swoc::TextView{buf};
+  auto result = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
+
+  REQUIRE(result == ParseResult::OK);
+  REQUIRE(output == "Foo: bar   baz\r\n"sv);
+}
+
+TEST_CASE("MIMEScanner obs-fold CR/LF split across fragments", "[proxy][mimescanner_obsfold]")
+{
+  // CR at the end of fragment 1, LF + continuation whitespace at the start
+  // of fragment 2. The unfold code must not walk backwards past the start of
+  // the second fragment's buffer.
+  MIMEScanner    scanner;
+  swoc::TextView output;
+  bool           shares_input = true;
+
+  char first[] = "Foo: bar\r";
+  auto input   = swoc::TextView{first};
+  auto result  = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
+  REQUIRE(result == ParseResult::CONT);
+
+  char second[] = "\n baz\r\n";
+  input         = swoc::TextView{second};
+  shares_input  = true;
+  result        = scanner.get(input, output, shares_input, false, MIMEScanner::ScanType::FIELD);
+
+  REQUIRE(result == ParseResult::OK);
+  REQUIRE(shares_input == false);
+  REQUIRE(output == "Foo: bar   baz\r\n"sv);
 }
 
 namespace
@@ -1023,6 +1131,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     if (cc_field == nullptr) {
       std::printf("FAILED: missing Cache-Control header\n\n");
       REQUIRE(false);
+      return; // REQUIRE throws, but make the early exit explicit so the dereferences below are
+              // unreachable to a reader and to the compiler
     }
 
     // TODO: Do we need to check the "count" returned?
@@ -2790,4 +2900,119 @@ TEST_CASE("HTTPInfo::unmarshal_v24_1 frag bounds checks", "[proxy][hdrtest][unma
     auto buf2    = make_marshalled_alt(5, static_cast<intptr_t>(buf_len + 1));
     CHECK(HTTPInfo::unmarshal_v24_1(buf2.data(), buf_len, nullptr) == -1);
   }
+}
+
+TEST_CASE("http_parse_status overflow protection", "[proxy][hdrtest]")
+{
+  SECTION("valid 3-digit status codes")
+  {
+    std::string_view s200 = "200";
+    CHECK(http_parse_status(s200.data(), s200.data() + s200.size()) == static_cast<HTTPStatus>(200));
+
+    std::string_view s404 = "404";
+    CHECK(http_parse_status(s404.data(), s404.data() + s404.size()) == static_cast<HTTPStatus>(404));
+
+    std::string_view s999 = "999";
+    CHECK(http_parse_status(s999.data(), s999.data() + s999.size()) == static_cast<HTTPStatus>(999));
+  }
+
+  SECTION("4-digit status returns NONE")
+  {
+    std::string_view s1000 = "1000";
+    CHECK(http_parse_status(s1000.data(), s1000.data() + s1000.size()) == HTTPStatus::NONE);
+
+    std::string_view s9999 = "9999";
+    CHECK(http_parse_status(s9999.data(), s9999.data() + s9999.size()) == HTTPStatus::NONE);
+  }
+
+  SECTION("very long digit sequence returns NONE")
+  {
+    std::string s_long = "99999999999999999999";
+    CHECK(http_parse_status(s_long.data(), s_long.data() + s_long.size()) == HTTPStatus::NONE);
+  }
+
+  SECTION("empty and zero")
+  {
+    std::string_view empty = "";
+    CHECK(http_parse_status(empty.data(), empty.data()) == HTTPStatus::NONE);
+
+    std::string_view zero = "0";
+    CHECK(http_parse_status(zero.data(), zero.data() + zero.size()) == static_cast<HTTPStatus>(0));
+  }
+
+  SECTION("leading spaces are skipped")
+  {
+    std::string_view s = "  200";
+    CHECK(http_parse_status(s.data(), s.data() + s.size()) == static_cast<HTTPStatus>(200));
+  }
+
+  SECTION("high-bit bytes are rejected without UB")
+  {
+    char buf[] = {'\xff', '\xff', '\xff'};
+    CHECK(http_parse_status(buf, buf + sizeof(buf)) == static_cast<HTTPStatus>(0));
+  }
+}
+
+TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
+{
+  struct Test {
+    std::string_view msg;
+    ParseResult      expected_result;
+  };
+
+  static const std::vector<Test> tests = {
+    {"GET /x HTTP/\xff.0\r\n\r\n"sv, ParseResult::ERROR},
+    {"GET /x HTTP/1.\xff\r\n\r\n"sv, ParseResult::ERROR},
+    {"GET /\xff HTTP/1.0\r\n\r\n"sv, ParseResult::DONE },
+  };
+
+  auto test = GENERATE(from_range(tests));
+  CAPTURE(test.expected_result);
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
+
+  auto start = test.msg.data();
+  auto ret   = req_hdr.parse_req(&parser, &start, test.msg.data() + test.msg.size(), true);
+
+  CHECK(ret == test.expected_result);
+
+  req_hdr.destroy();
+}
+
+TEST_CASE("HTTP response parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
+{
+  struct Test {
+    std::string_view msg;
+    ParseResult      expected_result;
+  };
+
+  static const std::vector<Test> tests = {
+    {"HTTP/\xff.0 200 OK\r\n\r\n"sv,       ParseResult::ERROR},
+    {"HTTP/1.\xff 200 OK\r\n\r\n"sv,       ParseResult::ERROR},
+    {"HTTP/1.0 \xff\xff\xff OK\r\n\r\n"sv, ParseResult::DONE },
+  };
+
+  auto test = GENERATE(from_range(tests));
+  CAPTURE(test.expected_result);
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  resp_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+
+  resp_hdr.create(HTTPType::RESPONSE, HTTP_1_1, heap);
+
+  auto start = test.msg.data();
+  auto ret   = resp_hdr.parse_resp(&parser, &start, test.msg.data() + test.msg.size(), true);
+
+  CHECK(ret == test.expected_result);
+
+  resp_hdr.destroy();
 }

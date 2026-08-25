@@ -44,16 +44,21 @@ public:
   Http3FrameUPtr generate_frame() override;
   bool           is_done() const override;
 
+  void reset();
+  bool is_final_header_sent() const;
+
 private:
-  Http3Transaction *_transaction         = nullptr;
-  VIO              *_source_vio          = nullptr;
-  QPACK            *_qpack               = nullptr;
-  MIOBuffer        *_header_block        = nullptr;
-  IOBufferReader   *_header_block_reader = nullptr;
-  uint64_t          _header_block_len    = 0;
-  uint64_t          _header_block_wrote  = 0;
-  uint64_t          _stream_id           = 0;
-  bool              _sent_all_data       = false;
+  Http3Transaction *_transaction             = nullptr;
+  VIO              *_source_vio              = nullptr;
+  QPACK            *_qpack                   = nullptr;
+  MIOBuffer        *_header_block            = nullptr;
+  IOBufferReader   *_header_block_reader     = nullptr;
+  uint64_t          _header_block_len        = 0;
+  uint64_t          _header_block_wrote      = 0;
+  uint64_t          _stream_id               = 0;
+  bool              _sent_all_data           = false;
+  bool              _is_current_header_final = false;
+  bool              _is_final_header_sent    = false;
   HTTPParser        _http_parser;
   HTTPHdr           _header;
   VersionConverter  _hvc;

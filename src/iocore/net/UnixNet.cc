@@ -32,6 +32,8 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
+#include <limits>
+
 ink_hrtime        last_throttle_warning;
 ink_hrtime        last_shedding_warning;
 int               net_connections_throttle;
@@ -41,7 +43,10 @@ ink_hrtime        last_transient_accept_error;
 
 NetHandler::Config                                     NetHandler::global_config;
 std::bitset<std::numeric_limits<unsigned int>::digits> NetHandler::active_thread_types;
-const std::bitset<NetHandler::CONFIG_ITEM_COUNT>       NetHandler::config_value_affects_per_thread_value{0x3};
+/// The values @c NetHandler::configure_per_thread_values reads.
+const std::bitset<NetHandler::CONFIG_ITEM_COUNT> NetHandler::config_value_affects_per_thread_value{
+  (1ULL << static_cast<unsigned>(NetHandler::Config::Index::MAX_CONNECTIONS_IN)) |
+  (1ULL << static_cast<unsigned>(NetHandler::Config::Index::MAX_REQUESTS_IN))};
 
 namespace
 {

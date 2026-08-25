@@ -41,6 +41,7 @@
 #include "HttpDataFetcherImpl.h"
 #include "gzip.h"
 #include "Utils.h"
+#include "combo_handler_utils.h"
 
 using namespace std;
 using namespace EsiLib;
@@ -277,27 +278,23 @@ CacheControlHeader::update(TSMBuffer bufp, TSMLoc hdr_loc)
         int         _val_len = 0;
         const char *val      = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &_val_len);
 
-        // Update max-age if necessary
-        if (strncasecmp(val, TS_HTTP_VALUE_MAX_AGE, TS_HTTP_LEN_MAX_AGE) == 0) {
-          unsigned int max_age  = 0;
-          char        *ptr      = const_cast<char *>(val);
-          ptr                  += TS_HTTP_LEN_MAX_AGE;
-          while ((*ptr == ' ') || (*ptr == '\t')) {
-            ptr++;
+        if (val != nullptr && _val_len > 0) {
+          combo_handler::CacheControlValue const parsed =
+            combo_handler::parse_cache_control_value({val, static_cast<size_t>(_val_len)});
+
+          // Update max-age if necessary. max-age=0 is a valid directive
+          // ("must revalidate") and must be honored as the minimum.
+          if (parsed.has_max_age) {
+            if (parsed.max_age < _max_age) {
+              _max_age = parsed.max_age;
+            }
+            // If we find even a single occurrence of private, the whole response must be private
+          } else if (parsed.is_private) {
+            found_private = true;
+            // Every requested document must have immutable for the final response to be immutable
+          } else if (parsed.is_immutable) {
+            found_immutable = true;
           }
-          if (*ptr == '=') {
-            ptr++;
-            max_age = atoi(ptr);
-          }
-          if (max_age > 0 && max_age < _max_age) {
-            _max_age = max_age;
-          }
-          // If we find even a single occurrence of private, the whole response must be private
-        } else if (strncasecmp(val, TS_HTTP_VALUE_PRIVATE, TS_HTTP_LEN_PRIVATE) == 0) {
-          found_private = true;
-          // Every requested document must have immutable for the final response to be immutable
-        } else if (strncasecmp(val, HTTP_IMMUTABLE, strlen(HTTP_IMMUTABLE)) == 0) {
-          found_immutable = true;
         }
       }
     }
@@ -1092,6 +1089,11 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
     const char *value;
     int         value_len;
     int         n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
+    if (n_values <= 0 && !_content_type_allowlist.empty()) {
+      // An empty Content-Type field with a non-empty allowlist must not pass.
+      TSHandleMLocRelease(bufp, hdr_loc, field_loc);
+      return false;
+    }
     for (int i = 0; i < n_values; ++i) {
       value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, field_loc, i, &value_len);
       swoc::TextView tv{value, size_t(value_len)};
@@ -1101,9 +1103,11 @@ ContentTypeHandler::nextObjectHeader(TSMBuffer bufp, TSMLoc hdr_loc)
       } else if (std::find_if(_content_type_allowlist.begin(), _content_type_allowlist.end(), [tv](swoc::TextView tv2) -> bool {
                    return strcasecmp(tv, tv2) == 0;
                  }) == _content_type_allowlist.end()) {
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
         return false;
       } else if (tv.empty()) {
         // allowlist is bad, contains an empty string.
+        TSHandleMLocRelease(bufp, hdr_loc, field_loc);
         return false;
       }
       if (!_added_content_type) {

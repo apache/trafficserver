@@ -31,6 +31,7 @@
 #include "BodyData.h"
 
 #include <cstdint>
+#include <string>
 #include <map>
 
 struct BodyData;
@@ -49,7 +50,8 @@ struct LogInfo {
   bool            all                    = false;
   bool            stale_if_error         = false;
   bool            stale_while_revalidate = false;
-  char const     *filename               = PLUGIN_TAG;
+  // Empty means log to PLUGIN_TAG; see the effective name computed in parse_args().
+  std::string filename_override;
 };
 
 struct ConfigInfo {
@@ -64,9 +66,6 @@ struct ConfigInfo {
     }
     if (this->body_data_mutex) {
       TSMutexDestroy(this->body_data_mutex);
-    }
-    if (this->log_info.filename != PLUGIN_TAG) {
-      free(const_cast<char *>(this->log_info.filename));
     }
   }
   UintBodyMap *body_data = nullptr;
@@ -130,6 +129,7 @@ struct StateInfo {
   bool             swr_active         = false;
   bool             sie_active         = false;
   bool             over_max_memory    = false;
+  bool             fetch_error        = false;
   TSIOBuffer       req_io_buf         = nullptr;
   TSIOBuffer       resp_io_buf        = nullptr;
   TSIOBufferReader req_io_buf_reader  = nullptr;
@@ -150,6 +150,7 @@ struct StateInfo {
 BodyData *async_check_active(uint32_t key_hash, ConfigInfo *plugin_config);
 bool      async_check_and_add_active(uint32_t key_hash, ConfigInfo *plugin_config);
 bool      async_remove_active(uint32_t key_hash, ConfigInfo *plugin_config);
+void      body_memory_release(ConfigInfo *plugin_config, BodyData *pBody);
 
 // 500, 502, 503, 504
 inline bool

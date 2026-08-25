@@ -15,15 +15,19 @@
 #
 #######################
 
+add_autest_plugin(client_packet_mark client_packet_mark.cc packet_mark_common.cc)
 add_autest_plugin(conf_remap_stripped conf_remap_stripped.cc)
 add_autest_plugin(continuations_verify continuations_verify.cc)
 add_autest_plugin(cont_schedule cont_schedule.cc)
 add_autest_plugin(custom204plugin custom204plugin.cc)
+add_autest_plugin(delay_txn_start delay_txn_start.cc)
 add_autest_plugin(emergency_shutdown emergency_shutdown.cc)
 add_autest_plugin(fatal_shutdown fatal_shutdown.cc)
 add_autest_plugin(hook_add_plugin hook_add_plugin.cc)
+add_autest_plugin(http_alt_info_quality http_alt_info_quality.cc)
 add_autest_plugin(missing_mangled_definition missing_mangled_definition_c.c missing_mangled_definition_cpp.cc)
 add_autest_plugin(missing_ts_plugin_init missing_ts_plugin_init.cc)
+add_autest_plugin(server_packet_mark server_packet_mark.cc packet_mark_common.cc)
 add_autest_plugin(ssl_client_verify_test ssl_client_verify_test.cc)
 add_autest_plugin(ssl_hook_test ssl_hook_test.cc)
 add_autest_plugin(ssl_secret_load_test ssl_secret_load_test.cc)
@@ -37,6 +41,7 @@ add_autest_plugin(user_args user_args.cc)
 add_autest_plugin(hook_tunnel_plugin hook_tunnel_plugin.cc)
 add_autest_plugin(tunnel_transform tunnel_transform.cc)
 add_autest_plugin(http2_close_connection http2_close_connection.cc)
+add_autest_plugin(redirect_rearm redirect_rearm.cc)
 
 target_link_libraries(continuations_verify PRIVATE OpenSSL::SSL)
 target_link_libraries(ssl_client_verify_test PRIVATE OpenSSL::SSL)

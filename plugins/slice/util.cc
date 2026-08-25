@@ -138,7 +138,7 @@ request_block(TSCont contp, Data *const data)
   }
 
   header.removeKey(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size());
-  if (data->m_config->m_prefetchcount > 0 && data->m_req_range.m_beg >= 0 &&
+  if (!data->is_purge() && data->m_config->m_prefetchcount > 0 && data->m_req_range.m_beg >= 0 &&
       data->m_blocknum == data->m_req_range.firstBlockFor(data->m_config->m_blockbytes)) {
     header.setKeyVal(SLICE_CRR_HEADER.data(), SLICE_CRR_HEADER.size(), SLICE_CRR_VAL.data(), SLICE_CRR_VAL.size());
   }
@@ -232,6 +232,12 @@ request_block(TSCont contp, Data *const data)
 bool
 reader_avail_more_than(TSIOBufferReader const reader, int64_t bytes)
 {
+  // A purge refused before opening an upstream has no reader, and TSIOBufferReaderStart
+  // does not tolerate a null one
+  if (nullptr == reader) {
+    return false;
+  }
+
   TSIOBufferBlock block = TSIOBufferReaderStart(reader);
 
   if (nullptr == block) {

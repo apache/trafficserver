@@ -9,7 +9,6 @@
 #include "swoc/swoc_meta.h"
 
 using swoc::TextView;
-using swoc::svtoi;
 using swoc::svtou;
 using namespace swoc::literals;
 
@@ -465,8 +464,8 @@ IP6Addr::load(std::string_view const &str) {
       empty_idx = n;
     } else {
       TextView r;
-      auto x = svtoi(token, &r, 16);
-      if (r.size() == token.size()) {
+      auto x = svtou(token, &r, 16);
+      if (r.size() == token.size() && x <= std::numeric_limits<quad_type>::max()) {
         quad[QUAD_IDX[n++]] = x;
       } else {
         break;

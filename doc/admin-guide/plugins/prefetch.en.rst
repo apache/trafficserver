@@ -34,6 +34,15 @@ On every **incoming** URL request, the plugin can decide to pre-fetch the
 **next object** or more objects based on the common URL path pattern and a
 pre-defined pre-fetch policy.
 
+.. note::
+
+   The plugin only prefetches on requests that go through a cache lookup.
+   On transactions where ATS skips the cache lookup -- non-cacheable
+   methods, or caching turned off (:ts:cv:`proxy.config.http.cache.http`
+   set to ``0``) -- the plugin does not prefetch. Issuing prefetches into
+   a cache that will not be consulted would do real work for no cache
+   benefit.
+
 Currently, most HLS video urls follow a predictable pattern, with most URLs
 containing a segment number. Since the segments are ~10s of content, the normal
 usage pattern is to fetch the incremental segment every few seconds. The CDN
@@ -292,6 +301,13 @@ Plugin parameters
     * if ``false`` (default) the fetch policy would use the **incoming** URL's cache key to find out if the **next object** should be prefetched or not,
     * if ``true`` the fetch policy would use the **next** URL's cache key that to find out if the **next object** should be prefetched or not
 * ``--log-name`` - specifies a custom log name (if not specified a log is not created)
+
+An invalid parameter value is a configuration error. ``--fetch-count`` and ``--fetch-max`` must be
+decimal numbers that fit in an unsigned integer, ``--fetch-overflow`` must be ``32`` or ``64``, and
+``--fetch-path-pattern`` must compile and may only reference capture groups that the pattern
+defines. A remap rule with an invalid value fails to load, instead of loading with prefetch
+silently disabled. ``traffic_ctl config reload`` rejects such a configuration and keeps the running
+one.
 
 Metrics
 =======

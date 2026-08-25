@@ -45,8 +45,10 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      client_ip = netvc->get_proxy_protocol_src_addr();
-      break;
+      if (sockaddr const *proxy_ip = netvc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+        client_ip = proxy_ip;
+        break;
+      }
     }
   }
 

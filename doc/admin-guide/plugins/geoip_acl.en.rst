@@ -72,6 +72,13 @@ Note that the default in the case of no matches on the regular
 expressions is to "allow" the request. This can be overridden, see next
 use case.
 
+.. seealso::
+   The regex is matched against the URL path returned by
+   ``TSUrlPathGet`` (which excludes the leading ``/``). Operator-written
+   patterns can match more inputs than intended when unanchored. For
+   per-site subject definitions, common pitfalls, and recommended
+   pattern shapes, see :ref:`admin-regex-best-practices`.
+
 3. You can also combine 1) and 2), and provide defaults in the
    remap.config configuration, which then applies for the cases where no
    regular expressions matches at all. This would be useful to override

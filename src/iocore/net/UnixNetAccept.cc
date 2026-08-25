@@ -135,7 +135,7 @@ net_accept(NetAccept *na, void *ep, bool blockable)
     if (!vc) {
       goto Ldone; // note: @a con will clean up the socket when it goes out of scope.
     }
-    vc->enable_inbound_connection_tracking(conn_track_group);
+    vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);
@@ -420,7 +420,7 @@ NetAccept::do_blocking_accept(EThread *t)
     if (unlikely(!vc)) {
       return -1;
     }
-    vc->enable_inbound_connection_tracking(conn_track_group);
+    vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);
@@ -588,7 +588,7 @@ NetAccept::acceptFastEvent(int event, void *ep)
 
     vc = static_cast<UnixNetVConnection *>(this->getNetProcessor()->allocate_vc(e->ethread));
     ink_release_assert(vc);
-    vc->enable_inbound_connection_tracking(conn_track_group);
+    vc->enable_inbound_connection_tracking(std::move(conn_track_group));
 
     count++;
     Metrics::Gauge::increment(net_rsb.connections_currently_open);

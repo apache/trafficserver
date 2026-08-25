@@ -139,7 +139,8 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   //   or
   // c). Add interface to HttpSM to handle HTTPHdr directly
   int            bufindex;
-  int            dumpoffset = 0;
+  int            dumpoffset    = 0;
+  int64_t        header_length = 0;
   int            done, tmp;
   IOBufferBlock *block;
   do {
@@ -150,14 +151,19 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
       writer->add_block();
       block = writer->get_current_block();
     }
-    done        = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
-    dumpoffset += bufindex;
+    done           = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
+    dumpoffset    += bufindex;
+    header_length += bufindex;
     writer->fill(bufindex);
     if (!done) {
       writer->add_block();
     }
   } while (!done);
 
-  this->_is_complete = true;
+  this->_sink_vio->ndone += header_length;
+  this->_is_complete      = true;
+  if (auto *transaction = dynamic_cast<Http3Transaction *>(this->_txn); transaction != nullptr) {
+    transaction->on_header_decode_complete();
+  }
   return 1;
 }

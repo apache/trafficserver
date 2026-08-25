@@ -163,14 +163,18 @@ struct EventProcessorListener : Catch::EventListenerBase {
     Layout::get()->sysconfdir = std::move(src_dir);
   }
 
+  // Every test binary using this harness reaches exit() with the event threads
+  // still running, so stop them and wait for them before static destruction
+  // frees the globals they read.
   void
-  testRunEnded(Catch::TestRunStats const & /* testRunStats ATS_UNUSED */) override
+  testRunEnded(Catch::TestRunStats const & /* stats ATS_UNUSED */) override
   {
-    // Stop the event threads before the process tears down static state (e.g.
-    // the Metrics singleton) at exit. Synchronous tests never call TEST_DONE()
-    // themselves, so without this an ET_NET thread keeps running and can touch
-    // freed memory during shutdown.
-    test_done();
+    TSSystemState::shut_down_event_system();
+    for (EThread *ethread : eventProcessor.active_ethreads()) {
+      if (ethread->tid != ink_thread_null()) {
+        ink_thread_join(ethread->tid);
+      }
+    }
   }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);

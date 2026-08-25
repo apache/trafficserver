@@ -16,9 +16,13 @@
 #######################
 
 add_executable(test_evaluate test_evaluate.cc "${PROJECT_SOURCE_DIR}/common.cc" "${PROJECT_SOURCE_DIR}/evaluate.cc")
+add_executable(test_prefetch_path test_path.cc "${PROJECT_SOURCE_DIR}/path.cc")
 
 target_link_libraries(test_evaluate PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(test_prefetch_path PRIVATE Catch2::Catch2WithMain)
 
 target_compile_definitions(test_evaluate PRIVATE PREFETCH_UNIT_TEST)
+target_compile_definitions(test_prefetch_path PRIVATE PREFETCH_UNIT_TEST)
 
 add_catch2_test(NAME test_evaluate COMMAND test_evaluate)
+add_catch2_test(NAME test_prefetch_path COMMAND test_prefetch_path)
