@@ -1,0 +1,5 @@
+tests/data/ops/norm_bad_value_mod.fail.input.txt:2:2: error: symbol error in {}: Not a value modifier, expected one of NORM
+   2 |   inbound.req.X-Path = "{inbound.url.path with NOCASE}";
+     |   ^
+     | String interpolation context: "{inbound.url.path with NOCASE}"...
+     | Current section: REMAP
