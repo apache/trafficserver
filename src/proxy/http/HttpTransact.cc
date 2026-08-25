@@ -3881,6 +3881,8 @@ HttpTransact::handle_response_from_parent(State *s)
     } else {
       if (is_request_retryable(s)) {
         markParentDown(s);
+      } else {
+        TxnDbg(dbg_ctl_http_trans, "skipping parent markdown for unavailable_server retry because request is not retryable");
       }
       s->current.unavailable_server_retry_attempts++;
     }
