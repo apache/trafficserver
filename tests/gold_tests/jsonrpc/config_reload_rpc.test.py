@@ -507,15 +507,21 @@ tr.StillRunningAfter = ts
 # ============================================================================
 # Test 14: virtualhost config content over RPC is rejected
 # virtualhost is FileAndRpc, but only '_reload' directives are supported — a
-# supplied body must be refused instead of silently ignored.
+# supplied body must be refused instead of silently ignored. The handler reports
+# the rejection through the reload task log, so the rejection is verified by
+# querying the task status rather than by scanning diags.log.
 # ============================================================================
+vhost_reject_token = "vhost-content-reject"
+
 tr = Test.AddTestRun("virtualhost rejects pushed config content")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
-    ts, Request.admin_config_reload(configs={"virtualhost": [{
-        "id": "pushed.example.com",
-        "domains": ["pushed.example.com"]
-    }]}))
+    ts,
+    Request.admin_config_reload(
+        token=vhost_reject_token, configs={"virtualhost": [{
+            "id": "pushed.example.com",
+            "domains": ["pushed.example.com"]
+        }]}))
 
 
 def validate_content_rejected(resp: Response):
@@ -532,8 +538,47 @@ def validate_content_rejected(resp: Response):
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_content_rejected)
 tr.StillRunningAfter = ts
 
-ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "virtualhost does not accept config content over rpc", "Pushed virtualhost content should be rejected")
+# The handler's rejection lands in the reload task log — query it by token.
+tr = Test.AddTestRun("virtualhost content rejection is reported in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status(token=vhost_reject_token))
+
+
+def validate_content_rejection_logged(resp: Response):
+    '''The virtualhost subtask should be FAIL and carry the rejection message'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "virtualhost does not accept config content over rpc"
+
+    def find_rejection(task_list):
+        for t in task_list:
+            for entry in t.get('logs', []):
+                if expected in entry.get('text', ''):
+                    return t
+            found = find_rejection(t.get('sub_tasks', []))
+            if found:
+                return found
+        return None
+
+    tasks = result.get('tasks', [])
+    task = find_rejection(tasks)
+
+    if task is None:
+        return (False, f"Pushed virtualhost content should be rejected, no such log in: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the rejecting task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Pushed virtualhost content rejected and logged: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_content_rejection_logged)
+tr.StillRunningAfter = ts
 
 # ============================================================================
 # Test 15: single-entry reload of an id that is not in virtualhost.yaml
