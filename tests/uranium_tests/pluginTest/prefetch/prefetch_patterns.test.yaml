@@ -37,6 +37,14 @@ urtest:
         file_checks:
           - {path: "{LOG_DIR}/traffic.out", contains: "demo-4.txt", timeout: 15}
 
+    - name: "simple-no-cachekey"
+      client: {process_config: {keys: "prefetch-simple"}}
+      ats:
+        remap_config:
+          - 'map http://domain.in http://127.0.0.1:{SERVER_HTTP_PORT} @plugin=prefetch.so @pparam=--front=true @pparam=--fetch-policy=simple @pparam=--fetch-path-pattern=/(.*-)(\d+)(.*)/$1{$2+1}$3/ @pparam=--fetch-count=3'
+        file_checks:
+          - {path: "{LOG_DIR}/traffic.out", contains: "demo-4.txt", timeout: 15}
+
     - name: "overflow-64"
       client: {process_config: {keys: "prefetch-overflow"}}
       ats:
