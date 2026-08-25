@@ -7780,13 +7780,23 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
   return TS_SUCCESS;
 }
 
+namespace
+{
+bool
+is_usable_port_descriptor(const HttpProxyPort *port)
+{
+  return port != nullptr &&
+         (port->m_family == AF_UNIX || ((port->m_family == AF_INET || port->m_family == AF_INET6) && port->m_port != 0));
+}
+} // namespace
+
 // Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
 TSPortDescriptor
 TSPortDescriptorParse(const char *descriptor)
 {
-  HttpProxyPort *port = new HttpProxyPort();
+  auto *port = new HttpProxyPort();
 
-  if (descriptor && port->processOptions(descriptor)) {
+  if (descriptor != nullptr && port->processOptions(descriptor) && is_usable_port_descriptor(port)) {
     return reinterpret_cast<TSPortDescriptor>(port);
   }
 
@@ -7797,8 +7807,17 @@ TSPortDescriptorParse(const char *descriptor)
 TSReturnCode
 TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
+  if (descp == nullptr || contp == nullptr) {
+    return TS_ERROR;
+  }
+
+  const auto *port = reinterpret_cast<const HttpProxyPort *>(descp);
+
+  if (!is_usable_port_descriptor(port)) {
+    return TS_ERROR;
+  }
+
   Action                     *action = nullptr;
-  HttpProxyPort              *port   = reinterpret_cast<HttpProxyPort *>(descp);
   NetProcessor::AcceptOptions net(make_net_accept_options(port, -1 /* nthreads */));
 
   if (port->isSSL()) {
@@ -7808,6 +7827,12 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
   }
 
   return action ? TS_SUCCESS : TS_ERROR;
+}
+
+void
+TSPortDescriptorDestroy(TSPortDescriptor descp)
+{
+  delete reinterpret_cast<HttpProxyPort *>(descp);
 }
 
 TSReturnCode
