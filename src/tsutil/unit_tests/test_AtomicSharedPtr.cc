@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -49,27 +50,25 @@ struct Payload {
 };
 
 struct ReaderState {
-  std::atomic_flag should_start;
-  std::atomic_flag should_stop;
-  std::atomic<int> invalid_reads{0};
-  std::atomic<int> read_count{0};
+  std::atomic<bool> should_start{false};
+  std::atomic<bool> should_stop{false};
+  std::atomic<int>  invalid_reads{0};
+  std::atomic<int>  read_count{0};
 };
 
 void
 run_reader(AtomicSharedPtr<Payload> &ptr, ReaderState &state)
 {
-  state.should_start.wait(false, std::memory_order_acquire);
+  while (!state.should_start.load(std::memory_order_acquire)) {
+    std::this_thread::yield();
+  }
 
-  while (!state.should_stop.test(std::memory_order_acquire)) {
+  while (!state.should_stop.load(std::memory_order_acquire)) {
     auto current = ptr.load(std::memory_order_acquire);
     if (current == nullptr || !current->is_valid()) {
       state.invalid_reads.fetch_add(1, std::memory_order_relaxed);
     }
     auto const reads = state.read_count.fetch_add(1, std::memory_order_release) + 1;
-    if (reads == 1) {
-      // Release start_readers() now that this reader has completed a read.
-      state.read_count.notify_all();
-    }
     if (reads % 64 == 0) {
       std::this_thread::yield();
     }
@@ -88,20 +87,24 @@ make_readers(int reader_count, AtomicSharedPtr<Payload> &ptr, ReaderState &state
   return readers;
 }
 
-// Release the readers and block until one of them has read, so that the
-// writer's swaps overlap with readers that are already loading the pointer.
-void
-start_readers(ReaderState &state)
+bool
+wait_for_reader(const ReaderState &state, std::chrono::steady_clock::duration timeout)
 {
-  state.should_start.test_and_set(std::memory_order_release);
-  state.should_start.notify_all();
-  state.read_count.wait(0, std::memory_order_acquire);
+  auto const deadline = std::chrono::steady_clock::now() + timeout;
+
+  while (std::chrono::steady_clock::now() < deadline) {
+    if (state.read_count.load(std::memory_order_acquire) > 0) {
+      return true;
+    }
+    std::this_thread::yield();
+  }
+  return false;
 }
 
 void
 stop_readers(ReaderState &state, std::vector<std::thread> &readers)
 {
-  state.should_stop.test_and_set(std::memory_order_release);
+  state.should_stop.store(true, std::memory_order_release);
   for (auto &reader : readers) {
     if (reader.joinable()) {
       reader.join();
@@ -137,7 +140,12 @@ TEST_CASE("AtomicSharedPtr supports concurrent readers during writer swaps", "[l
   ReaderState              state;
   auto                     readers = make_readers(READER_COUNT, ptr, state);
 
-  start_readers(state);
+  state.should_start.store(true, std::memory_order_release);
+  auto const reader_started = wait_for_reader(state, std::chrono::seconds(5));
+  if (!reader_started) {
+    stop_readers(state, readers);
+  }
+  REQUIRE(reader_started);
 
   for (int generation = 1; generation <= WRITE_COUNT; ++generation) {
     ptr.store(std::make_shared<Payload>(generation), std::memory_order_release);
