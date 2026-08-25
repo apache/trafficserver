@@ -8316,19 +8316,36 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
       return TS_ERROR;
     }
 
-    // Extract common name
-    const int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
-    const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    // Extract common name. X509_NAME_get_index_by_NID() returns -1 when the
+    // certificate has no commonName, and ASN1_STRING_get0_data() does not
+    // guarantee NUL termination. Check both conditions before using the data.
+    const X509_NAME *subject = X509_get_subject_name(cert.get());
+    const int        pos     = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
+    if (pos < 0) {
+      return TS_ERROR;
+    }
+
+    const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(subject, pos);
     const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
-    char *common_name_str = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
-    if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
+    if (!common_name_asn1) {
+      return TS_ERROR;
+    }
+
+    const auto *common_name_data = ASN1_STRING_get0_data(common_name_asn1);
+    const int   common_name_len  = ASN1_STRING_length(common_name_asn1);
+    if (!common_name_data || common_name_len <= 0) {
+      return TS_ERROR;
+    }
+
+    const std::string common_name_str{reinterpret_cast<const char *>(common_name_data), static_cast<size_t>(common_name_len)};
+    if (common_name_str.find('\0') != std::string::npos) {
       // Embedded null char
       return TS_ERROR;
     }
-    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s", cert_path, common_name_str);
 
+    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s", cert_path, common_name_str.c_str());
     // Update context to use cert
-    cc = lookup->find(common_name_str);
+    cc = lookup->find(common_name_str.c_str());
     if (cc && cc->getCtx()) {
       test_ctx = shared_SSL_CTX(SSLCreateServerContext(config, cc->userconfig.get(), cert_path, key_path), SSLReleaseContext);
       if (!test_ctx) {

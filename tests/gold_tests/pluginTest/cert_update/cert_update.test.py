@@ -99,6 +99,19 @@ tr.Processes.Default.Command = (
 ts.Disk.traffic_out.Content = "gold/update.gold"
 ts.StillRunningAfter = server
 
+# Server-Cert-Update-No-CN
+# A certificate without a common name must be rejected without crashing ATS.
+tr = Test.AddTestRun("Server-Cert-Update-No-CN")
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Command = (
+    'openssl req -x509 -newkey rsa:2048 -nodes -keyout {0}/no-cn.key -out {0}/no-cn.crt '
+    '-subj /O=NoCN -days 1 >/dev/null 2>&1 && '
+    'cat {0}/no-cn.key {0}/no-cn.crt > {0}/no-cn.pem && '
+    '{1}/traffic_ctl plugin msg cert_update.server {0}/no-cn.pem'.format(ts.Variables.SSLDir, ts.Variables.BINDIR))
+ts.Disk.traffic_out.Content = "gold/update-no-cn.gold"
+tr.Processes.Default.ReturnCode = 0
+ts.StillRunningAfter = server
+
 # Server-Cert-After
 # after use traffic_ctl to update server cert, curl should see bar.com cert from bob
 tr = Test.AddTestRun("Server-Cert-After")
