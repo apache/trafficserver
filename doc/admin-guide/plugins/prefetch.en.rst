@@ -34,6 +34,15 @@ On every **incoming** URL request, the plugin can decide to pre-fetch the
 **next object** or more objects based on the common URL path pattern and a
 pre-defined pre-fetch policy.
 
+.. note::
+
+   The plugin only prefetches on requests that go through a cache lookup.
+   On transactions where ATS skips the cache lookup -- non-cacheable
+   methods, or caching turned off (:ts:cv:`proxy.config.http.cache.http`
+   set to ``0``) -- the plugin does not prefetch. Issuing prefetches into
+   a cache that will not be consulted would do real work for no cache
+   benefit.
+
 Currently, most HLS video urls follow a predictable pattern, with most URLs
 containing a segment number. Since the segments are ~10s of content, the normal
 usage pattern is to fetch the incremental segment every few seconds. The CDN
