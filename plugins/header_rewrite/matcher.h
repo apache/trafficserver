@@ -60,6 +60,7 @@ enum class CondModifiers : int {
   MOD_PRE    = 1 << 6,
   MOD_SUF    = 1 << 7,
   MOD_MID    = 1 << 8, // Essentially a substring
+  MOD_NORM   = 1 << 9, // Normalize the value before use; percent-decoding for now
 };
 
 inline CondModifiers

@@ -123,8 +123,22 @@ public:
   }
 
   // Virtual methods, has to be implemented by each conditional;
-  void         initialize(Parser &p) override;
-  virtual void append_value(std::string &s, const Resources &res) = 0;
+  void initialize(Parser &p) override;
+
+  // Applies any value modifiers (currently only NORM) to what do_append_value() contributed,
+  // so conditions and %{} expansions in values behave alike.
+  void
+  append_value(std::string &s, const Resources &res)
+  {
+    if (!has_modifier(_mods, CondModifiers::MOD_NORM)) {
+      return do_append_value(s, res);
+    }
+
+    size_t start = s.size();
+
+    do_append_value(s, res);
+    normalize(s, start);
+  }
 
 protected:
   // Evaluate the condition
@@ -136,5 +150,10 @@ protected:
   std::unique_ptr<Matcher> _matcher       = nullptr;
 
 private:
+  // Keeps append_value() the only way in, so no caller can skip the modifiers.
+  virtual void do_append_value(std::string &s, const Resources &res) = 0;
+
+  static void normalize(std::string &s, size_t start);
+
   CondModifiers _mods = CondModifiers::NONE;
 };
