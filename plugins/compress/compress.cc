@@ -772,7 +772,7 @@ transformable(TSHttpTxn txnp, bool server, HostConfiguration *host_configuration
 }
 
 static void
-add_vary_header_for_compressible_content(TSHttpTxn txnp)
+add_vary_header_to_server_response(TSHttpTxn txnp)
 {
   TSMBuffer resp_buf;
   TSMLoc    resp_loc;
@@ -847,7 +847,7 @@ handle_compression_and_vary(TSCont contp, TSHttpTxn txnp, bool server, HostConfi
   // Add Vary: Accept-Encoding for all compressible content to ensure proper HTTP caching
   if (content_is_compressible) {
     if (server) {
-      add_vary_header_for_compressible_content(txnp);
+      add_vary_header_to_server_response(txnp);
     } else {
       TSHttpTxnHookAdd(txnp, TS_HTTP_SEND_RESPONSE_HDR_HOOK, contp);
     }
