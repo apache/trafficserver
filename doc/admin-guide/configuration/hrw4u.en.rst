@@ -639,6 +639,7 @@ MID           Match substring
 SUF           Match the end of a string
 PRE           Match the beginning of a string
 NOCASE        Case insensitive match
+NORM          Normalize the value first, currently percent-decoding
 ============= ===============================================
 
 These can be used with both sets and equality checks, using the ``with`` keyword:
@@ -652,6 +653,18 @@ These can be used with both sets and equality checks, using the ``with`` keyword
    if inbound.url.path in ["mp3", "mp4"] with EXT,NOCASE {
      ...
    }
+
+``NORM`` acts on the value rather than on the comparison, so it also applies to
+regular expression matches, and it is the one modifier allowed on an interpolated
+value:
+
+.. code-block:: none
+
+   if inbound.url.path ~ /private-/ with NORM {
+     ...
+   }
+
+   inbound.req.X-Decoded-Path = "{inbound.url.path with NORM}";
 
 Running and Debugging
 =====================
