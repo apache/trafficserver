@@ -25,6 +25,7 @@ class PerServerMetricScenario:
 
     _replay = "per_server_metric_enabled.replay.yaml"
     _keep_alive_timeout = 2
+    _stat_sync_interval_ms = 500
 
     def __init__(self, ats_factory: ATSFactory, services: ServiceFactory) -> None:
         self._server = self.configure_server(services)
@@ -43,6 +44,7 @@ class PerServerMetricScenario:
         ats.remap_config.add_line(f"map / http://127.0.0.1:{self._server.http_port}")
         ats.records.update(
             {
+                "proxy.config.raw_stat_sync_interval_ms": self._stat_sync_interval_ms,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http_ss|conn_track",
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
