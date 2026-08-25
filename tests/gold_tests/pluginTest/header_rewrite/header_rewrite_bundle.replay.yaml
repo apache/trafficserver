@@ -218,6 +218,22 @@ autest:
             args:
               - "rules/last_capture.conf"
 
+      # Dedicated hosts, because the [NORM] rules anchor on the start of the path.
+      - from: "http://norm.ex/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/norm_modifier.conf"
+
+      - from: "http://norm-block.ex/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/norm_block.conf"
+
+
     metric_checks:
       - metric: "proxy.process.plugin.header_rewrite.operators"
         min: 1
@@ -2501,3 +2517,267 @@ sessions:
         - [ X-Capture-In-Set, { as: absent } ]
         - [ X-Capture-No-Prior, { as: absent } ]
         - [ X-Capture-Empty, { value: "yes", as: equal } ]
+
+# Test 95: [NORM] on conditions. The paired rules differ only in that flag, so an
+# X-Norm-* header without its X-Raw-* twin was matched only after decoding. Also
+# checks both the bare and quoted spellings of a %{} expansion with [NORM].
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/pr%69vate-1
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 95 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Regex, { value: "yes", as: equal } ]
+        - [ X-Raw-Regex, { as: absent } ]
+        - [ X-Norm-Mid, { value: "yes", as: equal } ]
+        - [ X-Raw-Mid, { as: absent } ]
+        - [ X-Norm-Path, { value: "Bucket1/x/private-1", as: equal } ]
+        - [ X-Raw-Path, { value: "Bucket1/x/pr%69vate-1", as: equal } ]
+        - [ X-Norm-Quoted, { value: "path is Bucket1/x/private-1", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 96: nothing escaped, so [NORM] is a no-op and both rules of each pair fire.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/private-1
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 96 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Regex, { value: "yes", as: equal } ]
+        - [ X-Raw-Regex, { value: "yes", as: equal } ]
+        - [ X-Norm-Mid, { value: "yes", as: equal } ]
+        - [ X-Raw-Mid, { value: "yes", as: equal } ]
+        - [ X-Norm-Path, { value: "Bucket1/x/private-1", as: equal } ]
+        - [ X-Raw-Path, { value: "Bucket1/x/private-1", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 97: no match either way, so [NORM] must not manufacture one. Decoding happens exactly
+# once per RFC 3986 section 2.4, so %2569 yields %69 rather than collapsing to 'i'.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/pr%2569vate-1
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 97 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Regex, { as: absent } ]
+        - [ X-Raw-Regex, { as: absent } ]
+        - [ X-Norm-Mid, { as: absent } ]
+        - [ X-Raw-Mid, { as: absent } ]
+        - [ X-Norm-Path, { value: "Bucket1/x/pr%69vate-1", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 98: the blocklist rule. Escaping the pattern doesn't evade the 403, and
+# ATS never talks to the origin.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket123/foo/pr%69vate-1
+      headers:
+        fields:
+        - [ Host, norm-block.ex ]
+        - [ uuid, 98 ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 403
+
+# Test 99: the same rule still blocks the unescaped form.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /alpha-v12-beta/Bucket123/foo/private-1
+      headers:
+        fields:
+        - [ Host, norm-block.ex ]
+        - [ uuid, 99 ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 403
+
+# Test 100: an unrelated path is not blocked.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket123/foo/public-1
+      headers:
+        fields:
+        - [ Host, norm-block.ex ]
+        - [ uuid, 100 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ uuid, { value: "100", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 101: malformed escapes. These drive the unescaper's backtracking paths, which write
+# from str[-1]/str[-2] and so are the ones that would corrupt an in-place decode. Both
+# sequences are invalid, so the value must come through byte-for-byte unchanged.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/a%zzb%4zc-1
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 101 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Path, { value: "Bucket1/x/a%zzb%4zc-1", as: equal } ]
+        - [ X-Raw-Path, { value: "Bucket1/x/a%zzb%4zc-1", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 102: a legitimately encoded percent sign. %25 is how a literal '%' is sent, so the
+# decoded value keeps it as data.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/50%25-off
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 102 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Regex, { as: absent } ]
+        - [ X-Norm-Path, { value: "Bucket1/x/50%-off", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 103: exactly one pass, pinned. %2550%25-off decodes to %50%-off; a second pass would
+# turn that into P%-off, so this fails if decoding ever iterates.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/%2550%25-off
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 103 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Path, { value: "Bucket1/x/%50%-off", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200

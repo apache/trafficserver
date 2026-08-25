@@ -76,6 +76,27 @@ parse_matcher_op(std::string &arg)
 }
 
 void
+Condition::normalize(std::string &s, size_t start)
+{
+  auto pos = s.find('%', start);
+
+  // Percent-decoding is the only normalization so far.
+  if (pos == std::string::npos) {
+    return;
+  }
+
+  size_t len     = s.size() - pos;
+  size_t written = 0;
+
+  // Decoding only shrinks, so it's safe in place; the +1 is room for the NUL it appends.
+  if (TSStringPercentDecode(s.data() + pos, len, s.data() + pos, len + 1, &written) == TS_SUCCESS) {
+    s.resize(pos + written);
+  } else {
+    Dbg(pi_dbg_ctl, "Failed to percent-decode, leaving the value untouched");
+  }
+}
+
+void
 Condition::initialize(Parser &p)
 {
   Statement::initialize(p);
@@ -123,6 +144,10 @@ Condition::initialize(Parser &p)
 
   if (_substr_seen > 1) {
     throw std::runtime_error("Only one substring modifier (EXT, SUF, PRE, MID) may be used.");
+  }
+
+  if (p.consume_mod("NORM")) {
+    _mods |= CondModifiers::MOD_NORM;
   }
 
   if (p.consume_mod("L")) {
