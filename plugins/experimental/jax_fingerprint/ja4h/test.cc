@@ -105,7 +105,7 @@ public:
 
 private:
   std::string                        _method;
-  int                                _version;
+  int                                _version{};
   std::map<std::string, std::string> _fields{};
 };
 
