@@ -221,6 +221,12 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, u
           // The entry may still be sharing a caller's buffer from a put made
           // while copy semantics were not requested; refresh it with a
           // private copy before the caller mutates its buffer.
+          //
+          // A refresh only ever gives bytes back, so unlike an insert it needs
+          // no eviction pass: the private copy is charged its exact length
+          // while a shared buffer was charged the rounded block_size() (always
+          // >= len), and a re-put under the same key and auxkey names the same
+          // on-disk doc, so len itself does not grow.
           int64_t delta = static_cast<int64_t>(len) - e->data->block_size();
 
           e->data  = copy_data_in(data, len);
