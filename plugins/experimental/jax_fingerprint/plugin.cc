@@ -373,22 +373,33 @@ TSPluginInit(int argc, char const **argv)
     return;
   }
 
-  PluginConfig *config = new PluginConfig();
-  config->plugin_type  = PluginType::GLOBAL;
+  auto owned_config         = std::make_unique<PluginConfig>();
+  owned_config->plugin_type = PluginType::GLOBAL;
 
-  if (!read_config_option(argc, argv, *config)) {
+  if (!read_config_option(argc, argv, *owned_config)) {
     TSError("[%s] Failed to parse options.", PLUGIN_NAME);
     return;
   }
 
-  if (!config->log_filename.empty()) {
-    if (!create_log_file(config->log_filename, config->log_handle)) {
+  if (!owned_config->log_filename.empty()) {
+    if (!create_log_file(owned_config->log_filename, owned_config->log_handle)) {
       TSError("[%s] Failed to create log.", PLUGIN_NAME);
       return;
     } else {
       Dbg(dbg_ctl, "Created log file.");
     }
   }
+
+  // Reserve the index before registering the log field, so that every failure exit happens while the
+  // configuration is still owned here and nothing has taken a reference to it yet.
+  if (reserve_user_arg(*owned_config) == TS_ERROR) {
+    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
+    return;
+  }
+
+  // A global plugin's configuration lives for the life of the process: the log field callback and the
+  // continuation below both keep a reference to it, so release it from the unique_ptr here.
+  PluginConfig *config = owned_config.release();
 
   if (!config->log_symbol.empty()) {
     std::string name  = "jax_fingerprint-";
@@ -410,11 +421,6 @@ TSPluginInit(int argc, char const **argv)
         }
       },
       TSLogIntUnmarshal);
-  }
-
-  if (reserve_user_arg(*config) == TS_ERROR) {
-    TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
-    return;
   }
 
   TSCont cont = TSContCreate(main_handler, nullptr);
@@ -445,25 +451,23 @@ TSReturnCode
 TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSED */, int /* errbuf_size ATS_UNUSED */)
 {
   Dbg(dbg_ctl, "New instance for client matching %s to %s", argv[0], argv[1]);
-  auto config         = new PluginConfig();
-  config->plugin_type = PluginType::REMAP;
+  auto owned_config         = std::make_unique<PluginConfig>();
+  owned_config->plugin_type = PluginType::REMAP;
 
   // Parse parameters
-  if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *config)) {
-    delete config;
+  if (!read_config_option(argc - 1, const_cast<const char **>(argv + 1), *owned_config)) {
     Dbg(dbg_ctl, "Bad arguments");
     return TS_ERROR;
   }
 
-  if (!config->log_symbol.empty()) {
+  if (!owned_config->log_symbol.empty()) {
     TSError("[%s] --log-field is not supported in remap.config. Use it in plugin.config instead.", PLUGIN_NAME);
-    delete config;
     return TS_ERROR;
   }
 
   // Create a log file
-  if (!config->log_filename.empty()) {
-    if (!create_log_file(config->log_filename, config->log_handle)) {
+  if (!owned_config->log_filename.empty()) {
+    if (!create_log_file(owned_config->log_filename, owned_config->log_handle)) {
       TSError("[%s] Failed to create log.", PLUGIN_NAME);
       return TS_ERROR;
     } else {
@@ -471,10 +475,13 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  if (reserve_user_arg(*config) == TS_ERROR) {
+  if (reserve_user_arg(*owned_config) == TS_ERROR) {
     TSError("[%s] Failed to reserve user arg index.", PLUGIN_NAME);
     return TS_ERROR;
   }
+
+  // Past here the instance handle owns the configuration and TSRemapDeleteInstance releases it.
+  PluginConfig *config = owned_config.release();
 
   // Create continuation
   if (config->standalone) {

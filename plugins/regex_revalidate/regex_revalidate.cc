@@ -778,6 +778,7 @@ TSPluginInit(int argc, const char *argv[])
   while ((c = getopt_long(argc, (char *const *)argv, "c:l:f:m:", longopts, nullptr)) != -1) {
     switch (c) {
     case 'c':
+      TSfree(pstate->config_path); // An option can be repeated, so the earlier value is not leaked
       pstate->config_path = TSstrdup(optarg);
       break;
     case 'l':
@@ -790,9 +791,11 @@ TSPluginInit(int argc, const char *argv[])
       disable_timed_reload = true;
       break;
     case 'f':
+      TSfree(pstate->state_path);
       pstate->state_path = make_state_path(optarg);
       break;
     case 'm':
+      TSfree(pstate->match_header);
       pstate->match_header = TSstrdup(optarg);
       break;
     default:
