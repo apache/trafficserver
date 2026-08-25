@@ -106,7 +106,7 @@ ssl_multicert:
             tr.Processes.Default.ReturnCode = 0
 
         if self.gold_file:
-            tr.Processes.Default.Streams.all = self.gold_file
+            tr.Processes.Default.Streams.All = self.gold_file
 
 
 # Tests start.
