@@ -504,6 +504,9 @@ class InverseSymbolResolver(SymbolResolverBase):
                         rewritten_value = self._rewrite_inline_percents(value, section)
                     return f"{var_name} = {rewritten_value}"
 
+        if cmd == "set-body" and len(args) == 2:
+            return self._handle_statement_function("set-body", args, section, op_state)
+
         for lhs_key, params in tables.OPERATOR_MAP.items():
             commands = params.target if params else None
             if (isinstance(commands, (list, tuple)) and cmd in commands) or (cmd == commands):
