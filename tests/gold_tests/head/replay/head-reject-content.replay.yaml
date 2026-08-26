@@ -1,0 +1,243 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify HEAD requests carrying declared body content are rejected'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: false
+      enable_tls: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http_trans'
+      proxy.config.ssl.client.verify.server.policy: 'PERMISSIVE'
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+      - from: "https://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+      - from: "http://allow-body.example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.reject_head_with_content=0"
+
+sessions:
+
+# HEAD with a non-zero Content-Length should be rejected before reaching the
+# origin.
+- transactions:
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /reject/content-length
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, 5 ]
+        - [ uuid, head-reject-content-length ]
+      content:
+        data: "hello"
+
+    proxy-request:
+      expect: absent
+
+    # Never exercised, since proxy-request expects absent. Proxy Verifier's
+    # server requires every transaction to carry a server-response node.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 400
+
+# HEAD with a chunked Transfer-Encoding should be rejected before reaching the
+# origin.
+- transactions:
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /reject/chunked
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Transfer-Encoding, chunked ]
+        - [ uuid, head-reject-chunked ]
+      content:
+        transfer: plain
+        encoding: uri
+        # 3-byte chunk, abc.
+        data: 3%0D%0Aabc%0D%0A0%0D%0A%0D%0A
+
+    proxy-request:
+      expect: absent
+
+    # Never exercised, since proxy-request expects absent. Proxy Verifier's
+    # server requires every transaction to carry a server-response node.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 400
+
+# HEAD requests that don't declare any content are unaffected and are
+# forwarded to the origin as usual.
+- transactions:
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /allow/zero-length
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, 0 ]
+        - [ uuid, head-allow-zero-length ]
+
+    proxy-request:
+      method: "HEAD"
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, 14 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /allow/no-framing
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, head-allow-no-framing ]
+
+    proxy-request:
+      method: "HEAD"
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, 14 ]
+
+    proxy-response:
+      status: 200
+
+  # With proxy.config.http.reject_head_with_content set to 0 on this remap
+  # rule, a HEAD request with a body is forwarded to the origin unchanged.
+  - client-request:
+      method: "HEAD"
+      version: "1.1"
+      url: /override/content-length
+      headers:
+        fields:
+        - [ Host, allow-body.example.com ]
+        - [ Content-Length, 5 ]
+        - [ uuid, head-override-content-length ]
+      content:
+        data: "hello"
+
+    proxy-request:
+      method: "HEAD"
+      headers:
+        fields:
+        - [ Content-Length, { value: "5", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, 14 ]
+
+    proxy-response:
+      status: 200
+
+# An HTTP/2 HEAD request can carry a body via DATA frame framing without a
+# Content-Length header. This must be rejected the same as HEAD requests that
+# declare Content-Length or Transfer-Encoding, since HTTP/2 signals the body
+# through framing rather than a header.
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: example.com
+
+  transactions:
+  - client-request:
+      frames:
+      - HEADERS:
+          headers:
+            fields:
+            - [":method", HEAD]
+            - [":scheme", https]
+            - [":authority", example.com]
+            - [":path", /reject/h2-framed-body]
+            - [uuid, head-reject-h2-framed-body]
+      - DATA:
+          content:
+            encoding: plain
+            data: hello
+            size: 5
+
+    proxy-request:
+      expect: absent
+
+    # Never exercised, since proxy-request expects absent. Proxy Verifier's
+    # server requires every transaction to carry a server-response node.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 400

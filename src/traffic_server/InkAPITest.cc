@@ -8772,7 +8772,15 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.parent_proxy.enable_parent_timeout_markdowns",
    "proxy.config.http.parent_proxy.disable_parent_markdowns",
    "proxy.config.http.drop_chunked_trailers",
-   "proxy.config.http.strict_chunk_parsing"}};
+   "proxy.config.http.strict_chunk_parsing",
+   "proxy.config.http.reject_head_with_content"}};
+
+// Nothing else keeps this array in step with TSOverridableConfigKey, and a
+// missing entry is not a build failure by itself: std::array simply
+// default-constructs the tail, and the empty name then trips
+// sdk_sanity_check_null_ptr inside TSHttpTxnConfigFind at run time.
+static_assert(SDK_Overridable_Configs.size() == TS_CONFIG_LAST_ENTRY,
+              "SDK_Overridable_Configs size must match TS_CONFIG_LAST_ENTRY");
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 
