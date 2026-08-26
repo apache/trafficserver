@@ -115,6 +115,24 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.ssl_sni_name_set_failure integer
    :type: counter
 
+.. ts:stat:: global proxy.process.ssl.ssl_multicert_load_failures integer
+   :type: counter
+
+   Counts certificates that failed to load during live SSL configuration reloads
+   triggered by :program:`traffic_ctl`.
+   When :ts:cv:`proxy.config.ssl.server.multicert.partial_reload` is enabled, failed
+   certificates are skipped and the remaining valid certificates are committed.  This
+   counter increments regardless of that setting and can be used to alert on cert
+   load failures even in strict (default) mode.
+
+   .. note::
+
+      This counter does not include failures from the initial startup load,
+      nor from the QUIC certificate loader (``QUICCertConfig``).  The QUIC
+      loader uses the same :file:`ssl_multicert.yaml` but tracks its own
+      load state independently and does not increment this counter.
+      TLS startup failures are only visible in :file:`diags.log`.
+
 .. ts:stat:: global proxy.process.ssl.total_handshake_time integer
    :type: counter
    :units: milliseconds

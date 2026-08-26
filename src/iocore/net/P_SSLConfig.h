@@ -67,6 +67,7 @@ struct SSLConfigParams : public ConfigInfo {
   char *cipherSuite;
   char *client_cipherSuite;
   int   configExitOnLoadError;
+  int   configPartialReload; ///< When 1, commit a partial SSLCertLookup on reload even if some certs failed.
   int   configLoadConcurrency;
   int   clientCertLevel;
   int   verify_depth;
