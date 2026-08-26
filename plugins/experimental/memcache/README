@@ -1,1 +1,6 @@
 A Memcache compatible plugin for the Apache Traffic Server
+
+SECURITY: this plugin exposes the shared ATS cache (read/write/delete) with no
+authentication and no ip_allow ACL on its accept path. It binds to loopback
+(127.0.0.1) by default; only bind a non-loopback address behind a firewall that
+restricts access to trusted clients. See doc/admin-guide/plugins/memcache.en.rst.
