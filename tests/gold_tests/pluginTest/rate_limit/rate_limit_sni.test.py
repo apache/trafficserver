@@ -27,6 +27,7 @@ Test.Summary = '''
 Test rate_limit SNI queue expiry: active counter underflow regression (Finding #109).
 '''
 
+Test.SkipUnless(Condition.PluginExists('rate_limit.so'))
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server", delay=4)

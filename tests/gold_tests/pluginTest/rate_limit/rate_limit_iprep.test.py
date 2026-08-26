@@ -28,6 +28,7 @@ Test.Summary = '''
 Test rate_limit ip-rep initialization: reserve() vs resize() regression (Finding #108).
 '''
 
+Test.SkipUnless(Condition.PluginExists('rate_limit.so'))
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server")

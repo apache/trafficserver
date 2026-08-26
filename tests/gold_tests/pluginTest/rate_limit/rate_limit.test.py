@@ -21,6 +21,7 @@ Test.Summary = '''
 Test rate_limit plugin: concurrent limit enforcement, queue drain, and independent limiters.
 '''
 
+Test.SkipUnless(Condition.PluginExists('rate_limit.so'))
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server", delay=3)
