@@ -33,7 +33,7 @@ Synopsis
 
 .. function:: TSIOBuffer TSIOBufferCreate(void)
 .. function:: TSIOBuffer TSIOBufferSizedCreate(TSIOBufferSizeIndex index)
-.. function:: void TSIOBufferDestroy(TSIOBuffer bufp)
+.. function:: void TSIOBufferDestroy(TSIOBuffer bufp) noexcept
 .. function:: int64_t TSIOBufferWrite(TSIOBuffer bufp, const void * buf, int64_t length)
 .. function:: void TSIOBufferProduce(TSIOBuffer bufp, int64_t nbytes)
 .. function:: int64_t TSIOBufferWaterMarkGet(TSIOBuffer bufp)

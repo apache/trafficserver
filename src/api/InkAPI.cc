@@ -33,6 +33,7 @@
 #include "iocore/net/NetHandler.h"
 #include "iocore/net/UDPNet.h"
 #include "tscore/ink_config.h"
+#include "tscore/ink_error.h"
 #include "tscore/ink_platform.h"
 #include "tscore/ink_base64.h"
 #include "tscore/Encoding.h"
@@ -248,13 +249,15 @@ TSWarning(const char *fmt, ...)
 }
 
 void
-TSError(const char *fmt, ...)
-{
+TSError(const char *fmt, ...) noexcept
+try {
   va_list args;
 
   va_start(args, fmt);
   ErrorV(fmt, args);
   va_end(args);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
@@ -833,8 +836,8 @@ TSfgets(TSFile filep, char *buf, size_t length)
 ////////////////////////////////////////////////////////////////////
 
 TSReturnCode
-TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
-{
+TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc) noexcept
+try {
   MIMEFieldSDKHandle *field_handle;
   HdrHeapObjImpl     *obj = reinterpret_cast<HdrHeapObjImpl *>(mloc);
 
@@ -863,6 +866,8 @@ TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
     ink_release_assert(!"invalid mloc");
     return TS_ERROR;
   }
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -887,8 +892,8 @@ TSMBufferCreate()
 }
 
 TSReturnCode
-TSMBufferDestroy(TSMBuffer bufp)
-{
+TSMBufferDestroy(TSMBuffer bufp) noexcept
+try {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // TS_ERROR. If allowed, return TS_SUCCESS. Changed the
@@ -902,6 +907,8 @@ TSMBufferDestroy(TSMBuffer bufp)
   sdk_heap->m_heap->destroy();
   delete sdk_heap;
   return TS_SUCCESS;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -1469,8 +1476,8 @@ TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp)
 }
 
 TSReturnCode
-TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc obj)
-{
+TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc obj) noexcept
+try {
   // Allow to modify the buffer only
   // if bufp is modifiable. If bufp is not modifiable return
   // TS_ERROR. If allowed, return TS_SUCCESS. Changed the
@@ -1486,6 +1493,8 @@ TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc obj)
 
   mime_hdr_destroy((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap, mh);
   return TS_SUCCESS;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSReturnCode
@@ -2548,11 +2557,13 @@ TSHttpParserClear(TSHttpParser parser)
 }
 
 void
-TSHttpParserDestroy(TSHttpParser parser)
-{
+TSHttpParserDestroy(TSHttpParser parser) noexcept
+try {
   sdk_assert(sdk_sanity_check_http_parser(parser) == TS_SUCCESS);
   http_parser_clear(reinterpret_cast<HTTPParser *>(parser));
   ats_free(parser);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 /***********/
@@ -2571,8 +2582,8 @@ TSHttpHdrCreate(TSMBuffer bufp)
 }
 
 void
-TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc obj)
-{
+TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc obj) noexcept
+try {
   sdk_assert(sdk_sanity_check_mbuffer(bufp) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_http_hdr_handle(obj) == TS_SUCCESS);
 
@@ -2580,6 +2591,8 @@ TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc obj)
   //   so do nothing!
 
   // HDR FIX ME - Did this free the MBuffer in Pete's old system
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSReturnCode
@@ -3140,8 +3153,8 @@ TSCacheKeyPinnedSet(TSCacheKey key, time_t pin_in_cache)
 }
 
 TSReturnCode
-TSCacheKeyDestroy(TSCacheKey key)
-{
+TSCacheKeyDestroy(TSCacheKey key) noexcept
+try {
   sdk_assert(sdk_sanity_check_cachekey(key) == TS_SUCCESS);
 
   if ((reinterpret_cast<CacheInfo *>(key))->magic != CACHE_INFO_MAGIC_ALIVE) {
@@ -3154,6 +3167,8 @@ TSCacheKeyDestroy(TSCacheKey key)
   i->magic = CACHE_INFO_MAGIC_DEAD;
   delete i;
   return TS_SUCCESS;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSCacheHttpInfo
@@ -3415,8 +3430,8 @@ TSContCreate(TSEventFunc funcp, TSMutex mutexp)
 }
 
 void
-TSContDestroy(TSCont contp)
-{
+TSContDestroy(TSCont contp) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
@@ -3426,26 +3441,32 @@ TSContDestroy(TSCont contp)
   }
 
   i->destroy();
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
-TSContDataSet(TSCont contp, void *data)
-{
+TSContDataSet(TSCont contp, void *data) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
 
   i->mdata = data;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void *
-TSContDataGet(TSCont contp)
-{
+TSContDataGet(TSCont contp) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(contp) == TS_SUCCESS);
 
   INKContInternal *i = reinterpret_cast<INKContInternal *>(contp);
 
   return i->mdata;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSAction
@@ -5843,8 +5864,8 @@ TSHttpConnectTransparent(sockaddr const *client_addr, sockaddr const *server_add
 
 /* Actions */
 void
-TSActionCancel(TSAction actionp)
-{
+TSActionCancel(TSAction actionp) noexcept
+try {
   Action          *thisaction;
   INKContInternal *i;
 
@@ -5867,6 +5888,8 @@ TSActionCancel(TSAction actionp)
   }
 
   thisaction->cancel();
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 // Currently no error handling necessary, actionp can be anything.
@@ -6024,26 +6047,30 @@ TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbyt
 }
 
 void
-TSVConnClose(TSVConn connp)
-{
+TSVConnClose(TSVConn connp) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = reinterpret_cast<VConnection *>(connp);
   vc->do_io_close();
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
-TSVConnAbort(TSVConn connp, int error)
-{
+TSVConnAbort(TSVConn connp, int error) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = reinterpret_cast<VConnection *>(connp);
   vc->do_io_close(error);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
-TSVConnShutdown(TSVConn connp, int read, int write)
-{
+TSVConnShutdown(TSVConn connp, int read, int write) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(connp) == TS_SUCCESS);
 
   VConnection *vc = reinterpret_cast<VConnection *>(connp);
@@ -6055,6 +6082,8 @@ TSVConnShutdown(TSVConn connp, int read, int write)
   } else if (write) {
     vc->do_io_shutdown(IO_SHUTDOWN_WRITE);
   }
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 int64_t
@@ -6564,16 +6593,18 @@ TSTextLogObjectWrite(TSTextLogObject the_object, const char *format, ...)
 }
 
 void
-TSTextLogObjectFlush(TSTextLogObject the_object)
-{
+TSTextLogObjectFlush(TSTextLogObject the_object) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   (reinterpret_cast<TextLogObject *>(the_object))->force_new_buffer();
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSReturnCode
-TSTextLogObjectDestroy(TSTextLogObject the_object)
-{
+TSTextLogObjectDestroy(TSTextLogObject the_object) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(the_object) == TS_SUCCESS);
 
   if (Log::config->log_object_manager.unmanage_api_object(reinterpret_cast<TextLogObject *>(the_object))) {
@@ -6581,6 +6612,8 @@ TSTextLogObjectDestroy(TSTextLogObject the_object)
   }
 
   return TS_ERROR;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
@@ -6892,11 +6925,13 @@ TSFetchLaunch(TSFetchSM fetch_sm)
 }
 
 void
-TSFetchDestroy(TSFetchSM fetch_sm)
-{
+TSFetchDestroy(TSFetchSM fetch_sm) noexcept
+try {
   sdk_assert(sdk_sanity_check_fetch_sm(fetch_sm) == TS_SUCCESS);
 
   (reinterpret_cast<FetchSM *>(fetch_sm))->ext_destroy();
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
@@ -8251,9 +8286,11 @@ TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_f
 }
 
 void
-TSSslContextDestroy(TSSslContext ctx)
-{
+TSSslContextDestroy(TSSslContext ctx) noexcept
+try {
   SSLReleaseContext(reinterpret_cast<SSL_CTX *>(ctx));
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSReturnCode

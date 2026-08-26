@@ -43,7 +43,7 @@ const char PLUGIN_NAME_DBG[] = "TEST_dbg_header_rewrite";
 } // namespace header_rewrite_ns
 
 void
-TSError(const char *fmt, ...)
+TSError(const char *fmt, ...) noexcept
 {
   va_list args;
 

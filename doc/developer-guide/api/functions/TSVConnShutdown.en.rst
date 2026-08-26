@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSVConnShutdown(TSVConn connp, int read, int write)
+.. function:: void TSVConnShutdown(TSVConn connp, int read, int write) noexcept
 
 Description
 ===========

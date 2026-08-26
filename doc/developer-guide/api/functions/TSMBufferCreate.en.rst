@@ -30,8 +30,8 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: TSMBuffer TSMBufferCreate(void)
-.. function:: TSReturnCode TSMBufferDestroy(TSMBuffer bufp)
-.. function:: TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc)
+.. function:: TSReturnCode TSMBufferDestroy(TSMBuffer bufp) noexcept
+.. function:: TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc) noexcept
 
 Description
 ===========

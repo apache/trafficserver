@@ -32,10 +32,10 @@ Synopsis
 
 .. function:: TSIOBufferReader TSIOBufferReaderAlloc(TSIOBuffer bufp)
 .. function:: TSIOBufferReader TSIOBufferReaderClone(TSIOBufferReader readerp)
-.. function:: void TSIOBufferReaderFree(TSIOBufferReader readerp)
-.. function:: void TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
+.. function:: void TSIOBufferReaderFree(TSIOBufferReader readerp) noexcept
+.. function:: void TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes) noexcept
 .. function:: TSIOBufferBlock TSIOBufferReaderStart(TSIOBufferReader readerp)
-.. function:: int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp)
+.. function:: int64_t TSIOBufferReaderAvail(TSIOBufferReader readerp) noexcept
 .. function:: int64_t TSIOBufferReaderCopy(TSIOBufferReader reader, void * buf, int64_t length)
 
 Description

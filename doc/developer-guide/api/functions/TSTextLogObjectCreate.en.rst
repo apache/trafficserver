@@ -33,8 +33,8 @@ Synopsis
 
 .. function:: TSReturnCode TSTextLogObjectCreate(const char * filename, int mode, TSTextLogObject * new_log_obj)
 .. function:: TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, const char * format, ...)
-.. function:: void TSTextLogObjectFlush(TSTextLogObject the_object)
-.. function:: TSReturnCode TSTextLogObjectDestroy(TSTextLogObject the_object)
+.. function:: void TSTextLogObjectFlush(TSTextLogObject the_object) noexcept
+.. function:: TSReturnCode TSTextLogObjectDestroy(TSTextLogObject the_object) noexcept
 .. function:: void TSTextLogObjectHeaderSet(TSTextLogObject the_object, const char * header)
 .. function:: TSReturnCode TSTextLogObjectRollingEnabledSet(TSTextLogObject the_object, int rolling_enabled)
 .. function:: void TSTextLogObjectRollingIntervalSecSet(TSTextLogObject the_object, int rolling_interval_sec)

@@ -31,7 +31,7 @@ Synopsis
     #include <ts/ts.h>
 
 .. function:: TSSslContext TSSslServerContextCreate(TSSslX509 *cert, char *certname)
-.. function:: void TSSslContextDestroy(TSSslContext ctx)
+.. function:: void TSSslContextDestroy(TSSslContext ctx) noexcept
 
 Description
 ===========
