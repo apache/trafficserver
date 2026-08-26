@@ -123,6 +123,10 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    whose value is optional, otherwise it also consumes the positional arguments of its
    command.
 
+   A token naming another option is not a value for a fixed number of arguments either. An
+   option written where a value is expected leaves the value missing, which is reported as a
+   usage error rather than the option being consumed and applied as the value.
+
    A ``--`` token stops option recognition for the values being collected, which is how a
    value beginning with ``-`` is passed. Note this differs from the POSIX ``--``: it does
    not end the value list nor force the remainder to be positional arguments.

@@ -596,15 +596,30 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
     index -= 1;
     return "";
   }
-  // finite number of argument handling
-  for (unsigned j = 0; j < arg_num; j++) {
-    if (args.size() < index + j + 2 || args[index + j + 1].empty()) {
+  // Fixed number of arguments. A token naming another option of this command is not a value, so
+  // the missing value is reported rather than the following option being consumed as one. A "--"
+  // token ends option recognition, which is how a value that starts with '-' is passed.
+  unsigned j{index + 1};
+  bool     recognize_options{true};
+
+  for (unsigned collected{0}; collected < arg_num; ++j) {
+    if (j >= args.size() || args[j].empty()) {
       return std::to_string(arg_num) + " argument(s) expected by " + name;
     }
-    ret.append_arg(name, args[index + j + 1]);
+    if (recognize_options) {
+      if (args[j] == "--") {
+        recognize_options = false;
+        continue;
+      }
+      if (is_registered_option(args[j])) {
+        return std::to_string(arg_num) + " argument(s) expected by " + name;
+      }
+    }
+    ret.append_arg(name, args[j]);
+    ++collected;
   }
   // erase the used arguments and append the data to the return structure
-  args.erase(args.begin() + index, args.begin() + index + arg_num + 1);
+  args.erase(args.begin() + index, args.begin() + j);
   index -= 1;
   return "";
 }

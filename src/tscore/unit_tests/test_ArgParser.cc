@@ -358,3 +358,33 @@ TEST_CASE("An option taking at most one argument accepts no value at all", "[par
   REQUIRE(parsed.get("get").size() == 1);
   REQUIRE(parsed.get("get")[0] == "proxy.config.x");
 }
+
+TEST_CASE("An option taking a fixed number of arguments can be given a value shaped like an option", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl server debug enable [--tags TAGS] [--append]".
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "", 1);
+  cmd.add_option("--append", "-a", "append to the existing tags");
+
+  // A value that starts with '-' is passed after "--", which is otherwise taken as naming an
+  // option and reported as a missing value.
+  const char   *argv1[] = {"test_prog", "enable", "-t", "--", "-a", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("tags").value() == "-a");
+  REQUIRE(parsed.get("append") == false);
+
+  // The --option=value form needs no escape.
+  const char *argv2[] = {"test_prog", "enable", "--tags=-a", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("tags").value() == "-a");
+  REQUIRE(parsed.get("append") == false);
+
+  // An option written after the value keeps its own meaning.
+  const char *argv3[] = {"test_prog", "enable", "-t", "http", "-a", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("tags").value() == "http");
+  REQUIRE(parsed.get("append") == true);
+}
