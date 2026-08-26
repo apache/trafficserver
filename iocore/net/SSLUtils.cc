@@ -46,6 +46,8 @@
 #include "SSLDynlock.h"
 #include "SSLDiags.h"
 #include "SSLStats.h"
+#include "TLSBasicSupport.h"
+#include "tscore/LogMessage.h"
 
 #include <string>
 #include <unistd.h>
@@ -1229,12 +1231,26 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
 void
 setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 {
+  // Remembered on the connection because a resumed session's peer certificate has to be re-verified
+  // against whichever store the current SNI selected, and the TLS libraries do not uniformly expose
+  // a way to read that store back off the SSL object.
+  X509_STORE *verify_store = nullptr;
+
   if ((file != nullptr && file[0] != '\0') || (dir != nullptr && dir[0] != '\0')) {
 #if TS_HAS_VERIFY_CERT_STORE
     // The set0 version will take ownership of the X509_STORE object
     X509_STORE *ctx = X509_STORE_new();
-    if (X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
+    if (ctx != nullptr &&
+        X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
       SSL_set0_verify_cert_store(ssl, ctx);
+      verify_store = ctx;
+    } else {
+      // Leaving verify_store null here would silently fall back to the global CA
+      // store on the resumption recheck, so an unusable path must be visible.
+      static LogMessage log_msg{IS_THROTTLED};
+      log_msg.warning(MakeSourceLocation(), "failed to load verify_client_ca_certs (file '%s', dir '%s')",
+                      file != nullptr ? file : "", dir != nullptr ? dir : "");
+      X509_STORE_free(ctx);
     }
 
     // SSL_set_client_CA_list takes ownership of the STACK_OF(X509) structure
@@ -1245,6 +1261,10 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 #else
     ink_assert(!"Configuration checking should prevent reaching this code");
 #endif
+  }
+
+  if (auto *tbs = TLSBasicSupport::getInstance(ssl); tbs != nullptr) {
+    tbs->set_verify_cert_store(verify_store);
   }
 }
 

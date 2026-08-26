@@ -63,6 +63,7 @@ enum SSL_Stats {
   ssl_user_agent_other_errors_stat,
   ssl_origin_server_unknown_ca_stat,
   ssl_user_agent_unknown_ca_stat,
+  ssl_user_agent_resumed_cert_rejected_stat,
   ssl_user_agent_sessions_stat,
   ssl_user_agent_session_hit_stat,
   ssl_user_agent_session_miss_stat,
