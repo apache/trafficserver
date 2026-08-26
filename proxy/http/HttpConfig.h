@@ -596,6 +596,8 @@ struct OverridableHttpConfigParams {
   ////////////////////////
   MgmtByte post_check_content_length_enabled = 1;
 
+  MgmtByte reject_head_with_content = 1;
+
   ////////////////////////////////////////////////
   // Buffer post body before connecting servers //
   ////////////////////////////////////////////////

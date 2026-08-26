@@ -5644,6 +5644,17 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
       return UNACCEPTABLE_TE_REQUIRED;
     }
 
+    // RFC 9110 section 9.3.2: "A client SHOULD NOT send content in a HEAD
+    // request." has_request_body() is protocol-aware, since HTTP/2 can signal a
+    // body through framing (DATA frames) with no Content-Length header. As with
+    // the POST check below, ua_txn may be absent when a request is created
+    // independent of a transaction, so it must be null checked.
+    if (s->txn_conf->reject_head_with_content && method == HTTP_WKSIDX_HEAD && s->state_machine->ua_txn &&
+        s->state_machine->ua_txn->has_request_body(s->hdr_info.request_content_length,
+                                                   s->client_info.transfer_encoding == CHUNKED_ENCODING)) {
+      return HEAD_CONTENT;
+    }
+
     // Require Content-Length/Transfer-Encoding for POST/PUSH/PUT
     if ((scheme == URL_WKSIDX_HTTP || scheme == URL_WKSIDX_HTTPS) &&
         (method == HTTP_WKSIDX_POST || method == HTTP_WKSIDX_PUSH || method == HTTP_WKSIDX_PUT) &&
@@ -6739,6 +6750,12 @@ HttpTransact::is_request_valid(State *s, HTTPHdr *incoming_request)
     TxnDebug("http_trans", "post request with negative content length value");
     SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
     build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Invalid Content Length", "request#invalid_content_length");
+    return false;
+  }
+  case HEAD_CONTENT: {
+    TxnDebug("http_trans", "HEAD request with body");
+    SET_VIA_STRING(VIA_DETAIL_TUNNEL, VIA_DETAIL_TUNNEL_NO_FORWARD);
+    build_error_response(s, HTTP_STATUS_BAD_REQUEST, "Content Not Allowed", "request#head_content");
     return false;
   }
   default:
