@@ -124,7 +124,7 @@ class QuickServerTest:
             p.Command = (f'{sys.executable} {self._partial_post_client} '
                          f'127.0.0.1 {self._ts.Variables.port}')
             p.ReturnCode = 0
-            p.Streams.All += Testers.ContainsExpression('HTTP/1.1', 'Verify client received an HTTP response')
+            p.Streams.All += Testers.ContainsExpression('HTTP/1.1 200 OK', 'Verify client received the server response')
         else:
             tr.Setup.CopyAs(self._slow_post_client, Test.RunDirectory)
             client_command = (f'{sys.executable} {self._slow_post_client} '
