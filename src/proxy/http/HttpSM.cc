@@ -2151,7 +2151,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
       // with in_tunnel=true, which causes cleanup_entry() to skip
       // do_io_close() — leaking the VC.  Close it explicitly here.
       if (post_transform_info.entry != nullptr) {
-        post_transform_info.vc->do_io_close();
+        post_transform_info.entry->vc->do_io_close();
         vc_table.cleanup_entry(post_transform_info.entry);
         post_transform_info.entry = nullptr;
       }
