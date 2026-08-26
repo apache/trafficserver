@@ -34,6 +34,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cstring>
+#include <utility>
 #include "tscore/ink_inet.h"
 
 TEST_CASE("Test SSLSNIConfig")
@@ -266,7 +267,7 @@ TEST_CASE("SNIConfig handles high-bit bytes while normalizing server names")
   item.inbound_port_ranges.emplace_back(1, ts::MAX_PORT_VALUE);
 
   SNIConfigParams params;
-  params.yaml_sni.items.push_back(item);
+  params.yaml_sni.items.push_back(std::move(item));
   REQUIRE(params.load_sni_config());
 
   std::string servername{"hIGH"};

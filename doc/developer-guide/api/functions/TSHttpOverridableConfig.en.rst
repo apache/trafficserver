@@ -155,6 +155,8 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_HTTP_PER_PARENT_CONNECT_ATTEMPTS`                 :ts:cv:`proxy.config.http.parent_proxy.per_parent_connect_attempts`
 :enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH`                 :ts:cv:`proxy.config.http.per_server.connection.match`
 :enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX`                   :ts:cv:`proxy.config.http.per_server.connection.max`
+:enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE`      :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate`
+:enumerator:`TS_CONFIG_HTTP_PER_SERVER_CONNECTION_METRIC_ENABLED`        :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`
 :enumerator:`TS_CONFIG_HTTP_POST_CHECK_CONTENT_LENGTH_ENABLED`           :ts:cv:`proxy.config.http.post.check.content_length.enabled`
 :enumerator:`TS_CONFIG_HTTP_REDIRECT_USE_ORIG_CACHE_KEY`                 :ts:cv:`proxy.config.http.redirect_use_orig_cache_key`
 :enumerator:`TS_CONFIG_HTTP_REQUEST_BUFFER_ENABLED`                      :ts:cv:`proxy.config.http.request_buffer_enabled`
@@ -199,6 +201,7 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_BODY_FACTORY_RESPONSE_SUPPRESSION_MODE`           :ts:cv:`proxy.config.body_factory.response_suppression_mode`
 :enumerator:`TS_CONFIG_HTTP_CACHE_POST_METHOD`                           :ts:cv:`proxy.config.http.cache.post_method`
 :enumerator:`TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS`        :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers`
+:enumerator:`TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE_PERCENT`                 :ts:cv:`proxy.config.http.cache.max_stale_age_percent`
 ======================================================================== ====================================================================
 
 Examples

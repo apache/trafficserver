@@ -65,7 +65,7 @@ sessions:
       headers:
         fields:
         - [ Cache-Control, { value: no-store, as: equal } ]
-        - [ Content-Type, { value: text/html, as: equal } ]
+        - [ Content-Type, { value: "text/html; charset=utf-8", as: equal } ]
         - [ Server, { value: ATS, as: contains } ]
       content:
         encoding: plain

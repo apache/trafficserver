@@ -55,14 +55,11 @@
 #include <openssl/asn1.h>
 #include <openssl/bio.h>
 #include <openssl/conf.h>
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
 #include <openssl/evp.h>
 #endif
 #include <openssl/dh.h>
 #include <openssl/ec.h>
-#if HAVE_ENGINE_LOAD_DYNAMIC
-#include <openssl/engine.h>
-#endif
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/objects.h>
@@ -75,6 +72,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdint>
 #include <thread>
 #include <utility>
 #include <string>
@@ -99,6 +97,7 @@ static int ssl_vc_index = -1;
 static ink_mutex *mutex_buf            = nullptr;
 static bool       open_ssl_initialized = false;
 
+static DbgCtl dbg_ctl_ssl{"ssl"};
 static DbgCtl dbg_ctl_ssl_load{"ssl_load"};
 static DbgCtl dbg_ctl_ssl_session_cache{"ssl.session_cache"};
 static DbgCtl dbg_ctl_ssl_error{"ssl.error"};
@@ -373,6 +372,53 @@ ssl_next_protos_advertised_callback(SSL *ssl, const unsigned char **out, unsigne
   return SSL_TLSEXT_ERR_NOACK;
 }
 
+static bool
+is_http2_prohibited_cipher(const SSL_CIPHER *cipher)
+{
+  struct CipherRange {
+    uint16_t first;
+    uint16_t last;
+  };
+
+  // RFC 9113 Appendix A lists 276 prohibited TLS 1.2 cipher suites. The IANA
+  // identifiers for those suites form these 24 contiguous ranges.
+  static constexpr CipherRange prohibited_ranges[] = {
+    {0x0000, 0x001b},
+    {0x001e, 0x0046},
+    {0x0067, 0x006d},
+    {0x0084, 0x009d},
+    {0x00a0, 0x00a1},
+    {0x00a4, 0x00a9},
+    {0x00ac, 0x00c5},
+    {0x00ff, 0x00ff},
+    {0xc001, 0xc02a},
+    {0xc02d, 0xc02e},
+    {0xc031, 0xc051},
+    {0xc054, 0xc055},
+    {0xc058, 0xc05b},
+    {0xc05e, 0xc05f},
+    {0xc062, 0xc06b},
+    {0xc06e, 0xc07b},
+    {0xc07e, 0xc07f},
+    {0xc082, 0xc085},
+    {0xc088, 0xc089},
+    {0xc08c, 0xc08f},
+    {0xc092, 0xc09d},
+    {0xc0a0, 0xc0a1},
+    {0xc0a4, 0xc0a5},
+    {0xc0a8, 0xc0a9},
+  };
+
+  if (cipher == nullptr) {
+    return false;
+  }
+
+  const uint16_t cipher_id = SSL_CIPHER_get_protocol_id(cipher);
+
+  return std::any_of(std::begin(prohibited_ranges), std::end(prohibited_ranges),
+                     [cipher_id](const CipherRange &range) { return cipher_id >= range.first && cipher_id <= range.last; });
+}
+
 int
 ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned inlen,
                          void *)
@@ -381,6 +427,10 @@ ssl_alpn_select_callback(SSL *ssl, const unsigned char **out, unsigned char *out
 
   ink_assert(alpns);
   if (alpns) {
+    if (const SSL_CIPHER *cipher = SSL_get_pending_cipher(ssl); is_http2_prohibited_cipher(cipher)) {
+      Dbg(dbg_ctl_ssl, "disabling HTTP/2 for prohibited cipher %s", SSL_CIPHER_get_name(cipher));
+      alpns->disableProtocol(TS_ALPN_PROTOCOL_INDEX_HTTP_2_0);
+    }
     return alpns->select_next_protocol(out, outlen, in, inlen);
   }
 
@@ -770,10 +820,6 @@ void
 SSLPostConfigInitialize()
 {
   if (SSLConfigParams::engine_conf_file) {
-#if HAVE_ENGINE_LOAD_DYNAMIC
-    ENGINE_load_dynamic();
-#endif
-
     OPENSSL_load_builtin_modules();
     if (CONF_modules_load_file(SSLConfigParams::engine_conf_file, nullptr, 0) <= 0) {
       char err_buf[256] = {0};
@@ -856,43 +902,27 @@ SSLMultiCertConfigLoader::default_server_ssl_ctx()
 static bool
 SSLPrivateKeyHandler(SSL_CTX *ctx, const char *keyPath, const char *secret_data, int secret_data_len)
 {
-  EVP_PKEY *pkey = nullptr;
-#if HAVE_ENGINE_GET_DEFAULT_RSA && HAVE_ENGINE_LOAD_PRIVATE_KEY
-  ENGINE *e = ENGINE_get_default_RSA();
-  if (e != nullptr) {
-    pkey = ENGINE_load_private_key(e, keyPath, nullptr, nullptr);
-    if (pkey) {
-      if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-        Dbg(dbg_ctl_ssl_load, "failed to load server private key from engine");
-        EVP_PKEY_free(pkey);
-        return false;
-      }
-    }
-  }
-#else
-  void *e = nullptr;
-#endif
-  if (pkey == nullptr) {
-    scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
+  // SSL_CTX_use_PrivateKey() takes its own reference on the key, so this
+  // reference must be released on every exit.
+  scoped_BIO bio(BIO_new_mem_buf(secret_data, secret_data_len));
 
-    pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
-    void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
-    pkey                         = PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u);
-    if (nullptr == pkey) {
-      Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
-          secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
-      return false;
-    }
-    if (!SSL_CTX_use_PrivateKey(ctx, pkey)) {
-      Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %s",
-          (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
-      EVP_PKEY_free(pkey);
-      return false;
-    }
-    if (e == nullptr && !SSL_CTX_check_private_key(ctx)) {
-      Dbg(dbg_ctl_ssl_load, "server private key does not match the certificate public key");
-      return false;
-    }
+  pem_password_cb *password_cb = SSL_CTX_get_default_passwd_cb(ctx);
+  void            *u           = SSL_CTX_get_default_passwd_cb_userdata(ctx);
+
+  scoped_PKEY const pkey{PEM_read_bio_PrivateKey(bio.get(), nullptr, password_cb, u)};
+  if (nullptr == pkey) {
+    Dbg(dbg_ctl_ssl_load, "failed to load server private key (%.*s) from %s", secret_data_len < 50 ? secret_data_len : 50,
+        secret_data, (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+    return false;
+  }
+  if (!SSL_CTX_use_PrivateKey(ctx, pkey.get())) {
+    Dbg(dbg_ctl_ssl_load, "failed to attach server private key loaded from %s",
+        (!keyPath || keyPath[0] == '\0') ? "[empty key path]" : keyPath);
+    return false;
+  }
+  if (!SSL_CTX_check_private_key(ctx)) {
+    Dbg(dbg_ctl_ssl_load, "server private key does not match the certificate public key");
+    return false;
   }
 
   return true;
@@ -950,7 +980,7 @@ SSLMultiCertConfigLoader::check_server_cert_now(X509 *cert, const char *certname
 } /* CheckServerCertNow() */
 
 static char *
-asn1_strdup(ASN1_STRING *s)
+asn1_strdup(const ASN1_STRING *s)
 {
   // Make sure we have an 8-bit encoding.
   ink_assert(ASN1_STRING_type(s) == V_ASN1_IA5STRING || ASN1_STRING_type(s) == V_ASN1_UTF8STRING ||
@@ -1799,6 +1829,12 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   return ctx.get();
 }
 
+bool
+SSLMultiCertConfigLoader::_should_track_load_metrics() const
+{
+  return true;
+}
+
 swoc::Errata
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
@@ -1926,6 +1962,17 @@ SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCer
         std::lock_guard<std::mutex> lock(_loader_mutex);
         errata.note(ERRATA_ERROR, "Failed to load certificate '{}' at item {}",
                     sslMultiCertSettings->cert ? sslMultiCertSettings->cert : "(unnamed)", item_num);
+        // Guard required: SSLCertificateConfig::startup() ultimately calls _load_items() via
+        // reconfigure() and load(), and runs before SSLInitializeStatistics() in
+        // SSLNetProcessor::start(), so this counter is nullptr during the TLS startup cert load.
+        // The QUIC loader is excluded from this counter entirely via _should_track_load_metrics(),
+        // so the nullptr guard is TLS-startup-specific.
+        if (ssl_rsb.ssl_multicert_load_failures && _should_track_load_metrics()) {
+          Metrics::Counter::increment(ssl_rsb.ssl_multicert_load_failures);
+        }
+      } else if (sslMultiCertSettings->cert) {
+        std::lock_guard<std::mutex> lock(_loader_mutex);
+        ++lookup->user_cert_count;
       }
     } else {
       std::lock_guard<std::mutex> lock(_loader_mutex);
@@ -2091,7 +2138,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
   for (const char *keyname = key_tok.getNext(); keyname; keyname = key_tok.getNext()) {
     std::string completeServerKeyPath = Layout::get()->relative_to(params->serverKeyPathOnly, keyname);
-    data.key_list.push_back(completeServerKeyPath);
+    data.key_list.push_back(std::move(completeServerKeyPath));
   }
 
   for (const char *caname = ca_tok.getNext(); caname; caname = ca_tok.getNext()) {
@@ -2106,7 +2153,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   int  cert_index = 0;
   for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
     std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-    data.cert_names_list.push_back(completeServerCertPath);
+    data.cert_names_list.push_back(std::move(completeServerCertPath));
   }
 
   for (size_t i = 0; i < data.cert_names_list.size(); i++) {
@@ -2158,10 +2205,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     std::set<std::string> name_set;
     // Grub through the names in the certs
-    X509_NAME *subject = nullptr;
 
     // Insert a key for the subject CN.
-    subject = X509_get_subject_name(cert);
+    auto          *subject = X509_get_subject_name(cert);
     ats_scoped_str subj_name;
     if (subject) {
       int pos = -1;
@@ -2171,9 +2217,9 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
           break;
         }
 
-        X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
-        ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
-        subj_name           = asn1_strdup(cn);
+        const X509_NAME_ENTRY *e  = X509_NAME_get_entry(subject, pos);
+        const ASN1_STRING     *cn = X509_NAME_ENTRY_get_data(e);
+        subj_name                 = asn1_strdup(cn);
 
         Dbg(dbg_ctl_ssl_load, "subj '%s' in certificate %s %p", subj_name.get(), data.cert_names_list[i].c_str(), cert);
         name_set.insert(subj_name.get());
@@ -2202,7 +2248,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     if (first_pass) {
       first_pass   = false;
-      common_names = name_set;
+      common_names = std::move(name_set);
     } else {
       // Check that all elements in common_names are in name_set
       auto common_iter = common_names.begin();

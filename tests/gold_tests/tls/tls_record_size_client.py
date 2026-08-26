@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 Download an object from ATS over TLS and inspect the TLS records on the wire:
-confirm the body arrives intact AND that every application-data record is no
-larger than the configured proxy.config.ssl.max_record_size (plus AEAD overhead).
+confirm the body arrives intact AND that application-data records follow the
+configured fixed or dynamic record-size strategy.
 
 A MemoryBIO drives the handshake so the raw ciphertext stream is visible; the
 5-byte TLS record headers (type, version, length) are in cleartext, so record
@@ -34,12 +34,16 @@ import sys
 from collections.abc import Iterator
 
 TLS_APPLICATION_DATA = 23
+TLS12_GCM_OVERHEAD = 24
 # A clamped plaintext record becomes ciphertext of plaintext + AEAD overhead
 # (TLS1.2 GCM: 8-byte explicit nonce + 16-byte tag = 24 bytes; the cipher is pinned
 # to AEAD below). 256 is a generous ceiling over that, far below an unclamped ~16 KB
 # record, so the clamp check stays decisive and cannot be tripped by the larger,
 # variable expansion of a CBC suite.
 RECORD_OVERHEAD = 256
+DYNAMIC_SMALL_RECORD = 1300
+DYNAMIC_MAX_RECORD = 16383
+DYNAMIC_BYTE_THRESHOLD = 1_000_000
 
 
 def iter_record_lengths(buf: bytes | bytearray) -> Iterator[tuple[int, int]]:
@@ -54,12 +58,42 @@ def iter_record_lengths(buf: bytes | bytearray) -> Iterator[tuple[int, int]]:
         i += 5 + length
 
 
+def verify_dynamic_records(app_lengths: list[int]) -> bool:
+    '''Verify records ramp from single-segment to maximum-sized records.'''
+    small_limit = DYNAMIC_SMALL_RECORD + TLS12_GCM_OVERHEAD
+    max_limit = DYNAMIC_MAX_RECORD + TLS12_GCM_OVERHEAD
+    first_large = next((i for i, length in enumerate(app_lengths) if length > small_limit), None)
+
+    if first_large is None:
+        print('FAIL: dynamic sizing never ramped up to large TLS records')
+        return False
+
+    plaintext_before_ramp = sum(length - TLS12_GCM_OVERHEAD for length in app_lengths[:first_large])
+    if plaintext_before_ramp < DYNAMIC_BYTE_THRESHOLD:
+        print(
+            f'FAIL: dynamic sizing ramped after only {plaintext_before_ramp} plaintext bytes; '
+            f'expected at least {DYNAMIC_BYTE_THRESHOLD}')
+        return False
+
+    max_record = max(app_lengths)
+    if max_record > max_limit:
+        print(f'FAIL: a dynamic application-data record ({max_record}) exceeds the maximum ({max_limit})')
+        return False
+
+    print(
+        f'PASS: TLS records ramp from small to large after the dynamic threshold '
+        f'(first_large={first_large}, plaintext_before_ramp={plaintext_before_ramp}, max_record_len={max_record})')
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description='Measure ATS TLS record sizes on a download.')
     parser.add_argument('-p', '--port', type=int, required=True, help='ATS TLS port')
     parser.add_argument('--host', default='ex.test', help='Host header / SNI')
     parser.add_argument('--path', default='/obj', help='request path')
-    parser.add_argument('--max-record', type=int, required=True, help='configured proxy.config.ssl.max_record_size')
+    sizing = parser.add_mutually_exclusive_group(required=True)
+    sizing.add_argument('--max-record', type=int, help='positive proxy.config.ssl.max_record_size clamp')
+    sizing.add_argument('--dynamic', action='store_true', help='expect dynamic TLS record sizing')
     parser.add_argument('--expect-bytes', type=int, required=True, help='expected response body length')
     args = parser.parse_args()
 
@@ -132,11 +166,8 @@ def main() -> int:
 
     app_lengths = [length for content_type, length in iter_record_lengths(raw) if content_type == TLS_APPLICATION_DATA]
     max_record = max(app_lengths) if app_lengths else 0
-    limit = args.max_record + RECORD_OVERHEAD
 
-    print(
-        f'app_data_records={len(app_lengths)} max_record_len={max_record} '
-        f'limit={limit} body_len={body_len} expect={args.expect_bytes}')
+    print(f'app_data_records={len(app_lengths)} max_record_len={max_record} body_len={body_len} expect={args.expect_bytes}')
 
     if body_len != args.expect_bytes:
         print(f'FAIL: body length {body_len} != expected {args.expect_bytes}')
@@ -144,6 +175,11 @@ def main() -> int:
     if len(app_lengths) < 2:
         print('FAIL: too few application-data records to judge clamping')
         return 1
+    if args.dynamic:
+        return 0 if verify_dynamic_records(app_lengths) else 1
+
+    assert args.max_record is not None
+    limit = args.max_record + RECORD_OVERHEAD
     if max_record > limit:
         print(f'FAIL: an application-data record ({max_record}) exceeds the clamp + overhead ({limit})')
         return 1

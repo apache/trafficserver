@@ -205,6 +205,9 @@ protected:
   // the new_vc may be an SSLNetVConnection object.
   void _handle_if_ssl(NetVConnection *new_vc);
 
+  /// Update the client connection metric for the remote address family.
+  void _increment_total_client_connections_stat(NetVConnection *new_vc);
+
   NetVConnection *_vc = nullptr; // The netvc associated with the concrete session class
 
 private:

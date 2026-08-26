@@ -326,6 +326,32 @@ HttpHeader::toString() const
 
 /////// HdrMgr
 
+bool
+HdrMgr::create_response(TSHttpStatus const status)
+{
+  resetHeader();
+
+  if (nullptr == m_buffer) {
+    m_buffer = TSMBufferCreate();
+  }
+
+  m_lochdr = TSHttpHdrCreate(m_buffer);
+  if (nullptr == m_lochdr) {
+    return false;
+  }
+
+  TSHttpHdrTypeSet(m_buffer, m_lochdr, TS_HTTP_TYPE_RESPONSE);
+  TSHttpHdrVersionSet(m_buffer, m_lochdr, TS_HTTP_VERSION(1, 1));
+  TSHttpHdrStatusSet(m_buffer, m_lochdr, status);
+
+  char const *const reason = TSHttpHdrReasonLookup(status);
+  if (nullptr != reason) {
+    TSHttpHdrReasonSet(m_buffer, m_lochdr, reason, strlen(reason));
+  }
+
+  return true;
+}
+
 TSParseResult
 HdrMgr::populateFrom(TSHttpParser const http_parser, TSIOBufferReader const reader, HeaderParseFunc const parsefunc,
                      int64_t *const bytes)

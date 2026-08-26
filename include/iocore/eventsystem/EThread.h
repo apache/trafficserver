@@ -613,7 +613,7 @@ EThread::Metrics::Slice::record_event_count(int count) -> self_type &
     _events._min = count;
   }
   if (count > _events._max) {
-    _events._max = _count;
+    _events._max = count;
   }
   _events._total += count;
   return *this;

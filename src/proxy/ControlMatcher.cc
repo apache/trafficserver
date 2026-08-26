@@ -313,7 +313,7 @@ UrlMatcher<Data, MatchResult>::NewEntry(matcher_line *line_info)
   // Fill in the parameter info
   cur_d = data_array + num_el;
   error = cur_d->Init(line_info);
-  if (error.failed()) {
+  if (!error.failed()) {
     url_str[num_el]   = ats_strdup(pattern);
     url_value[num_el] = num_el;
     url_ht.emplace(url_str[num_el], url_value[num_el]);

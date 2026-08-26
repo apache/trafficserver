@@ -24,6 +24,7 @@
 #include "path.h"
 
 #include <cctype>
+#include <utility>
 
 namespace
 {
@@ -181,7 +182,7 @@ makeSafeRelativeFetchPath(const String &currentPath, const String &relativePath,
     return false;
   }
 
-  fetchPath.path = normalizedCandidatePath;
+  fetchPath.path = std::move(normalizedCandidatePath);
   if (String::npos != queryStart) {
     fetchPath.hasQuery = true;
     fetchPath.query    = relativePath.substr(queryStart + 1);

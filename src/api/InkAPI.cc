@@ -22,11 +22,12 @@
  */
 
 #include <atomic>
+#include <charconv>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
 #include <string>
-#include <charconv>
+#include <utility>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
@@ -7338,6 +7339,10 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MAX_SERVER_CONV; break;
 #define _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV(KEY, MEMBER)             \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::SERVER_MATCH_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV(KEY, MEMBER)           \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_ENABLED_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV(KEY, MEMBER)         \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_AGGREGATE_CONV; break;
 
 // Custom converter: Parses/formats host resolution preference strings.
 #define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
@@ -7396,6 +7401,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 #undef _CONF_CASE_ConnectionTracker_MIN_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV
 #undef _CONF_CASE_HttpTransact_HOST_RES_CONV
 #undef _CONF_CASE_TargetedCacheControlHeaders_Conv
 #undef _CONF_CASE_DISPATCH
@@ -7773,13 +7780,23 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
   return TS_SUCCESS;
 }
 
+namespace
+{
+bool
+is_usable_port_descriptor(const HttpProxyPort *port)
+{
+  return port != nullptr &&
+         (port->m_family == AF_UNIX || ((port->m_family == AF_INET || port->m_family == AF_INET6) && port->m_port != 0));
+}
+} // namespace
+
 // Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
 TSPortDescriptor
 TSPortDescriptorParse(const char *descriptor)
 {
-  HttpProxyPort *port = new HttpProxyPort();
+  auto *port = new HttpProxyPort();
 
-  if (descriptor && port->processOptions(descriptor)) {
+  if (descriptor != nullptr && port->processOptions(descriptor) && is_usable_port_descriptor(port)) {
     return reinterpret_cast<TSPortDescriptor>(port);
   }
 
@@ -7790,8 +7807,17 @@ TSPortDescriptorParse(const char *descriptor)
 TSReturnCode
 TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
+  if (descp == nullptr || contp == nullptr) {
+    return TS_ERROR;
+  }
+
+  const auto *port = reinterpret_cast<const HttpProxyPort *>(descp);
+
+  if (!is_usable_port_descriptor(port)) {
+    return TS_ERROR;
+  }
+
   Action                     *action = nullptr;
-  HttpProxyPort              *port   = reinterpret_cast<HttpProxyPort *>(descp);
   NetProcessor::AcceptOptions net(make_net_accept_options(port, -1 /* nthreads */));
 
   if (port->isSSL()) {
@@ -7801,6 +7827,12 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
   }
 
   return action ? TS_SUCCESS : TS_ERROR;
+}
+
+void
+TSPortDescriptorDestroy(TSPortDescriptor descp)
+{
+  delete reinterpret_cast<HttpProxyPort *>(descp);
 }
 
 TSReturnCode
@@ -8316,9 +8348,9 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     }
 
     // Extract common name
-    int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
-    X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
-    ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    const int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
+    const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     char *common_name_str = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
     if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
       // Embedded null char
@@ -8334,7 +8366,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
         return TS_ERROR;
       }
       // Atomic Swap
-      cc->setCtx(test_ctx);
+      cc->setCtx(std::move(test_ctx));
       return TS_SUCCESS;
     }
   }
@@ -8934,7 +8966,7 @@ TSRPCHandlerDone(TSYaml resp)
 {
   Dbg(dbg_ctl_rpc_api, ">> Handler seems to be done");
   std::lock_guard<std::mutex> lock(::rpc::g_rpcHandlingMutex);
-  auto                        data       = *reinterpret_cast<YAML::Node *>(resp);
+  auto const                 &data       = *reinterpret_cast<YAML::Node const *>(resp);
   ::rpc::g_rpcHandlerResponseData        = data;
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();
@@ -9079,7 +9111,8 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
 
   LogField *field = new LogField(
     name.data(), symbol.data(), static_cast<LogField::Type>(type),
-    [marshal_cb](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); }, unmarshal_cb);
+    [marshal_cb = std::move(marshal_cb)](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); },
+    unmarshal_cb);
   Log::global_field_list.add(field, false);
   Log::field_symbol_hash.emplace(symbol.data(), field);
 

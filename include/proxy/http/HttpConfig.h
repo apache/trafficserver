@@ -420,6 +420,18 @@ enum class CacheOpenWriteFailAction_t {
   TOTAL_TYPES
 };
 
+/** Whether a cache_open_write_fail_action retries the cache read.
+ *
+ * @param[in] action A proxy.config.http.cache.open_write_fail_action value.
+ * @return Whether losing the cache write lock should retry the cache read.
+ */
+inline bool
+is_read_retry_write_fail_action(MgmtByte action)
+{
+  return action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+         action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE);
+}
+
 extern HttpStatsBlock http_rsb;
 
 /////////////////////////////////////////////////////////////
@@ -693,6 +705,7 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_guaranteed_min_lifetime = 0;
   MgmtInt cache_guaranteed_max_lifetime = 31536000;
   MgmtInt cache_max_stale_age           = 604800;
+  MgmtInt cache_max_stale_age_percent   = 0;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //

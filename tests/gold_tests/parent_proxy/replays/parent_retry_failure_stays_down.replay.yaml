@@ -1,0 +1,215 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# A parent that accepts the connection but never sends a response ("up but not
+# serving") must stay marked down when a retry probe also fails.
+#
+# A retried parent must only be restored once a retry actually succeeds.
+# markParentUp() zeroes failedAt and failCount, and the markParentDown() that
+# follows a failed probe takes its result->retry branch, which leaves
+# new_fail_count at 0 and so never re-clears available. Restoring the parent
+# before the probe's outcome is known therefore returns it to the pool with a
+# clean counter after every retry_time window, no matter how long it stays
+# degraded. That is why the restore belongs in the CONNECTION_ALIVE branch of
+# HttpTransact::handle_response_from_parent and not at function entry.
+#
+# The verifier server plays the parent: server-response.delay (4s) exceeds the
+# child's transaction_no_activity_timeout_out (2s), so ATS reads zero bytes and
+# times out (INACTIVE_TIMEOUT), which enable_parent_timeout_markdowns=1 admits
+# as a markdown-eligible failure.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'A failed retry probe must not restore a degraded parent'
+
+  server:
+    name: 'server-degraded'
+    # Every transaction is abandoned by ATS mid-flight (the response is still
+    # being held when the timeout fires), so the server may report an incomplete
+    # transaction cycle. The assertions live in the client statuses and the ATS
+    # diags log.
+    return_code: [0, 1]
+
+  client:
+    name: 'client-degraded'
+    process_config:
+      # Each request waits out a 2s ATS timeout, and one waits a further 3s for
+      # retry_time. The default 5s poll timeout would abandon a transaction
+      # mid-flight and report no status violation at all.
+      other_args: '--poll-timeout 30000'
+
+  # Resolve every hostname to loopback. The origin is never actually contacted
+  # (go_direct=false keeps every request on the parent), but ATS may still run
+  # an origin DNS lookup on the way to parent selection, and an unresolvable
+  # name would fail the request before selection runs.
+  dns:
+    name: 'dns-degraded'
+
+  ats:
+    name: 'ts-degraded'
+    process_config:
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'parent_select|http_trans'
+      # NOTE: no_dns_just_forward_to_parent is deliberately NOT set here. It
+      # routes the request through the parentExists() shortcut in
+      # HttpTransact::HandleRequest, which tests pRecord::available directly and
+      # so short-circuits to an error as soon as the parent is marked down --
+      # before ParentRoundRobin::selectParent runs. The retry-window logic under
+      # test lives inside selectParent, so the request has to reach it.
+      #
+      # With the cache disabled every request is non-lookupable, and this
+      # setting (default 1) would then send each one direct to the origin
+      # instead of the parent -- "request not cacheable, so bypass parent".
+      proxy.config.http.uncacheable_requests_bypass_parent: 0
+      # A read timeout only counts toward markdown when this is enabled. It is
+      # off by default upstream but enabled in the production config this
+      # reproduces.
+      proxy.config.http.parent_proxy.enable_parent_timeout_markdowns: 1
+      # One timeout demotes the parent, keeping the test to four requests.
+      proxy.config.http.parent_proxy.fail_threshold: 1
+      # Short enough that a single in-replay delay outlasts the down window.
+      proxy.config.http.parent_proxy.retry_time: 2
+      # No intra-request retry looping; one attempt per request keeps the
+      # failure accounting one-to-one with the transactions below.
+      proxy.config.http.parent_proxy.total_connect_attempts: 1
+      proxy.config.http.parent_proxy.per_parent_connect_attempts: 1
+      # Keep the parent out of the HostStatus map so availability is governed
+      # purely by retry_time.
+      proxy.config.http.parent_proxy.self_detect: 0
+      # Bound the wait on the silent parent.
+      proxy.config.http.transaction_no_activity_timeout_out: 2
+      proxy.config.url_remap.remap_required: 0
+
+    # A single parent with go_direct=false: once it is unavailable there is
+    # nowhere else to go, so selection-time skipping is visible as a 502.
+    parent_config:
+      - 'dest_domain=. parent="127.0.0.1:{SERVER_HTTP_PORT}" go_direct=false parent_is_proxy=true'
+
+    log_validation:
+      diags_log:
+        contains:
+          # The retry probe fails, so the parent must be re-marked down rather
+          # than left available.
+          - expression: 'Parent retry marked as down 127\.0\.0\.1:\d+'
+            description: 'The failed retry probe re-marks the parent down'
+        excludes:
+          # Note() emitted only by ParentSelectionStrategy::markParentUp. Every
+          # request in this replay fails, so no retry ever succeeds and the
+          # parent must never be restored.
+          - expression: 'http parent proxy 127\.0\.0\.1:\d+ restored with request'
+            description: 'A failed retry probe must not restore the parent'
+
+sessions:
+- transactions:
+  # 1: the parent accepts but never responds. ATS times out (504) and the
+  # failure count reaches fail_threshold, so the parent is marked down as this
+  # request finishes.
+  - all: { headers: { fields: [[ uuid, degrade1 ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /degrade1
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 504
+
+  # 2: still inside retry_time. The parent is skipped at selection and, with no
+  # other parent and go_direct=false, ATS returns 502 without touching the leg.
+  # This confirms the markdown from request 1 actually took effect.
+  - all: { headers: { fields: [[ uuid, downcheck ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /downcheck
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502
+
+  # 3: the retry probe. The client delay pushes this request past retry_time, so
+  # parent selection picks the parent as a retry candidate. The probe reaches the
+  # still-silent parent and times out (504). The parent must not be restored:
+  # markParentUp belongs to the CONNECTION_ALIVE branch, which this never takes.
+  - all: { headers: { fields: [[ uuid, retryprobe ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /retryprobe
+      delay: 3s
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 504
+
+  # 4: the retry probe failed, so the parent must still be down. Selection skips
+  # it and ATS returns 502 without touching the leg. A 504 here would mean the
+  # failed probe had restored the parent and it was attempted again.
+  - all: { headers: { fields: [[ uuid, aftercheck ]]}}
+    client-request:
+      method: GET
+      version: "1.1"
+      scheme: http
+      url: /aftercheck
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Content-Length, "0" ]
+    server-response:
+      delay: 4s
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+    proxy-response:
+      status: 502

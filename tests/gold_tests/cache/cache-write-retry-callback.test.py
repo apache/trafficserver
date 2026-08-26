@@ -1,3 +1,6 @@
+'''
+Verify a cache write retry does not cancel the cache read that follows it.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,28 +17,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A very simple cleartext server for one HTTP transaction.  Does no validation of the Request message.
-# Sends a fixed response message
+Test.Summary = '''
+Verify a transaction that loses the cache write lock and retries can still
+receive the cache read callback that its retry triggers.
+'''
 
-
-response ()
-{
-  # Wait for end of Request message.
-  #
-  while (( 1 == 1 ))
-  do
-    if [[ -f $outfile ]] ; then
-      if tr '\r\n' '=!' < $outfile | grep '=!=!' > /dev/null
-      then
-        break;
-      fi
-    fi
-    sleep 1
-  done
-
-  printf "HTTP/1.1 200\r\nTransfer-encoding: chunked\r\n\r\n"
-  printf "F\r\n123456789012345\r\n0\r\n\r\n"
-
-}
-outfile=$2
-response | nc -l $1 > "$outfile"
+Test.ATSReplayTest(replay_file="replay/cache-write-retry-callback.replay.yaml")

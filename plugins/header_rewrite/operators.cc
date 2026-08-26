@@ -23,6 +23,9 @@
 #include <cstring>
 #include <algorithm>
 #include <iomanip>
+#include <stdexcept>
+#include <system_error>
+#include <utility>
 
 #include "records/RecCore.h"
 #include "ts/ts.h"
@@ -40,10 +43,37 @@ const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
 const unsigned int MAX_SIZE         = 256;
 const int          LOCAL_PORT       = 8080;
 
+void
+initialize_content_type(Parser &p, Operator *owner, Value &content_type)
+{
+  size_t      token_count = p.get_tokens().size();
+  auto const &tokens      = p.get_tokens();
+
+  if (token_count > 0 && tokens.back().size() >= 2 && tokens.back().front() == '[' && tokens.back().back() == ']') {
+    --token_count;
+  }
+  if (token_count > 3) {
+    throw std::runtime_error(p.get_op() + " accepts at most two arguments; quote arguments that contain whitespace");
+  }
+
+  auto const &value = p.get_value();
+
+  if (!value.empty() && value.find('/') == std::string::npos && value.find("%{") == std::string::npos) {
+    throw std::runtime_error(p.get_op() + " Content-Type must be a MIME type containing '/'");
+  }
+  content_type.set_value(value, owner);
+}
+
+struct SetBodyFromData {
+  TSHttpTxn   http_txn;
+  std::string content_type;
+};
+
 int
 handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn http_txn = static_cast<TSHttpTxn>(TSContDataGet(cont));
+  auto     *fetch_data = static_cast<SetBodyFromData *>(TSContDataGet(cont));
+  TSHttpTxn http_txn   = fetch_data->http_txn;
 
   switch (static_cast<int>(event)) {
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_SUCCESS: {
@@ -58,11 +88,25 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 
       TSHttpHdrTypeSet(hdr_buf, hdr_loc, TS_HTTP_TYPE_RESPONSE);
       if (TSHttpHdrParseResp(parser, hdr_buf, hdr_loc, &data_start, data_end) == TS_PARSE_DONE) {
-        size_t body_len = data_end - data_start;
-        char  *body     = static_cast<char *>(TSmalloc(body_len + 1));
+        char  *content_type = nullptr;
+        size_t body_len     = data_end - data_start;
+        char  *body         = static_cast<char *>(TSmalloc(body_len + 1));
+
+        if (!fetch_data->content_type.empty()) {
+          content_type = TSstrdup(fetch_data->content_type.c_str());
+        } else if (TSMLoc field_loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+                   field_loc != TS_NULL_MLOC) {
+          int         value_len = 0;
+          const char *value     = TSMimeHdrFieldValueStringGet(hdr_buf, hdr_loc, field_loc, -1, &value_len);
+
+          if (value != nullptr && value_len > 0) {
+            content_type = TSstrndup(value, value_len);
+          }
+          TSHandleMLocRelease(hdr_buf, hdr_loc, field_loc);
+        }
         memcpy(body, data_start, body_len);
         body[body_len] = '\0';
-        TSHttpTxnErrorBodySet(http_txn, body, body_len, nullptr);
+        TSHttpTxnErrorBodySet(http_txn, body, body_len, content_type);
       } else {
         TSWarning("[%s] Unable to parse set-custom-body fetch response", __FUNCTION__);
       }
@@ -83,6 +127,8 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
   case TS_EVENT_HTTP_TXN_CLOSE: {
+    delete fetch_data;
+    TSContDataSet(cont, nullptr);
     TSContDestroy(cont);
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
@@ -810,8 +856,8 @@ void
 OperatorSetBody::initialize(Parser &p)
 {
   Operator::initialize(p);
-  // we want the arg since body only takes one value
   _value.set_value(p.get_arg(), this);
+  initialize_content_type(p, this, _content_type);
 }
 
 void
@@ -825,13 +871,83 @@ bool
 OperatorSetBody::exec(const Resources &res) const
 {
   std::string value;
+  std::string content_type;
 
   _value.append_value(value, res);
-  char *msg = nullptr;
+  _content_type.append_value(content_type, res);
+  char *msg       = nullptr;
+  char *mime_type = nullptr;
+
   if (!value.empty()) {
     msg = TSstrdup(value.c_str());
+    if (!content_type.empty()) {
+      mime_type = TSstrdup(content_type.c_str());
+    }
   }
-  TSHttpTxnErrorBodySet(res.state.txnp, msg, value.size(), nullptr);
+  TSHttpTxnErrorBodySet(res.state.txnp, msg, value.size(), mime_type);
+  return true;
+}
+
+// OperatorSetBodyFromFile
+void
+OperatorSetBodyFromFile::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  initialize_content_type(p, this, _content_type);
+
+  swoc::file::path path{p.get_arg()};
+
+  if (path.is_relative()) {
+    swoc::file::path base{TSConfigDirGet()};
+
+    if (has_config_location()) {
+      base = swoc::file::path{get_config_filename()};
+      if (base.is_relative()) {
+        base = swoc::file::path{TSConfigDirGet()} / base;
+      }
+      base = base.parent_path();
+    }
+    path = base / path;
+  }
+
+  std::error_code ec;
+
+  _body = swoc::file::load(path, ec);
+  if (ec) {
+    throw std::system_error(ec, "unable to load body file '" + std::string(path.c_str()) + "'");
+  }
+
+  auto const max_body_size = RecGetRecordInt("proxy.config.body_factory.response_max_size");
+
+  if (max_body_size && *max_body_size >= 0 && _body.size() > static_cast<size_t>(*max_body_size)) {
+    throw std::runtime_error("body file '" + std::string(path.c_str()) + "' exceeds proxy.config.body_factory.response_max_size (" +
+                             std::to_string(*max_body_size) + ")");
+  }
+}
+
+void
+OperatorSetBodyFromFile::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+bool
+OperatorSetBodyFromFile::exec(const Resources &res) const
+{
+  std::string content_type;
+  char       *body      = nullptr;
+  char       *mime_type = nullptr;
+
+  _content_type.append_value(content_type, res);
+  if (!_body.empty()) {
+    body = static_cast<char *>(TSmalloc(_body.size()));
+    std::memcpy(body, _body.data(), _body.size());
+    if (!content_type.empty()) {
+      mime_type = TSstrdup(content_type.c_str());
+    }
+  }
+  TSHttpTxnErrorBodySet(res.state.txnp, body, _body.size(), mime_type);
   return true;
 }
 
@@ -1242,20 +1358,6 @@ OperatorSetPluginCntl::initialize(Parser &p)
   }
 }
 
-// This operator should be allowed everywhere
-void
-OperatorSetPluginCntl::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
-}
-
 bool
 OperatorSetPluginCntl::exec(const Resources &res) const
 {
@@ -1282,12 +1384,11 @@ OperatorRunPlugin::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  auto plugin_name = p.get_arg();
-  auto plugin_args = p.get_value();
+  const auto &plugin_name = p.get_arg();
+  const auto &plugin_args = p.get_value();
 
   if (plugin_name.empty()) {
-    TSError("[%s] missing plugin name", PLUGIN_NAME);
-    return;
+    throw std::runtime_error("run-plugin missing plugin name");
   }
 
   std::vector<std::string> tokens;
@@ -1298,15 +1399,10 @@ OperatorRunPlugin::initialize(Parser &p)
     tokens.push_back(token);
   }
 
-  // Create argc and argv
-  int    argc = tokens.size() + 2;
-  char **argv = new char *[argc];
+  std::vector<char *> argv{p.from_url(), p.to_url()};
 
-  argv[0] = p.from_url();
-  argv[1] = p.to_url();
-
-  for (size_t i = 0; i < tokens.size(); ++i) {
-    argv[i + 2] = const_cast<char *>(tokens[i].c_str());
+  for (auto const &argument : tokens) {
+    argv.push_back(const_cast<char *>(argument.c_str()));
   }
 
   std::string error;
@@ -1318,14 +1414,12 @@ OperatorRunPlugin::initialize(Parser &p)
     elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), argc, const_cast<char **>(argv), error,
+    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), static_cast<int>(argv.size()), argv.data(), error,
                                             isPluginDynamicReloadEnabled());
   } // done elevating access
 
-  delete[] argv;
-
   if (!_plugin) {
-    TSError("[%s] Unable to load plugin '%s': %s", PLUGIN_NAME, plugin_name.c_str(), error.c_str());
+    throw std::runtime_error("run-plugin unable to load plugin '" + std::string{plugin_name} + "': " + error);
   }
 }
 
@@ -1340,7 +1434,11 @@ OperatorRunPlugin::initialize_hooks()
 bool
 OperatorRunPlugin::exec(const Resources &res) const
 {
-  TSReleaseAssert(_plugin != nullptr);
+  // Rejected at config load (see initialize); guard anyway so a stray bad rule can't abort the server.
+  if (!_plugin) {
+    Dbg(pi_dbg_ctl, "OperatorRunPlugin::exec skipped, plugin was not loaded");
+    return true;
+  }
 
   if (res._rri && res.state.txnp) {
     _plugin->doRemap(res.state.txnp, res._rri);
@@ -1353,8 +1451,8 @@ void
 OperatorSetBodyFrom::initialize(Parser &p)
 {
   Operator::initialize(p);
-  // we want the arg since body only takes one value
   _value.set_value(p.get_arg(), this);
+  initialize_content_type(p, this, _content_type);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
 }
@@ -1375,29 +1473,30 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     return true;
   }
 
-  char req_buf[MAX_SIZE];
-  int  req_buf_size = 0;
-  if (createRequestString(_value.get_value(), req_buf, &req_buf_size) == TS_SUCCESS) {
+  std::string url;
+  std::string content_type;
+  char        req_buf[MAX_SIZE];
+  int         req_buf_size = 0;
+
+  _value.append_value(url, res);
+  _content_type.append_value(content_type, res);
+  if (createRequestString(url, req_buf, &req_buf_size) == TS_SUCCESS) {
     TSCont fetchCont = TSContCreate(handleFetchEvents, TSMutexCreate());
-    TSContDataSet(fetchCont, static_cast<void *>(res.state.txnp));
+    TSContDataSet(fetchCont, new SetBodyFromData{res.state.txnp, std::move(content_type)});
 
     TSHttpTxnHookAdd(res.state.txnp, TS_HTTP_TXN_CLOSE_HOOK, fetchCont);
 
     TSFetchEvent event_ids;
-    event_ids.success_event_id = TS_EVENT_FETCHSM_SUCCESS;
-    event_ids.failure_event_id = TS_EVENT_FETCHSM_FAILURE;
-    event_ids.timeout_event_id = TS_EVENT_FETCHSM_TIMEOUT;
+    event_ids.success_event_id = OperatorSetBodyFrom::TS_EVENT_FETCHSM_SUCCESS;
+    event_ids.failure_event_id = OperatorSetBodyFrom::TS_EVENT_FETCHSM_FAILURE;
+    event_ids.timeout_event_id = OperatorSetBodyFrom::TS_EVENT_FETCHSM_TIMEOUT;
 
-    struct sockaddr_in addr;
+    struct sockaddr_in addr {
+    };
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = LOCAL_IP_ADDRESS;
     addr.sin_port        = LOCAL_PORT;
-    TSFetchUrl(static_cast<const char *>(req_buf), req_buf_size, reinterpret_cast<struct sockaddr const *>(&addr), fetchCont,
-               AFTER_BODY, event_ids);
-
-    // Forces original status code in event TSHttpTxnErrorBodySet changed
-    // the code or another condition was set conflicting with this one.
-    // Set here because res is the only structure that contains the original status code.
+    TSFetchUrl(req_buf, req_buf_size, reinterpret_cast<struct sockaddr const *>(&addr), fetchCont, AFTER_BODY, event_ids);
     TSHttpTxnStatusSet(res.state.txnp, res.resp_status, PLUGIN_NAME);
   } else {
     TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
@@ -1429,20 +1528,6 @@ OperatorSetStateFlag::initialize(Parser &p)
     _mask = ~(1ULL << _flag_ix);
     _flag = false;
   }
-}
-
-// This operator should be allowed everywhere
-void
-OperatorSetStateFlag::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
 }
 
 bool
@@ -1483,20 +1568,6 @@ OperatorSetStateInt8::initialize(Parser &p)
       return;
     }
   }
-}
-
-// This operator should be allowed everywhere
-void
-OperatorSetStateInt8::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
 }
 
 bool
@@ -1553,20 +1624,6 @@ OperatorSetStateInt16::initialize(Parser &p)
       return;
     }
   }
-}
-
-// This operator should be allowed everywhere
-void
-OperatorSetStateInt16::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
 }
 
 bool
@@ -1710,7 +1767,7 @@ OperatorIf::new_section(Parser::CondClause clause)
 bool
 OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
 {
-  Operator *op = operator_factory(p.get_op());
+  std::unique_ptr<Operator> op{operator_factory(p.get_op())};
 
   if (!op) {
     TSError("[%s] Unknown operator: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
@@ -1723,7 +1780,6 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
   try {
     op->initialize(p);
   } catch (std::exception const &ex) {
-    delete op;
     TSError("[%s] Failed to initialize operator: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
             lineno, ex.what());
     return false;
@@ -1731,10 +1787,10 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
 
   // Add to current section
   if (_cur_section->ops.oper) {
-    _cur_section->ops.oper->append(op);
+    _cur_section->ops.oper->append(op.release());
   } else {
-    _cur_section->ops.oper.reset(op);
-    _cur_section->ops.oper_mods = op->get_oper_modifiers();
+    _cur_section->ops.oper      = std::move(op);
+    _cur_section->ops.oper_mods = _cur_section->ops.oper->get_oper_modifiers();
   }
 
   return true;

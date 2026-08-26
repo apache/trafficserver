@@ -77,7 +77,7 @@ extern "C" int plock(int);
 #include "Crash.h"
 #include "tscore/signals.h"
 #include "../iocore/net/P_Net.h"
-#if TS_HAS_QUICHE
+#if TS_USE_QUIC == 1
 #include "../iocore/net/P_QUICNetProcessor.h"
 #endif
 #include "../iocore/net/P_UDPNet.h"
@@ -86,6 +86,7 @@ extern "C" int plock(int);
 #include "../iocore/dns/P_SplitDNSProcessor.h"
 #include "../iocore/hostdb/P_HostDB.h"
 #include "../iocore/cache/P_CacheDir.h"
+#include "../iocore/cache/CacheShm.h"
 #include "../records/P_RecCore.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/Machine.h"
@@ -127,7 +128,7 @@ extern "C" int plock(int);
 
 #include "mgmt/config/FileManager.h"
 
-#if TS_USE_QUIC == 1
+#if TS_USE_QUIC == 1 || TS_USE_QMUX == 1
 #include "proxy/http3/Http3.h"
 #include "proxy/http3/Http3Config.h"
 #endif
@@ -301,9 +302,20 @@ struct AutoStopCont : public Continuation {
 
     TSSystemState::shut_down_event_system();
 
-    // Wake preproc threads to drain remaining log buffers before exit.
-    for (int i = 0; i < Log::preproc_threads; i++) {
-      Log::preproc_notify[i].signal();
+    // Only now is the directory quiescent enough to be worth trusting next start; marking clean while event threads
+    // could still mutate it would publish a directory torn mid-Directory::insert. Not a hard barrier -- the flag above
+    // stops new work but joins no thread -- so Stripe::_shm_directory_is_valid still has to prove the structure.
+    if (cacheProcessor.IsCacheEnabled() == CacheInitState::INITIALIZED) {
+      CacheShm::mark_clean_shutdown();
+    }
+
+    // Wake preproc threads to drain remaining log buffers before exit. The notify array is allocated only when the log
+    // threads are spawned, which happens well after Log::init() during startup and not at all in command mode, so a
+    // null array means there is no preproc thread in existence and nothing to wake.
+    if (Log::preproc_notify != nullptr) {
+      for (int i = 0; i < Log::preproc_threads; i++) {
+        Log::preproc_notify[i].signal();
+      }
     }
     delete this;
     return EVENT_CONT;
@@ -2159,7 +2171,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   // We want to initialize Machine as early as possible because it
   // has other dependencies. Hopefully not in prep_HttpProxyServer().
   HttpConfig::startup();
-#if TS_USE_QUIC == 1
+#if TS_USE_QUIC == 1 || TS_USE_QMUX == 1
   ts::Http3Config::startup();
 #endif
 
@@ -2353,7 +2365,7 @@ main(int /* argc ATS_UNUSED */, const char **argv)
 
     // Initialize HTTP/2
     Http2::init();
-#if TS_USE_QUIC == 1
+#if TS_USE_QUIC == 1 || TS_USE_QMUX == 1
     // Initialize HTTP/QUIC
     Http3::init();
 #endif
@@ -2403,7 +2415,9 @@ main(int /* argc ATS_UNUSED */, const char **argv)
     SSLConfigParams::load_ssl_file_cb = load_ssl_file_callback;
     sslNetProcessor.start(-1, stacksize);
 #if TS_USE_QUIC == 1
-    quic_NetProcessor.start(-1, stacksize);
+    if (HttpProxyPort::hasQUIC()) {
+      quic_NetProcessor.start(-1, stacksize);
+    }
 #endif
     FileManager::instance().registerConfigPluginCallbacks([&]() { global_config_cbs->invoke(); });
     cacheProcessor.afterInitCallbackSet(&CB_After_Cache_Init);

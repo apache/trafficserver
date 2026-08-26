@@ -99,6 +99,7 @@ Http2ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   ink_assert(new_vc->mutex->thread_holding == this_ethread());
   Metrics::Gauge::increment(http2_rsb.current_client_session_count);
   Metrics::Counter::increment(http2_rsb.total_client_connection_count);
+  this->_increment_total_client_connections_stat(new_vc);
   this->_milestones.mark(Http2SsnMilestone::OPEN);
 
   // Unique client session identifier.

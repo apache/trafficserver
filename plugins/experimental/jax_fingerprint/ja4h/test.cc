@@ -27,6 +27,7 @@
 
 #include <string>
 #include <map>
+#include <utility>
 
 namespace
 {
@@ -77,7 +78,7 @@ public:
     SHA256_CTX sha256ctx;
     SHA256_Init(&sha256ctx);
 
-    for (auto ite : this->_fields) {
+    for (auto const &ite : this->_fields) {
       if (this->_should_include_field({ite.first.c_str(), ite.first.size()})) {
         SHA256_Update(&sha256ctx, ite.first.c_str(), ite.first.size());
       }
@@ -89,7 +90,7 @@ public:
   void
   set_method(std::string method)
   {
-    this->_method = method;
+    this->_method = std::move(method);
   }
   void
   set_version(int version)
@@ -99,12 +100,12 @@ public:
   void
   set_fields(std::map<std::string, std::string> fields)
   {
-    this->_fields = fields;
+    this->_fields = std::move(fields);
   }
 
 private:
   std::string                        _method;
-  int                                _version;
+  int                                _version{};
   std::map<std::string, std::string> _fields{};
 };
 

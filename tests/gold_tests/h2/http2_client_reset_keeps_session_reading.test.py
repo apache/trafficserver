@@ -1,3 +1,4 @@
+'''Verify an HTTP/2 stream reset does not stop the session from reading.'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,28 +15,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A very simple cleartext server for one HTTP transaction.  Does no validation of the Request message.
-# Sends a fixed response message
+Test.Summary = __doc__
 
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion('1.1.1'), Condition.HasProxyVerifierVersion('2.8.0'), Condition.PluginExists('null_transform.so'))
 
-response ()
-{
-  # Wait for end of Request message.
-  #
-  while (( 1 == 1 ))
-  do
-    if [[ -f $outfile ]] ; then
-      if tr '\r\n' '=!' < $outfile | grep '=!=!' > /dev/null
-      then
-        break;
-      fi
-    fi
-    sleep 1
-  done
-
-  printf "HTTP/1.1 200\r\nContent-length: 15\r\n\r\n"
-  printf "123456789012345"
-
-}
-outfile=$2
-response | nc -l $1 > "$outfile"
+Test.ATSReplayTest(replay_file="replay/http2_client_reset_keeps_session_reading.replay.yaml")

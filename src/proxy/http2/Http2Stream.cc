@@ -807,12 +807,12 @@ Http2Stream::restart_sending()
     }
   }
 
-  IOBufferReader *reader = this->get_data_reader_for_send();
-  if (reader && !reader->is_read_avail_more_than(0)) {
+  if (this->write_vio.mutex && this->write_vio.ntodo() <= 0) {
     return;
   }
 
-  if (this->write_vio.mutex && this->write_vio.ntodo() == 0) {
+  IOBufferReader *reader = this->get_data_reader_for_send();
+  if (reader && !reader->is_read_avail_more_than(0)) {
     return;
   }
 
@@ -970,6 +970,11 @@ Http2Stream::signal_write_event(int event, bool call_update)
         write_event = nullptr;
       }
       _timeout.update_inactivity();
+      if (event == VC_EVENT_WRITE_COMPLETE) {
+        // HttpSM owns the write buffer and may release it while handling this
+        // event. Drop the unowned alias before transferring control.
+        _send_reader = nullptr;
+      }
       this->write_vio.cont->handleEvent(event, &this->write_vio);
     } else {
       if (this->_write_vio_event) {

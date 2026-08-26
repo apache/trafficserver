@@ -434,13 +434,13 @@ public:
         if (!content_length_usable) {
           TSHttpTxnServerRespNoStoreSet(static_cast<TSHttpTxn>(transaction.getAtsHandle()), 1);
         }
-        transaction.addPlugin(new ImageTransform(transaction, ctype, input_image_type, ImageEncoding::webp));
+        transaction.addPlugin(new ImageTransform(transaction, std::move(ctype), input_image_type, ImageEncoding::webp));
       } else if (webp_supported == false && transaction_convert_to_jpeg == true) {
         Dbg(webp_dbg_ctl, "Content type is webp. Converting to jpeg");
         if (!content_length_usable) {
           TSHttpTxnServerRespNoStoreSet(static_cast<TSHttpTxn>(transaction.getAtsHandle()), 1);
         }
-        transaction.addPlugin(new ImageTransform(transaction, ctype, input_image_type, ImageEncoding::jpeg));
+        transaction.addPlugin(new ImageTransform(transaction, std::move(ctype), input_image_type, ImageEncoding::jpeg));
       } else {
         Dbg(webp_dbg_ctl, "Nothing to convert");
       }

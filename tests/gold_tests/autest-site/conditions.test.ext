@@ -33,6 +33,12 @@ OPENSSL_TLS_FLAGS = {
 }
 
 
+def _version_tuple(value, width=3):
+    parts = [int(part) for part in re.findall(r'\d+', value)[:width]]
+    parts.extend([0] * (width - len(parts)))
+    return tuple(parts)
+
+
 def _terminate_process(process):
     if process.poll() is not None:
         return
@@ -130,10 +136,27 @@ def HasOpenSSLVersion(self, version):
     output = subprocess.check_output(os.path.join(self.Variables.BINDIR, "traffic_layout") + " info --versions --json", shell=True)
     json_data = output.decode('utf-8')
     openssl_str = json.loads(json_data)['openssl_str']
-    exe_ver = re.search(r'\d\.\d\.\d', openssl_str).group(0)
-    if exe_ver == '':
+    match = re.search(r'\d+(?:\.\d+)+', openssl_str)
+    if match is None:
         raise ValueError("Error determining version of OpenSSL library needed by traffic_server executable")
-    return self.Condition(lambda: exe_ver >= version, "OpenSSL library version is " + exe_ver + ", must be at least " + version)
+    exe_ver = match.group(0)
+    return self.Condition(
+        lambda: _version_tuple(exe_ver) >= _version_tuple(version),
+        "OpenSSL library version is " + exe_ver + ", must be at least " + version)
+
+
+def HasOpenSSLQuicClient(self):
+    """Check whether the openssl CLI supports s_client -quic."""
+
+    def check_openssl_quic_client():
+        try:
+            result = subprocess.run(["openssl", "s_client", "-help"], capture_output=True, text=True, timeout=5)
+        except (OSError, subprocess.SubprocessError):
+            return False
+
+        return "-quic" in result.stdout or "-quic" in result.stderr
+
+    return self.Condition(check_openssl_quic_client, "OpenSSL CLI must support s_client -quic")
 
 
 def IsBoringSSL(self):
@@ -215,6 +238,26 @@ def HasCurlVersion(self, version):
 def HasProxyVerifierVersion(self, version):
     verifier_path = os.path.join(self.Variables.VerifierBinPath, 'verifier-client')
     return self.EnsureVersion([verifier_path, "--version"], min_version=version)
+
+
+def HasGoVersion(self, version):
+    """Check whether the go command is available at the requested version."""
+
+    def check_go_version():
+        try:
+            output = subprocess.check_output(["go", "version"], stderr=subprocess.STDOUT, text=True)
+        except (OSError, subprocess.SubprocessError):
+            return False
+
+        match = re.search(r'\bgo(\d+\.\d+(?:\.\d+)?)\b', output)
+        if match is None:
+            return False
+
+        found = _version_tuple(match.group(1))
+        required = _version_tuple(version)
+        return found >= required
+
+    return self.Condition(check_go_version, "Go must be installed and at least version " + version)
 
 
 def HasCurlFeature(self, feature):
@@ -325,7 +368,9 @@ def CurlUsingUnixDomainSocket(self):
 
 
 ExtendCondition(HasOpenSSLVersion)
+ExtendCondition(HasOpenSSLQuicClient)
 ExtendCondition(HasProxyVerifierVersion)
+ExtendCondition(HasGoVersion)
 ExtendCondition(IsBoringSSL)
 ExtendCondition(IsOpenSSL)
 ExtendCondition(HasLegacyTLSSupport)

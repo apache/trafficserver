@@ -19,6 +19,17 @@
 
 .. _upgrading:
 
+Upgrading to ATS v11.x
+======================
+
+API Changes
+-----------
+
+The handle returned by :cpp:func:`TSPortDescriptorParse` must now be released
+with :cpp:func:`TSPortDescriptorDestroy`. The descriptor can be destroyed
+immediately after :cpp:func:`TSPortDescriptorAccept` returns because the
+listener does not retain it.
+
 Upgrading to ATS v10.x
 ======================
 

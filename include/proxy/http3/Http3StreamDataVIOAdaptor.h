@@ -42,7 +42,9 @@ public:
   bool has_data();
 
 private:
-  VIO       *_sink_vio          = nullptr;
-  int64_t    _total_data_length = 0;
-  MIOBuffer *_buffer;
+  VIO            *_sink_vio          = nullptr;
+  int64_t         _total_data_length = 0;
+  MIOBuffer      *_buffer            = nullptr;
+  IOBufferReader *_reader            = nullptr;
+  bool            _finalized         = false;
 };

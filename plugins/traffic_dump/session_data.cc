@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unordered_map>
+#include <utility>
 
 #include <tscore/ink_inet.h>
 
@@ -552,7 +553,7 @@ SessionData::global_session_handler(TSCont /* contp ATS_UNUSED */, TSEvent event
         TSHttpSsnReenable(ssnp, TS_EVENT_HTTP_CONTINUE);
         return TS_EVENT_HTTP_CONTINUE;
       }
-      ssnData->log_name = log_f;
+      ssnData->log_name = std::move(log_f);
       // Write log file beginning to disk
       ssnData->write_to_disk(beginning);
     }

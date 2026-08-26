@@ -153,10 +153,20 @@ TLSEventSupport::callHooks(TSEvent eventId)
   Dbg(dbg_ctl_ssl, "sslHandshakeHookState=%s eventID=%d", get_ssl_handshake_hook_state_name(this->sslHandshakeHookState), eventId);
 
   // Move state if it is appropriate
-  if (eventId == TS_EVENT_VCONN_CLOSE) {
+  if (eventId == TS_EVENT_VCONN_CLOSE || eventId == TS_EVENT_VCONN_OUTBOUND_CLOSE) {
     // Regardless of state, if the connection is closing, then transition to
     // the DONE state. This will trigger us to call the appropriate cleanup
     // routines.
+    //
+    // A connection can close while it is parked in a handshake hook, waiting for a plugin to
+    // reenable it. curHook then still points into that handshake hook's list. Each hook id owns
+    // a separate list, so advancing curHook below would walk the handshake list rather than the
+    // close list: the close event is dropped when the handshake list is exhausted, or delivered
+    // to the wrong plugin when it is not. Restart from the head of the close list unless we are
+    // already iterating it.
+    if (this->sslHandshakeHookState != SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE) {
+      this->curHook = nullptr;
+    }
     this->sslHandshakeHookState = SSLHandshakeHookState::HANDSHAKE_HOOKS_DONE;
   } else {
     switch (this->sslHandshakeHookState) {

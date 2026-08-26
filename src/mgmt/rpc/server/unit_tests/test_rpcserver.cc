@@ -559,6 +559,15 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
       auto              resp = rpc_client.query(json);
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": "32000"}, "id": "32k_1"})");
     }());
+
+    const int oversized_message_size{64000};
+    auto      oversized_json{R"({"jsonrpc": "2.0", "method": "do_nothing32000", "params": {"msg":")" +
+                        random_string(oversized_message_size) + R"("}, "id":"over-limit"})"};
+    REQUIRE_NOTHROW([&]() {
+      ScopedLocalSocket rpc_client;
+      auto              resp = rpc_client.query(oversized_json);
+      REQUIRE(resp.empty());
+    }());
   }
   REQUIRE(rpc::test_remove_handler("do_nothing32000"));
 }

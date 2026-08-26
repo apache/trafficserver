@@ -40,9 +40,7 @@ public:
   bool init(const String &config);
   bool empty() const;
   bool match(const String &subject);
-  bool capture(const String &subject, StringVector &result);
   bool replace(const String &subject, String &result);
-  bool process(const String &subject, StringVector &result);
 
 private:
   bool compile();

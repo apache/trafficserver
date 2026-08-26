@@ -168,6 +168,10 @@ IPCSocketServer::init()
     return ec;
   }
 
+  // Set this before RPCServer creates the worker thread so an immediate stop
+  // cannot be overwritten when the worker eventually enters run().
+  _running.store(true);
+
   return ec;
 }
 
@@ -201,8 +205,6 @@ IPCSocketServer::poll_for_new_client(std::chrono::milliseconds timeout) const
 void
 IPCSocketServer::run()
 {
-  _running.store(true);
-
   while (_running) {
     // poll till socket it's ready.
     if (!this->poll_for_new_client()) {
@@ -430,7 +432,7 @@ IPCSocketServer::Client::read_all(Buffer &bw) const
       return {false, swoc::bwprint(buff, "Peer disconnected. EOF")};
     }
     bw.save(ret);
-    if (_max_req_size - bw.stored() > 0) { // we can still read more.
+    if (bw.stored() < _max_req_size) { // we can still read more.
       using namespace std::chrono_literals;
       if (!this->poll_for_data(1ms)) {
         return {true, buff};

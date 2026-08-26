@@ -1131,6 +1131,8 @@ TEST_CASE("HdrTest", "[proxy][hdrtest]")
     if (cc_field == nullptr) {
       std::printf("FAILED: missing Cache-Control header\n\n");
       REQUIRE(false);
+      return; // REQUIRE throws, but make the early exit explicit so the dereferences below are
+              // unreachable to a reader and to the compiler
     }
 
     // TODO: Do we need to check the "count" returned?

@@ -1,0 +1,8 @@
+REMAP {
+    set-body("{{"error": "bad request", "detail": {"code": 400}}}\n", "application/problem+json");
+    set-body-from-file("errors/forbidden.json", "application/json");
+}
+
+READ_RESPONSE {
+    set-body-from("http://errors.example.com/not-found", "application/json");
+}

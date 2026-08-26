@@ -177,7 +177,7 @@ validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hos
   char      *matched_name = nullptr;
   bool const enforce_mode = netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::ENFORCED;
   bool       verified     = false;
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
   X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
   X509 *cert = SSL_get_peer_certificate(ssl);

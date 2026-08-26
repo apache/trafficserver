@@ -66,7 +66,7 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression("Activity Timeout", "Request should fail with active timeout")
 
-    if Condition.HasATSFeature('TS_HAS_QUICHE') and Condition.HasCurlFeature('http3'):
+    if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
         tr4 = Test.AddTestRun("tr")
         tr4.MakeCurlCommand('-k -i --http3 https://localhost:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
         tr4.Processes.Default.Streams.stdout = Testers.ContainsExpression(

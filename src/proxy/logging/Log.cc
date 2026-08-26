@@ -277,6 +277,7 @@ struct LoggingPreprocContinuation : public Continuation {
   mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
     Log::preproc_thread_main((void *)&m_idx);
+    delete this;
     return 0;
   }
 
@@ -293,6 +294,7 @@ struct LoggingFlushContinuation : public Continuation {
   mainEvent(int /* event ATS_UNUSED */, void * /* data ATS_UNUSED */)
   {
     Log::flush_thread_main((void *)&m_idx);
+    delete this;
     return 0;
   }
 
@@ -898,7 +900,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("ssql", field);
 
-  field = new LogField("server_resp_http_version", "sshv", LogField::Type::dINT, &LogAccess::marshal_server_resp_http_version,
+  field = new LogField("server_resp_http_version", "sshv", LogField::Type::STRING, &LogAccess::marshal_server_resp_http_version,
                        &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sshv", field);
@@ -973,7 +975,7 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("cssql", field);
 
-  field = new LogField("cached_resp_http_version", "csshv", LogField::Type::dINT, &LogAccess::marshal_cache_resp_http_version,
+  field = new LogField("cached_resp_http_version", "csshv", LogField::Type::STRING, &LogAccess::marshal_cache_resp_http_version,
                        &LogAccess::unmarshal_http_version);
   global_field_list.add(field, false);
   field_symbol_hash.emplace("csshv", field);
@@ -1240,7 +1242,11 @@ void
 Log::create_threads()
 {
   char desc[64];
-  preproc_notify = new EventNotify[preproc_threads];
+  preproc_notify  = new EventNotify[preproc_threads];
+  flush_notify    = new EventNotify;
+  flush_data_list = new InkAtomicList;
+
+  ink_atomiclist_init(flush_data_list, "Logging flush buffer list", 0);
 
   size_t stacksize;
   stacksize = RecGetRecordInt("proxy.config.thread.default.stacksize").value_or(0);
@@ -1259,10 +1265,6 @@ Log::create_threads()
   // TODO: Enable multiple flush threads, such as
   //       one flush thread per file.
   //
-  flush_notify    = new EventNotify;
-  flush_data_list = new InkAtomicList;
-
-  ink_atomiclist_init(flush_data_list, "Logging flush buffer list", 0);
   Continuation *flush_cont = new LoggingFlushContinuation(0);
   eventProcessor.spawn_thread(flush_cont, "[LOG_FLUSH]", stacksize);
 }

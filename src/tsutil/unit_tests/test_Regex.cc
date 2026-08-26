@@ -460,6 +460,61 @@ TEST_CASE("RegexMatches edge cases", "[libts][Regex][RegexMatches]")
     CHECK(count >= 2); // At least whole match + first group
     CHECK(matches[1] == "foo");
   }
+
+  SECTION("RegexMatches with a non-participating group before a participating one")
+  {
+    // pcre2_match() returns one past the highest participating group, so an earlier optional group
+    // that did not participate is still within that count. Its offsets are unset.
+    Regex r;
+    REQUIRE(r.compile("(a)?(b)"));
+
+    RegexMatches matches;
+    int          count = r.exec("b", matches);
+
+    CHECK(count == 3);
+    CHECK(matches[0] == "b");
+    CHECK(matches[1] == "");
+    CHECK(matches[2] == "b");
+    CHECK(matches[1].data() != nullptr);
+  }
+
+  SECTION("RegexMatches past what the match populated")
+  {
+    // The ovector holds a fixed number of pairs regardless of the pattern, and pcre2_match() writes
+    // no further than the highest participating group. Reading past that must not build a view over
+    // the uninitialized remainder of the buffer.
+    Regex r;
+    REQUIRE(r.compile("(.*-)(\\d+)(\\?.*)?$"));
+
+    RegexMatches matches;
+    int          count = r.exec("/img-7", matches);
+
+    // Three groups defined, but the trailing optional one did not participate.
+    CHECK(r.get_capture_count() == 3);
+    CHECK(count == 3);
+    CHECK(matches[1] == "/img-");
+    CHECK(matches[2] == "7");
+
+    // A group the pattern defines that the match did not reach, ...
+    CHECK(matches[3] == "");
+    CHECK(matches[3].data() != nullptr);
+
+    // ... and an index past the pattern's groups entirely, still inside the allocated ovector.
+    CHECK(matches[9] == "");
+    CHECK(matches[9].data() != nullptr);
+  }
+
+  SECTION("RegexMatches after a failed match")
+  {
+    Regex r;
+    REQUIRE(r.compile("(a)(b)"));
+
+    RegexMatches matches;
+    CHECK(r.exec("zz", matches) < 0);
+
+    CHECK(matches[0] == "");
+    CHECK(matches[0].data() != nullptr);
+  }
 }
 
 TEST_CASE("Regex with special characters", "[libts][Regex][special]")

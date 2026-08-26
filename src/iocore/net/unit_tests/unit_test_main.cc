@@ -23,6 +23,7 @@
 
 #include "iocore/eventsystem/EventSystem.h"
 #include "../P_SSLConfig.h"
+#include "api/LifecycleAPIHooks.h"
 #include "records/RecordsConfig.h"
 #include "tscore/BaseLogFile.h"
 #include "tscore/Diags.h"
@@ -54,6 +55,10 @@ public:
 
     RecProcessInit();
     LibRecordsConfigInit();
+
+    // SSLSecret::loadSecret consults the global lifecycle hooks for the
+    // SSL_SECRET hook, so they must be allocated before any secret is loaded.
+    init_global_lifecycle_hooks();
 
     ink_event_system_init(EVENT_SYSTEM_MODULE_PUBLIC_VERSION);
     eventProcessor.start(test_threads);

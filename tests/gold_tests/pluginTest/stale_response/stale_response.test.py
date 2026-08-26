@@ -134,6 +134,8 @@ class TestStaleResponse:
                 "proxy.config.http.server_session_sharing.pool": "global",
                 # Turn off negative revalidating so that we can test stale-if-error.
                 "proxy.config.http.negative_revalidating_enabled": 0,
+                # Keep the active log filename available for the final content check if the test spans UTC midnight.
+                "proxy.config.log.rolling_enabled": 0,
             })
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}/ {remap_plugin_config}")
 

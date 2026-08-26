@@ -100,7 +100,7 @@ set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(SSLLIB_IS_BORINGSSL OR SSLLIB_IS_AWSLC)
   target_sources(tscore PRIVATE HKDF_boringssl.cc)
-elseif(SSLLIB_IS_OPENSSL3)
+elseif(SSLLIB_IS_AT_LEAST_OPENSSL3)
   target_sources(tscore PRIVATE HKDF_openssl3.cc)
 else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)

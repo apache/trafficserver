@@ -11,7 +11,6 @@ leak:RegressionTest_HttpTransact_handle_trace_and_options_requests
 leak:CRYPTO_malloc
 leak:RegressionTest_SDK_API_TSMgmtGet
 leak:RegressionTest_SDK_API_TSCache
-leak:RegressionTest_SDK_API_TSPortDescriptor
 leak:RegressionTest_HostDBProcessor
 leak:RegressionTest_DNS
 leak:RegressionTest_UDPNet_echo

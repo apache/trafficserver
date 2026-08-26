@@ -1,0 +1,481 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not
+#  use this file except in compliance with the License.  You may
+#  obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: "Verify HTTP/3 client interop with Proxy Verifier across multiple connections"
+
+  server:
+    name: "server-h3-proxy-verifier"
+    process_config:
+      verbose: false
+      other_args: "--poll-timeout 30000"
+
+  client:
+    name: "client-h3-proxy-verifier"
+    process_config:
+      verbose: false
+      other_args: "--poll-timeout 30000"
+
+  ats:
+    name: "ts-h3-proxy-verifier"
+    startup_timeout: 60
+    process_config:
+      enable_tls: true
+      enable_quic: true
+      enable_cache: false
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "quic|http3"
+      proxy.config.quic.initial_max_data_in: 1000000
+      proxy.config.quic.initial_max_stream_data_bidi_remote_in: 1000000
+      proxy.config.quic.server.stateless_retry_enabled: 0
+
+    remap_config:
+    - from: "https://example.com/"
+      to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+    log_validation:
+      traffic_out:
+        contains:
+        - expression: 'start HTTP/3 app \(ALPN=h3\)'
+          description: "ATS should negotiate HTTP/3"
+
+sessions:
+- protocol:
+  - name: http
+    version: 3
+  - name: tls
+    sni: example.com
+  - name: udp
+  - name: ip
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-get-empty ]
+        - [ uuid, h3-get-empty ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "0" ]
+      content:
+        size: 0
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "0", as: equal } ]
+
+  - client-request:
+      version: "3"
+      await: h3-get-empty
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-get-small ]
+        - [ uuid, h3-get-small ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzAB"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyzAB"
+        verify: { as: equal }
+
+  - client-request:
+      version: "3"
+      await: h3-get-small
+      headers:
+        fields:
+        - [ ":method", HEAD ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-head-no-body ]
+        - [ uuid, h3-head-no-body ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+
+  - client-request:
+      version: "3"
+      await: h3-head-no-body
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-204-no-body ]
+        - [ uuid, h3-204-no-body ]
+
+    server-response:
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+        - [ X-H3-Status, no-content ]
+
+    proxy-response:
+      status: 204
+
+  - client-request:
+      version: "3"
+      await: h3-204-no-body
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-post-small ]
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+        - [ uuid, h3-post-small ]
+      content:
+        encoding: plain
+        data: "post-body-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqr"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "post-body-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqr"
+        verify: { as: equal }
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "post-response-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmn"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "post-response-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmn"
+        verify: { as: equal }
+
+  - client-request:
+      version: "3"
+      await: h3-post-small
+      headers:
+        fields:
+        - [ ":method", PUT ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-put-small ]
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+        - [ uuid, h3-put-small ]
+      content:
+        encoding: plain
+        data: "put-body-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs"
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "put-body-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrs"
+        verify: { as: equal }
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "put-response-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmno"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "put-response-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmno"
+        verify: { as: equal }
+
+  - client-request:
+      version: "3"
+      await: h3-put-small
+      headers:
+        fields:
+        - [ ":method", DELETE ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-delete-empty ]
+        - [ uuid, h3-delete-empty ]
+
+    server-response:
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ X-H3-Status, delete-no-content ]
+
+    proxy-response:
+      status: 204
+
+  - client-request:
+      version: "3"
+      await: h3-delete-empty
+      headers:
+        fields:
+        - [ ":method", OPTIONS ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-options-small ]
+        - [ uuid, h3-options-small ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Allow, "GET, HEAD, POST, PUT, DELETE, OPTIONS" ]
+        - [ Content-Length, "100" ]
+      content:
+        encoding: plain
+        data: "options-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrst"
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Allow, { value: "GET, HEAD, POST, PUT, DELETE, OPTIONS", as: equal } ]
+        - [ Content-Length, { value: "100", as: equal } ]
+      content:
+        encoding: plain
+        data: "options-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrst"
+        verify: { as: equal }
+
+- protocol:
+  - name: http
+    version: 3
+  - name: tls
+    sni: example.com
+  - name: udp
+  - name: ip
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-post-empty ]
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "0" ]
+        - [ uuid, h3-post-empty ]
+      content:
+        size: 0
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Content-Length, { value: "0", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "0" ]
+      content:
+        size: 0
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "0", as: equal } ]
+
+  - client-request:
+      version: "3"
+      await: h3-post-empty
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-get-large ]
+        - [ uuid, h3-get-large ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
+
+  - client-request:
+      version: "3"
+      await: h3-get-large
+      headers:
+        fields:
+        - [ ":method", PUT ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-put-large ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, h3-put-large ]
+      content:
+        size: 300000
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
+
+- protocol:
+  - name: http
+    version: 3
+  - name: tls
+    sni: example.com
+  - name: udp
+  - name: ip
+
+  transactions:
+  - client-request:
+      version: "3"
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", example.com ]
+        - [ ":path", /h3-post-large ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, h3-post-large ]
+      content:
+        size: 300000
+
+    proxy-request:
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Length, { value: "300000", as: equal } ]
+      content:
+        size: 300000

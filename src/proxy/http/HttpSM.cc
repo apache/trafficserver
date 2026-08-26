@@ -905,10 +905,19 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
   case VC_EVENT_EOS: {
     // We got an early EOS.
     if (!terminate_sm) { // Not done already
+      // ProxySession::do_io_shutdown dereferences its NetVConnection
+      // unconditionally, so only shut down while the peer is still attached.
       NetVConnection *netvc = _ua.get_txn()->get_netvc();
+
       if (_ua.get_txn()->allow_half_open() || tunnel.has_consumer_besides_client()) {
         if (netvc) {
-          netvc->do_io_shutdown(IO_SHUTDOWN_READ);
+          // Shut the read side down through the transaction rather than through
+          // the NetVConnection. For multiplexed protocols the NetVConnection is
+          // shared by every stream on the connection, so shutting its read side
+          // down here would stop the session from reading frames for all of the
+          // other streams. HTTP/2 and HTTP/3 therefore implement
+          // do_io_shutdown() as a no-op.
+          _ua.get_txn()->do_io_shutdown(IO_SHUTDOWN_READ);
         }
       } else if (t_state.txn_conf->cache_http &&
                  (server_entry != nullptr && server_entry->vc_read_handler == &HttpSM::state_read_server_response_header)) {
@@ -1140,11 +1149,37 @@ HttpSM::state_raw_http_server_open(int event, void *data)
   pending_action = nullptr;
   switch (event) {
   case NET_EVENT_OPEN: {
+    netvc = static_cast<NetVConnection *>(data);
+    if (plugin_tunnel_type == HttpPluginTunnel_t::NONE) {
+      _netvc             = netvc;
+      _netvc_read_buffer = new_MIOBuffer(HTTP_SERVER_RESP_HDR_BUFFER_INDEX);
+      _netvc_reader      = _netvc_read_buffer->alloc_reader();
+
+      // Wait for write readiness to verify that the nonblocking TCP connection
+      // completed before reporting a successful tunnel to the client.
+      _netvc->do_io_write(this, 1, _netvc_reader);
+      _netvc->set_inactivity_timeout(get_server_connect_timeout());
+      return 0;
+    }
+    [[fallthrough]];
+  }
+  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_WRITE_READY:
+  case VC_EVENT_WRITE_COMPLETE: {
+    if (netvc == nullptr) {
+      netvc = _netvc;
+      netvc->do_io_write(nullptr, 0, nullptr);
+      free_MIOBuffer(_netvc_read_buffer);
+      _netvc             = nullptr;
+      _netvc_read_buffer = nullptr;
+      _netvc_reader      = nullptr;
+    }
+
     // Record the VC in our table
-    server_entry     = vc_table.new_entry();
-    server_entry->vc = netvc = static_cast<NetVConnection *>(data);
-    server_entry->vc_type    = HttpVC_t::RAW_SERVER_VC;
-    t_state.current.state    = HttpTransact::CONNECTION_ALIVE;
+    server_entry          = vc_table.new_entry();
+    server_entry->vc      = netvc;
+    server_entry->vc_type = HttpVC_t::RAW_SERVER_VC;
+    t_state.current.state = HttpTransact::CONNECTION_ALIVE;
     ats_ip_copy(&t_state.server_info.src_addr, netvc->get_local_addr());
 
     netvc->set_inactivity_timeout(get_server_inactivity_timeout());
@@ -1157,9 +1192,24 @@ HttpSM::state_raw_http_server_open(int event, void *data)
 
     break;
   }
+  case VC_EVENT_INACTIVITY_TIMEOUT:
+  case VC_EVENT_ACTIVE_TIMEOUT:
+    t_state.set_connect_fail(ETIMEDOUT);
+    [[fallthrough]];
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
-  case NET_EVENT_OPEN_FAILED:
+  case NET_EVENT_OPEN_FAILED: {
+    if (_netvc != nullptr) {
+      if (event == VC_EVENT_ERROR || event == NET_EVENT_OPEN_FAILED) {
+        t_state.set_connect_fail(_netvc->lerrno);
+      }
+      _netvc->do_io_write(nullptr, 0, nullptr);
+      _netvc->do_io_close();
+      _netvc = nullptr;
+      free_MIOBuffer(_netvc_read_buffer);
+      _netvc_read_buffer = nullptr;
+      _netvc_reader      = nullptr;
+    }
     if (t_state.cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
       if (event == VC_EVENT_EOS) {
         t_state.set_connect_fail(EPIPE);
@@ -1171,6 +1221,7 @@ HttpSM::state_raw_http_server_open(int event, void *data)
     // use this value just to get around other values
     t_state.hdr_info.response_error = HttpTransact::ResponseError_t::STATUS_CODE_SERVER_ERROR;
     break;
+  }
   case EVENT_INTERVAL:
     // If we get EVENT_INTERNAL it means that we moved the transaction
     // to a different thread in do_http_server_open.  Since we didn't
@@ -2533,6 +2584,12 @@ HttpSM::state_cache_open_write(int event, void *data)
 {
   STATE_ENTER(state_cache_open_write, event);
 
+  // The cache action has already delivered this callback, so drop it before any
+  // thread adjustment below can assign over it. Assigning to pending_action
+  // cancels whatever it holds, and canceling the cache SM's reusable captive
+  // action here would break every cache operation this transaction makes later.
+  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
+
   // Make sure we are on the "right" thread
   if (_ua.get_txn()) {
     pending_action = _ua.get_txn()->adjust_thread(this, event, data);
@@ -2543,8 +2600,6 @@ HttpSM::state_cache_open_write(int event, void *data)
     NetVConnection *vc = _ua.get_txn()->get_netvc();
     ink_release_assert(vc && vc->thread == this_ethread());
   }
-
-  pending_action.clear_if_action_is(reinterpret_cast<Action *>(data));
 
   ATS_PROBE1(milestone_cache_open_write_end, sm_id);
   milestones[TS_MILESTONE_CACHE_OPEN_WRITE_END] = ink_get_hrtime();
@@ -5836,7 +5891,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
   // See if the outbound connection tracker data is needed. If so, get it here for consistency.
   if (t_state.txn_conf->connection_tracker_config.server_max > 0 || t_state.txn_conf->connection_tracker_config.server_min > 0 ||
-      t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+      t_state.txn_conf->connection_tracker_config.metric_enabled) {
     t_state.outbound_conn_track_state =
       ConnectionTracker::obtain_outbound(t_state.txn_conf->connection_tracker_config,
                                          std::string_view{t_state.current.server->name}, t_state.current.server->dst_addr);
@@ -5863,9 +5918,12 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
     }
 
     ct_state.update_max_count(ccount);
-  } else if (t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+  } else if (t_state.txn_conf->connection_tracker_config.server_min > 0 ||
+             t_state.txn_conf->connection_tracker_config.metric_enabled) {
     auto &ct_state = t_state.outbound_conn_track_state;
-    ct_state.reserve();
+    // Feed the count through as well, otherwise the group's peak stays at zero whenever metrics
+    // are enabled without a configured maximum.
+    ct_state.update_max_count(ct_state.reserve());
   }
 
   // We did not manage to get an existing session and need to open a new connection
@@ -6916,7 +6974,7 @@ HttpSM::attach_server_session()
   server_entry->vc_type          = HttpVC_t::SERVER_VC;
   server_entry->vc_write_handler = &HttpSM::state_send_server_request_header;
 
-  UnixNetVConnection *server_vc = static_cast<UnixNetVConnection *>(server_txn->get_netvc());
+  NetVConnection *server_vc = server_txn->get_netvc();
 
   // set flag for server session is SSL
   if (server_vc->get_service<TLSBasicSupport>()) {

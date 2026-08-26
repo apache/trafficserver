@@ -28,6 +28,7 @@
 #include "P_CacheInternal.h"
 #include "StripeSM.h"
 #include "Stripe.h"
+#include "CacheShm.h"
 
 // Must be included after P_CacheInternal.h.
 #include "P_CacheHosting.h"
@@ -186,6 +187,9 @@ CacheProcessor::start_internal(int flags)
   /* Read the config file and create the data structures corresponding to the file. */
   gndisks = theCacheStore.n_spans;
   gdisks.resize(gndisks);
+
+  // Must run before any Stripe is constructed so each can attach/create its segment.
+  CacheShm::initialize(theCacheStore);
 
   // Temporaries to carry values between loops
   char **paths = static_cast<char **>(alloca(sizeof(char *) * gndisks));
@@ -1494,6 +1498,9 @@ CacheProcessor::cacheInitialized()
       cacheProcessor.max_stripe_version = v->directory.header->version;
     }
   }
+
+  // All stripes have claimed their segments; reclaim any orphan (e.g. a dropped disk).
+  CacheShm::finalize_attach();
 
   if (caches_ready) {
     Dbg(dbg_ctl_cache_init, "CacheProcessor::cacheInitialized - caches_ready=0x%0X, gnvol=%d", (unsigned int)caches_ready,

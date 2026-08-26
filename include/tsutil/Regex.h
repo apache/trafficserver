@@ -68,7 +68,7 @@ public:
 
   /** Get the match at the given index.
    *
-   * @return The match at the given index.
+   * @return The match at the given index, or an empty view.
    */
   std::string_view operator[](size_t index) const;
   /** Get the ovector pointer for the capture groups.  Don't use this unless you know what you are doing.

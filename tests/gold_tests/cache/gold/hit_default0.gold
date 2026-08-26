@@ -4,5 +4,5 @@
 < Server: ATS/{}
 < X-Cache-Key: http://127.0.0.1/cache/10/{}
 < X-Cache: hit-fresh
-< X-Cache-Generation: 77
+< X-Cache-Generation: 0
 {}

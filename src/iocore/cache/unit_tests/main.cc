@@ -162,6 +162,20 @@ struct EventProcessorListener : Catch::EventListenerBase {
     std::string src_dir       = std::string(TS_ABS_TOP_SRCDIR) + "/src/iocore/cache/unit_tests/etc/";
     Layout::get()->sysconfdir = std::move(src_dir);
   }
+
+  // Every test binary using this harness reaches exit() with the event threads
+  // still running, so stop them and wait for them before static destruction
+  // frees the globals they read.
+  void
+  testRunEnded(Catch::TestRunStats const & /* stats ATS_UNUSED */) override
+  {
+    TSSystemState::shut_down_event_system();
+    for (EThread *ethread : eventProcessor.active_ethreads()) {
+      if (ethread->tid != ink_thread_null()) {
+        ink_thread_join(ethread->tid);
+      }
+    }
+  }
 };
 CATCH_REGISTER_LISTENER(EventProcessorListener);
 

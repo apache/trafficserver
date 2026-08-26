@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "tscore/Diags.h"
+#include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 #include "tsutil/ts_errata.h"
 #include "tsutil/PostScript.h"
@@ -183,10 +184,8 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
         return {};
       }
     }
-    if (ipi) {
-      rule->src_ip_cnt++;
-      rule->src_ip_valid = 1;
-    }
+    rule->src_ip_cnt++;
+    rule->src_ip_valid = 1;
     return {};
   };
 
@@ -239,10 +238,8 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
         return {};
       }
     }
-    if (ipi) {
-      rule->src_ip_category_cnt++;
-      rule->src_ip_category_valid = 1;
-    }
+    rule->src_ip_category_cnt++;
+    rule->src_ip_category_valid = 1;
     return {};
   };
 
@@ -284,10 +281,8 @@ remap_validate_yaml_filter_args(acl_filter_rule **rule_pp, const YAML::Node &nod
         return {};
       }
     }
-    if (ipi) {
-      rule->in_ip_cnt++;
-      rule->in_ip_valid = 1;
-    }
+    rule->in_ip_cnt++;
+    rule->in_ip_valid = 1;
     return {};
   };
 
@@ -388,7 +383,11 @@ parse_map_referer(const YAML::Node &node, url_mapping *url_mapping)
       !strcasecmp(url.c_str(), "<default_redirect_url>") || !strcasecmp(url.c_str(), "default_redirect_url")) {
     url_mapping->default_redirect_url = true;
   }
-  url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(ats_strdup(url.c_str()));
+  // parse_format_redirect_url() null-terminates each chunk in place before copying it out, so it
+  // needs a mutable buffer. It keeps no pointer into that buffer, only ats_strdup copies, so the
+  // duplicate can be released as soon as it returns. Previously nothing owned it and it leaked.
+  ats_scoped_str redirect_url(ats_strdup(url.c_str()));
+  url_mapping->redir_chunk_list = redirect_tag_str::parse_format_redirect_url(redirect_url.get());
 
   if (!node["regex"] || !node["regex"].IsSequence()) {
     return swoc::Errata("'regex' field must be sequence");

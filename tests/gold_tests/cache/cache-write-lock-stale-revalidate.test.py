@@ -1,3 +1,6 @@
+'''
+Verify losing the cache write lock while revalidating a stale object is handled.
+'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -14,30 +17,16 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# A very simple cleartext server for one HTTP transaction.  Does no validation of the Request message.
-# Sends a fixed response message
+Test.Summary = '''
+Verify that a transaction which loses the cache write lock while revalidating a
+stale object serves that object instead of tripping over the cache read
+connection it still holds.
+'''
 
-response ()
-{
-  # Wait for end of Request message.
-  #
-  while (( 1 == 1 ))
-  do
-    if [[ -f $outfile ]] ; then
-      if tr '\r\n' '=!' < $outfile | grep '=!=!' > /dev/null
-      then
-        break;
-      fi
-    fi
-    sleep 1
-  done
+Test.ContinueOnFail = True
 
-  # delay before finishing the chunk
-  printf "HTTP/1.1 200\r\nTransfer-encoding: chunked\r\n\r\n"
-  printf "F\r\n123456789012345\r\n"
-  sleep 1
-  printf "0\r\n\r\n"
+# STALE_ON_REVALIDATE (action 2) serves the stale object directly.
+Test.ATSReplayTest(replay_file="replay/cache-write-lock-stale-serve.replay.yaml")
 
-}
-outfile=$2
-response | nc -l $1 > "$outfile"
+# READ_RETRY_STALE_ON_REVALIDATE (action 6) retries the cache read first.
+Test.ATSReplayTest(replay_file="replay/cache-write-lock-stale-retry.replay.yaml")

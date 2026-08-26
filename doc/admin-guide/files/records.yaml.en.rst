@@ -1532,6 +1532,10 @@ Parent Proxy Configuration
 
    The amount of time allowed between connection retries to a parent cache that is unavailable.
 
+   Once this time has elapsed the parent is selected again as a retry candidate. It is
+   restored to the pool only if that retry actually succeeds; if the retry fails, the parent
+   remains unavailable and a further ``retry_time`` must elapse before it is tried again.
+
 .. ts:cv:: CONFIG proxy.config.http.parent_proxy.max_trans_retries INT 2
 
    Limits the number of simultaneous transactions that may retry a parent once the parents
@@ -2003,6 +2007,94 @@ Origin Server Connect Attempts
    the connection. Useful when the origin supports keep-alive, removing the time needed to set up a
    new connection from the next request at the expense of added (inactive) connections.
 
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_enabled INT 0
+   :reloadable:
+   :overridable:
+
+   Enable per upstream server connection metrics. These metrics are dynamically named, one set per
+   upstream server group, so the number of them scales with the number of distinct upstream servers
+   seen. See :ref:`per-server-connection-metrics`.
+
+   ===== ======================================================================================
+   Value Effect
+   ===== ======================================================================================
+   ``0`` No per server connection metrics.
+   ``1`` Per server connection metrics are collected for each upstream server group.
+   ===== ======================================================================================
+
+   What is published from them is controlled separately by
+   :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate`, which by default publishes the
+   per group metrics themselves.
+
+   Because this is overridable, metrics can be enabled for the upstreams of interest and left off
+   for the rest, for example with :ref:`admin-plugins-conf-remap` on a specific mapping.
+
+   The value is applied when a connection group is created. Where two mappings that disagree about
+   this setting resolve to the same group -- that is, the same key under
+   :ts:cv:`proxy.config.http.per_server.connection.match` -- the transaction that creates the group
+   determines its metrics, and later transactions do not change them. A group is discarded once its
+   connection count reaches zero, so *raising* the level of publication is picked up the next time
+   that upstream is reopened: enabling metrics, or enabling the aggregates, takes effect as upstreams
+   reconnect. Lowering it does not. Metrics are never retired once published, so disabling this
+   setting, or switching
+   :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate` to ``2``, leaves the names that
+   are already published in place, frozen at their last sampled value, until |TS| is restarted. This
+   affects only which metrics exist; enforcement of
+   :ts:cv:`proxy.config.http.per_server.connection.max` uses the group's own connection count and is
+   unaffected.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_aggregate INT 0
+   :reloadable:
+   :overridable:
+
+   Control what is published from the per server connection metrics enabled by
+   :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. Has no effect when that setting
+   is ``0``.
+
+   A per hostname aggregate sums a counter across every group belonging to that hostname that has
+   aggregation enabled, and exists only for
+   :ts:cv:`match type <proxy.config.http.per_server.connection.match>` ``both``, since that is the
+   only match type whose group key carries the hostname. See :ref:`per-server-connection-metrics`.
+
+   ===== ======================================================================================
+   Value Effect
+   ===== ======================================================================================
+   ``0`` No aggregates. The per group metrics are published under their own names.
+   ``1`` Publish the per hostname aggregates and the per group metrics.
+   ``2`` Publish only the per hostname aggregates. The per group metrics from which they are
+         computed are collected but not published, which keeps the number of published metrics
+         proportional to hostnames rather than to groups.
+   ===== ======================================================================================
+
+   With value ``2``, a group that has no aggregate to belong to -- any match type other than
+   ``both`` -- has its per group metrics published anyway, since otherwise nothing at all would be
+   reported for it.
+
+   Values ``0`` and ``1`` can produce a very large number of metrics when the match type includes the
+   address or port, since there is then one set per address and port rather than one per hostname.
+
+   Like :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`, this is applied when a
+   connection group is created, with the same consequence for mappings that disagree and resolve to
+   the same group. A group joins its hostname's aggregate only if the mapping that first opened that
+   upstream had aggregation enabled, so mappings that disagree for one hostname produce an aggregate
+   that covers only part of it.
+
+   The reload is one-directional for the same reason given under
+   :ts:cv:`proxy.config.http.per_server.connection.metric_enabled`. Raising the value takes effect
+   as upstreams reconnect, but moving to ``2`` does not hide per group metrics that are already
+   published, and moving from ``1`` to ``0`` does not stop the hostname aggregates from publishing.
+   Reducing the number of published metrics therefore requires a restart, which matters most for
+   ``2``, the value chosen specifically to bound that number.
+
+.. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_prefix STRING NULL
+   :reloadable:
+
+   An optional prefix inserted into the per server connection metric names, between the fixed
+   ``proxy.process.http.per_server.<counter>.`` portion of the name and the upstream server group
+   or hostname. Useful to distinguish metrics from separate
+   :ts:cv:`match <proxy.config.http.per_server.connection.match>` configurations sharing the same
+   upstream. See :ref:`per-server-connection-metrics`.
+
 .. ts:cv:: CONFIG proxy.config.http.connect_attempts_rr_retries INT 3
    :reloadable:
    :overridable:
@@ -2028,9 +2120,10 @@ Origin Server Connect Attempts
    :overridable:
 
    Specifies how long (in seconds) |TS| remembers that an origin server was unreachable.
-   During this window, if a stale cached response exists and its age is within the cached response's ``max-age`` plus
-   :ts:cv:`proxy.config.http.cache.max_stale_age`, |TS| serves the stale content directly
-   without attempting to contact the origin server.
+   During this window, if a stale cached response exists and its age is within the limits configured by
+   :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent`, |TS| serves the stale content directly without attempting
+   to contact the origin server.
 
 .. ts:cv:: CONFIG proxy.config.http.uncacheable_requests_bypass_parent INT 1
    :reloadable:
@@ -2124,8 +2217,8 @@ Negative Response Caching
    current stale content is preserved and served. Note this is considered only on a revalidation of
    already cached content. A revalidation failure means a connection failure or a 50x response code.
    When considering replying with a stale response in these negative revalidating circumstances,
-   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` configuration and will not
-   use a cached response older than ``max_stale_age`` seconds plus ``max-age`` of cached content.
+   |TS| will respect the :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
 
    A value of ``0`` disables serving stale content and a value of ``1`` enables keeping and serving stale content if revalidation fails.
 
@@ -2151,7 +2244,8 @@ Negative Response Caching
    behavior with regard to whether it considers a stale object to be fresh enough to serve out of
    cache when revalidation fails. As mentioned above in
    :ts:cv:`proxy.config.http.negative_revalidating_enabled`,
-   :ts:cv:`proxy.config.http.cache.max_stale_age` is used for that determination.
+   :ts:cv:`proxy.config.http.cache.max_stale_age` and
+   :ts:cv:`proxy.config.http.cache.max_stale_age_percent` are used for that determination.
 
    This configuration defaults to 1,800 seconds (30 minutes).
 
@@ -2650,7 +2744,35 @@ Cache Control
    :reloadable:
    :overridable:
 
-   The maximum age in seconds allowed for a stale response before it cannot be cached.
+   The maximum number of seconds that a stale response can be served after its ``max-age`` freshness
+   lifetime has passed.
+
+   When :ts:cv:`proxy.config.http.cache.max_stale_age_percent` is enabled, the smaller of the
+   absolute and percentage limits is used.
+
+.. ts:cv:: CONFIG proxy.config.http.cache.max_stale_age_percent INT 0
+   :reloadable:
+   :overridable:
+
+   Limits the stale response lifetime to a percentage of its ``max-age`` freshness lifetime. The
+   valid range is ``0`` to ``100``. A value of ``0`` disables the percentage limit. When enabled,
+   |TS| uses the smaller of this limit and
+   :ts:cv:`proxy.config.http.cache.max_stale_age`.
+
+   For example, a value of ``25`` allows a response with a one-hour freshness lifetime
+   (``Cache-Control: max-age=3600``) to be served stale for up to 15 minutes (25% of one hour),
+   provided that the absolute stale age limit is at least 15 minutes.
+
+   Percentage limits are calculated in whole seconds and rounded down. If the calculated limit is
+   less than one second, no stale window is allowed. For example, a value of ``1`` with
+   ``Cache-Control: max-age=99`` produces a zero-second stale window.
+
+   A value of ``0`` applies no percentage limit. For example, with the default
+   :ts:cv:`proxy.config.http.cache.max_stale_age` of seven days, a response with a one-hour
+   freshness lifetime can be served stale for up to seven days after that freshness lifetime ends.
+
+   Responses without ``max-age`` are controlled by :ts:cv:`proxy.config.http.cache.max_stale_age`
+   alone.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.guaranteed_min_lifetime INT 0
    :reloadable:
@@ -3064,6 +3186,108 @@ RAM Cache
    Compression runs on task threads. To use more cores for RAM cache
    compression, increase :ts:cv:`proxy.config.task_threads`.
 
+.. _admin-cache-shm-fast-restart:
+
+Shared Memory Fast Restart
+==========================
+
+|TS| can optionally keep the cache directory -- the in-memory index that maps
+cached objects to their location on disk -- in POSIX shared memory so that it
+survives a process restart. On a normal start the directory is read from disk
+and, for a large cache, rebuilt in memory before the cache comes online. When
+this feature is enabled and the previous instance shut down cleanly, the new
+instance attaches the existing shared memory segments and skips that work,
+bringing the cache online much faster.
+
+The shared memory directory is only an optimization for restart time; the
+on-disk cache always remains the source of truth. A new instance discards the
+segments and falls back to reading the directory from disk whenever they cannot
+be trusted, including when:
+
+- the previous instance did not shut down cleanly (for example, it crashed),
+- the |TS| binary's directory structures changed (an ABI mismatch, such as
+  after an upgrade), or
+- the shared memory schema version changed.
+
+A change to the on-disk storage layout in :file:`storage.yaml` does *not*
+discard everything. Each cache stripe attaches by its own identity, so stripes
+that still exist are fast-attached, added or resized stripes are rebuilt from
+disk, and segments for stripes that no longer exist are reclaimed.
+
+Segments left over from a crash can be inspected or removed with
+``traffic_ctl cache shm status`` and ``traffic_ctl cache shm clear``, which act
+directly on the shared memory objects whether or not |TS| is running.
+
+.. note::
+
+   This is an experimental feature, disabled by default. All of its settings
+   take effect only on a restart of |TS|.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.enabled INT 0
+
+   Enables the shared memory cache directory described above. When ``0`` (the
+   default), the cache directory is always read from disk on start.
+
+   The feature requires ``shm_open()`` in libc, which |TS| checks for at build
+   time. Where it is absent -- glibc older than 2.34, which keeps it in
+   ``librt`` -- the feature is compiled out and this setting has no effect: |TS|
+   logs a warning at startup and every stripe uses a heap directory. That
+   applies to RHEL/Rocky 8, Ubuntu 20.04 and Debian 11 among others; run
+   ``traffic_layout info | grep TS_USE_CACHE_SHM`` to check a given build.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.name_prefix STRING ats
+
+   The word used to name the POSIX shared memory objects, which on Linux appear
+   under ``/dev/shm``. Set only the middle word (default ``ats``); |TS| frames it
+   as ``/<word>-`` so the leading ``/`` that POSIX requires and the trailing
+   ``-`` separator cannot be mis-typed. With the default the control segment is
+   named ``/ats-control`` and each per-stripe directory segment ``/ats-s<N>``
+   (for example ``/ats-s0``). Any stray framing characters are trimmed, so a
+   value carried over from an older release (such as ``/ats-``) still resolves to
+   the same names. Give each |TS| instance sharing a host a distinct word so
+   their segments do not collide.
+
+   Renaming this value does not remove segments created under the old prefix:
+   |TS| only manages segments under the *current* prefix, so the old ``/dev/shm``
+   objects linger until cleared manually with ``traffic_ctl cache shm clear
+   --prefix <old-word>`` (or a host reboot).
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.use_hugepages INT 0
+
+   When enabled (``1``), |TS| attempts to back the shared memory directory with
+   huge pages, which cut the cost of tearing down the large directory's page
+   tables at process exit (and ease TLB pressure). This requires the shared
+   memory to be eligible for huge pages (for example, ``/dev/shm`` mounted with
+   huge page support on Linux). When it is not, |TS| logs a debug message under
+   the ``cache_shm`` tag and transparently falls back to ordinary pages, so
+   enabling this is always safe.
+
+   This advises transparent huge pages (``MADV_HUGEPAGE``) on the mapping; the
+   reserved ``MAP_HUGETLB`` pages used by the global hugepage allocator cannot
+   back a ``tmpfs``-backed shared memory segment. To avoid silently downgrading a
+   box that already runs with :ts:cv:`proxy.config.allocator.hugepages` enabled,
+   |TS| turns this on automatically when the global allocator is enabled and this
+   record is left at its default; set it to ``0`` explicitly to opt out.
+
+.. ts:cv:: CONFIG proxy.config.cache.shm.purge_stale_on_start INT 0
+
+   When enabled (``1``) and :ts:cv:`proxy.config.cache.shm.enabled` is ``0``,
+   |TS| removes any leftover shared memory segments for
+   :ts:cv:`proxy.config.cache.shm.name_prefix` at startup (the ``<prefix>control``
+   segment and the per-stripe segments it lists). This guards against two
+   hazards of running with the feature disabled after it had been enabled:
+
+   - the leftover segments keep consuming memory (for example ``/dev/shm`` on
+     Linux) even though the disabled instance never reads them, and
+   - a later run with the feature re-enabled would otherwise fast-attach a
+     directory that went stale while |TS| ran disabled and wrote only to disk.
+
+   The purge is skipped if a live process still owns the segments (a concurrent
+   instance using the same prefix), and it never blocks startup. It has no
+   effect when the feature is enabled, when no ``<prefix>control`` segment
+   exists, or when set to ``0`` (the default). ``traffic_ctl cache shm clear``
+   performs the same cleanup on demand.
+
 .. _admin-heuristic-expiration:
 
 Heuristic Expiration
@@ -3135,13 +3359,15 @@ Dynamic Content & Content Negotiation
    ===== ======================================================================
    ``0`` Default. Disable cache and go to origin server.
    ``1`` Return a ``502`` error on a cache miss.
-   ``2`` Serve stale if object's age is under ``max-age`` +
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
+   ``2`` Serve stale if the object's age is within the
+         :ts:cv:`proxy.config.http.cache.max_stale_age` and
+         :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
+         Otherwise, go to the origin server.
    ``3`` Return a ``502`` error on a cache miss or serve stale on a cache
-         revalidate if object's age is under ``max-age`` +
-         :ts:cv:`proxy.config.http.cache.max_stale_age`. Otherwise, go to
-         origin server.
+         revalidate if the object's age is within the
+         :ts:cv:`proxy.config.http.cache.max_stale_age` and
+         :ts:cv:`proxy.config.http.cache.max_stale_age_percent` limits.
+         Otherwise, go to the origin server.
    ``4`` Return a ``502`` error on either a cache miss or on a revalidation.
    ``5`` Retry Cache Read on a Cache Write Lock failure. This option together
          with :ts:cv:`proxy.config.cache.enable_read_while_writer` configuration
@@ -3272,13 +3498,23 @@ DNS
    :overridable:
 
    Enables (``1``) or disables (``0``) the use of SRV records for origin server
-   lookup. |TS| will use weights found in the SRV record as a weighted round
-   robin in origin selection. Note that |TS| will lookup
-   ``_$scheme._$internet_protocol.$origin_name``. For instance, if the origin is
-   set to ``https://my.example.com``, |TS| would lookup ``_https._tcp.my.example.com``.
-   Also note that the port returned in the SRV record MUST match the port being
-   used for the origin (e.g. if the origin scheme is http and a default port, there
-   should be a SRV record with port 80).
+   lookup. |TS| constructs the service name
+   ``_$scheme._tcp.$origin_name`` from the scheme and host in the origin URL
+   (the replacement URL after remapping). For example, this rule::
+
+      map http://www.example.com/ https://origin.example.com/
+
+   causes |TS| to query ``_https._tcp.origin.example.com``. Given these records::
+
+      _https._tcp.origin.example.com. 300 IN SRV 10 1 8443 server1.example.com.
+      _https._tcp.origin.example.com. 300 IN SRV 10 1 8443 server2.example.com.
+
+   |TS| resolves the selected target and connects to its SRV port, ``8443`` in
+   this example. The selected SRV port overrides any port in the origin URL.
+   |TS| honors SRV priority and weight when selecting among records. If the SRV
+   lookup returns no usable records, |TS| falls back to resolving the origin
+   host directly. SRV results are cached in HostDB according to
+   :ts:cv:`proxy.config.hostdb.ttl_mode`.
 
 .. ts:cv:: CONFIG proxy.config.dns.dedicated_thread INT 0
 
@@ -4239,6 +4475,60 @@ SSL Termination
    :file:`ssl_multicert.yaml` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.partial_reload INT 0
+   :reloadable:
+
+   When set to ``1``, a live ``traffic_ctl config reload`` that encounters one or more
+   certificate load failures will still commit the partial ``SSLCertLookup``
+   (containing all certificates that did load cleanly) instead of discarding the entire
+   new configuration and keeping the old one, provided at least one
+   certificate-bearing entry loaded successfully.  If every entry fails, the reload
+   is rejected regardless of this setting.
+
+   By default (``0``), the reload is strict and all-or-nothing: any failure causes the
+   entire new configuration to be rejected and the previous configuration to remain active.
+
+   When the knob is on, a partial commit emits a ``Warning`` message naming
+   the count of certificate entries that loaded, any skipped certificate
+   produces an ``ERROR`` entry in :file:`diags.log`, and the
+   ``proxy.process.ssl.ssl_multicert_load_failures`` metric is incremented,
+   so degraded state is never silent.  The metric is also incremented in strict mode (``0``) and can
+   be used as an alert signal in both configurations.  Note that the counter only
+   covers live reloads via :program:`traffic_ctl`; failures during the initial
+   startup load are not counted because the statistics subsystem is not yet
+   initialized at that point.
+
+   This knob takes effect on the next ``traffic_ctl config reload`` without requiring
+   a process restart.
+
+   .. note::
+
+      This knob is independent of :ts:cv:`proxy.config.ssl.server.multicert.exit_on_load_fail`.
+      That option governs startup behavior only.  ``partial_reload`` governs live reloads
+      via :program:`traffic_ctl`.
+
+   .. note::
+
+      When a partial reload is committed, any hostname whose certificate failed
+      to load is removed from the new lookup table and is no longer matched by
+      SNI.  The connection falls back to the default context: the wildcard
+      certificate if a ``dest_ip: "*"`` entry loaded successfully, or the bare
+      TLS bootstrap context (no X.509 certificate) if no wildcard entry loaded.
+      In either case the hostname's previously-loaded certificate is not retained
+      across the reload boundary.  Strict mode (``0``) is safer in this regard:
+      all hostnames continue serving their old certificates until a
+      fully-successful reload, but at the cost of blocking all certificate
+      updates whenever any single certificate fails.  Enabling
+      ``partial_reload`` trades per-hostname reliability for reduced blast
+      radius across the certificate set.
+
+   .. note::
+
+      This knob applies only to TLS server certificate loading (``SSLCertificateConfig``).
+      The QUIC/HTTP3 certificate loader (``QUICCertConfig``) is not yet covered and continues
+      to use strict all-or-nothing semantics regardless of this setting.  Deployments without
+      a ``dest_ip: "*"`` wildcard entry (SNI-only configurations) are fully supported.
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.concurrency INT 1
 
    Controls how many threads are used to load SSL certificates from :file:`ssl_multicert.yaml`
@@ -4306,8 +4596,9 @@ SSL Termination
   This configuration specifies the maximum number of bytes to write
   into a SSL record when replying over a SSL session. In some
   circumstances this setting can improve response latency by reducing
-  buffering at the SSL layer. This setting can have a value between 0
-  and 16383 (max TLS record size).
+  buffering at the SSL layer. This setting accepts ``-1`` for dynamic
+  sizing, ``0`` for the default behavior, or a fixed maximum between
+  ``1`` and ``16383`` bytes.
 
   The default of ``0`` means to always write all available data into
   a single SSL record.
@@ -5078,7 +5369,7 @@ HTTP/2 Configuration
 
    This is the threshold of sampling stream number to start checking the stream error rate.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 7
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_frame INT 16
    :reloadable:
 
    Specifies how many settings in an HTTP/2 SETTINGS frame |TS| accepts.
@@ -5086,7 +5377,7 @@ HTTP/2 Configuration
    code of ENHANCE_YOUR_CALM.
    Any negative value configures no limit to the number of settings received.
 
-.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 14
+.. ts:cv:: CONFIG proxy.config.http2.max_settings_per_minute INT 32
    :reloadable:
 
    Specifies how many settings in HTTP/2 SETTINGS frames |TS| accept for a minute.
@@ -5220,8 +5511,8 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.instance_id INT 0
    :reloadable:
 
-   A static key used for calculating Stateless Reset Token. All instances in a
-   cluster need to share the same value.
+   An instance identifier mixed into Stateless Reset Tokens. All instances in a
+   cluster that share token keys need to use the same value.
 
 .. ts:cv:: CONFIG proxy.config.quic.connection_table.size INT 65521
 
@@ -5235,6 +5526,20 @@ removed in the future without prior notice.
 .. ts:cv:: CONFIG proxy.config.quic.server.stateless_retry_enabled INT 0
 
    Enables Stateless Retry.
+
+.. ts:cv:: CONFIG proxy.config.quic.server.token_key.filename STRING NULL
+   :reloadable:
+
+   The file containing the secret keys used to generate QUIC address-validation
+   and stateless-reset tokens. Relative paths are resolved from the |TS|
+   configuration directory. The file must contain one or more raw 32-byte keys.
+   The first key generates new tokens, while all keys validate address-validation
+   tokens to support key rotation. For example, generate a key with
+   ``head -c32 /dev/urandom > quic_token.key``.
+
+   When this is not set, |TS| generates a random per-process key at startup. Set
+   the same key file on each server that must validate tokens generated by other
+   servers. Reload configuration after changing the key file.
 
 .. ts:cv:: CONFIG proxy.config.quic.client.vn_exercise_enabled INT 0
    :reloadable:

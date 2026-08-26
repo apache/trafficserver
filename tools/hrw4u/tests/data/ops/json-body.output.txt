@@ -1,0 +1,6 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+    set-body "{\"error\": \"bad request\", \"detail\": {\"code\": 400}}\n" "application/problem+json"
+    set-body-from-file "errors/forbidden.json" "application/json"
+
+cond %{READ_RESPONSE_HDR_HOOK} [AND]
+    set-body-from "http://errors.example.com/not-found" "application/json"

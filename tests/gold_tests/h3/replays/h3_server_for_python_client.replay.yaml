@@ -1,0 +1,297 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not
+#  use this file except in compliance with the License.  You may
+#  obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - request_base: &request_base
+      version: "1.1"
+  - empty_response: &empty_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, "0" ]
+      content:
+        size: 0
+  - generated_100_response: &generated_100_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+      content:
+        size: 100
+  - generated_300k_response: &generated_300k_response
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+      content:
+        size: 300000
+
+sessions:
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-get-empty
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-get-empty ]
+        - [ X-H3-Test-Case, py-get-empty ]
+
+    server-response:
+      <<: *empty_response
+
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-get-small
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-get-small ]
+        - [ X-H3-Test-Case, py-get-small ]
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: HEAD
+      url: /py-head-no-body
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-head-no-body ]
+        - [ X-H3-Test-Case, py-head-no-body ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "0" ]
+
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-204-no-body
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-204-no-body ]
+        - [ X-H3-Test-Case, py-204-no-body ]
+
+    server-response:
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ X-H3-Status, no-content ]
+
+  - client-request:
+      <<: *request_base
+      method: POST
+      url: /py-post-small
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+        - [ uuid, py-post-small ]
+        - [ X-H3-Test-Case, py-post-small ]
+      content:
+        size: 100
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: PUT
+      url: /py-put-small
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "100" ]
+        - [ uuid, py-put-small ]
+        - [ X-H3-Test-Case, py-put-small ]
+      content:
+        size: 100
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_100_response
+
+  - client-request:
+      <<: *request_base
+      method: DELETE
+      url: /py-delete-empty
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-delete-empty ]
+        - [ X-H3-Test-Case, py-delete-empty ]
+
+    server-response:
+      status: 204
+      reason: No Content
+      headers:
+        fields:
+        - [ X-H3-Status, delete-no-content ]
+
+  - client-request:
+      <<: *request_base
+      method: OPTIONS
+      url: /py-options-small
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-options-small ]
+        - [ X-H3-Test-Case, py-options-small ]
+
+    server-response:
+      <<: *generated_100_response
+
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-get-concurrent-large
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-get-concurrent-large ]
+        - [ X-H3-Test-Case, py-get-concurrent-large ]
+
+    server-response:
+      <<: *generated_300k_response
+
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-get-concurrent-small
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-get-concurrent-small ]
+        - [ X-H3-Test-Case, py-get-concurrent-small ]
+
+    server-response:
+      <<: *generated_100_response
+
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-get-large
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-get-large ]
+        - [ X-H3-Test-Case, py-get-large ]
+
+    server-response:
+      <<: *generated_300k_response
+
+  - client-request:
+      <<: *request_base
+      method: POST
+      url: /py-post-large
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, py-post-large ]
+        - [ X-H3-Test-Case, py-post-large ]
+      content:
+        size: 300000
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_300k_response
+
+  - client-request:
+      <<: *request_base
+      method: PUT
+      url: /py-put-large
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ Content-Type, application/octet-stream ]
+        - [ Content-Length, "300000" ]
+        - [ uuid, py-put-large ]
+        - [ X-H3-Test-Case, py-put-large ]
+      content:
+        size: 300000
+        verify: { as: equal }
+
+    server-response:
+      <<: *generated_300k_response
+
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-edge-after-unknown
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-edge-after-unknown ]
+        - [ X-H3-Test-Case, py-edge-after-unknown ]
+
+    server-response:
+      <<: *generated_100_response
+
+- transactions:
+  - client-request:
+      <<: *request_base
+      method: GET
+      url: /py-edge-after-reserved
+      headers:
+        fields:
+        - [ X-H3-Python-Client, aioquic ]
+        - [ X-H3-Reused-Header, stable-python-qpack-value ]
+        - [ uuid, py-edge-after-reserved ]
+        - [ X-H3-Test-Case, py-edge-after-reserved ]
+
+    server-response:
+      <<: *generated_100_response

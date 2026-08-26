@@ -100,10 +100,10 @@ loadLine<StringMap>(StringMap &map, const String &line)
   std::getline(ss, value, '=');
   trim(key);
   trim(value);
-  map[key] = value;
+  map[key] = std::move(value);
 
 #ifdef ACCESS_CONTROL_LOG_SECRETS
-  AccessControlDebug("Adding secrets[%s]='%s'", key.c_str(), value.c_str());
+  AccessControlDebug("Adding secrets[%s]='%s'", key.c_str(), map[key].c_str());
 #endif
 }
 
@@ -116,10 +116,10 @@ loadLine<StringVector>(StringVector &vector, const String &line)
 {
   String trimmedLine(line);
   trim(trimmedLine);
-  vector.push_back(trimmedLine);
+  vector.push_back(std::move(trimmedLine));
 
 #ifdef ACCESS_CONTROL_LOG_SECRETS
-  AccessControlDebug("Adding secrets[%d]='%s'", (int)(vector.size() - 1), trimmedLine.c_str());
+  AccessControlDebug("Adding secrets[%d]='%s'", (int)(vector.size() - 1), vector.back().c_str());
 #endif
 }
 
