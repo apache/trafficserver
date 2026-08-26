@@ -2154,6 +2154,9 @@ HttpSM::state_read_server_response_header(int event, void *data)
         post_transform_info.entry->vc->do_io_close();
         vc_table.cleanup_entry(post_transform_info.entry);
         post_transform_info.entry = nullptr;
+        // .vc stays non-null so transform_cleanup() skips the already-closed chain.
+        // tunnel_handler_post_or_put() is unreachable after
+        // abort_tunnel() since the tunnel is dead and reset.
       }
       // Make sure client connection is closed when we are done in case there is cruft left over
       t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
