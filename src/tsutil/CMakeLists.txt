@@ -74,6 +74,7 @@ endif()
 if(BUILD_TESTING)
   add_executable(
     test_tsutil
+    unit_tests/test_AtomicSharedPtr.cc
     unit_tests/test_Bravo.cc
     unit_tests/test_LocalBuffer.cc
     unit_tests/test_Metrics.cc
