@@ -567,10 +567,11 @@ ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string con
     return "";
   }
   if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
-    // Variable number of arguments. Stop collecting at a token that names another option
-    // of this command, so that following options and this command's own positional
-    // arguments are left in place for the caller. A "--" token ends option recognition,
-    // which is how a value that starts with '-' can be passed.
+    // Variable number of arguments. Stop collecting at a token that names another option of this
+    // command, so options written afterwards keep their own values. Every other token is taken as
+    // a value, including a positional argument of the command, which is why an option whose value
+    // is optional wants AT_MOST_ONE_ARG_N rather than MORE_THAN_ZERO_ARG_N. A "--" token ends
+    // option recognition, which is how a value that starts with '-' can be passed.
     unsigned j{index + 1};
     unsigned collected{0};
     bool     recognize_options{true};
