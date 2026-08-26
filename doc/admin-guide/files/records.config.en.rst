@@ -1047,7 +1047,7 @@ mptcp
    ``host``      Re-use server sessions, checking that the fully qualified
                  domain name matches. In addition, if the session uses TLS, it also
                  checks that the current transaction's host header value matches the session's SNI.
-   ``both``      Equivalent to ``host,ip``.
+   ``both``      Equivalent to ``host,ip,cert``.
    ``hostonly``  Check that the fully qualified domain name matches.
    ``sni``       Check that the SNI of the session matches the SNI that would be used to
                  create a new session.  Only applicable for TLS sessions.
@@ -1059,6 +1059,19 @@ mptcp
    The setting must contain at least one of ``ip``, ``host``, ``hostonly`` or ``both``
    for session reuse to operate.  The other values may be used for greater control
    with TLS session reuse.
+
+.. important::
+
+   ``both`` selects ``cert`` in addition to ``ip`` and ``host``.  A pooled outbound TLS
+   session is only reused for a transaction that would present the same client
+   certificate, because the origin authorizes the connection on the certificate sent
+   during the handshake and reuse performs no second handshake.
+
+   Deployments that override :ts:cv:`proxy.config.ssl.client.cert.filename` per remap
+   rule or from a plugin will therefore see outbound sessions pool per certificate, and
+   so more outbound handshakes.  Set ``ip,host`` explicitly to select what ``both``
+   selected previously; note that doing so also disables the client-certificate check on
+   session reuse.
 
 .. note::
 

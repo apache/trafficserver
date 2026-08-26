@@ -166,6 +166,7 @@ test_HttpTransact_LDADD = \
 test_HttpTransact_SOURCES = \
 	../../iocore/cache/test/stub.cc \
 	unit_tests/main.cc \
+	unit_tests/test_HttpConfig.cc \
 	unit_tests/test_HttpTransact.cc
 
 clang-tidy-local: $(libhttp_a_SOURCES) $(noinst_HEADERS)

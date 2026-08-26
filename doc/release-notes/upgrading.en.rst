@@ -58,6 +58,20 @@ Configuration Settings: records.config
 These are the changes that are most likely to cause problems during an upgrade. Take special care making sure you have updated your
 configurations accordingly.
 
+Outbound Session Sharing and Client Certificates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The default value of :ts:cv:`proxy.config.http.server_session_sharing.match` is unchanged at
+``both``, but ``both`` now selects ``cert`` in addition to ``ip`` and ``host``.  A pooled
+outbound TLS session is only reused for a transaction that would present the same client
+certificate, because the origin authorizes the connection on the certificate sent during the
+handshake and reuse performs no second handshake.
+
+Deployments that override :ts:cv:`proxy.config.ssl.client.cert.filename` per remap rule or from
+a plugin will see outbound sessions pool per certificate, and so more outbound handshakes.  Set
+``ip,host`` explicitly to select what ``both`` selected before; that also turns the
+client-certificate check on session reuse back off.
+
 Connection Management
 ~~~~~~~~~~~~~~~~~~~~~
 

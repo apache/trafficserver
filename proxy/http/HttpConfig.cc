@@ -145,8 +145,13 @@ HttpConfig::load_server_session_sharing_match(const char *key, MgmtByte &mask)
     if (value < TS_SERVER_SESSION_SHARING_MATCH_NONE) {
       mask |= (1 << value);
     } else if (value == TS_SERVER_SESSION_SHARING_MATCH_BOTH) {
+      // MASK_CERT is included so a pooled TLS session is only reused for a
+      // transaction that would present the same client certificate. The
+      // outbound certificate is overridable per transaction, so without this
+      // bit a session authenticated as one identity can serve a transaction
+      // configured for another, which the origin sees as the wrong client.
       mask |= TS_SERVER_SESSION_SHARING_MATCH_MASK_IP | TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY |
-              TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC;
+              TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC | TS_SERVER_SESSION_SHARING_MATCH_MASK_CERT;
     } else if (value == TS_SERVER_SESSION_SHARING_MATCH_HOST) {
       mask |= TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTONLY | TS_SERVER_SESSION_SHARING_MATCH_MASK_HOSTSNISYNC;
     }
