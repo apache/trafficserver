@@ -25,6 +25,11 @@
 #include "TLSBasicSupport.h"
 #include "SSLStats.h"
 
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
+
+#include <memory>
+
 int TLSBasicSupport::_ex_data_index = -1;
 
 void
@@ -57,8 +62,73 @@ TLSBasicSupport::unbind(SSL *ssl)
 void
 TLSBasicSupport::clear()
 {
+  this->set_verify_cert_store(nullptr);
   this->_tls_handshake_begin_time = 0;
   this->_tls_handshake_end_time   = 0;
+}
+
+void
+TLSBasicSupport::set_verify_cert_store(X509_STORE *store)
+{
+  if (this->_verify_cert_store == store) {
+    return;
+  }
+
+  if (store != nullptr) {
+    X509_STORE_up_ref(store);
+  }
+  if (this->_verify_cert_store != nullptr) {
+    X509_STORE_free(this->_verify_cert_store);
+  }
+  this->_verify_cert_store = store;
+}
+
+bool
+TLSBasicSupport::is_peer_cert_trusted_by_current_ca() const
+{
+  SSL *ssl = this->_get_ssl_object();
+
+  if (ssl == nullptr) {
+    return false;
+  }
+
+  // Without a verify_client_ca_certs override for this SNI, the context's own store is what the
+  // handshake would have used.
+  X509_STORE *store = this->_verify_cert_store != nullptr ? this->_verify_cert_store : SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl));
+
+  if (store == nullptr) {
+    return false;
+  }
+
+  // SSL_get_peer_certificate is what the rest of this branch uses (see
+  // peer_provided_cert() and the handshake paths); it is available on every TLS
+  // library 9.2.x supports, including BoringSSL, which has no
+  // SSL_get1_peer_certificate.
+  std::unique_ptr<X509, decltype(&X509_free)> peer_cert{SSL_get_peer_certificate(ssl), &X509_free};
+
+  if (peer_cert == nullptr) {
+    return false;
+  }
+
+  std::unique_ptr<X509_STORE_CTX, decltype(&X509_STORE_CTX_free)> store_ctx{X509_STORE_CTX_new(), &X509_STORE_CTX_free};
+
+  if (store_ctx == nullptr) {
+    return false;
+  }
+
+  STACK_OF(X509) *chain = SSL_get_peer_cert_chain(ssl);
+
+  if (X509_STORE_CTX_init(store_ctx.get(), store, peer_cert.get(), chain) != 1) {
+    return false;
+  }
+
+  // Match what the TLS library itself applies to a client certificate during a full handshake.
+  if (X509_STORE_CTX_set_default(store_ctx.get(), "ssl_client") != 1 ||
+      X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(store_ctx.get()), SSL_get0_param(ssl)) != 1) {
+    return false;
+  }
+
+  return X509_verify_cert(store_ctx.get()) == 1;
 }
 
 const char *

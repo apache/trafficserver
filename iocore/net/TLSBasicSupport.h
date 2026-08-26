@@ -45,6 +45,28 @@ public:
   ink_hrtime get_tls_handshake_begin_time() const;
   ink_hrtime get_tls_handshake_end_time() const;
 
+  /**
+   * Records the CA store being used to verify this connection's client certificate.
+   *
+   * sni.yaml's verify_client_ca_certs installs a store on the connection, and the TLS libraries do
+   * not uniformly let that store be read back, so it is remembered here as it is applied.
+   *
+   * @param store The store selected for the current SNI, or nullptr when the SSL_CTX's store applies.
+   */
+  void set_verify_cert_store(X509_STORE *store);
+
+  /**
+   * Re-verifies the peer certificate against the CA store in effect for this connection.
+   *
+   * A resumed session carries forward the verification result cached by whichever handshake created
+   * it, evaluated against the CA store that applied to that connection's SNI. Re-running the chain
+   * verification is the only portable way to tell whether the peer certificate is trusted by the
+   * SNI in use now.
+   *
+   * @return true if the peer presented a certificate that chains to a CA this connection trusts.
+   */
+  bool is_peer_cert_trusted_by_current_ca() const;
+
 protected:
   void clear();
 
@@ -56,6 +78,8 @@ protected:
 
 private:
   static int _ex_data_index;
+
+  X509_STORE *_verify_cert_store = nullptr;
 
   ink_hrtime _tls_handshake_begin_time = 0;
   ink_hrtime _tls_handshake_end_time   = 0;

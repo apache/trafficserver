@@ -72,13 +72,23 @@ verify_server_properties               Outbound  One of the values :code:`NONE`,
                                                  By default this is :ts:cv:`proxy.config.ssl.client.verify.server.properties`.
                                                  This controls what |TS| checks when evaluating the origin certificate.
 
-verify_client                          Outbound  One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
+verify_client                          Inbound   One of the values :code:`NONE`, :code:`MODERATE`, or :code:`STRICT`.
                                                  If ``NONE`` is specified, |TS| requests no certificate.  If ``MODERATE`` is specified
                                                  |TS| will verify a certificate that is presented by the client, but it will not
                                                  fail the TLS handshake if no certificate is presented.  If ``STRICT`` is specified
                                                  the client must present a certificate during the TLS handshake.
 
                                                  By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
+
+                                                 A resumed TLS session does not re-request a client certificate, so |TS|
+                                                 enforces ``MODERATE`` and ``STRICT`` against the certificate carried over
+                                                 from the session that was resumed, rejecting the handshake if it does not
+                                                 satisfy the current SNI's policy. That carried certificate is re-validated
+                                                 against the certificate authorities in force for the current SNI rather
+                                                 than trusting the result cached by the handshake that issued the session,
+                                                 so two SNIs sharing a listener at the same ``verify_client`` level do not
+                                                 accept each other's client certificates. Disabling session tickets via
+                                                 ``ssl_ticket_enabled`` is not required as a workaround for this.
 
 verify_client_ca_certs                 Both      Specifies an alternate set of certificate authority certs to use to verify the
                                                  client cert.  The value must be either a file path, or a nested set of key /

@@ -91,6 +91,8 @@ SSLInitializeStatistics()
                      (int)ssl_user_agent_cert_verify_failed_stat, RecRawStatSyncSum);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_bad_cert", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_bad_cert_stat, RecRawStatSyncSum);
+  RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_resumed_cert_rejected", RECD_COUNTER, RECP_PERSISTENT,
+                     (int)ssl_user_agent_resumed_cert_rejected_stat, RecRawStatSyncSum);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_decryption_failed", RECD_COUNTER, RECP_PERSISTENT,
                      (int)ssl_user_agent_decryption_failed_stat, RecRawStatSyncSum);
   RecRegisterRawStat(ssl_rsb, RECT_PROCESS, "proxy.process.ssl.user_agent_wrong_version", RECD_COUNTER, RECP_PERSISTENT,
