@@ -17,6 +17,7 @@
  */
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <functional>
@@ -25,6 +26,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <string_view>
 
 #include <cassert>
 #include <cstring>
@@ -34,6 +36,8 @@
 #include <tscpp/api/TransformationPlugin.h>
 
 #include <ts/ts.h>
+
+#include "magick_args.h"
 
 #include <openssl/err.h>
 #include <openssl/evp.h>
@@ -57,9 +61,8 @@
 using std::string;
 using namespace atscppapi;
 
-using CharVector        = std::vector<char>;
-using CharPointerVector = std::vector<char *>;
-using StringViewVector  = std::vector<std::string_view>;
+// CharVector and CharPointerVector come from magick_args.h.
+using StringViewVector = std::vector<std::string_view>;
 
 using byte = unsigned char;
 
@@ -251,6 +254,28 @@ struct Exception {
   }
 
   Exception() : info(AcquireExceptionInfo()) { assert(nullptr != info); }
+
+  /** The reason ImageMagick recorded, if any, so a failure can be diagnosed from
+   * the error log instead of a fixed string.
+   */
+  std::string
+  text() const
+  {
+    assert(nullptr != info);
+    std::string result;
+
+    if (nullptr != info->reason) {
+      result += info->reason;
+    }
+    if (nullptr != info->description) {
+      if (!result.empty()) {
+        result += ": ";
+      }
+      result += info->description;
+    }
+
+    return result;
+  }
 };
 
 struct Image {
@@ -273,12 +298,30 @@ struct Wand {
   {
     assert(nullptr != wand);
     wand = DestroyMagickWand(wand);
-    if (nullptr == blob) {
+    if (nullptr != blob) {
       blob = MagickRelinquishMemory(blob);
     }
   }
 
   Wand() : wand(NewMagickWand()) { assert(nullptr != wand); }
+
+  /** The reason the last wand operation failed, so a failure can be diagnosed from
+   * the error log instead of a fixed string.
+   */
+  std::string
+  exceptionText() const
+  {
+    assert(nullptr != wand);
+    ExceptionType severity = UndefinedException;
+    std::string result;
+
+    if (char *const description = MagickGetException(wand, &severity); nullptr != description) {
+      result = description;
+      MagickRelinquishMemory(description);
+    }
+
+    return result;
+  }
 
   void
   clear() const
@@ -408,51 +451,29 @@ QueryParameterToCharVector(CharVector &v)
   {
     std::size_t s         = 0;
     const TSReturnCode rc = TSStringPercentDecode(v.data(), v.size(), v.data(), v.size(), &s);
-    assert(TS_SUCCESS == rc);
+
+    // This input is client controlled and reachable before signature
+    // verification, so it must return a failure rather than assert.
+    if (rc != TS_SUCCESS) {
+      return false;
+    }
     v.resize(s);
   }
 
   {
     std::size_t s         = 0;
     const TSReturnCode rc = TSBase64Decode(v.data(), v.size(), reinterpret_cast<unsigned char *>(v.data()), v.size(), &s);
-    assert(TS_SUCCESS == rc);
+
+    // This rejects any input too short to be valid base64, which is client
+    // controlled and reachable before signature verification, so it must return a
+    // failure rather than assert.
+    if (rc != TS_SUCCESS) {
+      return false;
+    }
     v.resize(s);
   }
 
   return true;
-}
-
-CharPointerVector
-QueryParameterToArguments(CharVector &v)
-{
-  CharPointerVector result;
-  result.reserve(32);
-
-  std::size_t i = 0, j = 0;
-  bool quote = false;
-
-  for (; i < v.size(); ++i) {
-    char &c = v[i];
-    assert('\0' != c);
-    if ('"' == c) {
-      if (i > j) {
-        result.push_back(&v[j]);
-      }
-      c     = '\0';
-      j     = i + 1;
-      quote = !quote;
-    } else if (!quote && ' ' == c) {
-      if (i > j) {
-        result.push_back(&v[j]);
-      }
-      c = '\0';
-      j = i + 1;
-    }
-  }
-  if (i > j) {
-    result.push_back(&v[j]);
-  }
-  return result;
 }
 
 struct ImageTransform : TransformationPlugin {
@@ -462,9 +483,42 @@ struct ImageTransform : TransformationPlugin {
     : TransformationPlugin(t, TransformationPlugin::RESPONSE_TRANSFORMATION),
       arguments_(std::move(a)),
       argumentMap_(std::move(m)),
-      threadPool_(p)
+      threadPool_(p),
+      txn_(static_cast<TSHttpTxn>(t.getAtsHandle())),
+      // fail() runs on a pool thread, where touching the transaction to read the
+      // URL is not safe, so capture it here while still on the transaction thread.
+      url_(t.getClientRequest().getUrl().getUrlString())
   {
     TSDebug(PLUGIN_TAG, "ImageTransform");
+    TransformationPlugin::registerHook(HOOK_SEND_RESPONSE_HEADERS);
+  }
+
+  /** A failed conversion must not be served as a 200. The client response headers
+   * still describe the origin image at this point, so rewrite them here.
+   */
+  void
+  handleSendResponseHeaders(Transaction &t) override
+  {
+    if (failed_) {
+      Response &response = t.getClientResponse();
+      response.setStatusCode(HTTP_STATUS_BAD_GATEWAY);
+      response.setReasonPhrase("Bad Gateway");
+      // This is an empty error response, not an image.
+      Headers &headers = response.getHeaders();
+
+      headers.erase("Content-Type");
+
+      // The origin's freshness and validator headers describe an image that was
+      // never produced. Leaving them would let a downstream cache or browser store
+      // this 502 against the URL.
+      headers.erase("Cache-Control");
+      headers.erase("Expires");
+      headers.erase("ETag");
+      headers.erase("Last-Modified");
+      headers.erase("Vary");
+      headers.set("Cache-Control", "no-store");
+    }
+    t.resume();
   }
 
   void
@@ -484,18 +538,48 @@ struct ImageTransform : TransformationPlugin {
       magick::Exception exception;
       magick::Wand wand;
 
-      assert(!this->blob_.empty());
+      // An empty body is origin controlled, so it has to fail rather than assert.
+      if (this->blob_.empty()) {
+        this->fail("origin returned an empty body");
+        return;
+      }
 
-      wand.readBlob(this->blob_);
-      wand.write("mpr:b");
+      /** Every step is checked. ImageMagick's MPR registry is process-global rather
+       * than per-wand, so on a failed conversion mpr:a still holds whatever a
+       * previous transform wrote, from any thread. Producing unconditionally would
+       * serve that unrelated image under this request's URL, status and
+       * Content-Type, and cache it.
+       */
+      if (!wand.readBlob(this->blob_)) {
+        this->fail("failed to decode the origin image", wand.exceptionText());
+        return;
+      }
 
-      const bool result = MagickCommandGenesis(image.info, ConvertImageCommand, this->argumentMap_.size(),
-                                               this->argumentMap_.data(), nullptr, exception.info) == MagickTrue;
+      if (!wand.write("mpr:b")) {
+        this->fail("failed to write the input MPR register", wand.exceptionText());
+        return;
+      }
+
+      if (MagickCommandGenesis(image.info, ConvertImageCommand, this->argumentMap_.size(), this->argumentMap_.data(), nullptr,
+                               exception.info) != MagickTrue) {
+        this->fail("convert command failed", exception.text());
+        return;
+      }
 
       wand.clear();
-      wand.read("mpr:a");
+
+      if (!wand.read("mpr:a")) {
+        this->fail("failed to read the output MPR register", wand.exceptionText());
+        return;
+      }
 
       const std::string_view output = wand.get();
+
+      if (output.empty()) {
+        this->fail("conversion produced an empty image", wand.exceptionText());
+        return;
+      }
+
       this->produce(output);
 
       TSDebug(PLUGIN_TAG, "Background transformation is done, resuming continuation (%p)", this);
@@ -506,10 +590,43 @@ struct ImageTransform : TransformationPlugin {
     TSDebug(PLUGIN_TAG, "Scheduling background transformation (%p)", this);
   }
 
+  /** Emit no body, suppress the cache write, and let handleSendResponseHeaders turn
+   * the response into a 502.
+   *
+   * Setting failed_ and disabling the cache write before setOutputComplete() is
+   * load-bearing, not incidental ordering. setOutputComplete() is what drives the
+   * transform read to completion, and therefore what makes the transaction thread
+   * observe both. api_info.cache_transformed is read by
+   * HttpTransact::handle_transform_ready, which runs off that same write.
+   */
+  void
+  fail(const char *const reason, const std::string &detail = std::string())
+  {
+    if (detail.empty()) {
+      TSDebug(PLUGIN_TAG, "transformation failed (%p): %s [%s]", this, reason, url_.c_str());
+      TSError("[" PLUGIN_TAG "] %s: %s", reason, url_.c_str());
+    } else {
+      TSDebug(PLUGIN_TAG, "transformation failed (%p): %s: %s [%s]", this, reason, detail.c_str(), url_.c_str());
+      TSError("[" PLUGIN_TAG "] %s: %s: %s", reason, detail.c_str(), url_.c_str());
+    }
+
+    failed_ = true;
+
+    TSHttpTxnTransformedRespCache(txn_, 0);
+
+    setOutputComplete();
+  }
+
   CharVector arguments_;
   CharPointerVector argumentMap_;
   CharVector blob_;
   ThreadPool &threadPool_;
+  TSHttpTxn txn_ = nullptr;
+  std::string url_;
+
+  /// Written on a pool thread in fail(), read on an ET_NET thread in
+  /// handleSendResponseHeaders().
+  std::atomic<bool> failed_ = false;
 };
 
 struct GlobalHookPlugin : GlobalPlugin {
@@ -580,32 +697,59 @@ struct GlobalHookPlugin : GlobalPlugin {
         const auto &view = magickQueryParameter.front();
         CharVector magick(view.data(), view.data() + view.size());
 
-        bool verified = nullptr == key_;
+        // Fail closed: a request is only trusted when a signing key is
+        // configured AND the accompanying signature verifies. Treating an absent
+        // key as "verified" would run client-supplied operators unauthenticated.
+        bool verified = false;
 
-        if (!verified) {
+        if (nullptr != key_) {
           const auto &magickSigQueryParameter = queryMap["magickSig"];
           if (!magickSigQueryParameter.empty()) {
             const auto &view2 = magickSigQueryParameter.front();
             CharVector magickSig(view2.data(), view2.data() + view2.size());
             magickSig.insert(magickSig.end(), '\0');
             TSDebug(PLUGIN_TAG, "Magick Signature: %s", magickSig.data());
-            QueryParameterToCharVector(magickSig);
-            verified = magick::verify(reinterpret_cast<const byte *>(magick.data()), magick.size(),
-                                      reinterpret_cast<const byte *>(magickSig.data()), magickSig.size(), key_->key);
+            if (QueryParameterToCharVector(magickSig)) {
+              verified = magick::verify(reinterpret_cast<const byte *>(magick.data()), magick.size(),
+                                        reinterpret_cast<const byte *>(magickSig.data()), magickSig.size(), key_->key);
+            }
           }
         }
 
         if (verified) {
           magick.insert(magick.end(), '\0');
-          QueryParameterToCharVector(magick);
-          TSDebug(PLUGIN_TAG, "ImageMagick's syntax: %s", magick.data());
-          CharPointerVector argumentMap = QueryParameterToArguments(magick);
-          t.addPlugin(new ImageTransform(t, std::move(magick), std::move(argumentMap), threadPool_));
+          const bool decoded = QueryParameterToCharVector(magick);
+
+          // Keep the terminator within size() so every argv token, including the
+          // last, is a NUL-terminated C string without depending on the decoders
+          // leaving one in the vector's unused capacity.
+          CharPointerVector argumentMap;
+          std::string reason;
+
+          if (decoded) {
+            magick.push_back('\0');
+            TSDebug(PLUGIN_TAG, "ImageMagick's syntax: %s", magick.data());
+            argumentMap = QueryParameterToArguments(magick);
+          }
+
+          if (decoded && ValidateMagickArguments(argumentMap, &reason)) {
+            t.addPlugin(new ImageTransform(t, std::move(magick), std::move(argumentMap), threadPool_));
+          } else {
+            TSDebug(PLUGIN_TAG, "disallowed ImageMagick operator in magick arguments: %s", reason.c_str());
+            TSError("[" PLUGIN_TAG "] disallowed ImageMagick operator in magick arguments: %s", reason.c_str());
+            t.setStatusCode(HTTP_STATUS_FORBIDDEN);
+            t.error();
+            // error() is a terminal reenable; falling through to t.resume() below
+            // would reenable the transaction a second time.
+            return;
+          }
         } else {
           TSDebug(PLUGIN_TAG, "signature verification failed.");
           TSError("[" PLUGIN_TAG "] signature verification failed.");
           t.setStatusCode(HTTP_STATUS_FORBIDDEN);
           t.error();
+          // error() is a terminal reenable; see above.
+          return;
         }
       }
     }
@@ -623,10 +767,17 @@ TSPluginInit(int argc, const char **argv)
 
   const char *key = nullptr;
 
-  if (1 < argc) {
-    // first argument is the path to the public key used to verify query parameter magick's content.
-    key = argv[1];
+  // Fail closed: refuse to load without a key. Without one, the signature check
+  // below is skipped and client-supplied ImageMagick operators would be run
+  // unauthenticated.
+  if (2 > argc) {
+    TSError("[" PLUGIN_TAG "] a public key file argument is required; refusing to load without a signing key");
+    TSDebug(PLUGIN_TAG, "no public key configured; refusing to load");
+    return;
   }
+
+  // first argument is the path to the public key used to verify query parameter magick's content.
+  key = argv[1];
 
   plugin = new GlobalHookPlugin(key);
 }

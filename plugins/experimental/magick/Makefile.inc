@@ -21,7 +21,8 @@ experimental_magick_magick_la_CXXFLAGS = $(AM_CXXFLAGS) -Wno-unused-variable
 pkglib_LTLIBRARIES += experimental/magick/magick.la
 
 experimental_magick_magick_la_SOURCES = \
-  experimental/magick/magick.cc
+  experimental/magick/magick.cc \
+  experimental/magick/magick_args.cc
 
 experimental_magick_magick_la_LDFLAGS = \
   $(AM_LDFLAGS) \
@@ -30,3 +31,13 @@ experimental_magick_magick_la_LDFLAGS = \
 experimental_magick_magick_la_LIBADD = \
   -ltscppapi \
   $(LIBMAGICKCPP_LIBS)
+
+# magick_args.cc depends only on <string>/<vector>, not on ImageMagick, so the
+# argument validator is unit testable even where ImageMagick is absent.
+check_PROGRAMS += experimental/magick/test_magick_args
+
+experimental_magick_test_magick_args_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdir)/tests/include
+
+experimental_magick_test_magick_args_SOURCES = \
+  experimental/magick/unit_tests/test_magick_args.cc \
+  experimental/magick/magick_args.cc
