@@ -287,8 +287,23 @@ Http2Stream::increment_data_length(uint64_t length)
 inline bool
 Http2Stream::payload_length_is_valid() const
 {
-  uint32_t content_length = _req_header.get_content_length();
-  return content_length == 0 || content_length == data_length;
+  int64_t content_length = _req_header.get_content_length();
+
+  // Both diagnostics below are driven by peer-supplied framing, so a peer could
+  // otherwise emit one log line per stream. Throttle them per call site.
+  if (content_length < 0) {
+    SiteThrottledWarning("Negative payload length content_length=%" PRId64 " session_id=%" PRId64, content_length,
+                         _proxy_ssn ? _proxy_ssn->connection_id() : 0);
+    return false;
+  }
+
+  if (content_length != 0 && static_cast<uint64_t>(content_length) != data_length) {
+    SiteThrottledWarning("Bad payload length content_length=%" PRId64 " data_length=%" PRIu64 " session_id=%" PRId64,
+                         content_length, data_length, _proxy_ssn ? _proxy_ssn->connection_id() : 0);
+    return false;
+  }
+
+  return true;
 }
 
 inline bool
