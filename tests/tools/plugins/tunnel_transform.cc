@@ -295,7 +295,8 @@ transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
   switch (event) {
   case TS_EVENT_HTTP_READ_REQUEST_HDR:
   case TS_EVENT_HTTP_TUNNEL_START:
-    Dbg(plugin_ctl, "\tEvent is %d", event);
+    Dbg(plugin_ctl, "\tEvent is %s",
+        event == TS_EVENT_HTTP_TUNNEL_START ? "TS_EVENT_HTTP_TUNNEL_START" : "TS_EVENT_HTTP_READ_REQUEST_HDR");
     transform_add(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
