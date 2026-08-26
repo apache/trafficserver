@@ -107,6 +107,8 @@ handle_transform(TSCont contp, bool forward)
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
     Dbg(plugin_ctl, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
+    // A request transform must report a real content length — INT64_MAX
+    // makes state_request_wait_for_transform_read() fail the transaction.
     int64_t nbytes   = (request_hdr_mode && TSVIONBytesGet(input_vio) > 0) ? TSVIONBytesGet(input_vio) : INT64_MAX;
     data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, nbytes);
     TSContDataSet(contp, data);
