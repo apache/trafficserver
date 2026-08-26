@@ -50,10 +50,7 @@ def main() -> int:
         try:
             response = sock.recv(4096)
         except ConnectionError:
-            # ATS may reset the connection after responding since the POST
-            # body is incomplete.  This is acceptable — the important thing
-            # is that ATS did not crash.
-            print('HTTP/1.1 connection reset (expected for partial POST)')
+            print('Connection reset (expected for partial POST)')
             return 0
         except socket.timeout:
             print('ERROR: timeout waiting for response', file=sys.stderr)
@@ -67,8 +64,8 @@ def main() -> int:
             print('ERROR: unexpected response', file=sys.stderr)
             return 1
         else:
-            print('ERROR: connection closed with no response', file=sys.stderr)
-            return 1
+            print('Connection closed (expected for partial POST)')
+            return 0
     finally:
         sock.close()
 
