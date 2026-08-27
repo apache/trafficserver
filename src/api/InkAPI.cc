@@ -8322,18 +8322,21 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     const X509_NAME *subject = X509_get_subject_name(cert.get());
     const int        pos     = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
     if (pos < 0) {
+      SSLError("Failed to extract common name from certificate %s: no commonName", cert_path);
       return TS_ERROR;
     }
 
     const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(subject, pos);
     const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     if (!common_name_asn1) {
+      SSLError("Failed to extract common name from certificate %s: missing ASN.1 value", cert_path);
       return TS_ERROR;
     }
 
     const auto *common_name_data = ASN1_STRING_get0_data(common_name_asn1);
     const int   common_name_len  = ASN1_STRING_length(common_name_asn1);
     if (!common_name_data || common_name_len <= 0) {
+      SSLError("Failed to extract common name from certificate %s: invalid ASN.1 value", cert_path);
       return TS_ERROR;
     }
 
@@ -8343,7 +8346,8 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
       return TS_ERROR;
     }
 
-    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s", cert_path, common_name_str.c_str());
+    Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %.*s", cert_path, static_cast<int>(common_name_str.size()),
+        common_name_str.data());
     // Update context to use cert
     cc = lookup->find(common_name_str);
     if (cc && cc->getCtx()) {
