@@ -56,6 +56,7 @@ public:
 
 private:
   const char *_debug_tag() const override;
+  bool        _should_track_load_metrics() const override;
 #if TS_HAS_OPENSSL_QUIC
   virtual void _set_handshake_callbacks(SSL_CTX *ctx) override;
   virtual bool _set_alpn_callback(SSL_CTX *ctx) override;

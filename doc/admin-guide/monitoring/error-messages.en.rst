@@ -108,6 +108,47 @@ it would be used instead of ``cache#read_error`` if there is no ``apache_cache#r
 The text for an error message is processed as if it were a :ref:`admin-logging-fields` which
 enables customization by values present in the transaction for which the error occurred.
 
+.. _body-factory-info:
+
+Template Set Metadata
+---------------------
+
+Each template set directory must contain a ``.body_factory_info`` file for the template set to be
+loaded. This file controls the ``Content-Type``, ``Content-Language``, and character set of the
+HTTP response headers sent with error pages.
+
+The following directives are supported:
+
+``Content-Language``
+   The natural language of the error pages. This value is sent in the ``Content-Language`` HTTP
+   response header. Default: ``en``.
+
+``Content-Charset``
+   The character encoding of the error pages. When ``Content-Type`` is not explicitly configured,
+   this value is appended to the default ``text/html`` type as a ``charset`` parameter. Default:
+   ``utf-8``.
+
+``Content-Type``
+   The complete MIME type for the error response. The value is used exactly as configured, so include
+   a ``charset`` parameter here when one is desired. Default: ``text/html; charset=utf-8``.
+
+For example, to serve plain text error pages in English::
+
+   Content-Language: en
+   Content-Charset: utf-8
+   Content-Type: text/plain
+
+This would produce the response header ``Content-Type: text/plain``. To declare the character set as
+well, configure ``Content-Type: text/plain; charset=utf-8``.
+
+To describe Korean error pages encoded in the ``iso-2022-kr`` character set::
+
+   Content-Language: ko-KR
+   Content-Charset: iso-2022-kr
+
+If the file is empty or contains only comments, the defaults are used: English ``text/html`` in
+the ``utf-8`` character set. If the file is absent, the entire template set directory is skipped.
+
 The following table lists the hard-coded Traffic Server HTTP messages,
 with corresponding HTTP response codes and customizable files.
 
@@ -269,4 +310,3 @@ with corresponding HTTP response codes and customizable files.
    Could not process this request because the request uri
    was too long ..
    ``request#uri_len_too_long``
-

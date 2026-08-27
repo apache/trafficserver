@@ -8,5 +8,5 @@
 < Proxy-Connection: keep-alive
 < Server: ATS/``
 ``
-< Content-Type: text/html
+< Content-Type: text/html; charset=utf-8
 ``

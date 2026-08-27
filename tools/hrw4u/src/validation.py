@@ -57,6 +57,9 @@ class ValidatorChain:
     def arg_count(self, counts: int) -> 'ValidatorChain':
         return self._add(Validator.arg_count(counts))
 
+    def arg_count_range(self, minimum: int, maximum: int) -> 'ValidatorChain':
+        return self._add(Validator.arg_count_range(minimum, maximum))
+
     def min_args(self, count: int) -> 'ValidatorChain':
         return self._add(Validator.min_args(count))
 
@@ -106,6 +109,16 @@ class Validator:
         def validator(args: list[str]) -> None:
             if len(args) != count:
                 raise SymbolResolutionError(str(args), f"Invalid number of arguments (expected {count}, got {len(args)})")
+
+        return ValidatorChain([validator])
+
+    @staticmethod
+    def arg_count_range(minimum: int, maximum: int) -> 'ValidatorChain':
+
+        def validator(args: list[str]) -> None:
+            if not minimum <= len(args) <= maximum:
+                raise SymbolResolutionError(
+                    str(args), f"Invalid number of arguments (expected {minimum}-{maximum}, got {len(args)})")
 
         return ValidatorChain([validator])
 

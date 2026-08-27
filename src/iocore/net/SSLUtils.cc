@@ -1829,6 +1829,12 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   return ctx.get();
 }
 
+bool
+SSLMultiCertConfigLoader::_should_track_load_metrics() const
+{
+  return true;
+}
+
 swoc::Errata
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
@@ -1956,6 +1962,17 @@ SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCer
         std::lock_guard<std::mutex> lock(_loader_mutex);
         errata.note(ERRATA_ERROR, "Failed to load certificate '{}' at item {}",
                     sslMultiCertSettings->cert ? sslMultiCertSettings->cert : "(unnamed)", item_num);
+        // Guard required: SSLCertificateConfig::startup() ultimately calls _load_items() via
+        // reconfigure() and load(), and runs before SSLInitializeStatistics() in
+        // SSLNetProcessor::start(), so this counter is nullptr during the TLS startup cert load.
+        // The QUIC loader is excluded from this counter entirely via _should_track_load_metrics(),
+        // so the nullptr guard is TLS-startup-specific.
+        if (ssl_rsb.ssl_multicert_load_failures && _should_track_load_metrics()) {
+          Metrics::Counter::increment(ssl_rsb.ssl_multicert_load_failures);
+        }
+      } else if (sslMultiCertSettings->cert) {
+        std::lock_guard<std::mutex> lock(_loader_mutex);
+        ++lookup->user_cert_count;
       }
     } else {
       std::lock_guard<std::mutex> lock(_loader_mutex);
