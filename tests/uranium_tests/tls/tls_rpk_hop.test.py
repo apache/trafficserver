@@ -305,11 +305,12 @@ tr.Processes.Default.StartBefore(parent_mtls_x509)
 tr.Processes.Default.StartBefore(edge_mtls_x509)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     'origin response', 'a valid X.509 client cert should still verify on an RPK-enabled entry')
-# Confirms the custom_verify path (mandatory for the RPK branch above) actually engaged for this
-# connection, and its hand-rolled X.509 fallback -- rather than some other, unrelated path --
-# is what accepted the chain.
+# Confirms client-cert verification actually engaged for this connection, rather than some other,
+# unrelated path silently accepting the chain. BoringSSL takes the custom_verify path (mandatory
+# for the RPK branch above) and its hand-rolled X.509 fallback; OpenSSL has no such split -- the
+# same classic callback handles both RPK and X.509 natively, so its entry log is the signal there.
 parent_mtls_x509.Disk.traffic_out.Content = Testers.ContainsExpression(
-    'Callback: custom verify client cert', 'the RPK-aware custom_verify callback must run for this entry')
+    'Callback: custom verify client cert|Callback: verify client cert', 'a client-cert verify callback must run for this entry')
 parent_mtls_x509.Disk.traffic_out.Content += Testers.ExcludesExpression(
     'client certificate chain verification failed', 'the X.509 fallback must accept a validly-signed chain')
 tr.StillRunningAfter = server
