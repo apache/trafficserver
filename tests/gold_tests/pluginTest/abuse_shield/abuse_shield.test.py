@@ -24,7 +24,7 @@ Test.Summary = '''
 Verify abuse_shield plugin initialization and message handling via traffic_ctl.
 '''
 
-Test.SkipUnless(Condition.PluginExists('abuse_shield.so'),)
+Test.SkipUnless(Condition.PluginExists('abuse_shield.so'), Condition.PluginExists('jax_fingerprint.so'))
 
 
 class AbuseShieldMessageTest:
@@ -1223,7 +1223,7 @@ ssl_multicert:
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'abuse_shield',
+                'proxy.config.diags.debug.tags': 'abuse_shield|jax_fingerprint',
                 'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
             })
@@ -1236,6 +1236,7 @@ global:
   ip_tracking:
     slots: 1000
   log_interval_sec: 0
+  fingerprint_registry: abuse_shield.fingerprints
 
 rules:
   - name: "blocked_ja3"
@@ -1247,10 +1248,17 @@ rules:
 
 enabled: true
 '''.strip().split('\n'))
-        self._ts.Disk.plugin_config.AddLine('abuse_shield.so abuse_shield.yaml')
+        self._ts.Disk.plugin_config.AddLines(
+            [
+                'jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints',
+                'abuse_shield.so abuse_shield.yaml',
+            ])
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r"abuse_shield.*Plugin initialized with 1000 slots per tracker, 1 rules",
             "Verify the fingerprint configuration loaded.")
+        self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
+            r"abuse_shield.*Using JAx fingerprint registry 'abuse_shield.fingerprints'",
+            "Verify abuse_shield consumes the named JAx registry.")
 
     def _client_command(self, expectation: str) -> str:
         """Build the deterministic ClientHello client command."""

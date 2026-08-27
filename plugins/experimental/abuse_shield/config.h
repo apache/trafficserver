@@ -180,6 +180,11 @@ public:
   {
     return !fingerprint_methods_.empty();
   }
+  const std::string &
+  fingerprint_registry() const
+  {
+    return fingerprint_registry_;
+  }
   const swoc::IPSpace<bool> &
   trusted_ips() const
   {
@@ -263,6 +268,7 @@ private:
 
   std::string config_path_;
   std::string log_file_;
+  std::string fingerprint_registry_;
 };
 
 } // namespace abuse_shield

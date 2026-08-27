@@ -27,10 +27,9 @@ bounded per-client state and token-bucket rate limiting. It supports:
 
 * per-IP request, connection, and HTTP/2 error token buckets;
 * trusted IP ranges and rule-specific rate-limit tiers;
-* logging, temporary IP blocking, and connection closing; and
+* logging, temporary IP blocking, and connection closing;
 * atomic rule reloads through traffic_ctl; and
-* optional JA3 and JA4 ClientHello fingerprint matching before the TLS
-  handshake continues.
+* optional ClientHello fingerprint matching before the TLS handshake continues.
 
 Building and Loading
 ====================
@@ -47,6 +46,13 @@ Add the plugin and its YAML configuration to plugin.config::
 A relative configuration path is resolved from the |TS| configuration
 directory.
 
+Fingerprint rules also require global JAx instances before Abuse Shield. Each
+method publishes to the registry named by ``global.fingerprint_registry``::
+
+   jax_fingerprint.so --method JA3 --export abuse_shield.fingerprints
+   jax_fingerprint.so --method JA4 --export abuse_shield.fingerprints
+   abuse_shield.so abuse_shield.yaml
+
 Configuration
 =============
 
@@ -62,6 +68,7 @@ The following example configures several available abuse controls:
      trusted_ips_file: /etc/trafficserver/abuse_shield_trusted.yaml
      log_interval_sec: 10
      log_file: abuse_shield
+     fingerprint_registry: abuse_shield.fingerprints
 
    rules:
      - name: excessive_requests
@@ -104,6 +111,7 @@ blocking.duration_seconds             Duration of a block action (default 300)
 trusted_ips_file                      Optional YAML file of IP ranges to bypass
 log_interval_sec                      Minimum log interval per IP (default 10)
 log_file                              Optional separate |TS| text log object
+fingerprint_registry                  Named JAx registry used by fingerprint rules
 ===================================== ==============================================
 
 Rules are evaluated in file order and the first matching rule wins.
@@ -139,40 +147,43 @@ rate limits.
 ClientHello Fingerprints
 ------------------------
 
-The supplied fingerprint providers are JA3 and JA4. Method names are
+The supplied JAx methods are JA3 and JA4. Their method names are
 case-insensitive. JA3 values are validated as 32 hexadecimal characters and
 canonicalized to lowercase; JA4 values are validated against the 36-character
-JA4 layout.
+JA4 layout. Other method names and values are treated as opaque strings and
+matched exactly, allowing downstream JAx builds to publish site-specific
+methods.
 
 Only methods derived entirely from a TLS ClientHello can be used. JA4H is
 derived from an HTTP request and is therefore unavailable at the
 TS_SSL_CLIENT_HELLO_HOOK where the plugin makes its decision.
 
-The plugin computes only methods referenced by the active configuration, once
-per ClientHello. A matching close action rejects the connection with
-TSVConnReenableEx(vconn, TS_EVENT_ERROR). This stops processing before
-ServerHello and key-exchange work. The read-only jax_fingerprint plugin is not
-required and remains independent.
+JAx computes each fingerprint and publishes it in a versioned, read-only
+registry held in a named VConn user-argument slot. Abuse Shield consumes that
+result at its ClientHello hook; it does not link fingerprint algorithms or
+recompute their values. The registry is an in-process array of
+length-delimited method/value entries, not JSON. Its header contains a magic
+value, ABI version, and structure sizes so a consumer can reject an
+incompatible layout. JAx owns all registry memory for the VConn lifetime.
 
-Adding Fingerprint Providers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The JAx plugin lines must precede Abuse Shield in :file:`plugin.config` so
+their hooks publish values before Abuse Shield evaluates them. A missing or
+incompatible named registry is a startup error. A matching close action uses
+``TSVConnReenableEx(vconn, TS_EVENT_ERROR)``, stopping processing before
+ServerHello and key-exchange work.
 
-Downstream builds can add private or site-specific methods without changing
-the ATS plugin API:
+Adding Fingerprint Methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. Create plugins/experimental/abuse_shield/fingerprints/<method>/method.h
-   and method.cc.
-#. Export abuse_shield::fingerprints::<method>::method as an
-   abuse_shield::FingerprintMethod.
-#. Supply a ClientHello compute callback and a configuration validation and
-   canonicalization callback.
-#. Add the directory name to the CMake cache list, for example::
+Downstream builds add private or site-specific methods to JAx, following its
+developer README, then load the method with the same export name::
 
-      -DABUSE_SHIELD_FINGERPRINT_METHODS="ja3;ja4;site_fingerprint"
+   jax_fingerprint.so --method SITE_METHOD --export abuse_shield.fingerprints
 
-The build generates the provider registry from that list. A configuration that
-references a method not compiled into the plugin is rejected at startup or
-reload. No JA-specific addition to ts.h is needed.
+Configure ``SITE_METHOD`` as a key under ``fingerprints``. Abuse Shield does
+not need to know how the method is computed and compares the exported value
+exactly. No JA-specific addition to ``ts.h`` or Abuse Shield provider code
+is needed.
 
 Actions
 -------
@@ -223,8 +234,9 @@ Reload the YAML rules without restarting |TS|::
 The new configuration is validated before it replaces the active
 configuration. Existing table data and block expiration times are preserved,
 as is the state set by ``abuse_shield.enabled``. ``ip_tracking.slots`` and
-``log_file`` are startup-only; a reload that changes either setting is
-rejected. Fingerprint additions and removals apply to the next ClientHello.
+``log_file`` and ``fingerprint_registry`` are startup-only; a reload that
+changes any of these settings is rejected. Fingerprint additions and removals
+apply to the next ClientHello.
 
 Other lifecycle messages are::
 
@@ -253,6 +265,7 @@ abuse_shield.connections.rejected                 Previously blocked IPs
 abuse_shield.connections.reject_failed            Failed blocked-IP rejections
 abuse_shield.fingerprints.matched                 Fingerprint rule matches
 abuse_shield.fingerprints.rejected                ClientHello rejections
+abuse_shield.fingerprints.unavailable             ClientHellos missing a configured fingerprint
 abuse_shield.<tracker>.events                     Events for a tracker
 abuse_shield.<tracker>.events_untracked           Events not admitted to a tracker
 abuse_shield.<tracker>.scan_exhausted             Protected-slot scans that hit their bound

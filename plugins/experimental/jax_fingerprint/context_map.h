@@ -28,6 +28,7 @@
 #pragma once
 
 #include "context.h"
+#include "fingerprint_registry.h"
 
 #include "ts/ts.h"
 
@@ -52,11 +53,21 @@
  * to a string literal with static storage duration, so storing the view
  * is safe).
  */
-class ContextMap
+class ContextMap : public jax_fingerprint::RegistryV1
 {
 public:
   static constexpr std::size_t MAX_METHODS = JAX_FINGERPRINT_MAX_METHODS;
   static_assert(MAX_METHODS >= 1, "Must accommodate at least one fingerprinting method");
+
+  ContextMap()
+  {
+    magic       = jax_fingerprint::REGISTRY_MAGIC;
+    abi_version = jax_fingerprint::REGISTRY_ABI_VERSION;
+    struct_size = sizeof(jax_fingerprint::RegistryV1);
+    entry_size  = sizeof(jax_fingerprint::RegistryEntryV1);
+    entry_count = 0;
+    entries     = _entries.data();
+  }
 
   ~ContextMap()
   {
@@ -78,11 +89,15 @@ public:
       if (_slots[i].first == method_name) {
         delete _slots[i].second;
         _slots[i].second = ctx;
+        refresh(i);
         return;
       }
     }
     TSReleaseAssert(_size < MAX_METHODS);
-    _slots[_size++] = {method_name, ctx};
+    _slots[_size] = {method_name, ctx};
+    refresh(_size);
+    ++_size;
+    entry_count = static_cast<uint32_t>(_size);
   }
 
   /**
@@ -114,8 +129,23 @@ public:
         --_size;
         if (i != _size) {
           _slots[i] = _slots[_size];
+          refresh(i);
         }
-        _slots[_size] = {};
+        _slots[_size]   = {};
+        _entries[_size] = {};
+        entry_count     = static_cast<uint32_t>(_size);
+        return;
+      }
+    }
+  }
+
+  /** Refresh the exported view after a method changes its fingerprint. */
+  void
+  refresh(std::string_view method_name)
+  {
+    for (std::size_t i = 0; i < _size; ++i) {
+      if (_slots[i].first == method_name) {
+        refresh(i);
         return;
       }
     }
@@ -132,6 +162,21 @@ public:
   }
 
 private:
+  void
+  refresh(std::size_t index)
+  {
+    const auto &method      = _slots[index].first;
+    const auto &fingerprint = _slots[index].second->get_fingerprint();
+
+    _entries[index] = {
+      method.data(),
+      fingerprint.data(),
+      static_cast<uint32_t>(method.size()),
+      static_cast<uint32_t>(fingerprint.size()),
+    };
+  }
+
   std::array<std::pair<std::string_view, JAxContext *>, MAX_METHODS> _slots{};
+  std::array<jax_fingerprint::RegistryEntryV1, MAX_METHODS>          _entries{};
   std::size_t                                                        _size{0};
 };

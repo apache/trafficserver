@@ -269,6 +269,9 @@ TEST_CASE("Config parses and canonicalizes ClientHello fingerprint filters", "[a
 {
   TempConfig files;
   auto       config_path = files.write("abuse_shield.yaml", R"(
+global:
+  fingerprint_registry: test.jax.registry
+
 rules:
   - name: "blocked_tls_clients"
     filter:
@@ -285,6 +288,7 @@ rules:
   REQUIRE(config);
   REQUIRE(config->rules().size() == 1);
   CHECK(config->has_fingerprint_rules());
+  CHECK(config->fingerprint_registry() == "test.jax.registry");
   CHECK(config->fingerprint_methods().contains("JA3"));
   CHECK(config->fingerprint_methods().contains("JA4"));
 
@@ -294,11 +298,14 @@ rules:
   CHECK(fingerprints.at("JA4").contains("t13d1516h2_8daaf6152771_02713d6af862"));
 }
 
-TEST_CASE("Config rejects unavailable and malformed fingerprints", "[abuse_shield][config][fingerprint]")
+TEST_CASE("Config accepts private methods and rejects malformed fingerprints", "[abuse_shield][config][fingerprint]")
 {
   TempConfig files;
 
-  auto unavailable = files.write("unavailable.yaml", R"(
+  auto internal        = files.write("internal.yaml", R"(
+global:
+  fingerprint_registry: test.jax.registry
+
 rules:
   - name: "internal_method"
     filter:
@@ -307,9 +314,15 @@ rules:
           - "company-specific-value"
     action: [close]
 )");
-  CHECK_FALSE(Config::parse(unavailable.string()));
+  auto internal_config = Config::parse(internal.string());
+  REQUIRE(internal_config);
+  CHECK(internal_config->fingerprint_methods().contains("JA_INTERNAL"));
+  CHECK(internal_config->rules()[0].filter.fingerprints.at("JA_INTERNAL").contains("company-specific-value"));
 
   auto malformed = files.write("malformed.yaml", R"(
+global:
+  fingerprint_registry: test.jax.registry
+
 rules:
   - name: "bad_ja3"
     filter:
@@ -321,6 +334,9 @@ rules:
   CHECK_FALSE(Config::parse(malformed.string()));
 
   auto empty = files.write("empty.yaml", R"(
+global:
+  fingerprint_registry: test.jax.registry
+
 rules:
   - name: "empty_ja3"
     filter:
@@ -329,6 +345,27 @@ rules:
     action: [close]
 )");
   CHECK_FALSE(Config::parse(empty.string()));
+}
+
+TEST_CASE("Config requires a registry for fingerprint rules", "[abuse_shield][config][fingerprint]")
+{
+  TempConfig files;
+  auto       config_path = files.write("abuse_shield.yaml", R"(
+rules:
+  - name: "blocked_tls_clients"
+    filter:
+      fingerprints:
+        JA3:
+          - "238bcebdfa16aa0be417a7f7a80063a9"
+    action: [close]
+)");
+
+  auto config = Config::parse(config_path.string());
+  REQUIRE(config);
+
+  std::string error_msg;
+  CHECK_FALSE(config->validate(error_msg));
+  CHECK(error_msg == "global.fingerprint_registry is required when fingerprint rules are configured");
 }
 
 TEST_CASE("Config rejects malformed security settings", "[abuse_shield][config]")

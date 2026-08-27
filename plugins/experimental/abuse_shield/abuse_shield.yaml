@@ -17,6 +17,9 @@ global:
     duration_seconds: 300
   log_interval_sec: 10
   log_file: abuse_shield
+  # Load matching jax_fingerprint instances before abuse_shield.so and give
+  # each one this name with --export.
+  fingerprint_registry: abuse_shield.fingerprints
 
 rules:
   - name: excessive_requests

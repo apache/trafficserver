@@ -62,6 +62,8 @@ ActionStats::init()
     TSStatCreate("abuse_shield.fingerprints.matched", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
   fingerprint_connections_rejected =
     TSStatCreate("abuse_shield.fingerprints.rejected", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  fingerprint_unavailable =
+    TSStatCreate("abuse_shield.fingerprints.unavailable", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
 }
 
 } // namespace abuse_shield

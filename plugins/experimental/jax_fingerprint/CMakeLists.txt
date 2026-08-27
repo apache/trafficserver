@@ -63,7 +63,7 @@ verify_global_plugin(jax_fingerprint)
 verify_remap_plugin(jax_fingerprint)
 
 if(BUILD_TESTING)
-  add_executable(test_jax common/utils.cc ${_jax_test_method_sources})
+  add_executable(test_jax common/utils.cc fingerprint_registry_test.cc ${_jax_test_method_sources})
   target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL)
   target_include_directories(test_jax BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_compile_definitions(test_jax PRIVATE ${_jax_method_defs})

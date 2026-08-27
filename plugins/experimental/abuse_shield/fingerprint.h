@@ -1,6 +1,6 @@
 /** @file
 
-  Extensible TLS ClientHello fingerprint provider interface.
+  TLS ClientHello fingerprint configuration helpers.
 
   @section license License
 
@@ -24,33 +24,23 @@
 #include <string_view>
 #include <unordered_map>
 
-#include "swoc/MemSpan.h"
-#include "ts/ts.h"
-
 namespace abuse_shield
 {
 
 using FingerprintResults = std::unordered_map<std::string, std::string>;
 
-/** A ClientHello fingerprint implementation compiled into Abuse Shield.
- *
- * Providers live in @c fingerprints/<name>/ and export a @c method instance.
- * Add the directory name to @c ABUSE_SHIELD_FINGERPRINT_METHODS to compile a
- * provider into the plugin.
- */
-struct FingerprintMethod {
-  using Compute      = std::string (*)(TSClientHello);
-  using Canonicalize = std::optional<std::string> (*)(std::string_view);
-
-  std::string_view name;         ///< Stable method name used as the YAML key.
-  Compute          compute;      ///< Compute the fingerprint from a ClientHello.
-  Canonicalize     canonicalize; ///< Validate and canonicalize a configured fingerprint.
+/** A validated fingerprint method/value pair from configuration. */
+struct ConfiguredFingerprint {
+  std::string method;
+  std::string value;
 };
 
-/** Return all ClientHello fingerprint providers compiled into Abuse Shield. */
-swoc::MemSpan<const FingerprintMethod *const> fingerprint_methods();
-
-/** Find a compiled fingerprint provider by case-insensitive name. */
-const FingerprintMethod *find_fingerprint_method(std::string_view name);
+/** Validate and canonicalize a configured fingerprint.
+ *
+ * Public JAx methods receive their standard spelling and value validation.
+ * Other method names are retained exactly so private JAx builds can export
+ * implementation-specific fingerprints without changes to Abuse Shield.
+ */
+std::optional<ConfiguredFingerprint> canonicalize_fingerprint(std::string_view method, std::string_view value);
 
 } // namespace abuse_shield

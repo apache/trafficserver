@@ -255,6 +255,10 @@ Config::parse(const std::string &path)
         config->log_file_ = global["log_file"].as<std::string>();
         Dbg(dbg_ctl, "Log file configured: %s", config->log_file_.c_str());
       }
+
+      if (global["fingerprint_registry"]) {
+        config->fingerprint_registry_ = global["fingerprint_registry"].as<std::string>();
+      }
     }
 
     // Rules.
@@ -283,30 +287,23 @@ Config::parse(const std::string &path)
 
             for (const auto &fingerprint_entry : fingerprints_node) {
               std::string method_name = fingerprint_entry.first.as<std::string>();
-              const auto *method      = find_fingerprint_method(method_name);
-              if (!method) {
-                TSError("[%s] Rule '%s' references unavailable fingerprint method '%s'", PLUGIN_NAME, rule.name.c_str(),
-                        method_name.c_str());
-                return nullptr;
-              }
               if (!fingerprint_entry.second.IsSequence() || fingerprint_entry.second.size() == 0) {
                 TSError("[%s] Rule '%s' fingerprint method '%s' must contain at least one value", PLUGIN_NAME, rule.name.c_str(),
                         method_name.c_str());
                 return nullptr;
               }
 
-              auto &configured_values = rule.filter.fingerprints[std::string(method->name)];
               for (const auto &value_node : fingerprint_entry.second) {
                 std::string value     = value_node.as<std::string>();
-                auto        canonical = method->canonicalize(value);
+                auto        canonical = canonicalize_fingerprint(method_name, value);
                 if (!canonical) {
                   TSError("[%s] Rule '%s' contains an invalid %s fingerprint '%s'", PLUGIN_NAME, rule.name.c_str(),
-                          method->name.data(), value.c_str());
+                          method_name.c_str(), value.c_str());
                   return nullptr;
                 }
-                configured_values.insert(std::move(*canonical));
+                rule.filter.fingerprints[canonical->method].insert(std::move(canonical->value));
+                config->fingerprint_methods_.insert(std::move(canonical->method));
               }
-              config->fingerprint_methods_.emplace(method->name);
             }
           }
           if (filter_node["rate_limited_ips_file"]) {
@@ -359,6 +356,10 @@ Config::validate(std::string &error_msg) const
   }
   if (log_interval_sec_ < 0) {
     error_msg = "global.log_interval_sec must not be negative";
+    return false;
+  }
+  if (has_fingerprint_rules() && fingerprint_registry_.empty()) {
+    error_msg = "global.fingerprint_registry is required when fingerprint rules are configured";
     return false;
   }
 

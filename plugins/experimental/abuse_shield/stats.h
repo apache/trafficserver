@@ -52,6 +52,7 @@ struct ActionStats {
   int connections_reject_failed{-1};        ///< Blocked connections that could not be rejected
   int fingerprint_matches{-1};              ///< ClientHello fingerprint rule matches
   int fingerprint_connections_rejected{-1}; ///< Connections rejected at ClientHello
+  int fingerprint_unavailable{-1};          ///< ClientHellos missing one or more configured fingerprints
 
   /** Initialize action statistics by creating the ATS stat entries. */
   void init();

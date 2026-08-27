@@ -73,6 +73,20 @@ This option specifies server name(s) for which the plugin generates fingerprints
 The value must be provided as a single comma separated value (no space) of server names.
 If the option is not specified, the plugin generates fingerprints for any server names.
 
+.. option:: --export <user_arg_name>
+
+Publish generated fingerprints in a named, versioned registry for other
+plugins. Instances with the same storage type and export name contribute to
+one registry, so a ClientHello fingerprint is computed once even when more
+than one plugin uses it. For example::
+
+    jax_fingerprint.so --method JA3 --export security.fingerprints
+    jax_fingerprint.so --method JA4 --export security.fingerprints
+
+The default registry name is ``jax_fingerprint``. Consumers should use an
+explicit name to make the relationship clear and must be loaded after all JAx
+instances that publish to it.
+
 .. option:: --header <header_name>
 
 This option specifies the name of the header field where the plugin stores the generated fingerprint value. If not specified, header generation will be suppressed.
@@ -121,6 +135,22 @@ Hybrid setup
 Hybrid setup is the best if you:
  * Need a fingerprint only for specific server names (in TLS SNI extension), and
  * Need a fingerprint only on specific paths
+
+Fingerprint Registry Export
+---------------------------
+
+The export registry is an in-process, read-only view stored in a named |TS|
+user-argument slot. It is not JSON and does not serialize fingerprints. The
+registry contains length-delimited method/value entries plus a magic value,
+ABI version, and structure sizes, allowing consumers to reject incompatible
+layouts. JAx owns the registry and strings for the lifetime of the connection
+or transaction; consumers must not modify them or retain their pointers.
+
+Connection-based methods such as JA3 and JA4 use a VConn registry. Request-
+based methods such as JA4H use a transaction registry and therefore cannot be
+consumed at a ClientHello hook. A downstream build can add its own method to
+JAx and publish it through the same registry without adding a method-specific
+API to ``ts.h``.
 
 
 Log Output

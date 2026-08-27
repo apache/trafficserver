@@ -457,34 +457,40 @@ ssl_multicert:
         # Each of the following pairs makes sure that the expression exists
         # exactly once.
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Reserved shared user_arg slot: type=vconn, index=\d+', 'Verify a shared vconn user arg slot was reserved.')
+            r'Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=\d+',
+            'Verify a shared vconn user arg slot was reserved.')
         self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            r'Reserved shared user_arg slot: type=vconn, index=\d+.*Reserved shared user_arg slot: type=vconn, index=\d+',
+            r'Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=\d+.*'
+            r'Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=\d+',
             'Verify the shared vconn user arg slot was reserved only once.',
             reflags=re.MULTILINE | re.DOTALL)
 
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Reserved shared user_arg slot: type=txn, index=\d+', 'Verify a shared txn user arg slot was reserved.')
+            r'Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=\d+',
+            'Verify a shared txn user arg slot was reserved.')
         self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            r'Reserved shared user_arg slot: type=txn, index=\d+.*Reserved shared user_arg slot: type=txn, index=\d+',
+            r'Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=\d+.*'
+            r'Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=\d+',
             'Verify the shared txn user arg slot was reserved only once.',
             reflags=re.MULTILINE | re.DOTALL)
 
         # Ensure that JA3 and JA4 share the same vconn user arg slot.
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Using shared user_arg: type=vconn, method=JA3, index=(\d+).*Using shared user_arg: type=vconn, method=JA4, index=\1',
+            r'Using shared user_arg: type=vconn, name=test.jax.registry, method=JA3, index=(\d+).*'
+            r'Using shared user_arg: type=vconn, name=test.jax.registry, method=JA4, index=\1',
             'Verify JA3 and JA4 share the same vconn user arg slot.',
             reflags=re.MULTILINE | re.DOTALL)
         # Note that JA4H is on txn not vconn as JA3 and JA4 above.
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Using shared user_arg: type=txn, method=JA4H, index=\d+', 'Verify JA4H uses the shared txn user arg slot.')
+            r'Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=\d+',
+            'Verify JA4H uses the shared txn user arg slot.')
 
         # Load multiple methods - all share the same user arg slot via ContextMap.
         self._ts.Disk.plugin_config.AddLines(
             [
-                'jax_fingerprint.so --method JA3 --header x-ja3 --standalone',
-                'jax_fingerprint.so --method JA4 --header x-ja4 --standalone',
-                'jax_fingerprint.so --method JA4H --header x-ja4h --standalone',
+                'jax_fingerprint.so --method JA3 --header x-ja3 --standalone --export test.jax.registry',
+                'jax_fingerprint.so --method JA4 --header x-ja4 --standalone --export test.jax.registry',
+                'jax_fingerprint.so --method JA4H --header x-ja4h --standalone --export test.jax.registry',
             ])
 
         self._ts.Disk.remap_config.AddLine(f'map https://jax.server.test https://jax.backend.test:{server_port}')

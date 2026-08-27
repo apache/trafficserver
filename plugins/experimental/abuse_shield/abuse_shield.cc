@@ -44,6 +44,7 @@
 
 #include "config.h"
 #include "fingerprint.h"
+#include "fingerprint_registry.h"
 #include "ip_data.h"
 #include "stats.h"
 #include "logging.h"
@@ -58,6 +59,9 @@ TSTextLogObject g_log_object = nullptr;
 
 // Global action stats.
 abuse_shield::ActionStats g_action_stats;
+
+// Named JAx VConn user-arg selected by global.fingerprint_registry.
+int g_fingerprint_registry_index = -1;
 
 // Per-tracker stats.
 abuse_shield::TrackerStats g_txn_stats;
@@ -652,25 +656,29 @@ handle_client_hello_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
     return TS_SUCCESS;
   }
 
-  TSClientHello client_hello = TSVConnClientHelloGet(vconn);
-  if (!client_hello) {
-    TSError("[%s] Could not retrieve the TLS ClientHello", PLUGIN_NAME);
+  auto *registry = static_cast<const jax_fingerprint::RegistryV1 *>(TSUserArgGet(vconn, g_fingerprint_registry_index));
+  if (!jax_fingerprint::is_valid(registry)) {
+    TSStatIntIncrement(g_action_stats.fingerprint_unavailable, 1);
+    Dbg(dbg_ctl, "JAx fingerprint registry '%s' is unavailable for this ClientHello", config->fingerprint_registry().c_str());
     TSVConnReenable(vconn);
     return TS_SUCCESS;
   }
 
   abuse_shield::FingerprintResults fingerprints;
   fingerprints.reserve(config->fingerprint_methods().size());
-  for (const auto &method_name : config->fingerprint_methods()) {
-    const auto *method = abuse_shield::find_fingerprint_method(method_name);
-    if (!method) {
+  for (uint32_t index = 0; index < registry->entry_count; ++index) {
+    const auto *entry = jax_fingerprint::entry_at(registry, index);
+    if (entry->method == nullptr || entry->value == nullptr || entry->value_length == 0) {
       continue;
     }
 
-    std::string fingerprint = method->compute(client_hello);
-    if (!fingerprint.empty()) {
-      fingerprints.emplace(method->name, std::move(fingerprint));
+    std::string method(entry->method, entry->method_length);
+    if (config->fingerprint_methods().contains(method)) {
+      fingerprints.emplace(std::move(method), std::string(entry->value, entry->value_length));
     }
+  }
+  if (fingerprints.size() != config->fingerprint_methods().size()) {
+    TSStatIntIncrement(g_action_stats.fingerprint_unavailable, 1);
   }
 
   abuse_shield::RuleMatch match = evaluate_fingerprint_rules(ip, *config, fingerprints);
@@ -1096,8 +1104,10 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
         TSError("[%s] Configuration reload rejected: %s. Keeping current configuration.", PLUGIN_NAME, validation_error.c_str());
       } else {
         std::unique_lock lock(g_config_mutex);
-        if (new_config->slots() != g_config->slots() || new_config->log_file() != g_config->log_file()) {
-          TSError("[%s] Configuration reload rejected: global.ip_tracking.slots and global.log_file are startup-only settings",
+        if (new_config->slots() != g_config->slots() || new_config->log_file() != g_config->log_file() ||
+            new_config->fingerprint_registry() != g_config->fingerprint_registry()) {
+          TSError("[%s] Configuration reload rejected: global.ip_tracking.slots, global.log_file, and "
+                  "global.fingerprint_registry are startup-only settings",
                   PLUGIN_NAME);
         } else {
           bool runtime_enabled = g_config->enabled();
@@ -1132,6 +1142,7 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
     TSStatIntSet(g_action_stats.connections_reject_failed, 0);
     TSStatIntSet(g_action_stats.fingerprint_matches, 0);
     TSStatIntSet(g_action_stats.fingerprint_connections_rejected, 0);
+    TSStatIntSet(g_action_stats.fingerprint_unavailable, 0);
     TSNote("[%s] Metrics reset", PLUGIN_NAME);
   } else if (tag == "abuse_shield.enabled") {
     if (msg->data_size > 0) {
@@ -1220,6 +1231,22 @@ TSPluginInit(int argc, const char *argv[])
 
   g_config->set_config_path(config_path);
 
+  if (!g_config->fingerprint_registry().empty()) {
+    const char *description = nullptr;
+    if (TSUserArgIndexNameLookup(TS_USER_ARGS_VCONN, g_config->fingerprint_registry().c_str(), &g_fingerprint_registry_index,
+                                 &description) != TS_SUCCESS) {
+      TSFatal("[%s] Fingerprint registry '%s' was not exported by an earlier plugin", PLUGIN_NAME,
+              g_config->fingerprint_registry().c_str());
+      return;
+    }
+    if (description == nullptr || std::strcmp(description, jax_fingerprint::REGISTRY_DESCRIPTION) != 0) {
+      TSFatal("[%s] Fingerprint registry '%s' uses an incompatible data contract", PLUGIN_NAME,
+              g_config->fingerprint_registry().c_str());
+      return;
+    }
+    TSNote("[%s] Using JAx fingerprint registry '%s'", PLUGIN_NAME, g_config->fingerprint_registry().c_str());
+  }
+
   // Create optional log file for LOG action output.
   if (!g_config->log_file().empty()) {
     if (TSTextLogObjectCreate(g_config->log_file().c_str(), TS_LOG_MODE_ADD_TIMESTAMP, &g_log_object) != TS_SUCCESS) {
@@ -1251,8 +1278,8 @@ TSPluginInit(int argc, const char *argv[])
   TSCont ssn_cont = TSContCreate(handle_ssn_start, nullptr);
   TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssn_cont);
 
-  // CLIENT_HELLO: Compute only the configured fingerprints and reject matching
-  // TLS clients before ServerHello and key-exchange work.
+  // CLIENT_HELLO: Consume configured JAx fingerprints and reject matching TLS
+  // clients before ServerHello and key-exchange work.
   TSCont client_hello_cont = TSContCreate(handle_client_hello, nullptr);
   TSHttpHookAdd(TS_SSL_CLIENT_HELLO_HOOK, client_hello_cont);
 
