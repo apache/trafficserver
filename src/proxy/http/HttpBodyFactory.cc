@@ -267,6 +267,7 @@ HttpBodyFactory::reconfigure()
     unlock();
     return;
   } // callbacks not setup right
+  unlock();
 
   ////////////////////////////////////////////
   // extract relevant records.yaml values //
@@ -278,14 +279,14 @@ HttpBodyFactory::reconfigure()
 
   // enable_customizations if records.yaml set
   auto e{RecGetRecordInt("proxy.config.body_factory.enable_customizations")};
-  enable_customizations = (e.has_value() ? e.value() : 0);
-  all_found             = all_found && e.has_value();
-  Dbg(dbg_ctl_body_factory, "enable_customizations = %d (found = %d)", enable_customizations, e.has_value());
+  int  new_enable_customizations = (e.has_value() ? e.value() : 0);
+  all_found                      = all_found && e.has_value();
+  Dbg(dbg_ctl_body_factory, "enable_customizations = %d (found = %d)", new_enable_customizations, e.has_value());
 
-  e              = RecGetRecordInt("proxy.config.body_factory.enable_logging");
-  enable_logging = (e.has_value() ? (e.value() ? true : false) : false);
-  all_found      = all_found && e.has_value();
-  Dbg(dbg_ctl_body_factory, "enable_logging = %d (found = %d)", enable_logging, e.has_value());
+  e                       = RecGetRecordInt("proxy.config.body_factory.enable_logging");
+  bool new_enable_logging = (e.has_value() ? (e.value() ? true : false) : false);
+  all_found               = all_found && e.has_value();
+  Dbg(dbg_ctl_body_factory, "enable_logging = %d (found = %d)", new_enable_logging, e.has_value());
 
   ats_scoped_str directory_of_template_sets;
 
@@ -311,21 +312,16 @@ HttpBodyFactory::reconfigure()
     Warning("config changed, but can't fetch all proxy.config.body_factory values");
   }
 
-  /////////////////////////////////////////////
-  // clear out previous template hash tables //
-  /////////////////////////////////////////////
-
-  nuke_template_tables();
-
-  /////////////////////////////////////////////////////////////
-  // at this point, the body hash table is gone, so we start //
-  // building a new one, by scanning the template directory. //
-  /////////////////////////////////////////////////////////////
-
+  std::unique_ptr<BodySetTable> new_table_of_sets;
   if (directory_of_template_sets) {
-    table_of_sets = load_sets_from_directory(directory_of_template_sets);
+    new_table_of_sets = load_sets_from_directory(directory_of_template_sets);
   }
 
+  lock();
+  enable_customizations = new_enable_customizations;
+  enable_logging        = new_enable_logging;
+  nuke_template_tables();
+  table_of_sets = std::move(new_table_of_sets);
   unlock();
 }
 
@@ -736,7 +732,6 @@ HttpBodyFactory::nuke_template_tables()
   }
 }
 
-// LOCKING: must be called with lock taken
 std::unique_ptr<HttpBodyFactory::BodySetTable>
 HttpBodyFactory::load_sets_from_directory(char *set_dir)
 {
@@ -806,7 +801,6 @@ HttpBodyFactory::load_sets_from_directory(char *set_dir)
   return new_table_of_sets;
 }
 
-// LOCKING: must be called with lock taken
 HttpBodySet *
 HttpBodyFactory::load_body_set_from_directory(char *set_name, char *tmpl_dir)
 {

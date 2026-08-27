@@ -194,19 +194,30 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
   // XXX the protocol probe should be a configuration option.
 
-  ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
+  // A QUIC port is dispatched to the QUIC acceptor below, which has no probe fallback, so building a
+  // probe for one only leaks it. Every other port type ends up behind the probe, either directly or
+  // as the SSL acceptor's fallback. Without QUIC compiled in no port can be a QUIC port, so this is
+  // always true there.
+  bool const needs_probe = !port.isQUIC();
+
+  ProtocolProbeSessionAccept *probe = nullptr;
   HttpSessionAccept          *http  = nullptr; // don't allocate this unless it will be used.
-  probe->proxyPort                  = &port;
-  probe->proxy_protocol_ipmap       = &HttpConfig::m_master.config_proxy_protocol_ip_addrs;
 
-  if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
-    http = new HttpSessionAccept(accept_opt, &port);
-    probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP, http);
+  if (needs_probe) {
+    probe                       = new ProtocolProbeSessionAccept();
+    probe->proxyPort            = &port;
+    probe->proxy_protocol_ipmap = &HttpConfig::m_master.config_proxy_protocol_ip_addrs;
+
+    if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
+      http = new HttpSessionAccept(accept_opt, &port);
+      probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP, http);
+    }
+
+    if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
+      probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP2, new Http2SessionAccept(accept_opt, &port));
+    }
   }
 
-  if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP2, new Http2SessionAccept(accept_opt, &port));
-  }
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_2_0, create_h2_server_session});
