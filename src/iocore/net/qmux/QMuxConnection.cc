@@ -92,12 +92,11 @@ QMuxConnection::_init_shared_config()
   });
 }
 
-QMuxConnection::QMuxConnection(NetVConnection *netvc) : Continuation(netvc->mutex)
+QMuxConnection::QMuxConnection(NetVConnection *netvc) : Continuation(netvc->mutex), _synthetic_cid(QUICConnectionId::random())
 {
   _init_shared_config();
   SET_HANDLER(&QMuxConnection::main_event);
 
-  _synthetic_cid.randomize();
   _cids_str = _synthetic_cid.hex();
 
   auto *local_ep = netvc->get_local_addr();
