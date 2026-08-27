@@ -459,6 +459,7 @@ parse_yaml_plugins(const YAML::Node &node, url_mapping *url_mapping, BUILD_TABLE
   }
 
   std::vector<char *> pargv;
+  pargv.reserve(plugin_params.size());
   for (auto &param : plugin_params) {
     pargv.push_back(param.data());
   }
