@@ -2509,7 +2509,8 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
       }
       field_name.rtrim_if(&ParseRules::is_ws);
       raw_print_field = false;
-    } else if (parsed.suffix(2) != "\r\n") {
+    } else if (parsed.suffix(2) != "\r\n" || (parsed.size() > 2 && parsed[parsed.size() - 3] == '\r')) {
+      // Do not preserve malformed line endings when forwarding the field.
       raw_print_field = false;
     }
 
