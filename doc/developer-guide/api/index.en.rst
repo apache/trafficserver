@@ -26,6 +26,19 @@ For an introduction to the |TS| API, how to link it to your plugin, and the
 methods of passing parameters to your plugin at runtime, please refer to
 :manpage:`TSAPI(3ts)`.
 
+Output Parameters and Failure
+=============================
+
+Many API functions return a handle through an output parameter and report
+success or failure with a :type:`TSReturnCode`. When such a function returns
+anything other than ``TS_SUCCESS``, it clears its output parameters: handle
+parameters are set to ``TS_NULL_MLOC`` and buffer parameters to ``nullptr``.
+A failing call therefore never leaves an indeterminate or partially written
+value behind.
+
+Checking the return code is still required. A cleared output parameter is not
+a usable handle, and passing one to another API function is an error.
+
 .. toctree::
    :maxdepth: 1
 

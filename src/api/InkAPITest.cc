@@ -37,6 +37,8 @@
 #include <cstdio>
 #include <cstring>
 #include <regex>
+#include <limits>
+#include <string>
 
 #include "tscore/ink_config.h"
 #include "tscore/ink_sprintf.h"
@@ -9257,4 +9259,45 @@ REGRESSION_TEST(SDK_API_TSStatCreate)(RegressionTest *test, int /* level */, int
   TSMgmtInt expected = getpid() + 2;
 
   box.check(expected >= value, "TSStatIntGet(%s) gave %" PRId64 ", expected at least %" PRId64, name, value, expected);
+}
+
+//////////////////////////////////////////////
+//       SDK_API_OutParamClearedOnFailure
+//
+// Failing API calls must leave their output parameters cleared rather than
+// indeterminate, so a caller that skips the return code gets a null handle
+// instead of a wild one.
+//////////////////////////////////////////////
+
+REGRESSION_TEST(SDK_API_OutParamClearedOnFailure)(RegressionTest *test, int /* level */, int *pstatus)
+{
+  TestBox box(test, pstatus);
+
+  box = REGRESSION_TEST_PASSED;
+
+  // TSHttpHdrUrlGet fails on a response header, since only requests carry a URL.
+  TSMBuffer bufp     = TSMBufferCreate();
+  TSMLoc    resp_loc = TSHttpHdrCreate(bufp);
+
+  box.check(resp_loc != TS_NULL_MLOC, "TSHttpHdrCreate failed");
+  TSHttpHdrTypeSet(bufp, resp_loc, TS_HTTP_TYPE_RESPONSE);
+
+  TSMLoc url_loc = reinterpret_cast<TSMLoc>(&box); // deliberate garbage
+  box.check(TSHttpHdrUrlGet(bufp, resp_loc, &url_loc) == TS_ERROR, "TSHttpHdrUrlGet should fail on a response");
+  box.check(url_loc == TS_NULL_MLOC, "TSHttpHdrUrlGet left its out parameter unset on failure");
+
+  // TSMimeHdrFieldCreateNamed fails when the name exceeds the field length limit.
+  TSMLoc mime_loc = TS_NULL_MLOC;
+  box.check(TSMimeHdrCreate(bufp, &mime_loc) == TS_SUCCESS, "TSMimeHdrCreate failed");
+
+  std::string too_long(std::numeric_limits<uint16_t>::max() + 1, 'x');
+  TSMLoc      field_loc = reinterpret_cast<TSMLoc>(&box); // deliberate garbage
+
+  if (TSMimeHdrFieldCreateNamed(bufp, mime_loc, too_long.c_str(), static_cast<int>(too_long.size()), &field_loc) == TS_ERROR) {
+    box.check(field_loc == TS_NULL_MLOC, "TSMimeHdrFieldCreateNamed left its out parameter unset on failure");
+  }
+
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, mime_loc);
+  TSHandleMLocRelease(bufp, TS_NULL_MLOC, resp_loc);
+  TSMBufferDestroy(bufp);
 }
