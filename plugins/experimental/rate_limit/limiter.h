@@ -225,7 +225,7 @@ public:
       std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
 
       Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
-      initializeMetrics(RATE_LIMITER_TYPE_SNI, prefix, tag);
+      initializeMetrics(RATE_LIMITER_TYPE_SNI, std::move(prefix), std::move(tag));
     }
 
     return true;
