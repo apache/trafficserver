@@ -41,7 +41,7 @@ class Http09Session;
 class Http09App : public QUICApplication
 {
 public:
-  Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
+  Http09App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, HttpSessionAcceptBase const *acceptor);
   ~Http09App();
 
   void on_stream_open(QUICStream &stream) override;

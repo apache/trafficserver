@@ -72,7 +72,8 @@ TEST_CASE("tcp_reused should be set correctly when a session is attached.")
   SSLNetVConnection      netvc;
   ssn.set_vc(&netvc);
   HttpSessionAccept::Options options;
-  ssn.accept_options = &options;
+  HttpSessionAccept          acceptor{options};
+  ssn.acceptor = &acceptor;
   Http1ClientTransaction txn{&ssn};
 
   SECTION("When a transaction is the first one, "
@@ -90,4 +91,27 @@ TEST_CASE("tcp_reused should be set correctly when a session is attached.")
     user_agent.set_txn(&txn, milestones);
     CHECK(user_agent.get_client_tcp_reused() == true);
   }
+}
+
+TEST_CASE("Transactions inherit shared acceptor properties")
+{
+  HttpSessionAccept::Options options;
+  HttpProxyPort              proxy_port;
+
+  options.setOutboundPort(8080);
+  options.setOutboundTransparent(true);
+  options.setTransparentPassthrough(true);
+
+  auto                   options_handle = std::make_shared<HttpSessionAccept::Options>(options);
+  HttpSessionAccept      acceptor{options_handle, &proxy_port};
+  Http1ClientTestSession ssn;
+
+  ssn.acceptor = &acceptor;
+  Http1ClientTransaction txn{&ssn};
+
+  CHECK(&acceptor.options() == options_handle.get());
+  CHECK(ssn.acceptor->proxyPort == &proxy_port);
+  CHECK(txn.get_outbound_port() == 8080);
+  CHECK(txn.is_outbound_transparent());
+  CHECK(txn.is_transparent_passthrough_allowed());
 }

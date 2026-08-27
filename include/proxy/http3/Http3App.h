@@ -47,7 +47,7 @@ class Http3Session;
 class Http3App : public QUICApplication
 {
 public:
-  Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
+  Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, HttpSessionAcceptBase const *acceptor);
   virtual ~Http3App();
 
   void on_stream_open(QUICStream &stream) override;

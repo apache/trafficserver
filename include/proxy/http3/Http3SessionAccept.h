@@ -26,8 +26,6 @@
 #include "tscore/ink_platform.h"
 #include "iocore/net/Net.h"
 
-// XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that
-// it can generically apply to all protocol implementations.
 #include "proxy/http/HttpSessionAccept.h"
 
 // HTTP/QUIC Session Accept.
@@ -37,10 +35,10 @@
 //
 // CONFIG proxy.config.http.server_ports STRING 443:quic
 
-class Http3SessionAccept : public SessionAccept
+class Http3SessionAccept : public HttpSessionAcceptBase
 {
 public:
-  explicit Http3SessionAccept(const HttpSessionAccept::Options &);
+  explicit Http3SessionAccept(OptionsHandle options, HttpProxyPort *proxy_port = nullptr);
   ~Http3SessionAccept();
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
@@ -49,6 +47,4 @@ public:
 private:
   Http3SessionAccept(const Http3SessionAccept &);
   Http3SessionAccept &operator=(const Http3SessionAccept &);
-
-  HttpSessionAccept::Options options;
 };

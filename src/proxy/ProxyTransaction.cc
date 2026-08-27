@@ -38,7 +38,12 @@ DbgCtl dbg_ctl_http_txn{"http_txn"};
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 
-ProxyTransaction::ProxyTransaction(ProxySession *session) : VConnection(nullptr), _proxy_ssn(session) {}
+ProxyTransaction::ProxyTransaction(ProxySession *session) : VConnection(nullptr), _proxy_ssn(session)
+{
+  if (_proxy_ssn != nullptr && _proxy_ssn->acceptor != nullptr) {
+    upstream_outbound_options = _proxy_ssn->acceptor->options();
+  }
+}
 
 ProxyTransaction::~ProxyTransaction()
 {
@@ -55,6 +60,9 @@ ProxyTransaction::new_transaction(bool from_early_data)
   // connection re-use
 
   ink_release_assert(_proxy_ssn != nullptr);
+  if (_proxy_ssn->acceptor != nullptr) {
+    upstream_outbound_options = _proxy_ssn->acceptor->options();
+  }
   _sm = THREAD_ALLOC(httpSMAllocator, this_thread());
   _sm->init(from_early_data);
   HttpTxnDebug("[%" PRId64 "] Starting transaction %d using sm [%" PRId64 "]", _proxy_ssn->connection_id(),

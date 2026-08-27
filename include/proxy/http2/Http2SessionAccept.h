@@ -26,8 +26,6 @@
 #include "tscore/ink_platform.h"
 #include "iocore/net/Net.h"
 
-// XXX HttpSessionAccept::Options needs to be refactored and separated from HttpSessionAccept so that
-// it can generically apply to all protocol implementations.
 #include "proxy/http/HttpSessionAccept.h"
 
 // HTTP/2 Session Accept.
@@ -38,8 +36,8 @@
 //
 // CONFIG proxy.config.http.server_ports STRING 80:proto=http2 443:ssl:proto=h2-12
 
-struct Http2SessionAccept : public SessionAccept {
-  explicit Http2SessionAccept(const HttpSessionAccept::Options &);
+struct Http2SessionAccept : public HttpSessionAcceptBase {
+  explicit Http2SessionAccept(OptionsHandle options, HttpProxyPort *proxy_port = nullptr);
   ~Http2SessionAccept() override;
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
@@ -48,7 +46,4 @@ struct Http2SessionAccept : public SessionAccept {
   // noncopyable
   Http2SessionAccept(const Http2SessionAccept &)            = delete;
   Http2SessionAccept &operator=(const Http2SessionAccept &) = delete;
-
-private:
-  HttpSessionAccept::Options options;
 };

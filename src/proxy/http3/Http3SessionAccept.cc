@@ -42,7 +42,8 @@ DbgCtl dbg_ctl_http3{"http3"};
 
 } // end anonymous namespace
 
-Http3SessionAccept::Http3SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
+Http3SessionAccept::Http3SessionAccept(OptionsHandle options, HttpProxyPort *proxy_port)
+  : HttpSessionAcceptBase(std::move(options), proxy_port)
 {
   SET_HANDLER(&Http3SessionAccept::mainEvent);
 }
@@ -66,7 +67,7 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
     return false;
   }
 
-  netvc->attributes = this->options.transport_type;
+  netvc->attributes = this->options().transport_type;
 
   QUICConnection *qc = netvc->get_service<QUICSupport>()->get_quic_connection();
 
@@ -80,12 +81,12 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
 
   if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/0.9 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
-    new Http09App(netvc, qc, std::move(session_acl), this->options);
+    new Http09App(netvc, qc, std::move(session_acl), this);
   } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0 ||
              IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/3 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
 
-    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this->options);
+    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this);
 
 #if TS_USE_QMUX
     if (IP_PROTO_TAG_H3QX.compare(alpn) == 0) {

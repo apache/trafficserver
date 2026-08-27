@@ -70,7 +70,7 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
 
   // Set the transport type if not already set
   if (HttpProxyPort::TRANSPORT_NONE == netvc->attributes) {
-    netvc->attributes = transport_type;
+    netvc->attributes = options().transport_type;
   }
 
   if (dbg_ctl_http_seq.on()) {
@@ -80,8 +80,8 @@ HttpSessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferReade
 
   Http1ClientSession *new_session = THREAD_ALLOC_INIT(http1ClientSessionAllocator, this_ethread());
 
-  new_session->accept_options = static_cast<Options *>(this);
-  new_session->acl            = std::move(acl);
+  new_session->acceptor = this;
+  new_session->acl      = std::move(acl);
 
   // Pin session to current ET_NET thread
   new_session->setThreadAffinity(this_ethread());
