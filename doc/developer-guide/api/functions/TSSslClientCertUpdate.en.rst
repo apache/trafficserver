@@ -35,6 +35,11 @@ Description
 ===========
 
 :func:`TSSslClientCertUpdate` updates existing client certificates configured in :file:`sni.yaml` or
-`proxy.config.ssl.client.cert.filename`. :arg:`cert_path` should be exact match as provided in
-configurations. :func:`TSSslClientCertUpdate` returns :enumerator:`TS_SUCCESS` only if :arg:`cert_path` exists
-in configuration and reloaded to update the context.
+`proxy.config.ssl.client.cert.filename`. :arg:`cert_path` must match the resolved certificate path used by
+Traffic Server. Relative certificate names in the configuration are resolved against
+`proxy.config.ssl.client.cert.path`. :func:`TSSslClientCertUpdate` returns :enumerator:`TS_SUCCESS` only if
+:arg:`cert_path` exists in the configuration and is reloaded into every matching context.
+
+Any certificate data cached for :arg:`cert_path` and :arg:`key_path` is discarded as well, so client
+contexts that Traffic Server creates after the update also use the new certificate rather than the
+previously cached one.

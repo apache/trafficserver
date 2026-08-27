@@ -37,8 +37,8 @@ Description
 These functions are used to explore the client contexts that |TS| uses to connect to upstreams.
 
 :func:`TSSslClientContextsNamesGet` can be used to retrieve the entire client context mappings. Note
-that in |TS|, client contexts are stored in a 2-level mapping with ca paths and cert/key
-paths as keys. Hence every 2 null-terminated string in :arg:`result` can be used to lookup one context.
+that in |TS|, client contexts are stored in a 2-level mapping with CA paths and the resolved certificate
+path as keys. Hence every 2 null-terminated string in :arg:`result` can be used to lookup one context.
 :arg:`result` points to an user allocated array that will hold pointers to lookup key strings and
 :arg:`n` is the size for :arg:`result` array. :arg:`actual`, if valid, will be filled with actual number
 of lookup keys (2 for each context).
