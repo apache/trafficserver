@@ -140,9 +140,9 @@ load_status_file(HCFileInfo *info)
 
   if (nullptr != (fd = fopen(info->fname, "r"))) {
     data->exists = 1;
-    size_t bytes_read;
-    while ((bytes_read = fread(data->body, 1, MAX_BODY_LEN, fd)) > 0) {
-      data->b_len = static_cast<int>(bytes_read);
+    data->b_len  = static_cast<int>(fread(data->body, 1, MAX_BODY_LEN, fd));
+    if (ferror(fd)) {
+      data->b_len = 0;
     }
     fclose(fd);
   }
@@ -333,68 +333,66 @@ parse_configs(const char *fname)
     return nullptr;
   }
 
-  while (!feof(fd)) {
+  while (fgets(buf, sizeof(buf) - 1, fd) != nullptr) {
     char *str, *save;
     char *ok = nullptr, *miss = nullptr, *mime = nullptr;
 
-    if (fgets(buf, sizeof(buf) - 1, fd)) {
-      finfo = new HCFileInfo();
+    finfo = new HCFileInfo();
 
-      str       = strtok_r(buf, SEPARATORS, &save);
-      int state = 0;
-      while (nullptr != str) {
-        if (strlen(str) > 0) {
-          switch (state) {
-          case 0:
-            if ('/' == *str) {
-              ++str;
-            }
-            strncpy(finfo->path, str, PATH_NAME_MAX - 1);
-            finfo->path[PATH_NAME_MAX - 1] = '\0';
-            finfo->p_len                   = strlen(finfo->path);
-            break;
-          case 1:
-            strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
-            finfo->fname[MAX_PATH_LEN - 1] = '\0';
-            finfo->basename                = strrchr(finfo->fname, '/');
-            if (finfo->basename) {
-              ++(finfo->basename);
-              finfo->basename_len = strlen(finfo->basename);
-            }
-            break;
-          case 2:
-            mime = str;
-            break;
-          case 3:
-            ok = str;
-            break;
-          case 4:
-            miss = str;
-            break;
+    str       = strtok_r(buf, SEPARATORS, &save);
+    int state = 0;
+    while (nullptr != str) {
+      if (strlen(str) > 0) {
+        switch (state) {
+        case 0:
+          if ('/' == *str) {
+            ++str;
           }
-          ++state;
+          strncpy(finfo->path, str, PATH_NAME_MAX - 1);
+          finfo->path[PATH_NAME_MAX - 1] = '\0';
+          finfo->p_len                   = strlen(finfo->path);
+          break;
+        case 1:
+          strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
+          finfo->fname[MAX_PATH_LEN - 1] = '\0';
+          finfo->basename                = strrchr(finfo->fname, '/');
+          if (finfo->basename) {
+            ++(finfo->basename);
+            finfo->basename_len = strlen(finfo->basename);
+          }
+          break;
+        case 2:
+          mime = str;
+          break;
+        case 3:
+          ok = str;
+          break;
+        case 4:
+          miss = str;
+          break;
         }
-        str = strtok_r(nullptr, SEPARATORS, &save);
+        ++state;
       }
+      str = strtok_r(nullptr, SEPARATORS, &save);
+    }
 
-      /* Fill in the info if everything was ok */
-      if (state > 4) {
-        Dbg(dbg_ctl, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
-        finfo->ok   = gen_header(ok, mime, &finfo->o_len);
-        finfo->miss = gen_header(miss, mime, &finfo->m_len);
-        finfo->set_data(load_status_file(finfo));
+    /* Fill in the info if everything was ok */
+    if (state > 4) {
+      Dbg(dbg_ctl, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
+      finfo->ok   = gen_header(ok, mime, &finfo->o_len);
+      finfo->miss = gen_header(miss, mime, &finfo->m_len);
+      finfo->set_data(load_status_file(finfo));
 
-        /* Add it the linked list */
-        Dbg(dbg_ctl, "Adding path=%s to linked list", finfo->path);
-        if (nullptr == head_finfo) {
-          head_finfo = finfo;
-        } else {
-          prev_finfo->_next = finfo;
-        }
-        prev_finfo = finfo;
+      /* Add it the linked list */
+      Dbg(dbg_ctl, "Adding path=%s to linked list", finfo->path);
+      if (nullptr == head_finfo) {
+        head_finfo = finfo;
       } else {
-        delete finfo;
+        prev_finfo->_next = finfo;
       }
+      prev_finfo = finfo;
+    } else {
+      delete finfo;
     }
   }
   fclose(fd);
