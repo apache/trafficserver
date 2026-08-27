@@ -8327,7 +8327,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     }
 
     const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(subject, pos);
-    const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    const auto            *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     if (!common_name_asn1) {
       Dbg(dbg_ctl_ssl_cert_update, "Failed to extract common name from certificate %s: missing ASN.1 value", cert_path);
       return TS_ERROR;
