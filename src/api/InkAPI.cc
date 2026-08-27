@@ -8345,7 +8345,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
 
     Dbg(dbg_ctl_ssl_cert_update, "Updating from %s with common name %s", cert_path, common_name_str.c_str());
     // Update context to use cert
-    cc = lookup->find(common_name_str.c_str());
+    cc = lookup->find(common_name_str);
     if (cc && cc->getCtx()) {
       test_ctx = shared_SSL_CTX(SSLCreateServerContext(config, cc->userconfig.get(), cert_path, key_path), SSLReleaseContext);
       if (!test_ctx) {
