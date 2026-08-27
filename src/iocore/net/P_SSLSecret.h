@@ -34,6 +34,13 @@ public:
   void        setSecret(const std::string &name, std::string_view data);
   void        getOrLoadSecret(const std::string &name1, const std::string &name2, std::string &data, std::string &data2);
 
+  /** Drop any cached data for @a name.
+   *
+   * The next getOrLoadSecret() for @a name reloads the data, either from a
+   * TS_LIFECYCLE_SSL_SECRET_HOOK plugin or from the file itself.
+   */
+  void invalidateSecret(const std::string &name);
+
 private:
   void        loadSecret(const std::string &name1, const std::string &name2, std::string &data_item, std::string &data_item2);
   std::string loadFile(const std::string &name);
