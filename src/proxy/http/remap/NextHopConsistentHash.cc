@@ -96,7 +96,7 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
 
   try {
     if (n["hash_url"]) {
-      auto const &hash_url_val = n["hash_url"].Scalar();
+      auto hash_url_val = n["hash_url"].Scalar();
       if (hash_url_val == hash_url_request) {
         hash_url = NHHashUrlType::REQUEST;
       } else if (hash_url_val == hash_url_cache) {
@@ -116,7 +116,7 @@ NextHopConsistentHash::NextHopConsistentHash(const std::string_view name, const 
 
   try {
     if (n["hash_key"]) {
-      auto const &hash_key_val = n["hash_key"].Scalar();
+      auto hash_key_val = n["hash_key"].Scalar();
       if (hash_key_val == hash_key_url) {
         hash_key = NHHashKeyType::URL_HASH_KEY;
       } else if (hash_key_val == hash_key_hostname) {
