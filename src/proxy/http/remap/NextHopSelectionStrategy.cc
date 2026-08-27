@@ -55,7 +55,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
   try {
     // scheme is optional, and strategies with no scheme will match hosts with no scheme
     if (n["scheme"]) {
-      auto scheme_val = n["scheme"].Scalar();
+      auto const &scheme_val = n["scheme"].Scalar();
       if (scheme_val == "http") {
         scheme = NHSchemeType::HTTP;
       } else if (scheme_val == "https") {
@@ -97,7 +97,7 @@ NextHopSelectionStrategy::NextHopSelectionStrategy(const std::string_view &name,
     if (failover_node_n) {
       ts::Yaml::Map failover_node{failover_node_n};
       if (failover_node["ring_mode"]) {
-        auto ring_mode_val = failover_node["ring_mode"].Scalar();
+        auto const &ring_mode_val = failover_node["ring_mode"].Scalar();
         if (ring_mode_val == alternate_rings) {
           ring_mode = NHRingMode::ALTERNATE_RING;
         } else if (ring_mode_val == exhaust_rings) {
@@ -389,7 +389,7 @@ template <> struct convert<NHProtocol> {
 
     // scheme is optional, and strategies with no scheme will match hosts with no scheme
     if (map["scheme"]) {
-      const auto scheme_val = map["scheme"].Scalar();
+      const auto &scheme_val = map["scheme"].Scalar();
       if (scheme_val == "http") {
         nh.scheme = NHSchemeType::HTTP;
       } else if (scheme_val == "https") {
