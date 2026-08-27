@@ -291,11 +291,13 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 
   if (largest_reference != 0 && (this->_dynamic_table.is_empty() || this->_dynamic_table.largest_index() < largest_reference)) {
     // Blocked
-    if (this->_add_to_blocked_list(
-          new DecodeRequest(largest_reference, thread, cont, stream_id, header_block, header_block_len, hdr))) {
+    auto *decode_request = new DecodeRequest(largest_reference, thread, cont, stream_id, header_block, header_block_len, hdr);
+
+    if (this->_add_to_blocked_list(decode_request)) {
       return 1;
     } else {
       // Number of blocked streams exceed the limit
+      delete decode_request;
       return -2;
     }
   }
