@@ -74,7 +74,7 @@ tr.MakeCurlCommand(
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
-tr.Processes.Default.Streams.all = Testers.ContainsExpression("TLS", "Should negiotiate TLS")
+tr.Processes.Default.Streams.All = Testers.ContainsExpression("TLS", "Should negiotiate TLS")
 
 # non-TLS curl should also work to the same port
 tr2 = Test.AddTestRun()
@@ -85,7 +85,7 @@ tr2.MakeCurlCommand(
 tr2.Processes.Default.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
-tr2.Processes.Default.Streams.all = Testers.ExcludesExpression("TLS", "Should not negiotiate TLS")
+tr2.Processes.Default.Streams.All = Testers.ExcludesExpression("TLS", "Should not negiotiate TLS")
 
 # Make sure a post > 32K works.  Early version forgot to free a reader which caused a stall once the initial buffer filled
 # Seems like we needed to make a second resquest to trigger the issue
@@ -97,4 +97,4 @@ tr3.MakeCurlCommand(
 tr3.Processes.Default.ReturnCode = 0
 tr3.StillRunningAfter = server
 tr3.StillRunningAfter = ts
-tr3.Processes.Default.Streams.all = Testers.ExcludesExpression("TLS", "Should not negiotiate TLS")
+tr3.Processes.Default.Streams.All = Testers.ExcludesExpression("TLS", "Should not negiotiate TLS")

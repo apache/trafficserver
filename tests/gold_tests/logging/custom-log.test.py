@@ -83,9 +83,10 @@ tr = Test.AddTestRun()
 tr.MakeCurlCommand('"http://127.123.32.243:{0}" --verbose'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'))
-test_run.Processes.Default.ReturnCode = 0
+# Wait for all expected log lines to be written.
+Test.AddAwaitFileContainsTestRun(
+    'Await custom log lines.',
+    os.path.join(ts.Variables.LOGDIR, 'test_log_field.log'),
+    r'^127\.',
+    8,
+)

@@ -93,7 +93,7 @@ class TestDefaultInactivityTimeout:
 
         # Set up expectectations for the timeout closing the connection.
         tr.Processes.Default.ReturnCode = 1
-        tr.Processes.Default.Streams.all = self.client_gold_file
+        tr.Processes.Default.Streams.All = self.client_gold_file
 
 
 test = TestDefaultInactivityTimeout("global config", use_override=False)

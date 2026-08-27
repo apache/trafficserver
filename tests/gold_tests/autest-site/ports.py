@@ -39,7 +39,7 @@ class PortQueueSelectionError(Exception):
     pass
 
 
-def PortOpen(port: int, address: str = None, listening_ports: Set[int] = None) -> bool:
+def PortOpen(port: int, address: str = None, bound_ports: Set[int] = None) -> bool:
     """
     Detect whether the port is open, that is a socket is currently using that port.
 
@@ -49,19 +49,19 @@ def PortOpen(port: int, address: str = None, listening_ports: Set[int] = None) -
     Args:
         port: The port to check.
         address: The address to check. Defaults to localhost.
-        listening_ports: A set of ports that are currently listening. If a port
-            is in this set, it is considered open.
+        bound_ports: A set of ports that are currently bound. If a port is in
+            this set, it is considered open.
 
     Returns:
-        True if there is a connection currently listening on the port, False if
-        there is no server listening on the port currently.
+        True if a socket is currently bound to the port or accepts a TCP
+        connection, False otherwise.
     """
     ret = False
     if address is None:
         address = "localhost"
 
-    if port in listening_ports:
-        host.WriteDebug('PortOpen', f"{port} is open because it is in the listening sockets set.")
+    if port in bound_ports:
+        host.WriteDebug('PortOpen', f"{port} is open because it is in the bound sockets set.")
         return True
 
     address = (address, port)
@@ -108,9 +108,9 @@ def _get_available_port(queue):
         host.WriteWarning("Port queue is empty.")
         raise PortQueueSelectionError("Could not get a valid port because the queue is empty")
 
-    listening_ports = _get_listening_ports()
+    bound_ports = _get_bound_ports()
     port = queue.get()
-    while PortOpen(port, listening_ports=listening_ports):
+    while PortOpen(port, bound_ports=bound_ports):
         host.WriteDebug('_get_available_port', f"Port was closed but now is used: {port}")
         if queue.qsize() == 0:
             host.WriteWarning("Port queue is empty.")
@@ -119,16 +119,27 @@ def _get_available_port(queue):
     return port
 
 
-def _get_listening_ports() -> Set[int]:
-    """Use psutil to get the set of ports that are currently listening.
+def _is_bound(conn) -> bool:
+    """Return whether an internet socket connection occupies its local port."""
+    return bool(
+        conn.family in (socket.AF_INET, socket.AF_INET6) and conn.laddr and
+        (conn.status == psutil.CONN_LISTEN or conn.type == socket.SOCK_DGRAM))
 
-    :return: The set of ports that are currently listening.
+
+def _get_bound_ports() -> Set[int]:
+    """Use psutil to get the set of ports that are currently bound.
+
+    TCP sockets report a listening status, but UDP sockets have no comparable
+    status. Any UDP socket with a local address is bound and therefore makes
+    its port unavailable to AuTest processes.
+
+    :return: The set of ports that are currently bound.
     """
     ports: Set[int] = set()
     try:
         connections = psutil.net_connections(kind='all')
         for conn in connections:
-            if conn.status == psutil.CONN_LISTEN:
+            if _is_bound(conn):
                 ports.add(conn.laddr.port)
     except psutil.AccessDenied:
         # Mac OS X doesn't allow net_connections() to be called without root.
@@ -138,7 +149,7 @@ def _get_listening_ports() -> Set[int]:
             except (psutil.AccessDenied, psutil.NoSuchProcess):
                 continue
             for conn in connections:
-                if conn.status == psutil.CONN_LISTEN:
+                if _is_bound(conn):
                     ports.add(conn.laddr.port)
     return ports
 
@@ -192,14 +203,14 @@ def _setup_port_queue(amount=1000):
     rmin = dmin - 2000
     rmax = 65536 - dmax
 
-    listening_ports = _get_listening_ports()
+    bound_ports = _get_bound_ports()
     if rmax > amount:
         # Fill in ports, starting above the upper OS-usable port range.
         # Add port_offset to support parallel test execution.
         port = dmax + 1 + port_offset
         while port < 65536 and g_ports.qsize() < amount:
-            if PortOpen(port, listening_ports=listening_ports):
-                host.WriteDebug('_setup_port_queue', f"Rejecting an already open port: {port}")
+            if PortOpen(port, bound_ports=bound_ports):
+                host.WriteDebug('_setup_port_queue', f"Rejecting an already bound port: {port}")
             else:
                 host.WriteDebug('_setup_port_queue', f"Adding a possible port to connect to: {port}")
                 g_ports.put(port)
@@ -210,8 +221,8 @@ def _setup_port_queue(amount=1000):
         # Add port_offset to support parallel test execution (same as high range).
         port = 2001 + port_offset
         while port < dmin and g_ports.qsize() < amount:
-            if PortOpen(port, listening_ports=listening_ports):
-                host.WriteDebug('_setup_port_queue', f"Rejecting an already open port: {port}")
+            if PortOpen(port, bound_ports=bound_ports):
+                host.WriteDebug('_setup_port_queue', f"Rejecting an already bound port: {port}")
             else:
                 host.WriteDebug('_setup_port_queue', f"Adding a possible port to connect to: {port}")
                 g_ports.put(port)

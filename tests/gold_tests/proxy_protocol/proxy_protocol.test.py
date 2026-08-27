@@ -86,14 +86,20 @@ logging:
         """
         check access log
         """
-        Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content=f"gold/access-{self.name}.gold")
+        log_file = os.path.join(self.ts.Variables.LOGDIR, 'access.log')
 
-        # Wait for log file to appear, then wait one extra second to make sure
-        # TS is done writing it.
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self.ts.Variables.LOGDIR, 'access.log'))
+        # Transactions can finish on different event threads, so their access
+        # log records are not guaranteed to be written in replay order.
+        Test.AddAwaitFileContainsTestRun(
+            f'Await PROXY protocol access log lines. {self.name}',
+            log_file,
+            r'^(127\.0\.0\.1|198\.51\.100\.1) (0|127\.0\.0\.1|198\.51\.100\.1) 127\.0\.0\.1$',
+            7,
+        )
+
+        tr = Test.AddTestRun(f'Verify PROXY protocol access log lines. {self.name}')
+        tr.Processes.Default.Command = f'LC_ALL=C sort < "{log_file}"'
+        tr.Processes.Default.Streams.stdout = f"gold/access-{self.name}.gold"
         tr.Processes.Default.ReturnCode = 0
 
     def run(self):

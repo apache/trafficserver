@@ -77,6 +77,11 @@ sessions:
         - [ Connection, close ]
         - [ Cache-Control, "max-age=1" ]
         - [ X-Response, oversized-origin-response ]
+        # The preceding fields serialize to 215 bytes. X-Padding adds 42 wire
+        # bytes (name, separator, 29-byte value, and CRLF), bringing the header
+        # to the 256-byte limit plus the one-byte overflow sentinel. This makes
+        # the memory rejection independent of body segmentation.
+        - [ X-Padding, aaaaaaaaaaaaaaaaaaaaaaaaaaaaa ]
       content:
         size: 512
 

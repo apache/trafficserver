@@ -197,9 +197,10 @@ for trace in trace_strings:
     tr.StillRunningAfter = ts
     tr.StillRunningAfter = server
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+# Wait for the final log line to be written.
 # 11 Test
-tr = Test.AddTestRun()
-ps = tr.Processes.Default
-ps.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'remap.log'))
+Test.AddAwaitFileContainsTestRun(
+    'Await final money_trace remap log line.',
+    os.path.join(ts.Variables.LOGDIR, 'remap.log'),
+    r'^cqh: not a trace header - trace-id=.* pqh: trace-id=.* - psh: not a trace header -$',
+)
