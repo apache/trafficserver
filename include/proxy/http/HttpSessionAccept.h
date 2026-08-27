@@ -31,6 +31,9 @@
 #include "iocore/net/Net.h"
 #include "iocore/net/SessionAccept.h"
 
+#include <memory>
+#include <utility>
+
 namespace detail
 {
 /** Options for @c HttpSessionAccept.
@@ -154,18 +157,43 @@ HttpSessionAcceptOptions::setSessionProtocolPreference(SessionProtocolSet const 
 }
 } // namespace detail
 
-/**
-   The continuation mutex is NULL to allow parellel accepts in NT. No
-   state is recorded by the handler and values are required to be set
-   during construction via the @c Options struct and never changed. So
-   a NULL mutex is safe.
+/** Common state for protocol-specific HTTP acceptors.
+ *
+ * A proxy port can dispatch connections to several HTTP protocol acceptors.
+ * This base keeps one shared, immutable set of connection properties for all
+ * of those acceptors and provides access to the complete proxy port. Sessions
+ * retain a pointer to their acceptor so the properties remain available
+ * without protocol-specific copies.
+ *
+ * The continuation mutex is @c NULL because the acceptors do not mutate their
+ * shared state after construction.
+ */
+class HttpSessionAcceptBase : public SessionAccept
+{
+public:
+  using Options       = detail::HttpSessionAcceptOptions;
+  using OptionsHandle = std::shared_ptr<Options const>;
 
-   Most of the state is simply passed on to the @c ClientSession after
-   an accept. It is done here because this is the least bad pathway
-   from the top level configuration to the HTTP session.
-*/
+  HttpSessionAcceptBase(OptionsHandle options, HttpProxyPort *proxy_port = nullptr)
+    : SessionAccept(nullptr), _options(std::move(options))
+  {
+    ink_release_assert(_options != nullptr);
+    proxyPort = proxy_port;
+  }
 
-class HttpSessionAccept : public SessionAccept, private detail::HttpSessionAcceptOptions
+  ~HttpSessionAcceptBase() override = default;
+
+  Options const &
+  options() const
+  {
+    return *_options;
+  }
+
+private:
+  OptionsHandle _options;
+};
+
+class HttpSessionAccept : public HttpSessionAcceptBase
 {
 private:
   using self = HttpSessionAccept; ///< Self reference type.
@@ -173,17 +201,20 @@ public:
   /** Construction options.
       Provide an easier to remember typedef for clients.
   */
-  using Options = detail::HttpSessionAcceptOptions;
+  using Options       = HttpSessionAcceptBase::Options;
+  using OptionsHandle = HttpSessionAcceptBase::OptionsHandle;
 
   /** Default constructor.
       @internal We don't use a static default options object because of
       initialization order issues. It is important to pick up data that is read
       from the config file and a static is initialized long before that point.
   */
-  HttpSessionAccept(Options const &opt = Options()) : SessionAccept(nullptr), detail::HttpSessionAcceptOptions(opt) // copy these.
+  HttpSessionAccept(Options const &opt = Options()) : HttpSessionAccept(std::make_shared<Options>(opt)) {}
+
+  HttpSessionAccept(OptionsHandle options, HttpProxyPort *proxy_port = nullptr)
+    : HttpSessionAcceptBase(std::move(options), proxy_port)
   {
     SET_HANDLER(&HttpSessionAccept::mainEvent);
-    return;
   }
 
   ~HttpSessionAccept() override { return; }
