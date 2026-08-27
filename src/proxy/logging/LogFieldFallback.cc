@@ -83,13 +83,13 @@ constexpr bool
 test_find_field_fallback_separator()
 {
   static_assert(find_field_fallback_separator("") == nullptr);
-  constexpr char const *text1 = "{field}??default";
+  [[maybe_unused]] constexpr char text1[] = "{field}??default";
   static_assert(find_field_fallback_separator(text1) == text1 + 7);
-  constexpr char const *text2 = "??default";
+  [[maybe_unused]] constexpr char text2[] = "??default";
   static_assert(find_field_fallback_separator(text2) == text2);
-  constexpr char const *text3 = "{field}??def??ault";
+  [[maybe_unused]] constexpr char text3[] = "{field}??def??ault";
   static_assert(find_field_fallback_separator(text3) == text3 + 7);
-  constexpr char const *text4 = "{field}??\"def??ault\"";
+  [[maybe_unused]] constexpr char text4[] = "{field}??\"def??ault\"";
   static_assert(find_field_fallback_separator(text4) == text4 + 7);
   return true;
 }

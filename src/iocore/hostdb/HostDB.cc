@@ -953,6 +953,10 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         ts::LocalBuffer<SRV *, 16> q_buf(valid_records);
         SRV                      **q = q_buf.data();
         ink_assert(valid_records <= static_cast<int>(hostdb_round_robin_max_count));
+        // The loop below assigns every element, but ts::LocalBuffer hands back raw storage and the
+        // static analyzer cannot follow the loop well enough to see that. Pre-fill so the sort below
+        // is never reported as reading an uninitialized pointer.
+        std::fill_n(q, valid_records, nullptr);
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
         }

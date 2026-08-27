@@ -1625,7 +1625,7 @@ LogAccess::marshal_version_string(char *buf)
 int
 LogAccess::marshal_proxy_protocol_version(char *buf)
 {
-  const char *version_str = "-";
+  const char *version_str;
   switch (m_data->get_pp_version()) {
   case 1:
     version_str = "V1";

@@ -267,6 +267,8 @@
       "description": "CI Pipeline config for running clang-analyzer",
       "inherits": ["ci"],
       "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "ENABLE_CCACHE": "OFF",
         "ENABLE_EXAMPLE": "OFF",

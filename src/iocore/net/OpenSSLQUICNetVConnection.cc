@@ -389,7 +389,10 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   MUTEX_TRY_LOCK(lock, h->mutex, t);
   if (!lock.is_locked()) {
-    if (event == EVENT_NONE) {
+    // The event system always hands over a non-null Event, so @a e is only null if this is called
+    // directly, which pairs with EVENT_NONE. Reschedule on the thread in that case rather than
+    // dereferencing @a e.
+    if (event == EVENT_NONE || e == nullptr) {
       t->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     } else {

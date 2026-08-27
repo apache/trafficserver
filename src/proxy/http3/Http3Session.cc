@@ -65,11 +65,12 @@ HQSession::remove_transaction(HQTransaction *trans)
 void
 HQSession::_close_transactions()
 {
-  while (this->_transaction_list.head != nullptr) {
-    auto *transaction = this->_transaction_list.head;
+  for (auto *transaction = this->_transaction_list.head; transaction != nullptr;) {
+    auto *next = static_cast<HQTransaction *>(transaction->link.next);
 
     transaction->do_io_close();
     delete transaction;
+    transaction = next;
   }
 }
 
