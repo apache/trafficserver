@@ -36,6 +36,12 @@ class PerServerMetricEnabledTest:
     _replay_file: str = 'per_server_metric_enabled.replay.yaml'
     _keep_alive_timeout: int = 2
 
+    # The per group metric asserted below is published by mirroring the internal one through a
+    # derived metric, refreshed every proxy.config.raw_stat_sync_interval_ms. The 5000ms default
+    # would leave at most one second of margin inside this test's wait, so shorten the interval
+    # rather than racing it. The record is startup only and so has to be set in records.yaml.
+    _stat_sync_interval_ms: int = 500
+
     def __init__(self) -> None:
         """Configure the test processes in preparation for the TestRun."""
         self._configure_server()
@@ -51,6 +57,7 @@ class PerServerMetricEnabledTest:
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
         self._ts.Disk.records_config.update(
             {
+                'proxy.config.raw_stat_sync_interval_ms': self._stat_sync_interval_ms,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http_ss|conn_track',
                 'proxy.config.http.per_server.connection.metric_enabled': 1,

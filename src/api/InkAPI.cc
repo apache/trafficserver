@@ -28,6 +28,7 @@
 #include <string_view>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
@@ -7339,6 +7340,10 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MAX_SERVER_CONV; break;
 #define _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV(KEY, MEMBER)             \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::SERVER_MATCH_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV(KEY, MEMBER)           \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_ENABLED_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV(KEY, MEMBER)         \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_AGGREGATE_CONV; break;
 
 // Custom converter: Parses/formats host resolution preference strings.
 #define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
@@ -7397,6 +7402,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 #undef _CONF_CASE_ConnectionTracker_MIN_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV
 #undef _CONF_CASE_HttpTransact_HOST_RES_CONV
 #undef _CONF_CASE_TargetedCacheControlHeaders_Conv
 #undef _CONF_CASE_DISPATCH
@@ -7774,13 +7781,23 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
   return TS_SUCCESS;
 }
 
+namespace
+{
+bool
+is_usable_port_descriptor(const HttpProxyPort *port)
+{
+  return port != nullptr &&
+         (port->m_family == AF_UNIX || ((port->m_family == AF_INET || port->m_family == AF_INET6) && port->m_port != 0));
+}
+} // namespace
+
 // Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
 TSPortDescriptor
 TSPortDescriptorParse(const char *descriptor)
 {
-  HttpProxyPort *port = new HttpProxyPort();
+  auto *port = new HttpProxyPort();
 
-  if (descriptor && port->processOptions(descriptor)) {
+  if (descriptor != nullptr && port->processOptions(descriptor) && is_usable_port_descriptor(port)) {
     return reinterpret_cast<TSPortDescriptor>(port);
   }
 
@@ -7791,8 +7808,17 @@ TSPortDescriptorParse(const char *descriptor)
 TSReturnCode
 TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
+  if (descp == nullptr || contp == nullptr) {
+    return TS_ERROR;
+  }
+
+  const auto *port = reinterpret_cast<const HttpProxyPort *>(descp);
+
+  if (!is_usable_port_descriptor(port)) {
+    return TS_ERROR;
+  }
+
   Action                     *action = nullptr;
-  HttpProxyPort              *port   = reinterpret_cast<HttpProxyPort *>(descp);
   NetProcessor::AcceptOptions net(make_net_accept_options(port, -1 /* nthreads */));
 
   if (port->isSSL()) {
@@ -7802,6 +7828,12 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
   }
 
   return action ? TS_SUCCESS : TS_ERROR;
+}
+
+void
+TSPortDescriptorDestroy(TSPortDescriptor descp)
+{
+  delete reinterpret_cast<HttpProxyPort *>(descp);
 }
 
 TSReturnCode
@@ -8232,59 +8264,106 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
     return TS_ERROR;
   }
 
-  std::string      key;
-  shared_SSL_CTX   client_ctx = nullptr;
-  SSLConfigParams *params     = SSLConfig::acquire();
+  // --- Pin the active SSL configuration ---
+  //
+  // Keep this configuration generation alive across every early return and
+  // release it automatically when the update finishes.
+  std::string              key{cert_path};
+  SSLConfig::scoped_config params;
 
-  // Generate second level key for client context lookup
-  swoc::bwprint(key, "{}:{}", cert_path, key_path);
+  // The client context map is keyed by the resolved certificate path.
   Dbg(dbg_ctl_ssl_cert_update, "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
 
-  if (nullptr != params) {
-    // Try to update client contexts maps
-    auto       &ca_paths_map = params->top_level_ctx_map;
-    auto       &map_lock     = params->ctxMapLock;
-    std::string ca_paths_key;
-    // First try to locate the client context and its CA path (by top level)
-    ink_mutex_acquire(&map_lock);
-    for (auto &ca_paths_pair : ca_paths_map) {
-      auto &ctx_map = ca_paths_pair.second;
-      auto  iter    = ctx_map.find(key);
-      if (iter != ctx_map.end() && iter->second != nullptr) {
-        ca_paths_key = ca_paths_pair.first;
-        break;
-      }
-    }
-    ink_mutex_release(&map_lock);
-
-    // Only update on existing
-    if (ca_paths_key.empty()) {
-      return TS_ERROR;
-    }
-
-    // Extract CA related paths
-    size_t      sep            = ca_paths_key.find(':');
-    std::string ca_bundle_file = ca_paths_key.substr(0, sep);
-    std::string ca_bundle_path = ca_paths_key.substr(sep + 1);
-
-    // Build new client context
-    client_ctx =
-      shared_SSL_CTX(SSLCreateClientContext(params, ca_bundle_path.empty() ? nullptr : ca_bundle_path.c_str(),
-                                            ca_bundle_file.empty() ? nullptr : ca_bundle_file.c_str(), cert_path, key_path),
-                     SSL_CTX_free);
-
-    // Successfully generates a client context, update in the map
-    ink_mutex_acquire(&map_lock);
-    auto iter = ca_paths_map.find(ca_paths_key);
-    if (iter != ca_paths_map.end() && iter->second.count(key)) {
-      iter->second[key] = client_ctx;
-    } else {
-      client_ctx = nullptr;
-    }
-    ink_mutex_release(&map_lock);
+  if (!params) {
+    return TS_ERROR;
   }
 
-  return client_ctx ? TS_SUCCESS : TS_ERROR;
+  auto                    &ca_paths_map = params->top_level_ctx_map;
+  auto                    &map_lock     = params->ctxMapLock;
+  std::vector<std::string> ca_paths_keys;
+
+  // --- Find every matching CA bucket ---
+  //
+  // A certificate can be used with more than one CA configuration. Snapshot
+  // all matching bucket keys while holding the map lock, then release it
+  // before performing the expensive context construction.
+  ink_mutex_acquire(&map_lock);
+  for (auto const &[ca_paths_key, ctx_map] : ca_paths_map) {
+    if (ctx_map.contains(key)) {
+      ca_paths_keys.push_back(ca_paths_key);
+    }
+  }
+  ink_mutex_release(&map_lock);
+
+  if (ca_paths_keys.empty()) {
+    return TS_ERROR;
+  }
+
+  // --- Drop the cached certificate data ---
+  //
+  // getCTX() builds contexts from the cached secret data rather than from the
+  // files. Drop the cached copies so that a context built later for a CA
+  // bucket that does not exist yet also picks up the updated certificate
+  // instead of the pre-update PEM.
+  params->secrets.invalidateSecret(key);
+  if (key_path != nullptr && key_path[0] != '\0') {
+    params->secrets.invalidateSecret(key_path);
+  }
+
+  std::vector<std::pair<std::string, shared_SSL_CTX>> client_contexts;
+
+  // --- Build every replacement context ---
+  //
+  // Build all replacements before changing the live map. If any construction
+  // fails, the existing working contexts remain installed.
+  client_contexts.reserve(ca_paths_keys.size());
+  for (auto const &ca_paths_key : ca_paths_keys) {
+    size_t         sep            = ca_paths_key.find(':');
+    std::string    ca_bundle_file = ca_paths_key.substr(0, sep);
+    std::string    ca_bundle_path = ca_paths_key.substr(sep + 1);
+    shared_SSL_CTX client_ctx(SSLCreateClientContext(params, ca_bundle_file.empty() ? nullptr : ca_bundle_file.c_str(),
+                                                     ca_bundle_path.empty() ? nullptr : ca_bundle_path.c_str(), cert_path,
+                                                     key_path),
+                              SSL_CTX_free);
+
+    if (!client_ctx) {
+      return TS_ERROR;
+    }
+    client_contexts.emplace_back(ca_paths_key, std::move(client_ctx));
+  }
+
+  std::vector<shared_SSL_CTX *> targets;
+
+  // --- Install all replacement contexts ---
+  //
+  // Reacquire the map lock and locate every target before overwriting any of
+  // them, so that the live map is either updated completely or left untouched.
+  targets.reserve(client_contexts.size());
+  ink_mutex_acquire(&map_lock);
+  for (auto const &client_context : client_contexts) {
+    auto ca_iter = ca_paths_map.find(client_context.first);
+
+    if (ca_iter == ca_paths_map.end()) {
+      break;
+    }
+    auto ctx_iter = ca_iter->second.find(key);
+
+    if (ctx_iter == ca_iter->second.end()) {
+      break;
+    }
+    targets.push_back(&ctx_iter->second);
+  }
+
+  bool const updated_all = targets.size() == client_contexts.size();
+
+  if (updated_all) {
+    for (std::size_t i = 0; i < targets.size(); ++i) {
+      *targets[i] = std::move(client_contexts[i].second);
+    }
+  }
+  ink_mutex_release(&map_lock);
+
+  return updated_all ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -8356,7 +8435,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
         return TS_ERROR;
       }
       // Atomic Swap
-      cc->setCtx(test_ctx);
+      cc->setCtx(std::move(test_ctx));
       return TS_SUCCESS;
     }
   }
@@ -8956,7 +9035,7 @@ TSRPCHandlerDone(TSYaml resp)
 {
   Dbg(dbg_ctl_rpc_api, ">> Handler seems to be done");
   std::lock_guard<std::mutex> lock(::rpc::g_rpcHandlingMutex);
-  auto                        data       = *reinterpret_cast<YAML::Node *>(resp);
+  auto const                 &data       = *reinterpret_cast<YAML::Node const *>(resp);
   ::rpc::g_rpcHandlerResponseData        = data;
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();

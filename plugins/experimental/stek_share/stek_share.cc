@@ -124,7 +124,7 @@ message_handler(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
               TSError("[%s] Raft initialization failed with new config, retrying with old config.", PLUGIN_NAME);
               auto config_old = get_scoped_config(true);
               restore_config(config_old);
-              if (init_raft(nuraft::cs_new<STEKShareSM>(), config_old) == 0) {
+              if (init_raft(nuraft::cs_new<STEKShareSM>(), std::move(config_old)) == 0) {
                 Dbg(dbg_ctl, "Server ID: %d, Endpoint: %s", config->server_id, config->endpoint.c_str());
               } else {
                 TSEmergency("[%s] Raft initialization failed with old config.", PLUGIN_NAME);
@@ -168,7 +168,7 @@ init_raft(nuraft::ptr<nuraft::state_machine> sm_instance, std::shared_ptr<Plugin
   // State machine.
   {
     std::unique_lock lock(stek_share_server.sm_mutex);
-    stek_share_server.sm_instance = sm_instance;
+    stek_share_server.sm_instance = std::move(sm_instance);
   }
 
   // ASIO options.
@@ -349,7 +349,7 @@ load_config_from_file()
   }
 
   std::unique_lock lock(plugin_config_mutex);
-  plugin_config = new_config;
+  plugin_config = std::move(new_config);
 
   return 0;
 }

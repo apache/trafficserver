@@ -48,6 +48,7 @@
 #include <netinet/in.h>
 #include <string>
 #include <cstring>
+#include <utility>
 
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>
@@ -2398,7 +2399,7 @@ SSLNetVConnection::_ssl_connect()
 
         if (shared_sess && SSL_set_session(ssl, shared_sess.get())) {
           // Keep a reference of this shared pointer in the connection
-          this->client_sess = shared_sess;
+          this->client_sess = std::move(shared_sess);
         }
       }
     }

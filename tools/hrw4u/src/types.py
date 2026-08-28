@@ -37,6 +37,7 @@ class MagicStrings(str, Enum):
     SET_STATUS_REASON = "set-status-reason"
     SET_BODY = "set-body"
     SET_BODY_FROM = "set-body-from"
+    SET_BODY_FROM_FILE = "set-body-from-file"
     NO_OP = "no-op"
     SET_DEBUG = "set-debug"
     SET_CONFIG = "set-config"

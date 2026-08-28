@@ -230,7 +230,9 @@ public:
   static constexpr int    MAX_LENGTH             = 20;
   static constexpr size_t MAX_HEX_STR_LENGTH     = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();
-  QUICConnectionId();
+  static QUICConnectionId random();
+  /// Force callers to explicitly choose zero, random, or byte-based initialization.
+  QUICConnectionId() = delete;
   QUICConnectionId(const uint8_t *buf, uint8_t len);
 
   explicit
@@ -269,12 +271,11 @@ public:
 
   uint8_t length() const;
   bool    is_zero() const;
-  void    randomize();
 
 private:
   uint64_t _hashcode() const;
-  uint8_t  _id[MAX_LENGTH];
-  uint8_t  _len = 0;
+  uint8_t  _id[MAX_LENGTH] = {0};
+  uint8_t  _len            = 0;
 };
 
 class QUICStatelessResetToken
@@ -432,7 +433,7 @@ public:
 private:
   IpEndpoint              _endpoint_ipv4 = {};
   IpEndpoint              _endpoint_ipv6 = {};
-  QUICConnectionId        _cid;
+  QUICConnectionId        _cid           = QUICConnectionId::ZERO();
   QUICStatelessResetToken _token;
   bool                    _valid = false;
 };

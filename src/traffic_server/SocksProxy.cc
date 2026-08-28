@@ -117,7 +117,7 @@ struct SocksProxy : public Continuation {
   int setupHttpRequest(unsigned char *p);
   int sendResp(bool granted);
 
-  void init(NetVConnection *netVC);
+  void init(NetVConnection *netVC, HttpSessionAccept *http_acceptor);
   void free();
 
 private:
@@ -128,9 +128,10 @@ private:
   IOBufferReader *reader  = nullptr;
   Event          *timeout = nullptr;
 
-  SocksAuthHandler  auth_handler   = nullptr;
-  SocksProxyHandler vc_handler     = nullptr;
-  Action           *pending_action = nullptr;
+  SocksAuthHandler   auth_handler   = nullptr;
+  SocksProxyHandler  vc_handler     = nullptr;
+  Action            *pending_action = nullptr;
+  HttpSessionAccept *http_acceptor  = nullptr;
 
   unsigned char version   = 0;
   int           port      = 0;
@@ -141,11 +142,12 @@ private:
 ClassAllocator<SocksProxy, false> socksProxyAllocator("socksProxyAllocator");
 
 void
-SocksProxy::init(NetVConnection *netVC)
+SocksProxy::init(NetVConnection *netVC, HttpSessionAccept *http_accept)
 {
-  mutex  = new_ProxyMutex();
-  buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
-  reader = buf->alloc_reader();
+  mutex         = new_ProxyMutex();
+  buf           = new_MIOBuffer(BUFFER_SIZE_INDEX_32K);
+  reader        = buf->alloc_reader();
+  http_acceptor = http_accept;
 
   SCOPED_MUTEX_LOCK(lock, mutex, this_ethread());
 
@@ -551,14 +553,10 @@ SocksProxy::state_handing_over_http_request(int event, [[maybe_unused]] void *da
 
   switch (event) {
   case VC_EVENT_WRITE_COMPLETE: {
-    HttpSessionAccept::Options ha_opt;
-
     ts::Metrics::Counter::increment(stats.http_connections);
     Dbg(dbg_ctl_SocksProxy, "Handing over the HTTP request");
 
-    ha_opt.transport_type = clientVC->attributes;
-    HttpSessionAccept http_accept(ha_opt);
-    if (!http_accept.accept(clientVC, buf, reader)) {
+    if (!http_acceptor->accept(clientVC, buf, reader)) {
       state = SOCKS_ERROR;
     } else {
       state      = ALL_DONE;
@@ -673,10 +671,10 @@ SocksProxy::setupHttpRequest(unsigned char *p)
 }
 
 static void
-new_SocksProxy(NetVConnection *netVC)
+new_SocksProxy(NetVConnection *netVC, HttpSessionAccept *http_acceptor)
 {
   SocksProxy *proxy = socksProxyAllocator.alloc();
-  proxy->init(netVC);
+  proxy->init(netVC, http_acceptor);
 }
 
 struct SocksAccepter : public Continuation {
@@ -688,13 +686,15 @@ struct SocksAccepter : public Continuation {
     ink_assert(event == NET_EVENT_ACCEPT);
     // Dbg(dbg_ctl_Socks, "Accepter got ACCEPT event");
 
-    new_SocksProxy(netVC);
+    new_SocksProxy(netVC, &http_acceptor);
 
     return EVENT_CONT;
   }
 
   // There is no state used we dont need a mutex
   SocksAccepter() : Continuation(nullptr) { SET_HANDLER(&SocksAccepter::mainEvent); }
+
+  HttpSessionAccept http_acceptor;
 };
 
 void

@@ -7,3 +7,5 @@ qsa.input: u4wrh
 header_value_context.input: u4wrh
 # HTTP-CNTL valid bools can not reverse back to the original input
 http_cntl_valid_bools.input: hrw4u
+# Literal JSON blocks compile to native header_rewrite escaping.
+json-body.input: hrw4u

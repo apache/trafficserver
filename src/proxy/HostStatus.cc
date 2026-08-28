@@ -309,7 +309,7 @@ HostStatus::getAllHostStatuses(std::vector<HostStatuses> &hosts)
       h.hostname = hsts.first;
       ss << *hsts.second;
       h.status = ss.str();
-      hosts.push_back(h);
+      hosts.push_back(std::move(h));
     }
   }
 }

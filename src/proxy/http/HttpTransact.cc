@@ -1088,9 +1088,10 @@ HttpTransact::HandleBlindTunnel(State *s)
 void
 HttpTransact::StartRemapRequest(State *s)
 {
-  // Preserve effective url before remap, regardless of actual need for remap
+  // Preserve the effective URL before remap, regardless of the actual need for remap.
   s->unmapped_url.create(s->hdr_info.client_request.url_get()->m_heap);
   s->unmapped_url.copy(s->hdr_info.client_request.url_get());
+  s->hdr_info.client_request.set_url_target_from_host_field(&s->unmapped_url);
 
   if (s->api_skip_all_remapping) {
     TxnDbg(dbg_ctl_http_trans, "API request to skip remapping");
@@ -3881,6 +3882,8 @@ HttpTransact::handle_response_from_parent(State *s)
     } else {
       if (is_request_retryable(s)) {
         markParentDown(s);
+      } else {
+        TxnDbg(dbg_ctl_http_trans, "skipping parent markdown for unavailable_server retry because request is not retryable");
       }
       s->current.unavailable_server_retry_attempts++;
     }
@@ -8643,7 +8646,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if (len > 0) {
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE), body_type);
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE), body_language);
+    if (s->internal_msg_buffer_type == nullptr) {
+      s->internal_msg_buffer_type = ats_strdup(body_type);
+    }
   } else {
+    s->internal_msg_buffer_type = static_cast<char *>(ats_free_null(s->internal_msg_buffer_type));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE));
   }

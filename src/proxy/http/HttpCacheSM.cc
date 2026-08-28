@@ -440,7 +440,7 @@ HttpCacheSM::open_write(const HttpCacheKey *key, URL *url, HTTPHdr *request, Cac
   CacheHTTPInfo *info          = allow_multiple ? reinterpret_cast<CacheHTTPInfo *>(CACHE_ALLOW_MULTIPLE_WRITES) : old_info;
   Action        *action_handle = nullptr;
 
-  if (master_sm && master_sm->t_state.cache_info.volume_host_rec) {
+  if (master_sm->t_state.cache_info.volume_host_rec) {
     action_handle =
       cacheProcessor.open_write(this, key, info, pin_in_cache, CACHE_FRAG_TYPE_HTTP, master_sm->t_state.cache_info.volume_host_rec);
   } else {

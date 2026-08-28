@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <cstdlib>
+#include <utility>
 
 #include "txn_limiter.h"
 
@@ -178,7 +179,7 @@ TxnRateLimiter::initialize(int argc, const char *argv[])
     _action = TSContScheduleEveryOnPool(_queue_cont, QUEUE_DELAY_TIME.count(), TS_THREAD_POOL_TASK);
   }
 
-  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP, tag, prefix);
+  this->initializeMetrics(RATE_LIMITER_TYPE_REMAP, std::move(tag), std::move(prefix));
 
   return true;
 }

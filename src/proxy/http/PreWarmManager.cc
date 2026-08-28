@@ -924,7 +924,7 @@ PreWarmQueue::_reconfigure()
       // copy from old info
       const Info &old_info = res->second;
 
-      new_map[dst] = Info{old_info.init_list, old_info.open_list, conf, old_info.stats_ids, old_info.stat};
+      new_map[dst] = Info{old_info.init_list, old_info.open_list, std::move(conf), old_info.stats_ids, old_info.stat};
     } else {
       // make new info
       PreWarm::SPtrConstStatsIds stats_ids;
@@ -937,7 +937,7 @@ PreWarmQueue::_reconfigure()
 
       Queue *init_list = new Queue();
       Queue *open_list = new Queue();
-      new_map[dst]     = Info{init_list, open_list, conf, stats_ids, {}};
+      new_map[dst]     = Info{init_list, open_list, std::move(conf), std::move(stats_ids), {}};
     }
   }
 

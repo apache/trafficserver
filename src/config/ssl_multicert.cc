@@ -249,16 +249,16 @@ SSLMultiCertParser::parse_yaml(std::string_view content)
   try {
     YAML::Node config = YAML::Load(std::string(content));
     if (config.IsNull()) {
-      return {result, std::move(errata)};
+      return {std::move(result), std::move(errata)};
     }
 
     if (!config[KEY_SSL_MULTICERT]) {
-      return {result, swoc::Errata("expected a toplevel 'ssl_multicert' node")};
+      return {std::move(result), swoc::Errata("expected a toplevel 'ssl_multicert' node")};
     }
 
     YAML::Node entries = config[KEY_SSL_MULTICERT];
     if (!entries.IsSequence()) {
-      return {result, swoc::Errata("expected 'ssl_multicert' to be a sequence")};
+      return {std::move(result), swoc::Errata("expected 'ssl_multicert' to be a sequence")};
     }
 
     for (auto const &entry_node : entries) {
@@ -279,7 +279,7 @@ SSLMultiCertParser::parse_yaml(std::string_view content)
       result.push_back(entry_node.as<SSLMultiCertEntry>());
     }
   } catch (std::exception const &ex) {
-    return {result, swoc::Errata("YAML parse error: {}", ex.what())};
+    return {std::move(result), swoc::Errata("YAML parse error: {}", ex.what())};
   }
 
   return {std::move(result), std::move(errata)};
