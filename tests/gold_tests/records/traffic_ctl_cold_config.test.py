@@ -132,3 +132,11 @@ tr.Processes.Default.Command = f'traffic_ctl config set -c {file} proxy.config.c
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'
+
+# 10
+tr = Test.AddTestRun("--cold takes at most one file name, so repeating it is an error")
+tr.Processes.Default.Command = f'traffic_ctl config get --cold={records_file} --cold={records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'A repeated --cold must be reported rather than the last one winning')

@@ -794,9 +794,15 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
   }
   // check for wrong number of arguments for --arg=...
   for (const auto &it : check_map) {
-    unsigned num = _option_list.at(it.first).arg_num;
-    if (num != it.second && !is_variable_arg_num(num)) {
-      help_message(std::to_string(_option_list.at(it.first).arg_num) + " arguments expected by " + it.first);
+    unsigned const num = _option_list.at(it.first).arg_num;
+    if (num == AT_MOST_ONE_ARG_N) {
+      // At most one, so a repeated option is as wrong as a repeated fixed arity one, which
+      // is_variable_arg_num() would otherwise wave through.
+      if (it.second > 1) {
+        help_message("at most one argument expected by " + it.first);
+      }
+    } else if (num != it.second && !is_variable_arg_num(num)) {
+      help_message(std::to_string(num) + " arguments expected by " + it.first);
     }
   }
 }
