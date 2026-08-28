@@ -79,7 +79,7 @@ alpn_name_for_stat(int alpn_id)
 void
 parse_authority(std::string &fqdn, int32_t &port, std::string_view authority)
 {
-  if (auto pos = authority.find(":"); pos != std::string::npos) {
+  if (auto pos = authority.find(':'); pos != std::string::npos) {
     fqdn = authority.substr(0, pos);
     port = static_cast<in_port_t>(std::stoi(authority.substr(pos + 1).data()));
   } else {

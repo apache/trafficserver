@@ -33,6 +33,7 @@ Checks: >-
   bugprone-unique-ptr-array-mismatch,
   bugprone-unused-raii,
   bugprone-use-after-move,
+  performance-faster-string-find,
   performance-inefficient-algorithm,
   performance-inefficient-vector-operation,
   performance-move-constructor-init,
