@@ -126,8 +126,9 @@ outputs.
 
 Implements the Python entry point used by `tests/urtest.sh` and generated
 build-tree wrappers. It separates wrapper options from pytest arguments,
-selects Docker or direct execution, prepares the container build, handles CI
-shards, chooses a short sandbox path, and restores artifact ownership.
+selects Apple container, Podman, Docker, or direct execution, prepares the
+container build, handles CI shards, chooses a short sandbox path, and restores
+artifact ownership.
 
 ### `runtime.py`
 
