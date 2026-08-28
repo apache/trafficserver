@@ -136,22 +136,26 @@ Container Execution
 
 The source-tree ``tests/urtest.sh`` command defaults to the official
 ``ci.trafficserver.apache.org/ats/fedora:44`` image. It configures an
-incremental build under ``build-urtest-container`` and then runs pytest. Pass
-``--run-in-docker`` to force this behavior or ``--no-run-in-docker`` to use the
-current environment. A short ``/tmp`` sandbox avoids Unix socket path limits;
-afterward, regular files are copied to ``build-urtest-container/sandbox`` on
-the host.
+incremental build under ``build-urtest-container`` and then runs pytest. The
+launcher prefers Apple container on macOS, Podman on Linux, and Docker as a
+fallback. Pass ``--run-in-container`` to force this behavior or
+``--no-run-in-container`` to use the current environment. The older
+``--run-in-docker`` and ``--no-run-in-docker`` spellings remain aliases. A
+short ``/tmp`` sandbox avoids Unix socket path limits; afterward, regular files
+are copied to ``build-urtest-container/sandbox`` on the host.
 
-The default changes to direct execution only when both conditions are true:
+The default changes to direct execution when either condition is true:
 
 - A Docker, Podman, containerd, or Kubernetes marker indicates that the
   process is containerized.
-- ``/etc/os-release`` identifies Fedora 44.
+- ``/etc/os-release`` identifies Fedora 44. This recognizes Apple container,
+  which intentionally does not create Docker's ``/.dockerenv`` marker.
 
 Thus Jenkins, which already launches the Fedora 44 image, does not attempt
-nested Docker. The container launch matches CI with an init process, host
-networking, and the ``SYS_PTRACE`` capability. It does not require
-``--privileged`` and does not mount the host Docker socket.
+nested container execution. The launch uses an init process and the
+``SYS_PTRACE`` capability. Podman and Docker use host networking; Apple
+container uses its default network because it has no Docker-style host network.
+The launcher does not require ``--privileged`` or mount a host runtime socket.
 
 Recommended Approach: Direct Replay Tests
 ==========================================
