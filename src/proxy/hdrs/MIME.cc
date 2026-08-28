@@ -74,7 +74,7 @@ make_packed(const std::array<std::string_view, count> &names)
 {
   std::array<uint32_t, count> packed{};
 
-  auto tl = [](char c) -> char { return (c >= 'A' && c <= 'Z') ? (c + 32) : c; };
+  auto tl = [](unsigned char c) -> uint32_t { return (c >= 'A' && c <= 'Z') ? (c + 32) : c; };
 
   for (size_t i = 0; i < count; ++i) {
     const auto    &sv = names[i];
@@ -2874,7 +2874,7 @@ mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_retur
 {
   static constexpr int DAYS_OFFSET = 25508;
 
-  static const char months[] = {
+  static constexpr uint8_t months[] = {
     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
     2,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
     4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
