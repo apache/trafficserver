@@ -27,20 +27,29 @@ std::atomic<SniSelector *> SniSelector::_instance = nullptr;
 ///////////////////////////////////////////////////////////////////////////////
 // YAML parser for the global YAML configuration (via plugin.config)
 //
+// This is the exception boundary for the configuration parsing. The node
+// accessors and conversions in parseYamlFile() throw on malformed input, and
+// this runs on the management update continuation during a config reload, so
+// letting an exception escape here would terminate the server.
+//
 bool
 SniSelector::yamlParser(const std::string &yaml_file)
 {
-  YAML::Node config;
-
   try {
-    config = YAML::LoadFile(yaml_file);
+    return parseYamlFile(yaml_file);
   } catch (YAML::BadFile const &e) {
     TSError("[%s] Cannot load configuration file: %s.", PLUGIN_NAME, e.what());
-    return false;
   } catch (std::exception const &e) {
-    TSError("[%s] Unknown error while loading configuration file: %s.", PLUGIN_NAME, e.what());
-    return false;
+    TSError("[%s] Failed to parse configuration file %s: %s.", PLUGIN_NAME, yaml_file.c_str(), e.what());
   }
+
+  return false;
+}
+
+bool
+SniSelector::parseYamlFile(const std::string &yaml_file)
+{
+  YAML::Node config = YAML::LoadFile(yaml_file);
 
   _yaml_file = yaml_file;
 
@@ -113,7 +122,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
     for (const auto &i : sel) {
       const YAML::Node &sni = i;
 
-      if (sni.IsMap() && !sni["sni"].IsSequence()) {
+      if (sni.IsMap() && sni["sni"] && !sni["sni"].IsSequence()) {
         auto name = sni["sni"].as<std::string>();
 
         if (nullptr != findLimiter(name)) {
