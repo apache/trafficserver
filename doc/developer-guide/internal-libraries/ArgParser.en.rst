@@ -131,6 +131,11 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    value beginning with ``-`` is passed. Note this differs from the POSIX ``--``: it does
    not end the value list nor force the remainder to be positional arguments.
 
+   Option recognition stays off for the rest of that collection, so for a variable number of
+   values every remaining token becomes a value and no later option is recognized. Use the
+   ``--option=value`` form instead when options still have to follow a value that begins with
+   ``-``.
+
 We can also use the following chained way to add subcommand or option:
 
 .. code-block:: cpp

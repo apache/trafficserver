@@ -465,8 +465,14 @@ Display the current value of a configuration record.
             $ traffic_ctl config reload -D myconfig.id=foo --monitor
             $ traffic_ctl config reload -D myconfig.id=foo -d 'myconfig: {rules: [a]}'
 
-         To pass a directive value that begins with ``-``, place ``--`` before it; every
-         token after ``--`` is taken as a value rather than an option.
+         To pass a directive value that begins with ``-``, place ``--`` before it. Option
+         recognition then stays off for the rest of the line, so every remaining token becomes
+         a directive value and any option written afterwards is swallowed. Use
+         ``--directive=-value`` instead when options still have to follow:
+
+         .. code-block:: bash
+
+            $ traffic_ctl config reload --directive=-weird.id=foo --monitor
 
       .. note::
 
