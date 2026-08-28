@@ -2,6 +2,7 @@
 # diagnostics. Add checks after their findings are clean on the CI image.
 Checks: >-
   -*,
+  bugprone-dangling-handle,
   bugprone-inaccurate-erase,
   bugprone-incorrect-enable-if,
   bugprone-incorrect-enable-shared-from-this,
