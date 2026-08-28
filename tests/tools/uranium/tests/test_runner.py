@@ -27,9 +27,10 @@ from tools.uranium.runner import (
     _copy_sandbox_artifacts,
     _short_sandbox,
     _uv_run_prefix,
-    choose_docker_mode,
+    choose_container_mode,
+    find_container_runtime,
     is_official_test_container,
-    launch_docker,
+    launch_container,
     runner_help,
     translate_arguments,
 )
@@ -38,26 +39,28 @@ from tools.uranium.runner import (
 def test_explicit_container_mode_is_removed_from_test_arguments() -> None:
     """Do not leak container-only flags into pytest."""
 
-    assert choose_docker_mode(["--run-in-docker", "-k", "cache"]) == (True, ["-k", "cache"])
-    assert choose_docker_mode(["--no-run-in-docker", "-k", "cache"]) == (False, ["-k", "cache"])
+    assert choose_container_mode(["--run-in-container", "-k", "cache"]) == (True, ["-k", "cache"])
+    assert choose_container_mode(["--no-run-in-container", "-k", "cache"]) == (False, ["-k", "cache"])
+    assert choose_container_mode(["--run-in-docker", "-k", "cache"]) == (True, ["-k", "cache"])
+    assert choose_container_mode(["--no-run-in-docker", "-k", "cache"]) == (False, ["-k", "cache"])
 
 
 def test_conflicting_container_modes_fail() -> None:
     """Reject an ambiguous explicit execution environment."""
 
     with pytest.raises(RunnerError, match="conflicts"):
-        choose_docker_mode(["--run-in-docker", "--no-run-in-docker"])
+        choose_container_mode(["--run-in-container", "--no-run-in-docker"])
 
 
-def test_official_container_requires_fedora_44_and_container_marker(tmp_path: Path) -> None:
-    """Do not mistake a Fedora host or a different container image for CI."""
+def test_official_environment_recognizes_fedora_44_without_runtime_marker(tmp_path: Path) -> None:
+    """Recognize Apple containers, which do not add an OCI marker.
+
+    :param tmp_path: Stand-in filesystem root for the Fedora release file.
+    """
 
     os_release = tmp_path / "etc" / "os-release"
     os_release.parent.mkdir()
     os_release.write_text('ID="fedora"\nVERSION_ID="44"\n')
-    assert not is_official_test_container(tmp_path)
-
-    (tmp_path / ".dockerenv").touch()
     assert is_official_test_container(tmp_path)
 
     os_release.write_text('ID="fedora"\nVERSION_ID="45"\n')
@@ -65,13 +68,26 @@ def test_official_container_requires_fedora_44_and_container_marker(tmp_path: Pa
 
 
 def test_any_container_runs_directly_by_default(tmp_path: Path) -> None:
-    """Avoid nested Docker when the container image is not the official one.
+    """Avoid nested container execution even outside the official image.
 
     :param tmp_path: Stand-in filesystem root for container markers.
     """
 
     (tmp_path / ".dockerenv").touch()
-    assert choose_docker_mode(["-q"], tmp_path) == (False, ["-q"])
+    assert choose_container_mode(["-q"], tmp_path) == (False, ["-q"])
+
+
+def test_fedora_44_runs_directly_without_a_runtime_marker(tmp_path: Path) -> None:
+    """Avoid nesting from an Apple container running the official image.
+
+    :param tmp_path: Stand-in filesystem root for the Fedora release file.
+    """
+
+    os_release = tmp_path / "etc" / "os-release"
+    os_release.parent.mkdir()
+    os_release.write_text('ID="fedora"\nVERSION_ID="44"\n')
+
+    assert choose_container_mode(["-q"], tmp_path) == (False, ["-q"])
 
 
 def test_pytest_arguments_pass_through_unchanged() -> None:
@@ -104,7 +120,7 @@ def test_runner_help_separates_wrapper_and_pytest_options() -> None:
     assert "-j N" not in help_text
     assert "--clean" not in help_text
     assert "--list" not in help_text
-    assert "Docker is the default unless urtest.sh is already running inside a container" in help_text
+    assert "Apple container on macOS, Podman on Linux, and Docker as a fallback" in help_text
     assert help_text.endswith("pytest options (passed through after urtest.sh processing):")
 
 
@@ -135,29 +151,99 @@ def test_invalid_ci_shard_fails() -> None:
         translate_arguments([], {"SHARD": "12", "SHARDCNT": "12"})
 
 
-def test_docker_launch_forwards_ci_sharding(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """Keep the stable pytest shard when the source launcher enters Docker."""
+def test_runtime_selection_prefers_host_native_tools(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Prefer Apple container on macOS and Podman on Linux.
+
+    :param monkeypatch: Pytest environment and function patch helper.
+    """
+
+    available = {"container": "/usr/bin/container", "podman": "/usr/bin/podman", "docker": "/usr/bin/docker"}
+    monkeypatch.setattr("tools.uranium.runner.shutil.which", available.get)
+
+    assert find_container_runtime("darwin") == ("container", "/usr/bin/container")
+    assert find_container_runtime("linux") == ("podman", "/usr/bin/podman")
+
+
+def test_container_launch_forwards_ci_sharding(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Keep the stable pytest shard when the source launcher enters Podman.
+
+    :param monkeypatch: Pytest environment and function patch helper.
+    :param tmp_path: Stand-in ATS source-tree root.
+    """
 
     commands: list[list[str]] = []
 
     def record_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        """Record a simulated Podman invocation.
+
+        :param command: Complete runtime command to record.
+        :param check: Whether subprocess failures should raise an exception.
+        """
+
         assert not check
         commands.append(command)
         return subprocess.CompletedProcess(command, 0)
 
-    def find_executable(executable: str) -> str:
-        return f"/usr/bin/{executable}"
+    def find_executable(executable: str) -> str | None:
+        """Expose only Podman to runtime discovery.
+
+        :param executable: Runtime executable name to resolve.
+        """
+
+        return f"/usr/bin/{executable}" if executable == "podman" else None
 
     monkeypatch.setattr("tools.uranium.runner.shutil.which", find_executable)
     monkeypatch.setattr("tools.uranium.runner.subprocess.run", record_run)
     monkeypatch.setenv("SHARD", "3")
     monkeypatch.setenv("SHARDCNT", "12")
 
-    assert launch_docker(tmp_path, ["-n2", "-q"]) == 0
+    monkeypatch.setattr("tools.uranium.runner.sys.platform", "linux")
+
+    assert launch_container(tmp_path, ["-n2", "-q"]) == 0
     command = commands[0]
+    assert command[0] == "/usr/bin/podman"
+    assert "--network=host" in command
+    assert "ATS_URTEST_IN_CONTAINER=1" in command
     assert command[command.index("SHARD=3") - 1] == "--env"
     assert command[command.index("SHARDCNT=12") - 1] == "--env"
-    assert command[-4:] == [str(tmp_path / "tests" / "urtest.sh"), "--no-run-in-docker", "-n2", "-q"]
+    assert command[-4:] == [str(tmp_path / "tests" / "urtest.sh"), "--no-run-in-container", "-n2", "-q"]
+
+
+def test_apple_container_launch_omits_unsupported_host_network(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Use Apple container without requesting Docker-style host networking.
+
+    :param monkeypatch: Pytest environment and function patch helper.
+    :param tmp_path: Stand-in ATS source-tree root.
+    """
+
+    commands: list[list[str]] = []
+
+    def record_run(command: list[str], *, check: bool) -> subprocess.CompletedProcess[str]:
+        """Record a simulated Apple container invocation.
+
+        :param command: Complete runtime command to record.
+        :param check: Whether subprocess failures should raise an exception.
+        """
+
+        assert not check
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0)
+
+    def find_executable(executable: str) -> str | None:
+        """Expose only Apple container to runtime discovery.
+
+        :param executable: Runtime executable name to resolve.
+        """
+
+        return "/usr/bin/container" if executable == "container" else None
+
+    monkeypatch.setattr("tools.uranium.runner.shutil.which", find_executable)
+    monkeypatch.setattr("tools.uranium.runner.subprocess.run", record_run)
+    monkeypatch.setattr("tools.uranium.runner.sys.platform", "darwin")
+
+    assert launch_container(tmp_path, ["-q"]) == 0
+    assert commands[0][0] == "/usr/bin/container"
+    assert "--network=host" not in commands[0]
 
 
 def test_source_runner_keeps_a_short_stable_sandbox(tmp_path: Path) -> None:
