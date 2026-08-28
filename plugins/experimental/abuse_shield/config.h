@@ -155,6 +155,11 @@ public:
   {
     return block_duration_sec_;
   }
+  uint64_t
+  block_duration_ms() const
+  {
+    return static_cast<uint64_t>(block_duration_sec_) * 1000;
+  }
   bool
   enabled() const
   {

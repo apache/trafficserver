@@ -18,7 +18,7 @@
   the License.
 */
 
-#include "../config.h"
+#include "config.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -280,7 +280,7 @@ rules:
           - "238BCEBDFA16AA0BE417A7F7A80063A9"
           - "99c071c5a5e14cc2527c9e8e0dde4a50"
         JA4:
-          - "t13d1516h2_8daaf6152771_02713d6af862"
+          - "T13D1516H2_8DAAF6152771_02713D6AF862"
     action: [log, close]
 )");
 
@@ -419,4 +419,23 @@ rules:
   REQUIRE(config);
   std::string error;
   CHECK_FALSE(config->validate(error));
+}
+
+TEST_CASE("Config converts large block durations without overflow", "[abuse_shield][config][blocking]")
+{
+  TempConfig files;
+  auto       config_path = files.write("large-duration.yaml", R"(
+global:
+  blocking:
+    duration_seconds: 2147483647
+rules:
+  - name: request_rate
+    filter:
+      max_req_rate: 10
+    action: [block]
+)");
+
+  auto config = Config::parse(config_path.string());
+  REQUIRE(config);
+  CHECK(config->block_duration_ms() == 2147483647000ULL);
 }

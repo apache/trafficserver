@@ -41,7 +41,8 @@ rules:
     action: [log, block, close]
 
   # Values across fingerprint methods use OR logic. Add "block" if the client
-  # IP should also be denied for the global blocking duration.
+  # IP should also be denied for the global blocking duration. Rule changes,
+  # including fingerprint values, apply after an abuse_shield.reload message.
   - name: blocked_tls_clients
     filter:
       fingerprints:

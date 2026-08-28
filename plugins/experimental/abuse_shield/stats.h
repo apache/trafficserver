@@ -31,7 +31,7 @@ struct TrackerStats {
   int slots_used{-1};       ///< Current slots in use (gauge)
   int contests{-1};         ///< Total contest attempts
   int contests_won{-1};     ///< Contests won by new IP
-  int evictions{-1};        ///< IPs evicted (score reached 0)
+  int evictions{-1};        ///< Occupied tracker slots replaced by contest winners
 
   /** Initialize tracker statistics with a name prefix.
    *

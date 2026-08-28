@@ -1,6 +1,6 @@
 /** @file
 
-  Private fixed-size table used by the abuse_shield plugin.
+  Fixed-size table for tracking frequently observed keys with bounded memory.
 
   @section license License
 
@@ -29,10 +29,20 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
-namespace abuse_shield
+namespace ts
 {
+
+/** Default eviction policy for UdiTable. */
+template <typename Data> struct UdiTableAlwaysEvictable {
+  bool
+  operator()(Data const &) const noexcept
+  {
+    return true;
+  }
+};
 
 /** A fixed-size hash table using the Udi "King of the Hill" algorithm.
  *
@@ -46,9 +56,11 @@ namespace abuse_shield
  * - Simple locking: Single mutex for all operations
  * - Safe references: Returns shared_ptr so data survives eviction
  *
- * @tparam Key The entity type (e.g., IP address, URL)
- * @tparam Data User's custom data type to associate with each entry
+ * @tparam Key Default-constructible entity type (e.g., IP address, URL)
+ * @tparam Data Default-constructible user data type stored with each key.
  * @tparam Hash Hash function for keys (defaults to std::hash)
+ * @tparam CanEvict Predicate callable with @c Data @c const& before replacing
+ *   an occupied slot. The default permits every occupied slot to participate.
  *
  * The table owns the key and score for each entry. Users provide only their custom
  * Data type which is stored in a shared_ptr for safe access.
@@ -56,6 +68,8 @@ namespace abuse_shield
  * Thread Safety:
  * All operations are protected by a single mutex and are serialized.
  * Returned shared_ptr<Data> remains valid even after the slot is evicted.
+ * The eviction predicate is invoked while the mutex is held and must not
+ * reenter the same table.
  *
  * Example usage:
  * @code
@@ -64,7 +78,7 @@ namespace abuse_shield
  *   std::atomic<uint32_t> success_count{0};
  * };
  *
- * abuse_shield::UdiTable<std::string, MyData> table(10000);
+ * ts::UdiTable<std::string, MyData> table(10000);
  *
  * auto data = table.process_event("some_key", 1);
  * if (data) {
@@ -72,7 +86,8 @@ namespace abuse_shield
  * }
  * @endcode
  */
-template <typename Key, typename Data, typename Hash = std::hash<Key>> class UdiTable
+template <typename Key, typename Data, typename Hash = std::hash<Key>, typename CanEvict = UdiTableAlwaysEvictable<Data>>
+class UdiTable
 {
 public:
   using key_type  = Key;
@@ -82,7 +97,7 @@ public:
   enum class ProcessStatus {
     TRACKED,      ///< Existing entry or successful contest.
     CONTEST_LOST, ///< Ordinary score-based contest loss.
-    NO_CANDIDATE, ///< Bounded protected-slot scan found no candidate.
+    NO_CANDIDATE, ///< Bounded eviction-predicate scan found no candidate.
   };
 
   using const_data_ptr = std::shared_ptr<Data const>;
@@ -94,8 +109,9 @@ public:
 
   /**
    * @param[in] num_slots Total number of slots to allocate.
+   * @param[in] can_evict Predicate that decides whether occupied slots may be replaced.
    */
-  explicit UdiTable(size_t num_slots);
+  explicit UdiTable(size_t num_slots, CanEvict can_evict = {});
 
   // No copying or moving
   UdiTable(UdiTable const &)            = delete;
@@ -227,6 +243,9 @@ private:
   /// The contest pointer - rotates through all slots as @a contest() is called.
   size_t contest_ptr_{0};
 
+  /// Policy for determining whether an occupied slot may participate in a contest.
+  CanEvict can_evict_;
+
   /// Metrics.
   std::atomic<uint64_t> metric_contests_{0};
   std::atomic<uint64_t> metric_contests_won_{0};
@@ -240,15 +259,16 @@ private:
 // Implementation
 // ===========================================================================
 
-template <typename Key, typename Data, typename Hash>
-UdiTable<Key, Data, Hash>::UdiTable(size_t num_slots) : slots_(num_slots), last_reset_time_(std::chrono::system_clock::now())
+template <typename Key, typename Data, typename Hash, typename CanEvict>
+UdiTable<Key, Data, Hash, CanEvict>::UdiTable(size_t num_slots, CanEvict can_evict)
+  : slots_(num_slots), can_evict_(std::move(can_evict)), last_reset_time_(std::chrono::system_clock::now())
 {
   lookup_.reserve(num_slots);
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 std::shared_ptr<Data>
-UdiTable<Key, Data, Hash>::find(Key const &key)
+UdiTable<Key, Data, Hash, CanEvict>::find(Key const &key)
 {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -259,16 +279,16 @@ UdiTable<Key, Data, Hash>::find(Key const &key)
   return nullptr;
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 std::shared_ptr<Data const>
-UdiTable<Key, Data, Hash>::find(Key const &key) const
+UdiTable<Key, Data, Hash, CanEvict>::find(Key const &key) const
 {
   return const_cast<UdiTable *>(this)->find(key);
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 std::shared_ptr<Data>
-UdiTable<Key, Data, Hash>::process_event(Key const &key, uint32_t score_delta, ProcessStatus *status)
+UdiTable<Key, Data, Hash, CanEvict>::process_event(Key const &key, uint32_t score_delta, ProcessStatus *status)
 {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -288,9 +308,9 @@ UdiTable<Key, Data, Hash>::process_event(Key const &key, uint32_t score_delta, P
   return contest(key, score_delta, status);
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 bool
-UdiTable<Key, Data, Hash>::remove(Key const &key)
+UdiTable<Key, Data, Hash, CanEvict>::remove(Key const &key)
 {
   std::lock_guard<std::mutex> lock(mutex_);
 
@@ -304,45 +324,45 @@ UdiTable<Key, Data, Hash>::remove(Key const &key)
   return true;
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 size_t
-UdiTable<Key, Data, Hash>::num_slots() const
+UdiTable<Key, Data, Hash, CanEvict>::num_slots() const
 {
   return slots_.size();
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 size_t
-UdiTable<Key, Data, Hash>::slots_used() const
+UdiTable<Key, Data, Hash, CanEvict>::slots_used() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return lookup_.size();
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 uint64_t
-UdiTable<Key, Data, Hash>::contests() const
+UdiTable<Key, Data, Hash, CanEvict>::contests() const
 {
   return metric_contests_.load(std::memory_order_relaxed);
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 uint64_t
-UdiTable<Key, Data, Hash>::contests_won() const
+UdiTable<Key, Data, Hash, CanEvict>::contests_won() const
 {
   return metric_contests_won_.load(std::memory_order_relaxed);
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 uint64_t
-UdiTable<Key, Data, Hash>::evictions() const
+UdiTable<Key, Data, Hash, CanEvict>::evictions() const
 {
   return metric_evictions_.load(std::memory_order_relaxed);
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 void
-UdiTable<Key, Data, Hash>::reset_metrics()
+UdiTable<Key, Data, Hash, CanEvict>::reset_metrics()
 {
   std::lock_guard<std::mutex> lock(mutex_);
   metric_contests_.store(0, std::memory_order_relaxed);
@@ -351,17 +371,17 @@ UdiTable<Key, Data, Hash>::reset_metrics()
   last_reset_time_ = std::chrono::system_clock::now();
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 std::chrono::system_clock::time_point
-UdiTable<Key, Data, Hash>::last_reset_time() const
+UdiTable<Key, Data, Hash, CanEvict>::last_reset_time() const
 {
   std::lock_guard<std::mutex> lock(mutex_);
   return last_reset_time_;
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 uint64_t
-UdiTable<Key, Data, Hash>::seconds_since_reset() const
+UdiTable<Key, Data, Hash, CanEvict>::seconds_since_reset() const
 {
   auto reset_time = last_reset_time();
   auto now        = std::chrono::system_clock::now();
@@ -369,9 +389,9 @@ UdiTable<Key, Data, Hash>::seconds_since_reset() const
   return static_cast<uint64_t>(elapsed.count());
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 std::string
-UdiTable<Key, Data, Hash>::dump(data_format_fn format_data) const
+UdiTable<Key, Data, Hash, CanEvict>::dump(data_format_fn format_data) const
 {
   struct Snapshot {
     Key            key;
@@ -403,9 +423,9 @@ UdiTable<Key, Data, Hash>::dump(data_format_fn format_data) const
   return result;
 }
 
-template <typename Key, typename Data, typename Hash>
+template <typename Key, typename Data, typename Hash, typename CanEvict>
 std::shared_ptr<Data>
-UdiTable<Key, Data, Hash>::contest(Key const &key, uint32_t incoming_score, ProcessStatus *status)
+UdiTable<Key, Data, Hash, CanEvict>::contest(Key const &key, uint32_t incoming_score, ProcessStatus *status)
 {
   // Called with mutex_ already held exclusively
 
@@ -419,16 +439,15 @@ UdiTable<Key, Data, Hash>::contest(Key const &key, uint32_t incoming_score, Proc
     return nullptr;
   }
 
-  // Negative token debt is security state, so do not let unrelated traffic
-  // evict it. Bound the scan so a fully protected table cannot serialize all
-  // event threads behind a full-table walk.
+  // Bound the scan so a predicate that rejects every occupied slot cannot
+  // serialize all callers behind a full-table walk.
   size_t slot_idx    = slots_.size();
   size_t probe_limit = std::min(slots_.size(), MAX_CONTEST_PROBES);
   for (size_t count = 0; count < probe_limit; ++count) {
     size_t candidate = contest_ptr_;
     contest_ptr_     = (contest_ptr_ + 1) % slots_.size();
     Slot const &slot = slots_[candidate];
-    if (slot.is_empty() || slot.data->is_evictable()) {
+    if (slot.is_empty() || can_evict_(*slot.data)) {
       slot_idx = candidate;
       break;
     }
@@ -471,4 +490,4 @@ UdiTable<Key, Data, Hash>::contest(Key const &key, uint32_t incoming_score, Proc
   }
 }
 
-} // namespace abuse_shield
+} // namespace ts

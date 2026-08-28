@@ -126,11 +126,14 @@ max_req_rate                          Maximum requests per second
 req_burst_multiplier                  Request bucket capacity multiplier
 max_conn_rate                         Maximum connections per second
 conn_burst_multiplier                 Connection bucket capacity multiplier
-max_h2_error_rate                     Maximum HTTP/2 errors per second
+max_h2_error_rate                     Maximum received/sent HTTP/2 errors per second
 h2_burst_multiplier                   HTTP/2 error bucket capacity multiplier
 rate_limited_ips_file                 Optional IP list that selects this rule
 fingerprints                          Map of method names to fingerprint sequences
 ===================================== ==============================================
+
+HTTP/2 error rates include both stream and connection errors received from or
+sent to the client.
 
 Burst multipliers default to 1.0 and must be at least 1.0. Every rule has an
 independent token bucket for each configured rate, so thresholds do not depend
@@ -148,11 +151,11 @@ ClientHello Fingerprints
 ------------------------
 
 The supplied JAx methods are JA3 and JA4. Their method names are
-case-insensitive. JA3 values are validated as 32 hexadecimal characters and
-canonicalized to lowercase; JA4 values are validated against the 36-character
-JA4 layout. Other method names and values are treated as opaque strings and
-matched exactly, allowing downstream JAx builds to publish site-specific
-methods.
+case-insensitive. JA3 values are validated as 32 hexadecimal characters, while
+JA4 values are validated against the 36-character JA4 layout. Both are
+canonicalized to lowercase before matching. Other method names and values are
+treated as opaque strings and matched exactly, allowing downstream JAx builds
+to publish site-specific methods.
 
 Only methods derived entirely from a TLS ClientHello can be used. JA4H is
 derived from an HTTP request and is therefore unavailable at the
@@ -162,15 +165,20 @@ JAx computes each fingerprint and publishes it in a versioned, read-only
 registry held in a named VConn user-argument slot. Abuse Shield consumes that
 result at its ClientHello hook; it does not link fingerprint algorithms or
 recompute their values. The registry is an in-process array of
-length-delimited method/value entries, not JSON. Its header contains a magic
-value, ABI version, and structure sizes so a consumer can reject an
-incompatible layout. JAx owns all registry memory for the VConn lifetime.
+length-delimited method/value entries. Its header contains a magic value, ABI
+version, and structure sizes so a consumer can reject an incompatible layout.
+JAx owns all registry memory for the VConn lifetime.
 
-The JAx plugin lines must precede Abuse Shield in :file:`plugin.config` so
-their hooks publish values before Abuse Shield evaluates them. A missing or
-incompatible named registry is a startup error. A matching close action uses
-``TSVConnReenableEx(vconn, TS_EVENT_ERROR)``, stopping processing before
-ServerHello and key-exchange work.
+.. important::
+
+   Since ``abuse_shield`` relies upon the JAx plugin for JA fingerprint
+   values, the JAx plugin lines must precede Abuse Shield in
+   :file:`plugin.config`. This ensures their hooks publish values before Abuse
+   Shield evaluates them. A missing or incompatible named registry is a
+   startup error.
+
+A matching close action uses ``TSVConnReenableEx(vconn, TS_EVENT_ERROR)``,
+stopping processing before ServerHello and key-exchange work.
 
 Adding Fingerprint Methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -283,7 +291,9 @@ Memory Bound
 Request, connection, and HTTP/2 state use separate private fixed-size tables
 with ``ip_tracking.slots`` entries each. Block expirations use a separate
 bounded table that never evicts an unexpired block. This keeps memory usage
-bounded even when traffic contains many distinct source addresses.
+bounded even when traffic contains many distinct source addresses. These
+tables use the reusable :ref:`udi-table` utility with an eviction policy that
+protects entries carrying token debt.
 
 New addresses compete for tracker slots. An ordinary contest loss increments
 ``events_untracked``. Entries with token debt are protected from eviction, and

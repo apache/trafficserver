@@ -140,17 +140,17 @@ Fingerprint Registry Export
 ---------------------------
 
 The export registry is an in-process, read-only view stored in a named |TS|
-user-argument slot. It is not JSON and does not serialize fingerprints. The
-registry contains length-delimited method/value entries plus a magic value,
-ABI version, and structure sizes, allowing consumers to reject incompatible
-layouts. JAx owns the registry and strings for the lifetime of the connection
-or transaction; consumers must not modify them or retain their pointers.
+user-argument slot. The registry contains length-delimited method/value
+entries plus a magic value, ABI version, and structure sizes, allowing
+consumers to reject incompatible layouts. JAx owns the registry and strings
+for the lifetime of the connection or transaction; consumers must not modify
+them or retain their pointers.
 
 Connection-based methods such as JA3 and JA4 use a VConn registry. Request-
 based methods such as JA4H use a transaction registry and therefore cannot be
-consumed at a ClientHello hook. A downstream build can add its own method to
-JAx and publish it through the same registry without adding a method-specific
-API to ``ts.h``.
+consumed at a ClientHello hook. If your organization implements custom JA
+methods, these also can be exported through the same registry without adding a
+method-specific API to ``ts.h``.
 
 
 Log Output

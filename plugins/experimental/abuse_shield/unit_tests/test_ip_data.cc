@@ -18,7 +18,7 @@
   the License.
 */
 
-#include "../ip_data.h"
+#include "ip_data.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -135,4 +135,36 @@ TEST_CASE("now_ms is monotonic", "[abuse_shield][time]")
   uint64_t first = now_ms();
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   CHECK(now_ms() > first);
+}
+
+TEST_CASE("Log interval permits an IP's first log", "[abuse_shield][logging]")
+{
+  std::atomic<uint64_t> last_logged{0};
+
+  CHECK(claim_log_interval(last_logged, 1, 10'000));
+  CHECK(last_logged.load(std::memory_order_relaxed) == 1);
+  CHECK_FALSE(claim_log_interval(last_logged, 2, 10'000));
+  CHECK(claim_log_interval(last_logged, 10'001, 10'000));
+}
+
+TEST_CASE("Log interval claim is atomic", "[abuse_shield][logging][threaded]")
+{
+  std::atomic<uint64_t> last_logged{0};
+  std::atomic<int>      claims{0};
+
+  constexpr int            THREADS = 8;
+  std::vector<std::thread> threads;
+
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&last_logged, &claims]() {
+      if (claim_log_interval(last_logged, 1, 10'000)) {
+        claims.fetch_add(1, std::memory_order_relaxed);
+      }
+    });
+  }
+  for (auto &thread : threads) {
+    thread.join();
+  }
+
+  CHECK(claims.load(std::memory_order_relaxed) == 1);
 }

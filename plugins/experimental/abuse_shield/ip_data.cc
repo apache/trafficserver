@@ -89,18 +89,18 @@ TokenBucket::tokens() const
 }
 
 RuleBuckets::BucketPtr
-RuleBuckets::find_or_create(std::string_view rule_name)
+RuleBuckets::find_or_create(const std::string &rule_name)
 {
   std::lock_guard lock(mutex_);
   auto            spot = buckets_.find(rule_name);
   if (spot == buckets_.end()) {
-    spot = buckets_.emplace(std::string(rule_name), std::make_shared<TokenBucket>()).first;
+    spot = buckets_.emplace(rule_name, std::make_shared<TokenBucket>()).first;
   }
   return spot->second;
 }
 
 RuleBuckets::BucketPtr
-RuleBuckets::find(std::string_view rule_name) const
+RuleBuckets::find(const std::string &rule_name) const
 {
   std::lock_guard lock(mutex_);
   auto            spot = buckets_.find(rule_name);
@@ -108,20 +108,20 @@ RuleBuckets::find(std::string_view rule_name) const
 }
 
 int32_t
-RuleBuckets::consume(std::string_view rule_name, int rate_per_sec, int burst_limit)
+RuleBuckets::consume(const std::string &rule_name, int rate_per_sec, int burst_limit)
 {
   return find_or_create(rule_name)->consume(rate_per_sec, burst_limit);
 }
 
 bool
-RuleBuckets::exceeded(std::string_view rule_name) const
+RuleBuckets::exceeded(const std::string &rule_name) const
 {
   auto bucket = find(rule_name);
   return bucket && bucket->tokens() < 0;
 }
 
 int32_t
-RuleBuckets::tokens(std::string_view rule_name) const
+RuleBuckets::tokens(const std::string &rule_name) const
 {
   auto bucket = find(rule_name);
   return bucket ? bucket->tokens() : 0;

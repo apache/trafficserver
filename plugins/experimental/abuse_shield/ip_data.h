@@ -27,11 +27,10 @@
 #include <memory>
 #include <mutex>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 
 #include "swoc/swoc_ip.h"
-#include "UdiTable.h"
+#include "tsutil/UdiTable.h"
 
 namespace abuse_shield
 {
@@ -41,6 +40,26 @@ inline uint64_t
 now_ms()
 {
   return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+/** Check whether a per-IP log interval has elapsed.
+ *
+ * A zero timestamp means that the IP has never been logged.
+ */
+inline bool
+log_interval_elapsed(uint64_t now, uint64_t last_logged, uint64_t interval)
+{
+  return last_logged == 0 || (now >= last_logged && now - last_logged >= interval);
+}
+
+/** Atomically claim the current per-IP log opportunity. */
+inline bool
+claim_log_interval(std::atomic<uint64_t> &last_logged, uint64_t now, uint64_t interval)
+{
+  uint64_t expected = last_logged.load(std::memory_order_relaxed);
+
+  return log_interval_elapsed(now, expected, interval) &&
+         last_logged.compare_exchange_strong(expected, now, std::memory_order_relaxed);
 }
 
 /** A token bucket whose tokens and update time change in one atomic operation. */
@@ -58,29 +77,19 @@ private:
 class RuleBuckets
 {
 public:
-  int32_t consume(std::string_view rule_name, int rate_per_sec, int burst_limit);
-  bool    exceeded(std::string_view rule_name) const;
-  int32_t tokens(std::string_view rule_name) const;
+  int32_t consume(const std::string &rule_name, int rate_per_sec, int burst_limit);
+  bool    exceeded(const std::string &rule_name) const;
+  int32_t tokens(const std::string &rule_name) const;
   bool    has_debt() const;
 
 private:
   using BucketPtr = std::shared_ptr<TokenBucket>;
 
-  struct TransparentStringHash {
-    using is_transparent = void;
+  BucketPtr find_or_create(const std::string &rule_name);
+  BucketPtr find(const std::string &rule_name) const;
 
-    size_t
-    operator()(std::string_view value) const noexcept
-    {
-      return std::hash<std::string_view>{}(value);
-    }
-  };
-
-  BucketPtr find_or_create(std::string_view rule_name);
-  BucketPtr find(std::string_view rule_name) const;
-
-  mutable std::mutex                                                                 mutex_;
-  std::unordered_map<std::string, BucketPtr, TransparentStringHash, std::equal_to<>> buckets_;
+  mutable std::mutex                         mutex_;
+  std::unordered_map<std::string, BucketPtr> buckets_;
 };
 
 // ============================================================================
@@ -97,7 +106,7 @@ struct TxnData {
   TxnData() : slot_created(now_ms()) {}
 
   int32_t
-  consume(std::string_view rule_name, int rate, int burst)
+  consume(const std::string &rule_name, int rate, int burst)
   {
     count.fetch_add(1, std::memory_order_relaxed);
     return buckets.consume(rule_name, rate, burst);
@@ -124,7 +133,7 @@ struct ConnData {
   ConnData() : slot_created(now_ms()) {}
 
   int32_t
-  consume(std::string_view rule_name, int rate, int burst)
+  consume(const std::string &rule_name, int rate, int burst)
   {
     count.fetch_add(1, std::memory_order_relaxed);
     return buckets.consume(rule_name, rate, burst);
@@ -154,7 +163,7 @@ struct H2Data {
   H2Data() : slot_created(now_ms()) {}
 
   int32_t
-  consume(std::string_view rule_name, int rate, int burst, uint64_t error_code = 0)
+  consume(const std::string &rule_name, int rate, int burst, uint64_t error_code = 0)
   {
     count.fetch_add(1, std::memory_order_relaxed);
     if (error_code < NUM_H2_ERROR_CODES) {
@@ -170,9 +179,18 @@ struct H2Data {
   }
 };
 
+struct DebtAwareEviction {
+  template <typename Data>
+  bool
+  operator()(Data const &data) const
+  {
+    return data.is_evictable();
+  }
+};
+
 // Table type aliases
-using TxnTable  = UdiTable<swoc::IPAddr, TxnData, std::hash<swoc::IPAddr>>;
-using ConnTable = UdiTable<swoc::IPAddr, ConnData, std::hash<swoc::IPAddr>>;
-using H2Table   = UdiTable<swoc::IPAddr, H2Data, std::hash<swoc::IPAddr>>;
+using TxnTable  = ts::UdiTable<swoc::IPAddr, TxnData, std::hash<swoc::IPAddr>, DebtAwareEviction>;
+using ConnTable = ts::UdiTable<swoc::IPAddr, ConnData, std::hash<swoc::IPAddr>, DebtAwareEviction>;
+using H2Table   = ts::UdiTable<swoc::IPAddr, H2Data, std::hash<swoc::IPAddr>, DebtAwareEviction>;
 
 } // namespace abuse_shield

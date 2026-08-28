@@ -441,29 +441,19 @@ execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip,
   }
 
   // Only log if enough time has passed since the last log for this IP.
-  if (now - most_recent_log < log_interval_ms) {
+  if (!abuse_shield::log_interval_elapsed(now, most_recent_log, log_interval_ms)) {
     return;
   }
 
   // Try to claim the log opportunity atomically using the first available slot.
-  bool     claimed  = false;
-  uint64_t expected = 0;
+  bool claimed = false;
 
   if (txn_slot) {
-    expected = txn_slot->last_logged.load(std::memory_order_relaxed);
-    if (now - expected >= log_interval_ms) {
-      claimed = txn_slot->last_logged.compare_exchange_weak(expected, now, std::memory_order_relaxed);
-    }
+    claimed = abuse_shield::claim_log_interval(txn_slot->last_logged, now, log_interval_ms);
   } else if (conn_slot) {
-    expected = conn_slot->last_logged.load(std::memory_order_relaxed);
-    if (now - expected >= log_interval_ms) {
-      claimed = conn_slot->last_logged.compare_exchange_weak(expected, now, std::memory_order_relaxed);
-    }
+    claimed = abuse_shield::claim_log_interval(conn_slot->last_logged, now, log_interval_ms);
   } else if (h2_slot) {
-    expected = h2_slot->last_logged.load(std::memory_order_relaxed);
-    if (now - expected >= log_interval_ms) {
-      claimed = h2_slot->last_logged.compare_exchange_weak(expected, now, std::memory_order_relaxed);
-    }
+    claimed = abuse_shield::claim_log_interval(h2_slot->last_logged, now, log_interval_ms);
   }
 
   if (!claimed) {
@@ -488,21 +478,21 @@ execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip,
   int32_t conn_tokens = conn_slot ? conn_slot->buckets.tokens(match.rule->name) : 0;
   int32_t h2_tokens   = h2_slot ? h2_slot->buckets.tokens(match.rule->name) : 0;
 
-  std::string fingerprint;
+  std::string fingerprint_suffix;
   if (!match.fingerprint.empty()) {
-    fingerprint = " fingerprint=";
-    fingerprint.append(match.fingerprint_method);
-    fingerprint.push_back(':');
-    fingerprint.append(match.fingerprint);
+    fingerprint_suffix = " fingerprint=";
+    fingerprint_suffix.append(match.fingerprint_method);
+    fingerprint_suffix.push_back(':');
+    fingerprint_suffix.append(match.fingerprint);
   }
 
   if (g_log_object) {
-    TSTextLogObjectWrite(g_log_object, "Rule \"%s\" matched for IP=%s:%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d",
-                         match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint.c_str(),
+    TSTextLogObjectWrite(g_log_object, "Rule \"%s\" matched for IP=%s%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d",
+                         match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint_suffix.c_str(),
                          abuse_shield::actions_to_string(match.actions).c_str(), req_tokens, conn_tokens, h2_tokens);
   } else {
-    TSError("[%s] Rule \"%s\" matched for IP=%s:%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d", PLUGIN_NAME,
-            match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint.c_str(),
+    TSError("[%s] Rule \"%s\" matched for IP=%s%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d", PLUGIN_NAME,
+            match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint_suffix.c_str(),
             abuse_shield::actions_to_string(match.actions).c_str(), req_tokens, conn_tokens, h2_tokens);
   }
 }
@@ -526,7 +516,7 @@ execute_actions(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip, TS
   TSStatIntIncrement(g_action_stats.rules_matched, 1);
 
   if (abuse_shield::has_action(match.actions, abuse_shield::Action::BLOCK)) {
-    uint64_t block_until = abuse_shield::now_ms() + (config.block_duration_sec() * 1000);
+    uint64_t block_until = abuse_shield::now_ms() + config.block_duration_ms();
     if (block_ip(ip, block_until)) {
       TSStatIntIncrement(g_action_stats.actions_blocked, 1);
       Dbg(dbg_ctl, "Blocking IP %s for %d seconds (rule: %s)", ip_to_string(ip).c_str(), config.block_duration_sec(),
@@ -596,29 +586,22 @@ process_h2_response(TSHttpTxn txnp, TSVConn vconn, const swoc::IPAddr &ip, const
   TSHttpTxnClientReceivedErrorGet(txnp, &received_error.cls, &received_error.code);
   TSHttpTxnClientSentErrorGet(txnp, &sent_error.cls, &sent_error.code);
 
-  // Check for HTTP/2 errors.
-  bool     has_h2_error = false;
-  uint64_t error_code   = 0;
+  auto consume_error = [&](const H2Errors &error, const char *direction) {
+    if ((error.cls != 1 && error.cls != 2) || error.code == 0) {
+      return false;
+    }
 
-  // Stream-level error (class 2).
-  if (received_error.cls == 2 && received_error.code != 0) {
-    has_h2_error = true;
-    error_code   = received_error.code;
-    Dbg(dbg_ctl, "Stream error from %s: code=%" PRIu64, ip_to_string(ip).c_str(), error_code);
-  }
+    const char *error_class = error.cls == 1 ? "Connection" : "Stream";
+    Dbg(dbg_ctl, "%s error %s %s: code=%" PRIu64, error_class, direction, ip_to_string(ip).c_str(), error.code);
+    consume_rule_buckets(g_h2_tracker.get(), ip, config, abuse_shield::RateMetric::H2_ERROR, g_h2_stats, error.code);
+    return true;
+  };
 
-  // Connection-level error (class 1).
-  if (sent_error.cls == 1 && sent_error.code != 0) {
-    has_h2_error = true;
-    error_code   = sent_error.code;
-    Dbg(dbg_ctl, "Connection error sent to %s: code=%" PRIu64, ip_to_string(ip).c_str(), error_code);
-  }
-
-  if (!has_h2_error) {
+  bool received_h2_error = consume_error(received_error, "received from");
+  bool sent_h2_error     = consume_error(sent_error, "sent to");
+  if (!received_h2_error && !sent_h2_error) {
     return;
   }
-
-  consume_rule_buckets(g_h2_tracker.get(), ip, config, abuse_shield::RateMetric::H2_ERROR, g_h2_stats, error_code);
 
   abuse_shield::RuleMatch match = evaluate_rate_rules(ip, config);
   if (match.actions != 0) {

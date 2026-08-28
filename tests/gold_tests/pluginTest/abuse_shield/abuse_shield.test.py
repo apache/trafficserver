@@ -347,6 +347,7 @@ enabled: true
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._origin)
         tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
@@ -367,6 +368,7 @@ enabled: true
             f'--num-requests 50 --rate 100 --path /')
         tr.Processes.Default.Command = client_cmd
         tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Verify the rate limit rule was triggered and block action was taken.
@@ -590,6 +592,7 @@ enabled: true
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._origin)
         tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Send rate-limited IP traffic above rate-limited request limit")
@@ -599,6 +602,7 @@ enabled: true
             f'--num-requests 250 --rate 1000 --path /')
         tr.Processes.Default.Command = client_cmd
         tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
@@ -917,6 +921,7 @@ enabled: true
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._origin)
         tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Verify blocking occurred.
@@ -929,6 +934,7 @@ enabled: true
         tr = Test.AddTestRun("Verify the temporary block is active")
         tr.Processes.Default.Command = (f'curl -k -s -o /dev/null --max-time 2 https://127.0.0.1:{self._ts.Variables.ssl_port}/')
         tr.Processes.Default.ReturnCode = Any(28, 35, 52, 55, 56)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Verify the block action metric")
@@ -937,6 +943,7 @@ enabled: true
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
             r"abuse_shield.actions.blocked\s+[1-9][0-9]*", "Verify at least one block action was recorded.")
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Verify the connection rejection metric")
@@ -945,12 +952,14 @@ enabled: true
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
             r"abuse_shield.connections.rejected\s+[1-9][0-9]*", "Verify the blocked connection was rejected.")
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Step 3: Wait for block to expire (5 seconds + buffer).
         tr = Test.AddTestRun("Wait for block to expire")
         tr.Processes.Default.Command = "sleep 7"
         tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Step 4: Verify requests work again after expiration.
@@ -958,6 +967,7 @@ enabled: true
         tr.Processes.Default.Command = f'curl -k -s -o /dev/null -w "%{{http_code}}" https://127.0.0.1:{self._ts.Variables.ssl_port}/'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("200", "Verify request succeeds after block expires.")
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
 

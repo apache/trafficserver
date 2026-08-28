@@ -53,6 +53,16 @@ is_opaque_value(std::string_view value)
     return uc >= static_cast<unsigned char>(' ') && uc <= static_cast<unsigned char>('~');
   });
 }
+
+std::string
+to_lowercase(std::string_view value)
+{
+  std::string result{value};
+
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](char c) { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
+  return result;
+}
 } // namespace
 
 std::optional<abuse_shield::ConfiguredFingerprint>
@@ -68,10 +78,7 @@ abuse_shield::canonicalize_fingerprint(std::string_view method, std::string_view
       return std::nullopt;
     }
 
-    ConfiguredFingerprint result{"JA3", std::string(value)};
-    std::transform(result.value.begin(), result.value.end(), result.value.begin(),
-                   [](char c) { return static_cast<char>(std::tolower(static_cast<unsigned char>(c))); });
-    return result;
+    return ConfiguredFingerprint{"JA3", to_lowercase(value)};
   }
 
   if (names_equal(method, "JA4")) {
@@ -79,7 +86,7 @@ abuse_shield::canonicalize_fingerprint(std::string_view method, std::string_view
     if (value.size() != JA4_LENGTH || value[10] != '_' || value[23] != '_' || !is_opaque_value(value)) {
       return std::nullopt;
     }
-    return ConfiguredFingerprint{"JA4", std::string(value)};
+    return ConfiguredFingerprint{"JA4", to_lowercase(value)};
   }
 
   if (!is_opaque_value(value)) {
