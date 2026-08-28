@@ -13,3 +13,5 @@ next_hop/zzz_strategies_peer2/zzz_strategies_peer2.test.py
 
 # Starts many ATS instances and intentionally saturates local connections.
 pluginTest/abuse_shield/abuse_shield.test.py
+pluginTest/abuse_shield/abuse_shield_session_errors.test.py
+pluginTest/abuse_shield/abuse_shield_pacing.test.py

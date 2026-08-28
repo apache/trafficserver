@@ -2987,6 +2987,26 @@ void TSHttpTxnResponseActionGet(TSHttpTxn txnp, TSResponseAction *action);
  */
 TSIOBufferReader TSHttpTxnPostBufferReaderGet(TSHttpTxn txnp);
 
+/** Get the most recent connection error received from an HTTP/2 client.
+ *
+ * @param[in] ssnp The client session, including during @c TS_HTTP_SSN_CLOSE_HOOK.
+ * @param[out] error_class Zero for no error information, or one for a connection error.
+ * @param[out] error_code The HTTP/2 GOAWAY error code, including zero for @c NO_ERROR.
+ * @note Other client protocols return zero for both outputs. Stream errors are
+ *       available through @ref TSHttpTxnClientReceivedErrorGet.
+ */
+void TSHttpSsnClientReceivedErrorGet(TSHttpSsn ssnp, uint32_t *error_class, uint64_t *error_code);
+
+/** Get the most recent connection error sent to an HTTP/2 client.
+ *
+ * @param[in] ssnp The client session, including during @c TS_HTTP_SSN_CLOSE_HOOK.
+ * @param[out] error_class Zero for no error information, or one for a connection error.
+ * @param[out] error_code The HTTP/2 GOAWAY error code, including zero for @c NO_ERROR.
+ * @note Other client protocols return zero for both outputs. Stream errors are
+ *       available through @ref TSHttpTxnClientSentErrorGet.
+ */
+void TSHttpSsnClientSentErrorGet(TSHttpSsn ssnp, uint32_t *error_class, uint64_t *error_code);
+
 /**
  * @brief Get the client error received from the transaction
  *

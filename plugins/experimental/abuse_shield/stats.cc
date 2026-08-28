@@ -46,6 +46,12 @@ TrackerStats::init(const char *prefix)
 void
 ActionStats::init()
 {
+  actions_log_untracked =
+    TSStatCreate("abuse_shield.actions.log_untracked", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  actions_log_failed =
+    TSStatCreate("abuse_shield.actions.log_failed", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
+  fingerprint_missing_methods =
+    TSStatCreate("abuse_shield.fingerprints.missing_methods", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
   rules_matched   = TSStatCreate("abuse_shield.rules.matched", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
   actions_blocked = TSStatCreate("abuse_shield.actions.blocked", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_COUNT);
   actions_block_failed =

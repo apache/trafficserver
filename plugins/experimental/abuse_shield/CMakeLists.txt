@@ -36,8 +36,10 @@ if(BUILD_TESTING)
   add_catch2_test(NAME test_abuse_shield_ip_data COMMAND test_abuse_shield_ip_data)
 
   add_executable(test_abuse_shield_config unit_tests/test_config.cc config.cc fingerprint.cc)
-  target_include_directories(test_abuse_shield_config PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-  target_include_directories(test_abuse_shield_config BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint")
+  target_include_directories(
+    test_abuse_shield_config BEFORE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/../jax_fingerprint"
+  )
   target_link_libraries(
     test_abuse_shield_config PRIVATE Catch2::Catch2WithMain libswoc::libswoc ts::tsutil yaml-cpp::yaml-cpp
   )

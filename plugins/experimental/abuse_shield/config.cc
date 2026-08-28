@@ -19,9 +19,13 @@
 */
 
 #include "config.h"
+#include "ip_data.h"
 #include "fingerprint.h"
 #include "logging.h"
 
+#include <algorithm>
+#include <initializer_list>
+#include <string_view>
 #include <string>
 #include <cmath>
 #include <limits>
@@ -212,6 +216,26 @@ Config::add_rate_limited_rule_ips(const Rule &rule)
   }
 }
 
+namespace
+{
+  bool
+  check_keys(const YAML::Node &node, std::initializer_list<std::string_view> allowed, std::string_view scope)
+  {
+    if (!node.IsMap()) {
+      TSError("[%s] %.*s must be a map", PLUGIN_NAME, static_cast<int>(scope.size()), scope.data());
+      return false;
+    }
+    for (const auto &entry : node) {
+      auto key = entry.first.as<std::string>();
+      if (std::find(allowed.begin(), allowed.end(), key) == allowed.end()) {
+        TSError("[%s] Unknown key '%s' in %.*s", PLUGIN_NAME, key.c_str(), static_cast<int>(scope.size()), scope.data());
+        return false;
+      }
+    }
+    return true;
+  }
+} // namespace
+
 std::shared_ptr<Config>
 Config::parse(const std::string &path)
 {
@@ -221,19 +245,34 @@ Config::parse(const std::string &path)
     YAML::Node           root = YAML::LoadFile(path);
     RateLimitedIpCache_t rate_limited_ip_cache;
 
+    if (!check_keys(root, {"global", "rules", "enabled"}, "document root")) {
+      return nullptr;
+    }
+
     // Global settings.
     if (root["global"]) {
       auto global = root["global"];
+      if (!check_keys(global,
+                      {"ip_tracking", "blocking", "trusted_ips_file", "log_interval_sec", "log_file", "fingerprint_registry"},
+                      "global")) {
+        return nullptr;
+      }
 
       // IP tracking table settings.
       if (global["ip_tracking"]) {
         auto ip_tracking = global["ip_tracking"];
-        config->slots_   = read_optional<size_t>(ip_tracking, "slots", DEFAULT_SLOTS);
+        if (!check_keys(ip_tracking, {"slots"}, "global.ip_tracking")) {
+          return nullptr;
+        }
+        config->slots_ = read_optional<size_t>(ip_tracking, "slots", DEFAULT_SLOTS);
       }
 
       // Blocking settings.
       if (global["blocking"]) {
-        auto blocking               = global["blocking"];
+        auto blocking = global["blocking"];
+        if (!check_keys(blocking, {"duration_seconds"}, "global.blocking")) {
+          return nullptr;
+        }
         config->block_duration_sec_ = read_optional<int>(blocking, "duration_seconds", DEFAULT_BLOCK_DURATION_SEC);
       }
 
@@ -268,11 +307,20 @@ Config::parse(const std::string &path)
         return nullptr;
       }
       for (const auto &rule_node : root["rules"]) {
+        if (!check_keys(rule_node, {"name", "filter", "action"}, "rule")) {
+          return nullptr;
+        }
         Rule rule;
         rule.name = read_optional<std::string>(rule_node, "name", "");
 
         if (rule_node["filter"]) {
-          auto filter_node                  = rule_node["filter"];
+          auto filter_node = rule_node["filter"];
+          if (!check_keys(filter_node,
+                          {"max_req_rate", "req_burst_multiplier", "max_conn_rate", "conn_burst_multiplier", "max_h2_error_rate",
+                           "h2_burst_multiplier", "fingerprints", "rate_limited_ips_file"},
+                          "rule filter")) {
+            return nullptr;
+          }
           rule.filter.max_req_rate          = read_optional<int>(filter_node, "max_req_rate", 0);
           rule.filter.req_burst_multiplier  = read_optional<double>(filter_node, "req_burst_multiplier", 1.0);
           rule.filter.max_conn_rate         = read_optional<int>(filter_node, "max_conn_rate", 0);
@@ -332,7 +380,7 @@ Config::parse(const std::string &path)
       }
     }
 
-    config->enabled_ = root["enabled"].as<bool>(true);
+    config->enabled_ = read_optional<bool>(root, "enabled", true);
 
   } catch (const YAML::Exception &e) {
     TSError("[%s] YAML parse error in %s at line %d, column %d: %s", PLUGIN_NAME, path.c_str(), e.mark.line + 1, e.mark.column + 1,
@@ -346,8 +394,8 @@ Config::parse(const std::string &path)
 bool
 Config::validate(std::string &error_msg) const
 {
-  if (slots_ == 0) {
-    error_msg = "global.ip_tracking.slots must be greater than zero";
+  if (slots_ == 0 || slots_ > 1'000'000) {
+    error_msg = "global.ip_tracking.slots must be between 1 and 1000000";
     return false;
   }
   if (block_duration_sec_ <= 0) {
@@ -406,12 +454,12 @@ Config::validate(std::string &error_msg) const
       return false;
     }
     auto burst_fits = [](int rate, double multiplier) {
-      return static_cast<double>(rate) * multiplier <= static_cast<double>(std::numeric_limits<int32_t>::max());
+      return static_cast<double>(rate) * multiplier <= static_cast<double>(TokenBucket::MAX_BURST);
     };
     if (!burst_fits(rule.filter.max_req_rate, rule.filter.req_burst_multiplier) ||
         !burst_fits(rule.filter.max_conn_rate, rule.filter.conn_burst_multiplier) ||
         !burst_fits(rule.filter.max_h2_error_rate, rule.filter.h2_burst_multiplier)) {
-      error_msg = "Rule '" + rule.name + "' has a rate burst larger than INT32_MAX";
+      error_msg = "Rule '" + rule.name + "' has a rate burst larger than 2147483 whole tokens";
       return false;
     }
   }

@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -155,6 +156,11 @@ public:
   {
     return block_duration_sec_;
   }
+  uint64_t
+  block_duration_ms() const
+  {
+    return static_cast<uint64_t>(block_duration_sec_) * 1000;
+  }
   bool
   enabled() const
   {
@@ -264,7 +270,7 @@ private:
   swoc::IPSpace<bool>             rate_limited_conn_ips_;
   swoc::IPSpace<bool>             rate_limited_h2_ips_;
 
-  bool enabled_{true};
+  std::atomic<bool> enabled_{true};
 
   std::string config_path_;
   std::string log_file_;

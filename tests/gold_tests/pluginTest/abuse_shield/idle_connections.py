@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Open plain TCP connections without sending HTTP requests."""
-
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements. See the NOTICE file
 #  distributed with this work for additional information regarding
@@ -15,6 +13,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+"""Open plain TCP connections without sending HTTP requests."""
 
 import argparse
 import socket

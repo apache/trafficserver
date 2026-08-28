@@ -65,9 +65,15 @@ public:
     abi_version = jax_fingerprint::REGISTRY_ABI_VERSION;
     struct_size = sizeof(jax_fingerprint::RegistryV1);
     entry_size  = sizeof(jax_fingerprint::RegistryEntryV1);
+    reserved    = 0;
     entry_count = 0;
     entries     = _entries.data();
   }
+
+  ContextMap(const ContextMap &)            = delete;
+  ContextMap &operator=(const ContextMap &) = delete;
+  ContextMap(ContextMap &&)                 = delete;
+  ContextMap &operator=(ContextMap &&)      = delete;
 
   ~ContextMap()
   {

@@ -6982,6 +6982,32 @@ txn_error_get(TSHttpTxn txnp, bool client, bool sent, uint32_t &error_class, uin
 }
 
 void
+TSHttpSsnClientReceivedErrorGet(TSHttpSsn ssnp, uint32_t *error_class, uint64_t *error_code)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  sdk_assert(error_class != nullptr && error_code != nullptr);
+
+  auto      *session = dynamic_cast<Http2ClientSession *>(reinterpret_cast<ProxySession *>(ssnp));
+  ProxyError error   = session ? session->connection_state.rx_error_code : ProxyError{};
+
+  *error_class = static_cast<uint32_t>(error.cls);
+  *error_code  = error.code;
+}
+
+void
+TSHttpSsnClientSentErrorGet(TSHttpSsn ssnp, uint32_t *error_class, uint64_t *error_code)
+{
+  sdk_assert(sdk_sanity_check_http_ssn(ssnp) == TS_SUCCESS);
+  sdk_assert(error_class != nullptr && error_code != nullptr);
+
+  auto      *session = dynamic_cast<Http2ClientSession *>(reinterpret_cast<ProxySession *>(ssnp));
+  ProxyError error   = session ? session->connection_state.tx_error_code : ProxyError{};
+
+  *error_class = static_cast<uint32_t>(error.cls);
+  *error_code  = error.code;
+}
+
+void
 TSHttpTxnClientReceivedErrorGet(TSHttpTxn txnp, uint32_t *error_class, uint64_t *error_code)
 {
   txn_error_get(txnp, true, false, *error_class, *error_code);

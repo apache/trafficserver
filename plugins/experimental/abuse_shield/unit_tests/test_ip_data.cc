@@ -18,7 +18,7 @@
   the License.
 */
 
-#include "../ip_data.h"
+#include "ip_data.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -26,6 +26,16 @@
 #include <vector>
 
 using namespace abuse_shield;
+
+TEST_CASE("An unused TokenBucket has no debt", "[abuse_shield][token_bucket]")
+{
+  TokenBucket bucket;
+
+  CHECK(bucket.tokens() == 0);
+  CHECK(bucket.consume(0, 1) == 0);
+  CHECK(bucket.consume(0, 1) == -1);
+  CHECK(bucket.tokens() == -1);
+}
 
 TEST_CASE("TokenBucket consumes atomically", "[abuse_shield][token_bucket]")
 {
@@ -42,14 +52,12 @@ TEST_CASE("TokenBucket preserves every concurrent consume", "[abuse_shield][toke
   constexpr int            THREADS           = 8;
   constexpr int            EVENTS_PER_THREAD = 1000;
   std::vector<std::thread> threads;
-  uint64_t                 start_ms = now_ms();
 
-  // A nonzero rate keeps the replenishment path active. At one token per
-  // second this tight loop still completes before any token can replenish.
+  // A fixed timestamp isolates lost updates from replenishment.
   for (int i = 0; i < THREADS; ++i) {
     threads.emplace_back([&bucket]() {
       for (int event = 0; event < EVENTS_PER_THREAD; ++event) {
-        bucket.consume(1, 1);
+        bucket.consume(1, 1, 100);
       }
     });
   }
@@ -57,9 +65,7 @@ TEST_CASE("TokenBucket preserves every concurrent consume", "[abuse_shield][toke
     thread.join();
   }
 
-  int64_t elapsed_ms           = static_cast<int64_t>(now_ms() - start_ms);
-  int64_t maximum_valid_tokens = 2 - (THREADS * EVENTS_PER_THREAD) + elapsed_ms / 1000;
-  CHECK(bucket.tokens() <= maximum_valid_tokens);
+  CHECK(bucket.tokens() == 1 - THREADS * EVENTS_PER_THREAD);
 }
 
 TEST_CASE("RuleBuckets keep thresholds independent of rule order", "[abuse_shield][token_bucket][rules]")
@@ -135,4 +141,111 @@ TEST_CASE("now_ms is monotonic", "[abuse_shield][time]")
   uint64_t first = now_ms();
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   CHECK(now_ms() > first);
+}
+
+TEST_CASE("Log interval permits an IP's first log", "[abuse_shield][logging]")
+{
+  std::atomic<uint64_t> last_logged{0};
+
+  CHECK(claim_log_interval(last_logged, 1, 10'000));
+  CHECK(last_logged.load(std::memory_order_relaxed) == 1);
+  CHECK_FALSE(claim_log_interval(last_logged, 2, 10'000));
+  CHECK(claim_log_interval(last_logged, 10'001, 10'000));
+}
+
+TEST_CASE("Log interval claim is atomic", "[abuse_shield][logging][threaded]")
+{
+  std::atomic<uint64_t> last_logged{0};
+  std::atomic<int>      claims{0};
+
+  constexpr int            THREADS = 8;
+  std::vector<std::thread> threads;
+
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&last_logged, &claims]() {
+      if (claim_log_interval(last_logged, 1, 10'000)) {
+        claims.fetch_add(1, std::memory_order_relaxed);
+      }
+    });
+  }
+  for (auto &thread : threads) {
+    thread.join();
+  }
+
+  CHECK(claims.load(std::memory_order_relaxed) == 1);
+}
+
+TEST_CASE("TokenBucket preserves fractional replenishment", "[abuse_shield][token_bucket]")
+{
+  for (int rate : {30, 60, 75, 100}) {
+    TokenBucket bucket;
+    for (int i = 0; i < rate * 30; ++i) {
+      REQUIRE(bucket.consume(rate, rate, static_cast<uint32_t>(i * 1000 / rate)) >= 0);
+    }
+  }
+
+  TokenBucket bucket;
+  CHECK(bucket.consume(30, 1, 0) == 0);
+  CHECK(bucket.consume(30, 1, 33) == -1);
+  CHECK(bucket.tokens() == -1);
+  CHECK(bucket.consume(30, 1, 67) == 0);
+  CHECK(bucket.consume(30, 1, 1000) == 0);
+}
+
+TEST_CASE("Saturated debt cannot collide with the initial sentinel", "[abuse_shield][token_bucket]")
+{
+  TokenBucket bucket;
+  for (int i = 0; i < 2'200'000; ++i) {
+    bucket.consume(0, 1, 0);
+  }
+  CHECK(bucket.tokens() == -2'147'484);
+  CHECK(bucket.consume(0, 1, 0) == -2'147'484);
+}
+
+TEST_CASE("Removing a rule releases obsolete debt", "[abuse_shield][table]")
+{
+  TxnTable     table(1);
+  swoc::IPAddr ip{"192.0.2.1"};
+  auto         data = table.process_event(ip);
+  REQUIRE(data);
+  data->consume("removed", 0, 1);
+  data->consume("removed", 0, 1);
+  data->consume("retained", 0, 2);
+  REQUIRE_FALSE(data->is_evictable());
+  for (const auto &entry : table.data_snapshot()) {
+    entry->buckets.prune({"retained"});
+  }
+  CHECK(data->is_evictable());
+  CHECK(data->buckets.tokens("retained") == 1);
+  CHECK(table.process_event(swoc::IPAddr{"192.0.2.2"}, 100));
+}
+
+TEST_CASE("BlockedIpTable preserves capacity expiry and maximum extension", "[abuse_shield][blocking]")
+{
+  BlockedIpTable table(1);
+  swoc::IPAddr   first{"192.0.2.1"};
+  swoc::IPAddr   second{"192.0.2.2"};
+  REQUIRE(table.block(first, 100, 0));
+  CHECK_FALSE(table.block(second, 200, 0));
+  CHECK(table.block(first, 50, 0));
+  CHECK(table.is_blocked(first, 75));
+  CHECK(table.block(first, 150, 75));
+  CHECK(table.is_blocked(first, 100));
+  CHECK_FALSE(table.is_blocked(first, 150));
+  CHECK(table.block(second, 200, 150));
+  CHECK(table.block(first, 300, 200));
+  CHECK_FALSE(table.is_blocked(second, 200));
+  table.clear();
+  CHECK_FALSE(table.is_blocked(first, 200));
+}
+
+TEST_CASE("Variable arrival times preserve earned credit", "[abuse_shield][token_bucket]")
+{
+  TokenBucket bucket;
+  uint32_t    now = 0;
+  // Alternate a short and a long interval at 100 requests per second.
+  for (int i = 0; i < 10'000; ++i) {
+    REQUIRE(bucket.consume(100, 100, now) >= 0);
+    now += i % 2 == 0 ? 3 : 17;
+  }
 }
