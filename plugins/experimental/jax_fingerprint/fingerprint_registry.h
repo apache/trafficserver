@@ -67,7 +67,9 @@ is_valid(const RegistryV1 *registry)
 {
   return registry != nullptr && registry->magic == REGISTRY_MAGIC && registry->abi_version == REGISTRY_ABI_VERSION &&
          registry->struct_size >= sizeof(RegistryV1) && registry->entry_size >= sizeof(RegistryEntryV1) &&
-         registry->entry_size % alignof(RegistryEntryV1) == 0 && (registry->entry_count == 0 || registry->entries != nullptr);
+         registry->entry_size % alignof(RegistryEntryV1) == 0 &&
+         (registry->entry_count == 0 ||
+          (registry->entries != nullptr && reinterpret_cast<uintptr_t>(registry->entries) % alignof(RegistryEntryV1) == 0));
 }
 
 inline const RegistryEntryV1 *

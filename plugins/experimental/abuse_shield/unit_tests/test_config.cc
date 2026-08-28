@@ -18,7 +18,7 @@
   the License.
 */
 
-#include "../config.h"
+#include "config.h"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -92,6 +92,7 @@ TEST_CASE("Config parses rate-limited IP lists and selects metric-specific tiers
   auto trusted         = files.write("trusted.yaml", R"(
 trusted_ips:
   - 198.51.100.8
+  - 2001:db8:1::/48
 )");
   auto rate_limited    = files.write("rate_limited.yaml", R"(
 rate_limited_ips:
@@ -151,6 +152,11 @@ enabled: true
   swoc::IPAddr rate_limited_h2_ip{"2001:db8:1::1"};
 
   CHECK(config->is_trusted(trusted_ip));
+  CHECK(config->is_trusted(swoc::IPAddr{"2001:db8:1::1"}));
+  CHECK_FALSE(config->is_trusted(swoc::IPAddr{"198.51.100.7"}));
+  CHECK_FALSE(config->is_trusted(swoc::IPAddr{"198.51.100.9"}));
+  CHECK_FALSE(config->is_trusted(swoc::IPAddr{"2001:db8::ffff"}));
+  CHECK_FALSE(config->is_trusted(swoc::IPAddr{"2001:db8:2::"}));
   CHECK(config->is_rate_limited_for_metric(rate_limited_ip, RateMetric::REQUEST));
   CHECK_FALSE(config->is_rate_limited_for_metric(rate_limited_ip, RateMetric::CONNECTION));
   CHECK(config->is_rate_limited_for_metric(rate_limited_h2_ip, RateMetric::H2_ERROR));
@@ -280,7 +286,7 @@ rules:
           - "238BCEBDFA16AA0BE417A7F7A80063A9"
           - "99c071c5a5e14cc2527c9e8e0dde4a50"
         JA4:
-          - "t13d1516h2_8daaf6152771_02713d6af862"
+          - "T13D1516H2_8DAAF6152771_02713D6AF862"
     action: [log, close]
 )");
 
@@ -419,4 +425,73 @@ rules:
   REQUIRE(config);
   std::string error;
   CHECK_FALSE(config->validate(error));
+}
+
+TEST_CASE("Config converts large block durations without overflow", "[abuse_shield][config][blocking]")
+{
+  TempConfig files;
+  auto       config_path = files.write("large-duration.yaml", R"(
+global:
+  blocking:
+    duration_seconds: 2147483647
+rules:
+  - name: request_rate
+    filter:
+      max_req_rate: 10
+    action: [block]
+)");
+
+  auto config = Config::parse(config_path.string());
+  REQUIRE(config);
+  CHECK(config->block_duration_ms() == 2147483647000ULL);
+}
+
+TEST_CASE("Config rejects unknown filter keys alongside valid criteria", "[abuse_shield][config]")
+{
+  TempConfig files;
+  auto       path = files.write("unknown.yaml", R"(
+rules:
+  - name: typo
+    filter:
+      max_h2_error_rate: 10
+      h2_error: 7
+    action: [log]
+)");
+
+  CHECK_FALSE(Config::parse(path.string()));
+}
+
+TEST_CASE("Config rejects misspelled keys and boolean values", "[abuse_shield][config]")
+{
+  TempConfig files;
+  for (const auto *yaml :
+       {"enabled: flase", "enabld: true", "global: {trusted_ip_file: trusted.yaml}", "global: {ip_tracking: {slot: 5}}",
+        "global: {blocking: {duration_second: 5}}", "rules: [{name: typo, filters: {max_req_rate: 1}, action: [log]}]"}) {
+    INFO(yaml);
+    CHECK_FALSE(Config::parse(files.write("typo.yaml", yaml).string()));
+  }
+  auto config = Config::parse(files.write("default.yaml", "{}").string());
+  REQUIRE(config);
+  CHECK(config->enabled());
+}
+
+TEST_CASE("Config validates numeric bounds independently", "[abuse_shield][config]")
+{
+  TempConfig        files;
+  const std::string rules = "\nrules: [{name: rate, filter: {max_req_rate: 10}, action: [log]}]\n";
+  for (const auto *global : {"global: {ip_tracking: {slots: 0}}", "global: {ip_tracking: {slots: 1000001}}",
+                             "global: {blocking: {duration_seconds: -1}}", "global: {log_interval_sec: -1}"}) {
+    INFO(global);
+    auto config = Config::parse(files.write("bounds.yaml", global + rules).string());
+    REQUIRE(config);
+    std::string error;
+    CHECK_FALSE(config->validate(error));
+    CHECK(error.starts_with("global."));
+  }
+  auto config =
+    Config::parse(files.write("burst.yaml", "rules: [{name: rate, filter: {max_req_rate: 2147484}, action: [log]}]").string());
+  REQUIRE(config);
+  std::string error;
+  CHECK_FALSE(config->validate(error));
+  CHECK(error.find("2147483") != std::string::npos);
 }

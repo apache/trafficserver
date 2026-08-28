@@ -111,7 +111,7 @@ trusted_ips:
     def _test_disable_plugin(self) -> None:
         """Verify the 'enabled' setting can be changed via traffic_ctl."""
         tr = Test.AddTestRun("Verify changing 'enabled' via traffic_ctl.")
-        tr.Processes.Default.Command = "traffic_ctl plugin msg abuse_shield.enabled 0"
+        tr.Processes.Default.Command = "traffic_ctl plugin msg abuse_shield.enabled false"
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Env = self._ts.Env
         tr.StillRunningAfter = self._ts
@@ -129,7 +129,7 @@ trusted_ips:
     def _test_enable_plugin(self) -> None:
         """Re-enable the plugin via traffic_ctl."""
         tr = Test.AddTestRun("Re-enable the plugin via traffic_ctl.")
-        tr.Processes.Default.Command = "traffic_ctl plugin msg abuse_shield.enabled 1"
+        tr.Processes.Default.Command = "traffic_ctl plugin msg abuse_shield.enabled true"
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Env = self._ts.Env
         tr.StillRunningAfter = self._ts
@@ -347,6 +347,7 @@ enabled: true
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._origin)
         tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
@@ -367,6 +368,7 @@ enabled: true
             f'--num-requests 50 --rate 100 --path /')
         tr.Processes.Default.Command = client_cmd
         tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Verify the rate limit rule was triggered and block action was taken.
@@ -481,6 +483,16 @@ enabled: true
             r'Rule "conn_rate_flood" matched for IP=.*actions=\[log,block\]',
             "Verify the conn_rate_flood rule was triggered and block action was taken.")
 
+        tr = Test.AddTestRun("Verify enforcement counters after the flood")
+        tr.Processes.Default.Command = "traffic_ctl metric get abuse_shield.actions.blocked abuse_shield.connections.rejected"
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            r"abuse_shield\.actions\.blocked [1-9][0-9]*", "An actual block was installed.")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"abuse_shield\.connections\.rejected [1-9][0-9]*", "A blocked connection was rejected.")
+        tr.StillRunningAfter = self._ts
+
 
 class AbuseShieldRateLimitedIpRateLimitTest:
     """Verify rate-limited IP rules replace ordinary rules for the rate-limited metric."""
@@ -590,6 +602,7 @@ enabled: true
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._origin)
         tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Send rate-limited IP traffic above rate-limited request limit")
@@ -599,6 +612,7 @@ enabled: true
             f'--num-requests 250 --rate 1000 --path /')
         tr.Processes.Default.Command = client_cmd
         tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
@@ -703,13 +717,23 @@ enabled: true
             r'Rule "http_conn_rate_flood" matched for IP=.*actions=\[log,block\]',
             "Verify the plain HTTP connection rule was triggered and block action was taken.")
 
+        tr = Test.AddTestRun("Verify enforcement counters after the flood")
+        tr.Processes.Default.Command = "traffic_ctl metric get abuse_shield.actions.blocked abuse_shield.connections.rejected"
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            r"abuse_shield\.actions\.blocked [1-9][0-9]*", "An actual block was installed.")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"abuse_shield\.connections\.rejected [1-9][0-9]*", "A blocked connection was rejected.")
+        tr.StillRunningAfter = self._ts
+
 
 class AbuseShieldMultipleRulesTest:
     """Verify abuse_shield plugin can handle multiple rules with different thresholds.
 
     This test verifies that when multiple rules are configured, the first matching
-    rule triggers blocking. Combined rules (AND logic) with connection rate require
-    multiple physical connections and are better tested manually.
+    rule triggers blocking. The combined-rule test below uses multiple physical
+    connections to exercise AND logic.
     """
 
     _server_counter: int = 0
@@ -917,6 +941,7 @@ enabled: true
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._origin)
         tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Verify blocking occurred.
@@ -929,6 +954,7 @@ enabled: true
         tr = Test.AddTestRun("Verify the temporary block is active")
         tr.Processes.Default.Command = (f'curl -k -s -o /dev/null --max-time 2 https://127.0.0.1:{self._ts.Variables.ssl_port}/')
         tr.Processes.Default.ReturnCode = Any(28, 35, 52, 55, 56)
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Verify the block action metric")
@@ -937,6 +963,7 @@ enabled: true
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
             r"abuse_shield.actions.blocked\s+[1-9][0-9]*", "Verify at least one block action was recorded.")
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Verify the connection rejection metric")
@@ -945,12 +972,14 @@ enabled: true
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
             r"abuse_shield.connections.rejected\s+[1-9][0-9]*", "Verify the blocked connection was rejected.")
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Step 3: Wait for block to expire (5 seconds + buffer).
         tr = Test.AddTestRun("Wait for block to expire")
         tr.Processes.Default.Command = "sleep 7"
         tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
         # Step 4: Verify requests work again after expiration.
@@ -958,6 +987,7 @@ enabled: true
         tr.Processes.Default.Command = f'curl -k -s -o /dev/null -w "%{{http_code}}" https://127.0.0.1:{self._ts.Variables.ssl_port}/'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("200", "Verify request succeeds after block expires.")
+        tr.StillRunningAfter = self._origin
         tr.StillRunningAfter = self._ts
 
 
@@ -1072,6 +1102,16 @@ enabled: true
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
             r'Rule "combined_abuse" matched for IP=.*actions=\[log,block\]',
             "Verify the combined_abuse rule was triggered and block action was taken.")
+
+        tr = Test.AddTestRun("Verify enforcement counters after the flood")
+        tr.Processes.Default.Command = "traffic_ctl metric get abuse_shield.actions.blocked abuse_shield.connections.rejected"
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            r"abuse_shield\.actions\.blocked [1-9][0-9]*", "An actual block was installed.")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"abuse_shield\.connections\.rejected [1-9][0-9]*", "A blocked connection was rejected.")
+        tr.StillRunningAfter = self._ts
 
 
 class AbuseShieldLogFileTest:
@@ -1365,6 +1405,62 @@ enabled: true
         tr.StillRunningAfter = self._ts
 
 
+class AbuseShieldSharedLogIntervalTest:
+    """Connection and transaction hooks share one per-IP log interval."""
+
+    def __init__(self) -> None:
+        self._setup_ts()
+        self._send_concurrent_requests()
+        self._check_log_count()
+
+    def _setup_ts(self) -> None:
+        self._ts = Test.MakeATSProcess("ts_shared_log_interval")
+        self._ts.Disk.File(self._ts.Variables.CONFIGDIR + "/abuse_shield.yaml", id="abuse_shield_yaml", typename="ats:config")
+        self._ts.Disk.abuse_shield_yaml.AddLines(
+            '''
+global:
+  ip_tracking:
+    slots: 1000
+  log_interval_sec: 3600
+rules:
+  - name: "connection_log"
+    filter:
+      max_conn_rate: 1
+    action: [log]
+  - name: "request_log"
+    filter:
+      max_req_rate: 1
+    action: [log]
+enabled: true
+'''.strip().split('\n'))
+        self._ts.Disk.plugin_config.AddLine('abuse_shield.so abuse_shield.yaml')
+        self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
+            r'Rule "(connection|request)_log" matched for IP=127.0.0.1 actions=\[log\]',
+            "The expected throttled action is written to the diagnostic log.")
+
+    def _send_concurrent_requests(self) -> None:
+        # Each curl opens a connection and completes a transaction. Unmapped
+        # requests return ATS's 404 response without requiring an origin.
+        tr = Test.AddTestRun("Trigger connection and request logging concurrently")
+        tr.Processes.Default.Command = (
+            f'seq 1 100 | xargs -P 16 -I {{}} '
+            f'curl --max-time 5 -s -o /dev/null http://127.0.0.1:{self._ts.Variables.port}/')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.StartBefore(self._ts)
+        tr.StillRunningAfter = self._ts
+
+    def _check_log_count(self) -> None:
+        tr = Test.AddTestRun("Verify repeated matches share one log interval")
+        tr.Processes.Default.Command = "traffic_ctl metric get abuse_shield.actions.logged abuse_shield.rules.matched"
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
+            r"abuse_shield.actions.logged\s+1\b", "Exactly one action logged for the shared client IP.")
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r"abuse_shield.rules.matched\s+[1-9][0-9]+\b", "Many rule matches exercised log throttling.")
+        tr.StillRunningAfter = self._ts
+
+
 #
 # Main: Run the tests.
 #
@@ -1378,3 +1474,5 @@ AbuseShieldBlockExpirationTest()
 AbuseShieldCombinedRuleTest()
 AbuseShieldLogFileTest()
 AbuseShieldFingerprintTest()
+
+AbuseShieldSharedLogIntervalTest()

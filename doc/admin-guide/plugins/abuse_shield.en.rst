@@ -126,18 +126,36 @@ max_req_rate                          Maximum requests per second
 req_burst_multiplier                  Request bucket capacity multiplier
 max_conn_rate                         Maximum connections per second
 conn_burst_multiplier                 Connection bucket capacity multiplier
-max_h2_error_rate                     Maximum HTTP/2 errors per second
+max_h2_error_rate                     Maximum received/sent HTTP/2 errors per second
 h2_burst_multiplier                   HTTP/2 error bucket capacity multiplier
 rate_limited_ips_file                 Optional IP list that selects this rule
 fingerprints                          Map of method names to fingerprint sequences
 ===================================== ==============================================
 
+HTTP/2 error rates include both stream and connection errors received from or
+sent to the client. Stream errors are counted at transaction close. Connection
+errors are counted once per direction at session close, including connections
+that never created a transaction. Normal ``NO_ERROR`` shutdowns are excluded.
+
+Exceeding the HTTP/2 concurrent-stream limit currently closes the connection
+with ``COMPRESSION_ERROR`` because the rejected HEADERS block has not been
+decoded. This connection error contributes to ``max_h2_error_rate``. A
+session-close match can log or block the IP for subsequent connections; its
+``close`` action is a no-op because the connection is already closed.
+
+Unknown keys at the document, global, nested global, rule, and filter levels
+are rejected. Invalid boolean values are also rejected. An invalid reload leaves the previous configuration active.
+
 Burst multipliers default to 1.0 and must be at least 1.0. Every rule has an
 independent token bucket for each configured rate, so thresholds do not depend
 on rule order. A rate is exceeded when its token bucket becomes negative.
-Excess events add proportional token debt; the rule stops matching only after
-the configured rate replenishes that debt. Entries with debt are protected
-from bounded-table eviction.
+Excess events add proportional token debt. Replenishment occurs on the next
+event for that address and metric; quiet addresses retain their stored debt.
+Entries with debt are protected from bounded-table eviction. All positive
+integer rates preserve fractional credit at millisecond resolution, including
+rates such as 30, 60, and 75. Burst capacity cannot exceed 2,147,483 tokens.
+Operator-facing token balances are whole tokens, with negative fractions
+rounded down.
 
 All configured rate filters in a rule use AND logic. Fingerprint values use OR
 logic across both values and methods, and that fingerprint result is ANDed with
@@ -148,11 +166,11 @@ ClientHello Fingerprints
 ------------------------
 
 The supplied JAx methods are JA3 and JA4. Their method names are
-case-insensitive. JA3 values are validated as 32 hexadecimal characters and
-canonicalized to lowercase; JA4 values are validated against the 36-character
-JA4 layout. Other method names and values are treated as opaque strings and
-matched exactly, allowing downstream JAx builds to publish site-specific
-methods.
+case-insensitive. JA3 values are validated as 32 hexadecimal characters, while
+JA4 values are validated against the 36-character JA4 layout. Both are
+canonicalized to lowercase before matching. Other method names and values are
+treated as opaque strings and matched exactly, allowing downstream JAx builds
+to publish site-specific methods.
 
 Only methods derived entirely from a TLS ClientHello can be used. JA4H is
 derived from an HTTP request and is therefore unavailable at the
@@ -162,15 +180,20 @@ JAx computes each fingerprint and publishes it in a versioned, read-only
 registry held in a named VConn user-argument slot. Abuse Shield consumes that
 result at its ClientHello hook; it does not link fingerprint algorithms or
 recompute their values. The registry is an in-process array of
-length-delimited method/value entries, not JSON. Its header contains a magic
-value, ABI version, and structure sizes so a consumer can reject an
-incompatible layout. JAx owns all registry memory for the VConn lifetime.
+length-delimited method/value entries. Its header contains a magic value, ABI
+version, and structure sizes so a consumer can reject an incompatible layout.
+JAx owns all registry memory for the VConn lifetime.
 
-The JAx plugin lines must precede Abuse Shield in :file:`plugin.config` so
-their hooks publish values before Abuse Shield evaluates them. A missing or
-incompatible named registry is a startup error. A matching close action uses
-``TSVConnReenableEx(vconn, TS_EVENT_ERROR)``, stopping processing before
-ServerHello and key-exchange work.
+.. important::
+
+   Since ``abuse_shield`` relies upon the JAx plugin for JA fingerprint
+   values, the JAx plugin lines must precede Abuse Shield in
+   :file:`plugin.config`. This ensures their hooks publish values before Abuse
+   Shield evaluates them. A missing or incompatible named registry is a
+   startup error.
+
+A matching close action uses ``TSVConnReenableEx(vconn, TS_EVENT_ERROR)``,
+stopping processing before ServerHello and key-exchange work.
 
 Adding Fingerprint Methods
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -236,16 +259,24 @@ configuration. Existing table data and block expiration times are preserved,
 as is the state set by ``abuse_shield.enabled``. ``ip_tracking.slots`` and
 ``log_file`` and ``fingerprint_registry`` are startup-only; a reload that
 changes any of these settings is rejected. Fingerprint additions and removals
-apply to the next ClientHello.
+apply to the next ClientHello. Buckets for removed or renamed rate rules are
+pruned on reload and during periodic maintenance, releasing obsolete debt.
 
 Other lifecycle messages are::
 
    traffic_ctl plugin msg abuse_shield.dump
    traffic_ctl plugin msg abuse_shield.stats
    traffic_ctl plugin msg abuse_shield.reset
+   traffic_ctl plugin msg abuse_shield.clear
    traffic_ctl plugin msg abuse_shield.enabled 0
    traffic_ctl plugin msg abuse_shield.enabled 1
    traffic_ctl plugin msg abuse_shield.trusted
+
+The ``reset`` message resets metrics only. The ``clear`` message discards all
+tracking and block state while preserving counters. Hooks already in flight
+may finish against their existing state. The ``enabled`` payload accepts
+``0/1``, ``false/true``, ``off/on``, or ``no/yes``; invalid payloads and unknown
+plugin messages produce errors.
 
 Metrics
 ========
@@ -260,12 +291,15 @@ abuse_shield.actions.blocked                      Block actions
 abuse_shield.actions.block_failed                 Block actions not stored
 abuse_shield.actions.closed                       Close actions
 abuse_shield.actions.close_failed                 Failed connection closes
-abuse_shield.actions.logged                       Emitted log records
+abuse_shield.actions.logged                       Successful writes or fallback submissions
+abuse_shield.actions.log_failed                   Failed log object writes
+abuse_shield.actions.log_untracked                Log actions without a tracker slot
 abuse_shield.connections.rejected                 Previously blocked IPs
 abuse_shield.connections.reject_failed            Failed blocked-IP rejections
 abuse_shield.fingerprints.matched                 Fingerprint rule matches
 abuse_shield.fingerprints.rejected                ClientHello rejections
-abuse_shield.fingerprints.unavailable             ClientHellos missing a configured fingerprint
+abuse_shield.fingerprints.unavailable             Absent or invalid registries
+abuse_shield.fingerprints.missing_methods         Registries missing configured methods
 abuse_shield.<tracker>.events                     Events for a tracker
 abuse_shield.<tracker>.events_untracked           Events not admitted to a tracker
 abuse_shield.<tracker>.scan_exhausted             Protected-slot scans that hit their bound
@@ -275,23 +309,49 @@ abuse_shield.<tracker>.contests_won               Contests won by new IPs
 abuse_shield.<tracker>.evictions                  Evicted IPs
 ================================================= =============================
 
-The tracker name is txn, conn, or h2.
+The tracker name is txn, conn, or h2. Table gauges and counters synchronize
+once per second and on ``stats`` or ``dump``. ``scan_exhausted`` is a subset of
+``events_untracked``; do not sum them. ``connections.reject_failed`` applies
+only to plain HTTP. Already-disconnected peers do not count as close failures.
 
 Memory Bound
 ============
 
 Request, connection, and HTTP/2 state use separate private fixed-size tables
 with ``ip_tracking.slots`` entries each. Block expirations use a separate
-bounded table that never evicts an unexpired block. This keeps memory usage
-bounded even when traffic contains many distinct source addresses.
+bounded table of the same capacity that never evicts an unexpired block. This keeps memory usage
+bounded even when traffic contains many distinct source addresses. These
+tables use the reusable :ref:`udi-table` utility with an eviction policy that
+protects entries carrying token debt. ``slots`` must be between 1 and
+1,000,000. Per-address memory also grows with the number of applicable rate
+rules because each rule and metric needs its own bucket.
 
 New addresses compete for tracker slots. An ordinary contest loss increments
 ``events_untracked``. Entries with token debt are protected from eviction, and
-the table probes at most 1024 candidates before incrementing
-``scan_exhausted`` and leaving the event untracked. This bounds work while the
+the table probes at most ``min(slots, 1024)`` candidates before incrementing
+both ``scan_exhausted`` and ``events_untracked``. This bounds work while the
 table mutex is held even if every probed entry has debt.
 
 Connection rules are evaluated when a connection starts: TLS connections at
 the TLS virtual-connection hook and plain HTTP connections at the HTTP session
 hook. Request and HTTP/2 error rules are evaluated when their corresponding
 event is recorded.
+
+
+Operational Limitations
+=======================
+
+Deploy an unscoped JAx instance for each required fingerprint method when
+enforcement must cover every TLS connection. ``--servernames`` limits JAx
+publication, including omitting connections without SNI; its default is
+unscoped. An absent registry differs from a registry missing a method in the
+metrics above. The separate ``ja4_fingerprint`` plugin does not export this
+registry. Export names consume the process-wide budget of four VCONN user
+argument slots; share an export name across producers for the same consumer.
+
+Runtime hooks fail open when the client address cannot be obtained, when the
+fingerprint registry is unavailable, or when an exception prevents evaluation.
+An unavailable fingerprint does not satisfy a fingerprint rule. A full block
+table cannot retain a new block, although other configured actions for the
+current event can still run. Monitor failure and unavailable counters.
+For a narrower HTTP/2 error-blocking policy, see the ``block_errors`` plugin.

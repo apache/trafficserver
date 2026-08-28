@@ -20,6 +20,7 @@
   the License.
 */
 
+#include <cerrno>
 #include <algorithm>
 #include <chrono>
 #include <cinttypes>
@@ -62,6 +63,9 @@ abuse_shield::ActionStats g_action_stats;
 
 // Named JAx VConn user-arg selected by global.fingerprint_registry.
 int g_fingerprint_registry_index = -1;
+
+// Retain the H2 client address until the session-close hook, after the VConn is gone.
+int g_session_ip_index = -1;
 
 // Per-tracker stats.
 abuse_shield::TrackerStats g_txn_stats;
@@ -109,54 +113,7 @@ std::unique_ptr<abuse_shield::TxnTable>  g_txn_tracker;  ///< Transaction/reques
 std::unique_ptr<abuse_shield::ConnTable> g_conn_tracker; ///< Connection rate tracking
 std::unique_ptr<abuse_shield::H2Table>   g_h2_tracker;   ///< HTTP/2 error tracking
 
-/** Bounded block state which never evicts an unexpired block. */
-class BlockedIpTable
-{
-public:
-  explicit BlockedIpTable(size_t capacity) : capacity_(capacity) { blocked_.reserve(capacity); }
-
-  bool
-  block(const swoc::IPAddr &ip, uint64_t until_ms)
-  {
-    std::lock_guard lock(mutex_);
-    auto            spot = blocked_.find(ip);
-    if (spot != blocked_.end()) {
-      spot->second = std::max(spot->second, until_ms);
-      return true;
-    }
-
-    if (blocked_.size() >= capacity_) {
-      uint64_t now = abuse_shield::now_ms();
-      std::erase_if(blocked_, [now](auto const &item) { return item.second <= now; });
-    }
-    if (blocked_.size() >= capacity_) {
-      return false;
-    }
-
-    blocked_.emplace(ip, until_ms);
-    return true;
-  }
-
-  bool
-  is_blocked(const swoc::IPAddr &ip)
-  {
-    std::lock_guard lock(mutex_);
-    auto            spot = blocked_.find(ip);
-    if (spot == blocked_.end()) {
-      return false;
-    }
-    if (spot->second <= abuse_shield::now_ms()) {
-      blocked_.erase(spot);
-      return false;
-    }
-    return true;
-  }
-
-private:
-  size_t                                     capacity_;
-  std::mutex                                 mutex_;
-  std::unordered_map<swoc::IPAddr, uint64_t> blocked_;
-};
+using abuse_shield::BlockedIpTable;
 
 std::unique_ptr<BlockedIpTable> g_blocked_ips;
 
@@ -415,8 +372,12 @@ block_ip(const swoc::IPAddr &ip, uint64_t until_ms)
 void
 execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip, const abuse_shield::Config &config)
 {
-  uint64_t log_interval_ms = static_cast<uint64_t>(config.log_interval_sec()) * 1000;
-  uint64_t now             = abuse_shield::now_ms();
+  // Serialize slot selection and timestamp propagation so tracker creation or
+  // fallback cannot give the same IP independent log interval claims.
+  static std::mutex log_mutex;
+  std::unique_lock  log_lock(log_mutex);
+  uint64_t          log_interval_ms = static_cast<uint64_t>(config.log_interval_sec()) * 1000;
+  uint64_t          now             = abuse_shield::now_ms();
 
   // Find the most recent log time across all trackers for this IP.
   uint64_t most_recent_log = 0;
@@ -424,9 +385,9 @@ execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip,
   auto     conn_slot       = g_conn_tracker ? g_conn_tracker->find(ip) : nullptr;
   auto     h2_slot         = g_h2_tracker ? g_h2_tracker->find(ip) : nullptr;
 
-  // Fingerprint-only rules do not otherwise need a rate-tracking slot. Use the
-  // bounded connection table to retain their per-IP log interval state.
-  if (!txn_slot && !conn_slot && !h2_slot && g_conn_tracker) {
+  // Prefer one connection-table slot across all rule types, including
+  // fingerprint-only rules that do not otherwise need rate tracking.
+  if (!conn_slot && g_conn_tracker) {
     conn_slot = g_conn_tracker->process_event(ip, 1);
   }
 
@@ -440,30 +401,25 @@ execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip,
     most_recent_log = std::max(most_recent_log, h2_slot->last_logged.load(std::memory_order_relaxed));
   }
 
+  if (!txn_slot && !conn_slot && !h2_slot) {
+    TSStatIntIncrement(g_action_stats.actions_log_untracked, 1);
+    return;
+  }
+
   // Only log if enough time has passed since the last log for this IP.
-  if (now - most_recent_log < log_interval_ms) {
+  if (!abuse_shield::log_interval_elapsed(now, most_recent_log, log_interval_ms)) {
     return;
   }
 
   // Try to claim the log opportunity atomically using the first available slot.
-  bool     claimed  = false;
-  uint64_t expected = 0;
+  bool claimed = false;
 
-  if (txn_slot) {
-    expected = txn_slot->last_logged.load(std::memory_order_relaxed);
-    if (now - expected >= log_interval_ms) {
-      claimed = txn_slot->last_logged.compare_exchange_weak(expected, now, std::memory_order_relaxed);
-    }
-  } else if (conn_slot) {
-    expected = conn_slot->last_logged.load(std::memory_order_relaxed);
-    if (now - expected >= log_interval_ms) {
-      claimed = conn_slot->last_logged.compare_exchange_weak(expected, now, std::memory_order_relaxed);
-    }
+  if (conn_slot) {
+    claimed = abuse_shield::claim_log_interval(conn_slot->last_logged, now, log_interval_ms);
+  } else if (txn_slot) {
+    claimed = abuse_shield::claim_log_interval(txn_slot->last_logged, now, log_interval_ms);
   } else if (h2_slot) {
-    expected = h2_slot->last_logged.load(std::memory_order_relaxed);
-    if (now - expected >= log_interval_ms) {
-      claimed = h2_slot->last_logged.compare_exchange_weak(expected, now, std::memory_order_relaxed);
-    }
+    claimed = abuse_shield::claim_log_interval(h2_slot->last_logged, now, log_interval_ms);
   }
 
   if (!claimed) {
@@ -481,35 +437,39 @@ execute_log_action(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip,
     h2_slot->last_logged.store(now, std::memory_order_relaxed);
   }
 
-  TSStatIntIncrement(g_action_stats.actions_logged, 1);
+  log_lock.unlock();
 
   // Get token state for logging.
   int32_t req_tokens  = txn_slot ? txn_slot->buckets.tokens(match.rule->name) : 0;
   int32_t conn_tokens = conn_slot ? conn_slot->buckets.tokens(match.rule->name) : 0;
   int32_t h2_tokens   = h2_slot ? h2_slot->buckets.tokens(match.rule->name) : 0;
 
-  std::string fingerprint;
+  std::string fingerprint_suffix;
   if (!match.fingerprint.empty()) {
-    fingerprint = " fingerprint=";
-    fingerprint.append(match.fingerprint_method);
-    fingerprint.push_back(':');
-    fingerprint.append(match.fingerprint);
+    fingerprint_suffix = " fingerprint=";
+    fingerprint_suffix.append(match.fingerprint_method);
+    fingerprint_suffix.push_back(':');
+    fingerprint_suffix.append(match.fingerprint);
   }
 
   if (g_log_object) {
-    TSTextLogObjectWrite(g_log_object, "Rule \"%s\" matched for IP=%s:%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d",
-                         match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint.c_str(),
-                         abuse_shield::actions_to_string(match.actions).c_str(), req_tokens, conn_tokens, h2_tokens);
+    auto result =
+      TSTextLogObjectWrite(g_log_object, "Rule \"%s\" matched for IP=%s%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d",
+                           match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint_suffix.c_str(),
+                           abuse_shield::actions_to_string(match.actions).c_str(), req_tokens, conn_tokens, h2_tokens);
+    TSStatIntIncrement(result == TS_SUCCESS ? g_action_stats.actions_logged : g_action_stats.actions_log_failed, 1);
   } else {
-    TSError("[%s] Rule \"%s\" matched for IP=%s:%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d", PLUGIN_NAME,
-            match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint.c_str(),
+    TSError("[%s] Rule \"%s\" matched for IP=%s%s actions=[%s] req_tokens=%d conn_tokens=%d h2_tokens=%d", PLUGIN_NAME,
+            match.rule->name.c_str(), ip_to_string(ip).c_str(), fingerprint_suffix.c_str(),
             abuse_shield::actions_to_string(match.actions).c_str(), req_tokens, conn_tokens, h2_tokens);
+    TSStatIntIncrement(g_action_stats.actions_logged, 1);
   }
 }
 
 enum class CloseHandling {
   SOCKET_SHUTDOWN,
   REENABLE_ERROR,
+  ALREADY_CLOSED,
 };
 
 /** Execute actions for a matched rule.
@@ -526,29 +486,30 @@ execute_actions(const abuse_shield::RuleMatch &match, const swoc::IPAddr &ip, TS
   TSStatIntIncrement(g_action_stats.rules_matched, 1);
 
   if (abuse_shield::has_action(match.actions, abuse_shield::Action::BLOCK)) {
-    uint64_t block_until = abuse_shield::now_ms() + (config.block_duration_sec() * 1000);
+    uint64_t block_until = abuse_shield::now_ms() + config.block_duration_ms();
     if (block_ip(ip, block_until)) {
       TSStatIntIncrement(g_action_stats.actions_blocked, 1);
       Dbg(dbg_ctl, "Blocking IP %s for %d seconds (rule: %s)", ip_to_string(ip).c_str(), config.block_duration_sec(),
           match.rule->name.c_str());
     } else {
       TSStatIntIncrement(g_action_stats.actions_block_failed, 1);
-      TSError("[%s] Block table is full; could not block %s for rule '%s'", PLUGIN_NAME, ip_to_string(ip).c_str(),
-              match.rule->name.c_str());
+      Dbg(dbg_ctl, "[%s] Block table is full; could not block %s for rule '%s'", PLUGIN_NAME, ip_to_string(ip).c_str(),
+          match.rule->name.c_str());
     }
   }
 
-  bool should_close = abuse_shield::has_action(match.actions, abuse_shield::Action::CLOSE);
+  bool should_close =
+    close_handling != CloseHandling::ALREADY_CLOSED && abuse_shield::has_action(match.actions, abuse_shield::Action::CLOSE);
   if (should_close) {
     if (close_handling == CloseHandling::SOCKET_SHUTDOWN) {
       int fd = TSVConnFdGet(vconn);
       if (fd >= 0 && shutdown(fd, SHUT_RDWR) == 0) {
         TSStatIntIncrement(g_action_stats.actions_closed, 1);
         Dbg(dbg_ctl, "Closing connection from %s (rule: %s)", ip_to_string(ip).c_str(), match.rule->name.c_str());
-      } else {
+      } else if (fd < 0 || errno != ENOTCONN) {
         TSStatIntIncrement(g_action_stats.actions_close_failed, 1);
-        TSError("[%s] Could not close the connection from %s for rule '%s'", PLUGIN_NAME, ip_to_string(ip).c_str(),
-                match.rule->name.c_str());
+        Dbg(dbg_ctl, "[%s] Could not close the connection from %s for rule '%s'", PLUGIN_NAME, ip_to_string(ip).c_str(),
+            match.rule->name.c_str());
       }
     } else {
       // The hook is rejected with TSVConnReenableEx by the caller.
@@ -574,56 +535,78 @@ struct H2Errors {
   uint64_t code{0}; ///< HTTP/2 error code
 };
 
-/** Process HTTP/2 response errors.
- *
- * Tracks HTTP/2 stream and connection errors using token bucket rate limiting.
- *
- * @param[in] txnp The transaction being closed.
- * @param[in] vconn The virtual connection.
- * @param[in] ip The client IP address.
- * @param[in] config The current configuration.
- */
+/** Apply the H2 error policy to one transaction or closing session. */
 void
-process_h2_response(TSHttpTxn txnp, TSVConn vconn, const swoc::IPAddr &ip, const abuse_shield::Config &config)
+process_h2_errors(const H2Errors &received_error, const H2Errors &sent_error, uint32_t expected_class, TSVConn vconn,
+                  const swoc::IPAddr &ip, const abuse_shield::Config &config, CloseHandling close_handling)
 {
   if (!g_h2_tracker) {
     return;
   }
 
-  // Get HTTP/2 errors.
-  H2Errors received_error; // Error received from the client.
-  H2Errors sent_error;     // Error sent to the client.
-  TSHttpTxnClientReceivedErrorGet(txnp, &received_error.cls, &received_error.code);
-  TSHttpTxnClientSentErrorGet(txnp, &sent_error.cls, &sent_error.code);
+  auto consume_error = [&](const H2Errors &error, const char *direction) {
+    if (error.cls != expected_class || error.code == 0) {
+      return false;
+    }
 
-  // Check for HTTP/2 errors.
-  bool     has_h2_error = false;
-  uint64_t error_code   = 0;
+    const char *error_class = error.cls == 1 ? "Connection" : "Stream";
+    Dbg(dbg_ctl, "%s error %s %s: code=%" PRIu64, error_class, direction, ip_to_string(ip).c_str(), error.code);
+    consume_rule_buckets(g_h2_tracker.get(), ip, config, abuse_shield::RateMetric::H2_ERROR, g_h2_stats, error.code);
+    return true;
+  };
 
-  // Stream-level error (class 2).
-  if (received_error.cls == 2 && received_error.code != 0) {
-    has_h2_error = true;
-    error_code   = received_error.code;
-    Dbg(dbg_ctl, "Stream error from %s: code=%" PRIu64, ip_to_string(ip).c_str(), error_code);
-  }
-
-  // Connection-level error (class 1).
-  if (sent_error.cls == 1 && sent_error.code != 0) {
-    has_h2_error = true;
-    error_code   = sent_error.code;
-    Dbg(dbg_ctl, "Connection error sent to %s: code=%" PRIu64, ip_to_string(ip).c_str(), error_code);
-  }
-
-  if (!has_h2_error) {
+  bool received_h2_error = consume_error(received_error, "received from");
+  bool sent_h2_error     = consume_error(sent_error, "sent to");
+  if (!received_h2_error && !sent_h2_error) {
     return;
   }
 
-  consume_rule_buckets(g_h2_tracker.get(), ip, config, abuse_shield::RateMetric::H2_ERROR, g_h2_stats, error_code);
-
   abuse_shield::RuleMatch match = evaluate_rate_rules(ip, config);
   if (match.actions != 0) {
-    execute_actions(match, ip, vconn, config);
+    execute_actions(match, ip, vconn, config, close_handling);
   }
+}
+
+/** Count stream errors at transaction close; connection errors belong to the session. */
+void
+process_h2_response(TSHttpTxn txnp, TSVConn vconn, const swoc::IPAddr &ip, const abuse_shield::Config &config)
+{
+  H2Errors received_error;
+  H2Errors sent_error;
+
+  TSHttpTxnClientReceivedErrorGet(txnp, &received_error.cls, &received_error.code);
+  TSHttpTxnClientSentErrorGet(txnp, &sent_error.cls, &sent_error.code);
+  process_h2_errors(received_error, sent_error, 2, vconn, ip, config, CloseHandling::SOCKET_SHUTDOWN);
+}
+
+int
+handle_ssn_close(TSCont /* contp */, TSEvent /* event */, void *edata)
+{
+  TSHttpSsn                     ssn = static_cast<TSHttpSsn>(edata);
+  std::unique_ptr<swoc::IPAddr> ip(static_cast<swoc::IPAddr *>(TSUserArgGet(ssn, g_session_ip_index)));
+  TSUserArgSet(ssn, g_session_ip_index, nullptr);
+
+  try {
+    std::shared_ptr<abuse_shield::Config> config;
+    {
+      std::shared_lock lock(g_config_mutex);
+      config = g_config;
+    }
+    if (ip && config && config->enabled() && !config->is_trusted(*ip)) {
+      H2Errors received_error;
+      H2Errors sent_error;
+
+      TSHttpSsnClientReceivedErrorGet(ssn, &received_error.cls, &received_error.code);
+      TSHttpSsnClientSentErrorGet(ssn, &sent_error.cls, &sent_error.code);
+      process_h2_errors(received_error, sent_error, 1, nullptr, *ip, *config, CloseHandling::ALREADY_CLOSED);
+    }
+  } catch (const std::exception &error) {
+    TSError("[%s] HTTP session close hook failed: %s", PLUGIN_NAME, error.what());
+  } catch (...) {
+    TSError("[%s] HTTP session close hook failed with an unknown exception", PLUGIN_NAME);
+  }
+  TSHttpSsnReenable(ssn, TS_EVENT_HTTP_CONTINUE);
+  return TS_SUCCESS;
 }
 
 /** Evaluate ClientHello fingerprint rules before the TLS handshake continues. */
@@ -678,7 +661,7 @@ handle_client_hello_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
     }
   }
   if (fingerprints.size() != config->fingerprint_methods().size()) {
-    TSStatIntIncrement(g_action_stats.fingerprint_unavailable, 1);
+    TSStatIntIncrement(g_action_stats.fingerprint_missing_methods, 1);
   }
 
   abuse_shield::RuleMatch match = evaluate_fingerprint_rules(ip, *config, fingerprints);
@@ -783,6 +766,16 @@ handle_ssn_start_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
 {
   TSHttpSsn ssn = static_cast<TSHttpSsn>(edata);
 
+  // Capture this even while disabled, so a later reload can enable H2 rules.
+  if (TSHttpSsnClientProtocolStackContains(ssn, "h2") != nullptr) {
+    TSVConn vconn       = TSHttpSsnClientVConnGet(ssn);
+    auto   *client_addr = vconn ? TSNetVConnRemoteAddrGet(vconn) : nullptr;
+    if (client_addr) {
+      auto ip = std::make_unique<swoc::IPAddr>(client_addr);
+      TSUserArgSet(ssn, g_session_ip_index, ip.release());
+    }
+  }
+
   std::shared_ptr<abuse_shield::Config> config;
   {
     std::shared_lock lock(g_config_mutex);
@@ -818,9 +811,9 @@ handle_ssn_start_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
     int fd = TSVConnFdGet(vconn);
     if (fd >= 0 && shutdown(fd, SHUT_RDWR) == 0) {
       TSStatIntIncrement(g_action_stats.connections_rejected, 1);
-    } else {
+    } else if (fd < 0 || errno != ENOTCONN) {
       TSStatIntIncrement(g_action_stats.connections_reject_failed, 1);
-      TSError("[%s] Could not reject blocked plain HTTP connection from %s", PLUGIN_NAME, ip_to_string(ip).c_str());
+      Dbg(dbg_ctl, "[%s] Could not reject blocked plain HTTP connection from %s", PLUGIN_NAME, ip_to_string(ip).c_str());
     }
     TSHttpSsnReenable(ssn, TS_EVENT_HTTP_CONTINUE);
     return TS_SUCCESS;
@@ -1078,6 +1071,42 @@ dump_tracker()
   return result;
 }
 
+void
+prune_rule_buckets(const abuse_shield::Config &config)
+{
+  auto prune = [&config](auto &table, abuse_shield::RateMetric metric) {
+    std::unordered_set<std::string> names;
+    for (const auto &rule : config.rules()) {
+      if (metric_rate(rule.filter, metric) > 0) {
+        names.insert(rule.name);
+      }
+    }
+    for (const auto &data : table->data_snapshot()) {
+      data->buckets.prune(names);
+    }
+  };
+  prune(g_txn_tracker, abuse_shield::RateMetric::REQUEST);
+  prune(g_conn_tracker, abuse_shield::RateMetric::CONNECTION);
+  prune(g_h2_tracker, abuse_shield::RateMetric::H2_ERROR);
+}
+
+int
+handle_maintenance(TSCont, TSEvent, void *)
+{
+  try {
+    std::shared_lock lock(g_config_mutex);
+    // An in-flight hook can still use a pre-reload config. Repeating pruning
+    // removes any obsolete bucket it recreates after the reload pass.
+    prune_rule_buckets(*g_config);
+    sync_all_tracker_stats();
+  } catch (const std::exception &error) {
+    Dbg(dbg_ctl, "Maintenance failed: %s", error.what());
+  } catch (...) {
+    Dbg(dbg_ctl, "Maintenance failed with an unknown exception");
+  }
+  return TS_SUCCESS;
+}
+
 // Handle plugin messages for dynamic config reload and data dump.
 int
 handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
@@ -1085,6 +1114,10 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
   TSPluginMsg *msg = static_cast<TSPluginMsg *>(edata);
 
   std::string_view tag(msg->tag, strlen(msg->tag));
+
+  if (!tag.starts_with("abuse_shield.")) {
+    return TS_SUCCESS;
+  }
 
   if (tag == "abuse_shield.reload") {
     std::string config_path;
@@ -1114,6 +1147,7 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
           new_config->set_config_path(config_path);
           new_config->set_enabled(runtime_enabled);
           g_config = new_config;
+          prune_rule_buckets(*g_config);
           TSNote("[%s] Configuration reloaded successfully", PLUGIN_NAME);
         }
       }
@@ -1127,6 +1161,13 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
   } else if (tag == "abuse_shield.stats") {
     sync_all_tracker_stats();
     TSNote("[%s] Stats synced", PLUGIN_NAME);
+  } else if (tag == "abuse_shield.clear") {
+    g_txn_tracker->clear();
+    g_conn_tracker->clear();
+    g_h2_tracker->clear();
+    g_blocked_ips->clear();
+    sync_all_tracker_stats();
+    TSNote("[%s] Tracking and block state cleared", PLUGIN_NAME);
   } else if (tag == "abuse_shield.reset") {
     reset_tracker_stats(g_txn_tracker.get(), g_txn_stats);
     reset_tracker_stats(g_conn_tracker.get(), g_conn_stats);
@@ -1138,6 +1179,9 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
     TSStatIntSet(g_action_stats.actions_closed, 0);
     TSStatIntSet(g_action_stats.actions_close_failed, 0);
     TSStatIntSet(g_action_stats.actions_logged, 0);
+    TSStatIntSet(g_action_stats.actions_log_untracked, 0);
+    TSStatIntSet(g_action_stats.actions_log_failed, 0);
+    TSStatIntSet(g_action_stats.fingerprint_missing_methods, 0);
     TSStatIntSet(g_action_stats.connections_rejected, 0);
     TSStatIntSet(g_action_stats.connections_reject_failed, 0);
     TSStatIntSet(g_action_stats.fingerprint_matches, 0);
@@ -1145,9 +1189,16 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
     TSStatIntSet(g_action_stats.fingerprint_unavailable, 0);
     TSNote("[%s] Metrics reset", PLUGIN_NAME);
   } else if (tag == "abuse_shield.enabled") {
-    if (msg->data_size > 0) {
-      bool             enabled = (static_cast<const char *>(msg->data)[0] == '1');
-      std::unique_lock lock(g_config_mutex);
+    std::string_view value =
+      msg->data && msg->data_size > 0 ? std::string_view(static_cast<const char *>(msg->data), msg->data_size) : std::string_view{};
+    if (!value.empty() && value.back() == '\0') {
+      value.remove_suffix(1);
+    }
+    bool enabled = value == "1" || value == "true" || value == "on" || value == "yes";
+    if (!enabled && value != "0" && value != "false" && value != "off" && value != "no") {
+      TSError("[%s] enabled requires 0/1, false/true, off/on, or no/yes", PLUGIN_NAME);
+    } else {
+      std::shared_lock lock(g_config_mutex);
       if (g_config) {
         g_config->set_enabled(enabled);
         TSNote("[%s] Plugin %s", PLUGIN_NAME, enabled ? "enabled" : "disabled");
@@ -1165,6 +1216,8 @@ handle_lifecycle_msg_impl(TSCont /* contp */, TSEvent /* event */, void *edata)
       }
       TSNote("[%s] %s", PLUGIN_NAME, oss.str().c_str());
     }
+  } else {
+    TSError("[%s] Unknown lifecycle message: %s", PLUGIN_NAME, msg->tag);
   }
 
   return TS_SUCCESS;
@@ -1270,6 +1323,12 @@ TSPluginInit(int argc, const char *argv[])
   g_conn_stats.init("conn");
   g_h2_stats.init("h2");
 
+  if (TSUserArgIndexReserve(TS_USER_ARGS_SSN, "abuse_shield.session_ip", "Client IP for session error accounting",
+                            &g_session_ip_index) != TS_SUCCESS) {
+    TSFatal("[%s] Could not reserve the session IP user argument", PLUGIN_NAME);
+    return;
+  }
+
   // Register hooks.
   // VCONN_START is the earliest TLS hook. Plain HTTP is handled at SSN_START.
   TSCont vconn_cont = TSContCreate(handle_vconn_start, nullptr);
@@ -1277,6 +1336,7 @@ TSPluginInit(int argc, const char *argv[])
 
   TSCont ssn_cont = TSContCreate(handle_ssn_start, nullptr);
   TSHttpHookAdd(TS_HTTP_SSN_START_HOOK, ssn_cont);
+  TSHttpHookAdd(TS_HTTP_SSN_CLOSE_HOOK, TSContCreate(handle_ssn_close, nullptr));
 
   // CLIENT_HELLO: Consume configured JAx fingerprints and reject matching TLS
   // clients before ServerHello and key-exchange work.
@@ -1291,5 +1351,7 @@ TSPluginInit(int argc, const char *argv[])
   TSCont msg_cont = TSContCreate(handle_lifecycle_msg, nullptr);
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, msg_cont);
 
-  TSNote("[%s] Plugin initialized with %zu slots per tracker, %zu rules", PLUGIN_NAME, g_config->slots(), g_config->rules().size());
+  TSContScheduleEveryOnPool(TSContCreate(handle_maintenance, TSMutexCreate()), 1000, TS_THREAD_POOL_TASK);
+  TSNote("[%s] Plugin initialized with %zu slots per tracker, %zu rules, %zu trusted ranges", PLUGIN_NAME, g_config->slots(),
+         g_config->rules().size(), g_config->trusted_ips().count());
 }

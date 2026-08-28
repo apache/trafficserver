@@ -31,7 +31,7 @@ struct TrackerStats {
   int slots_used{-1};       ///< Current slots in use (gauge)
   int contests{-1};         ///< Total contest attempts
   int contests_won{-1};     ///< Contests won by new IP
-  int evictions{-1};        ///< IPs evicted (score reached 0)
+  int evictions{-1};        ///< Occupied tracker slots replaced by contest winners
 
   /** Initialize tracker statistics with a name prefix.
    *
@@ -42,17 +42,20 @@ struct TrackerStats {
 
 /** Global action statistics/metrics. */
 struct ActionStats {
+  int actions_log_untracked{-1};            ///< Log actions without a tracking slot
+  int actions_log_failed{-1};               ///< Failed log object writes
+  int fingerprint_missing_methods{-1};      ///< Valid registries missing configured methods
   int rules_matched{-1};                    ///< Total times any rule matched
   int actions_blocked{-1};                  ///< Total block actions executed
   int actions_block_failed{-1};             ///< Block actions that could not be stored
   int actions_closed{-1};                   ///< Total close actions executed
   int actions_close_failed{-1};             ///< Close actions that could not shut down a connection
-  int actions_logged{-1};                   ///< Total log actions executed
-  int connections_rejected{-1};             ///< Connections rejected at VCONN_START (blocked IPs, HTTP & HTTPS)
-  int connections_reject_failed{-1};        ///< Blocked connections that could not be rejected
+  int actions_logged{-1};                   ///< Successful log writes or fallback submissions
+  int connections_rejected{-1};             ///< Blocked connections rejected at TLS or HTTP session start
+  int connections_reject_failed{-1};        ///< Plain HTTP blocked connections that could not be rejected
   int fingerprint_matches{-1};              ///< ClientHello fingerprint rule matches
   int fingerprint_connections_rejected{-1}; ///< Connections rejected at ClientHello
-  int fingerprint_unavailable{-1};          ///< ClientHellos missing one or more configured fingerprints
+  int fingerprint_unavailable{-1};          ///< ClientHellos with absent or invalid registries
 
   /** Initialize action statistics by creating the ATS stat entries. */
   void init();
