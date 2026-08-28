@@ -579,14 +579,17 @@ Display the current value of a configuration record.
       $ traffic_ctl config get --cold=records.yaml proxy.config.diags.debug.enabled
 
    When no file name is given, write ``-c`` last, or use the ``--cold=`` form for the
-   explicit file. A bare ``-c`` followed by a record name is ambiguous, because the record
-   name is taken as the file name:
+   explicit file. A bare ``-c`` followed by a record name takes the record as the file name,
+   which leaves the command with no records of its own and is reported as a usage error:
 
    .. code-block:: bash
 
       $ traffic_ctl config get proxy.config.diags.debug.enabled -c    # default records.yaml
-      $ traffic_ctl config get -c proxy.config.diags.debug.enabled    # wrong, reads a file
-                                                                      # named for the record
+      $ traffic_ctl config get -c proxy.config.diags.debug.enabled
+      Error: at least one argument expected by get
+
+   ``-c`` is also given at most once, so repeating it is a usage error rather than the last
+   file name silently winning.
 
    If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
 
