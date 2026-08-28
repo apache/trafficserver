@@ -144,6 +144,7 @@ auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_TSAN "Use thread sanitizer (default OFF)")
+option(ENABLE_UBSAN "Use undefined behavior sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
 option(ENABLE_FIPS "Enable fips compliance (default OFF)")
 option(ENABLE_EVENT_TRACKER "Enable event tracking (default OFF)")
@@ -447,6 +448,23 @@ elseif(ENABLE_TSAN)
   endif()
   add_compile_options(-g -fsanitize=thread -fno-omit-frame-pointer)
   add_link_options(-g -fsanitize=thread)
+endif()
+
+# UndefinedBehaviorSanitizer. Deliberately not part of the either/or chain above:
+# UBSan instruments arithmetic, shifts, and type loads rather than replacing the
+# allocator or the thread runtime, so it composes with an asan build
+# (-fsanitize=address,undefined) as well as standing on its own.
+#
+# vptr is excluded. It needs a matching type_info at every polymorphic access, and
+# a plugin loaded with dlopen does not reliably share type identity with the main
+# image, so the check reports the plugin boundary rather than a real bug.
+#
+# Findings are non-fatal by default so a single run reports every distinct site
+# instead of stopping at the first. Set UBSAN_OPTIONS=halt_on_error=1 at runtime
+# to abort instead, which is what a gating job would want.
+if(ENABLE_UBSAN)
+  add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fno-omit-frame-pointer)
+  add_link_options(-g -fsanitize=undefined -fno-sanitize=vptr)
 endif()
 
 # Clang Thread Safety Analysis. The TS_* annotations (tsutil/ts_thread_safety.h)
