@@ -17,6 +17,7 @@ Checks: >-
   bugprone-posix-return,
   bugprone-return-const-ref-from-parameter,
   bugprone-shared-ptr-array-mismatch,
+  bugprone-signed-char-misuse,
   bugprone-sizeof-expression,
   bugprone-string-constructor,
   bugprone-string-integer-assignment,

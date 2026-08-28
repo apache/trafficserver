@@ -4645,7 +4645,7 @@ HttpSM::check_sni_host()
     return;
   }
 
-  int host_sni_policy = t_state.http_config_param->http_host_sni_policy;
+  int host_sni_policy = static_cast<unsigned char>(t_state.http_config_param->http_host_sni_policy);
   if (snis->would_have_actions_for(std::string{host_name}.c_str(), netvc->get_remote_endpoint(), host_sni_policy) &&
       host_sni_policy > 0) {
     // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
