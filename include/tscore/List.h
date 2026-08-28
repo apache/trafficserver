@@ -957,7 +957,7 @@ template <class C, class L = typename C::Link_link> struct AtomicSLL {
   C *
   head()
   {
-    return (C *)TO_PTR(FREELIST_POINTER(al.head));
+    return (C *)TO_PTR(FREELIST_POINTER(al.head.load()));
   }
   C *
   next(C *c)
