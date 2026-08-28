@@ -29,6 +29,7 @@ import subprocess
 import sys
 
 DEFAULT_IMAGE = "ci.trafficserver.apache.org/ats/fedora:44"
+CONTAINER_MARKER = "ATS_URTEST_IN_CONTAINER"
 
 
 class RunnerError(RuntimeError):
@@ -83,9 +84,9 @@ def run_from_source(source_root: Path, arguments: Sequence[str]) -> int:
     """
 
     source_root = source_root.resolve()
-    should_use_docker, test_arguments = choose_docker_mode(arguments)
-    if should_use_docker:
-        return launch_docker(source_root, test_arguments)
+    should_use_container, test_arguments = choose_container_mode(arguments)
+    if should_use_container:
+        return launch_container(source_root, test_arguments)
 
     build_root = Path(os.environ.get("ATS_URTEST_CONTAINER_BUILD", source_root / "build-urtest-container")).resolve()
     install_prefix = build_root / "install"
@@ -121,7 +122,7 @@ def run_from_source(source_root: Path, arguments: Sequence[str]) -> int:
                 return result.returncode
 
         wrapper = build_root / "tests" / "urtest.sh"
-        result = subprocess.run([wrapper, "--no-run-in-docker", *test_arguments], cwd=wrapper.parent, check=False)
+        result = subprocess.run([wrapper, "--no-run-in-container", *test_arguments], cwd=wrapper.parent, check=False)
         return result.returncode
     finally:
         _copy_sandbox_artifacts(sandbox, build_root / "sandbox")
@@ -131,9 +132,9 @@ def run_from_source(source_root: Path, arguments: Sequence[str]) -> int:
 def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
     """Run pytest for every Uranium test in an already configured build."""
 
-    should_use_docker, test_arguments = choose_docker_mode(arguments)
-    if should_use_docker:
-        return launch_docker(config.source_root, test_arguments)
+    should_use_container, test_arguments = choose_container_mode(arguments)
+    if should_use_container:
+        return launch_container(config.source_root, test_arguments)
 
     pytest_arguments = translate_arguments(test_arguments, os.environ)
     if any(argument in ("-h", "--help") for argument in test_arguments):
@@ -196,10 +197,14 @@ def runner_help() -> str:
 
 urtest.sh options (consumed before pytest; these spellings take precedence):
   -h, --help                    Show this section followed by pytest's help.
-  --run-in-docker               Run in {DEFAULT_IMAGE}.
-  --no-run-in-docker            Run in the current environment.
+  --run-in-container            Run in {DEFAULT_IMAGE}.
+  --no-run-in-container         Run in the current environment.
+  --run-in-docker               Alias for --run-in-container.
+  --no-run-in-docker            Alias for --no-run-in-container.
 
-Docker is the default unless urtest.sh is already running inside a container.
+Container execution is the default unless urtest.sh detects that it is already
+running in a container or the Fedora 44 test environment. The launcher prefers
+Apple container on macOS, Podman on Linux, and Docker as a fallback.
 Any argument not consumed above is passed to pytest.
 Common pytest options include -k for selection, -n for parallel workers, and
 --collect-only/--co for listing tests. Pass --run-manual to include explicitly
@@ -208,8 +213,8 @@ opt-in Uranium tests; pytest documents these options below.
 pytest options (passed through after urtest.sh processing):"""
 
 
-def choose_docker_mode(arguments: Sequence[str], root: Path = Path("/")) -> tuple[bool, list[str]]:
-    """Apply explicit Docker flags, then avoid nested container execution.
+def choose_container_mode(arguments: Sequence[str], root: Path = Path("/")) -> tuple[bool, list[str]]:
+    """Apply explicit container flags, then avoid nested execution.
 
     :param arguments: Wrapper and pytest arguments from the command line.
     :param root: Filesystem root to inspect for container markers.
@@ -218,34 +223,46 @@ def choose_docker_mode(arguments: Sequence[str], root: Path = Path("/")) -> tupl
     requested: bool | None = None
     remaining = []
     for argument in arguments:
-        if argument == "--run-in-docker":
+        if argument in ("--run-in-container", "--run-in-docker"):
             if requested is False:
-                raise RunnerError("--run-in-docker conflicts with --no-run-in-docker")
+                raise RunnerError("container execution conflicts with direct execution")
             requested = True
-        elif argument == "--no-run-in-docker":
+        elif argument in ("--no-run-in-container", "--no-run-in-docker"):
             if requested is True:
-                raise RunnerError("--no-run-in-docker conflicts with --run-in-docker")
+                raise RunnerError("direct execution conflicts with container execution")
             requested = False
         else:
             remaining.append(argument)
 
     if requested is not None:
         return requested, remaining
-    return not is_container(root), remaining
+    return not (is_container(root) or is_fedora_44(root)), remaining
 
 
 def is_official_test_container(root: Path = Path("/")) -> bool:
-    """Recognize Fedora 44 only when the process is also containerized."""
+    """Recognize the Fedora 44 test environment across container runtimes."""
 
-    if not is_container(root):
-        return False
+    return is_fedora_44(root)
+
+
+def is_fedora_44(root: Path = Path("/")) -> bool:
+    """Check whether a filesystem root identifies Fedora 44.
+
+    :param root: Filesystem root containing ``etc/os-release``.
+    """
+
     release = read_os_release(root / "etc" / "os-release")
     return release.get("ID") == "fedora" and release.get("VERSION_ID") == "44"
 
 
 def is_container(root: Path = Path("/")) -> bool:
-    """Detect Docker, Podman, containerd, and Kubernetes environments."""
+    """Detect known OCI and orchestration container environments.
 
+    :param root: Filesystem root to inspect for runtime markers.
+    """
+
+    if os.environ.get(CONTAINER_MARKER) == "1" or os.environ.get("container"):
+        return True
     if (root / ".dockerenv").exists() or (root / "run" / ".containerenv").exists():
         return True
     cgroup = root / "proc" / "1" / "cgroup"
@@ -274,47 +291,71 @@ def read_os_release(path: Path) -> dict[str, str]:
     return values
 
 
-def launch_docker(source_root: Path, arguments: Sequence[str]) -> int:
+def find_container_runtime(platform: str | None = None) -> tuple[str, str] | None:
+    """Select the preferred installed container runtime for the host.
+
+    :param platform: Host platform name, or ``None`` to use ``sys.platform``.
+    :return: Runtime name and executable path, or ``None`` when unavailable.
+    """
+
+    host_platform = sys.platform if platform is None else platform
+    candidates = ("container", "podman", "docker") if host_platform == "darwin" else ("podman", "docker")
+    for name in candidates:
+        if executable := shutil.which(name):
+            return name, executable
+    return None
+
+
+def launch_container(source_root: Path, arguments: Sequence[str]) -> int:
     """Run the source entry point once in the official Fedora test image.
 
     :param source_root: ATS source-tree root to bind mount.
     :param arguments: Pytest arguments to pass through the container.
     """
 
-    docker = shutil.which("docker")
-    if docker is None:
+    runtime = find_container_runtime()
+    if runtime is None:
         raise RunnerError(
-            "Docker is required by the default execution mode. Install Docker, run inside the Fedora 44 test "
-            "container, or pass --no-run-in-docker to use the current environment.")
-    image = os.environ.get("ATS_URTEST_DOCKER_IMAGE", DEFAULT_IMAGE)
+            "A supported container runtime is required by the default execution mode. Install Apple container "
+            "on macOS, Podman or Docker, run inside the Fedora 44 test environment, or pass "
+            "--no-run-in-container to use the current environment.")
+    runtime_name, executable = runtime
+    image = os.environ.get("ATS_URTEST_CONTAINER_IMAGE", os.environ.get("ATS_URTEST_DOCKER_IMAGE", DEFAULT_IMAGE))
     source_root = source_root.resolve()
     command = [
-        docker,
+        executable,
         "run",
         "--rm",
         "--init",
-        "--cap-add=SYS_PTRACE",
-        "--network=host",
-        "--volume",
-        f"{source_root}:{source_root}",
-        "--workdir",
-        str(source_root),
-        "--env",
-        f"ATS_URTEST_HOST_UID={os.getuid()}",
-        "--env",
-        f"ATS_URTEST_HOST_GID={os.getgid()}",
-        "--env",
-        f"ATS_URTEST_HOST_OS={sys.platform}",
+        "--cap-add",
+        "SYS_PTRACE",
     ]
+    if runtime_name != "container":
+        command.append("--network=host")
+    command.extend(
+        [
+            "--volume",
+            f"{source_root}:{source_root}",
+            "--workdir",
+            str(source_root),
+            "--env",
+            f"ATS_URTEST_HOST_UID={os.getuid()}",
+            "--env",
+            f"ATS_URTEST_HOST_GID={os.getgid()}",
+            "--env",
+            f"ATS_URTEST_HOST_OS={sys.platform}",
+            "--env",
+            f"{CONTAINER_MARKER}=1",
+        ])
     for variable in ("ATS_URTEST_BUILD_JOBS", "ATS_URTEST_SANDBOX", "RUN_CACHE_CONTENTION_TEST", "SHARD", "SHARDCNT"):
         if variable in os.environ:
             command.extend(["--env", f"{variable}={os.environ[variable]}"])
-    if extra_arguments := os.environ.get("ATS_URTEST_DOCKER_ARGS"):
+    if extra_arguments := os.environ.get("ATS_URTEST_CONTAINER_ARGS", os.environ.get("ATS_URTEST_DOCKER_ARGS")):
         command.extend(shlex.split(extra_arguments))
     command.extend([
         image,
         str(source_root / "tests" / "urtest.sh"),
-        "--no-run-in-docker",
+        "--no-run-in-container",
         *arguments,
     ])
     result = subprocess.run(command, check=False)

@@ -49,16 +49,20 @@ cmake -B build -DENABLE_URTEST=ON -DURTEST_OPTIONS="-n 4 -k cache"
 ### The `urtest.sh` entry point
 
 `tests/urtest.sh` is the portable source-tree entry point. On a normal host it
-starts the official `ci.trafficserver.apache.org/ats/fedora:44` image, builds
-incrementally in `build-urtest-container`, and runs the tests there. In a
-Fedora 44 container it runs directly, which is also the Jenkins CI behavior.
+starts the official `ci.trafficserver.apache.org/ats/fedora:44` image with
+Apple container on macOS, Podman on Linux, or Docker as a fallback. It builds
+incrementally in `build-urtest-container` and runs the tests there. In a
+Fedora 44 test environment it runs directly, which is also the Jenkins CI
+behavior.
 
 Force either mode when needed:
 
 ```console
-./tests/urtest.sh --run-in-docker
-./tests/urtest.sh --no-run-in-docker
+./tests/urtest.sh --run-in-container
+./tests/urtest.sh --no-run-in-container
 ```
+
+The older `--run-in-docker` and `--no-run-in-docker` spellings remain aliases.
 
 The generated `<build>/tests/urtest.sh` entry point is fastest when ATS is
 already built and installed in the current environment.
