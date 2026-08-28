@@ -779,6 +779,11 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         } else {
           cur_option = _option_list.at(short_it->second);
         }
+        // Counted for the same repetition check as the --option=value form, so that an option
+        // taking at most one value cannot be given more by mixing the two spellings.
+        if (cur_option.arg_num == AT_MOST_ONE_ARG_N) {
+          check_map[cur_option.long_option] += 1;
+        }
         // handle the arguments
         std::string err = handle_args(ret, args, cur_option.key, cur_option.arg_num, i);
         if (!err.empty()) {

@@ -140,3 +140,19 @@ tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     'at most one argument expected by --cold', 'A repeated --cold must be reported rather than the last one winning')
+
+# 11
+tr = Test.AddTestRun("A repeated --cold is an error in the space-separated form too")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} -c {records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'A repeated -c must be reported rather than the last one winning')
+
+# 12
+tr = Test.AddTestRun("Mixing the two --cold spellings cannot smuggle in a second file name")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} --cold={records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'The two forms must be counted together')
