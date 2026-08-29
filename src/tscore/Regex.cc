@@ -22,6 +22,7 @@
  */
 
 #include <array>
+#include <string>
 
 #include "tscore/ink_platform.h"
 #include "tscore/ink_thread.h"
@@ -70,6 +71,20 @@ Regex::compile(const char *pattern, const unsigned flags)
 
   if (flags & RE_ANCHORED) {
     options |= PCRE_ANCHORED;
+  }
+
+  // PCRE1 has no end-anchor compile option, so express it in the pattern and let
+  // the engine enforce it. A post-match span check is not equivalent: it would
+  // reject a subject the pattern can match in full whenever the first path the
+  // engine takes ends early, as a lazy quantifier does. The non-capturing group
+  // preserves the pattern's own capture numbering and keeps \z from binding to
+  // just the last branch of a top level alternation.
+  std::string end_anchored_pattern;
+
+  if (flags & RE_ENDANCHORED) {
+    end_anchored_pattern.reserve(strlen(pattern) + 6);
+    end_anchored_pattern.assign("(?:").append(pattern).append(R"()\z)");
+    pattern = end_anchored_pattern.c_str();
   }
 
   regex = pcre_compile(pattern, options, &error, &erroffset, nullptr);

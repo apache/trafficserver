@@ -42,6 +42,7 @@ enum REFlags {
   RE_CASE_INSENSITIVE = 0x0001, ///< Ignore case (default: case sensitive).
   RE_UNANCHORED       = 0x0002, ///< Unanchored (DFA defaults to anchored).
   RE_ANCHORED         = 0x0004, ///< Anchored (Regex defaults to unanchored).
+  RE_ENDANCHORED      = 0x0008, ///< Anchored at the subject end; with RE_ANCHORED, requires a whole-subject match.
 };
 
 /** Wrapper for PCRE evaluation.

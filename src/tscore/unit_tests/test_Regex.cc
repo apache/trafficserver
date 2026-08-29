@@ -52,3 +52,61 @@ TEST_CASE("Regex", "[libts][Regex]")
     }
   }
 }
+
+// PCRE1 has no end-anchor compile option, so RE_ENDANCHORED is implemented by
+// rewriting the pattern. These cases pin the parts of that rewrite that are easy
+// to get wrong.
+TEST_CASE("Regex end anchored", "[libts][Regex]")
+{
+  SECTION("both anchors require a whole subject match")
+  {
+    Regex r;
+
+    REQUIRE(r.compile("cdn\\.example\\.com", RE_ANCHORED | RE_ENDANCHORED) == true);
+    CHECK(r.exec(std::string_view{"cdn.example.com"}) == true);
+    CHECK(r.exec(std::string_view{"cdn.example.com.test"}) == false);
+    CHECK(r.exec(std::string_view{"prefix.cdn.example.com"}) == false);
+  }
+
+  SECTION("the end anchor applies to every branch of a top level alternation")
+  {
+    Regex r;
+
+    REQUIRE(r.compile("foo|bar", RE_ANCHORED | RE_ENDANCHORED) == true);
+    CHECK(r.exec(std::string_view{"foo"}) == true);
+    CHECK(r.exec(std::string_view{"bar"}) == true);
+    CHECK(r.exec(std::string_view{"foobaz"}) == false);
+    CHECK(r.exec(std::string_view{"barbaz"}) == false);
+  }
+
+  SECTION("capture numbering is unchanged")
+  {
+    Regex r;
+    std::array<int, Regex::DEFAULT_GROUP_COUNT * 3> ovector = {{0}};
+    const std::string_view subject{"host.test"};
+
+    REQUIRE(r.compile("([a-z]+)\\.([a-z]+)", RE_ANCHORED | RE_ENDANCHORED) == true);
+    REQUIRE(r.get_capture_count() == 2);
+    REQUIRE(r.exec(subject, ovector.data(), int(ovector.size())) == true);
+    CHECK(subject.substr(ovector[2], ovector[3] - ovector[2]) == "host");
+    CHECK(subject.substr(ovector[4], ovector[5] - ovector[4]) == "test");
+  }
+
+  SECTION("a lazy quantifier still matches the full subject")
+  {
+    Regex r;
+
+    // The engine has to backtrack to satisfy the end anchor. Checking the match
+    // span after the fact instead would reject this.
+    REQUIRE(r.compile("a+?", RE_ANCHORED | RE_ENDANCHORED) == true);
+    CHECK(r.exec(std::string_view{"aaa"}) == true);
+  }
+
+  SECTION("RE_ANCHORED alone still permits a trailing substring")
+  {
+    Regex r;
+
+    REQUIRE(r.compile("cdn\\.example\\.com", RE_ANCHORED) == true);
+    CHECK(r.exec(std::string_view{"cdn.example.com.test"}) == true);
+  }
+}
