@@ -59,7 +59,7 @@ These are the changes that are most likely to cause problems during an upgrade. 
 configurations accordingly.
 
 Outbound Session Sharing and Client Certificates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The default value of :ts:cv:`proxy.config.http.server_session_sharing.match` is unchanged at
 ``both``, but ``both`` now selects ``cert`` in addition to ``ip`` and ``host``.  A pooled
