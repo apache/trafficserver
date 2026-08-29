@@ -2087,6 +2087,12 @@ HttpSM::state_read_server_response_header(int event, void *data)
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
       // Similarly the server connection should also be closed
       t_state.current.server->keep_alive = HTTP_NO_KEEPALIVE;
+      // The origin is still owed the remainder of the request body. Record that
+      // separately: HttpTransact::initialize_state_variables_from_response runs
+      // after this and recomputes current.server->keep_alive from the response
+      // headers, so a response carrying Keep-Alive would otherwise put this
+      // connection back in the pool with a partial body outstanding.
+      _server_owed_request_body = true;
     }
   }
 
@@ -3109,10 +3115,15 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   bool close_connection = false;
 
   if (t_state.current.server->keep_alive == HTTP_KEEPALIVE && server_entry->eos == false &&
-      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && t_state.txn_conf->keep_alive_enabled_out == 1) {
+      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && t_state.txn_conf->keep_alive_enabled_out == 1 && !_server_owed_request_body) {
     close_connection = false;
   } else {
-    if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
+    if (_server_owed_request_body) {
+      // Reusing this connection would let the unwritten remainder of the request
+      // body be answered by whatever is sent next on it.
+      SMDebug("http", "closing origin connection, request body was not fully written");
+      HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_no_keep_alive);
+    } else if (t_state.current.server->keep_alive != HTTP_KEEPALIVE) {
       HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_no_keep_alive);
     } else if (server_entry->eos == true) {
       HTTP_INCREMENT_DYN_STAT(http_origin_shutdown_tunnel_server_eos);
