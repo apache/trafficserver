@@ -937,6 +937,8 @@ UrlRewrite::_regexMappingLookup(RegexMappingList &regex_mappings, URL *request_u
     }
 
     int matches_info[MAX_REGEX_SUBS * 3];
+    // The regex is compiled anchored at both ends (see process_regex_mapping_config), so a
+    // successful match spans the entire request host, never a leading or trailing substring.
     bool match_result =
       list_iter->regular_expression.exec(std::string_view(request_host, request_host_len), matches_info, countof(matches_info));
 
