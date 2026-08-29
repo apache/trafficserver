@@ -22,7 +22,8 @@ pkglib_LTLIBRARIES += experimental/magick/magick.la
 
 experimental_magick_magick_la_SOURCES = \
   experimental/magick/magick.cc \
-  experimental/magick/magick_args.cc
+  experimental/magick/magick_args.cc \
+  experimental/magick/magick_args.h
 
 experimental_magick_magick_la_LDFLAGS = \
   $(AM_LDFLAGS) \
@@ -40,4 +41,5 @@ experimental_magick_test_magick_args_CPPFLAGS = $(AM_CPPFLAGS) -I$(abs_top_srcdi
 
 experimental_magick_test_magick_args_SOURCES = \
   experimental/magick/unit_tests/test_magick_args.cc \
-  experimental/magick/magick_args.cc
+  experimental/magick/magick_args.cc \
+  experimental/magick/magick_args.h
