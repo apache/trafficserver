@@ -206,12 +206,10 @@ struct EVPKey {
 bool
 verify(const byte *const msg, const size_t mlen, const byte *const sig, const size_t slen, EVP_PKEY *const pkey)
 {
-  assert(nullptr != msg);
-  assert(0 < mlen);
-  assert(nullptr != sig);
-  assert(0 < slen);
-  assert(nullptr != pkey);
-
+  // No asserts here: every one of these is reachable from the request. A
+  // present-but-empty magick parameter gives mlen == 0, and NDEBUG is not set
+  // for this build, so an assert would abort the process in a release build.
+  // The check below is the guard.
   if (nullptr == msg || 0 == mlen || nullptr == sig || 0 == slen || nullptr == pkey) {
     return false;
   }
