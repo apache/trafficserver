@@ -31,13 +31,13 @@ Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
 # policy, which can impose a TLS 1.2 minimum despite the ATS settings below.
 Test.Env['OPENSSL_CONF'] = os.devnull
 
-# TLSv1.0 and TLSv1.1 are unusable on OpenSSL 3.x in practice: the library is
-# normally built with support, but distro crypto-policies set a MinProtocol floor
-# of TLSv1.2, so the server answers a TLSv1.0 ClientHello with a protocol_version
-# alert regardless of what valid_tls_versions_in permits. curl still accepts
-# --tlsv1 and sends the ClientHello, so probing the client side reveals nothing.
-# Restrict the legacy-protocol runs to pre-3.x, where they are meaningful.
-legacy_tls_usable = not Condition.HasOpenSSLVersion("3.0.0")
+# Whether TLSv1.0 is usable depends on the crypto policy in force, not on the
+# OpenSSL version: a distro MinProtocol floor of TLSv1.2 blocks it even on
+# OpenSSL 1.1.1, and a self-built OpenSSL 3 with no system openssl.cnf allows it.
+# Probe an actual TLSv1.0 handshake, and probe curl separately, so an affected
+# host reports the file as skipped rather than silently running a subset.
+Test.SkipUnless(Condition.HasLegacyTLSSupport())
+legacy_tls_usable = Condition.HasCurlTLSVersionSupport("1.0")
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
