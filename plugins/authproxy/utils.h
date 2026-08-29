@@ -103,6 +103,9 @@ unsigned HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *value);
 void HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, unsigned value);
 
+// Remove every instance of an HTTP header.
+void HttpRemoveMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name);
+
 // Dump the given HTTP header to the debug log.
 void HttpDebugHeader(TSMBuffer mbuf, TSMLoc mhdr);
 

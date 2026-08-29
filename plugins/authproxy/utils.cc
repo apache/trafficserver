@@ -81,6 +81,18 @@ HttpSetMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name, const char *val
   TSHandleMLocRelease(mbuf, mhdr, mloc);
 }
 
+void
+HttpRemoveMimeHeader(TSMBuffer mbuf, TSMLoc mhdr, const char *name)
+{
+  TSMLoc mloc;
+
+  // A field may be repeated on multiple lines; destroy every instance.
+  while ((mloc = TSMimeHdrFieldFind(mbuf, mhdr, name, -1)) != TS_NULL_MLOC) {
+    TSReleaseAssert(TSMimeHdrFieldDestroy(mbuf, mhdr, mloc) == TS_SUCCESS);
+    TSHandleMLocRelease(mbuf, mhdr, mloc);
+  }
+}
+
 unsigned
 HttpGetContentLength(TSMBuffer mbuf, TSMLoc mhdr)
 {
