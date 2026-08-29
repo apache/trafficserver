@@ -600,6 +600,13 @@ protected:
   bool terminate_sm         = false;
   bool kill_this_async_done = false;
   bool parse_range_done     = false;
+
+  // Set when the request body tunnel is abandoned because the origin answered
+  // before we finished writing the body. The origin is then still owed the rest
+  // of that body, so the connection must not be reused. This has to be recorded
+  // rather than inferred from current.server->keep_alive, because the response
+  // path recomputes that field from the response headers.
+  bool _server_owed_request_body = false;
   void kill_this();
   void update_stats();
   void transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info);
