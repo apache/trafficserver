@@ -8775,18 +8775,19 @@ std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {
    "proxy.config.http.strict_chunk_parsing",
    "proxy.config.http.reject_head_with_content"}};
 
-// NOTE: this array is short of TS_CONFIG_LAST_ENTRY and its order diverges from
-// TSOverridableConfigKey partway through. TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS,
+// This array has one entry per TSOverridableConfigKey, in enum order, so the loop
+// below can compare the key returned for each name against the index. Three of the
+// entries are not string literals: TS_CONFIG_HTTP_SERVER_MIN_KEEP_ALIVE_CONNS,
 // TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MAX and TS_CONFIG_HTTP_PER_SERVER_CONNECTION_MATCH
-// have no entry, because Overridable_Txn_Vars maps them through the
-// OutboundConnTrack::CONFIG_VAR_* constants rather than string literals, so there was
-// no literal here to copy. Every index past that point is shifted and the trailing
-// slots are default-constructed, which limits what the loop below actually validates.
+// use the OutboundConnTrack::CONFIG_VAR_* string_view constants, which is what
+// Overridable_Txn_Vars registers them under. Counting only quoted strings therefore
+// undercounts this array by three and makes it look short when it is not.
 //
-// A size assertion cannot catch this: the array is declared with size
+// Adding an entry means inserting it at the position matching its enum value, not
+// appending. A size assertion cannot help here: the array is declared with size
 // TS_CONFIG_LAST_ENTRY, so comparing .size() against it is a tautology, and too many
-// initializers is already a hard error. A working guard needs either a constexpr array
-// with a non-empty check on the last element, or a deduced size compared to the enum.
+// initializers is already a hard error. Too few is the case that would slip through,
+// and catching it needs a deduced size compared against the enum.
 
 extern ClassAllocator<HttpSM> httpSMAllocator;
 
