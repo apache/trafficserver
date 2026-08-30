@@ -17,6 +17,7 @@ add_executable(
   test_meta.cc
   test_range.cc
   test_TextView.cc
+  test_TextViewConstructors.cc
   test_Scalar.cc
   test_swoc_file.cc
   test_Vectray.cc
@@ -48,3 +49,4 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 add_catch2_test(NAME test_libswoc COMMAND test_libswoc)
+
