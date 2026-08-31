@@ -2093,6 +2093,12 @@ HttpSM::state_read_server_response_header(int event, void *data)
       // headers, so a response carrying Keep-Alive would otherwise put this
       // connection back in the pool with a partial body outstanding.
       _server_owed_request_body = true;
+      // Marking the session private is what covers the release paths that never
+      // reach tunnel_handler_server. A 304 builds no response tunnel, so the
+      // check there cannot run, but release_server_session() will still pool the
+      // session. Http1ServerSession::release_transaction() closes a private
+      // session instead of pooling it, so this holds at every release site.
+      set_server_session_private(true);
     }
   }
 
