@@ -80,6 +80,24 @@ def test_explicit_stream_expectation_failure_reports_explanation(tmp_path: Path)
         service.run(5)
 
 
+def test_process_service_waits_for_live_output(tmp_path: Path) -> None:
+    """Poll output from a running support service until its marker arrives.
+
+    :param tmp_path: Temporary directory containing captured process output.
+    """
+
+    process = ManagedProcess(
+        "server",
+        [sys.executable, "-c", "import time; time.sleep(0.2); print('ready', flush=True); time.sleep(1)"],
+        tmp_path,
+    )
+    service = ProcessService(process)
+    service.start()
+
+    assert "ready" in service.wait_for_output(r"^ready$", timeout=2)
+    service.stop()
+
+
 def test_regex_stream_expectations_require_explanations(tmp_path: Path) -> None:
     """Reject contains and excludes declarations without useful explanations."""
 
