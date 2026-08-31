@@ -24,6 +24,8 @@
 #pragma once
 
 #include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <sys/types.h>
 #include "tscore/ink_assert.h"
 #include "tscore/ink_atomic.h"
@@ -31,7 +33,6 @@
 #include "tscore/ink_memory.h"
 #include "tscore/ink_string.h"
 #include "tscore/Allocator.h"
-#include "tsutil/Regex.h"
 #include "tscore/ink_apidefs.h"
 
 ////////////////////////////////////////////////////////////////////////////
@@ -57,20 +58,28 @@ enum class HdrTokenInfoFlags : uint32_t {
   PROXYAUTH = 1 << 3,
 };
 
-inline HdrTokenInfoFlags
+constexpr HdrTokenInfoFlags
 operator|(HdrTokenInfoFlags a, HdrTokenInfoFlags b)
 {
   return static_cast<HdrTokenInfoFlags>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
 }
 
-inline HdrTokenInfoFlags
+constexpr HdrTokenInfoFlags
 operator&(HdrTokenInfoFlags a, HdrTokenInfoFlags b)
 {
   return static_cast<HdrTokenInfoFlags>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
 }
 
-struct HdrTokenFieldInfo {
+// One row of the field initializer table. The name binds the row to a well-known string and is not
+// needed once the row is resolved, so it is absent from HdrTokenFieldInfo below.
+struct HdrTokenFieldInit {
   const char       *name;
+  int32_t           slotid;
+  uint64_t          mask;
+  HdrTokenInfoFlags flags;
+};
+
+struct HdrTokenFieldInfo {
   int32_t           slotid;
   uint64_t          mask;
   HdrTokenInfoFlags flags;
@@ -92,8 +101,20 @@ struct HdrTokenHeapPrefix {
   HdrTokenTypeSpecific wks_type_specific;
 };
 
-extern DFA *hdrtoken_strs_dfa;
-extern int  hdrtoken_num_wks;
+// Storage reserved per well-known string, including the NUL terminator. The size is fixed here
+// rather than computed from the longest string because hdrtoken_wks_to_prefix() needs
+// sizeof(HdrTokenWksEntry) to recover an entry index from a string pointer; HdrToken.cc statically
+// asserts that every string fits.
+constexpr size_t HDRTOKEN_WKS_STORAGE = 32;
+
+struct HdrTokenWksEntry {
+  HdrTokenHeapPrefix prefix;
+  char               str[HDRTOKEN_WKS_STORAGE];
+};
+
+extern const HdrTokenWksEntry *const hdrtoken_wks_entries;
+
+extern int hdrtoken_num_wks;
 
 extern const char       *hdrtoken_strs[];
 extern int               hdrtoken_str_lengths[];
@@ -109,7 +130,6 @@ extern HdrTokenInfoFlags hdrtoken_str_flags[];
 ////////////////////////////////////////////////////////////////////////////
 
 extern void        hdrtoken_init();
-extern int         hdrtoken_tokenize_dfa(const char *string, int string_len, const char **wks_string_out = nullptr);
 extern int         hdrtoken_tokenize(const char *string, int string_len, const char **wks_string_out = nullptr);
 extern int         hdrtoken_method_tokenize(const char *string, int string_len);
 extern const char *hdrtoken_string_to_wks(const char *string);
@@ -141,12 +161,20 @@ hdrtoken_is_valid_wks_idx(int wks_idx)
 /*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
-// ToDo: This, and dependencies / users should probably be const HdrTokenHeapPrefix * IMO.
-inline HdrTokenHeapPrefix *
+// The well-known strings live in a table that is built at compile time and is read-only, so a
+// prefix is only ever read through.
+inline const HdrTokenHeapPrefix *
 hdrtoken_wks_to_prefix(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  return reinterpret_cast<HdrTokenHeapPrefix *>(const_cast<char *>(wks) - sizeof(HdrTokenHeapPrefix));
+
+  // Recover the entry index through integer arithmetic. Subtracting sizeof(HdrTokenHeapPrefix)
+  // from wks directly would form a pointer outside the str array member, which is undefined
+  // behavior even though the prefix is physically adjacent.
+  uintptr_t const offset = reinterpret_cast<uintptr_t>(wks) - reinterpret_cast<uintptr_t>(hdrtoken_wks_entries);
+
+  ink_assert(offset % sizeof(HdrTokenWksEntry) == offsetof(HdrTokenWksEntry, str));
+  return &hdrtoken_wks_entries[offset / sizeof(HdrTokenWksEntry)].prefix;
 }
 
 /*-------------------------------------------------------------------------
@@ -194,7 +222,7 @@ hdrtoken_index_to_flags(int wks_idx)
   return hdrtoken_str_flags[wks_idx];
 }
 
-inline HdrTokenHeapPrefix *
+inline const HdrTokenHeapPrefix *
 hdrtoken_index_to_prefix(int wks_idx)
 {
   ink_assert(hdrtoken_is_valid_wks_idx(wks_idx));
@@ -236,7 +264,7 @@ inline uint64_t
 hdrtoken_wks_to_mask(const char *wks)
 {
   ink_assert(hdrtoken_is_wks(wks));
-  HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(wks);
+  const HdrTokenHeapPrefix *prefix = hdrtoken_wks_to_prefix(wks);
   return prefix->wks_info.mask;
 }
 
