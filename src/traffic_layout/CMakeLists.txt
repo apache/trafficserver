@@ -35,6 +35,10 @@ if(HAVE_ZSTD_H)
   target_link_libraries(traffic_layout PRIVATE zstd::zstd)
 endif()
 
+if(HAVE_LZ4_H)
+  target_link_libraries(traffic_layout PRIVATE LZ4::LZ4)
+endif()
+
 install(TARGETS traffic_layout)
 
 clang_tidy_check(traffic_layout)
