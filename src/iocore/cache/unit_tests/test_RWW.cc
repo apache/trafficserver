@@ -240,20 +240,11 @@ public:
           this->_read_event = this_ethread()->schedule_imm(this->_rt);
         }
         return;
-      } else {
-        this->close_write(100);
-        return;
       }
 
-      // write at least one fragment before read it
-      if (this->_latest_fragments == this->_wt->vc->fragment) {
-        base->reenable();
-        return;
-      }
-
-      this->_latest_fragments = this->_wt->vc->fragment;
-      this->_rt->reenable();
-      break;
+      // Once the reader has started, abort the writer to exercise the error path.
+      this->close_write(100);
+      return;
 
     case VC_EVENT_WRITE_COMPLETE:
       REQUIRE(!"should not happen because the writer aborted");

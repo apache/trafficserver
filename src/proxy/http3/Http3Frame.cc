@@ -599,8 +599,7 @@ Http3FrameFactory::create_headers_frame(IOBufferReader *header_block_reader, siz
 {
   ats_unique_buf buf = ats_unique_malloc(header_block_len);
 
-  int64_t nread;
-  while ((nread = header_block_reader->read(buf.get(), header_block_len)) > 0) {
+  while (header_block_reader->read(buf.get(), header_block_len) > 0) {
     ;
   }
 

@@ -331,7 +331,7 @@ TransactionData::write_client_request_node_no_content(TSMBuffer &buffer, TSMLoc 
   std::ostringstream client_request_node;
   client_request_node << R"(,"client-request":{)";
 
-  auto const http_version = _http_version_from_client_stack;
+  auto const &http_version = _http_version_from_client_stack;
   if (http_version == "2") {
     client_request_node << R"("http2":{)";
 

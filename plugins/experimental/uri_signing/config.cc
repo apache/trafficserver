@@ -225,9 +225,14 @@ read_config_from_json(json_t *const issuer_json)
               ++ad;
               ++ad_old_ct;
             }
-            cfg->auth_directives =
+            auto *new_auth_directives =
               static_cast<auth_directive *>(realloc(cfg->auth_directives, (ad_ct + ad_old_ct + 1) * sizeof *cfg->auth_directives));
-            ad = cfg->auth_directives + ad_old_ct;
+            if (!new_auth_directives) {
+              PluginError("Unable to extend auth_directives.");
+              goto cfg_fail;
+            }
+            cfg->auth_directives = new_auth_directives;
+            ad                   = cfg->auth_directives + ad_old_ct;
           } else {
             ad = cfg->auth_directives = static_cast<auth_directive *>(malloc((ad_ct + 1) * sizeof *cfg->auth_directives));
           }
@@ -282,8 +287,9 @@ read_config_from_json(json_t *const issuer_json)
       if (id_json) {
         id = json_string_value(id_json);
         if (id) {
-          cfg->id = static_cast<char *>(malloc(strlen(id) + 1));
-          strcpy(cfg->id, id);
+          /* An earlier issuer may have set an id; free it so it is not leaked. Last issuer wins. */
+          free(cfg->id);
+          cfg->id = strdup(id);
           PluginDebug("Found Id in the config: %s", cfg->id);
         }
       }

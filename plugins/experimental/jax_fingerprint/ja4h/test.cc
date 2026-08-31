@@ -78,7 +78,7 @@ public:
     SHA256_CTX sha256ctx;
     SHA256_Init(&sha256ctx);
 
-    for (auto ite : this->_fields) {
+    for (auto const &ite : this->_fields) {
       if (this->_should_include_field({ite.first.c_str(), ite.first.size()})) {
         SHA256_Update(&sha256ctx, ite.first.c_str(), ite.first.size());
       }
@@ -105,7 +105,7 @@ public:
 
 private:
   std::string                        _method;
-  int                                _version;
+  int                                _version{};
   std::map<std::string, std::string> _fields{};
 };
 

@@ -74,7 +74,7 @@ make_packed(const std::array<std::string_view, count> &names)
 {
   std::array<uint32_t, count> packed{};
 
-  auto tl = [](char c) -> char { return (c >= 'A' && c <= 'Z') ? (c + 32) : c; };
+  auto tl = [](unsigned char c) -> uint32_t { return (c >= 'A' && c <= 'Z') ? (c + 32) : c; };
 
   for (size_t i = 0; i < count; ++i) {
     const auto    &sv = names[i];
@@ -833,37 +833,6 @@ mime_init()
     MIME_VALUE_H2C                  = hdrtoken_string_to_wks_sv(MIME_UPGRADE_H2C_TOKEN);
 
     mime_init_date_format_table();
-    mime_init_cache_control_cooking_masks();
-  }
-}
-
-void
-mime_init_cache_control_cooking_masks()
-{
-  static struct {
-    const char *name;
-    uint32_t    mask;
-  } cc_mask_table[] = {
-    {"max-age",              MIME_COOKED_MASK_CC_MAX_AGE             },
-    {"no-cache",             MIME_COOKED_MASK_CC_NO_CACHE            },
-    {"no-store",             MIME_COOKED_MASK_CC_NO_STORE            },
-    {"no-transform",         MIME_COOKED_MASK_CC_NO_TRANSFORM        },
-    {"max-stale",            MIME_COOKED_MASK_CC_MAX_STALE           },
-    {"min-fresh",            MIME_COOKED_MASK_CC_MIN_FRESH           },
-    {"only-if-cached",       MIME_COOKED_MASK_CC_ONLY_IF_CACHED      },
-    {"public",               MIME_COOKED_MASK_CC_PUBLIC              },
-    {"private",              MIME_COOKED_MASK_CC_PRIVATE             },
-    {"must-revalidate",      MIME_COOKED_MASK_CC_MUST_REVALIDATE     },
-    {"proxy-revalidate",     MIME_COOKED_MASK_CC_PROXY_REVALIDATE    },
-    {"s-maxage",             MIME_COOKED_MASK_CC_S_MAXAGE            },
-    {"need-revalidate-once", MIME_COOKED_MASK_CC_NEED_REVALIDATE_ONCE},
-    {nullptr,                0                                       }
-  };
-
-  for (int i = 0; cc_mask_table[i].name != nullptr; i++) {
-    const char         *wks                      = hdrtoken_string_to_wks(cc_mask_table[i].name);
-    HdrTokenHeapPrefix *p                        = hdrtoken_wks_to_prefix(wks);
-    p->wks_type_specific.u.cache_control.cc_mask = cc_mask_table[i].mask;
   }
 }
 
@@ -1209,8 +1178,8 @@ _mime_hdr_field_list_search_by_slotnum(MIMEHdrImpl *mh, int slotnum)
 MIMEField *
 mime_hdr_field_find(MIMEHdrImpl *mh, std::string_view field_name)
 {
-  HdrTokenHeapPrefix *token_info;
-  const bool          is_wks = hdrtoken_is_wks(field_name.data());
+  const HdrTokenHeapPrefix *token_info;
+  const bool                is_wks = hdrtoken_is_wks(field_name.data());
 
   ink_assert(!field_name.empty());
 
@@ -2874,7 +2843,7 @@ mime_days_since_epoch_to_mdy_slowcase(time_t days_since_jan_1_1970, int *m_retur
 {
   static constexpr int DAYS_OFFSET = 25508;
 
-  static const char months[] = {
+  static constexpr uint8_t months[] = {
     2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,  2,
     2,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
     4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,  4,
@@ -3760,7 +3729,7 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
             Dbg(dbg_ctl_http, "recompute_cooked_stuff: got field '%s'", token_wks);
 #endif
 
-            HdrTokenHeapPrefix *p                  = hdrtoken_wks_to_prefix(token_wks);
+            const HdrTokenHeapPrefix *p            = hdrtoken_wks_to_prefix(token_wks);
             mask                                   = p->wks_type_specific.u.cache_control.cc_mask;
             m_cooked_stuff.m_cache_control.m_mask |= mask;
             csv_value_mask                        |= mask;
@@ -3812,9 +3781,13 @@ MIMEHdrImpl::recompute_cooked_stuff(MIMEField *changing_field_or_null, const std
                   csv_value_mask                         = 0;
                   m_cooked_stuff.m_cache_control.m_mask &= ~mask;
                 }
+              } else if (token_wks == MIME_VALUE_MAX_STALE.c_str()) {
+                // RFC 9111, Section 5.2.1.2: a valueless max-stale request
+                // directive permits a stale response of any age.
+                m_cooked_stuff.m_cache_control.m_secs_max_stale = INT_MAX;
               } else {
-                // No '=' found, or whitespace before '='. This is malformed.
-                // For directives that require values, this is an error.
+                // No '=' found, or whitespace before '='. This is malformed
+                // for directives that require values.
                 // Clear the mask for this directive.
                 csv_value_mask                         = 0;
                 m_cooked_stuff.m_cache_control.m_mask &= ~mask;

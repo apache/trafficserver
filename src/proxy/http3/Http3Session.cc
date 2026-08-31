@@ -65,11 +65,12 @@ HQSession::remove_transaction(HQTransaction *trans)
 void
 HQSession::_close_transactions()
 {
-  while (this->_transaction_list.head != nullptr) {
-    auto *transaction = this->_transaction_list.head;
+  for (auto *transaction = this->_transaction_list.head; transaction != nullptr;) {
+    auto *next = static_cast<HQTransaction *>(transaction->link.next);
 
     transaction->do_io_close();
     delete transaction;
+    transaction = next;
   }
 }
 
@@ -129,6 +130,7 @@ void
 HQSession::new_connection(NetVConnection *new_vc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
   this->con_id = new_vc->get_service<QUICSupport>()->get_quic_connection()->connection_id();
+  this->_increment_total_client_connections_stat(new_vc);
   this->_handle_if_ssl(new_vc);
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);

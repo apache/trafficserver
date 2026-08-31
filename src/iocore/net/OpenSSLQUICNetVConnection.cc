@@ -101,9 +101,9 @@ QUICNetVConnection::init(SSL *ssl, QUICPacketHandler *packet_handler)
 {
   SET_HANDLER((NetVConnHandler)&QUICNetVConnection::acceptEvent);
 
-  this->_ssl            = ssl;
-  this->_packet_handler = packet_handler;
-  this->_quic_connection_id.randomize();
+  this->_ssl                          = ssl;
+  this->_packet_handler               = packet_handler;
+  this->_quic_connection_id           = QUICConnectionId::random();
   this->_initial_source_connection_id = this->_quic_connection_id;
   this->_cid_text                     = this->_quic_connection_id.hex();
 
@@ -389,7 +389,10 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   MUTEX_TRY_LOCK(lock, h->mutex, t);
   if (!lock.is_locked()) {
-    if (event == EVENT_NONE) {
+    // The event system always hands over a non-null Event, so @a e is only null if this is called
+    // directly, which pairs with EVENT_NONE. Reschedule on the thread in that case rather than
+    // dereferencing @a e.
+    if (event == EVENT_NONE || e == nullptr) {
       t->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     } else {
@@ -477,25 +480,25 @@ QUICNetVConnection::ping()
 QUICConnectionId
 QUICNetVConnection::peer_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::original_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::first_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId
 QUICNetVConnection::retry_source_connection_id() const
 {
-  return {};
+  return QUICConnectionId::ZERO();
 }
 
 QUICConnectionId

@@ -439,10 +439,10 @@ HttpSM::attach_client_session(ProxyTransaction *txn)
   t_state.api_skip_all_remapping = netvc->get_is_unmanaged_request();
 
   ink_assert(_ua.get_txn()->get_proxy_ssn());
-  ink_assert(_ua.get_txn()->get_proxy_ssn()->accept_options);
+  ink_assert(_ua.get_txn()->get_proxy_ssn()->acceptor);
 
   // default the upstream IP style host resolution order from inbound
-  t_state.my_txn_conf().host_res_data.order = _ua.get_txn()->get_proxy_ssn()->accept_options->host_res_preference;
+  t_state.my_txn_conf().host_res_data.order = _ua.get_txn()->get_proxy_ssn()->acceptor->options().host_res_preference;
 
   start_sub_sm();
 
@@ -919,9 +919,12 @@ HttpSM::state_watch_for_client_abort(int event, void *data)
           // do_io_shutdown() as a no-op.
           _ua.get_txn()->do_io_shutdown(IO_SHUTDOWN_READ);
         }
-      } else if (t_state.txn_conf->cache_http &&
+      } else if (t_state.txn_conf->allow_half_open > 0 && t_state.txn_conf->cache_http &&
                  (server_entry != nullptr && server_entry->vc_read_handler == &HttpSM::state_read_server_response_header)) {
-        // if HttpSM is waiting response header from origin server, keep it for a while to run background fetch
+        // Half open connections are configured, but the transport does not support them (e.g. TLS or HTTP/2). If HttpSM is
+        // waiting response header from origin server, keep it for a while to run background fetch. Note that the operator
+        // disabling half open connections is handled below: the transaction is aborted rather than kept alive for a client
+        // that is no longer there.
         _ua.get_txn()->do_io_shutdown(IO_SHUTDOWN_READWRITE);
       } else {
         _ua.get_txn()->do_io_close();
@@ -4645,7 +4648,7 @@ HttpSM::check_sni_host()
     return;
   }
 
-  int host_sni_policy = t_state.http_config_param->http_host_sni_policy;
+  int host_sni_policy = static_cast<unsigned char>(t_state.http_config_param->http_host_sni_policy);
   if (snis->would_have_actions_for(std::string{host_name}.c_str(), netvc->get_remote_endpoint(), host_sni_policy) &&
       host_sni_policy > 0) {
     // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
@@ -4689,28 +4692,6 @@ HttpSM::do_remap_request(bool run_inline)
   bool ret = remapProcessor.setup_for_remap(&t_state, m_remap.get());
 
   check_sni_host();
-
-  // Depending on a variety of factors the HOST field may or may not have been promoted to the
-  // client request URL. The unmapped URL should always have that promotion done. If the HOST field
-  // is not already there, promote it only in the unmapped_url. This avoids breaking any logic that
-  // depends on the lack of promotion in the client request URL.
-  if (!t_state.unmapped_url.m_url_impl->m_ptr_host) {
-    MIMEField *host_field = t_state.hdr_info.client_request.field_find(static_cast<std::string_view>(MIME_FIELD_HOST));
-    if (host_field) {
-      auto host_name{host_field->value_get()};
-      if (!host_name.empty()) {
-        int  port     = 0;
-        bool has_port = false;
-
-        if (http_parse_host_header(host_name, host_name, port, has_port)) {
-          t_state.unmapped_url.host_set(host_name);
-        }
-        if (has_port) {
-          t_state.unmapped_url.port_set(port);
-        }
-      }
-    }
-  }
 
   if (!ret) {
     SMDbg(dbg_ctl_url_rewrite, "Could not find a valid remapping entry for this request");
@@ -5514,8 +5495,8 @@ std::string_view
 HttpSM::get_outbound_sni() const
 {
   using namespace swoc::literals;
-  swoc::TextView zret;
-  swoc::TextView policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
+  std::string_view zret;
+  swoc::TextView   policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
 
   TLSSNISupport *snis = nullptr;
   if (_ua.get_txn()) {
@@ -5533,15 +5514,15 @@ HttpSM::get_outbound_sni() const
   } else if (_ua.get_txn() && snis && policy == "server_name"_tv) {
     const char *const server_name = snis->get_sni_server_name();
     if (nullptr == server_name || server_name[0] == '\0') {
-      zret.assign(nullptr, swoc::TextView::npos);
+      zret = {};
     } else {
-      zret.assign(server_name, swoc::TextView::npos);
+      zret = server_name;
     }
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
     // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
-    zret.assign(t_state.server_info.name, swoc::TextView::npos);
+    zret = t_state.server_info.name;
   }
   return zret;
 }
@@ -5891,7 +5872,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
   // See if the outbound connection tracker data is needed. If so, get it here for consistency.
   if (t_state.txn_conf->connection_tracker_config.server_max > 0 || t_state.txn_conf->connection_tracker_config.server_min > 0 ||
-      t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+      t_state.txn_conf->connection_tracker_config.metric_enabled) {
     t_state.outbound_conn_track_state =
       ConnectionTracker::obtain_outbound(t_state.txn_conf->connection_tracker_config,
                                          std::string_view{t_state.current.server->name}, t_state.current.server->dst_addr);
@@ -5919,9 +5900,11 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
 
     ct_state.update_max_count(ccount);
   } else if (t_state.txn_conf->connection_tracker_config.server_min > 0 ||
-             t_state.http_config_param->global_connection_tracker_config.metric_enabled) {
+             t_state.txn_conf->connection_tracker_config.metric_enabled) {
     auto &ct_state = t_state.outbound_conn_track_state;
-    ct_state.reserve();
+    // Feed the count through as well, otherwise the group's peak stays at zero whenever metrics
+    // are enabled without a configured maximum.
+    ct_state.update_max_count(ct_state.reserve());
   }
 
   // We did not manage to get an existing session and need to open a new connection

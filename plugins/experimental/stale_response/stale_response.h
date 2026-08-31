@@ -31,6 +31,7 @@
 #include "BodyData.h"
 
 #include <cstdint>
+#include <string>
 #include <map>
 
 struct BodyData;
@@ -49,7 +50,8 @@ struct LogInfo {
   bool            all                    = false;
   bool            stale_if_error         = false;
   bool            stale_while_revalidate = false;
-  char const     *filename               = PLUGIN_TAG;
+  // Empty means log to PLUGIN_TAG; see the effective name computed in parse_args().
+  std::string filename_override;
 };
 
 struct ConfigInfo {
@@ -64,9 +66,6 @@ struct ConfigInfo {
     }
     if (this->body_data_mutex) {
       TSMutexDestroy(this->body_data_mutex);
-    }
-    if (this->log_info.filename != PLUGIN_TAG) {
-      free(const_cast<char *>(this->log_info.filename));
     }
   }
   UintBodyMap *body_data = nullptr;

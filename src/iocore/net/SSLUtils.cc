@@ -1829,6 +1829,12 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   return ctx.get();
 }
 
+bool
+SSLMultiCertConfigLoader::_should_track_load_metrics() const
+{
+  return true;
+}
+
 swoc::Errata
 SSLMultiCertConfigLoader::load(SSLCertLookup *lookup, bool firstLoad)
 {
@@ -1956,6 +1962,17 @@ SSLMultiCertConfigLoader::_load_items(SSLCertLookup *lookup, config::SSLMultiCer
         std::lock_guard<std::mutex> lock(_loader_mutex);
         errata.note(ERRATA_ERROR, "Failed to load certificate '{}' at item {}",
                     sslMultiCertSettings->cert ? sslMultiCertSettings->cert : "(unnamed)", item_num);
+        // Guard required: SSLCertificateConfig::startup() ultimately calls _load_items() via
+        // reconfigure() and load(), and runs before SSLInitializeStatistics() in
+        // SSLNetProcessor::start(), so this counter is nullptr during the TLS startup cert load.
+        // The QUIC loader is excluded from this counter entirely via _should_track_load_metrics(),
+        // so the nullptr guard is TLS-startup-specific.
+        if (ssl_rsb.ssl_multicert_load_failures && _should_track_load_metrics()) {
+          Metrics::Counter::increment(ssl_rsb.ssl_multicert_load_failures);
+        }
+      } else if (sslMultiCertSettings->cert) {
+        std::lock_guard<std::mutex> lock(_loader_mutex);
+        ++lookup->user_cert_count;
       }
     } else {
       std::lock_guard<std::mutex> lock(_loader_mutex);
@@ -2121,7 +2138,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
   for (const char *keyname = key_tok.getNext(); keyname; keyname = key_tok.getNext()) {
     std::string completeServerKeyPath = Layout::get()->relative_to(params->serverKeyPathOnly, keyname);
-    data.key_list.push_back(completeServerKeyPath);
+    data.key_list.push_back(std::move(completeServerKeyPath));
   }
 
   for (const char *caname = ca_tok.getNext(); caname; caname = ca_tok.getNext()) {
@@ -2136,7 +2153,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
   int  cert_index = 0;
   for (const char *certname = cert_tok.getNext(); certname; certname = cert_tok.getNext()) {
     std::string completeServerCertPath = Layout::relative_to(params->serverCertPathOnly, certname);
-    data.cert_names_list.push_back(completeServerCertPath);
+    data.cert_names_list.push_back(std::move(completeServerCertPath));
   }
 
   for (size_t i = 0; i < data.cert_names_list.size(); i++) {
@@ -2231,7 +2248,7 @@ SSLMultiCertConfigLoader::load_certs_and_cross_reference_names(
 
     if (first_pass) {
       first_pass   = false;
-      common_names = name_set;
+      common_names = std::move(name_set);
     } else {
       // Check that all elements in common_names are in name_set
       auto common_iter = common_names.begin();

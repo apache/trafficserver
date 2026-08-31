@@ -27,24 +27,22 @@
 #include <atomic>
 #include <memory>
 
-// Use the C++20 std::atomic<std::shared_ptr<T>> specialization when the
-// standard library provides it, otherwise fall back to the pre-C++20
-// std::atomic_*_explicit free-function overloads on shared_ptr.  The
-// fallback exists for libstdc++ < 12 and libc++ < 14, which predate the
-// specialization.  When those toolchains are no longer supported, delete
-// the #else branch and the surrounding #if; call sites do not change.
+// Use the C++20 std::atomic<std::shared_ptr<T>> specialization when its
+// feature-test macro reports support, otherwise fall back to the pre-C++20
+// std::atomic_*_explicit free-function overloads on shared_ptr.  When all
+// supported toolchains provide the specialization, delete the #else branch
+// and the surrounding #if; call sites do not change.
 #if defined(__cpp_lib_atomic_shared_ptr) && __cpp_lib_atomic_shared_ptr >= 201711L
 
 template <class T> using AtomicSharedPtr = std::atomic<std::shared_ptr<T>>;
 
 #else
 
-// Belt-and-suspenders: on the toolchains that take this branch (libstdc++
-// < 12, libc++ < 16) the free-function overloads are not yet marked
-// [[deprecated]], so the suppression below is usually a no-op.  It
-// matters only if someone forces the fallback on a modern library (e.g.
-// -D__cpp_lib_atomic_shared_ptr=0) or compiles against a library that
-// ships the deprecation markers ahead of the specialization.
+// Belt-and-suspenders: on toolchains that take this branch, the free-function
+// overloads are normally not marked [[deprecated]], so the suppression below is
+// usually a no-op.  It matters only if someone forces the fallback on a modern
+// library (e.g. -D__cpp_lib_atomic_shared_ptr=0) or compiles against a library
+// that ships the deprecation markers ahead of the specialization.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 

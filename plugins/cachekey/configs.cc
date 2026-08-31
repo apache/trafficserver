@@ -587,7 +587,7 @@ Configs::setKeyType(const char *arg)
     StringVector types;
     ::commaSeparateString<StringVector>(types, arg);
 
-    for (auto type : types) {
+    for (const auto &type : types) {
       if (9 == type.length() && 0 == strncasecmp(type.c_str(), "cache_key", 9)) {
         _keyTypes.insert(CacheKeyKeyType::CACHE_KEY);
         CacheKeyDebug("setting cache key");

@@ -149,7 +149,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
                   return false;
                 }
                 Dbg(dbg_ctl, "Adding alias: %s -> %s", alias.c_str(), name.c_str());
-                addAlias(alias, limiter_ptr);
+                addAlias(std::move(alias), limiter_ptr);
               }
             } else {
               TSError("[%s] aliases node is not a sequence", PLUGIN_NAME);

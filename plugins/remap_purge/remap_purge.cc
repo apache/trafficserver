@@ -287,17 +287,21 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
       purge->allow_get = true;
       break;
     case 'h':
+      TSfree(purge->header); // An option can be repeated, so the earlier value is not leaked
       purge->header     = TSstrdup(optarg);
       purge->header_len = strlen(purge->header);
       break;
     case 'i':
+      TSfree(purge->id);
       purge->id = TSstrdup(optarg);
       break;
     case 's':
+      TSfree(purge->secret);
       purge->secret     = TSstrdup(optarg);
       purge->secret_len = strlen(purge->secret);
       break;
     case 'f':
+      TSfree(purge->state_file);
       purge->state_file = make_state_path(optarg);
       break;
     }

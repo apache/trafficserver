@@ -88,7 +88,7 @@ check_parent_path(const std::string &path)
     if (exists(Layout::relative_to(yaml_path, "runroot.yaml"))) {
       return yaml_path;
     }
-    yaml_path = yaml_path.substr(0, yaml_path.find_last_of("/"));
+    yaml_path = yaml_path.substr(0, yaml_path.find_last_of('/'));
   }
   return {};
 }
@@ -142,7 +142,7 @@ path_handler(const std::string &path, bool run_flag, const std::string &command)
   if (!command.empty() && realpath(command.c_str(), RealBinPath) != nullptr) {
     std::string bindir = RealBinPath;
 
-    bindir = bindir.substr(0, bindir.find_last_of("/")); // getting the bin dir not executable path
+    bindir = bindir.substr(0, bindir.find_last_of('/')); // getting the bin dir not executable path
     bindir = check_parent_path(bindir);
     if (!bindir.empty()) {
       return bindir;
@@ -390,7 +390,7 @@ LayoutEngine::remove_runroot()
       if (dir.size() > clean_root.size() && dir.substr(0, clean_root.size()) == clean_root) {
         append_slash(dir);
         // get the directory to remove: prefix/etc/trafficserver -> prefix/etc
-        dir = dir.substr(0, dir.substr(clean_root.size()).find_first_of("/") + clean_root.size());
+        dir = dir.substr(0, dir.substr(clean_root.size()).find_first_of('/') + clean_root.size());
       }
       // don't remove cwd
       if (cur_working_dir != dir) {

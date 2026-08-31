@@ -172,26 +172,7 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   /* inbound requests stat should be incremented here, not after the
    * header has been read */
   Metrics::Counter::increment(http_rsb.total_incoming_connections);
-
-  // check what type of socket address we just accepted
-  // by looking at the address family value of sockaddr_storage
-  // and logging to stat system
-  switch (new_vc->get_remote_addr()->sa_family) {
-  case AF_INET:
-    Metrics::Counter::increment(http_rsb.total_client_connections_ipv4);
-    break;
-  case AF_INET6:
-    Metrics::Counter::increment(http_rsb.total_client_connections_ipv6);
-    break;
-  case AF_UNIX:
-    Metrics::Counter::increment(http_rsb.total_client_connections_uds);
-    break;
-  default:
-    // don't do anything if the address family is not ipv4, ipv6, or unix domain socket
-    // (there are many other address families in <sys/socket.h>
-    // but we don't have a need to report on all the others today)
-    break;
-  }
+  this->_increment_total_client_connections_stat(new_vc);
 
 #ifdef USE_HTTP_DEBUG_LISTS
   ink_mutex_acquire(&debug_cs_list_mutex);
@@ -207,7 +188,6 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   _reader     = reader ? reader : read_buffer->alloc_reader();
 
   trans.set_reader(_reader);
-  trans.upstream_outbound_options = *accept_options;
 
   _handle_if_ssl(new_vc);
 
