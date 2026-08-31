@@ -6278,7 +6278,9 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
           const char *new_wks_value = hdrtoken_string_to_wks(new_enc_val, new_enc_len);
           if (new_wks_value != wks_value) {
             if (new_enc_field) {
-              new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime, new_enc_val, new_enc_len, true);
+              new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime,
+                                          std::string_view{new_enc_val, static_cast<std::string_view::size_type>(new_enc_len)},
+                                          true);
             } else {
               new_enc_field = incoming_response->field_create();
               incoming_response->field_value_set(
@@ -9371,7 +9373,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
           if (val_code != static_cast<int>(warning_code)) {
             auto value = iter.get_current();
             if (new_field) {
-              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value.data(), value.size(), true);
+              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value, true);
             } else {
               new_field = to_warn->field_create();
               to_warn->field_value_set(new_field, value);

@@ -225,9 +225,14 @@ read_config_from_json(json_t *const issuer_json)
               ++ad;
               ++ad_old_ct;
             }
-            cfg->auth_directives =
+            auto *new_auth_directives =
               static_cast<auth_directive *>(realloc(cfg->auth_directives, (ad_ct + ad_old_ct + 1) * sizeof *cfg->auth_directives));
-            ad = cfg->auth_directives + ad_old_ct;
+            if (!new_auth_directives) {
+              PluginError("Unable to extend auth_directives.");
+              goto cfg_fail;
+            }
+            cfg->auth_directives = new_auth_directives;
+            ad                   = cfg->auth_directives + ad_old_ct;
           } else {
             ad = cfg->auth_directives = static_cast<auth_directive *>(malloc((ad_ct + 1) * sizeof *cfg->auth_directives));
           }

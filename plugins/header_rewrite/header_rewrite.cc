@@ -22,6 +22,7 @@
 #include <stack>
 #include <stdexcept>
 #include <array>
+#include <utility>
 #include <getopt.h>
 
 #include "ts/ts.h"
@@ -287,7 +288,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       if (!validate_rule_completion(rule.get(), fname, lineno)) {
         return false;
       } else {
-        add_rule(std::move(rule));
+        add_rule(std::exchange(rule, nullptr));
       }
     }
 

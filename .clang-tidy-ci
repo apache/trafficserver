@@ -1,5 +1,5 @@
-# This local configuration is a superset of .clang-tidy-ci so editor
-# diagnostics include every check enforced by CI.
+# Keep this list explicit so upgrading Clang does not silently enable new
+# diagnostics. Add checks after their findings are clean on the CI image.
 Checks: >-
   -*,
   bugprone-dangling-handle,
@@ -33,24 +33,10 @@ Checks: >-
   bugprone-unique-ptr-array-mismatch,
   bugprone-unused-raii,
   bugprone-use-after-move,
-  google-readability-braces-around-statements,
-  google-readability-casting,
-  modernize-deprecated-headers,
-  modernize-loop-convert,
-  modernize-raw-string-literal,
-  modernize-redundant-void-arg,
-  modernize-use-bool-literals,
-  modernize-use-nullptr,
-  modernize-use-override,
-  modernize-use-using,
   performance-faster-string-find,
   performance-inefficient-algorithm,
   performance-inefficient-vector-operation,
   performance-move-constructor-init,
   performance-unnecessary-copy-initialization,
-  performance-unnecessary-value-param,
   portability-std-allocator-const
-CheckOptions:
-  - key: modernize-use-default-member-init.UseAssignment
-    value: '1'
-HeaderFilterRegex: (?!(\/openssl\/|\/pcre\/|\/lib\/yaml\/)).*
+WarningsAsErrors: '*'

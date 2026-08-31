@@ -4645,7 +4645,7 @@ HttpSM::check_sni_host()
     return;
   }
 
-  int host_sni_policy = t_state.http_config_param->http_host_sni_policy;
+  int host_sni_policy = static_cast<unsigned char>(t_state.http_config_param->http_host_sni_policy);
   if (snis->would_have_actions_for(std::string{host_name}.c_str(), netvc->get_remote_endpoint(), host_sni_policy) &&
       host_sni_policy > 0) {
     // In a SNI/Host mismatch where the Host would have triggered SNI policy, mark the transaction
@@ -5492,8 +5492,8 @@ std::string_view
 HttpSM::get_outbound_sni() const
 {
   using namespace swoc::literals;
-  swoc::TextView zret;
-  swoc::TextView policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
+  std::string_view zret;
+  swoc::TextView   policy{t_state.txn_conf->ssl_client_sni_policy, swoc::TextView::npos};
 
   TLSSNISupport *snis = nullptr;
   if (_ua.get_txn()) {
@@ -5511,15 +5511,15 @@ HttpSM::get_outbound_sni() const
   } else if (_ua.get_txn() && snis && policy == "server_name"_tv) {
     const char *const server_name = snis->get_sni_server_name();
     if (nullptr == server_name || server_name[0] == '\0') {
-      zret.assign(nullptr, swoc::TextView::npos);
+      zret = {};
     } else {
-      zret.assign(server_name, swoc::TextView::npos);
+      zret = server_name;
     }
   } else if (policy.front() == '@') { // guaranteed non-empty from previous clause
     zret = policy.remove_prefix(1);
   } else {
     // If other is specified, like "remap" and "verify_with_name_source", the remapped origin name is used for the SNI value
-    zret.assign(t_state.server_info.name, swoc::TextView::npos);
+    zret = t_state.server_info.name;
   }
   return zret;
 }
