@@ -27,7 +27,6 @@
 #include "swoc/TextView.h"
 #include "tsutil/TsSharedMutex.h"
 #include "yaml-cpp/node/node.h"
-#include <shared_mutex>
 #include <string>
 #include <string_view>
 
@@ -84,24 +83,28 @@ template <> struct convert<HostDBCache> {
   {
     Node partitions;
     for (size_t i = 0; i < hostDB->refcountcache->partition_count(); i++) {
-      auto                                 &partition = hostDB->refcountcache->get_partition(i);
-      std::vector<RefCountCacheHashEntry *> partition_entries;
+      auto                             &partition = hostDB->refcountcache->get_partition(i);
+      std::vector<HostDBRecord::Handle> partition_records;
 
       {
-        std::shared_lock<ts::shared_mutex> shared_lock{partition.lock};
-        partition_entries.reserve(partition.count());
-        partition.copy(partition_entries);
+        ts::read_guard lock{partition.lock};
+
+        partition_records.reserve(partition.count());
+        for (auto &&entry : partition.get_map()) {
+          partition_records.emplace_back(make_ptr(static_cast<HostDBRecord *>(entry.item.get())));
+        }
       }
 
-      if (partition_entries.empty()) {
+      if (partition_records.empty()) {
         continue;
       }
 
       Node partition_node;
       partition_node["id"] = i;
 
-      for (RefCountCacheHashEntry *entry : partition_entries) {
-        HostDBRecord *record = static_cast<HostDBRecord *>(entry->item.get());
+      for (auto const &record_handle : partition_records) {
+        HostDBRecord *record = record_handle.get();
+
         if (!hostname.empty() && record->name_view().find(hostname) == std::string_view::npos) {
           continue;
         }
@@ -190,10 +193,16 @@ swoc::Rv<YAML::Node>
 get_hostdb_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &params)
 {
   swoc::Rv<YAML::Node> resp;
+  HostDBCache         *cache = hostDBProcessor.cache();
+  if (cache->refcountcache == nullptr) {
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("HostDB is not initialized");
+    return resp;
+  }
+
   try {
     HostDBGetStatusCmdInfo cmd = params.as<HostDBGetStatusCmdInfo>();
 
-    YAML::Node data = YAML::convert<HostDBCache>::encode(hostDBProcessor.cache(), cmd.hostname);
+    YAML::Node data = YAML::convert<HostDBCache>::encode(cache, cmd.hostname);
 
     resp.result()["data"] = data;
   } catch (std::exception const &ex) {
@@ -201,6 +210,20 @@ get_hostdb_status(std::string_view const & /* id ATS_UNUSED */, YAML::Node const
       .assign(std::error_code{errors::Codes::SERVER})
       .note("Error found when calling get_hostdb_status API: {}", ex.what());
   }
+  return resp;
+}
+
+swoc::Rv<YAML::Node>
+clear_hostdb(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  if (hostDBProcessor.cache()->refcountcache == nullptr) {
+    resp.errata().assign(std::error_code{errors::Codes::SERVER}).note("HostDB is not initialized");
+    return resp;
+  }
+
+  hostDBProcessor.clear();
+  Note("HostDB cleared via JSONRPC");
   return resp;
 }
 } // namespace rpc::handlers::hostdb

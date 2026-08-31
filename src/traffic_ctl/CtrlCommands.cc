@@ -950,6 +950,9 @@ HostDBCommand::HostDBCommand(ts::Arguments *args) : CtrlCommand(args)
   if (get_parsed_arguments()->get(STATUS_STR)) {
     _printer      = std::make_unique<HostDBStatusPrinter>(printOpts);
     _invoked_func = [&]() { status_get(); };
+  } else if (get_parsed_arguments()->get(CLEAR_STR)) {
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
+    _invoked_func = [&]() { clear(); };
   }
 }
 
@@ -966,6 +969,16 @@ HostDBCommand::status_get()
   }
 
   HostDBGetStatusRequest request{std::move(params)};
+
+  auto response = invoke_rpc(request);
+
+  _printer->write_output(response);
+}
+
+void
+HostDBCommand::clear()
+{
+  HostDBClearRequest request;
 
   auto response = invoke_rpc(request);
 

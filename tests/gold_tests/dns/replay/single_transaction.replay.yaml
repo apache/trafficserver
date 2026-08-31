@@ -35,6 +35,7 @@ sessions:
         - [ X-Request, { value: request, as: equal } ]
 
     server-response:
+      delay: 3s
       status: 200
       reason: OK
       headers:
