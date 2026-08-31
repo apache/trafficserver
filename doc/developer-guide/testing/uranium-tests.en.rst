@@ -144,6 +144,18 @@ fallback. Pass ``--run-in-container`` to force this behavior or
 short ``/tmp`` sandbox avoids Unix socket path limits; afterward, regular files
 are copied to ``build-urtest-container/sandbox`` on the host.
 
+Direct execution is also a supported workflow for a natively configured build,
+including on macOS. The generated ``<build>/tests/urtest.sh`` records the ATS,
+Proxy Verifier, build, and sandbox paths, so editor test integrations can invoke
+it without reconstructing the build configuration. Use
+``--no-run-in-container`` to select this workflow.
+
+Running ``uv sync`` in ``tests/`` creates an in-tree environment that editors
+can discover. The checked-in ``[tool.pyright]`` paths in ``tests/pyproject.toml``
+make Uranium's support modules resolvable by Pyright. A local
+``pyrightconfig.json`` takes precedence over those settings, so it must repeat
+them if one is present.
+
 The default changes to direct execution when either condition is true:
 
 - A Docker, Podman, containerd, or Kubernetes marker indicates that the
