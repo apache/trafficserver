@@ -320,6 +320,13 @@ URLImpl::unmarshal(intptr_t offset)
 }
 
 void
+URLImpl::recompute_wks_idx()
+{
+  m_scheme_wks_idx =
+    m_ptr_scheme != nullptr ? static_cast<int16_t>(hdrtoken_tokenize(m_ptr_scheme, m_len_scheme, nullptr)) : int16_t{-1};
+}
+
+void
 URLImpl::rehome_strings(HdrHeap *new_heap)
 {
   m_ptr_scheme         = new_heap->localize({m_ptr_scheme, m_len_scheme}).data();

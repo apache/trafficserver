@@ -326,8 +326,11 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
   ts::VersionNumber version(doc->v_major, doc->v_minor);
 
   // introduced by https://github.com/apache/trafficserver/pull/4874, this is used to distinguish the doc version
-  // before and after #4847
-  if (version < CACHE_DB_VERSION) {
+  // before and after #4847. Only objects written before the fragment offset table was marshalled in
+  // full need the old reader, so this compares against that fixed version rather than the current
+  // one: with CACHE_DB_VERSION here, bumping the cache version would route every object written by
+  // the previous release through a reader that rebuilds their fragment offset tables wrongly.
+  if (version < CACHE_DB_FRAG_OFFSET_TABLE_VERSION) {
     unmarshal_func = &HTTPInfo::unmarshal_v24_1;
   }
 
