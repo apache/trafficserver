@@ -41,7 +41,7 @@ from .assertions import assert_matches_gold
 from .config import ReplayConfigError, ReplaySpec, format_plugin_entry, merge_flat_records, write_yaml
 from .process import ManagedProcess
 from .runtime import TestRuntime
-from .utils import loopback_addresses, tcp_open
+from .utils import loopback_addresses, python_environment_executable, tcp_open
 
 
 class ReplaySkip(RuntimeError):
@@ -132,7 +132,12 @@ class ReplayTest:
             mappings.append({hostname if hostname.endswith(".") else hostname + ".": addresses})
         zone_file = directory / "dns_file.json"
         zone_file.write_text(json.dumps({"mappings": mappings, "otherwise": otherwise}))
-        process = ManagedProcess(name, ["microdns", "INADDR_LOOPBACK", str(self.dns_port), str(zone_file)], directory)
+        process = ManagedProcess(
+            name,
+            [python_environment_executable("microdns"), "INADDR_LOOPBACK",
+             str(self.dns_port), str(zone_file)],
+            directory,
+        )
         process.start()
         self.processes.append(process)
 

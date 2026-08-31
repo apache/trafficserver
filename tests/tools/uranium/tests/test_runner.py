@@ -25,6 +25,7 @@ from tools.uranium.runner import (
     RunnerError,
     _cmake_cache_value,
     _copy_sandbox_artifacts,
+    _library_path_variable,
     _short_sandbox,
     _uv_run_prefix,
     choose_container_mode,
@@ -104,8 +105,15 @@ def test_fedora_runner_installs_the_accelerated_diff_extra(tmp_path: Path) -> No
     :param tmp_path: Stand-in path for the configured Python project.
     """
 
-    assert _uv_run_prefix(tmp_path, True) == ["uv", "--project", str(tmp_path), "run", "--extra", "fast-diff"]
-    assert _uv_run_prefix(tmp_path, False) == ["uv", "--project", str(tmp_path), "run"]
+    assert _uv_run_prefix(tmp_path, True) == ["uv", "--project", str(tmp_path), "run", "--locked", "--extra", "fast-diff"]
+    assert _uv_run_prefix(tmp_path, False) == ["uv", "--project", str(tmp_path), "run", "--locked"]
+
+
+def test_library_path_variable_matches_the_host_loader() -> None:
+    """Use dyld's variable on macOS and the ELF loader variable elsewhere."""
+
+    assert _library_path_variable("darwin") == "DYLD_LIBRARY_PATH"
+    assert _library_path_variable("linux") == "LD_LIBRARY_PATH"
 
 
 def test_runner_help_separates_wrapper_and_pytest_options() -> None:

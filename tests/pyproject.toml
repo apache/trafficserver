@@ -68,3 +68,9 @@ fast-diff = [
 dev = [
     "pyflakes",
 ]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+
+[tool.pyright]
+extraPaths = [".", "uranium_tests/remap", "uranium_tests/remap_yaml", "uranium_tests/lib"]
