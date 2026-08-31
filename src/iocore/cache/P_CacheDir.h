@@ -41,8 +41,6 @@ struct InterimCacheVol;
 struct CacheVC;
 class CacheEvacuateDocVC;
 
-// #define LOOP_CHECK_MODE 1
-
 /*
   Directory layout
 */
@@ -308,6 +306,14 @@ public:
    */
   Dir *get_segment(int s) const;
 
+  /* Longest chain a bucket can legitimately hold.
+   *
+   * init_segment() frees rows 1..DIR_DEPTH-1 of every bucket onto the segment free list and never row 0, so one
+   * chain holds at most every free entry of the segment plus its own head. A walk past this has revisited an entry,
+   * which means the chain loops.
+   */
+  int max_bucket_depth() const;
+
   int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
   int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
   int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
@@ -405,6 +411,12 @@ inline Dir *
 Directory::get_segment(int s) const
 {
   return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+}
+
+inline int
+Directory::max_bucket_depth() const
+{
+  return (DIR_DEPTH - 1) * this->buckets + 1;
 }
 
 inline void
