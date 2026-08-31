@@ -53,19 +53,20 @@ if(ENABLE_URTEST_UDS)
 endif()
 
 configure_file(pyproject.toml pyproject.toml COPYONLY)
+configure_file(uv.lock uv.lock COPYONLY)
 configure_file(urtest.sh.in urtest.sh @ONLY USE_SOURCE_PERMISSIONS)
 
 add_custom_target(
   urtest-replay
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker -m uranium_replay
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-container -m uranium_replay
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
 
 add_custom_target(
   urtest-replay-no-install
-  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker -m uranium_replay
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-container -m uranium_replay
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
@@ -73,14 +74,14 @@ add_custom_target(
 add_custom_target(
   urtest
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-container
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
 
 add_custom_target(
   urtest-no-install
-  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-container
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )
@@ -88,7 +89,7 @@ add_custom_target(
 add_custom_target(
   urtest-uds
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target install
-  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-docker --curl-uds
+  COMMAND ${CMAKE_CURRENT_BINARY_DIR}/urtest.sh --no-run-in-container --curl-uds
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   USES_TERMINAL
 )

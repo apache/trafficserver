@@ -18,8 +18,22 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 import re
+import shutil
 import socket
+import sys
+
+
+def python_environment_executable(name: str) -> str:
+    """Resolve a console script installed beside the running interpreter.
+
+    :param name: Console-script executable name.
+    :return: Absolute path when installed in the active Python environment,
+        otherwise the original name for ordinary ``PATH`` resolution.
+    """
+
+    return shutil.which(name, path=str(Path(sys.executable).parent)) or name
 
 
 def loopback_addresses(ports: Iterable[int]) -> str:

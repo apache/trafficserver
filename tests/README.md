@@ -65,7 +65,15 @@ Force either mode when needed:
 The older `--run-in-docker` and `--no-run-in-docker` spellings remain aliases.
 
 The generated `<build>/tests/urtest.sh` entry point is fastest when ATS is
-already built and installed in the current environment.
+already built and installed in the current environment. This is also a
+supported native macOS workflow: the generated wrapper keeps the configured
+ATS, Proxy Verifier, build, and sandbox paths stable for command-line and
+editor test runners.
+
+Running `uv sync` in `tests/` creates an environment that editors can discover.
+`tests/pyproject.toml` supplies Pyright's source paths; if you create a
+`pyrightconfig.json`, remember that Pyright gives that file precedence over the
+settings in `pyproject.toml`.
 
 ### Selecting tests
 
