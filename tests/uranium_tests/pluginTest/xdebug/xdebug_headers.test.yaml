@@ -58,7 +58,10 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 500
-          headers: {fields: [[X-Cache-Info, {as: absent}]]}
+          headers:
+            fields:
+              - [Content-Type, {value: "text/html; charset=utf-8", as: equal}]
+              - [X-Cache-Info, {as: absent}]
 
       - all: {headers: {fields: [[uuid, cache-one]]}}
         client-request:
@@ -103,7 +106,10 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 500
-          headers: {fields: [[X-Effective-URL, {value: "http://none/argh", as: contains}]]}
+          headers:
+            fields:
+              - [Content-Type, {value: "text/html; charset=utf-8", as: equal}]
+              - [X-Effective-URL, {value: "http://none/argh", as: contains}]
 
       - all: {headers: {fields: [[uuid, effective-one]]}}
         client-request:
