@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
-'''Send a POST whose body is never completed, then a following request.
+'''Leave a request body unfinished, then send a following request.
 
-Raw sockets rather than curl so the request body can be left unfinished and so
-no proxy environment variables are consulted.
+Raw sockets rather than curl so a declared body can be left unsent, and so no
+proxy environment variables are consulted.
+
+Two scenarios, which differ in how the origin answers early and therefore in
+which ATS release path decides what happens to the origin connection:
+
+  abandoned-tunnel  POST answered 420 early, which builds a response tunnel.
+  revalidate-304    body-carrying GET on a stale entry answered 304 early, which
+                    builds no response tunnel.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -56,36 +63,66 @@ def status_of(response: bytes) -> str:
     return response.split(b'\r\n', 1)[0].decode(errors='replace')
 
 
+def request(port: int, head: bytes, label: str) -> bytes:
+    '''Send one request on its own connection and report the status.
+
+    :param port: ATS port to connect to.
+    :param head: The complete request head to send.
+    :param label: Label used in the reported line.
+    :return: The response bytes.
+    '''
+    conn = socket.create_connection(('127.0.0.1', port), timeout=10)
+    try:
+        conn.sendall(head)
+        response = read_response(conn)
+        print(f'{label} STATUS {status_of(response)}', flush=True)
+        return response
+    finally:
+        conn.close()
+
+
+def body_carrying(method: str, path: str) -> bytes:
+    '''Build a request head that declares a body which will never be sent.
+
+    :param method: Request method.
+    :param path: Request target.
+    :return: The request head bytes.
+    '''
+    return (f'{method} {path} HTTP/1.1\r\n'
+            f'Host: example.com\r\n'
+            f'Content-Length: {DECLARED_BODY_LENGTH}\r\n'
+            f'\r\n').encode()
+
+
 def main() -> int:
-    '''Drive the two requests.
+    '''Drive the requested scenario.
 
     :return: Process exit status.
     '''
     port = int(sys.argv[1])
+    scenario = sys.argv[2]
 
-    # Declare a body and send none of it. The origin answers early, so ATS is left
-    # holding a request body it has not finished forwarding.
-    first = socket.create_connection(('127.0.0.1', port), timeout=10)
-    first.sendall(
-        b'POST /early HTTP/1.1\r\n'
-        b'Host: example.com\r\n'
-        b'Content-Length: ' + str(DECLARED_BODY_LENGTH).encode() + b'\r\n'
-        b'\r\n')
-    print(f'EARLY-POST STATUS {status_of(read_response(first))}', flush=True)
-    first.close()
+    if scenario == 'abandoned-tunnel':
+        # The origin answers before ATS has finished forwarding the body, so ATS
+        # is left holding a body it has not finished sending.
+        request(port, body_carrying('POST', '/early'), 'EARLY-POST')
+    elif scenario == 'revalidate-304':
+        # Prime the cache with an entry that is immediately stale.
+        request(port, b'GET /revalidate HTTP/1.1\r\nHost: example.com\r\n\r\n', 'PRIME')
+        time.sleep(1)
+        # Revalidating request that also declares a body. The origin answers 304
+        # without reading it, and ATS serves the cached copy.
+        request(port, body_carrying('GET', '/revalidate'), 'REVALIDATE')
+    else:
+        print(f'unknown scenario {scenario}', file=sys.stderr)
+        return 1
 
     # Give ATS time to finish the transaction and decide what to do with the
     # origin connection.
     time.sleep(2)
 
     # A separate, ordinary request. It must reach the origin as a request.
-    second = socket.create_connection(('127.0.0.1', port), timeout=10)
-    second.sendall(b'GET /probe HTTP/1.1\r\n'
-                   b'Host: example.com\r\n'
-                   b'\r\n')
-    response = read_response(second)
-    print(f'PROBE STATUS {status_of(response)}', flush=True)
-    second.close()
+    request(port, b'GET /probe HTTP/1.1\r\nHost: example.com\r\n\r\n', 'PROBE')
 
     return 0
 

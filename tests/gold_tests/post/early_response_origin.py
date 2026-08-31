@@ -32,6 +32,23 @@ EARLY_RESPONSE = (b'HTTP/1.1 420 Be Calm\r\n'
                   b'Connection: keep-alive\r\n'
                   b'\r\n')
 
+# Cacheable but immediately stale, so the next request for it revalidates.
+CACHEABLE_BODY = b'cached-body\n'
+CACHEABLE_RESPONSE = (
+    b'HTTP/1.1 200 OK\r\n'
+    b'Cache-Control: max-age=0\r\n'
+    b'Last-Modified: Fri, 08 Aug 2025 08:08:08 GMT\r\n'
+    b'Content-Length: ' + str(len(CACHEABLE_BODY)).encode() + b'\r\n'
+    b'Connection: keep-alive\r\n'
+    b'\r\n' + CACHEABLE_BODY)
+
+EARLY_NOT_MODIFIED = (
+    b'HTTP/1.1 304 Not Modified\r\n'
+    b'Cache-Control: max-age=0\r\n'
+    b'Last-Modified: Fri, 08 Aug 2025 08:08:08 GMT\r\n'
+    b'Connection: keep-alive\r\n'
+    b'\r\n')
+
 REQUEST_LINE = re.compile(rb'^[A-Z]+ \S+ HTTP/1\.[01]\r?$', re.MULTILINE)
 
 
@@ -104,13 +121,22 @@ def serve(conn: socket.socket, conn_id: int) -> None:
             if not head:
                 return
 
-            first_line = head.split(b'\r\n', 1)[0].decode(errors='replace')
-            print(f'CONN {conn_id} REQUEST {first_line}', flush=True)
+            first_line = head.split(b'\r\n', 1)[0]
+            print(f'CONN {conn_id} REQUEST {first_line.decode(errors="replace")}', flush=True)
 
-            if b' /early' in head.split(b'\r\n', 1)[0]:
+            if b' /early' in first_line:
                 # Answer before reading the body, then discard it.
                 conn.sendall(EARLY_RESPONSE)
                 drain(conn, content_length_of(head), conn_id)
+            elif b' /revalidate' in first_line:
+                if re.search(rb'\r\nif-modified-since:|\r\nif-none-match:', head, re.IGNORECASE):
+                    # A revalidation. Answer 304 before reading the body, then
+                    # discard it. A 304 builds no response tunnel in ATS, so this
+                    # reaches a different release path than /early does.
+                    conn.sendall(EARLY_NOT_MODIFIED)
+                    drain(conn, content_length_of(head), conn_id)
+                else:
+                    conn.sendall(CACHEABLE_RESPONSE)
             else:
                 conn.sendall(
                     b'HTTP/1.1 200 OK\r\n'
