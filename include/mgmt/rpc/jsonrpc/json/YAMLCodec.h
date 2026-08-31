@@ -28,9 +28,9 @@ namespace rpc::json_codecs
 {
 ///
 /// @note The overall design is to make this classes @c yamlcpp_json_decoder and @c yamlcpp_json_encoder plugables into the Json Rpc
-/// encode/decode logic. yamlcpp does not give us all the behavior we need, such as the way it handles the null values. Json needs
-/// to use literal null and yamlcpp uses ~. If this becomes a problem, then we may need to change the codec implementation, we just
-/// follow the api and it should work with minimum changes.
+/// encode/decode logic. yamlcpp defaults to emitting null as ~, which is valid yaml but not valid json, so every emitter here sets
+/// @c YAML::LowerNull to spell it literal null. Both spellings resolve back to null when parsed as yaml, so accepting yaml input
+/// is unaffected.
 ///
 
 ///
@@ -251,8 +251,8 @@ class yamlcpp_json_encoder
     if (!resp.id.empty()) {
       json << YAML::Key << "id" << YAML::Value << resp.id;
     }
-    // else: We do not insert null as it will break the json, we need literal null and not ~ (as per yaml)
-    // json << YAML::Null;
+    // else: the field is omitted rather than set to null. Emitting it would be valid json now that LowerNull is set, but the
+    // omission is deliberate, see the id note in mgmt/rpc/schema/jsonrpc_response_schema.json.
 
     json << YAML::EndMap;
   }
@@ -268,6 +268,7 @@ public:
   encode(const specs::RPCResponseInfo &resp)
   {
     YAML::Emitter json;
+    json.SetNullFormat(YAML::LowerNull);
     json << YAML::DoubleQuoted << YAML::Flow;
     encode(resp, json);
 
@@ -284,6 +285,7 @@ public:
   encode(const specs::RPCResponse &response)
   {
     YAML::Emitter json;
+    json.SetNullFormat(YAML::LowerNull);
     json << YAML::DoubleQuoted << YAML::Flow;
     {
       if (response.is_batch()) {

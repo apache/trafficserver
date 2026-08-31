@@ -202,6 +202,7 @@ public:
   encode(shared::rpc::JSONRPCRequest const &req)
   {
     YAML::Emitter json;
+    json.SetNullFormat(YAML::LowerNull);
     json << YAML::DoubleQuoted << YAML::Flow;
     json << YAML::BeginMap;
 
