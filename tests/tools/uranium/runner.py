@@ -144,9 +144,6 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
     command = [
         *_uv_run_prefix(config.project_directory, is_official_test_container()),
         "pytest",
-        "--import-mode=importlib",
-        "-p",
-        "tools.uranium.plugin",
         str(config.source_root / "tests" / "tools" / "uranium" / "tests"),
         str(config.source_root / "tests" / "uranium_tests"),
         f"--ats-bin={config.install_prefix / 'bin'}",
@@ -158,17 +155,8 @@ def run_configured(config: ConfiguredBuild, arguments: Sequence[str]) -> int:
         *pytest_arguments,
     ]
     environment = os.environ.copy()
-    python_paths = [
-        config.source_root / "tests",
-        config.source_root / "tests" / "uranium_tests" / "remap",
-        config.source_root / "tests" / "uranium_tests" / "remap_yaml",
-        config.source_root / "tests" / "uranium_tests" / "lib",
-    ]
-    if existing := environment.get("PYTHONPATH"):
-        environment["PYTHONPATH"] = os.pathsep.join([*(str(path) for path in python_paths), existing])
-    else:
-        environment["PYTHONPATH"] = os.pathsep.join(str(path) for path in python_paths)
-    environment["LD_LIBRARY_PATH"] = _prepend_path(config.install_prefix / "lib", environment.get("LD_LIBRARY_PATH"))
+    library_path_variable = _library_path_variable()
+    environment[library_path_variable] = _prepend_path(config.install_prefix / "lib", environment.get(library_path_variable))
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
     for proxy_variable in ("HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "no_proxy"):
         environment[proxy_variable] = ""
@@ -184,10 +172,20 @@ def _uv_run_prefix(project_directory: Path, use_accelerated_diff: bool) -> list[
     :param use_accelerated_diff: Whether to install the optional C diff extra.
     """
 
-    command = ["uv", "--project", str(project_directory), "run"]
+    command = ["uv", "--project", str(project_directory), "run", "--locked"]
     if use_accelerated_diff:
         command.extend(["--extra", "fast-diff"])
     return command
+
+
+def _library_path_variable(platform: str | None = None) -> str:
+    """Return the dynamic-library search variable for a host platform.
+
+    :param platform: Host platform name, or ``None`` to use ``sys.platform``.
+    :return: Environment variable honored by the platform's dynamic loader.
+    """
+
+    return "DYLD_LIBRARY_PATH" if (sys.platform if platform is None else platform) == "darwin" else "LD_LIBRARY_PATH"
 
 
 def runner_help() -> str:
