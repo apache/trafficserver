@@ -18,7 +18,6 @@
   limitations under the License.
 */
 
-#include "../../../../iocore/cache/P_CacheDir.h"
 #include "iocore/eventsystem/EventProcessor.h"
 #include "iocore/net/ConnectionTracker.h"
 #include "mgmt/rpc/handlers/server/Server.h"
@@ -174,12 +173,6 @@ server_stop_drain(std::string_view const & /* id ATS_UNUSED */, YAML::Node const
   }
 
   return resp;
-}
-
-void
-server_shutdown(YAML::Node const &)
-{
-  sync_cache_dir_on_shutdown();
 }
 
 swoc::Rv<YAML::Node>
