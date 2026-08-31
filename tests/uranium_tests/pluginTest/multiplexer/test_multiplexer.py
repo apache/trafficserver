@@ -32,6 +32,13 @@ class MultiplexerScenario:
         services: ServiceFactory,
         variant: str,
     ) -> None:
+        """Configure one multiplexer scenario variant.
+
+        :param ats_factory: Factory used to create the Traffic Server process.
+        :param services: Factory used to create supporting processes.
+        :param variant: Multiplexer behavior variant to exercise.
+        """
+
         self._services = services
         self._variant = variant
         self._origin_replay, self._copy_replay = self.select_replays(variant)
@@ -42,7 +49,10 @@ class MultiplexerScenario:
 
     @staticmethod
     def select_replays(variant: str) -> tuple[Path, Path]:
-        """Return the original and copy-side Proxy Verifier traffic files."""
+        """Return the original and copy-side Proxy Verifier traffic files.
+
+        :param variant: Multiplexer behavior variant to exercise.
+        """
 
         names = {
             "copy-post-put": ("multiplexer_original.replay.yaml", "multiplexer_copy.replay.yaml"),
@@ -53,7 +63,10 @@ class MultiplexerScenario:
         return TEST_DIRECTORY / "replays" / origin, TEST_DIRECTORY / "replays" / copy
 
     def configure_servers(self, services: ServiceFactory) -> tuple[VerifierServer, VerifierServer, VerifierServer]:
-        """Create distinct verifier listeners for the original, HTTP copy, and HTTPS copy."""
+        """Create distinct verifier listeners for the original, HTTP copy, and HTTPS copy.
+
+        :param services: Factory used to create the verifier servers.
+        """
 
         return (
             services.verifier_server("origin", self._origin_replay),
@@ -63,12 +76,18 @@ class MultiplexerScenario:
 
     @staticmethod
     def configure_dns(services: ServiceFactory) -> DNSServer:
-        """Resolve the three logical backend names to the local listeners."""
+        """Resolve the three logical backend names to the local listeners.
+
+        :param services: Factory used to create the DNS server.
+        """
 
         return services.dns("dns", default="127.0.0.1")
 
     def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Configure the remap plugin and its two multiplexed destinations."""
+        """Configure the remap plugin and its two multiplexed destinations.
+
+        :param ats_factory: Factory used to create the Traffic Server process.
+        """
 
         ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
         if not ats.plugin_exists("multiplexer.so"):
@@ -90,7 +109,10 @@ class MultiplexerScenario:
         return ats
 
     def configure_client(self, services: ServiceFactory) -> ProcessService:
-        """Drive the original HTTPS request stream through ATS."""
+        """Drive the original HTTPS request stream through ATS.
+
+        :param services: Factory used to create the verifier client.
+        """
 
         return services.verifier_client(
             "client",
@@ -101,6 +123,10 @@ class MultiplexerScenario:
     def verify_server_traffic(self) -> None:
         """Check routing coverage beyond Proxy Verifier's field assertions."""
 
+        final_identifier = "INVALID_CHUNK" if self._variant == "invalid-chunk" else "MYCUSTOMMETHOD"
+        self._origin.wait_for_output(rf"^uuid: {final_identifier}$")
+        self._http_copy.wait_for_output(rf"^uuid: {final_identifier}$")
+        self._https_copy.wait_for_output(rf"^uuid: {final_identifier}$")
         origin = self._origin.output
         http_copy = self._http_copy.output
         https_copy = self._https_copy.output
@@ -145,6 +171,11 @@ class MultiplexerScenario:
 
 @pytest.mark.parametrize("variant", ("copy-post-put", "skip-post-put", "invalid-chunk"))
 def test_multiplexer(ats_factory: ATSFactory, services: ServiceFactory, variant: str) -> None:
-    """The multiplexer plugin copies eligible requests without disrupting the original transaction."""
+    """The multiplexer plugin copies eligible requests without disrupting the original transaction.
+
+    :param ats_factory: Factory used to create the Traffic Server process.
+    :param services: Factory used to create supporting processes.
+    :param variant: Multiplexer behavior variant to exercise.
+    """
 
     MultiplexerScenario(ats_factory, services, variant).run()

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import re
+import time
 from typing import Any
 
 from ..expectations import StreamExpectations
@@ -134,6 +135,24 @@ class ProcessService:
     @property
     def output(self) -> str:
         return self.stdout_text + self.stderr_text
+
+    def wait_for_output(self, expression: str, count: int = 1, timeout: float = 10) -> str:
+        """Wait until captured process output contains enough matching lines.
+
+        :param expression: Regular expression matched against combined standard
+            output and standard error.
+        :param count: Minimum number of required matches.
+        :param timeout: Maximum number of seconds to wait.
+        """
+
+        deadline = time.monotonic() + timeout
+        output = ""
+        while time.monotonic() < deadline:
+            output = self.output
+            if len(re.findall(expression, output, re.MULTILINE)) >= count:
+                return output
+            time.sleep(0.1)
+        raise AssertionError(f"Expected {count} matches for {expression!r} in {self.name} output.\n{output}")
 
     def start(self) -> None:
         self._process.start()
