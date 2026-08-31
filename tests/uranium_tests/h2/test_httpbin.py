@@ -30,18 +30,31 @@ class HttpbinH2Scenario:
     """Exercise HTTP/2 requests against a go-httpbin origin."""
 
     def __init__(self, ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
+        """Configure an HTTP/2 scenario.
+
+        :param ats_factory: Factory used to create the Traffic Server process.
+        :param services: Factory used to create the httpbin origin.
+        :param curl: Curl client used to send HTTP/2 requests.
+        """
+
         self._curl = curl
         self._httpbin = self.configure_httpbin(services)
         self._ats = self.configure_ats(ats_factory)
 
     @staticmethod
     def configure_httpbin(services: ServiceFactory) -> HttpBinServer:
-        """Create the HTTP behavior origin."""
+        """Create the HTTP behavior origin.
+
+        :param services: Factory used to create the httpbin origin.
+        """
 
         return services.httpbin("httpbin")
 
     def configure_ats(self, ats_factory: ATSFactory) -> ATS:
-        """Terminate HTTP/2, add Via headers, and configure access logging."""
+        """Terminate HTTP/2, add Via headers, and configure access logging.
+
+        :param ats_factory: Factory used to create the Traffic Server process.
+        """
 
         ats = ats_factory.create("ts", enable_tls=True, enable_cache=False)
         ats.add_default_ssl_files()
@@ -59,6 +72,7 @@ class HttpbinH2Scenario:
                 "proxy.config.http.insert_response_via_str": 1,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http",
+                "proxy.config.log.max_secs_per_buffer": 1,
             })
         ats.set_logging_yaml(
             {
@@ -80,7 +94,11 @@ class HttpbinH2Scenario:
         return ats
 
     def request(self, path: str, *arguments: str) -> CommandResult:
-        """Send one verbose HTTP/2 request through ATS."""
+        """Send one verbose HTTP/2 request through ATS.
+
+        :param path: Request path appended to the Traffic Server URL.
+        :param arguments: Additional curl command-line arguments.
+        """
 
         result = self._curl.run_for(
             self._ats,
@@ -132,6 +150,11 @@ class HttpbinH2Scenario:
 
 
 def test_httpbin(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
-    """HTTP/2 correctly proxies common httpbin response behaviors."""
+    """HTTP/2 correctly proxies common httpbin response behaviors.
+
+    :param ats_factory: Factory used to create the Traffic Server process.
+    :param services: Factory used to create the httpbin origin.
+    :param curl: Curl client used to send HTTP/2 requests.
+    """
 
     HttpbinH2Scenario(ats_factory, services, curl).run()
