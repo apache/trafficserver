@@ -45,7 +45,10 @@ sessions:
         server-response: {status: 599}
         proxy-response:
           status: 500
-          headers: {fields: [[X-Remap, "from=Not-Found, to=Not-Found"]]}
+          headers:
+            fields:
+              - [Content-Type, {value: "text/html; charset=utf-8", as: equal}]
+              - [X-Remap, "from=Not-Found, to=Not-Found"]
 
       - all: {headers: {fields: [[uuid, x-remap-one]]}}
         client-request:
