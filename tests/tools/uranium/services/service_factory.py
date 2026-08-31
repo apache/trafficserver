@@ -30,7 +30,7 @@ from typing import Any
 import pytest
 
 from ..process import ManagedProcess
-from ..utils import loopback_addresses, version_tuple
+from ..utils import loopback_addresses, python_environment_executable, version_tuple
 from .context import ProceduralContext
 from .dns import DNSServer
 from .httpbin import HttpBinServer
@@ -101,7 +101,7 @@ class ServiceFactory:
         address = {"INADDR_LOOPBACK": "127.0.0.1", "IN6ADDR_LOOPBACK": "::1"}.get(ip_value, ip_value)
         lookup_key = str(options.pop("lookup_key", "{PATH}"))
         command = [
-            "microserver",
+            python_environment_executable("microserver"),
             "--data-dir",
             data_directory,
             "--ip_address",
@@ -173,7 +173,7 @@ class ServiceFactory:
         zone_file.write_text(json.dumps({"mappings": [], **({"otherwise": otherwise} if otherwise else {})}))
         process = ManagedProcess(
             name,
-            ["microdns", "INADDR_LOOPBACK", port, zone_file],
+            [python_environment_executable("microdns"), "INADDR_LOOPBACK", port, zone_file],
             directory,
             test_directory=self._context.test_directory,
         )
