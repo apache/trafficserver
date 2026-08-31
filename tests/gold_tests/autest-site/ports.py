@@ -142,9 +142,13 @@ def _get_listening_ports() -> Set[int]:
     return ports
 
 
-def _setup_port_queue(amount=1000):
+def _setup_port_queue(amount=2000):
     """
     Build up the set of ports that the OS in theory will not use.
+
+    Once this queue is exhausted get_port() falls back to _get_port_by_bind(),
+    which reserves nothing, so the pool has to outlast the largest test. The
+    biggest single consumer is remap_acl, at roughly 1330 ports.
     """
     global g_ports
     if g_ports is None:
