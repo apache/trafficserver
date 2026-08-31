@@ -19,6 +19,7 @@ terminating traffic_server.
 #  limitations under the License.
 
 import os
+import shlex
 
 Test.Summary = '''
 rate_limit: a malformed YAML config fails the reload without killing ATS.
@@ -85,7 +86,7 @@ tr.StillRunningAfter = ts
 # each overwrite to make sure it does.
 for description, bad_config in [("selector entry without an sni key", missing_sni), ("a fractional percentage", bad_percentage)]:
     tr = Test.AddTestRun(f"Install {description}")
-    tr.Processes.Default.Command = f"sleep 2 && cp {bad_config} {rate_limit_yaml}"
+    tr.Processes.Default.Command = f"sleep 2 && cp {shlex.quote(bad_config)} {shlex.quote(rate_limit_yaml)}"
     tr.Processes.Default.ReturnCode = 0
     tr.StillRunningAfter = ts
 

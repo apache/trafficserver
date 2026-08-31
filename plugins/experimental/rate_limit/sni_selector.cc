@@ -38,7 +38,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
   try {
     return parseYamlFile(yaml_file);
   } catch (YAML::BadFile const &e) {
-    TSError("[%s] Cannot load configuration file: %s.", PLUGIN_NAME, e.what());
+    TSError("[%s] Cannot load configuration file %s: %s.", PLUGIN_NAME, yaml_file.c_str(), e.what());
   } catch (std::exception const &e) {
     TSError("[%s] Failed to parse configuration file %s: %s.", PLUGIN_NAME, yaml_file.c_str(), e.what());
   }
@@ -50,8 +50,6 @@ bool
 SniSelector::parseYamlFile(const std::string &yaml_file)
 {
   YAML::Node config = YAML::LoadFile(yaml_file);
-
-  _yaml_file = yaml_file;
 
   // First build the Lists, if any
   const YAML::Node &lists = config["lists"];
@@ -120,10 +118,11 @@ SniSelector::parseYamlFile(const std::string &yaml_file)
 
   if (sel && sel.IsSequence()) {
     for (const auto &i : sel) {
-      const YAML::Node &sni = i;
+      const YAML::Node &sni      = i;
+      const YAML::Node  sni_node = sni.IsMap() ? sni["sni"] : YAML::Node{};
 
-      if (sni.IsMap() && sni["sni"] && !sni["sni"].IsSequence()) {
-        auto name = sni["sni"].as<std::string>();
+      if (sni_node && !sni_node.IsSequence()) {
+        auto name = sni_node.as<std::string>();
 
         if (nullptr != findLimiter(name)) {
           TSError("[%s] Duplicate SNIs being added (%s)", PLUGIN_NAME, name.c_str());
@@ -176,6 +175,7 @@ SniSelector::parseYamlFile(const std::string &yaml_file)
     }
   }
 
+  _yaml_file = yaml_file;
   Dbg(dbg_ctl, "Succesfully loaded YAML file: %s", yaml_file.c_str());
 
   return true;
