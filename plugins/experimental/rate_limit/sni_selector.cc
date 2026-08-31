@@ -28,8 +28,8 @@ std::atomic<SniSelector *> SniSelector::_instance = nullptr;
 // YAML parser for the global YAML configuration (via plugin.config)
 //
 // This is the exception boundary for the configuration parsing. The node
-// accessors and conversions in parseYamlFile() throw on malformed input, and
-// this runs on the management update continuation during a config reload, so
+// accessors and conversions in parseYamlFile() throw on malformed input, and a
+// config reload runs this on an ET_TASK thread via ConfigUpdateCallback, so
 // letting an exception escape here would terminate the server.
 //
 bool
@@ -121,7 +121,7 @@ SniSelector::parseYamlFile(const std::string &yaml_file)
       const YAML::Node &sni      = i;
       const YAML::Node  sni_node = sni.IsMap() ? sni["sni"] : YAML::Node{};
 
-      if (sni_node && !sni_node.IsSequence()) {
+      if (sni.IsMap() && sni_node && !sni_node.IsSequence()) {
         auto name = sni_node.as<std::string>();
 
         if (nullptr != findLimiter(name)) {

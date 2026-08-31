@@ -63,6 +63,13 @@ bad_percentage = os.path.join(Test.RunDirectory, 'bad_percentage.yaml')
 with open(bad_percentage, 'w') as f:
     f.write('ip-rep:\n  - name: test\n    size: 15\n    percentage: 0.9\n')
 
+# A selector entry that is a sequence rather than a map, which is what one extra
+# level of indentation produces. Nothing here throws, so only the IsMap() check
+# keeps it from being accepted as a limiter named "null".
+non_map = os.path.join(Test.RunDirectory, 'non_map.yaml')
+with open(non_map, 'w') as f:
+    f.write('selector:\n  - - sni: indented.example.com\n      limit: 5\n')
+
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'rate_limit',
@@ -84,7 +91,8 @@ tr.StillRunningAfter = ts
 
 # The plugin callback only fires when the file mtime advances, so sleep before
 # each overwrite to make sure it does.
-for description, bad_config in [("selector entry without an sni key", missing_sni), ("a fractional percentage", bad_percentage)]:
+for description, bad_config in [("selector entry without an sni key", missing_sni), ("a fractional percentage", bad_percentage),
+                                ("a selector entry that is not a map", non_map)]:
     tr = Test.AddTestRun(f"Install {description}")
     tr.Processes.Default.Command = f"sleep 2 && cp {shlex.quote(bad_config)} {shlex.quote(rate_limit_yaml)}"
     tr.Processes.Default.ReturnCode = 0
@@ -98,11 +106,17 @@ for description, bad_config in [("selector entry without an sni key", missing_sn
     tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("200", "ATS should still be serving traffic")
     tr.StillRunningAfter = ts
 
-# Both cases have to be reported and rejected. Assigning here replaces the
+# Every case has to be reported and rejected. Assigning here replaces the
 # default "diags.log has no ERROR:" testers, since these errors are expected.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "selector node is not a map or without a name", "The missing sni key should be reported, not thrown")
+    "selector node is not a map or without a name", "The malformed selector entries should be reported, not thrown")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "Failed to parse configuration file", "The bad percentage should be caught by the parser")
-ts.Disk.diags_log.Content += Testers.ContainsExpression("Failed to reload YAML file", "Both reloads should be rejected")
-ts.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL", "ATS should not die on a malformed config")
+ts.Disk.diags_log.Content += Testers.ContainsExpression("Failed to reload YAML file", "The reloads should be rejected")
+
+# sni_config_cont() logs this only after a parse succeeds, right before it swaps
+# the new selector in. None of the three configs may get that far, so this is
+# what separates "rejected, previous config kept" from "accepted and the limits
+# silently dropped". The 200s above cannot tell those apart, because the origin
+# answers either way.
+ts.Disk.traffic_out.Content = Testers.ExcludesExpression("Reloading YAML file", "No malformed config should be swapped in")
