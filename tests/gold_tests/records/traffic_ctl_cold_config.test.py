@@ -160,10 +160,13 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 # An empty file name reaches traffic_ctl when it is taken from a variable that is unset.  The
 # --cold=FILE form has always rejected it; the space-separated form used to fall through to the
 # default records.yaml instead, so a run meant for another file read or wrote the live one.
+# These runs go through "sh -c" because autest indexes the first character of every argument
+# it splits, so an empty argument written straight into Command raises IndexError before the
+# process starts.
 
 # 13
 tr = Test.AddTestRun("An empty file name is reported rather than taken as the default file")
-tr.Processes.Default.Command = 'traffic_ctl config get -c "" proxy.config.diags.debug.tags'
+tr.Processes.Default.Command = """sh -c 'traffic_ctl config get -c "" proxy.config.diags.debug.tags'"""
 tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
@@ -171,7 +174,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 
 # 14
 tr = Test.AddTestRun("An empty file name is reported before anything is written")
-tr.Processes.Default.Command = 'traffic_ctl config set -c "" proxy.config.cache.limits.http.max_alts 9'
+tr.Processes.Default.Command = """sh -c 'traffic_ctl config set -c "" proxy.config.cache.limits.http.max_alts 9'"""
 tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
@@ -179,7 +182,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(
 
 # 15
 tr = Test.AddTestRun("The long spelling of an empty file name is reported as written")
-tr.Processes.Default.Command = 'traffic_ctl config get --cold "" proxy.config.diags.debug.tags'
+tr.Processes.Default.Command = """sh -c 'traffic_ctl config get --cold "" proxy.config.diags.debug.tags'"""
 tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
@@ -191,4 +194,4 @@ tr.Processes.Default.Command = 'traffic_ctl config set -c proxy.config.cache.lim
 tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    '2 argument(s) expected by set', 'set must report what it was left without, as the docs show')
+    r'2 argument\(s\) expected by set', 'set must report what it was left without, as the docs show')
