@@ -21,10 +21,10 @@
 #define TS_LUA_MAX_PACKAGE_PATH_LEN 256
 #define TS_LUA_MAX_PACKAGE_NUM      64
 
-typedef struct {
+struct ts_lua_package_path {
   size_t len;
   char  *name;
-} ts_lua_package_path;
+};
 
 static int                 path_cnt = 0;
 static ts_lua_package_path path[TS_LUA_MAX_PACKAGE_NUM];
