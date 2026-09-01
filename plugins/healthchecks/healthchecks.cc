@@ -48,11 +48,11 @@ static DbgCtl dbg_ctl{PLUGIN_NAME};
 #define MAX_BODY_LEN 16384
 
 /* Directories that we are watching for inotify IN_CREATE events. */
-typedef struct HCDirEntry_t {
+using HCDirEntry = struct HCDirEntry_t {
   char                 dname[MAX_PATH_LEN]; /* Directory name */
   int                  wd;                  /* Watch descriptor */
   struct HCDirEntry_t *_next;               /* Linked list */
-} HCDirEntry;
+};
 
 /* Information about a status file. This is never modified (only replaced, see HCFileInfo) */
 struct HCFileData {

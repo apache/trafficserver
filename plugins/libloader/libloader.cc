@@ -32,10 +32,10 @@
 #include <stdlib.h>
 #include <ts/ts.h>
 
-typedef struct link_handle_s {
+using link_handle = struct link_handle_s {
   void          *handle;
   link_handle_s *next;
-} link_handle;
+};
 
 static link_handle *libs = nullptr;
 
