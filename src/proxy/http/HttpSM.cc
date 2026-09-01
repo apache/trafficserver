@@ -2182,38 +2182,20 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
 
   switch (state) {
-  case ParseResult::ERROR: {
-    // Many broken servers send really badly formed 302 redirects.
-    //  Even if the parser doesn't like the redirect forward
-    //  if it's got a Location header.  We check the type of the
-    //  response to make sure that the parser was able to parse
-    //  something  and didn't just throw up it's hands (INKqa05339)
-    bool allow_error = false;
-    if (t_state.hdr_info.server_response.type_get() == HTTPType::RESPONSE &&
-        t_state.hdr_info.server_response.status_get() == HTTPStatus::MOVED_TEMPORARILY) {
-      if (t_state.hdr_info.server_response.field_find(static_cast<std::string_view>(MIME_FIELD_LOCATION))) {
-        allow_error = true;
-      }
-    }
+  case ParseResult::ERROR:
+    SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
+    t_state.current.state = HttpTransact::PARSE_ERROR;
+    t_state.set_connect_fail(EBADMSG);
 
-    if (allow_error == false) {
-      SMDbg(dbg_ctl_http_seq, "Error parsing server response header");
-      t_state.current.state = HttpTransact::PARSE_ERROR;
-      t_state.set_connect_fail(EBADMSG);
-
-      // If the server closed prematurely on us, use the
-      //   server setup error routine since it will forward
-      //   error to a POST tunnel if any
-      if (event == VC_EVENT_EOS) {
-        handle_server_setup_error(VC_EVENT_EOS, data);
-      } else {
-        call_transact_and_set_next_state(HttpTransact::HandleResponse);
-      }
-      break;
+    // If the server closed prematurely on us, use the
+    //   server setup error routine since it will forward
+    //   error to a POST tunnel if any
+    if (event == VC_EVENT_EOS) {
+      handle_server_setup_error(VC_EVENT_EOS, data);
+    } else {
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
-    // FALLTHROUGH (since we are allowing the parse error)
-  }
-    // fallthrough
+    break;
 
   case ParseResult::DONE: {
     if (!t_state.hdr_info.server_response.check_hdr_implements()) {
