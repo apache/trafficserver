@@ -640,3 +640,229 @@ TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]"
   REQUIRE(Metrics::Counter::load(p) == 7);
   REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
 }
+
+TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("a tombstoned metric is skipped by iteration")
+  {
+    Metrics::Counter::create("tombstone.iter.before");
+    auto target = Metrics::Counter::create("tombstone.iter.target");
+    Metrics::Counter::create("tombstone.iter.after");
+
+    REQUIRE(m.tombstone(target));
+
+    bool saw_before = false, saw_target = false, saw_after = false;
+
+    for (auto &&[name, type, value] : m) {
+      saw_before |= (name == "tombstone.iter.before");
+      saw_target |= (name == "tombstone.iter.target");
+      saw_after  |= (name == "tombstone.iter.after");
+    }
+
+    REQUIRE(saw_before);
+    REQUIRE_FALSE(saw_target);
+    REQUIRE(saw_after);
+  }
+
+  SECTION("creating a tombstoned name again resurrects it")
+  {
+    auto p  = Metrics::Counter::createPtr("tombstone.resurrect");
+    auto id = m.lookup("tombstone.resurrect");
+
+    Metrics::Counter::increment(p, 5);
+    REQUIRE(m.tombstone(id));
+    REQUIRE(m.tombstoned(id));
+
+    // Same name, same id, same atomic, and the mark is gone.
+    auto p2 = Metrics::Counter::createPtr("tombstone.resurrect");
+    REQUIRE(p2 == p);
+    REQUIRE(m.lookup("tombstone.resurrect") == id);
+    REQUIRE_FALSE(m.tombstoned(id));
+
+    // Visible again, with its value intact.
+    bool found = false;
+    for (auto &&[name, type, value] : m) {
+      if (name == "tombstone.resurrect") {
+        found = true;
+        REQUIRE(value == 5);
+      }
+    }
+    REQUIRE(found);
+  }
+
+  SECTION("tombstone by name, and clearing the mark")
+  {
+    auto id = Metrics::Counter::create("tombstone.byname");
+
+    REQUIRE(m.tombstone("tombstone.byname"));
+    REQUIRE(m.tombstoned(id));
+
+    REQUIRE(m.tombstone("tombstone.byname", false));
+    REQUIRE_FALSE(m.tombstoned(id));
+
+    bool found = false;
+    for (auto &&[name, type, value] : m) {
+      found |= (name == "tombstone.byname");
+    }
+    REQUIRE(found);
+
+    // A name that was never created cannot be marked.
+    REQUIRE_FALSE(m.tombstone("tombstone.byname.never.created"));
+  }
+
+  SECTION("a tombstoned metric is still resolvable and still counts")
+  {
+    auto p  = Metrics::Counter::createPtr("tombstone.resolvable");
+    auto id = m.lookup("tombstone.resolvable");
+
+    REQUIRE(m.tombstone(id));
+
+    // Hidden from enumeration is not gone: by name, by id, and through the atomic it is unchanged.
+    REQUIRE(m.lookup("tombstone.resolvable") == id);
+    REQUIRE(m.lookup(id) == p);
+    REQUIRE(m.valid(id));
+    REQUIRE(m.name(id) == "tombstone.resolvable");
+    REQUIRE(m.type(id) == Metrics::MetricType::COUNTER);
+
+    Metrics::Counter::increment(p, 3);
+    REQUIRE(Metrics::Counter::load(p) == 3);
+  }
+
+  SECTION("begin() skips a tombstoned first slot")
+  {
+    // Slot 0 is the reserved bad_id and is what begin() would otherwise return.
+    auto bad_id = m.lookup("proxy.process.api.metrics.bad_id");
+    REQUIRE(bad_id == 0);
+
+    REQUIRE(m.tombstone(bad_id));
+    REQUIRE(std::get<0>(*m.begin()) != "proxy.process.api.metrics.bad_id");
+
+    REQUIRE(m.tombstone(bad_id, false));
+    REQUIRE(std::get<0>(*m.begin()) == "proxy.process.api.metrics.bad_id");
+  }
+
+  SECTION("a tombstoned run at the end of the store terminates iteration")
+  {
+    // Skipping the last slots in the store is the case where the skip loop has nothing unmarked
+    // left to land on.
+    constexpr int            COUNT = 8;
+    std::vector<std::string> names;
+
+    names.reserve(COUNT);
+    for (int i = 0; i < COUNT; ++i) {
+      names.push_back("tombstone.tail." + std::to_string(i));
+      REQUIRE(m.tombstone(Metrics::Counter::create(names[i])));
+    }
+
+    auto count = std::distance(m.begin(), m.end());
+    REQUIRE(count > 0);
+
+    for (auto &&[name, type, value] : m) {
+      for (auto const &n : names) {
+        REQUIRE(name != n);
+      }
+    }
+  }
+
+  SECTION("iterator comparison")
+  {
+    auto a = m.begin();
+    auto b = m.begin();
+    auto e = m.end();
+
+    REQUIRE(a == b);
+
+    ++a;
+    REQUIRE(a != b); // two live iterators still compare by position
+
+    while (a != e) {
+      ++a;
+    }
+    REQUIRE(a == e); // exhausted equals the sentinel
+
+    while (b != e) {
+      ++b;
+    }
+    REQUIRE(b == a); // and equals another exhausted iterator
+  }
+
+  SECTION("iterating to a bound that is not end()")
+  {
+    // A sub-range delimited by a positional iterator has to terminate even when marked slots fall
+    // inside it. Both ends skip by the same rule, so the walk still lands exactly on the bound.
+    auto first = Metrics::Counter::create("tombstone.range.1");
+    auto skip1 = Metrics::Counter::create("tombstone.range.2");
+    auto skip2 = Metrics::Counter::create("tombstone.range.3");
+    Metrics::Counter::create("tombstone.range.4");
+    Metrics::Counter::create("tombstone.range.5");
+
+    REQUIRE(m.tombstone(skip1));
+    REQUIRE(m.tombstone(skip2));
+
+    auto stop = m.find("tombstone.range.5");
+    REQUIRE(stop != m.end());
+
+    std::vector<std::string> seen;
+
+    for (auto it = m.find("tombstone.range.1"); it != stop; ++it) {
+      seen.push_back(std::string(std::get<0>(*it)));
+      REQUIRE(seen.size() <= 4); // do not spin if the bound is never reached
+    }
+
+    REQUIRE(seen == std::vector<std::string>{"tombstone.range.1", "tombstone.range.4"});
+    REQUIRE(first != Metrics::NOT_FOUND);
+  }
+
+  SECTION("find() on a tombstoned metric yields end()")
+  {
+    // Iteration never visits a marked slot, so there must be no way to get an iterator that points
+    // at one. Otherwise using it as a range bound is a walk that never terminates: the skipping
+    // iterator steps straight over the bound and runs off the end of the store.
+    auto id = Metrics::Counter::create("tombstone.unfindable");
+
+    REQUIRE(m.find("tombstone.unfindable") != m.end());
+    REQUIRE(m.tombstone(id));
+    REQUIRE(m.find("tombstone.unfindable") == m.end());
+
+    // lookup() is the supported way to reach a tombstoned metric, and is unaffected.
+    REQUIRE(m.lookup("tombstone.unfindable") == id);
+  }
+
+  SECTION("an id that names no allocated slot cannot be marked")
+  {
+    // Blob 100, offset 0. The published store is nowhere near that many blobs.
+    Metrics::IdType const unallocated = 100 << 16;
+
+    REQUIRE_FALSE(m.tombstone(unallocated));
+    REQUIRE_FALSE(m.tombstoned(unallocated));
+  }
+
+  SECTION("the hidden store tombstones independently")
+  {
+    auto &h = Metrics::hidden_instance();
+
+    Metrics::Counter::createPtr("tombstone.dual");
+    Metrics::Counter::createHiddenPtr("tombstone.dual");
+
+    auto pub_id = m.lookup("tombstone.dual");
+    auto hid_id = h.lookup("tombstone.dual");
+
+    REQUIRE(h.tombstone(hid_id));
+    REQUIRE(h.tombstoned(hid_id));
+    REQUIRE_FALSE(m.tombstoned(pub_id));
+
+    bool in_published = false, in_hidden = false;
+
+    for (auto &&[name, type, value] : m) {
+      in_published |= (name == "tombstone.dual");
+    }
+    for (auto &&[name, type, value] : h) {
+      in_hidden |= (name == "tombstone.dual");
+    }
+
+    REQUIRE(in_published);
+    REQUIRE_FALSE(in_hidden);
+  }
+}

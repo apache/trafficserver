@@ -73,6 +73,14 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   auto            it = _lookups.find(name);
 
   if (it != _lookups.end()) {
+    // Re-creating a name is how a tombstoned metric is resurrected: same slot, same atomic, and
+    // whatever value it accumulated while it was hidden.
+    auto [blob_ix, offset] = _splitID(it->second);
+
+    if (Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get(); blob != nullptr) {
+      std::get<2>(*blob)[offset].fetch_and(static_cast<uint8_t>(~TOMBSTONE), MEMORY_ORDER);
+    }
+
     return it->second;
   }
 
@@ -245,9 +253,52 @@ Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
   return true;
 }
 
+bool
+Metrics::Storage::tombstone(Metrics::IdType id, bool set)
+{
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  // Only slots that have actually been allocated can be marked.
+  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
+    return false;
+  }
+
+  // Only this bit, so a flag added later is not clobbered by a tombstone or a resurrect.
+  if (set) {
+    std::get<2>(*blob)[offset].fetch_or(TOMBSTONE, MEMORY_ORDER);
+  } else {
+    std::get<2>(*blob)[offset].fetch_and(static_cast<uint8_t>(~TOMBSTONE), MEMORY_ORDER);
+  }
+
+  return true;
+}
+
+bool
+Metrics::Storage::tombstoned(Metrics::IdType id) const
+{
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  if (!blob) {
+    return false;
+  }
+
+  return (std::get<2>(*blob)[offset].load(MEMORY_ORDER) & TOMBSTONE) != 0;
+}
+
 // Iterator implementation
+Metrics::iterator::iterator(const Metrics &m) : _metrics(m), _it(0), _bound(m._storage->current_id())
+{
+  skip_tombstoned();
+}
+
+Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos), _bound(m._storage->current_id()) {}
+
+Metrics::iterator::iterator(const Metrics &m, end_tag) : _metrics(m), _end(true) {}
+
 void
-Metrics::iterator::next()
+Metrics::iterator::advance()
 {
   auto [blob, offset] = _metrics._splitID(_it);
 
@@ -257,6 +308,23 @@ Metrics::iterator::next()
   }
 
   _it = _makeId(blob, offset, MetricType::COUNTER);
+}
+
+void
+Metrics::iterator::skip_tombstoned()
+{
+  // Bounded by the snapshot so a slot created and marked after this iterator was made cannot draw
+  // the scan past the end of what this iterator agreed to visit.
+  while (!at_end() && _metrics._storage->tombstoned(_it)) {
+    advance();
+  }
+}
+
+void
+Metrics::iterator::next()
+{
+  advance();
+  skip_tombstoned();
 }
 
 namespace details

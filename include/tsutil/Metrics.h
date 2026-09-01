@@ -96,12 +96,19 @@ public:
   static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
 private:
-  using NameAndId       = std::tuple<std::string, IdType>;
-  using LookupTable     = std::unordered_map<std::string_view, IdType>;
-  using NameStorage     = std::array<NameAndId, MAX_SIZE>;
-  using AtomicStorage   = std::array<AtomicType, MAX_SIZE>;
-  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage>;
+  using NameAndId     = std::tuple<std::string, IdType>;
+  using LookupTable   = std::unordered_map<std::string_view, IdType>;
+  using NameStorage   = std::array<NameAndId, MAX_SIZE>;
+  using AtomicStorage = std::array<AtomicType, MAX_SIZE>;
+  /// Per slot flag bits, see @c TOMBSTONE. A parallel array rather than a member of @c NameAndId
+  /// because an atomic member would make that tuple neither copyable nor movable, and the slot is
+  /// written there with a tuple assignment.
+  using FlagStorage     = std::array<std::atomic<uint8_t>, MAX_SIZE>;
+  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage, FlagStorage>;
   using BlobStorage     = std::array<std::unique_ptr<NamesAndAtomics>, MAX_BLOBS>;
+
+  /// The slot exists and is still resolvable by name or id, but is skipped by iteration.
+  static constexpr uint8_t TOMBSTONE = 0x01;
 
 public:
   Metrics(const self_type &)              = delete;
@@ -151,6 +158,36 @@ public:
   rename(IdType id, const std::string_view name)
   {
     return _storage->rename(id, name);
+  }
+
+  /** Mark @a id as not enumerated, or clear that mark.
+   *
+   * A tombstoned metric keeps its slot, its name and its atomic. It is skipped by iteration, so it
+   * vanishes from everything that enumerates the store, but it still resolves through @c lookup and
+   * its value may still be read and written. Creating the same name again clears the mark and
+   * returns the same id.
+   *
+   * @return @c false if @a id does not name an allocated slot.
+   */
+  bool
+  tombstone(IdType id, bool set = true)
+  {
+    return _storage->tombstone(id, set);
+  }
+
+  bool
+  tombstoned(IdType id) const
+  {
+    return _storage->tombstoned(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id.
+  bool
+  tombstone(std::string_view name, bool set = true)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && tombstone(id, set);
   }
 
   AtomicType &
@@ -209,7 +246,14 @@ public:
     using pointer           = value_type *;
     using reference         = value_type &;
 
-    iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos) {}
+    iterator(const Metrics &m, IdType pos);
+
+    /// Tag for the end sentinel, which has no position and reads no storage.
+    struct end_tag {
+    };
+
+    explicit iterator(const Metrics &m);
+    iterator(const Metrics &m, end_tag);
 
     iterator &
     operator++()
@@ -239,37 +283,55 @@ public:
       return std::make_tuple(name, type, metric->_value.load());
     }
 
+    /** Equality.
+     *
+     * Three way rather than a plain position compare: any exhausted iterator equals the end
+     * sentinel, and equals any other exhausted iterator, since two of them may have skipped a
+     * different number of tombstoned slots. Two live iterators still compare by position.
+     */
     bool
     operator==(const iterator &o) const
     {
-      return _it == o._it && std::addressof(_metrics) == std::addressof(o._metrics);
-    }
+      if (std::addressof(_metrics) != std::addressof(o._metrics)) {
+        return false;
+      }
 
-    bool
-    operator!=(const iterator &o) const
-    {
-      return _it != o._it || std::addressof(_metrics) != std::addressof(o._metrics);
+      bool const a = at_end(), b = o.at_end();
+
+      if (a || b) {
+        return a && b;
+      }
+      return _it == o._it;
     }
 
   private:
     void next();
+    void advance();
+    void skip_tombstoned();
+
+    bool
+    at_end() const
+    {
+      return _end || _it >= _bound;
+    }
 
     const Metrics  &_metrics;
-    Metrics::IdType _it;
+    Metrics::IdType _it{0};
+    /// One past the last slot allocated when this iterator was made. Iteration is a snapshot.
+    Metrics::IdType _bound{0};
+    bool            _end{false};
   };
 
   iterator
   begin() const
   {
-    return iterator(*this, 0);
+    return iterator(*this);
   }
 
   iterator
   end() const
   {
-    auto [blob, offset] = _storage->current();
-
-    return iterator(*this, _makeId(blob, offset, MetricType::COUNTER));
+    return iterator(*this, iterator::end_tag{});
   }
 
   iterator
@@ -277,7 +339,9 @@ public:
   {
     auto id = lookup(name);
 
-    if (id == NOT_FOUND) {
+    // A tombstoned slot is never visited by iteration, so handing out an iterator to one would
+    // produce a bound that a skipping walk steps straight over. Reach it with lookup() instead.
+    if (id == NOT_FOUND || tombstoned(id)) {
       return end();
     } else {
       return iterator(*this, id);
@@ -349,6 +413,17 @@ private:
     MetricType       type(IdType id) const;
     SpanType         createSpan(size_t size, const MetricType type = MetricType::COUNTER, IdType *id = nullptr);
     bool             rename(IdType id, const std::string_view name);
+    bool             tombstone(IdType id, bool set);
+    bool             tombstoned(IdType id) const;
+
+    /// The id one past the last allocated slot, as an iteration bound.
+    IdType
+    current_id() const
+    {
+      auto [blob, offset] = current();
+
+      return _makeId(blob, offset, MetricType::COUNTER);
+    }
 
     std::pair<int16_t, int16_t>
     current() const
