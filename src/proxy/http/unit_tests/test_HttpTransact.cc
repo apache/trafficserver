@@ -31,6 +31,7 @@ using namespace std::string_view_literals;
 #include "tsutil/PostScript.h"
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/remap/RemapProcessor.h"
 #include "records/RecordsConfig.h"
@@ -970,4 +971,13 @@ TEST_CASE("HttpTransact", "[http]")
     REQUIRE(field != nullptr);
     CHECK(field->value_get() == "ok"sv);
   }
+}
+
+TEST_CASE("Compatibility cache writes use canonical object info", "[http][cache][compatibility]")
+{
+  CacheHTTPInfo object_read_info;
+
+  CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, &object_read_info) ==
+        &object_read_info);
+  CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, &object_read_info) == nullptr);
 }

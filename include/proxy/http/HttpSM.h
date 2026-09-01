@@ -344,6 +344,25 @@ public:
   void           set_http_schedule(Continuation *);
   int            get_http_schedule(int event, void *data);
 
+  static CacheHTTPInfo *
+  cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+  {
+    if (lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+      return nullptr;
+    }
+    return object_read_info;
+  }
+
+  MgmtByte
+  get_cache_open_write_fail_action() const
+  {
+    if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92 &&
+        cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
+      return static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE);
+    }
+    return t_state.txn_conf->cache_open_write_fail_action;
+  }
+
 private:
   void start_sub_sm();
 

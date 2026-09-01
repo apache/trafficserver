@@ -2625,11 +2625,11 @@ HttpSM::state_cache_open_write(int event, void *data)
       t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::FAIL;
       break;
     }
-    if (t_state.txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::DEFAULT)) {
+    if (get_cache_open_write_fail_action() == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::DEFAULT)) {
       t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::FAIL;
       break;
     } else {
-      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+      t_state.cache_open_write_fail_action = get_cache_open_write_fail_action();
       if (!t_state.cache_info.object_read || (t_state.cache_open_write_fail_action ==
                                               static_cast<MgmtByte>(CacheOpenWriteFailAction_t::ERROR_ON_MISS_OR_REVALIDATE))) {
         // cache miss, set wl_state to fail
@@ -2641,9 +2641,10 @@ HttpSM::state_cache_open_write(int event, void *data)
     }
   // INTENTIONAL FALL THROUGH
   // Allow for stale object to be served
-  case CACHE_EVENT_OPEN_READ:
+  case CACHE_EVENT_OPEN_READ: {
+    MgmtByte const write_fail_action = get_cache_open_write_fail_action();
     if (!t_state.cache_info.object_read) {
-      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+      t_state.cache_open_write_fail_action = write_fail_action;
       // READ_RETRY mode: write lock failed, no stale object available.
       // CACHE_LOOKUP_COMPLETE will fire from HandleCacheOpenReadMiss with MISS result.
       ink_assert(t_state.cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
@@ -2651,6 +2652,9 @@ HttpSM::state_cache_open_write(int event, void *data)
                    static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE));
       t_state.cache_lookup_result         = HttpTransact::CacheLookupResult_t::NONE;
       t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
+      if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+        compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
+      }
       break;
     }
     // The write vector was locked and the cache_sm retried
@@ -2667,10 +2671,15 @@ HttpSM::state_cache_open_write(int event, void *data)
     t_state.source = HttpTransact::Source_t::CACHE;
     // clear up CacheLookupResult_t::MISS, let Freshness function decide
     // hit status
-    t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+    t_state.cache_open_write_fail_action = write_fail_action;
     t_state.cache_lookup_result          = HttpTransact::CacheLookupResult_t::NONE;
     t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::READ_RETRY;
+    if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+      // Subsequent retry must use canonical key after a compatibility write conflict.
+      compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
+    }
     break;
+  }
 
   case HTTP_TUNNEL_EVENT_DONE:
     // In the case where we have issued a cache write for the
@@ -2789,9 +2798,8 @@ HttpSM::state_cache_open_read(int event, void *data)
     // during retry, or MISS if nothing is found (from HandleCacheOpenReadMiss).
     // This ensures plugins see only the final cache lookup result, avoiding issues
     // like stats double-counting and duplicate hook registrations.
-    if (t_state.txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
-        t_state.txn_conf->cache_open_write_fail_action ==
-          static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
+    if (get_cache_open_write_fail_action() == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+        get_cache_open_write_fail_action() == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
       SMDbg(dbg_ctl_http, "READ_RETRY configured, deferring CACHE_LOOKUP_COMPLETE hook");
       t_state.cache_lookup_complete_deferred = true;
       call_transact_and_set_next_state(nullptr);
@@ -5419,8 +5427,15 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   HttpCacheKey key;
   Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
+  // A compatibility read returns an object stored under the legacy key. Passing
+  // that object to a write using the canonical key turns the write into an
+  // update, but the canonical-key vector does not contain the legacy alternate.
+  // Cache::open_write then fails with ECACHE_NO_DOC instead of creating the
+  // migrated object. Create a new canonical-key object for compatibility reads.
+  CacheHTTPInfo *write_object_read_info = cache_write_info_for_lookup(compatibility_cache_lookup, object_read_info);
+
   pending_action =
-    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, write_object_read_info,
                      static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
                      retry, allow_multiple);
 }
