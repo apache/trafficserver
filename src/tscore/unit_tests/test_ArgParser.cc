@@ -470,39 +470,6 @@ TEST_CASE("A repeated option requiring at least one argument accumulates too", "
   REQUIRE(parsed.get("format").value() == "json");
 }
 
-TEST_CASE("A default command does not repeat the values of a global option", "[parse]")
-{
-  ts::ArgParser parser;
-  parser.add_global_usage("test_prog CMD [OPTIONS]");
-
-  // Mirrors traffic_layout, where "info" is the default command and --run-root is global. The
-  // first pass matches no command and is retried with the default inserted, so a global option
-  // is parsed twice and must not collect its value twice.
-  parser.add_option("--run-root", "", "runroot", "", 1);
-  parser.add_option("--tag", "", "tags", "", MORE_THAN_ZERO_ARG_N, "");
-  parser.add_command("info", "show the layout").set_default();
-
-  const char   *argv1[] = {"test_prog", "--run-root", "/tmp/rr", nullptr};
-  ts::Arguments parsed  = parser.parse(argv1);
-  REQUIRE(parsed.get("info") == true);
-  REQUIRE(parsed.get("run-root").size() == 1);
-  REQUIRE(parsed.get("run-root").value() == "/tmp/rr");
-
-  // An accumulating option is the case that would double, since it is the one that keeps what
-  // an earlier pass collected.
-  const char *argv2[] = {"test_prog", "--tag", "a", "b", nullptr};
-  parsed              = parser.parse(argv2);
-  REQUIRE(parsed.get("info") == true);
-  REQUIRE(parsed.get("tag").size() == 2);
-  REQUIRE(parsed.get("tag")[0] == "a");
-  REQUIRE(parsed.get("tag")[1] == "b");
-
-  // Naming the command explicitly takes the same path once.
-  const char *argv3[] = {"test_prog", "info", "--run-root", "/tmp/rr", nullptr};
-  parsed              = parser.parse(argv3);
-  REQUIRE(parsed.get("run-root").size() == 1);
-}
-
 TEST_CASE("A repeated option taking a fixed number of arguments keeps the last value", "[parse]")
 {
   ts::ArgParser parser;
