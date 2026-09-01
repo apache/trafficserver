@@ -41,11 +41,15 @@ namespace Yaml
 
   // Put an emitter into JSON output mode.
   //
-  // yaml-cpp has no JSON mode. The nearest equivalent is flow style with every scalar double quoted, which is valid
-  // JSON for every node type except null: yaml-cpp writes ~, and no JSON parser accepts that. LowerNull writes the
-  // literal null. YAML reads ~ and null as the same value, so output stays readable as YAML either way.
+  // yaml-cpp has no JSON output mode. The nearest equivalent is flow style with every scalar double quoted. For the
+  // node shapes the callers here emit -- maps, sequences, scalars and nulls, carrying no tags, anchors or aliases --
+  // that is JSON-compatible except for null: yaml-cpp writes `~`, which JSON parsers reject. LowerNull writes the
+  // literal `null` instead. YAML resolves `~` and `null` to the same value, so the output still reads as YAML.
   //
-  // Every emitter whose output reaches a JSON consumer must go through here. Setting two of the three manipulators
+  // This is not a general YAML to JSON converter. A node that carries a tag, an anchor or an alias still emits YAML
+  // syntax that JSON does not accept.
+  //
+  // Every emitter whose output reaches a JSON consumer must go through here. Setting only some of the manipulators
   // gives output that looks like JSON and parses correctly until some node is null.
   //
   inline void

@@ -24,6 +24,7 @@
 
 #include <swoc/swoc_meta.h>
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/YamlCfg.h"
 
 #include "CtrlPrinters.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"

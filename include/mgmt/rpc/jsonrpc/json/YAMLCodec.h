@@ -29,10 +29,10 @@
 namespace rpc::json_codecs
 {
 ///
-/// @note The overall design is to make this classes @c yamlcpp_json_decoder and @c yamlcpp_json_encoder plugables into the Json Rpc
-/// encode/decode logic. yamlcpp defaults to emitting null as ~, which is valid yaml but not valid json, so every emitter here sets
-/// @c YAML::LowerNull to spell it literal null. Both spellings resolve back to null when parsed as yaml, so accepting yaml input
-/// is unaffected.
+/// @note The design keeps @c yamlcpp_json_decoder and @c yamlcpp_json_encoder replaceable in the JSONRPC encode/decode logic.
+/// yaml-cpp emits null as @c ~ by default, which JSON parsers reject. Every emitter here calls
+/// @c ts::Yaml::configure_json_emitter, which writes the literal @c null instead. YAML resolves @c ~ and @c null to the same
+/// value, so the server still accepts YAML input.
 ///
 
 ///

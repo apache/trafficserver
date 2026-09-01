@@ -74,9 +74,8 @@ Our JSONRPC  protocol implementation uses lib yamlcpp for parsing incoming and o
 this allows the server to accept either JSON or YAML format messages which then will be parsed by the protocol implementation. This seems handy
 for user that want to feed |TS| with existing yaml configuration without the need to translate yaml into json.
 
-Null values on the way out are emitted as literal ``null`` rather than yaml's ``~``, as ``~`` is not accepted by JSON parsers. Both
-spellings resolve to null when read as yaml, so this does not affect messages that are consumed as yaml, nor the ability to send
-yaml to the server.
+The server emits null values as the literal ``null``, not as YAML's ``~``. JSON parsers reject ``~``. YAML resolves ``~`` and
+``null`` to the same value. Clients that read the response as YAML see no change, and the server still accepts YAML input.
 
 .. note::
 
