@@ -41,7 +41,7 @@ static const char *DEFAULT_DIR = "var/trafficserver"; /* Not perfect, but no bet
 
 static DbgCtl dbg_ctl{PLUGIN_NAME};
 
-typedef struct PurgeInstance_t {
+using PurgeInstance = struct PurgeInstance_t {
   char   *id;
   char   *secret;
   int     secret_len;
@@ -51,7 +51,7 @@ typedef struct PurgeInstance_t {
   bool    allow_get;
   int64_t gen_id;
   TSMutex lock;
-} PurgeInstance;
+};
 
 static char *
 make_state_path(const char *filename)
