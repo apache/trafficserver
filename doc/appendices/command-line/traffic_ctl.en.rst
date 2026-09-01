@@ -601,6 +601,15 @@ Display the current value of a configuration record.
       $ traffic_ctl config get -c proxy.config.diags.debug.enabled
       Error: at least one argument expected by get
 
+   An empty file name is not a file name, so it is reported rather than taken as a request for
+   the default file. This matters when the name comes from a variable that is unset, where
+   reading or writing the live :file:`records.yaml` is unlikely to be what was meant:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config set -c "" proxy.config.diags.debug.enabled 1
+      Error: missing argument for '-c'
+
    ``-c`` is also given at most once, so repeating it is a usage error rather than the last
    file name silently winning.
 

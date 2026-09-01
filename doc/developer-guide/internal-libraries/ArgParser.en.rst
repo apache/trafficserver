@@ -133,6 +133,10 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    values keeps its last-one-wins behaviour instead, and ``AT_MOST_ONE_ARG_N`` reports a
    repetition as a usage error since it permits only one value in total.
 
+   An empty token is not a value for ``AT_MOST_ONE_ARG_N``. It is reported as a missing
+   argument rather than read as the option having been given without one, so a value taken
+   from an unset variable cannot silently select the declared default.
+
    A ``--`` token stops option recognition for the values being collected, which is how a
    value beginning with ``-`` is passed. Note this differs from the POSIX ``--``: it does
    not end the value list nor force the remainder to be positional arguments.

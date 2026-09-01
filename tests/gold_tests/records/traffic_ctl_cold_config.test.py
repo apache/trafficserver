@@ -156,3 +156,31 @@ tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     'at most one argument expected by --cold', 'The two forms must be counted together')
+
+# An empty file name reaches traffic_ctl when it is taken from a variable that is unset.  The
+# --cold=FILE form has always rejected it; the space-separated form used to fall through to the
+# default records.yaml instead, so a run meant for another file read or wrote the live one.
+
+# 13
+tr = Test.AddTestRun("An empty file name is reported rather than taken as the default file")
+tr.Processes.Default.Command = 'traffic_ctl config get -c "" proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "missing argument for '-c'", 'An empty -c value must be reported, naming the option as written')
+
+# 14
+tr = Test.AddTestRun("An empty file name is reported before anything is written")
+tr.Processes.Default.Command = 'traffic_ctl config set -c "" proxy.config.cache.limits.http.max_alts 9'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "missing argument for '-c'", 'A set with an empty -c value must not fall back to the live records.yaml')
+
+# 15
+tr = Test.AddTestRun("The long spelling of an empty file name is reported as written")
+tr.Processes.Default.Command = 'traffic_ctl config get --cold "" proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "missing argument for '--cold'", 'The error must name the spelling the caller used')

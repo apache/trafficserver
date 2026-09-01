@@ -793,6 +793,11 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         // taking at most one value cannot be given more by mixing the two spellings.
         if (cur_option.arg_num == AT_MOST_ONE_ARG_N) {
           check_map[cur_option.long_option] += 1;
+          // An empty token is not a value, and the --option=value spelling already refuses one,
+          // so refuse it here rather than silently falling back to the declared default.
+          if (i + 1 < args.size() && args[i + 1].empty()) {
+            help_message("missing argument for '" + args[i] + "'");
+          }
         }
         // handle the arguments
         std::string err = handle_args(ret, args, cur_option.key, cur_option.arg_num, i);
