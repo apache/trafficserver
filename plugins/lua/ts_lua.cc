@@ -73,15 +73,14 @@ static char const *const ts_lua_g_stat_strs[] = {
   nullptr,
 };
 
-typedef struct {
+struct ts_lua_plugin_stats {
   ts_lua_main_ctx *main_ctx_array;
 
   TSMgmtInt gc_kb;   // last collected gc in kb
   TSMgmtInt threads; // last collected number active threads
 
   int stat_inds[TS_LUA_IND_SIZE]; // stats indices
-
-} ts_lua_plugin_stats;
+};
 
 ts_lua_plugin_stats *
 create_plugin_stats(ts_lua_main_ctx *const main_ctx_array, char const *const *stat_strs)

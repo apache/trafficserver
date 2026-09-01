@@ -20,7 +20,7 @@
 #include "ts_lua_transform.h"
 #include "ts_lua_util.h"
 
-typedef enum {
+enum TSLuaHookID {
   TS_LUA_HOOK_DUMMY = 0,
   TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE,
   TS_LUA_HOOK_SEND_REQUEST_HDR,
@@ -39,7 +39,7 @@ typedef enum {
   TS_LUA_RESPONSE_CLIENT,
   TS_LUA_HOOK_VCONN_START,
   TS_LUA_HOOK_LAST
-} TSLuaHookID;
+};
 
 char const *ts_lua_hook_id_string[] = {"TS_LUA_HOOK_DUMMY",
                                        "TS_LUA_HOOK_CACHE_LOOKUP_COMPLETE",
