@@ -593,13 +593,18 @@ Display the current value of a configuration record.
 
    When no file name is given, write ``-c`` last, or use the ``--cold=`` form for the
    explicit file. A bare ``-c`` followed by a record name takes the record as the file name,
-   which leaves the command with no records of its own and is reported as a usage error:
+   which leaves the command short of its own arguments. Each command reports this in terms of
+   what it was left without:
 
    .. code-block:: bash
 
       $ traffic_ctl config get proxy.config.diags.debug.enabled -c    # default records.yaml
       $ traffic_ctl config get -c proxy.config.diags.debug.enabled
       Error: at least one argument expected by get
+
+      $ traffic_ctl config set proxy.config.diags.debug.enabled 1 -c  # default records.yaml
+      $ traffic_ctl config set -c proxy.config.diags.debug.enabled 1
+      Error: 2 argument(s) expected by set
 
    An empty file name is not a file name, so it is reported rather than taken as a request for
    the default file. This matters when the name comes from a variable that is unset, where

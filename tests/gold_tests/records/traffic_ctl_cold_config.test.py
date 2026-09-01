@@ -184,3 +184,11 @@ tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "missing argument for '--cold'", 'The error must name the spelling the caller used')
+
+# 16
+tr = Test.AddTestRun("A bare -c before the record leaves set short of its own arguments")
+tr.Processes.Default.Command = 'traffic_ctl config set -c proxy.config.cache.limits.http.max_alts 9'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    '2 argument(s) expected by set', 'set must report what it was left without, as the docs show')
