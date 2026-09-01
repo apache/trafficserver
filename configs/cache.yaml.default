@@ -1,0 +1,36 @@
+# cache.yaml
+#
+# Documentation:
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.yaml.en.html
+#
+# Rules are evaluated from top to bottom. Only the first matching rule is
+# applied to a request.
+#
+# cache:
+#   - match:
+#       # A rule may have one primary match key:
+#       # dest_host, dest_domain, dest_ip, url_regex, or host_regex.
+#       dest_domain: www.example.com
+#
+#       # Optional secondary match keys:
+#       # port, scheme, prefix, suffix, method, time, src_ip,
+#       # incoming_port, tag, and internal.
+#       scheme: http
+#
+#     action:
+#       # cache may be "never" or "standard".
+#       cache: standard
+#
+#       # Optional duration actions:
+#       # revalidate, pin_in_cache, and ttl_in_cache.
+#       revalidate: 2h
+#
+#       # Optional boolean actions:
+#       # ignore_no_cache, ignore_client_no_cache, and
+#       # ignore_server_no_cache.
+#       ignore_server_no_cache: false
+#
+#       # Optional override matching the records.yaml setting of the same name.
+#       # cache_responses_to_cookies: 0
+
+cache: []
