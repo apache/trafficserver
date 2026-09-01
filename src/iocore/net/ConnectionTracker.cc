@@ -27,6 +27,7 @@
 #include "swoc/IPAddr.h"
 
 #include <algorithm>
+#include <array>
 
 using namespace std::literals;
 
@@ -501,6 +502,12 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
                                    Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
     }
 
+    std::array<std::string, 3> const published_names{
+      "proxy.process.http.per_server.current_connection." + _metric_name,
+      "proxy.process.http.per_server.total_connection." + _metric_name,
+      "proxy.process.http.per_server.blocked_connection." + _metric_name,
+    };
+
     // AGGREGATE_ONLY suppresses the per group metrics to keep the published count proportional to
     // hostnames. Without an aggregate to stand in for them there would be nothing at all reported
     // for this group, so in that case publish them regardless.
@@ -508,12 +515,20 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
       // Mirror the per group metrics into the published store under their own name. A single
       // source SUM combines nothing, but the published value is still a sample: it is whatever
       // the last derived tick read, and it reads 0 from creation until that first tick.
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _metric_name, Metrics::MetricType::GAUGE,
-                                   _count_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _metric_name, Metrics::MetricType::COUNTER,
-                                   _count_total_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.blocked_connection." + _metric_name, Metrics::MetricType::COUNTER,
-                                   _blocked_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(published_names[0], Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(published_names[1], Metrics::MetricType::COUNTER, _count_total_metric,
+                                   Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(published_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+    } else {
+      // metric_aggregate is dynamic and overridable, so this group may well have published these
+      // names under an earlier value. A published name is never removed from the store, so without
+      // withdrawing them here they would report for the life of the process no matter what the
+      // setting says. The add_source calls above republish them if the setting changes back.
+      auto &metrics = Metrics::instance();
+
+      for (auto const &name : published_names) {
+        metrics.unlist(name);
+      }
     }
 
     if (dbg_ctl.on()) {

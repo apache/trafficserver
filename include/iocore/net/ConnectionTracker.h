@@ -94,6 +94,11 @@ public:
    * is only a change of what is registered for publication, with no metric to migrate between the
    * two stores.
    *
+   * A change is applied per group, when that group is next constructed, which happens on the first
+   * connection after its count last fell to zero. A group that never goes idle keeps whatever was
+   * in effect when it was created. Retracting a published name relies on the metric store's
+   * listing, see @c ts::Metrics::unlist.
+   *
    * The records layer validates and clamps this to 0..2. A plugin setting the overridable config
    * directly is not clamped, see @c METRIC_AGGREGATE_CONV; any other value behaves as
    * @c AGGREGATE_GROUP, publishing both the aggregate and the per group metrics.
