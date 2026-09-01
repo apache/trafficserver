@@ -351,15 +351,16 @@ public:
   }
 
   static bool
-  should_invalidate_compatibility_cache(CompatibilityCacheLookup lookup, HTTPStatus status)
+  should_invalidate_compatibility_cache(CompatibilityCacheLookup lookup, const HTTPHdr &server_response)
   {
-    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92 && status == HTTPStatus::NOT_MODIFIED;
+    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92 && server_response.valid() &&
+           server_response.status_get() == HTTPStatus::NOT_MODIFIED;
   }
 
   bool
   should_invalidate_compatibility_cache() const
   {
-    return should_invalidate_compatibility_cache(compatibility_cache_lookup, t_state.hdr_info.server_response.status_get());
+    return should_invalidate_compatibility_cache(compatibility_cache_lookup, t_state.hdr_info.server_response);
   }
 
   MgmtByte
