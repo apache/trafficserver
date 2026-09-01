@@ -5,9 +5,12 @@ variable number of values, --directive (-D) and --data (-d).
 Options declared with MORE_THAN_ZERO_ARG_N used to consume every remaining
 token, so any option written after -D was silently swallowed as a directive
 value and never parsed.  -D therefore had to be the last option, and -D could
-not be combined with -d.  These runs assert on the JSONRPC request that
-traffic_ctl builds (printed by -f rpc), because the subject under test is the
-command line parsing rather than the server side handling of the reload.
+not be combined with -d.  Once collection stops at the following option, the
+option can be written more than once, and each occurrence has to keep the
+values it collected rather than replace the ones before it.  These runs assert
+on the JSONRPC request that traffic_ctl builds (printed by -f rpc), because the
+subject under test is the command line parsing rather than the server side
+handling of the reload.
 '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -116,4 +119,37 @@ tr.Processes.Default.Command = "traffic_ctl config reload -d"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 2
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("requires content", "-d must not be a silent no-op")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 8: a repeated -D keeps the directives of every occurrence
+# ============================================================================
+tr = Test.AddTestRun("A repeated -D accumulates its directives")
+tr.Processes.Default.Command = "traffic_ctl config reload -D ip_allow.id=1 -D sni.id=2 -f rpc"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"ip_allow"', "the first occurrence must survive the second")
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"sni"', "the second occurrence must be present")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 9: repeating the option is how a directive is written after another
+# option, since collection stops at the option rather than at the value
+# ============================================================================
+tr = Test.AddTestRun("A repeated -D survives an option written between the two")
+tr.Processes.Default.Command = "traffic_ctl config reload -D ip_allow.id=1 -t cli_token_8 -D sni.id=2 -f rpc"
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"token": "cli_token_8"', "-t must keep its own value")
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"ip_allow"', "the directive before -t must survive")
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"sni"', "the directive after -t must be parsed")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 10: the documented multi source reload, where dropping one -d would
+# leave its handler out of the reload without reporting anything
+# ============================================================================
+tr = Test.AddTestRun("A repeated -d merges every source")
+tr.Processes.Default.Command = ("traffic_ctl config reload -d 'ip_allow: {rules: [x]}' -d 'sni: {rules: [y]}' -f rpc")
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"ip_allow"', "content from the first -d must be present")
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"sni"', "content from the second -d must be present")
 tr.StillRunningAfter = ts

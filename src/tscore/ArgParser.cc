@@ -195,6 +195,9 @@ ArgParser::parse(const char **argv)
     if (!default_command.empty()) {
       args = _argv;
       args.insert(args.begin() + 1, default_command);
+      // The pass that failed may have collected options before it gave up. Those values would
+      // now accumulate on top of the ones the retry collects rather than be replaced.
+      ret = Arguments{};
       _top_level_command.parse(ret, args);
     }
   };
@@ -540,8 +543,15 @@ ArgParser::Command::is_registered_option(std::string const &token) const
 std::string
 ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index) const
 {
-  ArgumentData data;
-  ret.append(name, data);
+  // A repeated option taking an unbounded number of values accumulates, as the --option=value
+  // form always has, so an entry already written by this pass keeps the values it collected. A
+  // fixed arity option keeps its last-one-wins behaviour, which is a separate concern.
+  bool const accumulates = MORE_THAN_ZERO_ARG_N == arg_num || MORE_THAN_ONE_ARG_N == arg_num;
+
+  if (!accumulates || !ret.has(name)) {
+    ArgumentData data;
+    ret.append(name, data);
+  }
   // handle the args
   if (arg_num == AT_MOST_ONE_ARG_N) {
     // Zero or one value. A value is taken only when the following token does not name
@@ -924,6 +934,12 @@ Arguments::get(std::string const &name)
     return _data_map[name];
   }
   return ArgumentData();
+}
+
+bool
+Arguments::has(std::string const &name) const noexcept
+{
+  return _data_map.find(name) != _data_map.end();
 }
 
 void

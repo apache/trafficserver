@@ -127,6 +127,12 @@ This function call returns the new :class:`Option` instance. (0 is also number o
    option written where a value is expected leaves the value missing, which is reported as a
    usage error rather than the option being consumed and applied as the value.
 
+   Because collection stops at the following option, an option taking an unbounded number of
+   values may be written more than once, and the occurrences accumulate. This matches the
+   ``--option=value`` form, which has always appended. An option taking a fixed number of
+   values keeps its last-one-wins behaviour instead, and ``AT_MOST_ONE_ARG_N`` reports a
+   repetition as a usage error since it permits only one value in total.
+
    A ``--`` token stops option recognition for the values being collected, which is how a
    value beginning with ``-`` is passed. Note this differs from the POSIX ``--``: it does
    not end the value list nor force the remainder to be positional arguments.

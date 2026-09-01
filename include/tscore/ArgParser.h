@@ -102,6 +102,12 @@ public:
   ~Arguments();
 
   ArgumentData get(std::string const &name);
+  /** Whether @a name has an entry.
+
+      @return @c true when the command or option has been parsed. Unlike get(), the called
+      flag is left alone, so this can be asked while parsing.
+   */
+  bool has(std::string const &name) const noexcept;
 
   void append(std::string const &key, ArgumentData const &value);
   // Append value to the arg to the map of key

@@ -388,3 +388,133 @@ TEST_CASE("An option taking a fixed number of arguments can be given a value sha
   REQUIRE(parsed.get("tags").value() == "http");
   REQUIRE(parsed.get("append") == true);
 }
+
+TEST_CASE("A repeated variable argument option accumulates its values", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl config reload [-D DIRECTIVE...] [-d SOURCE...] [-m]".
+  ts::ArgParser::Command &cmd = parser.add_command("reload", "reload configs");
+  cmd.add_option("--directive", "-D", "reload directives", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--data", "-d", "inline config data", "", MORE_THAN_ZERO_ARG_N, "");
+  cmd.add_option("--monitor", "-m", "monitor progress");
+
+  // Collection stops at the second -D, so the values of the first must survive it.
+  const char   *argv1[] = {"test_prog", "reload", "-D", "a.id=1", "-D", "b.id=2", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+
+  // Each occurrence keeps every value it collected, in the order written.
+  const char *argv2[] = {"test_prog", "reload", "-D", "a.id=1", "b.id=2", "-D", "c.id=3", "d.id=4", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("directive").size() == 4);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[3] == "d.id=4");
+
+  // An unrelated option written between the two occurrences keeps its own meaning.
+  const char *argv3[] = {"test_prog", "reload", "-D", "a.id=1", "-m", "-D", "b.id=2", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+  REQUIRE(parsed.get("monitor") == true);
+
+  // The two spellings count against the same option, in either order.
+  const char *argv4[] = {"test_prog", "reload", "-D", "a.id=1", "--directive=b.id=2", nullptr};
+  parsed              = parser.parse(argv4);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("directive")[0] == "a.id=1");
+  REQUIRE(parsed.get("directive")[1] == "b.id=2");
+
+  const char *argv5[] = {"test_prog", "reload", "--directive=a.id=1", "--directive=b.id=2", nullptr};
+  parsed              = parser.parse(argv5);
+  REQUIRE(parsed.get("directive").size() == 2);
+
+  // Repeated -d merges the same way, which is what the documented multi-source reload needs.
+  const char *argv6[] = {"test_prog", "reload", "-d", "@ip_allow.yaml", "-d", "@sni.yaml", nullptr};
+  parsed              = parser.parse(argv6);
+  REQUIRE(parsed.get("data").size() == 2);
+  REQUIRE(parsed.get("data")[0] == "@ip_allow.yaml");
+  REQUIRE(parsed.get("data")[1] == "@sni.yaml");
+
+  // Two different options each keep their own values.
+  const char *argv7[] = {"test_prog", "reload", "-D", "a.id=1", "-d", "@f.yaml", "-D", "b.id=2", nullptr};
+  parsed              = parser.parse(argv7);
+  REQUIRE(parsed.get("directive").size() == 2);
+  REQUIRE(parsed.get("data").size() == 1);
+  REQUIRE(parsed.get("data")[0] == "@f.yaml");
+}
+
+TEST_CASE("A repeated option requiring at least one argument accumulates too", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl rpc invoke [--params PARAM...]".
+  ts::ArgParser::Command &cmd = parser.add_command("invoke", "invoke a method");
+  cmd.add_option("--params", "-p", "request parameters", "", MORE_THAN_ONE_ARG_N, "");
+  cmd.add_option("--format", "-f", "output format", "", 1, "");
+
+  const char   *argv1[] = {"test_prog", "invoke", "-p", "one", "-p", "two", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("params").size() == 2);
+  REQUIRE(parsed.get("params")[0] == "one");
+  REQUIRE(parsed.get("params")[1] == "two");
+
+  // The arity is satisfied by the first occurrence, so a later one is not left short.
+  const char *argv2[] = {"test_prog", "invoke", "-p", "one", "-f", "json", "-p", "two", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("params").size() == 2);
+  REQUIRE(parsed.get("format").value() == "json");
+}
+
+TEST_CASE("A default command does not repeat the values of a global option", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog CMD [OPTIONS]");
+
+  // Mirrors traffic_layout, where "info" is the default command and --run-root is global. The
+  // first pass matches no command and is retried with the default inserted, so a global option
+  // is parsed twice and must not collect its value twice.
+  parser.add_option("--run-root", "", "runroot", "", 1);
+  parser.add_option("--tag", "", "tags", "", MORE_THAN_ZERO_ARG_N, "");
+  parser.add_command("info", "show the layout").set_default();
+
+  const char   *argv1[] = {"test_prog", "--run-root", "/tmp/rr", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("info") == true);
+  REQUIRE(parsed.get("run-root").size() == 1);
+  REQUIRE(parsed.get("run-root").value() == "/tmp/rr");
+
+  // An accumulating option is the case that would double, since it is the one that keeps what
+  // an earlier pass collected.
+  const char *argv2[] = {"test_prog", "--tag", "a", "b", nullptr};
+  parsed              = parser.parse(argv2);
+  REQUIRE(parsed.get("info") == true);
+  REQUIRE(parsed.get("tag").size() == 2);
+  REQUIRE(parsed.get("tag")[0] == "a");
+  REQUIRE(parsed.get("tag")[1] == "b");
+
+  // Naming the command explicitly takes the same path once.
+  const char *argv3[] = {"test_prog", "info", "--run-root", "/tmp/rr", nullptr};
+  parsed              = parser.parse(argv3);
+  REQUIRE(parsed.get("run-root").size() == 1);
+}
+
+TEST_CASE("A repeated option taking a fixed number of arguments keeps the last value", "[parse]")
+{
+  ts::ArgParser parser;
+  parser.add_global_usage("test_prog [OPTIONS]");
+
+  // Mirrors "traffic_ctl server debug enable [--tags TAGS]". Only an unbounded arity
+  // accumulates; a fixed one keeps the behaviour it has always had.
+  ts::ArgParser::Command &cmd = parser.add_command("enable", "enable debug");
+  cmd.add_option("--tags", "-t", "debug tags", "", 1);
+
+  const char   *argv1[] = {"test_prog", "enable", "-t", "http", "-t", "cache", nullptr};
+  ts::Arguments parsed  = parser.parse(argv1);
+  REQUIRE(parsed.get("tags").size() == 1);
+  REQUIRE(parsed.get("tags").value() == "cache");
+}

@@ -429,7 +429,8 @@ Display the current value of a configuration record.
       - ``directive_key`` — the directive name understood by that handler
       - ``value`` — the directive value (always passed as a string on the wire)
 
-      Multiple directives are passed as space-separated values after a single ``-D``:
+      Multiple directives are passed as space-separated values after a single ``-D``, or by
+      repeating the option. Both spellings accumulate, and they may be mixed:
 
       .. code-block:: bash
 
@@ -441,6 +442,12 @@ Display the current value of a configuration record.
 
          # Directives for different handlers in the same reload
          $ traffic_ctl config reload -D myconfig.id=foo sni.fqdn=example.com
+
+         # The same, written as a repeated option
+         $ traffic_ctl config reload -D myconfig.id=foo -D sni.fqdn=example.com
+
+         # Repeating it is how a directive is written after another option
+         $ traffic_ctl config reload -D myconfig.id=foo --monitor -D sni.fqdn=example.com
 
       On the wire, ``-D myconfig.id=foo`` translates to:
 
