@@ -199,11 +199,8 @@ public:
       s1 = key.slice32(0) % stripe->directory.segments;
       b1 = key.slice32(1) % stripe->directory.buckets;
 
-      // Valid entries, so probe() below walks past them instead of deleting them as it goes.
-      stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
       dir_clear(&dir1);
       dir_set_offset(&dir1, 1);
-      REQUIRE(stripe->dir_valid(&dir1));
       corrupt_fresh_chain();
 
       // Detection: a cycle makes the chain longer than its segment can hold.
@@ -318,6 +315,78 @@ public:
     }
     CHECK(stripe->dir_check() == 0);
 
+    stripe->clear_dir();
+
+    Dbg(dbg_ctl_cache_dir_test, "stale entry test");
+    {
+      rand_CacheKey(&key);
+      s1 = key.slice32(0) % stripe->directory.segments;
+      b1 = key.slice32(1) % stripe->directory.buckets;
+
+      // Out of phase and behind the write cursor is what a cache cycle wrap leaves behind: the entry's blocks have
+      // been overwritten, so it is stale.
+      dir_clear(&dir1);
+      dir_set_offset(&dir1, 1);
+      dir_set_phase(&dir1, !stripe->directory.header->phase);
+      stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+      REQUIRE(!stripe->dir_valid(&dir1));
+      REQUIRE(stripe->directory.insert(&key, stripe, &dir1));
+
+      Dir *bucket = dir_bucket(b1, stripe->directory.get_segment(s1));
+      REQUIRE(dir_offset(bucket) == 1);
+
+      Dir  probed;
+      Dir *stale_collision = nullptr;
+      dir_clear(&probed);
+      CHECK(stripe->directory.probe(&key, stripe, &probed, &stale_collision) == 0);
+      CHECK(dir_offset(bucket) == 1);
+
+      stripe->directory.clean_segment(s1, stripe);
+      CHECK(dir_offset(bucket) == 0);
+    }
+    stripe->clear_dir();
+
+    Dbg(dbg_ctl_cache_dir_test, "stale entry ahead of a live one test");
+    {
+      rand_CacheKey(&key);
+      s1 = key.slice32(0) % stripe->directory.segments;
+      b1 = key.slice32(1) % stripe->directory.buckets;
+
+      stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+
+      Dir stale;
+      dir_clear(&stale);
+      dir_set_offset(&stale, 1);
+      dir_set_phase(&stale, !stripe->directory.header->phase);
+      REQUIRE(!stripe->dir_valid(&stale));
+      REQUIRE(stripe->directory.insert(&key, stripe, &stale));
+
+      Dir live;
+      dir_clear(&live);
+      dir_set_offset(&live, 2);
+      dir_set_phase(&live, stripe->directory.header->phase);
+      REQUIRE(stripe->dir_valid(&live));
+      REQUIRE(stripe->directory.insert(&key, stripe, &live));
+
+      Dir *bucket = dir_bucket(b1, stripe->directory.get_segment(s1));
+      REQUIRE(dir_offset(bucket) == 1);
+
+      Dir  probed;
+      Dir *collision = nullptr;
+      dir_clear(&probed);
+      CHECK(stripe->directory.probe(&key, stripe, &probed, &collision) == 1);
+      CHECK(dir_offset(&probed) == 2);
+      CHECK(dir_offset(bucket) == 1);
+
+      // Resuming must step past the live entry without restarting from the head, or it would hand the same entry back.
+      CHECK(stripe->directory.probe(&key, stripe, &probed, &collision) == 0);
+
+      stripe->directory.clean_segment(s1, stripe);
+      CHECK(dir_offset(bucket) == 2);
+      collision = nullptr;
+      CHECK(stripe->directory.probe(&key, stripe, &probed, &collision) == 1);
+      CHECK(dir_offset(&probed) == 2);
+    }
     stripe->clear_dir();
 
     // Teardown
