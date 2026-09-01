@@ -498,7 +498,7 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
       // The largest current count among this hostname's groups, sampled. Deliberately taken over
       // the instantaneous gauge rather than each group's all time peak, so the value falls again
       // and a maximum over time can be computed by whatever scrapes it.
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection_max." + _host_metric_name,
+      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection.max." + _host_metric_name,
                                    Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
     }
 
