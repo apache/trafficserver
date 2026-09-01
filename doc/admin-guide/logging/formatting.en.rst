@@ -691,6 +691,9 @@ SSL / Encryption
 .. _cqssv:
 .. _cqssc:
 .. _cqssu:
+.. _cqssg:
+.. _cqssig:
+.. _cqssin:
 .. _cqssa:
 .. _cthbr:
 .. _cthbt:
@@ -730,6 +733,18 @@ cqssg  Client Request SSL Group used by |TS| to communicate with the client.
                       This field is only applicable when building |TS| against
                       OpenSSL 3.2 or later or a version of BoringSSL that
                       supports querying group names.
+cqssig Client Request TLS signature schemes offered by the client, rendered as
+                      dash-separated decimal IANA code points in wire order.
+                      RFC 8701 GREASE values are omitted. This field contains
+                      ``-`` when the client does not send the extension or the
+                      TLS library cannot expose it.
+cqssin Client Request TLS signature scheme used by |TS| to authenticate the
+                      handshake, rendered as a decimal IANA code point. When the
+                      TLS library does not expose the exact scheme, |TS| derives
+                      it from the signature type, digest, shared algorithm list,
+                      and certificate key. If these do not identify a unique
+                      scheme, or if the session is resumed and therefore has no
+                      new handshake signature, this field contains ``-``.
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
 cthbr  Client Request TLS handshake bytes received from the client. This is the
                       number of bytes read from the client during the TLS
