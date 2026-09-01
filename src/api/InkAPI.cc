@@ -8398,8 +8398,8 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     // Extract common name. X509_NAME_get_index_by_NID() returns -1 when the
     // certificate has no commonName, and ASN1_STRING_get0_data() does not
     // guarantee NUL termination. Check both conditions before using the data.
-    const auto *subject = X509_get_subject_name(cert.get());
-    const int   pos     = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
+    auto     *subject = X509_get_subject_name(cert.get());
+    const int pos     = X509_NAME_get_index_by_NID(subject, NID_commonName, -1);
     if (pos < 0) {
       Dbg(dbg_ctl_ssl_cert_update, "Failed to extract common name from certificate %s: no commonName", cert_path);
       return TS_ERROR;
