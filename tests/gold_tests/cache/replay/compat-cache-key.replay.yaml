@@ -1,0 +1,286 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# ATS 9.2 hashed a cache key as path + ";" + params. The params segment was
+# removed from the URL parser, so ";params" now lives inside the path and the
+# separator is no longer added -- which is why every 9.2 object misses after an
+# upgrade and why proxy.config.http.cache.try_compat_key_read exists.
+#
+# That same equivalence gives this test a way to create a 9.2-key object using
+# only the running proxy: the 9.2 key of "/obj" is byte-identical to the current
+# key of "/obj;". Priming the cache with "/obj;" therefore leaves an object that
+# only a compatibility lookup for "/obj" can find.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify 92x compatibility cache lookups serve, migrate and drain'
+
+  dns:
+    name: 'dns-compat-cache-key'
+
+  server:
+    name: 'proxy-verifier-server'
+
+  client:
+    name: 'proxy-verifier-client'
+
+  ats:
+    name: 'ts-for-proxy-verifier'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http_cache|url_cachekey'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.cache.try_compat_key_read: 1
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      # Two compatibility hits are expected: the fresh serve and the stale
+      # revalidation that migrates the object.
+      - metric: proxy.process.http.cache.compat_key_reads
+        value: 2
+
+sessions:
+- transactions:
+
+  #
+  # Test 1: Prime the cache under the legacy key.
+  #
+  # "/migrate;" hashes to exactly the key ATS 9.2 produced for "/migrate", so
+  # after this transaction the cache holds what looks like a 9.2 object.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate;
+      headers:
+        fields:
+        - [ uuid, 1-prime-legacy-key ]
+        - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=2 ]
+        - [ ETag, '"legacy-object"' ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 2: A fresh compatibility hit is served from cache.
+  #
+  # The canonical lookup for "/migrate" misses and the compatibility lookup
+  # finds the object primed above. The origin must not be contacted.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate
+      headers:
+        fields:
+        - [ uuid, 2-compat-hit-fresh ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 3: A stale compatibility hit revalidates unconditionally.
+  #
+  # A 304 cannot be applied to a legacy-key object, because the write that would
+  # carry it is a create on the canonical key rather than an update of the
+  # legacy vector. ATS must therefore ask for the whole response, and the origin
+  # must see no conditional headers even though the cached object has an ETag.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate
+      headers:
+        fields:
+        - [ uuid, 3-compat-migrate ]
+        - [ Host, example.com ]
+      # Outlive the max-age=2 above so the object is stale.
+      delay: 3s
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { as: absent } ]
+        - [ If-Modified-Since, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"migrated-object"' ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 4: The migrated object is now a canonical-key hit.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate
+      headers:
+        fields:
+        - [ uuid, 4-canonical-hit ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 5: The legacy copy is left in place.
+  #
+  # "/migrate;" addresses the legacy key directly. Migration does not delete it:
+  # nothing at this layer reports that the new object reached disk, so removing
+  # it here would lose the object whenever that write later failed. It ages out
+  # instead, and stops being read as soon as the current key resolves -- which
+  # is what lets compat_key_reads decay to zero.
+  #
+  # Still being in the cache is observable: the object is stale by now, so it
+  # revalidates conditionally with the ETag it was stored with.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /migrate;
+      headers:
+        fields:
+        - [ uuid, 5-legacy-key-drained ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"legacy-object"', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 6: A path that already carries ";params" gets no compatibility lookup.
+  #
+  # Its current key and its 9.2 key are the same string, so a second lookup
+  # would only repeat the one that just missed.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /keep;jsessionid=abc
+      headers:
+        fields:
+        - [ uuid, 6-params-path-miss ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 7: ... and it still caches normally under the current key.
+  #
+  # The compat_key_reads count asserted above stays at 2, so neither of these
+  # two transactions took a compatibility path.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /keep;jsessionid=abc
+      headers:
+        fields:
+        - [ uuid, 7-params-path-hit ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200

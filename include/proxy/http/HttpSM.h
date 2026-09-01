@@ -35,8 +35,6 @@
 #include <optional>
 #include <memory>
 
-#include "tscore/ink_platform.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpUserAgent.h"
@@ -45,7 +43,6 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
-#include "proxy/hdrs/HdrUtils.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
@@ -344,6 +341,21 @@ public:
   void           set_http_schedule(Continuation *);
   int            get_http_schedule(int event, void *data);
 
+  static CacheHTTPInfo *
+  cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+  {
+    if (lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+      return nullptr;
+    }
+    return object_read_info;
+  }
+
+  static bool
+  should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
+  {
+    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+  }
+
 private:
   void start_sub_sm();
 
@@ -406,6 +418,7 @@ private:
 
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
+  URL *cache_lookup_url();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false, bool only_direct = false);
   bool apply_ip_allow_filter();
@@ -421,6 +434,7 @@ private:
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts();
+  void do_cache_delete_compat_alts();
   void do_auth_callout();
   int  do_api_callout();
   int  do_api_callout_internal();

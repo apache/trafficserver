@@ -1,0 +1,178 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Migrating a 9.2-key object to the current key must not remove the legacy copy,
+# because there is no signal at this layer that says the new object reached disk.
+# The tunnel's VC_EVENT_WRITE_COMPLETE only means the last byte was handed to the
+# cache VC: openWriteMain delivers it before openWriteCloseHead performs the
+# actual write. Deleting on that signal loses the object outright whenever the
+# write subsequently fails.
+#
+# proxy.config.cache.max_doc_size reproduces exactly that ordering. It is checked
+# in CacheVC::handleWrite, which for a single-fragment object runs at close time
+# -- after the tunnel has already reported the write complete.
+#
+# As in compat-cache-key.replay.yaml, "/obj;" addresses the same key that ATS
+# 9.2 produced for "/obj", which is how a legacy object gets into the cache.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify a failed 92x migration leaves the legacy object in place'
+
+  dns:
+    name: 'dns-compat-cache-key-write-fail'
+
+  server:
+    name: 'proxy-verifier-server'
+
+  client:
+    name: 'proxy-verifier-client'
+
+  ats:
+    name: 'ts-for-proxy-verifier'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http|http_cache'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.cache.try_compat_key_read: 1
+      # Small enough that the priming object caches but the revalidated one
+      # cannot. Note this also disables read-while-write, which this test does
+      # not rely on.
+      proxy.config.cache.max_doc_size: 512
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+    metric_checks:
+      # The migrating write really was attempted and really did fail. Without
+      # this the test could pass with the write never having been tried.
+      - metric: proxy.process.cache.write.backlog.failure
+        min: 1
+      # Exactly one compatibility hit: the stale revalidation in test 2. Test 3
+      # addresses the legacy key directly, so it is an ordinary lookup.
+      - metric: proxy.process.http.cache.compat_key_reads
+        value: 1
+
+sessions:
+- transactions:
+
+  #
+  # Test 1: Prime the cache under the legacy key.
+  #
+  # 16 bytes is comfortably under max_doc_size, so this write succeeds.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /fail;
+      headers:
+        fields:
+        - [ uuid, 1-prime-legacy-key ]
+        - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=2 ]
+        - [ ETag, '"legacy-object"' ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 2: The migrating write fails after the tunnel reports it complete.
+  #
+  # The object is stale, so the compatibility hit revalidates unconditionally
+  # and the origin returns a body larger than max_doc_size. ATS opens the write
+  # on the current key, starts filling it, and the cache rejects it.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /fail
+      headers:
+        fields:
+        - [ uuid, 2-migration-write-fails ]
+        - [ Host, example.com ]
+      # Outlive the max-age=2 above so the object is stale.
+      delay: 3s
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { as: absent } ]
+        - [ If-Modified-Since, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 4096 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"too-big-to-cache"' ]
+
+    # The client still gets the response; only the caching of it failed.
+    proxy-response:
+      status: 200
+
+  #
+  # Test 3: The legacy object survived.
+  #
+  # "/fail;" addresses the legacy key directly. The object there is stale by
+  # now, so it revalidates -- and it can only send a conditional header, with
+  # the original ETag, if it is still in the cache. A deleted object would be a
+  # plain miss with no If-None-Match at all.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /fail;
+      headers:
+        fields:
+        - [ uuid, 3-legacy-object-survived ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: '"legacy-object"', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+
+    proxy-response:
+      status: 200

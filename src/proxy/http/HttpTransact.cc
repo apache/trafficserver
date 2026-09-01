@@ -2582,6 +2582,15 @@ HttpTransact::issue_revalidate(State *s)
     return;
   }
 
+  // An object found under the 9.2 key cannot be revalidated conditionally. The
+  // write that would apply a 304 is a create on the canonical key rather than
+  // an update of the legacy vector, so the cache discards it. Ask for the full
+  // response instead, which migrates the object to the canonical key.
+  if (s->state_machine != nullptr && HttpSM::should_use_compatibility_cache_key(s->state_machine->compatibility_cache_lookup)) {
+    TxnDbg(dbg_ctl_http_trans, "compatibility key hit, revalidating without conditional headers");
+    return;
+  }
+
   // if the document is cached, just send a conditional request to the server
 
   // So the request does not have preconditions. It can, however

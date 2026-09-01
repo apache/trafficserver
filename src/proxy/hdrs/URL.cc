@@ -1720,6 +1720,11 @@ memcpy_tolower(char *d, const char *s, int n)
 
 // fast path for CryptoHash, HTTP, no user/password/params/query,
 // no buffer overflow, no unescaping needed
+//
+// NOTE: this emits the ";" path/params separator, which matches
+// url_CryptoHash_get_general_92() but not url_CryptoHash_get_general(). It is
+// currently unreachable because url_hash_method is 0; enabling it would make
+// canonical keys collide with 9.2 keys.
 
 static inline void
 url_CryptoHash_get_fast(const URLImpl *url, CryptoContext &ctx, CryptoHash *hash, cache_generation_t generation)
@@ -1908,8 +1913,16 @@ url_CryptoHash_get_general_92(const URLImpl *url, CryptoContext &ctx, CryptoHash
   ends[7] = strs[7] + 1;
   ends[8] = strs[8] + url->m_len_path;
 
-  strs[9]  = ";";
-  strs[10] = url->m_ptr_params;
+  // ATS 9.2 split "/path;params" into separate path and params components and
+  // hashed them as path + ";" + params. That parsing was removed, so ";params"
+  // now stays inside the path and already spells the same byte sequence. Adding
+  // the separator again would append a ";" that 9.2 never emitted, so only add
+  // it when the path does not carry one. The params component itself is always
+  // empty now; it is left out rather than read back as an empty string.
+  bool const path_has_params = url->has_path_params();
+
+  strs[9]  = path_has_params ? nullptr : ";";
+  strs[10] = nullptr;
   strs[11] = "?";
 
   // Special case for the query paramters, allowing us to ignore them if requested
@@ -1921,8 +1934,8 @@ url_CryptoHash_get_general_92(const URLImpl *url, CryptoContext &ctx, CryptoHash
     ends[12] = nullptr;
   }
 
-  ends[9]  = strs[9] + 1;
-  ends[10] = strs[10] + url->m_len_params;
+  ends[9]  = path_has_params ? nullptr : strs[9] + 1;
+  ends[10] = nullptr;
   ends[11] = strs[11] + 1;
 
   p = buffer;
@@ -1979,7 +1992,7 @@ void
 url_CryptoHash_get_92(const URLImpl *url, CryptoHash *hash, bool ignore_query, cache_generation_t generation)
 {
   URLHashContext ctx;
-  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) &&
+  if ((url_hash_method != 0) && (url->m_url_type == URLType::HTTP) && !url->has_path_params() &&
       ((url->m_len_user + url->m_len_password + url->m_len_params + (ignore_query ? 0 : url->m_len_query)) == 0) &&
       (10u + url->m_len_scheme + url->m_len_host + url->m_len_path < BUFSIZE) &&
       (memchr(url->m_ptr_host, '%', url->m_len_host) == nullptr) && (memchr(url->m_ptr_path, '%', url->m_len_path) == nullptr)) {

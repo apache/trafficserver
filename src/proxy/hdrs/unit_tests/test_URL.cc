@@ -852,6 +852,94 @@ TEST_CASE("UrlPathGet", "[url][path_get]")
   }
 }
 
+// ATS 9.2 hashed "path" ";" "params" as separate cache-key components, always
+// emitting the separator. The params component was removed from the parser, so
+// ";params" now lives inside the path and the separator is already there. That
+// makes the 9.2 key expressible through the current algorithm: it is the
+// current key of the same URL with exactly one ";" between path and query.
+namespace
+{
+CryptoHash
+hash92(char const *text)
+{
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse(text, strlen(text)) == ParseResult::DONE);
+
+  CryptoHash hash;
+  url.hash_get92(&hash);
+  heap->destroy();
+
+  return hash;
+}
+
+CryptoHash
+hash_current(char const *text)
+{
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse(text, strlen(text)) == ParseResult::DONE);
+
+  CryptoHash hash;
+  url.hash_get(&hash);
+  heap->destroy();
+
+  return hash;
+}
+
+bool
+has_params(char const *text)
+{
+  URL      url;
+  HdrHeap *heap = new_HdrHeap();
+  url.create(heap);
+  REQUIRE(url.parse(text, strlen(text)) == ParseResult::DONE);
+
+  bool result = url.has_path_params();
+  heap->destroy();
+
+  return result;
+}
+} // namespace
+
+TEST_CASE("UrlHashGet92 reproduces the 9.2 cache key", "[url][hash_get92]")
+{
+  SECTION("a path without params gains the 9.2 separator")
+  {
+    CHECK(hash92("http://foo.test/path") == hash_current("http://foo.test/path;"));
+    CHECK(hash92("http://foo.test/path?q=1") == hash_current("http://foo.test/path;?q=1"));
+    // A ';' inside the query is not a params segment: 9.2 stopped the params
+    // component at '?', so the path still gained a separator of its own.
+    CHECK(hash92("http://foo.test/a?b;c") == hash_current("http://foo.test/a;?b;c"));
+  }
+
+  SECTION("a path carrying params already spells the 9.2 key")
+  {
+    CHECK(hash92("http://foo.test/a;b=1") == hash_current("http://foo.test/a;b=1"));
+    CHECK(hash92("http://foo.test/a;b;c") == hash_current("http://foo.test/a;b;c"));
+    CHECK(hash92("http://foo.test/a;b=1?q=1") == hash_current("http://foo.test/a;b=1?q=1"));
+  }
+
+  SECTION("the keys diverge only when the path has no params segment")
+  {
+    // This divergence is the whole reason the compatibility lookup exists.
+    CHECK(hash92("http://foo.test/path") != hash_current("http://foo.test/path"));
+    CHECK(hash92("http://foo.test/path?q=1") != hash_current("http://foo.test/path?q=1"));
+    // ... and when it converges there is nothing for a second lookup to find.
+    CHECK(hash92("http://foo.test/a;b=1") == hash_current("http://foo.test/a;b=1"));
+  }
+
+  SECTION("has_path_params identifies the converging case")
+  {
+    CHECK(!has_params("http://foo.test/path"));
+    CHECK(!has_params("http://foo.test/a?b;c"));
+    CHECK(has_params("http://foo.test/a;b=1"));
+    CHECK(has_params("http://foo.test/a;b=1?q=1"));
+  }
+}
+
 // URL getters must not construct std::string_view from a nullptr pointer
 // (which is UB). Parts that are not present in the URL should return an
 // empty string_view with data() == nullptr.

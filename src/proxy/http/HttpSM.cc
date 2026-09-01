@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
@@ -2766,8 +2767,11 @@ HttpSM::state_cache_open_read(int event, void *data)
     if (cache_sm.get_last_error() == -ECACHE_DOC_BUSY) {
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::DOC_BUSY;
     } else {
+      // A path that carries its own ";params" segment already hashes to the 9.2
+      // key, so a compatibility lookup would just repeat the lookup that missed.
       if (t_state.http_config_param->cache_try_compat_key_read &&
-          compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL) {
+          compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL &&
+          !cache_lookup_url()->has_path_params()) {
         // do the retry
         compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
         do_cache_lookup_and_read();
@@ -5279,6 +5283,18 @@ HttpSM::do_range_setup_if_necessary()
   }
 }
 
+// YTS Team, yamsat Plugin
+// Changed the lookup_url to c_url which enables even
+// the new redirect url to perform a CACHE_LOOKUP
+URL *
+HttpSM::cache_lookup_url()
+{
+  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
+    return t_state.hdr_info.client_request.url_get();
+  }
+  return t_state.cache_info.lookup_url;
+}
+
 void
 HttpSM::do_cache_lookup_and_read()
 {
@@ -5295,20 +5311,12 @@ HttpSM::do_cache_lookup_and_read()
   milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
   t_state.cache_lookup_result                    = HttpTransact::CacheLookupResult_t::NONE;
   t_state.cache_info.lookup_count++;
-  // YTS Team, yamsat Plugin
-  // Changed the lookup_url to c_url which enables even
-  // the new redirect url to perform a CACHE_LOOKUP
-  URL *c_url;
-  if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
-    c_url = t_state.hdr_info.client_request.url_get();
-  } else {
-    c_url = t_state.cache_info.lookup_url;
-  }
+  URL *c_url = cache_lookup_url();
 
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
     Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   } else {
     Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
@@ -5339,8 +5347,39 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                      t_state.txn_conf->cache_generation_number);
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
+    Cache::generate_key92(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                          t_state.txn_conf->cache_generation_number);
+  } else {
+    Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                        t_state.txn_conf->cache_generation_number);
+  }
+  cacheProcessor.remove(nullptr, &key);
+}
+
+// Remove the object stored under the legacy key.
+//
+// Only for the cases that abort the canonical-key write, where nothing is left
+// depending on it. A successful migration deliberately leaves the legacy copy
+// alone: VC_EVENT_WRITE_COMPLETE means the tunnel handed the last byte to the
+// cache VC, not that the object reached disk, so deleting on that signal loses
+// the object outright whenever the write later fails. The copy ages out on its
+// own, and it stops being read as soon as the canonical key resolves, so the
+// compat_key_reads metric still decays to zero.
+void
+HttpSM::do_cache_delete_compat_alts()
+{
+  ink_assert(should_use_compatibility_cache_key(compatibility_cache_lookup));
+
+  URL *url = t_state.cache_info.lookup_url;
+
+  if (url == nullptr || !url->valid()) {
+    return;
+  }
+  SMDbg(dbg_ctl_http_seq, "Issuing compatibility cache delete for %s", url->string_get_ref());
+
+  HttpCacheKey key;
+  Cache::generate_key92(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -5419,8 +5458,15 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   HttpCacheKey key;
   Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
+  // A compatibility read returns an object stored under the legacy key. Passing
+  // that object to a write using the canonical key turns the write into an
+  // update, but the canonical-key vector does not contain the legacy alternate.
+  // Cache::open_write then fails with ECACHE_NO_DOC instead of creating the
+  // migrated object. Create a new canonical-key object for compatibility reads.
+  CacheHTTPInfo *write_object_read_info = cache_write_info_for_lookup(compatibility_cache_lookup, object_read_info);
+
   pending_action =
-    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, write_object_read_info,
                      static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
                      retry, allow_multiple);
 }
@@ -6816,8 +6862,15 @@ HttpSM::perform_cache_write_action()
   }
 
   case HttpTransact::CacheAction_t::DELETE: {
-    // Write close deletes the old alternate
-    cache_sm.close_write();
+    if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
+      // Write close cannot remove the legacy alternate for the same reason an
+      // update cannot commit: this write VC never opened the legacy vector.
+      cache_sm.abort_write();
+      do_cache_delete_compat_alts();
+    } else {
+      // Write close deletes the old alternate
+      cache_sm.close_write();
+    }
     cache_sm.close_read();
     t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
     break;
@@ -6875,6 +6928,18 @@ HttpSM::perform_cache_write_action()
 void
 HttpSM::issue_cache_update()
 {
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
+    // This write VC is a create on the canonical key, not an update of the
+    // legacy vector, so CacheVC turns a header-only close into an abort and the
+    // update is silently lost. Drop the legacy object instead; the next request
+    // repopulates it under the canonical key.
+    SMDbg(dbg_ctl_http, "compatibility key hit, dropping the legacy object instead of updating it");
+    cache_sm.abort_write();
+    do_cache_delete_compat_alts();
+    t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
+    return;
+  }
+
   ink_assert(cache_sm.cache_write_vc != nullptr);
   if (cache_sm.cache_write_vc) {
     t_state.cache_info.object_store.request_sent_time_set(t_state.request_sent_time);
@@ -8394,6 +8459,10 @@ HttpSM::set_next_state()
 
   case HttpTransact::StateMachineAction_t::CACHE_LOOKUP: {
     HTTP_SM_SET_DEFAULT_HANDLER(&HttpSM::state_cache_open_read);
+    // Every lookup starts from the canonical key. A redirect follow or a read
+    // retry looks up a different object than the one a previous compatibility
+    // lookup found, so the flag must not carry over.
+    compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
     do_cache_lookup_and_read();
     break;
   }
