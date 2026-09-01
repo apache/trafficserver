@@ -5322,7 +5322,7 @@ HttpSM::do_cache_lookup_and_read()
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
     Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   } else {
     Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
@@ -5353,7 +5353,7 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  if (should_invalidate_compatibility_cache()) {
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
     Cache::generate_key92(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
                           t_state.txn_conf->cache_generation_number);
   } else {

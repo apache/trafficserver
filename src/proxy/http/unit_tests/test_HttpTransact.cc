@@ -980,10 +980,17 @@ TEST_CASE("Compatibility cache writes use canonical object info", "[http][cache]
   CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, &object_read_info) ==
         &object_read_info);
   CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, &object_read_info) == nullptr);
+  CHECK(!HttpSM::should_use_compatibility_cache_key(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL));
+  CHECK(HttpSM::should_use_compatibility_cache_key(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92));
+
   HTTPHdr server_response;
   CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, server_response));
 
   server_response.create(HTTPType::RESPONSE);
+  server_response.status_set(HTTPStatus::OK);
+  CHECK(HttpSM::should_use_compatibility_cache_key(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92));
+  CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, server_response));
+
   server_response.status_set(HTTPStatus::NOT_MODIFIED);
   CHECK(HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, server_response));
   CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, server_response));

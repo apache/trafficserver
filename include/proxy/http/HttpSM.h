@@ -351,9 +351,15 @@ public:
   }
 
   static bool
+  should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
+  {
+    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+  }
+
+  static bool
   should_invalidate_compatibility_cache(CompatibilityCacheLookup lookup, const HTTPHdr &server_response)
   {
-    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92 && server_response.valid() &&
+    return should_use_compatibility_cache_key(lookup) && server_response.valid() &&
            server_response.status_get() == HTTPStatus::NOT_MODIFIED;
   }
 
