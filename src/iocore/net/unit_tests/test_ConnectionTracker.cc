@@ -156,7 +156,7 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[libinknet][Connect
     CHECK(is_published(current_group));
     CHECK(is_published(total_group));
     CHECK(is_published(blocked_group));
-    CHECK_FALSE(is_published(host_metric("current_connection_max")));
+    CHECK_FALSE(is_published(host_metric("current_connection.max")));
   }
 
   SECTION("switching to AGGREGATE_ONLY retracts an already published per group metric")
@@ -178,7 +178,7 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[libinknet][Connect
     CHECK(is_published(host_metric("current_connection")));
     CHECK(is_published(host_metric("total_connection")));
     CHECK(is_published(host_metric("blocked_connection")));
-    CHECK(is_published(host_metric("current_connection_max")));
+    CHECK(is_published(host_metric("current_connection.max")));
   }
 
   SECTION("switching back to AGGREGATE_GROUP republishes them")
