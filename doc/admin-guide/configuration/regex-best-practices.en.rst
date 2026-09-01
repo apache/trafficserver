@@ -45,20 +45,25 @@ This page documents:
 The matching contract
 =====================
 
-|TS| uses PCRE2 for regex matching. Patterns are compiled once at
+|TS| uses PCRE for regex matching. Patterns are compiled once at
 config load and reused per request. By default, a successful match
 means the pattern matched **some substring** of the input subject —
 possibly the whole subject, possibly a prefix, possibly a fragment in
 the middle. The matcher does not, by default, require the pattern to
 consume the entire subject.
 
+Two sites depart from that default and always require the pattern to
+match the entire subject: ``regex_map`` in :file:`remap.config` and
+``fqdn`` in :file:`sni.yaml`. Both are noted in their entries below.
+
 This is the standard PCRE behavior. It has security implications when
 the subject is influenced by a client (a request URL, a host header,
 an SNI value, a Referer header, etc.). An operator who writes the
-pattern ``cdn\.example\.com`` as a host regex thinking *"match this
-exact host"* will find the rule firing on client-supplied hosts like
-``cdn.example.com.other.org``, because the substring
-``cdn.example.com`` appears at position 0 of the longer subject.
+pattern ``cdn\.example\.com`` as a ``map_with_referer`` referer regex
+thinking *"match this exact host"* will find the rule firing on
+client-supplied ``Referer`` values like
+``http://cdn.example.com.other.org/``, because the substring
+``cdn.example.com`` appears within the longer subject.
 
 The fix at the operator level is to anchor patterns explicitly so the
 pattern says exactly what it should match:
@@ -90,6 +95,11 @@ remap.config — ``regex_map``
 
 For URL ``http://cdn.example.com:8080/path``, the regex sees the
 subject ``cdn.example.com``.
+
+Patterns at this site are compiled anchored at both ends, so a match
+must consume the whole host. A substring-style pattern such as
+``example\.com`` therefore does not match ``cdn.example.com``, and
+``cdn\.example\.com`` does not match ``cdn.example.com.other.org``.
 
 remap.config — ``map_with_referer``
 -----------------------------------
@@ -125,6 +135,16 @@ splitdns.config — ``url_regex``
 
 **Subject:** the full request URL — same as ``parent.config``'s
 ``url_regex``.
+
+sni.yaml — ``fqdn``
+-------------------
+
+**Subject:** the SNI value from the inbound TLS ClientHello.
+
+Each ``*`` in an ``fqdn`` is expanded to a wildcard group before the
+value is compiled as a regex, and matching is case-insensitive. A
+match must consume the entire SNI value, so a pattern for
+``example.com`` does not match ``example.com.other.org``.
 
 url_sig — ``excl_regex``
 ------------------------
@@ -168,13 +188,13 @@ uri_signing — ``cdniuc`` regex match
 .. note::
    The "matching contract" section at the top of this document
    describes |TS|'s general regex behavior, which is implemented
-   with PCRE2. This call site is the exception: ``uri_signing``
+   with PCRE. This call site is the exception: ``uri_signing``
    uses the GNU ``regex.h`` library's ``re_match``, which is
    start-anchored by definition (the pattern always matches
    starting at offset 0 of the subject). A leading ``^`` in an
    issuer pattern is therefore implicit, and only the trailing
    anchor ``$`` controls whether trailing content is allowed —
-   the opposite of PCRE2's default substring match.
+   the opposite of PCRE's default substring match.
 
 **Subject:** the normalized request URI (scheme, authority, path, and
 query — produced by the plugin's URI-normalization step).
