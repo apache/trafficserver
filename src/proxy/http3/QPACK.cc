@@ -1233,9 +1233,9 @@ const XpackLookupResult
 QPACK::StaticTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len)
 {
   XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
-  uint16_t                     i               = 0;
-  uint16_t                     candidate_index = 0;
-  int                          n               = countof(STATIC_HEADER_FIELDS);
+  uint32_t                     i               = 0;
+  uint32_t                     candidate_index = 0;
+  unsigned int                 n               = countof(STATIC_HEADER_FIELDS);
 
   for (; i < n; ++i) {
     const Header &h = STATIC_HEADER_FIELDS[i];

@@ -27,6 +27,7 @@ Checks: >-
   bugprone-suspicious-realloc-usage,
   bugprone-swapped-arguments,
   bugprone-throw-keyword-missing,
+  bugprone-too-small-loop-variable,
   bugprone-undelegated-constructor,
   bugprone-unhandled-exception-at-new,
   bugprone-unintended-char-ostream-output,
@@ -34,10 +35,13 @@ Checks: >-
   bugprone-unused-raii,
   bugprone-use-after-move,
   misc-redundant-expression,
+  misc-uniqueptr-reset-release,
   performance-faster-string-find,
+  performance-for-range-copy,
   performance-inefficient-algorithm,
   performance-inefficient-vector-operation,
   performance-move-constructor-init,
+  performance-no-automatic-move,
   performance-unnecessary-copy-initialization,
   portability-std-allocator-const
 WarningsAsErrors: '*'
