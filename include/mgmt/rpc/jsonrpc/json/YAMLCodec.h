@@ -21,6 +21,8 @@
 #pragma once
 
 #include <yaml-cpp/yaml.h>
+
+#include "tsutil/YamlCfg.h"
 #include "mgmt/rpc/jsonrpc/error/RPCError.h"
 #include "mgmt/rpc/jsonrpc/Defs.h"
 
@@ -268,8 +270,7 @@ public:
   encode(const specs::RPCResponseInfo &resp)
   {
     YAML::Emitter json;
-    json.SetNullFormat(YAML::LowerNull);
-    json << YAML::DoubleQuoted << YAML::Flow;
+    ts::Yaml::configure_json_emitter(json);
     encode(resp, json);
 
     return json.c_str();
@@ -285,8 +286,7 @@ public:
   encode(const specs::RPCResponse &response)
   {
     YAML::Emitter json;
-    json.SetNullFormat(YAML::LowerNull);
-    json << YAML::DoubleQuoted << YAML::Flow;
+    ts::Yaml::configure_json_emitter(json);
     {
       if (response.is_batch()) {
         json << YAML::BeginSeq;

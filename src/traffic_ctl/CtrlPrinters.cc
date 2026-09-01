@@ -102,8 +102,7 @@ void
 BasePrinter::write_output_json(YAML::Node const &node) const
 {
   YAML::Emitter out;
-  out.SetNullFormat(YAML::LowerNull);
-  out << YAML::DoubleQuoted << YAML::Flow;
+  ts::Yaml::configure_json_emitter(out);
   out << node;
   std::cout << out.c_str() << '\n';
 }
