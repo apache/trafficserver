@@ -52,13 +52,18 @@ possibly the whole subject, possibly a prefix, possibly a fragment in
 the middle. The matcher does not, by default, require the pattern to
 consume the entire subject.
 
+Two sites depart from that default and always require the pattern to
+match the entire subject: ``regex_map`` in :file:`remap.config` and
+``fqdn`` in :file:`sni.yaml`. Both are noted in their entries below.
+
 This is the standard PCRE behavior. It has security implications when
 the subject is influenced by a client (a request URL, a host header,
 an SNI value, a Referer header, etc.). An operator who writes the
-pattern ``cdn\.example\.com`` as a host regex thinking *"match this
-exact host"* will find the rule firing on client-supplied hosts like
-``cdn.example.com.other.org``, because the substring
-``cdn.example.com`` appears at position 0 of the longer subject.
+pattern ``cdn\.example\.com`` as a ``map_with_referer`` referer regex
+thinking *"match this exact host"* will find the rule firing on
+client-supplied ``Referer`` values like
+``http://cdn.example.com.other.org/``, because the substring
+``cdn.example.com`` appears within the longer subject.
 
 The fix at the operator level is to anchor patterns explicitly so the
 pattern says exactly what it should match:
@@ -90,6 +95,11 @@ remap.config — ``regex_map``
 
 For URL ``http://cdn.example.com:8080/path``, the regex sees the
 subject ``cdn.example.com``.
+
+Patterns at this site are compiled anchored at both ends, so a match
+must consume the whole host. A substring-style pattern such as
+``example\.com`` therefore does not match ``cdn.example.com``, and
+``cdn\.example\.com`` does not match ``cdn.example.com.other.org``.
 
 remap.config — ``map_with_referer``
 -----------------------------------
@@ -125,6 +135,16 @@ splitdns.config — ``url_regex``
 
 **Subject:** the full request URL — same as ``parent.config``'s
 ``url_regex``.
+
+sni.yaml — ``fqdn``
+-------------------
+
+**Subject:** the SNI value from the inbound TLS ClientHello.
+
+Each ``*`` in an ``fqdn`` is expanded to a wildcard group before the
+value is compiled as a regex, and matching is case-insensitive. A
+match must consume the entire SNI value, so a pattern for
+``example.com`` does not match ``example.com.other.org``.
 
 url_sig — ``excl_regex``
 ------------------------
