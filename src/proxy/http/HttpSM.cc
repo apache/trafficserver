@@ -2799,8 +2799,9 @@ HttpSM::state_cache_open_read(int event, void *data)
     // during retry, or MISS if nothing is found (from HandleCacheOpenReadMiss).
     // This ensures plugins see only the final cache lookup result, avoiding issues
     // like stats double-counting and duplicate hook registrations.
-    if (get_cache_open_write_fail_action() == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
-        get_cache_open_write_fail_action() == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
+    if (t_state.txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+        t_state.txn_conf->cache_open_write_fail_action ==
+          static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE)) {
       SMDbg(dbg_ctl_http, "READ_RETRY configured, deferring CACHE_LOOKUP_COMPLETE hook");
       t_state.cache_lookup_complete_deferred = true;
       call_transact_and_set_next_state(nullptr);
