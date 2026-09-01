@@ -1,0 +1,145 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Apply slice only to paths selected by include and exclude regular expressions"
+  requires:
+    plugins: ["slice.so"]
+  server:
+    name: "server"
+  client:
+    name: "client"
+  ats:
+    name: "ts"
+    process_config:
+      enable_cache: false
+    records_config:
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.response_via_str: 0
+    remap_config:
+      - "map http://exclude/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=slice.so @pparam=--blockbytes-test=100 @pparam=--exclude-regex=\\.txt @pparam=--remap-host=sliced"
+      - "map http://include/ http://127.0.0.1:{SERVER_HTTP_PORT}/ @plugin=slice.so @pparam=--blockbytes-test=100 @pparam=--include-regex=\\.mp4 @pparam=--remap-host=sliced"
+      - "map http://sliced/ http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: GET
+          url: /slice.txt
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, exclude]
+              - [uuid, slice-exclude-txt]
+        proxy-request:
+          method: GET
+          url: /slice.txt
+          headers:
+            fields:
+              - [Range, {as: absent}]
+              - [uuid, {value: slice-exclude-txt, as: equal}]
+        server-response: &plain-response
+          status: 200
+          reason: OK
+          headers:
+            fields:
+              - [Etag, '"path"']
+              - [Cache-Control, max-age=500]
+              - [X-Info, notsliced]
+              - [Content-Length, "18"]
+          content:
+            data: "lets go surfin now"
+        proxy-response: &plain-proxy-response
+          status: 200
+          headers:
+            fields:
+              - [X-Info, {value: notsliced, as: equal}]
+          content:
+            data: "lets go surfin now"
+
+      - client-request:
+          method: GET
+          url: /slice.mp4
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, exclude]
+              - [uuid, slice-exclude-mp4]
+        proxy-request:
+          method: GET
+          url: /slice.mp4
+          headers:
+            fields:
+              - [Range, {value: "bytes=0-99", as: equal}]
+              - [uuid, {value: slice-exclude-mp4, as: equal}]
+        server-response: &sliced-response
+          status: 206
+          reason: Partial Content
+          headers:
+            fields:
+              - [Etag, '"path"']
+              - [Content-Range, "bytes 0-17/18"]
+              - [Cache-Control, max-age=500]
+              - [X-Info, sliced]
+              - [Content-Length, "18"]
+          content:
+            data: "lets go surfin now"
+        proxy-response: &sliced-proxy-response
+          status: 200
+          headers:
+            fields:
+              - [X-Info, {value: sliced, as: equal}]
+          content:
+            data: "lets go surfin now"
+
+      - client-request:
+          method: GET
+          url: /slice.txt
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, include]
+              - [uuid, slice-include-txt]
+        proxy-request:
+          method: GET
+          url: /slice.txt
+          headers:
+            fields:
+              - [Range, {as: absent}]
+              - [uuid, {value: slice-include-txt, as: equal}]
+        server-response: *plain-response
+        proxy-response: *plain-proxy-response
+
+      - client-request:
+          method: GET
+          url: /slice.mp4
+          version: "1.1"
+          headers:
+            fields:
+              - [Host, include]
+              - [uuid, slice-include-mp4]
+        proxy-request:
+          method: GET
+          url: /slice.mp4
+          headers:
+            fields:
+              - [Range, {value: "bytes=0-99", as: equal}]
+              - [uuid, {value: slice-include-mp4, as: equal}]
+        server-response: *sliced-response
+        proxy-response: *sliced-proxy-response

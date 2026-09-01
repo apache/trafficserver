@@ -139,6 +139,6 @@ Unit tests vs. AuTest
     algorithm logic. Built when BUILD_TESTING is on; run via ctest or the
     test_jax binary directly.
 
-  * End-to-end AuTests live under `tests/gold_tests/pluginTest/jax_fingerprint/`
+  * End-to-end AuTests live under `tests/uranium_tests/pluginTest/jax_fingerprint/`
     and exercise the plugin via Proxy Verifier replay yamls. They require a
     full install (traffic_server, traffic_layout, the plugin .so).

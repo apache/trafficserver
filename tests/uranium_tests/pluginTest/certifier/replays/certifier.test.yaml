@@ -1,0 +1,87 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+urtest:
+  description: "Generate, reuse, and safely store certificates selected from TLS SNI"
+  requires:
+    plugins: [certifier.so]
+  server:
+    name: origin
+  client:
+    name: client
+  ats:
+    name: ts
+    process_config:
+      enable_tls: true
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: http|certifier|ssl
+    copy_to_config_dir:
+      - source: certs
+        destination: certifier-certs
+    pre_start_commands:
+      - "install -d -m 0777 {CONFIG_DIR}/certifier-certs/store"
+      - "chmod 0666 {CONFIG_DIR}/certifier-certs/ca-serial.txt"
+    plugin_config:
+      - >-
+        certifier.so -s {CONFIG_DIR}/certifier-certs/store -m 1000
+        -c {CONFIG_DIR}/certifier-certs/ca.cert -k {CONFIG_DIR}/certifier-certs/ca.key
+        -r {CONFIG_DIR}/certifier-certs/ca-serial.txt
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+  variants:
+    - name: generate
+      replay: https.replay.yaml
+      ats:
+        post_client_commands:
+          - >-
+            openssl x509 -in {CONFIG_DIR}/certifier-certs/store/4f5/www.tls.com.crt
+            -text -noout > {ATS_ROOT}/generated-cert.txt
+        file_checks:
+          - path: "{CONFIG_DIR}/certifier-certs/store/4f5/www.tls.com.crt"
+          - path: "{ATS_ROOT}/generated-cert.txt"
+            contains: "Subject: CN ?= ?www.tls.com"
+          - path: "{ATS_ROOT}/generated-cert.txt"
+            contains: "DNS:www.tls.com"
+          - path: "{LOG_DIR}/traffic.out"
+            contains: "creating shadow certs"
+
+    - name: reuse
+      replay: https-two-sessions.replay.yaml
+      ats:
+        file_checks:
+          - path: "{LOG_DIR}/traffic.out"
+            contains: "reusing existing cert and context for www.tls.com"
+
+    - name: reject-unsafe-sni
+      replay: https-path-traversal.replay.yaml
+      ats:
+        file_checks:
+          - path: "{CONFIG_DIR}/certifier-certs/certifier-escaped.crt"
+            exists: false
+          - path: "{LOG_DIR}/traffic.out"
+            contains: "rejecting unsafe SNI for certificate storage"
+
+    - name: no-sni-uses-default
+      replay: https-no-sni.replay.yaml
+      ats:
+        file_checks:
+          - path: "{LOG_DIR}/traffic.out"
+            contains: "no SNI available; using default certificate"
