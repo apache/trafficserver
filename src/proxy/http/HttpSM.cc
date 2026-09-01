@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
@@ -3990,6 +3991,11 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
     break;
   }
 
+  if (compatibility_cache_invalidate_after_read) {
+    compatibility_cache_invalidate_after_read = false;
+    do_cache_delete_all_alts();
+  }
+
   Metrics::Gauge::decrement(http_rsb.current_cache_connections);
   return 0;
 }
@@ -5347,8 +5353,13 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                      t_state.txn_conf->cache_generation_number);
+  if (should_invalidate_compatibility_cache()) {
+    Cache::generate_key92(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                          t_state.txn_conf->cache_generation_number);
+  } else {
+    Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                        t_state.txn_conf->cache_generation_number);
+  }
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -6845,7 +6856,12 @@ HttpSM::perform_cache_write_action()
   }
 
   case HttpTransact::CacheAction_t::SERVE_AND_UPDATE: {
-    issue_cache_update();
+    if (should_invalidate_compatibility_cache()) {
+      compatibility_cache_invalidate_after_read = true;
+      cache_sm.abort_write();
+    } else {
+      issue_cache_update();
+    }
     break;
   }
 
@@ -7164,6 +7180,9 @@ HttpSM::setup_cache_read_transfer()
                                               HttpTunnelType_t::CACHE_READ, "cache read");
   tunnel.add_consumer(_ua.get_entry()->vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_ua, HttpTunnelType_t::HTTP_CLIENT,
                       "user agent");
+  if (should_invalidate_compatibility_cache() && t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_UPDATE) {
+    compatibility_cache_invalidate_after_read = true;
+  }
   // if size of a cached item is not known, we'll do chunking for keep-alive HTTP/1.1 clients
   // this only applies to read-while-write cases where origin server sends a dynamically generated chunked content
   // w/o providing a Content-Length header
@@ -8570,12 +8589,22 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_UPDATE_HEADERS: {
-    issue_cache_update();
-    cache_sm.close_read();
+    if (should_invalidate_compatibility_cache()) {
+      cache_sm.abort_write();
+      cache_sm.close_read();
+      do_cache_delete_all_alts();
 
-    release_server_session();
-    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
-    do_api_callout();
+      release_server_session();
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
+      do_api_callout();
+    } else {
+      issue_cache_update();
+      cache_sm.close_read();
+
+      release_server_session();
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
+      do_api_callout();
+    }
     break;
   }
 

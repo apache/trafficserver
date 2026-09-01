@@ -980,4 +980,8 @@ TEST_CASE("Compatibility cache writes use canonical object info", "[http][cache]
   CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, &object_read_info) ==
         &object_read_info);
   CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, &object_read_info) == nullptr);
+  CHECK(HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, HTTPStatus::NOT_MODIFIED));
+  CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, HTTPStatus::OK));
+  CHECK(
+    !HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, HTTPStatus::NOT_MODIFIED));
 }

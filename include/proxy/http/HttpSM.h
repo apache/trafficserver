@@ -35,8 +35,6 @@
 #include <optional>
 #include <memory>
 
-#include "tscore/ink_platform.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpUserAgent.h"
@@ -45,7 +43,6 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
-#include "proxy/hdrs/HdrUtils.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
@@ -353,6 +350,18 @@ public:
     return object_read_info;
   }
 
+  static bool
+  should_invalidate_compatibility_cache(CompatibilityCacheLookup lookup, HTTPStatus status)
+  {
+    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92 && status == HTTPStatus::NOT_MODIFIED;
+  }
+
+  bool
+  should_invalidate_compatibility_cache() const
+  {
+    return should_invalidate_compatibility_cache(compatibility_cache_lookup, t_state.hdr_info.server_response.status_get());
+  }
+
   MgmtByte
   get_cache_open_write_fail_action() const
   {
@@ -564,6 +573,8 @@ public:
   CompatibilityCacheLookup compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
 
 private:
+  bool compatibility_cache_invalidate_after_read = false;
+
   HttpTunnel tunnel;
 
   HttpVCTable vc_table;
