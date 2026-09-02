@@ -26,6 +26,7 @@
 #include "test_Diags.h"
 
 #include <atomic>
+#include <string>
 #include <thread>
 
 TEST_CASE("RecRegisterConfig - Type Dispatch", "[librecords][RecConfig]")
@@ -103,7 +104,8 @@ TEST_CASE("RecLookupRecord - Concurrent metric registration", "[librecords][RecL
   std::atomic<bool> finished{false};
   std::thread       register_metrics([&]() {
     for (int i = 0; i < 100000; ++i) {
-      ts::Metrics::Counter::createSpan(1);
+      // Any registration will do; the point is to grow the store while lookups run.
+      ts::Metrics::Counter::create("proxy.test.concurrent.reg." + std::to_string(i));
     }
     finished.store(true, std::memory_order_release);
   });

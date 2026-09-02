@@ -95,31 +95,11 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(m[storeid].load() == 42);
   }
 
-  SECTION("Span allocation")
+  SECTION("rename")
   {
-    ts::Metrics::IdType span_id;
-    auto                fooid = m.lookup("foo");
-    auto                span  = Metrics::Counter::createSpan(17, &span_id);
+    auto fooid = m.lookup("foo");
 
-    REQUIRE(span.size() == 17);
-    // Not fixed offsets: those only hold against a virgin store. Assert instead that the span
-    // was allocated above the earlier metric and that every id in it is valid. Both ids are
-    // counters, so they are directly comparable -- ids encode the metric type, and so are not
-    // ordered across differing types.
     REQUIRE(fooid != ts::Metrics::NOT_FOUND);
-    REQUIRE(span_id != ts::Metrics::NOT_FOUND);
-    REQUIRE(span_id > fooid);
-    for (size_t i = 0; i < span.size(); ++i) {
-      REQUIRE(m.valid(span_id + static_cast<ts::Metrics::IdType>(i)));
-    }
-
-    m.rename(span_id + 0, "span.0");
-    m.rename(span_id + 1, "span.1");
-    m.rename(span_id + 2, "span.2");
-    REQUIRE(m.name(fooid) == "foo");
-    REQUIRE(m.name(span_id + 0) == "span.0");
-    REQUIRE(m.name(span_id + 1) == "span.1");
-    REQUIRE(m.name(span_id + 2) == "span.2");
     m.rename(fooid, "foo-new");
     REQUIRE(m.name(fooid) == "foo-new");
     REQUIRE(m.lookup("foo") == ts::Metrics::NOT_FOUND);
@@ -608,34 +588,6 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
   std::vector<Metrics::Counter::AtomicType *> sorted_ptrs = ptrs;
   std::sort(sorted_ptrs.begin(), sorted_ptrs.end());
   REQUIRE(std::adjacent_find(sorted_ptrs.begin(), sorted_ptrs.end()) == sorted_ptrs.end());
-}
-
-TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]")
-{
-  // A span of MAX_SIZE always lands at offset 0 of an empty blob and fills it, whatever the current
-  // offset was, so it reaches the blob boundary deterministically. createSpan only targets the
-  // published store, so this allocates there.
-  Metrics::IdType span_id = Metrics::NOT_FOUND;
-  auto            span    = Metrics::Counter::createSpan(Metrics::MAX_SIZE, &span_id);
-
-  REQUIRE(span.size() == Metrics::MAX_SIZE);
-  REQUIRE(span_id != Metrics::NOT_FOUND);
-  REQUIRE(span_id != 0); // 0 is the reserved bad_id, returned only when the store cannot grow.
-
-  // The store must still be usable, and the new metric must be a real, resolvable entry rather
-  // than something written past the end of a blob.
-  auto p = Metrics::Counter::createPtr("span.boundary.after");
-  REQUIRE(p != nullptr);
-
-  auto &m  = Metrics::instance();
-  auto  id = m.lookup("span.boundary.after");
-  REQUIRE(id != Metrics::NOT_FOUND);
-  REQUIRE(m.valid(id));
-
-  // And it must behave like any other metric.
-  Metrics::Counter::increment(p, 7);
-  REQUIRE(Metrics::Counter::load(p) == 7);
-  REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
 }
 
 TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]")

@@ -58,17 +58,16 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
   auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
-  auto const cur_blob = _cur_blob.load(std::memory_order_relaxed);
+  auto const [cur_blob, cur_off] = _splitID(static_cast<IdType>(_next_free.load(std::memory_order_relaxed)));
 
   debug_assert(blob);
   // The write below is to _blobs[cur_blob + 1], so the last usable blob index is MAX_BLOBS - 1.
   release_assert(cur_blob < MAX_BLOBS - 1);
 
   _blobs[cur_blob + 1] = std::move(blob);
-  _cur_off.store(0, std::memory_order_relaxed);
 
-  // Publishes the blob; both writes above are sequenced before it.
-  _cur_blob.store(cur_blob + 1, std::memory_order_release);
+  // Publishes the blob and the offset reset as one value; the write above is sequenced before it.
+  _next_free.store(_pack(cur_blob + 1, 0), std::memory_order_release);
 }
 
 Metrics::IdType
@@ -81,11 +80,10 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
     return it->second;
   }
 
-  // The slot is written below and the bookkeeping only then advances, calling addBlob() once
-  // _cur_off reaches MAX_SIZE. Refusing the final slot of the final blob keeps addBlob() from
-  // ever being reached in an exhausted store, at a cost of one slot out of MAX_BLOBS * MAX_SIZE.
-  auto const cur_blob = _cur_blob.load(std::memory_order_relaxed);
-  auto const cur_off  = _cur_off.load(std::memory_order_relaxed);
+  // The slot is written below and the bookkeeping only then advances, calling addBlob() once the
+  // offset reaches MAX_SIZE. Refusing the final slot of the final blob keeps addBlob() from ever
+  // being reached in an exhausted store, at a cost of one slot out of MAX_BLOBS * MAX_SIZE.
+  auto const [cur_blob, cur_off] = _splitID(static_cast<IdType>(_next_free.load(std::memory_order_relaxed)));
 
   if (cur_blob >= MAX_BLOBS - 1 && cur_off >= MAX_SIZE - 1) {
     return 0; // Slot 0 is the reserved bad_id. Cannot grow further.
@@ -98,11 +96,11 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   names[cur_off] = std::make_tuple(std::string(name), id);
   _lookups.emplace(std::get<0>(names[cur_off]), id);
 
-  // Publishes the slot; the name write above is sequenced before it.
-  _cur_off.store(cur_off + 1, std::memory_order_release);
-
   if (cur_off + 1 >= MAX_SIZE) {
-    addBlob(); // This resets _cur_off to 0 as well
+    addBlob(); // Publishes the next blob with a zero offset.
+  } else {
+    // Publishes the slot's name.
+    _next_free.store(_pack(cur_blob, cur_off + 1), std::memory_order_release);
   }
 
   return id;
@@ -190,55 +188,6 @@ Metrics::MetricType
 Metrics::Storage::type(IdType id) const
 {
   return _extractType(id);
-}
-
-Metrics::SpanType
-Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdType *id)
-{
-  release_assert(size <= MAX_SIZE);
-  std::lock_guard lock(_mutex);
-
-  // On the final blob there is nowhere left to grow, so refuse a span that would fill or overflow
-  // it rather than letting addBlob() assert. Same intent as the guard in create(), and the same
-  // cost: some slots of the last blob go unused.
-  auto cur_blob = _cur_blob.load(std::memory_order_relaxed);
-  auto cur_off  = _cur_off.load(std::memory_order_relaxed);
-
-  if (cur_blob >= MAX_BLOBS - 1 && cur_off + size >= MAX_SIZE) {
-    if (id) {
-      *id = 0; // Slot 0 is the reserved bad_id.
-    }
-    return {};
-  }
-
-  // A span has to be contiguous, so one that does not fit in the current blob starts a new one.
-  if (cur_off + size > MAX_SIZE) {
-    addBlob();
-    cur_blob = _cur_blob.load(std::memory_order_relaxed);
-    cur_off  = _cur_off.load(std::memory_order_relaxed);
-  }
-
-  Metrics::IdType           span_start = _makeId(cur_blob, cur_off, type);
-  Metrics::NamesAndAtomics *blob       = _blobs[cur_blob].get();
-  Metrics::AtomicStorage   &atomics    = std::get<1>(*blob);
-  Metrics::SpanType         span       = Metrics::SpanType(&atomics[cur_off], size);
-
-  if (id) {
-    *id = span_start;
-  }
-
-  // Publishes the span's slots.
-  _cur_off.store(cur_off + size, std::memory_order_release);
-
-  // create() grows as soon as it consumes the last slot; do the same here. Otherwise a span ending
-  // exactly on the boundary leaves _cur_off at MAX_SIZE, and the next create() writes one past the
-  // end of the blob's name array. It also makes end() unreachable for iterator::next(), which
-  // wraps on ++offset == MAX_SIZE.
-  if (cur_off + size >= MAX_SIZE) {
-    addBlob();
-  }
-
-  return span;
 }
 
 bool
