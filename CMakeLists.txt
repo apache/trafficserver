@@ -459,9 +459,12 @@ endif()
 # a plugin loaded with dlopen does not reliably share type identity with the main
 # image, so the check reports the plugin boundary rather than a real bug.
 #
-# Findings are non-fatal by default so a single run reports every distinct site
-# instead of stopping at the first. Set UBSAN_OPTIONS=halt_on_error=1 at runtime
-# to abort instead, which is what a gating job would want.
+# Findings recover, so a single run reports every distinct site instead of stopping
+# at the first. That is the default for most checks, but which checks recover by
+# default varies between compilers, so ask for it explicitly rather than inherit it.
+# A few checks cannot recover by construction (unreachable, return) and still abort.
+# Set UBSAN_OPTIONS=halt_on_error=1 at runtime to stop on the first finding, which
+# is what a gating job would want.
 if(ENABLE_UBSAN)
   # The checks are instrumentation, but they call into a runtime library that some
   # distributions package separately from the compiler (libubsan for GCC). Without it
@@ -475,8 +478,10 @@ if(ENABLE_UBSAN)
         "ENABLE_UBSAN needs the undefined behavior sanitizer runtime, which this toolchain cannot link. On GCC that runtime is the libubsan package."
     )
   endif()
-  add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fno-omit-frame-pointer)
-  add_link_options(-g -fsanitize=undefined -fno-sanitize=vptr)
+  add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fsanitize-recover=undefined -fno-omit-frame-pointer)
+  # Only -fsanitize=undefined matters at link time, to pull in the runtime. The vptr
+  # and recover flags are compile time instrumentation controls and do nothing here.
+  add_link_options(-g -fsanitize=undefined)
 endif()
 
 # Clang Thread Safety Analysis. The TS_* annotations (tsutil/ts_thread_safety.h)
