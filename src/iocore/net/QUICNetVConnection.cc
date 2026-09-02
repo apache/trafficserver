@@ -688,6 +688,23 @@ void
 QUICNetVConnection::_handle_write_ready()
 {
   if (quiche_conn_is_established(this->_quiche_con)) {
+    // Count real contention for THIS event before deciding its budget, rather than
+    // sizing it from a previous event's count -- a stale count can be wrong in either
+    // direction whenever contention swings between events, not just on the first
+    // event. writable() is a pure, side-effect-free snapshot (verified against
+    // quiche's source), so draining it twice costs one extra O(n) collect and n extra
+    // FFI calls, n bounded by this connection's stream limit -- cheap next to the
+    // per-stream work that follows.
+    quiche_stream_iter *probe          = quiche_conn_writable(this->_quiche_con);
+    uint64_t            probe_id       = 0;
+    size_t              writable_count = 0;
+    while (quiche_stream_iter_next(probe, &probe_id)) {
+      ++writable_count;
+    }
+    quiche_stream_iter_free(probe);
+
+    const size_t budget = QUICStream::compute_fair_send_budget(writable_count);
+
     quiche_stream_iter *writable = quiche_conn_writable(this->_quiche_con);
     uint64_t            s        = 0;
     while (quiche_stream_iter_next(writable, &s)) {
@@ -696,7 +713,7 @@ QUICNetVConnection::_handle_write_ready()
         [[maybe_unused]] QUICConnectionError err;
         stream = this->_stream_manager->create_stream(s, err);
       }
-      stream->send_data(*this);
+      stream->send_data(*this, budget);
     }
     quiche_stream_iter_free(writable);
   }

@@ -34,12 +34,12 @@ public:
   virtual ~Http3StreamDataVIOAdaptor();
 
   // Http3FrameHandler
-  std::vector<Http3FrameType> interests() override;
+  std::vector<Http3FrameType> const &interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
   // Http3StreamDataVIOAdaptor
   void finalize();
-  bool has_data();
+  bool has_data() const;
 
 private:
   VIO            *_sink_vio          = nullptr;

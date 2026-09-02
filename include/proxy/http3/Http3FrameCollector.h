@@ -33,6 +33,10 @@ class QUICStreamVCAdapter;
 class Http3FrameCollector
 {
 public:
+  // Http3Transaction always adds exactly 2 generators (header framer, data framer) per
+  // transaction; reserving avoids the growth-triggered reallocation on the second add_generator().
+  Http3FrameCollector() { _generators.reserve(2); }
+
   Http3ErrorUPtr on_write_ready(QUICStreamId stream_id, MIOBuffer &writer, size_t &nread, bool &all_done);
 
   void add_generator(Http3FrameGenerator *generator);

@@ -32,7 +32,7 @@ public:
   Http3FrameCounter(){};
 
   // Http3FrameHandler
-  std::vector<Http3FrameType> interests() override;
+  std::vector<Http3FrameType> const &interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
   uint64_t get_count(uint64_t type) const;

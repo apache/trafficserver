@@ -48,10 +48,11 @@ Http3HeaderVIOAdaptor::~Http3HeaderVIOAdaptor()
   this->_header.destroy();
 }
 
-std::vector<Http3FrameType>
+std::vector<Http3FrameType> const &
 Http3HeaderVIOAdaptor::interests()
 {
-  return {Http3FrameType::HEADERS};
+  static std::vector<Http3FrameType> const types = {Http3FrameType::HEADERS};
+  return types;
 }
 
 Http3ErrorUPtr

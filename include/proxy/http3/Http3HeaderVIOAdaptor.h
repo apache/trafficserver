@@ -35,7 +35,7 @@ public:
   ~Http3HeaderVIOAdaptor();
 
   // Http3FrameHandler
-  std::vector<Http3FrameType> interests() override;
+  std::vector<Http3FrameType> const &interests() override;
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
   bool is_complete();

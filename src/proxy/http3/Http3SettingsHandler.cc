@@ -32,10 +32,11 @@ DbgCtl dbg_ctl_http3{"http3"};
 //
 // SETTINGS frame handler
 //
-std::vector<Http3FrameType>
+std::vector<Http3FrameType> const &
 Http3SettingsHandler::interests()
 {
-  return {Http3FrameType::SETTINGS};
+  static std::vector<Http3FrameType> const types = {Http3FrameType::SETTINGS};
+  return types;
 }
 
 Http3ErrorUPtr

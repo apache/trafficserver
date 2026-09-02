@@ -35,10 +35,11 @@ Http3StreamDataVIOAdaptor::~Http3StreamDataVIOAdaptor()
   free_MIOBuffer(this->_buffer);
 }
 
-std::vector<Http3FrameType>
+std::vector<Http3FrameType> const &
 Http3StreamDataVIOAdaptor::interests()
 {
-  return {Http3FrameType::DATA};
+  static std::vector<Http3FrameType> const types = {Http3FrameType::DATA};
+  return types;
 }
 
 Http3ErrorUPtr
@@ -71,7 +72,7 @@ Http3StreamDataVIOAdaptor::finalize()
 }
 
 bool
-Http3StreamDataVIOAdaptor::has_data()
+Http3StreamDataVIOAdaptor::has_data() const
 {
   return this->_total_data_length > 0;
 }
