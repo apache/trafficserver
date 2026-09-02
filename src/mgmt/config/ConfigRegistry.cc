@@ -217,7 +217,7 @@ ConfigRegistry::do_register(Entry entry)
       entry.trigger_records.size());
 
   std::unique_lock lock(_mutex);
-  auto [it, inserted] = _entries.emplace(entry.key, std::move(entry));
+  auto [it, inserted] = _entries.try_emplace(entry.key, std::move(entry));
 
   if (inserted) {
     setup_triggers(it->second);
@@ -238,9 +238,7 @@ ConfigRegistry::do_register(Entry entry)
   } else {
     auto const &existing       = it->second;
     char const *existing_owner = existing.plugin_name.empty() ? "core" : existing.plugin_name.c_str();
-    char const *incoming_owner = entry.plugin_name.empty() ? "core" : entry.plugin_name.c_str();
-    Warning("Config '%s' already registered by %s; ignoring registration from %s", it->first.c_str(), existing_owner,
-            incoming_owner);
+    Warning("Config '%s' already registered by %s; ignoring registration from %s", it->first.c_str(), existing_owner, owner_str);
   }
 
   return inserted;
