@@ -463,6 +463,18 @@ endif()
 # instead of stopping at the first. Set UBSAN_OPTIONS=halt_on_error=1 at runtime
 # to abort instead, which is what a gating job would want.
 if(ENABLE_UBSAN)
+  # The checks are instrumentation, but they call into a runtime library that some
+  # distributions package separately from the compiler (libubsan for GCC). Without it
+  # the build gets a bare "cannot find libubsan.so" from the linker after compiling
+  # hundreds of objects, so establish it here and name what is missing.
+  include(CheckLinkerFlag)
+  check_linker_flag(CXX -fsanitize=undefined HAS_UBSAN_RUNTIME)
+  if(NOT HAS_UBSAN_RUNTIME)
+    message(
+      FATAL_ERROR
+        "ENABLE_UBSAN needs the undefined behavior sanitizer runtime, which this toolchain cannot link. On GCC that runtime is the libubsan package."
+    )
+  endif()
   add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fno-omit-frame-pointer)
   add_link_options(-g -fsanitize=undefined -fno-sanitize=vptr)
 endif()
