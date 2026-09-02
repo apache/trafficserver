@@ -251,6 +251,16 @@ TEST_CASE("XPACK_String", "[xpack]")
     result = dt.lookup_relative("", "");
     REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
     REQUIRE(result.index == 0);
+
+    // There is no head entry to count a relative index back from.
+    const char *name      = nullptr;
+    size_t      name_len  = 0;
+    const char *value     = nullptr;
+    size_t      value_len = 0;
+
+    result = dt.lookup_relative(0, &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
+    REQUIRE(result.index == 0);
   }
 
   SECTION("Dynamic Table")
@@ -339,6 +349,8 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(memcmp(name, "name1", name_len) == 0);
     REQUIRE(value_len == strlen("value1"));
     REQUIRE(memcmp(value, "value1", value_len) == 0);
+    result = dt.lookup_relative(dt.count(), &name, &name_len, &value, &value_len);
+    REQUIRE(result.match_type == XpackLookupResult::MatchType::NONE);
     result = dt.lookup_relative("name2", "value2");
     REQUIRE(result.match_type == XpackLookupResult::MatchType::EXACT);
     REQUIRE(result.index == 0);
