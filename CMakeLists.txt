@@ -452,8 +452,10 @@ endif()
 
 # UndefinedBehaviorSanitizer. Deliberately not part of the either/or chain above:
 # UBSan instruments arithmetic, shifts, and type loads rather than replacing the
-# allocator or the thread runtime, so it composes with an asan build
-# (-fsanitize=address,undefined) as well as standing on its own.
+# allocator or the thread runtime, so it composes with either of them as well as
+# standing on its own: asan gives -fsanitize=address,undefined and tsan gives
+# -fsanitize=thread,undefined. Only the asan pairing has a preset, since that is
+# the combination developers ask for, but the option itself does not restrict it.
 #
 # vptr is excluded. It needs a matching type_info at every polymorphic access, and
 # a plugin loaded with dlopen does not reliably share type identity with the main
@@ -466,16 +468,17 @@ endif()
 # Set UBSAN_OPTIONS=halt_on_error=1 at runtime to stop on the first finding, which
 # is what a gating job would want.
 if(ENABLE_UBSAN)
-  # The checks are instrumentation, but they call into a runtime library that some
-  # distributions package separately from the compiler (libubsan for GCC). Without it
-  # the build gets a bare "cannot find libubsan.so" from the linker after compiling
-  # hundreds of objects, so establish it here and name what is missing.
+  # This can fail two ways: the toolchain does not know -fsanitize=undefined at all,
+  # or it knows the flag but cannot link the runtime library, which some distributions
+  # package separately from the compiler. Without the check the second case surfaces as
+  # a bare "cannot find libubsan.so" from the linker after compiling hundreds of
+  # objects, so establish it here and let the message cover both.
   include(CheckLinkerFlag)
-  check_linker_flag(CXX -fsanitize=undefined HAS_UBSAN_RUNTIME)
-  if(NOT HAS_UBSAN_RUNTIME)
+  check_linker_flag(CXX -fsanitize=undefined HAS_UBSAN_SUPPORT)
+  if(NOT HAS_UBSAN_SUPPORT)
     message(
       FATAL_ERROR
-        "ENABLE_UBSAN needs the undefined behavior sanitizer runtime, which this toolchain cannot link. On GCC that runtime is the libubsan package."
+        "ENABLE_UBSAN was requested, but this toolchain cannot link -fsanitize=undefined. Either the compiler does not support the flag, or it does and the sanitizer runtime is missing. If the compiler is GCC, that runtime is the libubsan package."
     )
   endif()
   add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fsanitize-recover=undefined -fno-omit-frame-pointer)
