@@ -33,6 +33,8 @@
 struct RamCacheLRUEntry {
   CryptoHash key;
   uint64_t   auxkey;
+  uint32_t   len;  // data length; block_size() only bounds it, so copy entries need it recorded
+  bool       copy; // copy-in-copy-out: buffers are never shared with callers
   LINK(RamCacheLRUEntry, lru_link);
   LINK(RamCacheLRUEntry, hash_link);
   Ptr<IOBufferData> data;
@@ -147,7 +149,11 @@ RamCacheLRU::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
     if (e->key == *key && e->auxkey == auxkey) {
       lru.remove(e);
       lru.enqueue(e);
-      (*ret_data) = e->data;
+      if (e->copy) {
+        (*ret_data) = copy_data_out(e->data.get(), e->len);
+      } else {
+        (*ret_data) = e->data;
+      }
       DDbg(dbg_ctl_ram_cache, "get %X %" PRIu64 " HIT", key->slice32(3), auxkey);
       ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
       ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
@@ -181,9 +187,8 @@ RamCacheLRU::remove(RamCacheLRUEntry *e)
   return ret;
 }
 
-// ignore 'copy' since we don't touch the data
 int
-RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t len, bool, uint64_t auxkey)
+RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, uint64_t auxkey)
 {
   if (!max_bytes) {
     return 0;
@@ -213,6 +218,26 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
       if (e->auxkey == auxkey) {
         lru.remove(e);
         lru.enqueue(e);
+        if (copy) {
+          // The entry may still be sharing a caller's buffer from a put made
+          // while copy semantics were not requested; refresh it with a
+          // private copy before the caller mutates its buffer.
+          //
+          // A refresh only ever gives bytes back, so unlike an insert it needs
+          // no eviction pass: the private copy is an exact-size allocation
+          // while a shared buffer was charged its rounded block_size() (always
+          // >= len), and a re-put under the same key and auxkey names the same
+          // on-disk doc, so len itself does not grow.
+          Ptr<IOBufferData> d     = copy_data_in(data, len);
+          int64_t           delta = d->block_size() - e->data->block_size();
+
+          e->data  = d;
+          e->len   = len;
+          e->copy  = true;
+          bytes   += delta;
+          ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
+          ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
+        }
         return 1;
       } else { // discard when aux keys conflict
         e = remove(e);
@@ -224,13 +249,19 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
   e         = THREAD_ALLOC(ramCacheLRUEntryAllocator, this_ethread());
   e->key    = *key;
   e->auxkey = auxkey;
-  e->data   = data;
+  e->len    = len;
+  e->copy   = copy;
+  if (copy) {
+    e->data = copy_data_in(data, len);
+  } else {
+    e->data = data;
+  }
   bucket[i].push(e);
   lru.enqueue(e);
-  bytes += ENTRY_OVERHEAD + data->block_size();
+  bytes += ENTRY_OVERHEAD + e->data->block_size();
   objects++;
-  ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
-  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + data->block_size());
+  ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
+  ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, ENTRY_OVERHEAD + e->data->block_size());
   while (bytes > max_bytes) {
     RamCacheLRUEntry *ee = lru.dequeue();
     if (ee) {
