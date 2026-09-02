@@ -752,9 +752,9 @@ QUICNetVConnection::_process_openssl_streams()
     }
     if ((stream_type & SSL_STREAM_TYPE_WRITE) != 0 || stream->has_data_to_send()) {
       if (stream->has_data_to_send()) {
-        while (stream->has_data_to_send() && stream->send_data(*this) > 0) {}
+        while (stream->has_data_to_send() && stream->send_data(*this, QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT) > 0) {}
       } else {
-        stream->send_data(*this);
+        stream->send_data(*this, QUICStream::MIN_STREAM_SEND_BYTES_PER_EVENT);
       }
     }
   }

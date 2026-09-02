@@ -28,6 +28,11 @@
 #include "iocore/net/quic/QUICStreamVCAdapter.h"
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3FrameCollector.h"
+#include "proxy/http3/Http3HeaderFramer.h"
+#include "proxy/http3/Http3DataFramer.h"
+#include "proxy/http3/Http3ProtocolEnforcer.h"
+#include "proxy/http3/Http3HeaderVIOAdaptor.h"
+#include "proxy/http3/Http3StreamDataVIOAdaptor.h"
 
 #include <functional>
 
@@ -35,11 +40,6 @@ class QUICStreamIO;
 class HQSession;
 class Http09Session;
 class Http3Session;
-class Http3HeaderFramer;
-class Http3DataFramer;
-class Http3HeaderVIOAdaptor;
-class Http3ProtocolEnforcer;
-class Http3StreamDataVIOAdaptor;
 
 class HQTransaction : public ProxyTransaction
 {
@@ -151,13 +151,13 @@ private:
   void    _handle_error(const Http3Error &error);
 
   // These are for HTTP/3
-  Http3FrameDispatcher       _frame_dispatcher;
-  Http3FrameCollector        _frame_collector;
-  Http3ProtocolEnforcer     *_protocol_enforcer = nullptr;
-  Http3HeaderFramer         *_header_framer     = nullptr;
-  Http3DataFramer           *_data_framer       = nullptr;
-  Http3HeaderVIOAdaptor     *_header_handler    = nullptr;
-  Http3StreamDataVIOAdaptor *_data_handler      = nullptr;
+  Http3FrameDispatcher      _frame_dispatcher;
+  Http3FrameCollector       _frame_collector;
+  Http3ProtocolEnforcer     _protocol_enforcer;
+  Http3HeaderFramer         _header_framer;
+  Http3DataFramer           _data_framer;
+  Http3HeaderVIOAdaptor     _header_handler;
+  Http3StreamDataVIOAdaptor _data_handler;
 };
 
 /**

@@ -163,6 +163,9 @@ if(BUILD_TESTING)
   if(TS_USE_QUIC)
     target_sources(test_net PRIVATE unit_tests/test_QUICTokenKeyConfig.cc)
   endif()
+  if(TS_USE_QUIC OR TS_USE_QMUX)
+    target_sources(test_net PRIVATE unit_tests/test_QUICStream.cc)
+  endif()
   # Use link groups to solve circular dependency
   set(LINK_GROUP_LIBS
       ts::logging
