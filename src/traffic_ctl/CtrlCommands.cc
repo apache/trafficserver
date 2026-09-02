@@ -52,6 +52,16 @@ const StringToFormatFlagsMap _Fmt_str_to_enum = {
   {"rpc",  BasePrinter::Options::FormatFlags::RPC }
 };
 
+/// `-d ""`, or `-d $VAR` with VAR unset, yields an empty token that survives
+/// ArgumentData::size() and is then skipped by the parse loops, so the reload would quietly
+/// cover fewer configs than the operator asked for. Reported separately from the bare option
+/// so the operator is told which of the two mistakes they made.
+bool
+has_empty_value(ts::ArgumentData const &args)
+{
+  return std::any_of(args.begin(), args.end(), [](std::string const &value) { return value.empty(); });
+}
+
 constexpr std::string_view YAML_PREFIX{"records."};
 constexpr std::string_view RECORD_PREFIX{"proxy.config."};
 
@@ -557,10 +567,17 @@ ConfigCommand::config_reload()
 
   // Without content the request would silently degrade to a full reload of every handler,
   // which is the opposite of the scoped reload the operator asked for.
-  if (data_args && data_args.size() == 0) {
-    _printer->write_output("Error: --data (-d) requires content: @file, @- or a YAML string");
-    App_Exit_Status_Code = CTRL_EX_ERROR;
-    return;
+  if (data_args) {
+    if (data_args.size() == 0) {
+      _printer->write_output("Error: --data (-d) requires content: @file, @- or a YAML string");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+    if (has_empty_value(data_args)) {
+      _printer->write_output("Error: --data (-d) received an empty value, so its config would be left out");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
   }
 
   // Parse inline config data if provided (supports multiple -d arguments)
@@ -595,10 +612,17 @@ ConfigCommand::config_reload()
 
   // Parse --directive (-D) arguments into configs[key]["_reload"][directive] = value
   auto dir_args = get_parsed_arguments()->get("directive");
-  if (dir_args && dir_args.size() == 0) {
-    _printer->write_output("Error: --directive (-D) requires at least one config_key.directive_key=value");
-    App_Exit_Status_Code = CTRL_EX_ERROR;
-    return;
+  if (dir_args) {
+    if (dir_args.size() == 0) {
+      _printer->write_output("Error: --directive (-D) requires at least one config_key.directive_key=value");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
+    if (has_empty_value(dir_args)) {
+      _printer->write_output("Error: --directive (-D) received an empty value, so its directive would be left out");
+      App_Exit_Status_Code = CTRL_EX_ERROR;
+      return;
+    }
   }
   for (auto const &dir : dir_args) {
     if (dir.empty()) {

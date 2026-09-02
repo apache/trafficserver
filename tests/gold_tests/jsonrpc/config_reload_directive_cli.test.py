@@ -153,3 +153,43 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"ip_allow"', "content from the first -d must be present")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('"sni"', "content from the second -d must be present")
 tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 11: an empty -d token is no content. The token survives the argument
+# count, so without the content check the request degrades to a full reload
+# ============================================================================
+tr = Test.AddTestRun("-d with an empty argument is reported as empty")
+tr.Processes.Default.Command = "traffic_ctl config reload -d ''"
+# autest's shell detection indexes arg[0], so an empty argument needs the shell path.
+tr.Processes.Default.ForceUseShell = True
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 2
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "received an empty value", "an empty -d must be reported as empty, not as a missing argument")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 12: same for -D
+# ============================================================================
+tr = Test.AddTestRun("-D with an empty argument is reported as empty")
+tr.Processes.Default.Command = "traffic_ctl config reload -D ''"
+tr.Processes.Default.ForceUseShell = True
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 2
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "received an empty value", "an empty -D must be reported as empty, not as a missing argument")
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 13: an empty token is refused even next to a real one. This is what an
+# unset variable in a script written with several -d looks like, and accepting
+# it would reload fewer configs than were asked for without saying so
+# ============================================================================
+tr = Test.AddTestRun("An empty -d token is refused next to a real one")
+tr.Processes.Default.Command = ("traffic_ctl config reload -d '' -d 'ip_allow: {rules: [x]}'")
+tr.Processes.Default.ForceUseShell = True
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.ReturnCode = 2
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    "received an empty value", "a partial reload must not happen silently")
+tr.StillRunningAfter = ts
