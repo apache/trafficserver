@@ -454,7 +454,8 @@ private:
       return _makeId(blob, offset, MetricType::COUNTER);
     }
 
-    std::pair<int16_t, int16_t>
+    /// The current blob index and the offset of the next free slot in it.
+    std::pair<uint16_t, uint16_t>
     current() const
     {
       std::lock_guard lock(_mutex);

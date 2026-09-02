@@ -74,12 +74,9 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
 
   if (it != _lookups.end()) {
     // Re-creating a name is how an unlisted metric is relisted: same slot, same atomic, and
-    // whatever value it accumulated while it was out of the listing.
-    auto [blob_ix, offset] = _splitID(it->second);
-
-    if (Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get(); blob != nullptr) {
-      std::get<2>(*blob)[offset].fetch_and(static_cast<uint8_t>(~UNLISTED), MEMORY_ORDER);
-    }
+    // whatever value it accumulated while it was out of the listing. A name in _lookups always
+    // names an allocated slot, so this cannot fail.
+    set_listed(it->second, true);
 
     return it->second;
   }
