@@ -478,7 +478,7 @@ if(ENABLE_UBSAN)
   if(NOT HAS_UBSAN_SUPPORT)
     message(
       FATAL_ERROR
-        "ENABLE_UBSAN was requested, but this toolchain cannot link -fsanitize=undefined. Either the compiler does not support the flag, or it does and the sanitizer runtime is missing. If the compiler is GCC, that runtime is the libubsan package."
+        "ENABLE_UBSAN was requested, but this toolchain cannot link -fsanitize=undefined. Either the compiler does not support the flag, or it does and the sanitizer runtime is missing. GCC ships that runtime in a package separate from the compiler on most distributions, under a name that varies by distribution."
     )
   endif()
   add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fsanitize-recover=undefined -fno-omit-frame-pointer)
