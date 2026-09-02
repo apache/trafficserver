@@ -839,6 +839,35 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
     REQUIRE_FALSE(m.tombstoned(unallocated));
   }
 
+  SECTION("the next free slot is not allocated yet")
+  {
+    // create() writes the slot and then advances, so the id one past the last created metric is
+    // the next free slot. Marking it would make the metric invisible from the moment it is
+    // created, because a new slot is never cleared.
+    auto last = Metrics::Counter::create("tombstone.next.free");
+
+    REQUIRE_FALSE(m.tombstone(last + 1));
+    REQUIRE_FALSE(m.tombstoned(last + 1));
+  }
+
+  SECTION("an offset past the end of a full blob is rejected")
+  {
+    // _splitID takes the low 16 bits as the offset, so a manufactured id can name an offset far
+    // beyond MAX_SIZE. For a blob below the current one, a bound check against the current blob's
+    // fill level does not catch it, and indexing the flag array then runs off the end of the blob.
+    auto &h = Metrics::hidden_instance();
+
+    // Force at least one completed blob so blob 0 is full rather than current.
+    for (int i = 0; i <= Metrics::MAX_SIZE; ++i) {
+      REQUIRE(Metrics::Counter::createHiddenPtr("tombstone.fill." + std::to_string(i)) != nullptr);
+    }
+
+    Metrics::IdType const past_end = 0 << 16 | (Metrics::MAX_SIZE + 100);
+
+    REQUIRE_FALSE(h.tombstone(past_end));
+    REQUIRE_FALSE(h.tombstoned(past_end));
+  }
+
   SECTION("the hidden store tombstones independently")
   {
     auto &h = Metrics::hidden_instance();

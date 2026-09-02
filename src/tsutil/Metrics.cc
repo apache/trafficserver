@@ -256,13 +256,12 @@ Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
 bool
 Metrics::Storage::tombstone(Metrics::IdType id, bool set)
 {
-  auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
-
-  // Only slots that have actually been allocated can be marked.
-  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
+  if (!allocated(id)) {
     return false;
   }
+
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   // Only this bit, so a flag added later is not clobbered by a tombstone or a resurrect.
   if (set) {
@@ -277,12 +276,12 @@ Metrics::Storage::tombstone(Metrics::IdType id, bool set)
 bool
 Metrics::Storage::tombstoned(Metrics::IdType id) const
 {
-  auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
-
-  if (!blob) {
+  if (!allocated(id)) {
     return false;
   }
+
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   return (std::get<2>(*blob)[offset].load(MEMORY_ORDER) & TOMBSTONE) != 0;
 }
@@ -293,7 +292,13 @@ Metrics::iterator::iterator(const Metrics &m) : _metrics(m), _it(0), _bound(m._s
   skip_tombstoned();
 }
 
-Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos), _bound(m._storage->current_id()) {}
+Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos), _bound(m._storage->current_id())
+{
+  // Iteration never visits a marked slot, so an iterator must not rest on one either: used as a
+  // range bound it would be stepped over and never reached. find() resolves that case to end()
+  // before it gets here; this keeps the invariant true for any other positional construction.
+  skip_tombstoned();
+}
 
 Metrics::iterator::iterator(const Metrics &m, end_tag) : _metrics(m), _end(true) {}
 

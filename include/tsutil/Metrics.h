@@ -239,21 +239,24 @@ public:
   // Static methods to encapsulate access to the atomic's
   class iterator
   {
+    friend class Metrics;
+
+    /// Tag for the end sentinel, which has no position and reads no storage.
+    struct end_tag {
+    };
+
+    // Only Metrics hands these out, through begin(), end() and find(). A caller that could name an
+    // arbitrary position could name a tombstoned one, which iteration is required never to visit.
+    explicit iterator(const Metrics &m);
+    iterator(const Metrics &m, IdType pos);
+    iterator(const Metrics &m, end_tag);
+
   public:
     using iterator_category = std::input_iterator_tag;
     using value_type        = std::tuple<std::string_view, MetricType, int64_t>;
     using difference_type   = ptrdiff_t;
     using pointer           = value_type *;
     using reference         = value_type &;
-
-    iterator(const Metrics &m, IdType pos);
-
-    /// Tag for the end sentinel, which has no position and reads no storage.
-    struct end_tag {
-    };
-
-    explicit iterator(const Metrics &m);
-    iterator(const Metrics &m, end_tag);
 
     iterator &
     operator++()
@@ -438,6 +441,27 @@ private:
       auto [blob, entry] = _splitID(id);
 
       return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+    }
+
+    /** Whether @a id names a slot that @c create has actually written.
+     *
+     * Stricter than @c valid in two ways, both of which matter when the id can be manufactured
+     * rather than handed out by the store. The offset is the low 16 bits of the id, so it can name
+     * a slot well past @c MAX_SIZE in a blob that is full; indexing on that runs off the end of the
+     * blob. And @c _cur_off is the *next* free slot, not the last used one, so @c valid accepts one
+     * slot that does not exist yet -- writing a flag there would be inherited by whatever metric is
+     * created in it later.
+     */
+    bool
+    allocated(IdType id) const
+    {
+      auto [blob, entry] = _splitID(id);
+
+      if (id < 0 || entry >= MAX_SIZE || !_blobs[blob]) {
+        return false;
+      }
+
+      return blob < _cur_blob || (blob == _cur_blob && entry < _cur_off);
     }
   };
 
