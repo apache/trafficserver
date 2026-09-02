@@ -342,11 +342,15 @@ rules like::
     map https://www.acme.com/ http://localhost:8080/
     map https://static.acme.com/ https://origin-static.acme.com/
 
-This will require installing a certificate, and adding a line to
-:file:`ssl_multicert.config`. Assuming the cert has the static.acme.com alternate
-name, and that cert should be presented by default::
+This will require installing a certificate, and adding an entry to
+:file:`ssl_multicert.yaml`. Assuming the cert has the static.acme.com alternate
+name, and that cert should be presented by default:
 
-    dest_ip=* ssl_cert_name=/path/to/secret/privatekey/acme.rsa
+.. code-block:: yaml
+
+    ssl_multicert:
+      - ssl_cert_name: /path/to/secret/privatekey/acme.rsa
+        dest_ip: "*"
 
 Further information about configuring |TS| for TLS can be found :ref:`admin-ssl-termination`
 section of the documentation.
@@ -357,12 +361,18 @@ Adjust Cache Parameters
 The default |TS| configuration will provide a 256 MB disk cache, located in
 ``var/trafficserver/`` underneath your install prefix. You may wish to adjust
 either or both of the size and location of this cache. This is done with the
-:file:`storage.config` configuration file. In our example, |AW| has dedicated
+:file:`storage.yaml` configuration file. In our example, |AW| has dedicated
 a large storage pool on their cache server which is mounted at ``/cache``. To
 use this, and to disable the default cache storage setting, the following will
-be the sole entry in :file:`storage.config`::
+be the sole entry in :file:`storage.yaml`:
 
-    /cache/trafficserver 500G
+.. code-block:: yaml
+
+    cache:
+      spans:
+        - name: cache
+          path: /cache/trafficserver
+          size: 500G
 
 .. note:: Changes to the cache configuration require a restart of |TS|.
 
@@ -401,13 +411,22 @@ entries:
     map http://static.acme.com/ http://origin-static.acme.com/
     map https://static.acme.com/ https://origin-static.acme.com/
 
-:file:`storage.config`::
+:file:`storage.yaml`:
 
-    /cache/trafficserver 500G
+.. code-block:: yaml
 
-:file:`ssl_multicert.config`::
+    cache:
+      spans:
+        - name: cache
+          path: /cache/trafficserver
+          size: 500G
 
-    ssl_cert_name=/path/to/secret/acme.rsa
+:file:`ssl_multicert.yaml`:
+
+.. code-block:: yaml
+
+    ssl_multicert:
+      - ssl_cert_name: /path/to/secret/acme.rsa
 
 Configuring A Forward Proxy
 ---------------------------

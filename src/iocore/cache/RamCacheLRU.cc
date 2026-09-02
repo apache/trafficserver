@@ -190,9 +190,12 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
   }
   uint32_t i = key->slice32(3) % nbuckets;
   if ((cache_config_ram_cache_use_seen_filter == 1) ||
-      // If proxy.config.cache.ram_cache.use_seen_filter is > 1,  and the cache is more than <n>% full, then use the seen filter.
-      // <n>% is calculated based on this setting, with 2 == 50%, 3 == 67%, 4 == 75%, up to 9 == 90%.
-      ((cache_config_ram_cache_use_seen_filter > 1) && (bytes >= max_bytes * (1 - (1 / cache_config_ram_cache_use_seen_filter))))) {
+      // For use_seen_filter > 1, only apply the filter once the cache is more than <n>% full:
+      // 2 == 50%, 3 == 67%, 4 == 75%, up to 9 == 90%. Written as bytes * N >= max_bytes * (N - 1)
+      // rather than bytes >= max_bytes * (1 - 1 / N); the latter evaluates 1 / N in integer
+      // arithmetic (0 for every N > 1), so the filter only ever engaged at 100% full.
+      ((cache_config_ram_cache_use_seen_filter > 1) &&
+       (bytes * cache_config_ram_cache_use_seen_filter >= max_bytes * (cache_config_ram_cache_use_seen_filter - 1)))) {
     uint32_t j = key->slice32(3) % (nbuckets * 2); // The seen filter bucket size is 2x
 
     if (!seen[j]) {

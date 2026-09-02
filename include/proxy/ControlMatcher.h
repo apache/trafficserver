@@ -99,6 +99,8 @@
 
 #include <swoc/swoc_ip.h>
 
+#include "mgmt/config/ConfigContext.h"
+
 #ifdef HAVE_CTYPE_H
 #include <cctype>
 #endif
@@ -302,11 +304,12 @@ template <class Data, class MatchResult> class ControlMatcher
 public:
   // Parameter name must not be deallocated before this object is
   ControlMatcher(const char *file_var, const char *name, const matcher_tags *tags,
-                 int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE));
+                 int flags_in = (ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE),
+                 ConfigContext ctx = {});
   ~ControlMatcher();
 
-  int BuildTable();
-  int BuildTableFromString(char *str);
+  int BuildTable(ConfigContext ctx = {});
+  int BuildTableFromString(char *str, ConfigContext ctx = {});
 
   void Match(RequestData *rdata, MatchResult *result) const;
   void Print() const;

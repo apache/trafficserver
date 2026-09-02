@@ -30,7 +30,7 @@ Instance::_initialize(int argc, const char *argv[], const char *filename, bool r
   if (remap) {
     from_url = argv[0];
     to_url   = argv[1];
-    for (int i = 2; i < argc; i++) {
+    for (int i = 2; i < argc && (i - 2) < static_cast<int>(data.size()); i++) {
       auto s = cripts::string(argv[i]);
 
       s.trim("\"\'");

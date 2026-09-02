@@ -1168,6 +1168,26 @@ TSReturnCode TSMutexLockTry(TSMutex mutexp);
 
 void TSMutexUnlock(TSMutex mutexp);
 
+/** Scoped lock guard for a @c TSMutex.
+
+    Locks @a mutexp on construction and unlocks it when the guard leaves scope.
+ */
+class [[nodiscard]] TSMutexLockGuard
+{
+public:
+  explicit TSMutexLockGuard(TSMutex mutexp) : m_mutex(mutexp) { TSMutexLock(m_mutex); }
+
+  TSMutexLockGuard(const TSMutexLockGuard &)            = delete;
+  TSMutexLockGuard &operator=(const TSMutexLockGuard &) = delete;
+  TSMutexLockGuard(TSMutexLockGuard &&)                 = delete;
+  TSMutexLockGuard &operator=(TSMutexLockGuard &&)      = delete;
+
+  ~TSMutexLockGuard() { TSMutexUnlock(m_mutex); }
+
+private:
+  TSMutex m_mutex = nullptr;
+};
+
 /* --------------------------------------------------------------------------
    cachekey */
 /**
@@ -1227,6 +1247,101 @@ void         TSConfigRelease(unsigned int id, TSConfig configp);
 void        *TSConfigDataGet(TSConfig configp);
 
 TSReturnCode TSMgmtConfigFileAdd(const char *parent, const char *fileName);
+
+/* --------------------------------------------------------------------------
+   Config Registry - plugin config reload registration
+
+   See doc/developer-guide/api/functions/TSCfgRegister.en.rst for usage,
+   semantics, and examples. */
+
+/** Register a plugin config file with the reload framework.
+
+    Call from TSPluginInit() after TSPluginRegister(). All preconditions are
+    logged on failure; @a info must be non-null.
+
+    @param info  Registration parameters.
+    @return TS_SUCCESS if the config was registered; TS_ERROR on a precondition
+            failure or if the registration was dropped (duplicate key). On a
+            duplicate key the handler is never installed - probe first with
+            TSCfgIsRegistered() if the plugin may be loaded more than once.
+*/
+TSReturnCode TSCfgRegister(const TSCfgRegistrationInfo *info);
+
+/** Test whether a key is registered.
+
+    Plugins that may be loaded more than once (e.g. by an admin retry, or as
+    a remap plugin instance) can use this to skip a duplicate TSCfgRegister
+    call, which would otherwise be rejected with TS_ERROR.
+
+    @param key  Registry key.
+    @return     true if @a key is currently registered (core or plugin).
+*/
+bool TSCfgIsRegistered(std::string_view key);
+
+/** Attach a record so that changing its value re-runs the handler
+    registered for @a key. Call from TSPluginInit() after TSCfgRegister().
+
+    @return TS_SUCCESS on success; TS_ERROR if @a key is unknown.
+*/
+TSReturnCode TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name);
+
+/** Add a companion file dependency to a registered plugin config.
+    Call from TSPluginInit() after TSCfgRegister().
+
+    @return TS_SUCCESS on success; TS_ERROR on precondition fail.
+*/
+TSReturnCode TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info);
+
+/** Transition the load context to IN_PROGRESS and optionally attach a
+    one-line progress @a msg. Null @a ctx or empty @a msg is a no-op.
+*/
+void TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg);
+
+/** Report successful config load. Finalizes and invalidates @a ctx; do not use
+    it after this call. A later call on the same handle (double finalize, or any
+    accessor) is ignored and logged as misuse, not acted on. Null/unknown @a ctx
+    is a no-op; empty @a msg means no message.
+*/
+void TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg);
+
+/** Report failed config load. Finalizes and invalidates @a ctx with the same
+    post-finalize semantics as TSCfgLoadCtxComplete(). Null/unknown @a ctx is a
+    no-op; empty @a msg means no message.
+*/
+void TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg);
+
+/** Log an intermediate message without changing state.
+    Preferred channel for progress/diagnostic messages between handler entry
+    and the eventual Complete/Fail call. Null @a ctx or empty @a msg is a no-op.
+*/
+void TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg);
+
+/** Create a dependent subtask under @a ctx. The returned handle must be
+    completed/failed independently. Null @a ctx returns nullptr.
+*/
+TSCfgLoadCtx TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description);
+
+/** Resolved file path the framework expects this handler to read.
+    Returns the registration's @c config_path, or the current value of
+    @c filename_record if one was registered and is non-empty.
+    Valid until the completing call.
+*/
+std::string_view TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx);
+
+/** Reload token identifying the current reload cycle.
+    Valid until the completing call.
+*/
+std::string_view TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx);
+
+/** RPC-supplied YAML content for this load, or nullptr for file reloads.
+    Cast to YAML::Node*.
+*/
+TSYaml TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx);
+
+/** RPC-supplied reload directives (the _reload key, extracted from the
+    supplied YAML by the framework), or nullptr if none were provided.
+*/
+TSYaml TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx);
 
 /* --------------------------------------------------------------------------
    Management */
@@ -1565,20 +1680,35 @@ TSReturnCode           TSHttpSsnClientFdGet(TSHttpSsn ssnp, int *fdp);
 /* TS-1008 END */
 
 /** Change packet firewall mark for the client side connection
- *
-    @note The change takes effect immediately
 
-    @return TS_SUCCESS if the client connection was modified
+    Sets the entire client-side packet firewall mark to @a mark; the whole mark is replaced. @a mark
+    is interpreted as a 32-bit unsigned bit pattern.
+
+    @note The firewall mark is only honored on platforms whose OS supports it, specifically Linux via
+    @c SO_MARK. On platforms without @c SO_MARK support the call still returns TS_SUCCESS when a
+    client connection is present, but setting the mark has no effect at the OS layer (it is a safe
+    no-op).
+
+    @note The change takes effect immediately on the live client connection
+
+    @return TS_SUCCESS if the client connection was modified, TS_ERROR if there is no client
+    connection to modify
 */
 TSReturnCode TSHttpTxnClientPacketMarkSet(TSHttpTxn txnp, int mark);
 
 /** Change packet firewall mark for the server side connection
- *
-    @note The change takes effect immediately, if no OS connection has been
-    made, then this sets the mark that will be used IF an OS connection
-    is established
 
-    @return TS_SUCCESS if the (future?) server connection was modified
+    Sets the entire server-side packet firewall mark to @a mark; the whole mark is replaced. @a mark
+    is interpreted as a 32-bit unsigned bit pattern.
+
+    @note The firewall mark is only honored on platforms whose OS supports it, specifically Linux via
+    @c SO_MARK. On platforms without @c SO_MARK support the call still returns TS_SUCCESS, but setting
+    the mark has no effect at the OS layer (it is a safe no-op).
+
+    @note If a live server connection exists, the mark is applied to it immediately; the mark is also
+    recorded on the transaction so that any subsequent server connection for this transaction uses it.
+
+    @return TS_SUCCESS always, including when no server connection has been established yet.
 */
 TSReturnCode TSHttpTxnServerPacketMarkSet(TSHttpTxn txnp, int mark);
 
@@ -2152,19 +2282,39 @@ TSReturnCode TSPluginDescriptorAccept(TSCont contp);
 */
 TSReturnCode TSNetAcceptNamedProtocol(TSCont contp, const char *protocol);
 
-/**
-  Create a new port from the string specification used by the
-  proxy.config.http.server_ports configuration value.
+/** Create a port descriptor.
+ *
+ * Parse the string specification used by the
+ * @c proxy.config.http.server_ports configuration value. The returned handle
+ * must be released with TSPortDescriptorDestroy().
+ *
+ * @param[in] descriptor Port descriptor string to parse.
+ * @return A port descriptor handle, or @c nullptr if @a descriptor is invalid
+ * or cannot be used by TSPortDescriptorAccept().
  */
 TSPortDescriptor TSPortDescriptorParse(const char *descriptor);
 
-/**
-   Start listening on the given port descriptor. If a connection is
-   successfully accepted, the TS_EVENT_NET_ACCEPT is delivered to the
-   continuation. The event data will be a valid TSVConn bound to the accepted
-   connection.
+/** Start listening on a parsed port descriptor.
+ *
+ * If a connection is successfully accepted, @c TS_EVENT_NET_ACCEPT is
+ * delivered to @a contp. The event data will be a valid @c TSVConn bound to
+ * the accepted connection. The descriptor is not retained and can be
+ * destroyed immediately after this function returns.
+ *
+ * @param[in] descriptor Parsed port descriptor.
+ * @param[in] contp Continuation that accepts connections on the port.
+ * @return @c TS_SUCCESS if the port was opened, @c TS_ERROR otherwise.
  */
-TSReturnCode TSPortDescriptorAccept(TSPortDescriptor, TSCont);
+TSReturnCode TSPortDescriptorAccept(TSPortDescriptor descriptor, TSCont contp);
+
+/** Destroy a port descriptor.
+ *
+ * This does not stop a listener previously opened with
+ * TSPortDescriptorAccept(). Passing @c nullptr has no effect.
+ *
+ * @param[in] descriptor Port descriptor to destroy.
+ */
+void TSPortDescriptorDestroy(TSPortDescriptor descriptor);
 
 /* --------------------------------------------------------------------------
    DNS Lookups */
@@ -2768,6 +2918,25 @@ TSReturnCode TSHttpTxnCachedRespModifiableGet(TSHttpTxn txnp, TSMBuffer *bufp, T
 TSReturnCode TSHttpTxnCacheLookupStatusSet(TSHttpTxn txnp, int cachelookup);
 TSReturnCode TSHttpTxnCacheLookupUrlGet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
 TSReturnCode TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj);
+
+/**
+    Gets the effective cache key digest (cryptographic hash) that was
+    used for cache lookup or storage on this transaction.  The digest
+    is returned as raw bytes — 16 bytes for MD5 (default) or 32 bytes
+    for SHA-256 (FIPS mode).  A buffer of at least 32 bytes is
+    recommended to accommodate either configuration.
+
+    @param[in] txnp the transaction.
+    @param[out] buffer caller-provided buffer to receive the raw hash
+      bytes. If @c nullptr, only @a length is set (size query).
+    @param[in,out] length capacity of @a buffer in bytes on input; actual
+      digest size in bytes on output.
+
+    @return @c TS_SUCCESS if a cache key was computed for this
+      transaction, @c TS_ERROR if no cache lookup was performed or if
+      @a buffer is non-null and too small.
+ */
+TSReturnCode TSHttpTxnCacheKeyDigestGet(TSHttpTxn txnp, char *buffer, int *length);
 TSReturnCode TSHttpTxnPrivateSessionSet(TSHttpTxn txnp, int private_session);
 const char  *TSHttpTxnCacheDiskPathGet(TSHttpTxn txnp, int *length);
 int          TSHttpTxnBackgroundFillStarted(TSHttpTxn txnp);

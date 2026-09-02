@@ -74,7 +74,13 @@ dns.addRecords(records={"backend.wildcard.with.proxy.protocol.port.com": ["127.0
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=signed-foo.pem ssl_key_name=signed-foo.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: signed-foo.pem
+    ssl_key_name: signed-foo.key
+""".split("\n"))
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -93,6 +99,7 @@ ts.Disk.records_config.update(
         'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
         'proxy.config.dns.resolv_conf': 'NULL'
     })
+ts.addPrivateConnectAllowYaml()
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
@@ -286,6 +293,25 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Verify the tunnel destination is expanded correctly.")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify a successful response is received")
 
+# Regression: a tunnel_route that combines $N match groups with a port variable
+# must still enforce connect_ports.  An earlier bug let MATCH_GROUPS clear the
+# dynamic-port flag set by MAP_WITH_PROXY_PROTOCOL_PORT, bypassing the check.
+tr = Test.AddTestRun("test wildcard with proxy_protocol_port - not in connect_ports")
+tr.TimeOut = 5
+tr.Setup.Copy('proxy_protocol_client.py')
+wildcard_rejected_port = server_forbidden.Variables.SSL_Port
+tr.Processes.Default.Command = (
+    f'{sys.executable} proxy_protocol_client.py '
+    f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
+    f'127.0.0.1 127.0.0.1 60123 {wildcard_rejected_port} '
+    f'2 --https')
+tr.ReturnCode = 1
+tr.StillRunningAfter = ts
+tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify the handshake failed")
+ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+    f"Rejected a tunnel to port {wildcard_rejected_port} not in connect_ports",
+    "Verify the tunnel was rejected even though the route uses a $N match group")
+
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")
 # Update the SNI config
@@ -333,21 +359,15 @@ p.Streams.All += Testers.ContainsExpression('dummy SERVER_HELLO', 'Verify a dumm
 p.Streams.All += Testers.ContainsExpression('data: 0', 'Verify that the first data packet was received.')
 p.Streams.All += Testers.ContainsExpression('data: 1', 'Verify that the second data packet was received.')
 
-trreload = Test.AddTestRun("Reload config")
-trreload.StillRunningAfter = ts
+trreload = Test.AddConfigReload(ts, expect="success", expect_tasks=["sni.yaml"], description="Reload config")
 trreload.StillRunningAfter = server_foo
 trreload.StillRunningAfter = server_bar
-trreload.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-trreload.Processes.Default.Env = ts.Env
-trreload.Processes.Default.ReturnCode = 0
 
 # Should terminate on traffic_server (not tunnel)
 tr = Test.AddTestRun("foo.com no Tunnel-test")
 tr.TimeOut = 30
 tr.StillRunningAfter = ts
-# Wait for the reload to complete by running the sni_reload_done test
-tr.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 2))
+tr.Processes.Default.StartBefore(server2)
 tr.MakeCurlCommand("-v --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("Not Found on Accelerato", "Terminates on on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ATS", "Terminate on Traffic Server")

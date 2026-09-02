@@ -79,9 +79,28 @@ Network I/O
    :type: counter
    :units: bytes
 
+   Application-layer bytes read from client and origin connections.  For TLS
+   connections this is the decrypted payload, symmetric with ``write_bytes``; it
+   does not include TLS handshake or record-layer framing.
+
+.. ts:stat:: global proxy.process.net.read_bytes_count integer
+   :type: counter
+
+   The number of read operations that contributed to ``read_bytes``.  For TLS
+   connections this is one per decrypted-read pass, not per socket read.
+
 .. ts:stat:: global proxy.process.net.write_bytes integer
    :type: counter
    :units: bytes
+
+   Application-layer bytes written to client and origin connections.  For TLS
+   connections this is the plaintext payload; it does not include TLS handshake
+   or record-layer framing.
+
+.. ts:stat:: global proxy.process.net.write_bytes_count integer
+   :type: counter
+
+   The number of write operations that contributed to ``write_bytes``.
 
 .. ts:stat:: global proxy.process.tcp.total_accepts integer
    :type: counter

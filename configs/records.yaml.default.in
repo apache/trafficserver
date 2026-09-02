@@ -25,7 +25,7 @@ records:
 ##############################################################################
 # RAM and disk cache configurations. Docs:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#ram-cache
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/storage.yaml.en.html
 ##############################################################################
     ram_cache:
       size: -1
@@ -199,7 +199,7 @@ records:
 ##############################################################################
 # SSL Termination. Docs:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/records.yaml.en.html#client-related-configuration
-#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ssl_multicert.config.en.html
+#    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/ssl_multicert.yaml.en.html
 ##############################################################################
       verify:
         server:

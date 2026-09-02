@@ -82,6 +82,10 @@ Doc::prefix_len() const
 inline uint32_t
 Doc::data_len() const
 {
+  if (this->len <= sizeof(self_type) + this->hlen) {
+    return 0;
+  }
+
   return this->len - sizeof(self_type) - this->hlen;
 }
 

@@ -92,9 +92,7 @@ is_addr_query(int qtype)
 
 DNSProcessor                    dnsProcessor;
 ClassAllocator<DNSEntry, false> dnsEntryAllocator("dnsEntryAllocator");
-// Users are expected to free these entries in short order!
-// We could page align this buffer to enable page flipping for recv...
-ClassAllocator<HostEnt, false> dnsBufAllocator("dnsBufAllocator", 2);
+extern ClassAllocator<HostEnt>  dnsBufAllocator;
 
 //
 // Function Prototypes
@@ -149,12 +147,6 @@ bool
 HostEnt::isNameError()
 {
   return get_rcode(this) == NXDOMAIN;
-}
-
-void
-HostEnt::free()
-{
-  dnsBufAllocator.free(this);
 }
 
 size_t
@@ -883,25 +875,23 @@ DNSHandler::recv_dns(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
           dnsc->tcp_data.buf_ptr = make_ptr(dnsBufAllocator.alloc());
         }
         if (dnsc->tcp_data.total_length == 0) {
-          // see if TS gets a two-byte size
-          uint16_t tmp = 0;
-          res          = dnsc->sock.recv(&tmp, sizeof(tmp), MSG_PEEK);
-          if (res == -EAGAIN || res == 1) {
-            break;
-          }
-          if (res <= 0) {
-            goto Lerror;
-          }
-          // reading total size
-          res = dnsc->sock.recv(&(dnsc->tcp_data.total_length), sizeof(dnsc->tcp_data.total_length), 0);
+          // Read the 2-byte length prefix incrementally
+          res = dnsc->sock.recv(dnsc->tcp_data.length_buf + dnsc->tcp_data.length_read,
+                                sizeof(dnsc->tcp_data.length_buf) - dnsc->tcp_data.length_read, 0);
           if (res == -EAGAIN) {
             break;
           }
           if (res <= 0) {
             goto Lerror;
           }
-          dnsc->tcp_data.total_length = ntohs(dnsc->tcp_data.total_length);
-          if (res != sizeof(dnsc->tcp_data.total_length)) {
+          dnsc->tcp_data.length_read += res;
+          if (dnsc->tcp_data.length_read < sizeof(dnsc->tcp_data.length_buf)) {
+            continue;
+          }
+          uint16_t net_length;
+          memcpy(&net_length, dnsc->tcp_data.length_buf, sizeof(net_length));
+          dnsc->tcp_data.total_length = ntohs(net_length);
+          if (dnsc->tcp_data.total_length == 0) {
             goto Lerror;
           }
         }
@@ -1721,8 +1711,11 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
     unsigned char *here = reinterpret_cast<unsigned char *>(buf->buf) + HFIXEDSZ;
     if (e->qtype == T_SRV) {
       for (int ctr = ntohs(h->qdcount); ctr > 0; ctr--) {
-        int strlen  = dn_skipname(here, eom);
-        here       += strlen + QFIXEDSZ;
+        int strlen = dn_skipname(here, eom);
+        if (strlen < 0 || static_cast<size_t>(eom - here) < static_cast<size_t>(strlen) + QFIXEDSZ) {
+          goto Lerror;
+        }
+        here += strlen + QFIXEDSZ;
       }
     }
     //
@@ -1737,6 +1730,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         break;
       }
       cp += n;
+      if (static_cast<size_t>(eom - cp) < RRFIXEDSZ) {
+        ++error;
+        break;
+      }
       short int type;
       NS_GET16(type, cp);
       cp += NS_INT16SZ;       // NS_GET16(cls, cp);
@@ -1745,6 +1742,10 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         buf->ttl = temp_ttl;
       }
       NS_GET16(n, cp);
+      if (n > eom - cp) {
+        ++error;
+        break;
+      }
 
       //
       // Decode cname
@@ -1814,13 +1815,26 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
         if (buf->srv_hosts.hosts.size() >= hostdb_round_robin_max_count) {
           break;
         }
-        cp                            = here; /* hack */
-        int strlen                    = dn_skipname(cp, eom);
-        cp                           += strlen;
+        cp         = here; /* hack */
+        int strlen = dn_skipname(cp, eom);
+        if (strlen < 0) {
+          ++error;
+          break;
+        }
+        cp += strlen;
+        if (static_cast<size_t>(eom - cp) < SRV_FIXEDSZ) {
+          ++error;
+          break;
+        }
         const unsigned char *srv_off  = cp;
         cp                           += SRV_FIXEDSZ;
-        cp                           += dn_skipname(cp, eom);
-        here                          = cp; /* hack */
+        int srv_namelen               = dn_skipname(cp, eom);
+        if (srv_namelen < 0) {
+          ++error;
+          break;
+        }
+        cp   += srv_namelen;
+        here  = cp; /* hack */
 
         SRV srv;
 

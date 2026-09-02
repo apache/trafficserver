@@ -18,7 +18,8 @@ N=60
 while (( N > 0 ))
 do
     rm -f metrics.out
-    traffic_ctl metric match regex_revalidate > metrics.out
+    # Anchor to this plugin's own metrics; exclude the proxy.process.plugin.* workload counters.
+    traffic_ctl metric match '^plugin\.regex_revalidate\.' > metrics.out
     sleep 1
     if diff metrics.out ${AUTEST_TEST_DIR}/gold/metrics.gold
     then

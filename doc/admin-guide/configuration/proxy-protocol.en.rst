@@ -17,6 +17,8 @@
 
 .. include:: ../../common.defs
 
+.. default-domain:: cpp
+
 .. _proxy-protocol:
 
 Proxy Protocol
@@ -47,10 +49,13 @@ configured with :ts:cv:`proxy.config.http.proxy_protocol_allowlist`.
 
    .. important::
 
-       If the allowlist is configured, requests will only be accepted from these
-       IP addresses for all ports designated for Proxy Protocol in the
-       :ts:cv:`proxy.config.http.server_ports` configuration, regardless of whether
-       the connections have the Proxy Protocol header.
+       If the allowlist is configured, connections that begin with a Proxy
+       Protocol header preface will only be accepted from these IP addresses on
+       ports designated for Proxy Protocol in the
+       :ts:cv:`proxy.config.http.server_ports` configuration. Connections
+       without a Proxy Protocol header preface are not restricted by this
+       allowlist; use :file:`ip_allow.yaml` for general source-IP access
+       control.
 
 By default, |TS| uses client's IP address that is from the peer when it applies ACL. If you configure a port to
 enable PROXY protocol and want to apply ACL against the IP address delivered by PROXY protocol, you need to have ``PROXY`` in
@@ -59,6 +64,27 @@ enable PROXY protocol and want to apply ACL against the IP address delivered by 
 If you specify the server_ports flag `pp-clnt` then the client IP address used for the
 transaction will be the one provided by proxy protocol.
 
+The ``pp-clnt`` flag governs whether the operator-visible "client IP" is the
+PROXY-Protocol source address rather than the immediate TCP peer for the
+following surfaces:
+
+* The squid log field ``%<chi>`` (and its derivatives ``%<chp>`` /
+  ``%<chh>``).
+* :func:`TSHttpTxnClientAddrGet`, :func:`TSHttpSsnClientAddrGet`, and
+  :func:`TSNetVConnClientAddrGet` (the plugin-visible client address).
+* SNI ACL evaluation, the HTTP/2 ``PEER`` ACL, SSL diagnostics, and
+  client-certificate validation.
+* Outbound transparency: when binding the proxy's outbound socket to the
+  client's address (``addr_binding = FOREIGN_ADDR``), |TS| binds to the
+  PROXY-Protocol source address only when ``pp-clnt`` is in effect.
+* HostDB parent-selection affinity: the consistent-hash key that groups
+  requests onto the same upstream peer is the PROXY-Protocol source only
+  when ``pp-clnt`` is in effect; otherwise it is the immediate TCP peer.
+
+The new log field ``%<rchi>`` (and its derivatives ``%<rchp>`` /
+``%<rchh>``) always reports the immediate TCP peer regardless of
+``pp-clnt``.
+
 1. HTTP Forwarded Header
 
 The client IP address in the PROXY protocol header is passed to the origin server via an HTTP `Forwarded:
@@ -66,6 +92,13 @@ The client IP address in the PROXY protocol header is passed to the origin serve
 Detection of the PROXY protocol header is automatic.  If the PROXY header
 precludes the request, it will automatically be parse and made available to the
 Forwarded: request header sent to the origin server.
+
+The legacy outbound headers ``Client-ip:``
+(:ts:cv:`proxy.config.http.insert_client_ip`) and ``X-Forwarded-For:``
+(:ts:cv:`proxy.config.http.insert_squid_x_forwarded_for`) likewise carry
+the PROXY-Protocol source address whenever a PROXY-Protocol header is
+present, mirroring the ``Forwarded: for=`` parameter. This behavior is
+independent of the ``pp-clnt`` listener flag.
 
 2. Outbound PROXY protocol
 

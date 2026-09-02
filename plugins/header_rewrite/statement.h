@@ -27,10 +27,18 @@
 #include <vector>
 
 #include "ts/ts.h"
+#include "tsutil/Metrics.h"
 
 #include "resources.h"
 #include "parser.h"
 #include "lulu.h"
+
+// Counters for the number of header_rewrite operators executed and conditions evaluated; the
+// bare hook invocation count cannot tell a small ruleset from a large one. Created once via
+// init_hrw_work_stats(); both are null until then, so increments are guarded.
+extern ts::Metrics::Counter::AtomicType *hrw_stat_operators;
+extern ts::Metrics::Counter::AtomicType *hrw_stat_conditions;
+void                                     init_hrw_work_stats();
 
 namespace header_rewrite_ns
 {
@@ -144,13 +152,8 @@ public:
   Statement(const Statement &)      = delete;
   void operator=(const Statement &) = delete;
 
-  // Which hook are we adding this statement to?
-  bool set_hook(TSHttpHookID hook);
-  TSHttpHookID
-  get_hook() const
-  {
-    return _hook;
-  }
+  // Validate that this statement is allowed on the given hook. Used during parsing only.
+  bool is_hook_valid(TSHttpHookID hook) const;
 
   // Which hooks are this "statement" applicable for? Used during parsing only.
   void
@@ -164,6 +167,31 @@ public:
 
   ResourceIDs get_resource_ids() const;
 
+  void
+  set_config_location(const char *filename, int lineno)
+  {
+    _config_filename = filename ? filename : "";
+    _config_lineno   = lineno;
+  }
+
+  bool
+  has_config_location() const
+  {
+    return !_config_filename.empty();
+  }
+
+  const std::string &
+  get_config_filename() const
+  {
+    return _config_filename;
+  }
+
+  int
+  get_config_lineno() const
+  {
+    return _config_lineno;
+  }
+
   virtual void
   initialize(Parser &)
   {
@@ -172,6 +200,9 @@ public:
 
     if (need_txn_slot()) {
       _txn_slot = acquire_txn_slot();
+    }
+    if (need_ssn_slot()) {
+      _ssn_slot = acquire_ssn_slot();
     }
     if (need_txn_private_slot()) {
       _txn_private_slot = acquire_txn_private_slot();
@@ -194,6 +225,8 @@ public:
 
   static int acquire_txn_slot();
   static int acquire_txn_private_slot();
+  static int acquire_ssn_slot();
+  static int acquire_state_slot(TSUserArgType type);
 
 protected:
   virtual void initialize_hooks();
@@ -214,15 +247,65 @@ protected:
     return false;
   }
 
+  virtual bool
+  need_ssn_slot() const
+  {
+    return false;
+  }
+
+  // Scope-aware state accessors. A null handle (internal txns have no session)
+  // would trip a release assert in TSUserArg*, so treat it as unset.
+  uint64_t
+  _get_state_data(TSUserArgType scope, const Resources &res) const
+  {
+    if (!_check_state_handle(scope, res)) {
+      return 0;
+    }
+    if (scope == TS_USER_ARGS_SSN) {
+      return reinterpret_cast<uint64_t>(TSUserArgGet(res.state.ssnp, _ssn_slot));
+    }
+    return reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  }
+
+  void
+  _set_state_data(TSUserArgType scope, const Resources &res, uint64_t data) const
+  {
+    if (!_check_state_handle(scope, res)) {
+      return;
+    }
+    if (scope == TS_USER_ARGS_SSN) {
+      TSUserArgSet(res.state.ssnp, _ssn_slot, reinterpret_cast<void *>(data));
+    } else {
+      TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(data));
+    }
+  }
+
+  bool
+  _check_state_handle(TSUserArgType scope, const Resources &res) const
+  {
+    if (scope == TS_USER_ARGS_SSN) {
+      return res.state.ssnp != nullptr;
+    }
+    return res.state.txnp != nullptr;
+  }
+
+  static const char *
+  _scope_label(TSUserArgType scope)
+  {
+    return (scope == TS_USER_ARGS_SSN) ? "SESSION" : "STATE";
+  }
+
   Statement *_next             = nullptr; // Linked list
   int        _txn_slot         = -1;
   int        _txn_private_slot = -1;
+  int        _ssn_slot         = -1;
 
 private:
   ResourceIDs               _rsrc = RSRC_NONE;
-  TSHttpHookID              _hook = TS_HTTP_READ_RESPONSE_HDR_HOOK;
   std::vector<TSHttpHookID> _allowed_hooks;
-  bool                      _initialized = false;
+  std::string               _config_filename;
+  int                       _config_lineno = 0;
+  bool                      _initialized   = false;
 };
 
 union PrivateSlotData {

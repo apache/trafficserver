@@ -49,7 +49,13 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.remap_config.AddLines(['map /httpbin/ http://127.0.0.1:{0}/'.format(httpbin.Variables.Port)])
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 Test.PrepareTestPlugin(
     os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSHttpSsnInfo.so'), ts)
@@ -100,6 +106,8 @@ f = tr.Disk.File(log_path)
 f.Content = "test_TSHttpSsnInfo_plugin_log.gold"
 f.Content += Testers.ContainsExpression(
     "H2 Frames Received:D1,H1,PR.,RS0,S2,PP0,P0,G1,WU0,C1,U0", "Expected numbers of frames should be received")
+f.Content += Testers.ContainsExpression(
+    "H2 OOB\\(11\\)=0,OOB\\(1000\\)=0", "OOB sub_key values should map to UNKNOWN bucket without crashing")
 # We cannot test this on H3 now because the test plugin does not work on H3 sessions
 # f.Content += Testers.ContainsExpression("H3 Frames Received:D1,H1,Ra0,CP0,S1,PP0,Rb0,G0,Rc0,Rd0,UND0,UND0,UND0,MPI0,U0",
 #                                        "Expected numbers of frames should be received")

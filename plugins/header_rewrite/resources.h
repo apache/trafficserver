@@ -115,6 +115,8 @@ public:
   TSMLoc              hdr_loc        = nullptr;
   TSMBuffer           client_bufp    = nullptr;
   TSMLoc              client_hdr_loc = nullptr;
+  TSMBuffer           server_bufp    = nullptr;
+  TSMLoc              server_hdr_loc = nullptr;
 #if TS_HAS_CRIPTS
   cripts::Transaction         state; // This now holds txpn / ssnp
   cripts::Client::Connection *client_conn = nullptr;
@@ -125,6 +127,8 @@ public:
   TransactionState state; // Without cripts, txnp / ssnp goes here
 #endif
   TSHttpStatus resp_status = TS_HTTP_STATUS_NONE;
+  void        *geo_handle  = nullptr;
+  TSHttpHookID hook        = TS_HTTP_LAST_HOOK;
 
   struct LifetimeExtension {
     std::string                                        subject_storage;

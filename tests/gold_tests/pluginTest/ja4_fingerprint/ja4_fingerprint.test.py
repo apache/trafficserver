@@ -34,6 +34,7 @@ class TestJA4Fingerprint:
     '''Configure a test for ja4_fingerprint.'''
 
     replay_filepath: str = 'ja4_fingerprint.replay.yaml'
+    basic_server_replay_filepath: str = 'ja4_fingerprint_basic_server.replay.yaml'
     client_counter: int = 0
     server_counter: int = 0
     ts_counter: int = 0
@@ -51,7 +52,8 @@ class TestJA4Fingerprint:
     def _init_run(self) -> 'TestRun':
         '''Initialize processes for the test run.'''
 
-        server_one = TestJA4Fingerprint.configure_server('yay.com')
+        replay_filepath = self.replay_filepath if self.use_preserve else self.basic_server_replay_filepath
+        server_one = TestJA4Fingerprint.configure_server('yay.com', replay_filepath=replay_filepath)
         self._configure_traffic_server(server_one)
 
         tr = Test.AddTestRun(self.name)
@@ -96,11 +98,9 @@ class TestJA4Fingerprint:
         return wrapper
 
     @staticmethod
-    def configure_server(domain: str):
+    def configure_server(domain: str, replay_filepath: str):
         server = Test.MakeVerifierServerProcess(
-            f'server{TestJA4Fingerprint.server_counter + 1}.{domain}',
-            TestJA4Fingerprint.replay_filepath,
-            other_args='--format \'{url}\'')
+            f'server{TestJA4Fingerprint.server_counter + 1}.{domain}', replay_filepath, other_args="--format '{url}'")
         TestJA4Fingerprint.server_counter += 1
 
         return server
@@ -127,7 +127,13 @@ class TestJA4Fingerprint:
 
         ts.Disk.remap_config.AddLine(f'map / http://localhost:{server_one.Variables.http_port}')
 
-        ts.Disk.ssl_multicert_config.AddLine(f'dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         plugin_args = 'ja4_fingerprint.so'
         if self.use_preserve:

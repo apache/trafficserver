@@ -195,11 +195,11 @@ public:
   void               update_defaults();
   void               add_allow(swoc::TextView allow);
   void               add_compressible_content_type(swoc::TextView content_type);
-  void               add_compressible_status_codes(swoc::TextView status_codes);
+  void               add_compressible_status_codes(swoc::TextView &status_codes);
   [[nodiscard]] bool is_url_allowed(const char *url, int url_len);
   [[nodiscard]] bool is_content_type_compressible(const char *content_type, int content_type_length);
   [[nodiscard]] bool is_status_code_compressible(const TSHttpStatus status_code) const;
-  void               add_compression_algorithms(swoc::TextView algorithms);
+  void               add_compression_algorithms(swoc::TextView &algorithms);
   [[nodiscard]] int  compression_algorithms();
   void               set_range_request(swoc::TextView token);
 

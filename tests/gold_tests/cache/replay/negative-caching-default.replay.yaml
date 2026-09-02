@@ -100,6 +100,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # 404 responses should be cached when negative caching is enabled, so this
     # should not get to the server.  But if it does, return a 200 so the test
     # knows that something went wrong.
@@ -187,6 +190,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # This should not go to the server, but if it does return a 400 so we catch
     # it.

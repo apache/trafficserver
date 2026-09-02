@@ -23,6 +23,17 @@
 #include "proxy/hdrs/HdrHeap.h"
 #include "proxy/hdrs/URL.h"
 
+#include "tscore/ink_config.h"
+
+#if TS_USE_ALLOCATOR_METRICS
+#include "tscore/Allocator.h"
+#include "tsutil/Metrics.h"
+#include "iocore/eventsystem/ProxyAllocator.h"
+
+#include <algorithm>
+#include <cstdint>
+#endif
+
 /**
   This test is designed to test numerous pieces of the HdrHeaps including allocations,
   demotion of rw heaps to ronly heaps, and finally the coalesce and evacuate behaviours.
@@ -128,5 +139,139 @@ TEST_CASE("HdrHeap", "[proxy][hdrheap]")
   CHECK(aliased_str_url->m_ptr_path != &buf3[0]);
 
   // Clean up
+  heap->destroy();
+}
+
+#if TS_USE_ALLOCATOR_METRICS
+
+extern Allocator hdrHeapAllocator;
+extern Allocator strHeapAllocator;
+
+namespace
+{
+// Mirror the per-thread-freelist branch of the THREAD_FREE macro: push the block
+// onto the freelist and account the free with the same metered call the macro
+// uses (UPDATE_FREE_METRICS).
+void
+freelist_push(Allocator &a, ProxyAllocator &l, void *p)
+{
+  *reinterpret_cast<char **>(p) = reinterpret_cast<char *>(l.freelist);
+  l.freelist                    = p;
+  l.allocated++;
+  a.increment_for_free();
+}
+
+// RAII guard that restores cmd_disable_pfreelist on scope exit, so a failing
+// REQUIRE()/CHECK() does not leak the flipped flag into later tests.
+struct PfreelistGuard {
+  int saved;
+  explicit PfreelistGuard(bool disable) : saved{cmd_disable_pfreelist} { cmd_disable_pfreelist = disable; }
+  ~PfreelistGuard() { cmd_disable_pfreelist = saved; }
+};
+} // namespace
+
+// Regression test for the hdrHeap/hdrStrHeap allocator inuse underflow. These two
+// allocators are plain Allocator globals whose objects are allocated with no
+// constructor arguments, so THREAD_ALLOC resolves to the non-templated
+// thread_alloc(Allocator &, ProxyAllocator &). That overload used to skip the
+// metric increment when reusing an object from the per-thread freelist, while
+// THREAD_FREE always decremented it on the way in. The counted frees therefore
+// outran the counted allocs and proxy.process.allocator.inuse.* marched negative,
+// wrapping around as a huge uint64 value.
+TEST_CASE("allocator inuse stays balanced across freelist reuse", "[proxy][hdrheap][metrics]")
+{
+  struct AllocCase {
+    const char *metric;
+    Allocator  *allocator;
+  };
+
+  AllocCase const cases[] = {
+    {"proxy.process.allocator.inuse.hdrHeap",    &hdrHeapAllocator},
+    {"proxy.process.allocator.inuse.hdrStrHeap", &strHeapAllocator},
+  };
+
+  // The unit test harness disables per-thread freelists; enable them so that
+  // thread_alloc() exercises the freelist-reuse path that regressed. The guard
+  // restores the harness setting even if an assertion below throws.
+  PfreelistGuard const pfreelist_guard{false};
+
+  for (auto const &c : cases) {
+    ts::Metrics::IdType id;
+    auto               *inuse = ts::Metrics::Gauge::lookup(c.metric, &id);
+    REQUIRE(inuse != nullptr);
+
+    ProxyAllocator l;
+    int64_t const  baseline = inuse->load();
+    int64_t        low      = baseline;
+
+    // One live block, allocated from the global pool (a counted allocation).
+    void *p = thread_alloc(*c.allocator, l);
+    REQUIRE(p != nullptr);
+
+    // Cycle the single block through the freelist. Each iteration frees it
+    // (inuse--) then reuses it (which must inuse++). Without the fix the reuse
+    // does not re-increment and inuse marches negative.
+    for (int i = 0; i < 1000; ++i) {
+      freelist_push(*c.allocator, l, p);
+      low = std::min(low, inuse->load());
+      p   = thread_alloc(*c.allocator, l);
+      REQUIRE(p != nullptr);
+      low = std::min(low, inuse->load());
+    }
+
+    // Exactly one block is still outstanding, and inuse never dipped below the
+    // value we started from.
+    CHECK(inuse->load() == baseline + 1);
+    CHECK(low >= baseline);
+
+    // Release the outstanding block back to the global pool, restoring inuse.
+    c.allocator->free_void(p);
+    CHECK(inuse->load() == baseline);
+  }
+}
+
+#endif // TS_USE_ALLOCATOR_METRICS
+
+TEST_CASE("HdrHeap check_marshalled rejects corrupt data", "[proxy][hdrheap]")
+{
+  HdrHeap *heap = new_HdrHeap();
+  URLImpl *url  = url_create(heap);
+  url->set_path(heap, {"/test", 5}, true);
+
+  char buf[2048];
+  int  len = heap->marshal(buf, sizeof(buf));
+  REQUIRE(len > 0);
+
+  auto *hdr = reinterpret_cast<HdrHeap *>(buf);
+
+  SECTION("valid marshalled buffer passes")
+  {
+    CHECK(hdr->check_marshalled(len) == true);
+  }
+
+  SECTION("negative m_heap_len is rejected")
+  {
+    hdr->m_ronly_heap[0].m_heap_len = -1;
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  SECTION("m_heap_len exceeding buf_length is rejected")
+  {
+    hdr->m_ronly_heap[0].m_heap_len = len;
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  SECTION("m_heap_start inconsistent with m_size is rejected")
+  {
+    hdr->m_ronly_heap[0].m_heap_start = reinterpret_cast<char *>(static_cast<intptr_t>(hdr->m_size + 1));
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
+  SECTION("m_size smaller than HDR_HEAP_HDR_SIZE is rejected")
+  {
+    hdr->m_size = 1;
+    CHECK(hdr->check_marshalled(len) == false);
+  }
+
   heap->destroy();
 }

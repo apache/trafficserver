@@ -172,6 +172,21 @@ server_groups_list                       Inbound   Specifies an override to the 
                                                    `OpenSSL SSL_CTX_set_groups_list <https://docs.openssl.org/3.5/man3/SSL_CTX_set1_curves/>`_
                                                    documentation.
 
+ssl_ticket_enabled                       Inbound   Specifies an override to the global
+                                                   :ts:cv:`proxy.config.ssl.server.session_ticket.enable`
+                                                   :file:`records.yaml` configuration. Set this to :code:`1` to enable
+                                                   session tickets or :code:`0` to disable them for matching inbound TLS
+                                                   connections.
+
+ssl_ticket_number                        Inbound   Specifies an override to the global
+                                                   :ts:cv:`proxy.config.ssl.server.session_ticket.number`
+                                                   :file:`records.yaml` configuration. This controls how many TLSv1.3
+                                                   session tickets are issued for matching inbound TLS connections.
+                                                   BoringSSL does not support setting the ticket number on a
+                                                   per-SNI basis, so this configuration does not apply when ATS is
+                                                   linked against BoringSSL. The configured ticket count from the
+                                                   selected SSL context remains in effect.
+
 host_sni_policy                          Inbound   One of the values :code:`DISABLED`, :code:`PERMISSIVE`, or :code:`ENFORCED`.
 
                                                    If not specified, the value of :ts:cv:`proxy.config.http.host_sni_policy` is used.
@@ -301,11 +316,19 @@ tunnel_route                             Inbound   Destination as an FQDN and po
                                                    specified in the :ts:cv:`proxy.config.http.connect_ports` configuration in order for
                                                    the tunnel to succeed.
 
+                                                   The destination address is also subject to outbound :file:`ip_allow.yaml` policy. The
+                                                   default :file:`ip_allow.yaml` denies ``CONNECT`` tunnels to unspecified, loopback,
+                                                   private, link-local, and IPv4-mapped IPv6 destination addresses. To
+                                                   intentionally tunnel to one of those ranges, add an explicit outbound allow rule
+                                                   before the default deny rule.
+
 forward_route                            Inbound   Destination as an FQDN and port, separated by a colon ``:``.
 
                                                    This is similar to tunnel_route, but it terminates the TLS connection and forwards the
                                                    decrypted traffic. |TS| will not interpret the decrypted data, so the contents do not
                                                    need to be HTTP.
+                                                   The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
+                                                   |TS| opens the connection.
 
 partial_blind_route                      Inbound   Destination as an FQDN and port, separated by a colon ``:``.
 
@@ -313,6 +336,8 @@ partial_blind_route                      Inbound   Destination as an FQDN and po
                                                    In addition partial_blind_route creates a new TLS connection to the specified origin.
                                                    It does not interpret the decrypted data before passing it to the origin TLS
                                                    connection, so the contents do not need to be HTTP.
+                                                   The upstream destination is subject to outbound :file:`ip_allow.yaml` policy before
+                                                   |TS| opens the connection.
 
 tunnel_alpn                              Inbound   List of ALPN Protocol Ids for Partial Blind Tunnel.
 

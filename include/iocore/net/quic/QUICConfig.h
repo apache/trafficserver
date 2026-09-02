@@ -24,10 +24,56 @@
 #pragma once
 
 #include <openssl/ssl.h>
+#include "tscore/ink_config.h"
+
+#if TS_HAS_QUICHE
 #include <quiche.h>
+#endif
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SSLTypes.h"
+#include "mgmt/config/ConfigContext.h"
+
+#include <array>
+#include <string>
+#include <vector>
+
+class QUICTokenKeyConfigParams : public ConfigInfo
+{
+public:
+  static constexpr size_t KEY_LENGTH = 32;
+  using Key                          = std::array<uint8_t, KEY_LENGTH>;
+
+  ~QUICTokenKeyConfigParams() override;
+
+  /** Load one or more raw token keys from @a path. */
+  bool load(const char *path, ConfigContext ctx = {});
+
+  /** Generate a random primary token key. */
+  bool generate(ConfigContext ctx = {});
+
+  const std::vector<Key> &keys() const;
+  const std::string      &filename() const;
+
+private:
+  std::vector<Key> m_keys;
+  std::string      m_filename;
+};
+
+class QUICTokenKeyConfig
+{
+public:
+  static void startup();
+  static bool reconfigure(ConfigContext ctx = {});
+
+  static QUICTokenKeyConfigParams *acquire();
+  static void                      release(QUICTokenKeyConfigParams *params);
+
+  using scoped_config = ConfigProcessor::scoped_config<QUICTokenKeyConfig, QUICTokenKeyConfigParams>;
+
+private:
+  static int _config_id;
+};
 
 class QUICConfigParams : public ConfigInfo
 {
@@ -35,7 +81,7 @@ public:
   QUICConfigParams(){};
   ~QUICConfigParams();
 
-  void initialize();
+  void initialize(ConfigContext ctx = {});
 
   uint32_t instance_id() const;
   uint32_t stateless_retry() const;
@@ -88,7 +134,9 @@ public:
 
   bool disable_http_0_9() const;
 
+#if TS_HAS_QUICHE
   quiche_cc_algorithm get_cc_algorithm() const;
+#endif
 
 private:
   static int _connection_table_size;
@@ -151,7 +199,7 @@ class QUICConfig
 {
 public:
   static void              startup();
-  static void              reconfigure();
+  static void              reconfigure(ConfigContext ctx = {});
   static QUICConfigParams *acquire();
   static void              release(QUICConfigParams *params);
 
@@ -162,3 +210,4 @@ private:
 };
 
 SSL_CTX *quic_new_ssl_ctx();
+SSL_CTX *quic_new_server_ssl_ctx();

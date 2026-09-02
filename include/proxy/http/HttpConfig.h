@@ -193,6 +193,8 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *https_total_client_connections;
   Metrics::Counter::AtomicType *incoming_requests;
   Metrics::Counter::AtomicType *incoming_responses;
+  Metrics::Counter::AtomicType *client_request_at_headers_stripped;
+  Metrics::Counter::AtomicType *origin_response_at_headers_stripped;
   Metrics::Counter::AtomicType *invalid_client_requests;
   Metrics::Counter::AtomicType *misc_count;
   Metrics::Counter::AtomicType *misc_origin_server_bytes;
@@ -343,6 +345,7 @@ struct HttpStatsBlock {
   Metrics::Counter::AtomicType *total_transactions_time;
   Metrics::Counter::AtomicType *total_x_redirect;
   Metrics::Counter::AtomicType *trace_requests;
+  Metrics::Counter::AtomicType *tunnel_chunked_throttle;
   Metrics::Gauge::AtomicType   *tunnel_current_active_connections;
   Metrics::Counter::AtomicType *tunnels;
   Metrics::Counter::AtomicType *ua_begin_time;
@@ -416,6 +419,18 @@ enum class CacheOpenWriteFailAction_t {
   READ_RETRY_STALE_ON_REVALIDATE    = 0x06,
   TOTAL_TYPES
 };
+
+/** Whether a cache_open_write_fail_action retries the cache read.
+ *
+ * @param[in] action A proxy.config.http.cache.open_write_fail_action value.
+ * @return Whether losing the cache write lock should retry the cache read.
+ */
+inline bool
+is_read_retry_write_fail_action(MgmtByte action)
+{
+  return action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
+         action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE);
+}
 
 extern HttpStatsBlock http_rsb;
 
@@ -690,6 +705,7 @@ struct OverridableHttpConfigParams {
   MgmtInt cache_guaranteed_min_lifetime = 0;
   MgmtInt cache_guaranteed_max_lifetime = 31536000;
   MgmtInt cache_max_stale_age           = 604800;
+  MgmtInt cache_max_stale_age_percent   = 0;
 
   ///////////////////////////////////////////////////
   // connection variables. timeouts are in seconds //
@@ -706,11 +722,11 @@ struct OverridableHttpConfigParams {
   ////////////////////////////////////
   // origin server connect attempts //
   ////////////////////////////////////
-  MgmtInt connect_attempts_max_retries             = 0;
-  MgmtInt connect_attempts_max_retries_down_server = 3;
-  MgmtInt connect_attempts_rr_retries              = 3;
-  MgmtInt connect_attempts_timeout                 = 30;
-  MgmtInt connect_attempts_retry_backoff_base      = 0;
+  MgmtInt connect_attempts_max_retries                = 0;
+  MgmtInt connect_attempts_max_retries_suspect_server = 1;
+  MgmtInt connect_attempts_rr_retries                 = 3;
+  MgmtInt connect_attempts_timeout                    = 30;
+  MgmtInt connect_attempts_retry_backoff_base         = 0;
 
   MgmtInt connect_down_policy = 2;
 
@@ -773,6 +789,7 @@ struct OverridableHttpConfigParams {
   char *ssl_client_cert_filename        = nullptr;
   char *ssl_client_private_key_filename = nullptr;
   char *ssl_client_ca_cert_filename     = nullptr;
+  char *ssl_client_ca_cert_path         = nullptr;
   char *ssl_client_alpn_protocols       = nullptr;
 
   // Host Resolution order
@@ -888,6 +905,7 @@ public:
 
   MgmtInt http_request_line_max_size = 65535;
   MgmtInt http_hdr_field_max_size    = 131070;
+  MgmtInt pp_hdr_max_size            = 109;
 
   MgmtByte http_host_sni_policy         = 0;
   MgmtByte scheme_proto_mismatch_policy = 2;
@@ -932,6 +950,12 @@ public:
     std::variant<std::monostate, HostResData, HttpStatusCodeList, HttpForwarded::OptionBitSet, MgmtByte,
                  TargetedCacheControlHeaders>
       parsed{};
+
+    ParsedValue()                               = default;
+    ParsedValue(const ParsedValue &)            = delete;
+    ParsedValue &operator=(const ParsedValue &) = delete;
+    ParsedValue(ParsedValue &&)                 = delete;
+    ParsedValue &operator=(ParsedValue &&)      = delete;
   };
 
   /** Return the parsed value for the configuration.
@@ -957,7 +981,7 @@ private:
   static ParsedConfigCache &instance();
 
   const ParsedValue &lookup_impl(TSOverridableConfigKey key, std::string_view value);
-  ParsedValue        parse(TSOverridableConfigKey key, std::string_view value);
+  void               parse_into(ParsedValue &result, TSOverridableConfigKey key, std::string_view value);
 
   // Custom hash for the cache key.
   struct CacheKeyHash {
@@ -1024,6 +1048,7 @@ inline HttpConfigParams::~HttpConfigParams()
   ats_free(oride.ssl_client_cert_filename);
   ats_free(oride.ssl_client_private_key_filename);
   ats_free(oride.ssl_client_ca_cert_filename);
+  ats_free(oride.ssl_client_ca_cert_path);
   ats_free(connect_ports_string);
   ats_free(reverse_proxy_no_host_redirect);
   ats_free(redirect_actions_string);

@@ -191,6 +191,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # This should not go to the server since the 200 response is cached.
     server-response:
       status: 400

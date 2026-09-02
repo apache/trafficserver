@@ -27,6 +27,8 @@
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3Config.h"
 
+#include <algorithm>
+
 ClassAllocator<Http3Frame, false>         http3FrameAllocator("http3FrameAllocator");
 ClassAllocator<Http3DataFrame, false>     http3DataFrameAllocator("http3DataFrameAllocator");
 ClassAllocator<Http3HeadersFrame, false>  http3HeadersFrameAllocator("http3HeadersFrameAllocator");
@@ -39,6 +41,13 @@ constexpr int FRAME_TYPE_MAX_BYTES = 8;
 constexpr int HEADER_OVERHEAD      = 10; // This should work as long as a payload length is less than 64 bits
 
 DbgCtl dbg_ctl_http3_frame_factory{"http3_frame_factory"};
+
+bool
+is_reserved_frame_type(uint64_t type)
+{
+  return type >= static_cast<uint64_t>(Http3FrameType::RESERVED) &&
+         (type - static_cast<uint64_t>(Http3FrameType::RESERVED)) % 0x1f == 0;
+}
 
 } // end anonymous namespace
 
@@ -62,6 +71,8 @@ Http3Frame::type(const uint8_t *buf, size_t buf_len)
   ink_assert(ret != 1);
   if (type <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
     return static_cast<Http3FrameType>(type);
+  } else if (is_reserved_frame_type(type)) {
+    return Http3FrameType::RESERVED;
   } else {
     return Http3FrameType::UNKNOWN;
   }
@@ -141,8 +152,12 @@ Http3Frame::length() const
 Http3FrameType
 Http3Frame::type() const
 {
-  if (static_cast<uint64_t>(this->_type) <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
+  const auto type = static_cast<uint64_t>(this->_type);
+
+  if (type <= static_cast<uint64_t>(Http3FrameType::X_MAX_DEFINED)) {
     return this->_type;
+  } else if (is_reserved_frame_type(type)) {
+    return Http3FrameType::RESERVED;
   } else {
     return Http3FrameType::UNKNOWN;
   }
@@ -176,27 +191,6 @@ Http3Frame::reset(IOBufferReader &reader)
 {
   this->~Http3Frame();
   new (this) Http3Frame(reader);
-}
-
-//
-// UNKNOWN Frame
-//
-Http3UnknownFrame::Http3UnknownFrame(IOBufferReader &reader) : Http3Frame(reader) {}
-
-Ptr<IOBufferBlock>
-Http3UnknownFrame::to_io_buffer_block() const
-{
-  Ptr<IOBufferBlock> block;
-  size_t             n = 0;
-
-  block = make_ptr<IOBufferBlock>(new_IOBufferBlock());
-  block->alloc(iobuffer_size_to_index(HEADER_OVERHEAD + this->length(), BUFFER_SIZE_INDEX_32K));
-  uint8_t *block_start = reinterpret_cast<uint8_t *>(block->start());
-  memcpy(block_start, this->_buf, this->_buf_len);
-  n += this->_buf_len;
-
-  block->fill(n);
-  return block;
 }
 
 //
@@ -251,6 +245,12 @@ Http3DataFrame::payload_length() const
   return this->_length;
 }
 
+bool
+Http3DataFrame::_parse()
+{
+  return this->_reader->read_avail() >= static_cast<int64_t>(this->_length);
+}
+
 IOBufferReader *
 Http3DataFrame::data() const
 {
@@ -262,16 +262,17 @@ Http3DataFrame::data() const
 //
 Http3HeadersFrame::Http3HeadersFrame(IOBufferReader &reader) : Http3Frame(reader) {}
 
-Http3HeadersFrame::Http3HeadersFrame(ats_unique_buf header_block, size_t header_block_len)
-  : Http3Frame(Http3FrameType::HEADERS), _header_block_uptr(std::move(header_block)), _header_block_len(header_block_len)
+Http3HeadersFrame::Http3HeadersFrame(IOBufferReader &header_block_reader, size_t header_block_len)
+  : Http3Frame(Http3FrameType::HEADERS), _header_block_len(header_block_len), _header_block_reader(header_block_reader.clone())
 {
-  this->_length       = header_block_len;
-  this->_header_block = this->_header_block_uptr.get();
+  this->_length = header_block_len;
 }
 
 Http3HeadersFrame::~Http3HeadersFrame()
 {
-  if (this->_header_block_uptr == nullptr) {
+  if (this->_header_block_reader != nullptr) {
+    this->_header_block_reader->dealloc();
+  } else {
     ats_free(this->_header_block);
   }
 }
@@ -291,7 +292,11 @@ Http3HeadersFrame::to_io_buffer_block() const
   written += n;
   QUICVariableInt::encode(block_start + written, UINT64_MAX, n, this->_length);
   written += n;
-  memcpy(block_start + written, this->_header_block, this->_header_block_len);
+  if (this->_header_block_reader != nullptr) {
+    this->_header_block_reader->memcpy(block_start + written, this->_header_block_len);
+  } else {
+    memcpy(block_start + written, this->_header_block, this->_header_block_len);
+  }
   written += this->_header_block_len;
 
   block->fill(written);
@@ -505,9 +510,10 @@ Http3FrameFactory::create(IOBufferReader &reader)
   ts::Http3Config::scoped_config params;
   Http3Frame                    *frame = nullptr;
 
-  uint8_t type_buf[FRAME_TYPE_MAX_BYTES];
-  reader.memcpy(type_buf, sizeof(type_buf));
-  Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
+  uint8_t           type_buf[FRAME_TYPE_MAX_BYTES]{};
+  std::size_t const type_avail{std::min<std::size_t>(reader.read_avail(), sizeof(type_buf))};
+  reader.memcpy(type_buf, type_avail);
+  Http3FrameType type = Http3Frame::type(type_buf, type_avail);
 
   switch (type) {
   case Http3FrameType::HEADERS:
@@ -534,9 +540,10 @@ Http3FrameFactory::create(IOBufferReader &reader)
 std::shared_ptr<Http3Frame>
 Http3FrameFactory::fast_create(IOBufferReader &reader)
 {
-  uint8_t type_buf[FRAME_TYPE_MAX_BYTES]{};
-  reader.memcpy(type_buf, sizeof(type_buf));
-  Http3FrameType type = Http3Frame::type(type_buf, sizeof(type_buf));
+  uint8_t           type_buf[FRAME_TYPE_MAX_BYTES]{};
+  std::size_t const type_avail{std::min<std::size_t>(reader.read_avail(), sizeof(type_buf))};
+  reader.memcpy(type_buf, type_avail);
+  Http3FrameType type = Http3Frame::type(type_buf, type_avail);
   if (type == Http3FrameType::UNKNOWN) {
     if (!this->_unknown_frame) {
       this->_unknown_frame = Http3FrameFactory::create(reader);
@@ -561,28 +568,14 @@ Http3FrameFactory::fast_create(IOBufferReader &reader)
 }
 
 Http3HeadersFrameUPtr
-Http3FrameFactory::create_headers_frame(const uint8_t *header_block, size_t header_block_len)
-{
-  ats_unique_buf buf = ats_unique_malloc(header_block_len);
-  memcpy(buf.get(), header_block, header_block_len);
-
-  Http3HeadersFrame *frame = http3HeadersFrameAllocator.alloc();
-  new (frame) Http3HeadersFrame(std::move(buf), header_block_len);
-  return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
-}
-
-Http3HeadersFrameUPtr
 Http3FrameFactory::create_headers_frame(IOBufferReader *header_block_reader, size_t header_block_len)
 {
-  ats_unique_buf buf = ats_unique_malloc(header_block_len);
-
-  int64_t nread;
-  while ((nread = header_block_reader->read(buf.get(), header_block_len)) > 0) {
-    ;
-  }
-
   Http3HeadersFrame *frame = http3HeadersFrameAllocator.alloc();
-  new (frame) Http3HeadersFrame(std::move(buf), header_block_len);
+  new (frame) Http3HeadersFrame(*header_block_reader, header_block_len);
+  // The frame clones the reader before this, so consuming here only advances the caller's
+  // reader (for chunking header blocks larger than one generate_frame() call), not the frame's
+  // own clone.
+  header_block_reader->consume(header_block_len);
   return Http3HeadersFrameUPtr(frame, &Http3FrameDeleter::delete_headers_frame);
 }
 

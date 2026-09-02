@@ -40,7 +40,7 @@ namespace
 // These unions help us extract the fields in a platform-independent way,
 // namely regardless of endianness. They obviously will need to be updated if
 // the production versions of these structs change, but the tests will fail if
-// that happens allerting the developer to maintain these.
+// that happens alerting the developer to maintain these.
 union SnowflakeIDValue {
   uint64_t value;
   struct {

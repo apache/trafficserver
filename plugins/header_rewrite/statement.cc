@@ -21,6 +21,24 @@
 //
 #include "statement.h"
 
+ts::Metrics::Counter::AtomicType *hrw_stat_operators  = nullptr;
+ts::Metrics::Counter::AtomicType *hrw_stat_conditions = nullptr;
+
+void
+init_hrw_work_stats()
+{
+  // createPtr() is idempotent and internally synchronized: it returns the existing counter when
+  // one already has the given name. header_rewrite.so can be loaded both globally (TSPluginInit)
+  // and as a remap plugin (TSRemapInit), so init runs more than once; every call resolves to the
+  // same process-wide counter regardless of ordering or which thread runs it.
+  if (nullptr == hrw_stat_operators) {
+    hrw_stat_operators = ts::Metrics::Counter::createPtr("proxy.process.plugin.header_rewrite.operators");
+  }
+  if (nullptr == hrw_stat_conditions) {
+    hrw_stat_conditions = ts::Metrics::Counter::createPtr("proxy.process.plugin.header_rewrite.conditions");
+  }
+}
+
 void
 Statement::append(Statement *stmt)
 {
@@ -48,15 +66,9 @@ Statement::get_resource_ids() const
 }
 
 bool
-Statement::set_hook(TSHttpHookID hook)
+Statement::is_hook_valid(TSHttpHookID hook) const
 {
-  bool ret = std::find(_allowed_hooks.begin(), _allowed_hooks.end(), hook) != _allowed_hooks.end();
-
-  if (ret) {
-    _hook = hook;
-  }
-
-  return ret;
+  return std::find(_allowed_hooks.begin(), _allowed_hooks.end(), hook) != _allowed_hooks.end();
 }
 
 // This should be overridden for any Statement which only supports some hooks
@@ -69,25 +81,47 @@ Statement::initialize_hooks()
   add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
   add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
   add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_POST_REMAP_HOOK);
   add_allowed_hook(TS_HTTP_TXN_START_HOOK);
   add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
 }
 
 int
+Statement::acquire_state_slot(TSUserArgType type)
+{
+  if (type == TS_USER_ARGS_SSN) {
+    static int ssn_slot_index = []() -> int {
+      int index = -1;
+      if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_SSN, PLUGIN_NAME, "HRW ssn variables", &index)) {
+        TSError("[%s] failed to reserve ssn user arg index", PLUGIN_NAME);
+      }
+      return index;
+    }();
+
+    return ssn_slot_index;
+  } else {
+    static int txn_slot_index = []() -> int {
+      int index = -1;
+      if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
+        TSError("[%s] failed to reserve txn user arg index", PLUGIN_NAME);
+      }
+      return index;
+    }();
+
+    return txn_slot_index;
+  }
+}
+
+int
 Statement::acquire_txn_slot()
 {
-  // Only call the index reservation once per plugin load
-  static int txn_slot_index = []() -> int {
-    int index = -1;
+  return acquire_state_slot(TS_USER_ARGS_TXN);
+}
 
-    if (TS_ERROR == TSUserArgIndexReserve(TS_USER_ARGS_TXN, PLUGIN_NAME, "HRW txn variables", &index)) {
-      TSError("[%s] failed to reserve user arg index", PLUGIN_NAME);
-      return -1; // Fallback value
-    }
-    return index;
-  }();
-
-  return txn_slot_index;
+int
+Statement::acquire_ssn_slot()
+{
+  return acquire_state_slot(TS_USER_ARGS_SSN);
 }
 
 int

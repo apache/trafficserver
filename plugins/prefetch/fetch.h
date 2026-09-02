@@ -140,7 +140,7 @@ public:
     BgFetchState                              *state;
     std::map<String, BgFetchState *>::iterator it;
 
-    TSMutexLock(_prefetchStates->_lock);
+    TSMutexLockGuard lock(_prefetchStates->_lock);
     it = _prefetchStates->_states.find(space);
     if (it != _prefetchStates->_states.end()) {
       state = it->second;
@@ -148,7 +148,6 @@ public:
       state                           = new BgFetchState();
       _prefetchStates->_states[space] = state;
     }
-    TSMutexUnlock(_prefetchStates->_lock);
     return state;
   }
 
@@ -169,13 +168,13 @@ class BgFetch
 public:
   static bool schedule(BgFetchState *state, const PrefetchConfig &config, bool askPermission, TSMBuffer requestBuffer,
                        TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *path, size_t pathLen, const String &cachekey,
-                       bool removeQuery = false);
+                       bool removeQuery = false, const char *query = nullptr, size_t queryLen = 0);
 
 private:
   BgFetch(BgFetchState *state, const PrefetchConfig &config, bool lock);
   ~BgFetch();
   bool       init(TSMBuffer requestBuffer, TSMLoc requestHeaderLoc, TSHttpTxn txnp, const char *fetchPath, size_t fetchPathLen,
-                  const String &cacheKey, bool removeQuery = false);
+                  const String &cacheKey, bool removeQuery = false, const char *fetchQuery = nullptr, size_t fetchQueryLen = 0);
   void       schedule();
   static int handler(TSCont contp, TSEvent event, void * /* edata ATS_UNUSED */);
   bool       saveIp(TSHttpTxn txnp);

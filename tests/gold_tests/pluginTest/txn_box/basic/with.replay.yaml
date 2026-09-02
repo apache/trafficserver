@@ -61,7 +61,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   # Alpha cases use "none-of" so if the field isn't present, no with case should match and it should

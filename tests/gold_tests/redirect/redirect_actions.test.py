@@ -92,7 +92,7 @@ origin.addResponse('sessionfile.log', request_header, response_header)
 # Map scenarios to trafficserver processes.
 trafficservers = {}
 
-data_dirname = 'generated_test_data'
+data_dirname = 'redirect_actions_generated_test_data'
 data_path = os.path.join(Test.TestDirectory, data_dirname)
 os.makedirs(data_path, exist_ok=True)
 

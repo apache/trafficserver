@@ -27,6 +27,8 @@
 #include <string_view>
 
 #include "proxy/IPAllow.h"
+#include "mgmt/config/ConfigContextDiags.h"
+#include "mgmt/config/ConfigRegistry.h"
 #include "records/RecCore.h"
 #include "swoc/Errata.h"
 #include "swoc/TextView.h"
@@ -73,8 +75,6 @@ size_t  IpAllow::configid       = 0;
 bool    IpAllow::accept_check_p = true; // initializing global flag for fast deny
 uint8_t IpAllow::subjects[Subject::MAX_SUBJECTS];
 
-static ConfigUpdateHandler<IpAllow> *ipAllowUpdate;
-
 //
 //   Begin API functions
 //
@@ -93,9 +93,23 @@ IpAllow::startup()
   // Should not have been initialized before
   ink_assert(IpAllow::configid == 0);
 
-  ipAllowUpdate = new ConfigUpdateHandler<IpAllow>();
-  ipAllowUpdate->attach("proxy.config.cache.ip_allow.filename");
-  ipAllowUpdate->attach("proxy.config.cache.ip_categories.filename");
+  config::ConfigRegistry::Get_Instance().register_config(
+    "ip_allow",                                           // registry key
+    ts::filename::IP_ALLOW,                               // default filename
+    "proxy.config.cache.ip_allow.filename",               // record holding the filename
+    [](ConfigContext ctx) { IpAllow::reconfigure(ctx); }, // reload handler
+    config::ConfigSource::FileOnly,                       // no RPC content source. Change to FileAndRpc if we want to support RPC.
+                                                          // if supplied, YAML can be sourced by calling ctx.supplied_yaml()
+    {"proxy.config.cache.ip_allow.filename"});            // trigger records
+
+  // ip_categories is an auxiliary data file loaded by ip_allow (see BuildCategories()).
+  // Track it with FileManager for mtime detection and register a record callback
+  // so that changes to the file or the record trigger an ip_allow reload.
+  config::ConfigRegistry::Get_Instance().add_file_dependency(
+    "ip_allow",                                  // config key to attach to
+    "proxy.config.cache.ip_categories.filename", // record holding the filename
+    ts::filename::IP_CATEGORIES,                 // default filename (used when record is "")
+    false);                                      // not required
 
   reconfigure();
 
@@ -108,34 +122,30 @@ IpAllow::startup()
 }
 
 void
-IpAllow::reconfigure()
+IpAllow::reconfigure(ConfigContext ctx)
 {
-  self_type *new_table;
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::IP_ALLOW);
 
-  Note("%s loading ...", ts::filename::IP_ALLOW);
+  auto *new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
 
-  new_table = new self_type("proxy.config.cache.ip_allow.filename", "proxy.config.cache.ip_categories.filename");
   // IP rules need categories, so load them first (if they exist).
   if (auto errata = new_table->BuildCategories(); !errata.is_ok()) {
-    std::string text;
-    swoc::bwprint(text, "{} failed to load\n{}", new_table->ip_categories_config_file, errata);
-    Error("%s", text.c_str());
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", new_table->ip_categories_config_file.c_str());
     delete new_table;
     return;
   }
   if (auto errata = new_table->BuildTable(); !errata.is_ok()) {
-    std::string text;
-    swoc::bwprint(text, "{} failed to load\n{}", ts::filename::IP_ALLOW, errata);
-    if (errata.severity() <= ERRATA_ERROR) {
-      Error("%s", text.c_str());
-    } else {
-      Fatal("%s", text.c_str());
+    if (errata.severity() > ERRATA_ERROR) {
+      std::string errata_text;
+      swoc::bwprint(errata_text, "{}", errata);
+      Fatal("%s failed to load\n%s", ts::filename::IP_ALLOW, errata_text.c_str());
     }
+    CfgLoadFailWithErrata(ctx, errata, "%s failed to load", ts::filename::IP_ALLOW);
     delete new_table;
     return;
   }
   configid = configProcessor.set(configid, new_table);
-  Note("%s finished loading", ts::filename::IP_ALLOW);
+  CfgLoadComplete(ctx, "%s finished loading", ts::filename::IP_ALLOW);
 }
 
 IpAllow *
@@ -221,10 +231,11 @@ IpAllow::IpAllow(const char *ip_allow_config_var, const char *ip_categories_conf
     int                         i = 0;
     std::string_view::size_type s, e;
     for (s = 0, e = 0; s < subjects_sv.size() && e != subjects_sv.npos; s = e + 1) {
-      e                           = subjects_sv.find(",", s);
-      std::string_view subject_sv = subjects_sv.substr(s, e);
+      e                           = subjects_sv.find(',', s);
+      std::string_view subject_sv = subjects_sv.substr(s, e == subjects_sv.npos ? subjects_sv.npos : e - s);
       if (i >= MAX_SUBJECTS) {
         Error("Too many ACL subjects were provided");
+        break;
       }
       if (subject_sv == "PEER") {
         subjects[i] = Subject::PEER;
@@ -582,7 +593,7 @@ IpAllow::BuildCategories()
     return {};
   }
 
-  Note("%s loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
+  Note("%s loading categories file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
   std::string  content{swoc::file::load(ip_categories_config_file, ec)};
   swoc::Errata errata;
   if (ec.value() == 0) {
@@ -599,7 +610,7 @@ IpAllow::BuildCategories()
   } else {
     return swoc::Errata(ERRATA_ERROR, "{} Failed to load {}", this, ec);
   }
-  Note("%s done loading categores file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
+  Note("%s done loading categories file %s ...", ts::filename::IP_ALLOW, ip_categories_config_file.c_str());
   return {};
 }
 

@@ -35,7 +35,8 @@ def _configure_client(
         verbose=True,
         other_args='',
         run_parallel=False,
-        context=None):
+        context=None,
+        poll_timeout=None):
     """
     Configure the process for running the verifier-client.
 
@@ -136,6 +137,9 @@ def _configure_client(
     if keys is not None:
         command += f" --keys {keys}"
 
+    if poll_timeout is not None:
+        command += f" --poll-timeout {poll_timeout}"
+
     # Generally we prefer the deterministic behavior of a single thread where
     # each connection is processed sequentially.
     if not run_parallel and 'thread-limit' not in command:
@@ -161,7 +165,8 @@ def AddVerifierClientProcess(
         verbose=True,
         other_args='',
         run_parallel=False,
-        context=None):
+        context=None,
+        poll_timeout=None):
     """
     Set the Default process of the test run to a verifier-client Process.
 
@@ -198,6 +203,10 @@ def AddVerifierClientProcess(
                  Template strings support $-based substitutions in the replay file.
                  You can refer to https://docs.python.org/3/library/string.html#template-strings
                  for more information how to add template strings to the replay file.
+
+        poll_timeout: (int) The poll timeout in milliseconds passed to
+            verifier-client via --poll-timeout. Defaults to None which leaves the
+            verifier-client default (3000 ms) in place.
     Returns:
         The newly constructed verifier-client for the test run, which is also the
         Default Process of the test run.
@@ -213,7 +222,7 @@ def AddVerifierClientProcess(
     p = run.Processes.Default
     _configure_client(
         run, p, name, replay_path, http_ports, https_ports, http3_ports, keys, ssl_cert, ca_cert, verbose, other_args, run_parallel,
-        context)
+        context, poll_timeout)
     return p
 
 

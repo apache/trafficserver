@@ -20,6 +20,7 @@ import sys
 
 Test.Summary = 'Test that Trafficserver starts with different thread configurations.'
 Test.ContinueOnFail = True
+Test.SkipUnless(Condition.IsPlatform("linux"))
 
 ts = Test.MakeATSProcess('ts-1_exec-0_accept-1_task-1_aio')
 ts.Disk.records_config.update(

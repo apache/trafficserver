@@ -75,18 +75,22 @@ and reduces load on disks, especially during temporary traffic peaks.
 You can configure the RAM cache size to suit your needs, as described in
 :ref:`changing-the-size-of-the-ram-cache` below.
 
-The RAM cache supports two cache eviction algorithms, a regular *LRU*
-(Least Recently Used) and the more advanced *CLFUS* (Clocked Least
+The RAM cache supports three cache eviction algorithms: a regular *LRU*
+(Least Recently Used); the more advanced *CLFUS* (Clocked Least
 Frequently Used by Size; which balances recentness, frequency, and size
-to maximize hit rate, similar to a most frequently used algorithm).
-The default is to use *LRU*, and this is controlled via
+to maximize hit rate, similar to a most frequently used algorithm); and
+*S3-FIFO* (Simple Scalable Static FIFO), a FIFO-based policy whose small
+admission queue and ghost list filter one-hit-wonders, giving strong hit
+rates on CDN and key-value workloads at low cost. The default is to use
+*LRU*, and this is controlled via
 :ts:cv:`proxy.config.cache.ram_cache.algorithm`.
 
 Both the *LRU* and *CLFUS* RAM caches support a configuration to increase
 scan resistance. In a typical *LRU*, if you request all possible objects in
 sequence, you will effectively churn the cache on every request. The option
 :ts:cv:`proxy.config.cache.ram_cache.use_seen_filter` can be set to add some
-resistance against this problem.
+resistance against this problem. *S3-FIFO* is scan-resistant by design,
+through its admission queue, and does not use the seen filter.
 
 In addition, *CLFUS* also supports compressing in the RAM cache itself.
 This can be useful for content which is not compressed by itself (e.g.
@@ -143,8 +147,8 @@ Disabling the RAM Cache
 -----------------------
 
 It is possible to disable the RAM cache. If you have configured your
-storage using the :file:`volume.config` you can add an optional directive
-of ``ramcache=false`` to whichever volumes you wish to have it disabled on.
+storage using the :file:`storage.yaml` you can add an optional directive
+of ``ram_cache: false`` to whichever volumes you wish to have it disabled on.
 This may be desirable for volumes composed of storage like RAM disks where
 you may want to avoid double RAM caching.
 
@@ -166,7 +170,7 @@ existing disks, or to add new disks to a Traffic Server node:
 
 #. Add hardware, if necessary.
 
-#. Edit :file:`storage.config` to increase the amount of disk space allocated
+#. Edit :file:`storage.yaml` to increase the amount of disk space allocated
    to the cache on existing disks or describe the new hardware you are adding.
 
 #. Restart Traffic Server.
@@ -181,12 +185,12 @@ existing disk, or to remove disks from a Traffic Server node:
 
 #. Remove hardware, if necessary.
 
-#. Edit :file:`storage.config` to reduce the amount of disk space allocated
+#. Edit :file:`storage.yaml` to reduce the amount of disk space allocated
    to the cache on existing disks or delete the reference to the hardware you're removing.
 
 #. Restart Traffic Server.
 
-.. important:: In :file:`storage.config`, a formatted or raw disk must be at least 128 MB.
+.. important:: In :file:`storage.yaml`, a formatted or raw disk must be at least 128 MB.
 
 .. _partitioning-the-cache:
 
@@ -300,13 +304,28 @@ from any other IP, we connect to the daemon via localhost: ::
       > Host: example.com
       > Accept: */*
       >
-      < HTTP/1.1 200 Ok
+      < HTTP/1.1 200 OK
       < Date: Thu, 08 Jan 2010 20:32:07 GMT
       < Connection: keep-alive
 
 The next time Traffic Server receives a request for the removed object,
 it will contact the origin server to retrieve a new copy, which will replace
 the previously cached version in Traffic Server.
+
+If the removed object was stored as a partial response, that is if it carried a
+``Content-Range``, then the ``200 OK`` also reports that range back in a
+``X-Purged-Content-Range`` header::
+
+      < HTTP/1.1 200 OK
+      < X-Purged-Content-Range: bytes 0-1048575/9437184
+
+This lets a caller that holds one piece of a larger resource learn the whole
+resource's extent without a second lookup. It is what allows the
+:ref:`admin-plugins-slice` plugin to purge an object block by block and know which
+block is the last one. The range is reported under its own header name rather than
+as ``Content-Range``, because ``Content-Range`` on a ``200`` response has no
+meaning under :rfc:`9110` and is read by other components as a sign that a stored
+partial response is being served.
 
 This procedure only removes the index to the object from a specific Traffic Server
 cache. While the object remains on disk, Traffic Server will no longer able to find

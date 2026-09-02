@@ -52,10 +52,29 @@ class HeaderRewriteSetBodyFromTest:
         plugin_success_1_request_header = {"headers": "GET /plugin_success HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
         self.server.addResponse("sessionfile.log", plugin_success_1_request_header, response_header)
 
+        plugin_override_1_request_header = {"headers": "GET /plugin_override HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        self.server.addResponse("sessionfile.log", plugin_override_1_request_header, response_header)
+
         # Request/response for custom body transaction that successfully retrieves body
         success_2_request_header = {"headers": "GET /404.html HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
-        success_2_response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "Custom body found\n"}
+        success_2_response_header = {
+            "headers": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
+            "body": '{"error": "custom"}\n',
+        }
         self.server.addResponse("sessionfile.log", success_2_request_header, success_2_response_header)
+
+        # Request/response for original transaction that triggers binary set-body-from
+        remap_binary_request_header = {"headers": "GET /remap_binary HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        self.server.addResponse("sessionfile.log", remap_binary_request_header, response_header)
+
+        # Response for the set-body-from fetch: body has an internal NUL. The strdup
+        # bug truncated everything after the NUL and emitted heap garbage instead.
+        binary_body_request_header = {"headers": "GET /binary_body HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
+        binary_body_response_header = {
+            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
+            "body": "BeforeNUL\x00AfterNUL_AAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+        self.server.addResponse("sessionfile.log", binary_body_request_header, binary_body_response_header)
 
     def setUpTS(self):
         self.ts = Test.MakeATSProcess("ts")
@@ -63,13 +82,19 @@ class HeaderRewriteSetBodyFromTest:
         # Set header rewrite rules
         self.ts.Setup.CopyAs('rules/rule_set_body_from_remap.conf', Test.RunDirectory)
         self.ts.Setup.CopyAs('rules/rule_set_body_from_plugin.conf', Test.RunDirectory)
+        self.ts.Setup.CopyAs('rules/rule_set_body_from_file.conf', Test.RunDirectory)
+        self.ts.Setup.CopyAs('gold/header_rewrite-set_body_from_success.gold', Test.RunDirectory)
 
         self.ts.Disk.remap_config.AddLine(
             """\
              map http://www.example.com/remap_success http://127.0.0.1:{0}/remap_success @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
              map http://www.example.com/200 http://127.0.0.1:{0}/200 @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
              map http://www.example.com/remap_fail http://127.0.0.1:{0}/remap_fail @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
+             map http://www.example.com/remap_binary http://127.0.0.1:{0}/remap_binary @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_remap.conf
+             map http://www.example.com/binary_body http://127.0.0.1:{0}/binary_body
              map http://www.example.com/plugin_success http://127.0.0.1:{0}/plugin_success
+             map http://www.example.com/plugin_override http://127.0.0.1:{0}/plugin_override
+             map http://www.example.com/file http://127.0.0.1:{0}/file @plugin=header_rewrite.so @pparam={1}/rule_set_body_from_file.conf
              map http://www.example.com/plugin_fail http://127.0.0.1:{0}/plugin_fail
              map http://www.example.com/404.html http://127.0.0.1:{0}/404.html
              map http://www.example.com/plugin_no_server http://127.0.0.1::{2}/plugin_no_server
@@ -103,6 +128,31 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
+            "(?i)< content-type: application/json", "Expected the fetched Content-Type")
+        tr.StillRunningAfter = self.server
+
+    def test_setBodyFromContentTypeOverride(self) -> None:
+        '''Test that an explicit set-body-from Content-Type overrides the fetched value.'''
+        tr = Test.AddTestRun()
+        tr.MakeCurlCommand(
+            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_override"'.format(self.ts.Variables.port), ts=self.ts)
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
+            "(?i)< content-type: application/problem\\+json", "Expected the configured Content-Type override")
+        tr.StillRunningAfter = self.server
+
+    def test_setBodyFromFile(self) -> None:
+        '''Test that a local file supplies the exact response body.'''
+        tr = Test.AddTestRun()
+        tr.MakeCurlCommand('-s -v --proxy 127.0.0.1:{0} "http://www.example.com/file"'.format(self.ts.Variables.port), ts=self.ts)
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
+        tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("403 Forbidden", "Expected 403 response")
+        tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
+            "(?i)< content-type: application/json", "Expected the configured local file Content-Type")
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_plugin(self):
@@ -116,6 +166,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
+        tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
+            "(?i)< content-type: application/json", "Expected the fetched Content-Type")
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromFails_plugin(self):
@@ -146,12 +198,43 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("500 INKApi Error", "Expected 500 response")
         tr.StillRunningAfter = self.server
 
+    def test_setBodyFromBinary(self):
+        '''
+        set-body-from must preserve binary bodies that contain internal NUL
+        bytes. The previous TSstrdup path truncated at the first NUL and
+        emitted heap bytes for the remainder; check the SHA256 of the body
+        the client actually receives.
+        '''
+        body_path = f"{Test.RunDirectory}/binary_body.out"
+        # SHA256 of b"BeforeNUL\x00AfterNUL_AAAAAAAAAAAAAAAAAAAAAAAA" (43 bytes)
+        expected_sha = "a529bbd61061b739b611ca67a7b76fc433b3d3a9cc3bcc2e385b812f00b0fe63"
+
+        tr = Test.AddTestRun()
+        tr.MakeCurlCommand(
+            f'-s --proxy 127.0.0.1:{self.ts.Variables.port} -o {body_path} "http://www.example.com/remap_binary"', ts=self.ts)
+        tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self.server
+
+        # Compute the hash via Python instead of sha256sum/shasum so the
+        # check does not depend on which CLI hash tool the host happens
+        # to ship.
+        tr = Test.AddTestRun()
+        tr.Processes.Default.Command = (
+            f'python3 -c \'import hashlib; '
+            f'print(hashlib.sha256(open("{body_path}", "rb").read()).hexdigest())\'')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
+            expected_sha, "Client must receive the exact binary body bytes")
+
     def runTraffic(self):
         self.test_setBodyFromFails_remap()
         self.test_setBodyFromSucceeds_remap()
         self.test_setBodyFromSucceeds_plugin()
+        self.test_setBodyFromContentTypeOverride()
+        self.test_setBodyFromFile()
         self.test_setBodyFromFails_plugin()
         self.test_setBodyFromSucceeds_200()
+        self.test_setBodyFromBinary()
 
     def run(self):
         self.runTraffic()

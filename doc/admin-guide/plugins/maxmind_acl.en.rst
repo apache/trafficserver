@@ -63,8 +63,14 @@ You can mix and match the allow rules and deny rules, however deny rules will al
 The IP rules can take either single IPs or cidr formatted rules. It will also accept IPv6 IP and ranges.
 
 The regex portion can be added to both the allow and deny sections for creating allowable or deniable regexes. Each regex takes a country code first and a regex second. The regex
-operates on the entire original request URL, the pre-remapped fqdn and path.
+operates on the pre-remap host and path joined as ``host + "/" + path`` (no scheme, no query string).
 In the above example all requests from the US would be allowed except for those on ``txt`` and ``mp3`` files. More rules should be added as pairs, not as additions to existing lists.
+
+.. seealso::
+   Operator-written regex rules can match more inputs than intended
+   when the pattern is unanchored. For the exact subject this site
+   matches against, common pitfalls, and recommended pattern shapes,
+   see :ref:`admin-regex-best-practices`.
 
 Currently the only rules available are ``country``, ``ip``, and ``regex``, though more can easily be added if needed. Each config file does require a top level
 ``maxmind`` entry as well as a ``database`` entry for the IP lookups.  You can supply a separate database for each remap used in case you use custom
@@ -114,3 +120,48 @@ The plugin also supports optional fields from GeoGuard databases which includes:
 ``relay_proxy``
 ``proxy_over_vpn``
 ``smart_dns_proxy``
+
+Bypass
+======
+
+An optional ``bypass`` field allows a request to skip all geo checks entirely and pass through
+unmodified. Both a header name and an expected value must be configured; when the named header
+is present in the request **and** its value matches exactly, the plugin returns immediately
+without performing any country, IP, regex, or anonymous evaluation.
+
+``header``
+   Required sub-key. The name of the HTTP request header to look for, e.g. ``@GeoBypass``.
+
+``value``
+   Required sub-key. The header field value must match this string exactly for the bypass to
+   trigger. Both ``header`` and ``value`` must be present and non-empty; omitting either
+   disables the bypass entirely and a warning is emitted to the ATS error log.
+
+The comparison uses the complete, raw field value of the first occurrence of the named header.
+Duplicate headers with the same name (repeated lines) are ignored — only the first is evaluated.
+Within that first field, the entire value must match exactly, so a comma-separated multi-value
+(e.g. ``@GeoBypass: 1, extra``) in a single header line will not match a simple configured value.
+
+An example configuration ::
+
+   maxmind:
+    database: GeoIP2-City.mmdb
+    bypass:
+     header: "@GeoBypass"
+     value: "1"
+    allow:
+     country:
+      - US
+
+This is useful for internal or trusted upstream services that should not be subject to geo
+restrictions. If ``bypass`` is absent from the configuration, or if either ``header`` or
+``value`` is missing, bypass is disabled and all requests are evaluated normally.
+
+.. warning::
+
+   Because the bypass skips **all** ACL checks, the configured header must be
+   unforgeable by external clients. Use an internal ``@``-prefixed header (e.g.
+   ``@GeoBypass``) that is set by ATS itself or a trusted upstream, or
+   ensure the edge strips/overwrites the header before it reaches this plugin.
+   Configuring a normal client-supplied header allows end users to opt out of
+   geo restrictions by simply sending the header in their request.

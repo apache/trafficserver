@@ -145,14 +145,18 @@ crashlog_write_backtrace(FILE *fp, const crashlog_target &target)
   // can also happen without a debugger. Possibly in that case, there is a race with the
   // kernel locking the process information?
 
-  if (mgmterr == 0 && trace != nullptr) {
+  if (mgmterr == 0 && trace != nullptr && trace[0] != '\0') {
     // ServerBacktrace succeeded - this gives us backtraces for all threads.
     fprintf(fp, "%s", trace);
     free(trace);
     return true;
   }
+  free(trace);
 
-  // ServerBacktrace failed. Fall back to the in-process backtrace from the crashing thread.
+  // ServerBacktrace reports success but yields no frames when the target's thread list is
+  // unreadable -- e.g. a fast-aborting target has already exited by the time the forked
+  // helper attaches. Fall back to the in-process backtrace from the crashing thread rather
+  // than emitting an empty report.
   if ((target.flags & CRASHLOG_HAVE_BACKTRACE) && !target.backtrace.empty()) {
     fprintf(fp, "Crashing Thread Backtrace:\n%s", target.backtrace.c_str());
     return true;
@@ -201,7 +205,6 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   FILE           *fp;
   char           *logname;
   crashlog_target target;
-  pid_t           parent = getppid();
 
   DiagsPtr::set(new Diags("traffic_crashlog", "" /* tags */, "" /* actions */, new BaseLogFile("stderr")));
 
@@ -213,12 +216,22 @@ main(int /* argc ATS_UNUSED */, const char **argv)
   if (wait_mode) {
     EnableDeathSignal(SIGCONT);
     kill(getpid(), SIGSTOP);
-  }
 
-  // If our parent changed, then we were woken after traffic_server exited. There's no point trying to
-  // emit a crashlog because traffic_server is gone.
-  if (getppid() != parent) {
-    return 0;
+    // A real crash sends us a notification on this socket; any other parent exit just closes
+    // it, so EOF (or a short read) means there is nothing to log. getppid() is unreliable here:
+    // PR_SET_PDEATHSIG can fire while our parent pid is still alive.
+    //
+    //
+    //
+    int     crash_signo = 0; // value unused; an int keeps the socket framing aligned with the writer
+    ssize_t nbytes;
+    do {
+      nbytes = read(STDIN_FILENO, &crash_signo, sizeof(crash_signo));
+    } while (nbytes < 0 && errno == EINTR);
+
+    if (nbytes != static_cast<ssize_t>(sizeof(crash_signo))) {
+      return 0;
+    }
   }
 
   runroot_handler(argv);

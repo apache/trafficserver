@@ -25,7 +25,6 @@ reducing maintenance overhead.
 from __future__ import annotations
 
 from typing import Any
-from functools import cache
 from hrw4u.states import SectionType
 
 
@@ -39,33 +38,6 @@ class TableGenerator:
     def _clean_tag(tag: str) -> str:
         """Extract clean tag name from %{TAG:payload} format."""
         return tag.strip().removeprefix('%{').removesuffix('}').split(':')[0]
-
-    def generate_reverse_condition_map(self, condition_map: tuple[tuple[str, Any], ...]) -> dict[str, str]:
-        """Generate reverse condition mapping from forward condition map."""
-        reverse_map = {}
-
-        for ident_key, params in condition_map:
-            if not ident_key.endswith('.'):
-                tag = params.target if params else None
-                if tag:
-                    clean_tag = self._clean_tag(tag)
-                    reverse_map[clean_tag] = ident_key
-
-        return reverse_map
-
-    def generate_reverse_function_map(self, function_map: tuple[tuple[str, Any], ...]) -> dict[str, str]:
-        """Generate reverse function mapping from forward function map."""
-        return {params.target: func_name for func_name, params in function_map}
-
-    @cache
-    def generate_section_hook_mapping(self) -> dict[str, str]:
-        """Generate section name to hook name mapping."""
-        return {section.value: section.hook_name for section in SectionType}
-
-    @cache
-    def generate_hook_section_mapping(self) -> dict[str, str]:
-        """Generate hook name to section name mapping."""
-        return {section.hook_name: section.value for section in SectionType}
 
     def generate_ip_mapping(self) -> dict[str, str]:
         """Generate IP payload to identifier mapping from CONDITION_MAP."""
@@ -159,21 +131,6 @@ class TableGenerator:
 
 # Singleton instance for global use
 _table_generator = TableGenerator()
-
-
-def get_reverse_condition_map(condition_map: dict[str, tuple]) -> dict[str, str]:
-    """Get reverse condition mapping."""
-    return _table_generator.generate_reverse_condition_map(tuple(condition_map.items()))
-
-
-def get_reverse_function_map(function_map: dict[str, Any]) -> dict[str, str]:
-    """Get reverse function mapping."""
-    return _table_generator.generate_reverse_function_map(tuple(function_map.items()))
-
-
-def get_section_mappings() -> tuple[dict[str, str], dict[str, str]]:
-    """Get both section->hook and hook->section mappings."""
-    return (_table_generator.generate_section_hook_mapping(), _table_generator.generate_hook_section_mapping())
 
 
 def get_complete_reverse_resolution_map() -> dict[str, Any]:

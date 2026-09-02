@@ -143,6 +143,115 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
                                                 "\r\n"));
   }
 
+  SECTION("reject CRLF in header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "User-Agent: foobar\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *evil = hdr.field_create("x-injected");
+    hdr.field_attach(evil);
+    evil->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"safe\r\ninjected: evil"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::ERROR);
+  }
+
+  SECTION("reject bare CR in header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *evil = hdr.field_create("x-injected");
+    hdr.field_attach(evil);
+    evil->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"before\rafter"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::ERROR);
+  }
+
+  SECTION("reject bare LF in header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *evil = hdr.field_create("x-injected");
+    hdr.field_attach(evil);
+    evil->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"before\nafter"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::ERROR);
+  }
+
+  SECTION("accept clean header value")
+  {
+    const char request[] = "GET /index.html HTTP/1.1\r\n"
+                           "Host: trafficserver.apache.org\r\n"
+                           "\r\n";
+
+    HTTPHdr        hdr;
+    ts::PostScript hdr_defer([&]() -> void { hdr.destroy(); });
+    hdr.create(HTTPType::REQUEST, HTTP_2_0);
+
+    const char *start = request;
+    const char *end   = request + sizeof(request) - 1;
+    hdr.parse_req(&parser, &start, end, true);
+    http2_convert_header_from_1_1_to_2(&hdr);
+
+    MIMEField *clean = hdr.field_create("x-clean");
+    hdr.field_attach(clean);
+    clean->value_set(hdr.m_heap, hdr.m_mime, std::string_view{"perfectly-fine-value"});
+
+    HTTPHdr        hdr_out;
+    ts::PostScript hdr_out_defer([&]() -> void { hdr_out.destroy(); });
+    hdr_out.create(HTTPType::REQUEST);
+    hdr_out.copy(&hdr);
+
+    CHECK(http2_convert_header_from_2_to_1_1(&hdr_out) == ParseResult::DONE);
+  }
+
   SECTION("response")
   {
     const char response[] = "HTTP/1.1 200 OK\r\n"
@@ -194,5 +303,47 @@ TEST_CASE("Convert HTTPHdr", "[HTTP2]")
     // check
     REQUIRE(bufindex > 0);
     CHECK_THAT(buf, Catch::Matchers::StartsWith("HTTP/1.1 200 OK\r\n\r\n"));
+  }
+}
+
+// Regression: Http2ConnectionState::rcv_continuation_frame accumulates
+// the size of every CONTINUATION payload into stream->header_blocks_length, a uint32_t.
+// Before the fix, the increment was performed without overflow checking, so a crafted
+// sequence of CONTINUATION frames whose payloads sum to more than UINT32_MAX would
+// wrap the accumulator, and the subsequent ats_realloc would allocate a buffer smaller
+// than the pre-wrap offset that memcpy then writes to.
+TEST_CASE("CONTINUATION header_blocks_length overflow guard", "[HTTP2]")
+{
+  SECTION("zero accumulator and zero payload do not overflow")
+  {
+    CHECK_FALSE(http2_continuation_length_would_overflow(0u, 0u));
+  }
+
+  SECTION("small additions do not overflow")
+  {
+    CHECK_FALSE(http2_continuation_length_would_overflow(0u, 16384u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(16384u, 16384u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(1u << 20, 1u << 20));
+  }
+
+  SECTION("sum that exactly fills uint32_t is allowed")
+  {
+    CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX, 0u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(0u, UINT32_MAX));
+    CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX - 1u, 1u));
+    CHECK_FALSE(http2_continuation_length_would_overflow(1u, UINT32_MAX - 1u));
+  }
+
+  SECTION("sum exceeding uint32_t by one wraps and must be rejected")
+  {
+    CHECK(http2_continuation_length_would_overflow(UINT32_MAX, 1u));
+    CHECK(http2_continuation_length_would_overflow(1u, UINT32_MAX));
+  }
+
+  SECTION("realistic attack shape: prior bytes plus a max HTTP/2 frame payload")
+  {
+    constexpr uint32_t max_frame_payload = (1u << 24) - 1u;
+    CHECK(http2_continuation_length_would_overflow(UINT32_MAX - max_frame_payload + 1u, max_frame_payload));
+    CHECK_FALSE(http2_continuation_length_would_overflow(UINT32_MAX - max_frame_payload, max_frame_payload));
   }
 }

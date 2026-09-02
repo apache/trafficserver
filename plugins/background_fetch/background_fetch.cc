@@ -117,14 +117,13 @@ public:
   {
     bool ret;
 
-    TSMutexLock(_lock);
+    TSMutexLockGuard lock(_lock);
     if (_urls.end() == _urls.find(url)) {
       ret = false;
     } else {
       _urls.erase(url);
       ret = true;
     }
-    TSMutexUnlock(_lock);
 
     return ret;
   }

@@ -43,7 +43,8 @@
   @section example Example usage of the API
 
   @code
-  LogAccess entry(this);
+  // Populate a TransactionLogData source, then:
+  LogAccess entry(data);
   int ret = Log::access(&entry);
   @endcode
 
@@ -173,6 +174,8 @@ public:
   static int va_error(const char *format, va_list ap);
   static int error(const char *format, ...) TS_PRINTFLIKE(1, 2);
 
+  static void flush_all_objects();
+
   // public data members
   static LogObject *error_log;
   /** The latest fully initialized LogConfig.
@@ -231,5 +234,5 @@ LogThrottlingIsValid(int throttling_val)
 static inline bool
 LogRollingEnabledIsValid(int enabled)
 {
-  return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE); // lgtm[cpp/constant-comparison]
+  return enabled >= Log::NO_ROLLING && enabled < Log::INVALID_ROLLING_VALUE;
 }

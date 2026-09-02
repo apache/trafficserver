@@ -120,7 +120,9 @@ protected:
   /// @param argData argument's data.
   /// @param isRegex if the request should be done by regex or name.
   /// @param recQueryType Config or Metric.
-  shared::rpc::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType);
+  /// @param includeHidden if true, also match hidden (internal, normally unpublished) metrics. Only meaningful for METRIC.
+  shared::rpc::JSONRPCResponse record_fetch(ts::ArgumentData argData, bool isRegex, RecordQueryType recQueryType,
+                                            bool includeHidden = false);
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class ConfigCommand : public RecordCommand
@@ -147,13 +149,34 @@ class ConfigCommand : public RecordCommand
   void config_reload();
   void config_show_file_registry();
 
+  // Helper functions for config reload
+  ConfigReloadResponse fetch_config_reload(std::string const &token, std::string const &count = "1");
+  void                 track_config_reload_progress(std::string const &token, std::chrono::milliseconds refresh_interval,
+                                                    std::chrono::milliseconds timeout, std::string const &timeout_str);
+  ConfigReloadResponse config_reload(std::string const &token, bool force, YAML::Node const &configs);
+
+  // Helper to read data from file, stdin, or inline string
+  std::string read_data_input(std::string const &data_arg);
+
 public:
   ConfigCommand(ts::Arguments *args);
+};
+// -----------------------------------------------------------------------------------------------------------------------------------
+class CacheCommand : public CtrlCommand
+{
+public:
+  CacheCommand(ts::Arguments *args);
+
+private:
+  static inline const std::string CLEAR_STR{"clear"};
+
+  void clear();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class MetricCommand : public RecordCommand
 {
   static inline const std::string MONITOR_STR{"monitor"};
+  static inline const std::string INCLUDE_HIDDEN_STR{"include-hidden"};
 
   void metric_get();
   void metric_match();
@@ -198,7 +221,9 @@ public:
 
 private:
   static inline const std::string MSG_STR{"msg"};
+  static inline const std::string LIST_STR{"list"};
   void                            plugin_msg();
+  void                            plugin_list();
 };
 // -----------------------------------------------------------------------------------------------------------------------------------
 class DirectRPCCommand : public CtrlCommand

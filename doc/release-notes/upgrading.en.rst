@@ -19,6 +19,17 @@
 
 .. _upgrading:
 
+Upgrading to ATS v11.x
+======================
+
+API Changes
+-----------
+
+The handle returned by :cpp:func:`TSPortDescriptorParse` must now be released
+with :cpp:func:`TSPortDescriptorDestroy`. The descriptor can be destroyed
+immediately after :cpp:func:`TSPortDescriptorAccept` returns because the
+listener does not retain it.
+
 Upgrading to ATS v10.x
 ======================
 
@@ -146,6 +157,11 @@ The following :file:`records.yaml` changes have been made:
 
 - The records.yaml entry ``proxy.config.http.down_server.abort_threshold`` has been removed.
 - The records.yaml entry ``proxy.config.http.connect_attempts_max_retries_dead_server`` has been renamed to :ts:cv:`proxy.config.http.connect_attempts_max_retries_down_server`.
+- The records.yaml entry ``proxy.config.http.connect_attempts_max_retries_down_server`` is now deprecated in favor of
+  :ts:cv:`proxy.config.http.connect_attempts_max_retries_suspect_server`. The new name aligns with the
+  ``HostDBInfo::State::SUSPECT`` state it actually applies to (a recovering origin allowed a limited probe budget after
+  :ts:cv:`proxy.config.http.down_server.cache_time` elapses). When only the deprecated record is set, its value is mirrored
+  forward to the new record and a warning is logged. When both are set, the new record wins.
 - The entry ``proxy.config.http.connect.dead.policy`` has been renamed to :ts:cv:`proxy.config.http.connect.down.policy`.
 - The records.yaml entry ``proxy.config.http.parent_proxy.connect_attempts_timeout`` and
   ``proxy.config.http.post_connect_attempts_timeout`` have been removed. Instead use
@@ -163,6 +179,10 @@ The following :file:`records.yaml` changes have been made:
   :ts:cv:`proxy.config.http.header_field_max_size` have been changed to 32KB.
 - The records.yaml entry :ts:cv:`proxy.config.http.server_ports` now also accepts the
   ``allow-plain`` option
+- The records.yaml entry :ts:cv:`proxy.config.http.proxy_protocol_allowlist` is now enforced
+  only for connections on Proxy Protocol-enabled ports that begin with a Proxy Protocol
+  header preface. Non-Proxy Protocol traffic on flexible Proxy Protocol ports is no longer
+  restricted by this setting; use :file:`ip_allow.yaml` for general source-IP access control.
 - The records.yaml entry :ts:cv:`proxy.config.http.cache.max_open_write_retry_timeout` has been added to specify a timeout for starting a write to cache
 - The records.yaml entry :ts:cv:`proxy.config.net.per_client.max_connections_in` has
   been added to limit the number of connections from a client IP. This works the
@@ -173,7 +193,6 @@ The following :file:`records.yaml` changes have been made:
 - The records.yaml entry ``proxy.config.exec_thread.autoconfig`` has been renamed to :ts:cv:`proxy.config.exec_thread.autoconfig.enabled`.
 - The records.yaml entry ``proxy.config.tunnel.prewarm`` has been renamed to :ts:cv:`proxy.config.tunnel.prewarm.enabled`.
 - The records.yaml entry ``proxy.config.ssl.origin_session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.origin_session_cache.enabled`.
-- The records.yaml entry ``proxy.config.ssl.session_cache`` has been renamed to :ts:cv:`proxy.config.ssl.session_cache.mode`.
 - The records.yaml entry ``proxy.config.ssl.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.TLSv1_3.enabled`.
 - The records.yaml entry ``proxy.config.ssl.client.TLSv1_3`` has been renamed to :ts:cv:`proxy.config.ssl.client.TLSv1_3.enabled`.
 - The records.yaml entry :ts:cv:`proxy.config.allocator.iobuf_chunk_sizes` has been added
@@ -182,6 +201,18 @@ The following :file:`records.yaml` changes have been made:
   allocating iobuffers and cache volumes from hugepages if configured in the
   system.
 - The records.yaml entry ``proxy.config.plugin.compiler_path`` has been added to specify an optional compiler tool path for compiling plugins.
+
+The ``ssl_multicert.config`` file has been replaced with
+:file:`ssl_multicert.yaml`. The new file uses YAML format with a top-level
+``ssl_multicert`` key containing a sequence of certificate entries. Use
+``traffic_ctl config convert ssl_multicert`` to convert existing
+configuration files:
+
+.. code-block:: bash
+
+    traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml
+
+See :file:`ssl_multicert.yaml` for the new format documentation.
 
 The following changes have been made to the :file:`sni.yaml` file:
 

@@ -96,7 +96,7 @@ protected:
   bool setOutputComplete();
 
 private:
-  State *state_;
+  State *state_{nullptr};
 
   bool doRead();
   void handleEvent(int, void *);

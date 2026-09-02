@@ -153,6 +153,9 @@ sessions:
         - [ Connection, keep-alive ]
         - [ uuid, encoded_path_again ]
 
+    proxy-request:
+      expect: absent
+
     # The origin should not receive this request, but if it does, reply with a
     # non-404 response so we can detect it.
     <<: *200_ok_response
@@ -175,6 +178,9 @@ sessions:
         - [ Host, test.com ]
         - [ Connection, keep-alive ]
         - [ uuid, unencoded_path_again ]
+
+    proxy-request:
+      expect: absent
 
     # The origin should not receive this request, but if it does, reply with a
     # non-200 response so we can detect it.

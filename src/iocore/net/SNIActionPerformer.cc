@@ -200,8 +200,10 @@ TunnelDestination::SNIAction(SSL &ssl, const Context &ctx) const
     auto fixed_dst{destination};
     // Apply mapping functions to get the final destination.
     for (auto fnArrIndex : fnArrIndexes) {
+      bool has_dynamic_port = false;
       // Dispatch to the correct tunnel destination port function.
-      fixed_dst = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, port_is_dynamic);
+      fixed_dst        = fix_destination[fnArrIndex](fixed_dst, var_start_pos, ctx, ssl_netvc, has_dynamic_port);
+      port_is_dynamic |= has_dynamic_port;
     }
     tuns->set_tunnel_destination(fixed_dst, type, port_is_dynamic, tunnel_prewarm);
     Dbg(dbg_ctl_ssl_sni, "Destination now is [%s], configured [%s], fqdn [%s]", fixed_dst.c_str(), destination.c_str(), servername);
@@ -421,9 +423,14 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                ssl_vc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      client_ip = ssl_vc->get_proxy_protocol_src_addr();
-      break;
+      if (sockaddr const *proxy_ip = ssl_vc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+        client_ip = proxy_ip;
+        break;
+      }
     }
+  }
+  if (client_ip == nullptr) {
+    client_ip = ssl_vc->get_remote_addr();
   }
   swoc::IPAddr ip = swoc::IPAddr(client_ip);
 
@@ -439,10 +446,10 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
 }
 
 bool
-SNI_IpAllow::TestClientSNIAction(char const * /* servrername ATS_UNUSED */, IpEndpoint const &ep,
+SNI_IpAllow::TestClientSNIAction(char const * /* servrername ATS_UNUSED */, IpEndpoint const & /* ep ATS_UNUSED */,
                                  int & /* policy ATS_UNUSED */) const
 {
-  return ip_addrs.contains(swoc::IPAddr(ep));
+  return !ip_addrs.empty();
 }
 
 int
@@ -450,7 +457,7 @@ OutboundSNIPolicy::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) con
 {
   if (!policy.empty()) {
     if (auto snis = TLSSNISupport::getInstance(&ssl)) {
-      snis->hints_from_sni.outbound_sni_policy = policy;
+      snis->hints_from_sni.outbound_sni_policy.emplace(policy);
     }
   }
   return SSL_TLSEXT_ERR_OK;
@@ -471,6 +478,40 @@ ServerMaxEarlyData::SNIAction([[maybe_unused]] SSL &ssl, const Context & /* ctx 
   const uint32_t server_recv_max_early_data =
     server_max_early_data > 0 ? std::max(server_max_early_data, TLSEarlyDataSupport::DEFAULT_MAX_EARLY_DATA_SIZE) : 0;
   eds->update_early_data_config(&ssl, server_max_early_data, server_recv_max_early_data);
+#endif
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerSessionTicketEnabled::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+#if TS_HAS_TLS_SESSION_TICKET
+  if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+    const char *servername = snis->get_sni_server_name();
+    Dbg(dbg_ctl_ssl_sni, "Setting session ticket support from sni.yaml to %d for fqdn [%s]", session_ticket_enabled, servername);
+    snis->hints_from_sni.ssl_ticket_enabled = session_ticket_enabled;
+  }
+
+  // Apply the ticket enable/disable flag immediately so the current handshake
+  // sees the per-SNI override before TLS session ticket processing kicks in.
+  if (session_ticket_enabled != 0) {
+    SSL_clear_options(&ssl, SSL_OP_NO_TICKET);
+  } else {
+    SSL_set_options(&ssl, SSL_OP_NO_TICKET);
+  }
+#endif
+  return SSL_TLSEXT_ERR_OK;
+}
+
+int
+ServerSessionTicketNumber::SNIAction(SSL &ssl, const Context & /* ctx ATS_UNUSED */) const
+{
+#if TS_HAS_TLS_SESSION_TICKET
+  if (auto snis = TLSSNISupport::getInstance(&ssl)) {
+    const char *servername = snis->get_sni_server_name();
+    Dbg(dbg_ctl_ssl_sni, "Setting session ticket count from sni.yaml to %d for fqdn [%s]", session_ticket_number, servername);
+    snis->hints_from_sni.ssl_ticket_number = session_ticket_number;
+  }
 #endif
   return SSL_TLSEXT_ERR_OK;
 }

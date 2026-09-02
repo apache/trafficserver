@@ -30,7 +30,7 @@ refer to :ref:`partitioning-the-cache`.
 
 Before you can assign cache volumes to specific
 origin servers and/or domains, you must first partition your cache
-according to size and protocol in the :file:`volume.config`
+according to size and protocol in the :file:`storage.yaml`
 file.
 
 After you modify hosting.config, navigate to the Traffic Server bin
@@ -52,7 +52,7 @@ want to store on a particular partition (for example, ``mydomain.com``);
 and ``NUMBERS`` is a comma-separated list of the partitions on
 which you want to store the content that belongs to the origin server or
 domain listed. The partition numbers must be valid numbers listed in the
-:file:`volume.config`.
+:file:`storage.yaml`.
 
 **Note:** To allocate more than one partition to an origin server or
 domain, you must enter the partitions in a comma-separated list on one

@@ -459,7 +459,7 @@ http_txn_cont(TSCont contp, TSEvent event, void *edata)
           }
         }
       }
-      if (context->state.enabled_hooks & cripts::Callbacks::DO_TXN_CLOSE) {
+      if (context->state.enabled_hooks & cripts::Callbacks::DO_SEND_REQUEST) {
         CDebug("Entering do_send_request()");
         wrap_send_request(context, true, CaseArg);
       } else if (context->state.enabled_hooks & cripts::Callbacks::GLB_SEND_REQUEST) {
@@ -948,18 +948,20 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
   // levels of failure here? Non-fatal vs fatal?
   context->state.error.Execute(context);
 
+  bool url_modified = context->_urls.request.Modified();
+
   // For now, we always allocate the context, but a possible future optimization
   // could be to use stack allocation when there is only a do_remap() callback.
   if (!keep_context) {
     context->Release();
   }
 
-  // See if the Client URL was modified, which dicates the return code here.
-  if (context->_urls.request.Modified()) {
-    context->p_instance.debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
+  // Log via the live instance, not the (possibly freed) context.
+  if (url_modified) {
+    inst->debug("Client::URL was modified, returning TSREMAP_DID_REMAP");
     return TSREMAP_DID_REMAP;
   } else {
-    context->p_instance.debug("Client::URL was NOT modified, returning TSREMAP_NO_REMAP");
+    inst->debug("Client::URL was NOT modified, returning TSREMAP_NO_REMAP");
     return TSREMAP_NO_REMAP;
   }
 }

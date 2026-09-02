@@ -37,7 +37,13 @@ ts.addSSLfile("ssl/server.key")
 # Need no remap rules.  Everything should be processed by sni
 
 # Make sure the TS server certs are different from the origin certs
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.records_config.update(
     {
@@ -76,7 +82,7 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Setting groups list from server_groups_list to x25519", "Should log setting the server groups")
-tr.Processes.Default.Streams.all = Testers.IncludesExpression(
+tr.Processes.Default.Streams.All = Testers.IncludesExpression(
     f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection")
 
 tr = Test.AddTestRun("Test 1: fail")
@@ -102,6 +108,6 @@ if Condition.HasOpenSSLVersion("3.5.0"):
     tr.StillRunningAfter = ts
     ts.Disk.traffic_out.Content += Testers.ContainsExpression(
         "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups")
-    tr.Processes.Default.Streams.all = Testers.IncludesExpression(
+    tr.Processes.Default.Streams.All = Testers.IncludesExpression(
         f"SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768",
         f"Curl should log using X25519MLKEM768 in the SSL connection")

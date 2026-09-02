@@ -28,15 +28,18 @@
 #include "iocore/net/quic/QUICStreamVCAdapter.h"
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3FrameCollector.h"
+#include "proxy/http3/Http3HeaderFramer.h"
+#include "proxy/http3/Http3DataFramer.h"
+#include "proxy/http3/Http3ProtocolEnforcer.h"
+#include "proxy/http3/Http3HeaderVIOAdaptor.h"
+#include "proxy/http3/Http3StreamDataVIOAdaptor.h"
+
+#include <functional>
 
 class QUICStreamIO;
 class HQSession;
 class Http09Session;
 class Http3Session;
-class Http3HeaderFramer;
-class Http3DataFramer;
-class Http3HeaderVIOAdaptor;
-class Http3StreamDataVIOAdaptor;
 
 class HQTransaction : public ProxyTransaction
 {
@@ -53,6 +56,8 @@ public:
   void transaction_done() override;
   void release() override;
   int  get_transaction_id() const override;
+  void stream_closed();
+  void set_stream_cleanup(std::function<void()> cleanup);
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
 
@@ -81,6 +86,7 @@ protected:
   void            _schedule_read_complete_event();
   void            _unschedule_read_complete_event();
   void            _close_read_complete_event(Event *e);
+  void            _schedule_read_event();
   void            _schedule_write_ready_event();
   void            _unschedule_write_ready_event();
   void            _close_write_ready_event(Event *e);
@@ -90,12 +96,16 @@ protected:
   void            _signal_event(int event, Event *e);
   void            _signal_read_event();
   void            _signal_write_event();
+  bool            _is_write_buffer_flushed();
+  virtual bool    _is_closed() const = 0;
+  bool            _is_stream_closed() const;
   void            _delete_if_possible();
 
   EThread *_thread = nullptr;
 
   MIOBuffer                    _read_vio_buf{BUFFER_SIZE_INDEX_4K};
   QUICStreamVCAdapter::IOInfo &_info;
+  QUICStreamId                 _stream_id = 0;
 
   size_t _sent_bytes = 0;
 
@@ -106,7 +116,10 @@ protected:
   Event *_write_ready_event    = nullptr;
   Event *_write_complete_event = nullptr;
 
-  bool _transaction_done = false;
+  bool _transaction_done     = false;
+  bool _event_handler_active = false;
+
+  std::function<void()> _stream_cleanup;
 };
 
 class Http3Transaction : public HQTransaction
@@ -117,10 +130,13 @@ public:
   Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info);
   virtual ~Http3Transaction();
 
-  int state_stream_open(int event, Event *data) override;
-  int state_stream_closed(int event, Event *data) override;
+  VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = nullptr,
+                   bool owner = false) override;
+  int  state_stream_open(int event, Event *data) override;
+  int  state_stream_closed(int event, Event *data) override;
 
   void do_io_close(int lerrno = -1) override;
+  void on_header_decode_complete();
 
   bool is_response_header_sent() const;
   bool is_response_body_sent() const;
@@ -131,14 +147,17 @@ public:
 private:
   int64_t _process_read_vio() override;
   int64_t _process_write_vio() override;
+  bool    _is_closed() const override;
+  void    _handle_error(const Http3Error &error);
 
   // These are for HTTP/3
-  Http3FrameDispatcher       _frame_dispatcher;
-  Http3FrameCollector        _frame_collector;
-  Http3FrameGenerator       *_header_framer  = nullptr;
-  Http3FrameGenerator       *_data_framer    = nullptr;
-  Http3HeaderVIOAdaptor     *_header_handler = nullptr;
-  Http3StreamDataVIOAdaptor *_data_handler   = nullptr;
+  Http3FrameDispatcher      _frame_dispatcher;
+  Http3FrameCollector       _frame_collector;
+  Http3ProtocolEnforcer     _protocol_enforcer;
+  Http3HeaderFramer         _header_framer;
+  Http3DataFramer           _data_framer;
+  Http3HeaderVIOAdaptor     _header_handler;
+  Http3StreamDataVIOAdaptor _data_handler;
 };
 
 /**
@@ -160,6 +179,7 @@ public:
 private:
   int64_t _process_read_vio() override;
   int64_t _process_write_vio() override;
+  bool    _is_closed() const override;
 
   // These are for HTTP/0.9
   bool _protocol_detected          = false;

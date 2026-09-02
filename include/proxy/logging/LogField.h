@@ -23,10 +23,14 @@
 
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <optional>
 #include <string_view>
 #include <string>
 #include <variant>
 #include <tuple>
+#include <vector>
 
 #include "tscore/ink_inet.h"
 #include "tscore/ink_platform.h"
@@ -85,18 +89,28 @@ public:
   using UnmarshalFuncWithSlice = int (*)(char **, char *, int, LogSlice *, LogEscapeType);
   using UnmarshalFuncWithMap   = int (*)(char **, char *, int, const Ptr<LogFieldAliasMap> &);
   using SetFunc                = void (LogAccess::*)(char *, int);
-  using CustomMarshalFunc      = int (*)(void *, char *);
+  using CustomMarshalFunc      = std::function<int(void *, char *)>;
   using CustomUnmarshalFunc    = std::tuple<int, int> (*)(char **, char *, int);
 
   using VarUnmarshalFuncSliceOnly = std::variant<UnmarshalFunc, UnmarshalFuncWithSlice>;
   using VarUnmarshalFunc          = std::variant<decltype(nullptr), UnmarshalFunc, UnmarshalFuncWithSlice, UnmarshalFuncWithMap>;
 
-  enum Type {
-    sINT = 0,
-    dINT,
-    STRING,
-    IP, ///< IP Address.
-    N_TYPES
+  /** Field value type.
+
+      These values are also the on-wire type codes of the v3 binary log schema
+      (see LogBufferHeader::fmt_fieldtypes() and the v3 format docs under
+      doc/developer-guide/logging-architecture/), so they are a published
+      contract: append before N_TYPES, never renumber. 0 is reserved for INVALID
+      so a zero-filled schema byte can't pass as a real type. The code describes
+      only framing (how to walk/skip a field), never the value's meaning.
+  */
+  enum class Type : uint8_t {
+    INVALID = 0, ///< Reserved: never written; a reader treats 0 (or any unknown code) as unframmable and stops.
+    sINT    = 1, ///< one int64_t, 8 bytes (host byte order).
+    dINT    = 2, ///< two int64_t (16 bytes).
+    STRING  = 3, ///< NUL-terminated, 8-byte padded.
+    IP      = 4, ///< uint16_t family + family-sized address, 8-byte padded.
+    N_TYPES = 5, ///< Internal bound (asserts / name table); NOT a wire code.
   };
 
   enum Container {
@@ -129,6 +143,12 @@ public:
     N_AGGREGATES,
   };
 
+  struct HeaderField {
+    std::string name;
+    Container   container = NO_CONTAINER;
+    LogSlice    slice;
+  };
+
   LogField(const char *name, const char *symbol, Type type, MarshalFunc marshal, VarUnmarshalFuncSliceOnly unmarshal,
            SetFunc _setFunc = nullptr);
 
@@ -138,6 +158,8 @@ public:
   LogField(const char *name, const char *symbol, Type type, CustomMarshalFunc custom_marshal, CustomUnmarshalFunc custom_unmarshal);
 
   LogField(const char *field, Container container);
+  LogField(const char *symbol, std::vector<HeaderField> header_fields, std::unique_ptr<LogField> fallback_field = nullptr,
+           std::optional<std::string> fallback_default = std::nullopt);
   LogField(const LogField &rhs);
   ~LogField();
 
@@ -193,27 +215,38 @@ public:
   static Container valid_container_name(char *name);
   static Aggregate valid_aggregate_name(char *name);
   static bool      fieldlist_contains_aggregates(const char *fieldlist);
+  static bool      isHeaderContainer(Container container);
   static bool      isContainerUpdateFieldSupported(Container container);
 
 private:
-  char                 *m_name;
-  char                 *m_symbol;
-  Type                  m_type;
-  Container             m_container;
-  MarshalFunc           m_marshal_func;   // place data into buffer
-  VarUnmarshalFunc      m_unmarshal_func; // create a string of the data
-  Aggregate             m_agg_op;
-  int64_t               m_agg_cnt;
-  int64_t               m_agg_val;
-  TSMilestonesType      m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
-  TSMilestonesType      m_milestone2; ///< Second milestone for MSDMS
-  bool                  m_time_field;
-  Ptr<LogFieldAliasMap> m_alias_map; // map sINT <--> string
-  SetFunc               m_set_func;
-  TSMilestonesType      milestone_from_m_name();
-  int                   milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
-  CustomMarshalFunc     m_custom_marshal_func   = nullptr;
-  CustomUnmarshalFunc   m_custom_unmarshal_func = nullptr;
+  char                      *m_name;
+  char                      *m_symbol;
+  Type                       m_type;
+  Container                  m_container;
+  MarshalFunc                m_marshal_func;   // place data into buffer
+  VarUnmarshalFunc           m_unmarshal_func; // create a string of the data
+  Aggregate                  m_agg_op;
+  int64_t                    m_agg_cnt;
+  int64_t                    m_agg_val;
+  TSMilestonesType           m_milestone1; ///< Used for MS and MSDMS as the first (or only) milestone.
+  TSMilestonesType           m_milestone2; ///< Second milestone for MSDMS
+  bool                       m_time_field;
+  Ptr<LogFieldAliasMap>      m_alias_map; // map sINT <--> string
+  SetFunc                    m_set_func;
+  TSMilestonesType           milestone_from_m_name();
+  int                        milestones_from_m_name(TSMilestonesType *m1, TSMilestonesType *m2);
+  CustomMarshalFunc          m_custom_marshal_func;
+  CustomUnmarshalFunc        m_custom_unmarshal_func = nullptr;
+  std::vector<HeaderField>   m_fallback_header_fields;
+  std::unique_ptr<LogField>  m_fallback_field;
+  std::optional<std::string> m_fallback_default;
+  bool                       is_field_fallback() const;
+  int                        select_fallback_selector(LogAccess *lad) const;
+  unsigned                   marshal_fallback_header_field(LogAccess *lad, const HeaderField &field, char *buf) const;
+  unsigned                   marshal_fallback_default(char *buf) const;
+
+  static constexpr int FALLBACK_DEFAULT_SELECTOR = -1;
+  static constexpr int FALLBACK_FIELD_SELECTOR   = -2;
 
 public:
   LINK(LogField, link);

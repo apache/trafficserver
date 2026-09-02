@@ -17,6 +17,32 @@
 meta:
   version: "1.0"
 
+autest:
+  description: 'Verify cached duplicate headers are preserved across stale revalidation'
+
+  server:
+    name: 'cached-header-server'
+
+  client:
+    name: 'cached-header-client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache,x-cache-key,via'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.response_via_str: 3
+
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
 # Note 1:
 # When testing duplicate headers here, replay files cannot
 # handle two seperate values. So make sure that duplicate headers
@@ -55,14 +81,14 @@ sessions:
           headers:
             fields:
               - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
               - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
               - [Content-Length, { value: 3, as: equal }]
               - [Content-Type, { value: application/javascript, as: equal }]
               - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
               - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
               - [X-Cache, { value: miss, as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
 
       # Test 1: Cache hit stale with content-type after duplicate headers
       - client-request:
@@ -95,14 +121,14 @@ sessions:
           headers:
             fields:
               - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
               - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
               - [Content-Length, { value: 3, as: equal }]
               - [Content-Type, { value: application/javascript, as: equal }]
               - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
               - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
               - [X-Cache, { value: hit-stale, as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
 
       # Test 2: Cache fill with content-type before duplicate headers
       - client-request:
@@ -135,14 +161,14 @@ sessions:
           headers:
             fields:
               - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
               - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
               - [Content-Length, { value: 3, as: equal }]
               - [Content-Type, { value: application/javascript, as: equal }]
               - [Expires, { value: "Mon, 23 Sep 2024 14:22:44 GMT", as: equal }]
               - [Last-Modified, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
               - [X-Cache, { value: miss, as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
 
       # Test 3: Cache hit stale with content-type before duplicate headers
       - client-request:
@@ -175,8 +201,8 @@ sessions:
           headers:
             fields:
               - [Date, { value: "Mon, 23 Sep 2024 14:22:14 GMT", as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
-              - [X-Reveal-Duplicate, { value: same, as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
+              - [X-Reveal-Duplicate, { value: "same, same", as: equal }]
               - [Cache-Control, { value: "max-age=1, stale-if-error=1, stale-while-revalidate=1, public", as: equal }]
               - [Content-Length, { value: 3, as: equal }]
               - [Content-Type, { value: application/javascript, as: equal }]

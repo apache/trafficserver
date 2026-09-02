@@ -27,11 +27,9 @@ sessions:
 
 # HTTP/1.1 over TLS.
 - protocol:
-  - name: tls
-    sni: www.example.com
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: www.example.com
   transactions:
 
   # This test has more to do with ALPN configuration than the transactions. The
@@ -68,13 +66,9 @@ sessions:
 
 # HTTP/2 over TLS.
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: www.example.com
-  - name: tcp
-  - name: ip
-
+    stack: http2
+    tls:
+      sni: www.example.com
   transactions:
 
   # This test has more to do with ALPN configuration than the transactions. The

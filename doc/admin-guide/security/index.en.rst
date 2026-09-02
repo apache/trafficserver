@@ -121,7 +121,7 @@ Client/|TS| connections, you must do the following:
            private_key:
              path: /opt/ts/etc/ssl/keys
 
-#. Add an entry to :file:`ssl_multicert.config` for each certificate and key
+#. Add an entry to :file:`ssl_multicert.yaml` for each certificate and key
    which your |TS| system will be using to terminate SSL connections
    with clients. ::
 
@@ -302,7 +302,7 @@ a ticket key file as a reverse queue in 48-byte chunks.
 
 #. *Optional*: Delete the last ticket key from the ticket key file.
 
-#. Touch :file:`ssl_multicert.config` to indicate that the SSL configuration is stale.
+#. Touch :file:`ssl_multicert.yaml` to indicate that the SSL configuration is stale.
 
 #. Run the command :option:`traffic_ctl config reload` to apply the new ticket key.
 
@@ -335,7 +335,7 @@ Authority Information Access field of the signed certificate. For example::
                 CA Issuers - URI:http://cacerts.digicert.com/DigiCertSHA2SecureServerCA.crt
 
 |TS| can also use prefetched OCSP stapling responses if ssl_ocsp_name parameter
-is used in :file:`ssl_multicert.config`. Take into account that when using prefetched
+is used in :file:`ssl_multicert.yaml`. Take into account that when using prefetched
 OCSP stapling responses, |TS| will not refresh them and it should be done
 externally. This can be done using OpenSSL::
 

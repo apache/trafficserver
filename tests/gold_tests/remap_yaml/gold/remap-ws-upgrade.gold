@@ -1,0 +1,11 @@
+``
+> GET /chat HTTP/1.1
+> Host: ``
+> User-Agent: curl/``
+``
+< HTTP/1.1 101 Switching Protocols
+< Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=
+< Date: ``
+< Connection: Upgrade
+< Upgrade: websocket
+``

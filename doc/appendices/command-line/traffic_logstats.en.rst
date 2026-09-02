@@ -35,6 +35,9 @@ produce metrics for total and per origin requests. Currently, this utility
 only supports parsing and processing the Squid binary log format, or a custom
 format that is compatible with the initial log fields of the Squid format.
 
+Both version 2 and version 3 binary log segments are supported. See
+:ref:`binary-log-v3-format` for the self-describing v3 format.
+
 Output can either be a human readable text file, or a JSON format. Parsing can
 be done incrementally, and :program:`traffic_logstats` supports restarting
 where it left off previously (state is stored in an external file). This is

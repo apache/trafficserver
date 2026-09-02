@@ -1,0 +1,114 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: global JA3 servernames test.
+#
+# The plugin is loaded globally with --servernames jax.server.test.
+# In handle_client_hello, if the incoming SNI is not in the allowlist the
+# plugin calls TSVConnReenable and returns immediately.  No JAxContext is
+# ever created for that vconn, so handle_read_request_hdr returns early
+# ("No context. Skipping.") without touching any headers.
+#
+# Two TLS sessions reach the same backend through different remap rules:
+#   jax.server.test          – SNI is IN the allowlist  → headers added
+#   jax-filtered.server.test – SNI NOT in the allowlist → headers absent
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: SNI matches the allowlist – fingerprint headers must be added.
+- protocol:
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, servernames-in-filter ]
+
+    # SNI is in the allowlist – plugin must have computed and set both headers.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 10 ]
+        - [ X-Response, in-filter-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'in-filter-response', as: equal } ]
+
+# Session 2: SNI does NOT match the allowlist – plugin skips the connection.
+- protocol:
+  - name: tls
+    sni: jax-filtered.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      method: GET
+      url: /resource
+      version: '1.1'
+      headers:
+        fields:
+        - [ Host, jax-filtered.server.test ]
+        - [ Content-Length, 0 ]
+        - [ uuid, servernames-filtered ]
+
+    # SNI is not in the allowlist – plugin must not have touched either header.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: absent } ]
+        - [ x-jax-via, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 12 ]
+        - [ X-Response, filtered-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, { value: 'filtered-response', as: equal } ]

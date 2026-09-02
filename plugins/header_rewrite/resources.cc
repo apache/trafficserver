@@ -32,8 +32,8 @@
 void
 Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 {
+  this->hook = hook;
   Dbg(pi_dbg_ctl, "Building resources, hook=%s", TSHttpHookNameLookup(hook));
-
   Dbg(pi_dbg_ctl, "Gathering resources for hook %s with IDs %d", TSHttpHookNameLookup(hook), ids);
 
   // If we need the client request headers, make sure it's also available in the client vars.
@@ -42,6 +42,14 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
     if (TSHttpTxnClientReqGet(state.txnp, &client_bufp, &client_hdr_loc) != TS_SUCCESS) {
       Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
       return;
+    }
+  }
+
+  if (ids & RSRC_SERVER_REQUEST_HEADERS) {
+    Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
+    if (TSHttpTxnServerReqGet(state.txnp, &server_bufp, &server_hdr_loc) != TS_SUCCESS) {
+      Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for server request");
+      // Not a fatal error - server request may not be available in all hooks
     }
   }
 
@@ -63,19 +71,24 @@ Resources::gather(const ResourceIDs ids, TSHttpHookID hook)
 
   case TS_HTTP_SEND_REQUEST_HDR_HOOK:
     Dbg(pi_dbg_ctl, "Processing TS_HTTP_SEND_REQUEST_HDR_HOOK");
-    // Read request headers to server
     if (ids & RSRC_SERVER_REQUEST_HEADERS) {
-      Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
-      if (TSHttpTxnServerReqGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
-        Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
-        return;
+      if (server_bufp && server_hdr_loc) {
+        bufp    = server_bufp;
+        hdr_loc = server_hdr_loc;
+      } else {
+        Dbg(pi_dbg_ctl, "\tAdding TXN server request header buffers");
+        if (TSHttpTxnServerReqGet(state.txnp, &bufp, &hdr_loc) != TS_SUCCESS) {
+          Dbg(pi_dbg_ctl, "could not gather bufp/hdr_loc for request");
+          return;
+        }
       }
     }
     break;
 
   case TS_HTTP_READ_REQUEST_HDR_HOOK:
   case TS_HTTP_PRE_REMAP_HOOK:
-    // Read request from client
+  case TS_HTTP_POST_REMAP_HOOK:
+    // Read request from client (post-remap this is the remapped request)
     if (ids & RSRC_CLIENT_REQUEST_HEADERS) {
       bufp    = client_bufp;
       hdr_loc = client_hdr_loc;
@@ -169,6 +182,12 @@ Resources::destroy()
   if (client_bufp && (client_bufp != bufp)) {
     if (client_hdr_loc && (client_hdr_loc != hdr_loc)) { // TODO: Is this check really necessary?
       TSHandleMLocRelease(client_bufp, TS_NULL_MLOC, client_hdr_loc);
+    }
+  }
+
+  if (server_bufp && (server_bufp != bufp) && (server_bufp != client_bufp)) {
+    if (server_hdr_loc && (server_hdr_loc != hdr_loc) && (server_hdr_loc != client_hdr_loc)) {
+      TSHandleMLocRelease(server_bufp, TS_NULL_MLOC, server_hdr_loc);
     }
   }
 

@@ -55,8 +55,17 @@ if(BUILD_TESTING)
     unit_tests/unit_test_main.cc
   )
   target_link_libraries(
-    test_proxy_hdrs PRIVATE ts::hdrs ts::tscore ts::inkevent libswoc::libswoc Catch2::Catch2WithMain lshpack
+    test_proxy_hdrs
+    PRIVATE ts::hdrs
+            ts::tscore
+            ts::inkevent
+            libswoc::libswoc
+            Catch2::Catch2WithMain
+            lshpack
+            configmanager
   )
+  # For the ls-hpack decoder parity tests.
+  target_include_directories(test_proxy_hdrs PRIVATE ${CMAKE_SOURCE_DIR}/lib)
   add_catch2_test(NAME test_proxy_hdrs COMMAND test_proxy_hdrs)
 
   add_executable(test_proxy_hdrs_xpack unit_tests/test_XPACK.cc)

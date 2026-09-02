@@ -27,6 +27,7 @@ Test the reported type of HTTP transactions and tunnels
 '''
 
 Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
+
 # Define default ATS. Disable the cache to simplify the test.
 ts = Test.MakeATSProcess("ts", enable_cache=False, enable_tls=True)
 ts.addSSLfile("../tls/ssl/server.pem")
@@ -58,13 +59,20 @@ ts.Disk.records_config.update(
         'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.sni_yaml.AddLines([
     'sni:',
     '- fqdn: tunnel-test',
     "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
 ])
+ts.addPrivateConnectAllowYaml()
 
 # Set up simple forwarding proxy to keep track of TLS bytes for both
 # directions

@@ -33,6 +33,7 @@
 
 #include <string_view>
 #include <optional>
+#include <memory>
 
 #include "tscore/ink_platform.h"
 #include "iocore/eventsystem/EventSystem.h"
@@ -194,6 +195,11 @@ public:
   HttpCacheSM     &get_cache_sm(); // Added to get the object of CacheSM YTS Team, yamsat
   std::string_view get_outbound_sni() const;
   std::string_view get_outbound_cert() const;
+  /// Return the name used by outbound TLS certificate name verification. This
+  /// usually matches @c get_outbound_sni() above, but adds fallbacks for reuse
+  /// checks that run after the original NetVCOptions are no longer being
+  /// built for those reuse situations.
+  std::string_view get_outbound_sni_for_cert_verification() const;
 
   void init(bool from_early_data = false);
 
@@ -306,7 +312,7 @@ public:
 
   // This unfortunately can't go into the t_state, because of circular dependencies. We could perhaps refactor
   // this, with a lot of work, but this is easier for now.
-  UrlRewrite *m_remap = nullptr;
+  std::shared_ptr<UrlRewrite> m_remap;
 
   History<HISTORY_DEFAULT_SIZE> history;
   NetVConnection *
@@ -414,7 +420,7 @@ private:
   void do_cache_prepare_write_transform();
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
-  void do_cache_delete_all_alts(Continuation *cont);
+  void do_cache_delete_all_alts();
   void do_auth_callout();
   int  do_api_callout();
   int  do_api_callout_internal();
@@ -483,10 +489,9 @@ private:
    */
   void setup_client_request_plugin_agents(HttpTunnelProducer *p, int num_header_bytes = 0);
 
-  HttpTransact::StateMachineAction_t last_action     = HttpTransact::StateMachineAction_t::UNDEFINED;
-  int (HttpSM::*m_last_state)(int event, void *data) = nullptr;
-  virtual void set_next_state();
-  void         call_transact_and_set_next_state(TransactEntryFunc_t f);
+  HttpTransact::StateMachineAction_t last_action = HttpTransact::StateMachineAction_t::UNDEFINED;
+  virtual void                       set_next_state();
+  void                               call_transact_and_set_next_state(TransactEntryFunc_t f);
 
   bool    is_http_server_eos_truncation(HttpTunnelProducer *);
   bool    is_bg_fill_necessary(HttpTunnelConsumer *c);
@@ -564,11 +569,7 @@ private:
   APIHook const *cur_hook    = nullptr;
   HttpHookState  hook_state;
 
-  // Continuation time keeper
-  int64_t prev_hook_start_time = 0;
-
   int            reentrancy_count = 0;
-  int            cur_hooks        = 0;
   HttpApiState_t callout_state    = HttpApiState_t::NO_CALLOUT;
 
   // api_hooks must not be changed directly

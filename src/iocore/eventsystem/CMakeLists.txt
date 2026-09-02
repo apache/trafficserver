@@ -53,9 +53,9 @@ endif()
 
 if(BUILD_TESTING)
   add_executable(test_EventSystem unit_tests/test_EventSystem.cc)
-  target_link_libraries(test_EventSystem ts::inkevent Catch2::Catch2WithMain)
+  target_link_libraries(test_EventSystem ts::inkevent configmanager Catch2::Catch2WithMain)
   add_executable(test_IOBuffer unit_tests/test_IOBuffer.cc)
-  target_link_libraries(test_IOBuffer ts::inkevent Catch2::Catch2WithMain)
+  target_link_libraries(test_IOBuffer ts::inkevent configmanager Catch2::Catch2WithMain)
 
   add_executable(test_MIOBufferWriter unit_tests/test_MIOBufferWriter.cc)
   target_link_libraries(test_MIOBufferWriter libswoc::libswoc Catch2::Catch2WithMain)
@@ -63,6 +63,14 @@ if(BUILD_TESTING)
   add_catch2_test(NAME test_EventSystem COMMAND test_EventSystem)
   add_catch2_test(NAME test_IOBuffer COMMAND test_IOBuffer)
   add_catch2_test(NAME test_MIOBufferWriter COMMAND test_MIOBufferWriter)
+
+  add_executable(test_Continuation unit_tests/test_Continuation.cc)
+  target_link_libraries(test_Continuation ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_Continuation COMMAND test_Continuation)
+
+  add_executable(test_Action unit_tests/test_Action.cc)
+  target_link_libraries(test_Action ts::inkevent configmanager Catch2::Catch2WithMain)
+  add_catch2_test(NAME test_Action COMMAND test_Action)
 
 endif()
 

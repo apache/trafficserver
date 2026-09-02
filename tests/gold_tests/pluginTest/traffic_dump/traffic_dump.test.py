@@ -30,7 +30,8 @@ schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema
 
 # Configure the origin server.
 replay_file = "replay/traffic_dump.yaml"
-server = Test.MakeVerifierServerProcess("server", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+server = Test.MakeVerifierServerProcess(
+    "server", "replay/traffic_dump_server.yaml", ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
 
 # Define ATS and configure it.
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -59,7 +60,13 @@ ts.Disk.records_config.update(
         'proxy.config.http.connect_ports': f"{server.Variables.http_port}",
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLines(
     [
@@ -68,6 +75,7 @@ ts.Disk.remap_config.AddLines(
         f'map http://www.connect_target.com/ http://127.0.0.1:{server.Variables.http_port}',
         f'map / http://127.0.0.1:{server.Variables.http_port}',
     ])
+ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET, POST ]')
 
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(

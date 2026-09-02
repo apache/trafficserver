@@ -83,8 +83,13 @@ class quiche_qlog_Test:
                     qlog:
                       file_base: log/test_qlog # we expect to have log/test_qlog-<TRACE ID>.sqlog
                   ''')
-        self._ts.Disk.ssl_multicert_config.AddLine(
-            f'dest_ip=* ssl_cert_name={ts.Variables.SSLDir}/server.pem ssl_key_name={ts.Variables.SSLDir}/server.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            f"""
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: {ts.Variables.SSLDir}/server.pem
+    ssl_key_name: {ts.Variables.SSLDir}/server.key
+""".split("\n"))
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 

@@ -53,7 +53,13 @@ ts.Disk.remap_config.AddLine(
 ts.Disk.remap_config.AddLine(
     'map https://reallyreallyreallyreallylong.com http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -96,13 +102,13 @@ if not Condition.CurlUsingUnixDomainSocket():
         ts=ts)
     tr.Processes.Default.ReturnCode = 0
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
+# Wait for the final log line to be written.
 #
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'))
-test_run.Processes.Default.ReturnCode = 0
+Test.AddAwaitFileContainsTestRun(
+    'Await new log field output.',
+    os.path.join(ts.Variables.LOGDIR, 'test_new_log_flds.log'),
+    r'reallyreallyreallyreallylong\.com$',
+)
 
 # Validate generated log.
 #

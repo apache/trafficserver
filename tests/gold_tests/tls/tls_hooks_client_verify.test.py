@@ -45,10 +45,18 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
+        # The origin serves a self-signed cert; this test verifies inbound client certs.
+        'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
         'proxy.config.url_remap.pristine_host_hdr': 1
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLine(
     'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
@@ -81,7 +89,7 @@ tr.MakeCurlCommand(
     .format(ts.Variables.ssl_port),
     ts=ts)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.all = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
 tr2 = Test.AddTestRun("request bad name")
 tr2.StillRunningAfter = ts
@@ -91,7 +99,7 @@ tr2.MakeCurlCommand(
     .format(ts.Variables.ssl_port),
     ts=ts)
 tr2.Processes.Default.ReturnCode = 35
-tr2.Processes.Default.Streams.all = Testers.ContainsExpression("error", "Curl attempt should have failed")
+tr2.Processes.Default.Streams.All = Testers.ContainsExpression("error", "Curl attempt should have failed")
 
 tr3 = Test.AddTestRun("request badly signed cert")
 tr3.Setup.Copy("ssl/server.pem")
@@ -103,7 +111,7 @@ tr3.MakeCurlCommand(
         ts.Variables.ssl_port),
     ts=ts)
 tr3.Processes.Default.ReturnCode = 35
-tr3.Processes.Default.Streams.all = Testers.ContainsExpression("error", "Curl attempt should have failed")
+tr3.Processes.Default.Streams.All = Testers.ContainsExpression("error", "Curl attempt should have failed")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     r"Client verify callback 0 [\da-fx]+? - event is good good HS", "verify callback happens 2 times")

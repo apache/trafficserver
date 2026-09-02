@@ -1,0 +1,207 @@
+/** @file
+
+  ConfigContext implementation
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#include "mgmt/config/ConfigContext.h"
+#include "mgmt/config/ConfigReloadTrace.h"
+#include "mgmt/config/ReloadCoordinator.h"
+
+#include <yaml-cpp/yaml.h>
+
+// Defined here (not = default in header) so that YAML::Node ctor/dtor/copy
+// symbols are only emitted in this TU (part of librecords, which links yaml-cpp).
+// Otherwise every consumer of RecCore.h would need yaml-cpp at link time.
+ConfigContext::ConfigContext()                                 = default;
+ConfigContext::~ConfigContext()                                = default;
+ConfigContext::ConfigContext(ConfigContext const &)            = default;
+ConfigContext &ConfigContext::operator=(ConfigContext const &) = default;
+
+ConfigContext::ConfigContext(std::shared_ptr<ConfigReloadTask> t, std::string_view description, std::string_view filename)
+  : _task(t)
+{
+  if (auto p = _task.lock()) {
+    if (!description.empty()) {
+      p->set_description(description);
+    }
+    if (!filename.empty()) {
+      p->set_filename(filename);
+    }
+  }
+}
+
+bool
+ConfigContext::is_terminal() const
+{
+  if (auto p = _task.lock()) {
+    return ConfigReloadTask::is_terminal(p->get_state());
+  }
+  return true; // expired task is supposed to be terminal
+}
+
+void
+ConfigContext::in_progress(std::string_view text)
+{
+  if (auto p = _task.lock()) {
+    p->set_in_progress();
+    if (!text.empty()) {
+      p->log(DL_Note, std::string{text});
+    }
+  }
+}
+
+void
+ConfigContext::log(std::string_view text)
+{
+  if (auto p = _task.lock()) {
+    p->log(std::string{text});
+  }
+}
+
+void
+ConfigContext::log(DiagsLevel level, std::string_view text)
+{
+  if (auto p = _task.lock()) {
+    p->log(level, std::string{text});
+  }
+}
+
+void
+ConfigContext::log(swoc::Errata const &errata)
+{
+  if (auto p = _task.lock()) {
+    for (auto const &annotation : errata) {
+      p->log(static_cast<DiagsLevel>(static_cast<int>(annotation.severity())), std::string{annotation.text()});
+    }
+  }
+}
+
+void
+ConfigContext::complete(std::string_view text)
+{
+  if (auto p = _task.lock()) {
+    p->set_completed();
+    if (!text.empty()) {
+      p->log(DL_Note, std::string{text});
+    }
+  }
+}
+
+void
+ConfigContext::fail(std::string_view reason)
+{
+  if (auto p = _task.lock()) {
+    p->set_failed();
+    if (!reason.empty()) {
+      p->log(DL_Error, std::string{reason});
+    }
+  }
+}
+
+void
+ConfigContext::fail(swoc::Errata const &errata, std::string_view summary)
+{
+  if (auto p = _task.lock()) {
+    p->set_failed();
+    // Log the summary first
+    if (!summary.empty()) {
+      p->log(DL_Error, std::string{summary});
+    }
+    // Log each error from the errata
+    for (auto const &err : errata) {
+      p->log(static_cast<DiagsLevel>(static_cast<int>(err.severity())), std::string{err.text()});
+    }
+  }
+}
+
+std::string
+ConfigContext::get_description() const
+{
+  if (auto p = _task.lock()) {
+    return p->get_description();
+  }
+  return {};
+}
+
+std::string
+ConfigContext::get_reload_token() const
+{
+  if (auto p = _task.lock()) {
+    return p->get_token();
+  }
+  return {};
+}
+
+ConfigContext
+ConfigContext::add_dependent_ctx(std::string_view description, std::string_view filename)
+{
+  if (auto p = _task.lock()) {
+    auto child = p->add_child(description, filename);
+    // child task will get the full content of the parent task
+    // TODO: eventually we can have a "key" passed so child module
+    // only gets their node of interest.
+    child._supplied_yaml     = _supplied_yaml;
+    child._reload_directives = _reload_directives;
+    return child;
+  }
+  return {};
+}
+
+void
+ConfigContext::set_supplied_yaml(YAML::Node node)
+{
+  _supplied_yaml = node; // YAML::Node has no move semantics; copy is cheap (ref-counted).
+}
+
+void
+ConfigContext::set_plugin_name(std::string_view name)
+{
+  if (auto p = _task.lock()) {
+    p->set_plugin_name(name);
+  }
+}
+
+YAML::Node
+ConfigContext::supplied_yaml() const
+{
+  return _supplied_yaml;
+}
+
+void
+ConfigContext::set_reload_directives(YAML::Node node)
+{
+  _reload_directives = node;
+}
+
+YAML::Node
+ConfigContext::reload_directives() const
+{
+  return _reload_directives;
+}
+
+namespace config
+{
+ConfigContext
+make_config_reload_context(std::string_view description, std::string_view filename)
+{
+  return ReloadCoordinator::Get_Instance().create_config_context({}, description, filename);
+}
+} // namespace config

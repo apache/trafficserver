@@ -24,6 +24,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include "config/config_result.h"
 #include "tscore/List.h"
 
 enum class PluginDynamicReloadMode { OFF, ON, COUNT };
@@ -32,6 +34,30 @@ enum class PluginDynamicReloadMode { OFF, ON, COUNT };
 void parsePluginConfig();
 
 bool isPluginDynamicReloadEnabled();
+
+struct PluginYAMLEntry {
+  std::string              path;
+  bool                     enabled{true};
+  int                      load_order{-1};
+  std::vector<std::string> params;
+  std::string              config_literal;
+};
+
+using PluginYAMLEntries = std::vector<PluginYAMLEntry>;
+
+struct PluginLoadSummary {
+  struct Entry {
+    std::string path;
+    int         load_order{-1};
+    bool        enabled{true};
+    bool        loaded{false};
+    int         index{0};
+  };
+  std::string        source;
+  std::vector<Entry> entries;
+};
+
+const PluginLoadSummary &get_plugin_load_summary();
 
 struct PluginRegInfo {
   PluginRegInfo();
@@ -54,7 +80,12 @@ extern DLL<PluginRegInfo> plugin_reg_list;
 extern PluginRegInfo     *plugin_reg_current;
 
 bool plugin_init(bool validateOnly = false);
+bool plugin_yaml_init(bool validateOnly = false);
 bool plugin_dso_load(const char *path, void *&handle, void *&init, std::string &error);
+
+/// Parse plugin.yaml and return sorted entries.
+/// Exposed (non-static) for unit testing.
+config::ConfigResult<PluginYAMLEntries> parse_plugin_yaml(const char *yaml_path);
 
 /** Abstract interface class for plugin based continuations.
 

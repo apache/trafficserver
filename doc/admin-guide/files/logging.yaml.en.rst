@@ -258,6 +258,70 @@ supported at this time.
     expect. If, for example, we had 2 accept log filters, each disjoint from the other,
     nothing will ever get logged on the given log object.
 
+Wiping Query Parameter Values
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``wipe_field_value`` action masks the values of matching query string
+parameters before the event is written to the log. Unlike ``accept`` and
+``reject``, a ``wipe_field_value`` filter never drops an event; it only rewrites
+the logged field. This is useful for keeping secrets such as passwords, session
+tokens, or email addresses out of the access log while still logging the request.
+
+The filter examines the query string of the field named in the ``condition``
+(typically ``cquuc``, the client request URL) and, for every query parameter
+whose **name** matches one of the filter values, replaces that parameter's value
+with a run of ``X`` characters of the same length. The ``condition`` operator and
+values behave exactly as described above; use ``CASE_INSENSITIVE_CONTAIN`` (or
+``CONTAIN``) so that any parameter name containing one of the listed tokens is
+wiped.
+
+.. important::
+
+    Only the query parameter **names** are matched, never their values. A
+    parameter is wiped only when the pattern appears in the part of the parameter
+    before its ``=``. A value that happens to equal one of the filter tokens is
+    left untouched.
+
+The following filter wipes the values of a set of sensitive parameters:
+
+.. code:: yaml
+
+   filters:
+   - name: queryparamescaper_cquuc
+     action: WIPE_FIELD_VALUE
+     condition: cquuc CASE_INSENSITIVE_CONTAIN password,secret,access_token,session_redirect,cardNumber,code,query,search-query,prefix,keywords,email,handle
+
+Given that filter attached to a log using the ``%<cquuc>`` format, the following
+request URLs are logged as shown. Note that ``cquuc`` is the client request's
+*canonical* URL, so the logged value includes the scheme and host:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Requested URL
+     - Logged value
+   * - ``http://example.com/test-1?name=value&email=123@gmail.com``
+     - ``http://example.com/test-1?name=value&email=XXXXXXXXXXXXX``
+   * - ``http://example.com/test-2?email=123@gmail.com&name=password``
+     - ``http://example.com/test-2?email=XXXXXXXXXXXXX&name=password``
+   * - ``http://example.com/test-3?trivial=password&name1=val1&email=123@gmail.com``
+     - ``http://example.com/test-3?trivial=password&name1=val1&email=XXXXXXXXXXXXX``
+   * - ``http://example.com/test-4?trivial=password&email=&name=handle&session_redirect=wiped_string``
+     - ``http://example.com/test-4?trivial=password&email=&name=handle&session_redirect=XXXXXXXXXXXX``
+   * - ``http://example.com/test-5?trivial=password&email=123@gmail.com&email=456@gmail.com&session_redirect=wiped_string&email=789@gmail.com&name=value``
+     - ``http://example.com/test-5?trivial=password&email=XXXXXXXXXXXXX&email=XXXXXXXXXXXXX&session_redirect=XXXXXXXXXXXX&email=XXXXXXXXXXXXX&name=value``
+
+Note the behavior demonstrated above:
+
+- In ``test-2`` the ``name=password`` parameter is **not** wiped: the token
+  ``password`` appears in the value, not in the parameter name.
+- In ``test-3`` the ``trivial=password`` parameter is likewise left alone for the
+  same reason, while ``email`` is wiped.
+- An empty value (``email=`` in ``test-4``) matches but produces an empty wipe,
+  since there is nothing to mask.
+- In ``test-5`` every occurrence of the repeated ``email`` parameter is wiped, not
+  just the first.
+
 
 .. _admin-custom-logs-logs:
 
@@ -289,6 +353,15 @@ filename               string      The name of the logfile relative to the defau
 format                 string      a string with a valid named format specification.
 header                 string      If present, emitted as the first line of each
                                    new log file.
+binary_log_version     number      For ``binary`` logs only: the on-disk segment
+                                   format version, ``2`` or ``3`` (default
+                                   ``3``). Version 3 is self-describing (embeds a
+                                   per-field type schema so a generic reader can
+                                   decode the file without an ATS symbol table);
+                                   use ``2`` to emit the legacy layout for
+                                   downstream parsers that do not yet understand
+                                   version 3. Ignored for ``ascii`` and
+                                   ``ascii_pipe``.
 rolling_enabled        *see below* Determines the type of log rolling to use (or
                                    whether to disable rolling). Overrides
                                    :ts:cv:`proxy.config.log.rolling_enabled`.
@@ -389,3 +462,28 @@ matched the REFRESH_HIT filter we created.
      format: summaryfmt
      filters:
      - refreshhitfilter
+
+The following is an example of a binary log. Binary logs are written in the
+self-describing version 3 format by default, so ``traffic_logcat`` and
+``traffic_logstats`` (and any reader built from the
+:ref:`v3 format specification <binary-log-v3-format>`) can decode the
+``minimal.blog`` file without an embedded copy of the field table:
+
+.. code:: yaml
+
+   logs:
+   - mode: binary
+     filename: minimal
+     format: minimalfmt
+
+To keep emitting the older version 2 layout for a downstream parser that does
+not yet understand version 3, pin the object with ``binary_log_version``. This
+key only applies to ``binary`` logs and defaults to ``3``:
+
+.. code:: yaml
+
+   logs:
+   - mode: binary
+     filename: minimal_legacy
+     format: minimalfmt
+     binary_log_version: 2

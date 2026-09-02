@@ -48,12 +48,7 @@ sessions:
         size: 32
 
 - protocol:
-  - name: http
-    version: 1
-  - name: tls
-  - name: tcp
-  - name: ip
-
+    stack: https
   transactions:
   - client-request:
       method: "GET"

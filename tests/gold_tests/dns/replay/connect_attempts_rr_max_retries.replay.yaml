@@ -41,7 +41,7 @@ autest:
       proxy.config.diags.debug.tags: 'http|hostdb|dns'
       proxy.config.http.connect_attempts_rr_retries: 0
       proxy.config.http.connect_attempts_max_retries: 1
-      proxy.config.http.connect_attempts_max_retries_down_server: 0
+      proxy.config.http.connect_attempts_max_retries_suspect_server: 0
       proxy.config.http.connect_attempts_timeout: 1
       proxy.config.http.down_server.cache_time: 10
 

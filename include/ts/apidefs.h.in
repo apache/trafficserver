@@ -43,7 +43,9 @@
  */
 
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <string_view>
 #include <vector>
 #include <netinet/in.h>
 #include <sys/types.h>
@@ -824,6 +826,7 @@ enum TSOverridableConfigKey {
   TS_CONFIG_HTTP_TRANSACTION_ACTIVE_TIMEOUT_OUT,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_DOWN_SERVER,
+  TS_CONFIG_HTTP_CONNECT_ATTEMPTS_MAX_RETRIES_SUSPECT_SERVER,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_RR_RETRIES,
   TS_CONFIG_HTTP_CONNECT_ATTEMPTS_TIMEOUT,
   TS_CONFIG_HTTP_DOWN_SERVER_CACHE_TIME,
@@ -915,6 +918,10 @@ enum TSOverridableConfigKey {
   TS_CONFIG_HTTP_NEGATIVE_REVALIDATING_LIST,
   TS_CONFIG_HTTP_CACHE_POST_METHOD,
   TS_CONFIG_HTTP_CACHE_TARGETED_CACHE_CONTROL_HEADERS,
+  TS_CONFIG_SSL_CLIENT_CA_CERT_PATH,
+  TS_CONFIG_HTTP_CACHE_MAX_STALE_AGE_PERCENT,
+  TS_CONFIG_HTTP_PER_SERVER_CONNECTION_METRIC_ENABLED,
+  TS_CONFIG_HTTP_PER_SERVER_CONNECTION_METRIC_AGGREGATE,
   TS_CONFIG_LAST_ENTRY,
 };
 
@@ -1161,7 +1168,7 @@ using TSFetchSM = struct tsapi_fetchsm *;
 using TSThreadFunc           = void *(*)(void *data);
 using TSEventFunc            = int (*)(TSCont contp, TSEvent event, void *edata);
 using TSConfigDestroyFunc    = void (*)(void *data);
-using TSLogMarshalCallback   = int (*)(TSHttpTxn, char *);
+using TSLogMarshalCallback   = std::function<int(TSHttpTxn, char *)>;
 using TSLogUnmarshalCallback = std::tuple<int, int> (*)(char **, char *, int);
 
 struct TSFetchEvent {
@@ -1509,6 +1516,7 @@ extern const char *const TS_ALPN_PROTOCOL_HTTP_3;
 extern const char *const TS_ALPN_PROTOCOL_HTTP_3_D29;
 extern const char *const TS_ALPN_PROTOCOL_HTTP_QUIC;
 extern const char *const TS_ALPN_PROTOCOL_HTTP_QUIC_D29;
+extern const char *const TS_ALPN_PROTOCOL_H3QX;
 
 extern int TS_ALPN_PROTOCOL_INDEX_HTTP_0_9;
 extern int TS_ALPN_PROTOCOL_INDEX_HTTP_1_0;
@@ -1516,6 +1524,7 @@ extern int TS_ALPN_PROTOCOL_INDEX_HTTP_1_1;
 extern int TS_ALPN_PROTOCOL_INDEX_HTTP_2_0;
 extern int TS_ALPN_PROTOCOL_INDEX_HTTP_3;
 extern int TS_ALPN_PROTOCOL_INDEX_HTTP_QUIC;
+extern int TS_ALPN_PROTOCOL_INDEX_H3QX;
 
 extern const char *const TS_ALPN_PROTOCOL_GROUP_HTTP;
 extern const char *const TS_ALPN_PROTOCOL_GROUP_HTTP2;
@@ -1525,6 +1534,7 @@ extern const char *const TS_PROTO_TAG_HTTP_1_1;
 extern const char *const TS_PROTO_TAG_HTTP_2_0;
 extern const char *const TS_PROTO_TAG_HTTP_3;
 extern const char *const TS_PROTO_TAG_HTTP_QUIC;
+extern const char *const TS_PROTO_TAG_H3QX;
 extern const char *const TS_PROTO_TAG_TLS_1_3;
 extern const char *const TS_PROTO_TAG_TLS_1_2;
 extern const char *const TS_PROTO_TAG_TLS_1_1;
@@ -1590,6 +1600,49 @@ enum TSHttpCntlType {
   TS_HTTP_CNTL_SKIP_REMAPPING,
 };
 
+// Config reload registration interface.
+// See doc/developer-guide/api/functions/TSCfgRegister.en.rst for usage.
+using TSCfgLoadCtx = struct tsapi_cfgloadctx *;
+
+/// Plugin config load callback. The handler MUST call exactly one of
+/// TSCfgLoadCtxComplete / TSCfgLoadCtxFail per handle (parent + each subtask),
+/// either synchronously or from a deferred continuation. After the completing
+/// call, the handle is invalid.
+using TSCfgLoadCb = void (*)(TSCfgLoadCtx ctx, void *data);
+
+/// What content sources a plugin config handler supports.
+enum TSCfgSourceType {
+  TS_CFG_SOURCE_FILE_ONLY,   ///< File on disk only.
+  TS_CFG_SOURCE_FILE_AND_RPC ///< File or YAML supplied via RPC.
+};
+
+/// Severity for log entries emitted via TSCfgLoadCtxAddLog().
+enum TSCfgLogLevel {
+  TS_CFG_LOG_NOTE,    ///< Informational; default.
+  TS_CFG_LOG_WARNING, ///< Concerning; reload may still complete.
+  TS_CFG_LOG_ERROR    ///< Failure cause; pair with TSCfgLoadCtxFail.
+};
+
+/// Options for TSCfgRegister(). Default-construct, populate, pass by pointer.
+struct TSCfgRegistrationInfo {
+  std::string_view key;                             ///< Unique registry/RPC-routing key. Required.
+  std::string_view config_path;                     ///< Default config file path (absolute or relative to sysconfdir). Required.
+  std::string_view filename_record;                 ///< Optional record that overrides @c config_path at runtime.
+  TSCfgLoadCb      handler{nullptr};                ///< Reload callback. Required.
+  void            *data{nullptr};                   ///< Opaque pointer passed unmodified to @c handler. Plugin-owned.
+  TSCfgSourceType  source{TS_CFG_SOURCE_FILE_ONLY}; ///< Accepted content sources.
+  bool             is_required{false};              ///< FileManager hint; not enforced at reload time.
+};
+
+/// Options for TSCfgAddFileDependency(). Default-construct, populate, pass by pointer.
+struct TSCfgFileDependencyInfo {
+  std::string_view key;                ///< Parent registry key. Required.
+  std::string_view config_path;        ///< Companion file path. Required.
+  std::string_view filename_record;    ///< Optional record that overrides @c config_path at runtime.
+  std::string_view dep_key;            ///< Optional RPC routing key for inline YAML under this top-level node.
+  bool             is_required{false}; ///< FileManager hint.
+};
+
 // JSONRPC 2.0 related interface.
 using TSRPCProviderHandle = struct tsapi_rpcproviderhandle *;
 using TSYaml              = struct tsapi_yaml *;
@@ -1648,10 +1701,10 @@ struct TSResponseAction {
 };
 
 enum TSLogType {
-  TS_LOG_TYPE_INT,
+  TS_LOG_TYPE_INT = 1, ///< LogField::Type::sINT
   // DINT is omitted from the public API for now, until we decide whether we keep the type
-  TS_LOG_TYPE_STRING = 2,
-  TS_LOG_TYPE_ADDR   = 3,
+  TS_LOG_TYPE_STRING = 3, ///< LogField::Type::STRING
+  TS_LOG_TYPE_ADDR   = 4, ///< LogField::Type::IP
 };
 
 /* --------------------------------------------------------------------------

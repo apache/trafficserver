@@ -145,10 +145,25 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
                sm_id, cur_host->hostname.c_str(), (intmax_t)cur_host->failedAt, cur_host->failCount.load(), fail_threshold);
         parentUp = true;
       }
-    } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporairly mark it as
+    } else { // if not available, check to see if it can be retried.  If so, set the retry flag and temporarily mark it as
              // available.
       _now == 0 ? _now = time(nullptr) : _now = now;
-      if (((result->wrap_around) || (cur_host->failedAt + retry_time) < _now) && host_stat == TS_HOST_STATUS_UP) {
+      bool retryable = false;
+      if (host_stat == TS_HOST_STATUS_UP) {
+        if (result->wrap_around) {
+          // Wrap-around: force a retry of the host regardless of the timer.
+          retryable = true;
+        } else {
+          // Atomically push failedAt to (_now - retry_time) so only one
+          // concurrent transaction with this _now takes the retry slot;
+          // sequential retries with a later _now still pass the window check.
+          time_t observed = cur_host->failedAt.load();
+          if ((observed + retry_time) < _now && cur_host->failedAt.compare_exchange_strong(observed, _now - retry_time)) {
+            retryable = true;
+          }
+        }
+      }
+      if (retryable) {
         // Reuse the parent
         parentUp    = true;
         parentRetry = true;
@@ -170,7 +185,6 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
       result->last_parent = cur_hst_index;
       result->last_group  = cur_grp_index;
       result->retry       = parentRetry;
-      setHostHeader(txnp, result->hostname);
       ink_assert(result->hostname != nullptr);
       ink_assert(result->port != 0);
       NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] Chosen parent = %s.%d", sm_id, result->hostname, result->port);
@@ -202,6 +216,7 @@ NextHopRoundRobin::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, time_
             wrapped = wrap_around[cur_grp_index] = result->wrap_around = true;
           } else {
             start_host = cur_hst_index = 0;
+            hst_size                   = host_groups[cur_grp_index].size();
           }
         }
       }

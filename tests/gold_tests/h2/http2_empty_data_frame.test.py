@@ -45,7 +45,13 @@ class Http2EmptyDataFrameTest:
                 'proxy.config.http2.stream_error_rate_threshold': 0.1  # default
             })
         self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.Port}")
-        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
     def __setupClient(self):
         self._ts.Setup.CopyAs("clients/h2empty_data_frame.py", Test.RunDirectory)

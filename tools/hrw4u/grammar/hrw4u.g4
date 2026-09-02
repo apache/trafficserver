@@ -21,6 +21,7 @@ grammar hrw4u;
 // Lexer Rules
 // -----------------------------
 VARS          : 'VARS';
+SESSION_VARS  : 'SESSION_VARS';
 IF            : 'if';
 ELIF          : 'elif';
 ELSE          : 'else';
@@ -35,7 +36,7 @@ PROCEDURE     : 'procedure';
 REGEX         : '/' ( '\\/' | ~[/\r\n] )* '/' ;
 STRING        : '"' ( ESCAPED_BLOCK | '\\' . | ~["\\\r\n] )* '"' ;
 
-// {{ ... }} is an escape hatch — contents are passed through verbatim, inner quotes allowed
+// {{ ... }} delimits literal brace content, allowing inner quotes without escaping.
 fragment ESCAPED_BLOCK : '{{' ( ~'}' | '}' ~'}' )* '}}';
 
 IPV4_LITERAL
@@ -58,8 +59,8 @@ fragment IPV4_CIDR     : [1-9]
                        | '3'[0-2]
                        ;
 
-fragment IPV6_CIDR     : '3'[3-9]
-                       | [4-9][0-9]
+fragment IPV6_CIDR     : [1-9]
+                       | [1-9][0-9]
                        | '1'[0-1][0-9]
                        | '12'[0-8]
                        ;
@@ -131,11 +132,16 @@ paramRef
 
 section
     : varSection
+    | sessionVarSection
     | name=IDENT LBRACE sectionBody+ RBRACE
     ;
 
 varSection
     : VARS LBRACE variables RBRACE
+    ;
+
+sessionVarSection
+    : SESSION_VARS LBRACE variables RBRACE
     ;
 
 sectionBody

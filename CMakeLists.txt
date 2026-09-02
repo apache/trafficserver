@@ -166,9 +166,12 @@ option(ENABLE_AUTEST_UDS "Setup autest with curl using UDS (default OFF)")
 option(ENABLE_BENCHMARKS "Build benchmarks (default OFF)")
 option(EXTERNAL_YAML_CPP "Use external yaml-cpp (default OFF)")
 option(EXTERNAL_LIBSWOC "Use external libswoc (default OFF)")
+option(EXTERNAL_HWY "Use external highway (default OFF)")
 option(LINK_PLUGINS "Link core libraries to plugins (default OFF)")
 option(ENABLE_PROBES "Enable ATS SystemTap probes (default OFF)")
 option(ENABLE_VERIFY_PLUGINS "Enable plugin verification tests (default ON)" ON)
+option(ENABLE_THREAD_SAFETY_ANALYSIS "Enable Clang -Wthread-safety analysis (Clang only, default ON)" ON)
+option(THREAD_SAFETY_ANALYSIS_AS_ERROR "Treat thread-safety findings as errors; for CI gating (default OFF)")
 
 # Setup user
 # NOTE: this is the user trafficserver runs as
@@ -280,6 +283,9 @@ pkg_check_modules(PCRE2 REQUIRED IMPORTED_TARGET libpcre2-8)
 include(CheckOpenSSLIsBoringSSL)
 include(CheckOpenSSLIsQuictls)
 include(CheckOpenSSLIsAwsLc)
+include(CheckOpenSSLHasQuicTlsCbs)
+include(CheckOpenSSLHasNativeQuic)
+include(CheckQuicheHasQmux)
 find_package(OpenSSL REQUIRED)
 check_openssl_is_boringssl(SSLLIB_IS_BORINGSSL BORINGSSL_VERSION "${OPENSSL_INCLUDE_DIR}")
 check_openssl_is_awslc(SSLLIB_IS_AWSLC AWSLC_VERSION "${OPENSSL_INCLUDE_DIR}")
@@ -304,9 +310,38 @@ else()
 endif()
 check_openssl_is_quictls(SSLLIB_IS_QUICTLS "${OPENSSL_INCLUDE_DIR}")
 
-if(OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0")
-  set(SSLLIB_IS_OPENSSL3 TRUE)
-  add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_OPENSSL3)
+if(NOT SSLLIB_IS_BORINGSSL
+   AND NOT SSLLIB_IS_AWSLC
+   AND OPENSSL_VERSION VERSION_GREATER_EQUAL "3.0.0"
+)
+  set(SSLLIB_IS_AT_LEAST_OPENSSL3 TRUE)
+  add_compile_definitions(OPENSSL_API_COMPAT=10002 OPENSSL_IS_AT_LEAST_OPENSSL3)
+endif()
+
+check_openssl_has_quic_tls_cbs(SSLLIB_HAS_QUIC_TLS_CBS "${OPENSSL_INCLUDE_DIR}")
+if(SSLLIB_HAS_QUIC_TLS_CBS
+   AND NOT SSLLIB_IS_BORINGSSL
+   AND NOT SSLLIB_IS_AWSLC
+   AND NOT SSLLIB_IS_QUICTLS
+)
+  set(TS_OPENSSL_QUIC_TLS_CBS_COMPAT TRUE)
+  add_compile_definitions(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
+endif()
+
+check_openssl_has_native_quic(SSLLIB_HAS_NATIVE_QUIC "${OPENSSL_INCLUDE_DIR}")
+
+# OpenSSL's native QUIC is a capability of the mandatory OpenSSL dependency, not an optional
+# component to opt into -- same footing as SSLLIB_IS_BORINGSSL or SSLLIB_HAS_QUIC_TLS_CBS above.
+# It's mutually exclusive with quiche by construction: quiche requires BoringSSL or the TLS
+# callback compat shim, neither of which implements this upstream-OpenSSL-3.5+ API.
+set(TS_HAS_OPENSSL_QUIC FALSE)
+if(SSLLIB_HAS_NATIVE_QUIC
+   AND NOT SSLLIB_IS_BORINGSSL
+   AND NOT SSLLIB_IS_AWSLC
+   AND NOT SSLLIB_IS_QUICTLS
+   AND NOT ENABLE_QUICHE
+)
+  set(TS_HAS_OPENSSL_QUIC TRUE)
 endif()
 
 if(ENABLE_PROFILER)
@@ -325,12 +360,19 @@ elseif(TS_HAS_MIMALLOC)
 endif()
 
 if(ENABLE_QUICHE)
+  if(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
+    set(quiche_USE_STATIC TRUE)
+  endif()
   find_package(quiche REQUIRED)
 
   set(TS_HAS_QUICHE ${quiche_FOUND})
-  set(TS_USE_QUIC ${TS_HAS_QUICHE})
-  if(NOT SSLLIB_IS_BORINGSSL AND NOT SSLLIB_IS_QUICTLS)
-    message(FATAL_ERROR "Use of BoringSSL or OPENSSL/QUICTLS is required if quiche is used.")
+  if(NOT SSLLIB_IS_BORINGSSL
+     AND NOT SSLLIB_IS_QUICTLS
+     AND NOT TS_OPENSSL_QUIC_TLS_CBS_COMPAT
+  )
+    message(
+      FATAL_ERROR "Use of BoringSSL, OPENSSL/QUICTLS, or OpenSSL QUIC TLS callbacks is required if quiche is used."
+    )
   endif()
 
   if(SSLLIB_IS_QUICTLS)
@@ -339,7 +381,56 @@ if(ENABLE_QUICHE)
     message(
       "WARNING - Using quictls requires using a special version of quiche. Make sure quictls is supported in quiche."
     )
+  elseif(TS_OPENSSL_QUIC_TLS_CBS_COMPAT)
+    message(STATUS "Using OpenSSL QUIC TLS callbacks compatibility for quiche")
   endif()
+
+  check_quiche_has_qmux(TS_QUICHE_HAS_QMUX)
+endif()
+
+# A QUIC backend supplies the protocol implementation; the transport options
+# below decide how QUIC streams are actually carried on the wire. At least one
+# transport must be enabled for QUIC to be reachable.
+if(TS_HAS_OPENSSL_QUIC OR TS_HAS_QUICHE)
+  set(TS_HAS_QUIC_BACKEND TRUE)
+else()
+  set(TS_HAS_QUIC_BACKEND FALSE)
+endif()
+
+auto_option(
+  QUIC
+  DESCRIPTION
+  "Carry QUIC over UDP (default AUTO: on when a QUIC backend is available)"
+  FEATURE_VAR
+  TS_USE_QUIC
+  VAR_DEPENDS
+  TS_HAS_QUIC_BACKEND
+)
+
+if(TS_USE_QUIC)
+  if(TS_HAS_OPENSSL_QUIC)
+    message(STATUS "Using OpenSSL native QUIC")
+  elseif(TS_HAS_QUICHE)
+    message(STATUS "Using quiche for QUIC transport")
+  endif()
+endif()
+
+auto_option(
+  QMUX
+  DESCRIPTION
+  "Carry QUIC over TLS/TCP as QMux (default AUTO: on when quiche has qmux support)"
+  FEATURE_VAR
+  TS_USE_QMUX
+  VAR_DEPENDS
+  TS_HAS_QUICHE
+  TS_QUICHE_HAS_QMUX
+)
+
+if(TS_HAS_QUIC_BACKEND
+   AND NOT TS_USE_QUIC
+   AND NOT TS_USE_QMUX
+)
+  message(WARNING "A QUIC backend is enabled but neither UDP QUIC nor QMux is, so QUIC will not be served.")
 endif()
 
 find_package(maxminddb) # Header_rewrite experimental/maxmind_acl
@@ -356,6 +447,35 @@ elseif(ENABLE_TSAN)
   endif()
   add_compile_options(-g -fsanitize=thread -fno-omit-frame-pointer)
   add_link_options(-g -fsanitize=thread)
+endif()
+
+# Clang Thread Safety Analysis. The TS_* annotations (tsutil/ts_thread_safety.h)
+# compile to nothing on GCC, and the flag is Clang-only on purpose (GCC does not
+# know -Wthread-safety and would itself error if passed it), so this whole block
+# is a no-op for GCC builds.
+#
+# On Clang it is on by default but only a WARNING: -Wno-error=thread-safety keeps
+# it a warning even in builds that otherwise use -Werror, so an in-progress
+# annotation never blocks a developer's build. CI sets
+# THREAD_SAFETY_ANALYSIS_AS_ERROR=ON to promote findings to errors and gate
+# merges.
+#
+# Skip FreeBSD: its libc annotates the pthread primitives themselves, so
+# -Wthread-safety there flags ATS's existing hand-rolled mutex wrappers
+# (tscore/ink_mutex.h, ink_rwlock, ...) tree-wide, not just newly-annotated code.
+# Enabling it on FreeBSD needs those legacy wrappers made analysis-clean first.
+# Elsewhere the platform leaves the pthread primitives un-annotated, so only
+# annotated code is analyzed and this stays quiet until a real violation.
+if(ENABLE_THREAD_SAFETY_ANALYSIS
+   AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"
+   AND NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD"
+)
+  add_compile_options(-Wthread-safety)
+  if(THREAD_SAFETY_ANALYSIS_AS_ERROR)
+    add_compile_options(-Werror=thread-safety)
+  else()
+    add_compile_options(-Wno-error=thread-safety)
+  endif()
 endif()
 
 if(ENABLE_PROBES)
@@ -415,6 +535,11 @@ if(EXTERNAL_LIBSWOC)
   find_package(libswoc REQUIRED)
 endif()
 
+if(EXTERNAL_HWY)
+  message(STATUS "Looking for external highway")
+  find_package(HWY "1.4.0" CONFIG REQUIRED)
+endif()
+
 include(Check128BitCas)
 include(ConfigureTransparentProxy)
 
@@ -449,6 +574,9 @@ check_symbol_exists(mcheck_pedantic mcheck.h HAVE_MCHECK_PEDANTIC)
 check_symbol_exists(posix_fadvise fcntl.h HAVE_POSIX_FADVISE)
 check_symbol_exists(posix_fallocate fcntl.h HAVE_POSIX_FALLOCATE)
 check_symbol_exists(posix_madvise sys/mman.h HAVE_POSIX_MADVISE)
+# On glibc < 2.34 shm_open/shm_unlink live in librt, which ATS does not link, so the cache shm feature is compiled out
+# there. This is a link test, so it fails exactly on those platforms.
+check_symbol_exists(shm_open sys/mman.h HAVE_SHM_OPEN)
 check_symbol_exists(accept4 sys/socket.h HAVE_ACCEPT4)
 check_symbol_exists(eventfd sys/eventfd.h HAVE_EVENTFD)
 check_symbol_exists(sysconf unistd.h HAVE_SYSCONF)
@@ -484,6 +612,11 @@ if(HAVE_IOURING AND USE_IOURING)
   message(STATUS "Using io_uring")
   set(TS_USE_LINUX_IO_URING 1)
 endif(HAVE_IOURING AND USE_IOURING)
+
+option(ENABLE_CACHE_SHM "Host the cache directory in POSIX shared memory for fast restart" 1)
+if(HAVE_SHM_OPEN AND ENABLE_CACHE_SHM)
+  set(TS_USE_CACHE_SHM 1)
+endif(HAVE_SHM_OPEN AND ENABLE_CACHE_SHM)
 
 list(APPEND CMAKE_REQUIRED_LIBRARIES pthread)
 check_symbol_exists(pthread_getname_np pthread.h HAVE_PTHREAD_GETNAME_NP)
@@ -541,16 +674,15 @@ check_symbol_exists(SSL_error_description "openssl/ssl.h" HAVE_SSL_ERROR_DESCRIP
 check_symbol_exists(SSL_CTX_set_ciphersuites "openssl/ssl.h" TS_USE_TLS_SET_CIPHERSUITES)
 check_symbol_exists(SSL_CTX_set_keylog_callback "openssl/ssl.h" TS_HAS_TLS_KEYLOGGING)
 check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb "openssl/ssl.h" HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_CB)
+check_symbol_exists(SSL_CTX_add_cert_compression_alg "openssl/ssl.h" HAVE_SSL_CTX_ADD_CERT_COMPRESSION_ALG)
+check_symbol_exists(SSL_CTX_set1_cert_comp_preference "openssl/ssl.h" HAVE_SSL_CTX_SET1_CERT_COMP_PREFERENCE)
 check_symbol_exists(SSL_get_all_async_fds openssl/ssl.h TS_USE_TLS_ASYNC)
 check_symbol_exists(OSSL_PARAM_construct_end "openssl/params.h" HAVE_OSSL_PARAM_CONSTRUCT_END)
 check_symbol_exists(TLS1_3_VERSION "openssl/ssl.h" TS_USE_TLS13)
 check_symbol_exists(MD5_Init "openssl/md5.h" HAVE_MD5_INIT)
-check_symbol_exists(ENGINE_load_dynamic "openssl/engine.h" HAVE_ENGINE_LOAD_DYNAMIC)
-check_symbol_exists(ENGINE_get_default_RSA "openssl/engine.h" HAVE_ENGINE_GET_DEFAULT_RSA)
-check_symbol_exists(ENGINE_load_private_key "openssl/engine.h" HAVE_ENGINE_LOAD_PRIVATE_KEY)
 check_symbol_exists(sysctlbyname "sys/sysctl.h" HAVE_SYSCTLBYNAME)
 
-if(SSLLIB_IS_OPENSSL3)
+if(SSLLIB_IS_AT_LEAST_OPENSSL3)
   check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_evp_cb "openssl/ssl.h" TS_HAS_TLS_SESSION_TICKET)
 else()
   check_symbol_exists(SSL_CTX_set_tlsext_ticket_key_cb "openssl/ssl.h" TS_HAS_TLS_SESSION_TICKET)
@@ -593,19 +725,31 @@ check_cxx_source_compiles(
   }"
   HAVE_CRYPTO_EX_DUP_TYPE1
 )
-check_cxx_source_compiles(
-  "#include <openssl/asn1.h>
-  namespace bssl {
-    DECLARE_ASN1_ITEM(GENERAL_NAME)
-  };
-  int main() {
-    if (&bssl::GENERAL_NAME_it == reinterpret_cast<void *>(0x01)) {
-      return 1;
-    }
-    return 0;
-  }"
-  HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
-)
+if(SSLLIB_IS_BORINGSSL OR SSLLIB_IS_AWSLC)
+  check_cxx_source_compiles(
+    "#include <openssl/asn1.h>
+    namespace bssl {
+      DECLARE_ASN1_ITEM(GENERAL_NAME)
+    };
+    int main() {
+      if (&bssl::GENERAL_NAME_it == reinterpret_cast<void *>(0x01)) {
+        return 1;
+      }
+      return 0;
+    }"
+    HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+  )
+else()
+  # This probe is only meaningful for BoringSSL-family libraries. Force it off
+  # for OpenSSL so a stale cache or macro shape change can't enable bssl:: code.
+  set(HAVE_GENERAL_NAME_IN_BSSL_NAMESPACE
+      FALSE
+      CACHE INTERNAL "GENERAL_NAME lives in the bssl namespace" FORCE
+  )
+endif()
+# Prevent unrelated feature probes from inheriting the OpenSSL dependencies.
+list(REMOVE_ITEM CMAKE_REQUIRED_INCLUDES ${OPENSSL_INCLUDE_DIR})
+list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES ${OPENSSL_SSL_LIBRARY} ${OPENSSL_CRYPTO_LIBRARY})
 
 set(CMAKE_EXTRA_INCLUDE_FILES netinet/in.h netinet/tcp.h)
 check_type_size("struct tcp_info" STRUCT_TCP_INFO)
@@ -665,8 +809,11 @@ if(ENABLE_AUTEST)
   # the autest command. The original AUTEST_OPTIONS string is used in the
   # autest.sh script.
   separate_arguments(AUTEST_OPTIONS_LIST UNIX_COMMAND "${AUTEST_OPTIONS}")
-  set(PROXY_VERIFIER_VERSION "v2.12.0")
-  set(PROXY_VERIFIER_HASH "SHA1=8e9adc6e0b31251ca8e6fc2064ae54e5d752bb72")
+  file(READ "${CMAKE_SOURCE_DIR}/tests/proxy-verifier-version.txt" PROXY_VERIFIER_VERSION)
+  string(STRIP "${PROXY_VERIFIER_VERSION}" PROXY_VERIFIER_VERSION)
+  file(READ "${CMAKE_SOURCE_DIR}/tests/proxy-verifier-checksum.txt" PROXY_VERIFIER_SHA1)
+  string(STRIP "${PROXY_VERIFIER_SHA1}" PROXY_VERIFIER_SHA1)
+  set(PROXY_VERIFIER_HASH "SHA1=${PROXY_VERIFIER_SHA1}")
   include(proxy-verifier)
 endif()
 
@@ -750,13 +897,14 @@ file(REMOVE "${PROJECT_SOURCE_DIR}/include/tscore/ink_config.h")
 file(REMOVE "${PROJECT_SOURCE_DIR}/include/ts/apidefs.h")
 file(REMOVE "${PROJECT_SOURCE_DIR}/include/ink_autoconf.h")
 
-configure_file(configs/storage.config.default.in configs/storage.config.default)
+configure_file(configs/storage.yaml.default.in configs/storage.yaml.default)
 configure_file(configs/records.yaml.default.in configs/records.yaml.default)
 configure_file(include/tscore/ink_config.h.cmake.in include/tscore/ink_config.h)
 configure_file(include/ts/apidefs.h.in include/ts/apidefs.h)
 
 add_subdirectory(src/tscpp/api)
 add_subdirectory(src/tsutil)
+add_subdirectory(src/config)
 add_subdirectory(src/tscore)
 add_subdirectory(src/records)
 add_subdirectory(src/iocore)
@@ -905,7 +1053,8 @@ endif()
 add_custom_target(
   rat
   COMMENT "Running Apache RAT"
-  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.13-SNAPSHOT.jar -E ${CMAKE_SOURCE_DIR}/ci/rat-regex.txt -d
+  COMMAND java -jar ${CMAKE_SOURCE_DIR}/ci/apache-rat-0.17.jar --input-exclude-file
+          ${CMAKE_SOURCE_DIR}/ci/rat-exclude.txt --input-include-file ${CMAKE_SOURCE_DIR}/ci/rat-include.txt --
           ${CMAKE_SOURCE_DIR}
 )
 

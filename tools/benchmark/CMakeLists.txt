@@ -35,3 +35,19 @@ target_link_libraries(benchmark_SharedMutex PRIVATE Catch2::Catch2 ts::tscore li
 
 add_executable(benchmark_Random benchmark_Random.cc)
 target_link_libraries(benchmark_Random PRIVATE Catch2::Catch2WithMain ts::tscore)
+
+add_executable(benchmark_HostDB benchmark_HostDB.cc)
+target_link_libraries(
+  benchmark_HostDB
+  PRIVATE ts::tscore
+          ts::tsutil
+          ts::inkevent
+          ts::http
+          ts::http_remap
+          ts::inkcache
+          ts::inkhostdb
+)
+
+add_executable(benchmark_HuffmanDecode benchmark_HuffmanDecode.cc)
+target_link_libraries(benchmark_HuffmanDecode PRIVATE Catch2::Catch2WithMain lshpack)
+target_include_directories(benchmark_HuffmanDecode PRIVATE ${CMAKE_SOURCE_DIR}/lib)

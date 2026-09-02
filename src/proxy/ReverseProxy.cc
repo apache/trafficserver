@@ -29,9 +29,13 @@
 
 #include "tscore/ink_platform.h"
 #include "tscore/Filenames.h"
+#include "tscore/TSSystemState.h"
 #include <dlfcn.h>
-#include "iocore/eventsystem/ConfigProcessor.h"
+#include "iocore/cache/Cache.h"
+#include "iocore/eventsystem/Freer.h"
 #include "proxy/ReverseProxy.h"
+#include "mgmt/config/ConfigContextDiags.h"
+#include "mgmt/config/ConfigRegistry.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/Tokenizer.h"
 #include "ts/remap.h"
@@ -47,11 +51,43 @@ Ptr<ProxyMutex> reconfig_mutex;
 
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 
+// Steers UrlRewriteDeleter to inline-delete; see shutdown_url_rewrite().
+std::atomic<bool> rewrite_table_shutdown{false};
+
+// Defer teardown to ET_TASK; UrlRewrite destruction can be slow.
+struct UrlRewriteDeleter {
+  void
+  operator()(UrlRewrite *p) const noexcept
+  {
+    if (!p) {
+      return;
+    }
+    if (rewrite_table_shutdown.load(std::memory_order_acquire) || TSSystemState::is_event_system_shut_down()) {
+      // Leak; plugin teardown is unsafe post-shutdown.
+      return;
+    }
+    // new_Deleter allocates; fall back to inline delete so we don't escape noexcept.
+    try {
+      new_Deleter(p, 0);
+    } catch (...) {
+      delete p;
+    }
+  }
+};
+
 } // end anonymous namespace
 
 // Global Ptrs
-std::atomic<UrlRewrite *>         rewrite_table       = nullptr;
+AtomicSharedPtr<UrlRewrite>       rewrite_table;
 thread_local PluginThreadContext *pluginThreadContext = nullptr;
+
+void
+shutdown_url_rewrite()
+{
+  // Drain before flag: this ref destructs normally; later drops leak.
+  rewrite_table.exchange(nullptr);
+  rewrite_table_shutdown.store(true, std::memory_order_release);
+}
 
 // Tokens for the Callback function
 #define FILE_CHANGED                  0
@@ -61,28 +97,61 @@ thread_local PluginThreadContext *pluginThreadContext = nullptr;
 #define URL_REMAP_MODE_CHANGED        8
 #define HTTP_DEFAULT_REDIRECT_CHANGED 9
 
+static void init_table_volume_host_records(UrlRewrite &table);
+
 //
 // Begin API Functions
 //
 int
 init_reverse_proxy()
 {
-  ink_assert(rewrite_table.load() == nullptr);
-  reconfig_mutex = new_ProxyMutex();
-  rewrite_table.store(new UrlRewrite());
+  ink_assert(rewrite_table.load(std::memory_order_acquire) == nullptr);
+  reconfig_mutex      = new_ProxyMutex();
+  auto  initial_table = std::make_unique<UrlRewrite>();
+  auto &config_reg    = config::ConfigRegistry::Get_Instance();
 
-  rewrite_table.load()->acquire();
+  // Register with ConfigRegistry BEFORE load() so that remap.config and remap.yaml are in
+  // FileManager's bindings when .include directives call configFileChild()
+  // to register child files (e.g. test.inc).
+  config_reg.register_config(
+    "remap",                                          // registry key
+    ts::filename::REMAP,                              // default filename
+    "proxy.config.url_remap.filename",                // record holding the filename
+    [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
+    config::ConfigSource::FileOnly);                  // file-based only
+
+  config_reg.register_config(
+    "remap_yaml",                                     // registry key
+    ts::filename::REMAP_YAML,                         // default filename
+    "proxy.config.url_remap_yaml.filename",           // record holding the filename
+    [](ConfigContext ctx) { reloadUrlRewrite(ctx); }, // reload handler
+    config::ConfigSource::FileOnly);                  // file-based only
+
+  Note("%s loading (checking first) ...", ts::filename::REMAP_YAML);
   Note("%s loading ...", ts::filename::REMAP);
-  if (!rewrite_table.load()->load()) {
-    Emergency("%s failed to load", ts::filename::REMAP);
+  bool status  = initial_table->load();
+  bool is_yaml = initial_table->is_remap_yaml();
+
+  if (!status) {
+    Emergency("%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   } else {
-    Note("%s finished loading", ts::filename::REMAP);
+    Note("%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
   }
 
-  RecRegisterConfigUpdateCb("proxy.config.url_remap.filename", url_rewrite_CB, (void *)FILE_CHANGED);
-  RecRegisterConfigUpdateCb("proxy.config.proxy_name", url_rewrite_CB, (void *)TSNAME_CHANGED);
+  if (initial_table->is_valid() && CacheProcessor::IsCacheEnabled() == CacheInitState::INITIALIZED) {
+    // Initialize deferred @volume= mappings before publishing so startup-only
+    // remap walks cannot race a reload.
+    init_table_volume_host_records(*initial_table);
+  }
+
+  rewrite_table.store(std::shared_ptr<UrlRewrite>(initial_table.release(), UrlRewriteDeleter{}), std::memory_order_release);
+  ink_assert(0 == config_reg.attach("remap", "proxy.config.url_remap.filename"));
+  ink_assert(0 == config_reg.attach("remap", "proxy.config.proxy_name"));
+  ink_assert(0 == config_reg.attach("remap", "proxy.config.http.referer_default_redirect"));
+  ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.url_remap_yaml.filename"));
+  ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.proxy_name"));
+  ink_assert(0 == config_reg.attach("remap_yaml", "proxy.config.http.referer_default_redirect"));
   RecRegisterConfigUpdateCb("proxy.config.reverse_proxy.enabled", url_rewrite_CB, (void *)REVERSE_CHANGED);
-  RecRegisterConfigUpdateCb("proxy.config.http.referer_default_redirect", url_rewrite_CB, (void *)HTTP_DEFAULT_REDIRECT_CHANGED);
 
   return 0;
 }
@@ -108,18 +177,6 @@ response_url_remap(HTTPHdr *response_header, UrlRewrite *table)
 //  End API Functions
 //
 
-/** Used to read the remap.config file after the manager signals a change. */
-struct UR_UpdateContinuation : public Continuation {
-  int
-  file_update_handler(int /* etype ATS_UNUSED */, void * /* data ATS_UNUSED */)
-  {
-    static_cast<void>(reloadUrlRewrite());
-    delete this;
-    return EVENT_DONE;
-  }
-  UR_UpdateContinuation(Ptr<ProxyMutex> &m) : Continuation(m) { SET_HANDLER(&UR_UpdateContinuation::file_update_handler); }
-};
-
 bool
 urlRewriteVerify()
 {
@@ -127,42 +184,40 @@ urlRewriteVerify()
 }
 
 /**
-  Called when the remap.config file changes. Since it called infrequently,
+  Called when the remap.config or remap.yaml file changes. Since it called infrequently,
   we do the load of new file as blocking I/O and lock acquire is also
   blocking.
 
 */
 bool
-reloadUrlRewrite()
+reloadUrlRewrite(ConfigContext ctx)
 {
-  UrlRewrite *newTable, *oldTable;
+  std::string msg_buffer;
 
-  Note("%s loading ...", ts::filename::REMAP);
+  msg_buffer.reserve(1024);
+
+  CfgLoadLog(ctx, DL_Note, "%s loading (checking first) ...", ts::filename::REMAP_YAML);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::REMAP);
+  Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP_YAML);
   Dbg(dbg_ctl_url_rewrite, "%s updated, reloading...", ts::filename::REMAP);
-  newTable = new UrlRewrite();
-  if (newTable->load()) {
-    static const char *msg_format = "%s finished loading";
+  auto newTable = std::make_unique<UrlRewrite>();
 
-    // Hold at least one lease, until we reload the configuration
-    newTable->acquire();
+  bool status  = newTable->load(ctx);
+  bool is_yaml = (newTable->is_remap_yaml());
 
-    // Swap configurations
-    oldTable = rewrite_table.exchange(newTable);
+  if (status) {
+    swoc::bwprint(msg_buffer, "{} finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
-    ink_assert(oldTable != nullptr);
+    rewrite_table.exchange(std::shared_ptr<UrlRewrite>(newTable.release(), UrlRewriteDeleter{}), std::memory_order_acq_rel);
 
-    // Release the old one
-    oldTable->release();
-
-    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
-    Note(msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
+    CfgLoadComplete(ctx, "%s finished loading", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return true;
   } else {
-    static const char *msg_format = "%s failed to load";
+    swoc::bwprint(msg_buffer, "{} failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
 
-    delete newTable;
-    Dbg(dbg_ctl_url_rewrite, msg_format, ts::filename::REMAP);
-    Error(msg_format, ts::filename::REMAP);
+    Dbg(dbg_ctl_url_rewrite, "%s", msg_buffer.c_str());
+    CfgLoadFail(ctx, "%s failed to load", is_yaml ? ts::filename::REMAP_YAML : ts::filename::REMAP);
     return false;
   }
 }
@@ -201,55 +256,44 @@ init_store_volume_host_records(UrlRewrite::MappingsStore &store)
   }
 }
 
+static void
+init_table_volume_host_records(UrlRewrite &table)
+{
+  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
+
+  init_store_volume_host_records(table.forward_mappings);
+  init_store_volume_host_records(table.reverse_mappings);
+  init_store_volume_host_records(table.permanent_redirects);
+  init_store_volume_host_records(table.temporary_redirects);
+  init_store_volume_host_records(table.forward_mappings_with_recv_port);
+}
+
 // This is called after the cache is initialized, since we may need the volume_host_records.
 // Must only be called during startup before any remap reload can occur.
 void
 init_remap_volume_host_records()
 {
-  UrlRewrite *table = rewrite_table.load(std::memory_order_acquire);
+  if (CacheProcessor::IsCacheEnabled() != CacheInitState::INITIALIZED) {
+    return;
+  }
+
+  auto table = rewrite_table.load(std::memory_order_acquire);
 
   if (!table) {
     return;
   }
 
-  table->acquire();
-
-  Dbg(dbg_ctl_url_rewrite, "Initializing volume_host_rec for all remap rules after cache init");
-
-  // Initialize for all mapping stores
-  init_store_volume_host_records(table->forward_mappings);
-  init_store_volume_host_records(table->reverse_mappings);
-  init_store_volume_host_records(table->permanent_redirects);
-  init_store_volume_host_records(table->temporary_redirects);
-  init_store_volume_host_records(table->forward_mappings_with_recv_port);
-
-  table->release();
+  if (table->is_valid()) {
+    init_table_volume_host_records(*table);
+  }
 }
 
 int
-url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data, void *cookie)
+url_rewrite_CB(const char * /* name ATS_UNUSED */, RecDataT /* data_type ATS_UNUSED */, RecData data,
+               void * /* cookie ATS_UNUSED */)
 {
-  int my_token = static_cast<int>((long)cookie);
-
-  switch (my_token) {
-  case REVERSE_CHANGED:
-    rewrite_table.load()->SetReverseFlag(data.rec_int);
-    break;
-
-  case TSNAME_CHANGED:
-  case FILE_CHANGED:
-  case HTTP_DEFAULT_REDIRECT_CHANGED:
-    eventProcessor.schedule_imm(new UR_UpdateContinuation(reconfig_mutex), ET_TASK);
-    break;
-
-  case URL_REMAP_MODE_CHANGED:
-    // You need to restart TS.
-    break;
-
-  default:
-    ink_assert(0);
-    break;
+  if (auto table = rewrite_table.load(std::memory_order_acquire)) {
+    table->SetReverseFlag(data.rec_int);
   }
-
   return 0;
 }

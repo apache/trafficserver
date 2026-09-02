@@ -22,6 +22,7 @@
  */
 
 #include "proxy/http3/Http3HeaderVIOAdaptor.h"
+#include "proxy/http3/Http3Transaction.h"
 #include "proxy/hdrs/HeaderValidator.h"
 
 #include "iocore/eventsystem/VIO.h"
@@ -34,8 +35,8 @@ DbgCtl dbg_ctl_v_http3{"v_http3"};
 
 } // end anonymous namespace
 
-Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id)
-  : _sink_vio(sink), _qpack(qpack), _stream_id(stream_id)
+Http3HeaderVIOAdaptor::Http3HeaderVIOAdaptor(VIO *sink, HTTPType http_type, QPACK *qpack, uint64_t stream_id, HQTransaction *txn)
+  : _sink_vio(sink), _qpack(qpack), _stream_id(stream_id), _txn(txn)
 {
   SET_HANDLER(&Http3HeaderVIOAdaptor::event_handler);
 
@@ -47,10 +48,11 @@ Http3HeaderVIOAdaptor::~Http3HeaderVIOAdaptor()
   this->_header.destroy();
 }
 
-std::vector<Http3FrameType>
+std::vector<Http3FrameType> const &
 Http3HeaderVIOAdaptor::interests()
 {
-  return {Http3FrameType::HEADERS};
+  static std::vector<Http3FrameType> const types = {Http3FrameType::HEADERS};
+  return types;
 }
 
 Http3ErrorUPtr
@@ -108,11 +110,17 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   if (!HeaderValidator::is_h2_h3_header_valid(this->_header, http_hdr_type_get(this->_header.m_http) == HTTPType::RESPONSE,
                                               NON_TRAILER)) {
     Dbg(dbg_ctl_http3, "Header is invalid");
+    if (this->_txn != nullptr) {
+      this->_txn->log_non_http_sm_access(&this->_header, "http/3");
+    }
     return -1;
   }
   int res = this->_hvc.convert(this->_header, 3, 1);
   if (res != 0) {
     Dbg(dbg_ctl_http3, "ParseResult::ERROR");
+    if (this->_txn != nullptr) {
+      this->_txn->log_non_http_sm_access(&this->_header, "http/3");
+    }
     return -1;
   }
 
@@ -132,7 +140,8 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
   //   or
   // c). Add interface to HttpSM to handle HTTPHdr directly
   int            bufindex;
-  int            dumpoffset = 0;
+  int            dumpoffset    = 0;
+  int64_t        header_length = 0;
   int            done, tmp;
   IOBufferBlock *block;
   do {
@@ -143,14 +152,19 @@ Http3HeaderVIOAdaptor::_on_qpack_decode_complete()
       writer->add_block();
       block = writer->get_current_block();
     }
-    done        = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
-    dumpoffset += bufindex;
+    done           = this->_header.print(block->end(), block->write_avail(), &bufindex, &tmp);
+    dumpoffset    += bufindex;
+    header_length += bufindex;
     writer->fill(bufindex);
     if (!done) {
       writer->add_block();
     }
   } while (!done);
 
-  this->_is_complete = true;
+  this->_sink_vio->ndone += header_length;
+  this->_is_complete      = true;
+  if (auto *transaction = dynamic_cast<Http3Transaction *>(this->_txn); transaction != nullptr) {
+    transaction->on_header_decode_complete();
+  }
   return 1;
 }

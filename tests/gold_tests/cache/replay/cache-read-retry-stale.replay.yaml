@@ -114,6 +114,9 @@ sessions:
               - [uuid, cache-hit]
               - [Host, example.com]
 
+        proxy-request:
+          expect: absent
+
         # Should NOT reach origin (cache hit)
         server-response:
           status: 500

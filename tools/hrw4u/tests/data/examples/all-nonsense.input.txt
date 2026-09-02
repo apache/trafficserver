@@ -116,7 +116,7 @@ READ_REQUEST {
 }
 
 SEND_REQUEST {
-  # Use NEXT-HOP information to adjust Host header
+  # Use server URL information to adjust Host header
   if (outbound.url.host == "www.firstparent.com") {
     outbound.req.Host = "vhost.firstparent.com";
   } elif (outbound.url.host == "www.secondparent.com") {

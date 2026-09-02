@@ -87,7 +87,7 @@ Core Cache Types
 
    .. function:: char * read_config()
 
-      Read :file:`storage.config` and initialize the base state of the instance. The return value is :code:`nullptr` on success and a nul-terminated error string on error.
+      Read :file:`storage.yaml` and initialize the base state of the instance. The return value is :code:`nullptr` on success and a nul-terminated error string on error.
 
 .. cpp:class:: CacheDisk
 

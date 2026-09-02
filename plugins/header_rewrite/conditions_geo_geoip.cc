@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <cctype>
+#include <mutex>
 
 #include "ts/ts.h"
 
@@ -31,49 +32,65 @@
 
 #include <GeoIP.h>
 
-GeoIP *gGeoIP[NUM_DB_TYPES];
+struct GeoIPHandleSet {
+  GeoIP *dbs[NUM_DB_TYPES] = {};
+};
 
-void
+static std::mutex      gGeoIPCacheMutex;
+static GeoIPHandleSet *gGeoIPHandleSet = nullptr;
+
+void *
 GeoIPConditionGeo::initLibrary(const std::string &)
 {
+  std::lock_guard<std::mutex> lock(gGeoIPCacheMutex);
+
+  if (gGeoIPHandleSet != nullptr) {
+    return gGeoIPHandleSet;
+  }
+
+  gGeoIPHandleSet = new GeoIPHandleSet;
+
   GeoIPDBTypes dbs[] = {GEOIP_COUNTRY_EDITION, GEOIP_COUNTRY_EDITION_V6, GEOIP_ASNUM_EDITION, GEOIP_ASNUM_EDITION_V6};
 
   for (auto &db : dbs) {
-    if (!gGeoIP[db] && GeoIP_db_avail(db)) {
-      // GEOIP_STANDARD seems to break threaded apps...
-      gGeoIP[db] = GeoIP_open_type(db, GEOIP_MMAP_CACHE);
+    if (!gGeoIPHandleSet->dbs[db] && GeoIP_db_avail(db)) {
+      gGeoIPHandleSet->dbs[db] = GeoIP_open_type(db, GEOIP_MMAP_CACHE);
 
-      char *db_info = GeoIP_database_info(gGeoIP[db]);
+      char *db_info = GeoIP_database_info(gGeoIPHandleSet->dbs[db]);
       Dbg(pi_dbg_ctl, "initialized GeoIP-DB[%d] %s", db, db_info);
       free(db_info);
     }
   }
+
+  return gGeoIPHandleSet;
 }
 
 std::string
-GeoIPConditionGeo::get_geo_string(const sockaddr *addr) const
+GeoIPConditionGeo::get_geo_string(const sockaddr *addr, void *geo_handle) const
 {
   std::string ret = "(unknown)";
   int         v   = 4;
 
-  if (addr) {
+  auto *handle = static_cast<GeoIPHandleSet *>(geo_handle);
+
+  if (addr && handle) {
     switch (_geo_qual) {
     // Country database
     case GEO_QUAL_COUNTRY:
       switch (addr->sa_family) {
       case AF_INET:
-        if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
+        if (handle->dbs[GEOIP_COUNTRY_EDITION]) {
           uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-          ret = GeoIP_country_code_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
+          ret = GeoIP_country_code_by_ipnum(handle->dbs[GEOIP_COUNTRY_EDITION], ip);
         }
         break;
       case AF_INET6: {
-        if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
+        if (handle->dbs[GEOIP_COUNTRY_EDITION_V6]) {
           geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
           v   = 6;
-          ret = GeoIP_country_code_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
+          ret = GeoIP_country_code_by_ipnum_v6(handle->dbs[GEOIP_COUNTRY_EDITION_V6], ip);
         }
       } break;
       default:
@@ -86,18 +103,18 @@ GeoIPConditionGeo::get_geo_string(const sockaddr *addr) const
     case GEO_QUAL_ASN_NAME:
       switch (addr->sa_family) {
       case AF_INET:
-        if (gGeoIP[GEOIP_ASNUM_EDITION]) {
+        if (handle->dbs[GEOIP_ASNUM_EDITION]) {
           uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-          ret = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
+          ret = GeoIP_name_by_ipnum(handle->dbs[GEOIP_ASNUM_EDITION], ip);
         }
         break;
       case AF_INET6: {
-        if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
+        if (handle->dbs[GEOIP_ASNUM_EDITION_V6]) {
           geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
           v   = 6;
-          ret = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
+          ret = GeoIP_name_by_ipnum_v6(handle->dbs[GEOIP_ASNUM_EDITION_V6], ip);
         }
       } break;
       default:
@@ -114,12 +131,14 @@ GeoIPConditionGeo::get_geo_string(const sockaddr *addr) const
 }
 
 int64_t
-GeoIPConditionGeo::get_geo_int(const sockaddr *addr) const
+GeoIPConditionGeo::get_geo_int(const sockaddr *addr, void *geo_handle) const
 {
   int64_t ret = -1;
   int     v   = 4;
 
-  if (!addr) {
+  auto *handle = static_cast<GeoIPHandleSet *>(geo_handle);
+
+  if (!addr || !handle) {
     return 0;
   }
 
@@ -128,18 +147,18 @@ GeoIPConditionGeo::get_geo_int(const sockaddr *addr) const
   case GEO_QUAL_COUNTRY_ISO:
     switch (addr->sa_family) {
     case AF_INET:
-      if (gGeoIP[GEOIP_COUNTRY_EDITION]) {
+      if (handle->dbs[GEOIP_COUNTRY_EDITION]) {
         uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-        ret = GeoIP_id_by_ipnum(gGeoIP[GEOIP_COUNTRY_EDITION], ip);
+        ret = GeoIP_id_by_ipnum(handle->dbs[GEOIP_COUNTRY_EDITION], ip);
       }
       break;
     case AF_INET6: {
-      if (gGeoIP[GEOIP_COUNTRY_EDITION_V6]) {
+      if (handle->dbs[GEOIP_COUNTRY_EDITION_V6]) {
         geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
         v   = 6;
-        ret = GeoIP_id_by_ipnum_v6(gGeoIP[GEOIP_COUNTRY_EDITION_V6], ip);
+        ret = GeoIP_id_by_ipnum_v6(handle->dbs[GEOIP_COUNTRY_EDITION_V6], ip);
       }
     } break;
     default:
@@ -153,18 +172,18 @@ GeoIPConditionGeo::get_geo_int(const sockaddr *addr) const
 
     switch (addr->sa_family) {
     case AF_INET:
-      if (gGeoIP[GEOIP_ASNUM_EDITION]) {
+      if (handle->dbs[GEOIP_ASNUM_EDITION]) {
         uint32_t ip = ntohl(reinterpret_cast<const struct sockaddr_in *>(addr)->sin_addr.s_addr);
 
-        asn_name = GeoIP_name_by_ipnum(gGeoIP[GEOIP_ASNUM_EDITION], ip);
+        asn_name = GeoIP_name_by_ipnum(handle->dbs[GEOIP_ASNUM_EDITION], ip);
       }
       break;
     case AF_INET6:
-      if (gGeoIP[GEOIP_ASNUM_EDITION_V6]) {
+      if (handle->dbs[GEOIP_ASNUM_EDITION_V6]) {
         geoipv6_t ip = reinterpret_cast<const struct sockaddr_in6 *>(addr)->sin6_addr;
 
         v        = 6;
-        asn_name = GeoIP_name_by_ipnum_v6(gGeoIP[GEOIP_ASNUM_EDITION_V6], ip);
+        asn_name = GeoIP_name_by_ipnum_v6(handle->dbs[GEOIP_ASNUM_EDITION_V6], ip);
       }
       break;
     }

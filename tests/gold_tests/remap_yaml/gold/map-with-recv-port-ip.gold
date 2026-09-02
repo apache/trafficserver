@@ -1,0 +1,13 @@
+``
+> GET /``
+> Host: test.example.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Content-Length: 2
+< Date: ``
+< Age: ``
+< Server: ATS/``
+< 
+``

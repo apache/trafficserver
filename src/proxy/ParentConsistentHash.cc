@@ -20,10 +20,12 @@
   See the License for the specific language governing permissions and
   limitations under the License.
  */
+#include <algorithm>
 #include <atomic>
 #include "proxy/HostStatus.h"
 #include "proxy/ParentConsistentHash.h"
 #include "tscore/HashSip.h"
+#include "tsutil/LocalBuffer.h"
 
 namespace
 {
@@ -42,10 +44,8 @@ ParentConsistentHash::ParentConsistentHash(ParentRecord *parent_record)
   selected_algorithm = parent_record->consistent_hash_algorithm;
   hash_seed0         = parent_record->consistent_hash_seed0;
   hash_seed1         = parent_record->consistent_hash_seed1;
-  ink_zero(foundParents);
-
-  hash[PRIMARY]  = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
-  chash[PRIMARY] = std::make_unique<ATSConsistentHash>(parent_record->consistent_hash_replicas);
+  hash[PRIMARY]      = createHashInstance(selected_algorithm, hash_seed0, hash_seed1);
+  chash[PRIMARY]     = std::make_unique<ATSConsistentHash>(parent_record->consistent_hash_replicas);
 
   for (i = 0; i < parent_record->num_parents; i++) {
     chash[PRIMARY]->insert(&(parent_record->parents[i]), parent_record->parents[i].weight, hash[PRIMARY].get());
@@ -153,6 +153,19 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   HostStatus                &pStatus   = HostStatus::instance();
   TSHostStatus               host_stat = TSHostStatus::TS_HOST_STATUS_INIT;
 
+  // Bound the all-down ring walk: read each distinct parent's status at most once.
+  // Stack resident up to MAX_PARENTS -- the parent.config parser does not cap num_parents, so a bigger
+  // pool falls back to the heap rather than overflowing the stack.
+  int const                          num_parents_in_ring[2] = {result->rec->num_parents, result->rec->num_secondary_parents};
+  ts::LocalBuffer<bool, MAX_PARENTS> primary_seen(num_parents_in_ring[PRIMARY]);
+  ts::LocalBuffer<bool, MAX_PARENTS> secondary_seen(num_parents_in_ring[SECONDARY]);
+  bool *const                        seen_parent[2]    = {primary_seen.data(), secondary_seen.data()};
+  int                                seen_count[2]     = {0, 0};
+  int                                host_status_calls = 0; // getHostStatus() calls this selection (== distinct parents examined)
+
+  std::fill_n(seen_parent[PRIMARY], num_parents_in_ring[PRIMARY], false);
+  std::fill_n(seen_parent[SECONDARY], num_parents_in_ring[SECONDARY], false);
+
   Dbg(dbg_ctl_parent_select, "ParentConsistentHash::%s(): Using a consistent hash parent selection strategy.", __func__);
   ink_assert(numParents(result) > 0 || result->rec->go_direct == true);
 
@@ -222,8 +235,14 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
   // ----------------------------------------------------------------------------------------------------
 
   // didn't find a parent or the parent is marked unavailable or the parent is marked down
-  HostStatRec *hst = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
-  host_stat        = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
+  HostStatRec *hst = nullptr;
+  if (pRec) {
+    hst = pStatus.getHostStatus(pRec->hostname);
+    host_status_calls++;
+    seen_parent[last_lookup][pRec->idx] = true;
+    seen_count[last_lookup]++;
+  }
+  host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
   if (firstCall) {
     result->first_choice_status = host_stat;
   }
@@ -236,13 +255,22 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     }
   }
   if (!pRec || (pRec && !pRec->available.load()) || host_stat == TS_HOST_STATUS_DOWN) {
+    // All-down walk: ~O(N*logN) lock-free ring hops to reach every distinct parent, but <= N (num_parents) getHostStatus reads (see
+    // seen_parent below).
     do {
       // check if the host is retryable.  It's retryable if the retry window has elapsed
       // and the global host status is HOST_STATUS_UP
       if (pRec && !pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
-        Dbg(dbg_ctl_parent_select, "Parent.failedAt = %jd, retry = %u, xact_start = %jd", pRec->failedAt.load(), retry_time,
-            request_info->xact_start);
-        if ((pRec->failedAt.load() + retry_time) < request_info->xact_start) {
+        time_t observed = pRec->failedAt.load();
+        Dbg(dbg_ctl_parent_select, "Parent.failedAt = %jd, retry = %u, xact_start = %jd", static_cast<intmax_t>(observed),
+            retry_time, static_cast<intmax_t>(request_info->xact_start));
+        // Atomically push failedAt to (xact_start - retry_time) so that only
+        // one concurrent transaction with this xact_start takes the retry slot.
+        // Sequential retries with a later xact_start still pass the window
+        // check (failedAt + retry_time == xact_start, so xact_start' > xact_start
+        // satisfies the < check). Losers fall through to other parents.
+        if ((observed + retry_time) < request_info->xact_start &&
+            pRec->failedAt.compare_exchange_strong(observed, request_info->xact_start - retry_time)) {
           parentRetry = true;
           // make sure that the proper state is recorded in the result structure
           result->last_parent = pRec->idx;
@@ -307,7 +335,21 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
         Dbg(dbg_ctl_parent_select, "No available parents.");
         break;
       }
-      hst       = (pRec) ? pStatus.getHostStatus(pRec->hostname) : nullptr;
+      // Read each distinct parent's status at most once; force wrap when all are rejected.
+      if (pRec && seen_parent[last_lookup][pRec->idx]) {
+        if (seen_count[last_lookup] >= num_parents_in_ring[last_lookup]) {
+          wrap_around[last_lookup] = true;
+        }
+        host_stat = TS_HOST_STATUS_DOWN;
+        continue;
+      }
+      hst = nullptr;
+      if (pRec) {
+        hst = pStatus.getHostStatus(pRec->hostname);
+        host_status_calls++;
+        seen_parent[last_lookup][pRec->idx] = true;
+        seen_count[last_lookup]++;
+      }
       host_stat = (hst) ? hst->status : TSHostStatus::TS_HOST_STATUS_UP;
       // if the config ignore_self_detect is set to true and the host is down due to SELF_DETECT reason
       // ignore the down status and mark it as available
@@ -319,7 +361,7 @@ ParentConsistentHash::selectParent(bool first_call, ParentResult *result, Reques
     } while (!pRec || !pRec->available.load() || host_stat == TS_HOST_STATUS_DOWN);
   }
 
-  Dbg(dbg_ctl_parent_select, "Additional parent lookups: %d", lookups);
+  Dbg(dbg_ctl_parent_select, "Additional parent lookups: %d, getHostStatus calls: %d", lookups, host_status_calls);
 
   // ----------------------------------------------------------------------------------------------------
   // Validate and return the final result.

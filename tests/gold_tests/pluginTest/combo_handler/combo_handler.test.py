@@ -62,7 +62,7 @@ def tcp_client(host, port, data):
 server = Test.MakeOriginServer("server")
 
 
-def add_server_obj(content_type, path):
+def add_server_obj(content_type, path, cache_control="public, max-age=31536000"):
     request_header = {
         "headers": "GET " + path + " HTTP/1.1\r\n" + "Host: just.any.thing\r\n\r\n",
         "timestamp": "1469733493.993",
@@ -70,9 +70,8 @@ def add_server_obj(content_type, path):
     }
     response_header = {
         "headers":
-            "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "359670651"\r\n' +
-            "Cache-Control: public, max-age=31536000\r\n" + "Accept-Ranges: bytes\r\n" + "Content-Type: " + content_type + "\r\n" +
-            "\r\n",
+            "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "359670651"\r\n' + "Cache-Control: " + cache_control + "\r\n" +
+            "Accept-Ranges: bytes\r\n" + "Content-Type: " + content_type + "\r\n" + "\r\n",
         "timestamp": "1469733493.993",
         "body": "Content for " + path + "\n"
     }
@@ -83,6 +82,19 @@ add_server_obj("text/css ; charset=utf-8", "/obj1")
 add_server_obj("text/javascript", "/sub/obj2")
 add_server_obj("text/argh", "/obj3")
 add_server_obj("application/javascript", "/obj4")
+add_server_obj("application/javascript", "/s/assets/module:variant_v1.js")
+# Empty Content-Type header: the field is present but carries no value.
+# With an allowlist configured this must be rejected; otherwise it would
+# silently bypass the type check.
+add_server_obj("", "/obj_empty_ct")
+# Exercises CacheControlHeader::update via the refactored
+# parse_cache_control_value(): private must propagate to the combo
+# response and the smaller max-age must win across objects.
+add_server_obj("text/javascript", "/obj_priv_short", cache_control="private, max-age=60")
+# max-age=0 is a valid directive ("must revalidate"). The combo must
+# propagate it as the minimum, not silently fall back to the 10-year
+# default.
+add_server_obj("text/javascript", "/obj_revalidate", cache_control="public, max-age=0")
 
 ts = Test.MakeATSProcess("ts")
 
@@ -96,6 +108,7 @@ ts.Disk.plugin_config.AddLine("combo_handler.so - - - ctwl.txt")
 ts.Disk.remap_config.AddLine('map http://xyz/ http://127.0.0.1/ @plugin=combo_handler.so')
 ts.Disk.remap_config.AddLine(f'map http://localhost/127.0.0.1/ http://127.0.0.1:{server.Variables.Port}/')
 ts.Disk.remap_config.AddLine(f'map http://localhost/sub/ http://127.0.0.1:{server.Variables.Port}/sub/')
+ts.Disk.remap_config.AddLine(f'map http://localhost/s/ http://127.0.0.1:{server.Variables.Port}/s/')
 
 # Configure the combo_handler's configuration file.
 ts.Setup.Copy("ctwl.txt", ts.Variables.CONFIGDIR)
@@ -121,5 +134,49 @@ tr.Processes.Default.Command = tcp_client(
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr2.gold"
+
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?s:assets/module:variant_v1.js HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File("_output/3-tr-Default/stream.all.txt")
+f.Content = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should successfully combine an object with a colon in its path")
+f.Content += Testers.ContainsExpression(
+    "Content for /s/assets/module:variant_v1.js", "Should fetch the object path after the first colon")
+
+# An object whose Content-Type header is present but empty must not slip
+# past the allowlist. Pairing it with the allowed obj1 ensures the request
+# would have succeeded if the empty value were not enforced -- so a 403
+# here is a regression check for the bypass fix.
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_empty_ct HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File("_output/4-tr-Default/stream.all.txt")
+f.Content = "combo_handler_files/tr3.gold"
+
+# Combining a long-TTL public object with a short-TTL private object
+# must yield a Cache-Control of "max-age=60, private". This exercises
+# both parse paths in the refactored parse_cache_control_value().
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_priv_short HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File("_output/5-tr-Default/stream.all.txt")
+f.Content = "combo_handler_files/cache_control_aggregation.gold"
+
+# An object with max-age=0 must drive the combined response down to
+# max-age=0 instead of being filtered out as if it were absent. Pairs
+# with the long-TTL obj1 to confirm the min-merge respects zero.
+tr = Test.AddTestRun()
+tr.Processes.Default.Command = tcp_client(
+    "127.0.0.1", ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_revalidate HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+tr.Processes.Default.ReturnCode = 0
+f = tr.Disk.File("_output/6-tr-Default/stream.all.txt")
+f.Content = "combo_handler_files/max_age_zero.gold"
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Some tests are failure tests")

@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include <atomic>
+
 #include "P_Net.h"
 #include "P_UnixNetVConnection.h"
 #include "P_UnixPollDescriptor.h"
@@ -30,6 +32,7 @@
 #include "iocore/net/EventIO.h"
 #include "iocore/net/NetHandler.h"
 #include "tscore/ink_sys_control.h"
+#include "ts/ats_probe.h"
 
 #if TS_USE_LINUX_IO_URING
 #include "iocore/io_uring/IOUringEventIO.h"
@@ -42,13 +45,13 @@ PollDescriptor *get_PollDescriptor(EThread *t);
 using NetContHandler = int (NetHandler::*)(int, void *);
 using uint32         = unsigned int;
 
-extern ink_hrtime last_throttle_warning;
-extern ink_hrtime last_shedding_warning;
-extern ink_hrtime emergency_throttle_time;
-extern int        net_connections_throttle;
-extern bool       net_memory_throttle;
-extern int        fds_throttle;
-extern ink_hrtime last_transient_accept_error;
+extern ink_hrtime        last_throttle_warning;
+extern ink_hrtime        last_shedding_warning;
+extern ink_hrtime        emergency_throttle_time;
+extern int               net_connections_throttle;
+extern std::atomic<bool> net_memory_throttle;
+extern int               fds_throttle;
+extern ink_hrtime        last_transient_accept_error;
 
 //
 // Configuration Parameter had to move here to share
@@ -105,6 +108,14 @@ check_shedding_warning()
 TS_INLINE bool
 check_net_throttle(ThrottleType t)
 {
+  // Throttle new inbound connections when resident memory exceeds
+  // proxy.config.memory.max_usage (set by the MemoryLimit continuation). Only
+  // ACCEPT is throttled; outbound CONNECTs may be needed to let in-flight
+  // transactions complete and release memory.
+  if (t == ACCEPT && net_memory_throttle.load(std::memory_order_relaxed)) {
+    return true;
+  }
+
   int connections = net_connections_to_throttle(t);
 
   if (net_connections_throttle != 0 && connections >= net_connections_throttle) {
@@ -225,6 +236,7 @@ read_disable(NetHandler *nh, NetEvent *ne)
         ne);
   }
   ne->read.enabled = 0;
+  ATS_PROBE4(net_read_disable, ne->get_fd(), ne->read.vio.ndone, ne->write.enabled, ne->read.vio.nbytes);
   nh->read_ready_list.remove(ne);
   ne->ep.modify(-EVENTIO_READ);
 }
@@ -249,6 +261,7 @@ write_disable(NetHandler *nh, NetEvent *ne)
         ne);
   }
   ne->write.enabled = 0;
+  ATS_PROBE4(net_write_disable, ne->get_fd(), ne->write.vio.ndone, ne->read.enabled, ne->write.vio.nbytes);
   nh->write_ready_list.remove(ne);
   ne->ep.modify(-EVENTIO_WRITE);
 }

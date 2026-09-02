@@ -82,6 +82,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # The request should be served out of cache, so this 403 should not be
     # received.
     server-response:
@@ -111,6 +114,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The request should be served out of cache, so this 403 should not be
     # received.
@@ -142,6 +148,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The server should not receive this request because ATS should reply out
     # of the cache.
@@ -232,8 +241,8 @@ sessions:
       # transaction.
       delay: 100ms
 
-    # The server should not receive this request because ATS should reply out
-    # of the cache.
+    # The HEAD responses above should not populate cache, so this GET must go
+    # to origin and establish the cached GET entry for later requests.
     server-response:
       status: 200
       reason: OK
@@ -262,6 +271,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The request should be served out of cache, so this 403 should not be
     # received.
@@ -292,6 +304,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The request should be served out of cache, so this 403 should not be
     # received.

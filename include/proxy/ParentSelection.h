@@ -167,6 +167,7 @@ public:
   int                             max_unavailable_server_retries     = 1;
   int                             secondary_mode                     = 1;
   bool                            ignore_self_detect                 = false;
+  bool                            host_override                      = false;
   ParentHashAlgorithm             consistent_hash_algorithm          = ParentHashAlgorithm::SIPHASH24;
   uint64_t                        consistent_hash_seed0              = 0;
   uint64_t                        consistent_hash_seed1              = 0;
@@ -192,20 +193,38 @@ struct ParentResult {
   const char      *url;
   int              port;
   bool             retry;
-  bool             chash_init[MAX_GROUP_RINGS] = {false};
-  bool             use_pristine                = false;
-  TSHostStatus     first_choice_status         = TSHostStatus::TS_HOST_STATUS_INIT;
-  bool             do_not_cache_response       = false;
+  bool             chash_init[MAX_GROUP_RINGS];
+  bool             use_pristine;
+  TSHostStatus     first_choice_status;
+  bool             do_not_cache_response;
 
   void
   reset()
   {
-    ink_zero(*this);
-    line_number           = -1;
+    // Public members
     result                = ParentResultType::UNDEFINED;
-    mapWrapped[0]         = false;
-    mapWrapped[1]         = false;
+    hostname              = nullptr;
+    url                   = nullptr;
+    port                  = 0;
+    retry                 = false;
+    use_pristine          = false;
+    first_choice_status   = TSHostStatus::TS_HOST_STATUS_INIT;
     do_not_cache_response = false;
+
+    // Private members
+    line_number  = -1;
+    rec          = nullptr;
+    last_parent  = 0;
+    start_parent = 0;
+    last_group   = 0;
+    wrap_around  = false;
+    last_lookup  = 0;
+
+    for (uint32_t i = 0; i < MAX_GROUP_RINGS; ++i) {
+      chash_init[i] = false;
+      mapWrapped[i] = false;
+      chashIter[i]  = ATSConsistentHashIter{};
+    }
   }
 
   bool
@@ -240,6 +259,20 @@ struct ParentResult {
   retry_type() const
   {
     return is_api_result() ? ParentRetry_t::NONE : rec->parent_retry;
+  }
+
+  bool
+  host_override() const
+  {
+    if (is_api_result()) {
+      return false;
+    }
+
+    if (!is_some()) {
+      return false;
+    }
+
+    return rec->host_override;
   }
 
   unsigned
@@ -317,7 +350,7 @@ private:
   uint32_t      start_parent;
   uint32_t      last_group;
   bool          wrap_around;
-  bool          mapWrapped[2];
+  bool          mapWrapped[MAX_GROUP_RINGS];
   // state for consistent hash.
   int                   last_lookup;
   ATSConsistentHashIter chashIter[MAX_GROUP_RINGS];
@@ -430,7 +463,7 @@ class HttpRequestData;
 struct ParentConfig {
 public:
   static void startup();
-  static void reconfigure();
+  static void reconfigure(ConfigContext ctx = {});
   static void print();
   static void set_parent_table(P_table *pTable, ParentRecord *rec, int num_elements);
 

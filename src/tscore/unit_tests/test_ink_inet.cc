@@ -280,4 +280,36 @@ TEST_CASE("ink_inet_unix", "[libts][inet][unix]")
 #if HAVE_STRUCT_SOCKADDR_UN_SUN_LEN
   REQUIRE(ep.sun.sun_len == SUN_LEN(&ep.sun));
 #endif
+
+  // An over-long path must still yield a null terminated _path.
+  std::string long_path(TS_UNIX_SIZE + 10, 'y');
+  UnAddr      from_cstr(long_path.c_str());
+  REQUIRE(from_cstr._path[TS_UNIX_SIZE - 1] == '\0');
+  REQUIRE(strlen(from_cstr._path) == TS_UNIX_SIZE - 1);
+  UnAddr from_string(long_path);
+  REQUIRE(from_string._path[TS_UNIX_SIZE - 1] == '\0');
+  REQUIRE(strlen(from_string._path) == TS_UNIX_SIZE - 1);
+
+  // A kernel sockaddr_un may carry a full, unterminated sun_path; assign() and the copy
+  // paths must still yield a terminated _path.
+  IpEndpoint raw;
+  raw.sa.sa_family = AF_UNIX;
+  memset(raw.sun.sun_path, 'z', TS_UNIX_SIZE); // deliberately no terminator
+  UnAddr from_sockaddr(&raw.sa);
+  REQUIRE(from_sockaddr._path[TS_UNIX_SIZE - 1] == '\0');
+  REQUIRE(strlen(from_sockaddr._path) == TS_UNIX_SIZE - 1);
+  UnAddr copied(from_sockaddr);
+  REQUIRE(copied._path[TS_UNIX_SIZE - 1] == '\0');
+  UnAddr assigned;
+  assigned = from_sockaddr;
+  REQUIRE(assigned._path[TS_UNIX_SIZE - 1] == '\0');
+
+  // Constructing from a null address must leave _path an empty, terminated string so the copy
+  // paths don't read uninitialized memory.
+  UnAddr from_null_sa{static_cast<sockaddr const *>(nullptr)};
+  REQUIRE(from_null_sa._path[0] == '\0');
+  UnAddr from_null_ep{static_cast<IpEndpoint const *>(nullptr)};
+  REQUIRE(from_null_ep._path[0] == '\0');
+  UnAddr copied_null(from_null_sa);
+  REQUIRE(copied_null._path[0] == '\0');
 }

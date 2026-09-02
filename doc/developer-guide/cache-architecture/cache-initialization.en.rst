@@ -23,7 +23,7 @@ Cache Initialization
 ********************
 
 Initialization starts with an instance of :cpp:class:`Store` reading the storage
-configuration file, by default :file:`storage.config`. For each valid element in
+configuration file, by default :file:`storage.yaml`. For each valid element in
 the file an instance of :cpp:class:`Span` is created. These are of basically
 four types:
 

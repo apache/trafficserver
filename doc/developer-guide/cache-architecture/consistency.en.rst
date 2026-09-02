@@ -54,9 +54,9 @@ Volume Tagging
 
 Currently, :term:`cache volumes <cache volume>` are allocated somewhat
 arbitrarily from storage elements. `This enhancement <https://issues.apache.org/jira/browse/TS-1728>`__
-allows :file:`storage.config` to assign :term:`storage units <storage unit>` to
+allows :file:`storage.yaml` to assign :term:`storage units <storage unit>` to
 specific :term:`volumes <cache volume>` although the volumes must still be
-listed in :file:`volume.config` in general and in particular to map domains to
+listed in :file:`storage.yaml` in general and in particular to map domains to
 specific volumes. A primary use case for this is to be able to map specific
 types of content to different storage elements. This can be employed to have
 different storage devices for various types of content (SSD vs. rotational).

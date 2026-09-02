@@ -18,7 +18,7 @@
 from __future__ import annotations
 
 from functools import cached_property, lru_cache
-from typing import Callable, Any
+from typing import Any
 from hrw4u.debugging import Dbg
 from hrw4u.states import SectionType
 from hrw4u.common import SystemDefaults
@@ -35,11 +35,6 @@ class SymbolResolverBase:
         self._dbg = dbg if dbg is not None else Dbg(debug)
         self._sandbox = sandbox or SandboxConfig.empty()
         self._sandbox_warnings: list[str] = []
-        # Clear caches when debug status changes to ensure consistency
-        if hasattr(self, '_condition_cache'):
-            self._condition_cache.cache_clear()
-        if hasattr(self, '_operator_cache'):
-            self._operator_cache.cache_clear()
 
     # Cached table access for performance - Python 3.11+ cached_property
     @cached_property
@@ -67,10 +62,6 @@ class SymbolResolverBase:
     def _statement_function_map(self) -> dict[str, types.MapParams]:
         return tables.STATEMENT_FUNCTION_MAP
 
-    @cached_property
-    def _reverse_resolution_map(self) -> dict[str, Any]:
-        return tables.REVERSE_RESOLUTION_MAP
-
     def validate_section_access(self, name: str, section: SectionType | None, allowed_sections: set[SectionType] | None) -> None:
         if section and allowed_sections and section not in allowed_sections:
             raise SymbolResolutionError(name, f"{name} is not available in the {section.value} section")
@@ -78,10 +69,6 @@ class SymbolResolverBase:
     @lru_cache(maxsize=256)
     def _lookup_condition_cached(self, name: str) -> types.MapParams | None:
         return self._condition_map.get(name)
-
-    @lru_cache(maxsize=256)
-    def _lookup_operator_cached(self, name: str) -> types.MapParams | None:
-        return self._operator_map.get(name)
 
     @lru_cache(maxsize=128)
     def _lookup_function_cached(self, name: str) -> types.MapParams | None:
@@ -104,31 +91,12 @@ class SymbolResolverBase:
         else:
             self._dbg.exit(method_name)
 
-    def _debug_log(self, message: str) -> None:
-        self._dbg(message)
-
-    def _create_symbol_error(self, symbol_name: str, message: str) -> SymbolResolutionError:
-        return SymbolResolutionError(symbol_name, message)
-
-    def _handle_unknown_symbol(self, symbol_name: str, symbol_type: str) -> SymbolResolutionError:
-        return self._create_symbol_error(symbol_name, f"Unknown {symbol_type}: '{symbol_name}'")
-
-    def _handle_validation_error(self, symbol_name: str, validation_message: str) -> SymbolResolutionError:
-        return self._create_symbol_error(symbol_name, validation_message)
-
     def find_prefix_matches(self, target: str, table: dict[str, Any]) -> list[tuple[str, Any]]:
         matches = []
         for key, value in table.items():
             if key.endswith('.') and target.startswith(key):
                 matches.append((key, value))
         return matches
-
-    def get_longest_prefix_match(self, target: str, table: dict[str, Any]) -> tuple[str, Any] | None:
-        matches = self.find_prefix_matches(target, table)
-        if not matches:
-            return None
-        matches.sort(key=lambda x: len(x[0]), reverse=True)
-        return matches[0]
 
     def debug_context(self, method_name: str, *args: Any):
 

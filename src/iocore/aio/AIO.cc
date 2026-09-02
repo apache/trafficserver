@@ -85,6 +85,11 @@ AIOCallback::io_complete(int event, void *data)
 {
   (void)event;
   (void)data;
+  // Store from_api's value ahead of time because handling the event in the
+  // midst of this function may delete `this`, making using from_api itself a
+  // use-after-free later.
+  bool const should_delete_self = from_ts_api;
+
   if (aio_err_callback && !ok()) {
     AIOCallback *err_op          = new AIOCallback();
     err_op->aiocb.aio_fildes     = this->aiocb.aio_fildes;
@@ -99,6 +104,9 @@ AIOCallback::io_complete(int event, void *data)
   if (!action.cancelled && action.continuation) {
     action.continuation->handleEvent(AIO_EVENT_DONE, this);
   }
+  if (should_delete_self) {
+    delete this;
+  }
   return EVENT_DONE;
 }
 
@@ -109,7 +117,6 @@ struct AIO_Reqs {
   ASLL(AIOCallback, alink) aio_temp_list;
   ink_mutex aio_mutex;
   ink_cond  aio_cond;
-  int       index           = 0;  /* position of this struct in the aio_reqs array */
   int       pending         = 0;  /* number of outstanding requests on the disk */
   int       queued          = 0;  /* total number of aio_todo requests */
   int       filedes         = -1; /* the file descriptor for the requests or status IO_NOT_IN_PROGRESS */
@@ -298,14 +305,13 @@ aio_init_fildes(int fildes, int fromAPI = 0)
   RecInt thread_num;
 
   if (fromAPI) {
-    request->index    = 0;
     request->filedes  = -1;
     aio_reqs[0]       = request;
     thread_is_created = 1;
     thread_num        = api_config_threads_per_disk;
   } else {
-    request->index        = num_filedes;
-    request->filedes      = fildes;
+    request->filedes = fildes;
+    ink_release_assert(num_filedes < MAX_DISKS_POSSIBLE);
     aio_reqs[num_filedes] = request;
     thread_num            = cache_config_threads_per_disk;
   }

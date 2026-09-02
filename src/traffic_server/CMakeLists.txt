@@ -27,7 +27,6 @@ target_link_libraries(
           ts::http2
           ts::logging
           ts::hdrs
-          ts::configmanager
           ts::diagsconfig
           ts::inkutils
           ts::inkdns
@@ -42,6 +41,7 @@ target_link_libraries(
           ts::jsonrpc_protocol
           ts::jsonrpc_server
           ts::rpcpublichandlers
+          ts::configmanager
 )
 if(NOT APPLE)
   # Skipping apple because macOS doesn't seem to provide an equivalent option
@@ -50,8 +50,12 @@ if(NOT APPLE)
   target_link_options(traffic_server PRIVATE -Wl,--no-undefined,--no-allow-shlib-undefined)
 endif()
 
-if(TS_USE_QUIC)
+if(TS_USE_QUIC OR TS_USE_QMUX)
   target_link_libraries(traffic_server PRIVATE ts::http3 ts::quic)
+endif()
+
+if(TS_USE_QMUX)
+  target_link_libraries(traffic_server PRIVATE ts::qmux)
 endif()
 
 if(TS_HAS_PROFILER)

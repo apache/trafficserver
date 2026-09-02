@@ -448,7 +448,11 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
         // for retry.
         if (!pRec->available.load() && host_stat == TS_HOST_STATUS_UP) {
           _now == 0 ? _now = time(nullptr) : _now = now;
-          if ((pRec->failedAt.load() + retry_time) < _now) {
+          // Atomically push failedAt to (_now - retry_time) so only one
+          // concurrent transaction with this _now takes the retry slot;
+          // sequential retries with a later _now still pass the window check.
+          time_t observed = pRec->failedAt.load();
+          if ((observed + retry_time) < _now && pRec->failedAt.compare_exchange_strong(observed, _now - retry_time)) {
             nextHopRetry       = true;
             result.last_parent = pRec->host_index;
             result.last_lookup = pRec->group_index;
@@ -547,8 +551,4 @@ NextHopConsistentHash::findNextHop(TSHttpTxn txnp, void * /* ih ATS_UNUSED */, t
     NH_Dbg(NH_DBG_CTL, "[%" PRIu64 "] result.result: %s set hostname null port 0 retry false", sm_id,
            ParentResultStr[static_cast<int>(result.result)]);
   }
-
-  setHostHeader(txnp, result.hostname);
-
-  return;
 }

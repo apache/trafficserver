@@ -150,21 +150,20 @@ Converting a file with a detailed output.
    $ python3 convert2yaml.py -f records.config -o records.yaml
    [████████████████████████████████████████] 494/494
 
-   ┌■ 8 Renamed records:
+   ┌■ 7 Renamed records:
    └┬──» #1 : proxy.config.output.logfile -> proxy.config.output.logfile.name
     ├──» #2 : proxy.config.exec_thread.autoconfig -> proxy.config.exec_thread.autoconfig.enabled
     ├──» #3 : proxy.config.hostdb -> proxy.config.hostdb.enabled
     ├──» #4 : proxy.config.tunnel.prewarm -> proxy.config.tunnel.prewarm.enabled
     ├──» #5 : proxy.config.ssl.TLSv1_3 -> proxy.config.ssl.TLSv1_3.enabled
     ├──» #6 : proxy.config.ssl.client.TLSv1_3 -> proxy.config.ssl.client.TLSv1_3.enabled
-    ├──» #7 : proxy.config.ssl.origin_session_cache -> proxy.config.ssl.origin_session_cache.enabled
-    └──» #8 : proxy.config.ssl.session_cache -> proxy.config.ssl.session_cache.mode
+    └──» #7 : proxy.config.ssl.origin_session_cache -> proxy.config.ssl.origin_session_cache.enabled
 
 
 There are a few things to note here:
 
 Line 2. A total of ``494`` from ``494`` records were converted.
-Line 4. A total of ``8`` records were renamed.
+Line 4. A total of ``7`` records were renamed.
 
 Example 2
 ---------

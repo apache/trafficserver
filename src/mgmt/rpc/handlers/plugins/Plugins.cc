@@ -22,6 +22,7 @@
 #include "mgmt/rpc/handlers/common/ErrorUtils.h"
 
 #include "api/LifecycleAPIHooks.h"
+#include "proxy/Plugin.h"
 
 namespace
 {
@@ -87,6 +88,37 @@ plugin_send_basic_msg(std::string_view const & /* id ATS_UNUSED */, YAML::Node c
     resp = err::make_errata(err::Codes::PLUGIN, "Error parsing the incoming data: {}", ex.what());
   }
 
+  return resp;
+}
+swoc::Rv<YAML::Node>
+get_plugin_list(std::string_view const & /* id ATS_UNUSED */, YAML::Node const & /* params ATS_UNUSED */)
+{
+  swoc::Rv<YAML::Node> resp;
+  try {
+    const auto &summary = get_plugin_load_summary();
+    YAML::Node  data;
+
+    data["source"] = summary.source;
+
+    YAML::Node plugins;
+    for (const auto &e : summary.entries) {
+      YAML::Node plugin;
+
+      plugin["path"]    = e.path;
+      plugin["enabled"] = e.enabled;
+      plugin["status"]  = e.enabled ? "loaded" : "disabled";
+      plugin["index"]   = e.index;
+      if (e.load_order >= 0) {
+        plugin["load_order"] = e.load_order;
+      }
+      plugins.push_back(plugin);
+    }
+    data["plugins"] = plugins;
+
+    resp.result()["data"] = data;
+  } catch (std::exception const &ex) {
+    resp.errata().assign(std::error_code{errors::Codes::PLUGIN}).note("Error calling get_plugin_list: {}", ex.what());
+  }
   return resp;
 }
 } // namespace rpc::handlers::plugins

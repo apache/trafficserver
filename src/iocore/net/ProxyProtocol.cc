@@ -22,12 +22,14 @@
  */
 
 #include "iocore/net/ProxyProtocol.h"
+#include "tscore/Diags.h"
 #include "tscore/ink_assert.h"
 #include "tscore/ink_string.h"
 #include "tscore/ink_inet.h"
 #include "swoc/TextView.h"
 #include "swoc/bwf_base.h"
 #include "tsutil/DbgCtl.h"
+#include <limits>
 #include <optional>
 #include <string_view>
 
@@ -62,6 +64,19 @@ constexpr uint16_t PPv2_ADDR_LEN_INET6 = 16 + 16 + 2 + 2;
 constexpr uint16_t PPv2_ADDR_LEN_UNIX  = 108 + 108;
 
 const swoc::bwf::Spec ADDR_ONLY_FMT{"::a"};
+
+std::optional<in_port_t>
+proxy_protocol_v1_parse_port(swoc::TextView token)
+{
+  swoc::TextView parsed;
+  auto           port = swoc::svtoi(token, &parsed, 10);
+
+  if (parsed != token || port <= 0 || port > std::numeric_limits<in_port_t>::max()) {
+    return std::nullopt;
+  }
+
+  return static_cast<in_port_t>(port);
+}
 
 DbgCtl dbg_ctl_proxyprotocol_v1{"proxyprotocol_v1"};
 DbgCtl dbg_ctl_proxyprotocol_v2{"proxyprotocol_v2"};
@@ -181,22 +196,22 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
     return 0;
   }
 
-  // Next is the TCP source port represented as a decimal number in the range of [0..65535] inclusive.
+  // Next is the TCP source port represented as a decimal number in the range of [1..65535] inclusive.
   token = hdr.split_prefix_at(' ');
   if (0 == token.size()) {
     return 0;
   }
   Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = Source Port", static_cast<int>(token.size()), token.data());
 
-  in_port_t src_port = swoc::svtoi(token);
-  if (src_port == 0) {
-    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: src port [%d] token [%.*s] failed to parse", src_port,
-        static_cast<int>(token.size()), token.data());
+  auto src_port = proxy_protocol_v1_parse_port(token);
+  if (!src_port) {
+    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: src port token [%.*s] failed to parse", static_cast<int>(token.size()),
+        token.data());
     return 0;
   }
-  pp_info->src_addr.network_order_port() = htons(src_port);
+  pp_info->src_addr.network_order_port() = htons(*src_port);
 
-  // Next is the TCP destination port represented as a decimal number in the range of [0..65535] inclusive.
+  // Next is the TCP destination port represented as a decimal number in the range of [1..65535] inclusive.
   // Final trailer is CR LF so split at CR.
   token = hdr.split_prefix_at('\r');
   if (0 == token.size() || token.find(0x20) != token.npos) {
@@ -204,13 +219,13 @@ proxy_protocol_v1_parse(ProxyProtocol *pp_info, swoc::TextView hdr)
   }
   Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: [%.*s] = Destination Port", static_cast<int>(token.size()), token.data());
 
-  in_port_t dst_port = swoc::svtoi(token);
-  if (dst_port == 0) {
-    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: dst port [%d] token [%.*s] failed to parse", dst_port,
-        static_cast<int>(token.size()), token.data());
+  auto dst_port = proxy_protocol_v1_parse_port(token);
+  if (!dst_port) {
+    Dbg(dbg_ctl_proxyprotocol_v1, "proxy_protov1_parse: dst port token [%.*s] failed to parse", static_cast<int>(token.size()),
+        token.data());
     return 0;
   }
-  pp_info->dst_addr.network_order_port() = htons(dst_port);
+  pp_info->dst_addr.network_order_port() = htons(*dst_port);
 
   pp_info->version = ProxyProtocolVersion::V1;
 
@@ -237,7 +252,7 @@ proxy_protocol_v2_parse(ProxyProtocol *pp_info, const swoc::TextView &msg)
   uint16_t       tlv_len   = 0;
 
   if (msg.size() < total_len) {
-    Dbg(dbg_ctl_proxyprotocol_v2, "The amount of available data is smaller than the expected size");
+    Error("The size of PP header received (%zu) is smaller than the expected size (%zu)", msg.size(), total_len);
     return 0;
   }
 
@@ -452,6 +467,18 @@ proxy_protocol_v2_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &p
 }
 
 } // namespace
+
+bool
+proxy_protocol_detect(swoc::TextView tv)
+{
+  if (tv.size() >= PPv1_CONNECTION_HEADER_LEN_MIN && tv.starts_with(PPv1_CONNECTION_PREFACE)) {
+    return true;
+  } else if (tv.size() >= PPv2_CONNECTION_HEADER_LEN && tv.starts_with(PPv2_CONNECTION_PREFACE)) {
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /**
    PROXY Protocol Parser

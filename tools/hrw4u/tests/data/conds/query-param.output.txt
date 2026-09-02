@@ -11,7 +11,7 @@ cond %{TO-URL:QUERY:target} ="" [NOT]
     set-header X-Target "set"
 
 cond %{SEND_REQUEST_HDR_HOOK} [AND]
-cond %{NEXT-HOP:QUERY:backend} ="fast"
+cond %{SERVER-URL:QUERY:backend} ="fast"
     set-header X-Priority "high"
 
 cond %{SEND_RESPONSE_HDR_HOOK} [AND]

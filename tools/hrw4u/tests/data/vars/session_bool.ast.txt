@@ -1,0 +1,1 @@
+(program (programItem (section (sessionVarSection SESSION_VARS { (variables (variablesItem (variableDecl ssn_bool_0 : bool ;))) }))) (programItem (section REMAP { (sectionBody (conditional (ifStatement if (condition (expression (term (factor ssn_bool_0)))) (block { (blockItem (statement inbound.req.X-suspicious = (value "true") ;)) })))) })) <EOF>)

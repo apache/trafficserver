@@ -278,6 +278,7 @@ def MakeATSProcess(
     fname = "ip_allow.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+    AddMethodToInstance(p, addPrivateConnectAllowYaml)
 
     fname = "logging.yaml"
     tmpname = os.path.join(config_dir, fname)
@@ -295,6 +296,10 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
+    fname = "remap.yaml"
+    tmpname = os.path.join(config_dir, fname)
+    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
+
     fname = "socks.config"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
@@ -303,7 +308,7 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "ssl_multicert.config"
+    fname = "ssl_multicert.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
@@ -311,11 +316,7 @@ def MakeATSProcess(
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
-    fname = "storage.config"
-    tmpname = os.path.join(config_dir, fname)
-    p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
-
-    fname = "volume.config"
+    fname = "storage.yaml"
     tmpname = os.path.join(config_dir, fname)
     p.Disk.File(tmpname, id=make_id(fname), typename="ats:config")
 
@@ -419,6 +420,9 @@ def MakeATSProcess(
         })
         # ATS_ROOT is used by compiler.sh to find the ATS install directory.
         p.Env['ATS_ROOT'] = p.Variables.PREFIX
+        # Cripts are compiled at startup, which can exceed the default 10s readiness window
+        # under CI load and flake the "fully initialized" wait. Give cripts startup more room.
+        p.StartupTimeout = 60
 
     # The following message was added so that tests and users can know when
     # Traffic Server is ready to both receive and optimize traffic.
@@ -674,6 +678,46 @@ def addDefaultSSLFiles(self):
 
 def addSSLFileFromDefaultTestFolder(self, filename):
     addSSLfile(self, os.path.join(self.Variables.AtsTestToolsDir, "ssl", filename))
+
+
+CONNECT_DENY_RULE_MARKER = """  - apply: out
+    ip_addrs:
+      - 0.0.0.0/8
+"""
+
+
+def _addPrivateConnectAllowRule(content, methods="CONNECT"):
+    rule = "\n".join([
+        "  - apply: out",
+        "    ip_addrs: 127.0.0.1",
+        "    action: allow",
+        f"    methods: {methods}",
+    ]) + "\n"
+
+    if rule in content:
+        return content
+
+    marker_index = content.find(CONNECT_DENY_RULE_MARKER)
+    if marker_index >= 0:
+        return content[:marker_index] + rule + content[marker_index:]
+
+    raise RuntimeError("Could not find default outbound CONNECT deny rule in ip_allow.yaml")
+
+
+def addPrivateConnectAllowYaml(self, methods="CONNECT"):
+    """Allow tests to intentionally CONNECT to a loopback endpoint."""
+
+    def update_ip_allow_yaml(name):
+        with open(name) as f:
+            content = f.read()
+        with open(name, "w") as f:
+            f.write(_addPrivateConnectAllowRule(content, methods))
+        return (True, "Updated file {0}".format(self.Disk.ip_allow_yaml.Name), "Success")
+
+    if self.Disk.ip_allow_yaml.content is not None:
+        self.Disk.ip_allow_yaml.content = _addPrivateConnectAllowRule(self.Disk.ip_allow_yaml.content, methods)
+    else:
+        self.Disk.ip_allow_yaml.WriteCustomOn(update_ip_allow_yaml)
 
 
 RegisterFileType(Config, "ats:config")

@@ -121,7 +121,7 @@ protected:
   std::optional<TextView>      _text;                                         ///< Default literal text (optional)
   feature_type_for<DURATION>   _duration;                                     ///< Time between update checks.
   std::atomic<Clock::duration> _last_check = Clock::now().time_since_epoch(); ///< Absolute time of the last alert.
-  Clock::time_point            _last_modified;                                ///< Last modified time of the file.
+  Clock::time_point            _last_modified{};                              ///< Last modified time of the file.
   std::shared_ptr<std::string> _content;                                      ///< Content of the file.
   int                          _line_no = 0;                                  ///< For debugging name conflicts.
   std::shared_mutex            _content_mutex;                                ///< Lock for access @a content.
@@ -319,8 +319,20 @@ Do_text_block_define::Updater::operator()()
   // If control flow gets here, the file is no longer accessible and the content
   // should be cleared. If the file shows up again, it should have a modified time
   // later than the previously existing file, so that can be left unchanged.
-  std::unique_lock lock(_block->_content_mutex);
-  _block->_content.reset();
+  bool content_was_available = false;
+  {
+    std::unique_lock lock(_block->_content_mutex);
+    content_was_available = static_cast<bool>(_block->_content);
+    _block->_content.reset();
+  }
+
+  if (content_was_available) {
+    std::string msg;
+
+    swoc::bwprint(msg, R"([{}] Unable to read file "{}" for text block "{}" - {}.)", Config::PLUGIN_TAG, _block->_path,
+                  _block->_name, ec);
+    ts::Log_Error(msg);
+  }
 }
 
 /* ------------------------------------------------------------------------------------ */
@@ -480,7 +492,7 @@ Mod_as_text_block::load(Config &cfg, YAML::Node, TextView, TextView, YAML::Node 
 Rv<Feature>
 Mod_as_text_block::operator()(Context &ctx, Feature &feature)
 {
-  Feature zret{};
+  Feature zret{NIL_FEATURE};
   if (IndexFor(STRING) == feature.index()) {
     auto const &tag = std::get<IndexFor(STRING)>(feature); // get the name.
     zret            = Ex_text_block::extract_block(ctx, tag);

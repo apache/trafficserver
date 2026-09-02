@@ -50,8 +50,13 @@ RemapProcessor::setup_for_remap(HttpTransact::State *s, UrlRewrite *table)
   int      request_port;
   bool     proxy_request = false;
 
-  s->reverse_proxy = table->reverse_proxy;
   s->url_map.set(s->hdr_info.client_request.m_heap);
+  if (unlikely(table == nullptr)) {
+    Dbg(dbg_ctl_url_rewrite, "no remap table (shutdown in progress); skipping remap");
+    return false;
+  }
+
+  s->reverse_proxy = table->reverse_proxy;
 
   ink_assert(redirect_url != nullptr);
 
@@ -158,12 +163,19 @@ RemapProcessor::finish_remap(HttpTransact::State *s, UrlRewrite *table)
 {
   url_mapping  *map            = nullptr;
   HTTPHdr      *request_header = &s->hdr_info.client_request;
-  URL          *request_url    = request_header->url_get();
+  URL          *request_url    = nullptr;
   char        **redirect_url   = &s->remap_redirect;
   char          tmp_referer_buf[4096], tmp_redirect_buf[4096], tmp_buf[2048];
   int           tmp;
   int           from_len;
   referer_info *ri;
+
+  if (unlikely(table == nullptr)) {
+    Dbg(dbg_ctl_url_rewrite, "no remap table (shutdown in progress); skipping remap completion");
+    return false;
+  }
+
+  request_url = request_header->url_get();
 
   map = s->url_map.getMapping();
   if (nullptr == map) {

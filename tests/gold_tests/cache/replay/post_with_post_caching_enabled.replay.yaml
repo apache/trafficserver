@@ -94,6 +94,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # The request should not go to the server, so this 500 response should not
     # be served.
     server-response:
@@ -158,6 +161,9 @@ sessions:
       # transaction.
       delay: 500ms
 
+    proxy-request:
+      expect: absent
+
     # The request should be served out of cache, so this 403 should not be
     # received.
     server-response:
@@ -215,6 +221,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The earlier response to the POST request should be returned, not this 403.
     server-response:
@@ -334,6 +343,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The response should be served out of cache, not via this server response.
     server-response:

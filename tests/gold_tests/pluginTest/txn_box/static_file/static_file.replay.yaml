@@ -30,6 +30,11 @@ meta:
           text: "Concert missing."
           duration: "2 minutes 30 seconds"
 
+      - text-block-define:
+          name: "unreadable"
+          path: "unreadable.txt"
+          duration: "1 second"
+
 # -- doc-jwt-->
       - text-block-define:
           name: "default-jwt"
@@ -141,7 +146,8 @@ meta:
         - [ Content-Length, 56 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4 } ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 1 ]]}}
     client-request:
@@ -221,7 +227,8 @@ sessions:
     proxy-response:
       status: 200
 
-- protocol: [ { name: ip, version : 4 } ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 4 ]]}}
     client-request:
@@ -341,8 +348,6 @@ sessions:
       headers:
         fields:
         - [ Host, unmapped.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -356,8 +361,6 @@ sessions:
       headers:
         fields:
         - [ Host, unmapped.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -371,8 +374,6 @@ sessions:
       headers:
         fields:
         - [ Host, unmapped.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -386,8 +387,6 @@ sessions:
       headers:
         fields:
         - [ Host, base.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       status: 404
       reason: "Missing"

@@ -33,10 +33,19 @@
 #include "iocore/net/NetVConnection.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "tsutil/DbgCtl.h"
+#include "tsutil/LocalBuffer.h"
 #include <swoc/TextView.h>
+#include <algorithm>
 
 namespace
 {
+
+// 1024 bytes should be more than enough in the vast majority of
+// circumstances. proxy.config.proxy_protocol.max_header_size defaults
+// to 109 bytes. If somehow this is exceeded, LocalBuffer will allocate
+// space on the heap.
+static constexpr size_t PROXY_PROTOCOL_LOCAL_BUFFER_SIZE = 1024;
+
 DbgCtl dbg_ctl_ssl{"ssl"};
 
 } // end anonymous namespace
@@ -46,16 +55,54 @@ DbgCtl dbg_ctl_ssl{"ssl"};
 //
 
 /**
+   PROXY Protocol preface check with IOBufferReader.
+ */
+bool
+NetVConnection::has_proxy_protocol_preface(IOBufferReader *reader) const
+{
+  if (reader == nullptr) {
+    return false;
+  }
+
+  swoc::TextView tv;
+
+  char preface[PPv2_CONNECTION_HEADER_LEN];
+  tv.assign(preface, reader->memcpy(preface, sizeof(preface), 0));
+  return proxy_protocol_detect(tv);
+}
+
+/**
+   PROXY Protocol preface check with a raw buffer.
+ */
+bool
+NetVConnection::has_proxy_protocol_preface(const char *buffer, int64_t bytes_r) const
+{
+  if (buffer == nullptr || bytes_r <= 0) {
+    return false;
+  }
+
+  swoc::TextView tv;
+  tv.assign(buffer, static_cast<size_t>(bytes_r));
+  return proxy_protocol_detect(tv);
+}
+
+/**
    PROXY Protocol check with IOBufferReader
 
    If the buffer has PROXY Protocol, it will be consumed by this function.
  */
 bool
-NetVConnection::has_proxy_protocol(IOBufferReader *reader)
+NetVConnection::has_proxy_protocol(IOBufferReader *reader, int max_header_size)
 {
-  char           buf[PPv1_CONNECTION_HEADER_LEN_MAX + 1];
   swoc::TextView tv;
-  tv.assign(buf, reader->memcpy(buf, sizeof(buf), 0));
+
+  if (!this->has_proxy_protocol_preface(reader)) {
+    return false;
+  }
+
+  auto const                                              bufsize = std::min<int64_t>(max_header_size, reader->read_avail());
+  ts::LocalBuffer<char, PROXY_PROTOCOL_LOCAL_BUFFER_SIZE> buf(static_cast<size_t>(bufsize));
+  tv.assign(buf.data(), reader->memcpy(buf.data(), bufsize, 0));
 
   size_t len = proxy_protocol_parse(&this->pp_info, tv);
 

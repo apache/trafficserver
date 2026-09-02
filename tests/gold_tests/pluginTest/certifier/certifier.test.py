@@ -26,6 +26,20 @@ Test certifier plugin behaviors
 Test.SkipUnless(Condition.PluginExists('certifier.so'))
 
 
+def prepare_certifier_storage(source_path: str, destination_path: str) -> None:
+    """Copy the certifier files and make its mutable state writable by ATS."""
+    store_path = os.path.join(destination_path, 'store')
+    serial_path = os.path.join(destination_path, 'ca-serial.txt')
+
+    def set_permissions() -> None:
+        os.chmod(serial_path, 0o666)
+        os.chmod(store_path, 0o777)
+
+    Setup.Copy(source_path, destination_path)
+    Setup.MakeDir(store_path)
+    Setup.Lambda(func_setup=set_permissions, description="Make certifier state writable by ATS")
+
+
 class DynamicCertTest:
     httpsReplayFile = "replays/https.replay.yaml"
     certPathSrc = os.path.join(Test.TestDirectory, "certs")
@@ -44,8 +58,7 @@ class DynamicCertTest:
         self.ts.addDefaultSSLFiles()
         # copy over the cert store in which the certs will be generated/stored
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
-        Setup.Copy(self.certPathSrc, self.certPathDest)
-        Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -53,7 +66,13 @@ class DynamicCertTest:
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
             })
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
         self.ts.Disk.plugin_config.AddLine(
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
@@ -119,8 +138,7 @@ class ReuseExistingCertTest:
         self.ts.addDefaultSSLFiles()
         # copy over the cert store in which the certs will be generated/stored
         self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
-        Setup.Copy(self.certPathSrc, self.certPathDest)
-        Setup.MakeDir(os.path.join(self.certPathDest, 'store'))
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -128,7 +146,13 @@ class ReuseExistingCertTest:
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
             })
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
         self.ts.Disk.plugin_config.AddLine(
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
@@ -151,3 +175,120 @@ class ReuseExistingCertTest:
 
 
 ReuseExistingCertTest().run()
+
+
+class UnsafeSniTest:
+    httpsReplayFile = "replays/https-path-traversal.replay.yaml"
+    certPathSrc = os.path.join(Test.TestDirectory, "certs")
+    escapedCert = "certifier-escaped.crt"
+    certPathDest = ""
+
+    def __init__(self):
+        self.setupOriginServer()
+        self.setupTS()
+
+    def setupOriginServer(self):
+        self.server = Test.MakeVerifierServerProcess("verifier-server3", self.httpsReplayFile)
+
+    def setupTS(self):
+        self.ts = Test.MakeATSProcess("ts3", enable_tls=True)
+        self.ts.addDefaultSSLFiles()
+        self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|certifier|ssl",
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+            })
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+        self.ts.Disk.plugin_config.AddLine(
+            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
+        )
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            "rejecting unsafe SNI for certificate storage", "Should reject SNI values that cannot be used safely as file names.")
+
+    def runHTTPSTraffic(self):
+        tr = Test.AddTestRun("Test unsafe SNI is rejected")
+        tr.AddVerifierClientProcess(
+            "client3", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
+    def verifyCertNotExist(self, certPath):
+        tr = Test.AddTestRun("Verify unsafe SNI did not escape the store")
+        tr.Processes.Default.Command = "echo verify"
+        tr.Disk.File(certPath, exists=False)
+
+    def run(self):
+        escapedCertPath = os.path.join(self.certPathDest, self.escapedCert)
+        self.verifyCertNotExist(escapedCertPath)
+        self.runHTTPSTraffic()
+        self.verifyCertNotExist(escapedCertPath)
+
+
+UnsafeSniTest().run()
+
+
+class NoSniTest:
+    httpsReplayFile = "replays/https-no-sni.replay.yaml"
+    certPathSrc = os.path.join(Test.TestDirectory, "certs")
+    certPathDest = ""
+
+    def __init__(self):
+        self.setupOriginServer()
+        self.setupTS()
+
+    def setupOriginServer(self):
+        self.server = Test.MakeVerifierServerProcess("verifier-server4", self.httpsReplayFile)
+
+    def setupTS(self):
+        self.ts = Test.MakeATSProcess("ts4", enable_tls=True)
+        self.ts.addDefaultSSLFiles()
+        self.certPathDest = os.path.join(self.ts.Variables.CONFIGDIR, "certifier-certs")
+        prepare_certifier_storage(self.certPathSrc, self.certPathDest)
+        self.ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "http|certifier|ssl",
+                "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
+                "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
+            })
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+        self.ts.Disk.plugin_config.AddLine(
+            f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
+        )
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            "no SNI available; using default certificate", "Should continue the handshake when no SNI is available.")
+
+    def runHTTPSTraffic(self):
+        tr = Test.AddTestRun("Test missing SNI falls back to default cert")
+        tr.AddVerifierClientProcess(
+            "client4", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+        tr.Processes.Default.StartBefore(self.server)
+        tr.Processes.Default.StartBefore(self.ts)
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.ts
+
+    def run(self):
+        self.runHTTPSTraffic()
+
+
+NoSniTest().run()

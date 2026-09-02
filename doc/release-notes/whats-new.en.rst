@@ -76,6 +76,14 @@ TS API
 Features
 --------
 
+* Add :file:`plugin.yaml`, a YAML-based replacement for :file:`plugin.config`.
+  New features include disabling plugins without deleting lines
+  (``enabled: false``), explicit ``load_order``, inline ``config`` content, and
+  startup logging. See :doc:`../admin-guide/files/plugin.yaml.en`.
+* traffic_ctl: Add ``plugin list`` to show loaded plugins and their status via
+  JSONRPC.
+* traffic_ctl: Add ``config convert plugin_config`` to migrate
+  :file:`plugin.config` to :file:`plugin.yaml`.
 * Add the ``cqssg`` log field for TLS group name logging
 * traffic_ctl: Add a new :ref:`server <traffic-control-command-server-status>` command to show some basic internal
   information
@@ -94,9 +102,9 @@ Features
 * Added option for :ts:cv:`proxy.config.http.auth_server_session_private` to only mark the connection private if ``Proxy-Authorization`` or ``Www-Authenticate`` headers are present
 * It is now an ``ERROR`` if a remap ACL has more than one ``@action`` parameter.
   This was an error in ATS 10.0.x
-* Add a ``fragment-size`` option in volume.config to control the fragment size
+* Add a ``fragment_size`` option in storage.yaml to control the fragment size
   of the volume.
-* Add an optional ``avg_obj_size`` to ``volume.config`` to control the directory
+* Add an optional ``avg_obj_size`` to ``storage.yaml`` to control the directory
   entry sizing.
 * The ``proxy.config.http.cache.post_method`` is now an overridable config.
 * Defer deleting the copied plugin shared object file to startup to make it
@@ -108,17 +116,11 @@ Configuration
 
 * Added :ts:cv:`proxy.config.http.negative_revalidating_list` to configure the
   list of status codes that apply to the negative revalidating feature
-* Added :ts:cv:`proxy.config.ssl.session_cache.mode` to control TLS session caching.
-  This is intended to replace the legacy :ts:cv:`proxy.config.ssl.session_cache.enabled` and
-  ``proxy.config.ssl.session_cache.value`` configurations. The
-  :ts:cv:`proxy.config.ssl.session_cache.enabled` setting was documented but
-  never implemented, while ``proxy.config.ssl.session_cache.value`` was
-  implemented but not documented. The new :ts:cv:`proxy.config.ssl.session_cache.mode`
-  functions just like the legacy ``proxy.config.ssl.session_cache.value`` did
-  in the ealier 10.0 release. The :ts:cv:`proxy.config.ssl.session_cache.mode`
-  setting provides a clear and consistent interface going forward.  For backward
-  compatibility, ``.enabled`` is now implemented, but both ``.enabled`` and
-  ``.value`` will be removed in ATS 11.x.
+* :ts:cv:`proxy.config.http.cache.targeted_cache_control_headers` now defaults
+  to ``CDN-Cache-Control``. Set it to an empty string to disable targeted cache
+  control.
+* The ``ssl_multicert.config`` file has been replaced with :file:`ssl_multicert.yaml`.
+  Use ``traffic_ctl config convert ssl_multicert`` to convert existing configuration files.
 
 
 
@@ -233,5 +235,4 @@ HTTP UI Removed
 
 The stats and cache inspector pages were unmaintained and removed in this
 release.
-
 

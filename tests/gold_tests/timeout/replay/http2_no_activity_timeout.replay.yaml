@@ -19,10 +19,9 @@ meta:
 
 sessions:
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: example.com
+    stack: http2
+    tls:
+      sni: example.com
   transactions:
 
   - client-request:

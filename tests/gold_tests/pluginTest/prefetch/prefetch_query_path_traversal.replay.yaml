@@ -1,0 +1,165 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: "Verify query prefetch blocks path traversal"
+
+  server:
+    name: "server"
+    log_validation:
+      excludes:
+        - expression: "GET /texts/\\.\\./private/secret\\.txt"
+          description: "Traversal prefetch should not reach the origin"
+        - expression: "GET /private/secret\\.txt"
+          description: "Normalized traversal prefetch should not reach the origin"
+
+  client:
+    name: "client"
+
+  ats:
+    name: "ts"
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: "http|dns|prefetch"
+    remap_config:
+      - from: "http://domain.in/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "cachekey.so"
+            args:
+              - "--remove-all-params=true"
+          - name: "prefetch.so"
+            args:
+              - "--front=true"
+              - "--fetch-policy=simple"
+              - "--fetch-path-pattern=/(.*)/$1/"
+              - "--fetch-query=next"
+              - "--fetch-count=2"
+              - "--cmcd-nor=true"
+    log_validation:
+      traffic_out:
+        contains:
+          - expression: "schedule fetch: http://domain.in/texts/demo-2.txt"
+            description: "Safe query prefetch should be scheduled"
+          - expression: "skipping empty query prefetch path"
+            description: "Empty query prefetch values should be ignored"
+          - expression: "skipping unsafe query prefetch path: '../private/secret.txt'"
+            description: "Traversal query prefetch should be rejected"
+          - expression: "skipping unsafe cmcd nor path: '../private/secret.txt'"
+            description: "Percent-decoded CMCD nor traversal should be rejected"
+        excludes:
+          - expression: "schedule fetch: http://domain.in/texts/\\.\\./private/secret\\.txt"
+            description: "Traversal prefetch should not be scheduled"
+          - expression: "schedule fetch: http://domain.in/private/secret\\.txt"
+            description: "Normalized traversal prefetch should not be scheduled"
+
+sessions:
+  - transactions:
+      - client-request:
+          method: "GET"
+          version: "1.1"
+          url: "/texts/demo-1.txt?next=&next=demo-2.txt&next=../private/secret.txt"
+          headers:
+            fields:
+              - [Host, domain.in]
+              - [uuid, query-path-traversal]
+
+        proxy-request:
+          method: "GET"
+          url: "/texts/demo-1.txt?next=&next=demo-2.txt&next=../private/secret.txt"
+          headers:
+            fields:
+              - [Host, {value: "127.0.0.1", as: prefix}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [Connection, close]
+              - [Cache-Control, "max-age=85000"]
+              - [Content-Length, 40]
+          content:
+            data: "This is the body for /texts/demo-1.txt.\n"
+
+        proxy-response:
+          status: 200
+
+      - client-request:
+          delay: 1s
+          method: "GET"
+          version: "1.1"
+          url: "/cmcd/segment-1.m4s"
+          headers:
+            fields:
+              - [Host, domain.in]
+              - [Cmcd-Request, 'nor="%2e%2e/private/secret.txt"']
+              - [uuid, cmcd-path-traversal]
+
+        proxy-request:
+          method: "GET"
+          url: "/cmcd/segment-1.m4s"
+          headers:
+            fields:
+              - [Host, {value: "127.0.0.1", as: prefix}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [Connection, close]
+              - [Cache-Control, "max-age=85000"]
+              - [Content-Length, 42]
+          content:
+            data: "This is the body for /cmcd/segment-1.m4s.\n"
+
+        proxy-response:
+          status: 200
+
+      - client-request:
+          delay: 1s
+          method: "GET"
+          version: "1.1"
+          url: "/texts/demo-2.txt?next=&next=demo-2.txt&next=../private/secret.txt"
+          headers:
+            fields:
+              - [Host, domain.in]
+              - [uuid, query-path-traversal]
+
+        proxy-request:
+          method: "GET"
+          url: "/texts/demo-2.txt?next=&next=demo-2.txt&next=../private/secret.txt"
+          headers:
+            fields:
+              - [X-CDN-Prefetch, {value: "texts/demo-1.txt", as: equal}]
+
+        server-response:
+          status: 200
+          reason: "OK"
+          headers:
+            fields:
+              - [Connection, close]
+              - [Cache-Control, "max-age=85000"]
+              - [Content-Length, 40]
+          content:
+            data: "This is the body for /texts/demo-2.txt.\n"
+
+        proxy-response:
+          status: 200

@@ -78,6 +78,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # 403 responses should be cached when negative caching is enabled, so this
     # should not get to the server.  But if it does, return a 404 so the test
     # knows that something went wrong.

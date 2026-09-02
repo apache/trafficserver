@@ -31,6 +31,21 @@ do_remap()
 {
   borrow url = Client::URL::get();
 
+  // Force the live Query to parse so _state is populated;
+  // otherwise copies won't exercise the deep-copy path.
+  url.query["foo"];
+
+  // Copy-construct Query to exercise the explicit copy ctor (Query owns a std::unique_ptr<State>).
+  // Note: this remains tied to the same underlying URL; it is not an independent snapshot.
+  cripts::Url::Query query_copy = url.query;
+  query_copy.Erase("foo");
+
+  // Print the copy before mutating the live URL. After url.query.Flush() below,
+  // url.query is Reset()'d and TSUrlHttpQuerySet may invalidate the TS-owned
+  // buffer that query_copy's State string_views point into.
+  CDebug("Live: {}", url.query);
+  CDebug("Copy (foo erased): {}", query_copy);
+
   switch (AsInteger(instance.data[0])) {
   case 0:
     url.query.Erase({"foo", "bar"}, true);

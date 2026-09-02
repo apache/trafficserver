@@ -214,7 +214,7 @@ public:
   QUICStreamError(const QUICStream *s, const QUICAppErrorCode error_code, const char *error_msg = nullptr)
     : QUICError(QUICErrorClass::APPLICATION, static_cast<uint16_t>(error_code), error_msg), stream(s){};
 
-  const QUICStream *stream;
+  const QUICStream *stream{nullptr};
 };
 
 using QUICErrorUPtr           = std::unique_ptr<QUICError>;
@@ -230,7 +230,9 @@ public:
   static constexpr int    MAX_LENGTH             = 20;
   static constexpr size_t MAX_HEX_STR_LENGTH     = MAX_LENGTH * 2 + 1;
   static QUICConnectionId ZERO();
-  QUICConnectionId();
+  static QUICConnectionId random();
+  /// Force callers to explicitly choose zero, random, or byte-based initialization.
+  QUICConnectionId() = delete;
   QUICConnectionId(const uint8_t *buf, uint8_t len);
 
   explicit
@@ -269,12 +271,11 @@ public:
 
   uint8_t length() const;
   bool    is_zero() const;
-  void    randomize();
 
 private:
   uint64_t _hashcode() const;
-  uint8_t  _id[MAX_LENGTH];
-  uint8_t  _len = 0;
+  uint8_t  _id[MAX_LENGTH] = {0};
+  uint8_t  _len            = 0;
 };
 
 class QUICStatelessResetToken
@@ -321,13 +322,20 @@ private:
 class QUICAddressValidationToken
 {
 public:
+  static constexpr size_t MAC_LENGTH = 32;
+
   enum class Type : uint8_t {
     RESUMPTION,
     RETRY,
   };
 
-  // FIXME Check token length
-  QUICAddressValidationToken(const uint8_t *buf, size_t len) : _token_len(len) { memcpy(this->_token, buf, len); }
+  QUICAddressValidationToken(const uint8_t *buf, size_t len)
+  {
+    if (buf != nullptr && len <= sizeof(_token)) {
+      memcpy(_token, buf, len);
+      _token_len = len;
+    }
+  }
   virtual ~QUICAddressValidationToken(){};
 
   static Type
@@ -354,7 +362,7 @@ protected:
 
   // The size should be smaller than maximum size of Retry packet
   uint8_t      _token[1200] = {0};
-  unsigned int _token_len;
+  unsigned int _token_len   = 0;
 };
 
 class QUICResumptionToken : public QUICAddressValidationToken
@@ -425,7 +433,7 @@ public:
 private:
   IpEndpoint              _endpoint_ipv4 = {};
   IpEndpoint              _endpoint_ipv6 = {};
-  QUICConnectionId        _cid;
+  QUICConnectionId        _cid           = QUICConnectionId::ZERO();
   QUICStatelessResetToken _token;
   bool                    _valid = false;
 };
@@ -455,9 +463,9 @@ public:
   int        protocol() const;
 
 private:
-  IpEndpoint _source;
-  IpEndpoint _destination;
-  int        _protocol;
+  IpEndpoint _source{};
+  IpEndpoint _destination{};
+  int        _protocol  = 0;
   uint64_t   _hash_code = 0;
 };
 
@@ -575,20 +583,20 @@ struct QUICSentPacketInfo {
 
   private:
     QUICFrameId         _id = 0;
-    QUICFrameGenerator *_generator;
+    QUICFrameGenerator *_generator{nullptr};
   };
 
   // Recovery A.1.1.  Sent Packet Fields
-  QUICPacketNumber packet_number;
-  bool             ack_eliciting;
-  bool             in_flight;
-  size_t           sent_bytes;
-  ink_hrtime       time_sent;
+  QUICPacketNumber packet_number{0};
+  bool             ack_eliciting{false};
+  bool             in_flight{false};
+  size_t           sent_bytes{0};
+  ink_hrtime       time_sent{0};
 
   // Additional fields
-  QUICPacketType         type;
+  QUICPacketType         type{QUICPacketType::UNINITIALIZED};
   std::vector<FrameInfo> frames;
-  QUICPacketNumberSpace  pn_space;
+  QUICPacketNumberSpace  pn_space{QUICPacketNumberSpace::INITIAL};
   // End of additional fields
 };
 

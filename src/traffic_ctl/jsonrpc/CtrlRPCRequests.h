@@ -23,6 +23,9 @@
 
 // We base on the common client types.
 #include "shared/rpc/RPCRequests.h"
+#include "tsutil/ts_diag_levels.h"
+
+#include <yaml-cpp/yaml.h>
 
 /// This file defines all the traffic_ctl API client request and responses objects needed to model the jsonrpc messages used in the
 /// TS JSONRPC Node API.
@@ -39,15 +42,73 @@ struct GetAllRecordsRequest : shared::rpc::RecordLookupRequest {
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
-/// @brief Models the config reload request. No params are needed.
+/// @brief Models the config reload request. Supports both file-based and rpc-supplied  modes.
+/// rpc-supplied mode is triggered when configs is present.
 ///
 struct ConfigReloadRequest : shared::rpc::ClientRequest {
+  struct Params {
+    std::string token;
+    bool        force{false};
+    YAML::Node  configs; // Optional: if present, triggers inline mode
+  };
+  ConfigReloadRequest(Params p) { super::params = std::move(p); }
   std::string
   get_method() const override
   {
     return "admin_config_reload";
   }
 };
+
+// Full list of reload tasks, could be nested.
+struct ConfigReloadResponse {
+  // Existing reload task info, could be nested.
+  struct LogEntry {
+    DiagsLevel  level{DL_Undefined}; ///< DL_Undefined for state-change messages
+    std::string text;
+  };
+
+  struct ReloadInfo {
+    std::string             config_token;
+    std::string             status;
+    std::string             description;
+    std::string             filename;
+    std::vector<LogEntry>   logs;
+    std::vector<ReloadInfo> sub_tasks;
+    struct Meta { // internal info.
+      int64_t     created_time_ms{0};
+      int64_t     last_updated_time_ms{0};
+      bool        is_main_task{false};
+      std::string plugin_name; ///< Plugin name for plugin-owned entries (empty for core).
+    } meta;
+  };
+
+  struct Error {
+    int         code;
+    std::string message;
+  };
+  std::vector<Error> error; ///< Error list, if any.
+
+  // when requesting existing tasks.
+  std::vector<ReloadInfo> tasks;
+
+  std::string              created_time;
+  std::vector<std::string> messages;
+  std::string              config_token;
+};
+
+struct FetchConfigReloadStatusRequest : shared::rpc::ClientRequest {
+  struct Params {
+    std::string token;
+    std::string count{"1"}; // number of latest reloads to return, 0 means all.
+  };
+  FetchConfigReloadStatusRequest(Params p) { super::params = std::move(p); }
+  std::string
+  get_method() const override
+  {
+    return "get_reload_config_status";
+  }
+};
+
 //------------------------------------------------------------------------------------------------------------------------------------
 ///
 /// @brief To fetch config file registry from the RPC node.
@@ -80,6 +141,14 @@ struct ConfigSetRecordResponse {
     std::string updateType;
   };
   std::vector<UpdatedRec> data;
+};
+//------------------------------------------------------------------------------------------------------------------------------------
+struct CacheClearRequest : shared::rpc::ClientRequest {
+  std::string
+  get_method() const override
+  {
+    return "admin_cache_clear";
+  }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
 struct HostStatusLookUpResponse {
@@ -138,6 +207,28 @@ struct HostDBGetStatusRequest : shared::rpc::ClientRequest {
     return "get_hostdb_status";
   }
 };
+//------------------------------------------------------------------------------------------------------------------------------------
+struct GetPluginListRequest : shared::rpc::ClientRequest {
+  using super = shared::rpc::ClientRequest;
+  std::string
+  get_method() const override
+  {
+    return "admin_plugin_get_list";
+  }
+};
+
+struct PluginListResponse {
+  struct PluginInfo {
+    std::string path;
+    bool        enabled{false};
+    std::string status;
+    int         index{0};
+    int         load_order{-1};
+  };
+  std::string             source;
+  std::vector<PluginInfo> plugins;
+};
+
 //------------------------------------------------------------------------------------------------------------------------------------
 struct BasicPluginMessageRequest : shared::rpc::ClientRequest {
   using super = BasicPluginMessageRequest;

@@ -45,6 +45,7 @@ static Event      *config_update_cont_event;
 static Event      *sync_cont_event;
 
 static DbgCtl dbg_ctl_statsproc{"statsproc"};
+static DbgCtl dbg_ctl_configproc{"configproc"};
 
 //-------------------------------------------------------------------------
 // Simple setters for the intervals to decouple this from the proxy
@@ -107,7 +108,7 @@ struct config_update_cont : public Continuation {
   exec_callbacks(int /* event */, Event * /* e */)
   {
     RecExecConfigUpdateCbs(REC_PROCESS_UPDATE_REQUIRED);
-    Dbg(dbg_ctl_statsproc, "config_update_cont() processed");
+    Dbg(dbg_ctl_configproc, "config_update_cont() processed");
 
     return EVENT_CONT;
   }

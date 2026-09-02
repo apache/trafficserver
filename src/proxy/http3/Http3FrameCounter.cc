@@ -25,13 +25,14 @@
 #include "proxy/http3/Http3.h"
 #include "proxy/http3/Http3FrameCounter.h"
 
-std::vector<Http3FrameType>
+std::vector<Http3FrameType> const &
 Http3FrameCounter::interests()
 {
-  return {Http3FrameType::DATA,         Http3FrameType::HEADERS,      Http3FrameType::X_RESERVED_1, Http3FrameType::CANCEL_PUSH,
-          Http3FrameType::SETTINGS,     Http3FrameType::PUSH_PROMISE, Http3FrameType::X_RESERVED_2, Http3FrameType::GOAWAY,
-          Http3FrameType::X_RESERVED_3, Http3FrameType::X_RESERVED_4, Http3FrameType::MAX_PUSH_ID,  Http3FrameType::X_MAX_DEFINED,
-          Http3FrameType::UNKNOWN};
+  static std::vector<Http3FrameType> const types = {
+    Http3FrameType::DATA,         Http3FrameType::HEADERS,      Http3FrameType::X_RESERVED_1, Http3FrameType::CANCEL_PUSH,
+    Http3FrameType::SETTINGS,     Http3FrameType::PUSH_PROMISE, Http3FrameType::X_RESERVED_2, Http3FrameType::GOAWAY,
+    Http3FrameType::X_RESERVED_3, Http3FrameType::X_RESERVED_4, Http3FrameType::MAX_PUSH_ID,  Http3FrameType::UNKNOWN};
+  return types;
 }
 
 Http3ErrorUPtr

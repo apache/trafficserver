@@ -954,7 +954,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
   ///////////////////////////////////////////////////////////////////////
   // if no Accept-Encoding header, only match identity                 //
   //   The 1.1 spec says servers MAY assume that clients will accept   //
-  //   any encoding if no header is sent.  Unforntunately, this does   //
+  //   any encoding if no header is sent.  Unfortunately, this does   //
   //   not work 1.0 clients & is particularly thorny when the proxy    //
   //   created the encoding as the result of a transform.  Http 1.1   //
   //   purists would say that if proxy encodes something it's really   //

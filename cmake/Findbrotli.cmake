@@ -21,23 +21,28 @@
 #
 #     brotli_FOUND
 #     brotlicommon_LIBRARY
+#     brotlidec_LIBRARY
 #     brotlienc_LIBRARY
 #     brotli_INCLUDE_DIRS
 #
 # and the following imported targets
 #
 #     brotli::brotlicommon
+#     brotli::brotlidec
 #     brotli::brotlienc
 #
 
 find_library(brotlicommon_LIBRARY NAMES brotlicommon)
+find_library(brotlidec_LIBRARY NAMES brotlidec)
 find_library(brotlienc_LIBRARY NAMES brotlienc)
 find_path(brotli_INCLUDE_DIR NAMES brotli/encode.h)
 
-mark_as_advanced(brotli_FOUND brotlicommon_LIBRARY brotlienc_LIBRARY brotli_INCLUDE_DIR)
+mark_as_advanced(brotli_FOUND brotlicommon_LIBRARY brotlidec_LIBRARY brotlienc_LIBRARY brotli_INCLUDE_DIR)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(brotli REQUIRED_VARS brotlicommon_LIBRARY brotlienc_LIBRARY brotli_INCLUDE_DIR)
+find_package_handle_standard_args(
+  brotli REQUIRED_VARS brotlicommon_LIBRARY brotlidec_LIBRARY brotlienc_LIBRARY brotli_INCLUDE_DIR
+)
 
 if(brotli_FOUND)
   set(brotli_INCLUDE_DIRS "${brotli_INCLUDE_DIR}")
@@ -47,6 +52,12 @@ if(brotli_FOUND AND NOT TARGET brotli::brotlicommon)
   add_library(brotli::brotlicommon INTERFACE IMPORTED)
   target_include_directories(brotli::brotlicommon INTERFACE ${brotli_INCLUDE_DIRS})
   target_link_libraries(brotli::brotlicommon INTERFACE "${brotlicommon_LIBRARY}")
+endif()
+
+if(brotli_FOUND AND NOT TARGET brotli::brotlidec)
+  add_library(brotli::brotlidec INTERFACE IMPORTED)
+  target_include_directories(brotli::brotlidec INTERFACE ${brotli_INCLUDE_DIRS})
+  target_link_libraries(brotli::brotlidec INTERFACE brotli::brotlicommon "${brotlidec_LIBRARY}")
 endif()
 
 if(brotli_FOUND AND NOT TARGET brotli::brotlienc)

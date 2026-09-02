@@ -107,7 +107,13 @@ class TestAlpnFunctionality:
                 'proxy.config.ssl.client.alpn_protocols': records_config_alpn,
             })
 
-        ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         conf_remap_specification = ''
         if conf_remap_alpn is not None:

@@ -65,17 +65,31 @@ class DownCachedOriginServerTest:
 
     # Verify error log marking host down exists
     def _test_error_log(self):
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self._ts.Variables.LOGDIR, 'error.log'))
-
+        tr = Test.AddAwaitFileContainsTestRun(
+            'Await error.log mark-down entry.',
+            os.path.join(self._ts.Variables.LOGDIR, 'error.log'),
+            "/dns/mark/down' fail_count='1' marking down",
+        )
         self._ts.Disk.error_log.Content = Testers.ContainsExpression(
             "/dns/mark/down' fail_count='1' marking down", "host should be marked down")
+
+    # Verify down_server_no_requests metric is incremented:
+    #   - once when the first request marks the origin DOWN (502)
+    #   - once when the second request is rejected because HostDB has no live address (500)
+    def _test_down_server_no_requests_metric(self):
+        tr = Test.AddTestRun('Check proxy.process.http.down_server.no_requests metric')
+        tr.Processes.Default.Command = 'traffic_ctl metric get proxy.process.http.down_server.no_requests'
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+            'proxy.process.http.down_server.no_requests 2',
+            'down_server.no_requests should be 2 (mark-down on first txn, no-live-address on second)')
+        tr.StillRunningAfter = self._ts
 
     def run(self):
         self._test_host_mark_down()
         self._test_error_log()
+        self._test_down_server_no_requests_metric()
 
 
 DownCachedOriginServerTest().run()

@@ -70,19 +70,23 @@ enum class HttpTunnelType_t { HTTP_SERVER, HTTP_CLIENT, CACHE_READ, CACHE_WRITE,
 enum class TunnelChunkingAction_t { CHUNK_CONTENT, DECHUNK_CONTENT, PASSTHRU_CHUNKED_CONTENT, PASSTHRU_DECHUNKED_CONTENT };
 
 struct ChunkedHandler {
+  // Grants the unit test fixture access to the private read_size() parser.
+  friend class TestableChunkedHandler;
+
   enum class ChunkedState {
-    READ_CHUNK = 0,
-    READ_SIZE_START,
-    READ_SIZE,
-    READ_SIZE_CRLF,
-    READ_TRAILER_BLANK,
-    READ_TRAILER_CR,
-    READ_TRAILER_LINE,
-    READ_ERROR,
-    READ_DONE,
-    WRITE_CHUNK,
-    WRITE_DONE,
-    FLOW_CONTROL
+    READ_CHUNK = 0,     ///< Reading the chunk data bytes.
+    READ_SIZE_START,    ///< Expecting the start of the next chunk size line.
+    READ_SIZE,          ///< Reading the hex chunk size digits.
+    READ_EXTENSION,     ///< Reading a chunk extension (;name=value or ;name="quoted-string").
+    READ_SIZE_CRLF,     ///< Expecting the CRLF that terminates the chunk size line.
+    READ_TRAILER_BLANK, ///< Expecting the blank line or first trailer field after the last chunk.
+    READ_TRAILER_CR,    ///< Expecting the CR that ends the trailer section.
+    READ_TRAILER_LINE,  ///< Reading a trailer field line.
+    READ_ERROR,         ///< A protocol error was encountered; parsing stops.
+    READ_DONE,          ///< The full chunked body has been read.
+    WRITE_CHUNK,        ///< Writing a chunk while re-chunking content.
+    WRITE_DONE,         ///< Finished writing chunked content.
+    FLOW_CONTROL        ///< Paused for flow control.
   };
 
   static int const DEFAULT_MAX_CHUNK_SIZE = 4096;
@@ -128,11 +132,18 @@ struct ChunkedHandler {
   int  num_cr      = 0;
   bool prev_is_cr  = false;
 
+  // Chunk extension parsing state. The parser tracks whether it is inside a
+  // quoted-string extension value (RFC 9110 Section 5.6.4) and whether the
+  // previous octet began a quoted-pair escape, so it can find the closing DQUOTE
+  // and reject a CR or LF appearing inside the quoted-string.
+  bool in_quoted_string = false;
+  bool in_escape        = false;
+
   /// @name Output data.
   //@{
   /// The maximum chunk size.
   /// This is the preferred size as well, used whenever possible.
-  int64_t max_chunk_size;
+  int64_t max_chunk_size{DEFAULT_MAX_CHUNK_SIZE};
   /// Caching members to avoid using printf on every chunk.
   /// It holds the header for a maximal sized chunk which will cover
   /// almost all output chunks.
@@ -168,6 +179,11 @@ struct ChunkedHandler {
    * the entire chunked content is written, false otherwise.
    */
   std::pair<int64_t, bool> generate_chunked_content();
+
+  /**
+   * Check if chunked_reader or dechunked_reader has more data to read
+   */
+  bool is_read_avail();
 
 private:
   /** Read a chunk header containing the size of the chunk.
@@ -416,7 +432,6 @@ public:
   void                     tunnel_run(HttpTunnelProducer *p = nullptr);
 
   int     main_handler(int event, void *data);
-  void    consumer_reenable(HttpTunnelConsumer *c);
   bool    consumer_handler(int event, HttpTunnelConsumer *c);
   bool    producer_handler(int event, HttpTunnelProducer *p);
   int     producer_handler_dechunked(int event, HttpTunnelProducer *p);
@@ -450,6 +465,11 @@ private:
   void producer_run(HttpTunnelProducer *p);
   void _schedule_tls_tunnel_activity_check_event();
   bool _is_tls_tunnel_active() const;
+
+  bool _should_reenable_for_chunk_handler_fc(HttpTunnelConsumer *c);
+  bool _should_reenable_for_tunnel_chain_fc(HttpTunnelConsumer *c);
+
+  HttpTunnelConsumer *_throttle_chunked_producer(HttpTunnelProducer *p);
 
   HttpTunnelProducer *get_producer(VIO *vio);
   HttpTunnelConsumer *get_consumer(VIO *vio);
@@ -622,9 +642,11 @@ HttpTunnel::get_consumer(VConnection *vc)
 inline HttpTunnelProducer *
 HttpTunnel::get_producer(VIO *vio)
 {
-  for (int i = 0; i < MAX_PRODUCERS; i++) {
-    if (producers[i].read_vio == vio) {
-      return producers + i;
+  if (vio) {
+    for (int i = 0; i < MAX_PRODUCERS; i++) {
+      if (producers[i].alive && producers[i].read_vio == vio) {
+        return producers + i;
+      }
     }
   }
   return nullptr;

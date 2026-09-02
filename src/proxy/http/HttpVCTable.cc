@@ -30,11 +30,7 @@
 
 class HttpSM;
 
-HttpVCTable::HttpVCTable(HttpSM *mysm)
-{
-  memset(&vc_table, 0, sizeof(vc_table));
-  sm = mysm;
-}
+HttpVCTable::HttpVCTable(HttpSM *mysm) : sm(mysm) {}
 
 HttpVCTableEntry *
 HttpVCTable::new_entry()

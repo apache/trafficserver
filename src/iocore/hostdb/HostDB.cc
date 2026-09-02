@@ -25,6 +25,7 @@
 #include "swoc/swoc_file.h"
 #include "tscore/Regression.h"
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/LocalBuffer.h"
 
 #include "P_HostDB.h"
 // Gross
@@ -837,6 +838,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
     // Event should be immediate or interval.
     if (!action.continuation) {
       // Nothing to do, give up.
+      bool cleanup_self = false;
       if (event == EVENT_INTERVAL) {
         // Timeout - clear all queries queued up for this FQDN because none of the other ones have sent an
         // actual DNS query. If the request rate is high enough this can cause a persistent queue where the
@@ -846,9 +848,9 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       } else {
         // "local" signal to give up, usually due this being one of those "other" queries.
         // That generally means @a this has already been removed from the queue, but just in case...
-        hostDB.pending_dns_for_hash(hash.hash).remove(this);
+        cleanup_self = hostDB.remove_from_pending_dns_for_hash(hash.hash, this);
       }
-      if (hostDB.remove_from_pending_dns_for_hash(hash.hash, this)) {
+      if (cleanup_self) {
         hostdb_cont_free(this);
       }
       return EVENT_DONE;
@@ -947,9 +949,14 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
       auto rr_info = r->rr_info();
       // Fill in record type specific data.
       if (hash.is_srv()) {
-        char *pos = rr_info.rebind<char>().end();
-        SRV  *q[valid_records];
+        char                      *pos = rr_info.rebind<char>().end();
+        ts::LocalBuffer<SRV *, 16> q_buf(valid_records);
+        SRV                      **q = q_buf.data();
         ink_assert(valid_records <= static_cast<int>(hostdb_round_robin_max_count));
+        // The loop below assigns every element, but ts::LocalBuffer hands back raw storage and the
+        // static analyzer cannot follow the loop well enough to see that. Pre-fill so the sort below
+        // is never reported as reading an uninitialized pointer.
+        std::fill_n(q, valid_records, nullptr);
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
         }
@@ -1317,14 +1324,14 @@ HostDBRecord::select_best_http(ts_time now, ts_seconds fail_window, sockaddr con
       // Starting at the current target, search for a valid one.
       for (unsigned short i = 0; i < rr_count; i++) {
         auto target = &info[this->rr_idx(i)];
-        if (target->select(now, fail_window)) {
+        if (!target->is_down(now, fail_window)) {
           best_alive = target;
           break;
         }
       }
     }
   } else {
-    if (info[0].select(now, fail_window)) {
+    if (!info[0].is_down(now, fail_window)) {
       best_alive = &info[0];
     }
   }
@@ -1601,23 +1608,23 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
 {
   ink_assert(rr_count <= 0 || static_cast<unsigned int>(rr_count) < hostdb_round_robin_max_count);
 
-  int         i      = 0;
   int         live_n = 0;
   uint32_t    weight = 0, p = INT32_MAX;
   HostDBInfo *result = nullptr;
   auto        rr     = this->rr_info();
   // Array of live targets, sized by @a live_n
-  HostDBInfo *live[rr.count()];
-  for (auto &target : rr) {
+  ts::LocalBuffer<HostDBInfo *, 16> live_buf(rr.count());
+  HostDBInfo                      **live = live_buf.data();
+  for (auto &rr_target : rr) {
     // skip down targets.
-    if (rr[i].is_down(now, fail_window)) {
+    if (rr_target.is_down(now, fail_window)) {
       continue;
     }
 
-    if (target.data.srv.srv_priority <= p) {
-      p               = target.data.srv.srv_priority;
-      weight         += target.data.srv.srv_weight;
-      live[live_n++]  = &target;
+    if (rr_target.data.srv.srv_priority <= p) {
+      p               = rr_target.data.srv.srv_priority;
+      weight         += rr_target.data.srv.srv_weight;
+      live[live_n++]  = &rr_target;
     } else {
       break;
     }
@@ -1627,7 +1634,8 @@ HostDBRecord::select_best_srv(char *target, InkRand *rand, ts_time now, ts_secon
     result = this->select_next_rr(now, fail_window);
   } else {
     uint32_t xx = rand->random() % weight;
-    for (i = 0; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
+    int      i  = 0;
+    for (; i < live_n - 1 && xx >= live[i]->data.srv.srv_weight; ++i) {
       xx -= live[i]->data.srv.srv_weight;
     }
 
@@ -1647,7 +1655,7 @@ HostDBRecord::select_next_rr(ts_time now, ts_seconds fail_window)
   auto rr_info = this->rr_info();
   for (unsigned idx = 0, limit = rr_info.count(); idx < limit; ++idx) {
     auto &target = rr_info[this->next_rr()];
-    if (target.select(now, fail_window)) {
+    if (!target.is_down(now, fail_window)) {
       return &target;
     }
   }
@@ -1706,13 +1714,19 @@ ResolveInfo::set_active(HostDBInfo *info)
 }
 
 bool
-ResolveInfo::select_next_rr()
+ResolveInfo::select_next_rr(ts_time now, ts_seconds fail_window)
 {
   if (active) {
     if (auto rr_info{this->record->rr_info()}; rr_info.count() > 1) {
-      unsigned limit = active - rr_info.data(), idx = (limit + 1) % rr_info.count();
-      while ((idx = (idx + 1) % rr_info.count()) != limit && !rr_info[idx].is_alive()) {}
-      active = &rr_info[idx];
+      const unsigned limit = active - rr_info.data();
+      size_t         idx   = (limit + 1) % rr_info.count();
+      for (; idx != limit; idx = (idx + 1) % rr_info.count()) {
+        if (!rr_info[idx].is_down(now, fail_window)) {
+          active = &rr_info[idx];
+          break;
+        }
+      }
+
       return idx != limit; // if the active record was actually changed.
     }
   }

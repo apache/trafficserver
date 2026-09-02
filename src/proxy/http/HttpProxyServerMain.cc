@@ -40,6 +40,8 @@
 #include "../../iocore/net/P_QUICNetProcessor.h"
 #include "../../iocore/net/P_QUICNextProtocolAccept.h"
 #include "proxy/http3/Http3SessionAccept.h"
+#elif TS_USE_QMUX == 1
+#include "proxy/http3/Http3SessionAccept.h"
 #endif
 
 #include <vector>
@@ -158,6 +160,9 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
       net.local_ip = HttpConfig::m_master.inbound.ip4().network_order();
     } else if (AF_UNIX == port->m_family) {
       net.local_path = port->m_unix_path;
+      net.unix_perm  = port->m_unix_perm;
+      net.unix_uid   = port->m_unix_uid;
+      net.unix_gid   = port->m_unix_gid;
       net.sockopt_flags &=
         ~(NetVCOptions::SOCK_OPT_NO_DELAY | NetVCOptions::SOCK_OPT_TCP_FAST_OPEN | NetVCOptions::SOCK_OPT_TCP_NOTSENT_LOWAT);
     }
@@ -168,19 +173,19 @@ make_net_accept_options(const HttpProxyPort *port, unsigned nthreads)
 static void
 MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned nthreads)
 {
-  NetProcessor::AcceptOptions &net_opt = acceptor._net_opt;
-  HttpSessionAccept::Options   accept_opt;
+  NetProcessor::AcceptOptions &net_opt    = acceptor._net_opt;
+  auto                         accept_opt = std::make_shared<HttpSessionAccept::Options>();
 
   net_opt = make_net_accept_options(&port, nthreads);
 
-  accept_opt.f_outbound_transparent = port.m_outbound_transparent_p;
-  accept_opt.transport_type         = port.m_type;
-  accept_opt.setHostResPreference(port.m_host_res_preference);
-  accept_opt.setTransparentPassthrough(port.m_transparent_passthrough);
-  accept_opt.setSessionProtocolPreference(port.m_session_protocol_preference);
+  accept_opt->f_outbound_transparent = port.m_outbound_transparent_p;
+  accept_opt->transport_type         = port.m_type;
+  accept_opt->setHostResPreference(port.m_host_res_preference);
+  accept_opt->setTransparentPassthrough(port.m_transparent_passthrough);
+  accept_opt->setSessionProtocolPreference(port.m_session_protocol_preference);
 
-  accept_opt.outbound += HttpConfig::m_master.outbound;
-  accept_opt.outbound += port.m_outbound; // top priority, override master and base options.
+  accept_opt->outbound += HttpConfig::m_master.outbound;
+  accept_opt->outbound += port.m_outbound; // top priority, override master and base options.
 
   // OK the way this works is that the fallback for each port is a protocol
   // probe acceptor. For SSL ports, we can stack a NPN+ALPN acceptor in front
@@ -189,19 +194,30 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
   // XXX the protocol probe should be a configuration option.
 
-  ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
+  // A QUIC port is dispatched to the QUIC acceptor below, which has no probe fallback, so building a
+  // probe for one only leaks it. Every other port type ends up behind the probe, either directly or
+  // as the SSL acceptor's fallback. Without QUIC compiled in no port can be a QUIC port, so this is
+  // always true there.
+  bool const needs_probe = !port.isQUIC();
+
+  ProtocolProbeSessionAccept *probe = nullptr;
   HttpSessionAccept          *http  = nullptr; // don't allocate this unless it will be used.
-  probe->proxyPort                  = &port;
-  probe->proxy_protocol_ipmap       = &HttpConfig::m_master.config_proxy_protocol_ip_addrs;
 
-  if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
-    http = new HttpSessionAccept(accept_opt);
-    probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP, http);
+  if (needs_probe) {
+    probe                       = new ProtocolProbeSessionAccept();
+    probe->proxyPort            = &port;
+    probe->proxy_protocol_ipmap = &HttpConfig::m_master.config_proxy_protocol_ip_addrs;
+
+    if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
+      http = new HttpSessionAccept(accept_opt, &port);
+      probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP, http);
+    }
+
+    if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
+      probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP2, new Http2SessionAccept(accept_opt, &port));
+    }
   }
 
-  if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::ProtoGroupKey::HTTP2, new Http2SessionAccept(accept_opt));
-  }
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_0, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_1_1, create_h1_server_session});
   ProtocolSessionCreateMap.insert({TS_ALPN_PROTOCOL_INDEX_HTTP_2_0, create_h2_server_session});
@@ -219,7 +235,10 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     ssl->enableProtocols(port.m_session_protocol_preference);
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_0, http);
     ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_1_1, http);
-    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt));
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_2_0, new Http2SessionAccept(accept_opt, &port));
+#if TS_USE_QMUX
+    ssl->registerEndpoint(TS_ALPN_PROTOCOL_H3QX, new Http3SessionAccept(accept_opt, &port));
+#endif
 
     SCOPED_MUTEX_LOCK(lock, ssl_plugin_mutex, this_ethread());
     ssl_plugin_acceptors.push(ssl);
@@ -232,16 +251,16 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
     quic->enableProtocols(port.m_session_protocol_preference);
 
     // HTTP/0.9 over QUIC draft-29 (for interop only, will be removed)
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC_D29, new Http3SessionAccept(accept_opt));
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC_D29, new Http3SessionAccept(accept_opt, &port));
 
     // HTTP/3 draft-29
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3_D29, new Http3SessionAccept(accept_opt));
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3_D29, new Http3SessionAccept(accept_opt, &port));
 
     // HTTP/0.9 over QUIC (for interop only, will be removed)
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt));
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_QUIC, new Http3SessionAccept(accept_opt, &port));
 
     // HTTP/3
-    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt));
+    quic->registerEndpoint(TS_ALPN_PROTOCOL_HTTP_3, new Http3SessionAccept(accept_opt, &port));
 
     quic->proxyPort  = &port;
     acceptor._accept = quic;
@@ -376,4 +395,16 @@ stop_HttpProxyServer()
 {
   sslNetProcessor.stop_accept();
   netProcessor.stop_accept();
+
+  for (auto &acceptor : HttpProxyAcceptors) {
+    delete acceptor._accept;
+    acceptor._accept = nullptr;
+  }
+  HttpProxyAcceptors.clear();
+
+  delete plugin_http_accept;
+  plugin_http_accept = nullptr;
+
+  delete plugin_http_transparent_accept;
+  plugin_http_transparent_accept = nullptr;
 }

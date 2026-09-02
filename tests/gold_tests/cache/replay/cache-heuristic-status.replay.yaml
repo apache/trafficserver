@@ -1,0 +1,507 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Verify heuristic caching behavior for various HTTP status codes per
+# RFC 9110 Section 15.1. Responses contain only a Last-Modified header
+# (no Cache-Control or Expires) so cacheability depends entirely on the
+# status code allowlist in HttpTransact::is_response_cacheable().
+#
+# Negative caching is disabled to isolate the heuristic path.
+#
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify heuristic caching by status code per RFC 9110 Section 15.1'
+
+  dns:
+    name: 'dns-heuristic-status'
+
+  server:
+    name: 'server-heuristic-status'
+
+  client:
+    name: 'client-heuristic-status'
+
+  ats:
+    name: 'ts-heuristic-status'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.http.negative_caching_enabled: 0
+      proxy.config.http.cache.required_headers: 0
+
+    remap_config:
+      - from: "http://example.com/"
+        to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
+
+  blocks:
+  - canary_response: &canary_response
+      server-response:
+        status: 200
+        reason: OK
+        headers:
+          fields:
+          - [ Content-Length, 16 ]
+          - [ Cache-Control, max-age=300 ]
+
+sessions:
+- transactions:
+
+  # =====================================================================
+  # Heuristically cacheable status codes.
+  #
+  # Each test sends a request, gets a response with only Last-Modified
+  # (no CC/Expires), then repeats the request. The second request's
+  # server-response is a canary 200; if we get the original status back,
+  # the response was served from cache.
+  # =====================================================================
+
+  # --- 200 OK ---
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/200
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/200
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 200
+
+  # --- 203 Non-Authoritative Information ---
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/203
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 203
+      reason: "Non-Authoritative Information"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 203
+
+  - all: { headers: { fields: [[ uuid, 4 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/203
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 203
+
+  # --- 204 No Content ---
+  - all: { headers: { fields: [[ uuid, 5 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/204
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 204
+      reason: "No Content"
+      headers:
+        fields:
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 204
+
+  - all: { headers: { fields: [[ uuid, 6 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/204
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 204
+
+  # --- 300 Multiple Choices ---
+  - all: { headers: { fields: [[ uuid, 7 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/300
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 300
+      reason: "Multiple Choices"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+        - [ Location, "http://example.com/choice1" ]
+
+    proxy-response:
+      status: 300
+
+  - all: { headers: { fields: [[ uuid, 8 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/300
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 300
+
+  # --- 301 Moved Permanently ---
+  - all: { headers: { fields: [[ uuid, 9 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/301
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 301
+      reason: "Moved Permanently"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+        - [ Location, "http://example.com/new-location" ]
+
+    proxy-response:
+      status: 301
+
+  - all: { headers: { fields: [[ uuid, 10 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/301
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 301
+
+  # --- 308 Permanent Redirect ---
+  - all: { headers: { fields: [[ uuid, 11 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/308
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 308
+      reason: "Permanent Redirect"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+        - [ Location, "http://example.com/permanent" ]
+
+    proxy-response:
+      status: 308
+
+  - all: { headers: { fields: [[ uuid, 12 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/308
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 308
+
+  # --- 410 Gone ---
+  - all: { headers: { fields: [[ uuid, 13 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/410
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 410
+      reason: "Gone"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 410
+
+  - all: { headers: { fields: [[ uuid, 14 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /heuristic/410
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 410
+
+  # =====================================================================
+  # Non-cacheable status codes without explicit cache directives.
+  #
+  # These are NOT in the heuristic allowlist and negative caching is
+  # disabled, so they should not be cached. The second request should
+  # go to the origin and return the canary 200.
+  # =====================================================================
+
+  # --- 302 Found (explicitly rejected) ---
+  - all: { headers: { fields: [[ uuid, 15 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/302
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 302
+      reason: "Found"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+        - [ Location, "http://example.com/temporary" ]
+
+    proxy-response:
+      status: 302
+
+  - all: { headers: { fields: [[ uuid, 16 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/302
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 200
+
+  # --- 307 Temporary Redirect (explicitly rejected) ---
+  - all: { headers: { fields: [[ uuid, 17 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/307
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 307
+      reason: "Temporary Redirect"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+        - [ Location, "http://example.com/temporary" ]
+
+    proxy-response:
+      status: 307
+
+  - all: { headers: { fields: [[ uuid, 18 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/307
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 200
+
+  # --- 400 Bad Request ---
+  - all: { headers: { fields: [[ uuid, 19 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/400
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 400
+
+  - all: { headers: { fields: [[ uuid, 20 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/400
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 200
+
+  # --- 403 Forbidden ---
+  - all: { headers: { fields: [[ uuid, 21 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/403
+      headers:
+        fields:
+        - [ Host, example.com ]
+
+    server-response:
+      status: 403
+      reason: "Forbidden"
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Last-Modified, "Mon, 16 Mar 2026 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 403
+
+  - all: { headers: { fields: [[ uuid, 22 ]]}}
+    client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /not-cacheable/403
+      headers:
+        fields:
+        - [ Host, example.com ]
+      delay: 100ms
+
+    <<: *canary_response
+
+    proxy-response:
+      status: 200

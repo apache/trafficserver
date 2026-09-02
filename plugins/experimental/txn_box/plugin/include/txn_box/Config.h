@@ -559,15 +559,17 @@ protected:
   /// Set of named configuration storage objects.
   std::unordered_map<swoc::TextView, swoc::MemSpan<void>, std::hash<std::string_view>> _named_objects;
 
+  /// For localizing data at a configuration level, primarily strings.
+  /// Declared before _roots so it is destroyed after _roots, since directives
+  /// in _roots reference memory allocated from this arena.
+  swoc::MemArena _arena;
+
   /// Top level directives for each hook. Always invoked.
   std::array<std::vector<Directive::Handle>, std::tuple_size<Hook>::value> _roots;
 
   /// Largest number of directives across the hooks. These are updated during
   /// directive load, if needed. This includes the top level directives.
   std::array<size_t, std::tuple_size<Hook>::value> _directive_count{0};
-
-  /// For localizing data at a configuration level, primarily strings.
-  swoc::MemArena _arena;
 
   /// Additional clean up to perform when @a this is destroyed.
   swoc::IntrusiveDList<Finalizer::Linkage> _finalizers;

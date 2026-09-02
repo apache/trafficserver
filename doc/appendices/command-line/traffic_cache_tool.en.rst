@@ -48,12 +48,12 @@ be abbreviated to any unique initial substring (e.g. "--sp" for "--span").
 .. option:: --spans
 
     Specify the span (storage) configuration. This can be a device, a cache directory, or a
-    configuration file in the form of :file:`storage.config`. In the latter case all devices listed
+    configuration file in the form of :file:`storage.yaml`. In the latter case all devices listed
     in the configuration file become active.
 
 .. option:: --volumes
 
-    Specify the volume configuration file in the format of :file:`volume.config`. This is important
+    Specify the volume configuration file in the format of :file:`storage.yaml`. This is important
     primarily for allocation operations where having the volume configuration is needed in order to
     properly allocate storage in spans to specific volumes.
 
@@ -124,46 +124,40 @@ Examples
 
 List the basic span data.::
 
-    traffic_cache_tool --spans=/usr/local/etc/trafficserver/storage.config list
+    traffic_cache_tool --spans=/usr/local/etc/trafficserver/storage.yaml list
 
 Allocate unused storage space.::
 
    traffic_cache_tool \
-      --spans=/usr/local/etc/trafficserver/storage.config \
-      --volumes=/usr/local/etc/trafficserver/volume.config \
+      --spans=/usr/local/etc/trafficserver/storage.yaml \
       alloc free
 
 Clear all spans.::
 
      traffic_cache_tool \
-      --spans=/usr/local/etc/trafficserver/storage.config \
-      --volumes=/usr/local/etc/trafficserver/volume.config \
+      --spans=/usr/local/etc/trafficserver/storage.yaml \
       clear
 
 Clear a single span.::
 
     traffic_cache_tool \
-    --span /opt/etc/trafficserver/storage.config \
-    --volume /opt/etc/trafficserver/volume.config \
+    --span /opt/etc/trafficserver/storage.yaml \
     clear span --device "/dev/sdb3" --write
 
 Initialize a new span.::
 
     traffic_cache_tool \
-    --span /opt/etc/trafficserver/storage.config \
-    --volume /opt/etc/trafficserver/volume.config \
+    --span /opt/etc/trafficserver/storage.yaml \
     init --input "/dev/sdb3" --write
 
 Find Stripe Assignment.::
 
     traffic_cache_tool \
-    --span /opt/etc/trafficserver/storage.config \
-    --volume /opt/etc/trafficserver/volume.config \
+    --span /opt/etc/trafficserver/storage.yaml \
     init --input "/home/user/urls.txt"
 
 ========
 See also
 ========
 
-:manpage:`storage.config(5)`
-:manpage:`volume.config(5)`,
+:manpage:`storage.yaml(5)`

@@ -162,6 +162,7 @@ enum class SquidLogCode {
   ERR_FUTURE_1              = 'I',
   ERR_CLIENT_READ_ERROR     = 'J', // Client side abort logging
   ERR_LOOP_DETECTED         = 'K', // Loop or cycle detected, request came back to this server
+  ERR_TUN_ACTIVE_TIMEOUT    = 'T', // Tunnel (CONNECT) active timeout
   ERR_UNKNOWN               = 'Z'
 };
 
@@ -421,7 +422,15 @@ ParseResult http_parser_parse_req(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl
                                   bool must_copy_strings, bool eof, int strict_uri_parsing, size_t max_request_line_size,
                                   size_t max_hdr_field_size);
 ParseResult validate_hdr_request_target(int method_wks_idx, URLImpl *url);
+
+// This calls http_parse_host_header internally to parse the Host field value
+// when present, so it enforces the same syntax rules and also validates the
+// port number when specified.
 ParseResult validate_hdr_host(HTTPHdrImpl *hh);
+
+// This parses and validates the Host field value.
+bool http_parse_host_header(std::string_view value, std::string_view &host, int &port, bool &has_port);
+
 ParseResult validate_hdr_content_length(HdrHeap *heap, HTTPHdrImpl *hh);
 ParseResult http_parser_parse_resp(HTTPParser *parser, HdrHeap *heap, HTTPHdrImpl *hh, const char **start, const char *end,
                                    bool must_copy_strings, bool eof);
@@ -477,7 +486,10 @@ public:
 
   int valid() const;
 
+  // destroy() and clear() name-hide HdrHeapSDKHandle's non-virtual versions
+  // Dispatch is static; "override" doesn't apply
   void create(HTTPType polarity, HTTPVersion version = HTTP_INVALID, HdrHeap *heap = nullptr);
+  void destroy();
   void clear();
   void reset();
   void copy(const HTTPHdr *hdr);
@@ -487,6 +499,23 @@ public:
 
   int print(char *buf, int bufsize, int *bufindex, int *dumpoffset) const;
 
+  /** Returns the serialized byte length of the HTTP header.
+   *
+   * The count includes the request-line (for requests) or status-line (for
+   * responses), all header fields, and the terminating blank line. The message
+   * body is not included.
+   *
+   * @note Internal fields whose names begin with @c '@' are counted here even
+   *       though @c print() omits them from its output, so this length may
+   *       exceed the number of bytes @c print() actually writes.
+   *
+   * @return Serialized byte length of the header.
+   *
+   * @pre The header must be initialized.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
   int length_get() const;
 
   HTTPType type_get() const;
@@ -607,10 +636,70 @@ public:
   void mark_early_data(bool flag = true) const;
   bool is_early_data() const;
 
+  /** Parse an HTTP/1.x request header incrementally from a raw buffer.
+   *
+   * Parses input data into the header's request fields. Call repeatedly with the same @p parser
+   * until a result other than @c ParseResult::CONT is returned. When @c ParseResult::DONE is
+   * returned, the request method, URL, version, and header fields are set on this header.
+   *
+   * @param[in,out] parser                Parser state. Must be the same object on each call for a given message.
+   * @param[in,out] start                 On entry, points to the first unparsed byte; on return,
+   *                                       advanced past all consumed bytes.
+   * @param[in]     end                   One past the last available byte of input.
+   * @param[in]     eof                   @c true if no more data will follow @p end.
+   * @param[in]     strict_uri_parsing    URI compliance level: @c 0 performs no compliance check; @c 1 rejects
+   *                                       the URI unless every character is a valid RFC 3986 URI character; @c 2
+   *                                       is more permissive, rejecting the URI only if it contains whitespace or
+   *                                       non-printable characters. Other values behave like @c 0.
+   * @param[in]     max_request_line_size Maximum byte length of the request line; exceeding it returns
+   *                                       @c ParseResult::ERROR.
+   * @param[in]     max_hdr_field_size    Maximum byte length of a single header field; exceeding it
+   *                                       returns @c ParseResult::ERROR.
+   *
+   * @return @c ParseResult::DONE if a complete valid request header has been parsed;
+   *         @c ParseResult::CONT if more data is required;
+   *         @c ParseResult::ERROR on a protocol error or exceeded limit.
+   *
+   * @pre The header must be initialized with @c HTTPType::REQUEST polarity.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
   ParseResult parse_req(HTTPParser *parser, const char **start, const char *end, bool eof, int strict_uri_parsing = 0,
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = 131070);
   ParseResult parse_resp(HTTPParser *parser, const char **start, const char *end, bool eof);
 
+  /** Parse an HTTP/1.x request header incrementally from an @c IOBufferReader.
+   *
+   * Reads and consumes data from @p r, parsing it into the header's request fields. Call
+   * repeatedly with the same @p parser until a result other than @c ParseResult::CONT is
+   * returned. When @c ParseResult::DONE is returned, the request method, URL, version, and
+   * header fields are set on this header.
+   *
+   * @param[in,out] parser                Parser state. Must be the same object on each call for a given message.
+   * @param[in,out] r                     Source of input data; bytes consumed by the parser are removed from
+   *                                       the reader.
+   * @param[out]    bytes_used            Must be non-null; set to the number of bytes consumed from @p r.
+   * @param[in]     eof                   @c true if no more data will be provided after what is currently
+   *                                       available on @p r.
+   * @param[in]     strict_uri_parsing    URI compliance level: @c 0 performs no compliance check; @c 1 rejects
+   *                                       the URI unless every character is a valid RFC 3986 URI character; @c 2
+   *                                       is more permissive, rejecting the URI only if it contains whitespace or
+   *                                       non-printable characters. Other values behave like @c 0.
+   * @param[in]     max_request_line_size Maximum byte length of the request line; exceeding it returns
+   *                                       @c ParseResult::ERROR.
+   * @param[in]     max_hdr_field_size    Maximum byte length of a single header field; exceeding it
+   *                                       returns @c ParseResult::ERROR.
+   *
+   * @return @c ParseResult::DONE if a complete valid request header has been parsed;
+   *         @c ParseResult::CONT if more data is required;
+   *         @c ParseResult::ERROR on a protocol error or exceeded limit.
+   *
+   * @pre The header must be initialized with @c HTTPType::REQUEST polarity.
+   *
+   * @par Thread Safety
+   *   Not thread-safe.
+   */
   ParseResult parse_req(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof, int strict_uri_parsing = 0,
                         size_t max_request_line_size = UINT16_MAX, size_t max_hdr_field_size = UINT16_MAX);
   ParseResult parse_resp(HTTPParser *parser, IOBufferReader *r, int *bytes_used, bool eof);
@@ -636,6 +725,16 @@ protected:
       @ _fill_target_cache @b always does a cache fill.
   */
   void _test_and_fill_target_cache() const;
+  /** Null cached pointers/flags without touching the URL or heap.
+      Shared between @c _reset_local_state() and @c reset(); URL and
+      heap handling differ between those paths.
+  */
+  void _reset_local_fields();
+  /** Null out members that reference the heap.
+      Shared prologue for @c clear() and @c destroy(); ensures a reused
+      HTTPHdr can't dereference a stale @c m_host_mime via @c host_get().
+  */
+  void _reset_local_state();
 
   static Arena *const USE_HDR_HEAP_MAGIC;
 
@@ -673,23 +772,47 @@ HTTPHdr::create(HTTPType polarity, HTTPVersion version, HdrHeap *heap)
 }
 
 inline void
-HTTPHdr::clear()
+HTTPHdr::_reset_local_fields()
+{
+  m_http           = nullptr;
+  m_mime           = nullptr;
+  m_host_mime      = nullptr;
+  m_host_length    = 0;
+  m_port           = 0;
+  m_target_cached  = false;
+  m_target_in_url  = false;
+  m_port_in_header = false;
+}
+
+inline void
+HTTPHdr::_reset_local_state()
 {
   if (m_http && m_http->m_polarity == HTTPType::REQUEST) {
     m_url_cached.clear();
   }
+  _reset_local_fields();
+}
+
+inline void
+HTTPHdr::clear()
+{
+  _reset_local_state();
   this->HdrHeapSDKHandle::clear();
-  m_http = nullptr;
-  m_mime = nullptr;
+}
+
+inline void
+HTTPHdr::destroy()
+{
+  _reset_local_state();
+  this->HdrHeapSDKHandle::destroy();
 }
 
 inline void
 HTTPHdr::reset()
 {
   m_heap = nullptr;
-  m_http = nullptr;
-  m_mime = nullptr;
   m_url_cached.reset();
+  _reset_local_fields();
 }
 
 /*-------------------------------------------------------------------------
@@ -1088,7 +1211,7 @@ inline void
 HTTPHdr::status_set(HTTPStatus status)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
+  ink_release_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_status_set(m_http, status);
 }
@@ -1112,7 +1235,7 @@ inline void
 HTTPHdr::reason_set(std::string_view value)
 {
   ink_assert(valid());
-  ink_assert(m_http->m_polarity == HTTPType::RESPONSE);
+  ink_release_assert(m_http->m_polarity == HTTPType::RESPONSE);
 
   http_hdr_reason_set(m_heap, m_http, value, true);
 }

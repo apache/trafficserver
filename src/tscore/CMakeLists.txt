@@ -21,7 +21,7 @@ add_executable(CompileParseRules CompileParseRules.cc)
 
 add_custom_command(
   OUTPUT ParseRulesCType ParseRulesCTypeToUpper ParseRulesCTypeToLower
-  COMMAND CompileParseRules
+  COMMAND ${CMAKE_COMMAND} -E env ASAN_OPTIONS=detect_leaks=0 $<TARGET_FILE:CompileParseRules>
   COMMENT "Generating compile parse rules"
 )
 
@@ -100,7 +100,7 @@ set_target_properties(tscore PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 
 if(SSLLIB_IS_BORINGSSL OR SSLLIB_IS_AWSLC)
   target_sources(tscore PRIVATE HKDF_boringssl.cc)
-elseif(SSLLIB_IS_OPENSSL3)
+elseif(SSLLIB_IS_AT_LEAST_OPENSSL3)
   target_sources(tscore PRIVATE HKDF_openssl3.cc)
 else()
   target_sources(tscore PRIVATE HKDF_openssl.cc)
@@ -150,6 +150,7 @@ if(BUILD_TESTING)
     unit_tests/test_List.cc
     unit_tests/test_MMH.cc
     unit_tests/test_ParseRules.cc
+    unit_tests/test_PendingAction.cc
     unit_tests/test_PluginUserArgs.cc
     unit_tests/test_PriorityQueue.cc
     unit_tests/test_Ptr.cc
@@ -158,9 +159,11 @@ if(BUILD_TESTING)
     unit_tests/test_Throttler.cc
     unit_tests/test_Tokenizer.cc
     unit_tests/test_arena.cc
+    unit_tests/test_ink_base64.cc
     unit_tests/test_ink_inet.cc
     unit_tests/test_ink_memory.cc
     unit_tests/test_ink_string.cc
+    unit_tests/test_ink_sys_control.cc
     unit_tests/test_layout.cc
     unit_tests/test_scoped_resource.cc
     unit_tests/test_Version.cc

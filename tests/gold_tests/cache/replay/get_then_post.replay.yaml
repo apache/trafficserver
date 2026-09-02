@@ -57,6 +57,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # The request should be served out of cache, so this 403 should not be
     # received.
     server-response:
@@ -147,6 +150,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     # This should be served out of cache, so we do not expect for the server
     # to reply with this.
     server-response:
@@ -208,6 +214,9 @@ sessions:
       # Add a delay so ATS has time to finish any caching IO for the previous
       # transaction.
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     # The server should not receive this request because ATS should reply out
     # of the cache.

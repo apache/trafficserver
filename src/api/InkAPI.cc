@@ -22,11 +22,16 @@
  */
 
 #include <atomic>
+#include <charconv>
+#include <cstdint>
+#include <memory>
+#include <mutex>
 #include <tuple>
 #include <unordered_map>
 #include <string_view>
 #include <string>
-#include <charconv>
+#include <utility>
+#include <vector>
 
 #include "iocore/net/NetVConnection.h"
 #include "iocore/net/NetHandler.h"
@@ -90,6 +95,9 @@
 #include "proxy/http/HttpProxyServerMain.h"
 #include "shared/overridable_txn_vars.h"
 #include "mgmt/config/FileManager.h"
+#include "mgmt/config/ConfigRegistry.h"
+#include "mgmt/config/ConfigContext.h"
+#include "mgmt/config/ConfigContextDiags.h"
 
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 #include <swoc/bwf_base.h>
@@ -138,8 +146,6 @@ extern ClassAllocator<FetchSM, false> FetchSMAllocator;
 
 /* From proxy/http/HttpProxyServerMain.c: */
 extern bool ssl_register_protocol(const char *, Continuation *);
-
-extern SSLSessionCache *session_cache; // declared extern in P_SSLConfig.h
 
 // External converters.
 extern MgmtConverter const &HttpDownServerCacheTimeConv;
@@ -1650,7 +1656,9 @@ TSMimeFieldValueGet(TSMBuffer /* bufp ATS_UNUSED */, TSMLoc field_obj, int idx, 
   }
 }
 
-static void
+// Returns false when the value exceeds the uint16_t field-length limit and was
+// rejected by mime_field_value_set, so callers can surface TS_ERROR.
+static bool
 TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value, int length)
 {
   MIMEFieldSDKHandle *handle = reinterpret_cast<MIMEFieldSDKHandle *>(field_obj);
@@ -1663,10 +1671,10 @@ TSMimeFieldValueSet(TSMBuffer bufp, TSMLoc field_obj, int idx, const char *value
   if (idx >= 0) {
     mime_field_value_set_comma_val(heap, handle->mh, handle->field_ptr, idx,
                                    std::string_view{value, static_cast<std::string_view::size_type>(length)});
-  } else {
-    mime_field_value_set(heap, handle->mh, handle->field_ptr,
-                         std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
+    return true;
   }
+  return mime_field_value_set(heap, handle->mh, handle->field_ptr,
+                              std::string_view{value, static_cast<std::string_view::size_type>(length)}, true);
 }
 
 static void
@@ -1896,7 +1904,13 @@ TSMimeHdrFieldCreateNamed(TSMBuffer bufp, TSMLoc mh_mloc, const char *name, int 
   HdrHeap            *heap = ((reinterpret_cast<HdrHeapSDKHandle *>(bufp))->m_heap);
   MIMEFieldSDKHandle *h    = sdk_alloc_field_handle(bufp, mh);
   h->field_ptr = mime_field_create_named(heap, mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
-  *locp        = reinterpret_cast<TSMLoc>(h);
+  if (h->field_ptr == nullptr) {
+    // The name exceeds the uint16_t field-length limit; nothing was created.
+    sdk_free_field_handle(bufp, h);
+    *locp = nullptr;
+    return TS_ERROR;
+  }
+  *locp = reinterpret_cast<TSMLoc>(h);
   return TS_SUCCESS;
 }
 
@@ -2104,12 +2118,15 @@ TSMimeHdrFieldNameSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, const char *name
     mime_hdr_field_detach(handle->mh, handle->field_ptr, false);
   }
 
-  handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
+  bool const stored =
+    handle->field_ptr->name_set(heap, handle->mh, std::string_view{name, static_cast<std::string_view::size_type>(length)});
 
   if (attached) {
     mime_hdr_field_attach(handle->mh, handle->field_ptr, 1, nullptr);
   }
-  return TS_SUCCESS;
+  // A rejected oversized name leaves the field's prior name intact; report the
+  // failure so the plugin knows the set did not take effect.
+  return stored ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -2259,8 +2276,7 @@ TSMimeHdrFieldValueStringSet(TSMBuffer bufp, TSMLoc hdr, TSMLoc field, int idx, 
     length = strlen(value);
   }
 
-  TSMimeFieldValueSet(bufp, field, idx, value, length);
-  return TS_SUCCESS;
+  return TSMimeFieldValueSet(bufp, field, idx, value, length) ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -3299,6 +3315,416 @@ TSMgmtUpdateRegister(TSCont contp, const char *plugin_name, const char *plugin_f
   sdk_assert(sdk_sanity_check_null_ptr((void *)plugin_name) == TS_SUCCESS);
 
   global_config_cbs->insert(reinterpret_cast<INKContInternal *>(contp), plugin_name, plugin_file_name);
+}
+
+////////////////////////////////////////////////////////////////////
+//
+// Config Registry - plugin config reload registration
+//
+////////////////////////////////////////////////////////////////////
+
+namespace
+{
+// Handle behind the opaque TSCfgLoadCtx. One is created per handler invocation
+// (and per subtask) and owned by PluginCtxRegistry. Caches the strings/nodes the
+// getters need to return as stable pointers for the lifetime of the handle.
+struct PluginConfigContext {
+  ConfigContext ctx;
+  std::string   filename;
+  std::string   reload_token;
+  YAML::Node    supplied_yaml;
+  YAML::Node    reload_directives;
+};
+
+DbgCtl dbg_ctl_plugin_config{"config.reload"};
+
+// Process-lifetime registry of live TSCfgLoadCtx handles.
+//
+// Handles handed to plugins are opaque monotonically-increasing ids, never raw
+// pointers, so a stale handle can never alias a freshly-allocated context (no
+// ABA). Every accessor validates the id under the registry lock, so a call made
+// after Complete/Fail - or on a bogus handle - is a genuine no-op instead of a
+// use-after-free read. Complete/Fail unregister the context under the same lock,
+// so a second finalize can never double-free. Accessors hold shared ownership for
+// the duration of the call, so a Complete/Fail racing on another thread cannot
+// free the context mid-call.
+class PluginCtxRegistry
+{
+public:
+  static PluginCtxRegistry &
+  instance()
+  {
+    static PluginCtxRegistry r;
+    return r;
+  }
+
+  /// Take ownership of @a pctx and return its opaque handle.
+  TSCfgLoadCtx
+  create(std::unique_ptr<PluginConfigContext> pctx)
+  {
+    std::lock_guard lock(_mutex);
+    uint64_t        id = _next_id++;
+    _live.emplace(id, std::move(pctx));
+    return reinterpret_cast<TSCfgLoadCtx>(static_cast<uintptr_t>(id));
+  }
+
+  /// Look up a live context by handle. Returns @c nullptr when the handle was
+  /// already finalized or was never valid. The caller keeps shared ownership for
+  /// the duration of its call, so a concurrent Complete/Fail unregisters the
+  /// context without freeing it out from under the caller.
+  std::shared_ptr<PluginConfigContext>
+  lookup(TSCfgLoadCtx handle)
+  {
+    uint64_t        id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle));
+    std::lock_guard lock(_mutex);
+    auto            it = _live.find(id);
+    return it != _live.end() ? it->second : nullptr;
+  }
+
+  /// Remove a context from the registry, transferring ownership to the caller.
+  /// Returns @c nullptr when the handle is unknown or already finalized.
+  std::shared_ptr<PluginConfigContext>
+  extract(TSCfgLoadCtx handle)
+  {
+    uint64_t        id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(handle));
+    std::lock_guard lock(_mutex);
+    auto            it = _live.find(id);
+    if (it == _live.end()) {
+      return nullptr;
+    }
+    auto pctx = std::move(it->second);
+    _live.erase(it);
+    return pctx;
+  }
+
+private:
+  std::mutex                                                         _mutex;
+  std::unordered_map<uint64_t, std::shared_ptr<PluginConfigContext>> _live;
+  uint64_t                                                           _next_id{1};
+};
+
+/// Resolve a handle to its live context, logging when the handle is invalid or
+/// already finalized. Returns @c nullptr in that case so callers can no-op.
+std::shared_ptr<PluginConfigContext>
+resolve_plugin_ctx(TSCfgLoadCtx handle, const char *api_fn)
+{
+  auto pctx = PluginCtxRegistry::instance().lookup(handle);
+  if (pctx == nullptr) {
+    Warning("%s called on an invalid or already-finalized TSCfgLoadCtx; ignoring", api_fn);
+    ink_assert(!"TSCfgLoadCtx used after Complete/Fail or otherwise invalid");
+  }
+  return pctx;
+}
+
+/// Verify we're inside TSPluginInit() after a successful TSPluginRegister().
+/// Returns the active plugin name on success, nullptr on failure (after logging).
+const char *
+validate_plugin_init(const char *api_fn)
+{
+  if (!plugin_reg_current) {
+    Error("[unknown-plugin] %s must be called from TSPluginInit()", api_fn);
+    return nullptr;
+  }
+  if (!plugin_reg_current->plugin_registered || plugin_reg_current->plugin_name == nullptr) {
+    Error("[%s] %s must be called after TSPluginRegister() with a non-null plugin_name",
+          plugin_reg_current->plugin_path ? plugin_reg_current->plugin_path : "?", api_fn);
+    return nullptr;
+  }
+  return plugin_reg_current->plugin_name;
+}
+} // anonymous namespace
+
+TSReturnCode
+TSCfgRegister(const TSCfgRegistrationInfo *info)
+{
+  const char *plugin_name = validate_plugin_init("TSCfgRegister");
+  if (!plugin_name) {
+    return TS_ERROR;
+  }
+
+  if (info == nullptr) {
+    Error("[%s] TSCfgRegister: info is null", plugin_name);
+    return TS_ERROR;
+  }
+  if (info->key.empty() || info->config_path.empty() || info->handler == nullptr) {
+    Error("[%s] TSCfgRegister: missing required fields (key/config_path/handler)", plugin_name);
+    return TS_ERROR;
+  }
+
+  std::string key_str{info->key};
+  std::string config_path_str{info->config_path};
+  std::string filename_record_str{info->filename_record};
+
+  config::ConfigSource cfg_source =
+    (info->source == TS_CFG_SOURCE_FILE_AND_RPC) ? config::ConfigSource::FileAndRpc : config::ConfigSource::FileOnly;
+
+  auto cb    = info->handler;
+  auto udata = info->data;
+
+  // Lambda captures the function pointer, opaque user data, and the registry key
+  // (so it never has to rely on ctx.get_description() matching the key). The
+  // handle is owned by PluginCtxRegistry for the duration of the reload.
+  config::ConfigReloadHandler wrapper = [cb, udata, key_str](ConfigContext ctx) {
+    auto pctx               = std::make_unique<PluginConfigContext>();
+    pctx->reload_token      = ctx.get_reload_token();
+    pctx->supplied_yaml     = ctx.supplied_yaml();
+    pctx->reload_directives = ctx.reload_directives();
+    if (auto const *entry = config::ConfigRegistry::Get_Instance().find(key_str); entry != nullptr) {
+      pctx->filename = entry->resolve_filename();
+    }
+    pctx->ctx = std::move(ctx);
+
+    TSCfgLoadCtx handle = PluginCtxRegistry::instance().create(std::move(pctx));
+
+    Dbg(dbg_ctl_plugin_config, "Invoking plugin config handler for '%s'", key_str.c_str());
+    cb(handle, udata);
+    // On synchronous completion the plugin has already finalized (and freed) the
+    // handle. On deferred completion the handle stays live in the registry until
+    // the plugin calls Complete/Fail. If the plugin never finalizes, the entry
+    // persists (bounded: one per un-finalized reload) but core's progress
+    // timeout still unblocks the reload cycle.
+  };
+
+  // Duplicate-key / invalid registrations are dropped by register_plugin_config;
+  // surface that to the plugin as TS_ERROR rather than a false success. Callers
+  // can also probe up front with TSCfgIsRegistered.
+  if (!config::ConfigRegistry::Get_Instance().register_plugin_config(key_str, plugin_name, config_path_str, filename_record_str,
+                                                                     std::move(wrapper), cfg_source, {}, info->is_required)) {
+    Error("[%s] TSCfgRegister: registration dropped for key '%s' (duplicate key or invalid plugin state)", plugin_name,
+          key_str.c_str());
+    return TS_ERROR;
+  }
+
+  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgRegister: registered '%s' (file: %s)", plugin_name, key_str.c_str(),
+      config_path_str.c_str());
+  return TS_SUCCESS;
+}
+
+bool
+TSCfgIsRegistered(std::string_view key)
+{
+  if (key.empty()) {
+    return false;
+  }
+  return config::ConfigRegistry::Get_Instance().contains(std::string{key});
+}
+
+TSReturnCode
+TSCfgAttachReloadTrigger(std::string_view key, std::string_view record_name)
+{
+  const char *plugin_name = validate_plugin_init("TSCfgAttachReloadTrigger");
+  if (!plugin_name) {
+    return TS_ERROR;
+  }
+  if (key.empty() || record_name.empty()) {
+    Error("[%s] TSCfgAttachReloadTrigger: key and record_name required", plugin_name);
+    return TS_ERROR;
+  }
+
+  std::string key_str{key};
+  std::string record_str{record_name};
+  if (config::ConfigRegistry::Get_Instance().attach(key_str, record_str.c_str()) != 0) {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: attach failed (key='%s', record='%s')", plugin_name, key_str.c_str(),
+        record_str.c_str());
+    return TS_ERROR;
+  }
+
+  Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAttachReloadTrigger: attached record '%s' to config '%s'", plugin_name, record_str.c_str(),
+      key_str.c_str());
+  return TS_SUCCESS;
+}
+
+TSReturnCode
+TSCfgAddFileDependency(const TSCfgFileDependencyInfo *info)
+{
+  const char *plugin_name = validate_plugin_init("TSCfgAddFileDependency");
+  if (!plugin_name) {
+    return TS_ERROR;
+  }
+  if (info == nullptr) {
+    Error("[%s] TSCfgAddFileDependency: info is null", plugin_name);
+    return TS_ERROR;
+  }
+  if (info->key.empty() || info->config_path.empty()) {
+    Error("[%s] TSCfgAddFileDependency: missing required fields (key/config_path)", plugin_name);
+    return TS_ERROR;
+  }
+
+  auto       &registry            = config::ConfigRegistry::Get_Instance();
+  std::string key_str             = std::string{info->key};
+  std::string path_str            = std::string{info->config_path};
+  std::string filename_record_str = std::string{info->filename_record};
+  std::string dep_key_str         = std::string{info->dep_key};
+  bool const  has_dep_key         = !dep_key_str.empty();
+
+  // filename_record_str may be empty; add_file_dependency / resolve_config_filename treat empty as "no record".
+  const char *filename_record_arg = filename_record_str.empty() ? nullptr : filename_record_str.c_str();
+
+  int rc = has_dep_key ?
+             registry.add_file_and_node_dependency(key_str, dep_key_str, filename_record_arg, path_str.c_str(), info->is_required) :
+             registry.add_file_dependency(key_str, filename_record_arg, path_str.c_str(), info->is_required);
+
+  if (rc != 0) {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: registration failed (key='%s', dep_key='%s', file='%s')", plugin_name,
+        key_str.c_str(), dep_key_str.c_str(), path_str.c_str());
+    return TS_ERROR;
+  }
+
+  if (has_dep_key) {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: added file '%s' (dep_key '%s') to config '%s'", plugin_name,
+        path_str.c_str(), dep_key_str.c_str(), key_str.c_str());
+  } else {
+    Dbg(dbg_ctl_plugin_config, "[%s] TSCfgAddFileDependency: added file '%s' to config '%s'", plugin_name, path_str.c_str(),
+        key_str.c_str());
+  }
+  return TS_SUCCESS;
+}
+
+namespace
+{
+/// Finalize a handle with Complete or Fail. The context is extracted (and thus
+/// freed) under the registry lock, so a second finalize - or any later accessor
+/// call - safely finds nothing and no-ops instead of touching freed memory.
+void
+finalize_plugin_ctx(TSCfgLoadCtx handle, std::string_view msg, bool complete)
+{
+  auto pctx = PluginCtxRegistry::instance().extract(handle);
+  if (pctx == nullptr) {
+    Warning("TSCfgLoadCtx%s called on an invalid or already-finalized handle; ignoring", complete ? "Complete" : "Fail");
+    ink_assert(!"TSCfgLoadCtx finalized more than once or otherwise invalid");
+    return;
+  }
+
+  if (complete) {
+    if (!msg.empty()) {
+      CfgLoadComplete(pctx->ctx, "%.*s", static_cast<int>(msg.size()), msg.data());
+    } else {
+      pctx->ctx.complete();
+    }
+  } else {
+    if (!msg.empty()) {
+      CfgLoadFail(pctx->ctx, "%.*s", static_cast<int>(msg.size()), msg.data());
+    } else {
+      pctx->ctx.fail();
+    }
+  }
+  // pctx frees here, or when the last concurrent accessor releases its reference.
+}
+} // anonymous namespace
+
+void
+TSCfgLoadCtxInProgress(TSCfgLoadCtx ctx, std::string_view msg)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxInProgress");
+  if (pctx == nullptr) {
+    return;
+  }
+
+  if (!msg.empty()) {
+    CfgLoadInProgress(pctx->ctx, "%.*s", static_cast<int>(msg.size()), msg.data());
+  } else {
+    pctx->ctx.in_progress();
+  }
+}
+
+void
+TSCfgLoadCtxComplete(TSCfgLoadCtx ctx, std::string_view msg)
+{
+  finalize_plugin_ctx(ctx, msg, /*complete=*/true);
+}
+
+void
+TSCfgLoadCtxFail(TSCfgLoadCtx ctx, std::string_view msg)
+{
+  finalize_plugin_ctx(ctx, msg, /*complete=*/false);
+}
+
+void
+TSCfgLoadCtxAddLog(TSCfgLoadCtx ctx, TSCfgLogLevel level, std::string_view msg)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddLog");
+  if (pctx == nullptr || msg.empty()) {
+    return;
+  }
+
+  DiagsLevel diags_level = DL_Note;
+  switch (level) {
+  case TS_CFG_LOG_WARNING:
+    diags_level = DL_Warning;
+    break;
+  case TS_CFG_LOG_ERROR:
+    diags_level = DL_Error;
+    break;
+  case TS_CFG_LOG_NOTE:
+  default:
+    diags_level = DL_Note;
+    break;
+  }
+
+  CfgLoadLog(pctx->ctx, diags_level, "%.*s", static_cast<int>(msg.size()), msg.data());
+}
+
+TSCfgLoadCtx
+TSCfgLoadCtxAddSubtask(TSCfgLoadCtx ctx, std::string_view description)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxAddSubtask");
+  if (pctx == nullptr) {
+    return nullptr;
+  }
+
+  ConfigContext child_ctx = pctx->ctx.add_dependent_ctx(description);
+  if (!child_ctx) {
+    return nullptr;
+  }
+
+  auto child_handle               = std::make_unique<PluginConfigContext>();
+  child_handle->filename          = pctx->filename;
+  child_handle->reload_token      = pctx->reload_token;
+  child_handle->supplied_yaml     = child_ctx.supplied_yaml();
+  child_handle->reload_directives = child_ctx.reload_directives();
+  child_handle->ctx               = std::move(child_ctx);
+
+  return PluginCtxRegistry::instance().create(std::move(child_handle));
+}
+
+std::string_view
+TSCfgLoadCtxGetFilename(TSCfgLoadCtx ctx)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetFilename");
+  if (pctx == nullptr) {
+    return {};
+  }
+  return pctx->filename;
+}
+
+std::string_view
+TSCfgLoadCtxGetReloadToken(TSCfgLoadCtx ctx)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadToken");
+  if (pctx == nullptr) {
+    return {};
+  }
+  return pctx->reload_token;
+}
+
+TSYaml
+TSCfgLoadCtxGetSuppliedYaml(TSCfgLoadCtx ctx)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetSuppliedYaml");
+  if (pctx == nullptr || !pctx->supplied_yaml.IsDefined()) {
+    return nullptr;
+  }
+  return reinterpret_cast<TSYaml>(&pctx->supplied_yaml);
+}
+
+TSYaml
+TSCfgLoadCtxGetReloadDirectives(TSCfgLoadCtx ctx)
+{
+  auto pctx = resolve_plugin_ctx(ctx, "TSCfgLoadCtxGetReloadDirectives");
+  if (pctx == nullptr || !pctx->reload_directives.IsDefined()) {
+    return nullptr;
+  }
+  return reinterpret_cast<TSYaml>(&pctx->reload_directives);
 }
 
 TSReturnCode
@@ -4479,6 +4905,35 @@ TSHttpTxnCacheLookupUrlSet(TSHttpTxn txnp, TSMBuffer bufp, TSMLoc obj)
   return TS_SUCCESS;
 }
 
+TSReturnCode
+TSHttpTxnCacheKeyDigestGet(TSHttpTxn txnp, char *buffer, int *length)
+{
+  sdk_assert(sdk_sanity_check_txn(txnp) == TS_SUCCESS);
+  sdk_assert(length != nullptr);
+
+  HttpSM           *sm              = reinterpret_cast<HttpSM *>(txnp);
+  const CryptoHash &hash            = sm->get_cache_sm().get_cache_key().hash;
+  constexpr int     size            = CRYPTO_HASH_SIZE;
+  int               provided_length = *length;
+
+  *length = size;
+
+  if (hash.is_zero()) {
+    return TS_ERROR;
+  }
+
+  if (buffer == nullptr) {
+    return TS_SUCCESS;
+  }
+
+  if (provided_length < size) {
+    return TS_ERROR;
+  }
+
+  memcpy(buffer, hash.u8, size);
+  return TS_SUCCESS;
+}
+
 /**
  * timeout is in msec
  * overrides as proxy.config.http.transaction_active_timeout_out
@@ -5039,7 +5494,7 @@ TSHttpTxnNextHopNamedStrategyGet(TSHttpTxn txnp, const char *name)
 
   auto sm = reinterpret_cast<HttpSM const *>(txnp);
 
-  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap) == TS_SUCCESS);
+  sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap.get()) == TS_SUCCESS);
   sdk_assert(sdk_sanity_check_null_ptr((void *)sm->m_remap->strategyFactory) == TS_SUCCESS);
 
   // HttpSM has a reference count handle to UrlRewrite which has a
@@ -6713,7 +7168,8 @@ TSHttpTxnRedirectUrlSet(TSHttpTxn txnp, const char *url, const int url_len)
   sm->redirect_url       = const_cast<char *>(url);
   sm->redirect_url_len   = url_len;
   sm->enable_redirection = true;
-  sm->redirection_tries  = 0;
+  // Don't reset HttpSM::redirection_tries here: a per-hop reset defeats the number_of_redirections
+  // limit that HttpSM enforces, allowing an unbounded redirect chain.
 
   // Make sure we allow for at least one redirection.
   if (sm->t_state.txn_conf->number_of_redirections <= 0) {
@@ -7069,11 +7525,13 @@ TSAIORead(int fd, off_t offset, char *buf, size_t buffSize, TSCont contp)
   pAIO->aiocb.aio_buf = buf;
   pAIO->action        = pCont;
   pAIO->thread        = pCont->mutex->thread_holding;
+  pAIO->from_ts_api   = true;
 
   if (ink_aio_read(pAIO, 1) == 1) {
     return TS_SUCCESS;
   }
 
+  delete pAIO;
   return TS_ERROR;
 }
 
@@ -7108,11 +7566,13 @@ TSAIOWrite(int fd, off_t offset, char *buf, const size_t bufSize, TSCont contp)
   pAIO->aiocb.aio_nbytes = bufSize;
   pAIO->action           = pCont;
   pAIO->thread           = pCont->mutex->thread_holding;
+  pAIO->from_ts_api      = true;
 
   if (ink_aio_write(pAIO, 1) == 1) {
     return TS_SUCCESS;
   }
 
+  delete pAIO;
   return TS_ERROR;
 }
 
@@ -7296,6 +7756,10 @@ _memberp_to_generic(MgmtFloat *ptr, MgmtConverter const *&conv) -> typename std:
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::MAX_SERVER_CONV; break;
 #define _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV(KEY, MEMBER)             \
   case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::SERVER_MATCH_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV(KEY, MEMBER)           \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_ENABLED_CONV; break;
+#define _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV(KEY, MEMBER)         \
+  case TS_CONFIG_##KEY: ret = &overridableHttpConfig->MEMBER; conv = &ConnectionTracker::METRIC_AGGREGATE_CONV; break;
 
 // Custom converter: Parses/formats host resolution preference strings.
 #define _CONF_CASE_HttpTransact_HOST_RES_CONV(KEY, MEMBER)                      \
@@ -7354,6 +7818,8 @@ _conf_to_memberp(TSOverridableConfigKey conf, OverridableHttpConfigParams *overr
 #undef _CONF_CASE_ConnectionTracker_MIN_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_MAX_SERVER_CONV
 #undef _CONF_CASE_ConnectionTracker_SERVER_MATCH_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_ENABLED_CONV
+#undef _CONF_CASE_ConnectionTracker_METRIC_AGGREGATE_CONV
 #undef _CONF_CASE_HttpTransact_HOST_RES_CONV
 #undef _CONF_CASE_TargetedCacheControlHeaders_Conv
 #undef _CONF_CASE_DISPATCH
@@ -7543,6 +8009,11 @@ TSHttpTxnConfigStringSet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
       s->t_state.my_txn_conf().ssl_client_ca_cert_filename = const_cast<char *>(value);
     }
     break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
+    if (value && length > 0) {
+      s->t_state.my_txn_conf().ssl_client_ca_cert_path = const_cast<char *>(value);
+    }
+    break;
   case TS_CONFIG_SSL_CLIENT_ALPN_PROTOCOLS:
     if (value && length > 0) {
       s->t_state.my_txn_conf().ssl_client_alpn_protocols = const_cast<char *>(value);
@@ -7620,6 +8091,10 @@ TSHttpTxnConfigStringGet(TSHttpTxn txnp, TSOverridableConfigKey conf, const char
     break;
   case TS_CONFIG_HTTP_SERVER_SESSION_SHARING_MATCH:
     *value  = sm->t_state.txn_conf->server_session_sharing_match_str;
+    *length = *value ? strlen(*value) : 0;
+    break;
+  case TS_CONFIG_SSL_CLIENT_CA_CERT_PATH:
+    *value  = sm->t_state.txn_conf->ssl_client_ca_cert_path;
     *length = *value ? strlen(*value) : 0;
     break;
   default: {
@@ -7722,13 +8197,23 @@ TSHttpTxnCloseAfterResponse(TSHttpTxn txnp, int should_close)
   return TS_SUCCESS;
 }
 
+namespace
+{
+bool
+is_usable_port_descriptor(const HttpProxyPort *port)
+{
+  return port != nullptr &&
+         (port->m_family == AF_UNIX || ((port->m_family == AF_INET || port->m_family == AF_INET6) && port->m_port != 0));
+}
+} // namespace
+
 // Parse a port descriptor for the proxy.config.http.server_ports descriptor format.
 TSPortDescriptor
 TSPortDescriptorParse(const char *descriptor)
 {
-  HttpProxyPort *port = new HttpProxyPort();
+  auto *port = new HttpProxyPort();
 
-  if (descriptor && port->processOptions(descriptor)) {
+  if (descriptor != nullptr && port->processOptions(descriptor) && is_usable_port_descriptor(port)) {
     return reinterpret_cast<TSPortDescriptor>(port);
   }
 
@@ -7739,8 +8224,17 @@ TSPortDescriptorParse(const char *descriptor)
 TSReturnCode
 TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
 {
+  if (descp == nullptr || contp == nullptr) {
+    return TS_ERROR;
+  }
+
+  const auto *port = reinterpret_cast<const HttpProxyPort *>(descp);
+
+  if (!is_usable_port_descriptor(port)) {
+    return TS_ERROR;
+  }
+
   Action                     *action = nullptr;
-  HttpProxyPort              *port   = reinterpret_cast<HttpProxyPort *>(descp);
   NetProcessor::AcceptOptions net(make_net_accept_options(port, -1 /* nthreads */));
 
   if (port->isSSL()) {
@@ -7750,6 +8244,12 @@ TSPortDescriptorAccept(TSPortDescriptor descp, TSCont contp)
   }
 
   return action ? TS_SUCCESS : TS_ERROR;
+}
+
+void
+TSPortDescriptorDestroy(TSPortDescriptor descp)
+{
+  delete reinterpret_cast<HttpProxyPort *>(descp);
 }
 
 TSReturnCode
@@ -8180,59 +8680,106 @@ TSSslClientCertUpdate(const char *cert_path, const char *key_path)
     return TS_ERROR;
   }
 
-  std::string      key;
-  shared_SSL_CTX   client_ctx = nullptr;
-  SSLConfigParams *params     = SSLConfig::acquire();
+  // --- Pin the active SSL configuration ---
+  //
+  // Keep this configuration generation alive across every early return and
+  // release it automatically when the update finishes.
+  std::string              key{cert_path};
+  SSLConfig::scoped_config params;
 
-  // Generate second level key for client context lookup
-  swoc::bwprint(key, "{}:{}", cert_path, key_path);
+  // The client context map is keyed by the resolved certificate path.
   Dbg(dbg_ctl_ssl_cert_update, "TSSslClientCertUpdate(): Use %.*s as key for lookup", static_cast<int>(key.size()), key.data());
 
-  if (nullptr != params) {
-    // Try to update client contexts maps
-    auto       &ca_paths_map = params->top_level_ctx_map;
-    auto       &map_lock     = params->ctxMapLock;
-    std::string ca_paths_key;
-    // First try to locate the client context and its CA path (by top level)
-    ink_mutex_acquire(&map_lock);
-    for (auto &ca_paths_pair : ca_paths_map) {
-      auto &ctx_map = ca_paths_pair.second;
-      auto  iter    = ctx_map.find(key);
-      if (iter != ctx_map.end() && iter->second != nullptr) {
-        ca_paths_key = ca_paths_pair.first;
-        break;
-      }
-    }
-    ink_mutex_release(&map_lock);
-
-    // Only update on existing
-    if (ca_paths_key.empty()) {
-      return TS_ERROR;
-    }
-
-    // Extract CA related paths
-    size_t      sep            = ca_paths_key.find(':');
-    std::string ca_bundle_file = ca_paths_key.substr(0, sep);
-    std::string ca_bundle_path = ca_paths_key.substr(sep + 1);
-
-    // Build new client context
-    client_ctx =
-      shared_SSL_CTX(SSLCreateClientContext(params, ca_bundle_path.empty() ? nullptr : ca_bundle_path.c_str(),
-                                            ca_bundle_file.empty() ? nullptr : ca_bundle_file.c_str(), cert_path, key_path),
-                     SSL_CTX_free);
-
-    // Successfully generates a client context, update in the map
-    ink_mutex_acquire(&map_lock);
-    auto iter = ca_paths_map.find(ca_paths_key);
-    if (iter != ca_paths_map.end() && iter->second.count(key)) {
-      iter->second[key] = client_ctx;
-    } else {
-      client_ctx = nullptr;
-    }
-    ink_mutex_release(&map_lock);
+  if (!params) {
+    return TS_ERROR;
   }
 
-  return client_ctx ? TS_SUCCESS : TS_ERROR;
+  auto                    &ca_paths_map = params->top_level_ctx_map;
+  auto                    &map_lock     = params->ctxMapLock;
+  std::vector<std::string> ca_paths_keys;
+
+  // --- Find every matching CA bucket ---
+  //
+  // A certificate can be used with more than one CA configuration. Snapshot
+  // all matching bucket keys while holding the map lock, then release it
+  // before performing the expensive context construction.
+  ink_mutex_acquire(&map_lock);
+  for (auto const &[ca_paths_key, ctx_map] : ca_paths_map) {
+    if (ctx_map.contains(key)) {
+      ca_paths_keys.push_back(ca_paths_key);
+    }
+  }
+  ink_mutex_release(&map_lock);
+
+  if (ca_paths_keys.empty()) {
+    return TS_ERROR;
+  }
+
+  // --- Drop the cached certificate data ---
+  //
+  // getCTX() builds contexts from the cached secret data rather than from the
+  // files. Drop the cached copies so that a context built later for a CA
+  // bucket that does not exist yet also picks up the updated certificate
+  // instead of the pre-update PEM.
+  params->secrets.invalidateSecret(key);
+  if (key_path != nullptr && key_path[0] != '\0') {
+    params->secrets.invalidateSecret(key_path);
+  }
+
+  std::vector<std::pair<std::string, shared_SSL_CTX>> client_contexts;
+
+  // --- Build every replacement context ---
+  //
+  // Build all replacements before changing the live map. If any construction
+  // fails, the existing working contexts remain installed.
+  client_contexts.reserve(ca_paths_keys.size());
+  for (auto const &ca_paths_key : ca_paths_keys) {
+    size_t         sep            = ca_paths_key.find(':');
+    std::string    ca_bundle_file = ca_paths_key.substr(0, sep);
+    std::string    ca_bundle_path = ca_paths_key.substr(sep + 1);
+    shared_SSL_CTX client_ctx(SSLCreateClientContext(params, ca_bundle_file.empty() ? nullptr : ca_bundle_file.c_str(),
+                                                     ca_bundle_path.empty() ? nullptr : ca_bundle_path.c_str(), cert_path,
+                                                     key_path),
+                              SSL_CTX_free);
+
+    if (!client_ctx) {
+      return TS_ERROR;
+    }
+    client_contexts.emplace_back(ca_paths_key, std::move(client_ctx));
+  }
+
+  std::vector<shared_SSL_CTX *> targets;
+
+  // --- Install all replacement contexts ---
+  //
+  // Reacquire the map lock and locate every target before overwriting any of
+  // them, so that the live map is either updated completely or left untouched.
+  targets.reserve(client_contexts.size());
+  ink_mutex_acquire(&map_lock);
+  for (auto const &client_context : client_contexts) {
+    auto ca_iter = ca_paths_map.find(client_context.first);
+
+    if (ca_iter == ca_paths_map.end()) {
+      break;
+    }
+    auto ctx_iter = ca_iter->second.find(key);
+
+    if (ctx_iter == ca_iter->second.end()) {
+      break;
+    }
+    targets.push_back(&ctx_iter->second);
+  }
+
+  bool const updated_all = targets.size() == client_contexts.size();
+
+  if (updated_all) {
+    for (std::size_t i = 0; i < targets.size(); ++i) {
+      *targets[i] = std::move(client_contexts[i].second);
+    }
+  }
+  ink_mutex_release(&map_lock);
+
+  return updated_all ? TS_SUCCESS : TS_ERROR;
 }
 
 TSReturnCode
@@ -8265,9 +8812,9 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
     }
 
     // Extract common name
-    int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
-    X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
-    ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
+    const int              pos              = X509_NAME_get_index_by_NID(X509_get_subject_name(cert.get()), NID_commonName, -1);
+    const X509_NAME_ENTRY *common_name      = X509_NAME_get_entry(X509_get_subject_name(cert.get()), pos);
+    const ASN1_STRING     *common_name_asn1 = X509_NAME_ENTRY_get_data(common_name);
     char *common_name_str = reinterpret_cast<char *>(const_cast<unsigned char *>(ASN1_STRING_get0_data(common_name_asn1)));
     if (ASN1_STRING_length(common_name_asn1) != static_cast<int>(strlen(common_name_str))) {
       // Embedded null char
@@ -8283,7 +8830,7 @@ TSSslServerCertUpdate(const char *cert_path, const char *key_path)
         return TS_ERROR;
       }
       // Atomic Swap
-      cc->setCtx(test_ctx);
+      cc->setCtx(std::move(test_ctx));
       return TS_SUCCESS;
     }
   }
@@ -8463,61 +9010,6 @@ TSVConnPPInfoIntGet(TSVConn vconn, uint16_t key, TSMgmtInt *value)
   }
 
   return TS_SUCCESS;
-}
-
-TSSslSession
-TSSslSessionGet(const TSSslSessionID *session_id)
-{
-  SSL_SESSION *session = nullptr;
-  if (session_id && session_cache) {
-    session_cache->getSession(reinterpret_cast<const SSLSessionID &>(*session_id), &session, nullptr);
-  }
-  return reinterpret_cast<TSSslSession>(session);
-}
-
-int
-TSSslSessionGetBuffer(const TSSslSessionID *session_id, char *buffer, int *len_ptr)
-{
-  int true_len = 0;
-  // Don't get if there is no session id or the cache is not yet set up
-  if (session_id && session_cache && len_ptr) {
-    true_len = session_cache->getSessionBuffer(reinterpret_cast<const SSLSessionID &>(*session_id), buffer, *len_ptr);
-  }
-  return true_len;
-}
-
-TSReturnCode
-TSSslSessionInsert(const TSSslSessionID *session_id, TSSslSession add_session, TSSslConnection ssl_conn)
-{
-  // Don't insert if there is no session id or the cache is not yet set up
-  if (session_id && session_cache) {
-    if (dbg_ctl_ssl_session_cache_insert.on()) {
-      const SSLSessionID *sid = reinterpret_cast<const SSLSessionID *>(session_id);
-      char                buf[sid->len * 2 + 1];
-      sid->toString(buf, sizeof(buf));
-      DbgPrint(dbg_ctl_ssl_session_cache_insert, "TSSslSessionInsert: Inserting session '%s' ", buf);
-    }
-    SSL_SESSION *session = reinterpret_cast<SSL_SESSION *>(add_session);
-    SSL         *ssl     = reinterpret_cast<SSL *>(ssl_conn);
-    session_cache->insertSession(reinterpret_cast<const SSLSessionID &>(*session_id), session, ssl);
-    // insertSession returns void, assume all went well
-    return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
-  }
-}
-
-TSReturnCode
-TSSslSessionRemove(const TSSslSessionID *session_id)
-{
-  // Don't remove if there is no session id or the cache is not yet set up
-  if (session_id && session_cache) {
-    session_cache->removeSession(reinterpret_cast<const SSLSessionID &>(*session_id));
-    // removeSession returns void, assume all went well
-    return TS_SUCCESS;
-  } else {
-    return TS_ERROR;
-  }
 }
 
 // APIs for managing and using UUIDs.
@@ -8938,7 +9430,7 @@ TSRPCHandlerDone(TSYaml resp)
 {
   Dbg(dbg_ctl_rpc_api, ">> Handler seems to be done");
   std::lock_guard<std::mutex> lock(::rpc::g_rpcHandlingMutex);
-  auto                        data       = *reinterpret_cast<YAML::Node *>(resp);
+  auto const                 &data       = *reinterpret_cast<YAML::Node const *>(resp);
   ::rpc::g_rpcHandlerResponseData        = data;
   ::rpc::g_rpcHandlerProcessingCompleted = true;
   ::rpc::g_rpcHandlingCompletion.notify_one();
@@ -9068,8 +9560,23 @@ TSLogFieldRegister(std::string_view name, std::string_view symbol, TSLogType typ
     }
   }
 
-  LogField *field = new LogField(name.data(), symbol.data(), static_cast<LogField::Type>(type),
-                                 reinterpret_cast<LogField::CustomMarshalFunc>(marshal_cb), unmarshal_cb);
+  // TSLogType mirrors LogField::Type's values and is static_cast to it below.
+  // apidefs.h.in can't reference LogField::Type, so pin the alignment here (the
+  // only TU that sees both) -- a reorder then fails to compile.
+  static_assert(static_cast<int>(TS_LOG_TYPE_INT) == static_cast<int>(LogField::Type::sINT));
+  static_assert(static_cast<int>(TS_LOG_TYPE_STRING) == static_cast<int>(LogField::Type::STRING));
+  static_assert(static_cast<int>(TS_LOG_TYPE_ADDR) == static_cast<int>(LogField::Type::IP));
+
+  // Reject anything outside the public set before the cast, so a bad plugin
+  // value can't become an INVALID/out-of-range LogField::Type and trip the ctor.
+  if (type != TS_LOG_TYPE_INT && type != TS_LOG_TYPE_STRING && type != TS_LOG_TYPE_ADDR) {
+    return TS_ERROR;
+  }
+
+  LogField *field = new LogField(
+    name.data(), symbol.data(), static_cast<LogField::Type>(type),
+    [marshal_cb = std::move(marshal_cb)](void *sm, char *buf) -> int { return marshal_cb(reinterpret_cast<TSHttpTxn>(sm), buf); },
+    unmarshal_cb);
   Log::global_field_list.add(field, false);
   Log::field_symbol_hash.emplace(symbol.data(), field);
 

@@ -236,7 +236,7 @@ Conditions
 Below is a partial mapping of `header_rewrite` condition symbols to their HRW4U equivalents:
 
 ================================= ================================== ================================================
-Header Rewrite                     HRW4U                             Description
+Header Rewrite                    HRW4U                              Description
 ================================= ================================== ================================================
 cond %{ACCESS:/path}              access("/path")                    File exists at "/path" and is accessible by ATS
 cond %{CACHE} =hit-fresh          cache() == "hit-fresh"             Cache lookup result status
@@ -258,12 +258,13 @@ cond %{IP:SERVER} ="..."          outbound.ip == "..."               Upstream (n
 cond %{IP:OUTBOUND} ="..."        outbound.server == "..."           ATS's outbound IP address, connecting upstream
 cond %{LAST-CAPTURE:<#>} ="..."   capture.<#> == "..."               Last capture group from regex match (range: `0-9`)
 cond %{METHOD} =GET               inbound.method == "GET"            HTTP method match
-cond %{NEXT-HOP:<C>} ="bar"       outbound.url.<C> == "bar"          Next-hop URL component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
-cond %{NEXT-HOP:QUERY:<P>} =bar   outbound.url.query.<P> == "bar"    Extract specific query parameter ``P`` from next-hop URL
+cond %{NEXT-HOP:<C>} ="bar"       nexthop.<C> == "bar"               Next-hop destination, ``<C>`` is ``host``, ``port``, or ``strategy``
 cond %{NOW:<U>} ="..."            now.<U> == "..."                   Current date/time in format,  <:ref:`U<admin-plugins-header-rewrite-geo>`> selects time unit
 cond %{OUTBOUND:CLIENT-CERT:<X>}  outbound.client-cert.<X>           Access the mTLS / client certificate details, on the outbound (upstream) connection
 cond %{OUTbOUND:SERVER-CERT:<X>}  outbound.client-cert.<X>           Access the server (handshake) certificate details, on the outbound connection
 cond %{RANDOM:500} >250           random(500) > 250                  Random number between 0 and the specified range
+cond %{SERVER-HEADER:X} =foo      outbound.req.X == "foo"            Server request header (sent to origin)
+cond %{SERVER-URL:<C>} =bar       outbound.url.<C> == "bar"          Server request URL component (sent to origin)
 cond %{SSN-TXN-COUNT} >10         ssn-txn-count() > 10               Number of transactions on server connection
 cond %{TO-URL:<C>} =bar           to.url.<C> == "bar"                Remap ``To URL`` component match, <:ref:`C<admin-plugins-header-rewrite-url-parts>`> is ``host`` etc.
 cond %{TO-URL:QUERY:<P>} =bar     to.url.query.<P> == "bar"          Extract specific query parameter ``P`` from remap ``To URL``
@@ -275,6 +276,20 @@ cond %{TCP-INFO}                  tcp.info                           TCP Info st
 cond %{HTTP-CNTL:<C>}             http.cntl.<C>                      Check the state of the <:ref:`C<admin-plugins-header-rewrite-set-http-cntl>`> HTTP control
 cond %{INBOUND:<C>}               {in,out}bound.conn.<c>             inbound (:ref:`client, user agent<admin-plugins-header-rewrite-inbound>`) connection to ATS
 ================================= ================================== ================================================
+
+.. note::
+    **Header and URL prefix summary:**
+
+    - ``inbound.req.<header>`` → ``CLIENT-HEADER`` - Headers from the client request
+    - ``outbound.req.<header>`` → ``SERVER-HEADER`` - Headers in the request sent to origin
+    - ``inbound.url.<part>`` → ``CLIENT-URL`` - URL from the original client request
+    - ``outbound.url.<part>`` → ``SERVER-URL`` - URL in the request sent to origin (after remapping)
+    - ``nexthop.<field>`` → ``NEXT-HOP`` - Network destination info (host, port, strategy)
+
+    The distinction between ``outbound.url`` and ``nexthop`` is important:
+
+    - ``outbound.url`` is the HTTP request URL (what's in the request line/Host header)
+    - ``nexthop`` is the network destination (where ATS connects, may be a parent proxy)
 
 The conditions operating on headers and URLs are also available as operators. E.g.:
 
@@ -336,9 +351,9 @@ HRW4U provides a special ``+=`` operator for adding headers::
 
 The ``+=`` operator only works with the following pre-defined symbols:
 
-- ``inbound.req.<header>`` - Client request headers
+- ``inbound.req.<header>`` - Client request headers (maps to ``CLIENT-HEADER``)
 - ``inbound.resp.<header>`` - Origin response headers
-- ``outbound.req.<header>`` - Outbound request headers (context-restricted)
+- ``outbound.req.<header>`` - Server request headers (maps to ``SERVER-HEADER``)
 - ``outbound.resp.<header>`` - Outbound response headers (context-restricted)
 
 .. note::
@@ -390,7 +405,9 @@ TXN_CLOSE_HOOK                  TXN_CLOSE                End of transaction
 =============================== ======================== ================================
 
 A special section `VARS` is used to declare variables. There is no equivalent in
-`header_rewrite`, where you managed the variables manually.
+`header_rewrite`, where you managed the variables manually. Similarly,
+`SESSION_VARS` declares session-scoped variables that persist across all
+transactions on the same client connection (session).
 
 Variables and State Slots
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -401,6 +418,10 @@ Each variable type has a limited number of slots available:
 - ``int8`` - 4 slots (0-3)
 - ``int16`` - 1 slot (0)
 
+These limits apply independently to both ``VARS`` (transaction-scoped) and
+``SESSION_VARS`` (session-scoped) sections. For example, you can have 16 bool
+transaction variables *and* 16 bool session variables.
+
 By default, slots are assigned automatically in declaration order. You can explicitly assign
 a slot number using the ``@`` syntax::
 
@@ -410,6 +431,16 @@ a slot number using the ``@`` syntax::
         config: bool @12;       # Explicitly use slot 12
         counter: int8 @2;       # Explicitly use int8 slot 2
     }
+
+    SESSION_VARS {
+        is_suspicious: bool;    # Session-scoped, persists across requests
+        penalty_level: int8;    # Session-scoped 8-bit integer
+    }
+
+Transaction variables (``VARS``) are reset for each new HTTP transaction, while
+session variables (``SESSION_VARS``) persist for the lifetime of the client
+connection. Session variables are useful for tracking state across keep-alive
+requests, such as marking a connection as suspicious after the first bad request.
 
 Explicit slot assignment is useful when you need predictable slot numbers across configurations
 or when integrating with existing header_rewrite rules that reference specific slot numbers. In

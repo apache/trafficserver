@@ -1,0 +1,3 @@
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{SESSION-INT16:0} >10000
+    set-header X-heavy "true"

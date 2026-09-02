@@ -201,9 +201,19 @@ target_compile_definitions(
 target_include_directories(test_NextHopStrategyFactory PRIVATE ${PROJECT_SOURCE_DIR}/tests/include)
 
 target_link_libraries(
-  test_NextHopStrategyFactory PRIVATE Catch2::Catch2WithMain ts::hdrs ts::inkutils tscore libswoc::libswoc
-                                      yaml-cpp::yaml-cpp
+  test_NextHopStrategyFactory
+  PRIVATE Catch2::Catch2WithMain
+          ts::hdrs
+          ts::inkutils
+          tscore
+          libswoc::libswoc
+          yaml-cpp::yaml-cpp
+          configmanager
 )
+
+if(NOT APPLE)
+  target_link_options(test_NextHopStrategyFactory PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_catch2_test(NAME test_NextHopStrategyFactory COMMAND $<TARGET_FILE:test_NextHopStrategyFactory>)
 
@@ -234,7 +244,12 @@ target_link_libraries(
           tscore
           libswoc::libswoc
           yaml-cpp::yaml-cpp
+          configmanager
 )
+
+if(NOT APPLE)
+  target_link_options(test_NextHopRoundRobin PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_catch2_test(NAME test_NextHopRoundRobin COMMAND $<TARGET_FILE:test_NextHopRoundRobin>)
 
@@ -267,7 +282,12 @@ target_link_libraries(
           ts::inkutils
           libswoc::libswoc
           yaml-cpp::yaml-cpp
+          configmanager
 )
+
+if(NOT APPLE)
+  target_link_options(test_NextHopConsistentHash PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
 add_catch2_test(NAME test_NextHopConsistentHash COMMAND $<TARGET_FILE:test_NextHopConsistentHash>)
 
@@ -288,3 +308,21 @@ target_link_libraries(
 )
 
 add_catch2_test(NAME test_RemapRules COMMAND $<TARGET_FILE:test_RemapRules>)
+
+### test_RemapRulesYaml ########################################################################
+add_executable(test_RemapRulesYaml "${PROJECT_SOURCE_DIR}/src/iocore/cache/unit_tests/stub.cc" test_RemapRulesYaml.cc)
+
+target_link_libraries(
+  test_RemapRulesYaml
+  PRIVATE Catch2::Catch2WithMain
+          ts::http
+          ts::hdrs # transitive
+          logging # transitive
+          ts::http_remap # transitive
+          ts::proxy
+          inkdns # transitive
+          ts::inknet
+          ts::jsonrpc_protocol
+)
+
+add_catch2_test(NAME test_RemapRulesYaml COMMAND $<TARGET_FILE:test_RemapRulesYaml>)

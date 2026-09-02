@@ -157,11 +157,11 @@ BgFetchConfig::readConfig(const char *config_file)
           swoc::bwprint(ts::bw_dbg, "adding background_fetch address range rule {} for {}: {}", exclude, cfg_name, cfg_value);
           Dbg(dbg_ctl, "%s", ts::bw_dbg.c_str());
         } else if ("Content-Length"_tv == cfg_name) {
-          BgFetchRule::size_cmp_type::OP op;
+          BgFetchRule::size_cmp_type::OP op{BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL};
           if (cfg_value[0] == '<') {
             op = BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL;
           } else if (cfg_value[0] == '>') {
-            op = BgFetchRule::size_cmp_type::LESS_THAN_OR_EQUAL;
+            op = BgFetchRule::size_cmp_type::GREATER_THAN_OR_EQUAL;
           } else {
             TSError("[%s] invalid Content-Length condition %.*s, skipping config value", PLUGIN_NAME, int(cfg_value.size()),
                     cfg_value.data());

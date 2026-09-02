@@ -1,0 +1,3 @@
+cond %{CLIENT-HEADER:Debug} ="" [NOT]
+# to return the debug header if http header debug: on
+set-header @DebugHeader "TRUE"

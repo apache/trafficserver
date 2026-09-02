@@ -62,7 +62,7 @@ trap "rm -f $clang_patch_file $yapf_patch_file $cmake_format_patch_file" 0 1 2 3
 # Loop over all files that are changed, and produce a diff file
 REPO_ROOT=$(cd $(dirname $0)/../.. && git rev-parse --show-toplevel)
 YAPF_CONFIG=${REPO_ROOT}/.style.yapf
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" |  while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Catch2|fastlz|highway|ls-hpack|swoc|yamlcpp)" |  while read file; do
     case "$file" in
     *.cc | *.c | *.h | *.h.in | *.cript)
         ${FORMAT} "$file" | diff -u "$file" - >>"$clang_patch_file"
@@ -80,7 +80,7 @@ git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -vE "lib/(Cat
 done
 
 # Now repeat the above for CMakeLists.txt files.
-git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|\.cmake$' | grep -vE "lib/(Catch2|fastlz|ls-hpack|swoc|yamlcpp)" | while read file; do
+git diff-index --cached --diff-filter=ACMR --name-only HEAD | grep -E 'CMakeLists.txt|\.cmake$' | grep -vE "lib/(Catch2|highway|fastlz|ls-hpack|swoc|yamlcpp)" | while read file; do
     uv tool run --quiet --from cmakelang@${CMAKE_FORMAT_VERSION} --with pyaml cmake-format "$file" | diff -u "$file" - >>"$cmake_format_patch_file"
 done
 

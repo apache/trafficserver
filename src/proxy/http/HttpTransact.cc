@@ -28,7 +28,10 @@
 #include "tscore/ink_platform.h"
 
 #include <strings.h>
+#include <algorithm>
 #include <cmath>
+#include <string>
+#include <array>
 
 using namespace std::literals;
 
@@ -79,8 +82,65 @@ DbgCtl dbg_ctl_http_trans_websocket_upgrade_post_remap{"http_trans_websocket_upg
 DbgCtl dbg_ctl_parent_down{"parent_down"};
 DbgCtl dbg_ctl_url_rewrite{"url_rewrite"};
 DbgCtl dbg_ctl_ip_allow{"ip_allow"};
+
+std::string_view
+get_at_header_source_name(HttpTransact::AtHeaderSource source)
+{
+  using AtHeaderSource = HttpTransact::AtHeaderSource;
+
+  switch (source) {
+  case AtHeaderSource::CLIENT_REQUEST:
+    return "client request";
+  case AtHeaderSource::ORIGIN_RESPONSE:
+    return "origin response";
+  }
+
+  return "unknown source";
+}
+
+Metrics::Counter::AtomicType *
+get_at_header_source_metric(HttpTransact::AtHeaderSource source)
+{
+  using AtHeaderSource = HttpTransact::AtHeaderSource;
+
+  switch (source) {
+  case AtHeaderSource::CLIENT_REQUEST:
+    return http_rsb.client_request_at_headers_stripped;
+  case AtHeaderSource::ORIGIN_RESPONSE:
+    return http_rsb.origin_response_at_headers_stripped;
+  }
+
+  return nullptr;
+}
 } // namespace
 
+/**
+ * Remove internal @ headers from a parsed header before plugin hooks run.
+ *
+ * @param[in,out] header The header to sanitize in place.
+ * @param[in] source The source of the header being sanitized.
+ * @param[in] sm_id The state machine identifier for diagnostic logging.
+ */
+void
+HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int64_t sm_id)
+{
+  auto const metric      = get_at_header_source_metric(source);
+  auto const source_name = get_at_header_source_name(source);
+
+  for (auto field = header.begin(); field != header.end();) {
+    auto current = field++;
+    auto name    = current->name_get();
+
+    if (!name.empty() && name[0] == '@') {
+      Metrics::Counter::increment(metric);
+      Error("[%" PRId64 "] stripped internal @ header from %.*s: %.*s", sm_id, static_cast<int>(source_name.size()),
+            source_name.data(), static_cast<int>(name.size()), name.data());
+      header.field_delete(&*current, false);
+    }
+  }
+}
+
+//////////////////////////////////////////////////////////////////////////
 // Support ip_resolve override.
 const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
                                                   const HostResData *host_res_data = static_cast<const HostResData *>(data);
@@ -142,16 +202,48 @@ bypass_ok(HttpTransact::State *s)
 // wrapper to choose between a remap next hop strategy or use parent.config
 // remap next hop strategy is preferred
 inline static bool
+host_override(HttpTransact::State *s)
+{
+  if (s->response_action.handled) { // should be handled by the plugin
+    return false;
+  } else if (nullptr != s->next_hop_strategy) {
+    // remap strategies do not support the TSHttpTxnParentProxySet API.
+    return s->next_hop_strategy->host_override;
+  } else if (nullptr != s->parent_params) {
+    return s->parent_result.host_override();
+  }
+  return false;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static bool
+is_some(HttpTransact::State *s)
+{
+  if (s->response_action.handled) {
+    return true;
+  } else if (nullptr != s->next_hop_strategy) {
+    // remap strategies do not support the TSHttpTxnParentProxySet API.
+    return s->parent_result.result == ParentResultType::SPECIFIED;
+  } else if (nullptr != s->parent_params) {
+    return s->parent_result.is_some();
+  }
+  return false;
+}
+
+// wrapper to choose between a remap next hop strategy or use parent.config
+// remap next hop strategy is preferred
+inline static bool
 is_api_result(HttpTransact::State *s)
 {
-  bool r = false;
+  bool res = false;
   if (nullptr != s->next_hop_strategy) {
     // remap strategies do not support the TSHttpTxnParentProxySet API.
-    r = false;
+    res = false;
   } else if (nullptr != s->parent_params) {
-    r = s->parent_result.is_api_result();
+    res = s->parent_result.is_api_result();
   }
-  return r;
+  return res;
 }
 
 // wrapper to get the max_retries.
@@ -207,6 +299,8 @@ retry_type(HttpTransact::State *s)
 inline static void
 findParent(HttpTransact::State *s)
 {
+  TxnDbg(dbg_ctl_http_trans, "findParent");
+
   Metrics::Counter::increment(http_rsb.parent_count);
   if (s->response_action.handled) {
     s->parent_result.hostname = s->response_action.action.hostname;
@@ -295,6 +389,8 @@ parentExists(HttpTransact::State *s)
 inline static void
 nextParent(HttpTransact::State *s)
 {
+  TxnDbg(dbg_ctl_http_trans, "nextParent");
+
   TxnDbg(dbg_ctl_parent_down, "connection to parent %s failed, conn_state: %s, request to origin: %s", s->parent_result.hostname,
          HttpDebugNames::get_server_state_name(s->current.state), s->request_data.get_host());
   Metrics::Counter::increment(http_rsb.parent_count);
@@ -504,26 +600,39 @@ update_cache_control_information_from_config(HttpTransact::State *s)
   }
 }
 
-bool
-HttpTransact::is_server_negative_cached(State *s)
+/**
+  ATS has two configuration options controlling how many times it retries a connection attempt against origin servers.
+
+  - proxy.config.http.connect_attempts_max_retries
+  - proxy.config.http.connect_attempts_max_retries_suspect_server
+
+  The choice is based on the state of the active HostDBInfo.
+
+  - HostDBInfo::State::UP: use proxy.config.http.connect_attempts_max_retries
+  - HostDBInfo::State::DOWN: no retry
+  - HostDBInfo::State::SUSPECT: use proxy.config.http.connect_attempts_max_retries_suspect_server
+
+*/
+uint8_t
+HttpTransact::origin_server_connect_attempts_max_retries(State *s)
 {
-  if (s->dns_info.active && s->dns_info.active->last_fail_time() != TS_TIME_ZERO &&
-      s->dns_info.active->last_fail_time() + s->txn_conf->down_server_timeout > ts_clock::from_time_t(s->client_request_time)) {
-    return true;
-  } else {
-    // Make sure some nasty clock skew has not happened
-    //  Use the server timeout to set an upperbound as to how far in the
-    //   future we should tolerate bogus last failure times.  This sets
-    //   the upper bound to the time that we would ever consider a server
-    //   down to 2*down_server_timeout
-    if (s->dns_info.active &&
-        ts_clock::from_time_t(s->client_request_time) + s->txn_conf->down_server_timeout < s->dns_info.active->last_fail_time()) {
-      s->dns_info.active->mark_up();
-      ink_assert(!"extreme clock skew");
-      return true;
-    }
-    return false;
+  HostDBInfo *active = s->dns_info.active;
+  if (active == nullptr) {
+    return 0;
   }
+
+  switch (active->state(ts_clock::now(), s->txn_conf->down_server_timeout)) {
+  case HostDBInfo::State::UP:
+    return s->txn_conf->connect_attempts_max_retries;
+  case HostDBInfo::State::DOWN:
+    return 0;
+  case HostDBInfo::State::SUSPECT:
+    return s->txn_conf->connect_attempts_max_retries_suspect_server;
+  default:
+    break;
+  }
+
+  return 0;
 }
 
 inline static void
@@ -599,10 +708,11 @@ find_server_and_update_current_info(HttpTransact::State *s)
     } else {
       findParent(s);
     }
-    if (!s->parent_result.is_some() || is_api_result(s) || parent_is_proxy(s)) {
+    if (!is_some(s) || is_api_result(s) || parent_is_proxy(s)) {
       TxnDbg(dbg_ctl_http_trans, "request not cacheable, so bypass parent");
       s->parent_result.result = ParentResultType::DIRECT;
     }
+
   } else if (s->txn_conf->uncacheable_requests_bypass_parent && s->txn_conf->no_dns_forward_to_parent == 0 &&
              !HttpTransact::is_request_cache_lookupable(s)) {
     // request not lookupable and cacheable, so bypass parent if the parent is not an origin server.
@@ -616,10 +726,12 @@ find_server_and_update_current_info(HttpTransact::State *s)
     } else {
       findParent(s);
     }
-    if (!s->parent_result.is_some() || is_api_result(s) || parent_is_proxy(s)) {
+
+    if (!is_some(s) || is_api_result(s) || parent_is_proxy(s)) {
       TxnDbg(dbg_ctl_http_trans, "request not cacheable, so bypass parent");
       s->parent_result.result = ParentResultType::DIRECT;
     }
+
   } else {
     switch (s->parent_result.result) {
     case ParentResultType::UNDEFINED:
@@ -660,14 +772,32 @@ find_server_and_update_current_info(HttpTransact::State *s)
   }
 
   switch (s->parent_result.result) {
-  case ParentResultType::SPECIFIED:
-    s->parent_info.name = s->arena.str_store(s->parent_result.hostname, strlen(s->parent_result.hostname));
+  case ParentResultType::SPECIFIED: {
+    char const *const hostname = s->parent_result.hostname;
+
+    if (nullptr != hostname) {
+      s->parent_info.name = s->arena.str_store(hostname, strlen(hostname));
+
+      // if host header override option enabled
+      if (host_override(s)) {
+        TxnDbg(dbg_ctl_http_trans, "overriding host header with parent %s", hostname);
+        if (!s->hdr_info.server_request.valid()) {
+          s->hdr_info.client_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST), hostname);
+          s->hdr_info.client_request.mark_target_dirty();
+        } else {
+          s->hdr_info.server_request.value_set(static_cast<std::string_view>(MIME_FIELD_HOST), hostname);
+          s->hdr_info.server_request.mark_target_dirty();
+        }
+      }
+    }
+
     update_current_info(&s->current, &s->parent_info, ResolveInfo::PARENT_PROXY, false);
     update_dns_info(&s->dns_info, &s->current);
     ink_assert(s->dns_info.looking_up == ResolveInfo::PARENT_PROXY);
     s->next_hop_scheme = URL_WKSIDX_HTTP;
 
     return ResolveInfo::PARENT_PROXY;
+  }
   case ParentResultType::FAIL:
     // No more parents - need to return an error message
     s->current.request_to = ResolveInfo::HOST_NONE;
@@ -863,6 +993,12 @@ HttpTransact::BadRequest(State *s)
   case HTTPStatus::HTTPVER_NOT_SUPPORTED:
     status = s->http_return_code;
     reason = "Unsupported HTTP Version";
+    break;
+  case HTTPStatus::BAD_GATEWAY:
+    status                = s->http_return_code;
+    reason                = "Bad Gateway";
+    body_factory_template = "default";
+    break;
   default:
     break;
   }
@@ -918,22 +1054,6 @@ HttpTransact::TooEarly(State *s)
 }
 
 void
-HttpTransact::OriginDown(State *s)
-{
-  TxnDbg(dbg_ctl_http_trans, "origin server is marked down");
-  bootstrap_state_variables_from_request(s, &s->hdr_info.client_request);
-  build_error_response(s, HTTPStatus::BAD_GATEWAY, "Origin Server Marked Down", "connect#failed_connect");
-  Metrics::Counter::increment(http_rsb.down_server_no_requests);
-  char            *url_str = s->hdr_info.client_request.url_string_get_ref(nullptr);
-  std::string_view host_name{s->unmapped_url.host_get()};
-  swoc::bwprint(error_bw_buffer, "CONNECT: down server no request to {} for host='{}' url='{}'", s->current.server->dst_addr,
-                host_name, swoc::bwf::FirstOf(url_str, "<none>"));
-  Log::error("%s", error_bw_buffer.c_str());
-
-  TRANSACT_RETURN(StateMachineAction_t::SEND_ERROR_CACHE_NOOP, nullptr);
-}
-
-void
 HttpTransact::HandleBlindTunnel(State *s)
 {
   URL u;
@@ -968,9 +1088,10 @@ HttpTransact::HandleBlindTunnel(State *s)
 void
 HttpTransact::StartRemapRequest(State *s)
 {
-  // Preserve effective url before remap, regardless of actual need for remap
+  // Preserve the effective URL before remap, regardless of the actual need for remap.
   s->unmapped_url.create(s->hdr_info.client_request.url_get()->m_heap);
   s->unmapped_url.copy(s->hdr_info.client_request.url_get());
+  s->hdr_info.client_request.set_url_target_from_host_field(&s->unmapped_url);
 
   if (s->api_skip_all_remapping) {
     TxnDbg(dbg_ctl_http_trans, "API request to skip remapping");
@@ -1240,7 +1361,7 @@ HttpTransact::handle_upgrade_request(State *s)
   HTTPHdr &request = s->hdr_info.client_request;
   s->method        = request.method_get_wksidx();
 
-  // Quickest way to determine that this is defintely not an upgrade.
+  // Quickest way to determine that this is definitely not an upgrade.
   /* RFC 6455 The method of the request MUST be GET, and the HTTP version MUST
         be at least 1.1. */
   if (!s->hdr_info.client_request.presence(MIME_PRESENCE_UPGRADE) ||
@@ -1467,6 +1588,8 @@ HttpTransact::ModifyRequest(State *s)
     }
   }
 
+  strip_at_headers(request, AtHeaderSource::CLIENT_REQUEST, s->state_machine_id());
+
   TxnDbg(dbg_ctl_http_trans, "END HttpTransact::ModifyRequest");
 
   TRANSACT_RETURN(StateMachineAction_t::API_READ_REQUEST_HDR, HttpTransact::StartRemapRequest);
@@ -1480,7 +1603,7 @@ HttpTransact::handleIfRedirect(State *s)
   mapping_type answer;
   URL          redirect_url;
 
-  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, s->state_machine->m_remap);
+  answer = request_url_remap_redirect(&s->hdr_info.client_request, &redirect_url, s->state_machine->m_remap.get());
   if ((answer == mapping_type::PERMANENT_REDIRECT) || (answer == mapping_type::TEMPORARY_REDIRECT)) {
     s->remap_redirect = redirect_url.string_get_ref(nullptr);
     if (answer == mapping_type::TEMPORARY_REDIRECT) {
@@ -1912,6 +2035,9 @@ HttpTransact::OSDNSLookup(State *s)
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "Cannot find server.", Dns_error_body);
         log_msg = "looking up";
       } else {
+        // HostDB has the record but every address is DOWN within `down_server.cache_time`. This is a refusal-to-attempt
+        // rather than a true DNS failure; track it under down_server_no_requests.
+        Metrics::Counter::increment(http_rsb.down_server_no_requests);
         build_error_response(s, HTTPStatus::INTERNAL_SERVER_ERROR, "No valid server.", "connect#all_down");
         log_msg = "no valid server";
       }
@@ -1941,7 +2067,8 @@ HttpTransact::OSDNSLookup(State *s)
     // We've backed off from a client supplied address and found some
     // HostDB addresses. We use those if they're different from the CTA.
     // In all cases we now commit to client or HostDB for our source.
-    if (s->dns_info.set_active(&s->current.server->dst_addr.sa) && s->dns_info.select_next_rr()) {
+    if (s->dns_info.set_active(&s->current.server->dst_addr.sa) &&
+        s->dns_info.select_next_rr(ts_clock::now(), s->txn_conf->down_server_timeout)) {
       s->dns_info.os_addr_style = ResolveInfo::OS_Addr::USE_HOSTDB;
     } else {
       // nothing else there, continue with CTA.
@@ -2129,16 +2256,15 @@ HttpTransact::DecideCacheLookup(State *s)
       // We could a) have 6000 alts (barf, puke, vomit) or b) use the original
       // host header in the url before doing all cache actions (lookups, writes, etc.)
       if (s->txn_conf->maintain_pristine_host_hdr) {
-        // So, the host header will have the original host header.
-        if (auto [field, host, port_sv]{incoming_request->get_host_port_values()}; field != nullptr) {
-          int port = 0;
-          if (!port_sv.empty()) {
+        if (auto host_field = incoming_request->field_find(static_cast<std::string_view>(MIME_FIELD_HOST)); host_field != nullptr) {
+          std::string_view host;
+          int              port     = 0;
+          bool             has_port = false;
+
+          if (http_parse_host_header(host_field->value_get(), host, port, has_port)) {
             s->cache_info.lookup_url->host_set(host);
-            port = ink_atoi(port_sv.data(), static_cast<int>(port_sv.length()));
-          } else {
-            s->cache_info.lookup_url->host_set(host);
+            s->cache_info.lookup_url->port_set(has_port ? port : 0);
           }
-          s->cache_info.lookup_url->port_set(port);
         }
       }
       ink_assert(s->cache_info.lookup_url->valid() == true);
@@ -2623,6 +2749,18 @@ HttpTransact::CallOSDNSLookup(State *s)
   HostStatus  &pstatus = HostStatus::instance();
   HostStatRec *hst     = pstatus.getHostStatus(s->server_info.name);
   if (hst && hst->status == TSHostStatus::TS_HOST_STATUS_DOWN) {
+    // Guard against unbounded recursion when the host is DOWN, the cache has
+    // a HIT, and a Range request cannot be satisfied from cache. Without this
+    // flag, CallOSDNSLookup -> handle_server_connection_not_open ->
+    // build_response_from_cache (Range branch) -> CallOSDNSLookup recurses on
+    // the stack until overflow.
+    if (s->host_down_cache_fallback_attempted) {
+      TxnDbg(dbg_ctl_http, "host down cache fallback already attempted; returning 502");
+      build_error_response(s, HTTPStatus::BAD_GATEWAY, "Next Hop Connection Failed", "connect#failed_connect");
+      s->next_action = StateMachineAction_t::SEND_ERROR_CACHE_NOOP;
+      return;
+    }
+    s->host_down_cache_fallback_attempted = true;
     TxnDbg(dbg_ctl_http, "%d ", static_cast<int>(s->cache_lookup_result));
     s->current.state = OUTBOUND_CONGESTION;
     if (s->cache_lookup_result == CacheLookupResult_t::HIT_STALE || s->cache_lookup_result == CacheLookupResult_t::HIT_WARNING ||
@@ -2631,6 +2769,7 @@ HttpTransact::CallOSDNSLookup(State *s)
     } else {
       s->cache_info.action = CacheAction_t::NO_ACTION;
     }
+    error_log_connection_failure(s, s->current.state);
     handle_server_connection_not_open(s);
   } else {
     TRANSACT_RETURN(StateMachineAction_t::DNS_LOOKUP, OSDNSLookup);
@@ -2846,23 +2985,10 @@ HttpTransact::HandleCacheOpenReadHit(State *s)
 
     find_server_and_update_current_info(s);
 
-    // We do not want to try to revalidate documents if we think
-    //  the server is down due to the something report problem
-    //
-    // Note: we only want to skip origin servers because 1)
-    //  parent proxies have their own negative caching
-    //  scheme & 2) If we skip down parents, every page
-    //  we serve is potentially stale
-    //
-    if (s->current.request_to == ResolveInfo::ORIGIN_SERVER && is_server_negative_cached(s) && response_returnable == true &&
-        is_stale_cache_response_returnable(s) == true) {
-      server_up = false;
-      update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
-      TxnDbg(dbg_ctl_http_trans, "CacheOpenReadHit - server_down, returning stale document");
-    }
-    // a parent lookup could come back as ParentResultType::FAIL if in parent.config, go_direct == false and
+    // For origin servers (ResolveInfo::ORIGIN_SERVER): OSDNSLookup handles serving stale when all origin servers are down.
+    // For parent proxies: a parent lookup could come back as ParentResultType::FAIL if in parent.config, go_direct == false and
     // there are no available parents (all down).
-    else if (s->current.request_to == ResolveInfo::HOST_NONE && s->parent_result.result == ParentResultType::FAIL) {
+    if (s->current.request_to == ResolveInfo::HOST_NONE && s->parent_result.result == ParentResultType::FAIL) {
       if (response_returnable == true && is_stale_cache_response_returnable(s) == true) {
         server_up = false;
         update_current_info(&s->current, nullptr, ResolveInfo::UNDEFINED_LOOKUP, true);
@@ -3240,6 +3366,19 @@ HttpTransact::handle_cache_write_lock(State *s)
     // HIT_STALE (revalidation case), the hook already fired and deferred is false.
     CacheHTTPInfo *obj = s->cache_info.object_read;
     if (obj != nullptr) {
+      if (!is_read_retry_write_fail_action(s->cache_open_write_fail_action)) {
+        // Fail actions 2 and 3 do not retry the cache read: they serve the
+        // object this transaction already looked up. Deciding otherwise here
+        // would issue a second cache lookup while the transaction still holds
+        // the cache read connection from the first one, and the read that
+        // completes on that second lookup replaces the connection out from
+        // under it.
+        TxnDbg(dbg_ctl_http_trans, "write lock lost with a cached object and no read retry configured");
+        s->hdr_info.server_request.destroy();
+        HandleCacheOpenReadHitFreshness(s);
+        return;
+      }
+
       // Restore request/response times from cached object for freshness calculations and Age header.
       // Similar to HandleCacheOpenReadHitFreshness, handle clock skew by capping times.
       s->request_sent_time      = obj->request_sent_time_get();
@@ -3498,14 +3637,9 @@ HttpTransact::set_cache_prepare_write_action_for_new_request(State *s)
   // This method must be called no more than one time per request. It should
   // not be called for non-cacheable requests.
   if (s->cache_info.write_lock_state == CacheWriteLock_t::SUCCESS) {
-    // If and only if this is a redirected request, we may have already
-    // prepared a cache write (during the handling of the previous request
-    // which got the 3xx response) and can safely re-use it. Otherwise, we
-    // risk storing the response under the wrong cache key. This is a release
-    // assert because the correct behavior would be to prepare a new write,
-    // but we can't do that because we failed to release the lock. To recover
-    // we would have to tell the state machine to abort its write, and we
-    // don't have a state for that.
+    // If and only if this is a redirected request, we may have already prepared
+    // a cache write during the handling of the previous request and can re-use
+    // it. Otherwise, we risk storing the response under the wrong cache key.
     ink_release_assert(s->redirect_info.redirect_in_process);
     s->cache_info.action = CacheAction_t::WRITE;
   } else if (s->cache_info.write_lock_state == CacheWriteLock_t::READ_RETRY &&
@@ -3716,12 +3850,6 @@ HttpTransact::handle_response_from_parent(State *s)
   TxnDbg(dbg_ctl_http_trans, "(hrfp)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->parent_info);
 
-  // if this parent was retried from a markdown, then
-  // notify that the retry has completed.
-  if (s->parent_result.retry) {
-    markParentUp(s);
-  }
-
   simple_or_unavailable_server_retry(s);
 
   s->parent_info.state = s->current.state;
@@ -3752,7 +3880,11 @@ HttpTransact::handle_response_from_parent(State *s)
     if (s->current.retry_type == ParentRetry_t::SIMPLE) {
       s->current.simple_retry_attempts++;
     } else {
-      markParentDown(s);
+      if (is_request_retryable(s)) {
+        markParentDown(s);
+      } else {
+        TxnDbg(dbg_ctl_http_trans, "skipping parent markdown for unavailable_server retry because request is not retryable");
+      }
       s->current.unavailable_server_retry_attempts++;
     }
     next_lookup           = find_server_and_update_current_info(s);
@@ -3839,6 +3971,7 @@ HttpTransact::handle_response_from_parent(State *s)
   case ResolveInfo::HOST_NONE:
     // Check if content can be served from cache
     s->current.request_to = ResolveInfo::PARENT_PROXY;
+    error_log_connection_failure(s, s->current.state);
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3871,7 +4004,6 @@ HttpTransact::handle_response_from_server(State *s)
 {
   TxnDbg(dbg_ctl_http_trans, "(hrfs)");
   HTTP_RELEASE_ASSERT(s->current.server == &s->server_info);
-  unsigned max_connect_retries = 0;
 
   // plugin call
   s->server_info.state = s->current.state;
@@ -3890,6 +4022,7 @@ HttpTransact::handle_response_from_server(State *s)
     TxnDbg(dbg_ctl_http_trans, "Error. congestion control -- congested.");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
     s->set_connect_fail(EUSERS); // too many users
+    error_log_connection_failure(s, s->current.state);
     handle_server_connection_not_open(s);
     break;
   case OPEN_RAW_ERROR:
@@ -3898,8 +4031,7 @@ HttpTransact::handle_response_from_server(State *s)
   case INACTIVE_TIMEOUT:
   case PARSE_ERROR:
   case CONNECTION_CLOSED:
-  case BAD_INCOMING_RESPONSE:
-
+  case BAD_INCOMING_RESPONSE: {
     // Ensure cause_of_death_errno is set for all error states if not already set.
     // This prevents the assertion failure in retry_server_connection_not_open.
     if (s->cause_of_death_errno == -UNKNOWN_INTERNAL_ERROR) {
@@ -3914,63 +4046,92 @@ HttpTransact::handle_response_from_server(State *s)
       }
     }
 
-    if (is_server_negative_cached(s)) {
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries_down_server - 1;
-    } else {
-      // server not yet negative cached - use default number of retries
-      max_connect_retries = s->txn_conf->connect_attempts_max_retries;
-    }
-
+    unsigned max_connect_retries = s->txn_conf->connect_attempts_max_retries;
     TxnDbg(dbg_ctl_http_trans, "max_connect_retries: %d s->current.retry_attempts: %d", max_connect_retries,
            s->current.retry_attempts.get());
 
-    if (is_request_retryable(s) && s->current.retry_attempts.get() < max_connect_retries &&
-        !HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
-      // If this is a round robin DNS entry & we're tried configured
-      //    number of times, we should try another node
-      if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
-        // attempt was based on client supplied server address. Try again using HostDB.
-        // Allow DNS attempt
-        s->dns_info.resolved_p = false;
-        // See if we can get data from HostDB for this.
-        s->dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_HOSTDB;
-        // Force host resolution to have the same family as the client.
-        // Because this is a transparent connection, we can't switch address
-        // families - that is locked in by the client source address.
-        ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data.order);
-        return CallOSDNSLookup(s);
-      } else if (ResolveInfo::OS_Addr::USE_API == s->dns_info.os_addr_style && !s->api_server_addr_set_retried) {
-        // Plugin set the server address via TSHttpTxnServerAddrSet(). Clear resolution
-        // state to allow the OS_DNS hook to be called again, giving the plugin a chance
-        // to set a different server address for retry (issue #12611).
-        // Only retry once to avoid infinite loops if the plugin keeps setting failing addresses.
-        s->api_server_addr_set_retried = true;
-        s->dns_info.resolved_p         = false;
-        s->dns_info.os_addr_style      = ResolveInfo::OS_Addr::TRY_DEFAULT;
-        // Clear the server request so it can be rebuilt for the new destination
-        s->hdr_info.server_request.destroy();
-        TxnDbg(dbg_ctl_http_trans, "Retrying with plugin-set address, returning to OS_DNS hook");
-        return CallOSDNSLookup(s);
-      } else {
-        if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
-            ((s->current.retry_attempts.get() + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
-          s->dns_info.select_next_rr();
-        }
-        retry_server_connection_not_open(s, s->current.state, max_connect_retries);
-        TxnDbg(dbg_ctl_http_trans, "Error. Retrying...");
-        s->next_action = how_to_open_connection(s);
-      }
-    } else {
+    // Bail out if the request is not retryable, the global retry cap is reached, or we already have a usable response.
+    if (!is_request_retryable(s) || s->current.retry_attempts.get() >= max_connect_retries ||
+        HttpTransact::is_response_valid(s, &s->hdr_info.server_response)) {
+      TxnDbg(dbg_ctl_http_trans, "Error. No more retries. %d/%d", s->current.retry_attempts.get(), max_connect_retries);
+      SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       error_log_connection_failure(s, s->current.state);
-      TxnDbg(dbg_ctl_http_trans, "Error. No more retries.");
+      s->state_machine->do_hostdb_update_if_necessary();
+      handle_server_connection_not_open(s);
+      break;
+    }
+
+    // Attempt was based on a client-supplied address. Re-resolve via HostDB.
+    if (ResolveInfo::OS_Addr::TRY_CLIENT == s->dns_info.os_addr_style) {
+      // Allow DNS attempt
+      s->dns_info.resolved_p = false;
+      // See if we can get data from HostDB for this.
+      s->dns_info.os_addr_style = ResolveInfo::OS_Addr::TRY_HOSTDB;
+      // Force host resolution to have the same family as the client.
+      // Because this is a transparent connection, we can't switch address
+      // families - that is locked in by the client source address.
+      ats_force_order_by_family(s->current.server->dst_addr.family(), s->my_txn_conf().host_res_data.order);
+      return CallOSDNSLookup(s);
+    }
+
+    // Plugin set the server address via TSHttpTxnServerAddrSet(). Clear resolution
+    // state to allow the OS_DNS hook to be called again, giving the plugin a chance
+    // to set a different server address for retry (issue #12611).
+    // Only retry once to avoid infinite loops if the plugin keeps setting failing addresses.
+    if (ResolveInfo::OS_Addr::USE_API == s->dns_info.os_addr_style && !s->api_server_addr_set_retried) {
+      s->api_server_addr_set_retried = true;
+      s->dns_info.resolved_p         = false;
+      s->dns_info.os_addr_style      = ResolveInfo::OS_Addr::TRY_DEFAULT;
+      // Clear the server request so it can be rebuilt for the new destination
+      s->hdr_info.server_request.destroy();
+      TxnDbg(dbg_ctl_http_trans, "Retrying with plugin-set address, returning to OS_DNS hook");
+      return CallOSDNSLookup(s);
+    }
+
+    // Record the failure on the current active target.
+    error_log_connection_failure(s, s->current.state);
+    s->state_machine->do_hostdb_update_if_necessary();
+
+    // Decide between switching to the next round-robin member or staying on the same target.
+    if ((s->txn_conf->connect_attempts_rr_retries > 0) &&
+        ((s->current.retry_attempts.get() + 1) % s->txn_conf->connect_attempts_rr_retries == 0)) {
+      if (s->dns_info.select_next_rr(ts_clock::now(), s->txn_conf->down_server_timeout)) {
+        // select_next_rr() only updates dns_info.active; change the dst_addr too.
+        s->dns_info.addr.assign(s->dns_info.active->data.ip);
+        s->server_info.dst_addr.assign(s->dns_info.active->data.ip, s->server_info.dst_addr.network_order_port());
+        if (dbg_ctl_http_trans.on()) {
+          ip_port_text_buffer addrbuf;
+          TxnDbg(dbg_ctl_http_trans, "switched to next round-robin upstream addr=%s",
+                 ats_ip_nptop(&s->server_info.dst_addr.sa, addrbuf, sizeof(addrbuf)));
+        }
+      } else {
+        TxnDbg(dbg_ctl_http_trans, "No round-robin targets available, retrying current upstream if possible");
+      }
+    }
+
+    // The active target (HostDB) may be SUSPECT state, so re-evaluate the retry limit.
+    // Skip when there is no HostDBInfo (e.g. USE_CLIENT / USE_API) and keep the configured baseline.
+    if (s->dns_info.active != nullptr) {
+      max_connect_retries = origin_server_connect_attempts_max_retries(s);
+    }
+    if (max_connect_retries <= s->current.retry_attempts.get()) {
+      TxnDbg(dbg_ctl_http_trans, "Per-host retries exhausted. Giving up. %d/%d", s->current.retry_attempts.get(),
+             max_connect_retries);
       SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
       handle_server_connection_not_open(s);
+      break;
     }
+
+    TxnDbg(dbg_ctl_http_trans, "Error. Retrying...");
+    retry_server_connection_not_open(s, max_connect_retries);
+    s->next_action = how_to_open_connection(s);
     break;
+  }
   case ACTIVE_TIMEOUT:
     TxnDbg(dbg_ctl_http_trans, "[hrfs] connection not alive");
     SET_VIA_STRING(VIA_DETAIL_SERVER_CONNECT, VIA_DETAIL_SERVER_FAILURE);
     s->set_connect_fail(ETIMEDOUT);
+    s->state_machine->do_hostdb_update_if_necessary();
     handle_server_connection_not_open(s);
     break;
   default:
@@ -3984,6 +4145,14 @@ HttpTransact::handle_response_from_server(State *s)
 void
 HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 {
+  // No origin server was selected (e.g. a host marked DOWN whose Range request
+  // falls back to a cache hit), so there is no connection to log. Bail out
+  // before dereferencing a null current.server.
+  if (s->current.server == nullptr) {
+    TxnDbg(dbg_ctl_http_trans, "no current server; skipping connection failure log");
+    return;
+  }
+
   ip_port_text_buffer addrbuf;
   TxnDbg(dbg_ctl_http_trans, "[%d] failed to connect [%d] to %s", s->current.retry_attempts.get(), conn_state,
          ats_ip_nptop(&s->current.server->dst_addr.sa, addrbuf, sizeof(addrbuf)));
@@ -4019,14 +4188,12 @@ HttpTransact::error_log_connection_failure(State *s, ServerState_t conn_state)
 //
 ///////////////////////////////////////////////////////////////////////////////
 void
-HttpTransact::retry_server_connection_not_open(State *s, ServerState_t conn_state, unsigned max_retries)
+HttpTransact::retry_server_connection_not_open(State *s, unsigned max_retries)
 {
   ink_assert(s->current.state != CONNECTION_ALIVE);
   ink_assert(s->current.state != ACTIVE_TIMEOUT);
   ink_assert(s->current.retry_attempts.get() < max_retries);
   ink_assert(s->cause_of_death_errno != -UNKNOWN_INTERNAL_ERROR);
-
-  error_log_connection_failure(s, conn_state);
 
   //////////////////////////////////////////////
   // disable keep-alive for request and retry //
@@ -4060,9 +4227,6 @@ HttpTransact::handle_server_connection_not_open(State *s)
 
   SET_VIA_STRING(VIA_SERVER_RESULT, VIA_SERVER_ERROR);
   Metrics::Counter::increment(http_rsb.broken_server_connections);
-
-  // Fire off a hostdb update to mark the server as down
-  s->state_machine->do_hostdb_update_if_necessary();
 
   switch (s->cache_info.action) {
   case CacheAction_t::UPDATE:
@@ -4391,7 +4555,7 @@ HttpTransact::handle_cache_operation_on_forward_server_response(State *s)
           // No need to worry about If-Range headers because the request isn't conditional
           if (s->hdr_info.client_request.presence(MIME_PRESENCE_RANGE)) {
             s->state_machine->do_range_setup_if_necessary();
-            // Check client request range header if we cached a stealed content with cacheable=false
+            // Check client request range header if we cached a stolen content with cacheable=false
           }
           s->cache_info.action = CacheAction_t::SERVE_AND_DELETE;
           s->next_action       = StateMachineAction_t::SERVE_FROM_CACHE;
@@ -4971,11 +5135,23 @@ HttpTransact::merge_and_update_headers_for_cache_update(State *s)
   // 10.3.5), but RFC 7232) is clear that the 304 and 200 responses
   // must be identical (see section 4.1). This code attempts to strike
   // a balance between the two.
-  cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_AGE));
-  cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_ETAG));
-  cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPIRES));
+  //
+  // Only delete a caching header that the server response does NOT carry.
+  // If the response carries it, the merge below overwrites the cached field
+  // in place; deleting it first would strand a dead MIMEField slot on every
+  // revalidation (see merge_response_header_with_cached_header).
+  HTTPHdr *server_response = &s->hdr_info.server_response;
+  if (!server_response->presence(MIME_PRESENCE_AGE)) {
+    cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_AGE));
+  }
+  if (!server_response->presence(MIME_PRESENCE_ETAG)) {
+    cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_ETAG));
+  }
+  if (!server_response->presence(MIME_PRESENCE_EXPIRES)) {
+    cached_hdr->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPIRES));
+  }
 
-  merge_response_header_with_cached_header(cached_hdr, &s->hdr_info.server_response);
+  merge_response_header_with_cached_header(cached_hdr, server_response);
 
   // Some special processing for 304
   if (s->hdr_info.server_response.status_get() == HTTPStatus::NOT_MODIFIED) {
@@ -5153,19 +5329,33 @@ HttpTransact::set_headers_for_cache_write(State *s, HTTPInfo *cache_info, HTTPHd
 void
 HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, HTTPHdr *response_header)
 {
-  MIMEField *new_field;
-  bool       dups_seen = false;
+  // Connection tokens are hop-by-hop header names to strip.  Real-world Connection headers
+  // rarely contain more than a few tokens; use a fixed-capacity buffer to avoid allocation.
+  // If a pathological response exceeds the buffer, fall back to scanning the Connection field
+  // directly to ensure no token is silently skipped.
+  static constexpr size_t                     MAX_CONN_TOKENS = 16;
+  std::array<swoc::TextView, MAX_CONN_TOKENS> conn_tokens;
+  size_t                                      conn_token_count = 0;
+  bool                                        conn_overflow    = false;
+
+  MIMEField *conn_field = response_header->field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION));
+  if (conn_field != nullptr) {
+    HdrCsvIter csv;
+
+    for (auto token = csv.get_first(conn_field, true); token; token = csv.get_next()) {
+      if (conn_token_count < MAX_CONN_TOKENS) {
+        conn_tokens[conn_token_count++] = token;
+      } else {
+        conn_overflow = true;
+        break;
+      }
+    }
+  }
 
   for (auto spot = response_header->begin(), limit = response_header->end(); spot != limit; ++spot) {
     MIMEField &field{*spot};
     auto       name{field.name_get()};
 
-    ///////////////////////////
-    // is hop-by-hop header? //
-    ///////////////////////////
-    if (HttpTransactHeaders::is_this_a_hop_by_hop_header(name.data())) {
-      continue;
-    }
     /////////////////////////////////////
     // dont cache content-length field  and transfer encoding //
     /////////////////////////////////////
@@ -5194,54 +5384,71 @@ HttpTransact::merge_response_header_with_cached_header(HTTPHdr *cached_header, H
     if (name.data() == MIME_FIELD_WARNING.c_str()) {
       continue;
     }
-    // Copy all remaining headers with replacement
-
-    // Duplicate header fields cause a bug problem
-    //   since we need to duplicate with replacement.
-    //   Without dups, we can just nuke what is already
-    //   there in the cached header.  With dups, we
-    //   can't do this because what is already there
-    //   may be a dup we've already copied in.  If
-    //   dups show up we look through the remaining
-    //   header fields in the new response, nuke
-    //   them in the cached response and then add in
-    //   the remaining fields one by one from the
-    //   response header
-    //
-    if (field.m_next_dup) {
-      if (dups_seen == false) {
-        // use a second iterator to delete the
-        // remaining response headers in the cached response,
-        // so that they will be added in the next iterations.
-        for (auto spot2 = spot; spot2 != limit; ++spot2) {
-          MIMEField &field2{*spot2};
-          auto       name2{field2.name_get()};
-
-          // It is specified above that content type should not
-          // be altered here however when a duplicate header
-          // is present, all headers following are delete and
-          // re-added back. This includes content type if it follows
-          // any duplicate header. This leads to the loss of
-          // content type in the client response.
-          // This ensures that it is not altered when duplicate
-          // headers are present.
-          if (name2.data() == MIME_FIELD_CONTENT_TYPE.c_str()) {
-            continue;
+    ///////////////////////////
+    // is hop-by-hop header? //
+    ///////////////////////////
+    if (HttpTransactHeaders::is_this_a_hop_by_hop_header(name.data())) {
+      continue;
+    }
+    // Check if named in Connection header (linear scan — after cheap pointer checks above).
+    // On overflow, fall back to re-scanning the Connection CSV to guarantee correctness.
+    if (conn_field != nullptr) {
+      bool is_conn_token = false;
+      if (!conn_overflow) {
+        is_conn_token = std::any_of(conn_tokens.begin(), conn_tokens.begin() + conn_token_count,
+                                    [&name](swoc::TextView conn_token) { return strcasecmp(name, conn_token) == 0; });
+      } else {
+        HdrCsvIter csv;
+        for (auto token = csv.get_first(conn_field, true); token; token = csv.get_next()) {
+          if (strcasecmp(name, token) == 0) {
+            is_conn_token = true;
+            break;
           }
-          cached_header->field_delete(name2);
         }
-        dups_seen = true;
+      }
+      if (is_conn_token) {
+        continue;
       }
     }
 
-    auto value{field.value_get()};
+    // Reconcile the cached header's fields of this name to exactly match the
+    // response's values for this name. Each response field name is processed
+    // once, when we reach its dup-list head (dups are chained in slot order, so
+    // the head is encountered first). Response values are matched positionally
+    // against the cached fields of the same name: existing cached slots are
+    // overwritten in place, any extra response values are appended, and any
+    // surplus cached values are removed.
+    //
+    // Reusing cached slots in place keeps the merge idempotent: re-merging an
+    // unchanged response mutates the existing MIMEFields instead of stranding
+    // dead slots. A deleted MIMEField slot is not reclaimed until its whole
+    // field block empties, so a delete-and-recreate merge grows the cached
+    // header heap on every revalidation until it crosses the aggregation
+    // fragment limit and the cache write can no longer commit, freezing the
+    // object stale.
+    if (!field.is_dup_head()) {
+      continue; // a non-head dup: already handled when its dup-list head was processed
+    }
 
-    if (dups_seen == false) {
-      cached_header->value_set(name, value);
-    } else {
-      new_field = cached_header->field_create(name);
-      cached_header->field_attach(new_field);
-      cached_header->field_value_set(new_field, value);
+    MIMEField *cached_field = cached_header->field_find(name);
+    for (MIMEField *resp_field = &field; resp_field != nullptr; resp_field = resp_field->m_next_dup) {
+      auto value{resp_field->value_get()};
+      if (cached_field != nullptr) {
+        // overwrite an existing cached value of this name in place (reuses the slot)
+        cached_header->field_value_set(cached_field, value);
+        cached_field = cached_field->m_next_dup;
+      } else {
+        // the response has more values of this name than the cached header
+        MIMEField *new_field = cached_header->field_create(name);
+        cached_header->field_attach(new_field);
+        cached_header->field_value_set(new_field, value);
+      }
+    }
+    // remove any surplus cached values of this name the response no longer carries
+    while (cached_field != nullptr) {
+      MIMEField *next = cached_field->m_next_dup;
+      cached_header->field_delete(cached_field, false /* this dup only */);
+      cached_field = next;
     }
   }
 
@@ -5440,12 +5647,23 @@ HttpTransact::add_client_ip_to_outgoing_request(State *s, HTTPHdr *request)
   char   ip_string[INET6_ADDRSTRLEN + 1] = {'\0'};
   size_t ip_string_size                  = 0;
 
-  if (!ats_is_ip(&s->client_info.src_addr.sa)) {
+  // Prefer the PROXY-Protocol source address when one is present, so that
+  // Client-ip and X-Forwarded-For agree with Forwarded: for= regardless of
+  // whether the listener carries the :pp-clnt flag.
+  IpEndpoint src_addr = s->client_info.src_addr;
+  if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->get_netvc()) {
+    const ProxyProtocol &pp = s->state_machine->get_ua_txn()->get_netvc()->get_proxy_protocol_info();
+    if (pp.version != ProxyProtocolVersion::UNDEFINED) {
+      src_addr = pp.src_addr;
+    }
+  }
+
+  if (!ats_is_ip(&src_addr.sa)) {
     return;
   }
 
   // Always prepare the IP string.
-  if (ats_ip_ntop(&s->client_info.src_addr.sa, ip_string, sizeof(ip_string)) != nullptr) {
+  if (ats_ip_ntop(&src_addr.sa, ip_string, sizeof(ip_string)) != nullptr) {
     ip_string_size += strlen(ip_string);
   } else {
     // Failure, omg
@@ -5509,6 +5727,30 @@ HttpTransact::check_request_validity(State *s, HTTPHdr *incoming_hdr)
   set_client_request_state(s, incoming_hdr);
   if (incoming_hdr == nullptr) {
     return RequestError_t::NON_EXISTANT_REQUEST_HEADER;
+  }
+
+  // RFC 9112: If chunked is present in Transfer-Encoding, it must be the
+  // final encoding. Reject the request if chunked appears before other values.
+  if (incoming_hdr->presence(MIME_PRESENCE_TRANSFER_ENCODING)) {
+    MIMEField *field         = incoming_hdr->field_find(static_cast<std::string_view>(MIME_FIELD_TRANSFER_ENCODING));
+    bool       found_chunked = false;
+
+    while (field) {
+      HdrCsvIter  enc_val_iter;
+      int         enc_val_len;
+      const char *enc_value = enc_val_iter.get_first(field, &enc_val_len);
+
+      while (enc_value) {
+        const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
+        if (wks_value == HTTP_VALUE_CHUNKED.c_str()) {
+          found_chunked = true;
+        } else if (found_chunked) {
+          return RequestError_t::BAD_HTTP_HEADER_SYNTAX;
+        }
+        enc_value = enc_val_iter.get_next(&enc_val_len);
+      }
+      field = field->m_next_dup;
+    }
   }
 
   if (!(HttpTransactHeaders::is_request_proxy_authorized(incoming_hdr))) {
@@ -5638,7 +5880,10 @@ HttpTransact::set_client_request_state(State *s, HTTPHdr *incoming_hdr)
       while (enc_value) {
         const char *wks_value = hdrtoken_string_to_wks(enc_value, enc_val_len);
         if (wks_value == HTTP_VALUE_CHUNKED.c_str()) {
-          s->client_info.transfer_encoding = TransferEncoding_t::CHUNKED;
+          // Only treat as chunked if it is the last Transfer-Encoding value (RFC 9112)
+          if (enc_val_iter.get_next(&enc_val_len) == nullptr) {
+            s->client_info.transfer_encoding = TransferEncoding_t::CHUNKED;
+          }
           break;
         }
         enc_value = enc_val_iter.get_next(&enc_val_len);
@@ -6033,7 +6278,9 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
           const char *new_wks_value = hdrtoken_string_to_wks(new_enc_val, new_enc_len);
           if (new_wks_value != wks_value) {
             if (new_enc_field) {
-              new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime, new_enc_val, new_enc_len, true);
+              new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime,
+                                          std::string_view{new_enc_val, static_cast<std::string_view::size_type>(new_enc_len)},
+                                          true);
             } else {
               new_enc_field = incoming_response->field_create();
               incoming_response->field_value_set(
@@ -6154,8 +6401,20 @@ HttpTransact::is_stale_cache_response_returnable(State *s)
   time_t current_age = HttpTransactCache::calculate_document_age(s->cache_info.object_read->request_sent_time_get(),
                                                                  s->cache_info.object_read->response_received_time_get(),
                                                                  cached_response, cached_response->get_date(), s->current.now);
+
+  MgmtInt max_age       = get_max_age(cached_response);
+  MgmtInt max_stale_age = s->txn_conf->cache_max_stale_age;
+  MgmtInt max_stale_percentage =
+    std::clamp(s->txn_conf->cache_max_stale_age_percent, static_cast<MgmtInt>(0), static_cast<MgmtInt>(100));
+
+  if (max_stale_percentage > 0 && max_age >= 0) {
+    MgmtInt percent_max_stale_age = max_age * max_stale_percentage / 100;
+
+    max_stale_age = std::min(max_stale_age, percent_max_stale_age);
+  }
+
   // Negative age is overflow
-  if ((current_age < 0) || (current_age > s->txn_conf->cache_max_stale_age + get_max_age(cached_response))) {
+  if ((current_age < 0) || (current_age > max_age + max_stale_age)) {
     TxnDbg(dbg_ctl_http_trans, "document age is too large %" PRId64, (int64_t)current_age);
     return false;
   }
@@ -6507,7 +6766,8 @@ HttpTransact::is_response_cacheable(State *s, HTTPHdr *request, HTTPHdr *respons
   }
 
   if ((response_code == HTTPStatus::OK) || (response_code == HTTPStatus::NOT_MODIFIED) ||
-      (response_code == HTTPStatus::NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTPStatus::MOVED_PERMANENTLY) ||
+      (response_code == HTTPStatus::NON_AUTHORITATIVE_INFORMATION) || (response_code == HTTPStatus::NO_CONTENT) ||
+      (response_code == HTTPStatus::MOVED_PERMANENTLY) || (response_code == HTTPStatus::PERMANENT_REDIRECT) ||
       (response_code == HTTPStatus::MULTIPLE_CHOICES) || (response_code == HTTPStatus::GONE)) {
     TxnDbg(dbg_ctl_http_trans, "YES response code seems fine");
     return true;
@@ -6742,7 +7002,7 @@ HttpTransact::process_quick_http_filter(State *s, int method)
 }
 
 bool
-HttpTransact::will_this_request_self_loop(State *s)
+HttpTransact::will_this_request_self_loop(State *s, bool is_outbound_transparent)
 {
   // The self-loop detection for this ATS node will allow up to max_proxy_cycles
   // (each time it sees it returns to itself it is one cycle) before declaring a self-looping condition detected.
@@ -6761,10 +7021,14 @@ HttpTransact::will_this_request_self_loop(State *s)
       in_port_t dst_port   = s->hdr_info.client_request.url_get()->port_get(); // going to this port.
       in_port_t local_port = s->client_info.dst_addr.host_order_port();        // already connected proxy port.
       // It's a loop if connecting to the same port as it already connected to the proxy and
-      // it's a proxy address or the same address it already connected to.
+      // it's any of the proxy's local addresses. In outbound-transparent mode we also allow
+      // the outbound destination to match the client's original connection destination
+      // (client_info.dst_addr), because that equality is expected for every transparent
+      // request (the client's original destination IS the legitimate upstream) and would
+      // false-positive this check.
       TxnDbg(dbg_ctl_http_transact, "dst_port = %d local_port = %d", dst_port, local_port);
-      if (dst_port == local_port && ((s->dns_info.active->data.ip == &Machine::instance()->ip.sa) ||
-                                     (s->dns_info.active->data.ip == s->client_info.dst_addr))) {
+      if (dst_port == local_port && (Machine::instance()->is_self(s->dns_info.active->data.ip) ||
+                                     (!is_outbound_transparent && s->dns_info.active->data.ip == s->client_info.dst_addr))) {
         switch (s->dns_info.looking_up) {
         case ResolveInfo::ORIGIN_SERVER:
           TxnDbg(dbg_ctl_http_transact, "host ip and port same as local ip and port - bailing");
@@ -7237,6 +7501,25 @@ HttpTransact::delete_all_document_alternates_and_return(State *s, bool cache_hit
       s->hdr_info.trust_response_cl = true;
       build_response(s, &s->hdr_info.client_response, s->client_info.http_version,
                      (cache_hit == true) ? HTTPStatus::OK : HTTPStatus::NOT_FOUND);
+
+      // Report what was removed, so a caller holding one piece of a larger resource
+      // can learn its extent without a second lookup. Not Content-Range itself: on
+      // a 200 that is meaningless per RFC 9110, and cache_range_requests reads the
+      // pair as a stored 206 being served as 200 and rewrites the status.
+      if (cache_hit == true && s->method == HTTP_WKSIDX_PURGE && s->cache_info.object_read != nullptr) {
+        // read by the slice plugin as PURGED_CONTENT_RANGE in plugins/slice/HttpHeader.h
+        static constexpr std::string_view PURGED_CONTENT_RANGE{"X-Purged-Content-Range"};
+        HTTPHdr *const                    cached_response = s->cache_info.object_read->response_get();
+
+        if (cached_response != nullptr) {
+          auto value{cached_response->value_get(static_cast<std::string_view>(MIME_FIELD_CONTENT_RANGE))};
+          if (!value.empty()) {
+            s->hdr_info.client_response.value_set(PURGED_CONTENT_RANGE, value);
+            TxnDbg(dbg_ctl_http_trans, "PURGE reporting X-Purged-Content-Range: %.*s", static_cast<int>(value.length()),
+                   value.data());
+          }
+        }
+      }
 
       return true;
     } else {
@@ -8163,7 +8446,7 @@ HttpTransact::build_response(State *s, HTTPHdr *base_response, HTTPHdr *outgoing
 
   // process reverse mappings on the location header
   // TS-1364: do this regardless of response code
-  response_url_remap(outgoing_response, s->state_machine->m_remap);
+  response_url_remap(outgoing_response, s->state_machine->m_remap.get());
 
   if (s->http_config_param->enable_http_stats) {
     HttpTransactHeaders::generate_and_set_squid_codes(outgoing_response, s->via_string, &s->squid_codes);
@@ -8365,7 +8648,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if (len > 0) {
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE), body_type);
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE), body_language);
+    if (s->internal_msg_buffer_type == nullptr) {
+      s->internal_msg_buffer_type = ats_strdup(body_type);
+    }
   } else {
+    s->internal_msg_buffer_type = static_cast<char *>(ats_free_null(s->internal_msg_buffer_type));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE));
   }
@@ -9086,7 +9373,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
           if (val_code != static_cast<int>(warning_code)) {
             auto value = iter.get_current();
             if (new_field) {
-              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value.data(), value.size(), true);
+              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value, true);
             } else {
               new_field = to_warn->field_create();
               to_warn->field_value_set(new_field, value);

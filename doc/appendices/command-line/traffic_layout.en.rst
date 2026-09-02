@@ -99,8 +99,8 @@ If ``traffic_layout init --layout="custom.yml"`` is executed, a runroot followin
 
 .. Note::
 
-   :file:`storage.config` does not use the cachedir value, but makes its relatives paths relative to the base prefix.
-   So please update the directory for cache in ``storage.config`` according to the customized runroot.
+   :file:`storage.yaml` does not use the cachedir value, but makes its relatives paths relative to the base prefix.
+   So please update the directory for cache in ``storage.yaml`` according to the customized runroot.
 
 remove
 ------

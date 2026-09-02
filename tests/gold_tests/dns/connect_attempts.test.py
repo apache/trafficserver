@@ -21,6 +21,11 @@ Test.Summary = '''
 Verify Origin Server Connect Attempts Behavior
 '''
 
+# Single DNS Record
+# max_retries & down_server
+Test.ATSReplayTest(replay_file="replay/connect_attempts_single_max_retries.replay.yaml")
+
+# Multiple DNS Records
 # No retry
 Test.ATSReplayTest(replay_file="replay/connect_attempts_rr_no_retry.replay.yaml")
 

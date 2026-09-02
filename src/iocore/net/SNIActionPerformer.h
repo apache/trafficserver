@@ -314,6 +314,36 @@ private:
 };
 
 /**
+   Override session ticket support by ssl_ticket_enabled in sni.yaml
+ */
+class ServerSessionTicketEnabled : public ActionItem
+{
+public:
+  ServerSessionTicketEnabled(int value) : session_ticket_enabled(value) {}
+  ~ServerSessionTicketEnabled() override {}
+
+  int SNIAction(SSL &ssl, const Context &ctx) const override;
+
+private:
+  int session_ticket_enabled = 0;
+};
+
+/**
+   Override the number of issued TLSv1.3 session tickets by ssl_ticket_number in sni.yaml
+ */
+class ServerSessionTicketNumber : public ActionItem
+{
+public:
+  ServerSessionTicketNumber(int value) : session_ticket_number(value) {}
+  ~ServerSessionTicketNumber() override {}
+
+  int SNIAction(SSL &ssl, const Context &ctx) const override;
+
+private:
+  int session_ticket_number = 0;
+};
+
+/**
    Override proxy.config.ssl.server.cipher_suite by server_cipher_suite in sni.yaml
  */
 class ServerCipherSuite : public ActionItem

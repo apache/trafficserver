@@ -31,6 +31,8 @@
 #include "P_SplitDNSProcessor.h"
 #include "tscore/Tokenizer.h"
 #include "tscore/Filenames.h"
+#include "mgmt/config/ConfigContextDiags.h"
+#include "mgmt/config/ConfigRegistry.h"
 
 #include <sys/types.h>
 #include "P_SplitDNS.h"
@@ -45,8 +47,6 @@
    globals
    -------------------------------------------------------------- */
 static const char modulePrefix[] = "[SplitDNS]";
-
-ConfigUpdateHandler<SplitDNSConfig> *SplitDNSConfig::splitDNSUpdate = nullptr;
 
 static ClassAllocator<DNSRequestData, false> DNSReqAllocator("DNSRequestDataAllocator");
 
@@ -115,33 +115,41 @@ SplitDNSConfig::release(SplitDNS *params)
 void
 SplitDNSConfig::startup()
 {
-  // startup just check gsplit_dns_enabled
-  gsplit_dns_enabled             = RecGetRecordInt("proxy.config.dns.splitDNS.enabled").value_or(0);
-  SplitDNSConfig::splitDNSUpdate = new ConfigUpdateHandler<SplitDNSConfig>();
-  SplitDNSConfig::splitDNSUpdate->attach("proxy.config.cache.splitdns.filename");
+  gsplit_dns_enabled = RecGetRecordInt("proxy.config.dns.splitDNS.enabled").value_or(0);
+
+  config::ConfigRegistry::Get_Instance().register_config(
+    "split_dns",                                                 // registry key
+    ts::filename::SPLITDNS,                                      // default filename
+    "proxy.config.dns.splitdns.filename",                        // record holding the filename
+    [](ConfigContext ctx) { SplitDNSConfig::reconfigure(ctx); }, // reload handler
+    config::ConfigSource::FileOnly,                              // no RPC content
+    {"proxy.config.dns.splitdns.filename"});                     // trigger records
 }
 
 /* --------------------------------------------------------------
    SplitDNSConfig::reconfigure()
    -------------------------------------------------------------- */
 void
-SplitDNSConfig::reconfigure()
+SplitDNSConfig::reconfigure(ConfigContext ctx)
 {
   if (0 == gsplit_dns_enabled) {
+    CfgLoadComplete(ctx, "SplitDNS disabled, skipping reload");
     return;
   }
 
-  Note("%s loading ...", ts::filename::SPLITDNS);
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::SPLITDNS);
 
   SplitDNS *params = new SplitDNS;
 
   params->m_SplitDNSlEnable = gsplit_dns_enabled;
-  params->m_DNSSrvrTable    = std::make_unique<DNS_table>("proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags);
+  params->m_DNSSrvrTable    = std::make_unique<DNS_table>(
+    "proxy.config.dns.splitdns.filename", modulePrefix, &sdns_dest_tags,
+    ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE, ctx);
 
   if (nullptr == params->m_DNSSrvrTable || (0 == params->m_DNSSrvrTable->getEntryCount())) {
-    Warning("Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
     gsplit_dns_enabled = 0;
     delete params;
+    CfgLoadFail(ctx, "Failed to load %s - No NAMEDs provided! Disabling SplitDNS", ts::filename::SPLITDNS);
     return;
   }
   params->m_numEle = params->m_DNSSrvrTable->getEntryCount();
@@ -159,7 +167,7 @@ SplitDNSConfig::reconfigure()
     SplitDNSConfig::print();
   }
 
-  Note("%s finished loading", ts::filename::SPLITDNS);
+  CfgLoadComplete(ctx, "%s finished loading", ts::filename::SPLITDNS);
 }
 
 /* --------------------------------------------------------------

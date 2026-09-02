@@ -53,7 +53,13 @@ class TestGrpc():
         self._ts = tr.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 
         self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         self._ts.Disk.remap_config.AddLine(f"map / https://example.com:{server_port}/")
 

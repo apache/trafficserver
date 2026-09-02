@@ -31,6 +31,7 @@
 #include "proxy/http3/Http3HeaderVIOAdaptor.h"
 #include "proxy/http3/Http3HeaderFramer.h"
 #include "proxy/http3/Http3DataFramer.h"
+#include "proxy/http3/Http3ProtocolEnforcer.h"
 #include "proxy/http/HttpSM.h"
 
 #define NetVC2QUICCon(netvc) netvc->get_service<QUICSupport>()->get_quic_connection()
@@ -63,7 +64,8 @@ DbgCtl dbg_ctl_v_http3_trans{"v_http3_trans"};
 //
 // HQTransaction
 //
-HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info) : super(session), _info(info)
+HQTransaction::HQTransaction(HQSession *session, QUICStreamVCAdapter::IOInfo &info)
+  : super(session), _info(info), _stream_id(info.adapter.stream().id())
 {
   this->mutex   = new_ProxyMutex();
   this->_thread = this_ethread();
@@ -81,12 +83,16 @@ HQTransaction::~HQTransaction()
   this->_unschedule_write_complete_event();
 
   static_cast<HQSession *>(this->_proxy_ssn)->remove_transaction(this);
+
+  if (this->_stream_cleanup) {
+    this->_stream_cleanup();
+  }
 }
 
 void
 HQTransaction::set_active_timeout(ink_hrtime timeout_in)
 {
-  if (this->_proxy_ssn) {
+  if (!this->_is_closed() && this->_proxy_ssn) {
     this->_proxy_ssn->set_active_timeout(timeout_in);
   }
 }
@@ -94,7 +100,7 @@ HQTransaction::set_active_timeout(ink_hrtime timeout_in)
 void
 HQTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 {
-  if (this->_proxy_ssn) {
+  if (!this->_is_closed() && this->_proxy_ssn) {
     this->_proxy_ssn->set_inactivity_timeout(timeout_in);
   }
 }
@@ -102,7 +108,7 @@ HQTransaction::set_inactivity_timeout(ink_hrtime timeout_in)
 void
 HQTransaction::cancel_inactivity_timeout()
 {
-  if (this->_proxy_ssn) {
+  if (!this->_is_closed() && this->_proxy_ssn) {
     this->_proxy_ssn->cancel_inactivity_timeout();
   }
 }
@@ -132,7 +138,7 @@ HQTransaction::do_io_read(Continuation *c, int64_t nbytes, MIOBuffer *buf)
 
   if (buf) {
     this->_process_read_vio();
-    this->_schedule_read_ready_event();
+    this->_schedule_read_event();
   }
 
   return &this->_read_vio;
@@ -186,6 +192,10 @@ HQTransaction::do_io_shutdown(ShutdownHowTo_t /* howto ATS_UNUSED */)
 void
 HQTransaction::reenable(VIO *vio)
 {
+  if (this->_is_closed() || this->_is_stream_closed()) {
+    return;
+  }
+
   if (vio->op == VIO::READ) {
     int64_t len = this->_process_read_vio();
     this->_info.read_vio->reenable();
@@ -209,13 +219,28 @@ HQTransaction::transaction_done()
   // TODO: start closing transaction
   super::transaction_done();
   this->_transaction_done = true;
+  this->_delete_if_possible();
   return;
 }
 
 int
 HQTransaction::get_transaction_id() const
 {
-  return this->_info.adapter.stream().id();
+  return this->_stream_id;
+}
+
+void
+HQTransaction::stream_closed()
+{
+  this->_info.adapter.mark_stream_closed();
+  this->do_io_close();
+  this->_delete_if_possible();
+}
+
+void
+HQTransaction::set_stream_cleanup(std::function<void()> cleanup)
+{
+  this->_stream_cleanup = cleanup;
 }
 
 void
@@ -274,6 +299,20 @@ HQTransaction::_schedule_read_complete_event()
   }
 
   this->_read_complete_event = this->_thread->schedule_imm(this, VC_EVENT_READ_COMPLETE, &this->_read_vio);
+}
+
+void
+HQTransaction::_schedule_read_event()
+{
+  if (this->_read_vio.nbytes == 0) {
+    return;
+  }
+
+  if (this->_info.read_vio->nbytes == INT64_MAX) {
+    this->_schedule_read_ready_event();
+  } else {
+    this->_schedule_read_complete_event();
+  }
 }
 
 void
@@ -353,15 +392,23 @@ HQTransaction::_close_write_complete_event(Event *e)
 }
 
 void
-HQTransaction::_signal_event(int event, Event *edata)
+HQTransaction::_signal_event(int event, Event *)
 {
-  if (this->_write_vio.cont) {
-    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
-    this->_write_vio.cont->handleEvent(event, edata);
+  if (this->_is_closed() || this->_is_stream_closed()) {
+    return;
   }
-  if (this->_read_vio.cont && this->_read_vio.cont != this->_write_vio.cont) {
+
+  // HttpSM::main_handler expects a VIO* as the event data for VC events so it
+  // can locate the vc_table entry. Prefer the read side because H3 creates a
+  // zero-byte write VIO before HttpSM installs a client write handler.
+  if (this->_read_vio.cont && this->_read_vio.op != VIO::NONE) {
     SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
-    this->_read_vio.cont->handleEvent(event, edata);
+    this->_read_vio.cont->handleEvent(event, &this->_read_vio);
+    return;
+  }
+  if (this->_write_vio.cont && this->_write_vio.op != VIO::NONE && this->_write_vio.nbytes > 0) {
+    SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
+    this->_write_vio.cont->handleEvent(event, &this->_write_vio);
   }
 }
 
@@ -371,10 +418,10 @@ HQTransaction::_signal_event(int event, Event *edata)
 void
 HQTransaction::_signal_read_event()
 {
-  if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
+  if (this->_is_closed() || this->_is_stream_closed() || this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
     return;
   }
-  int event = this->_read_vio.nbytes == INT64_MAX ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
+  int event = this->_read_vio.nbytes == INT64_MAX || this->_read_vio.ntodo() > 0 ? VC_EVENT_READ_READY : VC_EVENT_READ_COMPLETE;
 
   SCOPED_MUTEX_LOCK(lock, this->_read_vio.mutex, this_ethread());
   this->_read_vio.cont->handleEvent(event, &this->_read_vio);
@@ -388,15 +435,42 @@ HQTransaction::_signal_read_event()
 void
 HQTransaction::_signal_write_event()
 {
-  if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
+  if (this->_is_closed() || this->_is_stream_closed() || this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
     return;
   }
+  if (this->_write_vio.ntodo() == 0 && !this->_is_write_buffer_flushed()) {
+    return;
+  }
+
   int event = this->_write_vio.ntodo() ? VC_EVENT_WRITE_READY : VC_EVENT_WRITE_COMPLETE;
 
   SCOPED_MUTEX_LOCK(lock, this->_write_vio.mutex, this_ethread());
   this->_write_vio.cont->handleEvent(event, &this->_write_vio);
 
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+}
+
+bool
+HQTransaction::_is_write_buffer_flushed()
+{
+  if (this->_is_closed() || this->_is_stream_closed()) {
+    return true;
+  }
+
+  if (this->_info.write_vio->op == VIO::NONE) {
+    return true;
+  }
+
+  SCOPED_MUTEX_LOCK(lock, this->_info.write_vio->mutex, this_ethread());
+
+  IOBufferReader *reader = this->_info.write_vio->get_reader();
+  return reader == nullptr || reader->read_avail() == 0;
+}
+
+bool
+HQTransaction::_is_stream_closed() const
+{
+  return this->_info.adapter.is_stream_closed();
 }
 
 /**
@@ -406,7 +480,12 @@ HQTransaction::_signal_write_event()
 void
 HQTransaction::_delete_if_possible()
 {
-  if (this->_transaction_done) {
+  if (this->_event_handler_active) {
+    return;
+  }
+
+  if (this->_transaction_done && this->_is_write_buffer_flushed() &&
+      (this->_is_stream_closed() || !this->_info.adapter.is_readable())) {
     delete this;
   }
 }
@@ -414,28 +493,22 @@ HQTransaction::_delete_if_possible()
 //
 // Http3Transaction
 //
-Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
+Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info)
+  : super(session, info),
+    _header_framer(this, &this->_write_vio, session->local_qpack(), this->_stream_id),
+    _data_framer(this, &this->_write_vio),
+    _header_handler(&this->_read_vio, this->direction() == NET_VCONNECTION_OUT ? HTTPType::RESPONSE : HTTPType::REQUEST,
+                    session->remote_qpack(), this->_stream_id, this),
+    _data_handler(&this->_read_vio)
 {
-  QUICStreamId stream_id = this->_info.adapter.stream().id();
-
-  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_id);
-  this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
-  this->_frame_collector.add_generator(this->_header_framer);
-  this->_frame_collector.add_generator(this->_data_framer);
+  this->_frame_collector.add_generator(&this->_header_framer);
+  this->_frame_collector.add_generator(&this->_data_framer);
   // this->_frame_collector.add_generator(this->_push_controller);
 
-  HTTPType http_type = HTTPType::UNKNOWN;
-  if (this->direction() == NET_VCONNECTION_OUT) {
-    http_type = HTTPType::RESPONSE;
-  } else {
-    http_type = HTTPType::REQUEST;
-  }
-  this->_header_handler = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id);
-  this->_data_handler   = new Http3StreamDataVIOAdaptor(&this->_read_vio);
-
   this->_frame_dispatcher.add_handler(session->get_received_frame_counter());
-  this->_frame_dispatcher.add_handler(this->_header_handler);
-  this->_frame_dispatcher.add_handler(this->_data_handler);
+  this->_frame_dispatcher.add_handler(&this->_protocol_enforcer);
+  this->_frame_dispatcher.add_handler(&this->_header_handler);
+  this->_frame_dispatcher.add_handler(&this->_data_handler);
 
   SET_HANDLER(&Http3Transaction::state_stream_open);
 }
@@ -446,15 +519,16 @@ Http3Transaction::~Http3Transaction()
 
   // This should have already been called but call it here just incase.
   do_io_close();
+}
 
-  delete this->_header_framer;
-  this->_header_framer = nullptr;
-  delete this->_data_framer;
-  this->_data_framer = nullptr;
-  delete this->_header_handler;
-  this->_header_handler = nullptr;
-  delete this->_data_handler;
-  this->_data_handler = nullptr;
+VIO *
+Http3Transaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
+{
+  if (c != nullptr && nbytes > 0 && buf != nullptr) {
+    this->_header_framer.reset();
+  }
+
+  return super::do_io_write(c, nbytes, buf, owner);
 }
 
 int
@@ -463,6 +537,7 @@ Http3Transaction::state_stream_open(int event, Event *edata)
   // TODO: should check recursive call?
   ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->_event_handler_active = true;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -472,22 +547,29 @@ Http3Transaction::state_stream_open(int event, Event *edata)
     if (this->_process_read_vio() > 0) {
       this->_signal_read_event();
     }
-    this->_info.read_vio->reenable();
+    if (!this->_is_closed()) {
+      this->_info.read_vio->reenable();
+    }
     break;
-  case VC_EVENT_READ_COMPLETE:
+  case VC_EVENT_READ_COMPLETE: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_close_read_complete_event(edata);
-    this->_process_read_vio();
-    if (!this->_header_handler->is_complete()) {
-      // Delay processing READ_COMPLETE
-      this->_schedule_read_complete_event();
+    int64_t nread = this->_process_read_vio();
+    if (!this->_header_handler.is_complete()) {
+      if (nread > 0) {
+        // Delay processing READ_COMPLETE until the header block can be fully decoded.
+        this->_schedule_read_complete_event();
+      }
       break;
     }
-    this->_data_handler->finalize();
+    this->_data_handler.finalize();
     // always signal regardless of progress
     this->_signal_read_event();
-    this->_info.read_vio->reenable();
+    if (!this->_is_closed()) {
+      this->_info.read_vio->reenable();
+    }
     break;
+  }
   case VC_EVENT_WRITE_READY:
     this->_close_write_ready_event(edata);
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
@@ -495,7 +577,9 @@ Http3Transaction::state_stream_open(int event, Event *edata)
     if (this->_process_write_vio() > 0) {
       this->_signal_write_event();
     }
-    this->_info.write_vio->reenable();
+    if (!this->_is_closed()) {
+      this->_info.write_vio->reenable();
+    }
     break;
   case VC_EVENT_WRITE_COMPLETE:
     this->_close_write_complete_event(edata);
@@ -503,7 +587,9 @@ Http3Transaction::state_stream_open(int event, Event *edata)
     this->_process_write_vio();
     // always signal regardless of progress
     this->_signal_write_event();
-    this->_info.write_vio->reenable();
+    if (!this->_is_closed()) {
+      this->_info.write_vio->reenable();
+    }
     break;
   case VC_EVENT_EOS:
   case VC_EVENT_ERROR:
@@ -511,12 +597,14 @@ Http3Transaction::state_stream_open(int event, Event *edata)
   case VC_EVENT_ACTIVE_TIMEOUT: {
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_signal_event(event, edata);
+    this->do_io_close();
     break;
   }
   default:
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_event_handler_active = false;
   this->_delete_if_possible();
   return EVENT_DONE;
 }
@@ -525,6 +613,7 @@ int
 Http3Transaction::state_stream_closed(int event, Event *data)
 {
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+  this->_event_handler_active = true;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -551,6 +640,7 @@ Http3Transaction::state_stream_closed(int event, Event *data)
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_event_handler_active = false;
   this->_delete_if_possible();
   return EVENT_DONE;
 }
@@ -563,20 +653,49 @@ Http3Transaction::do_io_close(int lerrno)
 }
 
 bool
+Http3Transaction::_is_closed() const
+{
+  return this->handler == continuation_handler_void_ptr(&Http3Transaction::state_stream_closed);
+}
+
+void
+Http3Transaction::on_header_decode_complete()
+{
+  this->_schedule_read_event();
+}
+
+bool
 Http3Transaction::is_response_header_sent() const
 {
-  return this->_header_framer->is_done();
+  return this->_header_framer.is_final_header_sent();
 }
 
 bool
 Http3Transaction::is_response_body_sent() const
 {
-  return this->_data_framer->is_done();
+  return this->_data_framer.is_done();
+}
+
+void
+Http3Transaction::_handle_error(const Http3Error &error)
+{
+  if (error.cls == Http3ErrorClass::CONNECTION) {
+    this->_info.adapter.mark_stream_closed();
+    this->do_io_close();
+    this->_transaction_done = true;
+    NetVC2QUICCon(this->_proxy_ssn->get_netvc())
+      ->close_quic_connection(
+        std::make_unique<QUICConnectionError>(QUICErrorClass::APPLICATION, static_cast<uint16_t>(error.code)));
+  }
 }
 
 int64_t
 Http3Transaction::_process_read_vio()
 {
+  if (this->_is_stream_closed()) {
+    return 0;
+  }
+
   if (this->_info.read_vio->cont == nullptr || this->_info.read_vio->op == VIO::NONE) {
     return 0;
   }
@@ -588,7 +707,8 @@ Http3Transaction::_process_read_vio()
   auto     error = this->_frame_dispatcher.on_read_ready(this->_info.adapter.stream().id(), Http3StreamType::UNKNOWN,
                                                          *this->_info.read_vio->get_reader(), nread);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
-    Http3TransDebug("Error occured while processing read vio: %hu, %s", error->get_code(), error->msg);
+    Http3TransDebug("Error occurred while processing read vio: %hu", error->get_code());
+    this->_handle_error(*error);
     return 0;
   }
   this->_info.read_vio->ndone += nread;
@@ -598,6 +718,10 @@ Http3Transaction::_process_read_vio()
 int64_t
 Http3Transaction::_process_write_vio()
 {
+  if (this->_is_stream_closed()) {
+    return 0;
+  }
+
   if (this->_info.write_vio->cont == nullptr || this->_info.write_vio->op == VIO::NONE) {
     return 0;
   }
@@ -610,7 +734,7 @@ Http3Transaction::_process_write_vio()
   auto   error    = this->_frame_collector.on_write_ready(this->_info.adapter.stream().id(), *this->_info.write_vio->get_writer(),
                                                           nwritten, all_done);
   if (error && error->cls != Http3ErrorClass::UNDEFINED) {
-    Http3TransDebug("Error occured while processing write vio: %hu, %s", error->get_code(), error->msg);
+    Http3TransDebug("Error occurred while processing write vio: %hu", error->get_code());
     return 0;
   }
   this->_sent_bytes += nwritten;
@@ -630,8 +754,12 @@ Http3Transaction::has_request_body(int64_t content_length, bool /* is_chunked_se
   }
 
   // Has body if there is DATA frame received (In case Content-Length is omitted)
-  if (this->_data_handler->has_data()) {
+  if (this->_data_handler.has_data()) {
     return true;
+  }
+
+  if (this->_is_stream_closed()) {
+    return false;
   }
 
   // No body if stream is already closed and DATA frame is not received yet
@@ -667,6 +795,7 @@ Http09Transaction::state_stream_open(int event, Event *edata)
 
   ink_release_assert(this->_thread == this_ethread());
   SCOPED_MUTEX_LOCK(lock, this->mutex, this_ethread());
+  this->_event_handler_active = true;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -704,12 +833,15 @@ Http09Transaction::state_stream_open(int event, Event *edata)
   case VC_EVENT_INACTIVITY_TIMEOUT:
   case VC_EVENT_ACTIVE_TIMEOUT: {
     Http3TransDebug("%d", event);
+    this->_signal_event(event, edata);
+    this->do_io_close();
     break;
   }
   default:
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_event_handler_active = false;
   this->_delete_if_possible();
   return EVENT_DONE;
 }
@@ -721,10 +853,17 @@ Http09Transaction::do_io_close(int lerrno)
   super::do_io_close(lerrno);
 }
 
+bool
+Http09Transaction::_is_closed() const
+{
+  return this->handler == continuation_handler_void_ptr(&Http09Transaction::state_stream_closed);
+}
+
 int
 Http09Transaction::state_stream_closed(int event, Event *data)
 {
   Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
+  this->_event_handler_active = true;
 
   switch (event) {
   case VC_EVENT_READ_READY:
@@ -750,6 +889,7 @@ Http09Transaction::state_stream_closed(int event, Event *data)
     Http3TransDebug("Unknown event %d", event);
   }
 
+  this->_event_handler_active = false;
   this->_delete_if_possible();
   return EVENT_DONE;
 }
@@ -758,6 +898,10 @@ Http09Transaction::state_stream_closed(int event, Event *data)
 int64_t
 Http09Transaction::_process_read_vio()
 {
+  if (this->_is_stream_closed()) {
+    return 0;
+  }
+
   if (this->_read_vio.cont == nullptr || this->_read_vio.op == VIO::NONE) {
     return 0;
   }
@@ -838,6 +982,10 @@ static constexpr char http_1_1_version[] = "HTTP/1.1";
 int64_t
 Http09Transaction::_process_write_vio()
 {
+  if (this->_is_stream_closed()) {
+    return 0;
+  }
+
   if (this->_write_vio.cont == nullptr || this->_write_vio.op == VIO::NONE) {
     return 0;
   }
@@ -882,7 +1030,7 @@ Http09Transaction::_process_write_vio()
     // NOTE: When Chunked Transfer Coding is supported, check ChunkedState of ChunkedHandler
     // is ChunkedState::READ_DONE and set FIN flag
     if (this->_write_vio.ntodo() == 0) {
-      // The size of respons to client
+      // The size of response to client
       this->_info.write_vio->done();
     }
 

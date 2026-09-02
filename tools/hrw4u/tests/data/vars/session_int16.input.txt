@@ -1,0 +1,9 @@
+SESSION_VARS {
+    ssn_int16_0: int16;
+}
+
+REMAP {
+    if ssn_int16_0 > 10000 {
+        inbound.req.X-heavy = "true";
+    }
+}

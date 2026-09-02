@@ -67,27 +67,6 @@ CacheHTTPInfoVector::insert(CacheHTTPInfo *info, int index)
   -------------------------------------------------------------------------*/
 
 void
-CacheHTTPInfoVector::detach(int idx, CacheHTTPInfo *r)
-{
-  int i;
-
-  ink_assert(idx >= 0);
-  ink_assert(idx < xcount);
-
-  r->copy_shallow(&data[idx].alternate);
-  data[idx].alternate.destroy();
-
-  for (i = idx; i < (xcount - 1); i++) {
-    data[i] = data[i + i];
-  }
-
-  xcount -= 1;
-}
-
-/*-------------------------------------------------------------------------
-  -------------------------------------------------------------------------*/
-
-void
 CacheHTTPInfoVector::remove(int idx, bool destroy)
 {
   if (destroy) {

@@ -152,6 +152,7 @@ public:
   virtual bool support_sni() const;
 
   APIHook            *hook_get(TSHttpHookID id) const;
+  bool                has_session_hook(TSHttpHookID id) const;
   HttpAPIHooks const *feature_hooks() const;
 
   // Returns null pointer if session does not use a TLS connection.
@@ -184,7 +185,7 @@ public:
 
   IpAllow::ACL acl; ///< IpAllow based method ACL.
 
-  HttpSessionAccept::Options const *accept_options; ///< connection info // L7R TODO: set in constructor
+  HttpSessionAcceptBase const *acceptor{nullptr}; ///< Acceptor with the connection properties.
 
 protected:
   // Hook dispatching state
@@ -203,6 +204,9 @@ protected:
   // This function should be called in all overrides of new_connection() where
   // the new_vc may be an SSLNetVConnection object.
   void _handle_if_ssl(NetVConnection *new_vc);
+
+  /// Update the client connection metric for the remote address family.
+  void _increment_total_client_connections_stat(NetVConnection *new_vc);
 
   NetVConnection *_vc = nullptr; // The netvc associated with the concrete session class
 
@@ -291,6 +295,12 @@ inline bool
 ProxySession::has_hooks() const
 {
   return this->api_hooks.has_hooks() || http_global_hooks->has_hooks();
+}
+
+inline bool
+ProxySession::has_session_hook(TSHttpHookID id) const
+{
+  return this->hook_get(id) != nullptr || http_global_hooks->get(id) != nullptr;
 }
 
 inline SSLProxySession const *

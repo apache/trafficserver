@@ -46,7 +46,13 @@ ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 ts.addDefaultSSLFiles()
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(httpbin.Variables.Port))
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 ts.Disk.records_config.update(
     {
         'proxy.config.http.insert_request_via_str': 1,
@@ -122,8 +128,9 @@ test_run.Processes.Default.Streams.stdout = "gold/httpbin_3_stdout.gold"
 test_run.Processes.Default.Streams.stderr = Testers.GoldFile("gold/httpbin_3_stderr.gold", case_insensitive=True)
 test_run.StillRunningAfter = httpbin
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-test_run = Test.AddTestRun()
-test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'access.log'))
-test_run.Processes.Default.ReturnCode = 0
+# Wait for the POST transaction to be logged.
+Test.AddAwaitFileContainsTestRun(
+    'Await POST access log entry.',
+    os.path.join(ts.Variables.LOGDIR, 'access.log'),
+    r'POST .*?/post',
+)

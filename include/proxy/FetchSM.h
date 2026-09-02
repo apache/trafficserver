@@ -165,7 +165,7 @@ private:
   HTTPParser           http_parser;
   HTTPHdr              client_response_hdr;
   ChunkedHandler       chunked_handler;
-  TSFetchEvent         callback_events;
+  TSFetchEvent         callback_events{};
   TSFetchWakeUpOptions callback_options    = NO_CALLBACK;
   bool                 req_finished        = false;
   bool                 header_done         = false;

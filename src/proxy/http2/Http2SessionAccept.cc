@@ -32,7 +32,8 @@ DbgCtl dbg_ctl_http2_seq{"http2_seq"};
 
 } // end anonymous namespace
 
-Http2SessionAccept::Http2SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
+Http2SessionAccept::Http2SessionAccept(OptionsHandle options, HttpProxyPort *proxy_port)
+  : HttpSessionAcceptBase(std::move(options), proxy_port)
 {
   SET_HANDLER(&Http2SessionAccept::mainEvent);
 }
@@ -50,9 +51,14 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
       break;
     } else if (IpAllow::Subject::PROXY == IpAllow::subjects[i] &&
                netvc->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-      client_ip = netvc->get_proxy_protocol_src_addr();
-      break;
+      if (sockaddr const *proxy_ip = netvc->get_proxy_protocol_src_addr(); proxy_ip != nullptr) {
+        client_ip = proxy_ip;
+        break;
+      }
     }
+  }
+  if (client_ip == nullptr) {
+    client_ip = netvc->get_remote_addr();
   }
 
   IpAllow::ACL session_acl = IpAllow::match(client_ip, IpAllow::match_key_t::SRC_ADDR);
@@ -62,7 +68,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
     return false;
   }
 
-  netvc->attributes = this->options.transport_type;
+  netvc->attributes = this->options().transport_type;
 
   if (dbg_ctl_http2_seq.on()) {
     ip_port_text_buffer ipb;
@@ -73,7 +79,7 @@ Http2SessionAccept::accept(NetVConnection *netvc, MIOBuffer *iobuf, IOBufferRead
 
   Http2ClientSession *new_session = THREAD_ALLOC_INIT(http2ClientSessionAllocator, this_ethread());
   new_session->acl                = std::move(session_acl);
-  new_session->accept_options     = &options;
+  new_session->acceptor           = this;
 
   // Pin session to current ET_NET thread
   new_session->setThreadAffinity(this_ethread());

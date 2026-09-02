@@ -24,7 +24,8 @@
 #include "proxy/ParentConsistentHash.h"
 #include "proxy/ParentRoundRobin.h"
 #include "proxy/ControlMatcher.h"
-#include "iocore/eventsystem/ConfigProcessor.h"
+#include "mgmt/config/ConfigContextDiags.h"
+#include "mgmt/config/ConfigRegistry.h"
 #include "proxy/HostStatus.h"
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/http/HttpTransact.h"
@@ -32,6 +33,7 @@
 #include "tscore/Regression.h"
 #include "tscore/Tokenizer.h"
 
+#include <string>
 #include <string_view>
 
 using namespace std::literals;
@@ -42,9 +44,8 @@ using namespace std::literals;
 using P_table = ControlMatcher<ParentRecord, ParentResult>;
 
 // Global Vars for Parent Selection
-static const char                         modulePrefix[]     = "[ParentSelection]";
-static ConfigUpdateHandler<ParentConfig> *parentConfigUpdate = nullptr;
-static int                                self_detect        = 2;
+static const char modulePrefix[] = "[ParentSelection]";
+static int        self_detect    = 2;
 
 // Config var names
 static const char *file_var      = "proxy.config.http.parent_proxy.file";
@@ -288,33 +289,28 @@ int ParentConfig::m_id = 0;
 void
 ParentConfig::startup()
 {
-  parentConfigUpdate = new ConfigUpdateHandler<ParentConfig>();
+  config::ConfigRegistry::Get_Instance().register_config(
+    "parent_proxy",                                            // registry key
+    ts::filename::PARENT,                                      // default filename
+    file_var,                                                  // record holding the filename
+    [](ConfigContext ctx) { ParentConfig::reconfigure(ctx); }, // reload handler
+    config::ConfigSource::FileOnly,                            // file-based only
+    {file_var, default_var, retry_var, threshold_var});        // trigger records
 
   // Load the initial configuration
   reconfigure();
-
-  // Setup the callbacks for reconfiuration
-  //   parent table
-  parentConfigUpdate->attach(file_var);
-  //   default parent
-  parentConfigUpdate->attach(default_var);
-  //   Retry time
-  parentConfigUpdate->attach(retry_var);
-  //   Fail Threshold
-  parentConfigUpdate->attach(threshold_var);
 }
 
 void
-ParentConfig::reconfigure()
+ParentConfig::reconfigure(ConfigContext ctx)
 {
-  Note("%s loading ...", ts::filename::PARENT);
-
-  ParentConfigParams *params = nullptr;
+  CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::PARENT);
 
   // Allocate parent table
-  P_table *pTable = new P_table(file_var, modulePrefix, &http_dest_tags);
-
-  params = new ParentConfigParams(pTable);
+  P_table *pTable =
+    new P_table(file_var, modulePrefix, &http_dest_tags,
+                ALLOW_HOST_TABLE | ALLOW_IP_TABLE | ALLOW_REGEX_TABLE | ALLOW_HOST_REGEX_TABLE | ALLOW_URL_TABLE, ctx);
+  ParentConfigParams *params = new ParentConfigParams(pTable);
   ink_assert(params != nullptr);
 
   m_id = configProcessor.set(m_id, params);
@@ -323,7 +319,7 @@ ParentConfig::reconfigure()
     ParentConfig::print();
   }
 
-  Note("%s finished loading", ts::filename::PARENT);
+  CfgLoadComplete(ctx, "%s finished loading", ts::filename::PARENT);
 }
 
 void
@@ -556,6 +552,11 @@ ParentRecord::ProcessParents(char *val, bool isPrimary)
       errPtr = "Parent string is empty";
       goto MERROR;
     }
+    if (tmp3 && strlen(tmp3 + 1) > MAXDNAME) {
+      errPtr = "Parent hash string is too long";
+      goto MERROR;
+    }
+
     // Update the pRecords
     if (isPrimary) {
       memcpy(this->parents[i].hostname, current, tmp - current);
@@ -797,6 +798,13 @@ ParentRecord::Init(matcher_line *line_info)
         ignore_self_detect = false;
       }
       used = true;
+    } else if (strcasecmp(label, "host_override") == 0) {
+      if (strcasecmp(val, "true") == 0) {
+        host_override = true;
+      } else {
+        host_override = false;
+      }
+      used = true;
     } else if (strcasecmp(label, "hash_algorithm") == 0) {
       consistent_hash_algorithm = parseHashAlgorithm(val);
       used                      = true;
@@ -847,7 +855,7 @@ ParentRecord::Init(matcher_line *line_info)
     delete simple_server_retry_responses;
     simple_server_retry_responses = nullptr;
   } else if (simple_server_retry_responses == nullptr && parent_retry != ParentRetry_t::NONE) {
-    // initialize simple server respones codes to the default value if simple_retry is enabled.
+    // initialize simple server responses codes to the default value if simple_retry is enabled.
     Warning("%s initializing SimpleRetryResponseCodes on line %d to 404 default.", modulePrefix, line_num);
     simple_server_retry_responses = new SimpleRetryResponseCodes(nullptr);
   }
@@ -1940,6 +1948,37 @@ EXCLUSIVE_REGRESSION_TEST(PARENTSELECTION)(RegressionTest * /* t ATS_UNUSED */, 
   br(request, "i.am.mouse.com");
   FP;
   RE(verify(result, ParentResultType::SPECIFIED, "minnie", 80), 213);
+
+  // Test 214
+  // Overlong hash_string (exceeding MAXDNAME chars) should be rejected by ProcessParents.
+  // The entry is discarded so findParent returns DIRECT.
+  {
+    tbl[0] = '\0';
+    ST(214);
+    std::string long_hash(MAXDNAME + 1, 'a');
+    std::string cfg = "dest_domain=. parent=host:80&" + long_hash + " round_robin=consistent_hash go_direct=true\n";
+    ink_strlcpy(tbl, cfg.c_str(), sizeof(tbl));
+    REBUILD;
+    REINIT;
+    br(request, "overlong.hash.net");
+    FP;
+    RE(verify(result, ParentResultType::DIRECT, nullptr, 0), 214);
+  }
+
+  // Test 215
+  // Max-length hash_string that fits (MAXDNAME chars) should be accepted.
+  {
+    tbl[0] = '\0';
+    ST(215);
+    std::string max_hash(MAXDNAME, 'b');
+    std::string cfg = "dest_domain=. parent=host:80&" + max_hash + " round_robin=consistent_hash go_direct=false\n";
+    ink_strlcpy(tbl, cfg.c_str(), sizeof(tbl));
+    REBUILD;
+    REINIT;
+    br(request, "maxlen.hash.net");
+    FP;
+    RE(verify(result, ParentResultType::SPECIFIED, "host", 80), 215);
+  }
 
   delete request;
   delete result;

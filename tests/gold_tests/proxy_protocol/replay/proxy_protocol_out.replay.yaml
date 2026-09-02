@@ -23,13 +23,9 @@ meta:
 sessions:
   # Basic https transaction
   - protocol:
-      - name: http
-        version: 1
-      - name: tls
+      stack: https
+      tls:
         sni: pp.origin.com
-      - name: tcp
-      - name: ip
-
     transactions:
       - client-request:
           method: GET

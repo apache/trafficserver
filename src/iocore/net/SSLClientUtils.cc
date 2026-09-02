@@ -24,9 +24,12 @@
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
 #include "SSLSessionCache.h"
+#include "TLSCertCompression.h"
+#include "iocore/net/TLSBasicSupport.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "iocore/net/SSLDiags.h"
 #include "tscore/ink_config.h"
+#include "tscore/SimpleTokenizer.h"
 #include "tscore/Filenames.h"
 #include "tscore/X509HostnameValidator.h"
 
@@ -103,17 +106,18 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   bool check_name =
     static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
   if (check_name) {
-    char          *matched_name = nullptr;
-    unsigned char *sni_name;
-    char           buff[INET6_ADDRSTRLEN];
+    char            *matched_name = nullptr;
+    std::string_view sni_name;
+    char             buff[INET6_ADDRSTRLEN];
     if (netvc->options.sni_servername) {
-      sni_name = reinterpret_cast<unsigned char *>(netvc->options.sni_servername.get());
+      sni_name = netvc->options.sni_servername.get();
     } else {
-      sni_name = reinterpret_cast<unsigned char *>(buff);
       ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+      sni_name = buff;
     }
     if (validate_hostname(cert, sni_name, false, &matched_name)) {
-      Dbg(dbg_ctl_ssl_verify, "Hostname %s verified OK, matched %s", sni_name, matched_name);
+      Dbg(dbg_ctl_ssl_verify, "Hostname %.*s verified OK, matched %s", static_cast<int>(sni_name.length()), sni_name.data(),
+          matched_name);
       ats_free(matched_name);
     } else { // Name validation failed
       // Get the server address if we did't already compute it
@@ -121,8 +125,8 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
         ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
       }
       // If we got here the verification failed
-      Warning("SNI (%s) not in certificate. Action=%s server=%s(%s)", sni_name, enforce_mode ? "Terminate" : "Continue",
-              netvc->options.ssl_servername.get(), buff);
+      Warning("SNI (%.*s) not in certificate. Action=%s server=%s(%s)", static_cast<int>(sni_name.length()), sni_name.data(),
+              enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
       return !enforce_mode;
     }
   }
@@ -149,6 +153,55 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   }
   // Made it this far.  All is good
   return true;
+}
+
+bool
+validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname)
+{
+  if (netvc == nullptr || hostname.empty() || netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return true;
+  }
+
+  auto *tls = netvc->get_service<TLSBasicSupport>();
+  auto *ssl = tls != nullptr ? tls->get_tls_handle() : nullptr;
+  if (ssl == nullptr) {
+    return true;
+  }
+
+  bool check_name =
+    static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
+  if (!check_name) {
+    return true;
+  }
+
+  char      *matched_name = nullptr;
+  bool const enforce_mode = netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::ENFORCED;
+  bool       verified     = false;
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
+  X509 *cert = SSL_get1_peer_certificate(ssl);
+#else
+  X509 *cert = SSL_get_peer_certificate(ssl);
+#endif
+
+  if (cert != nullptr) {
+    verified = validate_hostname(cert, hostname, false, &matched_name);
+    X509_free(cert);
+  }
+
+  if (verified) {
+    Dbg(dbg_ctl_ssl_verify, "Hostname %.*s verified OK for session reuse, matched %s", static_cast<int>(hostname.length()),
+        hostname.data(), matched_name != nullptr ? matched_name : "<unknown>");
+    ats_free(matched_name);
+    return true;
+  }
+
+  char        buff[INET6_ADDRSTRLEN];
+  const char *server_name = netvc->options.ssl_servername ? netvc->options.ssl_servername.get() : "<unknown>";
+  ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+  Warning("Origin hostname (%.*s) not in certificate. Action=%s server=%s(%s)", static_cast<int>(hostname.length()),
+          hostname.data(), enforce_mode ? "Terminate" : "Continue", server_name, buff);
+
+  return !enforce_mode;
 }
 
 static int
@@ -247,6 +300,18 @@ SSLInitClientContext(const SSLConfigParams *params)
   }
 #endif
 
+  if (params->client_cert_compression_algorithms) {
+    std::vector<std::string> algs;
+    SimpleTokenizer          tok(params->client_cert_compression_algorithms, ',');
+    for (const char *token = tok.getNext(); token; token = tok.getNext()) {
+      algs.emplace_back(token);
+    }
+    if (register_certificate_compression_preference(client_ctx, algs, true) != 1) {
+      SSLError("invalid client certificate compression algorithm list in %s", ts::filename::RECORDS);
+      goto fail;
+    }
+  }
+
   SSL_CTX_set_verify_depth(client_ctx, params->client_verify_depth);
   if (SSLConfigParams::init_ssl_ctx_cb) {
     SSLConfigParams::init_ssl_ctx_cb(client_ctx, false);
@@ -273,7 +338,7 @@ fail:
 }
 
 SSL_CTX *
-SSLCreateClientContext(const struct SSLConfigParams *params, const char *ca_bundle_path, const char *ca_bundle_file,
+SSLCreateClientContext(const struct SSLConfigParams *params, const char *ca_bundle_file, const char *ca_bundle_path,
                        const char *cert_path, const char *key_path)
 {
   std::unique_ptr<SSL_CTX, decltype(&SSL_CTX_free)> ctx(nullptr, &SSL_CTX_free);

@@ -25,10 +25,12 @@
 
 #include "iocore/net/SSLTypes.h"
 #include "tsutil/DbgCtl.h"
+#include "config/ssl_multicert.h"
 
 #include <openssl/ssl.h>
 #include <swoc/Errata.h>
 
+#include <mutex>
 #include <string>
 #include <set>
 #include <vector>
@@ -39,7 +41,7 @@ struct SSLMultiCertConfigParams;
 struct SSLLoadingContext;
 
 /**
-    @brief Load SSL certificates from ssl_multicert.config and setup SSLCertLookup for SSLCertificateConfig
+    @brief Load SSL certificates from ssl_multicert.yaml and setup SSLCertLookup for SSLCertificateConfig
  */
 class SSLMultiCertConfigLoader
 {
@@ -51,7 +53,7 @@ public:
   SSLMultiCertConfigLoader(const SSLConfigParams *p) : _params(p) {}
   virtual ~SSLMultiCertConfigLoader(){};
 
-  swoc::Errata load(SSLCertLookup *lookup);
+  swoc::Errata load(SSLCertLookup *lookup, bool firstLoad = false);
 
   virtual SSL_CTX *default_server_ssl_ctx();
 
@@ -82,12 +84,24 @@ protected:
   bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings, shared_SSL_CTX ctx,
                              SSLCertContextType ctx_type, std::set<std::string> &names);
 
+  /// Return true if this loader instance should increment the shared
+  /// ssl_multicert_load_failures metric on cert failure. The QUIC loader
+  /// returns false because it shares ssl_multicert.yaml with the TLS loader
+  /// and would otherwise double-count every failure on a QUIC-enabled build.
+  virtual bool _should_track_load_metrics() const;
+
 private:
   virtual const char   *_debug_tag() const;
   virtual const DbgCtl &_dbg_ctl() const;
   virtual bool          _store_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &ssl_multi_cert_params);
   bool _prep_ssl_ctx(const shared_SSLMultiCertConfigParams &sslMultCertSettings, SSLMultiCertConfigLoader::CertLoadData &data,
                      std::set<std::string> &common_names, std::unordered_map<int, std::set<std::string>> &unique_names);
+
+  void _load_items(SSLCertLookup *lookup, config::SSLMultiCertConfig::const_iterator begin,
+                   config::SSLMultiCertConfig::const_iterator end, int base_index, swoc::Errata &errata);
+
+  std::mutex _loader_mutex;
+
   virtual void _set_handshake_callbacks(SSL_CTX *ctx);
   virtual bool _setup_session_cache(SSL_CTX *ctx);
   virtual bool _setup_dialog(SSL_CTX *ctx, const SSLMultiCertConfigParams *sslMultCertSettings);
@@ -101,6 +115,7 @@ private:
   virtual bool _set_npn_callback(SSL_CTX *ctx);
   virtual bool _set_alpn_callback(SSL_CTX *ctx);
   virtual bool _set_keylog_callback(SSL_CTX *ctx);
+  virtual bool _enable_cert_compression(SSL_CTX *ctx);
   virtual bool _enable_ktls(SSL_CTX *ctx);
   virtual bool _enable_early_data(SSL_CTX *ctx);
 };

@@ -151,6 +151,7 @@ Cache Details
 .. _crc:
 .. _crsc:
 .. _chm:
+.. _ckh:
 .. _cwr:
 .. _cwtr:
 .. _crra:
@@ -166,6 +167,10 @@ Field Source         Description
 cluc  Client Request Cache Lookup URL, also known as the :term:`cache key`,
                      which is the canonicalized version of the client request
                      URL.
+ckh   Proxy Cache    Cache Key Hash. The base64-encoded cryptographic hash of the
+                     effective cache key used for cache lookup and storage. This
+                     is the actual key used to index cache objects. Empty
+                     (``-``) when no cache lookup was performed.
 crc   Proxy Cache    Cache Result Code. The result of |TS| attempting to obtain
                      the object from cache; :ref:`admin-logging-cache-results`.
 crsc  Proxy Cache    Cache Result Sub-Code. More specific code to complement the
@@ -314,8 +319,54 @@ prior to the log field's name, as so::
     Format = '%<{User-agent}cqh>'
 
 The above would insert the User Agent string from the client request headers
-into your log entry (or a blank string if no such header was present, or it did
-not contain a value).
+into your log entry (or ``-`` if no such header was present).
+
+Header fields can also be chained with a fallback operator, ``??``, when you want
+the log to use the first header that exists among n headers. For example::
+
+    Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??{x-tertiary-id}cqh>'
+
+|TS| evaluates the candidates from left to right and logs the first header that
+exists. If none of the headers exist, |TS| logs ``-`` by default. A header that
+exists but has an empty value is considered present, so |TS| logs the empty
+value instead of falling back. So in the example above, the value of
+x-primary-id of the client request is logged if it exists, otherwise the value
+of x-secondary-id is logged if it exists, otherwise ``-`` is logged if neither
+of the headers is present.
+
+The final log field in the chain can be a non-header log field whose value
+specifies the final fallback in the chain. This symbol is used only after all
+the previous header candidates in the chain are missing. For example::
+
+    Format = '%<{x-remote-ip}cqh??chi>'
+
+In this case, the value of the x-remote-ip HTTP header field is logged if that
+client request header exists. Otherwise, |TS| logs the value of ``chi``, the IP
+address of the client host.
+
+The final non-HTTP header log field must be the last term in the chain, so
+forms like ``%<chi??{x-id}cqh>`` are invalid.
+
+Alternatively, you can provide an explicit quoted default literal as the final
+term in the chain to use instead of the default ``-`` literal::
+
+    Format = '%<{x-primary-id}cqh??{x-secondary-id}cqh??"missing-id">'
+
+If none of the headers exist, |TS| logs the default literal instead,
+``missing-id`` in this case. The default literal must be quoted and must be the
+last term in the chain. Also, final non-header log fields and final default
+string literals cannot be used together. Thus forms like
+'%<{x-remote-ip}cqh??chi??"missing-id">' are invalid.
+
+
+Slices apply to each candidate in the fallback chain individually::
+
+    Format = '%<{x-primary-id}cqh[0:8]??{x-secondary-id}cqh[0:16]>'
+
+This is also true of non-header log fields. That is, if the final log field
+supports slicing, its own slice is preserved as usual::
+
+    Format = '%<{x-remote-ip}cqh??pqup[0:8]>'
 
 ===== ====================== ==================================================
 Field Source                 Description
@@ -426,6 +477,7 @@ Lengths and Sizes
 .. _cqcl:
 .. _cqhl:
 .. _cqql:
+.. _cqqtl:
 .. _csscl:
 .. _csshl:
 .. _cssql:
@@ -436,6 +488,7 @@ Lengths and Sizes
 .. _pscl:
 .. _pshl:
 .. _psql:
+.. _psqtl:
 .. _sscl:
 .. _sshl:
 .. _ssql:
@@ -451,6 +504,10 @@ cqcl  Client Request         Client request content length, in bytes.
 cqhl  Client Request         Client request header length, in bytes.
 cqql  Client Request         Client request header and content length combined,
                              in bytes.
+cqqtl Client Request         Same as cqql_, but for the first transaction on a
+                             TLS connection, also includes TLS handshake bytes
+                             received from the client. Note that this metric
+                             may not always be 100% accurate.
 csscl Cached Origin Response Content body length from cached origin response.
 csshl Cached Origin Response Header length from cached origin response.
 cssql Cached Origin Response Content and header length from cached origin
@@ -466,6 +523,10 @@ pscl  Proxy Response         Content body length of the |TS| proxy response.
 pshl  Proxy Response         Header length of the |TS| response to client.
 psql  Proxy Response         Content body and header length combined of the
                              |TS| response to client.
+psqtl Proxy Response         Same as psql_, but for the first transaction on a
+                             TLS connection, also includes TLS handshake bytes
+                             sent to the client. Note that this metric may not
+                             always be 100% accurate.
 sscl  Origin Response        Content body length of the origin server response
                              to |TS|.
 sshl  Origin Response        Header length of the origin server response.
@@ -631,6 +692,9 @@ SSL / Encryption
 .. _cqssc:
 .. _cqssu:
 .. _cqssa:
+.. _cthbr:
+.. _cthbt:
+.. _cthb:
 .. _pqssl:
 .. _pscert:
 
@@ -667,6 +731,17 @@ cqssg  Client Request SSL Group used by |TS| to communicate with the client.
                       OpenSSL 3.2 or later or a version of BoringSSL that
                       supports querying group names.
 cqssa  Client Request ALPN Protocol ID negotiated with the client.
+cthbr  Client Request TLS handshake bytes received from the client. This is the
+                      number of bytes read from the client during the TLS
+                      handshake. Populated for all transactions on a TLS connection,
+                      including reused connections.
+cthbt  Client Request TLS handshake bytes sent to the client. This is the number
+                      of bytes written to the client during the TLS handshake.
+                      Populated for all transactions on a TLS connection,
+                      including reused connections.
+cthb   Client Request Total TLS handshake bytes (received + sent). This is the
+                      sum of cthbr_ and cthbt_. Populated for all transactions
+                      on a TLS connection, including reused connections.
 pqssl  Proxy Request  Indicates whether the connection from |TS| to the origin
                       was over SSL or not.
 pqssr  Proxy Request  SSL session ticket reused status from |TS| to the origin;

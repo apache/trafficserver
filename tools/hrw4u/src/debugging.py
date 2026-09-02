@@ -18,7 +18,6 @@
 from __future__ import annotations
 
 import sys
-import types
 
 from .common import SystemDefaults
 
@@ -35,16 +34,6 @@ class Dbg:
             if levels:
                 msg = f"</{msg}>" if out else f"<{msg}>"
             print(f"{SystemDefaults.DEBUG_PREFIX} {' ' * (self.indent * SystemDefaults.INDENT_SPACES)}{msg}", file=sys.stderr)
-
-    def __enter__(self) -> "Dbg":
-        if self.enabled:
-            self.indent += 1
-        return self
-
-    def __exit__(
-            self, exc_type: type[BaseException] | None, exc_val: BaseException | None, exc_tb: types.TracebackType | None) -> None:
-        if self.enabled:
-            self.indent = max(0, self.indent - 1)
 
     def enter(self, msg: str) -> None:
         if self.enabled:

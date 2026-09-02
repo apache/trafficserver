@@ -39,6 +39,10 @@
 constexpr std::string_view SLICE_CRR_HEADER = {"Slice-Crr-Status"};
 constexpr std::string_view SLICE_CRR_VAL    = "1";
 
+// extent of the object a PURGE removed, reported by ATS on a successful purge.
+// Emitted by HttpTransact::delete_all_document_alternates_and_return.
+constexpr std::string_view PURGED_CONTENT_RANGE = {"X-Purged-Content-Range"};
+
 /**
   Designed to be a cheap throwaway struct which allows a
   consumer to make various calls to manipulate headers.
@@ -114,7 +118,9 @@ struct HttpHeader {
   // returns false if header invalid or something went wrong with removal.
   bool removeKey(char const *const key, int const keylen);
 
-  // retrieves header value as a char*
+  // retrieves header value as a null terminated char* in valstr.
+  // caller must ensure the valstr buffer has sufficient capacity.
+  // null termination only guaranteed on success.
   bool valueForKey(char const *const keystr, int const keylen,
                    char *const valstr,    // <-- return string value
                    int *const  vallen,    // <-- pass in capacity, returns len of string
@@ -204,6 +210,13 @@ struct HdrMgr {
       TSMBufferDestroy(m_buffer);
     }
   }
+
+  /** Create an owned HTTP/1.1 response header with the given status.
+   *
+   * For a response slice forms itself, with no server response to relay. An
+   * intercept is an HTTP/1.x channel, so the version is not negotiable.
+   */
+  bool create_response(TSHttpStatus const status);
 
   void
   resetHeader()

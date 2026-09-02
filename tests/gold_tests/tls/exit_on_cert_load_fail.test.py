@@ -58,7 +58,13 @@ class Test_exit_on_cert_load_fail:
             # Also setup the server certs so that issues are limited to client
             # cert loading.
             self._ts.addDefaultSSLFiles()
-        self._ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self._ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',

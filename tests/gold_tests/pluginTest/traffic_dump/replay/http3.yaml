@@ -28,10 +28,10 @@ meta:
           - [ Connection, close ]
 
 sessions:
-- protocol: [ {name: http, version: 3},
-              {name: tls, sni: www.tls.com},
-              {name: udp},
-              {name: ip} ]
+- protocol:
+    stack: http3
+    tls:
+      sni: www.tls.com
 
   transactions:
   - client-request:

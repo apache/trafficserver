@@ -1,0 +1,6 @@
+REMAP {
+    if inbound.req.Debug {
+        # to return the debug header if http header debug: on
+        inbound.req.@DebugHeader = "TRUE";
+    }
+}

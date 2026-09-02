@@ -21,6 +21,7 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <string>
 
 extern "C" {
 #include <jansson.h>
@@ -34,6 +35,7 @@ extern "C" {
 #include "../config.h"
 
 #include "tscore/Version.h"
+#include "tsutil/LocalBuffer.h"
 
 AppVersionInfo appVersionInfo;
 
@@ -169,43 +171,47 @@ jwt_parsing_helper(const char *jwt_string)
 bool
 normalize_uri_helper(const char *uri, const char *expected_normal)
 {
-  size_t uri_ct    = strlen(uri);
-  int    buff_size = uri_ct + 2;
+  size_t uri_ct       = strlen(uri);
+  size_t requested_ct = uri_ct + 2;
   int    err;
-  char  *uri_normal = static_cast<char *>(malloc(buff_size));
-  memset(uri_normal, 0, buff_size);
 
-  err = normalize_uri(uri, uri_ct, uri_normal, buff_size);
+  ts::LocalBuffer<char> uri_normal(requested_ct);
+  memset(uri_normal.data(), 0, requested_ct);
+
+  err = normalize_uri(uri, static_cast<int>(uri_ct), uri_normal.data(), static_cast<int>(requested_ct));
 
   if (err) {
-    free(uri_normal);
     return false;
   }
 
-  if (expected_normal && strcmp(expected_normal, uri_normal) == 0) {
-    free(uri_normal);
+  if (expected_normal && strcmp(expected_normal, uri_normal.data()) == 0) {
     return true;
   }
 
-  free(uri_normal);
   return false;
 }
 
 bool
 remove_dot_helper(const char *path, const char *expected_path)
 {
-  fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
   size_t path_ct = strlen(path);
-  path_ct++;
-  int  new_ct;
-  char path_buffer[path_ct];
-  memset(path_buffer, 0, path_ct);
 
-  new_ct = remove_dot_segments(path, path_ct, path_buffer, path_ct);
+  if (path_ct > 120) {
+    fprintf(stderr, "Removing Dot Segments from Path: %.120s... (%zu bytes)\n", path, path_ct);
+  } else {
+    fprintf(stderr, "Removing Dot Segments from Path: %s\n", path);
+  }
+  size_t requested_ct = path_ct + 1;
+  int    new_ct;
+
+  ts::LocalBuffer<char> path_buffer(requested_ct);
+  memset(path_buffer.data(), 0, requested_ct);
+
+  new_ct = remove_dot_segments(path, static_cast<int>(path_ct), path_buffer.data(), static_cast<int>(requested_ct));
 
   if (new_ct < 0) {
     return false;
-  } else if (strcmp(expected_path, path_buffer) == 0) {
+  } else if (strcmp(expected_path, path_buffer.data()) == 0) {
     return true;
   } else {
     return false;
@@ -216,22 +222,23 @@ bool
 jws_parsing_helper(const char *uri, const char *paramName, const char *expected_strip)
 {
   bool   resp;
-  size_t uri_ct   = strlen(uri);
-  size_t strip_ct = 0;
+  size_t uri_ct       = strlen(uri);
+  size_t strip_ct     = 0;
+  size_t requested_ct = uri_ct + 1;
 
-  char *uri_strip = static_cast<char *>(malloc(uri_ct + 1));
-  memset(uri_strip, 0, uri_ct + 1);
+  ts::LocalBuffer<char> uri_strip(requested_ct);
+  memset(uri_strip.data(), 0, requested_ct);
 
-  cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip, uri_ct, &strip_ct);
+  cjose_jws_t *jws = get_jws_from_uri(uri, uri_ct, paramName, uri_strip.data(), requested_ct, &strip_ct);
   if (jws) {
     resp = true;
     if (expected_strip != nullptr) {
-      if (strcmp(uri_strip, expected_strip) != 0) {
+      if (strcmp(uri_strip.data(), expected_strip) != 0) {
         resp = false;
       }
     } else {
       // expected_strip == nullptr means we expect uri_strip to be empty
-      if (uri_strip[0] != '\0') {
+      if (uri_strip.data()[0] != '\0') {
         resp = false;
       }
     }
@@ -239,7 +246,6 @@ jws_parsing_helper(const char *uri, const char *paramName, const char *expected_
     resp = false;
   }
   cjose_jws_release(jws);
-  free(uri_strip);
   return resp;
 }
 
@@ -441,7 +447,7 @@ TEST_CASE("2", "[JWSFromURLTest]")
   }
 }
 
-TEST_CASE("3", "[RemoveDotSegmentsTest]")
+TEST_CASE("3", "[RemoveDotSegmentsTest][large-path]")
 {
   INFO("TEST 3, Test Removal of Dot Segments From Paths");
 
@@ -534,6 +540,24 @@ TEST_CASE("3", "[RemoveDotSegmentsTest]")
   {
     REQUIRE(remove_dot_helper("/foo/bar/././something/../foobar", "/foo/bar/foobar"));
   }
+
+  SECTION("Large path normalization scenario")
+  {
+    std::string large_path = "/" + std::string(70000, 'a');
+    REQUIRE(remove_dot_helper(large_path.c_str(), large_path.c_str()));
+  }
+
+  SECTION("500 plus dot-segment normalization scenario")
+  {
+    std::string many_segments;
+    many_segments.reserve(4 * 512 + 4);
+    for (int i = 0; i < 512; ++i) {
+      many_segments += "/../";
+    }
+    many_segments += "bar";
+    REQUIRE(remove_dot_helper(many_segments.c_str(), "/bar"));
+  }
+
   fprintf(stderr, "\n");
 }
 
@@ -650,6 +674,133 @@ TEST_CASE("4", "[NormalizeTest]")
   {
     REQUIRE(!normalize_uri_helper("http://?/", nullptr));
   }
+
+  SECTION("Userinfo with colon-separated credentials and default port")
+  {
+    REQUIRE(normalize_uri_helper("https://admin:443@cdn.example.com:443/content/video.mp4",
+                                 "https://admin:443@cdn.example.com/content/video.mp4"));
+  }
+
+  SECTION("Userinfo with numeric password over http with default port")
+  {
+    REQUIRE(normalize_uri_helper("http://user:80@origin.example.net:80/assets/img.png",
+                                 "http://user:80@origin.example.net/assets/img.png"));
+  }
+
+  SECTION("Userinfo numeric password over http without host port")
+  {
+    REQUIRE(
+      normalize_uri_helper("http://deploy:80@origin.example.net/release/v2", "http://deploy:80@origin.example.net/release/v2"));
+  }
+
+  SECTION("Userinfo with colon but no host port")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://token:443@storage.example.io/bucket/obj", "https://token:443@storage.example.io/bucket/obj"));
+  }
+
+  SECTION("Userinfo with non-default numeric value and host default port")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://svc:8080@api.example.com:443/v1/resource", "https://svc:8080@api.example.com/v1/resource"));
+  }
+
+  SECTION("Userinfo containing only digits after colon")
+  {
+    REQUIRE(normalize_uri_helper("http://node:3000@cluster.local:80/healthz", "http://node:3000@cluster.local/healthz"));
+  }
+
+  SECTION("Userinfo with empty password and host port")
+  {
+    REQUIRE(normalize_uri_helper("https://user:@files.example.org:443/doc.pdf", "https://user:@files.example.org/doc.pdf"));
+  }
+
+  SECTION("Simple username without password and host default port")
+  {
+    REQUIRE(normalize_uri_helper("http://anonymous@mirror.example.com:80/pub/archive.tar.gz",
+                                 "http://anonymous@mirror.example.com/pub/archive.tar.gz"));
+  }
+
+  SECTION("Userinfo with percent-encoded colon and host default port")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://user%3Aname:pass@host.example.com:443/path", "https://user%3Aname:pass@host.example.com/path"));
+  }
+
+  SECTION("Userinfo with multiple colons")
+  {
+    REQUIRE(normalize_uri_helper("http://a:b:c@www.example.com:80/index.html", "http://a:b:c@www.example.com/index.html"));
+  }
+
+  SECTION("Userinfo preserves case while host is lowered")
+  {
+    REQUIRE(normalize_uri_helper("https://MyUser:MyPass@WWW.EXAMPLE.COM:443/Path", "https://MyUser:MyPass@www.example.com/Path"));
+  }
+
+  SECTION("Userinfo with non-default host port preserved")
+  {
+    REQUIRE(
+      normalize_uri_helper("https://ops:deploy@internal.example.com:8443/api", "https://ops:deploy@internal.example.com:8443/api"));
+  }
+
+  SECTION("Userinfo with query string and fragment")
+  {
+    REQUIRE(normalize_uri_helper("http://cache:secret@edge.example.net:80/video?quality=hd#t=10",
+                                 "http://cache:secret@edge.example.net/video?quality=hd#t=10"));
+  }
+
+  SECTION("Userinfo with encoded at-sign in username")
+  {
+    REQUIRE(normalize_uri_helper("http://foo%40bar:baz@www.example.com:80/", "http://foo%40bar:baz@www.example.com/"));
+  }
+
+  SECTION("Long userinfo with embedded port-like substring")
+  {
+    REQUIRE(normalize_uri_helper("https://serviceaccount:443secret@backend.example.com:443/rpc",
+                                 "https://serviceaccount:443secret@backend.example.com/rpc"));
+  }
+
+  SECTION("Userinfo digits matching port pattern but not at boundary")
+  {
+    REQUIRE(normalize_uri_helper("http://x:12380@lb.example.com:80/status", "http://x:12380@lb.example.com/status"));
+  }
+
+  SECTION("Userinfo and host both without port")
+  {
+    REQUIRE(normalize_uri_helper("https://readonly:tok@repo.example.com/org/project",
+                                 "https://readonly:tok@repo.example.com/org/project"));
+  }
+
+  SECTION("Userinfo with path dot-segment removal")
+  {
+    REQUIRE(normalize_uri_helper("https://ci:runner@build.example.com:443/workspace/../output/artifact.zip",
+                                 "https://ci:runner@build.example.com/output/artifact.zip"));
+  }
+
+  SECTION("FQDN-style userinfo with port-like suffix and host default port")
+  {
+    REQUIRE(normalize_uri_helper("https://registry.internal:443@cdn.example.com:443/v2/image/manifests/latest",
+                                 "https://registry.internal:443@cdn.example.com/v2/image/manifests/latest"));
+  }
+
+  SECTION("FQDN-style userinfo with port-like suffix and host without port")
+  {
+    REQUIRE(normalize_uri_helper("https://upstream.proxy.local:443@edge.example.net/assets/bundle.js",
+                                 "https://upstream.proxy.local:443@edge.example.net/assets/bundle.js"));
+  }
+
+  SECTION("FQDN-style userinfo with http default port value")
+  {
+    REQUIRE(normalize_uri_helper("http://cache.node.dc1:80@origin.example.com:80/media/stream.m3u8",
+                                 "http://cache.node.dc1:80@origin.example.com/media/stream.m3u8"));
+  }
+
+  SECTION("FQDN-style userinfo without port and host default port")
+  {
+    REQUIRE(normalize_uri_helper("https://forwarder.mesh.internal@gateway.example.com:443/api/v1/tokens",
+                                 "https://forwarder.mesh.internal@gateway.example.com/api/v1/tokens"));
+  }
+
   fprintf(stderr, "\n");
 }
 
@@ -784,15 +935,18 @@ TEST_CASE("7", "[TestsConfig]")
 bool
 jws_validation_helper(const char *url, const char *package, struct config *cfg)
 {
-  size_t url_ct   = strlen(url);
-  size_t strip_ct = 0;
-  char   uri_strip[url_ct + 1];
-  memset(uri_strip, 0, sizeof uri_strip);
-  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, uri_strip, url_ct, &strip_ct);
+  size_t url_ct       = strlen(url);
+  size_t strip_ct     = 0;
+  size_t requested_ct = url_ct + 1;
+
+  ts::LocalBuffer<char> uri_strip(requested_ct);
+  memset(uri_strip.data(), 0, requested_ct);
+
+  cjose_jws_t *jws = get_jws_from_uri(url, url_ct, package, uri_strip.data(), requested_ct, &strip_ct);
   if (!jws) {
     return false;
   }
-  struct jwt *jwt = validate_jws(jws, cfg, uri_strip, strip_ct);
+  struct jwt *jwt = validate_jws(jws, cfg, uri_strip.data(), strip_ct);
   cjose_jws_release(jws);
   if (!jwt) {
     return false;

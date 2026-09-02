@@ -179,6 +179,7 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
    Hook Trace <hook-trace.en>
    ICAP <icap.en>
    JA4 Fingerprint <ja4_fingerprint.en>
+   JAx Fingerprint <jax_fingerprint.en>
    Maxmind ACL <maxmind_acl.en>
    Memcache <memcache.en>
    Memory Profile <memory_profile.en>
@@ -235,6 +236,9 @@ directory of the |TS| source tree. Experimental plugins can be compiled by passi
 
 :doc:`JA4 Fingerprint <ja4_fingerprint.en>`
    Calculates JA4 Fingerprints for incoming TLS traffic.
+
+:doc:`JAx Fingerprint <jax_fingerprint.en>`
+   Calculates JAx Fingerprints.
 
 :doc:`MaxMind ACL <maxmind_acl.en>`
    ACL based on the maxmind geo databases (GeoIP2 mmdb and libmaxminddb)

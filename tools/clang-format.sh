@@ -24,8 +24,12 @@ PKGDATE="20240430"
 function main() {
   set -e # exit on error
 
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  ROOT=${ROOT:-${GIT_DIR}/fmt/${PKGDATE}}
+  # Resolve the common git directory, which is shared by all linked worktrees, so the
+  # downloaded clang-format is cached and found in one place.  --git-common-dir can return a
+  # relative path, so make it absolute without --path-format (which needs git 2.31+); this
+  # matches how CMakeLists.txt resolves GIT_COMMON_DIR.
+  GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
   # The presence of this file indicates clang-format was successfully installed.
   INSTALLED_SENTINEL=${ROOT}/.clang-format-installed
 
@@ -38,7 +42,7 @@ function main() {
       exit 2
     fi
   fi
-  DIR=${@:-$(dirname ${GIT_DIR})}
+  DIR=${@:-$(git rev-parse --show-toplevel)}
   PACKAGE="clang-format-${PKGDATE}.tar.bz2"
   VERSION="clang-format version 18.1.2 (https://github.com/llvm/llvm-project.git 26a1d6601d727a96f4301d0d8647b5a42760ae0c)"
 
@@ -100,7 +104,7 @@ EOF
   start_time_file=$(mktemp -t clang-format-start-time.XXXXXXXXXX)
   touch ${start_time_file}
 
-  target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in -o -iname \*.hpp -o -iname \*.cript | grep -vE 'lib/(Catch2|fastlz|ls-hpack|swoc|systemtap|yamlcpp)')
+  target_files=$(find $DIR -iname \*.[ch] -o -iname \*.cc -o -iname \*.h.in -o -iname \*.hpp -o -iname \*.cript | grep -vE 'lib/(Catch2|fastlz|highway|ls-hpack|swoc|systemtap|yamlcpp)')
   for file in ${target_files}; do
     # The ink_autoconf.h and ink_autoconf.h.in files are generated files,
     # so they do not need to be re-formatted by clang-format. Doing so
@@ -119,6 +123,6 @@ EOF
 if [[ "$(basename -- "$0")" == 'clang-format.sh' ]]; then
   main "$@"
 else
-  GIT_DIR=$(git rev-parse --absolute-git-dir)
-  ROOT=${ROOT:-${GIT_DIR}/fmt/${PKGDATE}}
+  GIT_COMMON_DIR=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+  ROOT=${ROOT:-${GIT_COMMON_DIR}/fmt/${PKGDATE}}
 fi

@@ -33,7 +33,9 @@
 #include "ts/ats_probe.h"
 #include "iocore/eventsystem/Tasks.h"
 
+#include <thread>
 #include <unordered_map>
+#include <utility>
 
 #ifdef LOOP_CHECK_MODE
 #define DIR_LOOP_THRESHOLD 1000
@@ -123,7 +125,6 @@ OpenDir::signal_readers(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   while ((c = delayed_readers.dequeue())) {
     CACHE_TRY_LOCK(lock, c->mutex, t);
     if (lock.is_locked()) {
-      c->f.open_read_timeout = 0;
       c->handleEvent(EVENT_IMMEDIATE, nullptr);
       continue;
     }
@@ -210,16 +211,16 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-dir_init_segment(int s, Directory *directory)
+Directory::init_segment(int s)
 {
-  directory->header->freelist[s] = 0;
-  Dir *seg                       = directory->get_segment(s);
+  this->header->freelist[s] = 0;
+  Dir *seg                  = this->get_segment(s);
   int  l, b;
-  memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * directory->buckets);
+  memset(static_cast<void *>(seg), 0, SIZEOF_DIR * DIR_DEPTH * this->buckets);
   for (l = 1; l < DIR_DEPTH; l++) {
-    for (b = 0; b < directory->buckets; b++) {
+    for (b = 0; b < this->buckets; b++) {
       Dir *bucket = dir_bucket(b, seg);
-      directory->free_entry(dir_bucket_row(bucket, l), s);
+      this->free_entry(dir_bucket_row(bucket, l), s);
     }
   }
 }
@@ -227,11 +228,11 @@ dir_init_segment(int s, Directory *directory)
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
-dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory)
+Directory::bucket_loop_fix(Dir *start_dir, int s)
 {
-  if (!dir_bucket_loop_check(start_dir, directory->get_segment(s))) {
+  if (!dir_bucket_loop_check(start_dir, this->get_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
-    dir_init_segment(s, directory);
+    this->init_segment(s);
     return 1;
   }
   return 0;
@@ -243,7 +244,7 @@ Directory::freelist_length(int s)
   int  free = 0;
   Dir *seg  = this->get_segment(s);
   Dir *e    = dir_from_offset(this->header->freelist[s], seg);
-  if (dir_bucket_loop_fix(e, s, this)) {
+  if (this->bucket_loop_fix(e, s)) {
     return (DIR_DEPTH - 1) * this->buckets;
   }
   while (e) {
@@ -260,7 +261,7 @@ Directory::bucket_length(Dir *b, int s)
   int  i   = 0;
   Dir *seg = this->get_segment(s);
 #ifdef LOOP_CHECK_MODE
-  if (dir_bucket_loop_fix(b, s, this))
+  if (this->bucket_loop_fix(b, s))
     return 1;
 #endif
   while (e) {
@@ -274,75 +275,35 @@ Directory::bucket_length(Dir *b, int s)
 }
 
 int
-Directory::check()
+Directory::check_segment(int s)
 {
-  int i, s;
-  Dbg(dbg_ctl_cache_check_dir, "inside check dir");
-  for (s = 0; s < this->segments; s++) {
-    Dir *seg = this->get_segment(s);
-    for (i = 0; i < this->buckets; i++) {
-      Dir *b = dir_bucket(i, seg);
-      if (!(this->bucket_length(b, s) >= 0)) {
-        return 0;
-      }
-      if (!(!dir_next(b) || dir_offset(b))) {
-        return 0;
-      }
-      if (!(dir_bucket_loop_check(b, seg))) {
-        return 0;
-      }
+  Dir *seg = this->get_segment(s);
+
+  for (int i = 0; i < this->buckets; i++) {
+    Dir *b = dir_bucket(i, seg);
+    if (!(this->bucket_length(b, s) >= 0)) {
+      return 0;
+    }
+    if (!(!dir_next(b) || dir_offset(b))) {
+      return 0;
+    }
+    if (!(dir_bucket_loop_check(b, seg))) {
+      return 0;
     }
   }
   return 1;
 }
 
-inline void
-unlink_from_freelist(Dir *e, int s, Directory *directory)
+int
+Directory::check()
 {
-  Dir *seg = directory->get_segment(s);
-  Dir *p   = dir_from_offset(dir_prev(e), seg);
-  if (p) {
-    dir_set_next(p, dir_next(e));
-  } else {
-    directory->header->freelist[s] = dir_next(e);
-  }
-  Dir *n = dir_from_offset(dir_next(e), seg);
-  if (n) {
-    dir_set_prev(n, dir_prev(e));
-  }
-}
-
-inline Dir *
-dir_delete_entry(Dir *e, Dir *p, int s, Directory *directory)
-{
-  Dir *seg                 = directory->get_segment(s);
-  int  no                  = dir_next(e);
-  directory->header->dirty = 1;
-  if (p) {
-    unsigned int fo = directory->header->freelist[s];
-    unsigned int eo = dir_to_offset(e, seg);
-    dir_clear(e);
-    dir_set_next(p, no);
-    dir_set_next(e, fo);
-    if (fo) {
-      dir_set_prev(dir_from_offset(fo, seg), eo);
-    }
-    directory->header->freelist[s] = eo;
-  } else {
-    Dir *n = next_dir(e, seg);
-    if (n) {
-      // "Shuffle" here means that we're copying the second entry's data to the head entry's location, and removing the second entry
-      // - because the head entry can't be moved.
-      ATS_PROBE3(cache_dir_shuffle, s, dir_to_offset(e, seg), dir_to_offset(n, seg));
-      dir_assign(e, n);
-      dir_delete_entry(n, e, s, directory);
-      return e;
-    } else {
-      dir_clear(e);
-      return nullptr;
+  Dbg(dbg_ctl_cache_check_dir, "inside check dir");
+  for (int s = 0; s < this->segments; s++) {
+    if (!this->check_segment(s)) {
+      return 0;
     }
   }
-  return dir_from_offset(no, seg);
+  return 1;
 }
 
 inline void
@@ -357,7 +318,7 @@ dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
 #ifdef LOOP_CHECK_MODE
     loop_count++;
     if (loop_count > DIR_LOOP_THRESHOLD) {
-      if (dir_bucket_loop_fix(b, s, vol->directory))
+      if (stripe->directory.bucket_loop_fix(b, s))
         return;
     }
 #endif
@@ -372,7 +333,7 @@ dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
       }
       // Match cache_dir_remove arguments
       ATS_PROBE7(cache_dir_remove_clean_bucket, stripe->fd, s, dir_to_offset(e, seg), dir_offset(e), dir_approx_size(e), 0, 0);
-      e = dir_delete_entry(e, p, s, &stripe->directory);
+      e = stripe->directory.delete_entry(e, p, s);
       continue;
     }
     p = e;
@@ -462,7 +423,7 @@ freelist_pop(int s, StripeSM *stripe)
   stripe->directory.header->freelist[s] = dir_next(e);
   // if the freelist if bad, punt.
   if (dir_offset(e)) {
-    dir_init_segment(s, &stripe->directory);
+    stripe->directory.init_segment(s);
     return nullptr;
   }
   Dir *h = dir_from_offset(stripe->directory.header->freelist[s], seg);
@@ -495,7 +456,7 @@ Directory::probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_
   Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
   CHECK_DIR(d);
 #ifdef LOOP_CHECK_MODE
-  if (dir_bucket_loop_fix(dir_bucket(b, seg), s, this))
+  if (this->bucket_loop_fix(dir_bucket(b, seg), s))
     return 0;
 #endif
 Lagain:
@@ -506,7 +467,7 @@ Lagain:
         ink_assert(dir_offset(e));
         // Bug: 51680. Need to check collision before checking
         // dir_valid(). In case of a collision, if !dir_valid(), we
-        // don't want to call dir_delete_entry.
+        // don't want to call Directory::delete_entry.
         if (collision) {
           if (collision == e) {
             collision = nullptr;
@@ -533,7 +494,7 @@ Lagain:
           ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
           ATS_PROBE7(cache_dir_remove_invalid, stripe->fd, s, dir_to_offset(e, seg), dir_offset(e), dir_approx_size(e),
                      key->slice64(0), key->slice64(1));
-          e = dir_delete_entry(e, p, s, this);
+          e = this->delete_entry(e, p, s);
           continue;
         }
       } else {
@@ -585,7 +546,7 @@ Lagain:
   for (l = 1; l < DIR_DEPTH; l++) {
     e = dir_bucket_row(b, l);
     if (dir_is_empty(e)) {
-      unlink_from_freelist(e, s, this);
+      this->unlink_from_freelist(e, s);
       goto Llink;
     }
   }
@@ -653,7 +614,7 @@ Lagain:
 #ifdef LOOP_CHECK_MODE
       loop_count++;
       if (loop_count > DIR_LOOP_THRESHOLD && loop_possible) {
-        if (dir_bucket_loop_fix(b, s, this)) {
+        if (this->bucket_loop_fix(b, s)) {
           loop_possible = false;
           goto Lagain;
         }
@@ -679,7 +640,7 @@ Lagain:
   for (l = 1; l < DIR_DEPTH; l++) {
     e = dir_bucket_row(b, l);
     if (dir_is_empty(e)) {
-      unlink_from_freelist(e, s, this);
+      this->unlink_from_freelist(e, s);
       goto Llink;
     }
   }
@@ -733,7 +694,7 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
 #ifdef LOOP_CHECK_MODE
       loop_count++;
       if (loop_count > DIR_LOOP_THRESHOLD) {
-        if (dir_bucket_loop_fix(dir_bucket(b, seg), s, this))
+        if (this->bucket_loop_fix(dir_bucket(b, seg), s))
           return 0;
       }
 #endif
@@ -743,7 +704,7 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
         ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used);
         ATS_PROBE7(cache_dir_remove, stripe->fd, s, dir_to_offset(e, seg), offset, dir_approx_size(e), key->slice64(0),
                    key->slice64(1));
-        dir_delete_entry(e, p, s, this);
+        this->delete_entry(e, p, s);
         CHECK_DIR(d);
         return 1;
       }
@@ -939,7 +900,7 @@ Directory::entries_used()
     sfull    = 0;
     for (int b = 0; b < this->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, this)) {
+      if (this->bucket_loop_fix(e, s)) {
         sfull = 0;
         break;
       }
@@ -958,20 +919,47 @@ Directory::entries_used()
 }
 
 /*
- * this function flushes the cache meta data to disk when
+ * This function flushes the cache meta data to disk when
  * the cache is shutdown. Must *NOT* be used during regular
- * operation.
+ * operation. Stripes are synced in parallel, one thread per
+ * physical disk.
  */
 
 void
 sync_cache_dir_on_shutdown()
 {
-  Dbg(dbg_ctl_cache_dir_sync, "sync started");
-  EThread *t = reinterpret_cast<EThread *>(0xdeadbeef);
+  Dbg(dbg_ctl_cache_dir_sync, "shutdown sync started");
+
+  std::unordered_map<CacheDisk *, std::vector<int>> drive_stripe_map;
+
   for (int i = 0; i < gnstripes; i++) {
-    gstripes[i]->shutdown(t);
+    drive_stripe_map[gstripes[i]->disk].push_back(i);
   }
-  Dbg(dbg_ctl_cache_dir_sync, "sync done");
+
+  std::vector<std::thread> threads;
+
+  threads.reserve(drive_stripe_map.size());
+  for (auto &[disk, indices] : drive_stripe_map) {
+    Dbg(dbg_ctl_cache_dir_sync, "Disk %s: syncing %zu stripe(s)", disk->path, indices.size());
+    auto stripe_indices = indices;
+    threads.emplace_back([stripe_indices = std::move(stripe_indices)]() {
+      // Use a thread_local variable to give each OS thread a unique EThread* sentinel instead of 0xdeadbeef.
+      thread_local char thread_sentinel;
+      EThread          *t = reinterpret_cast<EThread *>(&thread_sentinel);
+
+      for (int idx : stripe_indices) {
+        gstripes[idx]->shutdown(t);
+      }
+    });
+  }
+
+  for (auto &thr : threads) {
+    thr.join();
+  }
+
+  // The event system is still up here, so the shm trust flag is not set yet -- the caller marks it clean only
+  // after shutting the event system down. See CacheShm::mark_clean_shutdown.
+  Dbg(dbg_ctl_cache_dir_sync, "shutdown sync done");
 }
 
 int
@@ -1043,7 +1031,7 @@ Lrestart:
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
          the serial number causes the cache to recover more data than necessary.
-         The dirty bit it set in dir_insert, overwrite and dir_delete_entry
+         The dirty bit is set in dir_insert, overwrite and Directory::delete_entry
        */
       if (!stripe->directory.header->dirty) {
         Dbg(dbg_ctl_cache_dir_sync, "Dir %s not dirty", stripe->hash_text.get());

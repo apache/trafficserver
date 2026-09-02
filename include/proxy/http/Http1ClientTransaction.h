@@ -41,10 +41,4 @@ public:
   void transaction_done() override;
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
-
-  ////////////////////
-  // Variables
-
-protected:
-  bool outbound_transparent{false};
 };

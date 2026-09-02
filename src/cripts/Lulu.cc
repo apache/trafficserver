@@ -181,7 +181,7 @@ cripts::Versions::GetSV()
   if (_version.length() == 0) {
     const char *ver = TSTrafficServerVersionGet();
 
-    _version = cripts::string_view(ver, strlen(ver)); // ToDo: Annoyingly, we have ambiquity on the operator=
+    _version = cripts::string_view(ver, strlen(ver)); // ToDo: Annoyingly, we have ambiguity on the operator=
   }
 
   return _version;

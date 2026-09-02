@@ -19,15 +19,10 @@ meta:
 
 sessions:
   - protocol:
-      - name: http
-        version: '2'
-      - name: tls
+      stack: http2
+      tls:
         version: TLSv1.3
         sni: data.brian.example.com
-      - name: tcp
-      - name: ip
-        version: '4'
-
     transactions:
       - client-request:
           headers:

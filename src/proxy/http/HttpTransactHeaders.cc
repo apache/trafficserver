@@ -24,6 +24,7 @@
 #include <bitset>
 #include <algorithm>
 #include <array>
+#include <string>
 #include <string_view>
 
 #include "tscore/ink_platform.h"
@@ -40,6 +41,7 @@
 
 #include "iocore/utils/Machine.h"
 #include "tsutil/DbgCtl.h"
+#include "tsutil/StringCompare.h"
 
 using namespace std::literals;
 
@@ -224,6 +226,33 @@ HttpTransactHeaders::copy_header_fields(HTTPHdr *src_hdr, HTTPHdr *new_hdr, bool
 
   // Start with an exact duplicate
   new_hdr->copy(src_hdr);
+
+  if (MIMEField *conn_field = new_hdr->field_find(static_cast<std::string_view>(MIME_FIELD_CONNECTION)); conn_field != nullptr) {
+    HdrCsvIter csv;
+
+    for (auto token = csv.get_first(conn_field, true); !token.empty(); token = csv.get_next()) {
+      if (token[0] == '@') {
+        continue;
+      }
+
+      // Look up the named header; skip if not present
+      MIMEField *target = new_hdr->field_find(std::string_view{token});
+      if (target == nullptr) {
+        continue;
+      }
+
+      // Use wksidx for cheap well-known header exemption checks
+      int const wks_idx = target->m_wks_idx;
+      if (wks_idx == MIME_WKSIDX_TE || wks_idx == MIME_WKSIDX_CONNECTION) {
+        continue;
+      }
+      if (retain_proxy_auth_hdrs && (wks_idx == MIME_WKSIDX_PROXY_AUTHENTICATE || wks_idx == MIME_WKSIDX_PROXY_AUTHORIZATION)) {
+        continue;
+      }
+
+      new_hdr->field_delete(target);
+    }
+  }
 
   // Nuke hop-by-hop headers
   //
@@ -898,7 +927,7 @@ HttpTransactHeaders::remove_100_continue_headers(HttpTransact::State *s, HTTPHdr
 {
   auto expect{s->hdr_info.client_request.value_get(static_cast<std::string_view>(MIME_FIELD_EXPECT))};
 
-  if (strcasecmp(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE)) == 0) {
+  if (ts::iequals(expect, static_cast<std::string_view>(HTTP_VALUE_100_CONTINUE))) {
     outgoing->field_delete(static_cast<std::string_view>(MIME_FIELD_EXPECT));
   }
 }
@@ -1203,7 +1232,7 @@ HttpTransactHeaders::remove_privacy_headers_from_request(HttpConfigParams       
 void
 HttpTransactHeaders::normalize_accept_encoding(const OverridableHttpConfigParams *ohcp, HTTPHdr *header)
 {
-  int normalize_ae = ohcp->normalize_ae;
+  MgmtByte normalize_ae = ohcp->normalize_ae;
 
   if (normalize_ae) {
     MIMEField *ae_field = header->field_find(static_cast<std::string_view>(MIME_FIELD_ACCEPT_ENCODING));

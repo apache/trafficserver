@@ -52,6 +52,9 @@ SOFTWARE.
  */
 
 #include "huff-tables.h"
+#include "lshpack.h"
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 
@@ -61,7 +64,7 @@ namespace litespeed {
 namespace
 {
 
-constexpr int64_t LSHPACK_ERR_MORE_BUF = -3;
+constexpr unsigned SHORTEST_CODE = 5;
 
 struct decode_status {
   uint8_t state;
@@ -241,6 +244,191 @@ lshpack_dec_huff_decode_full(uint8_t const *src, uint32_t src_len, char *dst, ui
   }
 
   return p_dst - dst;
+}
+
+// Implementation taken from LiteSpeed:
+// lshpack_dec_huff_decode
+//
+// The decoder is optimized for the common case.  Most of the time, we decode
+// data whose encoding is 16 bits or shorter.  This lets us use a 64 KB table
+// indexed by two bytes of input and outputs 1, 2, or 3 bytes at a time.
+//
+// In the case a longer code is encountered, we fall back to the original
+// Huffman decoder that supports all code lengths.
+int64_t
+lshpack_dec_huff_decode(uint8_t const *src, uint32_t src_len, char *dst, uint32_t dst_len)
+{
+  char *const          orig_dst = dst;
+  uint8_t const *const src_end  = src + src_len;
+  char *const          dst_end  = dst + dst_len;
+  uintptr_t            buf      = 0;
+  unsigned             avail_bits, len;
+  struct hdec          hdec = {0, {0, 0, 0}};
+  uint16_t             idx;
+  int64_t              r;
+
+  avail_bits = 0;
+  while (true) {
+    if (src + sizeof(buf) <= src_end) {
+      len         = (sizeof(buf) * 8 - avail_bits) >> 3;
+      avail_bits += len << 3;
+      switch (len) {
+#if UINTPTR_MAX == 18446744073709551615ull
+      case 8:
+        buf <<= 8;
+        buf  |= static_cast<uintptr_t>(*src++);
+        [[fallthrough]];
+      case 7:
+        buf <<= 8;
+        buf  |= static_cast<uintptr_t>(*src++);
+        [[fallthrough]];
+      default:
+        buf <<= 48;
+        buf  |= static_cast<uintptr_t>(*src++) << 40;
+        buf  |= static_cast<uintptr_t>(*src++) << 32;
+        buf  |= static_cast<uintptr_t>(*src++) << 24;
+        buf  |= static_cast<uintptr_t>(*src++) << 16;
+#else
+        [[fallthrough]];
+      case 4:
+        buf <<= 8;
+        buf  |= static_cast<uintptr_t>(*src++);
+        [[fallthrough]];
+      case 3:
+        buf <<= 8;
+        buf  |= static_cast<uintptr_t>(*src++);
+        [[fallthrough]];
+      default:
+        buf <<= 16;
+#endif
+        buf |= static_cast<uintptr_t>(*src++) << 8;
+        buf |= static_cast<uintptr_t>(*src++) << 0;
+      }
+    } else if (src < src_end) {
+      do {
+        buf       <<= 8;
+        buf        |= static_cast<uintptr_t>(*src++);
+        avail_bits += 8;
+      } while (src < src_end && avail_bits <= sizeof(buf) * 8 - 8);
+    } else {
+      break; // Normal case terminating condition: out of input
+    }
+
+    if (dst_end - dst >= static_cast<ptrdiff_t>(8 * sizeof(buf) / SHORTEST_CODE) && avail_bits >= 16) {
+      // Fast path: don't check destination bounds
+      do {
+        idx         = static_cast<uint16_t>(buf >> (avail_bits - 16));
+        hdec        = hdecs[idx];
+        dst[0]      = static_cast<char>(hdec.out[0]);
+        dst[1]      = static_cast<char>(hdec.out[1]);
+        dst[2]      = static_cast<char>(hdec.out[2]);
+        dst        += hdec.lens & 3;
+        avail_bits -= hdec.lens >> 2;
+      } while (avail_bits >= 16 && hdec.lens);
+      if (avail_bits < 16) {
+        continue;
+      }
+      goto slow_path;
+    } else {
+      while (avail_bits >= 16) {
+        idx  = static_cast<uint16_t>(buf >> (avail_bits - 16));
+        hdec = hdecs[idx];
+        len  = hdec.lens & 3;
+        if (len && dst + len <= dst_end) {
+          switch (len) {
+          case 3:
+            *dst++ = static_cast<char>(hdec.out[0]);
+            *dst++ = static_cast<char>(hdec.out[1]);
+            *dst++ = static_cast<char>(hdec.out[2]);
+            break;
+          case 2:
+            *dst++ = static_cast<char>(hdec.out[0]);
+            *dst++ = static_cast<char>(hdec.out[1]);
+            break;
+          default:
+            *dst++ = static_cast<char>(hdec.out[0]);
+            break;
+          }
+          avail_bits -= hdec.lens >> 2;
+        } else if (dst + len > dst_end) {
+          r = dst_end - dst - static_cast<ptrdiff_t>(len);
+          if (r > LSHPACK_ERR_MORE_BUF) {
+            r = LSHPACK_ERR_MORE_BUF;
+          }
+          return r;
+        } else {
+          goto slow_path;
+        }
+      }
+    }
+  }
+
+  if (avail_bits >= SHORTEST_CODE) {
+    idx  = static_cast<uint16_t>(buf << (16 - avail_bits));
+    idx |= (1 << (16 - avail_bits)) - 1; // EOF
+    if (idx == 0xFFFF && avail_bits < 8) {
+      goto end;
+    }
+    // If a byte or more of input is left, this means there is a valid
+    // encoding, not just EOF.
+    hdec = hdecs[idx];
+    len  = hdec.lens & 3;
+    if ((static_cast<unsigned>(hdec.lens) >> 2) > avail_bits) {
+      return -1;
+    }
+    if (len && dst + len <= dst_end) {
+      switch (len) {
+      case 3:
+        *dst++ = static_cast<char>(hdec.out[0]);
+        *dst++ = static_cast<char>(hdec.out[1]);
+        *dst++ = static_cast<char>(hdec.out[2]);
+        break;
+      case 2:
+        *dst++ = static_cast<char>(hdec.out[0]);
+        *dst++ = static_cast<char>(hdec.out[1]);
+        break;
+      default:
+        *dst++ = static_cast<char>(hdec.out[0]);
+        break;
+      }
+      avail_bits -= hdec.lens >> 2;
+    } else if (dst + len > dst_end) {
+      r = dst_end - dst - static_cast<ptrdiff_t>(len);
+      if (r > LSHPACK_ERR_MORE_BUF) {
+        r = LSHPACK_ERR_MORE_BUF;
+      }
+      return r;
+    } else {
+      // This must be an invalid code, otherwise it would have fit
+      return -1;
+    }
+  }
+
+  if (avail_bits > 0) {
+    // ATS: unlike upstream ls-hpack, also reject padding of 8 or more bits
+    // (possible here after the final symbol consumed only part of the tail).
+    // RFC 7541 5.2: "A padding strictly longer than 7 bits MUST be treated as
+    // a decoding error." This keeps the strictness of the 4-bit FSM decoder.
+    if (avail_bits >= 8 || ((1u << avail_bits) - 1) != (buf & ((1u << avail_bits) - 1))) {
+      return -1; // Not EOF as expected
+    }
+  }
+
+end:
+  return dst - orig_dst;
+
+slow_path:
+  // Find previous byte boundary and finish decoding thence.
+  while ((avail_bits & 7) && dst > orig_dst) {
+    avail_bits += encode_table[static_cast<uint8_t>(*--dst)].bits;
+  }
+  assert((avail_bits & 7) == 0);
+  src -= avail_bits >> 3;
+  r = lshpack_dec_huff_decode_full(src, static_cast<uint32_t>(src_end - src), dst, static_cast<uint32_t>(dst_end - dst));
+  if (r >= 0) {
+    return dst - orig_dst + r;
+  }
+  return r;
 }
 
 } // namespace litespeed

@@ -31,10 +31,7 @@ sessions:
         - [ uuid, GET ]
 
     proxy-request:
-      method: "GET"
-      headers:
-        fields:
-        - [ X-Request, { value: first, as: equal } ]
+      expect: absent
 
     server-response:
       # The failover server should not receive this request since the original
@@ -57,10 +54,7 @@ sessions:
         - [ uuid, GET_chunked ]
 
     proxy-request:
-      method: "GET"
-      headers:
-        fields:
-        - [ X-Request, { value: second, as: equal } ]
+      expect: absent
 
     server-response:
       # The failover server should not receive this request since the original

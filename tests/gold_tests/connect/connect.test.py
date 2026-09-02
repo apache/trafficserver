@@ -56,6 +56,7 @@ class ConnectTest:
         self.ts.Disk.remap_config.AddLines([
             f"map http://foo.com/ http://127.0.0.1:{self.httpbin.Variables.Port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
 
         self.ts.Disk.logging_yaml.AddLines(
             '''
@@ -88,20 +89,21 @@ logging:
         tr.MakeCurlCommand(f"-v --fail -s -p -x 127.0.0.1:{self.ts.Variables.port} 'http://foo.com/get'", ts=self.ts)
         tr.Processes.Default.Streams.stderr = "gold/connect_0_stderr.gold"
         tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-            f'Connected to 127.0.0.1.*{self.ts.Variables.port}', 'Curl should connect through the ATS proxy port.')
+            rf'(Connected to|Established connection to) 127\.0\.0\.1.*{self.ts.Variables.port}',
+            'Curl should connect through the ATS proxy port.')
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 3
         self.__checkProcessAfter(tr)
 
     def __testAccessLog(self):
-        """Wait for log file to appear, then wait one extra second to make sure TS is done writing it."""
+        """Wait for the access log entry to be written."""
         Test.Disk.File(os.path.join(self.ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/connect_access.gold')
 
-        tr = Test.AddTestRun()
-        tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self.ts.Variables.LOGDIR, 'access.log'))
-        tr.Processes.Default.ReturnCode = 0
+        Test.AddAwaitFileContainsTestRun(
+            'Await CONNECT access log entry.',
+            os.path.join(self.ts.Variables.LOGDIR, 'access.log'),
+            'CONNECT',
+        )
 
     def run(self):
         self.__testCase0()
@@ -141,6 +143,7 @@ class ConnectViaPVTest:
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
         # Verify ts logs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",
@@ -221,11 +224,18 @@ class ConnectViaPVTest2:
             })
 
         self.ts.addDefaultSSLFiles()
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         self.ts.Disk.remap_config.AddLines([
             f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
         ])
+        self.ts.addPrivateConnectAllowYaml()
         # Verify ts logs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             f"Proxy's Request.*\n.*\nCONNECT 127.0.0.1:{self.server.Variables.http_port} HTTP/1.1",

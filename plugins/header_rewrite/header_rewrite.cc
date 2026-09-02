@@ -22,6 +22,7 @@
 #include <stack>
 #include <stdexcept>
 #include <array>
+#include <utility>
 #include <getopt.h>
 
 #include "ts/ts.h"
@@ -41,25 +42,31 @@
 // Debugs
 namespace header_rewrite_ns
 {
-std::once_flag initHRWLibs;
+std::once_flag initPlugin;
 PluginFactory  plugin_factory;
 } // namespace header_rewrite_ns
 
 static void
-initHRWLibraries(const std::string &dbPath)
+initPluginFactory()
 {
   header_rewrite_ns::plugin_factory.setRuntimeDir(RecConfigReadRuntimeDir()).addSearchDir(RecConfigReadPluginDir());
+}
 
+static void *
+initGeoLibraries(const std::string &dbPath)
+{
   if (dbPath.empty()) {
-    return;
+    return nullptr;
   }
 
   Dbg(pi_dbg_ctl, "Loading geo db %s", dbPath.c_str());
 
 #if TS_USE_HRW_GEOIP
-  GeoIPConditionGeo::initLibrary(dbPath);
+  return GeoIPConditionGeo::initLibrary(dbPath);
 #elif TS_USE_HRW_MAXMINDDB
-  MMConditionGeo::initLibrary(dbPath);
+  return MMConditionGeo::initLibrary(dbPath);
+#else
+  return nullptr;
 #endif
 }
 
@@ -71,7 +78,8 @@ static int cont_rewrite_headers(TSCont, TSEvent, void *);
 class RulesConfig
 {
 public:
-  RulesConfig(int timezone, int inboundIpSource) : _timezone(timezone), _inboundIpSource(inboundIpSource)
+  RulesConfig(int timezone, int inboundIpSource, void *geo_handle = nullptr)
+    : _timezone(timezone), _inboundIpSource(inboundIpSource), _geo_handle(geo_handle)
   {
     Dbg(dbg_ctl, "RulesConfig CTOR");
     _cont = TSContCreate(cont_rewrite_headers, nullptr);
@@ -114,6 +122,12 @@ public:
     return _inboundIpSource;
   }
 
+  [[nodiscard]] void *
+  geo_handle() const
+  {
+    return _geo_handle;
+  }
+
   bool parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url = nullptr, char *to_url = nullptr);
 
 private:
@@ -125,6 +139,8 @@ private:
 
   int _timezone        = 0;
   int _inboundIpSource = 0;
+
+  void *_geo_handle = nullptr;
 };
 
 void
@@ -187,12 +203,12 @@ validate_rule_completion(RuleSet *rule, const std::string &fname, int lineno)
 bool
 RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, char *from_url, char *to_url)
 {
-  std::unique_ptr<RuleSet>     rule(nullptr);
-  std::string                  filename;
-  int                          lineno = 0;
-  ConditionGroup              *group  = nullptr;
-  std::stack<ConditionGroup *> group_stack;
-  std::stack<OperatorIf *>     if_stack;
+  std::unique_ptr<RuleSet>                rule(nullptr);
+  std::string                             filename;
+  int                                     lineno = 0;
+  ConditionGroup                         *group  = nullptr;
+  std::stack<ConditionGroup *>            group_stack;
+  std::stack<std::unique_ptr<OperatorIf>> if_stack;
 
   constexpr int MAX_IF_NESTING_DEPTH = 10;
 
@@ -272,7 +288,7 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
       if (!validate_rule_completion(rule.get(), fname, lineno)) {
         return false;
       } else {
-        add_rule(std::move(rule));
+        add_rule(std::exchange(rule, nullptr));
       }
     }
 
@@ -351,10 +367,8 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
             throw std::runtime_error("maximum if nesting depth exceeded");
           }
 
-          auto *op_if = new OperatorIf();
-
-          if_stack.push(op_if);
-          group = op_if->get_group(); // Set group to the new OperatorIf's group
+          if_stack.push(std::make_unique<OperatorIf>());
+          group = if_stack.top()->get_group(); // Set group to the new OperatorIf's group
           Dbg(dbg_ctl, "Started nested OperatorIf, depth: %zu", if_stack.size());
 
         } else if (p.is_endif()) {
@@ -362,21 +376,20 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
             throw std::runtime_error("endif without matching if");
           }
 
-          OperatorIf *op_if = if_stack.top();
+          auto op_if = std::move(if_stack.top());
 
           if_stack.pop();
           if (!if_stack.empty()) {
             auto *parent_sec = if_stack.top()->cur_section();
 
             if (parent_sec->ops.oper) {
-              parent_sec->ops.oper->append(op_if);
+              parent_sec->ops.oper->append(op_if.release());
             } else {
-              parent_sec->ops.oper.reset(op_if);
+              parent_sec->ops.oper = std::move(op_if);
             }
             group = if_stack.top()->get_group();
           } else {
-            if (!rule->add_operator(op_if)) {
-              delete op_if;
+            if (!rule->add_operator(std::move(op_if))) {
               throw std::runtime_error("Failed to add nested OperatorIf to RuleSet");
             }
             group = rule->get_group();
@@ -419,10 +432,6 @@ RulesConfig::parse_config(const std::string &fname, TSHttpHookID default_hook, c
   // Check for unmatched if statements
   if (!if_stack.empty()) {
     TSError("[%s] %zu unmatched 'if' statement(s) without 'endif' in file: %s", PLUGIN_NAME, if_stack.size(), fname.c_str());
-    while (!if_stack.empty()) {
-      delete if_stack.top();
-      if_stack.pop();
-    }
     return false;
   }
 
@@ -479,6 +488,9 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   case TS_EVENT_HTTP_READ_REQUEST_PRE_REMAP:
     hook = TS_HTTP_PRE_REMAP_HOOK;
     break;
+  case TS_EVENT_HTTP_POST_REMAP:
+    hook = TS_HTTP_POST_REMAP_HOOK;
+    break;
   case TS_EVENT_HTTP_SEND_REQUEST_HDR:
     hook = TS_HTTP_SEND_REQUEST_HDR_HOOK;
     break;
@@ -503,6 +515,8 @@ cont_rewrite_headers(TSCont contp, TSEvent event, void *edata)
   if (hook != TS_HTTP_LAST_HOOK) {
     RuleSet  *rule = conf->rule(hook);
     Resources res(txnp, contp);
+
+    res.geo_handle = conf->geo_handle();
 
     // Get the resources necessary to process this event
     res.gather(conf->resid(hook), hook);
@@ -552,6 +566,8 @@ TSPluginInit(int argc, const char *argv[])
     return;
   }
 
+  init_hrw_work_stats();
+
   std::string geoDBpath;
   int         inboundIpSource = 0;
   int         timezone        = 0;
@@ -597,11 +613,12 @@ TSPluginInit(int argc, const char *argv[])
 
   Dbg(pi_dbg_ctl, "Global geo db %s", geoDBpath.c_str());
 
-  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
+  void *geo_handle = initGeoLibraries(geoDBpath);
+  std::call_once(initPlugin, initPluginFactory);
 
   // Parse the global config file(s). All rules are just appended
   // to the "global" Rules configuration.
-  auto *conf       = new RulesConfig(timezone, inboundIpSource);
+  auto *conf       = new RulesConfig(timezone, inboundIpSource, geo_handle);
   bool  got_config = false;
 
   for (int i = optind; i < argc; ++i) {
@@ -644,6 +661,8 @@ TSRemapInit(TSRemapInterface *api_info, char *errbuf, int errbuf_size)
 {
   CHECK_REMAP_API_COMPATIBILITY(api_info, errbuf, errbuf_size);
   Dbg(pi_dbg_ctl, "Remap plugin is successfully initialized");
+
+  init_hrw_work_stats();
 
   return TS_SUCCESS;
 }
@@ -705,19 +724,19 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
     }
   }
 
-  if (!geoDBpath.empty() && !geoDBpath.starts_with('/')) {
-    geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
-  }
+  void *geo_handle = nullptr;
 
   if (!geoDBpath.empty()) {
+    if (!geoDBpath.starts_with('/')) {
+      geoDBpath = std::string(TSConfigDirGet()) + '/' + geoDBpath;
+    }
     Dbg(pi_dbg_ctl, "Remap geo db %s", geoDBpath.c_str());
+    geo_handle = initGeoLibraries(geoDBpath);
   }
 
-  // Always initialize the plugin factory, even if no geo DB is specified. This
-  // is needed for run-plugin to work with relative paths.
-  std::call_once(initHRWLibs, [&geoDBpath]() { initHRWLibraries(geoDBpath); });
+  std::call_once(initPlugin, initPluginFactory);
 
-  auto *conf = new RulesConfig(timezone, inboundIpSource);
+  auto *conf = new RulesConfig(timezone, inboundIpSource, geo_handle);
 
   for (int i = optind; i < argc; ++i) {
     Dbg(pi_dbg_ctl, "Loading remap configuration file %s", argv[i]);
@@ -772,6 +791,8 @@ TSRemapDoRemap(void *ih, TSHttpTxn rh, TSRemapRequestInfo *rri)
   // we can't (shouldn't) schedule this as a TXN hook.
   RuleSet  *rule = conf->rule(TS_REMAP_PSEUDO_HOOK);
   Resources res(rh, rri);
+
+  res.geo_handle = conf->geo_handle();
 
   if (rule) {
     res.gather(conf->resid(TS_REMAP_PSEUDO_HOOK), TS_REMAP_PSEUDO_HOOK);

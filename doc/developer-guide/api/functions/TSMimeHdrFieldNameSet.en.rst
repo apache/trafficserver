@@ -32,3 +32,14 @@ Synopsis
 
 Description
 ===========
+
+:func:`TSMimeHdrFieldNameSet` sets the name of the MIME field identified by :arg:`bufp`,
+:arg:`hdr`, and :arg:`field` to :arg:`name`. The :arg:`name` is copied into the header
+represented by :arg:`bufp` and does not have to be null terminated. :arg:`length` is the length
+of :arg:`name`, or ``-1`` if :arg:`name` is null terminated.
+
+A header field name is stored with a 16-bit length, so it is limited to ``65535`` (``UINT16_MAX``)
+bytes. A :arg:`name` longer than that is rejected: the field's existing name is left unchanged and
+the function returns :enumerator:`TS_ERROR`.
+
+This function returns :enumerator:`TS_SUCCESS` if the name was set, :enumerator:`TS_ERROR` if not.

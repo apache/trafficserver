@@ -306,6 +306,9 @@ sessions:
       # transaction.
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -373,9 +376,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [ X-Vary-On-This, { value: sixth, as: equal } ]
+      expect: absent
 
     # This should be served out of the cache and not reach the origin.
     server-response:

@@ -42,7 +42,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields: [[ uuid, "base-case" ]]}}
@@ -60,7 +61,8 @@ sessions:
       status: 501
 
   # Must be a different session because the internal error forces a connection close.
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields: [[ uuid, "bypass-case" ]]}}
@@ -78,7 +80,8 @@ sessions:
       <<: *base-rsp
       status: 200
 
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields: [[ uuid, "no-fixup" ]]}}

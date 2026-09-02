@@ -52,7 +52,13 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLines([
     f'map / http://127.0.0.1:{server.Variables.http_port}',

@@ -20,11 +20,9 @@ meta:
 sessions:
 
 - protocol:
-  - name: tls
-    sni: block.me.com
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: block.me.com
   transactions:
 
   #
@@ -72,11 +70,9 @@ sessions:
           - [ X-Response, { as: absent } ]
 
 - protocol:
-  - name: tls
-    sni: allow.me.com
-  - name: tcp
-  - name: ip
-
+    stack: https
+    tls:
+      sni: allow.me.com
   transactions:
   #
   # This should also be configured for tunneling, but allowed per sni.yaml ip_allow.

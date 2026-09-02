@@ -47,7 +47,7 @@ class Http3Session;
 class Http3App : public QUICApplication
 {
 public:
-  Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, const HttpSessionAccept::Options &options);
+  Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, HttpSessionAcceptBase const *acceptor);
   virtual ~Http3App();
 
   void on_stream_open(QUICStream &stream) override;
@@ -79,6 +79,7 @@ private:
   void _handle_bidi_stream_on_write_complete(int event, VIO *vio);
   void _handle_bidi_stream_on_eos(int event, VIO *vio);
 
+  void _handle_error(const Http3Error &error);
   void _set_qpack_stream(Http3StreamType type, QUICStreamVCAdapter *adapter);
 
   QUICStreamVCAdapter::IOInfo &_get_stream_info(QUICStreamId stream_id);

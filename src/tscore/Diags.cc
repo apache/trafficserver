@@ -238,8 +238,16 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
   // now, finally, output the message //
   //////////////////////////////////////
 
-  lock();
-  if (config.outputs[diags_level].to_diagslog) {
+  auto const &output = config.outputs[diags_level];
+
+  // FILE output must be serialized, but syslog provides its own thread safety.
+  bool const serialize_file_output = output.to_diagslog || output.to_stdout || output.to_stderr || regression_testing_on;
+
+  if (serialize_file_output) {
+    lock();
+  }
+
+  if (output.to_diagslog) {
     if (diags_log && diags_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
@@ -248,7 +256,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-  if (config.outputs[diags_level].to_stdout) {
+  if (output.to_stdout) {
     if (stdout_log && stdout_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
@@ -257,7 +265,7 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-  if (config.outputs[diags_level].to_stderr || regression_testing_on) {
+  if (output.to_stderr || regression_testing_on) {
     if (stderr_log && stderr_log->m_fp) {
       va_list tmp;
       va_copy(tmp, ap);
@@ -266,11 +274,11 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     }
   }
 
-#if !defined(freebsd)
-  unlock();
-#endif
+  if (serialize_file_output) {
+    unlock();
+  }
 
-  if (config.outputs[diags_level].to_syslog) {
+  if (output.to_syslog) {
     int  priority;
     char syslog_buffer[2048];
 
@@ -308,10 +316,6 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
     vsnprintf(syslog_buffer, sizeof(syslog_buffer), format_writer.data() + timestamp_offset, ap);
     syslog(priority, "%s", syslog_buffer);
   }
-
-#if defined(freebsd)
-  unlock();
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -328,19 +332,26 @@ Diags::print_va(const char *debug_tag, DiagsLevel diags_level, const SourceLocat
 bool
 Diags::tag_activated(const char *tag, DiagsTagType mode) const
 {
-  bool activated = false;
-
   if (tag == nullptr) {
-    return (true);
+    return true;
   }
 
-  lock();
-  if (activated_tags[mode]) {
-    activated = activated_tags[mode]->exec(tag, RE_ANCHORED);
+  // Snapshot the regex under the lock, then release the lock before running
+  // Regex::exec().  exec() can lazily construct a thread_local RegexContext
+  // whose destructor registration via __cxa_thread_atexit_impl takes the
+  // dynamic loader lock.  Holding tag_table_lock across exec() therefore
+  // creates a lock-order inversion with dlopen() callers that construct a
+  // DbgCtl during a plugin's static initialization (which takes
+  // tag_table_lock while already holding the dl loader lock).  See the
+  // analogous fix in DbgCtl::_new_reference.
+  std::shared_ptr<Regex> regex;
+  {
+    lock();
+    regex = activated_tags[mode];
+    unlock();
   }
-  unlock();
 
-  return (activated);
+  return regex ? regex->exec(tag, RE_ANCHORED) : false;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -358,13 +369,15 @@ void
 Diags::activate_taglist(const char *taglist, DiagsTagType mode)
 {
   if (taglist) {
-    lock();
-    if (activated_tags[mode]) {
-      delete activated_tags[mode];
+    // Compile the new regex outside tag_table_lock to avoid holding the lock
+    // across work that may touch thread_local state (see tag_activated).
+    auto new_regex = std::make_shared<Regex>();
+    new_regex->compile(taglist);
+    {
+      lock();
+      activated_tags[mode] = std::move(new_regex);
+      unlock();
     }
-    activated_tags[mode] = new Regex;
-    activated_tags[mode]->compile(taglist);
-    unlock();
   }
   if ((DiagsTagType_Debug == mode) && (this == diags())) {
     DbgCtl::update([&](const char *tag) -> bool { return tag_activated(tag, DiagsTagType_Debug); });
@@ -385,10 +398,7 @@ void
 Diags::deactivate_all(DiagsTagType mode)
 {
   lock();
-  if (activated_tags[mode]) {
-    delete activated_tags[mode];
-    activated_tags[mode] = nullptr;
-  }
+  activated_tags[mode].reset();
   unlock();
   if ((DiagsTagType_Debug == mode) && (this == diags())) {
     DbgCtl::update([&](const char *tag) -> bool { return tag_activated(tag, DiagsTagType_Debug); });

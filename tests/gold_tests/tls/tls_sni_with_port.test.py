@@ -120,6 +120,7 @@ class TestSNIWithPort:
             })
 
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server_three.Variables.http_port}")
+        ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
 
         ts.Disk.sni_yaml.AddLines(
             [
@@ -134,7 +135,13 @@ class TestSNIWithPort:
                 f"  tunnel_route: localhost:{server_two.Variables.https_port}",
             ])
 
-        ts.Disk.ssl_multicert_config.AddLine(f"dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
         self._ts = ts
 

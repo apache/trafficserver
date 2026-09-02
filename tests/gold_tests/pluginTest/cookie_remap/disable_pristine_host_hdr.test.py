@@ -53,6 +53,10 @@ class TestUpdateHostHeader:
         TestUpdateHostHeader.test_counter += 1
         self.disable_pristine_host_hdr = disable_pristine_host_hdr
         self.replay_file = f'disable_pristine_host_hdr_{"true" if disable_pristine_host_hdr else "false"}.replay.yaml'
+        self.canary_replay_file = (
+            'disable_pristine_host_hdr_server_canary_true.replay.yaml'
+            if disable_pristine_host_hdr else 'disable_pristine_host_hdr_server_canary_false.replay.yaml')
+        self.stable_replay_file = 'disable_pristine_host_hdr_server_stable.replay.yaml'
         self._setupDns()
         self._setupServers()
         self._setupTS(disable_pristine_host_hdr)
@@ -68,11 +72,11 @@ class TestUpdateHostHeader:
 
         Creates two servers to simulate canary and stable environments.
         """
-        self._server_canary = Test.MakeVerifierServerProcess(f"server_canary_{self.test_id}", self.replay_file)
+        self._server_canary = Test.MakeVerifierServerProcess(f"server_canary_{self.test_id}", self.canary_replay_file)
         expected_host = 'canary.com' if self.disable_pristine_host_hdr else 'example.com'
         self._server_canary.Streams.All += Testers.ContainsExpression(expected_host, f'Host header should be {expected_host}')
 
-        self._server_stable = Test.MakeVerifierServerProcess(f"server_stable_{self.test_id}", self.replay_file)
+        self._server_stable = Test.MakeVerifierServerProcess(f"server_stable_{self.test_id}", self.stable_replay_file)
         # The else path always preserves pristine host header (example.com).
         expected_host = 'example.com'
         self._server_stable.Streams.All += Testers.ContainsExpression(expected_host, f'Host header should be {expected_host}')

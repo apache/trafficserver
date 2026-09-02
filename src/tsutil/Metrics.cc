@@ -22,6 +22,7 @@
  */
 
 #include "tsutil/Assert.h"
+#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -42,13 +43,24 @@ Metrics::instance()
   return _instance;
 }
 
+Metrics &
+Metrics::hidden_instance()
+{
+  // Separate storage from instance(). Hidden metrics are never published.
+  static std::shared_ptr<Storage> _hidden_store = std::make_shared<Storage>();
+  thread_local Metrics            _instance(_hidden_store);
+
+  return _instance;
+}
+
 void
 Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
   auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
   debug_assert(blob);
-  debug_assert(_cur_blob < MAX_BLOBS);
+  // The write below is to _blobs[_cur_blob + 1], so the last usable blob index is MAX_BLOBS - 1.
+  release_assert(_cur_blob < MAX_BLOBS - 1);
 
   _blobs[++_cur_blob] = std::move(blob);
   _cur_off            = 0;
@@ -62,6 +74,13 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
 
   if (it != _lookups.end()) {
     return it->second;
+  }
+
+  // The slot is written below and the bookkeeping only then advances, calling addBlob() once
+  // _cur_off reaches MAX_SIZE. Refusing the final slot of the final blob keeps addBlob() from
+  // ever being reached in an exhausted store, at a cost of one slot out of MAX_BLOBS * MAX_SIZE.
+  if (_cur_blob >= MAX_BLOBS - 1 && _cur_off >= MAX_SIZE - 1) {
+    return 0; // Slot 0 is the reserved bad_id. Cannot grow further.
   }
 
   Metrics::IdType           id    = _makeId(_cur_blob, _cur_off, type);
@@ -166,6 +185,17 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
   release_assert(size <= MAX_SIZE);
   std::lock_guard lock(_mutex);
 
+  // On the final blob there is nowhere left to grow, so refuse a span that would fill or overflow
+  // it rather than letting addBlob() assert. Same intent as the guard in create(), and the same
+  // cost: some slots of the last blob go unused.
+  if (_cur_blob >= MAX_BLOBS - 1 && _cur_off + size >= MAX_SIZE) {
+    if (id) {
+      *id = 0; // Slot 0 is the reserved bad_id.
+    }
+    return {};
+  }
+
+  // A span has to be contiguous, so one that does not fit in the current blob starts a new one.
   if (_cur_off + size > MAX_SIZE) {
     addBlob();
   }
@@ -180,6 +210,14 @@ Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdT
   }
 
   _cur_off += size;
+
+  // create() grows as soon as it consumes the last slot; do the same here. Otherwise a span ending
+  // exactly on the boundary leaves _cur_off at MAX_SIZE, and the next create() writes one past the
+  // end of the blob's name array. It also makes end() unreachable for iterator::next(), which
+  // wraps on ++offset == MAX_SIZE.
+  if (_cur_off >= MAX_SIZE) {
+    addBlob();
+  }
 
   return span;
 }
@@ -226,6 +264,7 @@ namespace details
   struct DerivedMetric {
     Metrics::IdType                    metric;
     std::vector<Metrics::AtomicType *> derived_from;
+    Metrics::Derived::Op               op{Metrics::Derived::Op::SUM};
   };
 
   struct DerivativeMetrics {
@@ -239,12 +278,30 @@ namespace details
       std::lock_guard l(metrics_lock);
 
       for (auto &m : metrics) {
-        int64_t sum = 0;
-
-        for (auto d : m.derived_from) {
-          sum += d->load();
+        if (m.derived_from.empty()) {
+          continue;
         }
-        instance[m.metric].store(sum);
+
+        // Seeded from the first source rather than from zero: a zero seed is correct only for
+        // SUM, and would clamp every MIN result to <= 0.
+        int64_t value = m.derived_from.front()->load();
+
+        for (auto it = m.derived_from.begin() + 1; it != m.derived_from.end(); ++it) {
+          int64_t const v = (*it)->load();
+
+          switch (m.op) {
+          case Metrics::Derived::Op::SUM:
+            value += v;
+            break;
+          case Metrics::Derived::Op::MAX:
+            value = std::max(value, v);
+            break;
+          case Metrics::Derived::Op::MIN:
+            value = std::min(value, v);
+            break;
+          }
+        }
+        instance[m.metric].store(value);
       }
     }
 
@@ -252,7 +309,27 @@ namespace details
     push_back(const DerivedMetric &m)
     {
       std::lock_guard l(metrics_lock);
-      metrics.push_back(std::move(m));
+      metrics.push_back(m);
+    }
+
+    void
+    add_source(Metrics::IdType id, Metrics::AtomicType *source, Metrics::Derived::Op op)
+    {
+      if (!source) {
+        return;
+      }
+
+      std::lock_guard l(metrics_lock);
+      auto            it = std::find_if(metrics.begin(), metrics.end(), [id](DerivedMetric const &m) { return m.metric == id; });
+
+      if (it == metrics.end()) {
+        metrics.push_back(DerivedMetric{id, {source}, op});
+        return;
+      }
+      // Already registered sources are skipped so repeated registration is harmless.
+      if (std::find(it->derived_from.begin(), it->derived_from.end(), source) == it->derived_from.end()) {
+        it->derived_from.push_back(source);
+      }
     }
 
     static DerivativeMetrics &
@@ -273,14 +350,25 @@ Metrics::Derived::derive(const std::initializer_list<Metrics::Derived::DerivedMe
   for (auto &m : metrics) {
     details::DerivedMetric dm{};
     dm.metric = instance._create(m.derived_name, m.derived_type);
+    dm.op     = m.op;
 
     for (auto &d : m.derived_from) {
+      Metrics::AtomicType *ptr = nullptr;
+
       if (std::holds_alternative<Metrics::AtomicType *>(d)) {
-        dm.derived_from.push_back(std::get<Metrics::AtomicType *>(d));
+        ptr = std::get<Metrics::AtomicType *>(d);
       } else if (std::holds_alternative<Metrics::IdType>(d)) {
-        dm.derived_from.push_back(instance.lookup(std::get<Metrics::IdType>(d)));
-      } else if (std::holds_alternative<std::string_view>(d)) {
-        dm.derived_from.push_back(instance.lookup(instance.lookup(std::get<std::string_view>(d))));
+        auto id = std::get<Metrics::IdType>(d);
+        ptr     = instance.valid(id) ? instance.lookup(id) : nullptr;
+      } else {
+        auto id = instance.lookup(std::get<std::string_view>(d));
+        ptr     = (id != Metrics::NOT_FOUND) ? instance.lookup(id) : nullptr;
+      }
+
+      // A source that does not resolve is skipped. Passing an unresolved id to lookup() would
+      // silently land on the reserved bad_id slot and contribute its value to the aggregate.
+      if (ptr) {
+        dm.derived_from.push_back(ptr);
       }
     }
     details::DerivativeMetrics::instance().push_back(dm);
@@ -291,6 +379,15 @@ void
 Metrics::Derived::update_derived()
 {
   details::DerivativeMetrics::instance().update();
+}
+
+void
+Metrics::Derived::add_source(std::string_view derived_name, Metrics::MetricType type, Metrics::AtomicType *source, Op op)
+{
+  // Resolved here rather than in the helper because _create is private to Metrics.
+  auto id = Metrics::instance()._create(derived_name, type);
+
+  details::DerivativeMetrics::instance().add_source(id, source, op);
 }
 
 Metrics::StaticString &

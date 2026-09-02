@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("proxy_src_port", type=int, help="The source port in the PROXY message.")
     parser.add_argument("proxy_dest_port", type=int, help="The destination port in the PROXY message.")
     parser.add_argument("protocol_version", type=int, choices=[1, 2], help="the proxy protocol version(either 1 or 2).")
+    parser.add_argument("--addressless", action="store_true", help="Send a PROXY header without source or destination addresses.")
     parser.add_argument("--https", action="store_true", help="Send https data after the PROXY message.")
     return parser.parse_args()
 
@@ -50,6 +51,11 @@ def construct_proxy_header_v1(src_addr: tuple, dst_addr: tuple) -> bytes:
     :return: A PROXY protocol v1 header.
     """
     return f"PROXY TCP4 {src_addr[0]} {dst_addr[0]} {src_addr[1]} {dst_addr[1]}\r\n".encode()
+
+
+def construct_proxy_header_v1_unknown() -> bytes:
+    """Construct a PROXY protocol v1 UNKNOWN header."""
+    return b"PROXY UNKNOWN\r\n"
 
 
 def construct_proxy_header_v2(src_addr: tuple, dst_addr: tuple) -> bytes:
@@ -74,8 +80,19 @@ def construct_proxy_header_v2(src_addr: tuple, dst_addr: tuple) -> bytes:
     return header
 
 
+def construct_proxy_header_v2_local() -> bytes:
+    """Construct a PROXY protocol v2 LOCAL header."""
+    return VERSION_2_SIGNATURE + b'\x20\x00\x00\x00'
+
+
 def send_proxy_header(
-        socket: socket.socket, src_ip: str, src_port: str, dest_ip: int, dest_port: int, proxy_protocol_version: int) -> None:
+        socket: socket.socket,
+        src_ip: str,
+        src_port: int,
+        dest_ip: str,
+        dest_port: int,
+        proxy_protocol_version: int,
+        addressless: bool = False) -> None:
     """Send the specified PROXY protocol header.
 
     :param socket: The socket to send the header on.
@@ -84,9 +101,14 @@ def send_proxy_header(
     :param dest_ip: The destination IP address.
     :param dest_port: The destination port.
     :param proxy_protocol_version: The PROXY protocol version.
+    :param addressless: Whether to send a valid header with no address data.
     """
     logging.info(f'Sending PROXY protocol version {proxy_protocol_version}')
-    if proxy_protocol_version == 1:
+    if addressless and proxy_protocol_version == 1:
+        header = construct_proxy_header_v1_unknown()
+    elif addressless and proxy_protocol_version == 2:
+        header = construct_proxy_header_v2_local()
+    elif proxy_protocol_version == 1:
         header = construct_proxy_header_v1((src_ip, src_port), (dest_ip, dest_port))
     elif proxy_protocol_version == 2:
         header = construct_proxy_header_v2((src_ip, src_port), (dest_ip, dest_port))
@@ -102,7 +124,7 @@ def send_and_receive_http(sock: socket.socket, host: str) -> None:
     :param sock: The socket to send and receive data on.
     :param host: The Host header value to send in the HTTP request.
     """
-    request = f"GET /proxy_protocol HTTP/1.1\r\nHost: {host}\r\n\r\n"
+    request = f"GET /proxy_protocol HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
     logging.info("Sending:")
     logging.info(f'\n{request}')
     sock.sendall(request.encode())
@@ -123,7 +145,8 @@ def main() -> None:
     with socket.create_connection((args.server_address, args.server_port)) as sock:
         # send the PROXY header
         send_proxy_header(
-            sock, args.proxy_src_ip, args.proxy_src_port, args.proxy_dest_ip, args.proxy_dest_port, args.protocol_version)
+            sock, args.proxy_src_ip, args.proxy_src_port, args.proxy_dest_ip, args.proxy_dest_port, args.protocol_version,
+            args.addressless)
         if args.https:
             # https
             context = ssl.create_default_context()

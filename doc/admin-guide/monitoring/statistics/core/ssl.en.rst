@@ -115,6 +115,24 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.ssl_sni_name_set_failure integer
    :type: counter
 
+.. ts:stat:: global proxy.process.ssl.ssl_multicert_load_failures integer
+   :type: counter
+
+   Counts certificates that failed to load during live SSL configuration reloads
+   triggered by :program:`traffic_ctl`.
+   When :ts:cv:`proxy.config.ssl.server.multicert.partial_reload` is enabled, failed
+   certificates are skipped and the remaining valid certificates are committed.  This
+   counter increments regardless of that setting and can be used to alert on cert
+   load failures even in strict (default) mode.
+
+   .. note::
+
+      This counter does not include failures from the initial startup load,
+      nor from the QUIC certificate loader (``QUICCertConfig``).  The QUIC
+      loader uses the same :file:`ssl_multicert.yaml` but tracks its own
+      load state independently and does not increment this counter.
+      TLS startup failures are only visible in :file:`diags.log`.
+
 .. ts:stat:: global proxy.process.ssl.total_handshake_time integer
    :type: counter
    :units: milliseconds
@@ -389,3 +407,69 @@ Stats for Pre-warming TLS Tunnel is registered dynamically. The ``POOL`` in belo
    :type: counter
 
    Represents the total number of pre-warming retry.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zlib integer
+   :type: counter
+
+   The number of times a server certificate was compressed with zlib during a
+   TLS handshake.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zlib_failure integer
+   :type: counter
+
+   The number of times zlib compression of a server certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zlib integer
+   :type: counter
+
+   The number of times a certificate received from an origin server was
+   decompressed with zlib.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zlib_failure integer
+   :type: counter
+
+   The number of times zlib decompression of a certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.brotli integer
+   :type: counter
+
+   The number of times a server certificate was compressed with Brotli during a
+   TLS handshake.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.brotli_failure integer
+   :type: counter
+
+   The number of times Brotli compression of a server certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.brotli integer
+   :type: counter
+
+   The number of times a certificate received from an origin server was
+   decompressed with Brotli.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.brotli_failure integer
+   :type: counter
+
+   The number of times Brotli decompression of a certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zstd integer
+   :type: counter
+
+   The number of times a server certificate was compressed with zstd during a
+   TLS handshake.
+
+.. ts:stat:: global proxy.process.ssl.cert_compress.zstd_failure integer
+   :type: counter
+
+   The number of times zstd compression of a server certificate failed.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zstd integer
+   :type: counter
+
+   The number of times a certificate received from an origin server was
+   decompressed with zstd.
+
+.. ts:stat:: global proxy.process.ssl.cert_decompress.zstd_failure integer
+   :type: counter
+
+   The number of times zstd decompression of a certificate failed.

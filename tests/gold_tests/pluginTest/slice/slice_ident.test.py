@@ -177,7 +177,6 @@ ps.Streams.stdout.Content = Testers.ContainsExpression("404", "expected 404 Not 
 tr.StillRunningAfter = ts
 
 # 7 - wait for logs
-condwaitpath = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
 tslog = os.path.join(ts.Variables.LOGDIR, 'transaction.log')
 Test.AddAwaitFileContainsTestRun('Await ts transactions to finish logging.', tslog, '404.txt')
 

@@ -65,7 +65,13 @@ allowed values.
 .. _parent-config-format-url-regex:
 
 ``url_regex``
-    A regular expression (regex) to be found in a URL
+    A regular expression (regex) matched against the full request URL.
+
+    .. seealso::
+       Operator-written regex rules can match more inputs than
+       intended when the pattern is unanchored. For per-site subject
+       definitions, common pitfalls, and recommended pattern shapes,
+       see :ref:`admin-regex-best-practices`.
 
 The secondary specifiers are optional in the :file:`parent.config` file. The
 following list shows the possible secondary specifiers and their allowed
@@ -323,6 +329,14 @@ The following list shows the possible actions and their allowed values.
       marked up.
 
   -  ``false`` - The default.  Do not ignore the host status.
+
+.. _parent-config-format-host_override:
+
+``host_override``
+    One of the following values:
+
+    -  ``true`` - Sets the host header of the request using the selected parent, including the SNI name to be used for any upstream TLS connection.  Useful when a parent is another CDN that requires a correct SNI name.
+    -  ``false`` - The default.  Does not change the host header.
 
 .. _parent-config-format-hash-algorithm:
 

@@ -68,7 +68,13 @@ ts.Disk.remap_config.AddLine(
     'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
 ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all

@@ -209,7 +209,7 @@ public:
 
           field.ltrim_if(&isspace).rtrim_if(&isspace);
           values.insert(convert(std::string(field)));
-          start       = ++cur + skip_quotes;
+          start       = ++cur;
           skip_quotes = 0;
         } else {
           ++cur;

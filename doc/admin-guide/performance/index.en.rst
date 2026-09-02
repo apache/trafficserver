@@ -405,9 +405,6 @@ will persist, specified in seconds using
 the remote OCSP responders, in seconds, with
 :ts:cv:`proxy.config.ssl.ocsp.request_timeout`.
 
-Lastly, you can control the number of seconds for which SSL sessions will be
-cached in |TS| using :ts:cv:`proxy.config.ssl.session_cache.timeout`.
-
 .. code-block:: yaml
 
    records:
@@ -416,8 +413,6 @@ cached in |TS| using :ts:cv:`proxy.config.ssl.session_cache.timeout`.
        ocsp:
          cache_timeout: 3600
          request_timeout: 10
-       session_cache:
-         timeout: 0
 
 
 Transaction Activity Timeouts
@@ -528,8 +523,6 @@ SSL-Specific Options
 ~~~~~~~~~~~~~~~~~~~~
 
 :ts:cv:`proxy.config.ssl.max_record_size`
-:ts:cv:`proxy.config.ssl.session_cache.mode`
-:ts:cv:`proxy.config.ssl.session_cache.size`
 
 Thread Types
 ------------

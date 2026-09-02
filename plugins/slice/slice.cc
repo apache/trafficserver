@@ -28,6 +28,7 @@
 #include "ts/ts.h"
 
 #include <charconv>
+#include <memory>
 #include <netinet/in.h>
 #include <array>
 #include <string_view>
@@ -50,14 +51,13 @@ TSCont global_read_resp_hdr_contp;
 static bool
 should_skip_this_obj(TSHttpTxn txnp, Config *const config)
 {
-  int         len    = 0;
-  char *const urlstr = TSHttpTxnEffectiveUrlStringGet(txnp, &len);
+  int                                      len = 0;
+  std::unique_ptr<char, decltype(&TSfree)> urlstr(TSHttpTxnEffectiveUrlStringGet(txnp, &len), TSfree);
 
-  bool const known_large = config->isKnownLargeObj({urlstr, static_cast<size_t>(len)});
-  TSfree(urlstr);
+  bool const known_large = config->isKnownLargeObj({urlstr.get(), static_cast<size_t>(len)});
 
   if (!known_large) {
-    DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr);
+    DEBUG_LOG("Not a known large object, not slicing: %.*s", len, urlstr.get());
     return true;
   }
 
@@ -108,7 +108,14 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
       std::unique_ptr<Data> data = std::make_unique<Data>(config);
 
       data->m_method_type = header.method();
-      data->m_txnp        = txnp;
+
+      // Cache the effective URL now while txnp is still valid
+      int   efflen = 0;
+      char *effstr = TSHttpTxnEffectiveUrlStringGet(txnp, &efflen);
+      if (effstr != nullptr) {
+        data->m_effective_url.assign(effstr, efflen);
+        TSfree(effstr);
+      }
 
       // set up feedback connect
       if (AF_INET == ip->sa_family) {
@@ -200,8 +207,8 @@ read_request(TSHttpTxn txnp, Config *const config, TSCont read_resp_hdr_contp)
         }
       }
 
-      data->m_buffer_index      = TSPluginVCIOBufferIndexGet(data->m_txnp);     // default of m_buffer_index = 32KB
-      data->m_buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(data->m_txnp); // default of m_buffer_water_mark = 0
+      data->m_buffer_index      = TSPluginVCIOBufferIndexGet(txnp);     // default of m_buffer_index = 32KB
+      data->m_buffer_water_mark = TSPluginVCIOBufferWaterMarkGet(txnp); // default of m_buffer_water_mark = 0
 
       if (dbg_ctl.on()) {
         int         len    = 0;

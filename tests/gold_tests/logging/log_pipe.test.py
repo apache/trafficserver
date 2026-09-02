@@ -27,12 +27,16 @@ Test.SkipUnless(Condition.HasATSFeature('TS_HAS_PIPE_BUFFER_SIZE_CONFIG'))
 ts_counter = 1
 
 
-def get_ts(logging_config):
+def get_ts(logging_config, disable_log_checks=False):
     """
     Create a Traffic Server process.
+
+    :param disable_log_checks: Whether to disable the default diagnostics log
+        checks on systems where the kernel may reject increasing the pipe
+        buffer size for an unprivileged Traffic Server process.
     """
     global ts_counter
-    ts = Test.MakeATSProcess("ts{}".format(ts_counter))
+    ts = Test.MakeATSProcess("ts{}".format(ts_counter), disable_log_checks=disable_log_checks)
     ts_counter += 1
 
     ts.Disk.records_config.update(
@@ -122,9 +126,14 @@ logging:
       mode: ascii_pipe
       format: custom
       pipe_buffer_size: {}
-      '''.format(pipe_name, pipe_size).split("\n"))
+      '''.format(pipe_name, pipe_size).split("\n"),
+    disable_log_checks=True)
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
+
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    r"ERROR:(?! Set pipe size failed for pipe .*: Operation not permitted)", "The diagnostics should contain no unexpected errors.")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "The diagnostics should contain no fatal errors.")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created")
@@ -147,7 +156,8 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "New buffer size for pipe.*{}".format(pipe_name), "Verify that the named pipe's size was adjusted")
 buffer_verifier = "pipe_buffer_is_larger_than.py"
 tr.Setup.Copy(buffer_verifier)
-verify_buffer_size = tr.Processes.Process("verify_buffer_size", f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size}")
+verify_buffer_size = tr.Processes.Process(
+    "verify_buffer_size", f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size} {ts.Disk.diags_log.AbsPath}")
 verify_buffer_size.Return = 0
 verify_buffer_size.Streams.All += Testers.ContainsExpression("Success", "The buffer size verifier should report success.")
 

@@ -208,7 +208,7 @@ public:
 
     {
       std::lock_guard<std::mutex> l(snapshot_lock_);
-      snapshot_ = ctx;
+      snapshot_ = std::move(ctx);
     }
 
     nuraft::ptr<std::exception> except(nullptr);

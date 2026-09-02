@@ -149,6 +149,27 @@ REMAP {
 
 Passing the output from hrw4u back into u4wrh brings back the original script again!
 
+### JSON response bodies
+
+Use the two-argument `set-body` form to set body content and its MIME type
+together. Double braces delimit literal brace content, so JSON object braces
+are not interpreted as HRW4U interpolation:
+
+```
+REMAP {
+    http.status = 400;
+    set-body("{{"error": "bad request"}}\n", "application/problem+json");
+}
+```
+
+`set-body-from(url)` preserves the fetched response's `Content-Type`. Pass a
+second argument, `set-body-from(url, content_type)`, to override it. This
+function is available in the `READ_RESPONSE` section.
+
+Use `set-body-from-file(path, content_type)` in `REMAP` or `SEND_RESPONSE` to
+load a local body when the rule configuration is loaded. Relative paths are
+resolved from the directory containing the rule file.
+
 ## Build System
 
 The project uses a hybrid build system:

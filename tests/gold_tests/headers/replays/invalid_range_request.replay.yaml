@@ -17,6 +17,32 @@
 meta:
   version: "1.0"
 
+autest:
+  description: 'Verify invalid Range requests are forwarded to origin and return 416'
+
+  server:
+    name: 'invalid-range-server'
+
+  client:
+    name: 'invalid-range-client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.cache.http: 1
+      proxy.config.http.cache.range.write: 1
+      proxy.config.http.cache.required_headers: 0
+      proxy.config.http.insert_age_in_response: 0
+
+    remap_config:
+      - from: "/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
 sessions:
   # Populate cache entry
   - transactions:
@@ -55,3 +81,10 @@ sessions:
           headers:
             fields:
               - [X-ResponseHeader, failed_response]
+
+        proxy-response:
+          status: 416
+          reason: Range Not Satisfiable
+          headers:
+            fields:
+              - [X-ResponseHeader, { value: failed_response, as: equal }]

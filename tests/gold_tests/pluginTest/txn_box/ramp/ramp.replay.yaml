@@ -18,7 +18,8 @@ meta:
       url: "/1"
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 1 ]]}}
     client-request:

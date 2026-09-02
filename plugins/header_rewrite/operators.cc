@@ -23,6 +23,9 @@
 #include <cstring>
 #include <algorithm>
 #include <iomanip>
+#include <stdexcept>
+#include <system_error>
+#include <utility>
 
 #include "records/RecCore.h"
 #include "ts/ts.h"
@@ -40,10 +43,37 @@ const unsigned int LOCAL_IP_ADDRESS = 0x0100007f;
 const unsigned int MAX_SIZE         = 256;
 const int          LOCAL_PORT       = 8080;
 
+void
+initialize_content_type(Parser &p, Operator *owner, Value &content_type)
+{
+  size_t      token_count = p.get_tokens().size();
+  auto const &tokens      = p.get_tokens();
+
+  if (token_count > 0 && tokens.back().size() >= 2 && tokens.back().front() == '[' && tokens.back().back() == ']') {
+    --token_count;
+  }
+  if (token_count > 3) {
+    throw std::runtime_error(p.get_op() + " accepts at most two arguments; quote arguments that contain whitespace");
+  }
+
+  auto const &value = p.get_value();
+
+  if (!value.empty() && value.find('/') == std::string::npos && value.find("%{") == std::string::npos) {
+    throw std::runtime_error(p.get_op() + " Content-Type must be a MIME type containing '/'");
+  }
+  content_type.set_value(value, owner);
+}
+
+struct SetBodyFromData {
+  TSHttpTxn   http_txn;
+  std::string content_type;
+};
+
 int
 handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 {
-  TSHttpTxn http_txn = static_cast<TSHttpTxn>(TSContDataGet(cont));
+  auto     *fetch_data = static_cast<SetBodyFromData *>(TSContDataGet(cont));
+  TSHttpTxn http_txn   = fetch_data->http_txn;
 
   switch (static_cast<int>(event)) {
   case OperatorSetBodyFrom::TS_EVENT_FETCHSM_SUCCESS: {
@@ -58,7 +88,25 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
 
       TSHttpHdrTypeSet(hdr_buf, hdr_loc, TS_HTTP_TYPE_RESPONSE);
       if (TSHttpHdrParseResp(parser, hdr_buf, hdr_loc, &data_start, data_end) == TS_PARSE_DONE) {
-        TSHttpTxnErrorBodySet(http_txn, TSstrdup(data_start), (data_end - data_start), nullptr);
+        char  *content_type = nullptr;
+        size_t body_len     = data_end - data_start;
+        char  *body         = static_cast<char *>(TSmalloc(body_len + 1));
+
+        if (!fetch_data->content_type.empty()) {
+          content_type = TSstrdup(fetch_data->content_type.c_str());
+        } else if (TSMLoc field_loc = TSMimeHdrFieldFind(hdr_buf, hdr_loc, TS_MIME_FIELD_CONTENT_TYPE, TS_MIME_LEN_CONTENT_TYPE);
+                   field_loc != TS_NULL_MLOC) {
+          int         value_len = 0;
+          const char *value     = TSMimeHdrFieldValueStringGet(hdr_buf, hdr_loc, field_loc, -1, &value_len);
+
+          if (value != nullptr && value_len > 0) {
+            content_type = TSstrndup(value, value_len);
+          }
+          TSHandleMLocRelease(hdr_buf, hdr_loc, field_loc);
+        }
+        memcpy(body, data_start, body_len);
+        body[body_len] = '\0';
+        TSHttpTxnErrorBodySet(http_txn, body, body_len, content_type);
       } else {
         TSWarning("[%s] Unable to parse set-custom-body fetch response", __FUNCTION__);
       }
@@ -79,6 +127,8 @@ handleFetchEvents(TSCont cont, TSEvent event, void *edata)
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
   case TS_EVENT_HTTP_TXN_CLOSE: {
+    delete fetch_data;
+    TSContDataSet(cont, nullptr);
     TSContDestroy(cont);
     TSHttpTxnReenable(http_txn, TS_EVENT_HTTP_CONTINUE);
   } break;
@@ -100,11 +150,18 @@ createRequestString(const std::string_view &value, char (&req_buf)[MAX_SIZE], in
 
   if (TSUrlCreate(url_buf, &url_loc) == TS_SUCCESS && TSUrlParse(url_buf, url_loc, &start, end) == TS_PARSE_DONE) {
     const char *host = TSUrlHostGet(url_buf, url_loc, &host_len);
-    const char *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
+    char       *url  = TSUrlStringGet(url_buf, url_loc, &url_len);
 
-    *req_buf_size = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
+    int written = snprintf(req_buf, MAX_SIZE, "GET %.*s HTTP/1.1\r\nHost: %.*s\r\n\r\n", url_len, url, host_len, host);
 
+    TSfree(url);
     TSMBufferDestroy(url_buf);
+
+    if (written < 0 || static_cast<unsigned int>(written) >= MAX_SIZE) {
+      Dbg(pi_dbg_ctl, "Request string does not fit in %u byte buffer, not sending truncated request", MAX_SIZE);
+      return TS_ERROR;
+    }
+    *req_buf_size = written;
 
     return TS_SUCCESS;
   } else {
@@ -198,19 +255,13 @@ OperatorSetStatus::initialize_hooks()
 bool
 OperatorSetStatus::exec(const Resources &res) const
 {
-  switch (get_hook()) {
-  case TS_HTTP_READ_RESPONSE_HDR_HOOK:
-  case TS_HTTP_SEND_RESPONSE_HDR_HOOK:
-    if (res.bufp && res.hdr_loc) {
-      TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
-      if (_reason && _reason_len > 0) {
-        TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
-      }
+  if (res.bufp && res.hdr_loc && TSHttpHdrTypeGet(res.bufp, res.hdr_loc) == TS_HTTP_TYPE_RESPONSE) {
+    TSHttpHdrStatusSet(res.bufp, res.hdr_loc, static_cast<TSHttpStatus>(_status.get_int_value()), res.state.txnp, PLUGIN_NAME);
+    if (_reason && _reason_len > 0) {
+      TSHttpHdrReasonSet(res.bufp, res.hdr_loc, _reason, _reason_len);
     }
-    break;
-  default:
+  } else {
     TSHttpTxnStatusSet(res.state.txnp, static_cast<TSHttpStatus>(_status.get_int_value()), PLUGIN_NAME);
-    break;
   }
 
   Dbg(pi_dbg_ctl, "OperatorSetStatus::exec() invoked with status=%d", _status.get_int_value());
@@ -601,7 +652,7 @@ OperatorSetRedirect::exec(const Resources &res) const
       const_cast<Resources &>(res).changed_url = true;
       res._rri->redirect                       = 1;
     } else {
-      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() hook=%d", int(get_hook()));
+      Dbg(pi_dbg_ctl, "OperatorSetRedirect::exec() redirect to %s", value.c_str());
       // Set the new status code and reason.
       TSHttpStatus status = static_cast<TSHttpStatus>(_status.get_int_value());
       TSHttpHdrStatusSet(res.bufp, res.hdr_loc, status, res.state.txnp, PLUGIN_NAME);
@@ -805,8 +856,8 @@ void
 OperatorSetBody::initialize(Parser &p)
 {
   Operator::initialize(p);
-  // we want the arg since body only takes one value
   _value.set_value(p.get_arg(), this);
+  initialize_content_type(p, this, _content_type);
 }
 
 void
@@ -820,13 +871,83 @@ bool
 OperatorSetBody::exec(const Resources &res) const
 {
   std::string value;
+  std::string content_type;
 
   _value.append_value(value, res);
-  char *msg = nullptr;
+  _content_type.append_value(content_type, res);
+  char *msg       = nullptr;
+  char *mime_type = nullptr;
+
   if (!value.empty()) {
     msg = TSstrdup(value.c_str());
+    if (!content_type.empty()) {
+      mime_type = TSstrdup(content_type.c_str());
+    }
   }
-  TSHttpTxnErrorBodySet(res.state.txnp, msg, value.size(), nullptr);
+  TSHttpTxnErrorBodySet(res.state.txnp, msg, value.size(), mime_type);
+  return true;
+}
+
+// OperatorSetBodyFromFile
+void
+OperatorSetBodyFromFile::initialize(Parser &p)
+{
+  Operator::initialize(p);
+  initialize_content_type(p, this, _content_type);
+
+  swoc::file::path path{p.get_arg()};
+
+  if (path.is_relative()) {
+    swoc::file::path base{TSConfigDirGet()};
+
+    if (has_config_location()) {
+      base = swoc::file::path{get_config_filename()};
+      if (base.is_relative()) {
+        base = swoc::file::path{TSConfigDirGet()} / base;
+      }
+      base = base.parent_path();
+    }
+    path = base / path;
+  }
+
+  std::error_code ec;
+
+  _body = swoc::file::load(path, ec);
+  if (ec) {
+    throw std::system_error(ec, "unable to load body file '" + std::string(path.c_str()) + "'");
+  }
+
+  auto const max_body_size = RecGetRecordInt("proxy.config.body_factory.response_max_size");
+
+  if (max_body_size && *max_body_size >= 0 && _body.size() > static_cast<size_t>(*max_body_size)) {
+    throw std::runtime_error("body file '" + std::string(path.c_str()) + "' exceeds proxy.config.body_factory.response_max_size (" +
+                             std::to_string(*max_body_size) + ")");
+  }
+}
+
+void
+OperatorSetBodyFromFile::initialize_hooks()
+{
+  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
+  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
+}
+
+bool
+OperatorSetBodyFromFile::exec(const Resources &res) const
+{
+  std::string content_type;
+  char       *body      = nullptr;
+  char       *mime_type = nullptr;
+
+  _content_type.append_value(content_type, res);
+  if (!_body.empty()) {
+    body = static_cast<char *>(TSmalloc(_body.size()));
+    std::memcpy(body, _body.data(), _body.size());
+    if (!content_type.empty()) {
+      mime_type = TSstrdup(content_type.c_str());
+    }
+  }
+  TSHttpTxnErrorBodySet(res.state.txnp, body, _body.size(), mime_type);
   return true;
 }
 
@@ -1011,7 +1132,7 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
     for (; idx < cookies_len && std::isspace(cookies[idx]); idx++) {
       ;
     }
-    if (0 == strncmp(cookies + idx, cookie_key.c_str(), cookie_key.size())) {
+    if (cookies_len - idx >= cookie_key.size() && 0 == memcmp(cookies + idx, cookie_key.c_str(), cookie_key.size())) {
       size_t key_start_idx = idx;
       // advance to past the name and any subsequent spaces
       for (idx += cookie_key.size(); idx < cookies_len && std::isspace(cookies[idx]); idx++) {
@@ -1029,12 +1150,7 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
         for (; idx < cookies_len && cookies[idx] != ';'; idx++) {
           ;
         }
-        // If we have not reached the end and there is a space after the
-        // semi-colon, advance one char
-        if (idx + 1 < cookies_len && std::isspace(cookies[idx + 1])) {
-          idx++;
-        }
-        // cookie value is found
+        // idx now points at the ';' ending this pair, or at cookies_len.
         size_t value_end_idx = idx;
         if (CookieHelper::COOKIE_OP_SET == cookie_op) {
           updated_cookies.append(cookies, value_start_idx);
@@ -1044,10 +1160,15 @@ CookieHelper::cookieModifyHelper(const char *cookies, const size_t cookies_len, 
         }
 
         if (CookieHelper::COOKIE_OP_DEL == cookie_op) {
-          // +1 to skip the semi-colon after the cookie_value
           updated_cookies.append(cookies, key_start_idx);
+          // Drop the deleted pair's trailing ';' and one following space, if present.
           if (value_end_idx < cookies_len) {
-            updated_cookies.append(cookies + value_end_idx + 1, cookies_len - value_end_idx - 1);
+            size_t tail_idx = value_end_idx + 1;
+
+            if (tail_idx < cookies_len && std::isspace(cookies[tail_idx])) {
+              tail_idx++;
+            }
+            updated_cookies.append(cookies + tail_idx, cookies_len - tail_idx);
           }
           // if the cookie to delete is the last pair,
           // the semi-colon before this pair needs to be deleted
@@ -1232,21 +1353,9 @@ OperatorSetPluginCntl::initialize(Parser &p)
     } else {
       TSError("[%s] Unknown value for INBOUND_IP_SOURCE control: %s", PLUGIN_NAME, value.c_str());
     }
+  } else {
+    TSError("[%s] Unknown plugin control name: %s", PLUGIN_NAME, name.c_str());
   }
-}
-
-// This operator should be allowed everywhere
-void
-OperatorSetPluginCntl::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
 }
 
 bool
@@ -1275,12 +1384,11 @@ OperatorRunPlugin::initialize(Parser &p)
 {
   Operator::initialize(p);
 
-  auto plugin_name = p.get_arg();
-  auto plugin_args = p.get_value();
+  const auto &plugin_name = p.get_arg();
+  const auto &plugin_args = p.get_value();
 
   if (plugin_name.empty()) {
-    TSError("[%s] missing plugin name", PLUGIN_NAME);
-    return;
+    throw std::runtime_error("run-plugin missing plugin name");
   }
 
   std::vector<std::string> tokens;
@@ -1291,15 +1399,10 @@ OperatorRunPlugin::initialize(Parser &p)
     tokens.push_back(token);
   }
 
-  // Create argc and argv
-  int    argc = tokens.size() + 2;
-  char **argv = new char *[argc];
+  std::vector<char *> argv{p.from_url(), p.to_url()};
 
-  argv[0] = p.from_url();
-  argv[1] = p.to_url();
-
-  for (size_t i = 0; i < tokens.size(); ++i) {
-    argv[i + 2] = const_cast<char *>(tokens[i].c_str());
+  for (auto const &argument : tokens) {
+    argv.push_back(const_cast<char *>(argument.c_str()));
   }
 
   std::string error;
@@ -1311,14 +1414,12 @@ OperatorRunPlugin::initialize(Parser &p)
     elevate_access = RecGetRecordInt("proxy.config.plugin.load_elevated").value_or(0);
     ElevateAccess access(elevate_access ? ElevateAccess::FILE_PRIVILEGE : 0);
 
-    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), argc, const_cast<char **>(argv), error,
+    _plugin = plugin_factory.getRemapPlugin(swoc::file::path(plugin_name), static_cast<int>(argv.size()), argv.data(), error,
                                             isPluginDynamicReloadEnabled());
   } // done elevating access
 
-  delete[] argv;
-
   if (!_plugin) {
-    TSError("[%s] Unable to load plugin '%s': %s", PLUGIN_NAME, plugin_name.c_str(), error.c_str());
+    throw std::runtime_error("run-plugin unable to load plugin '" + std::string{plugin_name} + "': " + error);
   }
 }
 
@@ -1333,7 +1434,11 @@ OperatorRunPlugin::initialize_hooks()
 bool
 OperatorRunPlugin::exec(const Resources &res) const
 {
-  TSReleaseAssert(_plugin != nullptr);
+  // Rejected at config load (see initialize); guard anyway so a stray bad rule can't abort the server.
+  if (!_plugin) {
+    Dbg(pi_dbg_ctl, "OperatorRunPlugin::exec skipped, plugin was not loaded");
+    return true;
+  }
 
   if (res._rri && res.state.txnp) {
     _plugin->doRemap(res.state.txnp, res._rri);
@@ -1346,8 +1451,8 @@ void
 OperatorSetBodyFrom::initialize(Parser &p)
 {
   Operator::initialize(p);
-  // we want the arg since body only takes one value
   _value.set_value(p.get_arg(), this);
+  initialize_content_type(p, this, _content_type);
   require_resources(RSRC_SERVER_RESPONSE_HEADERS);
   require_resources(RSRC_RESPONSE_STATUS);
 }
@@ -1368,29 +1473,30 @@ OperatorSetBodyFrom::exec(const Resources &res) const
     return true;
   }
 
-  char req_buf[MAX_SIZE];
-  int  req_buf_size = 0;
-  if (createRequestString(_value.get_value(), req_buf, &req_buf_size) == TS_SUCCESS) {
+  std::string url;
+  std::string content_type;
+  char        req_buf[MAX_SIZE];
+  int         req_buf_size = 0;
+
+  _value.append_value(url, res);
+  _content_type.append_value(content_type, res);
+  if (createRequestString(url, req_buf, &req_buf_size) == TS_SUCCESS) {
     TSCont fetchCont = TSContCreate(handleFetchEvents, TSMutexCreate());
-    TSContDataSet(fetchCont, static_cast<void *>(res.state.txnp));
+    TSContDataSet(fetchCont, new SetBodyFromData{res.state.txnp, std::move(content_type)});
 
     TSHttpTxnHookAdd(res.state.txnp, TS_HTTP_TXN_CLOSE_HOOK, fetchCont);
 
     TSFetchEvent event_ids;
-    event_ids.success_event_id = TS_EVENT_FETCHSM_SUCCESS;
-    event_ids.failure_event_id = TS_EVENT_FETCHSM_FAILURE;
-    event_ids.timeout_event_id = TS_EVENT_FETCHSM_TIMEOUT;
+    event_ids.success_event_id = OperatorSetBodyFrom::TS_EVENT_FETCHSM_SUCCESS;
+    event_ids.failure_event_id = OperatorSetBodyFrom::TS_EVENT_FETCHSM_FAILURE;
+    event_ids.timeout_event_id = OperatorSetBodyFrom::TS_EVENT_FETCHSM_TIMEOUT;
 
-    struct sockaddr_in addr;
+    struct sockaddr_in addr {
+    };
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = LOCAL_IP_ADDRESS;
     addr.sin_port        = LOCAL_PORT;
-    TSFetchUrl(static_cast<const char *>(req_buf), req_buf_size, reinterpret_cast<struct sockaddr const *>(&addr), fetchCont,
-               AFTER_BODY, event_ids);
-
-    // Forces original status code in event TSHttpTxnErrorBodySet changed
-    // the code or another condition was set conflicting with this one.
-    // Set here because res is the only structure that contains the original status code.
+    TSFetchUrl(req_buf, req_buf_size, reinterpret_cast<struct sockaddr const *>(&addr), fetchCont, AFTER_BODY, event_ids);
     TSHttpTxnStatusSet(res.state.txnp, res.resp_status, PLUGIN_NAME);
   } else {
     TSError(PLUGIN_NAME, "OperatorSetBodyFrom:exec:: Could not create request");
@@ -1407,7 +1513,7 @@ OperatorSetStateFlag::initialize(Parser &p)
   _flag_ix = strtol(p.get_arg().c_str(), nullptr, 10);
 
   if (_flag_ix < 0 || _flag_ix >= NUM_STATE_FLAGS) {
-    TSError("[%s] state flag with index %d is out of range", PLUGIN_NAME, _flag_ix);
+    TSError("[%s] %s flag with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), _flag_ix);
     return;
   }
 
@@ -1424,33 +1530,19 @@ OperatorSetStateFlag::initialize(Parser &p)
   }
 }
 
-// This operator should be allowed everywhere
-void
-OperatorSetStateFlag::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
-}
-
 bool
 OperatorSetStateFlag::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetStateFlag() failed. Transaction is null", PLUGIN_NAME);
+  if (!_check_state_handle(_scope, res)) {
+    TSError("[%s] OperatorSetStateFlag() failed. %s handle is null", PLUGIN_NAME, _scope_label(_scope));
     return false;
   }
 
-  Dbg(pi_dbg_ctl, "   Setting state flag %d to %d", _flag_ix, _flag);
+  Dbg(pi_dbg_ctl, "   Setting %s flag %d to %d", _scope_label(_scope), _flag_ix, _flag);
 
-  auto data = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto data = _get_state_data(_scope, res);
 
-  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(_flag ? data | _mask : data & _mask));
+  _set_state_data(_scope, res, _flag ? data | _mask : data & _mask);
 
   return true;
 }
@@ -1463,7 +1555,7 @@ OperatorSetStateInt8::initialize(Parser &p)
   _byte_ix = strtol(p.get_arg().c_str(), nullptr, 10);
 
   if (_byte_ix < 0 || _byte_ix >= NUM_STATE_INT8S) {
-    TSError("[%s] state int8 with index %d is out of range", PLUGIN_NAME, _byte_ix);
+    TSError("[%s] %s int8 with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), _byte_ix);
     return;
   }
 
@@ -1472,35 +1564,21 @@ OperatorSetStateInt8::initialize(Parser &p)
     int v = _value.get_int_value();
 
     if (v < 0 || v > 255) {
-      TSError("[%s] state int8 value %d is out of range", PLUGIN_NAME, v);
+      TSError("[%s] %s int8 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), v);
       return;
     }
   }
 }
 
-// This operator should be allowed everywhere
-void
-OperatorSetStateInt8::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
-}
-
 bool
 OperatorSetStateInt8::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetStateInt8() failed. Transaction is null", PLUGIN_NAME);
+  if (!_check_state_handle(_scope, res)) {
+    TSError("[%s] OperatorSetStateInt8() failed. %s handle is null", PLUGIN_NAME, _scope_label(_scope));
     return false;
   }
 
-  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto ptr = _get_state_data(_scope, res);
   int  val = 0;
 
   if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
@@ -1509,7 +1587,7 @@ OperatorSetStateInt8::exec(const Resources &res) const
     _value.append_value(v, res);
     val = strtol(v.c_str(), nullptr, 10);
     if (val < 0 || val > 255) {
-      TSWarning("[%s] state int8 value %d is out of range", PLUGIN_NAME, val);
+      TSWarning("[%s] %s int8 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), val);
       return false;
     }
   } else {
@@ -1517,10 +1595,10 @@ OperatorSetStateInt8::exec(const Resources &res) const
     val = _value.get_int_value();
   }
 
-  Dbg(pi_dbg_ctl, "   Setting state int8 %d to %d", _byte_ix, val);
+  Dbg(pi_dbg_ctl, "   Setting %s int8 %d to %d", _scope_label(_scope), _byte_ix, val);
   ptr &= ~STATE_INT8_MASKS[_byte_ix]; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << (NUM_STATE_FLAGS + _byte_ix * 8));
-  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+  _set_state_data(_scope, res, ptr);
 
   return true;
 }
@@ -1533,7 +1611,7 @@ OperatorSetStateInt16::initialize(Parser &p)
   int ix = strtol(p.get_arg().c_str(), nullptr, 10);
 
   if (ix != 0) {
-    TSError("[%s] state int16 with index %d is out of range", PLUGIN_NAME, ix);
+    TSError("[%s] %s int16 with index %d is out of range", PLUGIN_NAME, _scope_label(_scope), ix);
     return;
   }
 
@@ -1542,35 +1620,21 @@ OperatorSetStateInt16::initialize(Parser &p)
     int v = _value.get_int_value();
 
     if (v < 0 || v > 65535) {
-      TSError("[%s] state int16 value %d is out of range", PLUGIN_NAME, v);
+      TSError("[%s] %s int16 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), v);
       return;
     }
   }
 }
 
-// This operator should be allowed everywhere
-void
-OperatorSetStateInt16::initialize_hooks()
-{
-  add_allowed_hook(TS_HTTP_READ_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_READ_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_RESPONSE_HDR_HOOK);
-  add_allowed_hook(TS_REMAP_PSEUDO_HOOK);
-  add_allowed_hook(TS_HTTP_PRE_REMAP_HOOK);
-  add_allowed_hook(TS_HTTP_SEND_REQUEST_HDR_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_CLOSE_HOOK);
-  add_allowed_hook(TS_HTTP_TXN_START_HOOK);
-}
-
 bool
 OperatorSetStateInt16::exec(const Resources &res) const
 {
-  if (!res.state.txnp) {
-    TSError("[%s] OperatorSetStateInt16() failed. Transaction is null", PLUGIN_NAME);
+  if (!_check_state_handle(_scope, res)) {
+    TSError("[%s] OperatorSetStateInt16() failed. %s handle is null", PLUGIN_NAME, _scope_label(_scope));
     return false;
   }
 
-  auto ptr = reinterpret_cast<uint64_t>(TSUserArgGet(res.state.txnp, _txn_slot));
+  auto ptr = _get_state_data(_scope, res);
   int  val = 0;
 
   if (_value.has_conds()) { // If there are conditions, we need to evaluate them, which gives us a string
@@ -1579,7 +1643,7 @@ OperatorSetStateInt16::exec(const Resources &res) const
     _value.append_value(v, res);
     val = strtol(v.c_str(), nullptr, 10);
     if (val < 0 || val > 65535) {
-      TSWarning("[%s] state int8 value %d is out of range", PLUGIN_NAME, val);
+      TSWarning("[%s] %s int16 value %d is out of range", PLUGIN_NAME, _scope_label(_scope), val);
       return false;
     }
   } else {
@@ -1587,10 +1651,10 @@ OperatorSetStateInt16::exec(const Resources &res) const
     val = _value.get_int_value();
   }
 
-  Dbg(pi_dbg_ctl, "   Setting state int16 to %d", val);
+  Dbg(pi_dbg_ctl, "   Setting %s int16 to %d", _scope_label(_scope), val);
   ptr &= ~STATE_INT16_MASK; // Clear any old value
   ptr |= (static_cast<uint64_t>(val) << 48);
-  TSUserArgSet(res.state.txnp, _txn_slot, reinterpret_cast<void *>(ptr));
+  _set_state_data(_scope, res, ptr);
 
   return true;
 }
@@ -1703,7 +1767,7 @@ OperatorIf::new_section(Parser::CondClause clause)
 bool
 OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
 {
-  Operator *op = operator_factory(p.get_op());
+  std::unique_ptr<Operator> op{operator_factory(p.get_op())};
 
   if (!op) {
     TSError("[%s] Unknown operator: %s, file: %s, line: %d", PLUGIN_NAME, p.get_op().c_str(), filename, lineno);
@@ -1711,11 +1775,11 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
+  op->set_config_location(filename, lineno);
 
   try {
     op->initialize(p);
   } catch (std::exception const &ex) {
-    delete op;
     TSError("[%s] Failed to initialize operator: %s, file: %s, line: %d, error: %s", PLUGIN_NAME, p.get_op().c_str(), filename,
             lineno, ex.what());
     return false;
@@ -1723,10 +1787,10 @@ OperatorIf::add_operator(Parser &p, const char *filename, int lineno)
 
   // Add to current section
   if (_cur_section->ops.oper) {
-    _cur_section->ops.oper->append(op);
+    _cur_section->ops.oper->append(op.release());
   } else {
-    _cur_section->ops.oper.reset(op);
-    _cur_section->ops.oper_mods = op->get_oper_modifiers();
+    _cur_section->ops.oper      = std::move(op);
+    _cur_section->ops.oper_mods = _cur_section->ops.oper->get_oper_modifiers();
   }
 
   return true;
@@ -1743,6 +1807,7 @@ OperatorIf::make_condition(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  cond->set_config_location(filename, lineno);
 
   try {
     cond->initialize(p);

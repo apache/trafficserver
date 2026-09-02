@@ -63,7 +63,7 @@ Glossary
 
    cache volume
       A user defined unit of persistent storage for the cache. Cache volumes
-      are defined in :file:`volume.config`. A cache volume is by default spread
+      are defined in :file:`storage.yaml`. A cache volume is by default spread
       across :term:`cache span`\ s to increase robustness. Each section of a
       cache volume on a specific cache span is a :term:`cache stripe`.
 
@@ -74,8 +74,8 @@ Glossary
       smallest independent unit of storage.
 
    cache span
-      The physical storage described by a single line in
-      :file:`storage.config`.
+      The physical storage described by a single entry in
+      :file:`storage.yaml`.
 
    cache key
       A byte sequence that is a globally unique identifier for an

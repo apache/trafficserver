@@ -369,6 +369,25 @@ header operated on by this condition will be a comma separated string of the
 values from every occurrence of the header. More details are provided in
 `Repeated Headers`_ below.
 
+SERVER-HEADER
+~~~~~~~~~~~~~
+::
+
+    cond %{SERVER-HEADER:<name>} <operand>
+
+Value of the header ``<name>`` from the request sent to the origin server
+(regardless of the hook context in which the rule is being evaluated). This is
+useful when you need to check headers that have been modified or added during
+the request processing before being sent to the origin. Note that some headers
+may appear in an HTTP message more than once. In these cases, the value of the
+header operated on by this condition will be a comma separated string of the
+values from every occurrence of the header. More details are provided in
+`Repeated Headers`_ below.
+
+Note that the server request headers are only available after the
+``SEND_REQUEST_HDR_HOOK`` has been reached. Using this condition in earlier
+hooks will result in an empty value.
+
 CLIENT-URL
 ~~~~~~~~~~
 ::
@@ -384,6 +403,20 @@ Note that the HOST ``<part>`` of the CLIENT-URL might not be set until the remap
 phase of the transaction.  This happens when there is no host in the incoming URL
 and only set as a host header.  During the remap phase the host header is copied
 to the CLIENT-URL.  Use CLIENT-HEADER:Host if you are going to match the host.
+
+SERVER-URL
+~~~~~~~~~~
+::
+
+    cond %{SERVER-URL:<part>} <operand>
+
+The URL of the request being sent to the origin server. This is the URL after
+any remapping and modifications have been applied. The ``<part>`` may be
+specified according to the options documented in `URL Parts`_.
+
+Note that the server request URL is only available after the
+``SEND_REQUEST_HDR_HOOK`` has been reached. Using this condition in earlier
+hooks will result in an empty value.
 
 CIDR
 ~~~~
@@ -829,6 +862,41 @@ There's only one such integer, and its value is returned from this condition.
 As such, the index, ``0``, is optional here. The initialized value of this
 state variable is ``0``.
 
+SESSION-FLAG
+~~~~~~~~~~~~
+::
+
+      cond %{SESSION-FLAG:<n>}
+
+This condition allows you to check the state of a session-scoped flag. The
+``<n>`` is the number of the flag, from 0 to 15. Unlike ``STATE-FLAG`` which
+is scoped to the current transaction, session flags persist across all
+transactions on the same client connection (session). The default value of all
+flags are ``false``.
+
+SESSION-INT8
+~~~~~~~~~~~~
+::
+
+      cond %{SESSION-INT8:<n>}
+
+This condition allows you to check the state of a session-scoped 8-bit unsigned
+integer. The ``<n>`` is the number of the integer, from 0 to 3. The current
+value is returned, and all 4 integers are initialized to 0. Session integers
+persist across all transactions on the same client connection.
+
+SESSION-INT16
+~~~~~~~~~~~~~
+::
+
+      cond %{SESSION-INT16:<0>}
+
+This condition allows you to check the state of a session-scoped 16-bit unsigned
+integer. There's only one such integer, and its value is returned from this
+condition. As such, the index, ``0``, is optional here. The initialized value
+is ``0``. Session integers persist across all transactions on the same client
+connection.
+
 STATUS
 ~~~~~~
 ::
@@ -1103,28 +1171,48 @@ run-plugin
 This allows to run an existing remap plugin, conditionally, from within a
 header rewrite rule.
 
+.. note::
+    ``<plugin-argument>`` is fixed when the rule is loaded (or reloaded);
+    it behaves the same as a plugin argument in ``remap.config``. It is
+    not re-evaluated per request, so variable interpolation (e.g.
+    ``%{HEADER:bar}``) does not work here.
+
 set-body
 ~~~~~~~~
 ::
 
-  set-body <text>
+  set-body <text> [<content-type>]
 
-Sets the body to ``<text>``. Can also be used to delete a body with ``""``. This is only useful when overriding the origin status, i.e.
-intercepting/pre-empting a request so that you can override the body from the body-factory with your own.
+Sets the body to ``<text>``. If ``<content-type>`` is supplied, it is used for
+the response instead of the default ``text/html``. Can also be used to delete
+a body with ``""``. This is only useful when overriding the origin status,
+i.e. intercepting/pre-empting a request so that you can override the body from
+the body-factory with your own.
+
+Quoted values support escaped quotes and the ``\n``, ``\r``, and ``\t``
+control characters. For example, a JSON error response can be configured as::
+
+   cond %{REMAP_PSEUDO_HOOK}
+      set-status 400
+      set-body "{\"error\": \"bad request\"}\n" "application/problem+json"
 
 set-body-from
 ~~~~~~~~~~~~~
 ::
 
-  set-body-from <URL>
+  set-body-from <URL> [<content-type>]
 
 Will call ``<URL>`` (see URL in `URL Parts`_) to retrieve a custom error response
 and set the body with the result. Triggering this rule on an OK transaction will
 send a 500 status code to the client with the desired response. If this is triggered
 on any error status code, that original status code will be sent to the client.
+By default, the fetched response's ``Content-Type`` is also used. The optional
+``<content-type>`` overrides that value.
 
 .. note::
-    This config should only be set using READ_RESPONSE_HDR_HOOK
+    This operator is supported only with ``READ_RESPONSE_HDR_HOOK`` because
+    its fetch suspends an active transaction. To generate a literal response
+    at remap time, use ``set-body`` instead.
 
 An example config would look like::
 
@@ -1138,6 +1226,25 @@ An example remap config would look like::
 
    map /first http://www.example.com/first @plugin=header_rewrite.so @pparam=cond1.conf
    map /second http://www.example.com/second
+
+set-body-from-file
+~~~~~~~~~~~~~~~~~~
+::
+
+  set-body-from-file <path> [<content-type>]
+
+Loads the file at ``<path>`` when the rule configuration is loaded and uses
+its exact contents as the response body. Relative paths are resolved from the
+directory containing the rule file. If ``<content-type>`` is omitted, the
+default ``text/html`` is used. Reload the header rewrite configuration after
+changing the body file. The rule configuration is rejected if the file cannot
+be loaded or exceeds :ts:cv:`proxy.config.body_factory.response_max_size`.
+
+For example::
+
+   cond %{REMAP_PSEUDO_HOOK}
+      set-status 403
+      set-body-from-file errors/forbidden.json "application/json"
 
 set-config
 ~~~~~~~~~~
@@ -1270,6 +1377,42 @@ This operator allows you to set the state of a 16-bit unsigned integer.
 The ``<value>`` is an unsigned 16-bit integer as well, 0-65535. It can also
 be a condition, in which case thevalue of the condition is used. The index,
 0, is always required eventhough there is only one 16-bit integer state variable.
+
+set-session-flag
+~~~~~~~~~~~~~~~~
+::
+
+  set-session-flag <n> <value>
+
+This operator allows you to set the state of a session-scoped flag. The ``<n>``
+is the number of the flag, from 0 to 15. The ``<value>`` is either ``true`` or
+``false``, turning the flag on or off. Unlike ``set-state-flag``, session flags
+persist across all transactions on the same client connection.
+
+set-session-int8
+~~~~~~~~~~~~~~~~
+::
+
+   set-session-int8 <n> <value>
+
+This operator allows you to set the state of a session-scoped 8-bit unsigned
+integer. The ``<n>`` is the number of the integer, from 0 to 3. The ``<value>``
+is an unsigned 8-bit integer, 0-255. It can also be a condition, in which case
+the value of the condition is used. Session integers persist across all
+transactions on the same client connection.
+
+set-session-int16
+~~~~~~~~~~~~~~~~~
+::
+
+   set-session-int16 0 <value>
+
+This operator allows you to set the state of a session-scoped 16-bit unsigned
+integer. The ``<value>`` is an unsigned 16-bit integer, 0-65535. It can also
+be a condition, in which case the value of the condition is used. The index,
+0, is always required even though there is only one 16-bit session integer
+state variable. Session integers persist across all transactions on the same
+client connection.
 
 set-status
 ~~~~~~~~~~
@@ -1629,6 +1772,22 @@ Because this hook is valid only within a remapping context, for configuration
 files shared by both the global :file:`plugin.config` and individual remapping
 entries in :file:`remap.config`, this hook condition will force the subsequent
 ruleset(s) to be valid only for remapped transactions.
+
+POST_REMAP_HOOK
+~~~~~~~~~~~~~~~
+
+Forces evaluation of the ruleset immediately after remapping has completed, but
+before |TS| looks the request up in the cache. There is no response data yet, so
+context-adapting conditions and operators match against the request, which at
+this point is the remapped request.
+
+For rulesets in :file:`remap.config`, `REMAP_PSEUDO_HOOK`_ already covers this
+window. This hook exists for globally-configured rulesets, which otherwise have
+no hook that sees the remapped request before the cache lookup:
+`READ_REQUEST_HDR_HOOK`_ and `READ_REQUEST_PRE_REMAP_HOOK`_ run before
+remapping, and `SEND_REQUEST_HDR_HOOK`_ runs after the lookup, only when the
+request is forwarded to an origin. Anything that has to influence the lookup
+itself belongs at this hook.
 
 SEND_REQUEST_HDR_HOOK
 ~~~~~~~~~~~~~~~~~~~~~

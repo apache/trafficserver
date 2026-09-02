@@ -125,6 +125,11 @@ TEST_CASE("Basic IP", "[libswoc][ip]") {
   REQUIRE(alpha[3] == 135);
 
   CHECK(IP6Addr().load("ffee:1f2d:c587:24c3:9128:3349:3cee:143"));
+  CHECK(IP6Addr().load("ffff::1"));
+  CHECK_FALSE(IP6Addr().load("10000::1"));
+  CHECK_FALSE(IP6Addr().load("[10000::1]"));
+  CHECK_FALSE(IP6Addr().load("-1::1"));
+  CHECK_FALSE(IP6Addr().load("+1::1"));
 
   IP4Addr lo{"127.0.0.1"};
   CHECK(lo.is_loopback());

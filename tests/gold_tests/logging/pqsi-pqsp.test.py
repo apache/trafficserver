@@ -78,12 +78,12 @@ tr.Processes.Default.ReturnCode = 0
 
 log_filespec = os.path.join(ts.Variables.LOGDIR, 'field-test.log')
 
-# Wait for log file to appear, then wait one extra second to make sure TS is done writing it.
-tr = Test.AddTestRun()
-tr.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + log_filespec)
-tr.Processes.Default.ReturnCode = 0
+# Wait for both transaction log lines to be written. Their write order is not
+# deterministic.
+Test.AddAwaitFileContainsTestRun('Await pqsi/pqsp cache-miss line.', log_filespec, r'^127\.0\.0\.1 [1-6][0-9]*$')
+Test.AddAwaitFileContainsTestRun('Await pqsi/pqsp cache-hit line.', log_filespec, r'^0 0$')
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = "sed '1s/^127.0.0.1 [1-6][0-9]*$$/abc/' < " + log_filespec
+tr.Processes.Default.Command = "sed 's/^127\\.0\\.0\\.1 [1-6][0-9]*$$/abc/' < " + log_filespec + " | LC_ALL=C sort"
 tr.Processes.Default.Streams.stdout = "gold/pqsi-pqsp.gold"
 tr.Processes.Default.ReturnCode = 0

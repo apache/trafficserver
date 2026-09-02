@@ -1,0 +1,8 @@
+plugins:
+  - path: stats_over_http.so
+    params:
+      - _stats
+  - path: header_rewrite.so
+    params:
+      - /etc/trafficserver/rewrite.conf
+  - path: xdebug.so

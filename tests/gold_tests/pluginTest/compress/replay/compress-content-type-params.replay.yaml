@@ -71,3 +71,31 @@ sessions:
         fields:
           - [ Content-Encoding, { value: gzip, as: equal } ]
           - [ Content-Length, { value: 223, as: equal } ]
+
+  # C: Verify the compress plugin handles a character with a high bit set correctly.
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /ignore-params-true/
+      headers:
+        fields:
+          - [ uuid, C-1]
+          - [ Host, example.com ]
+          - [ Accept-Encoding, gzip ]
+
+    server-response:
+      status: 200
+      headers:
+        fields:
+          - [ Cache-Control, public;max-age=3600 ]
+          - [ Content-Type, "application/json\xfe; charset=utf-8" ]
+          - [ Content-Length, 1024 ]
+        content:
+          encoding: plain
+          size: 1024
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+          - [ Content-Type, { value: "application/json\xfe; charset=utf-8", as: equal } ]

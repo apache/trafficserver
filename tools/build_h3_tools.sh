@@ -20,9 +20,10 @@
 #  limitations under the License.
 
 
-# The whole idea is to end up with two set of tools, a borinssgl toolset and an
-# openssl one. The first one can be used to build ATS+Boringssl+quiche(borinssl) while the
-# later one will give the base to build ATS on top of openssl/quictls+quiche(openssl/quictls).
+# The whole idea is to end up with two sets of tools, a boringssl toolset and an
+# openssl one. The first one can be used to build ATS+Boringssl+quiche(boringssl)
+# while the latter one will give the base to build ATS on top of
+# OpenSSL+quiche(OpenSSL).
 
 
 SCRIPT_PATH=$(dirname $0)
@@ -33,7 +34,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# then openssl/quictls.
+# then OpenSSL.
 BASE=${BASE:-"/opt"}/h3-tools-openssl ${SCRIPT_PATH}/build_openssl_h3_tools.sh
 if [ $? -ne 0 ]; then
     echo "build_openssl_h3_tools script Failed."

@@ -21,11 +21,7 @@ sessions:
 
 # Session 1: No pre-existing JA4 headers - new headers should be added.
 - protocol:
-  - name: http
-    version: 1
-  - name: tcp
-  - name: ip
-
+    stack: http
   transactions:
   - client-request:
       method: "GET"
@@ -52,11 +48,7 @@ sessions:
 
 # Session 2: Pre-existing JA4 headers - with preserve, no new headers added.
 - protocol:
-  - name: http
-    version: 1
-  - name: tcp
-  - name: ip
-
+    stack: http
   transactions:
   - client-request:
       method: "GET"
@@ -86,11 +78,7 @@ sessions:
 
 # Session 3: Only x-ja4-via exists - should still trigger preserve for all.
 - protocol:
-  - name: http
-    version: 1
-  - name: tcp
-  - name: ip
-
+    stack: http
   transactions:
   - client-request:
       method: "GET"

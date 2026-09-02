@@ -132,3 +132,6 @@ p = tr.AddVerifierClientProcess("client-ttl-in-cache", replay_file, http_ports=[
 p.StartBefore(dns)
 p.StartBefore(server)
 p.StartBefore(ts)
+
+# Test malformed Cache-Control header with semicolons instead of commas (issue #12029)
+Test.ATSReplayTest(replay_file="replay/negative-caching-malformed-cc.replay.yaml")

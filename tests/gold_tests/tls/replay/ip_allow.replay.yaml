@@ -20,13 +20,9 @@ meta:
 sessions:
 
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: block.me.com
-  - name: tcp
-  - name: ip
-
+    stack: http2
+    tls:
+      sni: block.me.com
   transactions:
 
   #
@@ -56,13 +52,9 @@ sessions:
         size: 3432
 
 - protocol:
-  - name: http
-    version: 2
-  - name: tls
-    sni: allow.me.com
-  - name: tcp
-  - name: ip
-
+    stack: http2
+    tls:
+      sni: allow.me.com
   transactions:
 
   #

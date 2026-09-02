@@ -215,7 +215,7 @@ Context::extract(Expr const &expr)
 FeatureView
 Context::extract_view(const Expr &expr, std::initializer_list<ViewOption> opts)
 {
-  FeatureView zret;
+  FeatureView zret{};
 
   bool commit_p = false;
   bool cstr_p   = false;

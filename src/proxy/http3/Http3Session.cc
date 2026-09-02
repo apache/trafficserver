@@ -26,6 +26,7 @@
 
 #include "proxy/http3/Http3.h"
 #include "proxy/http3/Http3Types.h"
+#include "proxy/http/HttpConfig.h"
 
 //
 // HQSession
@@ -39,7 +40,9 @@ HQSession::HQSession(NetVConnection *vc) : ProxySession(vc)
 
 HQSession::~HQSession()
 {
-  // Transactions should be deleted first before HQSesson gets deleted.
+  this->_close_transactions();
+
+  // Transactions should be deleted first before HQSession gets deleted.
   ink_assert(this->_transaction_list.head == nullptr);
 }
 
@@ -57,6 +60,18 @@ HQSession::remove_transaction(HQTransaction *trans)
   this->_transaction_list.remove(trans);
 
   return;
+}
+
+void
+HQSession::_close_transactions()
+{
+  for (auto *transaction = this->_transaction_list.head; transaction != nullptr;) {
+    auto *next = static_cast<HQTransaction *>(transaction->link.next);
+
+    transaction->do_io_close();
+    delete transaction;
+    transaction = next;
+  }
 }
 
 const char *
@@ -115,6 +130,7 @@ void
 HQSession::new_connection(NetVConnection *new_vc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
   this->con_id = new_vc->get_service<QUICSupport>()->get_quic_connection()->connection_id();
+  this->_increment_total_client_connections_stat(new_vc);
   this->_handle_if_ssl(new_vc);
 
   do_api_callout(TS_HTTP_SSN_START_HOOK);
@@ -162,9 +178,11 @@ HQSession::main_event_handler(int event, void *edata)
   case VC_EVENT_ERROR:
   case VC_EVENT_EOS:
     this->do_io_close();
-    for (HQTransaction *t = this->_transaction_list.head; t; t = static_cast<HQTransaction *>(t->link.next)) {
+    for (HQTransaction *t = this->_transaction_list.head; t != nullptr;) {
+      HQTransaction *next = static_cast<HQTransaction *>(t->link.next);
       SCOPED_MUTEX_LOCK(lock, t->mutex, this_ethread());
       t->handleEvent(event, edata);
+      t = next;
     }
     break;
   }
@@ -177,15 +195,24 @@ HQSession::main_event_handler(int event, void *edata)
 //
 Http3Session::Http3Session(NetVConnection *vc) : HQSession(vc)
 {
-  QUICConnection *qc = vc->get_service<QUICSupport>()->get_quic_connection();
-  this->_local_qpack =
-    new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
-  this->_remote_qpack =
-    new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE, HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS);
+  QUICConnection   *qc                    = vc->get_service<QUICSupport>()->get_quic_connection();
+  uint32_t          header_field_max_size = 32768;
+  HttpConfigParams *http_config           = HttpConfig::acquire();
+
+  if (http_config) {
+    header_field_max_size = http_config->http_hdr_field_max_size;
+    HttpConfig::release(http_config);
+  }
+
+  this->_local_qpack  = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
+  this->_remote_qpack = new QPACK(qc, HTTP3_DEFAULT_MAX_FIELD_SECTION_SIZE, HTTP3_DEFAULT_HEADER_TABLE_SIZE,
+                                  HTTP3_DEFAULT_QPACK_BLOCKED_STREAMS, header_field_max_size);
 }
 
 Http3Session::~Http3Session()
 {
+  this->_close_transactions();
   this->_vc = nullptr;
   delete this->_local_qpack;
   delete this->_remote_qpack;

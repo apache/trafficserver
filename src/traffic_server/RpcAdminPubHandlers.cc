@@ -21,6 +21,7 @@
 #include "mgmt/rpc/jsonrpc/JsonRPC.h"
 
 // Admin API Implementation headers.
+#include "mgmt/rpc/handlers/cache/Cache.h"
 #include "mgmt/rpc/handlers/config/Configuration.h"
 #include "mgmt/rpc/handlers/hostdb/HostDB.h"
 #include "mgmt/rpc/handlers/records/Records.h"
@@ -34,11 +35,18 @@ namespace rpc::admin
 void
 register_admin_jsonrpc_handlers()
 {
+  // Cache
+  using namespace rpc::handlers::cache;
+  rpc::add_method_handler("admin_cache_clear", &clear_cache, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
+
   // Config
   using namespace rpc::handlers::config;
   rpc::add_method_handler("admin_config_set_records", &set_config_records, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
+  // Unified reload handler - supports both file-based and rpc-supplied modes.
   rpc::add_method_handler("admin_config_reload", &reload_config, &core_ats_rpc_service_provider_handle, {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("get_reload_config_status", &get_reload_config_status, &core_ats_rpc_service_provider_handle,
+                          {{rpc::RESTRICTED_API}});
 
   // HostDB
   using namespace rpc::handlers::hostdb;
@@ -53,6 +61,8 @@ register_admin_jsonrpc_handlers()
   using namespace rpc::handlers::plugins;
   rpc::add_method_handler("admin_plugin_send_basic_msg", &plugin_send_basic_msg, &core_ats_rpc_service_provider_handle,
                           {{rpc::RESTRICTED_API}});
+  rpc::add_method_handler("admin_plugin_get_list", &get_plugin_list, &core_ats_rpc_service_provider_handle,
+                          {{rpc::NON_RESTRICTED_API}});
 
   // server
   using namespace rpc::handlers::server;

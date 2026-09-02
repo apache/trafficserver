@@ -15,14 +15,14 @@
 #  limitations under the License.
 
 Test.Summary = '''
-Test reloading ssl_multicert.config with errors and keeping around the old ssl config structure
+Test reloading ssl_multicert.yaml with errors and keeping around the old ssl config structure
 '''
 
 sni_domain = 'example.com'
 
-ts = Test.MakeATSProcess("ts", enable_tls=True)
+ts = Test.MakeATSProcess("ts", enable_tls=True, disable_log_checks=True)
 server = Test.MakeOriginServer("server")
-server2 = Test.MakeOriginServer("server3")
+server2 = Test.MakeOriginServer("server2")
 request_header = {"headers": f"GET / HTTP/1.1\r\nHost: {sni_domain}\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -39,7 +39,13 @@ ts.addDefaultSSLFiles()
 
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr = Test.AddTestRun("ensure we can connect for SNI $sni_domain")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -53,34 +59,32 @@ tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Conn
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
 
 tr2 = Test.AddTestRun("Update config files")
-# Update the configs
-sslcertpath = ts.Disk.ssl_multicert_config.AbsPath
+# Update the configs - overwrite the ssl_multicert.yaml file with an invalid config
+sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
 
-tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config")
-tr2.Disk.ssl_multicert_config.AddLines(
-    [
-        'ssl_cert_name=server_does_not_exist.pem ssl_key_name=server_does_not_exist.key',
-        'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
-    ])
+tr2.Disk.File(sslcertpath, id="ssl_multicert_update", typename="ats:config")
+tr2.Disk.ssl_multicert_update.AddLines(
+    """
+ssl_multicert:
+  - ssl_cert_name: server_does_not_exist.pem
+    ssl_key_name: server_does_not_exist.key
+  - dest_ip: "*"
+    ssl_cert_name: server.pem_doesnotexist
+    ssl_key_name: server.key
+""".split("\n"))
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-tr2reload = Test.AddTestRun("Reload config")
-tr2reload.StillRunningAfter = ts
+tr2reload = Test.AddConfigReload(ts, expect="fail", expect_tasks=["ssl_multicert.yaml"], description="Reload config")
 tr2reload.StillRunningAfter = server
-tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
-tr2reload.Processes.Default.Env = ts.Env
-tr2reload.Processes.Default.ReturnCode = 0
-ts.Disk.diags_log.Content = Testers.ContainsExpression('ERROR: ', 'ERROR')
 
-# Reload of ssl_multicert.config should fail, BUT the old config structure
+# Reload of ssl_multicert.yaml should fail, BUT the old config structure
 # should be in place to successfully answer for the test domain
 tr3 = Test.AddTestRun("Make request again for $sni_domain")
-# Wait for the reload to complete
-tr3.Processes.Default.StartBefore(server2, ready=When.FileContains(ts.Disk.diags_log.Name, 'failed to load certificate ', 1))
+tr3.Processes.Default.StartBefore(server2)
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
@@ -88,6 +92,8 @@ tr3.MakeCurlCommand(
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+ts.Disk.diags_log.Content = Testers.ExcludesExpression(
+    r'\(quic\).*ssl_multicert', 'QUIC certificates should not load without a configured QUIC listener')
 
 ##########################################################################
 # Ensure ATS fails/exits when non-existent cert is specified
@@ -95,9 +101,13 @@ tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_doma
 # to catch if the current default (1) changes in the future
 
 ts2 = Test.MakeATSProcess("ts2", enable_tls=True)
-ts2.Disk.ssl_multicert_config.AddLines([
-    'dest_ip=* ssl_cert_name=server.pem_doesnotexist ssl_key_name=server.key',
-])
+ts2.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem_doesnotexist
+    ssl_key_name: server.key
+""".split("\n"))
 
 tr4 = Test.AddTestRun()
 tr4.Processes.Default.Command = 'echo Waiting'
@@ -109,3 +119,45 @@ ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to m
 ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
     'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
 ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to load SSL certificate file', 'check diags.log"')
+
+##########################################################################
+# Verify parallel cert loading on startup (firstLoad uses hardware_concurrency,
+# not the configured concurrency value, so the thread count is host-dependent)
+
+ts3 = Test.MakeATSProcess("ts3", enable_tls=True)
+server3 = Test.MakeOriginServer("server3")
+server3.addResponse("sessionlog.json", request_header, response_header)
+
+ts3.Disk.records_config.update(
+    {
+        'proxy.config.ssl.server.cert.path': f'{ts3.Variables.SSLDir}',
+        'proxy.config.ssl.server.private_key.path': f'{ts3.Variables.SSLDir}',
+    })
+
+ts3.addDefaultSSLFiles()
+
+ts3.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server3.Variables.Port}')
+
+# Need at least 2 certs for multi-threading to kick in
+ts3.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+  - ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+
+tr5 = Test.AddTestRun("Verify parallel cert loading")
+tr5.Processes.Default.StartBefore(ts3)
+tr5.Processes.Default.StartBefore(server3)
+tr5.StillRunningAfter = ts3
+tr5.StillRunningAfter = server3
+tr5.MakeCurlCommand(
+    f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts3.Variables.ssl_port}",
+    ts=ts3)
+tr5.Processes.Default.ReturnCode = 0
+tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
+tr5.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
+ts3.Disk.diags_log.Content = Testers.IncludesExpression('loaded 2 certs', 'verify certs were loaded successfully')

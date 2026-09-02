@@ -1,0 +1,599 @@
+/** @file
+ *
+ *  Config Registry implementation
+ *
+ *  @section license License
+ *
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+#include "mgmt/config/ConfigRegistry.h"
+
+#include "iocore/eventsystem/Continuation.h"
+#include "iocore/eventsystem/EventProcessor.h"
+#include "iocore/eventsystem/Tasks.h"
+#include "records/RecCore.h"
+#include "mgmt/config/ConfigContext.h"
+#include "mgmt/config/FileManager.h"
+#include "mgmt/config/ReloadCoordinator.h"
+#include "tscore/Diags.h"
+#include "tscore/ink_assert.h"
+#include "tscore/Layout.h"
+#include "tsutil/ts_errata.h"
+#include "swoc/TextView.h"
+
+#include <yaml-cpp/yaml.h>
+
+namespace
+{
+DbgCtl dbg_ctl{"config.reload"};
+
+/// Infer ConfigType from the filename extension.
+config::ConfigType
+infer_config_type(swoc::TextView filename)
+{
+  return (filename.ends_with(".yaml") || filename.ends_with(".yml")) ? config::ConfigType::YAML : config::ConfigType::LEGACY;
+}
+
+// Resolve a config filename: read the current value from the named record,
+// fallback to default_filename if the record is empty or absent.
+// Returns the bare filename (no sysconfdir prefix) - suitable for FileManager::addFile().
+std::string
+resolve_config_filename(const char *record_name, const std::string &default_filename)
+{
+  if (record_name && record_name[0] != '\0') {
+    if (auto val = RecGetRecordStringAlloc(record_name); val && !val->empty()) {
+      return std::string{*val};
+    }
+  }
+  return default_filename;
+}
+
+///
+// Continuation that executes config reload on ET_TASK thread
+// Used by ConfigRegistry::schedule_reload() for async rpc reloads (content supplied via RPC) or file reloads
+//
+class ScheduledReloadContinuation : public Continuation
+{
+public:
+  ScheduledReloadContinuation(Ptr<ProxyMutex> &m, std::string key) : Continuation(m.get()), _config_key(std::move(key))
+  {
+    SET_HANDLER(&ScheduledReloadContinuation::execute);
+  }
+
+  int
+  execute(int /* event */, Event * /* e */)
+  {
+    Dbg(dbg_ctl, "ScheduledReloadContinuation: executing reload for config '%s'", _config_key.c_str());
+    config::ConfigRegistry::Get_Instance().execute_reload(_config_key);
+    delete this;
+    return EVENT_DONE;
+  }
+
+private:
+  std::string _config_key;
+};
+
+} // anonymous namespace
+
+namespace detail
+{
+///
+// Continuation used by record-triggered reloads (via on_record_change callback)
+// This is separate from ScheduledReloadContinuation as it always reloads from file
+//
+class RecordTriggeredReloadContinuation : public Continuation
+{
+public:
+  RecordTriggeredReloadContinuation(Ptr<ProxyMutex> &m, std::string key) : Continuation(m.get()), _config_key(std::move(key))
+  {
+    SET_HANDLER(&RecordTriggeredReloadContinuation::execute);
+  }
+
+  int
+  execute(int /* event */, Event * /* e */)
+  {
+    Dbg(dbg_ctl, "RecordTriggeredReloadContinuation: executing reload for config '%s'", _config_key.c_str());
+
+    auto const *entry = config::ConfigRegistry::Get_Instance().find(_config_key);
+
+    if (entry == nullptr) {
+      Warning("Config key '%s' not found in registry", _config_key.c_str());
+    } else if (!entry->handler) {
+      Warning("Config '%s' has no handler", _config_key.c_str());
+    } else {
+      auto ctx = ReloadCoordinator::Get_Instance().create_config_context(_config_key, _config_key, entry->resolve_filename());
+      if (!ctx) {
+        if (ReloadCoordinator::Get_Instance().is_reload_in_progress()) {
+          Dbg(dbg_ctl, "Config '%s' reload skipped (duplicate in this reload cycle)", _config_key.c_str());
+        } else {
+          Dbg(dbg_ctl, "Config '%s' standalone record-triggered reload (no active reload task)", _config_key.c_str());
+          ctx.set_plugin_name(entry->plugin_name);
+          entry->handler(ctx);
+        }
+      } else {
+        ctx.set_plugin_name(entry->plugin_name);
+        ctx.in_progress();
+        entry->handler(ctx);
+        Dbg(dbg_ctl, "Config '%s' file reload completed", _config_key.c_str());
+      }
+    }
+
+    delete this;
+    return EVENT_DONE;
+  }
+
+private:
+  std::string _config_key;
+};
+} // namespace detail
+
+namespace
+{
+///
+/// Callback invoked by the Records system when a trigger record changes.
+/// Only fires for records registered with ConfigRegistry (via trigger_records
+/// in register_config()/register_record_config(), or via add_file_dependency()).
+///
+/// Record-triggered reload: fan-in deduplication
+/// ──────────────────────────────────────────────
+/// When a config key has N trigger records (e.g., ssl_client_coordinator has 11),
+/// setup_triggers() registers an independent on_record_change callback for each.
+/// The Records system (RecExecConfigUpdateCbs) fires all record
+/// callbacks synchronously in one pass - N records produce N calls here, each
+/// scheduling its own RecordTriggeredReloadContinuation on ET_TASK.
+///
+/// All N continuations carry the same config_key and would invoke the same handler.
+/// The handler doesn't know which specific record triggered it - trigger records are
+/// an OR-set meaning "any of these changed → reconfigure this subsystem."
+///
+/// If different records need different handlers, register them under separate config keys.
+///
+int
+on_record_change(const char *name, RecDataT /* data_type */, RecData /* data */, void *cookie)
+{
+  auto *ctx = static_cast<config::ConfigRegistry::TriggerContext *>(cookie);
+
+  Dbg(dbg_ctl, "Record '%s' changed, scheduling reload for config '%s'", name, ctx->config_key.c_str());
+
+  // Pre-register a CREATED subtask so the main task knows work is pending.
+  // Without this, aggregate_status() can reach SUCCESS before the continuation
+  // runs and creates the subtask. The continuation will activate the reserved
+  // subtask instead of creating a new one.
+  ReloadCoordinator::Get_Instance().reserve_subtask(ctx->config_key);
+
+  // Schedule file reload on ET_TASK thread (always file-based, no rpc-supplied content)
+  eventProcessor.schedule_imm(new detail::RecordTriggeredReloadContinuation(ctx->mutex, ctx->config_key), ET_TASK);
+
+  return 0;
+}
+
+} // anonymous namespace
+
+namespace config
+{
+
+ConfigRegistry &
+ConfigRegistry::Get_Instance()
+{
+  static ConfigRegistry _instance;
+  return _instance;
+}
+
+std::string
+ConfigRegistry::Entry::resolve_filename() const
+{
+  auto fname = resolve_config_filename(filename_record.empty() ? nullptr : filename_record.c_str(), default_filename);
+
+  // Build full path if not already absolute
+  if (!fname.empty() && fname[0] != '/') {
+    return Layout::get()->sysconfdir + "/" + fname;
+  }
+  return fname;
+}
+
+bool
+ConfigRegistry::do_register(Entry entry)
+{
+  const char *type_str  = (entry.type == ConfigType::YAML) ? "YAML" : "legacy";
+  const char *owner_str = entry.plugin_name.empty() ? "core" : entry.plugin_name.c_str();
+
+  Dbg(dbg_ctl, "Registering %s config '%s' [owner=%s] (default: %s, record: %s, triggers: %zu)", type_str, entry.key.c_str(),
+      owner_str, entry.default_filename.c_str(), entry.filename_record.empty() ? "<none>" : entry.filename_record.c_str(),
+      entry.trigger_records.size());
+
+  std::unique_lock lock(_mutex);
+  auto [it, inserted] = _entries.try_emplace(entry.key, std::move(entry));
+
+  if (inserted) {
+    setup_triggers(it->second);
+
+    // Register with FileManager for mtime-based file change detection.
+    // This replaces the manual registerFile() call in AddConfigFilesHere.cc.
+    // When rereadConfig() detects the file changed, it calls RecSetSyncRequired()
+    // on the filename_record, which eventually triggers our on_record_change callback.
+    if (!it->second.default_filename.empty()) {
+      auto resolved = resolve_config_filename(it->second.filename_record.empty() ? nullptr : it->second.filename_record.c_str(),
+                                              it->second.default_filename);
+      // When filename_record is empty (e.g. plugin configs), pass the registry key
+      // as the configName so process_config_update can route mtime changes back to
+      // ConfigRegistry::schedule_reload().
+      const char *config_name = it->second.filename_record.empty() ? it->second.key.c_str() : it->second.filename_record.c_str();
+      FileManager::instance().addFile(resolved.c_str(), config_name, false, it->second.is_required);
+    }
+  } else {
+    auto const &existing       = it->second;
+    char const *existing_owner = existing.plugin_name.empty() ? "core" : existing.plugin_name.c_str();
+    Warning("Config '%s' already registered by %s; ignoring registration from %s", it->first.c_str(), existing_owner, owner_str);
+  }
+
+  return inserted;
+}
+
+void
+ConfigRegistry::register_config(const std::string &key, const std::string &default_filename, const std::string &filename_record,
+                                ConfigReloadHandler handler, ConfigSource source,
+                                std::initializer_list<const char *> trigger_records, bool is_required)
+{
+  Entry entry;
+  entry.key              = key;
+  entry.default_filename = default_filename;
+  entry.filename_record  = filename_record;
+  entry.handler          = std::move(handler);
+  entry.source           = source;
+  entry.is_required      = is_required;
+  entry.type             = infer_config_type(default_filename);
+
+  for (auto const *record : trigger_records) {
+    entry.trigger_records.emplace_back(record);
+  }
+
+  do_register(std::move(entry));
+}
+
+bool
+ConfigRegistry::register_plugin_config(const std::string &key, const std::string &plugin_name, const std::string &default_filename,
+                                       const std::string &filename_record, ConfigReloadHandler handler, ConfigSource source,
+                                       std::initializer_list<const char *> trigger_records, bool is_required)
+{
+  if (plugin_name.empty()) {
+    Warning("ConfigRegistry::register_plugin_config: empty plugin_name for key '%s'; refusing", key.c_str());
+    ink_assert(!"register_plugin_config called with empty plugin_name");
+    return false;
+  }
+
+  Entry entry;
+  entry.key              = key;
+  entry.plugin_name      = plugin_name;
+  entry.default_filename = default_filename;
+  entry.filename_record  = filename_record;
+  entry.handler          = std::move(handler);
+  entry.source           = source;
+  entry.is_required      = is_required;
+  entry.type             = infer_config_type(default_filename);
+
+  for (auto const *record : trigger_records) {
+    entry.trigger_records.emplace_back(record);
+  }
+
+  return do_register(std::move(entry));
+}
+
+void
+ConfigRegistry::register_record_config(const std::string &key, ConfigReloadHandler handler,
+                                       std::initializer_list<const char *> trigger_records)
+{
+  register_config(key, "", "", std::move(handler), ConfigSource::RecordOnly, trigger_records);
+}
+
+void
+ConfigRegistry::register_static_file(const std::string &key, const std::string &default_filename,
+                                     const std::string &filename_record, bool is_required)
+{
+  // Delegate - no handler, no trigger records, FileOnly source.
+  register_config(key, default_filename, filename_record, nullptr, ConfigSource::FileOnly, {}, is_required);
+}
+
+void
+ConfigRegistry::setup_triggers(Entry &entry)
+{
+  for (auto const &record : entry.trigger_records) {
+    wire_record_callback(record.c_str(), entry.key);
+  }
+}
+
+int
+ConfigRegistry::wire_record_callback(const char *record_name, const std::string &config_key)
+{
+  // TriggerContext lives for the lifetime of the process - intentionally not deleted
+  // as RecRegisterConfigUpdateCb stores the pointer and may invoke the callback at any time.
+  // This is a small, bounded allocation (one per trigger record).
+  auto *ctx       = new TriggerContext();
+  ctx->config_key = config_key;
+  ctx->mutex      = new_ProxyMutex();
+
+  Dbg(dbg_ctl, "Wiring record callback '%s' to config '%s'", record_name, config_key.c_str());
+
+  int result = RecRegisterConfigUpdateCb(record_name, on_record_change, ctx);
+  if (result != 0) {
+    Warning("Failed to wire callback for record '%s' on config '%s'", record_name, config_key.c_str());
+    delete ctx;
+    return -1;
+  }
+  return 0;
+}
+
+int
+ConfigRegistry::attach(const std::string &key, const char *record_name)
+{
+  std::string config_key;
+
+  {
+    std::shared_lock lock(_mutex);
+    auto             it = _entries.find(key);
+    if (it == _entries.end()) {
+      Warning("Cannot attach trigger to unknown config: %s", key.c_str());
+      return -1;
+    }
+    config_key = it->second.key;
+  }
+
+  Dbg(dbg_ctl, "Attaching trigger '%s' to config '%s'", record_name, key.c_str());
+  if (int rc = wire_record_callback(record_name, config_key); rc != 0) {
+    return rc;
+  }
+
+  // Wire succeeded - record the trigger for diagnostic listings.
+  {
+    std::unique_lock lock(_mutex);
+    if (auto it = _entries.find(key); it != _entries.end()) {
+      it->second.trigger_records.emplace_back(record_name);
+    }
+  }
+  return 0;
+}
+
+int
+ConfigRegistry::add_file_dependency(const std::string &key, const char *filename_record, const char *default_filename,
+                                    bool is_required)
+{
+  std::string config_key;
+
+  {
+    std::shared_lock lock(_mutex);
+    auto             it = _entries.find(key);
+    if (it == _entries.end()) {
+      Warning("Cannot add file dependency to unknown config: %s", key.c_str());
+      return -1;
+    }
+    config_key = it->second.key;
+  }
+
+  bool has_record = (filename_record != nullptr && filename_record[0] != '\0');
+  auto resolved   = resolve_config_filename(has_record ? filename_record : nullptr, default_filename);
+
+  Dbg(dbg_ctl, "Adding file dependency '%s' (resolved: %s) to config '%s'", has_record ? filename_record : "<none>",
+      resolved.c_str(), key.c_str());
+
+  // Wire the record callback first so a wiring failure leaves no partial state
+  // in FileManager (which has no removeFile API).
+  if (has_record) {
+    if (int rc = wire_record_callback(filename_record, config_key); rc != 0) {
+      return rc;
+    }
+  }
+
+  // Register with FileManager for mtime-based change detection.
+  // When filename_record is empty (e.g. plugin configs), pass the config key
+  // as the configName so process_config_update routes mtime changes back to
+  // ConfigRegistry::schedule_reload().
+  const char *config_name = has_record ? filename_record : config_key.c_str();
+  FileManager::instance().addFile(resolved.c_str(), config_name, false, is_required);
+
+  return 0;
+}
+
+int
+ConfigRegistry::add_file_and_node_dependency(const std::string &key, const std::string &dep_key, const char *filename_record,
+                                             const char *default_filename, bool is_required)
+{
+  // Claim the dep_key first so a collision can't leave FileManager half-registered.
+  {
+    std::unique_lock lock(_mutex);
+    if (_entries.find(key) == _entries.end()) {
+      Warning("Cannot add file dependency to unknown config: %s", key.c_str());
+      return -1;
+    }
+    if (_entries.count(dep_key)) {
+      Warning("ConfigRegistry: dep_key '%s' collides with an existing entry key, ignoring", dep_key.c_str());
+      return -1;
+    }
+    if (_dep_key_to_parent.count(dep_key)) {
+      Warning("ConfigRegistry: dep_key '%s' already registered, ignoring", dep_key.c_str());
+      return -1;
+    }
+    _dep_key_to_parent[dep_key] = key;
+  }
+
+  if (int ret = add_file_dependency(key, filename_record, default_filename, is_required); ret != 0) {
+    std::unique_lock lock(_mutex);
+    _dep_key_to_parent.erase(dep_key);
+    return ret;
+  }
+
+  Dbg(dbg_ctl, "Dependency key '%s' routes to parent '%s'", dep_key.c_str(), key.c_str());
+  return 0;
+}
+
+std::pair<std::string, ConfigRegistry::Entry const *>
+ConfigRegistry::resolve(const std::string &key) const
+{
+  std::shared_lock lock(_mutex);
+
+  // Direct entry lookup
+  auto it = _entries.find(key);
+  if (it != _entries.end()) {
+    return {key, &it->second};
+  }
+
+  // Dependency key lookup
+  auto dep_it = _dep_key_to_parent.find(key);
+  if (dep_it != _dep_key_to_parent.end()) {
+    auto parent_it = _entries.find(dep_it->second);
+    if (parent_it != _entries.end()) {
+      return {dep_it->second, &parent_it->second};
+    }
+  }
+
+  return {{}, nullptr};
+}
+
+bool
+ConfigRegistry::contains(const std::string &key) const
+{
+  std::shared_lock lock(_mutex);
+  return _entries.find(key) != _entries.end();
+}
+
+ConfigRegistry::Entry const *
+ConfigRegistry::find(const std::string &key) const
+{
+  std::shared_lock lock(_mutex);
+  auto             it = _entries.find(key);
+  return it != _entries.end() ? &it->second : nullptr;
+}
+
+bool
+ConfigRegistry::is_reloadable(const std::string &key) const
+{
+  std::shared_lock lock(_mutex);
+  auto             it = _entries.find(key);
+  return it != _entries.end() && static_cast<bool>(it->second.handler);
+}
+
+void
+ConfigRegistry::set_passed_config(const std::string &key, YAML::Node content)
+{
+  std::unique_lock lock(_mutex);
+  _passed_configs[key] = std::move(content);
+  Dbg(dbg_ctl, "Stored passed config for '%s'", key.c_str());
+}
+
+void
+ConfigRegistry::schedule_reload(const std::string &key)
+{
+  Dbg(dbg_ctl, "Scheduling async reload for config '%s'", key.c_str());
+
+  Ptr<ProxyMutex> mutex(new_ProxyMutex());
+  eventProcessor.schedule_imm(new ScheduledReloadContinuation(mutex, key), ET_TASK);
+}
+
+void
+ConfigRegistry::apply_passed_config(ConfigContext &ctx, YAML::Node &passed_config, std::string_view key)
+{
+  // Extract _reload directives before passing content to the handler. This keeps
+  // supplied_yaml() clean (pure config data) and exposes reload_directives() as a
+  // separate accessor for operational parameters.
+  const YAML::Node &cfg_view = passed_config;
+  if (cfg_view.IsMap() && cfg_view["_reload"]) {
+    auto directives = cfg_view["_reload"];
+    if (!directives.IsMap()) {
+      Warning("Config '%.*s': _reload must be a YAML map, ignoring directives", static_cast<int>(key.size()), key.data());
+    } else {
+      Dbg(dbg_ctl, "Config '%.*s' has reload directives", static_cast<int>(key.size()), key.data());
+      ctx.set_reload_directives(directives);
+    }
+    passed_config.remove("_reload");
+  }
+
+  if (passed_config.size() > 0) {
+    ctx.set_supplied_yaml(passed_config);
+  }
+}
+
+void
+ConfigRegistry::execute_reload(const std::string &key)
+{
+  Dbg(dbg_ctl, "Executing reload for config '%s'", key.c_str());
+
+  YAML::Node passed_config;
+  bool       has_passed_config{false};
+  Entry      entry_copy;
+  {
+    std::unique_lock lock(_mutex);
+
+    if (auto pc_it = _passed_configs.find(key); pc_it != _passed_configs.end()) {
+      passed_config     = pc_it->second;
+      has_passed_config = true;
+      _passed_configs.erase(pc_it);
+      Dbg(dbg_ctl, "Retrieved and consumed passed config for '%s'", key.c_str());
+    }
+
+    if (auto it = _entries.find(key); it != _entries.end()) {
+      entry_copy = it->second;
+    } else {
+      Warning("Config '%s' not found in registry during execute_reload", key.c_str());
+      return;
+    }
+  }
+
+  // A handler-less entry can reach here if a file that maps to a catalog-only
+  // registry key (e.g. the static "storage"/"plugin" entries) changes on disk.
+  // Skip it rather than aborting the server with a release assert.
+  if (!entry_copy.handler) {
+    Warning("Config '%s' has no reload handler; ignoring reload request", key.c_str());
+    return;
+  }
+
+  // Create context with subtask tracking.
+  // For rpc reload: use key as description, no filename (source: rpc)
+  // For file reload: use key as description, filename indicates source: file
+  std::string filename = has_passed_config ? "" : entry_copy.resolve_filename();
+
+  auto ctx = ReloadCoordinator::Get_Instance().create_config_context(entry_copy.key, entry_copy.key, filename);
+  ctx.set_plugin_name(entry_copy.plugin_name);
+
+  ctx.in_progress();
+
+  if (has_passed_config) {
+    Dbg(dbg_ctl, "Config '%s' reloading from rpc-supplied content", entry_copy.key.c_str());
+    apply_passed_config(ctx, passed_config, entry_copy.key);
+  } else {
+    Dbg(dbg_ctl, "Config '%s' reloading from file '%s'", entry_copy.key.c_str(), filename.c_str());
+  }
+
+  // Handler checks ctx.supplied_yaml() for rpc-supplied content, otherwise reads from
+  // the module's known filename. Plugin handlers run through the same path: the plugin
+  // layer wraps @c ctx by value into its own TSCfgLoadCtx handle for deferred completion.
+  try {
+    entry_copy.handler(ctx);
+    if (!ctx.is_terminal()) {
+      Warning("Config '%s' reload still in progress after handler return - deferred completion expected, otherwise will TIMEOUT",
+              entry_copy.key.c_str());
+    }
+    Dbg(dbg_ctl, "Config '%s' reload completed", entry_copy.key.c_str());
+    // TODO: For future diff/etc support, snapshot the config content here.
+    //       For RPC reloads: serialize passed_config to string.
+    //       For file reloads: read the file content at reload time.
+    //       Store in ConfigReloadTask::Info for history-based diffing.
+  } catch (std::exception const &ex) {
+    ctx.fail(ex.what());
+    Warning("Config '%s' reload failed: %s", entry_copy.key.c_str(), ex.what());
+  }
+}
+
+} // namespace config

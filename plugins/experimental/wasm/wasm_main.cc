@@ -304,14 +304,13 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
 
   auto *c = static_cast<ats_wasm::Context *>(TSContDataGet(contp));
 
-  auto *old_wasm = static_cast<ats_wasm::Wasm *>(c->wasm());
-  TSMutexLock(old_wasm->mutex());
+  auto            *old_wasm = static_cast<ats_wasm::Wasm *>(c->wasm());
+  TSMutexLockGuard lock(old_wasm->mutex());
 
   c->onTick(0); // use 0 as  token
 
   if (wasm_config->configs.empty()) {
     TSError("[wasm][%s] Configuration objects are empty", __FUNCTION__);
-    TSMutexUnlock(old_wasm->mutex());
     return 0;
   }
 
@@ -364,8 +363,6 @@ schedule_handler(TSCont contp, TSEvent /*event*/, void * /*data*/)
 
     Dbg(ats_wasm::dbg_ctl, "[%s] config wasm has changed. thus not scheduling", __FUNCTION__);
   }
-
-  TSMutexUnlock(old_wasm->mutex());
 
   return 0;
 }

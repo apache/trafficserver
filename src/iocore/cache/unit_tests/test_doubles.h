@@ -34,6 +34,7 @@
 #endif
 
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <stdexcept>
 
@@ -137,3 +138,37 @@ private:
   EventNotify _notifier;
   bool        _got_callback{false};
 };
+
+/* Minimal CacheDisk suitable for constructing a StripeSM in a unit test.
+ */
+inline void
+init_disk(CacheDisk &disk)
+{
+  disk.path                = static_cast<char *>(ats_malloc(1));
+  disk.path[0]             = '\0';
+  disk.disk_stripes        = static_cast<DiskStripe **>(ats_malloc(sizeof(DiskStripe *)));
+  disk.disk_stripes[0]     = nullptr;
+  disk.header              = static_cast<DiskHeader *>(ats_malloc(sizeof(DiskHeader)));
+  disk.header->num_volumes = 0;
+}
+
+/* Catch test helper to provide a StripeSM with a valid file descriptor.
+ *
+ * The file will be deleted automatically when the application ends normally.
+ * If the StripeSM already has a valid file descriptor, that file will NOT be
+ * closed.
+ *
+ * @param stripe: A StripeSM object with no valid file descriptor.
+ * @return The std::FILE* stream if successful, otherwise the Catch test will
+ *   be failed at the point of error.
+ */
+inline std::FILE *
+attach_tmpfile_to_stripe(StripeSM &stripe)
+{
+  auto *file{std::tmpfile()};
+  REQUIRE(file != nullptr);
+  int fd{fileno(file)};
+  REQUIRE(fd != -1);
+  stripe.fd = fd;
+  return file;
+}

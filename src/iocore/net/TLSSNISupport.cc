@@ -163,8 +163,19 @@ TLSSNISupport::set_sni_server_name(SSL *ssl, char const *name)
 }
 
 void
+TLSSNISupport::set_sni_server_name(std::string_view name)
+{
+  if (name.empty()) {
+    this->_clear();
+  } else {
+    this->_set_sni_server_name_buffer(name);
+  }
+}
+
+void
 TLSSNISupport::_clear()
 {
+  hints_from_sni = {};
   _sni_server_name.reset();
 }
 

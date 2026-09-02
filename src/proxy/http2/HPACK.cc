@@ -430,7 +430,6 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
 
   switch (type) {
   case HpackField::INDEXED_LITERAL:
-    indexing_table.add_header_field(header);
     prefix = 6;
     flag   = 0x40;
     break;
@@ -467,6 +466,11 @@ encode_literal_header_field_with_indexed_name(uint8_t *buf_start, const uint8_t 
   }
   p += len;
 
+  // Encoded successfully; update the dynamic table.
+  if (type == HpackField::INDEXED_LITERAL) {
+    indexing_table.add_header_field(header);
+  }
+
   Dbg(dbg_ctl_hpack_encode, "Encoded field: %d: %.*s", index, static_cast<int>(header.value.size()), header.value.data());
   return p - buf_start;
 }
@@ -483,7 +487,6 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
 
   switch (type) {
   case HpackField::INDEXED_LITERAL:
-    indexing_table.add_header_field(header);
     flag = 0x40;
     break;
   case HpackField::NOINDEX_LITERAL:
@@ -514,6 +517,11 @@ encode_literal_header_field_with_new_name(uint8_t *buf_start, const uint8_t *buf
   }
 
   p += len;
+
+  // Encoded successfully; update the dynamic table.
+  if (type == HpackField::INDEXED_LITERAL) {
+    indexing_table.add_header_field(header);
+  }
 
   Dbg(dbg_ctl_hpack_encode, "Encoded field: %.*s: %.*s", static_cast<int>(header.name.size()), header.name.data(),
       static_cast<int>(header.value.size()), header.value.data());
@@ -548,7 +556,11 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
+  if (index > UINT32_MAX) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
+  if (indexing_table.get_header_field(static_cast<uint32_t>(index), header) == HPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
@@ -569,7 +581,7 @@ decode_indexed_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
 //
 int64_t
 decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, const uint8_t *buf_end,
-                            HpackIndexingTable &indexing_table)
+                            HpackIndexingTable &indexing_table, uint32_t header_field_max_size)
 {
   const uint8_t *p                   = buf_start;
   bool           isIncremental       = false;
@@ -592,18 +604,22 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
+  if (index > UINT32_MAX) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
+
   p += len;
 
   // Decode header field name
   if (index) {
-    if (indexing_table.get_header_field(index, header) == HPACK_ERROR_COMPRESSION_ERROR) {
+    if (indexing_table.get_header_field(static_cast<uint32_t>(index), header) == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
   } else {
     char    *name_str     = nullptr;
     uint64_t name_str_len = 0;
 
-    len = xpack_decode_string(indexing_table.arena, &name_str, name_str_len, p, buf_end);
+    len = xpack_decode_string(indexing_table.arena, &name_str, name_str_len, p, buf_end, header_field_max_size);
     if (len == XPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
@@ -617,23 +633,29 @@ decode_literal_header_field(MIMEFieldWrapper &header, const uint8_t *buf_start, 
       }
     }
 
-    p += len;
-    header.name_set(name_str, name_str_len);
+    p                += len;
+    bool name_stored  = header.name_set(name_str, name_str_len);
     indexing_table.arena.str_free(name_str);
+    if (!name_stored) {
+      return HPACK_ERROR_COMPRESSION_ERROR;
+    }
   }
 
   // Decode header field value
   char    *value_str     = nullptr;
   uint64_t value_str_len = 0;
 
-  len = xpack_decode_string(indexing_table.arena, &value_str, value_str_len, p, buf_end);
+  len = xpack_decode_string(indexing_table.arena, &value_str, value_str_len, p, buf_end, header_field_max_size);
   if (len == XPACK_ERROR_COMPRESSION_ERROR) {
     return HPACK_ERROR_COMPRESSION_ERROR;
   }
 
-  p += len;
-  header.value_set(value_str, value_str_len);
+  p                 += len;
+  bool value_stored  = header.value_set(value_str, value_str_len);
   indexing_table.arena.str_free(value_str);
+  if (!value_stored) {
+    return HPACK_ERROR_COMPRESSION_ERROR;
+  }
 
   // Incremental Indexing adds header to header table as new entry
   if (isIncremental) {
@@ -687,7 +709,7 @@ update_dynamic_table_size(const uint8_t *buf_start, const uint8_t *buf_end, Hpac
 
 int64_t
 hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, const uint8_t *in_buf, const size_t in_buf_len,
-                          uint32_t max_header_size, uint32_t maximum_table_size)
+                          uint32_t max_header_size, uint32_t maximum_table_size, uint32_t header_field_max_size)
 {
   const uint8_t       *cursor               = in_buf;
   const uint8_t *const in_buf_end           = in_buf + in_buf_len;
@@ -717,7 +739,7 @@ hpack_decode_header_block(HpackIndexingTable &indexing_table, HTTPHdr *hdr, cons
     case HpackField::INDEXED_LITERAL:
     case HpackField::NOINDEX_LITERAL:
     case HpackField::NEVERINDEX_LITERAL:
-      read_bytes = decode_literal_header_field(header, cursor, in_buf_end, indexing_table);
+      read_bytes = decode_literal_header_field(header, cursor, in_buf_end, indexing_table, header_field_max_size);
       if (read_bytes == HPACK_ERROR_COMPRESSION_ERROR) {
         return HPACK_ERROR_COMPRESSION_ERROR;
       }
@@ -774,12 +796,13 @@ hpack_encode_header_block(HpackIndexingTable &indexing_table, uint8_t *out_buf, 
 
   // Update dynamic table size
   if (maximum_table_size >= 0) {
-    indexing_table.update_maximum_size(maximum_table_size);
     int64_t written = encode_dynamic_table_size_update(cursor, out_buf_end, maximum_table_size);
     if (written == HPACK_ERROR_COMPRESSION_ERROR) {
       return HPACK_ERROR_COMPRESSION_ERROR;
     }
     cursor += written;
+    // Encoded successfully; update the dynamic table.
+    indexing_table.update_maximum_size(maximum_table_size);
   }
 
   for (auto &field : *hdr) {

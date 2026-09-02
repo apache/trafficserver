@@ -69,6 +69,7 @@
 
 namespace
 {
+DbgCtl dbg_ctl_cache_ram{"cache_ram"};
 DbgCtl dbg_ctl_cache_bc{"cache_bc"};
 DbgCtl dbg_ctl_cache_disk_error{"cache_disk_error"};
 DbgCtl dbg_ctl_cache_read{"cache_read"};
@@ -110,9 +111,6 @@ next_in_map(Stripe *stripe, char *vol_map, off_t offset)
   return new_off + start_offset;
 }
 
-// Function in CacheDir.cc that we need for make_vol_map().
-int dir_bucket_loop_fix(Dir *start_dir, int s, Directory *directory);
-
 // TODO: If we used a bit vector, we could make a smaller map structure.
 // TODO: If we saved a high water mark we could have a smaller buf, and avoid searching it
 // when we are asked about the highest interesting offset.
@@ -136,7 +134,7 @@ make_vol_map(Stripe *stripe)
     Dir *seg = stripe->directory.get_segment(s);
     for (int b = 0; b < stripe->directory.buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (dir_bucket_loop_fix(e, s, &stripe->directory)) {
+      if (stripe->directory.bucket_loop_fix(e, s)) {
         break;
       }
       while (e) {
@@ -215,6 +213,14 @@ CacheVC::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *abuf, bool
 #ifdef DEBUG
   ink_assert(!c || c->mutex->thread_holding);
 #endif
+  if (nbytes == 0) {
+    // A zero-byte write represents an empty document, while closing without a
+    // write represents a header-only update.
+    f.allow_empty_doc = 1;
+    if (alternate.valid()) {
+      alternate.object_size_set(0);
+    }
+  }
   if (c && !trigger && !recursive) {
     trigger = c->mutex->thread_holding->schedule_imm_local(this);
   }
@@ -225,6 +231,14 @@ void
 CacheVC::do_io_close(int alerrno)
 {
   ink_assert(mutex->thread_holding == this_ethread());
+  if (alerrno == -1 && vio.op == VIO::WRITE && vio.get_reader() != nullptr && vio.nbytes == 0) {
+    // The write may have started with an unknown length and been finalized
+    // at zero after the response framing was parsed.
+    f.allow_empty_doc = 1;
+    if (alternate.valid()) {
+      alternate.object_size_set(0);
+    }
+  }
   int previous_closed = closed;
   closed              = (alerrno == -1) ? 1 : -1; // Stupid default arguments
   DDbg(dbg_ctl_cache_close, "do_io_close %p %d %d", this, alerrno, closed);
@@ -449,27 +463,56 @@ Ldone:
 
 int
 CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-
 {
   cancel_trigger();
 
   f.doc_from_ram_cache = false;
 
   ink_assert(stripe->mutex->thread_holding == this_ethread());
+
+  // 1. check RAM cache
   if (load_from_ram_cache()) {
-    goto LramHit;
-  } else if (load_from_last_open_read_call()) {
-    goto LmemHit;
-  } else if (load_from_aggregation_buffer()) {
+    Dbg(dbg_ctl_cache_ram, "RAM cache hit");
     f.doc_from_ram_cache = true;
     io.aio_result        = io.aiocb.aio_nbytes;
+
+    Doc *doc = reinterpret_cast<Doc *>(buf->data());
+    if (cache_config_ram_cache_compress && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
+      SET_HANDLER(&CacheVC::handleReadDone);
+      return EVENT_RETURN;
+    }
+
+    POP_HANDLER;
+    return EVENT_RETURN;
+  }
+
+  // 2. check last open read cache
+  if (load_from_last_open_read_call()) {
+    Dbg(dbg_ctl_cache_ram, "last open read hit");
+    f.doc_from_ram_cache = true;
+    io.aio_result        = io.aiocb.aio_nbytes;
+
+    POP_HANDLER;
+    return EVENT_RETURN;
+  }
+
+  // 3. check aggregation buffer
+  if (load_from_aggregation_buffer()) {
+    Dbg(dbg_ctl_cache_ram, "aggregation buffer hit");
+    f.doc_from_ram_cache = true;
+    io.aio_result        = io.aiocb.aio_nbytes;
+
     SET_HANDLER(&CacheVC::handleReadDone);
     return EVENT_RETURN;
   }
 
+  // 4. read from Disk (AIO) due to all memory cache miss
+  Dbg(dbg_ctl_cache_ram, "all memory cache miss");
+
   ts::Metrics::Counter::increment(cache_rsb.all_mem_misses);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.all_mem_misses);
 
+  // enqueue AIO read
   io.aiocb.aio_fildes = stripe->fd;
   io.aiocb.aio_offset = stripe->vol_offset(&dir);
   if (static_cast<off_t>(io.aiocb.aio_offset + io.aiocb.aio_nbytes) > static_cast<off_t>(stripe->skip + stripe->len)) {
@@ -480,30 +523,14 @@ CacheVC::handleRead(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
   io.action        = this;
   io.thread        = mutex->thread_holding->tt == DEDICATED ? AIO_CALLBACK_THREAD_ANY : mutex->thread_holding;
   SET_HANDLER(&CacheVC::handleReadDone);
-  ink_assert(ink_aio_read(&io) >= 0);
 
-// ToDo: Why are these for debug only ??
-#if DEBUG
+  int res = ink_aio_read(&io);
+  ink_assert(res >= 0);
+
   ts::Metrics::Counter::increment(cache_rsb.pread_count);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.pread_count);
-#endif
 
   return EVENT_CONT;
-
-LramHit: {
-  f.doc_from_ram_cache = true;
-  io.aio_result        = io.aiocb.aio_nbytes;
-  Doc *doc             = reinterpret_cast<Doc *>(buf->data());
-  if (cache_config_ram_cache_compress && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen) {
-    SET_HANDLER(&CacheVC::handleReadDone);
-    return EVENT_RETURN;
-  }
-}
-LmemHit:
-  f.doc_from_ram_cache = true;
-  io.aio_result        = io.aiocb.aio_nbytes;
-  POP_HANDLER;
-  return EVENT_RETURN; // allow the caller to release the volume lock
 }
 
 bool
@@ -755,9 +782,17 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       }
       break;
     }
-    if (doc->data() - buf->data() > static_cast<int>(io.aiocb.aio_nbytes)) {
-      might_need_overlap_read = true;
-      goto Lskip;
+    {
+      size_t const doc_off = reinterpret_cast<char *>(doc) - buf->data();
+      // Bounds-check in unsigned domain: doc must lie within the
+      // buffer, with room for the Doc header, and doc->hlen must
+      // fit in the remaining bytes before doc->hdr() and
+      // HTTPInfo::unmarshal walk it.
+      if (io.aiocb.aio_nbytes < doc_off || (io.aiocb.aio_nbytes - doc_off) < sizeof(Doc) ||
+          (io.aiocb.aio_nbytes - doc_off - sizeof(Doc)) < doc->hlen) {
+        might_need_overlap_read = true;
+        goto Lskip;
+      }
     }
     {
       char *tmp = doc->hdr();
@@ -1044,7 +1079,8 @@ CacheVC::set_http_info(CacheHTTPInfo *ainfo)
   }
 
   MIMEField *field = ainfo->m_alt->m_response_hdr.field_find(static_cast<std::string_view>(MIME_FIELD_CONTENT_LENGTH));
-  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTPStatus::NO_CONTENT) {
+  if ((field && !field->value_get_int64()) || ainfo->m_alt->m_response_hdr.status_get() == HTTPStatus::NO_CONTENT ||
+      (f.allow_empty_doc && vio.nbytes == 0)) {
     f.allow_empty_doc = 1;
     // Set the object size here to zero in case this is a cache replace where the new object
     // length is zero but the old object was not.

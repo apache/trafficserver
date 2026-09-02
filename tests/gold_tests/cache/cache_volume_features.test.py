@@ -16,10 +16,11 @@
 
 Test.Summary = '''
 Comprehensive test suite for cache volume features:
-- Per-volume RAM cache configuration (ram_cache_size, ram_cache_cutoff)
+- Per-volume RAM cache configuration (ram_cache, ram_cache_size, ram_cache_cutoff)
+- Per-volume settings take effect on the first start after a cache clear
 - @volume= directive in remap.config for volume selection
 - Integration between both features
 '''
-# TODO: hosting.config + @volume= priority interaction test requires ats_replay.test.ext to support volume_config/hosting_config.
+# TODO: hosting.config + @volume= priority interaction test requires ats_replay.test.ext to support storage_yaml/hosting_config.
 
 Test.ATSReplayTest(replay_file="cache_volume_features.replay.yaml")

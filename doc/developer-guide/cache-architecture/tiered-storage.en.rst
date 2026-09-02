@@ -46,7 +46,7 @@ copied if evicted from a higher tier.
 Configuration
 =============
 
-Each :term:`storage unit` in :file:`storage.config` can be marked with a
+Each :term:`storage unit` in :file:`storage.yaml` can be marked with a
 *quality* value which is 32 bit number. Storage units that are not marked are
 all assigned the same value which is guaranteed to be distinct from all explicit
 values. The quality value is arbitrary from the point of view of this design,

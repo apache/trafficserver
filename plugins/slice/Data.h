@@ -25,6 +25,7 @@
 #include "Stage.h"
 
 #include <netinet/in.h>
+#include <string>
 #include <unordered_map>
 
 struct Config;
@@ -47,8 +48,8 @@ struct Data {
 
   sockaddr_storage m_client_ip;
 
-  // transaction pointer
-  TSHttpTxn m_txnp{nullptr};
+  // cached effective URL for use during async intercept processing
+  std::string m_effective_url;
 
   // for pristine/effective url coming in
   TSMBuffer m_urlbuf{nullptr};
@@ -76,6 +77,11 @@ struct Data {
   int64_t m_blockskip{0};     // number of bytes to skip in this block
   int64_t m_blockconsumed{0}; // body bytes consumed
 
+  int64_t      m_purge_hits{0};                    // blocks a purge actually removed
+  int          m_purge_misses{0};                  // consecutive uncached blocks the walk has seen
+  int          m_purge_miss_bound{0};              // from the config or the request header
+  TSHttpStatus m_purge_error{TS_HTTP_STATUS_NONE}; // block failure that ended the walk
+
   BlockState m_blockstate{Pending}; // is there an active slice block
 
   int64_t m_bytestosend{0}; // header + content bytes to send
@@ -93,6 +99,8 @@ struct Data {
 
   bool m_prefetchable{false};
 
+  int64_t m_prefetch_hwm{-1}; // highest block this request has scheduled for prefetch
+
   HdrMgr m_req_hdrmgr;  // manager for server request
   HdrMgr m_resp_hdrmgr; // manager for client response
 
@@ -106,11 +114,25 @@ struct Data {
     memset(&m_client_ip, 0, sizeof(m_client_ip));
   }
 
-  // Check if response only expects header
+  // HEAD only; a purge sends just a header too but never reaches the transfer path
   bool
   onlyHeader() const
   {
-    return (m_method_type == TS_HTTP_METHOD_HEAD || m_method_type == TS_HTTP_METHOD_PURGE);
+    return m_method_type == TS_HTTP_METHOD_HEAD;
+  }
+
+  bool
+  is_purge() const
+  {
+    return m_method_type == TS_HTTP_METHOD_PURGE;
+  }
+
+  // The purge range, closed against the object length once known. m_req_range
+  // stays as sent so a longer extent can widen the walk; a clamp could only shrink.
+  Range
+  purge_range() const
+  {
+    return (m_contentlen < 0) ? m_req_range : m_req_range.intersectedWith(Range(0, m_contentlen));
   }
 
   ~Data()

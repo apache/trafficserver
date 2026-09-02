@@ -19,6 +19,7 @@
 // ruleset.cc: implementation of the ruleset class
 //
 //
+#include <exception>
 #include <string>
 
 #include "ruleset.h"
@@ -65,8 +66,9 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
   }
 
   Dbg(pi_dbg_ctl, "    Creating condition: %%{%s} with arg: %s", p.get_op().c_str(), p.get_arg().c_str());
+  c->set_config_location(filename, lineno);
   c->initialize(p);
-  if (!c->set_hook(_hook)) {
+  if (!c->is_hook_valid(_hook)) {
     delete c;
     TSError("[%s] in %s:%d: can't use this condition in hook=%s: %%{%s} with arg: %s", PLUGIN_NAME, filename, lineno,
             TSHttpHookNameLookup(_hook), p.get_op().c_str(), p.get_arg().c_str());
@@ -88,13 +90,20 @@ RuleSet::make_condition(Parser &p, const char *filename, int lineno)
 bool
 RuleSet::add_operator(Parser &p, const char *filename, int lineno)
 {
-  Operator *op = operator_factory(p.get_op());
+  std::unique_ptr<Operator> op{operator_factory(p.get_op())};
 
-  if (nullptr != op) {
+  if (op) {
     Dbg(pi_dbg_ctl, "    Adding operator: %s(%s)=\"%s\"", p.get_op().c_str(), p.get_arg().c_str(), p.get_value().c_str());
-    op->initialize(p);
-    if (!op->set_hook(_hook)) {
-      delete op;
+    op->set_config_location(filename, lineno);
+
+    try {
+      op->initialize(p);
+    } catch (std::exception const &ex) {
+      TSError("[%s] in %s:%d: failed to initialize operator %s: %s", PLUGIN_NAME, filename, lineno, p.get_op().c_str(), ex.what());
+      return false;
+    }
+
+    if (!op->is_hook_valid(_hook)) {
       Dbg(pi_dbg_ctl, "in %s:%d: can't use this operator in hook=%s:  %s(%s)", filename, lineno, TSHttpHookNameLookup(_hook),
           p.get_op().c_str(), p.get_arg().c_str());
       TSError("[%s] in %s:%d: can't use this operator in hook=%s:  %s(%s)", PLUGIN_NAME, filename, lineno,
@@ -105,9 +114,9 @@ RuleSet::add_operator(Parser &p, const char *filename, int lineno)
     auto *cur_sec = _op_if.cur_section();
 
     if (!cur_sec->ops.oper) {
-      cur_sec->ops.oper.reset(op);
+      cur_sec->ops.oper = std::move(op);
     } else {
-      cur_sec->ops.oper->append(op);
+      cur_sec->ops.oper->append(op.release());
     }
 
     cur_sec->ops.oper_mods = static_cast<OperModifiers>(cur_sec->ops.oper_mods | cur_sec->ops.oper->get_oper_modifiers());
@@ -134,14 +143,14 @@ RuleSet::get_all_resource_ids() const
 }
 
 bool
-RuleSet::add_operator(Operator *op)
+RuleSet::add_operator(std::unique_ptr<Operator> op)
 {
   auto *cur_sec = _op_if.cur_section();
 
   if (!cur_sec->ops.oper) {
-    cur_sec->ops.oper.reset(op);
+    cur_sec->ops.oper = std::move(op);
   } else {
-    cur_sec->ops.oper->append(op);
+    cur_sec->ops.oper->append(op.release());
   }
 
   // Update some ruleset state based on this new operator

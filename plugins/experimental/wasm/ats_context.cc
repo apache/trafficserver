@@ -496,9 +496,9 @@ Context::getConfiguration()
 WasmResult
 Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_ptr)
 {
-  Wasm    *wasm         = this->wasm();
-  Context *root_context = this->root_context();
-  TSMutexLock(wasm->mutex());
+  Wasm            *wasm         = this->wasm();
+  Context         *root_context = this->root_context();
+  TSMutexLockGuard lock(wasm->mutex());
   if (!wasm->existsTimerPeriod(root_context->id())) {
     Dbg(dbg_ctl, "[%s] no previous timer period set", __FUNCTION__);
     TSCont contp = root_context->scheduler_cont();
@@ -511,7 +511,6 @@ Context::setTimerPeriod(std::chrono::milliseconds period, uint32_t *timer_token_
 
   wasm->setTimerPeriod(root_context->id(), period);
   *timer_token_ptr = 0;
-  TSMutexUnlock(wasm->mutex());
   return WasmResult::Ok;
 }
 
@@ -720,7 +719,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);
@@ -788,7 +787,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);
@@ -826,7 +825,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);
@@ -864,7 +863,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnClientVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);
@@ -953,7 +952,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnServerVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);
@@ -991,7 +990,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnServerVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1029,7 +1028,7 @@ Context::getProperty(std::string_view path, std::string *result)
     TSVConn         client_conn = TSHttpSsnServerVConnGet(ssnp);
     TSSslConnection sslobj      = TSVConnSslConnectionGet(client_conn);
     SSL            *ssl         = reinterpret_cast<SSL *>(sslobj);
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
     X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
     X509 *cert = SSL_get_peer_certificate(ssl);

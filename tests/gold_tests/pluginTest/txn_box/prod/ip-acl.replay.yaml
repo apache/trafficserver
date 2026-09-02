@@ -43,7 +43,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
 
   - all: { headers: { fields: [[ uuid, 1 ]]}}
@@ -84,8 +85,6 @@ sessions:
         fields:
         - [ Host, base.ex ]
         - [ addr, "192.168.2.3" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -122,4 +121,3 @@ sessions:
       <<: *base-rsp
     proxy-response:
       status: 200
-

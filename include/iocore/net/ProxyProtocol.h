@@ -82,6 +82,25 @@ public:
     other.tlv.clear();
   }
   ~ProxyProtocol() = default;
+
+  /** Release owned heap and reset to the default-constructed state.
+   *
+   * Swap rather than clear() the containers: clear() retains capacity, which would be abandoned
+   * (leaked) when the slot is reused, since the NetVConnection allocators are Destruct_on_free=false
+   * and so never run ~ProxyProtocol.
+   */
+  void
+  reset()
+  {
+    std::string{}.swap(additional_data);
+    std::unordered_map<uint8_t, std::string_view>{}.swap(tlv);
+    version   = ProxyProtocolVersion::UNDEFINED;
+    ip_family = AF_UNSPEC;
+    type      = 0;
+    src_addr  = {};
+    dst_addr  = {};
+  }
+
   int  set_additional_data(std::string_view data);
   void set_ipv4_addrs(in_addr_t src_addr, uint16_t src_port, in_addr_t dst_addr, uint16_t dst_port);
   void set_ipv6_addrs(const in6_addr &src_addr, uint16_t src_port, const in6_addr &dst_addr, uint16_t dst_port);
@@ -145,6 +164,7 @@ private:
 const size_t PPv1_CONNECTION_HEADER_LEN_MAX = 108;
 const size_t PPv2_CONNECTION_HEADER_LEN     = 16;
 
+extern bool                 proxy_protocol_detect(swoc::TextView tv);
 extern size_t               proxy_protocol_parse(ProxyProtocol *pp_info, swoc::TextView tv);
 extern size_t               proxy_protocol_build(uint8_t *buf, size_t max_buf_len, const ProxyProtocol &pp_info,
                                                  ProxyProtocolVersion force_version = ProxyProtocolVersion::UNDEFINED);

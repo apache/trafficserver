@@ -31,7 +31,10 @@
 #include "tscore/signals.h"
 
 #include "CtrlCommands.h"
+#include "CacheShmCommand.h"
+#include "ConvertConfigCommand.h"
 #include "FileConfigCommand.h"
+#include "SSLMultiCertCommand.h"
 #include "TrafficCtlStatus.h"
 
 // Define the global variable
@@ -88,9 +91,11 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--run-root", "", "using TS_RUNROOT as sandbox", "TS_RUNROOT", 1)
     .add_option("--format", "-f", "Use a specific output format {json|rpc}", "", 1, "", "format")
     .add_option("--read-timeout-ms", "", "Read timeout for RPC (in milliseconds)", "", 1, "10000", "read-timeout")
-    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts");
+    .add_option("--read-attempts", "", "Read attempts for RPC", "", 1, "100", "read-attempts")
+    .add_option("--watch", "-w", "Execute a program periodically. Watch interval(in seconds) can be passed.", "", 1, "-1", "watch");
 
   auto &config_command     = parser.add_command("config", "Manipulate configuration records").require_commands();
+  auto &cache_command      = parser.add_command("cache", "Manage the document cache").require_commands();
   auto &metric_command     = parser.add_command("metric", "Manipulate performance metrics").require_commands();
   auto &server_command     = parser.add_command("server", "Stop, restart and examine the server").require_commands();
   auto &storage_command    = parser.add_command("storage", "Manipulate cache storage").require_commands();
@@ -120,9 +125,63 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl config match [OPTIONS] REGEX [REGEX ...]")
     .add_option("--records", "", "Emit output in YAML format")
     .add_option("--default", "", "Include the default value");
-  config_command.add_command("reload", "Request a configuration reload", Command_Execute)
-    .add_example_usage("traffic_ctl config reload");
-  config_command.add_command("status", "Check the configuration status", Command_Execute)
+
+  //
+  // Start a new reload. If used without any extra options, it will start a new reload
+  // or show the details of the current reload if one is in progress.
+  // A new token will be assigned by the server if no token is provided.
+  config_command.add_command("reload", "Request a configuration reload", [&]() { command->execute(); })
+    .add_example_usage("traffic_ctl config reload")
+    //
+    // Start a new reload with a specific token. If no token is provided, the server will assign one.
+    // If a reload is already in progress, it will try to show the details of the current reload.
+    // If token already exists, you must use another token, or let the server assign one.
+    .add_option("--token", "-t", "Configuration token to reload.", "", 1, "")
+    //
+    // Start a new reload and monitor its progress until completion.
+    // Polls the server at regular intervals (see --refresh-int).
+    // If a reload is already in progress, monitors that one instead.
+    .add_option("--monitor", "-m", "Monitor reload progress until completion")
+    //
+    // Start a new reload. if one in progress it will show de details of the current reload.
+    // if no reload in progress, it will start a new one and it will show the details of it.
+    // This cannot be used with --monitor, if both are set, --show-details will be ignored.
+    .add_option("--show-details", "-s", "Show detailed information of the reload.")
+    .add_option("--include-logs", "-l", "include logs in the details. only work together with --show-details")
+
+    //
+    // Refresh interval in seconds used with --monitor.
+    // Controls how often to poll the server for reload status.
+    .add_option("--refresh-int", "-r", "Refresh interval in seconds (used with --monitor). Accepts fractional values (e.g. 0.5)",
+                "", 1, "0.5")
+    //
+    // The server will not let you start two reload at the same time. This option will force a new reload
+    // even if there is one in progress. Use with caution as this may have unexpected results.
+    // This is mostly for debugging and testing purposes. note: Should we keep it here?
+    .add_option("--force", "-F", "Force reload even if there are unsaved changes")
+    //
+    // Pass inline config data for reload. Like curl's -d flag:
+    //   -d @file.yaml              - read config from file
+    //   -d @file1.yaml @file2.yaml - read multiple files
+    //   -d @-                      - read config from stdin
+    //   -d "yaml: content"         - inline yaml string
+    .add_option("--data", "-d", "Inline config data (@file, @- for stdin, or yaml string)", "", MORE_THAN_ZERO_ARG_N, "")
+    .add_option("--directive", "-D", "Pass a reload directive to a config handler (format: config_key.directive_key=value)", "",
+                MORE_THAN_ZERO_ARG_N, "")
+    .add_option(
+      "--initial-wait", "-w",
+      "Initial wait before first poll, giving the server time to schedule all handlers (seconds). Accepts fractional values", "", 1,
+      "2")
+    .add_option("--timeout", "-T",
+                "Maximum time to wait for reload completion (used with --monitor). "
+                "Accepts duration units: 30s, 1m, 500ms, etc. 0 means no timeout",
+                "", 1, "0")
+    .with_required("--monitor");
+
+  config_command.add_command("status", "Check the configuration status", [&]() { command->execute(); })
+    .add_option("--token", "-t", "Configuration token to check status.", "", 1, "")
+    .add_option("--count", "-c", "Number of status records to return. Use numeric or 'all' to get the full history", "", 1, "")
+    .add_option("--min-level", "", "Minimum severity level for log entries: debug, note, warning, error", "", 1, "")
     .add_example_usage("traffic_ctl config status");
   config_command.add_command("set", "Set a configuration value", "", 2, Command_Execute)
     .add_option("--cold", "-c",
@@ -143,6 +202,38 @@ main([[maybe_unused]] int argc, const char **argv)
 
   config_command.add_command("registry", "Show configuration file registry", Command_Execute)
     .add_example_usage("traffic_ctl config registry");
+
+  // cache commands
+  cache_command.add_command("clear", "Advance the global cache generation", "", 0, Command_Execute)
+    .add_example_usage("traffic_ctl cache clear");
+
+  // ssl-multicert subcommand
+  auto &ssl_multicert_command =
+    config_command.add_command("ssl-multicert", "Manage ssl_multicert configuration").require_commands();
+  auto &ssl_multicert_show = ssl_multicert_command.add_command("show", "Show the ssl_multicert configuration", Command_Execute)
+                               .add_example_usage("traffic_ctl config ssl-multicert show")
+                               .add_example_usage("traffic_ctl config ssl-multicert show --yaml")
+                               .add_example_usage("traffic_ctl config ssl-multicert show --json");
+  ssl_multicert_show.add_mutex_group("format", false, "Output format");
+  ssl_multicert_show.add_option_to_group("format", "--yaml", "-y", "Output in YAML format (default)");
+  ssl_multicert_show.add_option_to_group("format", "--json", "-j", "Output in JSON format");
+
+  // convert subcommand - convert config files between formats
+  auto &convert_command = config_command.add_command("convert", "Convert configuration files to YAML format").require_commands();
+  convert_command.add_command("ssl_multicert", "Convert ssl_multicert.config to ssl_multicert.yaml", "", 2, Command_Execute)
+    .add_example_usage("traffic_ctl config convert ssl_multicert <input_file> <output_file>")
+    .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config ssl_multicert.yaml")
+    .add_example_usage("traffic_ctl config convert ssl_multicert ssl_multicert.config -  # output to stdout");
+  convert_command.add_command("storage", "Convert storage.config + volume.config to storage.yaml", "", 3, Command_Execute)
+    .add_example_usage("traffic_ctl config convert storage <storage.config> <volume.config> <output_file>")
+    .add_example_usage("traffic_ctl config convert storage storage.config volume.config storage.yaml")
+    .add_example_usage("traffic_ctl config convert storage storage.config volume.config -  # output to stdout");
+  convert_command.add_command("plugin_config", "Convert plugin.config to plugin.yaml", "", 2, Command_Execute)
+    .add_example_usage("traffic_ctl config convert plugin_config <input_file> <output_file>")
+    .add_example_usage("traffic_ctl config convert plugin_config plugin.config plugin.yaml")
+    .add_example_usage("traffic_ctl config convert plugin_config plugin.config -  # output to stdout")
+    .add_option("--skip-disabled", "", "Omit commented-out (disabled) plugins from the output");
+
   // host commands
   host_command.add_command("status", "Get one or more host statuses", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
     .add_example_usage("traffic_ctl host status HOST  [HOST  ...]");
@@ -159,7 +250,9 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl metric get METRIC [METRIC ...]");
   metric_command.add_command("describe", "Show detailed information about one or more metric values", "", MORE_THAN_ONE_ARG_N,
                              Command_Execute); // not implemented
-  metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N, Command_Execute);
+  metric_command.add_command("match", "Get metrics matching a regular expression", "", MORE_THAN_ZERO_ARG_N, Command_Execute)
+    .add_option("--include-hidden", "", "Also match hidden (internal, normally unpublished) metrics")
+    .add_example_usage("traffic_ctl metric match [--include-hidden] METRIC [METRIC ...]");
   metric_command
     .add_command(
       "monitor",
@@ -179,6 +272,8 @@ main([[maybe_unused]] int argc, const char **argv)
   plugin_command
     .add_command("msg", "Send message to plugins - a TAG and the message DATA(optional)", "", MORE_THAN_ONE_ARG_N, Command_Execute)
     .add_example_usage("traffic_ctl plugin msg TAG DATA");
+  plugin_command.add_command("list", "Show globally loaded plugins and their status", "", 0, Command_Execute)
+    .add_example_usage("traffic_ctl plugin list");
 
   // server commands
   server_command.add_command("backtrace", "Show a full stack trace of the traffic_server process",
@@ -228,12 +323,40 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_option("--params", "-p", "Parameters to be passed in the request, YAML or JSON format", "", MORE_THAN_ONE_ARG_N, "", "")
     .add_example_usage("traffic_ctl rpc invoke foo_bar -p \"numbers: [1, 2, 3]\"");
 
+  // cache shm commands - operate directly on POSIX shared memory; no running server required.
+  auto &shm_command = cache_command.add_command("shm", "Inspect and manage cache shared-memory segments").require_commands();
+  // No parser-level default for --prefix: ArgParser injects defaults into the parsed
+  // arguments, which would make an omitted --prefix indistinguishable from an explicit
+  // one. CacheShmCommand supplies the runtime default and keys its "did you set
+  // name_prefix?" hint off the option being absent.
+  shm_command.add_option("--prefix", "-p", "shm name prefix word, framed as /<word>- (default 'ats')", "", 1, "");
+  shm_command.add_command("status", "Show the cache shared-memory control segment and stripe table", Command_Execute)
+    .add_example_usage("traffic_ctl cache shm status")
+    .add_example_usage("traffic_ctl cache shm status --prefix ats-t");
+  shm_command.add_command("clear", "Unlink the cache shared-memory control and stripe segments", Command_Execute)
+    .add_example_usage("traffic_ctl cache shm clear")
+    .add_example_usage("traffic_ctl cache shm clear --prefix ats-t");
+
   auto create_command = [](ts::Arguments &args) -> std::unique_ptr<CtrlCommand> {
     if (args.get("config")) {
+      if (args.get("convert")) {
+        return std::make_unique<ConvertConfigCommand>(&args);
+      }
+      if (args.get("ssl-multicert")) {
+        return std::make_unique<SSLMultiCertCommand>(&args);
+      }
       if (args.get("cold")) {
         return std::make_unique<FileConfigCommand>(&args);
       }
       return std::make_unique<ConfigCommand>(&args);
+    }
+
+    if (args.get("cache")) {
+      // `cache shm` reads the shm segments directly, so it must not be routed through the RPC-backed CacheCommand.
+      if (args.get("shm")) {
+        return std::make_unique<CacheShmCommand>(&args);
+      }
+      return std::make_unique<CacheCommand>(&args);
     }
 
     static const std::map<std::string, std::function<std::unique_ptr<CtrlCommand>(ts::Arguments *)>> factories = {

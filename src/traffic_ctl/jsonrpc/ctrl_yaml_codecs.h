@@ -26,6 +26,8 @@
 
 #include "CtrlRPCRequests.h"
 
+#include <utility>
+
 // traffic_ctl jsonrpc request/response YAML codec implementation.
 
 namespace YAML
@@ -41,6 +43,117 @@ template <> struct convert<ConfigSetRecordRequest::Params> {
     return node;
   }
 };
+//------------------------------------------------------------------------------------------------------------------------------------
+
+template <> struct convert<ConfigReloadRequest::Params> {
+  static Node
+  encode(ConfigReloadRequest::Params const &params)
+  {
+    Node node;
+    if (!params.token.empty()) {
+      node["token"] = params.token;
+    }
+
+    if (params.force) {
+      node["force"] = params.force;
+    }
+
+    // Include configs if present (triggers inline mode on server)
+    if (params.configs && params.configs.IsMap() && params.configs.size() > 0) {
+      node["configs"] = params.configs;
+    }
+
+    return node;
+  }
+};
+
+template <> struct convert<FetchConfigReloadStatusRequest::Params> {
+  static Node
+  encode(FetchConfigReloadStatusRequest::Params const &params)
+  {
+    Node node;
+    auto is_number = [](const std::string &s) {
+      return !s.empty() && std::find_if(s.begin(), s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
+    };
+    // either passed values or defaults.
+    node["token"] = params.token;
+
+    if (!params.count.empty() && (!is_number(params.count) && params.count != "all")) {
+      throw std::invalid_argument("Invalid 'count' value, must be numeric or 'all'");
+    }
+
+    if (!params.count.empty()) {
+      if (params.count == "all") {
+        node["count"] = 0; // 0 means all.
+      } else {
+        node["count"] = std::stoi(params.count);
+      }
+    }
+
+    return node;
+  }
+};
+
+template <> struct convert<ConfigReloadResponse> {
+  static bool
+  decode(Node const &node, ConfigReloadResponse &out)
+  {
+    auto get_info = [](auto &&self, YAML::Node const &from) -> ConfigReloadResponse::ReloadInfo {
+      ConfigReloadResponse::ReloadInfo info;
+      info.config_token = helper::try_extract<std::string>(from, "config_token");
+      info.status       = helper::try_extract<std::string>(from, "status");
+      info.description  = helper::try_extract<std::string>(from, "description", false, std::string{"<none>"});
+      info.filename     = helper::try_extract<std::string>(from, "filename", false, std::string{"<none>"});
+      for (auto &&log : from["logs"]) {
+        if (log.IsMap()) {
+          ConfigReloadResponse::LogEntry entry;
+          entry.level = static_cast<DiagsLevel>(log["level"].as<int>(DL_Undefined));
+          entry.text  = log["text"].as<std::string>();
+          info.logs.push_back(std::move(entry));
+        } else {
+          info.logs.push_back({DL_Undefined, log.as<std::string>()});
+        }
+      }
+
+      for (auto &&sub : from["sub_tasks"]) {
+        info.sub_tasks.push_back(self(self, sub));
+      }
+
+      if (auto meta = from["meta"]) {
+        info.meta.created_time_ms      = helper::try_extract<int64_t>(meta, "created_time_ms");
+        info.meta.last_updated_time_ms = helper::try_extract<int64_t>(meta, "last_updated_time_ms");
+        info.meta.is_main_task         = helper::try_extract<bool>(meta, "main_task");
+        if (meta["plugin_name"]) {
+          info.meta.plugin_name = helper::try_extract<std::string>(meta, "plugin_name");
+        }
+      }
+      return info;
+    };
+
+    // Server sends "errors" (plural)
+    if (node["errors"]) {
+      for (auto &&err : node["errors"]) {
+        ConfigReloadResponse::Error e;
+        e.code    = helper::try_extract<int>(err, "code");
+        e.message = helper::try_extract<std::string>(err, "message");
+        out.error.push_back(std::move(e));
+      }
+    }
+    out.created_time = helper::try_extract<std::string>(node, "created_time");
+    for (auto &&msg : node["message"]) {
+      out.messages.push_back(msg.as<std::string>());
+    }
+    out.config_token = helper::try_extract<std::string>(node, "token");
+
+    for (auto &&element : node["tasks"]) {
+      ConfigReloadResponse::ReloadInfo task = get_info(get_info, element);
+      out.tasks.push_back(std::move(task));
+    }
+
+    return true;
+  }
+};
+
 //------------------------------------------------------------------------------------------------------------------------------------
 template <> struct convert<HostSetStatusRequest::Params::Op> {
   static Node
@@ -78,6 +191,31 @@ template <> struct convert<HostDBGetStatusRequest::Params> {
     Node node;
     node["hostname"] = params.hostname;
     return node;
+  }
+};
+//------------------------------------------------------------------------------------------------------------------------------------
+template <> struct convert<PluginListResponse> {
+  static bool
+  decode(Node const &node, PluginListResponse &out)
+  {
+    if (auto data = node["data"]; data) {
+      out.source = helper::try_extract<std::string>(data, "source");
+      for (const auto &p : data["plugins"]) {
+        PluginListResponse::PluginInfo info;
+
+        info.path    = helper::try_extract<std::string>(p, "path");
+        info.enabled = helper::try_extract<bool>(p, "enabled");
+        info.status  = helper::try_extract<std::string>(p, "status");
+        if (p["index"]) {
+          info.index = p["index"].as<int>();
+        }
+        if (p["load_order"]) {
+          info.load_order = p["load_order"].as<int>();
+        }
+        out.plugins.emplace_back(std::move(info));
+      }
+    }
+    return true;
   }
 };
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -164,7 +302,7 @@ template <> struct convert<HostStatusLookUpResponse> {
       HostStatusLookUpResponse::HostStatusInfo hi;
       hi.hostName = item["hostname"].Scalar();
       hi.status   = item["status"].Scalar();
-      info.statusList.push_back(hi);
+      info.statusList.push_back(std::move(hi));
     }
     for (auto &&item : errorList) {
       info.errorList.push_back(item.Scalar());

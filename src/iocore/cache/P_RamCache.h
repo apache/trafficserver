@@ -45,3 +45,4 @@ public:
 
 RamCache *new_RamCacheLRU();
 RamCache *new_RamCacheCLFUS();
+RamCache *new_RamCacheS3FIFO();

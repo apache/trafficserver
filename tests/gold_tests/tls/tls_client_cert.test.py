@@ -91,7 +91,13 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
     })
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 ts.Disk.remap_config.AddLine('map /case1 https://127.0.0.1:{0}/'.format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine('map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port))
@@ -182,19 +188,13 @@ tr2.Processes.Default.Command = 'echo Updated configs'
 tr2.Processes.Default.Env = ts.Env
 tr2.Processes.Default.ReturnCode = 0
 
-tr2reload = Test.AddTestRun("Reload config")
-tr2reload.StillRunningAfter = ts
+tr2reload = Test.AddConfigReload(ts, expect_tasks=["sni.yaml"], description="Reload config")
 tr2reload.StillRunningAfter = server
 tr2reload.StillRunningAfter = server2
-tr2reload.Processes.Default.Command = 'traffic_ctl config reload'
-# Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
-tr2reload.Processes.Default.Env = ts.Env
-tr2reload.Processes.Default.ReturnCode = 0
 
 # Should succeed
 tr3bar = Test.AddTestRun("Make request with other bar cert to first server")
-# Wait for the reload to complete
-tr3bar.Processes.Default.StartBefore(server3, ready=When.FileContains(ts.Disk.diags_log.Name, 'sni.yaml finished loading', 2))
+tr3bar.Processes.Default.StartBefore(server3)
 tr3bar.StillRunningAfter = ts
 tr3bar.StillRunningAfter = server
 tr3bar.StillRunningAfter = server2
@@ -245,18 +245,12 @@ trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.cl
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0
 
-trreload = Test.AddTestRun("Reload config after renaming certs")
-trreload.StillRunningAfter = ts
+trreload = Test.AddConfigReload(ts, expect_tasks=["sni.yaml"], description="Reload config after renaming certs")
 trreload.StillRunningAfter = server
 trreload.StillRunningAfter = server2
-trreload.Processes.Default.Command = 'traffic_ctl config reload'
-trreload.Processes.Default.Env = ts.Env
-trreload.Processes.Default.ReturnCode = 0
 
 # Should succeed
 tr4bar = Test.AddTestRun("Make request with renamed bar cert to second server")
-# Wait for the reload to complete
-tr4bar.DelayStart = 10
 tr4bar.StillRunningAfter = ts
 tr4bar.StillRunningAfter = server
 tr4bar.StillRunningAfter = server2

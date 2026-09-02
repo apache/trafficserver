@@ -42,8 +42,20 @@ ts.addSSLfile("ssl/ocsp_response.der")
 ts.Disk.remap_config.AddLine(
     'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
 
-ts.Disk.ssl_multicert_config.AddLine(
-    'dest_ip=* ssl_cert_name=server.ocsp.pem ssl_key_name=server.ocsp.key ssl_ocsp_name=ocsp_response.der')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+
+
+ssl_multicert:
+
+
+  - dest_ip: "*"
+    ssl_cert_name: server.ocsp.pem
+    ssl_key_name: server.ocsp.key
+    ssl_ocsp_name: ocsp_response.der
+
+
+""".split("\n"))
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all

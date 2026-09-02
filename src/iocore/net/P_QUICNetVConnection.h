@@ -46,11 +46,19 @@
 #include "iocore/net/quic/QUICConnection.h"
 #include "iocore/net/quic/QUICConnectionTable.h"
 #include "iocore/net/quic/QUICContext.h"
+#include "iocore/net/quic/QUICStream.h"
 #include "iocore/net/quic/QUICStreamManager.h"
+#include "tscore/ink_config.h"
 #include "tscore/List.h"
 
 #include <netinet/in.h>
+#include <openssl/ssl.h>
+#include <string>
+#include <unordered_map>
+
+#if TS_HAS_QUICHE
 #include <quiche.h>
+#endif
 
 class EThread;
 class QUICPacketHandler;
@@ -66,16 +74,23 @@ class QUICNetVConnection : public UnixNetVConnection,
                            public TLSCertSwitchSupport,
                            public TLSEventSupport,
                            public TLSBasicSupport,
-                           public QUICSupport
+                           public QUICSupport,
+                           public QUICStreamIO
 {
   using super = UnixNetVConnection; ///< Parent type.
 
 public:
   QUICNetVConnection();
   ~QUICNetVConnection();
+#if TS_HAS_OPENSSL_QUIC
+  void                    init(SSL *ssl, QUICPacketHandler *packet_handler);
+  void                    set_quic_endpoints(IpEndpoint const &local, IpEndpoint const &remote);
+  QUICConnectionErrorUPtr create_openssl_stream(uint64_t flags, QUICStreamId &new_stream_id);
+#elif TS_HAS_QUICHE
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, UDPConnection *, QUICPacketHandler *);
   void init(QUICVersion version, QUICConnectionId peer_cid, QUICConnectionId original_cid, QUICConnectionId first_cid,
             QUICConnectionId retry_cid, UDPConnection *, quiche_conn *, QUICPacketHandler *, QUICConnectionTable *ctable, SSL *);
+#endif
 
   // Event handlers
   int acceptEvent(int event, Event *e);
@@ -103,7 +118,7 @@ public:
 
   // NetVConnection
   int         populate_protocol(std::string_view *results, int n) const override;
-  const char *protocol_contains(std::string_view tag) const override;
+  char const *protocol_contains(std::string_view tag) const override;
 
   // QUICConnection
   QUICStreamManager *stream_manager() override;
@@ -120,11 +135,12 @@ public:
   QUICConnectionId        initial_source_connection_id() const override;
   QUICConnectionId        connection_id() const override;
   std::string_view        cids() const override;
-  const QUICFiveTuple     five_tuple() const override;
+  QUICFiveTuple const     five_tuple() const override;
   uint32_t                pmtu() const override;
   NetVConnectionContext_t direction() const override;
   QUICVersion             negotiated_version() const override;
   std::string_view        negotiated_application_name() const override;
+  void                    on_stream_updated() override;
   bool                    is_closed() const override;
   bool                    is_at_anti_amplification_limit() const override;
   bool                    is_address_validation_completed() const override;
@@ -132,6 +148,13 @@ public:
 
   // QUICSupport
   QUICConnection *get_quic_connection() override;
+
+  // QUICStreamIO
+  int64_t read_stream(QUICStreamId stream_id, uint8_t *buf, size_t len, bool &fin, QUICStreamIO::ErrorCode &error_code) override;
+  bool    stream_read_finished(QUICStreamId stream_id) override;
+  int64_t stream_write_capacity(QUICStreamId stream_id) override;
+  int64_t write_stream(QUICStreamId stream_id, uint8_t const *buf, size_t len, bool fin,
+                       QUICStreamIO::ErrorCode &error_code) override;
 
   // QUICNetVConnection
   int in_closed_queue = 0;
@@ -166,11 +189,11 @@ protected:
   in_port_t _get_local_port() override;
 
   // TLSSessionResumptionSupport
-  const IpEndpoint &_getLocalEndpoint() override;
+  IpEndpoint const &_getLocalEndpoint() override;
 
   // TLSCertSwitchSupport
   bool           _isTryingRenegotiation() const override;
-  shared_SSL_CTX _lookupContextByName(const std::string &servername, SSLCertContextType ctxType) override;
+  shared_SSL_CTX _lookupContextByName(std::string const &servername, SSLCertContextType ctxType) override;
   shared_SSL_CTX _lookupContextByIP() override;
 
   // TLSEventSupport
@@ -190,17 +213,27 @@ private:
   SSL                      *_ssl;
   QUICConfig::scoped_config _quic_config;
 
-  QUICConnectionId _peer_quic_connection_id;      // dst cid in local
-  QUICConnectionId _peer_old_quic_connection_id;  // dst previous cid in local
-  QUICConnectionId _original_quic_connection_id;  // dst cid of initial packet from client
-  QUICConnectionId _first_quic_connection_id;     // dst cid of initial packet from client that doesn't have retry token
-  QUICConnectionId _retry_source_connection_id;   // src cid used for sending Retry packet
-  QUICConnectionId _initial_source_connection_id; // src cid used for Initial packet
-  QUICConnectionId _quic_connection_id;           // src cid in local
+  QUICConnectionId _peer_quic_connection_id     = QUICConnectionId::ZERO(); // dst cid in local
+  QUICConnectionId _peer_old_quic_connection_id = QUICConnectionId::ZERO(); // dst previous cid in local
+  QUICConnectionId _original_quic_connection_id = QUICConnectionId::ZERO(); // dst cid of initial packet from client
+  QUICConnectionId _first_quic_connection_id =
+    QUICConnectionId::ZERO(); // dst cid of initial packet from client without retry token
+  QUICConnectionId _retry_source_connection_id   = QUICConnectionId::ZERO(); // src cid used for sending Retry packet
+  QUICConnectionId _initial_source_connection_id = QUICConnectionId::ZERO(); // src cid used for Initial packet
+  QUICConnectionId _quic_connection_id           = QUICConnectionId::ZERO(); // src cid in local
 
-  UDPConnection       *_udp_con    = nullptr;
-  quiche_conn         *_quiche_con = nullptr;
-  QUICConnectionTable *_ctable     = nullptr;
+#if TS_HAS_QUICHE
+  QUICConnectionTable *_ctable = nullptr;
+#endif
+
+#if TS_HAS_OPENSSL_QUIC
+  std::unordered_map<QUICStreamId, SSL *> _openssl_streams;
+  std::string                             _cid_text;
+  std::string                             _negotiated_alpn;
+#elif TS_HAS_QUICHE
+  UDPConnection *_udp_con    = nullptr;
+  quiche_conn   *_quiche_con = nullptr;
+#endif
 
   void _bindSSLObject();
   void _unbindSSLObject();
@@ -210,16 +243,27 @@ private:
   void   _close_packet_write_ready(Event *data);
   Event *_packet_write_ready = nullptr;
 
-  void   _schedule_quiche_timeout();
-  void   _unschedule_quiche_timeout();
-  void   _close_quiche_timeout(Event *data);
+  void _schedule_quiche_timeout();
+  void _unschedule_quiche_timeout();
+  void _close_quiche_timeout(Event *data);
+#if TS_HAS_QUICHE
   Event *_quiche_timeout = nullptr;
+#endif
 
   void _schedule_closing_event();
 
   void _handle_read_ready();
   void _handle_write_ready();
   void _handle_interval();
+
+#if TS_HAS_OPENSSL_QUIC
+  void _handle_openssl_events();
+  void _accept_openssl_streams();
+  void _process_openssl_streams();
+  void _schedule_openssl_event(bool delay = true);
+  void _unschedule_openssl_event();
+  bool _openssl_connection_closed() const;
+#endif
 
   void _propagate_event(int event);
 

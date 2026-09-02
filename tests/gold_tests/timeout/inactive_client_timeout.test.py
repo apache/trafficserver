@@ -46,7 +46,13 @@ ts.Disk.remap_config.AddLines(
         'map / http://127.0.0.1:{0}'.format(server.Variables.http_port),
     ])
 
-ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+ts.Disk.ssl_multicert_yaml.AddLines(
+    """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
 
 #
 # Test 1: Verify that server delay does not trigger client activity timeout.

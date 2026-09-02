@@ -438,6 +438,26 @@ protected:
 
 private:
   Value _value;
+  Value _content_type;
+};
+
+class OperatorSetBodyFromFile : public Operator
+{
+public:
+  OperatorSetBodyFromFile() { Dbg(dbg_ctl, "Calling CTOR for OperatorSetBodyFromFile"); }
+
+  OperatorSetBodyFromFile(const OperatorSetBodyFromFile &) = delete;
+  void operator=(const OperatorSetBodyFromFile &)          = delete;
+
+  void initialize(Parser &p) override;
+
+protected:
+  void initialize_hooks() override;
+  bool exec(const Resources &res) const override;
+
+private:
+  std::string _body;
+  Value       _content_type;
 };
 
 class OperatorSetHttpCntl : public Operator
@@ -456,8 +476,8 @@ protected:
   bool exec(const Resources &res) const override;
 
 private:
-  bool           _flag = false;
-  TSHttpCntlType _cntl_qual;
+  bool           _flag{false};
+  TSHttpCntlType _cntl_qual{TS_HTTP_CNTL_LOGGING_MODE}; // always overwritten by initialize()
 };
 
 class OperatorSetPluginCntl : public Operator
@@ -477,7 +497,6 @@ public:
   };
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
@@ -487,8 +506,8 @@ protected:
   }
 
 private:
-  PluginCtrl _name;
-  int        _value;
+  PluginCtrl _name{PluginCtrl::TIMEZONE}; // always overwritten by initialize()
+  int        _value{0};
 };
 
 class RemapPluginInst; // Opaque to the HRW operator, but needed in the implementation.
@@ -542,12 +561,13 @@ protected:
 
 private:
   Value _value;
+  Value _content_type;
 };
 
 class OperatorSetStateFlag : public Operator
 {
 public:
-  OperatorSetStateFlag()
+  explicit OperatorSetStateFlag(TSUserArgType scope = TS_USER_ARGS_TXN) : _scope(scope)
   {
     static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
     Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateFlag");
@@ -560,25 +580,31 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
   need_txn_slot() const override
   {
-    return true;
+    return _scope == TS_USER_ARGS_TXN;
+  }
+
+  bool
+  need_ssn_slot() const override
+  {
+    return _scope == TS_USER_ARGS_SSN;
   }
 
 private:
-  int      _flag_ix = -1;
-  int      _flag    = false;
-  uint64_t _mask    = 0;
+  TSUserArgType _scope   = TS_USER_ARGS_TXN;
+  int           _flag_ix = -1;
+  int           _flag    = false;
+  uint64_t      _mask    = 0;
 };
 
 class OperatorSetStateInt8 : public Operator
 {
 public:
-  OperatorSetStateInt8()
+  explicit OperatorSetStateInt8(TSUserArgType scope = TS_USER_ARGS_TXN) : _scope(scope)
   {
     static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
     Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateInt8");
@@ -591,24 +617,30 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
   need_txn_slot() const override
   {
-    return true;
+    return _scope == TS_USER_ARGS_TXN;
+  }
+
+  bool
+  need_ssn_slot() const override
+  {
+    return _scope == TS_USER_ARGS_SSN;
   }
 
 private:
-  int   _byte_ix = -1;
-  Value _value;
+  TSUserArgType _scope   = TS_USER_ARGS_TXN;
+  int           _byte_ix = -1;
+  Value         _value;
 };
 
 class OperatorSetStateInt16 : public Operator
 {
 public:
-  OperatorSetStateInt16()
+  explicit OperatorSetStateInt16(TSUserArgType scope = TS_USER_ARGS_TXN) : _scope(scope)
   {
     static_assert(sizeof(void *) == 8, "State Variables requires a 64-bit system.");
     Dbg(dbg_ctl, "Calling CTOR for OperatorSetStateInt16");
@@ -621,17 +653,23 @@ public:
   void initialize(Parser &p) override;
 
 protected:
-  void initialize_hooks() override;
   bool exec(const Resources &res) const override;
 
   bool
   need_txn_slot() const override
   {
-    return true;
+    return _scope == TS_USER_ARGS_TXN;
+  }
+
+  bool
+  need_ssn_slot() const override
+  {
+    return _scope == TS_USER_ARGS_SSN;
   }
 
 private:
-  Value _value;
+  TSUserArgType _scope = TS_USER_ARGS_TXN;
+  Value         _value;
 };
 
 class OperatorSetEffectiveAddress : public Operator

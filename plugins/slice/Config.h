@@ -25,12 +25,18 @@
 
 #include <string>
 #include <mutex>
+#include <unordered_set>
+#include <vector>
+
+struct BgBlockFetch;
 
 // Data Structures and Classes
 struct Config {
   static constexpr int64_t const blockbytesmin     = 1024 * 256;        // 256KB
   static constexpr int64_t const blockbytesmax     = 1024 * 1024 * 128; // 128MB
   static constexpr int64_t const blockbytesdefault = 1024 * 1024;       // 1MB
+
+  static constexpr int const purgeprobeblocksdefault = 8;
 
   int64_t     m_blockbytes{blockbytesdefault};
   std::string m_remaphost; // remap host to use for loopback slice GET
@@ -45,8 +51,12 @@ struct Config {
   bool     m_head_strip_range{false}; // strip range header for head requests
   uint64_t m_min_size_to_slice{0};    // Only strip objects larger than this
 
+  // consecutive uncached blocks a purge tolerates before giving up on the object
+  int m_purge_probe_blocks{purgeprobeblocksdefault};
+
   std::string m_skip_header;
   std::string m_crr_ident_header;
+  std::string m_purge_probe_header; // request header overriding m_purge_probe_blocks
 
   // Convert optarg to bytes
   static int64_t bytesFrom(char const *const valstr);
@@ -79,6 +89,10 @@ struct Config {
   // Did we cache this internally as a small object?
   bool isKnownLargeObj(std::string_view url);
 
+  // Prefetch dedup and freelist
+  std::pair<bool, BgBlockFetch *> prefetchAcquire(const std::string &key);
+  void                            prefetchRelease(BgBlockFetch *bg);
+
   // Metadata cache stats
   std::string stat_prefix{};
   int         stat_TP{0}, stat_TN{0}, stat_FP{0}, stat_FN{0}, stat_no_cl{0}, stat_bad_cl{0}, stat_no_url{0};
@@ -89,4 +103,9 @@ private:
   std::mutex                     m_mutex;
   std::optional<ObjectSizeCache> m_oscache;
   void                           setCacheSize(size_t entries);
+
+  std::mutex                      m_prefetch_mutex;
+  std::unordered_set<std::string> m_prefetch_active;
+  std::vector<BgBlockFetch *>     m_prefetch_freelist;
+  void                            prefetchCleanup();
 };

@@ -47,7 +47,6 @@ using hwloc_obj_t = hwloc_obj *;
 // instead.
 #define MUTEX_RETRY_DELAY HRTIME_MSECONDS(20)
 
-class DiskHandler;
 struct EventIO;
 
 class ServerSessionPool;
@@ -327,12 +326,6 @@ public:
 
   /** Block of memory to allocate thread specific data e.g. stat system arrays. */
   char thread_private[PER_THREAD_DATA];
-
-  /** Private Data for the Disk Processor. */
-  DiskHandler *diskHandler = nullptr;
-
-  /** Private Data for AIO. */
-  Que(Continuation, link) aio_ops;
 
   ProtectedQueue     EventQueueExternal;
   PriorityEventQueue EventQueue;
@@ -620,7 +613,7 @@ EThread::Metrics::Slice::record_event_count(int count) -> self_type &
     _events._min = count;
   }
   if (count > _events._max) {
-    _events._max = _count;
+    _events._max = count;
   }
   _events._total += count;
   return *this;

@@ -34,13 +34,18 @@ class EscalateTest:
 
     _replay_original_file: str = 'escalate_original.replay.yaml'
     _replay_failover_file: str = 'escalate_failover.replay.yaml'
+    _server_original_file: str = 'escalate_original_server_default.replay.yaml'
+    _server_failover_file: str = 'escalate_failover_server_default.replay.yaml'
     _process_counter: int = 0
 
-    def __init__(self, disable_redirect_header: bool = False) -> None:
+    def __init__(self, disable_redirect_header: bool = False, enable_cache: bool = False) -> None:
         '''Configure the test run.
         :param disable_redirect_header: Whether to use --no-redirect-header.
+        :param enable_cache: Whether to exercise the cached redirect path.
         '''
-        tr = Test.AddTestRun(f'Test escalate plugin. disable_redirect_header={disable_redirect_header}')
+        tr = Test.AddTestRun(
+            f'Test escalate plugin. disable_redirect_header={disable_redirect_header}, enable_cache={enable_cache}')
+        self._enable_cache = enable_cache
         self._setup_dns(tr)
         self._setup_servers(tr, disable_redirect_header)
         self._setup_ts(tr, disable_redirect_header)
@@ -63,10 +68,12 @@ class EscalateTest:
         '''
         tr.Setup.Copy(self._replay_original_file)
         tr.Setup.Copy(self._replay_failover_file)
+        tr.Setup.Copy(self._server_original_file)
+        tr.Setup.Copy(self._server_failover_file)
         process_name = f"server_origin_{EscalateTest._process_counter}"
-        self._server_origin = tr.AddVerifierServerProcess(process_name, self._replay_original_file)
+        self._server_origin = tr.AddVerifierServerProcess(process_name, self._server_original_file)
         process_name = f"server_failover_{EscalateTest._process_counter}"
-        self._server_failover = tr.AddVerifierServerProcess(process_name, self._replay_failover_file)
+        self._server_failover = tr.AddVerifierServerProcess(process_name, self._server_failover_file)
 
         self._server_origin.Streams.All += Testers.ContainsExpression(
             'uuid: GET', "Verify the origin server received the GET request.")
@@ -114,7 +121,7 @@ class EscalateTest:
         :param disable_redirect_header: Whether ATS should be configured with --no-redirect-header.
         '''
         process_name = f"ts_{EscalateTest._process_counter}"
-        self._ts = tr.MakeATSProcess(process_name, enable_cache=False)
+        self._ts = tr.MakeATSProcess(process_name, enable_cache=self._enable_cache)
         # Select a port that is guaranteed to not be used at the moment.
         dead_port = get_port(self._ts, "dead_port")
         self._ts.Disk.records_config.update(
@@ -176,6 +183,8 @@ class EscalateNonGetMethodsTest:
 
     _replay_get_method_file: str = 'escalate_non_get_methods.replay.yaml'
     _replay_failover_file: str = 'escalate_failover.replay.yaml'
+    _server_origin_file: str = 'escalate_original_server_non_get.replay.yaml'
+    _server_failover_file: str = 'escalate_failover_server_non_get.replay.yaml'
 
     def __init__(self):
         '''Configure the test run for escalating non-GET methods testing.'''
@@ -193,8 +202,10 @@ class EscalateNonGetMethodsTest:
         '''Set up the origin and failover servers for non-GET methods testing.'''
         tr.Setup.Copy(self._replay_get_method_file)
         tr.Setup.Copy(self._replay_failover_file)
-        self._server_origin = tr.AddVerifierServerProcess("server_origin_non_get_methods", self._replay_get_method_file)
-        self._server_failover = tr.AddVerifierServerProcess("server_failover_non_get_methods", self._replay_failover_file)
+        tr.Setup.Copy(self._server_origin_file)
+        tr.Setup.Copy(self._server_failover_file)
+        self._server_origin = tr.AddVerifierServerProcess("server_origin_non_get_methods", self._server_origin_file)
+        self._server_failover = tr.AddVerifierServerProcess("server_failover_non_get_methods", self._server_failover_file)
 
         # Verify the origin server received all requests
         self._server_origin.Streams.All += Testers.ContainsExpression(
@@ -279,4 +290,5 @@ class EscalateNonGetMethodsTest:
 
 EscalateTest(disable_redirect_header=False)
 EscalateTest(disable_redirect_header=True)
+EscalateTest(disable_redirect_header=False, enable_cache=True)
 EscalateNonGetMethodsTest()

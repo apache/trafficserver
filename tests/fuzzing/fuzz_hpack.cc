@@ -30,6 +30,7 @@
 #define INITIAL_TABLE_SIZE      4096
 #define MAX_REQUEST_HEADER_SIZE 131072
 #define MAX_TABLE_SIZE          4096
+#define MAX_FIELD_SIZE          32768
 
 extern int cmd_disable_pfreelist;
 
@@ -46,7 +47,8 @@ LLVMFuzzerTestOneInput(const uint8_t *input_data, size_t size_data)
   std::unique_ptr<HTTPHdr> headers(new HTTPHdr);
   headers->create(HTTPType::REQUEST);
 
-  hpack_decode_header_block(indexing_table, headers.get(), input_data, size_data, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE);
+  hpack_decode_header_block(indexing_table, headers.get(), input_data, size_data, MAX_REQUEST_HEADER_SIZE, MAX_TABLE_SIZE,
+                            MAX_FIELD_SIZE);
 
   headers->destroy();
 

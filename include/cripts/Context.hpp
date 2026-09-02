@@ -18,6 +18,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <variant>
 #include "ts/ts.h"
 #include "ts/remap.h"
@@ -28,7 +29,7 @@
 #include "cripts/Connections.hpp"
 
 // These are pretty arbitrary for now
-constexpr int CONTEXT_DATA_SLOTS = 4;
+constexpr int CONTEXT_DATA_SLOTS = 16;
 
 namespace cripts
 {
@@ -132,23 +133,16 @@ public:
   } _cache;
 
   struct _UrlBlock {
-    cripts::Client::URL  &request;
-    cripts::Pristine::URL pristine;
-    cripts::Parent::URL   parent;
+    cripts::Client::URL                   &request;
+    std::unique_ptr<cripts::Pristine::URL> pristine;
+    std::unique_ptr<cripts::Parent::URL>   parent;
 
     struct {
-      cripts::Remap::From::URL from;
-      cripts::Remap::To::URL   to;
+      std::unique_ptr<cripts::Remap::From::URL> from;
+      std::unique_ptr<cripts::Remap::To::URL>   to;
     } remap;
 
-    _UrlBlock(Context *ctx, cripts::Client::URL &alias) : request(alias)
-    {
-      request.set_context(ctx);
-      pristine.set_context(ctx);
-      parent.set_context(ctx);
-      remap.from.set_context(ctx);
-      remap.to.set_context(ctx);
-    }
+    _UrlBlock(Context *ctx, cripts::Client::URL &alias) : request(alias) { request.set_context(ctx); }
 
   } _urls;
 }; // End class Context

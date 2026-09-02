@@ -1,0 +1,13 @@
+``
+> GET /test``
+> Host: www.testexample.com``
+> User-Agent: curl/``
+> Accept: */*
+``
+< HTTP/1.1 200 OK
+< Date: ``
+< Age: ``
+< Transfer-Encoding: chunked
+< Connection: keep-alive
+< Server: ATS/``
+``

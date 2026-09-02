@@ -51,7 +51,13 @@ class TransactionDataSyncTest:
             })
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.remap_config.AddLine(f'map / http://localhost:{self.server.Variables.http_port}/')
-        self.ts.Disk.ssl_multicert_config.AddLine('dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key')
+        self.ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
         self.ts.Disk.plugin_config.AddLine('txn_data_sink.so')
 
         # All of the bodies that contained "not_dumped" were not configured to
@@ -80,6 +86,23 @@ class TransactionDataSyncTest:
         tr.Processes.Default.StartBefore(self.ts)
         tr.AddVerifierClientProcess(
             "client", self.replay_file, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.nameserver
+        tr.StillRunningAfter = self.ts
+
+        tr = Test.AddTestRun("Wait for transaction data sink output")
+        timeout = 30
+        watcher = tr.Processes.Process("watcher")
+        watcher.Command = f"sleep {timeout}"
+        watcher.Ready = When.FileContains(self.ts.Disk.traffic_out.Name, "http2_response_body_dumped")
+        watcher.TimeOut = timeout
+        tr.TimeOut = timeout
+        tr.StillRunningAfter = self.server
+        tr.StillRunningAfter = self.nameserver
+        tr.StillRunningAfter = self.ts
+        tr.Processes.Default.StartBefore(watcher)
+        tr.Processes.Default.Command = "echo await_transaction_data_sink_output"
+        tr.Processes.Default.ReturnCode = 0
 
 
 TransactionDataSyncTest().run()

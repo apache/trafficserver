@@ -240,9 +240,8 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_pac
 
     QUICConfig::scoped_config params;
     if (params->stateless_retry() && token_len == 0) {
-      QUICConnectionId new_cid;
-      new_cid.randomize();
-      QUICRetryToken retry_token = {
+      QUICConnectionId new_cid     = QUICConnectionId::random();
+      QUICRetryToken   retry_token = {
         udp_packet->from,
         {dcid, static_cast<uint8_t>(dcid_len)},
         new_cid
@@ -278,10 +277,11 @@ QUICPacketHandlerIn::_recv_packet(int /* event ATS_UNUSED */, UDPPacket *udp_pac
       return;
     }
 
-    QUICConnectionId new_cid;
+    QUICConnectionId new_cid = QUICConnectionId::random();
 
     QUICCertConfig::scoped_config server_cert;
-    SSL                          *ssl = SSL_new(server_cert->defaultContext());
+    auto                          default_ctx = server_cert->defaultContext();
+    SSL                          *ssl         = SSL_new(default_ctx.get());
 
     quiche_conn *quiche_con = quiche_conn_new_with_tls(
       new_cid, new_cid.length(), retry_token.original_dcid(), retry_token.original_dcid().length(), &udp_packet->to.sa,

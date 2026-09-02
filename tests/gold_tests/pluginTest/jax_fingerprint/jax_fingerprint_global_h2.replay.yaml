@@ -1,0 +1,121 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+# Used by: global JA4 HTTP/2 test and global JA4H HTTP/2 test.
+#
+# The client connects to ATS over HTTP/2 (h2 over TLS).  ATS forwards
+# to the backend over HTTPS/1.1.
+#
+# JA3/JA4: the TLS ClientHello includes an h2 ALPN extension, so the
+# computed fingerprint differs from a plain HTTP/1.1 TLS session.
+#
+# JA4H: TxnDatasource::get_version() detects HTTP/2 via
+# TSHttpTxnClientProtocolStackContains(txn, "h2"), producing an
+# h2-specific fingerprint value.
+#
+# In both cases the plugin writes x-jax and x-jax-via into the
+# HTTP/1.1 proxy-request that ATS sends upstream.  Header field names
+# are already lowercase so HTTP/2's mandatory-lowercase rule does not
+# introduce any new behaviour to verify here.
+
+meta:
+  version: "1.0"
+
+sessions:
+
+# Session 1: HTTP/2 request without pre-existing x-jax – plugin adds it.
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, jax.server.test ]
+        - [ :path, /resource-h2 ]
+        - [ uuid, global-h2-request ]
+
+    # ATS translates to HTTP/1.1 toward the backend; the plugin must have
+    # written both headers into this outgoing request.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, 2 ]
+        - [ X-Response, global-h2-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, { value: 200, as: equal } ]
+
+# Session 2: HTTP/2 request with pre-existing x-jax – overwrite mode
+# replaces the upstream value with the freshly computed fingerprint.
+- protocol:
+  - name: http
+    version: 2
+  - name: tls
+    sni: jax.server.test
+  - name: tcp
+  - name: ip
+
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ :method, GET ]
+        - [ :scheme, https ]
+        - [ :authority, jax.server.test ]
+        - [ :path, /resource-h2-with-header ]
+        - [ uuid, global-h2-overwrite ]
+        - [ x-jax, upstream-fingerprint ]
+        - [ x-jax-via, upstream-via ]
+
+    # Overwrite mode: both upstream values must be replaced by the plugin.
+    proxy-request:
+      headers:
+        fields:
+        - [ x-jax, { as: present } ]
+        - [ x-jax-via, { value: 'test.proxy.test', as: equal } ]
+
+    server-response:
+      headers:
+        fields:
+        - [ :status, 200 ]
+        - [ Content-Length, 2 ]
+        - [ X-Response, global-h2-overwrite-response ]
+        - [ Connection, close ]
+
+    proxy-response:
+      headers:
+        fields:
+        - [ :status, { value: 200, as: equal } ]

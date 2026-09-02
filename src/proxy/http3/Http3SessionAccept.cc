@@ -32,13 +32,18 @@
 #include "proxy/http3/Http09App.h"
 #include "proxy/http3/Http3App.h"
 
+#if TS_USE_QMUX
+#include "iocore/net/qmux/QMuxConnection.h"
+#endif
+
 namespace
 {
 DbgCtl dbg_ctl_http3{"http3"};
 
 } // end anonymous namespace
 
-Http3SessionAccept::Http3SessionAccept(const HttpSessionAccept::Options &_o) : SessionAccept(nullptr), options(_o)
+Http3SessionAccept::Http3SessionAccept(OptionsHandle options, HttpProxyPort *proxy_port)
+  : HttpSessionAcceptBase(std::move(options), proxy_port)
 {
   SET_HANDLER(&Http3SessionAccept::mainEvent);
 }
@@ -62,7 +67,7 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
     return false;
   }
 
-  netvc->attributes = this->options.transport_type;
+  netvc->attributes = this->options().transport_type;
 
   QUICConnection *qc = netvc->get_service<QUICSupport>()->get_quic_connection();
 
@@ -76,11 +81,27 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
 
   if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/0.9 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
-    new Http09App(netvc, qc, std::move(session_acl), this->options);
-  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0) {
+    new Http09App(netvc, qc, std::move(session_acl), this);
+  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0 ||
+             IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/3 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
 
-    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this->options);
+    Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this);
+
+#if TS_USE_QMUX
+    if (IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
+      // Http3App's constructor runs the generic ProxySession start-up (HQSession::start()),
+      // which claims the netvc's read/write VIOs for itself. Reclaim them for QMuxConnection
+      // here, after that clobber and before app->start() can generate any stream I/O that
+      // would need them.
+      auto *qmux_con = dynamic_cast<QMuxConnection *>(qc);
+      if (!qmux_con) {
+        ink_abort("negotiated h3qx-01 but QUICConnection is not a QMuxConnection");
+      }
+      qmux_con->start(netvc);
+    }
+#endif
+
     app->start();
   } else {
     ink_abort("Negotiated App Name is unknown");

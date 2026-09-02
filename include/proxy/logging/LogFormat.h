@@ -115,6 +115,13 @@ public:
   {
     return m_field_count;
   }
+  // Read-only view of the parsed fields, in marshalling (on-wire) order. Used
+  // by the v3 binary log writer to publish each field's wire type.
+  const LogFieldList &
+  field_list() const
+  {
+    return m_field_list;
+  }
   long
   interval() const
   {

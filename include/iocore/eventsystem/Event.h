@@ -267,20 +267,6 @@ public:
   | UNIX/non-NT Interface                                   |
   \*-------------------------------------------------------*/
 
-#ifdef ONLY_USED_FOR_FIB_AND_BIN_HEAP
-  void *node_pointer;
-  void
-  set_node_pointer(void *x)
-  {
-    node_pointer = x;
-  }
-  void *
-  get_node_pointer()
-  {
-    return node_pointer;
-  }
-#endif
-
 #if defined(__GNUC__)
   ~Event() override {}
 #endif

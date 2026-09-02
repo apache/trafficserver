@@ -41,8 +41,11 @@ TEST_CASE("BRAVO - simple check", "[libts][BRAVO]")
 
     std::thread t{[](ts::bravo::shared_mutex &mutex) {
                     ts::bravo::Token token{0};
-                    CHECK(mutex.try_lock_shared(token) == true);
-                    mutex.unlock_shared(token);
+                    bool             locked = mutex.try_lock_shared(token);
+                    CHECK(locked == true);
+                    if (locked) {
+                      mutex.unlock_shared(token);
+                    }
                   },
                   std::ref(mutex)};
 
@@ -95,28 +98,40 @@ TEST_CASE("BRAVO - multiple try-lock", "[libts][BRAVO]")
 
     {
       ts::bravo::Token token{0};
-      CHECK(mutex.try_lock_shared(token));
+      bool             locked = mutex.try_lock_shared(token);
+      CHECK(locked);
       CHECK(i == 0);
-      mutex.unlock_shared(token);
+      if (locked) {
+        mutex.unlock_shared(token);
+      }
     }
 
     {
-      CHECK(mutex.try_lock());
+      bool locked = mutex.try_lock();
+      CHECK(locked);
       CHECK(++i == 1);
-      mutex.unlock();
+      if (locked) {
+        mutex.unlock();
+      }
     }
 
     {
       ts::bravo::Token token{0};
-      CHECK(mutex.try_lock_shared(token));
+      bool             locked = mutex.try_lock_shared(token);
+      CHECK(locked);
       CHECK(i == 1);
-      mutex.unlock_shared(token);
+      if (locked) {
+        mutex.unlock_shared(token);
+      }
     }
 
     {
-      CHECK(mutex.try_lock());
+      bool locked = mutex.try_lock();
+      CHECK(locked);
       CHECK(++i == 2);
-      mutex.unlock();
+      if (locked) {
+        mutex.unlock();
+      }
     }
 
     CHECK(i == 2);

@@ -25,10 +25,10 @@ namespace ts
 {
 namespace filename
 {
-  constexpr const char *STORAGE = "storage.config";
-  constexpr const char *RECORDS = "records.yaml";
-  constexpr const char *VOLUME  = "volume.config";
-  constexpr const char *PLUGIN  = "plugin.config";
+  constexpr const char *STORAGE     = "storage.yaml";
+  constexpr const char *RECORDS     = "records.yaml";
+  constexpr const char *PLUGIN      = "plugin.config";
+  constexpr const char *PLUGIN_YAML = "plugin.yaml";
 
   // These still need to have their corresponding records.yaml settings removed.
   constexpr const char *LOGGING       = "logging.yaml";
@@ -39,7 +39,8 @@ namespace filename
   constexpr const char *SOCKS         = "socks.config";
   constexpr const char *PARENT        = "parent.config";
   constexpr const char *REMAP         = "remap.config";
-  constexpr const char *SSL_MULTICERT = "ssl_multicert.config";
+  constexpr const char *REMAP_YAML    = "remap.yaml";
+  constexpr const char *SSL_MULTICERT = "ssl_multicert.yaml";
   constexpr const char *SPLITDNS      = "splitdns.config";
   constexpr const char *SNI           = "sni.yaml";
   constexpr const char *JSONRPC       = "jsonrpc.yaml";

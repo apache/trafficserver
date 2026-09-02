@@ -31,14 +31,15 @@ Configuration Files
    logging.yaml.en
    parent.config.en
    plugin.config.en
+   plugin.yaml.en
    records.yaml.en
    remap.config.en
+   remap.yaml.en
    splitdns.config.en
-   ssl_multicert.config.en
+   ssl_multicert.yaml.en
    sni.yaml.en
-   storage.config.en
+   storage.yaml.en
    strategies.yaml.en
-   volume.config.en
    jsonrpc.yaml.en
 
 :doc:`cache.config.en`
@@ -63,30 +64,34 @@ Configuration Files
    Control runtime loadable plugins available to |TS|, as well as their
    configurations.
 
+:doc:`plugin.yaml.en`
+   YAML-based alternative to :doc:`plugin.config.en` with support for
+   disabling plugins, explicit load ordering, and inline configuration.
+
 :doc:`records.yaml.en`
    Contains many configuration variables affecting |TS| operation.
 
 :doc:`remap.config.en`
    Defines mapping rules used by |TS| to properly route all incoming requests.
 
+:doc:`remap.yaml.en`
+   Defines mapping rules used by |TS| to properly route all incoming requests in YAML format
+
 :doc:`splitdns.config.en`
    Configures DNS servers to use under specific conditions.
 
-:doc:`ssl_multicert.config.en`
+:doc:`ssl_multicert.yaml.en`
    Configures |TS| to use different server certificates for SSL termination
    when listening on multiple addresses or when clients employ SNI.
 
 :doc:`sni.yaml.en`
    Configures SNI based Layer 4 routing.
 
-:doc:`storage.config.en`
-   Configures all storage devices and paths to be used for the |TS| cache.
+:doc:`storage.yaml.en`
+   Configures all storage devices and paths to be used for the |TS| cache and defines cache space usage by individual protocols.
 
 :doc:`strategies.yaml.en`
    Configures NextHop strategies used with `remap.config` and replaces parent.config.
-
-:doc:`volume.config.en`
-    Defines cache space usage by individual protocols.
 
 :doc:`jsonrpc.yaml.en`
     Defines some of the configurable arguments of the jsonrpc endpoint.

@@ -27,7 +27,6 @@
 #include <utility>
 
 #include "ts/apidefs.h"
-#include "proxy/ParentSelection.h"
 #include "proxy/http/HttpTransact.h"
 
 #ifndef _NH_UNIT_TESTS_
@@ -198,8 +197,6 @@ public:
   void         markNextHop(TSHttpTxn txnp, const char *hostname, const int port, const NHCmd status, void *ih = nullptr,
                            const time_t now = 0);
   bool         nextHopExists(TSHttpTxn txnp, void *ih = nullptr);
-
-  void setHostHeader(TSHttpTxn txnp, const char *hostname);
 
   virtual ParentRetry_t responseIsRetryable(int64_t sm_id, HttpTransact::CurrentInfo &current_info, HTTPStatus response_code);
 

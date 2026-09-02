@@ -38,6 +38,7 @@
 #include "proxy/Plugin.h"
 #include "iocore/net/NetVConnection.h"
 #include "tscore/ink_atomic.h"
+#include "tsutil/Metrics.h"
 
 class PluginVCCore;
 
@@ -252,6 +253,11 @@ private:
 
   Continuation *connect_to = nullptr;
   bool          connected  = false;
+
+  // Transport counters of the plugin that created this intercept, captured at alloc(). Registry-owned
+  // (process-lifetime), so safe to hold raw. Null for core-internal PluginVCs.
+  ts::Metrics::Counter::AtomicType *_bytes     = nullptr;
+  ts::Metrics::Counter::AtomicType *_transfers = nullptr;
 
   IpEndpoint passive_addr_struct;
   IpEndpoint active_addr_struct;

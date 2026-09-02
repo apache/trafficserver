@@ -92,6 +92,9 @@ sessions:
               - [Host, example.com]
               - [Cookie, "tasty_cookie=strawberry"]
 
+        proxy-request:
+          expect: absent
+
         server-response:
           status: 200
           reason: OK
@@ -147,6 +150,9 @@ sessions:
               - [uuid, set-cookie-vid-response-verify]
               - [Host, example.com]
               - [Cookie, "tasty_cookie=strawberry"]
+
+        proxy-request:
+          expect: absent
 
         server-response:
           status: 200
@@ -262,6 +268,9 @@ sessions:
               - [Host, example.com]
               - [Cookie, "tasty_cookie=strawberry"]
 
+        proxy-request:
+          expect: absent
+
         server-response:
           status: 200
           reason: OK
@@ -318,6 +327,9 @@ sessions:
               - [uuid, cookie-vid-response-verify]
               - [Host, example.com]
               - [Cookie, "tasty_cookie=strawberry"]
+
+        proxy-request:
+          expect: absent
 
         server-response:
           status: 200

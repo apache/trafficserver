@@ -63,7 +63,8 @@ meta:
         - [ Content-Length, 96 ]
 
 sessions:
-- protocol: [ { name: ip, version : 4} ]
+- protocol:
+    stack: http
   transactions:
   - all: { headers: { fields: [[ uuid, 101 ]]}}
     client-request:
@@ -72,8 +73,6 @@ sessions:
       headers:
         fields:
         - [ Host, base.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -89,8 +88,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -106,8 +103,6 @@ sessions:
       headers:
         fields:
         - [ Host, base.ex ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -123,8 +118,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -140,8 +133,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -158,8 +149,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -194,8 +183,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -211,8 +198,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "base.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -228,8 +213,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "encode.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -244,8 +227,6 @@ sessions:
       headers:
         fields:
         - [ "Host", "decode.ex" ]
-    proxy-request:
-      <<: *base-req
     server-response:
       <<: *base-rsp
     proxy-response:

@@ -1,0 +1,123 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Test header_rewrite POST_REMAP_HOOK support (global plugin)'
+
+  dns:
+    name: 'dns'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    process_config:
+      enable_cache: true
+
+    copy_to_config_dir:
+      - 'post_remap.conf'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'header_rewrite'
+
+    # header_rewrite loaded as a GLOBAL plugin. The conf resolves relative to
+    # the ATS config dir, where copy_to_config_dir places it.
+    plugin_config:
+      - 'header_rewrite.so post_remap.conf'
+      - 'xdebug.so --enable=x-cache'
+
+    remap_config:
+      - from: "http://www.example.com/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/"
+
+sessions:
+- transactions:
+
+  #############################################################################
+  # Cache miss: the header set at POST_REMAP reaches the origin, and the echo
+  # rule reports it on the response.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /post_remap/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ x-debug, "x-cache" ]
+        - [ uuid, post-remap-miss ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Post-Remap-Host, { value: "backend.ex", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/plain ]
+        - [ Content-Length, "3" ]
+        - [ Cache-Control, "max-age=300" ]
+      content:
+        encoding: plain
+        data: xxx
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: "miss", as: equal } ]
+        - [ X-Post-Remap-Echo, { value: "backend.ex", as: equal } ]
+
+  #############################################################################
+  # Cache hit: nothing is forwarded to the origin, so SEND_REQUEST_HDR_HOOK
+  # never runs. The rule still fires, because POST_REMAP is before the lookup.
+  #############################################################################
+  - client-request:
+      delay: 100ms
+      method: "GET"
+      version: "1.1"
+      url: /post_remap/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ x-debug, "x-cache" ]
+        - [ uuid, post-remap-hit ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 404
+      reason: Not Found
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: "hit-fresh", as: equal } ]
+        - [ X-Post-Remap-Echo, { value: "backend.ex", as: equal } ]

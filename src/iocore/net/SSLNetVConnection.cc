@@ -27,6 +27,7 @@
 #include "SSLStats.h"
 #include "P_Net.h"
 #include "P_SSLUtils.h"
+#include "ts/ats_probe.h"
 #include "P_SSLNextProtocolSet.h"
 #include "P_SSLConfig.h"
 #include "P_SSLClientUtils.h"
@@ -47,6 +48,7 @@
 #include <netinet/in.h>
 #include <string>
 #include <cstring>
+#include <utility>
 
 #if TS_USE_TLS_ASYNC
 #include <openssl/async.h>
@@ -91,6 +93,17 @@ DbgCtl dbg_ctl_ssl_shutdown{"ssl-shutdown"};
 DbgCtl dbg_ctl_ssl_alpn{"ssl_alpn"};
 DbgCtl dbg_ctl_ssl_origin_session_cache{"ssl.origin_session_cache"};
 DbgCtl dbg_ctl_proxyprotocol{"proxyprotocol"};
+
+const char *
+resolve_client_ca_cert_path(const SSLConfigParams *params, const char *path, std::string &storage)
+{
+  if (path == nullptr) {
+    return params->clientCACertPath;
+  }
+
+  storage = Layout::get()->relative_to(Layout::get()->prefix, path);
+  return storage.c_str();
+}
 
 } // namespace
 
@@ -155,7 +168,7 @@ SSLNetVConnection::_unbindSSLObject()
 }
 
 static void
-debug_certificate_name(const char *msg, X509_NAME *name)
+debug_certificate_name(const char *msg, const X509_NAME *name)
 {
   BIO *bio;
 
@@ -276,6 +289,9 @@ SSLNetVConnection::_ssl_read_from_net(int64_t &ret)
     Dbg(dbg_ctl_ssl, "bytes_read=%" PRId64, bytes_read);
 
     s->vio.ndone += bytes_read;
+    // Decrypted application bytes, to match write_bytes (also plaintext for TLS).
+    Metrics::Counter::increment(net_rsb.read_bytes, bytes_read);
+    Metrics::Counter::increment(net_rsb.read_bytes_count);
     this->netActivity();
 
     ret = bytes_read;
@@ -340,8 +356,6 @@ SSLNetVConnection::read_raw_data()
       r = total_read - rattempted + r;
     }
   }
-  Metrics::Counter::increment(net_rsb.read_bytes, r);
-  Metrics::Counter::increment(net_rsb.read_bytes_count);
 
   if (!this->haveCheckedProxyProtocol) {
     // The PROXY Protocol, by spec, is designed to require only the first TCP packet of bytes
@@ -353,41 +367,54 @@ SSLNetVConnection::read_raw_data()
 
     if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() == ProxyProtocolVersion::UNDEFINED) {
       Dbg(dbg_ctl_proxyprotocol, "proxy protocol is enabled on this port");
-      if (pp_ipmap->count() > 0) {
-        Dbg(dbg_ctl_proxyprotocol, "proxy protocol has a configured allowlist of trusted IPs - checking");
+      if (this->has_proxy_protocol_preface(buffer, r)) {
+        if (pp_ipmap->count() > 0) {
+          Dbg(dbg_ctl_proxyprotocol, "proxy protocol has a configured allowlist of trusted IPs - checking");
 
-        // Using get_remote_addr() will return the ip of the
-        // proxy source IP, not the Proxy Protocol client ip.
-        if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
-          Dbg(dbg_ctl_proxyprotocol, "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
-          r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
-          goto proxy_protocol_bypass;
+          // Using get_remote_addr() will return the ip of the
+          // proxy source IP, not the Proxy Protocol client ip.
+          if (!pp_ipmap->contains(swoc::IPAddr(get_remote_addr()))) {
+            Dbg(dbg_ctl_proxyprotocol, "Source IP is NOT in the configured allowlist of trusted IPs - closing connection");
+            r = -ENOTCONN; // Need a quick close/exit here to refuse the connection!!!!!!!!!
+            goto proxy_protocol_bypass;
+          } else {
+            char new_host[INET6_ADDRSTRLEN];
+            Dbg(dbg_ctl_proxyprotocol, "Source IP [%s] is in the trusted allowlist for proxy protocol",
+                ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+          }
         } else {
-          char new_host[INET6_ADDRSTRLEN];
-          Dbg(dbg_ctl_proxyprotocol, "Source IP [%s] is in the trusted allowlist for proxy protocol",
-              ats_ip_ntop(this->get_remote_addr(), new_host, sizeof(new_host)));
+          Dbg(dbg_ctl_proxyprotocol, "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
+                                     "proxy protocol is enabled on this port - processing all connections with Proxy Protocol "
+                                     "headers");
         }
-      } else {
-        Dbg(dbg_ctl_proxyprotocol, "proxy protocol DOES NOT have a configured allowlist of trusted IPs but "
-                                   "proxy protocol is enabled on this port - processing all connections");
-      }
 
-      auto const stored_r = r;
-      if (this->has_proxy_protocol(buffer, &r)) {
-        Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
-        if (dbg_ctl_proxyprotocol.on()) {
-          IpEndpoint dst;
-          dst.sa = *(this->get_proxy_protocol_dst_addr());
-          ip_port_text_buffer ipb1;
-          ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
-          DbgPrint(dbg_ctl_proxyprotocol, "ssl_has_proxy_v1, dest IP received [%s]", ipb1);
+        auto const stored_r = r;
+        if (this->has_proxy_protocol(buffer, &r)) {
+          Dbg(dbg_ctl_proxyprotocol, "ssl has proxy protocol header");
+          if (dbg_ctl_proxyprotocol.on()) {
+            sockaddr const *src_addr = this->get_proxy_protocol_src_addr();
+            sockaddr const *dst_addr = this->get_proxy_protocol_dst_addr();
+            if (src_addr != nullptr && dst_addr != nullptr) {
+              IpEndpoint src;
+              src.sa = *src_addr;
+              IpEndpoint dst;
+              dst.sa = *dst_addr;
+              ip_port_text_buffer src_ipb, dst_ipb;
+              ats_ip_nptop(&src, src_ipb, sizeof(src_ipb));
+              ats_ip_nptop(&dst, dst_ipb, sizeof(dst_ipb));
+              DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed: src=[%s] dst=[%s]",
+                       static_cast<int>(this->get_proxy_protocol_version()), src_ipb, dst_ipb);
+            } else {
+              DbgPrint(dbg_ctl_proxyprotocol, "ssl proxy protocol v%d header parsed without address information",
+                       static_cast<int>(this->get_proxy_protocol_version()));
+            }
+          }
+        } else {
+          Dbg(dbg_ctl_proxyprotocol, "proxy protocol preface was present, but Proxy Protocol header could not be parsed");
+          r = stored_r;
         }
       } else {
         Dbg(dbg_ctl_proxyprotocol, "proxy protocol was enabled, but Proxy Protocol header was not present");
-        // We are flexible with the Proxy Protocol designation. Maybe not all
-        // connections include Proxy Protocol. Revert to the stored value of r so
-        // we can process the bytes that are on the wire (likely a CLIENT_HELLO).
-        r = stored_r;
       }
     }
   } // end of Proxy Protocol processing
@@ -635,6 +662,7 @@ SSLNetVConnection::net_read_io(NetHandler *nh)
     ink_assert(bytes >= 0);
   } while ((ret == SSL_READ_READY && bytes == 0) || ret == SSL_READ_ERROR_NONE);
   ssl_read_errno = errno;
+  ATS_PROBE4(net_ssl_read, this->get_fd(), bytes, s->vio.ndone, ret);
 
   if (bytes > 0) {
     if (ret == SSL_READ_WOULD_BLOCK || ret == SSL_READ_READY) {
@@ -722,18 +750,18 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
 
   Dbg(dbg_ctl_ssl, "towrite=%" PRId64, towrite);
 
+  // SSL_write retries (WANT_WRITE/READ) must reuse the same address; thread_local gives the
+  // coalesce path a stable one. SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER is off.
+  static thread_local char gather_buf[SSL_MAX_TLS_RECORD_SIZE];
+
+  // Caller bounds towrite by read_avail(); asserting lets the loop skip an O(n) chain walk.
+  ink_assert(towrite <= buf.reader()->read_avail());
+
   ERR_clear_error();
   do {
-    // What is remaining left in the next block?
-    l                   = buf.reader()->block_read_avail();
-    char *current_block = buf.reader()->start();
+    IOBufferReader *reader = buf.reader();
 
-    // check if to amount to write exceeds that in this buffer
-    int64_t wavail = towrite - total_written;
-
-    if (l > wavail) {
-      l = wavail;
-    }
+    l = towrite - total_written;
 
     // TS-2365: If the SSL max record size is set and we have
     // more data than that, break this into smaller write
@@ -765,15 +793,29 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
       break;
     }
 
+    // Coalesce across blocks only when it fits one record; else write in place, capped to the block.
+    const char *write_block;
+    int64_t     block_avail = reader->block_read_avail();
+
+    if (block_avail < l && l <= static_cast<int64_t>(sizeof(gather_buf))) {
+      reader->memcpy(gather_buf, l, 0);
+      write_block = gather_buf;
+    } else {
+      if (l > block_avail) {
+        l = block_avail;
+      }
+      write_block = reader->start();
+    }
+
     try_to_write       = l;
     num_really_written = 0;
-    Dbg(dbg_ctl_v_ssl, "b=%p l=%" PRId64, current_block, l);
-    err = this->_ssl_write_buffer(current_block, l, num_really_written);
+    Dbg(dbg_ctl_v_ssl, "b=%p l=%" PRId64, write_block, l);
+    err = this->_ssl_write_buffer(write_block, l, num_really_written);
 
     // We wrote all that we thought we should
     if (num_really_written > 0) {
       total_written += num_really_written;
-      buf.reader()->consume(num_really_written);
+      reader->consume(num_really_written);
     }
 
     Dbg(dbg_ctl_ssl, "try_to_write=%" PRId64 " written=%" PRId64 " total_written=%" PRId64, try_to_write, num_really_written,
@@ -832,6 +874,8 @@ SSLNetVConnection::load_buffer_and_write(int64_t towrite, MIOBufferAccessor &buf
     } break;
     }
   }
+  ATS_PROBE5(net_ssl_write, this->get_fd(), total_written, write.vio.ndone + total_written, num_really_written,
+             static_cast<int>(err));
   return num_really_written;
 }
 
@@ -850,6 +894,14 @@ SSLNetVConnection::SSLNetVConnection()
 void
 SSLNetVConnection::do_io_close(int lerrno)
 {
+  // Stop any async-handshake eventfd before the VC is closed.
+  // If WANT_ASYNC was registered the eventfd is wired into the poller with
+  // `this` as the EventIO target. Without this stop() the SSLNetVConnection
+  // can be freed while the eventfd still has a live epoll registration; when
+  // the OpenSSL async job completes the poller wakes on freed memory.
+  if (async_ep.fd >= 0) {
+    async_ep.stop();
+  }
   if (this->ssl != nullptr) {
     if (get_context() == NET_VCONNECTION_OUT) {
       callHooks(TS_EVENT_VCONN_OUTBOUND_CLOSE);
@@ -900,7 +952,7 @@ SSLNetVConnection::do_io_close(int lerrno)
 void
 SSLNetVConnection::do_io_shutdown(ShutdownHowTo_t howto)
 {
-  if (get_tunnel_type() == SNIRoutingType::BLIND) {
+  if (ssl == nullptr || get_tunnel_type() == SNIRoutingType::BLIND) {
     // we don't have TLS layer control of blind tunnel
     UnixNetVConnection::do_io_shutdown(howto);
     return;
@@ -959,10 +1011,34 @@ SSLNetVConnection::clear()
   // resetting here will decrement the ref-counter.
   client_sess.reset();
 
+  // Stop the async-handshake eventfd before SSL_free. The
+  // eventfd is owned by the SSL object, so SSL_free closes it; deregistering
+  // first keeps the EPOLL_CTL_DEL operating on a valid, owned fd. clear() runs
+  // on every free path through free_thread(), so it is the backstop in case
+  // do_io_close() did not already stop the eventfd.
+  if (async_ep.fd >= 0) {
+    async_ep.stop();
+  }
+
   if (ssl != nullptr) {
+    // clear() runs from free() once per VC recycle, so this is the single chokepoint where a TLS
+    // connection's SSL object is torn down -- count it as one connection close here. Blind-tunnel
+    // conversions free their SSL earlier (before any data) and continue as a tunnel rather than a
+    // close, so by here ssl is already null for them and they are not counted (they are tracked by
+    // the tunnel metrics instead).
+    Metrics::Counter::increment(ssl_rsb.connections_closed);
     SSL_free(ssl);
     ssl = nullptr;
   }
+
+#if TS_USE_QMUX
+  // The destructor never runs (ClassAllocator<SSLNetVConnection, false>), so the
+  // QMux connection has to be released here or it leaks on every VC recycle.
+  // Clear the QUICSupport service slot too, or a recycled non-QMux VC would
+  // still report a (now null) QUIC connection to get_service<QUICSupport>().
+  _qmux_connection.reset();
+  this->_set_service(static_cast<QUICSupport *>(nullptr));
+#endif
 
   ALPNSupport::clear();
   TLSBasicSupport::clear();
@@ -976,10 +1052,9 @@ SSLNetVConnection::clear()
   sslLastWriteTime            = 0;
   sslTotalBytesSent           = 0;
   sslClientRenegotiationAbort = false;
+  hookOpRequested             = SslVConnOp::SSL_HOOK_OP_DEFAULT;
 
-  hookOpRequested = SslVConnOp::SSL_HOOK_OP_DEFAULT;
   free_handshake_buffers();
-
   super::clear();
 }
 void
@@ -1078,7 +1153,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
         }
         ats_ip_nptop(&dst, ipb1, sizeof(ipb1));
         ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-        DbgPrint(dbg_ctl_ssl, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, lookup->defaultContext());
+        auto default_ctx = lookup->defaultContext();
+        DbgPrint(dbg_ctl_ssl, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
       }
 
       // Escape if this is marked to be a tunnel.
@@ -1100,7 +1176,7 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       // Attach the default SSL_CTX to this SSL session. The default context is never going to be able
       // to negotiate a SSL session, but it's enough to trampoline us into the SNI callback where we
       // can select the right server certificate.
-      this->_make_ssl_connection(lookup->defaultContext());
+      this->_make_ssl_connection(lookup->defaultContext().get());
     }
 
     if (this->ssl == nullptr) {
@@ -1125,6 +1201,8 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
       auto           nps       = sniParam->get_property_config(serverKey);
       shared_SSL_CTX sharedCTX = nullptr;
       SSL_CTX       *clientCTX = nullptr;
+      std::string    caCertPathStorage;
+      const char    *caCertPath = resolve_client_ca_cert_path(params, options.ssl_client_ca_cert_path, caCertPathStorage);
 
       // First Look to see if there are override parameters
       Dbg(dbg_ctl_ssl, "Checking for outbound client cert override [%p]", options.ssl_client_cert_name.get());
@@ -1140,18 +1218,21 @@ SSLNetVConnection::_sslStartHandShake(int event, int &err)
             keyFilePath = Layout::get()->relative_to(params->clientKeyPathOnly, options.ssl_client_private_key_name);
           }
           if (options.ssl_client_ca_cert_name) {
-            caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
+            caCertFilePath = Layout::get()->relative_to(caCertPath, options.ssl_client_ca_cert_name);
           }
           Dbg(dbg_ctl_ssl, "Using outbound client cert `%s'", options.ssl_client_cert_name.get());
         } else {
           Dbg(dbg_ctl_ssl, "Clearing outbound client cert");
         }
-        sharedCTX =
-          params->getCTX(certFilePath, keyFilePath, caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(),
-                         params->clientCACertPath);
-      } else if (options.ssl_client_ca_cert_name) {
-        std::string caCertFilePath = Layout::get()->relative_to(params->clientCACertPath, options.ssl_client_ca_cert_name);
-        sharedCTX = params->getCTX(params->clientCertPath, params->clientKeyPath, caCertFilePath.c_str(), params->clientCACertPath);
+        sharedCTX = params->getCTX(certFilePath, keyFilePath,
+                                   caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(), caCertPath);
+      } else if (options.ssl_client_ca_cert_name || options.ssl_client_ca_cert_path) {
+        std::string caCertFilePath;
+        if (options.ssl_client_ca_cert_name) {
+          caCertFilePath = Layout::get()->relative_to(caCertPath, options.ssl_client_ca_cert_name);
+        }
+        sharedCTX = params->getCTX(params->clientCertPath, params->clientKeyPath,
+                                   caCertFilePath.empty() ? params->clientCACertFilename : caCertFilePath.c_str(), caCertPath);
       } else if (nps && !nps->client_cert_file.empty()) {
         // If no overrides available, try the available nextHopProperty by reading from context mappings
         sharedCTX =
@@ -1262,9 +1343,6 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
     // we get out of this callback, and then will shuffle
     // over the buffered handshake packets to the O.S.
     return EVENT_DONE;
-  } else if (SslVConnOp::SSL_HOOK_OP_TERMINATE == hookOpRequested) {
-    sslHandshakeStatus = SSLHandshakeStatus::SSL_HANDSHAKE_DONE;
-    return EVENT_DONE;
   }
 
   Dbg(dbg_ctl_ssl, "Go on with the handshake state=%s",
@@ -1363,7 +1441,7 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (dbg_ctl_ssl.on()) {
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1414,6 +1492,20 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
         this->set_negotiated_protocol_id({reinterpret_cast<const char *>(proto), static_cast<size_t>(len)});
 
         Dbg(dbg_ctl_ssl, "Origin selected next protocol '%.*s'", len, proto);
+
+#if TS_USE_QMUX
+        if (this->get_negotiated_protocol_id() == TS_ALPN_PROTOCOL_INDEX_H3QX) {
+          Dbg(dbg_ctl_ssl, "ALPN h3qx-01: creating QMuxConnection");
+          _qmux_connection = std::make_unique<QMuxConnection>(this);
+          if (_qmux_connection->is_closed()) {
+            // Config or quiche_accept() failed. Don't advertise a QUIC connection that can
+            // never make progress -- fail the connection instead of completing the handshake.
+            _qmux_connection.reset();
+            return EVENT_ERROR;
+          }
+          this->_set_service(static_cast<QUICSupport *>(this));
+        }
+#endif
       } else {
         Dbg(dbg_ctl_ssl, "Origin did not select a next protocol");
       }
@@ -1545,7 +1637,7 @@ SSLNetVConnection::sslClientHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     if (dbg_ctl_ssl.on()) {
-#ifdef OPENSSL_IS_OPENSSL3
+#ifdef OPENSSL_IS_AT_LEAST_OPENSSL3
       X509 *cert = SSL_get1_peer_certificate(ssl);
 #else
       X509 *cert = SSL_get_peer_certificate(ssl);
@@ -1703,6 +1795,10 @@ SSLNetVConnection::populate(Connection &con, Continuation *c, void *arg)
 {
   int retval = super::populate(con, c, arg);
   if (retval != EVENT_DONE) {
+    // arg is the migrated SSL this VC would adopt below; release it since we won't.
+    if (arg != nullptr) {
+      SSL_free(static_cast<SSL *>(arg));
+    }
     return retval;
   }
   // Add in the SSL data
@@ -1955,8 +2051,12 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   SSLCertContext *cc = nullptr;
-  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED) {
-    ip.sa = *(this->get_proxy_protocol_dst_addr());
+  sockaddr const *proxy_protocol_dst_addr =
+    this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
+      this->get_proxy_protocol_dst_addr() :
+      nullptr;
+  if (proxy_protocol_dst_addr != nullptr) {
+    ip.sa = *proxy_protocol_dst_addr;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
     cc = lookup->find(ip);
@@ -1970,8 +2070,8 @@ SSLNetVConnection::_lookupContextByIP()
         return nullptr;
       }
       ats_ip_nptop(&src, ipb2, sizeof(ipb2));
-      DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1,
-               lookup->defaultContext());
+      auto default_ctx = lookup->defaultContext();
+      DbgPrint(dbg_ctl_proxyprotocol, "IP context is %p for [%s] -> [%s], default context %p", cc, ipb2, ipb1, default_ctx.get());
     }
   } else if (0 == safe_getsockname(this->get_socket(), &ip.sa, &namelen)) {
     cc = lookup->find(ip);
@@ -2299,7 +2399,7 @@ SSLNetVConnection::_ssl_connect()
 
         if (shared_sess && SSL_set_session(ssl, shared_sess.get())) {
           // Keep a reference of this shared pointer in the connection
-          this->client_sess = shared_sess;
+          this->client_sess = std::move(shared_sess);
         }
       }
     }

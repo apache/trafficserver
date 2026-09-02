@@ -26,6 +26,7 @@
 #include <netinet/in.h>
 #include <iostream>
 #include <list>
+#include <utility>
 
 #include "swoc/swoc_file.h"
 #include "swoc/Scalar.h"
@@ -290,7 +291,7 @@ struct url_matcher {
       while (fileContent) {
         swoc::TextView line = fileContent.take_prefix_at('\n');
         std::string    reg_str(line.data(), line.size());
-        str_vec.push_back(reg_str);
+        str_vec.push_back(std::move(reg_str));
         count++;
       }
       patterns = (const char **)ats_malloc(count * sizeof(char *));

@@ -23,6 +23,7 @@
 
 #pragma once
 
+#include "mgmt/config/ConfigContext.h"
 #include "proxy/http/remap/AclFiltering.h"
 
 class UrlRewrite;
@@ -65,7 +66,7 @@ struct BUILD_TABLE_INFO {
   bool              ip_allow_check_enabled_p = true;
   bool              accept_check_p           = true;
 
-  acl_filter_rule *rules_list = nullptr; // all rules defined in config files as .define_filter foobar @src_ip=.....
+  acl_filter_rule *rules_list = nullptr; // all rules defined in config files
   UrlRewrite      *rewrite    = nullptr; // Pointer to the UrlRewrite object we are parsing for.
 
   // Clear the argument vector.
@@ -80,7 +81,7 @@ struct BUILD_TABLE_INFO {
 };
 
 const char *remap_parse_directive(BUILD_TABLE_INFO *bti, char *errbuf, size_t errbufsize);
-bool        remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti);
+bool        remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ctx = {});
 
 const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *const *argv, int argc, char *errStrBuf,
                                        size_t errStrBufSize, ACLBehaviorPolicy behavior_policy);
@@ -88,8 +89,13 @@ const char *remap_validate_filter_args(acl_filter_rule **rule_pp, const char *co
 unsigned long remap_check_option(const char *const *argv, int argc, unsigned long findmode = 0, int *_ret_idx = nullptr,
                                  const char **argptr = nullptr);
 
-bool remap_parse_config(const char *path, UrlRewrite *rewrite);
+bool remap_parse_config(const char *path, UrlRewrite *rewrite, ConfigContext ctx = {});
 
 using load_remap_file_func = void (*)(const char *, const char *);
 
 extern load_remap_file_func load_remap_file_cb;
+
+// Helper functions shared between RemapConfig.cc and RemapYamlConfig.cc
+bool        is_inkeylist(const char *key, ...);
+void        free_directory_list(int n_entries, struct dirent **entrylist);
+const char *is_valid_scheme(std::string_view fromScheme, std::string_view toScheme);

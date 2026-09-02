@@ -110,10 +110,10 @@ sessions:
 #
 # Test 3: An HTTP/2 request body.
 #
-- protocol: [ {name: http, version: 2},
-              {name: tls, sni: www.tls.com},
-              {name: tcp},
-              {name: ip} ]
+- protocol:
+    stack: http2
+    tls:
+      sni: www.tls.com
 
   transactions:
   - client-request:

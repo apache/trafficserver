@@ -150,6 +150,9 @@ sessions:
               - [uuid, response-cc-no-store-verify]
               - [Host, example.com]
 
+        proxy-request:
+          expect: absent
+
         server-response:
           status: 200
           reason: OK

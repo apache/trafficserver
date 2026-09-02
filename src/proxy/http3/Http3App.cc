@@ -51,13 +51,12 @@ DbgCtl dbg_ctl_v{debug_tag_v};
 
 } // end anonymous namespace
 
-Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl,
-                   const HttpSessionAccept::Options &options)
+Http3App::Http3App(NetVConnection *client_vc, QUICConnection *qc, IpAllow::ACL &&session_acl, HttpSessionAcceptBase const *acceptor)
   : QUICApplication(qc)
 {
-  this->_ssn                 = new Http3Session(client_vc);
-  this->_ssn->acl            = std::move(session_acl);
-  this->_ssn->accept_options = &options;
+  this->_ssn           = new Http3Session(client_vc);
+  this->_ssn->acl      = std::move(session_acl);
+  this->_ssn->acceptor = acceptor;
   this->_ssn->new_connection(client_vc, nullptr, nullptr);
 
   this->_qc->stream_manager()->set_default_application(this);
@@ -104,6 +103,15 @@ Http3App::start()
 }
 
 void
+Http3App::_handle_error(const Http3Error &error)
+{
+  if (error.cls == Http3ErrorClass::CONNECTION) {
+    this->_qc->close_quic_connection(
+      std::make_unique<QUICConnectionError>(QUICErrorClass::APPLICATION, static_cast<uint16_t>(error.code)));
+  }
+}
+
+void
 Http3App::on_stream_open(QUICStream &stream)
 {
   auto  ret  = this->_streams.emplace(stream.id(), stream);
@@ -131,7 +139,15 @@ Http3App::on_stream_open(QUICStream &stream)
 void
 Http3App::on_stream_close(QUICStream &stream)
 {
-  this->_streams.erase(stream.id());
+  QUICStreamId const stream_id = stream.id();
+
+  if (auto *txn = this->_ssn->get_transaction(stream_id); txn != nullptr) {
+    SCOPED_MUTEX_LOCK(lock, txn->mutex, this_ethread());
+    txn->set_stream_cleanup([this, stream_id]() { this->_streams.erase(stream_id); });
+    txn->stream_closed();
+  } else {
+    this->_streams.erase(stream_id);
+  }
 }
 
 int
@@ -279,12 +295,21 @@ Http3App::_handle_uni_stream_on_read_ready(int /* event */, VIO *vio)
     // Recipients of unknown stream types MUST either abort reading of the stream or discard incoming data without further
     // processing. If reading is aborted, the recipient SHOULD use the H3_STREAM_CREATION_ERROR error code or a reserved error code
     // (Section 8.1). The recipient MUST NOT consider unknown stream types to be a connection error of any kind.
-    error = std::make_unique<Http3Error>(Http3ErrorClass::STREAM, Http3ErrorCode::H3_STREAM_CREATION_ERROR, "Stream type unkown");
-    Dbg(dbg_ctl, "UNKNOWN stream [%" PRIu64 "] error: %hu, %s", adapter->stream().id(), error->get_code(), error->msg);
+    IOBufferReader *reader = vio->get_reader();
+    if (reader != nullptr) {
+      int64_t const bytes_to_discard = reader->read_avail();
+
+      reader->consume(bytes_to_discard);
+      vio->ndone += bytes_to_discard;
+    }
     break;
   }
   default:
     break;
+  }
+
+  if (error && error->cls != Http3ErrorClass::UNDEFINED) {
+    this->_handle_error(*error);
   }
 }
 

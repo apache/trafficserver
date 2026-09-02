@@ -26,6 +26,71 @@ meta:
           fields:
           - [ Content-Length, 0 ]
 
+autest:
+  description: 'Verify cache matching with normalized Accept-Encoding and Vary'
+
+  server:
+    name: 'normalized-ae-server'
+
+  client:
+    name: 'normalized-ae-client'
+
+  ats:
+    name: 'ts'
+    process_config:
+      enable_cache: true
+
+    plugin_config:
+      - 'xdebug.so --enable=x-cache'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'http'
+      proxy.config.http.response_via_str: 3
+      proxy.config.cache.limits.http.max_alts: 6
+      proxy.config.http.cache.ignore_accept_mismatch: 2
+      proxy.config.http.cache.ignore_accept_language_mismatch: 2
+      proxy.config.http.cache.ignore_accept_encoding_mismatch: 2
+      proxy.config.http.cache.ignore_accept_charset_mismatch: 2
+
+    remap_config:
+      - from: "http://www.ae-0.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=0"
+      - from: "http://www.ae-1.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=1"
+      - from: "http://www.ae-2.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=2"
+      - from: "http://www.ae-3.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=3"
+      - from: "http://www.ae-4.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=4"
+      - from: "http://www.ae-5.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: "conf_remap.so"
+            args:
+              - "proxy.config.http.normalize_ae=5"
+
 sessions:
 - transactions:
 
@@ -274,6 +339,9 @@ sessions:
         - [ uuid, 12 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -297,6 +365,9 @@ sessions:
         - [ Accept-Encoding, deflate ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -319,6 +390,9 @@ sessions:
         - [ uuid, 14 ]
         - [ Accept-Encoding, "br, compress" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -378,6 +452,9 @@ sessions:
         - [ Accept-Encoding, "br, compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -434,6 +511,9 @@ sessions:
         - [ uuid, 22 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -456,6 +536,9 @@ sessions:
         - [ uuid, 23 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -550,6 +633,9 @@ sessions:
         - [ Accept-Encoding, "br, compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -572,6 +658,9 @@ sessions:
         - [ uuid, 27 ]
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -629,6 +718,9 @@ sessions:
         - [ uuid, 32 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -651,6 +743,9 @@ sessions:
         - [ uuid, 33 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -779,6 +874,9 @@ sessions:
         - [ Accept-Encoding, "compress, gzip" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -802,6 +900,9 @@ sessions:
         - [ Accept-Encoding, "br;q=1.1" ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -823,6 +924,9 @@ sessions:
         - [ uuid, 39 ]
         - [ Accept-Encoding, "br, gzip;q=0.8" ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -880,6 +984,9 @@ sessions:
         - [ uuid, 42 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -902,6 +1009,9 @@ sessions:
         - [ uuid, 43 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1047,9 +1157,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1075,9 +1183,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: br, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1103,9 +1209,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1131,9 +1235,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1191,6 +1293,9 @@ sessions:
         - [ uuid, 52 ]
       delay: 100ms
 
+    proxy-request:
+      expect: absent
+
     server-response:
       <<: *404_response
 
@@ -1213,6 +1318,9 @@ sessions:
         - [ uuid, 53 ]
         - [ Accept-Encoding, deflate ]
       delay: 100ms
+
+    proxy-request:
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1475,9 +1583,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1503,9 +1609,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: br, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1531,9 +1635,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: gzip, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1559,9 +1661,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: zstd, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1587,9 +1687,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: br, as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1614,9 +1712,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: "zstd, br", as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
@@ -1641,9 +1737,7 @@ sessions:
       delay: 100ms
 
     proxy-request:
-      headers:
-        fields:
-        - [Accept-Encoding, { value: "zstd, gzip", as: equal }]
+      expect: absent
 
     server-response:
       <<: *404_response
