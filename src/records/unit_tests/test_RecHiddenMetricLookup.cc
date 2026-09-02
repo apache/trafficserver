@@ -116,9 +116,9 @@ TEST_CASE("RecLookupMatchingRecords - hidden metrics", "[librecords][RecLookup][
   }
 }
 
-TEST_CASE("RecLookupMatchingRecords - tombstoned metrics", "[librecords][RecLookup][tombstone]")
+TEST_CASE("RecLookupMatchingRecords - unlisted metrics", "[librecords][RecLookup][unlisted]")
 {
-  const std::string name = "proxy.test.lookup.tombstoned_gauge";
+  const std::string name = "proxy.test.lookup.unlisted_gauge";
   auto             *m    = ts::Metrics::Gauge::createPtr(name);
 
   REQUIRE(m != nullptr);
@@ -128,9 +128,9 @@ TEST_CASE("RecLookupMatchingRecords - tombstoned metrics", "[librecords][RecLook
   auto  id      = metrics.lookup(name);
 
   REQUIRE(id != ts::Metrics::NOT_FOUND);
-  REQUIRE(metrics.tombstone(id));
+  REQUIRE(metrics.unlist(id));
 
-  SECTION("a tombstoned metric is not enumerated")
+  SECTION("an unlisted metric is not enumerated")
   {
     std::vector<LookupEntry> entries;
 
@@ -141,10 +141,10 @@ TEST_CASE("RecLookupMatchingRecords - tombstoned metrics", "[librecords][RecLook
     }
   }
 
-  SECTION("a tombstoned metric is still found by exact name")
+  SECTION("an unlisted metric is still found by exact name")
   {
     // RecLookupRecord resolves through Metrics::lookup() rather than iteration, which is what keeps
-    // logging fields and TSStatFindName working across a tombstone.
+    // logging fields and TSStatFindName working across an unlisting.
     std::vector<LookupEntry> entries;
 
     REQUIRE(RecLookupRecord(name.c_str(), collect, &entries) == REC_ERR_OKAY);
@@ -153,9 +153,9 @@ TEST_CASE("RecLookupMatchingRecords - tombstoned metrics", "[librecords][RecLook
     CHECK(entries[0].int_value == 7);
   }
 
-  SECTION("clearing the mark puts it back in enumeration")
+  SECTION("relisting puts it back in enumeration")
   {
-    REQUIRE(metrics.tombstone(id, false));
+    REQUIRE(metrics.relist(id));
 
     std::vector<LookupEntry> entries;
     bool                     found = false;

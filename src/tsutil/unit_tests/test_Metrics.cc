@@ -642,24 +642,24 @@ TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]"
   REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
 }
 
-TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
+TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();
 
-  SECTION("a tombstoned metric is skipped by iteration")
+  SECTION("an unlisted metric is skipped by iteration")
   {
-    Metrics::Counter::create("tombstone.iter.before");
-    auto target = Metrics::Counter::create("tombstone.iter.target");
-    Metrics::Counter::create("tombstone.iter.after");
+    Metrics::Counter::create("unlisted.iter.before");
+    auto target = Metrics::Counter::create("unlisted.iter.target");
+    Metrics::Counter::create("unlisted.iter.after");
 
-    REQUIRE(m.tombstone(target));
+    REQUIRE(m.unlist(target));
 
     bool saw_before = false, saw_target = false, saw_after = false;
 
     for (auto &&[name, type, value] : m) {
-      saw_before |= (name == "tombstone.iter.before");
-      saw_target |= (name == "tombstone.iter.target");
-      saw_after  |= (name == "tombstone.iter.after");
+      saw_before |= (name == "unlisted.iter.before");
+      saw_target |= (name == "unlisted.iter.target");
+      saw_after  |= (name == "unlisted.iter.after");
     }
 
     REQUIRE(saw_before);
@@ -667,25 +667,25 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
     REQUIRE(saw_after);
   }
 
-  SECTION("creating a tombstoned name again resurrects it")
+  SECTION("creating an unlisted name again relists it")
   {
-    auto p  = Metrics::Counter::createPtr("tombstone.resurrect");
-    auto id = m.lookup("tombstone.resurrect");
+    auto p  = Metrics::Counter::createPtr("unlisted.resurrect");
+    auto id = m.lookup("unlisted.resurrect");
 
     Metrics::Counter::increment(p, 5);
-    REQUIRE(m.tombstone(id));
-    REQUIRE(m.tombstoned(id));
+    REQUIRE(m.unlist(id));
+    REQUIRE_FALSE(m.listed(id));
 
     // Same name, same id, same atomic, and the mark is gone.
-    auto p2 = Metrics::Counter::createPtr("tombstone.resurrect");
+    auto p2 = Metrics::Counter::createPtr("unlisted.resurrect");
     REQUIRE(p2 == p);
-    REQUIRE(m.lookup("tombstone.resurrect") == id);
-    REQUIRE_FALSE(m.tombstoned(id));
+    REQUIRE(m.lookup("unlisted.resurrect") == id);
+    REQUIRE(m.listed(id));
 
     // Visible again, with its value intact.
     bool found = false;
     for (auto &&[name, type, value] : m) {
-      if (name == "tombstone.resurrect") {
+      if (name == "unlisted.resurrect") {
         found = true;
         REQUIRE(value == 5);
       }
@@ -693,58 +693,58 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
     REQUIRE(found);
   }
 
-  SECTION("tombstone by name, and clearing the mark")
+  SECTION("unlist and relist by name")
   {
-    auto id = Metrics::Counter::create("tombstone.byname");
+    auto id = Metrics::Counter::create("unlisted.byname");
 
-    REQUIRE(m.tombstone("tombstone.byname"));
-    REQUIRE(m.tombstoned(id));
+    REQUIRE(m.unlist("unlisted.byname"));
+    REQUIRE_FALSE(m.listed(id));
 
-    REQUIRE(m.tombstone("tombstone.byname", false));
-    REQUIRE_FALSE(m.tombstoned(id));
+    REQUIRE(m.relist("unlisted.byname"));
+    REQUIRE(m.listed(id));
 
     bool found = false;
     for (auto &&[name, type, value] : m) {
-      found |= (name == "tombstone.byname");
+      found |= (name == "unlisted.byname");
     }
     REQUIRE(found);
 
     // A name that was never created cannot be marked.
-    REQUIRE_FALSE(m.tombstone("tombstone.byname.never.created"));
+    REQUIRE_FALSE(m.unlist("unlisted.byname.never.created"));
   }
 
-  SECTION("a tombstoned metric is still resolvable and still counts")
+  SECTION("an unlisted metric is still resolvable and still counts")
   {
-    auto p  = Metrics::Counter::createPtr("tombstone.resolvable");
-    auto id = m.lookup("tombstone.resolvable");
+    auto p  = Metrics::Counter::createPtr("unlisted.resolvable");
+    auto id = m.lookup("unlisted.resolvable");
 
-    REQUIRE(m.tombstone(id));
+    REQUIRE(m.unlist(id));
 
     // Hidden from enumeration is not gone: by name, by id, and through the atomic it is unchanged.
-    REQUIRE(m.lookup("tombstone.resolvable") == id);
+    REQUIRE(m.lookup("unlisted.resolvable") == id);
     REQUIRE(m.lookup(id) == p);
     REQUIRE(m.valid(id));
-    REQUIRE(m.name(id) == "tombstone.resolvable");
+    REQUIRE(m.name(id) == "unlisted.resolvable");
     REQUIRE(m.type(id) == Metrics::MetricType::COUNTER);
 
     Metrics::Counter::increment(p, 3);
     REQUIRE(Metrics::Counter::load(p) == 3);
   }
 
-  SECTION("begin() skips a tombstoned first slot")
+  SECTION("begin() skips an unlisted first slot")
   {
     // Slot 0 is the reserved bad_id and is what begin() would otherwise return.
     auto bad_id = m.lookup("proxy.process.api.metrics.bad_id");
     REQUIRE(bad_id == 0);
 
-    REQUIRE(m.tombstone(bad_id));
+    REQUIRE(m.unlist(bad_id));
     REQUIRE(std::get<0>(*m.begin()) != "proxy.process.api.metrics.bad_id");
 
-    REQUIRE(m.tombstone(bad_id, false));
+    REQUIRE(m.relist(bad_id));
     REQUIRE(std::get<0>(*m.begin()) == "proxy.process.api.metrics.bad_id");
   }
 
-  SECTION("a tombstoned run at the end of the store terminates iteration")
+  SECTION("an unlisted run at the end of the store terminates iteration")
   {
     // Skipping the last slots in the store is the case where the skip loop has nothing unmarked
     // left to land on.
@@ -753,8 +753,8 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
 
     names.reserve(COUNT);
     for (int i = 0; i < COUNT; ++i) {
-      names.push_back("tombstone.tail." + std::to_string(i));
-      REQUIRE(m.tombstone(Metrics::Counter::create(names[i])));
+      names.push_back("unlisted.tail." + std::to_string(i));
+      REQUIRE(m.unlist(Metrics::Counter::create(names[i])));
     }
 
     auto count = std::distance(m.begin(), m.end());
@@ -793,51 +793,51 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
   {
     // A sub-range delimited by a positional iterator has to terminate even when marked slots fall
     // inside it. Both ends skip by the same rule, so the walk still lands exactly on the bound.
-    auto first = Metrics::Counter::create("tombstone.range.1");
-    auto skip1 = Metrics::Counter::create("tombstone.range.2");
-    auto skip2 = Metrics::Counter::create("tombstone.range.3");
-    Metrics::Counter::create("tombstone.range.4");
-    Metrics::Counter::create("tombstone.range.5");
+    auto first = Metrics::Counter::create("unlisted.range.1");
+    auto skip1 = Metrics::Counter::create("unlisted.range.2");
+    auto skip2 = Metrics::Counter::create("unlisted.range.3");
+    Metrics::Counter::create("unlisted.range.4");
+    Metrics::Counter::create("unlisted.range.5");
 
-    REQUIRE(m.tombstone(skip1));
-    REQUIRE(m.tombstone(skip2));
+    REQUIRE(m.unlist(skip1));
+    REQUIRE(m.unlist(skip2));
 
-    auto stop = m.find("tombstone.range.5");
+    auto stop = m.find("unlisted.range.5");
     REQUIRE(stop != m.end());
 
     std::vector<std::string> seen;
 
-    for (auto it = m.find("tombstone.range.1"); it != stop; ++it) {
+    for (auto it = m.find("unlisted.range.1"); it != stop; ++it) {
       seen.push_back(std::string(std::get<0>(*it)));
       REQUIRE(seen.size() <= 4); // do not spin if the bound is never reached
     }
 
-    REQUIRE(seen == std::vector<std::string>{"tombstone.range.1", "tombstone.range.4"});
+    REQUIRE(seen == std::vector<std::string>{"unlisted.range.1", "unlisted.range.4"});
     REQUIRE(first != Metrics::NOT_FOUND);
   }
 
-  SECTION("find() on a tombstoned metric yields end()")
+  SECTION("find() on an unlisted metric yields end()")
   {
     // Iteration never visits a marked slot, so there must be no way to get an iterator that points
     // at one. Otherwise using it as a range bound is a walk that never terminates: the skipping
     // iterator steps straight over the bound and runs off the end of the store.
-    auto id = Metrics::Counter::create("tombstone.unfindable");
+    auto id = Metrics::Counter::create("unlisted.unfindable");
 
-    REQUIRE(m.find("tombstone.unfindable") != m.end());
-    REQUIRE(m.tombstone(id));
-    REQUIRE(m.find("tombstone.unfindable") == m.end());
+    REQUIRE(m.find("unlisted.unfindable") != m.end());
+    REQUIRE(m.unlist(id));
+    REQUIRE(m.find("unlisted.unfindable") == m.end());
 
-    // lookup() is the supported way to reach a tombstoned metric, and is unaffected.
-    REQUIRE(m.lookup("tombstone.unfindable") == id);
+    // lookup() is the supported way to reach a unlisted metric, and is unaffected.
+    REQUIRE(m.lookup("unlisted.unfindable") == id);
   }
 
-  SECTION("an id that names no allocated slot cannot be marked")
+  SECTION("an id that names no allocated slot cannot be unlisted")
   {
     // Blob 100, offset 0. The published store is nowhere near that many blobs.
     Metrics::IdType const unallocated = 100 << 16;
 
-    REQUIRE_FALSE(m.tombstone(unallocated));
-    REQUIRE_FALSE(m.tombstoned(unallocated));
+    REQUIRE_FALSE(m.unlist(unallocated));
+    REQUIRE_FALSE(m.listed(unallocated)); // nothing there to list
   }
 
   SECTION("a wildly out of range id is handled without indexing out of bounds")
@@ -847,8 +847,8 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
     // stops the largest possible id here from running off the end of a blob.
     auto const huge = std::numeric_limits<Metrics::IdType>::max();
 
-    REQUIRE_FALSE(m.tombstoned(huge));
-    REQUIRE_FALSE(m.tombstone(huge));
+    REQUIRE_FALSE(m.listed(huge));
+    REQUIRE_FALSE(m.unlist(huge));
   }
 
   SECTION("the next free slot is not allocated yet")
@@ -856,10 +856,10 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
     // create() writes the slot and then advances, so the id one past the last created metric is
     // the next free slot. Marking it would make the metric invisible from the moment it is
     // created, because a new slot is never cleared.
-    auto last = Metrics::Counter::create("tombstone.next.free");
+    auto last = Metrics::Counter::create("unlisted.next.free");
 
-    REQUIRE_FALSE(m.tombstone(last + 1));
-    REQUIRE_FALSE(m.tombstoned(last + 1));
+    REQUIRE_FALSE(m.unlist(last + 1));
+    REQUIRE_FALSE(m.listed(last + 1)); // not allocated, so not listed
   }
 
   SECTION("an offset past the end of a full blob is rejected")
@@ -871,36 +871,36 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
 
     // Force at least one completed blob so blob 0 is full rather than current.
     for (int i = 0; i <= Metrics::MAX_SIZE; ++i) {
-      REQUIRE(Metrics::Counter::createHiddenPtr("tombstone.fill." + std::to_string(i)) != nullptr);
+      REQUIRE(Metrics::Counter::createHiddenPtr("unlisted.fill." + std::to_string(i)) != nullptr);
     }
 
     Metrics::IdType const past_end = 0 << 16 | (Metrics::MAX_SIZE + 100);
 
-    REQUIRE_FALSE(h.tombstone(past_end));
-    REQUIRE_FALSE(h.tombstoned(past_end));
+    REQUIRE_FALSE(h.unlist(past_end));
+    REQUIRE_FALSE(h.listed(past_end));
   }
 
-  SECTION("the hidden store tombstones independently")
+  SECTION("the hidden store unlists independently")
   {
     auto &h = Metrics::hidden_instance();
 
-    Metrics::Counter::createPtr("tombstone.dual");
-    Metrics::Counter::createHiddenPtr("tombstone.dual");
+    Metrics::Counter::createPtr("unlisted.dual");
+    Metrics::Counter::createHiddenPtr("unlisted.dual");
 
-    auto pub_id = m.lookup("tombstone.dual");
-    auto hid_id = h.lookup("tombstone.dual");
+    auto pub_id = m.lookup("unlisted.dual");
+    auto hid_id = h.lookup("unlisted.dual");
 
-    REQUIRE(h.tombstone(hid_id));
-    REQUIRE(h.tombstoned(hid_id));
-    REQUIRE_FALSE(m.tombstoned(pub_id));
+    REQUIRE(h.unlist(hid_id));
+    REQUIRE_FALSE(h.listed(hid_id));
+    REQUIRE(m.listed(pub_id));
 
     bool in_published = false, in_hidden = false;
 
     for (auto &&[name, type, value] : m) {
-      in_published |= (name == "tombstone.dual");
+      in_published |= (name == "unlisted.dual");
     }
     for (auto &&[name, type, value] : h) {
-      in_hidden |= (name == "tombstone.dual");
+      in_hidden |= (name == "unlisted.dual");
     }
 
     REQUIRE(in_published);

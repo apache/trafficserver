@@ -105,7 +105,7 @@ private:
   using LookupTable   = std::unordered_map<std::string_view, IdType>;
   using NameStorage   = std::array<NameAndId, MAX_SIZE>;
   using AtomicStorage = std::array<AtomicType, MAX_SIZE>;
-  /// Per slot flag bits, see @c TOMBSTONE. A parallel array rather than a member of @c NameAndId
+  /// Per slot flag bits, see @c UNLISTED. A parallel array rather than a member of @c NameAndId
   /// because an atomic member would make that tuple neither copyable nor movable, and the slot is
   /// written there with a tuple assignment.
   using FlagStorage     = std::array<std::atomic<uint8_t>, MAX_SIZE>;
@@ -113,7 +113,7 @@ private:
   using BlobStorage     = std::array<std::unique_ptr<NamesAndAtomics>, MAX_BLOBS>;
 
   /// The slot exists and is still resolvable by name or id, but is skipped by iteration.
-  static constexpr uint8_t TOMBSTONE = 0x01;
+  static constexpr uint8_t UNLISTED = 0x01;
 
 public:
   Metrics(const self_type &)              = delete;
@@ -165,34 +165,55 @@ public:
     return _storage->rename(id, name);
   }
 
-  /** Mark @a id as not enumerated, or clear that mark.
+  /** Take @a id out of the store's listing.
    *
-   * A tombstoned metric keeps its slot, its name and its atomic. It is skipped by iteration, so it
+   * An unlisted metric keeps its slot, its name and its atomic. It is skipped by iteration, so it
    * vanishes from everything that enumerates the store, but it still resolves through @c lookup and
-   * its value may still be read and written. Creating the same name again clears the mark and
-   * returns the same id.
+   * its value may still be read and written -- an unlisted number that still rings. Creating the
+   * same name again relists it and returns the same id.
    *
    * @return @c false if @a id does not name an allocated slot.
    */
   bool
-  tombstone(IdType id, bool set = true)
+  unlist(IdType id)
   {
-    return _storage->tombstone(id, set);
+    return _storage->set_listed(id, false);
   }
 
+  /// Put @a id back in the listing. @see unlist
   bool
-  tombstoned(IdType id) const
+  relist(IdType id)
   {
-    return _storage->tombstoned(id);
+    return _storage->set_listed(id, true);
   }
 
-  /// Convenience for callers that publish by name and do not retain the id.
+  /** Whether @a id is enumerated.
+   *
+   * @return @c false for an unlisted metric, and also for an id that names no allocated slot --
+   *   neither appears in iteration.
+   */
   bool
-  tombstone(std::string_view name, bool set = true)
+  listed(IdType id) const
+  {
+    return _storage->listed(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see unlist
+  bool
+  unlist(std::string_view name)
   {
     auto id = lookup(name);
 
-    return id != NOT_FOUND && tombstone(id, set);
+    return id != NOT_FOUND && unlist(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see relist
+  bool
+  relist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && relist(id);
   }
 
   AtomicType &
@@ -251,7 +272,7 @@ public:
     };
 
     // Only Metrics hands these out, through begin(), end() and find(). A caller that could name an
-    // arbitrary position could name a tombstoned one, which iteration is required never to visit.
+    // arbitrary position could name an unlisted one, which iteration is required never to visit.
     explicit iterator(const Metrics &m);
     iterator(const Metrics &m, IdType pos);
     iterator(const Metrics &m, end_tag);
@@ -295,7 +316,7 @@ public:
      *
      * Three way rather than a plain position compare: any exhausted iterator equals the end
      * sentinel, and equals any other exhausted iterator, since two of them may have skipped a
-     * different number of tombstoned slots. Two live iterators still compare by position.
+     * different number of unlisted slots. Two live iterators still compare by position.
      */
     bool
     operator==(const iterator &o) const
@@ -315,7 +336,7 @@ public:
   private:
     void next();
     void advance();
-    void skip_tombstoned();
+    void skip_unlisted();
 
     bool
     at_end() const
@@ -347,9 +368,9 @@ public:
   {
     auto id = lookup(name);
 
-    // A tombstoned slot is never visited by iteration, so handing out an iterator to one would
+    // An unlisted slot is never visited by iteration, so handing out an iterator to one would
     // produce a bound that a skipping walk steps straight over. Reach it with lookup() instead.
-    if (id == NOT_FOUND || tombstoned(id)) {
+    if (id == NOT_FOUND || !listed(id)) {
       return end();
     } else {
       return iterator(*this, id);
@@ -421,8 +442,8 @@ private:
     MetricType       type(IdType id) const;
     SpanType         createSpan(size_t size, const MetricType type = MetricType::COUNTER, IdType *id = nullptr);
     bool             rename(IdType id, const std::string_view name);
-    bool             tombstone(IdType id, bool set);
-    bool             tombstoned(IdType id) const;
+    bool             set_listed(IdType id, bool listed);
+    bool             listed(IdType id) const;
 
     /// The id one past the last allocated slot, as an iteration bound.
     IdType
