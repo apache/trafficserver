@@ -816,6 +816,24 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
     REQUIRE(first != Metrics::NOT_FOUND);
   }
 
+  SECTION("find() works for a gauge, whose id carries type bits")
+  {
+    // A metric id encodes its type at METRIC_TYPE_BITS, while the iteration bound is built with
+    // COUNTER type bits. Comparing a GAUGE id against that bound numerically makes it look past
+    // the end of the store.
+    Metrics::Gauge::createPtr("unlisted.typed.gauge");
+    Metrics::Counter::createPtr("unlisted.typed.counter");
+
+    auto g = m.find("unlisted.typed.gauge");
+    REQUIRE(g != m.end());
+    REQUIRE(std::get<0>(*g) == "unlisted.typed.gauge");
+    REQUIRE(std::get<1>(*g) == Metrics::MetricType::GAUGE);
+
+    auto c = m.find("unlisted.typed.counter");
+    REQUIRE(c != m.end());
+    REQUIRE(std::get<0>(*c) == "unlisted.typed.counter");
+  }
+
   SECTION("find() on an unlisted metric yields end()")
   {
     // Iteration never visits a marked slot, so there must be no way to get an iterator that points

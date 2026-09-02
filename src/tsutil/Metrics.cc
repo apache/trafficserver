@@ -289,8 +289,15 @@ Metrics::iterator::iterator(const Metrics &m) : _metrics(m), _it(0), _bound(m._s
   skip_unlisted();
 }
 
-Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos), _bound(m._storage->current_id())
+Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _bound(m._storage->current_id())
 {
+  // A metric id carries its type at METRIC_TYPE_BITS, but positions are compared numerically
+  // against a bound built with COUNTER type bits. Keep only the blob and offset, as advance() does,
+  // or a GAUGE id would compare past the end of the store and the iterator would look exhausted.
+  auto [blob, offset] = _metrics._splitID(pos);
+
+  _it = _makeId(blob, offset, MetricType::COUNTER);
+
   // Iteration never visits an unlisted slot, so an iterator must not rest on one either: used as a
   // range bound it would be stepped over and never reached. find() resolves that case to end()
   // before it gets here; this keeps the invariant true for any other positional construction.
