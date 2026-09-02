@@ -297,7 +297,7 @@ LayoutEngine::create_runroot()
   for (const auto &it : original_map) {
     // path handle
     std::string join_path;
-    if (it.second[0] && it.second[0] == '/') {
+    if (it.second.starts_with('/')) {
       join_path = it.second.substr(1);
     } else {
       join_path = it.second;

@@ -35,6 +35,7 @@ Checks: >-
   bugprone-use-after-move,
   google-readability-braces-around-statements,
   google-readability-casting,
+  misc-redundant-expression,
   modernize-deprecated-headers,
   modernize-loop-convert,
   modernize-raw-string-literal,

@@ -1808,7 +1808,7 @@ process_file(int in_fd, off_t offset, unsigned max_age)
           return 0;
         }
         // ensure that this is a valid logbuffer header
-        if (header->cookie && (LOG_SEGMENT_COOKIE == header->cookie)) {
+        if (LOG_SEGMENT_COOKIE == header->cookie) {
           offset = 0;
           break;
         }

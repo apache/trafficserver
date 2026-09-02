@@ -234,5 +234,5 @@ LogThrottlingIsValid(int throttling_val)
 static inline bool
 LogRollingEnabledIsValid(int enabled)
 {
-  return (enabled >= Log::NO_ROLLING || enabled < Log::INVALID_ROLLING_VALUE); // lgtm[cpp/constant-comparison]
+  return enabled >= Log::NO_ROLLING && enabled < Log::INVALID_ROLLING_VALUE;
 }

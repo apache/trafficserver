@@ -272,7 +272,7 @@ CacheControlHeader::update(TSMBuffer bufp, TSMLoc hdr_loc)
   TSMLoc field_loc = TSMimeHdrFieldFind(bufp, hdr_loc, TS_MIME_FIELD_CACHE_CONTROL, TS_MIME_LEN_CACHE_CONTROL);
   if (field_loc != TS_NULL_MLOC) {
     int n_values = TSMimeHdrFieldValuesCount(bufp, hdr_loc, field_loc);
-    if ((n_values != TS_ERROR) && (n_values > 0)) {
+    if (n_values > 0) {
       for (int i = 0; i < n_values; i++) {
         // Grab this current header value
         int         _val_len = 0;
@@ -996,7 +996,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
         if (field_loc != TS_NULL_MLOC) {
           time_t curr_field_expires_time;
           int    n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
-          if ((n_values != TS_ERROR) && (n_values > 0)) {
+          if (n_values > 0) {
             curr_field_expires_time = TSMimeHdrFieldValueDateGet(resp_data.bufp, resp_data.hdr_loc, field_loc);
             if (!got_expires_time) {
               expires_time     = curr_field_expires_time;
@@ -1021,7 +1021,7 @@ prepareResponse(InterceptData &int_data, ByteBlockList &body_blocks, string &res
             const char *value;
             int         value_len;
             int         n_values = TSMimeHdrFieldValuesCount(resp_data.bufp, resp_data.hdr_loc, field_loc);
-            if ((n_values != TS_ERROR) && (n_values > 0)) {
+            if (n_values > 0) {
               for (int k = 0; k < n_values; k++) {
                 value = TSMimeHdrFieldValueStringGet(resp_data.bufp, resp_data.hdr_loc, field_loc, k, &value_len);
                 if (!values_added) {
