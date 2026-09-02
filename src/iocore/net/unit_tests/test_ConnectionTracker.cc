@@ -108,7 +108,7 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[net][ConnectionTra
   const std::string total_group   = group_metric("total_connection", "10.9.8.7:443");
   const std::string blocked_group = group_metric("blocked_connection", "10.9.8.7:443");
 
-  SECTION("AGGREGATE_NONE publishes the per group metrics")
+  SECTION("AGGREGATE_NONE publishes the per group metrics and no aggregate")
   {
     txn.metric_aggregate = ConnectionTracker::AGGREGATE_NONE;
     open_and_close_connection(txn, addr);
@@ -119,31 +119,99 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[net][ConnectionTra
     CHECK_FALSE(is_published(host_metric("current_connection.max")));
   }
 
-  SECTION("switching to AGGREGATE_ONLY retracts an already published per group metric")
+  SECTION("AGGREGATE_GROUP publishes the per group metrics, the sums and the max")
   {
-    // This is the production sequence: run for a while with the per group metrics published, then
-    // change the setting. Without a retraction the first set of names is published forever.
-    txn.metric_aggregate = ConnectionTracker::AGGREGATE_NONE;
-    open_and_close_connection(txn, addr);
-    REQUIRE(is_published(current_group));
-
-    txn.metric_aggregate = ConnectionTracker::AGGREGATE_ONLY;
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_GROUP;
     open_and_close_connection(txn, addr);
 
-    CHECK_FALSE(is_published(current_group));
-    CHECK_FALSE(is_published(total_group));
-    CHECK_FALSE(is_published(blocked_group));
-
-    // The aggregate stands in for them.
+    CHECK(is_published(current_group));
     CHECK(is_published(host_metric("current_connection")));
     CHECK(is_published(host_metric("total_connection")));
     CHECK(is_published(host_metric("blocked_connection")));
     CHECK(is_published(host_metric("current_connection.max")));
   }
 
-  SECTION("switching back to AGGREGATE_GROUP republishes them")
+  SECTION("AGGREGATE_MAX publishes the max and nothing else")
   {
-    txn.metric_aggregate = ConnectionTracker::AGGREGATE_ONLY;
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_MAX;
+    open_and_close_connection(txn, addr);
+
+    CHECK(is_published(host_metric("current_connection.max")));
+
+    CHECK_FALSE(is_published(host_metric("current_connection")));
+    CHECK_FALSE(is_published(host_metric("total_connection")));
+    CHECK_FALSE(is_published(host_metric("blocked_connection")));
+    CHECK_FALSE(is_published(current_group));
+    CHECK_FALSE(is_published(total_group));
+    CHECK_FALSE(is_published(blocked_group));
+  }
+
+  SECTION("AGGREGATE_SUM publishes the sums and the max, but not the per group metrics")
+  {
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_SUM;
+    open_and_close_connection(txn, addr);
+
+    CHECK(is_published(host_metric("current_connection")));
+    CHECK(is_published(host_metric("total_connection")));
+    CHECK(is_published(host_metric("blocked_connection")));
+    CHECK(is_published(host_metric("current_connection.max")));
+
+    CHECK_FALSE(is_published(current_group));
+    CHECK_FALSE(is_published(total_group));
+    CHECK_FALSE(is_published(blocked_group));
+  }
+
+  SECTION("switching to AGGREGATE_MAX retracts already published per group metrics")
+  {
+    // The production sequence: run for a while with the per group metrics published, then change
+    // the setting. Without a retraction the first set of names is published forever.
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_NONE;
+    open_and_close_connection(txn, addr);
+    REQUIRE(is_published(current_group));
+
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_MAX;
+    open_and_close_connection(txn, addr);
+
+    CHECK_FALSE(is_published(current_group));
+    CHECK_FALSE(is_published(total_group));
+    CHECK_FALSE(is_published(blocked_group));
+    CHECK(is_published(host_metric("current_connection.max")));
+  }
+
+  SECTION("switching from AGGREGATE_SUM to AGGREGATE_MAX retracts the sums")
+  {
+    // The sums are aggregates rather than per group names, but they are published the same way and
+    // so need withdrawing the same way when the setting stops asking for them.
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_SUM;
+    open_and_close_connection(txn, addr);
+    REQUIRE(is_published(host_metric("current_connection")));
+
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_MAX;
+    open_and_close_connection(txn, addr);
+
+    CHECK_FALSE(is_published(host_metric("current_connection")));
+    CHECK_FALSE(is_published(host_metric("total_connection")));
+    CHECK_FALSE(is_published(host_metric("blocked_connection")));
+    CHECK(is_published(host_metric("current_connection.max")));
+  }
+
+  SECTION("switching from AGGREGATE_MAX to AGGREGATE_SUM republishes the sums")
+  {
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_MAX;
+    open_and_close_connection(txn, addr);
+    REQUIRE_FALSE(is_published(host_metric("total_connection")));
+
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_SUM;
+    open_and_close_connection(txn, addr);
+
+    CHECK(is_published(host_metric("current_connection")));
+    CHECK(is_published(host_metric("total_connection")));
+    CHECK(is_published(host_metric("blocked_connection")));
+  }
+
+  SECTION("switching back to AGGREGATE_GROUP republishes the per group metrics")
+  {
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_MAX;
     open_and_close_connection(txn, addr);
     REQUIRE_FALSE(is_published(current_group));
 
@@ -154,17 +222,19 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[net][ConnectionTra
     CHECK(is_published(host_metric("current_connection")));
   }
 
-  SECTION("AGGREGATE_ONLY still publishes a group that has no aggregate to stand in for it")
+  SECTION("a group with no aggregate keeps its own metrics whatever the setting")
   {
     // Only MATCH_BOTH yields a hostname to gather under, so a MATCH_PORT group has no aggregate.
     // Suppressing it would report nothing at all for that upstream.
-    txn.server_match     = ConnectionTracker::MATCH_PORT;
-    txn.metric_aggregate = ConnectionTracker::AGGREGATE_ONLY;
+    txn.server_match = ConnectionTracker::MATCH_PORT;
 
     IpEndpoint port_addr;
     REQUIRE(ats_ip_pton("10.9.8.6:80", &port_addr) == 0);
-    open_and_close_connection(txn, port_addr);
 
-    CHECK(is_published("proxy.process.http.per_server.current_connection.10.9.8.6:80"));
+    for (auto level : {ConnectionTracker::AGGREGATE_MAX, ConnectionTracker::AGGREGATE_SUM}) {
+      txn.metric_aggregate = level;
+      open_and_close_connection(txn, port_addr);
+      CHECK(is_published("proxy.process.http.per_server.current_connection.10.9.8.6:80"));
+    }
   }
 }

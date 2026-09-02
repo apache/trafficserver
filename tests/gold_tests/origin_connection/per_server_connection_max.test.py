@@ -156,11 +156,11 @@ class PerServerConnectionMaxTest:
 class ConnectMethodTest:
     """Test our max origin connection behavior with CONNECT traffic.
 
-    Also covers the two aggregate-publishing modes of
+    Also covers two of the aggregate-publishing modes of
     proxy.config.http.per_server.connection.metric_aggregate:
-      - 2 (AGGREGATE_ONLY): only the per hostname aggregate is published; the per group metrics
-        stay hidden and are visible only with --include-hidden.
-      - 1 (AGGREGATE_GROUP): the per hostname aggregate is published, and the per group metrics
+      - 3 (AGGREGATE_SUM): the per hostname sums and max are published; the per group metrics stay
+        hidden and are visible only with --include-hidden.
+      - 1 (AGGREGATE_GROUP): the per hostname sums and max are published, and the per group metrics
         are also mirrored into the published store.
 
     The match here defaults to 'both' and there is exactly one group for this hostname, so the
@@ -171,7 +171,7 @@ class ConnectMethodTest:
     _process_counter: int = 0
     _client_counter: int = 0
 
-    def __init__(self, max_conn, metric_aggregate=2) -> None:
+    def __init__(self, max_conn, metric_aggregate=3) -> None:
         """Configure the server processes in preparation for the TestRun."""
         self._metric_aggregate = metric_aggregate
         self._configure_dns()
@@ -238,7 +238,7 @@ class ConnectMethodTest:
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
                 f'per_server.total_connection.{group_name} 5', 'The per group metric should be published at AGGREGATE_GROUP.')
         else:
-            # AGGREGATE_ONLY keeps the per group metrics hidden, so none of the three per group
+            # AGGREGATE_SUM keeps the per group metrics hidden, so none of the three per group
             # names may appear in a normal query. current_connection.max is not among them: it only
             # ever exists as a hostname aggregate, never per group.
             for counter in ('current_connection', 'total_connection', 'blocked_connection'):
@@ -345,9 +345,9 @@ class MultiGroupAggregateTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
-                # Aggregates only: the per group metrics stay hidden, which is what this test is
-                # about reading through the aggregate.
-                'proxy.config.http.per_server.connection.metric_aggregate': 2,
+                # Sums and max, per group metrics hidden: this test is about reading the group
+                # behavior through the hostname aggregate.
+                'proxy.config.http.per_server.connection.metric_aggregate': 3,
                 'proxy.config.http.per_server.connection.match': 'both',
             })
         self._ts.Disk.remap_config.AddLines(
@@ -394,8 +394,8 @@ class MultiGroupAggregateTest:
         # which cannot catch a metric that should not be there at all.
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
             r'per_server\.\w+_connection\.multi\.origin\.com\.\d',
-            'At metric_aggregate 2 the per group metrics must stay hidden, leaving only the '
-            'hostname aggregate published.')
+            'At metric_aggregate 3 the per group metrics must stay hidden, leaving only the '
+            'hostname aggregates published.')
 
     def _test_metrics_after_drain(self) -> None:
         """After traffic drains and a further sync tick passes, both live gauges must read 0.
@@ -525,15 +525,15 @@ class MetricOverrideTest:
 class AggregateOnlyWithoutHostAggregateTest:
     """Verify metric_aggregate 2 still publishes per group metrics when there is no aggregate.
 
-    metric_aggregate 2 (AGGREGATE_ONLY) normally leaves the per group metrics hidden and publishes
-    only the per hostname aggregate. That aggregate exists only under match 'both', which is the
-    only match type with more than one group per hostname (Group::host_metric_name returns empty
-    for the others). With match 'port' there is therefore nothing for the aggregate to stand in
-    for, so the per group metrics have to be published regardless, or level 2 would report nothing
-    at all for this group.
+    metric_aggregate 2 (AGGREGATE_MAX) normally leaves the per group metrics hidden and publishes
+    only the per hostname max. That aggregate exists only under match 'both', which is the only
+    match type with more than one group per hostname (Group::host_metric_name returns empty for
+    the others). With match 'port' there is therefore nothing for the aggregate to stand in for,
+    so the per group metrics have to be published regardless, or level 2 would report nothing at
+    all for this group.
 
-    Every other test in this file that sets metric_aggregate 2 uses match 'both', so without this
-    case a regression that dropped the fallback would leave the suite green.
+    Every other test in this file that suppresses the per group metrics uses match 'both', so
+    without this case a regression that dropped the fallback would leave the suite green.
     """
 
     def __init__(self) -> None:
@@ -594,6 +594,9 @@ class AggregateOnlyWithoutHostAggregateTest:
 
 class AggregateRetractionTest:
     """Verify that raising metric_aggregate to 2 withdraws already published per group metrics.
+
+    metric_aggregate 2 (AGGREGATE_MAX) publishes the per hostname max and nothing else, so this
+    also covers that the hostname sums are not published at that level.
 
     metric_aggregate is dynamic, but the publication decision is made in the ConnectionTracker
     Group constructor, and a published metric name is never removed from the metric store. Before
@@ -694,12 +697,18 @@ class AggregateRetractionTest:
             'no longer be published, even though they were published earlier in this process.')
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             r'per_server\.current_connection\.max\.retract\.origin\.com',
-            'The hostname aggregate stands in for the withdrawn per group metrics.')
+            'The hostname max stands in for the withdrawn per group metrics.')
+        # metric_aggregate 2 is the max and nothing else, so the hostname sums must not appear
+        # either. '\.com ' with the trailing space matches the aggregate names, whose value follows
+        # the hostname directly; the max is 'current_connection.max.<host>' and does not match.
+        tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+            r'per_server\.\w+_connection\.retract\.origin\.com ',
+            'At metric_aggregate 2 only the max is published: the hostname sums must be absent.')
         tr.StillRunningAfter = self._ts
 
 
 PerServerConnectionMaxTest().run()
-ConnectMethodTest(3, metric_aggregate=2).run(blocked=2, gold_file="gold/two_503_congested.gold")
+ConnectMethodTest(3, metric_aggregate=3).run(blocked=2, gold_file="gold/two_503_congested.gold")
 ConnectMethodTest(0, metric_aggregate=1).run(blocked=0, gold_file="gold/two_200_ok.gold")
 MultiGroupAggregateTest().run()
 MetricOverrideTest().run()

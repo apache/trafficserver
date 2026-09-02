@@ -78,8 +78,8 @@ const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
 // records paths do the range checking instead -- records.yaml validates the value and the reload
 // callbacks below clamp -- so an out of range value is only reachable by a plugin that sets one
 // deliberately. Both settings degrade safely if that happens: any non-zero metric_enabled enables
-// metrics, and any metric_aggregate outside 0..2 publishes both the aggregate and the per group
-// metrics, the same as AGGREGATE_GROUP.
+// metrics, and any metric_aggregate outside 0..3 publishes everything, the same as
+// AGGREGATE_GROUP.
 const MgmtConverter ConnectionTracker::METRIC_ENABLED_CONV{
   [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::metric_enabled) *>(data)); },
   [](void *data, MgmtInt i) -> void {
@@ -190,7 +190,7 @@ Config_Update_Conntrack_Metric_Aggregate(const char * /* name ATS_UNUSED */, Rec
 
   if (RECD_INT == dtype) {
     auto level               = std::clamp(static_cast<int>(data.rec_int), static_cast<int>(ConnectionTracker::AGGREGATE_NONE),
-                                          static_cast<int>(ConnectionTracker::AGGREGATE_ONLY));
+                                          static_cast<int>(ConnectionTracker::AGGREGATE_SUM));
     config->metric_aggregate = static_cast<ConnectionTracker::MetricAggregate>(level);
     return true;
   }
@@ -488,45 +488,65 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
     std::string _host_metric_name = host_metric_name(key, fqdn, _global_config->metric_prefix);
     bool const  has_aggregate     = !_host_metric_name.empty();
 
-    if (has_aggregate && metric_aggregate != AGGREGATE_NONE) {
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _host_metric_name,
-                                   Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _host_metric_name,
-                                   Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.blocked_connection." + _host_metric_name,
-                                   Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
-      // The largest current count among this hostname's groups, sampled. Deliberately taken over
-      // the instantaneous gauge rather than each group's all time peak, so the value falls again
-      // and a maximum over time can be computed by whatever scrapes it.
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection.max." + _host_metric_name,
-                                   Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
+    // A plugin can set an out of range value through the overridable config, see
+    // METRIC_AGGREGATE_CONV. Anything unrecognized publishes everything.
+    if (metric_aggregate < AGGREGATE_NONE || metric_aggregate > AGGREGATE_SUM) {
+      metric_aggregate = AGGREGATE_GROUP;
     }
 
-    std::array<std::string, 3> const published_names{
+    // See MetricAggregate for the table these three implement. A group with no hostname to
+    // aggregate under keeps its own metrics whatever the setting says, since suppressing them would
+    // report nothing at all for that upstream.
+    bool const publish_sums  = has_aggregate && (metric_aggregate == AGGREGATE_GROUP || metric_aggregate == AGGREGATE_SUM);
+    bool const publish_max   = has_aggregate && metric_aggregate != AGGREGATE_NONE;
+    bool const publish_group = !has_aggregate || metric_aggregate == AGGREGATE_NONE || metric_aggregate == AGGREGATE_GROUP;
+
+    std::array<std::string, 3> const sum_names{
+      "proxy.process.http.per_server.current_connection." + _host_metric_name,
+      "proxy.process.http.per_server.total_connection." + _host_metric_name,
+      "proxy.process.http.per_server.blocked_connection." + _host_metric_name,
+    };
+    std::array<std::string, 3> const group_names{
       "proxy.process.http.per_server.current_connection." + _metric_name,
       "proxy.process.http.per_server.total_connection." + _metric_name,
       "proxy.process.http.per_server.blocked_connection." + _metric_name,
     };
+    std::string const max_name = "proxy.process.http.per_server.current_connection.max." + _host_metric_name;
 
-    // AGGREGATE_ONLY suppresses the per group metrics to keep the published count proportional to
-    // hostnames. Without an aggregate to stand in for them there would be nothing at all reported
-    // for this group, so in that case publish them regardless.
-    if (metric_aggregate != AGGREGATE_ONLY || !has_aggregate) {
+    auto &metrics = Metrics::instance();
+
+    // metric_aggregate is dynamic and overridable, so this group may well have published a name
+    // under an earlier value. A published name is never removed from the store, so without
+    // withdrawing it here it would report for the life of the process no matter what the setting
+    // says. Re-registering a source republishes it if the setting changes back.
+    if (publish_sums) {
+      Metrics::Derived::add_source(sum_names[0], Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(sum_names[1], Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(sum_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+    } else if (has_aggregate) {
+      for (auto const &name : sum_names) {
+        metrics.unlist(name);
+      }
+    }
+
+    if (publish_max) {
+      // The largest current count among this hostname's groups, sampled. Deliberately taken over
+      // the instantaneous gauge rather than each group's all time peak, so the value falls again
+      // and a maximum over time can be computed by whatever scrapes it.
+      Metrics::Derived::add_source(max_name, Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
+    } else if (has_aggregate) {
+      metrics.unlist(max_name);
+    }
+
+    if (publish_group) {
       // Mirror the per group metrics into the published store under their own name. A single
       // source SUM combines nothing, but the published value is still a sample: it is whatever
       // the last derived tick read, and it reads 0 from creation until that first tick.
-      Metrics::Derived::add_source(published_names[0], Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source(published_names[1], Metrics::MetricType::COUNTER, _count_total_metric,
-                                   Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source(published_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(group_names[0], Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(group_names[1], Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(group_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
     } else {
-      // metric_aggregate is dynamic and overridable, so this group may well have published these
-      // names under an earlier value. A published name is never removed from the store, so without
-      // withdrawing them here they would report for the life of the process no matter what the
-      // setting says. The add_source calls above republish them if the setting changes back.
-      auto &metrics = Metrics::instance();
-
-      for (auto const &name : published_names) {
+      for (auto const &name : group_names) {
         metrics.unlist(name);
       }
     }

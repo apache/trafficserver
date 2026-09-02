@@ -79,16 +79,30 @@ public:
    *
    * This is independent of @c TxnConfig::metric_enabled, which decides only whether per server
    * metrics exist for a group at all. The per group metrics are always created in the hidden metric
-   * store; what varies here is what gets published from them:
-   *   - @c AGGREGATE_NONE: no aggregate. The per group metrics are published under their own names.
-   *     This is the default and matches the behavior of releases that had no aggregate support.
-   *   - @c AGGREGATE_GROUP: the per hostname aggregates are published, and so are the per group
-   *     metrics they are computed from.
-   *   - @c AGGREGATE_ONLY: the per hostname aggregates are published and the per group metrics stay
-   *     hidden, which keeps the published metric count proportional to hostnames rather than to
-   *     groups. Where a group has no aggregate to belong to -- see @c Group::host_metric_name, which
-   *     only yields a name for match type @c MATCH_BOTH -- the per group metrics are published
-   *     anyway, since otherwise nothing at all would be reported for that group.
+   * store; what varies here is what gets published from them.
+   *
+   * Two kinds of per hostname aggregate exist. The *sums* are @c current_connection,
+   * @c total_connection and @c blocked_connection added across the groups of a hostname. The *max*
+   * is @c current_connection.max, the largest @c current_connection among those groups. Which of
+   * them are published, and whether the per group metrics are published alongside, is what this
+   * selects:
+   *
+   *   | value                | per group | sums | max |
+   *   |----------------------|-----------|------|-----|
+   *   | @c AGGREGATE_NONE    | yes       | no   | no  |
+   *   | @c AGGREGATE_GROUP   | yes       | yes  | yes |
+   *   | @c AGGREGATE_MAX     | no        | no   | yes |
+   *   | @c AGGREGATE_SUM     | no        | yes  | yes |
+   *
+   * @c AGGREGATE_NONE is the default and matches the behavior of releases that had no aggregate
+   * support. @c AGGREGATE_MAX is the smallest useful configuration: one metric per hostname,
+   * answering how close the busiest group is to @c per_server.connection.max. @c AGGREGATE_SUM adds
+   * the totals for that hostname. Both keep the published metric count proportional to hostnames
+   * rather than to groups.
+   *
+   * Where a group has no aggregate to belong to -- see @c Group::host_metric_name, which only
+   * yields a name for match type @c MATCH_BOTH -- the per group metrics are published whatever this
+   * says, since otherwise nothing at all would be reported for that group.
    *
    * Keeping the per group metrics in the hidden store in every case means changing this at runtime
    * is only a change of what is registered for publication, with no metric to migrate between the
@@ -97,16 +111,19 @@ public:
    * A change is applied per group, when that group is next constructed, which happens on the first
    * connection after its count last fell to zero. A group that never goes idle keeps whatever was
    * in effect when it was created. Retracting a published name relies on the metric store's
-   * listing, see @c ts::Metrics::unlist.
+   * listing, see @c ts::Metrics::unlist. The sums are named per hostname rather than per group, so
+   * where the mappings for one hostname disagree about this setting, the last group constructed
+   * decides whether they are published.
    *
-   * The records layer validates and clamps this to 0..2. A plugin setting the overridable config
+   * The records layer validates and clamps this to 0..3. A plugin setting the overridable config
    * directly is not clamped, see @c METRIC_AGGREGATE_CONV; any other value behaves as
-   * @c AGGREGATE_GROUP, publishing both the aggregate and the per group metrics.
+   * @c AGGREGATE_GROUP, publishing everything.
    */
   enum MetricAggregate : int {
     AGGREGATE_NONE  = 0, ///< No hostname aggregate; the per group metrics are published.
-    AGGREGATE_GROUP = 1, ///< Hostname aggregates published, along with the per group metrics.
-    AGGREGATE_ONLY  = 2, ///< Hostname aggregates published, per group metrics kept hidden.
+    AGGREGATE_GROUP = 1, ///< Hostname sums and max, published along with the per group metrics.
+    AGGREGATE_MAX   = 2, ///< Hostname max only; the per group metrics stay hidden.
+    AGGREGATE_SUM   = 3, ///< Hostname sums and max; the per group metrics stay hidden.
   };
 
   /// Per transaction configuration values.
