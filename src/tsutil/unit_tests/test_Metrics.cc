@@ -629,6 +629,7 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
 
   auto             &h = Metrics::hidden_instance();
   std::atomic<bool> stop{false};
+  std::atomic<int>  ready{0};
   std::atomic<int>  mismatches{0};
   std::atomic<int>  resolved{0};
 
@@ -638,11 +639,21 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
     c.store(Metrics::NOT_FOUND, std::memory_order_relaxed);
   }
 
+  // Precomputed so a reader can compare against the name it must see without allocating in the
+  // loop. Checking the name is the whole point: an id that lookup() clamps resolves to the reserved
+  // bad_id slot, whose name is not empty, so only the expected name distinguishes the two.
+  std::vector<std::string> names;
+
+  names.reserve(N_CREATE);
+  for (int i = 0; i < N_CREATE; ++i) {
+    names.push_back("pub.order." + std::to_string(i));
+  }
+
   std::vector<std::thread> readers;
 
   for (int t = 0; t < N_READERS; ++t) {
     readers.emplace_back([&]() {
-      int n = 0;
+      ready.fetch_add(1, std::memory_order_release);
 
       while (!stop.load(std::memory_order_relaxed)) {
         for (int i = 0; i < N_CREATE; ++i) {
@@ -652,27 +663,39 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
             continue;
           }
 
-          // valid() accepted the id, so lookup() must hand back the metric with its name rather
-          // than clamping to the reserved bad_id slot.
+          // valid() accepted the id, so lookup() must hand back that metric rather than clamping
+          // to the reserved bad_id slot.
           std::string_view    name;
           Metrics::MetricType type;
           auto               *m = h.lookup(id, &name, &type);
 
-          if (m == nullptr || name.empty()) {
+          if (m == nullptr || name != names[i]) {
             mismatches.fetch_add(1, std::memory_order_relaxed);
           }
-          ++n;
+
+          // Published as it happens rather than summed at the end, so the writer can wait for it.
+          resolved.fetch_add(1, std::memory_order_relaxed);
         }
       }
-      resolved.fetch_add(n, std::memory_order_relaxed);
     });
   }
 
-  for (int i = 0; i < N_CREATE; ++i) {
-    auto const nm = "pub.order." + std::to_string(i);
+  // Every reader has to be in its loop before the writer starts, or the writer can finish and set
+  // stop before any of them does work, and the test passes without having raced anything.
+  while (ready.load(std::memory_order_acquire) < N_READERS) {
+    std::this_thread::yield();
+  }
 
-    REQUIRE(Metrics::Counter::createHiddenPtr(nm) != nullptr);
-    created[i].store(h.lookup(nm), std::memory_order_relaxed);
+  for (int i = 0; i < N_CREATE; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr(names[i]) != nullptr);
+    created[i].store(h.lookup(names[i]), std::memory_order_relaxed);
+  }
+
+  // Readers being in their loops is not enough to guarantee they did any work: on a single CPU the
+  // writer can run to completion first, and every reader would then see stop and resolve nothing.
+  // Wait for one actual resolution so the check below cannot pass vacuously.
+  while (resolved.load(std::memory_order_relaxed) == 0) {
+    std::this_thread::yield();
   }
 
   stop.store(true, std::memory_order_relaxed);
@@ -687,12 +710,11 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
   auto hi = std::numeric_limits<Metrics::IdType>::min();
 
   for (int i = 0; i < N_CREATE; ++i) {
-    auto const nm = "pub.order." + std::to_string(i);
-    auto const id = h.lookup(nm);
+    auto const id = h.lookup(names[i]);
 
     REQUIRE(id != Metrics::NOT_FOUND);
     REQUIRE(h.valid(id));
-    REQUIRE(h.name(id) == nm);
+    REQUIRE(h.name(id) == names[i]);
 
     lo = std::min(lo, id);
     hi = std::max(hi, id);
