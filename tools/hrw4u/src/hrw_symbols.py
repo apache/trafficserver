@@ -26,6 +26,7 @@ from hrw4u.validation import Validator
 import hrw4u.types as types
 import hrw4u.tables as tables
 from hrw4u.states import SectionType
+from hrw4u.common import apply_percent_mods, split_percent_mods
 from hrw4u.symbols_base import SymbolResolverBase
 
 
@@ -408,6 +409,20 @@ class InverseSymbolResolver(SymbolResolverBase):
 
     def percent_to_ident_or_func(self, percent: str, section: SectionType | None) -> tuple[str, bool]:
         """Convert percent block to identifier or function call."""
+        stripped, mods = split_percent_mods(percent)
+        expr, is_func = self._percent_to_ident_or_func(stripped, section)
+
+        if not mods:
+            return expr, is_func
+
+        # A block with no DSL equivalent comes back as %{...}, where the modifiers belong
+        # inside the braces rather than in a "with" clause.
+        if expr == stripped:
+            return apply_percent_mods(expr, mods), is_func
+
+        return f"{expr} with {','.join(mods)}", is_func
+
+    def _percent_to_ident_or_func(self, percent: str, section: SectionType | None) -> tuple[str, bool]:
         match = Validator._PERCENT_RE.match(percent)
         if not match:
             raise SymbolResolutionError(percent, "Invalid %{...} reference")
