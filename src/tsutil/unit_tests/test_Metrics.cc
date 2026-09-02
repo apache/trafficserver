@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <array>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <string>
 #include <thread>
@@ -837,6 +838,17 @@ TEST_CASE("Metrics tombstone", "[libtsapi][Metrics]")
 
     REQUIRE_FALSE(m.tombstone(unallocated));
     REQUIRE_FALSE(m.tombstoned(unallocated));
+  }
+
+  SECTION("a wildly out of range id is handled without indexing out of bounds")
+  {
+    // _splitID masks the blob index to less than MAX_BLOBS, so no id can name a _blobs entry that
+    // does not exist. The offset is not masked that way and has to be range checked, which is what
+    // stops the largest possible id here from running off the end of a blob.
+    auto const huge = std::numeric_limits<Metrics::IdType>::max();
+
+    REQUIRE_FALSE(m.tombstoned(huge));
+    REQUIRE_FALSE(m.tombstone(huge));
   }
 
   SECTION("the next free slot is not allocated yet")

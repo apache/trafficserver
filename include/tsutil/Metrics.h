@@ -95,6 +95,11 @@ public:
   static constexpr int      METRIC_TYPE_BITS = 29;
   static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
+  // Despite the name, METRIC_TYPE_MASK is what @c _splitID masks the blob index with, and that is
+  // the only reason indexing @c _blobs with a blob index taken from an arbitrary id stays in range
+  // without a further check. It holds only while the mask covers exactly the blob count.
+  static_assert(MAX_BLOBS == METRIC_TYPE_MASK + 1, "a masked blob index must always be a valid _blobs index");
+
 private:
   using NameAndId     = std::tuple<std::string, IdType>;
   using LookupTable   = std::unordered_map<std::string_view, IdType>;
@@ -451,6 +456,9 @@ private:
      * blob. And @c _cur_off is the *next* free slot, not the last used one, so @c valid accepts one
      * slot that does not exist yet -- writing a flag there would be inherited by whatever metric is
      * created in it later.
+     *
+     * The blob index needs no range check of its own: @c _splitID has already masked it to less
+     * than @c MAX_BLOBS, per the static assertion on that mask above.
      */
     bool
     allocated(IdType id) const
