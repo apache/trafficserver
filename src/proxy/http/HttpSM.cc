@@ -6017,6 +6017,7 @@ HttpSM::do_http_server_open(bool raw, bool only_direct)
       new_entry->sni                 = this->get_outbound_sni();
       new_entry->cert_name           = this->get_outbound_cert();
       new_entry->is_no_plugin_tunnel = plugin_tunnel_type == HttpPluginTunnel_t::NONE;
+      new_entry->enable_outbound_connection_tracking(t_state.outbound_conn_track_state.drop());
       this->t_state.set_connect_fail(EIO);
       new_entry->connect_sms.insert(this);
       ethread->connecting_pool->m_ip_pool.insert(std::make_pair(new_entry->ipaddr, new_entry));
