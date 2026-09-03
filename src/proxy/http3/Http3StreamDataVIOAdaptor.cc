@@ -48,8 +48,13 @@ Http3StreamDataVIOAdaptor::handle_frame(std::shared_ptr<const Http3Frame> frame,
   ink_assert(frame->type() == Http3FrameType::DATA);
   const Http3DataFrame *dframe = dynamic_cast<const Http3DataFrame *>(frame.get());
 
-  // Need to wait for headers to be written
-  int64_t written           = this->_buffer->write(dframe->data());
+  // The frame's reader is bounded to this frame by size_limit, but the default
+  // length for MIOBuffer::write is INT64_MAX, which walks the raw block chain
+  // and copies whatever follows the frame in the stream read buffer. Pass
+  // read_avail(), which honours size_limit, to bound the copy to the payload.
+  IOBufferReader *reader  = dframe->data();
+  int64_t         written = this->_buffer->write(reader, reader->read_avail());
+
   this->_total_data_length += written;
 
   return Http3ErrorUPtr(nullptr);
@@ -75,4 +80,10 @@ bool
 Http3StreamDataVIOAdaptor::has_data() const
 {
   return this->_total_data_length > 0;
+}
+
+int64_t
+Http3StreamDataVIOAdaptor::total_data_length() const
+{
+  return this->_total_data_length;
 }
