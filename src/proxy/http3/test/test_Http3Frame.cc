@@ -166,6 +166,43 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
   }
 }
 
+// A SETTINGS identifier is a full QUIC variable-length integer (up to 62 bits).
+// Parsing must compare the decoded identifier against the known-ID set at full
+// width; narrowing the decoded value into a smaller integer type can cause an
+// identifier outside the known set to be misinterpreted as a known one.
+// Here, encoding 0x10001 as a 4-byte QUIC varint (0x80 0x01 0x00 0x01) shares
+// its low 16 bits with HEADER_TABLE_SIZE (0x01). The parser must treat the
+// identifier as unknown and skip the setting rather than store it under
+// HEADER_TABLE_SIZE.
+TEST_CASE("Load SETTINGS Frame ignores wide unknown identifier", "[http3][http3-settings-id-width]")
+{
+  uint8_t buf[] = {
+    0x04,                   // Type
+    0x05,                   // Length
+    0x80, 0x01, 0x00, 0x01, // Identifier: QUIC varint encoding of 0x10001
+    0x2a,                   // Value (1-byte QUIC varint = 42)
+  };
+  MIOBuffer *input = new_MIOBuffer(BUFFER_SIZE_INDEX_128);
+  input->write(buf, sizeof(buf));
+  IOBufferReader *input_reader = input->alloc_reader();
+
+  std::shared_ptr<Http3Frame> frame = Http3FrameFactory::create(*input_reader);
+  frame->update();
+  REQUIRE(frame->type() == Http3FrameType::SETTINGS);
+
+  std::shared_ptr<Http3SettingsFrame> settings_frame = std::dynamic_pointer_cast<Http3SettingsFrame>(frame);
+  REQUIRE(settings_frame);
+  REQUIRE(settings_frame->is_valid());
+
+  CHECK_FALSE(settings_frame->contains(Http3SettingsId::HEADER_TABLE_SIZE));
+
+  // ~Http3Frame deallocates the reader it holds, so drop the frames before the
+  // MIOBuffer that reader belongs to.
+  settings_frame.reset();
+  frame.reset();
+  free_MIOBuffer(input);
+}
+
 TEST_CASE("Store SETTINGS Frame", "[http3]")
 {
   SECTION("Normal")
