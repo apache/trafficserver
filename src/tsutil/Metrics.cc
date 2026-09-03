@@ -58,7 +58,8 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
   auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
-  auto const [cur_blob, cur_off] = _splitID(static_cast<IdType>(_next_free.load(std::memory_order_relaxed)));
+  // Only the blob index is needed; the offset resets to zero below.
+  auto const cur_blob = static_cast<uint16_t>(_next_free.load(std::memory_order_relaxed) >> 16);
 
   debug_assert(blob);
   // The write below is to _blobs[cur_blob + 1], so the last usable blob index is MAX_BLOBS - 1.
