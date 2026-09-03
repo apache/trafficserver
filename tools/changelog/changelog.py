@@ -33,8 +33,9 @@ To generate a changelog file for a release:
     uv run --project tools/changelog python tools/changelog/changelog.py \
         -o apache -r trafficserver -m 10.2.0 > CHANGELOG-10.2.0
 
-Use --doc to include extra metadata (merge commit SHA, full commit message,
-labels) for each PR, useful for generating release documentation:
+Use --doc to include extra metadata (merge commit SHA, PR body, labels) for each
+PR, useful for generating release documentation. With --from-git the body is the
+commit message body rather than a PR body:
 
     uv run --project tools/changelog python tools/changelog/changelog.py \
         -o apache -r trafficserver -m 10.2.0 --doc --format yaml > changelog.yaml
@@ -134,12 +135,7 @@ def changelog_via_gh(owner: str, repo: str, milestone: str, verbose: bool, doc: 
                     print("not a PR.", file=sys.stderr)
                 continue
 
-            merge_result = subprocess.run(
-                ["gh", "api", f"/repos/{owner}/{repo}/pulls/{number}/merge"],
-                capture_output=True,
-                text=True,
-            )
-            if merge_result.returncode != 0:
+            if not _gh_is_merged(owner, repo, number):
                 if verbose:
                     print("not merged.", file=sys.stderr)
                 continue
@@ -156,13 +152,12 @@ def changelog_via_gh(owner: str, repo: str, milestone: str, verbose: bool, doc: 
                     capture_output=True,
                     text=True,
                 )
-                if pr_detail.returncode == 0:
-                    pr_data = json.loads(pr_detail.stdout)
-                    entry["sha"] = pr_data.get("merge_commit_sha", "")
-                    entry["body"] = pr_data.get("body", "") or ""
-                else:
-                    entry["sha"] = ""
-                    entry["body"] = ""
+                if pr_detail.returncode != 0:
+                    print(f"gh api error fetching PR #{number}: {pr_detail.stderr.strip()}", file=sys.stderr)
+                    sys.exit(1)
+                pr_data = json.loads(pr_detail.stdout)
+                entry["sha"] = pr_data.get("merge_commit_sha", "")
+                entry["body"] = pr_data.get("body", "") or ""
             changelog.append(entry)
 
         page += 1
@@ -331,6 +326,38 @@ def _lookup_milestone(client: httpx.Client, owner: str, repo: str, title: str) -
     return None
 
 
+def _http_status(response: str) -> int | None:
+    """Status code from the status line that `gh api --include` prints first."""
+    match = re.match(r"HTTP/[\d.]+\s+(\d{3})", response.split("\n", 1)[0])
+    return int(match.group(1)) if match else None
+
+
+def _gh_is_merged(owner: str, repo: str, pr_number: int) -> bool:
+    """Whether pr_number is merged, via the gh CLI.
+
+    gh exits non-zero for any HTTP error, so without the status line --include
+    supplies, a real 404 is indistinguishable from 403 rate limiting or a 5xx.
+    Anything but 204/404 is fatal; skipping would drop merged PRs and still exit 0.
+    """
+    result = subprocess.run(
+        ["gh", "api", "--include", f"/repos/{owner}/{repo}/pulls/{pr_number}/merge"],
+        capture_output=True,
+        text=True,
+    )
+    status = _http_status(result.stdout)
+    if status == 204:
+        return True
+    if status == 404:
+        return False
+
+    print(
+        f"gh api error checking whether PR #{pr_number} is merged "
+        f"(HTTP {status if status else 'unknown'}): {result.stderr.strip()}",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
 def _is_merged(client: httpx.Client, owner: str, repo: str, pr_number: int) -> bool:
     resp = client.get(f"/repos/{owner}/{repo}/pulls/{pr_number}/merge")
     if resp.status_code == 204:
@@ -351,17 +378,22 @@ def _check_rate_limit(resp: httpx.Response) -> None:
         sys.exit(2)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Generate changelog from merged PRs in a GitHub milestone.")
     parser.add_argument("-o", "--owner", required=True, help="Repository owner")
     parser.add_argument("-r", "--repo", required=True, help="Repository name")
     parser.add_argument("-m", "--milestone", required=True, help="Milestone title")
-    parser.add_argument("-a", "--auth", default=None, help="GitHub auth token (or set GH_TOKEN env var)")
+    parser.add_argument(
+        "-a",
+        "--auth",
+        default=None,
+        help="GitHub auth token. Discouraged: it is visible in ps output and shell history. Prefer GH_TOKEN.",
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_argument(
         "--doc",
         action="store_true",
-        help="Include extra metadata (merge SHA, full commit message, labels) for documentation",
+        help="Include extra metadata (merge SHA, PR body, labels) for documentation",
     )
     parser.add_argument(
         "--format",
