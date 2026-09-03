@@ -204,7 +204,17 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         def repl(m: re.Match) -> str:
             try:
                 if m.group("escaped"):
-                    return m.group("escaped")
+                    payload = m.group("escaped")[2:-2]
+                    escaped_payload = []
+                    preceding_backslashes = 0
+
+                    for char in payload:
+                        if char == '"' and preceding_backslashes % 2 == 0:
+                            escaped_payload.append('\\')
+                        escaped_payload.append(char)
+                        preceding_backslashes = preceding_backslashes + 1 if char == '\\' else 0
+
+                    return "{" + "".join(escaped_payload) + "}"
                 if m.group("func"):
                     func_name = m.group("func").strip()
                     arg_str = m.group("args").strip()

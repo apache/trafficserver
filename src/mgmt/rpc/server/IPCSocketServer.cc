@@ -334,7 +334,8 @@ IPCSocketServer::bind(std::error_code &ec)
   // Defense in depth for filesystems that do not honor the umask on AF_UNIX socket
   // inodes.
   if (chmod(_conf.sockPathName.c_str(), mode) < 0) {
-    if (errno != EINVAL && errno != ENOTSUP && errno != EOPNOTSUPP) {
+    // ENOTSUP and EOPNOTSUPP are distinct on some platforms.
+    if (errno != EINVAL && errno != ENOTSUP && errno != EOPNOTSUPP) { // NOLINT(misc-redundant-expression)
       ec = std::make_error_code(static_cast<std::errc>(errno));
       return;
     }

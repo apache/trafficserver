@@ -84,7 +84,11 @@ QUICNetProcessor::start(int, size_t /* stacksize ATS_UNUSED */)
   QUICCertConfig::startup();
   QUICConfig::scoped_config params;
 
-  if (dbg_ctl_vv_quiche.tag_on()) {
+  // tag_on() only checks the tag pattern, not whether debug output is globally
+  // enabled -- use on() so a tag that happens to match "vv_quiche" as a substring
+  // (e.g. "vv_quic") doesn't permanently install quiche's trace-level Rust logger
+  // regardless of proxy.config.diags.debug.enabled.
+  if (dbg_ctl_vv_quiche.on()) {
     quiche_enable_debug_logging(debug_log, NULL);
   }
   this->_quiche_config = quiche_config_new(QUICHE_PROTOCOL_VERSION);
@@ -185,8 +189,7 @@ QUICNetProcessor::connect_re(Continuation *cont, sockaddr const *remote_addr, Ne
   }
 
   // Setup QUICNetVConnection
-  QUICConnectionId client_dst_cid;
-  client_dst_cid.randomize();
+  QUICConnectionId client_dst_cid = QUICConnectionId::random();
   // vc->init set handler of vc `QUICNetVConnection::startEvent`
   vc->init(QUIC_SUPPORTED_VERSIONS[0], client_dst_cid, client_dst_cid, con, packet_handler);
   packet_handler->init(vc);

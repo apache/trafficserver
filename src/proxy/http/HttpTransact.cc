@@ -1088,9 +1088,10 @@ HttpTransact::HandleBlindTunnel(State *s)
 void
 HttpTransact::StartRemapRequest(State *s)
 {
-  // Preserve effective url before remap, regardless of actual need for remap
+  // Preserve the effective URL before remap, regardless of the actual need for remap.
   s->unmapped_url.create(s->hdr_info.client_request.url_get()->m_heap);
   s->unmapped_url.copy(s->hdr_info.client_request.url_get());
+  s->hdr_info.client_request.set_url_target_from_host_field(&s->unmapped_url);
 
   if (s->api_skip_all_remapping) {
     TxnDbg(dbg_ctl_http_trans, "API request to skip remapping");
@@ -6277,7 +6278,9 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
           const char *new_wks_value = hdrtoken_string_to_wks(new_enc_val, new_enc_len);
           if (new_wks_value != wks_value) {
             if (new_enc_field) {
-              new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime, new_enc_val, new_enc_len, true);
+              new_enc_field->value_append(incoming_response->m_heap, incoming_response->m_mime,
+                                          std::string_view{new_enc_val, static_cast<std::string_view::size_type>(new_enc_len)},
+                                          true);
             } else {
               new_enc_field = incoming_response->field_create();
               incoming_response->field_value_set(
@@ -8645,7 +8648,11 @@ HttpTransact::build_error_response(State *s, HTTPStatus status_code, const char 
   if (len > 0) {
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE), body_type);
     s->hdr_info.client_response.value_set(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE), body_language);
+    if (s->internal_msg_buffer_type == nullptr) {
+      s->internal_msg_buffer_type = ats_strdup(body_type);
+    }
   } else {
+    s->internal_msg_buffer_type = static_cast<char *>(ats_free_null(s->internal_msg_buffer_type));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_TYPE));
     s->hdr_info.client_response.field_delete(static_cast<std::string_view>(MIME_FIELD_CONTENT_LANGUAGE));
   }
@@ -9366,7 +9373,7 @@ HttpTransact::delete_warning_value(HTTPHdr *to_warn, HTTPWarningCode warning_cod
           if (val_code != static_cast<int>(warning_code)) {
             auto value = iter.get_current();
             if (new_field) {
-              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value.data(), value.size(), true);
+              new_field->value_append(to_warn->m_heap, to_warn->m_mime, value, true);
             } else {
               new_field = to_warn->field_create();
               to_warn->field_value_set(new_field, value);

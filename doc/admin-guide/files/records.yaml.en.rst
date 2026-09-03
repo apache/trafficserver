@@ -4475,6 +4475,60 @@ SSL Termination
    :file:`ssl_multicert.yaml` file successfully load.  If false (``0``), SSL certificate
    load failures will not prevent |TS| from starting.
 
+.. ts:cv:: CONFIG proxy.config.ssl.server.multicert.partial_reload INT 0
+   :reloadable:
+
+   When set to ``1``, a live ``traffic_ctl config reload`` that encounters one or more
+   certificate load failures will still commit the partial ``SSLCertLookup``
+   (containing all certificates that did load cleanly) instead of discarding the entire
+   new configuration and keeping the old one, provided at least one
+   certificate-bearing entry loaded successfully.  If every entry fails, the reload
+   is rejected regardless of this setting.
+
+   By default (``0``), the reload is strict and all-or-nothing: any failure causes the
+   entire new configuration to be rejected and the previous configuration to remain active.
+
+   When the knob is on, a partial commit emits a ``Warning`` message naming
+   the count of certificate entries that loaded, any skipped certificate
+   produces an ``ERROR`` entry in :file:`diags.log`, and the
+   ``proxy.process.ssl.ssl_multicert_load_failures`` metric is incremented,
+   so degraded state is never silent.  The metric is also incremented in strict mode (``0``) and can
+   be used as an alert signal in both configurations.  Note that the counter only
+   covers live reloads via :program:`traffic_ctl`; failures during the initial
+   startup load are not counted because the statistics subsystem is not yet
+   initialized at that point.
+
+   This knob takes effect on the next ``traffic_ctl config reload`` without requiring
+   a process restart.
+
+   .. note::
+
+      This knob is independent of :ts:cv:`proxy.config.ssl.server.multicert.exit_on_load_fail`.
+      That option governs startup behavior only.  ``partial_reload`` governs live reloads
+      via :program:`traffic_ctl`.
+
+   .. note::
+
+      When a partial reload is committed, any hostname whose certificate failed
+      to load is removed from the new lookup table and is no longer matched by
+      SNI.  The connection falls back to the default context: the wildcard
+      certificate if a ``dest_ip: "*"`` entry loaded successfully, or the bare
+      TLS bootstrap context (no X.509 certificate) if no wildcard entry loaded.
+      In either case the hostname's previously-loaded certificate is not retained
+      across the reload boundary.  Strict mode (``0``) is safer in this regard:
+      all hostnames continue serving their old certificates until a
+      fully-successful reload, but at the cost of blocking all certificate
+      updates whenever any single certificate fails.  Enabling
+      ``partial_reload`` trades per-hostname reliability for reduced blast
+      radius across the certificate set.
+
+   .. note::
+
+      This knob applies only to TLS server certificate loading (``SSLCertificateConfig``).
+      The QUIC/HTTP3 certificate loader (``QUICCertConfig``) is not yet covered and continues
+      to use strict all-or-nothing semantics regardless of this setting.  Deployments without
+      a ``dest_ip: "*"`` wildcard entry (SNI-only configurations) are fully supported.
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.multicert.concurrency INT 1
 
    Controls how many threads are used to load SSL certificates from :file:`ssl_multicert.yaml`
@@ -6155,6 +6209,15 @@ Sockets
 
    Turn on or off support for connection half open for client side. Default is on, so
    after client sends FIN, the connection is still there.
+
+   When this is enabled and the client aborts before the origin server has sent its response header, |TS| keeps the transaction
+   alive so that the response can still be fetched and cached, which is known as a **background fill**. This is done even for
+   transports such as TLS and HTTP/2 that have no way to half close a connection.
+
+   When this is disabled, a client abort ends the transaction: the connection to the origin server is closed rather than held
+   open for a client that is no longer there. See :ts:cv:`proxy.config.http.background_fill_completed_threshold` and
+   :ts:cv:`proxy.config.http.background_fill_active_timeout` for controlling background fills that have already started
+   delivering the response to the client.
 
 .. ts:cv:: CONFIG proxy.config.http.wait_for_cache INT 0
 

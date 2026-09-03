@@ -188,7 +188,6 @@ Http1ClientSession::new_connection(NetVConnection *new_vc, MIOBuffer *iobuf, IOB
   _reader     = reader ? reader : read_buffer->alloc_reader();
 
   trans.set_reader(_reader);
-  trans.upstream_outbound_options = *accept_options;
 
   _handle_if_ssl(new_vc);
 

@@ -36,7 +36,7 @@ PROCEDURE     : 'procedure';
 REGEX         : '/' ( '\\/' | ~[/\r\n] )* '/' ;
 STRING        : '"' ( ESCAPED_BLOCK | '\\' . | ~["\\\r\n] )* '"' ;
 
-// {{ ... }} is an escape hatch — contents are passed through verbatim, inner quotes allowed
+// {{ ... }} delimits literal brace content, allowing inner quotes without escaping.
 fragment ESCAPED_BLOCK : '{{' ( ~'}' | '}' ~'}' )* '}}';
 
 IPV4_LITERAL

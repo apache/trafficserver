@@ -217,7 +217,7 @@ ContData::checkXformStatus()
 {
   if (!xform_closed) {
     int retval = TSVConnClosedGet(contp);
-    if ((retval == TS_ERROR) || retval) {
+    if (retval != 0) {
       if (retval == TS_ERROR) {
         CONT_DATA_DBG(this, "[%s] Error while getting close status of transformation at state %d", __FUNCTION__, curr_state);
       } else {

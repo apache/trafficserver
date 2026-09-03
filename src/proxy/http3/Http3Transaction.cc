@@ -493,30 +493,22 @@ HQTransaction::_delete_if_possible()
 //
 // Http3Transaction
 //
-Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info) : super(session, info)
+Http3Transaction::Http3Transaction(Http3Session *session, QUICStreamVCAdapter::IOInfo &info)
+  : super(session, info),
+    _header_framer(this, &this->_write_vio, session->local_qpack(), this->_stream_id),
+    _data_framer(this, &this->_write_vio),
+    _header_handler(&this->_read_vio, this->direction() == NET_VCONNECTION_OUT ? HTTPType::RESPONSE : HTTPType::REQUEST,
+                    session->remote_qpack(), this->_stream_id, this),
+    _data_handler(&this->_read_vio)
 {
-  QUICStreamId stream_id = this->_info.adapter.stream().id();
-
-  this->_header_framer = new Http3HeaderFramer(this, &this->_write_vio, session->local_qpack(), stream_id);
-  this->_data_framer   = new Http3DataFramer(this, &this->_write_vio);
-  this->_frame_collector.add_generator(this->_header_framer);
-  this->_frame_collector.add_generator(this->_data_framer);
+  this->_frame_collector.add_generator(&this->_header_framer);
+  this->_frame_collector.add_generator(&this->_data_framer);
   // this->_frame_collector.add_generator(this->_push_controller);
 
-  HTTPType http_type = HTTPType::UNKNOWN;
-  if (this->direction() == NET_VCONNECTION_OUT) {
-    http_type = HTTPType::RESPONSE;
-  } else {
-    http_type = HTTPType::REQUEST;
-  }
-  this->_protocol_enforcer = new Http3ProtocolEnforcer();
-  this->_header_handler    = new Http3HeaderVIOAdaptor(&this->_read_vio, http_type, session->remote_qpack(), stream_id, this);
-  this->_data_handler      = new Http3StreamDataVIOAdaptor(&this->_read_vio);
-
   this->_frame_dispatcher.add_handler(session->get_received_frame_counter());
-  this->_frame_dispatcher.add_handler(this->_protocol_enforcer);
-  this->_frame_dispatcher.add_handler(this->_header_handler);
-  this->_frame_dispatcher.add_handler(this->_data_handler);
+  this->_frame_dispatcher.add_handler(&this->_protocol_enforcer);
+  this->_frame_dispatcher.add_handler(&this->_header_handler);
+  this->_frame_dispatcher.add_handler(&this->_data_handler);
 
   SET_HANDLER(&Http3Transaction::state_stream_open);
 }
@@ -527,24 +519,13 @@ Http3Transaction::~Http3Transaction()
 
   // This should have already been called but call it here just incase.
   do_io_close();
-
-  delete this->_header_framer;
-  this->_header_framer = nullptr;
-  delete this->_data_framer;
-  this->_data_framer = nullptr;
-  delete this->_protocol_enforcer;
-  this->_protocol_enforcer = nullptr;
-  delete this->_header_handler;
-  this->_header_handler = nullptr;
-  delete this->_data_handler;
-  this->_data_handler = nullptr;
 }
 
 VIO *
 Http3Transaction::do_io_write(Continuation *c, int64_t nbytes, IOBufferReader *buf, bool owner)
 {
   if (c != nullptr && nbytes > 0 && buf != nullptr) {
-    this->_header_framer->reset();
+    this->_header_framer.reset();
   }
 
   return super::do_io_write(c, nbytes, buf, owner);
@@ -574,14 +555,14 @@ Http3Transaction::state_stream_open(int event, Event *edata)
     Http3TransVDebug("%s (%d)", get_vc_event_name(event), event);
     this->_close_read_complete_event(edata);
     int64_t nread = this->_process_read_vio();
-    if (!this->_header_handler->is_complete()) {
+    if (!this->_header_handler.is_complete()) {
       if (nread > 0) {
         // Delay processing READ_COMPLETE until the header block can be fully decoded.
         this->_schedule_read_complete_event();
       }
       break;
     }
-    this->_data_handler->finalize();
+    this->_data_handler.finalize();
     // always signal regardless of progress
     this->_signal_read_event();
     if (!this->_is_closed()) {
@@ -686,13 +667,13 @@ Http3Transaction::on_header_decode_complete()
 bool
 Http3Transaction::is_response_header_sent() const
 {
-  return this->_header_framer->is_final_header_sent();
+  return this->_header_framer.is_final_header_sent();
 }
 
 bool
 Http3Transaction::is_response_body_sent() const
 {
-  return this->_data_framer->is_done();
+  return this->_data_framer.is_done();
 }
 
 void
@@ -773,7 +754,7 @@ Http3Transaction::has_request_body(int64_t content_length, bool /* is_chunked_se
   }
 
   // Has body if there is DATA frame received (In case Content-Length is omitted)
-  if (this->_data_handler->has_data()) {
+  if (this->_data_handler.has_data()) {
     return true;
   }
 

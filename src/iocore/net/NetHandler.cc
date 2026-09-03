@@ -59,7 +59,8 @@ NetHandler::startIO(NetEvent *ne)
   int res = 0;
 
   PollDescriptor *pd = get_PollDescriptor(this->thread);
-  if (ne->ep.start(pd, ne, this, EVENTIO_READ | EVENTIO_WRITE) < 0) {
+  // The read and write masks intentionally share the epoll edge-trigger flag.
+  if (ne->ep.start(pd, ne, this, EVENTIO_READ | EVENTIO_WRITE) < 0) { // NOLINT(misc-redundant-expression)
     res = errno;
     // EEXIST should be ok, though it should have been cleared before we got back here
     if (errno != EEXIST) {

@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <mutex>
+#include <vector>
 
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
@@ -899,19 +900,22 @@ ssl_stapling_init_cert(SSL_CTX *ctx, X509 *cert, const char *certname, const cha
     Dbg(dbg_ctl_ssl_ocsp, "using OCSP prefetched response file %s", rsp_file);
     FILE *fp = fopen(rsp_file, "r");
     if (fp) {
-      fseek(fp, 0, SEEK_END);
-      long rsp_buf_len = ftell(fp);
-      if (rsp_buf_len >= 0) {
-        rewind(fp);
-        unsigned char *rsp_buf  = static_cast<unsigned char *>(malloc(rsp_buf_len));
-        auto           read_len = fread(rsp_buf, 1, rsp_buf_len, fp);
+      long rsp_buf_len = -1;
+
+      if (fseek(fp, 0, SEEK_END) == 0) {
+        rsp_buf_len = ftell(fp);
+      }
+
+      if (rsp_buf_len > 0 && fseek(fp, 0, SEEK_SET) == 0) {
+        std::vector<unsigned char> rsp_buf(rsp_buf_len);
+        auto                       read_len = fread(rsp_buf.data(), 1, rsp_buf.size(), fp);
+
         if (read_len == static_cast<size_t>(rsp_buf_len)) {
-          const unsigned char *p = rsp_buf;
+          const unsigned char *p = rsp_buf.data();
           rsp                    = d2i_TS_OCSP_RESPONSE(nullptr, &p, rsp_buf_len);
         } else {
           Error("stapling_refresh_response: failed to read prefetched response file: %s", rsp_file);
         }
-        free(rsp_buf);
       } else {
         Error("stapling_refresh_response: failed to check the size of prefetched response file: %s", rsp_file);
       }

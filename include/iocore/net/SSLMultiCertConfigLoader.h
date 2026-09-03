@@ -84,6 +84,12 @@ protected:
   bool _store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings, shared_SSL_CTX ctx,
                              SSLCertContextType ctx_type, std::set<std::string> &names);
 
+  /// Return true if this loader instance should increment the shared
+  /// ssl_multicert_load_failures metric on cert failure. The QUIC loader
+  /// returns false because it shares ssl_multicert.yaml with the TLS loader
+  /// and would otherwise double-count every failure on a QUIC-enabled build.
+  virtual bool _should_track_load_metrics() const;
+
 private:
   virtual const char   *_debug_tag() const;
   virtual const DbgCtl &_dbg_ctl() const;

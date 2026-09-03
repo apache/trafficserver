@@ -224,8 +224,8 @@ public:
       std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
       std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
 
-      Dbg(dbg_ctl, "Metrics for selector rule: %s(%s, %s)", name().c_str(), prefix.c_str(), tag.c_str());
-      initializeMetrics(RATE_LIMITER_TYPE_SNI, std::move(prefix), std::move(tag));
+      Dbg(dbg_ctl, "Metrics for selector rule: %s (prefix=%s, tag=%s)", name().c_str(), prefix.c_str(), tag.c_str());
+      initializeMetrics(RATE_LIMITER_TYPE_SNI, std::move(tag), std::move(prefix));
     }
 
     return true;

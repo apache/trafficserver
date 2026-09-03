@@ -7,3 +7,8 @@ implicit-cmp.input: u4wrh
 double-negation.input: hrw4u
 # Old format without explicit hook defaults to REMAP; hrw4u always emits explicit sections
 no-hook.input: u4wrh
+# HRW %{CIDR} forms with implicit defaults (N, N,, ,N) expand to cidr(v4, v6) using 24/48;
+# forward always emits both arguments explicitly
+cidr-single.input: u4wrh
+# Bare %{CIDR} (no payload) defaults to cidr(24, 48); forward emits %{CIDR:24,48}
+cidr-bare.input: u4wrh

@@ -26,7 +26,8 @@
 #include "iocore/net/quic/QUICApplication.h"
 #include "proxy/http3/Http3Frame.h"
 #include "proxy/http3/Http3FrameHandler.h"
-#include <vector>
+#include <array>
+#include <cstdint>
 
 class QUICStreamVCAdapter;
 
@@ -38,17 +39,25 @@ public:
   void add_handler(Http3FrameHandler *handler);
 
 private:
+  // At most a handful of handlers ever register interest in the same frame type (currently
+  // up to 3: the frame counter, the protocol enforcer, and one of the header/data handlers).
+  // Inline storage avoids a heap allocation per handler registration, which otherwise runs
+  // once per HTTP/3 request since this dispatcher is a per-transaction object.
+  static constexpr size_t MAX_HANDLERS_PER_TYPE = 4;
+
   enum READING_STATE {
     READING_TYPE_LEN,
     READING_LENGTH_LEN,
     READING_PAYLOAD_LEN,
     READING_PAYLOAD,
   } _reading_state = READING_TYPE_LEN;
-  int64_t                          _reading_frame_type_len;
-  int64_t                          _reading_frame_length_len;
-  uint64_t                         _reading_frame_payload_len;
-  uint64_t                         _bytes_to_skip;
-  Http3FrameFactory                _frame_factory;
-  std::shared_ptr<Http3Frame>      _current_frame = nullptr;
-  std::vector<Http3FrameHandler *> _handlers[256];
+  int64_t                     _reading_frame_type_len;
+  int64_t                     _reading_frame_length_len;
+  uint64_t                    _reading_frame_payload_len;
+  uint64_t                    _bytes_to_skip;
+  Http3FrameFactory           _frame_factory;
+  std::shared_ptr<Http3Frame> _current_frame = nullptr;
+
+  std::array<Http3FrameHandler *, MAX_HANDLERS_PER_TYPE> _handlers[256]      = {};
+  uint8_t                                                _handler_count[256] = {};
 };

@@ -293,12 +293,15 @@ class SliceMixedGenerationTest(SliceHierarchyTest):
         client = self._replay_phase(tr, 'mixed')
         # Let the reference block go stale so that only it is revalidated.
         tr.Processes.Default.Command = f'sleep {self._expiry_wait}; ' + tr.Processes.Default.Command
-        # Slice aborts the transaction, so the client never reads a response at
-        # all: not a short body, no response header. verifier-client exits 1.
+        # Slice aborts the transaction, so the client never reads a complete
+        # response. How far slice got before aborting decides what the client
+        # sees: either a response header it cannot parse, or a complete header
+        # whose body never arrives. Both are the same failure, and which one
+        # shows up is timing, so accept either. verifier-client exits 1 for both.
         client.ReturnCode = 1
         client.Streams.stdout += Testers.ContainsExpression(
-            'Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE',
-            'The client should not receive a parsable response.')
+            'Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE'
+            '|Content-Length body underrun for key mixed', 'The client should not receive a complete response.')
         client.Streams.stdout += Testers.ContainsExpression(
             'Failed HTTP/1 transaction with key: mixed', 'The transaction should fail.')
         self._still_running(tr)

@@ -32,10 +32,11 @@ namespace
 class AliasedInterestsFrameHandler : public Http3FrameHandler
 {
 public:
-  std::vector<Http3FrameType>
+  std::vector<Http3FrameType> const &
   interests() override
   {
-    return {Http3FrameType::MAX_PUSH_ID, Http3FrameType::X_MAX_DEFINED};
+    static std::vector<Http3FrameType> const types = {Http3FrameType::MAX_PUSH_ID, Http3FrameType::X_MAX_DEFINED};
+    return types;
   }
 
   Http3ErrorUPtr
