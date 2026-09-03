@@ -318,31 +318,45 @@ CacheVC::dead(int /* event ATS_UNUSED */, Event * /*e ATS_UNUSED */)
   return EVENT_DONE;
 }
 
-static void
-unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
+static bool
+unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf)
 {
   using UnmarshalFunc              = int(char *buf, int len, RefCountObj *block_ref);
   UnmarshalFunc    *unmarshal_func = &HTTPInfo::unmarshal;
   ts::VersionNumber version(doc->v_major, doc->v_minor);
 
-  // introduced by https://github.com/apache/trafficserver/pull/4874, this is used to distinguish the doc version
-  // before and after #4847
-  if (version < CACHE_DB_VERSION) {
+  if (version < CACHE_DB_VERSION_HTTPINFO_V24_2) {
     unmarshal_func = &HTTPInfo::unmarshal_v24_1;
   }
+
+  // Objects written by an older version can carry stale well known string indices and
+  // presence bits. Repair them only on the MARSHALED to ALIVE transition, since an already
+  // ALIVE block may be shared with other readers. All alts of a doc transition together, so
+  // the first one answers for the whole header block.
+  bool const needs_wks_fixup = version < CACHE_DB_VERSION && doc->hlen > 0 &&
+                               reinterpret_cast<HTTPCacheAlt *>(doc->hdr())->m_magic == CacheAltMagic::MARSHALED;
 
   char *tmp = doc->hdr();
   int   len = doc->hlen;
   while (len > 0) {
     int r = unmarshal_func(tmp, len, buf.get());
+
     if (r < 0) {
-      ink_assert(!"CacheVC::handleReadDone unmarshal failed");
-      okay = 0;
-      break;
+      ink_assert(!"unmarshal_helper: HTTPInfo unmarshal failed");
+      return false;
+    }
+    if (needs_wks_fixup) {
+      auto *alt = reinterpret_cast<HTTPCacheAlt *>(tmp);
+      for (HTTPHdr *hdr : {&alt->m_response_hdr, &alt->m_request_hdr}) {
+        if (hdr->valid()) {
+          hdr->m_mime->recompute_accelerators_and_presence_bits();
+        }
+      }
     }
     len -= r;
     tmp += r;
   }
+  return true;
 }
 
 // [amc] I think this is where all disk reads from cache funnel through here.
@@ -421,7 +435,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
       if (!http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        unmarshal_helper(doc, buf, okay);
+        okay = unmarshal_helper(doc, buf);
       }
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
@@ -452,7 +466,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       } // end VIO::READ check
       // If it could be compressed, unmarshal after
       if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        unmarshal_helper(doc, buf, okay);
+        okay = unmarshal_helper(doc, buf);
       }
     } // end io.ok() check
   }
@@ -787,25 +801,15 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // Bounds-check in unsigned domain: doc must lie within the
       // buffer, with room for the Doc header, and doc->hlen must
       // fit in the remaining bytes before doc->hdr() and
-      // HTTPInfo::unmarshal walk it.
+      // unmarshal_helper walk it.
       if (io.aiocb.aio_nbytes < doc_off || (io.aiocb.aio_nbytes - doc_off) < sizeof(Doc) ||
           (io.aiocb.aio_nbytes - doc_off - sizeof(Doc)) < doc->hlen) {
         might_need_overlap_read = true;
         goto Lskip;
       }
     }
-    {
-      char *tmp = doc->hdr();
-      int   len = doc->hlen;
-      while (len > 0) {
-        int r = HTTPInfo::unmarshal(tmp, len, buf.get());
-        if (r < 0) {
-          ink_assert(!"CacheVC::scanObject unmarshal failed");
-          goto Lskip;
-        }
-        len -= r;
-        tmp += r;
-      }
+    if (!unmarshal_helper(doc, buf)) {
+      goto Lskip;
     }
     if (this->load_http_info(&vector, doc) != doc->hlen) {
       goto Lskip;
