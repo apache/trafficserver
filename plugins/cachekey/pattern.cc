@@ -158,7 +158,7 @@ Pattern::process(const String &subject, StringVector &result)
       } else {
         StringVector::iterator it = captures.begin() + 1;
         for (; it != captures.end(); it++) {
-          result.push_back(std::move(*it));
+          result.push_back(*it);
         }
       }
     } else {
