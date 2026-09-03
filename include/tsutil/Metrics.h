@@ -145,12 +145,6 @@ public:
   {
     return _storage->lookup(id, out_name, type);
   }
-  bool
-  rename(IdType id, const std::string_view name)
-  {
-    return _storage->rename(id, name);
-  }
-
   AtomicType &
   operator[](IdType id)
   {
@@ -325,6 +319,9 @@ private:
      * caught a new offset against an old blob index, or the reverse, would reject ids that exist
      * or accept ids that do not. Release stored last, after the blob pointer or the slot's name it
      * publishes. Only ever increases, so an id is allocated exactly when it packs below it.
+     *
+     * A slot's name is written once, before the store that publishes it, and never changes, which
+     * is what lets @c name and @c lookup hand out a view of it without the mutex.
      */
     BlobStorage           _blobs;
     std::atomic<uint32_t> _next_free{0};
@@ -352,7 +349,6 @@ private:
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
     MetricType       type(IdType id) const;
-    bool             rename(IdType id, const std::string_view name);
 
     /// The id the next slot will get, which is also iteration's exclusive bound.
     IdType

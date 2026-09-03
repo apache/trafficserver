@@ -190,30 +190,6 @@ Metrics::Storage::type(IdType id) const
   return _extractType(id);
 }
 
-bool
-Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
-{
-  // We can only rename Metrics that are already allocated
-  if (!_is_allocated(id)) {
-    return false;
-  }
-
-  // The name is the key _lookups is indexed by, so the whole replacement is serialized.
-  std::lock_guard lock(_mutex);
-
-  auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
-  std::string              &cur  = std::get<0>(std::get<0>(*blob)[offset]);
-
-  if (cur.length() > 0) {
-    _lookups.erase(cur);
-  }
-  cur = name;
-  _lookups.emplace(cur, id);
-
-  return true;
-}
-
 // Iterator implementation
 void
 Metrics::iterator::next()

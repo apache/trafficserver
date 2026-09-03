@@ -95,17 +95,6 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     REQUIRE(m[storeid].load() == 42);
   }
 
-  SECTION("rename")
-  {
-    auto fooid = m.lookup("foo");
-
-    REQUIRE(fooid != ts::Metrics::NOT_FOUND);
-    m.rename(fooid, "foo-new");
-    REQUIRE(m.name(fooid) == "foo-new");
-    REQUIRE(m.lookup("foo") == ts::Metrics::NOT_FOUND);
-    REQUIRE(m.lookup("foo-new") == fooid);
-  }
-
   SECTION("lookup")
   {
     auto nm = m.lookup("notametric");
