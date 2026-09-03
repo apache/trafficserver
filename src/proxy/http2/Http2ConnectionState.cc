@@ -107,7 +107,9 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   Http2StreamDebug(this->session, id, "Received DATA frame, flags: %d", frame.header().flags);
 
-  // Update connection window size, before any stream specific handling
+  // Update connection window size, before any stream specific handling. RFC
+  // 9113 section 6.9 requires accounting for every flow-controlled frame
+  // against the connection window, even one that is in error.
   this->decrement_local_rwnd(payload_length);
 
   if (this->get_zombie_event()) {
@@ -126,6 +128,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   if (stream == nullptr) {
     if (this->is_valid_streamid(id)) {
       // This error occurs fairly often, and is probably innocuous (SM initiates the shutdown)
+      this->credit_discarded_data(payload_length);
       if (this->session->is_outbound()) {
         this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_NO_ERROR);
         return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
@@ -140,6 +143,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
 
   if (stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_CLOSED ||
       stream->get_state() == Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_REMOTE) {
+    this->credit_discarded_data(payload_length);
     this->send_rst_stream_frame(id, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
   }
@@ -149,6 +153,7 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
   // the recipient MUST respond with a stream error of type STREAM_CLOSED.
   if (stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_OPEN &&
       stream->get_state() != Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL) {
+    this->credit_discarded_data(payload_length);
     return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_STREAM_CLOSED,
                       "recv data stream closed");
   }
@@ -1997,6 +2002,18 @@ Http2ConnectionState::restart_streams()
 
     ++starting_point;
   }
+}
+
+void
+Http2ConnectionState::credit_discarded_data(uint32_t payload_length)
+{
+  // DATA for a stream that is not open is charged to the connection window
+  // above, but no stream will ever consume it, so nothing would otherwise
+  // trigger a WINDOW_UPDATE for those bytes. Restore the connection window so
+  // that DATA sent to closed streams cannot drain the session window.
+  Http2StreamDebug(this->session, HTTP2_CONNECTION_CONTROL_STREAM, "Discarded DATA payload_length=%" PRIu32 " rwnd con=%zd",
+                   payload_length, this->get_local_rwnd());
+  this->restart_receiving(nullptr);
 }
 
 void
