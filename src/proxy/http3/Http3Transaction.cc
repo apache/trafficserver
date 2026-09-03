@@ -226,6 +226,13 @@ HQTransaction::transaction_done()
 int
 HQTransaction::get_transaction_id() const
 {
+  // Narrowing is intentional here; see get_quic_stream_id() for the full-width value.
+  return static_cast<int>(this->_stream_id);
+}
+
+QUICStreamId
+HQTransaction::get_quic_stream_id() const
+{
   return this->_stream_id;
 }
 
