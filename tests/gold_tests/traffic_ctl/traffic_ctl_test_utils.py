@@ -646,7 +646,7 @@ class TrafficCtl(Config, Server):
         Every time a config() is called, a new test is created.
     """
 
-    def __init__(self, test, records_yaml=None, retcode=0):
+    def __init__(self, test, records_yaml=None, retcode=0, plugin_config=None):
         self._testNumber = 0
         self._current_test_number = self._testNumber
         self._retcode = retcode
@@ -654,6 +654,9 @@ class TrafficCtl(Config, Server):
         self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}")
         if records_yaml != None:
             self._ts.Disk.records_config.update(records_yaml)
+        if plugin_config != None:
+            for line in plugin_config:
+                self._ts.Disk.plugin_config.AddLine(line)
         self._tests = []
 
     def __get_index(self):
@@ -695,6 +698,6 @@ class TrafficCtl(Config, Server):
         return Plugin(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
 
-def Make_traffic_ctl(test, records_yaml=None, retcode=0):
-    tctl = TrafficCtl(test, records_yaml, retcode)
+def Make_traffic_ctl(test, records_yaml=None, retcode=0, plugin_config=None):
+    tctl = TrafficCtl(test, records_yaml, retcode, plugin_config)
     return tctl
