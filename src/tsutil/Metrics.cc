@@ -199,11 +199,13 @@ Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
     return false;
   }
 
+  // Held across the whole rename: the name is the key _lookups is indexed by, so replacing it has
+  // to be serialized against every other writer of that slot's name.
+  std::lock_guard lock(_mutex);
+
   auto [blob_ix, offset]         = _splitID(id);
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
-
-  std::string    &cur = std::get<0>(std::get<0>(*blob)[offset]);
-  std::lock_guard lock(_mutex);
+  std::string              &cur  = std::get<0>(std::get<0>(*blob)[offset]);
 
   if (cur.length() > 0) {
     _lookups.erase(cur);
