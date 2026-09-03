@@ -49,8 +49,9 @@ enum REFlags {
 ///
 /// @internal As with REFlags, these values are copied from pcre2.h, to avoid having to include it.
 enum REErrors {
-  RE_ERROR_NOMATCH = -1, ///< No match found.
-  RE_ERROR_NULL    = -51 ///< NULL code or subject was passed.
+  RE_ERROR_NOMATCH    = -1,  ///< No match found.
+  RE_ERROR_MATCHLIMIT = -47, ///< Match limit exhausted; the match has no verdict.
+  RE_ERROR_NULL       = -51  ///< NULL code or subject was passed.
 };
 
 /// @brief Wrapper for PCRE2 match data.

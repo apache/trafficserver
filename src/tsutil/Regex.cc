@@ -38,6 +38,7 @@ static_assert(RE_ANCHORED == PCRE2_ANCHORED, "Update RE_ANCHORED for current PCR
 static_assert(RE_NOTEMPTY == PCRE2_NOTEMPTY, "Update RE_NOTEMPTY for current PCRE2 version.");
 
 static_assert(RE_ERROR_NOMATCH == PCRE2_ERROR_NOMATCH, "Update RE_ERROR_NOMATCH for current PCRE2 version.");
+static_assert(RE_ERROR_MATCHLIMIT == PCRE2_ERROR_MATCHLIMIT, "Update RE_ERROR_MATCHLIMIT for current PCRE2 version.");
 static_assert(RE_ERROR_NULL == PCRE2_ERROR_NULL, "Update RE_ERROR_NULL for current PCRE2 version.");
 
 // PCRE2 10.30 added PCRE2_ENDANCHORED. Older PCRE2 (e.g., CentOS 7 ships 10.23) lacks it.

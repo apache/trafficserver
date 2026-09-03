@@ -504,6 +504,11 @@ class TrafficCtl(Config, Server):
             self._ts.Disk.records_config.update(records_yaml)
         self._tests = []
 
+    @property
+    def ts(self):
+        """The ATS process under test, for tests that also assert on its logs."""
+        return self._ts
+
     def __get_index(self):
         return self._current_test_number
 

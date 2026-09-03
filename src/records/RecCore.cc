@@ -41,6 +41,7 @@
 #include "tscore/Layout.h"
 #include "tsutil/ts_errata.h"
 #include "tsutil/Metrics.h"
+#include "tsutil/Regex.h"
 
 using ts::Metrics;
 
@@ -582,11 +583,34 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     return REC_ERR_FAIL;
   }
 
+  // The pattern comes from the admin_lookup_records RPC and is run against every record name,
+  // and that RPC is served inline on a single thread, so an unbounded pattern stalls it: 19s per
+  // request across a stock server's 1328 names, against 123ms at this limit.
+  //
+  // Raising the limit costs run time linearly, while the longest name a pattern can still resolve
+  // grows only as its square root, since proving no match costs about L^2/2 steps. 50,000 resolves
+  // names up to ~310 characters, 4.7x the 66 character longest a stock build registers. The 1750
+  // used elsewhere in the tree reaches only ~59 and cannot resolve what ships.
+  static constexpr uint32_t REC_REGEX_MATCH_LIMIT = 50000;
+
+  RegexMatchContext match_context;
+  match_context.set_match_limit(REC_REGEX_MATCH_LIMIT);
+  RegexMatches matches;
+
+  // Exhausting the limit is the only failure this bound provokes, and it is not a verdict, so count
+  // those names and report once per lookup instead of silently dropping records from the caller's
+  // results. Any other negative return keeps the pre-existing treat-as-no-match behavior.
+  unsigned indeterminate = 0;
+
   if ((rec_type & (RECT_PROCESS | RECT_NODE | RECT_PLUGIN))) {
     // First find the new metrics, this is a bit of a hack, because we still use the old
     // librecords callback with a "pseudo" record.
     for (auto &&[name, type, val] : ts::Metrics::instance()) {
-      if (regex.exec(name.data())) {
+      int const rc = regex.exec(name.data(), matches, 0, &match_context);
+
+      if (rc == RE_ERROR_MATCHLIMIT) {
+        ++indeterminate;
+      } else if (rc >= 0) {
         RecRecord tmp{};
 
         tmp.rec_type = RECT_PROCESS;
@@ -599,7 +623,11 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     }
     // Finally check string metrics
     ts::Metrics::StaticString::instance().for_each([&](const std::string &name, const std::string &value) {
-      if (regex.exec(name)) {
+      int const rc = regex.exec(name, matches, 0, &match_context);
+
+      if (rc == RE_ERROR_MATCHLIMIT) {
+        ++indeterminate;
+      } else if (rc >= 0) {
         RecRecord tmp{};
 
         tmp.rec_type = RECT_PROCESS;
@@ -626,7 +654,11 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
     for (; it != hidden.end(); ++it) {
       auto &&[name, type, val] = *it;
 
-      if (regex.exec(name.data())) {
+      int const rc = regex.exec(name.data(), matches, 0, &match_context);
+
+      if (rc == RE_ERROR_MATCHLIMIT) {
+        ++indeterminate;
+      } else if (rc >= 0) {
         RecRecord tmp{};
 
         // Tag both bits so that a caller asking only for RECT_HIDDEN_METRIC passes the rec_type
@@ -652,13 +684,25 @@ RecLookupMatchingRecords(unsigned rec_type, const char *match, void (*callback)(
       continue;
     }
 
-    if (!regex.exec(r->name)) {
+    int const rc = regex.exec(r->name, matches, 0, &match_context);
+
+    if (rc == RE_ERROR_MATCHLIMIT) {
+      ++indeterminate;
+      continue;
+    }
+    if (rc < 0) {
       continue;
     }
 
     rec_mutex_acquire(&(r->lock));
     callback(r, data);
     rec_mutex_release(&(r->lock));
+  }
+
+  if (indeterminate > 0) {
+    // The caller supplied pattern is deliberately not echoed into the log.
+    Warning("record lookup pattern exceeded the %u step match limit on %u name(s); results are incomplete", REC_REGEX_MATCH_LIMIT,
+            indeterminate);
   }
 
   return REC_ERR_OKAY;
