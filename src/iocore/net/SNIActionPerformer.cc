@@ -415,7 +415,11 @@ SNI_IpAllow::SNIAction(SSL &ssl, ActionItem::Context const & /* ctx ATS_UNUSED *
     return SSL_TLSEXT_ERR_OK;
   }
 
-  auto            ssl_vc    = SSLNetVCAccess(&ssl);
+  auto ssl_vc = SSLNetVCAccess(&ssl);
+  if (ssl_vc == nullptr) {
+    return SSL_TLSEXT_ERR_OK;
+  }
+
   const sockaddr *client_ip = nullptr;
   for (int i = 0; i < IpAllow::Subject::MAX_SUBJECTS; ++i) {
     if (IpAllow::Subject::PEER == IpAllow::subjects[i]) {

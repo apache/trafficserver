@@ -198,7 +198,8 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   }
 
   if (tbs->verify_certificate(ctx) == 1) { // hook moved the handshake state to terminal
-    Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", netvc->options.sni_servername.get());
+    const char *sni = (netvc != nullptr) ? netvc->options.sni_servername.get() : "<unknown>";
+    Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", sni);
     return false;
   }
 
@@ -2004,12 +2005,8 @@ SSLNetVCDetach(SSL *ssl)
 SSLNetVConnection *
 SSLNetVCAccess(const SSL *ssl)
 {
-  SSLNetVConnection *netvc;
-  netvc = static_cast<SSLNetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index));
-
-  ink_assert(dynamic_cast<SSLNetVConnection *>(static_cast<NetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index))));
-
-  return netvc;
+  auto *base = static_cast<NetVConnection *>(SSL_get_ex_data(ssl, ssl_vc_index));
+  return dynamic_cast<SSLNetVConnection *>(base);
 }
 
 std::string

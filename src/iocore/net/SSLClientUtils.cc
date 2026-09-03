@@ -209,7 +209,7 @@ ssl_client_cert_callback(SSL *ssl, void * /*arg*/)
 {
   SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
   SSL_CTX           *ctx   = SSL_get_SSL_CTX(ssl);
-  if (ctx) {
+  if (ctx != nullptr && netvc != nullptr) {
     // Do not need to free either the cert or the ssl_ctx
     // both are internal pointers
     X509 *cert = SSL_CTX_get0_certificate(ctx);
