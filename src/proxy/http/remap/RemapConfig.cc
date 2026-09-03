@@ -900,8 +900,8 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
                   int *plugin_found_at, UrlRewrite *rewrite)
 {
   char       *c, *err;
-  const char *new_argv[1024];
-  char       *pargv[1024];
+  const char *new_argv[BUILD_TABLE_MAX_ARGS + 1];
+  char       *pargv[BUILD_TABLE_MAX_ARGS + 1];
   int         idx  = 0;
   int         parc = 0;
   *plugin_found_at = 0;
@@ -914,7 +914,7 @@ remap_load_plugin(const char *const *argv, int argc, url_mapping *mp, char *errb
   if (jump_to_argc != 0) {
     argc  -= jump_to_argc;
     int i  = 0;
-    while (argv[i + jump_to_argc]) {
+    while (i < argc && i < static_cast<int>(countof(new_argv) - 1)) {
       new_argv[i] = argv[i + jump_to_argc];
       i++;
     }
@@ -1164,6 +1164,11 @@ remap_parse_config_bti(const char *path, BUILD_TABLE_INFO *bti, ConfigContext ct
     tok_count = whiteTok.Initialize(cur_line, (SHARE_TOKS | ALLOW_SPACES));
 
     for (int j = 0; j < tok_count; j++) {
+      if (bti->argc >= BUILD_TABLE_MAX_ARGS || bti->paramc >= BUILD_TABLE_MAX_ARGS) {
+        snprintf(errStrBuf, sizeof(errStrBuf), "too many arguments on line %d in file %s", cln + 1, path);
+        errStr = errStrBuf;
+        goto MAP_ERROR;
+      }
       if ((const_cast<char *>(whiteTok[j]))[0] == '@') {
         if ((const_cast<char *>(whiteTok[j]))[1]) {
           bti->argv[bti->argc++] = ats_strdup(&(((char *)whiteTok[j])[1]));
