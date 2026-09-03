@@ -26,7 +26,6 @@
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
-#include <iomanip>
 #include <utility>
 #include <thread>
 #include <unistd.h>
@@ -974,12 +973,17 @@ HostDBCommand::status_get()
 //------------------------------------------------------------------------------------------------------------------------------------
 PluginCommand::PluginCommand(ts::Arguments *args) : CtrlCommand(args)
 {
+  BasePrinter::Options printOpts{parse_print_opts(args)};
+
   if (get_parsed_arguments()->get(MSG_STR)) {
     _invoked_func = [&]() { plugin_msg(); };
+    _printer      = std::make_unique<GenericPrinter>(printOpts);
   } else if (get_parsed_arguments()->get(LIST_STR)) {
     _invoked_func = [&]() { plugin_list(); };
+    _printer      = std::make_unique<PluginListPrinter>(printOpts);
+  } else {
+    _printer = std::make_unique<GenericPrinter>(printOpts);
   }
-  _printer = std::make_unique<GenericPrinter>(parse_print_opts(args));
 }
 
 void
@@ -1003,44 +1007,7 @@ PluginCommand::plugin_list()
   GetPluginListRequest request;
   auto                 response = invoke_rpc(request);
 
-  if (response.is_error()) {
-    _printer->write_output(response);
-    return;
-  }
-
-  auto info = response.result.as<PluginListResponse>();
-
-  std::cout << "source: " << info.source << '\n';
-
-  bool has_load_order = false;
-  for (const auto &p : info.plugins) {
-    if (p.load_order >= 0) {
-      has_load_order = true;
-      break;
-    }
-  }
-
-  if (has_load_order) {
-    std::cout << "  #  plugin                          load_order   status\n";
-  } else {
-    std::cout << "  #  plugin                          status\n";
-  }
-
-  for (const auto &p : info.plugins) {
-    std::cout << " " << std::right << std::setw(2) << p.index << "  " << std::left << std::setw(30) << p.path;
-
-    if (has_load_order) {
-      char order_buf[12];
-      if (p.load_order >= 0) {
-        snprintf(order_buf, sizeof(order_buf), "%d", p.load_order);
-      } else {
-        snprintf(order_buf, sizeof(order_buf), "--");
-      }
-      std::cout << "  " << std::left << std::setw(11) << order_buf;
-    }
-
-    std::cout << "  " << p.status << '\n';
-  }
+  _printer->write_output(response);
 }
 //------------------------------------------------------------------------------------------------------------------------------------
 DirectRPCCommand::DirectRPCCommand(ts::Arguments *args) : CtrlCommand(args)
