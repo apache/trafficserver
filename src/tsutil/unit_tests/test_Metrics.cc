@@ -593,8 +593,8 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
 TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]")
 {
   // An id's offset field is 16 bits but a real offset is below MAX_SIZE, so a malformed one must
-  // not index past a blob's arrays. Two blobs are needed for the offset check to be what rejects
-  // it; with one, the null blob check would.
+  // not index past a blob's arrays. Filling past one blob puts the ids below in earlier blobs,
+  // where they pack under the bound and only the MAX_SIZE test rejects them.
   auto &h = Metrics::hidden_instance();
 
   for (int i = 0; i < Metrics::MAX_SIZE + 8; ++i) {
@@ -604,8 +604,6 @@ TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]
   auto const *bad = h.lookup(Metrics::IdType{0}); // the reserved bad_id slot
   REQUIRE(bad != nullptr);
 
-  // blob 0 is allocated, so the null check does not fire; only the MAX_SIZE test stands between
-  // this and atomics[65535].
   for (Metrics::IdType id : {Metrics::IdType{0x0000FFFF}, Metrics::IdType{0x00000400}, Metrics::IdType{0x0001FFFF}}) {
     REQUIRE(h.valid(id) == false);
     REQUIRE(h.lookup(id) == bad);
@@ -639,9 +637,8 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
     c.store(Metrics::NOT_FOUND, std::memory_order_relaxed);
   }
 
-  // Precomputed so a reader can compare against the name it must see without allocating in the
-  // loop. Checking the name is the whole point: an id that lookup() clamps resolves to the reserved
-  // bad_id slot, whose name is not empty, so only the expected name distinguishes the two.
+  // A clamped lookup resolves to the bad_id slot, whose name is not empty, so only the expected
+  // name detects one.
   std::vector<std::string> names;
 
   names.reserve(N_CREATE);
@@ -663,8 +660,7 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
             continue;
           }
 
-          // valid() accepted the id, so lookup() must hand back that metric rather than clamping
-          // to the reserved bad_id slot.
+          // valid() accepted the id, so lookup() must return that metric and not clamp.
           std::string_view    name;
           Metrics::MetricType type;
           auto               *m = h.lookup(id, &name, &type);
@@ -673,15 +669,14 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
             mismatches.fetch_add(1, std::memory_order_relaxed);
           }
 
-          // Published as it happens rather than summed at the end, so the writer can wait for it.
+          // Published as it happens so the writer can wait for one.
           resolved.fetch_add(1, std::memory_order_relaxed);
         }
       }
     });
   }
 
-  // Every reader has to be in its loop before the writer starts, or the writer can finish and set
-  // stop before any of them does work, and the test passes without having raced anything.
+  // Readers must be in their loops before the writer starts, or nothing races.
   while (ready.load(std::memory_order_acquire) < N_READERS) {
     std::this_thread::yield();
   }
@@ -691,9 +686,8 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
     created[i].store(h.lookup(names[i]), std::memory_order_relaxed);
   }
 
-  // Readers being in their loops is not enough to guarantee they did any work: on a single CPU the
-  // writer can run to completion first, and every reader would then see stop and resolve nothing.
-  // Wait for one actual resolution so the check below cannot pass vacuously.
+  // Being in the loop is not doing work: on one CPU the writer can finish first and every reader
+  // would then see stop. Wait for a real resolution so the check below cannot pass vacuously.
   while (resolved.load(std::memory_order_relaxed) == 0) {
     std::this_thread::yield();
   }

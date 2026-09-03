@@ -58,7 +58,6 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
   auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
-  // Only the blob index is needed; the offset resets to zero below.
   auto const cur_blob = static_cast<uint16_t>(_next_free.load(std::memory_order_relaxed) >> 16);
 
   debug_assert(blob);
@@ -67,7 +66,7 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 
   _blobs[cur_blob + 1] = std::move(blob);
 
-  // Publishes the blob and the offset reset as one value; the write above is sequenced before it.
+  // One store publishes both; the install above is sequenced before it.
   _next_free.store(_pack(cur_blob + 1, 0), std::memory_order_release);
 }
 
@@ -98,7 +97,7 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   _lookups.emplace(std::get<0>(names[cur_off]), id);
 
   if (cur_off + 1 >= MAX_SIZE) {
-    addBlob(); // Publishes the next blob with a zero offset.
+    addBlob();
   } else {
     // Publishes the slot's name.
     _next_free.store(_pack(cur_blob, cur_off + 1), std::memory_order_release);
@@ -199,8 +198,7 @@ Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
     return false;
   }
 
-  // Held across the whole rename: the name is the key _lookups is indexed by, so replacing it has
-  // to be serialized against every other writer of that slot's name.
+  // The name is the key _lookups is indexed by, so the whole replacement is serialized.
   std::lock_guard lock(_mutex);
 
   auto [blob_ix, offset]         = _splitID(id);

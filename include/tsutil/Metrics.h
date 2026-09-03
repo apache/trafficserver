@@ -308,26 +308,23 @@ private:
     return (t << METRIC_TYPE_BITS | blob << 16 | offset);
   }
 
-  /// A position with no type bits, which is how the next free slot is tracked and compared.
+  /// As @c _makeId, without the type bits.
   static constexpr uint32_t
   _pack(uint16_t blob, uint16_t offset)
   {
     return static_cast<uint32_t>(blob) << 16 | offset;
   }
 
-  // _pack must not collide with the type bits, and an offset must fit the field it is packed into.
+  // A packed position must not reach the type bits, and an offset must fit its field.
   static_assert(MAX_SIZE <= 0x10000);
   static_assert(MAX_BLOBS <= (1 << (METRIC_TYPE_BITS - 16)));
 
   class Storage
   {
-    /* The next free slot, packed as @c _makeId would pack it: the blob index above the offset. One
-     * value rather than two because readers need the pair to be coherent -- a reader that caught a
-     * new offset against an old blob index, or the reverse, would reject ids that exist or accept
-     * ids that do not. Release stored last, after whatever it publishes: the blob pointer when it
-     * crosses a blob, the slot's name otherwise. It only ever increases, so an id is allocated
-     * exactly when it packs below it. _blobs needs no atomic because it is only read at an index
-     * this value has published. Writers hold _mutex and load relaxed.
+    /* The next free slot, packed as @c _makeId packs one. A single value because a reader that
+     * caught a new offset against an old blob index, or the reverse, would reject ids that exist
+     * or accept ids that do not. Release stored last, after the blob pointer or the slot's name it
+     * publishes. Only ever increases, so an id is allocated exactly when it packs below it.
      */
     BlobStorage           _blobs;
     std::atomic<uint32_t> _next_free{0};
@@ -357,7 +354,7 @@ private:
     MetricType       type(IdType id) const;
     bool             rename(IdType id, const std::string_view name);
 
-    /// The next free slot, as the id it will be given. Also the exclusive bound for iteration.
+    /// The id the next slot will get, which is also iteration's exclusive bound.
     IdType
     next_free_id() const
     {
@@ -386,14 +383,12 @@ private:
 
       auto [blob_ix, offset] = _splitID(id);
 
-      // The offset check is not implied by the comparison below: _splitID takes the low 16 bits, so
-      // an id in an earlier blob can name an offset past MAX_SIZE and still pack below the bound.
+      // Not implied below: an earlier blob can name an offset past MAX_SIZE and still pack under.
       if (offset >= MAX_SIZE) {
         return false;
       }
 
-      // Acquiring the bound also makes visible everything published under it, the blob pointer
-      // included, so _blobs needs no separate check.
+      // Acquiring the bound acquires the blob install, so _blobs needs no check of its own.
       return _pack(blob_ix, offset) < _next_free.load(std::memory_order_acquire);
     }
   };
