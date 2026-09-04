@@ -39,6 +39,26 @@ namespace Yaml
   constexpr std::string_view YAML_BOOL_TAG_URI{"tag:yaml.org,2002:bool"};
   constexpr std::string_view YAML_NULL_TAG_URI{"tag:yaml.org,2002:null"};
 
+  // Put an emitter into JSON output mode.
+  //
+  // yaml-cpp has no JSON output mode. The nearest equivalent is flow style with every scalar double quoted. For the
+  // node shapes the callers here emit -- maps, sequences, scalars and nulls, carrying no tags, anchors or aliases --
+  // that is JSON-compatible except for null: yaml-cpp writes `~`, which JSON parsers reject. LowerNull writes the
+  // literal `null` instead. YAML resolves `~` and `null` to the same value, so the output still reads as YAML.
+  //
+  // This is not a general YAML to JSON converter. A node that carries a tag, an anchor or an alias still emits YAML
+  // syntax that JSON does not accept.
+  //
+  // Every emitter whose output reaches a JSON consumer must go through here. Setting only some of the manipulators
+  // gives output that looks like JSON and parses correctly until some node is null.
+  //
+  inline void
+  configure_json_emitter(YAML::Emitter &emitter)
+  {
+    emitter.SetNullFormat(YAML::LowerNull);
+    emitter << YAML::DoubleQuoted << YAML::Flow;
+  }
+
   // A class that is a wrapper for a YAML::Node that corresponds to a map in a YAML input file.
   // It's purpose is to make sure all keys in the map are processed.
   //

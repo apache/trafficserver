@@ -100,7 +100,7 @@ get_plugin_list(std::string_view const & /* id ATS_UNUSED */, YAML::Node const &
 
     data["source"] = summary.source;
 
-    YAML::Node plugins;
+    YAML::Node plugins{YAML::NodeType::Sequence};
     for (const auto &e : summary.entries) {
       YAML::Node plugin;
 

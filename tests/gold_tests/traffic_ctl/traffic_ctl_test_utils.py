@@ -15,8 +15,11 @@
 #  limitations under the License.
 
 import atexit
+import json
 import os
+import shlex
 import shutil
+import sys
 import tempfile
 
 _gold_tmpdir = None
@@ -136,6 +139,45 @@ class Common():
         """
         full_text = f'{{\"jsonrpc\": \"2.0\", \"result\": {text}, \"id\": {"``"}}}'
         self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(full_text, self._dir, self._tn)
+        self._finish()
+        return self
+
+    def validate_json_data_matches(self, expected: dict):
+        """
+        Validate the JSON-RPC result data equals expected, exactly.
+
+        Descends into result.data, which is where every handler puts its
+        payload, and compares the whole structure rather than a few fields, so
+        an added, removed or renamed key fails the assertion. This is the
+        machine-readable contract; prefer it over asserting the human-readable
+        text output, whose column widths are a presentation detail.
+
+        Write every scalar in expected as a string: the emitter double-quotes
+        all of them, so booleans arrive as 'true' and integers as '1'.
+
+        On mismatch both structures are printed to stderr, key-sorted.
+
+        Example:
+            traffic_ctl.plugin().list().as_json().validate_json_data_matches(
+                {'source': 'plugin.yaml', 'plugins': []})
+        """
+        # The script is single quoted and interpolates nothing. Expected values
+        # travel as one shlex.quote'd json argument, so a value containing a
+        # quote, a $, or a backtick is compared literally instead of being
+        # expanded by the shell or breaking the script it is embedded in.
+        script = (
+            "import sys, json\n"
+            "actual = json.load(sys.stdin)['result']['data']\n"
+            "expected = json.loads(sys.argv[1])\n"
+            "if actual != expected:\n"
+            "    print('FAIL: result.data does not match', file=sys.stderr)\n"
+            "    print('  actual  :', json.dumps(actual, sort_keys=True), file=sys.stderr)\n"
+            "    print('  expected:', json.dumps(expected, sort_keys=True), file=sys.stderr)\n"
+            "    sys.exit(1)\n")
+        # sys.executable rather than python3, so the check runs under the same
+        # interpreter as the harness instead of whatever PATH resolves to.
+        payload = shlex.quote(json.dumps(expected))
+        self._cmd = f"{self._cmd} | {shlex.quote(sys.executable)} -c {shlex.quote(script)} {payload}"
         self._finish()
         return self
 
@@ -447,6 +489,26 @@ class Server(Common):
         return self
 
 
+class Plugin(Common):
+    """
+        Handy class to map traffic_ctl plugin options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr)
+        self._cmd = "traffic_ctl plugin "
+        self._dir = dir
+        self._tn = tn
+
+    def list(self):
+        self._cmd = f'{self._cmd}  list '
+        return self
+
+    def as_json(self):
+        self._cmd = f'{self._cmd} -f json'
+        return self
+
+
 class RPC(Common):
     """
         Handy class to map traffic_ctl server options.
@@ -494,7 +556,7 @@ class TrafficCtl(Config, Server):
         Every time a config() is called, a new test is created.
     """
 
-    def __init__(self, test, records_yaml=None, retcode=0):
+    def __init__(self, test, records_yaml=None, retcode=0, plugin_config=None):
         self._testNumber = 0
         self._current_test_number = self._testNumber
         self._retcode = retcode
@@ -502,6 +564,9 @@ class TrafficCtl(Config, Server):
         self._ts = self._Test.MakeATSProcess(f"ts_{self._testNumber}")
         if records_yaml != None:
             self._ts.Disk.records_config.update(records_yaml)
+        if plugin_config != None:
+            for line in plugin_config:
+                self._ts.Disk.plugin_config.AddLine(line)
         self._tests = []
 
     def __get_index(self):
@@ -534,7 +599,11 @@ class TrafficCtl(Config, Server):
         self.add_test()
         return RPC(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
+    def plugin(self):
+        self.add_test()
+        return Plugin(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
-def Make_traffic_ctl(test, records_yaml=None, retcode=0):
-    tctl = TrafficCtl(test, records_yaml, retcode)
+
+def Make_traffic_ctl(test, records_yaml=None, retcode=0, plugin_config=None):
+    tctl = TrafficCtl(test, records_yaml, retcode, plugin_config)
     return tctl
