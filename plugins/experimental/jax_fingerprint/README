@@ -14,7 +14,8 @@ jax_fingerprint/
   plugin.cc / plugin.h     Plugin entry points, hook handlers, method dispatch.
   context.cc / .h          JAxContext: per-connection (or per-txn) fingerprint state.
   context_map.h            Inline fixed-size table that multiplexes JAxContexts
-                           by method name on a single user-arg slot.
+                           and exposes their results through one registry.
+  fingerprint_registry.h   Versioned, read-only inter-plugin data contract.
   userarg.cc / userarg.h   Shared user-arg slot reservation and accessors.
   header.cc / .h           Set/append/remove the fingerprint and via headers.
   log.cc / .h              Optional log file output for fingerprints.
@@ -73,9 +74,10 @@ Suppose you want to add a method called `mymethod`. The steps are:
      `ENABLE_JAX_METHOD_MYMETHOD`, and bumps `JAX_FINGERPRINT_MAX_METHODS` to
      match the list length.
 
-  5. Use the method:
+  5. Use the method, optionally sharing its result with other plugins:
 
-       jax_fingerprint.so --method MYMETHOD --header x-my-fingerprint
+       jax_fingerprint.so --method MYMETHOD --header x-my-fingerprint \
+         --export security.fingerprints
 
 
 File naming
@@ -113,6 +115,23 @@ matched against `--method` on the command line.
 string literal is the natural fit). ContextMap stores `std::string_view`
 slot keys that alias `Method::name`; if `name` ever pointed at temporary
 storage, the keys would dangle.
+
+
+Inter-plugin registry
+---------------------
+
+Each ContextMap begins with the `RegistryV1` layout declared in
+`fingerprint_registry.h`. It publishes length-delimited method/value pairs
+without serializing or recomputing fingerprints. Multiple plugin
+instances with the same storage type and `--export` name share the same map.
+The producer owns the data for the lifetime of the VConn or transaction, and
+consumers treat it as immutable.
+
+The magic value, ABI version, and structure sizes are part of the contract.
+Make backward-compatible extensions by appending fields and retaining the
+version; use a new version and registry description for incompatible changes.
+This is a general method/value contract: downstream methods require no changes
+to consumers that treat method names and values as opaque strings.
 
 
 Build-time configuration

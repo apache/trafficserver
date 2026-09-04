@@ -17,6 +17,9 @@
 
 # See cmake/ExperimentalPlugins.cmake for the auto_options.
 
+if(BUILD_ABUSE_SHIELD)
+  add_subdirectory(abuse_shield)
+endif()
 if(BUILD_ACCESS_CONTROL)
   add_subdirectory(access_control)
 endif()
