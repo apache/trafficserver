@@ -66,6 +66,7 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <limits>
 
 namespace
 {
@@ -325,6 +326,13 @@ CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
   UnmarshalFunc    *unmarshal_func = &HTTPInfo::unmarshal;
   ts::VersionNumber version(doc->v_major, doc->v_minor);
 
+  // hlen is unsigned and the walk below is not. Narrowing a header length this large would
+  // make the walk negative, skipping it and reporting success on a block nothing decoded.
+  if (doc->hlen > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+    Warning("CacheVC::unmarshal_http_info: header length %u exceeds the maximum - corrupt cache entry", doc->hlen);
+    return false;
+  }
+
   if (version < CACHE_DB_VERSION_HTTPINFO_V24_2) {
     unmarshal_func = &HTTPInfo::unmarshal_v24_1;
   }
@@ -342,7 +350,7 @@ CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
     // The decoders read the alt header before they check any length, so a tail too short
     // to hold one has to be rejected here rather than passed down.
     if (static_cast<size_t>(len) < sizeof(HTTPCacheAlt)) {
-      ink_assert(!"CacheVC::unmarshal_http_info: truncated header block");
+      Warning("CacheVC::unmarshal_http_info: header block ends mid alternate - corrupt cache entry");
       return false;
     }
     int r = unmarshal_func(tmp, len, buf.get());

@@ -29,6 +29,7 @@
 #include "tscore/ink_memory.h"
 
 #include <cstring>
+#include <limits>
 #include <vector>
 
 int  cache_vols           = 1;
@@ -174,6 +175,31 @@ TEST_CASE("unmarshal_http_info selects the decoder matching the object version",
     check_offsets_are_sequential(doc.alt());
     CHECK(reinterpret_cast<char *>(doc.alt()->m_frag_offsets) != doc.doc()->hdr() + ALT_MARSHAL_SIZE);
     free_frag_offsets(doc.alt());
+  }
+}
+
+TEST_CASE("unmarshal_http_info reports failure on a malformed header length", "[cache][unmarshal][compat]")
+{
+  Ptr<IOBufferData> buf;
+
+  // A header block nothing decoded must never be reported as unmarshalled: the caller
+  // would go on to read it as though the alts were live.
+  SECTION("a header length that cannot be walked as a signed length")
+  {
+    DocBuffer doc{make_v24_2_doc(CACHE_DB_VERSION_HTTPINFO_V24_2._major, CACHE_DB_VERSION_HTTPINFO_V24_2._minor)};
+
+    doc.doc()->hlen = static_cast<uint32_t>(std::numeric_limits<int>::max()) + 1;
+    CHECK_FALSE(CacheVC::unmarshal_http_info(doc.doc(), buf));
+    CHECK(doc.alt()->m_magic == CacheAltMagic::MARSHALED);
+  }
+
+  SECTION("a header block ending part way through an alternate")
+  {
+    DocBuffer doc{make_v24_2_doc(CACHE_DB_VERSION_HTTPINFO_V24_2._major, CACHE_DB_VERSION_HTTPINFO_V24_2._minor)};
+
+    doc.doc()->hlen = sizeof(HTTPCacheAlt) - 1;
+    CHECK_FALSE(CacheVC::unmarshal_http_info(doc.doc(), buf));
+    CHECK(doc.alt()->m_magic == CacheAltMagic::MARSHALED);
   }
 }
 
