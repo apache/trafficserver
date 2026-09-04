@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Verify ESI transformation, gzip, cache-control, and size options."""
+
 from pathlib import Path
 
 from dataclasses import dataclass
@@ -73,30 +74,30 @@ def configure_server(services: ServiceFactory) -> OriginServer:
     origin.add_response(
         {"headers": "GET /esi.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\nConnection: close\r\n"
-                    f"Content-Length: {len(ESI_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nX-Esi: 1\r\nConnection: close\r\n"
+                f"Content-Length: {len(ESI_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"
+            ),
             "body": ESI_BODY,
         },
     )
     origin.add_response(
         {"headers": "GET /date.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n"
-                    f"Content-Length: {len(DATE_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nConnection: close\r\n"
+                f"Content-Length: {len(DATE_BODY)}\r\nCache-Control: max-age=300\r\n\r\n"
+            ),
             "body": DATE_BODY,
         },
     )
     origin.add_response(
         {"headers": "GET /expect_empty_body HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"},
         {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\nX-ESI: On\r\nContent-Length: 0\r\nConnection: close\r\n"
-                    "Content-Type: text/html; charset=UTF-8\r\n\r\n")
+            "headers": (
+                "HTTP/1.1 200 OK\r\nX-ESI: On\r\nContent-Length: 0\r\nConnection: close\r\n"
+                "Content-Type: text/html; charset=UTF-8\r\n\r\n"
+            )
         },
     )
     return origin
@@ -113,10 +114,12 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer, _variant: E
     ats = ats_factory.create("ats", disable_log_checks=_variant.behavior == "too-small")
     if not ats.plugin_exists("esi.so"):
         pytest.skip("esi.so is not installed")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http|plugin_esi",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http|plugin_esi",
+        }
+    )
     ats.remap_config.add_line(f"map http://www.example.com/ http://127.0.0.1:{_origin.port}")
     ats.plugin_config.add_line(_variant.plugin_config)
     return ats
@@ -134,10 +137,7 @@ def request(path: str, *options: str, _ats: ATS, _curl: Curl) -> CommandResult:
     return _curl.get(
         _ats,
         path,
-        headers={
-            "Host": "www.example.com",
-            "Accept": "*/*"
-        },
+        headers={"Host": "www.example.com", "Accept": "*/*"},
         options=f"--verbose {shlex.join(options)}",
     )
 

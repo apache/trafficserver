@@ -46,8 +46,7 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, push_enabled: bool, _cu
     """
 
     ats = ats_factory.create(name, enable_tls=True)
-    server_ports = (f"{ats.http_port} {ats.ipv6_port}:ipv6 "
-                    f"{ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6")
+    server_ports = f"{ats.http_port} {ats.ipv6_port}:ipv6 {ats.https_port}:ssl {ats.ipv6_https_port}:ssl:ipv6"
     records: dict[str, object] = {
         "proxy.config.diags.debug.enabled": 1,
         "proxy.config.diags.debug.tags": "http|dns|cache",
@@ -64,7 +63,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, push_enabled: bool, _cu
         (
             f"map https://localhost:{ats.https_port} http://localhost:{ats.http_port}",
             f"map https://localhost:{ats.ipv6_https_port} http://localhost:{ats.http_port}",
-        ))
+        )
+    )
     return ats
 
 
@@ -83,7 +83,8 @@ def push(ats: ATS, *, _curl: Curl, _push_file: Path) -> str:
             "--verbose --header 'Content-Type: application/octet-stream' "
             f"--data-binary '@{_push_file}' --request PUSH "
             f"http://localhost:{ats.http_port}/bigobj "
-            f"--header 'Content-Length: {_push_file.stat().st_size}'"),
+            f"--header 'Content-Length: {_push_file.stat().st_size}'"
+        ),
         timeout=60,
     )
     assert result.returncode == 0, result.output
@@ -126,13 +127,17 @@ def test_bigobj(ats_factory: ATSFactory, curl: Curl) -> None:
     assert "HTTP/1.1 201 Created" in push(_enabled, _curl=curl, _push_file=_push_file)
     cleartext_options = "" if curl.uses_uds else "--ipv4"
     assert "HTTP/1.1 200 OK" in get(
-        f"{cleartext_options} --http1.1 http://localhost:{_enabled.http_port}/bigobj", _curl=curl, _enabled=_enabled)
+        f"{cleartext_options} --http1.1 http://localhost:{_enabled.http_port}/bigobj", _curl=curl, _enabled=_enabled
+    )
     if not curl.uses_uds:
         assert "HTTP/1.1 200 OK" in get(
-            f"--ipv4 --http1.1 --insecure https://localhost:{_enabled.https_port}/bigobj", _curl=curl, _enabled=_enabled)
+            f"--ipv4 --http1.1 --insecure https://localhost:{_enabled.https_port}/bigobj", _curl=curl, _enabled=_enabled
+        )
         assert "HTTP/2 200" in get(
-            f"--ipv4 --http2 --insecure https://localhost:{_enabled.https_port}/bigobj", _curl=curl, _enabled=_enabled)
+            f"--ipv4 --http2 --insecure https://localhost:{_enabled.https_port}/bigobj", _curl=curl, _enabled=_enabled
+        )
         assert "HTTP/2 200" in get(
-            f"--ipv6 --http2 --insecure https://localhost:{_enabled.ipv6_https_port}/bigobj", _curl=curl, _enabled=_enabled)
+            f"--ipv6 --http2 --insecure https://localhost:{_enabled.ipv6_https_port}/bigobj", _curl=curl, _enabled=_enabled
+        )
     _disabled.start()
     assert "403 Access Denied" in push(_disabled, _curl=curl, _push_file=_push_file)

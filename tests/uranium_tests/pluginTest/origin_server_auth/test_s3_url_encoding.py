@@ -38,10 +38,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("origin")
     for path, body in S3_URL_ENCODING__cases:
         origin.add_response(
-            {
-                "headers": f"GET {path} HTTP/1.1\r\nHost: s3.amazonaws.com\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET {path} HTTP/1.1\r\nHost: s3.amazonaws.com\r\n\r\n", "body": ""},
             {
                 "headers": f"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: {len(body)}\r\n\r\n",
                 "body": body,
@@ -65,12 +62,14 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "origin_server_auth",
             "proxy.config.url_remap.pristine_host_hdr": 1,
-        })
+        }
+    )
     config = TEST_DIRECTORY / "rules" / "s3_url_encoding.test_input"
     ats.copy_to_config(config)
     ats.remap_config.add_line(
         f"map http://s3.amazonaws.com/ http://127.0.0.1:{_origin.port}/ "
-        f"@plugin=origin_server_auth.so @pparam=--config @pparam={ats.config_directory / config.name}")
+        f"@plugin=origin_server_auth.so @pparam=--config @pparam={ats.config_directory / config.name}"
+    )
     return ats
 
 
@@ -89,8 +88,7 @@ def test_s3_url_encoding(ats_factory: ATSFactory, services: ServiceFactory, curl
     for path, body in S3_URL_ENCODING__cases:
         result = curl.run_for(
             _ats,
-            (f"--silent --verbose --path-as-is --header 'Host: s3.amazonaws.com' "
-             f"'http://127.0.0.1:{_ats.http_port}{path}'"),
+            (f"--silent --verbose --path-as-is --header 'Host: s3.amazonaws.com' 'http://127.0.0.1:{_ats.http_port}{path}'"),
         )
         assert result.returncode == 0, result.output
         assert "200 OK" in result.stderr

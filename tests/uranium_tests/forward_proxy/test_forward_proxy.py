@@ -43,7 +43,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: VerifierServer, _policy: 
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
-        })
+        }
+    )
     if _policy is not None:
         ats.records.update({"proxy.config.ssl.client.scheme_proto_mismatch_policy": _policy})
     return ats
@@ -86,7 +87,6 @@ def test_forward_proxy(policy: int | None, ats_factory: ATSFactory, services: Se
     _ats.start()
     result = curl.run_for(
         _ats,
-        (f"--proxy-insecure --verbose --header 'uuid: 1' --proxy 'https://127.0.0.1:{_ats.https_port}/' "
-         f"http://example.com/"),
+        (f"--proxy-insecure --verbose --header 'uuid: 1' --proxy 'https://127.0.0.1:{_ats.https_port}/' http://example.com/"),
     )
     verify(result, _origin=_origin, _policy=policy)

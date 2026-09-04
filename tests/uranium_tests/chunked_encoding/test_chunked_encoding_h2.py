@@ -65,7 +65,8 @@ def configure_ats(ats_factory: ATSFactory, *, _ports: list[int]) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     for path, port in zip(("delay-chunked-response", "post-full", "post-chunked"), _ports):
         ats.remap_config.add_line(f"map /{path} http://127.0.0.1:{port}")
     ats.ssl_multicert_config.add_lines(
@@ -74,7 +75,8 @@ def configure_ats(ats_factory: ATSFactory, *, _ports: list[int]) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     return ats
 
 
@@ -111,7 +113,8 @@ def test_chunked_encoding_h2(ats_factory: ATSFactory, services: ServiceFactory, 
             _ats,
             (
                 f"--http2 --insecure --verbose --header 'Transfer-encoding: chunked' --data 'Knock knock' "
-                f"'https://127.0.0.1:{_ats.https_port}/{path}'"),
+                f"'https://127.0.0.1:{_ats.https_port}/{path}'"
+            ),
         )
         assert result.returncode == 0, result.output
         assert "HTTP/2 200" in result.output

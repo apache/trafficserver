@@ -45,19 +45,22 @@ def configure_ats(ats_factory: ATSFactory, *, _httpbin: HttpBinServer) -> ATS:
     rule = TEST_DIRECTORY / "rules" / "graceful_shutdown.conf"
     ats.copy_to_config(rule)
     ats.remap_config.add_line(
-        f"map /httpbin/ http://127.0.0.1:{_httpbin.port}/ "
-        f"@plugin=header_rewrite.so @pparam={ats.config_directory / rule.name}")
+        f"map /httpbin/ http://127.0.0.1:{_httpbin.port}/ @plugin=header_rewrite.so @pparam={ats.config_directory / rule.name}"
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "http2_cs",
-    })
+        )
+    )
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "http2_cs",
+        }
+    )
     return ats
 
 

@@ -60,7 +60,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
     ats = ats_factory.create("ts", enable_tls=True)
     ats.copy_to_ssl(
         *(
-            TEST_DIRECTORY / "ssl" / name for name in (
+            TEST_DIRECTORY / "ssl" / name
+            for name in (
                 "signed-foo.pem",
                 "signed-foo.key",
                 "signed-bar.pem",
@@ -69,7 +70,9 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
                 "signer.pem",
                 "signer.key",
                 "combo.pem",
-            )))
+            )
+        )
+    )
     ats.ssl_multicert_config.add_lines(
         (
             "ssl_multicert:",
@@ -80,7 +83,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "    ssl_key_name: signed-bar.key",
             '  - dest_ip: "*"',
             "    ssl_cert_name: combo.pem",
-        ))
+        )
+    )
     ats.remap_config.add_line(f"map / https://foo.com:{_origin.https_port}")
     ats.records.update(
         {
@@ -89,7 +93,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origin: OriginSe
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     return ats
 
 
@@ -107,11 +112,13 @@ def request(hostname: str, ca_file: str | None = None, *, _ats: ATS, _curl: Curl
         arguments.append("--insecure")
     else:
         arguments.extend(("--cacert", str(TEST_DIRECTORY / "ssl" / ca_file)))
-    arguments.extend((
-        "--resolve",
-        f"{hostname}:{_ats.https_port}:127.0.0.1",
-        f"https://{hostname}:{_ats.https_port}",
-    ))
+    arguments.extend(
+        (
+            "--resolve",
+            f"{hostname}:{_ats.https_port}:127.0.0.1",
+            f"https://{hostname}:{_ats.https_port}",
+        )
+    )
     result = _curl.run_for(
         _ats,
         shlex.join(arguments),

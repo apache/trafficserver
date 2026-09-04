@@ -75,7 +75,8 @@ def main() -> int:
     # No -quiet: it suppresses s_client's interpretation of the "R" command, so
     # the renegotiation request would otherwise be sent as plain application data.
     cmd = shlex.split(
-        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_2 -servername {args.sni} -cipher DEFAULT@SECLEVEL=0')
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_2 -servername {args.sni} -cipher DEFAULT@SECLEVEL=0'
+    )
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     output = OutputCollector(proc.stdout)
     verdict = 'RENEGOTIATION-STALLED'

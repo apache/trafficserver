@@ -55,31 +55,29 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "qmux|http3",
             "proxy.config.http.server_ports": f"{ats.http_port} {ats.https_port}:ssl:proto=h3qx-01",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "qmux_access",
-                                "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "qmux_access",
-                        "format": "qmux_access"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "qmux_access",
+                        "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
+                    }
+                ],
+                "logs": [{"filename": "qmux_access", "format": "qmux_access"}],
+            }
+        }
+    )
     return ats
 
 
@@ -94,7 +92,8 @@ def configure_client(services: ServiceFactory, sandbox: Path, *, _ats: ATS) -> P
     source = shlex.quote(str(TEST_DIRECTORY / "go_qmux_client"))
     command = (
         f"cd {source} && exec go run . --addr 127.0.0.1:{_ats.https_port} "
-        f"--authority qmux.example.com:{_ats.https_port} --server-name qmux.example.com")
+        f"--authority qmux.example.com:{_ats.https_port} --server-name qmux.example.com"
+    )
     environment = {
         **os.environ,
         "GOFLAGS": "-mod=readonly -modcacherw",

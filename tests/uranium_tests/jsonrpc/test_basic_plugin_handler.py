@@ -37,7 +37,8 @@ def test_basic_plugin_handler(ats_factory: ATSFactory) -> None:
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "rpc|jsonrpc_plugin_handler_test",
-            })
+            }
+        )
         ats.copy_custom_plugin("plugins/.libs/jsonrpc_plugin_handler_test.so")
         ats.plugin_config.add_line("jsonrpc_plugin_handler_test.so")
         return ats
@@ -90,40 +91,19 @@ def test_basic_plugin_handler(ats_factory: ATSFactory) -> None:
     assert response["result"]["join"] == "yahoo.comaol.comvz.com"
 
     hosts = [
-        {
-            "name": "brbzull",
-            "status": "up"
-        },
-        {
-            "name": "brbzull1",
-            "status": "down"
-        },
-        {
-            "name": "brbzull3",
-            "status": "up"
-        },
-        {
-            "name": "brbzull4",
-            "status": "down"
-        },
-        {
-            "name": "yahoo",
-            "status": "down"
-        },
-        {
-            "name": "trafficserver",
-            "status": "down"
-        },
+        {"name": "brbzull", "status": "up"},
+        {"name": "brbzull1", "status": "down"},
+        {"name": "brbzull3", "status": "up"},
+        {"name": "brbzull4", "status": "down"},
+        {"name": "yahoo", "status": "down"},
+        {"name": "trafficserver", "status": "down"},
     ]
     created = rpc("test_io_on_et_task", {"hosts": hosts})["result"]
     assert created["addedHosts"] == "6"
     assert created["updatedHosts"] == "0"
     updated = rpc(
         "test_io_on_et_task",
-        {"hosts": [{
-            "name": "yahoo",
-            "status": "up"
-        }]},
+        {"hosts": [{"name": "yahoo", "status": "up"}]},
     )["result"]
     assert updated["addedHosts"] == "0"
     assert updated["updatedHosts"] == "1"

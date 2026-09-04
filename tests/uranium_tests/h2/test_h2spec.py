@@ -48,7 +48,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: HttpBinServer) -> ATS:
             "proxy.config.http.insert_response_via_str": 1,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http",
-        })
+        }
+    )
     return ats
 
 

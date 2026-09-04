@@ -53,7 +53,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.cache.http": 1,
             "proxy.config.http.insert_age_in_response": 1,
-        })
+        }
+    )
     return ats
 
 

@@ -52,12 +52,8 @@ class ReplayTest:
     """Run one replay file as one independently reportable test item."""
 
     def __init__(
-            self,
-            spec: ReplaySpec,
-            runtime: TestRuntime,
-            node_name: str | None = None,
-            *,
-            sandbox_parent: Path | None = None) -> None:
+        self, spec: ReplaySpec, runtime: TestRuntime, node_name: str | None = None, *, sandbox_parent: Path | None = None
+    ) -> None:
         """Prepare service state without touching the scenario's sandbox.
 
         :param spec: Validated replay manifest and selected variant.
@@ -128,8 +124,9 @@ class ReplayTest:
                 shutil.rmtree(directory, ignore_errors=True)
 
         if client is not None:
-            client_excludes = "" if self.spec.urtest["client"].get("process_config", {}).get("allow_errors") else \
-                "Violation|Invalid status"
+            client_excludes = (
+                "" if self.spec.urtest["client"].get("process_config", {}).get("allow_errors") else "Violation|Invalid status"
+            )
             self._validate_process_output(client, self.spec.urtest["client"], client_excludes)
         if server is not None:
             self._validate_process_output(server, self.spec.urtest["server"], "Violation")
@@ -153,8 +150,7 @@ class ReplayTest:
         zone_file.write_text(json.dumps({"mappings": mappings, "otherwise": otherwise}))
         process = ManagedProcess(
             name,
-            [python_environment_executable("microdns"), "INADDR_LOOPBACK",
-             str(self.dns_port), str(zone_file)],
+            [python_environment_executable("microdns"), "INADDR_LOOPBACK", str(self.dns_port), str(zone_file)],
             directory,
         )
         process.start()
@@ -234,17 +230,15 @@ class ReplayTest:
 
         records: dict[str, Any] = {
             "config_update_interval_ms": 20,
-            "http":
-                {
-                    "server_ports":
-                        self._server_ports(
-                            enable_tls,
-                            enable_quic,
-                            enable_proxy_protocol,
-                            enable_proxy_protocol_cp_src,
-                        ),
-                    "wait_for_cache": 1,
-                },
+            "http": {
+                "server_ports": self._server_ports(
+                    enable_tls,
+                    enable_quic,
+                    enable_proxy_protocol,
+                    enable_proxy_protocol_cp_src,
+                ),
+                "wait_for_cache": 1,
+            },
         }
         # ATS writes a log buffer when it is max_secs_per_buffer old, checked every
         # periodic_tasks_interval, both 5 s by default. At 1 s each, an entry reaches disk within a
@@ -299,12 +293,14 @@ class ReplayTest:
                 "PV_HTTP_PORT": str(self.server_http_port),
                 "PV_HTTPS_PORT": str(self.server_https_port),
                 "PATH": str(paths["bin"]) + os.pathsep + os.environ.get("PATH", ""),
-            })
+            }
+        )
         environment.update(
             {
                 str(name): self._replace_runtime_placeholders(str(value), paths)
                 for name, value in config.get("environment", {}).items()
-            })
+            }
+        )
         for variable in config.get("unset_environment", []):
             environment.pop(str(variable), None)
         if enable_cripts:
@@ -329,15 +325,18 @@ class ReplayTest:
         startup_timeout = float(config.get("startup_timeout", 60 if enable_cripts else 30))
         diags_name = str(config.get("records_config", {}).get("proxy.config.diags.logfile.filename", "diags.log"))
         readiness_paths = (
-            (traffic_out, process.stdout_path, process.stderr_path) if diags_name in ("stdout", "stderr") else
-            (paths["log"] / diags_name,))
+            (traffic_out, process.stdout_path, process.stderr_path)
+            if diags_name in ("stdout", "stderr")
+            else (paths["log"] / diags_name,)
+        )
         diags_log = readiness_paths[0]
         if expected_failure := config.get("startup_failure"):
             process.wait(timeout=startup_timeout)
             output = "\n".join(
                 path.read_text(errors="replace")
                 for path in (diags_log, traffic_out, process.stdout_path, process.stderr_path)
-                if path.exists())
+                if path.exists()
+            )
             if re.search(str(expected_failure), output) is None:
                 raise AssertionError(f"{name} did not emit expected startup failure {expected_failure!r}:\n{output}")
             return process
@@ -345,7 +344,10 @@ class ReplayTest:
             lambda: (
                 any(
                     path.exists() and "NOTE: Traffic Server is fully initialized" in path.read_text(errors="replace")
-                    for path in readiness_paths) or (diags_name in ("stdout", "stderr") and tcp_open(self.http_port))),
+                    for path in readiness_paths
+                )
+                or (diags_name in ("stdout", "stderr") and tcp_open(self.http_port))
+            ),
             startup_timeout,
             "the fully initialized log message",
         )
@@ -373,8 +375,8 @@ class ReplayTest:
             qlog = directory / "qlog_directory"
             qlog.mkdir()
             command.extend(
-                ["--connect-http3",
-                 self._replace_port_placeholders(loopback_addresses(http3_ports)), "--qlog-dir", qlog])
+                ["--connect-http3", self._replace_port_placeholders(loopback_addresses(http3_ports)), "--qlog-dir", qlog]
+            )
         if https_ports or http3_ports:
             client_cert = self._resolve_test_path(process_config.get("ssl_cert"), ssl_dir / "client.pem")
             ca_certs = self._resolve_test_path(process_config.get("ca_cert"), ssl_dir / "ca.pem")
@@ -386,7 +388,8 @@ class ReplayTest:
                     ca_certs,
                     "--tls-secrets-log-file",
                     directory / "tls_secrets.txt",
-                ])
+                ]
+            )
         if process_config.get("verbose", True):
             command.extend(["--verbose", "diag"])
         other_args = str(process_config.get("other_args", ""))
@@ -588,8 +591,10 @@ class ReplayTest:
             if isinstance(entry, str):
                 remap_lines.append(str(self._replace_runtime_placeholders(entry, paths)))
                 continue
-            line = f"map {self._replace_runtime_placeholders(entry['from'], paths)} " \
-                   f"{self._replace_runtime_placeholders(entry['to'], paths)}"
+            line = (
+                f"map {self._replace_runtime_placeholders(entry['from'], paths)} "
+                f"{self._replace_runtime_placeholders(entry['to'], paths)}"
+            )
             for plugin in entry.get("plugins", []):
                 line += f" @plugin={plugin['name']}"
                 for argument in plugin.get("args", []):
@@ -736,8 +741,13 @@ class ReplayTest:
             deadline = time.monotonic() + timeout
 
             def matching_paths() -> list[Path]:
-                return [Path(path) for path in glob.glob(pattern)
-                       ] if "glob" in check else [Path(pattern)] if Path(pattern).exists() else []
+                return (
+                    [Path(path) for path in glob.glob(pattern)]
+                    if "glob" in check
+                    else [Path(pattern)]
+                    if Path(pattern).exists()
+                    else []
+                )
 
             def is_ready() -> bool:
                 paths = matching_paths()
@@ -750,7 +760,8 @@ class ReplayTest:
                     if not any(re.search(str(check["contains"]), content, re.MULTILINE) is not None for content in contents):
                         return False
                 return "line_count_min" not in check or sum(len(content.splitlines()) for content in contents) >= int(
-                    check["line_count_min"])
+                    check["line_count_min"]
+                )
 
             while not is_ready() and time.monotonic() < deadline:
                 time.sleep(0.1)
@@ -789,7 +800,8 @@ class ReplayTest:
         if server is not None and server.return_code is not None and server.return_code not in server.return_codes:
             raise AssertionError(
                 f"Proxy Verifier server exited with status {server.return_code}; expected "
-                f"{sorted(server.return_codes)}.\n{server.output()}")
+                f"{sorted(server.return_codes)}.\n{server.output()}"
+            )
 
     def _validate_process_output(self, process: ManagedProcess, config: Mapping[str, Any], default_excludes: str) -> None:
         output = ""
@@ -831,7 +843,8 @@ class ReplayTest:
                 assert_matches_gold(access_path, self.test_directory / access["gold_file"])
             else:
                 self._validate_text(
-                    access_path.read_text(errors="replace") if access_path.exists() else "", access, access_path.name)
+                    access_path.read_text(errors="replace") if access_path.exists() else "", access, access_path.name
+                )
 
     def _validate_text(self, content: str, rules: Mapping[str, Any], label: str) -> None:
         flags = re.MULTILINE

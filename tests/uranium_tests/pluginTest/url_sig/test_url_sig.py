@@ -48,10 +48,7 @@ def configure_server(*, _services: ServiceFactory) -> OriginServer:
     ):
         origin.add_response(
             {"headers": f"GET {path} HTTP/1.1\r\nHost: just.any.thing\r\n\r\n"},
-            {
-                "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                "body": body
-            },
+            {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
         )
     return origin
 
@@ -79,7 +76,8 @@ def configure_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> ATS:
             f"map http://four.five.six/ {target}/ @plugin=url_sig.so @pparam={config} @pparam=pristineurl",
             f"map http://seven.eight.nine/ {target} @plugin=url_sig.so @pparam={config} @pparam=PristineUrl",
             f"map http://ten.eleven.twelve/ {target}/ @plugin=url_sig.so @pparam={all_config}",
-        ))
+        )
+    )
     return ats
 
 
@@ -143,7 +141,8 @@ def request_cases(*, _origin: OriginServer) -> tuple[UrlCase, ...]:
                 seven + "?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8",
                 "200 OK",
             ),
-        ))
+        )
+    )
     dynamic_path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=1&S="
     payload = f"127.0.0.1:{_origin.port}/{dynamic_path}"
     cases.append(
@@ -151,7 +150,8 @@ def request_cases(*, _origin: OriginServer) -> tuple[UrlCase, ...]:
             "non-pristine-sha1",
             f"http://one.two.three/{dynamic_path}{sign(payload, 'dqsgopTSM_doT6iAysasQVUKaPykyb6e')}",
             "200 OK",
-        ))
+        )
+    )
     no_parts_path = "foo/abcde/qrstuvwxyz?E=33046618506&A=1&K=7&P=0&S="
     no_parts_payload = "?E=33046618506&A=1&K=7&P=0&S="
     cases.append(
@@ -159,13 +159,13 @@ def request_cases(*, _origin: OriginServer) -> tuple[UrlCase, ...]:
             "non-pristine-sha1-no-parts",
             f"http://one.two.three/{no_parts_path}{sign(no_parts_payload, 'dqsgopTSM_doT6iAysasQVUKaPykyb6e')}",
             "200 OK",
-        ))
+        )
+    )
     cases.extend(
         (
             UrlCase(
                 "pristine-config",
-                f"{ten}/foo/abcde/qrstuvwxyz"
-                "?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638",
+                f"{ten}/foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638",
                 "200 OK",
             ),
             UrlCase(
@@ -181,7 +181,8 @@ def request_cases(*, _origin: OriginServer) -> tuple[UrlCase, ...]:
                 "/qrstuvwxyz",
                 "200 OK",
             ),
-        ))
+        )
+    )
     return tuple(cases)
 
 

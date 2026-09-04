@@ -30,10 +30,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("origin", delay=4)
     for path, body in (("slow", "SLOW"), ("test", "OK")):
         origin.add_response(
-            {
-                "headers": f"GET /{path} HTTP/1.1\r\nHost: queue-expiry.example.com\r\n\r\n",
-                "body": ""
-            },
+            {"headers": f"GET /{path} HTTP/1.1\r\nHost: queue-expiry.example.com\r\n\r\n", "body": ""},
             {
                 "headers": f"HTTP/1.1 200 OK\r\nContent-Length: {len(body)}\r\nConnection: close\r\n\r\n",
                 "body": body,
@@ -54,12 +51,7 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
         pytest.skip("rate_limit.so is required")
     ats.write_config_file(
         "rate_limit.yaml",
-        "selector:\n"
-        f"  - sni: {RATE_LIMIT_SNI_EXPIRY__hostname}\n"
-        "    limit: 1\n"
-        "    queue:\n"
-        "      size: 5\n"
-        "      max_age: 1\n",
+        f"selector:\n  - sni: {RATE_LIMIT_SNI_EXPIRY__hostname}\n    limit: 1\n    queue:\n      size: 5\n      max_age: 1\n",
     )
     ats.plugin_config.add_line(f"rate_limit.so {ats.config_directory}/rate_limit.yaml")
     ats.records.update(
@@ -68,7 +60,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.tags": "rate_limit",
             "proxy.config.http.insert_response_via_str": 0,
             "proxy.config.url_remap.remap_required": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     return ats
 

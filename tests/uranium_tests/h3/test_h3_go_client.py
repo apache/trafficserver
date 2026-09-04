@@ -55,7 +55,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
@@ -63,25 +64,22 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.quic.initial_max_data_in": 1000000,
             "proxy.config.quic.initial_max_stream_data_bidi_remote_in": 1000000,
             "proxy.config.quic.server.stateless_retry_enabled": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "h3_go_access",
-                                "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "h3_go_access",
-                        "format": "h3_go_access"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "h3_go_access",
+                        "format": "c_alpn=%<cqssa> client_version=%<cqpv> c_method=%<cqhm> c_url=%<cquuc>",
+                    }
+                ],
+                "logs": [{"filename": "h3_go_access", "format": "h3_go_access"}],
+            }
+        }
+    )
     return ats
 
 
@@ -96,7 +94,8 @@ def configure_client(services: ServiceFactory, sandbox: Path, *, _ats: ATS) -> P
     source = shlex.quote(str(TEST_DIRECTORY / "go_h3_client"))
     command = (
         f"cd {source} && exec go run . --addr 127.0.0.1:{_ats.https_port} "
-        f"--authority go.example.com:{_ats.https_port} --server-name go.example.com")
+        f"--authority go.example.com:{_ats.https_port} --server-name go.example.com"
+    )
     environment = {
         **os.environ,
         "GOFLAGS": "-mod=readonly -modcacherw",

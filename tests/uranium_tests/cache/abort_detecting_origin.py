@@ -38,7 +38,8 @@ RESPONSE = (
     b'Cache-Control: max-age=300\r\n'
     b'Content-Length: ' + str(len(RESPONSE_BODY)).encode() + b'\r\n'
     b'Connection: close\r\n'
-    b'\r\n' + RESPONSE_BODY)
+    b'\r\n' + RESPONSE_BODY
+)
 
 
 def parse_args() -> argparse.Namespace:

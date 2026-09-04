@@ -68,13 +68,15 @@ def configure_ats(ats_factory: ATSFactory, *, _origin_port: int) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.allow_client_renegotiation": 1,
             "proxy.config.ssl.TLSv1_3.enabled": 0,
             "proxy.config.ssl.TLSv1_2": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin_port}")
     return ats
 
@@ -127,7 +129,8 @@ def test_tls_renegotiation_allowed(ats_factory: ATSFactory, services: ServiceFac
         _ats,
         (
             f"--verbose --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 --insecure --resolve "
-            f"'example.com:{_ats.https_port}:127.0.0.1' 'https://example.com:{_ats.https_port}/'"),
+            f"'example.com:{_ats.https_port}:127.0.0.1' 'https://example.com:{_ats.https_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert "HTTP/1.1 200 OK" in result.stderr

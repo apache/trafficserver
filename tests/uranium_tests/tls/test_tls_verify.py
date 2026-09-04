@@ -49,7 +49,8 @@ def configure_origin(
 
 
 def configure_ats(
-        ats_factory: ATSFactory, *, _bar: OriginServer, _default: OriginServer, _foo: OriginServer, _wild: OriginServer) -> ATS:
+    ats_factory: ATSFactory, *, _bar: OriginServer, _default: OriginServer, _foo: OriginServer, _wild: OriginServer
+) -> ATS:
     """Configure global signature checks and stricter SNI policies.
 
     :param _bar: Test-local bar configured by the test.
@@ -81,7 +82,8 @@ def configure_ats(
             f"map https://bad_bar.com/ https://127.0.0.1:{_bar.https_port}",
             f"map https://foo.wild.com/ https://127.0.0.1:{_wild.https_port}",
             f"map https://foo_bar.wild.com/ https://127.0.0.1:{_wild.https_port}",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
@@ -90,7 +92,8 @@ def configure_ats(
             "proxy.config.ssl.client.CA.cert.filename": "signer.pem",
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.url_remap.pristine_host_hdr": 1,
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"

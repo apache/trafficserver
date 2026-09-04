@@ -60,7 +60,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.http2.active_timeout_in": 3,
             "proxy.config.http2.max_concurrent_streams_in": 65535,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / https://127.0.0.1:{_origin.https_port}")
     ats.ip_allow_config.add_lines(
         """ip_allow:
@@ -72,30 +73,27 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     ip_addrs: ::/0
     action: allow
     methods: [GET, HEAD, POST]
-""")
+"""
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "custom",
-                                "format":
-                                    (
-                                        "scheme=%<pqus> %<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> "
-                                        "%<cqhm> %<pquc> %<phr> %<psct> %<{Y-RID}pqh> %<{Y-YPCS}pqh> %<{Host}cqh> "
-                                        "%<{CHAD}pqh>  sftover=%<{x-safet-overlimit-rules}cqh> "
-                                        "sftmat=%<{x-safet-matched-rules}cqh> sftcls=%<{x-safet-classification}cqh> "
-                                        "sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> status_setter=%<prscs>"),
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "squid.log",
-                        "format": "custom"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "custom",
+                        "format": (
+                            "scheme=%<pqus> %<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> "
+                            "%<cqhm> %<pquc> %<phr> %<psct> %<{Y-RID}pqh> %<{Y-YPCS}pqh> %<{Host}cqh> "
+                            "%<{CHAD}pqh>  sftover=%<{x-safet-overlimit-rules}cqh> "
+                            "sftmat=%<{x-safet-matched-rules}cqh> sftcls=%<{x-safet-classification}cqh> "
+                            "sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> status_setter=%<prscs>"
+                        ),
+                    }
+                ],
+                "logs": [{"filename": "squid.log", "format": "custom"}],
+            }
+        }
+    )
     return ats
 
 
@@ -154,7 +152,8 @@ def test_ip_allow(ats_factory: ATSFactory, services: ServiceFactory) -> None:
         f"http://127.0.0.1:{_ats.http_port}/connect",
         status="HTTP/1.1 403",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     request(
         "--http2",
         "--insecure",
@@ -165,7 +164,8 @@ def test_ip_allow(ats_factory: ATSFactory, services: ServiceFactory) -> None:
         f"https://127.0.0.1:{_ats.https_port}/h2_push",
         status="HTTP/2 403",
         _ats=_ats,
-        _curl=_curl)
+        _curl=_curl,
+    )
     wait_for_file_lines(_ats.traffic_out, "Line 1 denial for 'CONNECT' from 127.0.0.1", 1)
     wait_for_file_lines(_ats.traffic_out, "Line 1 denial for 'PUSH' from 127.0.0.1", 1)
     validate_access_log(_ats=_ats, _services=services)

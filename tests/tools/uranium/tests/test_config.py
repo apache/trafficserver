@@ -25,20 +25,13 @@ from tools.uranium.config import ReplayConfigError, ReplaySpec, merge_flat_recor
 
 
 @pytest.mark.parametrize(
-    "check", [
-        {
-            "path": "log",
-            "exclude": "bad"
-        }, {
-            "contains": "missing path"
-        }, {
-            "path": "log",
-            "matches": [{
-                "expression": "x",
-                "minimum": 1
-            }]
-        }
-    ])
+    "check",
+    [
+        {"path": "log", "exclude": "bad"},
+        {"contains": "missing path"},
+        {"path": "log", "matches": [{"expression": "x", "minimum": 1}]},
+    ],
+)
 def test_file_checks_reject_unknown_or_incomplete_assertions(tmp_path: Path, check: dict[str, object]) -> None:
     """Fail at collection instead of silently discarding a misspelled assertion.
 
@@ -48,14 +41,8 @@ def test_file_checks_reject_unknown_or_incomplete_assertions(tmp_path: Path, che
 
     manifest = tmp_path / "invalid.test.yaml"
     manifest.write_text(
-        yaml.safe_dump({"urtest": {
-            "description": "invalid",
-            "server": {},
-            "client": {},
-            "ats": {
-                "file_checks": [check]
-            }
-        }}))
+        yaml.safe_dump({"urtest": {"description": "invalid", "server": {}, "client": {}, "ats": {"file_checks": [check]}}})
+    )
     with pytest.raises(ReplayConfigError, match="file_checks"):
         ReplaySpec.load(manifest)
 
@@ -104,9 +91,12 @@ def test_all_bespoke_tests_are_available_to_pytest() -> None:
     modules = list(uranium_tests.rglob("test_*.py"))
     assert modules
     missing = [
-        str(path.relative_to(uranium_tests)) for path in modules if not any(
+        str(path.relative_to(uranium_tests))
+        for path in modules
+        if not any(
             isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")
-            for node in ast.parse(path.read_text()).body)
+            for node in ast.parse(path.read_text()).body
+        )
     ]
     assert not missing, f"Native modules without pytest entry points: {missing}"
 
@@ -169,15 +159,18 @@ def test_replay_accepts_summary_as_description(tmp_path: Path) -> None:
 
     path = tmp_path / "summary.test.yaml"
     path.write_text(
-        yaml.safe_dump({
-            "urtest": {
-                "summary": "Summary-only replay",
-                "server": {},
-                "client": {},
-                "ats": {},
-            },
-            "sessions": [],
-        }))
+        yaml.safe_dump(
+            {
+                "urtest": {
+                    "summary": "Summary-only replay",
+                    "server": {},
+                    "client": {},
+                    "ats": {},
+                },
+                "sessions": [],
+            }
+        )
+    )
     assert ReplaySpec.load(path).description == "Summary-only replay"
 
 
@@ -188,17 +181,16 @@ def test_replay_requires_ats_environment_mapping(tmp_path: Path) -> None:
     path.write_text(
         yaml.safe_dump(
             {
-                "urtest":
-                    {
-                        "description": "Invalid ATS environment",
-                        "server": {},
-                        "client": {},
-                        "ats": {
-                            "environment": ["ATS_TEST_HOOK=1"]
-                        },
-                    },
+                "urtest": {
+                    "description": "Invalid ATS environment",
+                    "server": {},
+                    "client": {},
+                    "ats": {"environment": ["ATS_TEST_HOOK=1"]},
+                },
                 "sessions": [],
-            }))
+            }
+        )
+    )
     with pytest.raises(ReplayConfigError, match="ats.environment"):
         ReplaySpec.load(path)
 
@@ -221,7 +213,9 @@ def test_replay_manual_metadata_requires_boolean_or_reason(tmp_path: Path) -> No
                     "ats": {},
                 },
                 "sessions": [],
-            }))
+            }
+        )
+    )
     with pytest.raises(ReplayConfigError, match="urtest.manual"):
         ReplaySpec.load(path)
 
@@ -234,13 +228,17 @@ def test_replay_manifest_resolves_traffic_file(tmp_path: Path) -> None:
     path = tmp_path / "manifest.test.yaml"
     path.write_text(
         yaml.safe_dump(
-            {"urtest": {
-                "description": "Replay manifest",
-                "replay": traffic.name,
-                "server": {},
-                "client": {},
-                "ats": {},
-            }}))
+            {
+                "urtest": {
+                    "description": "Replay manifest",
+                    "replay": traffic.name,
+                    "server": {},
+                    "client": {},
+                    "ats": {},
+                }
+            }
+        )
+    )
 
     assert ReplaySpec.load(path).replay_path == traffic
 
@@ -251,13 +249,17 @@ def test_replay_manifest_requires_traffic_file(tmp_path: Path) -> None:
     path = tmp_path / "manifest.test.yaml"
     path.write_text(
         yaml.safe_dump(
-            {"urtest": {
-                "description": "Missing replay",
-                "replay": "missing.yaml",
-                "server": {},
-                "client": {},
-                "ats": {},
-            }}))
+            {
+                "urtest": {
+                    "description": "Missing replay",
+                    "replay": "missing.yaml",
+                    "server": {},
+                    "client": {},
+                    "ats": {},
+                }
+            }
+        )
+    )
 
     with pytest.raises(ReplayConfigError, match="replay file does not exist"):
         ReplaySpec.load(path)
@@ -272,38 +274,26 @@ def test_replay_manifest_variants_are_merged(tmp_path: Path) -> None:
     path.write_text(
         yaml.safe_dump(
             {
-                "urtest":
-                    {
-                        "description": "Variant replay",
-                        "replay": traffic.name,
-                        "server": {},
-                        "client": {},
-                        "ats": {
-                            "records_config": {
-                                "one": 1
-                            }
+                "urtest": {
+                    "description": "Variant replay",
+                    "replay": traffic.name,
+                    "server": {},
+                    "client": {},
+                    "ats": {"records_config": {"one": 1}},
+                    "variants": [
+                        {
+                            "name": "two",
+                            "ats": {"records_config": {"two": 2}},
                         },
-                        "variants":
-                            [
-                                {
-                                    "name": "two",
-                                    "ats": {
-                                        "records_config": {
-                                            "two": 2
-                                        }
-                                    },
-                                },
-                                {
-                                    "name": "three",
-                                    "ats": {
-                                        "records_config": {
-                                            "two": 3
-                                        }
-                                    },
-                                },
-                            ],
-                    }
-            }))
+                        {
+                            "name": "three",
+                            "ats": {"records_config": {"two": 3}},
+                        },
+                    ],
+                }
+            }
+        )
+    )
 
     specs = ReplaySpec.load_all(path)
 
@@ -320,23 +310,12 @@ def test_flat_records_merge_with_nested_defaults() -> None:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.http.cache.http": 0,
         },
-        {"http": {
-            "server_ports": "8080"
-        }},
+        {"http": {"server_ports": "8080"}},
     )
     assert result == {
         "records": {
-            "http": {
-                "server_ports": "8080",
-                "cache": {
-                    "http": 0
-                }
-            },
-            "diags": {
-                "debug": {
-                    "enabled": 1
-                }
-            },
+            "http": {"server_ports": "8080", "cache": {"http": 0}},
+            "diags": {"debug": {"enabled": 1}},
         }
     }
 

@@ -51,7 +51,7 @@ Renamed_Records = {
     'proxy.config.ssl.client.TLSv1_3': 'proxy.config.ssl.client.TLSv1_3.enabled',
     'proxy.local.incoming_ip_to_bind': 'proxy.config.incoming_ip_to_bind',
     'proxy.local.outgoing_ip_to_bind': 'proxy.config.outgoing_ip_to_bind',
-    'proxy.local.http.parent_proxy.disable_connect_tunneling': 'proxy.config.http.parent_proxy.disable_connect_tunneling'
+    'proxy.local.http.parent_proxy.disable_connect_tunneling': 'proxy.config.http.parent_proxy.disable_connect_tunneling',
 }
 
 ###############################################################################################
@@ -129,16 +129,16 @@ def validate_schema(data, schema_filename):
 def save_to_file(filename, is_json, typerepr, no_backup, data):
 
     def float_representer(dumper, value):
-        return dumper.represent_scalar(u'tag:yaml.org,2002:float', str(value), style="'")
+        return dumper.represent_scalar('tag:yaml.org,2002:float', str(value), style="'")
 
     def int_representer(dumper, value):
-        return dumper.represent_scalar(u'tag:yaml.org,2002:int', str(value), style="'")
+        return dumper.represent_scalar('tag:yaml.org,2002:int', str(value), style="'")
 
     def bool_representer(dumper, value):
-        return dumper.represent_scalar(u'tag:yaml.org,2002:bool', str(value), style="'")
+        return dumper.represent_scalar('tag:yaml.org,2002:bool', str(value), style="'")
 
     def null_representer(dumper, value):
-        return dumper.represent_scalar(u'tag:yaml.org,2002:null', str(value), style="'")
+        return dumper.represent_scalar('tag:yaml.org,2002:null', str(value), style="'")
 
     # Make sure we do not wipe out an existing file.
     if no_backup == False and os.path.exists(filename):
@@ -207,7 +207,8 @@ def add_object(config, var, value, type, track_info):
         if isinstance(config, dict) == False:
             line, rec = track_info
             raise Exception(
-                f"We cannot continue with '{rec}' at line '{line}' as a value node will be overridden.\nPlease check your config.")
+                f"We cannot continue with '{rec}' at line '{line}' as a value node will be overridden.\nPlease check your config."
+            )
         elif var in config and isinstance(config[var], dict):
             line, rec = track_info
             raise Exception(
@@ -219,7 +220,7 @@ def add_object(config, var, value, type, track_info):
         if key not in config:
             config[key] = {}
 
-        add_object(config[key], var[index + 1:], value, type, track_info)
+        add_object(config[key], var[index + 1 :], value, type, track_info)
 
 
 def make_tmp_file_with_renamed_fields(file):
@@ -267,11 +268,11 @@ def handle_file_input(args):
             track_info = (idx + 1, name)  # in case we want to show any error. rec name is always handy.
             # We ignore the prefix and work away from  there.
             if name.startswith("proxy.config."):
-                name = name[len("proxy.config."):]
+                name = name[len("proxy.config.") :]
             elif name.startswith("local.config."):
-                name = name[len("local.config."):]
+                name = name[len("local.config.") :]
             elif args.node and name.startswith("proxy.node."):
-                name = name[len("proxy."):]
+                name = name[len("proxy.") :]
 
             # Build the object (use rstrip to handle files without trailing newline)
             add_object(config, name, value.rstrip('\n'), type, track_info)
@@ -306,7 +307,8 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--schema', help="Validate the output using a json schema file.")
     parser.add_argument('-o', '--output', help="Save to output file.", required=False, default="records.yaml")
     parser.add_argument(
-        '-m', '--mute', help="Be quiet, do not output anything, except for errors", required=False, action='store_true')
+        '-m', '--mute', help="Be quiet, do not output anything, except for errors", required=False, action='store_true'
+    )
     parser.add_argument('-e', '--error', help="Show traceback", required=False, action='store_true', default=False)
     parser.add_argument(
         '-x',
@@ -315,7 +317,8 @@ if __name__ == '__main__':
         required=False,
         action='store_true',
         default=False,
-        dest='no_backup')
+        dest='no_backup',
+    )
     kk = parser.add_mutually_exclusive_group(required=False)
     kk.add_argument('-j', '--json', help="Output as json", action='store_true', default=False)
     kk.add_argument('-y', '--yaml', help="Output as yaml", action='store_true', default=True)

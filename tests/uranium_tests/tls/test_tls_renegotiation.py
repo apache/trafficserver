@@ -35,10 +35,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin = services.origin("server")
     origin.add_response(
         {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "ok"
-        },
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "ok"},
     )
     return origin
 
@@ -58,7 +55,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.allow_client_renegotiation": 0,
@@ -66,7 +64,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.ssl.TLSv1_2": 1,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "ssl_load",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}")
     return ats
 
@@ -116,7 +115,8 @@ def test_tls_renegotiation(ats_factory: ATSFactory, services: ServiceFactory, cu
         _ats,
         (
             f"--verbose --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 --insecure --resolve "
-            f"'example.com:{_ats.https_port}:127.0.0.1' 'https://example.com:{_ats.https_port}/'"),
+            f"'example.com:{_ats.https_port}:127.0.0.1' 'https://example.com:{_ats.https_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert "HTTP/1.1 200 OK" in result.stderr

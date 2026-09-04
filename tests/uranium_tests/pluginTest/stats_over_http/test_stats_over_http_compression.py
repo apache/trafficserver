@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """Large compressed statistics and aborted intercept cleanup."""
+
 import re
 import shutil
 import sys
@@ -38,8 +39,9 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "test_metrics",
-            "proxy.config.dump_mem_info_frequency": 1
-        })
+            "proxy.config.dump_mem_info_frequency": 1,
+        }
+    )
     ats.start()
     encodings = ["gzip", "deflate"]
     if ats.has_feature("TS_HAS_BROTLI") and shutil.which("brotli"):
@@ -47,10 +49,16 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
     for stats_format in ("json", "csv", "prometheus", "prometheus_v2"):
         for encoding in encodings:
             result = services.process(
-                f"{stats_format}-{encoding}", [
-                    sys.executable, directory / "fetch_stats.py",
-                    str(ats.http_port), stats_format, f"--encoding={encoding}", "--count=10000"
-                ]).run()
+                f"{stats_format}-{encoding}",
+                [
+                    sys.executable,
+                    directory / "fetch_stats.py",
+                    str(ats.http_port),
+                    stats_format,
+                    f"--encoding={encoding}",
+                    "--count=10000",
+                ],
+            ).run()
             assert result.returncode == 0, result.output
             assert "Verified 10000 test metrics" in result.stdout
     # The continuation count comes from the freelist dump, which has no
@@ -59,19 +67,20 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
     baseline = ats.run_directory / "cont_baseline"
     if count_continuations:
         result = services.process(
-            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]).run()
+            "count-before", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline, "--save"]
+        ).run()
         assert result.returncode == 0, result.output
     result = services.process(
-        "reject", [sys.executable, directory / "fetch_stats.py",
-                   str(ats.http_port), "json", "--reject", "--encoding=gzip"]).run()
+        "reject", [sys.executable, directory / "fetch_stats.py", str(ats.http_port), "json", "--reject", "--encoding=gzip"]
+    ).run()
     assert result.returncode == 0, result.output
     assert "Response status 406" in result.stdout
     for encoding in ("identity", "gzip"):
         arguments = ["--encoding=gzip"] if encoding == "gzip" else []
         result = services.process(
             f"reset-{encoding}",
-            [sys.executable, directory / "fetch_stats.py",
-             str(ats.http_port), "prometheus", "--reset", *arguments]).run()
+            [sys.executable, directory / "fetch_stats.py", str(ats.http_port), "prometheus", "--reset", *arguments],
+        ).run()
         assert result.returncode == 0, result.output
     if count_continuations:
         result = services.process("count-after", [sys.executable, directory / "cont_count.py", ats.traffic_out, baseline]).run()
@@ -79,8 +88,8 @@ def test_stats_over_http_compression(ats_factory: ATSFactory, services: ServiceF
         assert "no more than the baseline" in result.stdout
     result = services.process(
         "after-aborts",
-        [sys.executable, directory / "fetch_stats.py",
-         str(ats.http_port), "json", "--encoding=gzip", "--count=10000"]).run()
+        [sys.executable, directory / "fetch_stats.py", str(ats.http_port), "json", "--encoding=gzip", "--count=10000"],
+    ).run()
     assert result.returncode == 0, result.output
     assert "Verified 10000 test metrics" in result.stdout
     ats.stop()

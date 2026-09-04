@@ -46,7 +46,8 @@ def main() -> int:
     parser.add_argument('traffic_out', help='traffic.out of a Traffic Server that dumps its memory use every second')
     parser.add_argument('baseline', help='the file that holds the baseline count')
     parser.add_argument(
-        '--save', action='store_true', help='save the count from the next dump as the baseline instead of checking against it')
+        '--save', action='store_true', help='save the count from the next dump as the baseline instead of checking against it'
+    )
     parser.add_argument('--timeout', type=float, default=30, help='seconds to wait for a matching dump')
     args = parser.parse_args()
 

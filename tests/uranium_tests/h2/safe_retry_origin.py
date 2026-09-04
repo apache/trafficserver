@@ -88,10 +88,9 @@ class RetryOrigin:
         if self.mode in ("rst", "early-rst", "rst-internal", "rst-cancel", "response-rst"):
             if self.mode == "response-rst":
                 connection.send_headers(stream_id, [(":status", "100")])
-            error = {
-                "rst-internal": ErrorCodes.INTERNAL_ERROR,
-                "rst-cancel": ErrorCodes.CANCEL
-            }.get(self.mode, ErrorCodes.REFUSED_STREAM)
+            error = {"rst-internal": ErrorCodes.INTERNAL_ERROR, "rst-cancel": ErrorCodes.CANCEL}.get(
+                self.mode, ErrorCodes.REFUSED_STREAM
+            )
             connection.reset_stream(stream_id, error_code=error)
             print(f"action=RST_STREAM attempt=1 error={error.name}", flush=True)
             return False
@@ -230,7 +229,7 @@ class RetryOrigin:
                     wire = bytearray(wire_bytes)
                     offset = 0
                     while offset + 9 <= len(wire):
-                        length = int.from_bytes(wire[offset:offset + 3], "big")
+                        length = int.from_bytes(wire[offset : offset + 3], "big")
                         if wire[offset + 3] == 7:
                             wire[offset + 9] |= 0x80
                         offset += 9 + length
@@ -330,8 +329,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "mode",
         choices=(
-            "rst", "early-rst", "goaway", "rst-internal", "rst-cancel", "response-rst", "goaway-equal", "goaway-reserved",
-            "goaway-drain", "goaway-drain-max", "goaway-drain-above", "goaway-split", "unsolicited-continuation", "settings-flood"))
+            "rst",
+            "early-rst",
+            "goaway",
+            "rst-internal",
+            "rst-cancel",
+            "response-rst",
+            "goaway-equal",
+            "goaway-reserved",
+            "goaway-drain",
+            "goaway-drain-max",
+            "goaway-drain-above",
+            "goaway-split",
+            "unsolicited-continuation",
+            "settings-flood",
+        ),
+    )
     parser.add_argument("port", type=int)
     parser.add_argument("certificate")
     parser.add_argument("private_key")

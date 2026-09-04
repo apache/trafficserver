@@ -54,7 +54,8 @@ def configure_server(suffix: str, *, _replay_file: Path, _services: ServiceFacto
 
 
 def configure_ats(
-        ats_factory: ATSFactory, suffix: str, *, _connection_type: ConnectionType, _dns: DNSServer, _server: VerifierServer) -> ATS:
+    ats_factory: ATSFactory, suffix: str, *, _connection_type: ConnectionType, _dns: DNSServer, _server: VerifierServer
+) -> ATS:
     """Configure SNI ACLs and routing for one connection mode.
 
     :param _connection_type: Test-local connection type configured by the test.
@@ -90,7 +91,8 @@ def configure_ats(
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http|ssl|proxyprotocol",
             "proxy.config.acl.subjects": "PROXY,PEER",
-        })
+        }
+    )
     if _connection_type is ConnectionType.TUNNEL:
         ats.records.update({"proxy.config.http.connect_ports": str(_server.https_port)})
         ats.allow_private_connect()
@@ -98,8 +100,8 @@ def configure_ats(
 
 
 def configure_client(
-        suffix: str, *, _ats: ATS, _connection_type: ConnectionType, _replay_file: Path,
-        _services: ServiceFactory) -> ProcessService:
+    suffix: str, *, _ats: ATS, _connection_type: ConnectionType, _replay_file: Path, _services: ServiceFactory
+) -> ProcessService:
     """Create a verifier client whose first blocked connection is expected to fail.
 
     :param _ats: Test-local ats configured by the test.

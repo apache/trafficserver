@@ -55,12 +55,15 @@ try:
     from zoneinfo import ZoneInfo
 except ImportError:
     from datetime import tzinfo
+
     ZoneInfo = None  # Will fall back to UTC only
 
 import matplotlib
+
 # Check for --gui in sys.argv early to set backend before importing pyplot
 if '--gui' in sys.argv:
     import platform
+
     if platform.system() == 'Darwin':
         matplotlib.use('MacOSX')
     else:
@@ -79,250 +82,199 @@ import yaml
 DEFAULT_PAGES = [
     {
         "name": "Traffic & Cache",
-        "panels":
-            [
-                {
-                    "title": "Requests/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Client",
-                                "type": "counter",
-                                "key": "proxy.process.http.incoming_requests",
-                                "color": "#FFFF00"
-                            },  # Yellow
-                            {
-                                "name": "Origin",
-                                "type": "counter",
-                                "key": "proxy.process.http.outgoing_requests",
-                                "color": "#BF00FF"
-                            },  # Electric Purple (complement)
-                        ]
-                },
-                {
-                    "title": "Latency (ms)",
-                    "metrics":
-                        [
-                            {
-                                "name": "Cache Hit",
-                                "type": "latency",
-                                "key": "proxy.process.http.transaction_totaltime.hit_fresh",
-                                "key2": "proxy.process.http.transaction_counts.hit_fresh",
-                                "color": "#00FF00"
-                            },  # Lime Green
-                            {
-                                "name": "Origin",
-                                "type": "latency",
-                                "key": "proxy.process.http.transaction_totaltime.miss_cold",
-                                "key2": "proxy.process.http.transaction_counts.miss_cold",
-                                "color": "#FF00FF"
-                            },  # Magenta (complement)
-                        ]
-                },
-                {
-                    "title": "Cache Hit Rate %",
-                    "metrics":
-                        [
-                            {
-                                "name": "Hit Rate",
-                                "type": "hit_rate",
-                                "key": "proxy.process.cache_total_hits",
-                                "key2": "proxy.process.cache_total_misses",
-                                "color": "#00FF7F"
-                            },  # Spring Green
-                        ]
-                },
-                {
-                    "title": "Connections",
-                    "metrics":
-                        [
-                            {
-                                "name": "Client",
-                                "type": "gauge",
-                                "key": "proxy.process.http.current_client_connections",
-                                "color": "#00FFFF"
-                            },  # Cyan
-                            {
-                                "name": "Origin",
-                                "type": "gauge",
-                                "key": "proxy.process.http.current_server_connections",
-                                "color": "#FF4040"
-                            },  # Bright Red (complement)
-                        ]
-                },
-            ]
+        "panels": [
+            {
+                "title": "Requests/sec",
+                "metrics": [
+                    {
+                        "name": "Client",
+                        "type": "counter",
+                        "key": "proxy.process.http.incoming_requests",
+                        "color": "#FFFF00",
+                    },  # Yellow
+                    {
+                        "name": "Origin",
+                        "type": "counter",
+                        "key": "proxy.process.http.outgoing_requests",
+                        "color": "#BF00FF",
+                    },  # Electric Purple (complement)
+                ],
+            },
+            {
+                "title": "Latency (ms)",
+                "metrics": [
+                    {
+                        "name": "Cache Hit",
+                        "type": "latency",
+                        "key": "proxy.process.http.transaction_totaltime.hit_fresh",
+                        "key2": "proxy.process.http.transaction_counts.hit_fresh",
+                        "color": "#00FF00",
+                    },  # Lime Green
+                    {
+                        "name": "Origin",
+                        "type": "latency",
+                        "key": "proxy.process.http.transaction_totaltime.miss_cold",
+                        "key2": "proxy.process.http.transaction_counts.miss_cold",
+                        "color": "#FF00FF",
+                    },  # Magenta (complement)
+                ],
+            },
+            {
+                "title": "Cache Hit Rate %",
+                "metrics": [
+                    {
+                        "name": "Hit Rate",
+                        "type": "hit_rate",
+                        "key": "proxy.process.cache_total_hits",
+                        "key2": "proxy.process.cache_total_misses",
+                        "color": "#00FF7F",
+                    },  # Spring Green
+                ],
+            },
+            {
+                "title": "Connections",
+                "metrics": [
+                    {
+                        "name": "Client",
+                        "type": "gauge",
+                        "key": "proxy.process.http.current_client_connections",
+                        "color": "#00FFFF",
+                    },  # Cyan
+                    {
+                        "name": "Origin",
+                        "type": "gauge",
+                        "key": "proxy.process.http.current_server_connections",
+                        "color": "#FF4040",
+                    },  # Bright Red (complement)
+                ],
+            },
+        ],
     },
     {
         "name": "Response Codes",
-        "panels":
-            [
-                {
-                    "title": "2xx Responses/sec",
-                    "metrics": [{
-                        "name": "2xx",
-                        "type": "counter",
-                        "key": "proxy.process.http.2xx_responses",
-                        "color": "#00FF00"
-                    },]
-                },
-                {
-                    "title": "3xx Responses/sec",
-                    "metrics": [{
-                        "name": "3xx",
-                        "type": "counter",
-                        "key": "proxy.process.http.3xx_responses",
-                        "color": "#00FFFF"
-                    },]
-                },
-                {
-                    "title": "4xx Responses/sec",
-                    "metrics": [{
-                        "name": "4xx",
-                        "type": "counter",
-                        "key": "proxy.process.http.4xx_responses",
-                        "color": "#FFA500"
-                    },]
-                },
-                {
-                    "title": "5xx Responses/sec",
-                    "metrics": [{
-                        "name": "5xx",
-                        "type": "counter",
-                        "key": "proxy.process.http.5xx_responses",
-                        "color": "#FF0000"
-                    },]
-                },
-            ]
+        "panels": [
+            {
+                "title": "2xx Responses/sec",
+                "metrics": [
+                    {"name": "2xx", "type": "counter", "key": "proxy.process.http.2xx_responses", "color": "#00FF00"},
+                ],
+            },
+            {
+                "title": "3xx Responses/sec",
+                "metrics": [
+                    {"name": "3xx", "type": "counter", "key": "proxy.process.http.3xx_responses", "color": "#00FFFF"},
+                ],
+            },
+            {
+                "title": "4xx Responses/sec",
+                "metrics": [
+                    {"name": "4xx", "type": "counter", "key": "proxy.process.http.4xx_responses", "color": "#FFA500"},
+                ],
+            },
+            {
+                "title": "5xx Responses/sec",
+                "metrics": [
+                    {"name": "5xx", "type": "counter", "key": "proxy.process.http.5xx_responses", "color": "#FF0000"},
+                ],
+            },
+        ],
     },
     {
         "name": "TLS & HTTP/2",
-        "panels":
-            [
-                {
-                    "title": "SSL Handshakes/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Success",
-                                "type": "counter",
-                                "key": "proxy.process.ssl.total_success_handshake_count_in",
-                                "color": "#00FF00"
-                            },
-                            {
-                                "name": "Failed",
-                                "type": "counter",
-                                "key": "proxy.process.ssl.ssl_error_ssl",
-                                "color": "#FF0000"
-                            },
-                        ]
-                },
-                {
-                    "title": "SSL Connections",
-                    "metrics":
-                        [{
-                            "name": "Active",
-                            "type": "gauge",
-                            "key": "proxy.process.ssl.user_agent_sessions",
-                            "color": "#00FFFF"
-                        },]
-                },
-                {
-                    "title": "HTTP/2 Connections",
-                    "metrics":
-                        [
-                            {
-                                "name": "Total",
-                                "type": "counter",
-                                "key": "proxy.process.http2.total_client_connections",
-                                "color": "#FF00FF"
-                            },
-                            {
-                                "name": "Active",
-                                "type": "gauge",
-                                "key": "proxy.process.http2.current_client_sessions",
-                                "color": "#00FFFF"
-                            },
-                        ]
-                },
-                {
-                    "title": "HTTP/2 Errors/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Errors",
-                                "type": "counter",
-                                "key": "proxy.process.http2.connection_errors",
-                                "color": "#FF0000"
-                            },
-                        ]
-                },
-            ]
+        "panels": [
+            {
+                "title": "SSL Handshakes/sec",
+                "metrics": [
+                    {
+                        "name": "Success",
+                        "type": "counter",
+                        "key": "proxy.process.ssl.total_success_handshake_count_in",
+                        "color": "#00FF00",
+                    },
+                    {"name": "Failed", "type": "counter", "key": "proxy.process.ssl.ssl_error_ssl", "color": "#FF0000"},
+                ],
+            },
+            {
+                "title": "SSL Connections",
+                "metrics": [
+                    {"name": "Active", "type": "gauge", "key": "proxy.process.ssl.user_agent_sessions", "color": "#00FFFF"},
+                ],
+            },
+            {
+                "title": "HTTP/2 Connections",
+                "metrics": [
+                    {"name": "Total", "type": "counter", "key": "proxy.process.http2.total_client_connections", "color": "#FF00FF"},
+                    {"name": "Active", "type": "gauge", "key": "proxy.process.http2.current_client_sessions", "color": "#00FFFF"},
+                ],
+            },
+            {
+                "title": "HTTP/2 Errors/sec",
+                "metrics": [
+                    {"name": "Errors", "type": "counter", "key": "proxy.process.http2.connection_errors", "color": "#FF0000"},
+                ],
+            },
+        ],
     },
     {
         "name": "Network & Errors",
-        "panels":
-            [
-                {
-                    "title": "Client Bytes/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Read",
-                                "type": "counter",
-                                "key": "proxy.process.http.user_agent_total_request_bytes",
-                                "color": "#00FFFF"
-                            },
-                            {
-                                "name": "Write",
-                                "type": "counter",
-                                "key": "proxy.process.http.user_agent_total_response_bytes",
-                                "color": "#FF00FF"
-                            },
-                        ]
-                },
-                {
-                    "title": "Origin Bytes/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Read",
-                                "type": "counter",
-                                "key": "proxy.process.http.origin_server_total_response_bytes",
-                                "color": "#00FF00"
-                            },
-                            {
-                                "name": "Write",
-                                "type": "counter",
-                                "key": "proxy.process.http.origin_server_total_request_bytes",
-                                "color": "#FFA500"
-                            },
-                        ]
-                },
-                {
-                    "title": "Connection Errors/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Connect Fail",
-                                "type": "counter",
-                                "key": "proxy.process.http.err_connect_fail_count",
-                                "color": "#FF0000"
-                            },
-                        ]
-                },
-                {
-                    "title": "Transaction Errors/sec",
-                    "metrics":
-                        [
-                            {
-                                "name": "Aborts",
-                                "type": "counter",
-                                "key": "proxy.process.http.transaction_counts.errors.aborts",
-                                "color": "#FFA500"
-                            },
-                        ]
-                },
-            ]
+        "panels": [
+            {
+                "title": "Client Bytes/sec",
+                "metrics": [
+                    {
+                        "name": "Read",
+                        "type": "counter",
+                        "key": "proxy.process.http.user_agent_total_request_bytes",
+                        "color": "#00FFFF",
+                    },
+                    {
+                        "name": "Write",
+                        "type": "counter",
+                        "key": "proxy.process.http.user_agent_total_response_bytes",
+                        "color": "#FF00FF",
+                    },
+                ],
+            },
+            {
+                "title": "Origin Bytes/sec",
+                "metrics": [
+                    {
+                        "name": "Read",
+                        "type": "counter",
+                        "key": "proxy.process.http.origin_server_total_response_bytes",
+                        "color": "#00FF00",
+                    },
+                    {
+                        "name": "Write",
+                        "type": "counter",
+                        "key": "proxy.process.http.origin_server_total_request_bytes",
+                        "color": "#FFA500",
+                    },
+                ],
+            },
+            {
+                "title": "Connection Errors/sec",
+                "metrics": [
+                    {
+                        "name": "Connect Fail",
+                        "type": "counter",
+                        "key": "proxy.process.http.err_connect_fail_count",
+                        "color": "#FF0000",
+                    },
+                ],
+            },
+            {
+                "title": "Transaction Errors/sec",
+                "metrics": [
+                    {
+                        "name": "Aborts",
+                        "type": "counter",
+                        "key": "proxy.process.http.transaction_counts.errors.aborts",
+                        "color": "#FFA500",
+                    },
+                ],
+            },
+        ],
     },
 ]
 
@@ -392,19 +344,19 @@ def format_value(value: float, is_percent: bool = False, is_latency: bool = Fals
     if is_latency:
         # Format latency in milliseconds
         if value >= 1000:
-            return f"{value/1000:.1f}s"
+            return f"{value / 1000:.1f}s"
         elif value >= 1:
             return f"{value:.0f}ms"
         else:
             return f"{value:.1f}ms"
     if abs(value) >= 1_000_000_000_000:
-        return f"{value/1_000_000_000_000:.1f}T"
+        return f"{value / 1_000_000_000_000:.1f}T"
     if abs(value) >= 1_000_000_000:
-        return f"{value/1_000_000_000:.1f}G"
+        return f"{value / 1_000_000_000:.1f}G"
     if abs(value) >= 1_000_000:
-        return f"{value/1_000_000:.1f}M"
+        return f"{value / 1_000_000:.1f}M"
     elif abs(value) >= 1_000:
-        return f"{value/1_000:.1f}K"
+        return f"{value / 1_000:.1f}K"
     elif abs(value) >= 1:
         return f"{value:.0f}"
     else:
@@ -421,13 +373,13 @@ def format_ytick(value, pos):
             return '0'
         return f'{value:.1f}'
     if abs(value) >= 1e12:
-        return f'{int(value/1e12)}T'
+        return f'{int(value / 1e12)}T'
     if abs(value) >= 1e9:
-        return f'{int(value/1e9)}G'
+        return f'{int(value / 1e9)}G'
     if abs(value) >= 1e6:
-        return f'{int(value/1e6)}M'
+        return f'{int(value / 1e6)}M'
     if abs(value) >= 1e3:
-        return f'{int(value/1e3)}K'
+        return f'{int(value / 1e3)}K'
     return f'{int(value)}'
 
 
@@ -720,7 +672,8 @@ class JSONRPCBatchCollector:
                 ["ssh", "-o", "ConnectTimeout=5", "-o", "BatchMode=yes", self.hostname, "echo ok"],
                 capture_output=True,
                 text=True,
-                timeout=10)
+                timeout=10,
+            )
             if result.returncode != 0:
                 stderr = result.stderr.strip()
                 return False, f"SSH failed: {stderr or 'unknown error'}"
@@ -849,14 +802,15 @@ class MetricCollector:
     """Collects metric values from a host via shell commands."""
 
     def __init__(
-            self,
-            name: str,
-            key: str,
-            metric_type: str,
-            color: str,
-            hostname: str = "",
-            host_name: str = "",
-            traffic_ctl_path: str = DEFAULT_TRAFFIC_CTL_PATH):
+        self,
+        name: str,
+        key: str,
+        metric_type: str,
+        color: str,
+        hostname: str = "",
+        host_name: str = "",
+        traffic_ctl_path: str = DEFAULT_TRAFFIC_CTL_PATH,
+    ):
         self.name = name
         self.key = key
         self.metric_type = metric_type.lower()
@@ -951,18 +905,19 @@ class ATSGrapher:
     LINE_STYLES = ['-', '--', '-.', ':']  # solid, dashed, dash-dot, dotted
 
     def __init__(
-            self,
-            hostnames: list,
-            interval: float,
-            history_seconds: int,
-            pages: list,
-            gui_mode: bool = False,
-            save_png: Optional[str] = None,
-            log_stats: Optional[str] = None,
-            run_for: Optional[int] = None,
-            no_keyboard: bool = False,
-            tz_name: str = "UTC",
-            socket_path: str = DEFAULT_JSONRPC_SOCKET_PATH):
+        self,
+        hostnames: list,
+        interval: float,
+        history_seconds: int,
+        pages: list,
+        gui_mode: bool = False,
+        save_png: Optional[str] = None,
+        log_stats: Optional[str] = None,
+        run_for: Optional[int] = None,
+        no_keyboard: bool = False,
+        tz_name: str = "UTC",
+        socket_path: str = DEFAULT_JSONRPC_SOCKET_PATH,
+    ):
         self.hostnames = hostnames  # Bare hostnames like ["ats-server1.example.com"]
         self.interval = interval
         self.history_seconds = history_seconds
@@ -1156,7 +1111,9 @@ class ATSGrapher:
                                     if prev is None:
                                         # Store both hits and misses as prev value
                                         self.prev_values[page_idx][panel_idx][metric_idx][host_idx] = (
-                                            (hits_raw, misses_raw), current_time)
+                                            (hits_raw, misses_raw),
+                                            current_time,
+                                        )
                                         value = None
                                     else:
                                         (prev_hits, prev_misses), prev_time = prev
@@ -1173,7 +1130,9 @@ class ATSGrapher:
                                         else:
                                             value = None
                                         self.prev_values[page_idx][panel_idx][metric_idx][host_idx] = (
-                                            (hits_raw, misses_raw), current_time)
+                                            (hits_raw, misses_raw),
+                                            current_time,
+                                        )
                                 else:
                                     value = None
                             elif metric_type == 'latency':
@@ -1187,7 +1146,9 @@ class ATSGrapher:
                                     prev = self.prev_values[page_idx][panel_idx][metric_idx][host_idx]
                                     if prev is None:
                                         self.prev_values[page_idx][panel_idx][metric_idx][host_idx] = (
-                                            (time_raw, count_raw), current_time)
+                                            (time_raw, count_raw),
+                                            current_time,
+                                        )
                                         value = None
                                     else:
                                         (prev_time_raw, prev_count), prev_time = prev
@@ -1200,7 +1161,9 @@ class ATSGrapher:
                                         else:
                                             value = None
                                         self.prev_values[page_idx][panel_idx][metric_idx][host_idx] = (
-                                            (time_raw, count_raw), current_time)
+                                            (time_raw, count_raw),
+                                            current_time,
+                                        )
                                 else:
                                     value = None
                             else:
@@ -1377,7 +1340,8 @@ class ATSGrapher:
                     fontsize=13,
                     facecolor=self.PLOT_BG_COLOR,
                     edgecolor=self.AXIS_COLOR,
-                    labelcolor=self.TEXT_COLOR)
+                    labelcolor=self.TEXT_COLOR,
+                )
 
         # Overall title with date, time, and timezone
         now = datetime.now(self.tz)
@@ -1533,7 +1497,8 @@ class ATSGrapher:
             return []
 
         anim = FuncAnimation(
-            fig, update, interval=int(self.interval * 1000), frames=num_frames, repeat=repeat, blit=False, cache_frame_data=False)
+            fig, update, interval=int(self.interval * 1000), frames=num_frames, repeat=repeat, blit=False, cache_frame_data=False
+        )
         plt.show()
 
     def run_once(self):
@@ -1586,10 +1551,12 @@ Examples:
   %(prog)s ats-server{1..3}.example.com                    # bash expansion
   %(prog)s --interval 2 --history 120 ats-server{1..4}.example.com
   %(prog)s ats1.dc1.example.com ats1.dc2.example.com   # compare POPs
-""")
+""",
+    )
 
     parser.add_argument(
-        'hosts', nargs='*', default=['localhost'], metavar='HOSTNAME', help='Hostnames to monitor (default: localhost, max 4)')
+        'hosts', nargs='*', default=['localhost'], metavar='HOSTNAME', help='Hostnames to monitor (default: localhost, max 4)'
+    )
     parser.add_argument('--interval', type=float, default=1.0, help='Refresh interval in seconds (default: 1.0)')
     parser.add_argument('--history', type=int, default=60, help='History window in seconds (default: 60)')
     parser.add_argument('--gui', action='store_true', help='Use matplotlib GUI window instead of imgcat')
@@ -1601,11 +1568,13 @@ Examples:
 
     # ATS paths
     parser.add_argument(
-        '--socket', default=DEFAULT_JSONRPC_SOCKET_PATH, help='Path to JSONRPC Unix socket (auto-discovered if not set)')
+        '--socket', default=DEFAULT_JSONRPC_SOCKET_PATH, help='Path to JSONRPC Unix socket (auto-discovered if not set)'
+    )
 
     # Debug options
     parser.add_argument(
-        '--save-png', default=None, metavar='FILE', help='Save PNG to file after each render (use {iter} for iteration number)')
+        '--save-png', default=None, metavar='FILE', help='Save PNG to file after each render (use {iter} for iteration number)'
+    )
     parser.add_argument('--log-stats', default=None, metavar='FILE', help='Log raw stats to file for debugging')
     parser.add_argument('--run-for', type=int, default=None, metavar='SECONDS', help='Run for N seconds then exit (for debugging)')
     parser.add_argument('--no-keyboard', action='store_true', help='Disable keyboard handling (for non-TTY environments)')
@@ -1646,7 +1615,8 @@ Examples:
         run_for=args.run_for,
         no_keyboard=args.no_keyboard,
         tz_name=tz_name,
-        socket_path=args.socket)
+        socket_path=args.socket,
+    )
 
     # In GUI mode, suppress terminal output -- errors show on the dashboard
     verbose = not args.gui

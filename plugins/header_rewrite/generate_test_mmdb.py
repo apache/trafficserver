@@ -48,17 +48,21 @@ def generate_flat(path):
     """Flat schema: country_code at top level (vendor databases)."""
     w = MMDBWriter(ip_version=4, database_type="Test-Flat-GeoIP")
     w.insert_network(
-        net("8.8.8.0/24"), {
+        net("8.8.8.0/24"),
+        {
             "country_code": "US",
             "autonomous_system_number": MmdbU32(15169),
             "autonomous_system_organization": "GOOGLE",
-        })
+        },
+    )
     w.insert_network(
-        net("1.2.3.0/24"), {
+        net("1.2.3.0/24"),
+        {
             "country_code": "KR",
             "autonomous_system_number": MmdbU32(9286),
             "autonomous_system_organization": "KINX",
-        })
+        },
+    )
     w.to_db_file(path)
 
 
@@ -66,27 +70,21 @@ def generate_nested(path):
     """Nested schema: country/iso_code (GeoLite2, GeoIP2, DBIP)."""
     w = MMDBWriter(ip_version=4, database_type="Test-Nested-GeoIP2")
     w.insert_network(
-        net("8.8.8.0/24"), {
-            "country": {
-                "iso_code": "US",
-                "names": {
-                    "en": "United States"
-                }
-            },
+        net("8.8.8.0/24"),
+        {
+            "country": {"iso_code": "US", "names": {"en": "United States"}},
             "autonomous_system_number": MmdbU32(15169),
             "autonomous_system_organization": "GOOGLE",
-        })
+        },
+    )
     w.insert_network(
-        net("1.2.3.0/24"), {
-            "country": {
-                "iso_code": "KR",
-                "names": {
-                    "en": "South Korea"
-                }
-            },
+        net("1.2.3.0/24"),
+        {
+            "country": {"iso_code": "KR", "names": {"en": "South Korea"}},
             "autonomous_system_number": MmdbU32(9286),
             "autonomous_system_organization": "KINX",
-        })
+        },
+    )
     w.to_db_file(path)
 
 

@@ -53,14 +53,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: reload.example.com\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: reload.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -72,14 +66,16 @@ def configure_startup_ats(*, _ats_factory: ATSFactory) -> ATS:
     """
 
     ats = _ats_factory.create("ts-startup", enable_cache=False)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "header_rewrite",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "header_rewrite",
+        }
+    )
     ats.write_config_file("bad_run_plugin.conf", BAD_RUN_PLUGIN_BAD_RULE)
     ats.remap_config.add_line(
-        "map http://startup.example.com/ http://127.0.0.1/ "
-        "@plugin=header_rewrite.so @pparam=bad_run_plugin.conf")
+        "map http://startup.example.com/ http://127.0.0.1/ @plugin=header_rewrite.so @pparam=bad_run_plugin.conf"
+    )
     ats.expect_start_failure(BAD_RUN_PLUGIN_ERROR_MARKER)
     return ats
 
@@ -92,10 +88,12 @@ def configure_reload_ats(*, _ats_factory: ATSFactory, _origin: OriginServer) -> 
     """
 
     ats = _ats_factory.create("ts-reload", enable_cache=False, disable_log_checks=True)
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "header_rewrite",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "header_rewrite",
+        }
+    )
     ats.write_config_file("nested_bad_run_plugin.conf", BAD_RUN_PLUGIN_NESTED_BAD_RULE)
     ats.remap_config.add_line(f"map http://reload.example.com http://127.0.0.1:{_origin.port}")
     return ats
@@ -134,7 +132,8 @@ def install_invalid_remap(*, _ats: ATS, _origin: OriginServer) -> None:
 
     _ats.remap_config.path.write_text(
         f"map http://reload.example.com http://127.0.0.1:{_origin.port} "
-        "@plugin=header_rewrite.so @pparam=nested_bad_run_plugin.conf\n")
+        "@plugin=header_rewrite.so @pparam=nested_bad_run_plugin.conf\n"
+    )
 
 
 def reject_reload(*, _ats: ATS) -> None:

@@ -26,7 +26,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     ats = ats_factory.create("ts-child")
     ats.parent_config.add_line(
         'dest_domain=. method=get parent="localhost:8081" '
-        'parent_retry=unavailable_server_retry unavailable_server_retry_responses="502,503"')
+        'parent_retry=unavailable_server_retry unavailable_server_retry_responses="502,503"'
+    )
     return ats
 
 

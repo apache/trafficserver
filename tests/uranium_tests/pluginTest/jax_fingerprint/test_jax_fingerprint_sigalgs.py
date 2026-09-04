@@ -37,20 +37,28 @@ def test_jax_fingerprint_sigalgs(ats_factory: ATSFactory) -> None:
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "jax_fingerprint",
-            "proxy.config.log.max_secs_per_buffer": 1
-        })
+            "proxy.config.log.max_secs_per_buffer": 1,
+        }
+    )
     ats.plugin_config.add_line("jax_fingerprint.so --standalone --method JA4 --log-filename jax_fingerprint")
     ats.start()
-    for sigalgs in ("rsa_pss_rsae_sha256:ecdsa_secp256r1_sha256", "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256",
-                    "rsa_pss_rsae_sha256:ecdsa_secp256r1_sha256:rsa_pss_rsae_sha384"):
+    for sigalgs in (
+        "rsa_pss_rsae_sha256:ecdsa_secp256r1_sha256",
+        "ecdsa_secp256r1_sha256:rsa_pss_rsae_sha256",
+        "rsa_pss_rsae_sha256:ecdsa_secp256r1_sha256:rsa_pss_rsae_sha384",
+    ):
         result = ats.run_shell(
             "printf 'GET / HTTP/1.1\\r\\nHost: jax.server.test\\r\\nConnection: close\\r\\n\\r\\n' | "
             f"openssl s_client -connect 127.0.0.1:{ats.https_port} -servername jax.server.test "
-            f"-sigalgs '{sigalgs}' -ign_eof")
+            f"-sigalgs '{sigalgs}' -ign_eof"
+        )
         assert result.returncode == 0, result.output
         assert re.search(r"HTTP/1\.1 \d{3}", result.output), result.output
     content = wait_for_file_lines(ats.log_directory / "jax_fingerprint.log", "JA4: ", 3)
     assert re.search(
         r"JA4: (?P<ab>[a-z0-9]{10}_[0-9a-f]{12})_(?P<c1>[0-9a-f]{12})\n"
         r"[^\n]*JA4: (?P=ab)_(?!(?P=c1)\n)(?P<c2>[0-9a-f]{12})\n"
-        r"[^\n]*JA4: (?P=ab)_(?!(?P=c1)\n)(?!(?P=c2)\n)[0-9a-f]{12}\n", content, re.MULTILINE), content
+        r"[^\n]*JA4: (?P=ab)_(?!(?P=c1)\n)(?!(?P=c2)\n)[0-9a-f]{12}\n",
+        content,
+        re.MULTILINE,
+    ), content

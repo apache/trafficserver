@@ -62,28 +62,23 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.http.server_ports": f"{ats.https_port}:ssl",
             "proxy.config.http.connect_ports": _server.http_port,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_server.http_port}/")
     ats.allow_private_connect(("CONNECT", "GET"))
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats":
-                        [
-                            {
-                                "name": "malformed_h2_request",
-                                "format": ("uuid=%<{uuid}cqh> cqpv=%<cqpv> cqhm=%<cqhm> "
-                                           "crc=%<crc> sstc=%<sstc> pqu=%<pqu>"),
-                            }
-                        ],
-                    "logs": [{
-                        "filename": "squid",
-                        "format": "malformed_h2_request",
-                        "mode": "ascii"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [
+                    {
+                        "name": "malformed_h2_request",
+                        "format": ("uuid=%<{uuid}cqh> cqpv=%<cqpv> cqhm=%<cqhm> crc=%<crc> sstc=%<sstc> pqu=%<pqu>"),
+                    }
+                ],
+                "logs": [{"filename": "squid", "format": "malformed_h2_request", "mode": "ascii"}],
+            }
+        }
+    )
     return ats
 
 
@@ -131,8 +126,10 @@ def validate_logs(*, _ats: ATS) -> None:
         1,
     )
     for _scenario, uuid, method, url in MALFORMED_H2_REQUEST_LOGGING_CASES:
-        expected = (rf"uuid={uuid} cqpv=http/2 cqhm={method} "
-                    rf"crc=ERR_INVALID_REQ sstc=0 pqu={re.escape(url)}")
+        expected = (
+            rf"uuid={uuid} cqpv=http/2 cqhm={method} "
+            rf"crc=ERR_INVALID_REQ sstc=0 pqu={re.escape(url)}"
+        )
         assert re.search(expected, squid_log)
     assert re.search(r"uuid=valid-get cqpv=http/2 cqhm=GET ", squid_log)
     if "uuid=valid-connect" in squid_log:

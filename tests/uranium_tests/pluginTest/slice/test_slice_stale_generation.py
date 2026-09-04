@@ -71,7 +71,8 @@ def slice_hierarchy_slice_remap(source: str, upstream: str) -> str:
 
     return (
         f"map {source} {upstream} @plugin=slice.so @pparam=--blockbytes-test={SLICE_STALE_GENERATION_BLOCK_BYTES} "
-        "@plugin=cache_range_requests.so")
+        "@plugin=cache_range_requests.so"
+    )
 
 
 def slice_hierarchy_configure_records(ats: ATS, *, _dns: DNSServer) -> None:
@@ -88,7 +89,8 @@ def slice_hierarchy_configure_records(ats: ATS, *, _dns: DNSServer) -> None:
             "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
             "proxy.config.dns.resolv_conf": "NULL",
             "proxy.config.http.parent_proxy.self_detect": 0,
-        })
+        }
+    )
 
 
 def slice_hierarchy_require_plugins(ats: ATS) -> None:
@@ -120,13 +122,8 @@ def slice_hierarchy_configure_parent(*, _ats_factory: ATSFactory, _dns: DNSServe
 
 
 def slice_hierarchy_configure_child(
-        label: str,
-        *,
-        _ats_factory: ATSFactory,
-        _dns: DNSServer,
-        _name: str,
-        _parent: ATS,
-        disable_log_checks: bool = False) -> ATS:
+    label: str, *, _ats_factory: ATSFactory, _dns: DNSServer, _name: str, _parent: ATS, disable_log_checks: bool = False
+) -> ATS:
     """Configure a child that slices requests and forwards blocks to the parent.
 
     :param _ats_factory: Test-local ats factory configured by the test.
@@ -146,13 +143,8 @@ def slice_hierarchy_configure_child(
 
 
 def slice_hierarchy_configure_client(
-        phase: str,
-        *,
-        ats: ATS | None = None,
-        expected_return_code: int = 0,
-        _child: ATS,
-        _name: str,
-        _services: ServiceFactory) -> ProcessService:
+    phase: str, *, ats: ATS | None = None, expected_return_code: int = 0, _child: ATS, _name: str, _services: ServiceFactory
+) -> ProcessService:
     """Create a phase-selected replay client for one child.
 
     :param _child: Test-local child configured by the test.
@@ -249,9 +241,11 @@ def test_slice_mixed_generation(ats_factory: ATSFactory, services: ServiceFactor
     _origin = slice_hierarchy_configure_origin(_name=name, _services=services)
     _parent = slice_hierarchy_configure_parent(_ats_factory=ats_factory, _dns=_dns, _name=name, _origin=_origin)
     _child = slice_hierarchy_configure_child(
-        "child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent, disable_log_checks=True)
+        "child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent, disable_log_checks=True
+    )
     _cold_child = slice_hierarchy_configure_child(
-        "cold-child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent, disable_log_checks=True)
+        "cold-child", _ats_factory=ats_factory, _dns=_dns, _name=name, _parent=_parent, disable_log_checks=True
+    )
 
     slice_hierarchy_start_hierarchy(_child=_child, _dns=_dns, _origin=_origin, _parent=_parent)
     fill = slice_hierarchy_configure_client("fill-interior", _child=_child, _name=name, _services=services).run()
@@ -271,7 +265,8 @@ def test_slice_mixed_generation(ats_factory: ATSFactory, services: ServiceFactor
 
     _cold_child.start()
     cold = slice_hierarchy_configure_client(
-        "cold-child", ats=_cold_child, expected_return_code=1, _child=_child, _name=name, _services=services).run()
+        "cold-child", ats=_cold_child, expected_return_code=1, _child=_child, _name=name, _services=services
+    ).run()
     assert "Failed HTTP/1 transaction with key: cold-child" in cold.output
     slice_mixed_generation_assert_mismatch_diagnostics(_cold_child, both_blocks=False)
 

@@ -54,7 +54,8 @@ def configure_ats(ats_factory: ATSFactory, *, _server: VerifierServer) -> ATS:
             "proxy.config.http.per_server.connection.min": 0,
             "proxy.config.http.keep_alive_no_activity_timeout_out": PER_SERVER_METRIC__keep_alive_timeout,
             "proxy.config.http.server_session_sharing.pool": "global",
-        })
+        }
+    )
     return ats
 
 

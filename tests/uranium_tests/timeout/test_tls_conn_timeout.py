@@ -47,7 +47,8 @@ CASES = (
 
 
 def configure_origin(
-        context: ProceduralContext, services: ServiceFactory, *, _case: TimeoutCase, _origin_port: int) -> ProcessService:
+    context: ProceduralContext, services: ServiceFactory, *, _case: TimeoutCase, _origin_port: int
+) -> ProcessService:
     """Start the compiled TLS server with the requested delay points.
 
     :param _case: Test-local case configured by the test.
@@ -89,7 +90,8 @@ def configure_ats(ats_factory: ATSFactory, *, _case: TimeoutCase, _origin_port: 
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http|ssl",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.remap_config.add_line(f"map {_case.path} https://127.0.0.1:{_origin_port}")
     return ats
 

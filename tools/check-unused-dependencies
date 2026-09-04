@@ -43,27 +43,40 @@ def get_dependencies(program):
     args = ['./libtool', '--mode=execute', 'ldd', '--unused', '--function-relocs', program]
     for dependency in subprocess.Popen(args, stdout=subprocess.PIPE).stdout:
         dependency = dependency.decode('utf-8')[:-1]
-        if any(map(
+        if any(
+            map(
                 os.path.basename(dependency).startswith,
-            [
-                'libdl.so.',  # Because we add -ldl to LIBS
-                'libgcc_s.so.',
-                'libm.so.',  # Why does Libtool call ld with -lm?
-                'libpthread.so.',  # Because we add -lpthread to LIBS
-            ])):
+                [
+                    'libdl.so.',  # Because we add -ldl to LIBS
+                    'libgcc_s.so.',
+                    'libm.so.',  # Why does Libtool call ld with -lm?
+                    'libpthread.so.',  # Because we add -lpthread to LIBS
+                ],
+            )
+        ):
             continue
 
         progbase = os.path.basename(program)
 
         # clang+asan pulls in dependencies for these specific tools:
-        if any(map(progbase.__eq__, [
-                'http_load',
-                'escape_mapper',
-        ])):
-            if any(map(os.path.basename(dependency).startswith, [
-                    'librt.so',
-                    'libresolv.so',
-            ])):
+        if any(
+            map(
+                progbase.__eq__,
+                [
+                    'http_load',
+                    'escape_mapper',
+                ],
+            )
+        ):
+            if any(
+                map(
+                    os.path.basename(dependency).startswith,
+                    [
+                        'librt.so',
+                        'libresolv.so',
+                    ],
+                )
+            ):
                 continue
 
         if re.sub(r'\s+', '', dependency):

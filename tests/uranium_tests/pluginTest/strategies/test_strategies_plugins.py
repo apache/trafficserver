@@ -59,57 +59,69 @@ def configure_origins(services: ServiceFactory) -> dict[str, OriginServer]:
 def header_rewrite_config() -> str:
     """Return strategy mutations selected by a request header."""
 
-    return "\n".join(
-        (
-            'cond %{CLIENT-HEADER:Strategy} ="nemo"',
-            "set-next-hop-strategy nemo",
-            'cond %{CLIENT-HEADER:Strategy} ="nh0"',
-            "set-next-hop-strategy nh0",
-            'cond %{CLIENT-HEADER:Strategy} ="nh1"',
-            "set-next-hop-strategy nh1",
-            'cond %{CLIENT-HEADER:Strategy} ="null"',
-            "set-next-hop-strategy null",
-            'cond %{CLIENT-HEADER:Strategy} ="clear"',
-            'set-next-hop-strategy ""',
-        )) + "\n"
+    return (
+        "\n".join(
+            (
+                'cond %{CLIENT-HEADER:Strategy} ="nemo"',
+                "set-next-hop-strategy nemo",
+                'cond %{CLIENT-HEADER:Strategy} ="nh0"',
+                "set-next-hop-strategy nh0",
+                'cond %{CLIENT-HEADER:Strategy} ="nh1"',
+                "set-next-hop-strategy nh1",
+                'cond %{CLIENT-HEADER:Strategy} ="null"',
+                "set-next-hop-strategy null",
+                'cond %{CLIENT-HEADER:Strategy} ="clear"',
+                'set-next-hop-strategy ""',
+            )
+        )
+        + "\n"
+    )
 
 
 def regex_remap_config() -> str:
     """Return path-selected strategy mutations for regex_remap."""
 
-    return "\n".join(
-        (
-            "/nh0 http://origin/path @strategy=nh1",
-            "/nh1 http://origin/path @strategy=",
-            "/nh2 http://origin/path @strategy=nh0",
-            "/null http://origin/path @strategy=null",
-            "/nemo http://origin/path @strategy=nemo",
-            "/ http://origin/path",
-        )) + "\n"
+    return (
+        "\n".join(
+            (
+                "/nh0 http://origin/path @strategy=nh1",
+                "/nh1 http://origin/path @strategy=",
+                "/nh2 http://origin/path @strategy=nh0",
+                "/null http://origin/path @strategy=null",
+                "/nemo http://origin/path @strategy=nemo",
+                "/ http://origin/path",
+            )
+        )
+        + "\n"
+    )
 
 
 def lua_config() -> str:
     """Return URI-selected strategy mutations for tslua."""
 
-    return "\n".join(
-        (
-            "function do_remap()",
-            " local uri = ts.client_request.get_uri()",
-            ' if uri:find("nh0") then',
-            '  ts.http.set_next_hop_strategy("nh1")',
-            ' elseif uri:find("nh1") then',
-            '  ts.http.set_next_hop_strategy("")',
-            ' elseif uri:find("nh2") then',
-            '  ts.http.set_next_hop_strategy("nh0")',
-            ' elseif uri:find("null") then',
-            '  ts.http.set_next_hop_strategy("null")',
-            ' elseif uri:find("nemo") then',
-            '  ts.http.set_next_hop_strategy("nemo")',
-            " end",
-            ' ts.client_request.set_uri("path")',
-            " return 0",
-            "end",
-        )) + "\n"
+    return (
+        "\n".join(
+            (
+                "function do_remap()",
+                " local uri = ts.client_request.get_uri()",
+                ' if uri:find("nh0") then',
+                '  ts.http.set_next_hop_strategy("nh1")',
+                ' elseif uri:find("nh1") then',
+                '  ts.http.set_next_hop_strategy("")',
+                ' elseif uri:find("nh2") then',
+                '  ts.http.set_next_hop_strategy("nh0")',
+                ' elseif uri:find("null") then',
+                '  ts.http.set_next_hop_strategy("null")',
+                ' elseif uri:find("nemo") then',
+                '  ts.http.set_next_hop_strategy("nemo")',
+                " end",
+                ' ts.client_request.set_uri("path")',
+                " return 0",
+                "end",
+            )
+        )
+        + "\n"
+    )
 
 
 def strategies_config(*, _origins: dict[str, OriginServer]) -> str:
@@ -129,7 +141,8 @@ def strategies_config(*, _origins: dict[str, OriginServer]) -> str:
                 "        - scheme: http",
                 f"          port: {origin.port}",
                 "      weight: 1.0",
-            ))
+            )
+        )
     lines.append("strategies:")
     for suffix in STRATEGY_PLUGINS_ORIGIN_SUFFIXES:
         lines.extend(
@@ -143,7 +156,8 @@ def strategies_config(*, _origins: dict[str, OriginServer]) -> str:
                 "    groups:",
                 f"      - *g{suffix}",
                 "    scheme: http",
-            ))
+            )
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -170,14 +184,15 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origins: dict[st
             "proxy.config.http.parent_proxy.self_detect": 0,
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "next_hop|dns|http|parent|regex_remap|header_rewrite|tslua",
-        })
+        }
+    )
     ats.write_config_file("hdr_rw.config", header_rewrite_config())
     ats.write_config_file("regex_remap.config", regex_remap_config())
     ats.write_config_file("strategies.lua", lua_config())
     ats.write_config_file("strategies.yaml", strategies_config(_origins=_origins))
     ats.parent_config.add_line(
-        f'dest_domain=. parent="nh2:{_origins["nh2"].port}" '
-        "round_robin=false go_direct=false parent_is_proxy=false")
+        f'dest_domain=. parent="nh2:{_origins["nh2"].port}" round_robin=false go_direct=false parent_is_proxy=false'
+    )
     ats.remap_config.add_lines(
         (
             "map http://nhp_hr http://origin @plugin=header_rewrite.so @pparam=hdr_rw.config",
@@ -195,7 +210,8 @@ def configure_ats(ats_factory: ATSFactory, *, _dns: DNSServer, _origins: dict[st
             "map http://nh0_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strategies.lua",
             "map http://nh1_lua http://origin @strategy=nh1 @plugin=tslua.so @pparam=strategies.lua",
             "map http://nh2_lua http://origin @plugin=tslua.so @pparam=strategies.lua",
-        ))
+        )
+    )
     return ats
 
 

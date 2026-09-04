@@ -27,23 +27,16 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET /obj HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /obj HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         {
             "headers": f"HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{origin.port}/obj2\r\n\r\n",
             "body": "",
         },
     )
     origin.add_response(
+        {"headers": "GET /obj2 HTTP/1.1\r\nHost: *\r\n\r\n", "body": ""},
         {
-            "headers": "GET /obj2 HTTP/1.1\r\nHost: *\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": ("HTTP/1.1 200 OK\r\nX-Obj: obj2\r\nCache-Control: max-age=2\r\n"
-                        "Content-Length: 0\r\n\r\n"),
+            "headers": ("HTTP/1.1 200 OK\r\nX-Obj: obj2\r\nCache-Control: max-age=2\r\nContent-Length: 0\r\n\r\n"),
             "body": "",
         },
     )
@@ -66,7 +59,8 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
             "proxy.config.url_remap.remap_required": 0,
             "proxy.config.http.redirect.actions": "routable:follow,loopback:follow,self:follow",
             "proxy.config.http.number_of_redirections": 1,
-        })
+        }
+    )
     return ats
 
 
@@ -80,9 +74,7 @@ def request(*, _ats: ATS, _curl: Curl, _origin: OriginServer) -> CommandResult:
 
     result = _curl.run_for(
         _ats,
-        (
-            f"--silent --dump-header /dev/stdout --header 'Host: 127.0.0.1:{_origin.port}' "
-            f"'http://127.0.0.1:{_ats.http_port}/obj'"),
+        (f"--silent --dump-header /dev/stdout --header 'Host: 127.0.0.1:{_origin.port}' 'http://127.0.0.1:{_ats.http_port}/obj'"),
     )
     assert result.returncode == 0, result.output
     return result

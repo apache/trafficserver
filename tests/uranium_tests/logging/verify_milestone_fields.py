@@ -107,8 +107,7 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
             continue
 
         if val > EPOCH_THRESHOLD:
-            errors.append(f'line {line_num}: field "{name}" looks like an epoch leak: {val} '
-                          f'(> {EPOCH_THRESHOLD})')
+            errors.append(f'line {line_num}: field "{name}" looks like an epoch leak: {val} (> {EPOCH_THRESHOLD})')
 
     crc = fields.get('crc', '')
     is_miss = 'MISS' in crc or 'NONE' in crc
@@ -155,8 +154,8 @@ def validate_line(fields: dict[str, str], line_num: int) -> list[str]:
                 c_ttfb_val = int(c_ttfb_str)
                 if c_ttfb_val >= 0 and abs(chain_sum - c_ttfb_val) > CHAIN_TOLERANCE:
                     errors.append(
-                        f'line {line_num}: chain sum ({chain_sum}) != c_ttfb ({c_ttfb_val}), '
-                        f'diff={abs(chain_sum - c_ttfb_val)}ms')
+                        f'line {line_num}: chain sum ({chain_sum}) != c_ttfb ({c_ttfb_val}), diff={abs(chain_sum - c_ttfb_val)}ms'
+                    )
             except ValueError:
                 pass
 
@@ -220,16 +219,15 @@ def main():
         all_errors.append('No cache hit line found in log')
     if len(cache_key_hashes) != 1:
         all_errors.append(
-            f'Expected identical cache key hash on all lines, got {len(cache_key_hashes)} '
-            f'distinct values: {cache_key_hashes}')
+            f'Expected identical cache key hash on all lines, got {len(cache_key_hashes)} distinct values: {cache_key_hashes}'
+        )
 
     if all_errors:
         for err in all_errors:
             print(f'FAIL: {err}')
         sys.exit(1)
     else:
-        print(f'PASS: validated {len(lines)} log lines '
-              f'(miss={miss_found}, hit={hit_found}), all fields correct')
+        print(f'PASS: validated {len(lines)} log lines (miss={miss_found}, hit={hit_found}), all fields correct')
         sys.exit(0)
 
 

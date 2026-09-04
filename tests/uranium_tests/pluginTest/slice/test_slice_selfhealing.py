@@ -38,13 +38,12 @@ def add_range_response(origin: OriginServer, uid: str, byte_range: str, etag: st
     start, requested_end = (int(value) for value in byte_range.split("-"))
     end = min(requested_end, 4)
     origin.add_response(
-        {"headers": (f"GET {{PATH}} HTTP/1.1\r\nHost: www.example.com\r\nuuid: {uid}\r\n"
-                     f"Range: bytes={byte_range}\r\n\r\n")},
+        {"headers": (f"GET {{PATH}} HTTP/1.1\r\nHost: www.example.com\r\nuuid: {uid}\r\nRange: bytes={byte_range}\r\n\r\n")},
         {
-            "headers":
-                (
-                    "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nCache-Control: max-age=5000\r\n"
-                    f"Connection: close\r\nContent-Range: bytes {start}-{end}/5\r\nEtag: \"{etag}\"\r\n\r\n"),
+            "headers": (
+                "HTTP/1.1 206 Partial Content\r\nAccept-Ranges: bytes\r\nCache-Control: max-age=5000\r\n"
+                f"Connection: close\r\nContent-Range: bytes {start}-{end}/5\r\nEtag: \"{etag}\"\r\n\r\n"
+            ),
             "body": body,
         },
     )
@@ -69,8 +68,7 @@ def configure_server(services: ServiceFactory) -> OriginServer:
     ):
         add_range_response(origin, uid, byte_range, etag, body)
     origin.add_response(
-        {"headers": ("GET /code200 HTTP/1.1\r\nHost: www.example.com\r\nuuid: code200\r\n"
-                     "Range: bytes=3-5\r\n\r\n")},
+        {"headers": ("GET /code200 HTTP/1.1\r\nHost: www.example.com\r\nuuid: code200\r\nRange: bytes=3-5\r\n\r\n")},
         {
             "headers": ("HTTP/1.1 200 OK\r\nCache-Control: max-age=5000\r\nConnection: close\r\nEtag: \"etag\"\r\n\r\n"),
             "body": "ccccc",
@@ -78,10 +76,7 @@ def configure_server(services: ServiceFactory) -> OriginServer:
     )
     origin.add_response(
         {"headers": "GET {PATH} HTTP/1.1\r\nHost: www.example.com\r\n\r\n"},
-        {
-            "headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n",
-            "body": "Not Found"
-        },
+        {"headers": "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n", "body": "Not Found"},
     )
     return origin
 
@@ -105,25 +100,29 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             f"map http://slicehdr/ {origin} @plugin=slice.so @pparam=--blockbytes-test=3 "
             "@pparam=--remap-host=crrhdr @pparam=--crr-ident-header=crr-foo",
             f"map http://crrhdr/ {origin} @plugin=cache_range_requests.so @pparam=--ident-header=crr-foo",
-        ))
+        )
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "cache_range_requests|slice",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "cache_range_requests|slice",
+        }
+    )
     return ats
 
 
 def request(
-        host: str,
-        path: str,
-        *,
-        byte_range: str | None = None,
-        uid: str | None = None,
-        identity: str | None = None,
-        show_download_size: bool = False,
-        _ats: ATS,
-        _curl: Curl) -> CommandResult:
+    host: str,
+    path: str,
+    *,
+    byte_range: str | None = None,
+    uid: str | None = None,
+    identity: str | None = None,
+    show_download_size: bool = False,
+    _ats: ATS,
+    _curl: Curl,
+) -> CommandResult:
     """Issue one range request through the persistent ATS cache.
 
     :param _ats: Test-local ats configured by the test.

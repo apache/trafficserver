@@ -144,7 +144,8 @@ def send_withheld_post(port: int, path: str, expect_100_continue: bool, read_tim
     conn.sendall(
         f'POST {path} HTTP/1.1\r\n'.encode() + expect_header + b'Host: example.com\r\n'
         b'Content-Length: ' + str(WITHHELD_BODY_LENGTH).encode() + b'\r\n'
-        b'\r\n')
+        b'\r\n'
+    )
     response = read_response(conn)
     print(f'EARLY-POST STATUS {status_of(response)}', flush=True)
     # The client declared a body it never finished sending, so this connection is framed
@@ -165,7 +166,8 @@ def send_completed_post(port: int, path: str) -> None:
         f'POST {path} HTTP/1.1\r\n'.encode() + b'Expect: 100-continue\r\n'
         b'Host: example.com\r\n'
         b'Content-Length: ' + str(COMPLETED_BODY_LENGTH).encode() + b'\r\n'
-        b'\r\n')
+        b'\r\n'
+    )
 
     # Wait for the go-ahead, which may be preceded by other interim responses.
     reader = HeadReader(conn)
@@ -193,7 +195,8 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Proxy port to connect to.')
     parser.add_argument(
-        '--expect-100-continue', action='store_true', help='Ask for a 100 Continue so the body tunnel is never opened.')
+        '--expect-100-continue', action='store_true', help='Ask for a 100 Continue so the body tunnel is never opened.'
+    )
     parser.add_argument('--complete-body', action='store_true', help='Complete the declared body instead of withholding it.')
     parser.add_argument('--path', default='/early', help="Request target, which selects the origin's behavior.")
     parser.add_argument('--read-timeout', type=float, default=10.0, help='Seconds to wait for the first response.')
@@ -211,9 +214,7 @@ def main() -> int:
     # A separate, ordinary request on its own client connection.  It must reach the
     # origin as a request.
     probe = socket.create_connection(('127.0.0.1', args.port), timeout=10)
-    probe.sendall(b'GET /probe HTTP/1.1\r\n'
-                  b'Host: example.com\r\n'
-                  b'\r\n')
+    probe.sendall(b'GET /probe HTTP/1.1\r\nHost: example.com\r\n\r\n')
     print(f'PROBE STATUS {status_of(read_response(probe))}', flush=True)
     probe.close()
 

@@ -55,7 +55,8 @@ def test_healthchecks(ats_factory: ATSFactory, curl: Curl) -> None:
                 "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "healthchecks",
-            })
+            }
+        )
         return ats
 
     def request(path: str, *, tls: bool = False, discard: bool = False) -> CommandResult:

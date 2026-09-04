@@ -29,10 +29,12 @@ def configure_traffic_server(*, _ats: ATS) -> None:
 
     :param _ats: Test-local ats configured by the test.
     """
-    _ats.records.update({
-        "proxy.config.body_factory.enable_customizations": 3,
-        "proxy.config.http.cache.generation": -1,
-    })
+    _ats.records.update(
+        {
+            "proxy.config.body_factory.enable_customizations": 3,
+            "proxy.config.http.cache.generation": -1,
+        }
+    )
     _ats.plugin_config.add_line("xdebug.so --enable=x-cache,x-cache-key,via,x-cache-generation")
     _ats.remap_config.add_line("map /default/ http://127.0.0.1/ @plugin=generator.so")
 
@@ -57,7 +59,8 @@ def request_object(gold_name: str, *, _ats: ATS, _curl: Curl, object_id: uuid.UU
         _ats,
         (
             f"--verbose --output /dev/null --header 'x-debug: {XDEBUG_HEADER}' "
-            f"'http://127.0.0.1:{_ats.http_port}/default/cache/10/{object_id}'"),
+            f"'http://127.0.0.1:{_ats.http_port}/default/cache/10/{object_id}'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert_matches_gold(result.output, GOLD_DIRECTORY / gold_name)

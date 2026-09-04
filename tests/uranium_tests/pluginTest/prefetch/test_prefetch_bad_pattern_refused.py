@@ -28,14 +28,17 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     ats = ats_factory.create("ts")
     if not ats.plugin_exists("prefetch.so"):
         pytest.skip("prefetch.so is not installed")
-    ats.records.update({
-        "proxy.config.diags.debug.enabled": 1,
-        "proxy.config.diags.debug.tags": "prefetch",
-    })
+    ats.records.update(
+        {
+            "proxy.config.diags.debug.enabled": 1,
+            "proxy.config.diags.debug.tags": "prefetch",
+        }
+    )
     ats.remap_config.add_line(
         "map http://domain.in http://127.0.0.1:8080 @plugin=prefetch.so "
         "@pparam=--front=true @pparam=--fetch-policy=simple "
-        r"@pparam=--fetch-path-pattern=/(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)/$1/")
+        r"@pparam=--fetch-path-pattern=/(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)/$1/"
+    )
     ats.expect_start_failure("defines 10 capture groups", 33)
     return ats
 

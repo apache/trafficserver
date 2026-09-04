@@ -41,7 +41,8 @@ def privilege_command() -> tuple[str, ...]:
 
 
 def configure_origin(
-        services: ServiceFactory, *, _namespace: str, _privilege: tuple[str, ...], _upstream_port: int) -> ProcessService:
+    services: ServiceFactory, *, _namespace: str, _privilege: tuple[str, ...], _upstream_port: int
+) -> ProcessService:
     """Create the delayed server inside the test network namespace.
 
     :param services: Factory that owns the delayed origin process.
@@ -86,27 +87,33 @@ def configure_ats(ats_factory: ATSFactory, *, _blocked_port: int, _upstream_port
             "proxy.config.http.connect_attempts_max_retries": 0,
             "proxy.config.http.transaction_no_activity_timeout_out": 5,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_lines(
         (
             f"map /blocked http://10.1.1.1:{_blocked_port}",
             f"map /not-blocked http://10.1.1.1:{_upstream_port}",
-        ))
+        )
+    )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
+            "logging": {
+                "formats": [
+                    {
                         "name": "testformat",
                         "format": "%<pssc> %<pquc> %<pscert> %<cscert>",
-                    }],
-                    "logs": [{
+                    }
+                ],
+                "logs": [
+                    {
                         "mode": "ascii",
                         "format": "testformat",
                         "filename": "squid",
-                    }],
-                }
-        })
+                    }
+                ],
+            }
+        }
+    )
     return ats
 
 
@@ -128,8 +135,14 @@ def run_privileged(*arguments: str, _privilege: tuple[str, ...]) -> subprocess.C
 
 
 def setup_namespace(
-        *, _blocked_port: int, _host_interface: str, _namespace: str, _namespace_interface: str, _privilege: tuple[str, ...],
-        _upstream_port: int) -> None:
+    *,
+    _blocked_port: int,
+    _host_interface: str,
+    _namespace: str,
+    _namespace_interface: str,
+    _privilege: tuple[str, ...],
+    _upstream_port: int,
+) -> None:
     """Create the isolated dropped-SYN and delayed-origin network.
 
     :param _blocked_port: Test-local blocked port configured by the test.
@@ -148,7 +161,8 @@ def setup_namespace(
         _namespace,
         _host_interface,
         _namespace_interface,
-        _privilege=_privilege)
+        _privilege=_privilege,
+    )
     if result.returncode != 0:
         cleanup_namespace(_host_interface=_host_interface, _namespace=_namespace, _privilege=_privilege)
         pytest.skip(f"network namespace setup is unavailable:\n{result.stdout}{result.stderr}")
@@ -239,7 +253,8 @@ def test_conn_timeout(ats_factory: ATSFactory, services: ServiceFactory, curl: C
         _namespace=_namespace,
         _namespace_interface=_namespace_interface,
         _privilege=_privilege,
-        _upstream_port=_upstream_port)
+        _upstream_port=_upstream_port,
+    )
     try:
         _ats.start()
         request_blocked("GET", _ats=_ats, _curl=curl)

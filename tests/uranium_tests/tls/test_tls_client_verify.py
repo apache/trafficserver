@@ -66,7 +66,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.TLSv1_3.enabled": 0,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
     ats.write_config_file(
         "sni.yaml",
@@ -82,30 +83,18 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
     )
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "testformat",
-                        "format": "%<pssc> %<pquc> %<pscert> %<cscert>"
-                    }],
-                    "logs": [{
-                        "mode": "ascii",
-                        "format": "testformat",
-                        "filename": "squid"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "testformat", "format": "%<pssc> %<pquc> %<pscert> %<cscert>"}],
+                "logs": [{"mode": "ascii", "format": "testformat", "filename": "squid"}],
+            }
+        }
+    )
     return ats
 
 
 def request(
-        host: str,
-        case_number: int,
-        certificate: str | None = None,
-        key: str | None = None,
-        *,
-        _ats: ATS,
-        _curl: Curl) -> CommandResult:
+    host: str, case_number: int, certificate: str | None = None, key: str | None = None, *, _ats: ATS, _curl: Curl
+) -> CommandResult:
     """Connect to one SNI name with optional client certificate material.
 
     :param _ats: Test-local ats configured by the test.
@@ -119,11 +108,13 @@ def request(
     arguments = ["--tls-max", "1.2", "--insecure"]
     if certificate is not None and key is not None:
         arguments.extend(("--cert", str(SSL_DIRECTORY / certificate), "--key", str(SSL_DIRECTORY / key)))
-    arguments.extend((
-        "--resolve",
-        f"{host}:{_ats.https_port}:127.0.0.1",
-        f"https://{host}:{_ats.https_port}/case{case_number}",
-    ))
+    arguments.extend(
+        (
+            "--resolve",
+            f"{host}:{_ats.https_port}:127.0.0.1",
+            f"https://{host}:{_ats.https_port}/case{case_number}",
+        )
+    )
     return _curl.run_for(
         _ats,
         shlex.join(arguments),

@@ -49,15 +49,12 @@ class AbuseShieldHarness:
 
         origin = self._services.origin("origin")
         origin.add_response(
+            {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n", "body": ""},
             {
-                "headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
-                "body": ""
-            },
-            {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\nServer: origin\r\nCache-Control: max-age=300\r\n"
-                        "Connection: close\r\nContent-Length: 2\r\n\r\n"),
+                "headers": (
+                    "HTTP/1.1 200 OK\r\nServer: origin\r\nCache-Control: max-age=300\r\n"
+                    "Connection: close\r\nContent-Length: 2\r\n\r\n"
+                ),
                 "body": "OK",
             },
         )
@@ -90,7 +87,8 @@ class AbuseShieldHarness:
             {
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "abuse_shield|jax_fingerprint" if jax else "abuse_shield",
-            })
+            }
+        )
         if origin is not None:
             ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.port}/")
         ats.write_config_file("abuse_shield.yaml", config)
@@ -198,7 +196,8 @@ def test_abuse_shield_messages(ats_factory: ATSFactory, services: ServiceFactory
         "rules:\n"
         "  - {name: test_h2_error_rule, filter: {max_h2_error_rate: 5}, action: [log, block]}\n"
         "  - {name: test_request_rule, filter: {max_req_rate: 10}, action: [log, block, close]}\n"
-        "enabled: true\n")
+        "enabled: true\n"
+    )
     ats = harness.ats(config)
     ats.write_config_file("abuse_shield_trusted.yaml", trusted)
     config_path = ats.config_directory / "abuse_shield.yaml"
@@ -267,7 +266,8 @@ def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: Service
     ats = harness.ats(
         "global:\n  ip_tracking: {slots: 1000}\n  blocking: {duration_seconds: 60}\n"
         "rules:\n  - {name: conn_rate_flood, filter: {max_conn_rate: 5}, action: [log, block]}\n"
-        "enabled: true\n")
+        "enabled: true\n"
+    )
     harness.start(ats)
     harness.helper("flood-client", "tls_connection_flood.py", "--port", str(ats.https_port), "--count", "30")
     wait_for_file_lines(ats.diags_log, r'Rule "conn_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
@@ -278,7 +278,9 @@ def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: Service
     # The log action deliberately emits an ERROR for this rule match.
     assert not re.search(
         r'ERROR:(?! \[abuse_shield\] Rule "conn_rate_flood" matched for IP=127\.0\.0\.1 actions=\[log,block\] )'
-        r"|FATAL:|Unrecognized configuration value", diagnostics), diagnostics
+        r"|FATAL:|Unrecognized configuration value",
+        diagnostics,
+    ), diagnostics
 
 
 def test_abuse_shield_rate_limited_ips(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -394,7 +396,8 @@ def test_abuse_shield_block_expiration(ats_factory: ATSFactory, services: Servic
     assert before.returncode == 0, before.output
     for _ in range(2):
         recovered = curl.run(
-            f'--insecure --silent --output /dev/null --write-out "%{{http_code}}" https://127.0.0.1:{ats.https_port}/')
+            f'--insecure --silent --output /dev/null --write-out "%{{http_code}}" https://127.0.0.1:{ats.https_port}/'
+        )
         assert recovered.returncode == 0, recovered.output
         assert recovered.stdout == "200", recovered.output
     after = ats.traffic_ctl("metric", "get", "abuse_shield.actions.blocked")

@@ -49,7 +49,8 @@ def configure_valid_ats(ats_factory: ATSFactory, name: str, origin: OriginServer
             "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
             "proxy.config.ssl.server.private_key.path": str(ats.ssl_directory),
             "proxy.config.ssl.server.multicert.exit_on_load_fail": 0,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin.http_port}")
     ats.ssl_multicert_config.add_lines(
         (
@@ -57,7 +58,8 @@ def configure_valid_ats(ats_factory: ATSFactory, name: str, origin: OriginServer
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     return ats
 
 
@@ -72,7 +74,8 @@ def request(ats: ATS, *, _curl: Curl) -> None:
         ats,
         (
             f"--silent --verbose --insecure --resolve 'example.com:{ats.https_port}:127.0.0.1' "
-            f"'https://example.com:{ats.https_port}/'"),
+            f"'https://example.com:{ats.https_port}/'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert "Could Not Connect" not in result.stdout
@@ -123,7 +126,8 @@ def check_invalid_startup_fails(*, _ats_factory: ATSFactory) -> None:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem_doesnotexist",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.expect_start_failure("EMERGENCY: failed to load SSL certificate file", return_code=33)
     ats.start()
 
@@ -138,10 +142,12 @@ def check_parallel_loading(*, _ats_factory: ATSFactory, _curl: Curl, _services: 
 
     origin = configure_origin(_services, "server3")
     ats = configure_valid_ats(_ats_factory, "ts3", origin)
-    ats.ssl_multicert_config.add_lines((
-        "  - ssl_cert_name: server.pem",
-        "    ssl_key_name: server.key",
-    ))
+    ats.ssl_multicert_config.add_lines(
+        (
+            "  - ssl_cert_name: server.pem",
+            "    ssl_key_name: server.key",
+        )
+    )
     origin.start()
     ats.start()
     request(ats, _curl=_curl)

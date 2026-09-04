@@ -40,14 +40,8 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n",
-            "body": ""
-        },
-        {
-            "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET /argh HTTP/1.1\r\nHost: doesnotmatter\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n", "body": ""},
     )
     return origin
 
@@ -66,14 +60,16 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.url_remap.remap_required": 0,
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http|test_hooks",
-        })
+        }
+    )
     ats.copy_custom_plugin("{AtsTestPluginsDir}/test_hooks.so")
     ats.plugin_config.add_line("test_hooks.so")
     ats.remap_config.add_lines(
         [
             f"map http://one http://127.0.0.1:{_origin.port}",
             f"map https://one http://127.0.0.1:{_origin.port}",
-        ])
+        ]
+    )
     ats.set_environment("OUTPUT_FILE", str(ats.log_directory / "log.txt"))
     return ats
 
@@ -112,8 +108,8 @@ def request_tls(*, _ats: ATS, _curl: Curl) -> None:
         pytest.skip("curl with HTTP/2 support is required")
     for version in ("--http2", "--http1.1"):
         result = _curl.run(
-            (f"--verbose --ipv4 '{version}' --insecure --header 'Host: one' "
-             f"'https://127.0.0.1:{_ats.https_port}/argh'"),)
+            (f"--verbose --ipv4 '{version}' --insecure --header 'Host: one' 'https://127.0.0.1:{_ats.https_port}/argh'"),
+        )
         verify_response(result)
 
 

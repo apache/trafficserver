@@ -35,8 +35,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
     origin.add_response(
         {"headers": "GET /path HTTP/1.1\r\nHost: origin\r\n\r\n"},
         {
-            "headers": ('HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "path"\r\n'
-                        "Cache-Control: max-age=500\r\n\r\n"),
+            "headers": ('HTTP/1.1 200 OK\r\nConnection: close\r\nEtag: "path"\r\nCache-Control: max-age=500\r\n\r\n'),
             "body": BODY,
         },
     )
@@ -59,7 +58,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             f"map http://slice_only/ http://127.0.0.1:{_origin.port}",
             f"map http://slice/ http://127.0.0.1:{_origin.port}{plugin}",
             f"map http://slicehdr/ http://127.0.0.1:{_origin.port}{plugin} @pparam=--skip-header=SkipSlice",
-        ))
+        )
+    )
     return ats
 
 
@@ -143,7 +143,8 @@ def test_slice(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) ->
         assert_response(request("slice", byte_range, _ats=_ats, _curl=curl), "206 Partial Content", body_gold, content_range)
     invalid_begin = len(BODY) + 1
     assert_response(
-        request("slice", f"{invalid_begin}-{invalid_begin + 7}", _ats=_ats, _curl=curl), "416 Requested Range Not Satisfiable")
+        request("slice", f"{invalid_begin}-{invalid_begin + 7}", _ats=_ats, _curl=curl), "416 Requested Range Not Satisfiable"
+    )
     assert_response(
         request("slicehdr", "0-6", _ats=_ats, _curl=curl),
         "206 Partial Content",

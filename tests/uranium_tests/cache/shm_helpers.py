@@ -59,17 +59,21 @@ def configure_shm_ats(
     ats = factory.create(name)
     storage_lines = ["cache:", "  spans:"]
     for index, storage_path in enumerate(storage_paths):
-        storage_lines.extend([
-            f"    - name: disk.{index}",
-            f"      path: {storage_path}",
-            f"      size: {DISK_SIZE}",
-        ])
-    storage_lines.extend([
-        "  volumes:",
-        "    - id: 1",
-        "      scheme: http",
-        "      size: 100%",
-    ])
+        storage_lines.extend(
+            [
+                f"    - name: disk.{index}",
+                f"      path: {storage_path}",
+                f"      size: {DISK_SIZE}",
+            ]
+        )
+    storage_lines.extend(
+        [
+            "  volumes:",
+            "    - id: 1",
+            "      scheme: http",
+            "      size: 100%",
+        ]
+    )
     ats.storage_config.add_lines(storage_lines)
     ats.records.update(
         {
@@ -81,7 +85,8 @@ def configure_shm_ats(
             "proxy.config.diags.debug.tags": debug_tags,
             "proxy.config.diags.output.diag": "L",
             "proxy.config.http.wait_for_cache": 1,
-        })
+        }
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache,via")
     target = f"http://127.0.0.1:{origin_port}/" if origin_port is not None else "http://127.0.0.1/ @plugin=generator.so"
     ats.remap_config.add_line(f"map / {target}")
@@ -95,8 +100,9 @@ def assert_log(ats: ATS, *, contains: Iterable[str] = (), excludes: Iterable[str
     for expression in contains:
         assert re.search(expression, content, re.MULTILINE), f"{ats.name} diags.log should contain {expression!r}\n{content}"
     for expression in excludes:
-        assert re.search(expression, content, re.MULTILINE) is None, \
+        assert re.search(expression, content, re.MULTILINE) is None, (
             f"{ats.name} diags.log should exclude {expression!r}\n{content}"
+        )
     return content
 
 
@@ -107,7 +113,8 @@ def get_200(curl: Curl, ats: ATS, path: str) -> None:
         ats,
         (
             f"--silent --output /dev/null --write-out '%{{http_code}}\n' --header 'x-debug: x-cache,via' "
-            f"'http://127.0.0.1:{ats.http_port}{path}'"),
+            f"'http://127.0.0.1:{ats.http_port}{path}'"
+        ),
     )
     assert result.returncode == 0, result.output
     assert result.stdout.strip() == "200", result.output

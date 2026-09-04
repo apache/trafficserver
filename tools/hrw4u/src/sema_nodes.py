@@ -51,6 +51,7 @@ class OpVariant(StrEnum):
 class BuiltinRef:
     """A read of a tables.py entry. `arg` is the normalized suffix of a prefix key, or the
     joined argument list of a function call."""
+
     key: str
     entry: MapParams
     arg: str | None = None
@@ -89,6 +90,7 @@ Ref = Union[BuiltinRef, VarRef]
 @dataclass(frozen=True, slots=True)
 class ModifiedRef:
     """An interpolated reference carrying value modifiers, e.g. `{inbound.url.path with NORM}`."""
+
     ref: Ref
     mods: tuple[str, ...]
 
@@ -99,12 +101,14 @@ class ModifiedRef:
 @dataclass(frozen=True, slots=True)
 class RawArg:
     """Verbatim source text for a non-interpolated value, post-normalization."""
+
     text: str
 
 
 @dataclass(frozen=True, slots=True)
 class StrTemplate:
     """A string literal split into literal chunks and resolved references."""
+
     parts: tuple[Union[str, BuiltinRef, VarRef, ModifiedRef], ...]
 
 
@@ -169,6 +173,7 @@ class Group:
     """Parentheses kept so the emitter can reproduce them. Shares its name with
     ast_nodes.Group: a module needing both must import at least one qualified, since a flat
     import of both would shadow silently."""
+
     inner: Cond
     span: Span
 
@@ -187,6 +192,7 @@ class Test:
 class Truth:
     """A bare reference in boolean position. `existence` is the old default_expr flag.
     No modifiers: the grammar attaches `modifier?` to `comparison`, not to `factor`."""
+
     ref: Ref
     existence: bool
     span: Span
@@ -202,6 +208,7 @@ class BoolCond:
 class Unresolved:
     """A condition sema could not resolve; the failure is already reported, and a run that
     reported an error writes no configuration, so the emitter renders nothing."""
+
     span: Span
 
 
@@ -276,6 +283,7 @@ class Inlined:
     re-emitted for the call itself, and a blank line precedes every hook the body opens
     except one opened by the body's first source item. `opens_with_statement` says whether
     `body[0]` is that item -- not so when it was a comment, even one dropped from the output."""
+
     body: tuple[Stmt, ...]
     opens_with_statement: bool
     span: Span
@@ -301,6 +309,7 @@ class VarsBlock:
     """A VARS/SESSION_VARS section. Declarations are consumed by sema; only its
     comments reach the output, and it counts as a program item for the blank-line
     separator rule."""
+
     comments: tuple[CommentStmt, ...]
     span: Span
 

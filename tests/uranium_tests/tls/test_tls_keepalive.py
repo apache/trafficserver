@@ -61,29 +61,24 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.TLSv1_3.enabled": 0,
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.log.max_secs_per_buffer": 1,
-        })
+        }
+    )
     ats.remap_config.add_line(f"map https://example.com:{ats.https_port} http://127.0.0.1:{_origin.port}")
     ats.set_logging_yaml(
         {
-            "logging":
-                {
-                    "formats": [{
-                        "name": "testformat",
-                        "format": "%<cqssl> %<cqtr>"
-                    }],
-                    "logs": [{
-                        "mode": "ascii",
-                        "format": "testformat",
-                        "filename": "squid"
-                    }],
-                }
-        })
+            "logging": {
+                "formats": [{"name": "testformat", "format": "%<cqssl> %<cqtr>"}],
+                "logs": [{"mode": "ascii", "format": "testformat", "filename": "squid"}],
+            }
+        }
+    )
     ats.copy_custom_plugin("{AtsTestPluginsDir}/ssl_secret_load_test.so")
     ats.plugin_config.add_line("ssl_secret_load_test.so")
     return ats

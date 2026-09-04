@@ -35,14 +35,8 @@ def run_map_with_recv_port(ats_factory: ATSFactory, services: ServiceFactory, cu
         origin = services.origin("origin")
         for path, body in (("/ip", "ip"), ("/unix", "unix"), ("/error", "error")):
             origin.add_response(
-                {
-                    "headers": f"GET {path} HTTP/1.1\r\nHost: origin.example.com\r\n\r\n",
-                    "body": ""
-                },
-                {
-                    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-                    "body": body
-                },
+                {"headers": f"GET {path} HTTP/1.1\r\nHost: origin.example.com\r\n\r\n", "body": ""},
+                {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": body},
             )
         return origin
 
@@ -67,7 +61,8 @@ def run_map_with_recv_port(ats_factory: ATSFactory, services: ServiceFactory, cu
                 "proxy.config.diags.debug.tags": "http|dns",
                 "proxy.config.dns.nameservers": f"127.0.0.1:{_dns.port}",
                 "proxy.config.dns.resolv_conf": "NULL",
-            })
+            }
+        )
         if use_yaml:
             ats.remap_yaml.add_lines(
                 [
@@ -87,15 +82,16 @@ def run_map_with_recv_port(ats_factory: ATSFactory, services: ServiceFactory, cu
                     "      url: http+unix://test.example.com",
                     "    to:",
                     f"      url: http://origin.example.com:{_origin.port}/unix",
-                ])
+                ]
+            )
         else:
             ats.remap_config.add_lines(
                 [
                     f"map http://test.example.com http://origin.example.com:{_origin.port}/error",
-                    f"map_with_recv_port http://test.example.com:{ats.http_port}/ "
-                    f"http://origin.example.com:{_origin.port}/ip",
+                    f"map_with_recv_port http://test.example.com:{ats.http_port}/ http://origin.example.com:{_origin.port}/ip",
                     f"map_with_recv_port http+unix://test.example.com http://origin.example.com:{_origin.port}/unix",
-                ])
+                ]
+            )
         return ats
 
     _origin = configure_origin(services)

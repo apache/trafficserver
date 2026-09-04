@@ -47,6 +47,7 @@ class ProcEntry:
 @dataclass
 class ProcRegistry:
     """Procedure declarations, keyed by qualified name."""
+
     source_map: SourceMap
     _sigs: dict[str, ProcEntry] = field(default_factory=dict, init=False)
     _loaded: set[str] = field(default_factory=set, init=False)
@@ -61,7 +62,8 @@ class ProcRegistry:
         if expected_ns and not decl.name.startswith(expected_ns):
             namespace = expected_ns.removesuffix('::')
             raise self.source_map.error_at(
-                span, f"procedure '{decl.name}' does not match namespace '{namespace}' (expected from 'use {use_spec}')")
+                span, f"procedure '{decl.name}' does not match namespace '{namespace}' (expected from 'use {use_spec}')"
+            )
         if existing := self._sigs.get(decl.name):
             raise self.source_map.error_at(span, f"procedure '{decl.name}' already declared in {existing.source_file}")
 
@@ -69,7 +71,8 @@ class ProcRegistry:
         for param in decl.params:
             if param.default is None and seen_default:
                 raise self.source_map.error_at(
-                    span, f"procedure '{decl.name}': required parameter '${param.name}' must not follow an optional parameter")
+                    span, f"procedure '{decl.name}': required parameter '${param.name}' must not follow an optional parameter"
+                )
             if param.default is not None:
                 seen_default = True
 
@@ -115,7 +118,7 @@ class ProcRegistry:
         # 'use Apple::Common' requires every declaration in the file to start 'Apple::'.
         expected_ns = None
         if '::' in spec:
-            expected_ns = spec[:spec.rindex('::') + 2]
+            expected_ns = spec[: spec.rindex('::') + 2]
         found_proc = False
 
         for node in file_ast.body:

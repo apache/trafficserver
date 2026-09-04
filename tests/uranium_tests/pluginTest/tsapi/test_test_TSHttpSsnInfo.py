@@ -54,12 +54,14 @@ def configure_ats(ats_factory: ATSFactory, *, _enable_quic: bool, _httpbin: Http
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http2|http3|quic|test_TSHttpSsnInfo",
-        })
+        }
+    )
     return ats
 
 

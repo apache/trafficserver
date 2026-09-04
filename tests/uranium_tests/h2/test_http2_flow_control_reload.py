@@ -14,6 +14,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 """HTTP/2 receive-window policies change without restarting ATS."""
+
 import sys
 from pathlib import Path
 from tools.uranium.services import ATSFactory, ServiceFactory
@@ -28,23 +29,35 @@ def test_http2_flow_control_reload(ats_factory: ATSFactory, services: ServiceFac
     """
     port = services.allocate_port()
     ats = configure_h2_origin(
-        ats_factory, port, **{
+        ats_factory,
+        port,
+        **{
             "proxy.config.http2.initial_window_size_in": 65535,
             "proxy.config.http2.initial_window_size_out": 65535,
             "proxy.config.http2.max_concurrent_streams_in": 100,
             "proxy.config.http2.max_concurrent_streams_out": 100,
             "proxy.config.http2.flow_control.policy_in": 0,
             "proxy.config.http2.flow_control.policy_out": 0,
-        })
+        },
+    )
     ats.start()
     result = services.process(
-        "probe", [
+        "probe",
+        [
             sys.executable,
-            Path(__file__).with_name("http2_flow_control_reload.py"), "--https-port",
-            str(ats.https_port), "--http-port",
-            str(ats.http_port), "--origin-port",
-            str(port), "--cert", ats.ssl_directory / "server.pem", "--key", ats.ssl_directory / "server.key"
+            Path(__file__).with_name("http2_flow_control_reload.py"),
+            "--https-port",
+            str(ats.https_port),
+            "--http-port",
+            str(ats.http_port),
+            "--origin-port",
+            str(port),
+            "--cert",
+            ats.ssl_directory / "server.pem",
+            "--key",
+            ats.ssl_directory / "server.key",
         ],
-        environment=ats.environment).run(timeout=180)
+        environment=ats.environment,
+    ).run(timeout=180)
     assert result.returncode == 0, result.output
     assert "PASS: both flow control policies reloaded" in result.stdout

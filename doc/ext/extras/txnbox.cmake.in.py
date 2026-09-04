@@ -18,10 +18,10 @@
 #
 # Copyright 2019, Oath Inc.
 """
-    Transaction Box Sphinx Directives
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Transaction Box Sphinx Directives
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    Sphinx Docs directives for Transaction Box plugin.
+Sphinx Docs directives for Transaction Box plugin.
 """
 
 from docutils import nodes
@@ -68,7 +68,7 @@ class TxbDirective(std.Target):
         'arg': rst.directives.unchanged,
         'value': rst.directives.unchanged,
         'keys': rst.directives.unchanged,
-        'hooks': rst.directives.unchanged
+        'hooks': rst.directives.unchanged,
     }
 
     # External entry point
@@ -97,7 +97,7 @@ class TxbDirective(std.Target):
         title += sphinx.addnodes.desc_name(txb_name, txb_name)
 
         node.append(title)
-        if ('class' in self.options):
+        if 'class' in self.options:
             title['classes'].append(self.options.get('class'))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
@@ -108,7 +108,7 @@ class TxbDirective(std.Target):
         env.domaindata['txb']['directive'][txb_name] = env.docname
 
         fl = nodes.field_list()
-        if ('keys' in self.options):
+        if 'keys' in self.options:
             key_field = nodes.field()
             key_field.append(nodes.field_name(text='Secondary Keys'))
             key_value = nodes.field_list()
@@ -125,9 +125,9 @@ class TxbDirective(std.Target):
                 descr = descr.strip()
                 key_value.append(self.make_field(tag, descr))
             fl.append(key_field)
-        if ('arg' in self.options):
+        if 'arg' in self.options:
             fl.append(self.make_field('Argument', self.options['arg']))
-        if ('value' in self.options):
+        if 'value' in self.options:
             fl.append(self.make_field('Value', self.options['value']))
 
         # Get any contained content
@@ -163,7 +163,7 @@ class TxbExtractor(std.Target):
         'class': rst.directives.class_option,
         'arg': rst.directives.unchanged,
         #        'result': txb_value_type_options
-        'result': rst.directives.unchanged
+        'result': rst.directives.unchanged,
     }
 
     # External entry point
@@ -192,7 +192,7 @@ class TxbExtractor(std.Target):
 
         node.append(title)
 
-        if ('class' in self.options):
+        if 'class' in self.options:
             title['classes'].append(self.options.get('class'))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
@@ -203,12 +203,11 @@ class TxbExtractor(std.Target):
         env.domaindata['txb']['extractor'][txb_name] = env.docname
 
         fl = nodes.field_list()
-        if ('result' in self.options):
+        if 'result' in self.options:
             fl.append(self.make_field('Result', sphinx.addnodes.literal_emphasis(text=self.options['result'])))
 
-
-#            fl.append(self.make_field('Result', self.options['result']))
-        if ('arg' in self.options):
+        #            fl.append(self.make_field('Result', self.options['result']))
+        if 'arg' in self.options:
             fl.append(self.make_field('Argument', self.options['arg']))
 
         # Get any contained content
@@ -223,13 +222,11 @@ class TxbExtractor(std.Target):
 
 
 class TxbDirectiveRef(XRefRole):
-
     def process_link(self, env, ref_node, explicit_title_p, title, target):
         return title, target
 
 
 class TxbExtractorRef(XRefRole):
-
     def process_link(self, env, ref_node, explicit_title_p, title, target):
         return title, target
 
@@ -238,6 +235,7 @@ class TxbComparison(std.Target):
     """
     Comparison description.
     """
+
     make_field = txb_make_field
 
     required_arguments = 1
@@ -250,7 +248,7 @@ class TxbComparison(std.Target):
         'arg': rst.directives.unchanged,
         'type': rst.directives.unchanged,
         'groups': rst.directives.unchanged,
-        'tuple': rst.directives.flag
+        'tuple': rst.directives.flag,
     }
 
     # External entry point
@@ -278,17 +276,17 @@ class TxbComparison(std.Target):
         title += sphinx.addnodes.desc_name(txb_name, txb_name)
 
         node.append(title)
-        if ('class' in self.options):
+        if 'class' in self.options:
             title['classes'].append(self.options.get('class'))
 
         fl = nodes.field_list()
-        if ('arg' in self.options):
+        if 'arg' in self.options:
             fl.append(self.make_field('Argument', self.options['arg']))
-        if ('type' in self.options):
+        if 'type' in self.options:
             fl.append(self.make_field('Value Types', self.options['type']))
-        if ('tuple' in self.options):
+        if 'tuple' in self.options:
             fl.append(self.make_field('List matching', sphinx.addnodes.literal_emphasis(text='enabled')))
-        if ('groups' in self.options):
+        if 'groups' in self.options:
             fl.append(self.make_field('Groups', self.options['groups']))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
@@ -310,7 +308,6 @@ class TxbComparison(std.Target):
 
 
 class TxbRef(XRefRole):
-
     def process_link(self, env, ref_node, explicit_title_p, title, target):
         return title, target
 
@@ -333,7 +330,7 @@ class TxbModifier(std.Target):
         'arg': rst.directives.unchanged,
         'expr': rst.directives.unchanged,
         'value': rst.directives.unchanged,
-        'result': rst.directives.unchanged
+        'result': rst.directives.unchanged,
     }
 
     # External entry point
@@ -362,7 +359,7 @@ class TxbModifier(std.Target):
         title += sphinx.addnodes.desc_name(txb_name, txb_name)
 
         node.append(title)
-        if ('class' in self.options):
+        if 'class' in self.options:
             title['classes'].append(self.options.get('class'))
 
         # This has to be a distinct node before the title. if nested then the browser will scroll forward to just past the title.
@@ -373,11 +370,11 @@ class TxbModifier(std.Target):
         env.domaindata['txb'][self.obj_type][txb_name] = env.docname
 
         fl = nodes.field_list()
-        if ('keys' in self.options):
+        if 'keys' in self.options:
             fl.append(self.make_field('Secondary Keys', self.options['keys']))
-        if ('arg' in self.options):
+        if 'arg' in self.options:
             fl.append(self.make_field('Argument', self.options['arg']))
-        if ('value' in self.options):
+        if 'value' in self.options:
             fl.append(self.make_field('Value', self.options['value']))
 
         # Get any contained content
@@ -404,7 +401,7 @@ class TxnBoxDomain(Domain):
         'directive': ObjType(_('Directive'), 'directive'),
         'extractor': ObjType(_('Extractor'), 'extractor'),
         'comparison': ObjType(_('Comparison'), 'comparison'),
-        'modifier': ObjType(_('Modifier'), 'modifier')
+        'modifier': ObjType(_('Modifier'), 'modifier'),
     }
 
     directives = {'directive': TxbDirective, 'extractor': TxbExtractor, 'comparison': TxbComparison, 'modifier': TxbModifier}
@@ -415,14 +412,14 @@ class TxnBoxDomain(Domain):
         'directive': {},  # full name -> docname
         'extractor': {},
         'comparison': {},
-        'modifier': {}
+        'modifier': {},
     }
 
     dangling_warnings = {
         'directive': "No definition found for directive '%(target)s'",
         'extractor': "No definition found for extractor '%(target)s'",
         'comparison': "No definition found for comparison '%(target)s'",
-        'modifier': "No definition found for modifier '%(targets)s'"
+        'modifier': "No definition found for modifier '%(targets)s'",
     }
 
     def clear_doc(self, docname):
@@ -466,7 +463,7 @@ class TxnBoxDomain(Domain):
 
     def resolve_xref(self, env, src_doc, builder, obj_type, target, node, cont_node):
         dst_doc = self.find_doc(target, obj_type)
-        if (dst_doc):
+        if dst_doc:
             return sphinx.util.nodes.make_refnode(builder, src_doc, dst_doc, nodes.make_id(target), cont_node, target)
 
     def get_objects(self):

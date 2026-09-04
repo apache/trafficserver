@@ -74,7 +74,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             '  - dest_ip: "*"',
             "    ssl_cert_name: server.pem",
             "    ssl_key_name: server.key",
-        ))
+        )
+    )
     ats.remap_config.add_lines(
         (
             f"map / https://127.0.0.1:{_default.https_port}",
@@ -82,7 +83,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             f"map https://bad_foo.com/ https://127.0.0.1:{_foo.https_port}",
             f"map https://bar.com/ https://127.0.0.1:{_bar.https_port}",
             f"map https://bad_bar.com/ https://127.0.0.1:{_bar.https_port}",
-        ))
+        )
+    )
     ats.records.update(
         {
             "proxy.config.ssl.server.cert.path": str(ats.ssl_directory),
@@ -93,7 +95,8 @@ def configure_ats(ats_factory: ATSFactory, *, _bar: OriginServer, _default: Orig
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.client.sni_policy": "host",
             "proxy.config.ssl.client.verify.server.policy": "PERMISSIVE",
-        })
+        }
+    )
     ats.write_config_file(
         "sni.yaml",
         "sni:\n"
