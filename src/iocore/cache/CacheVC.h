@@ -201,6 +201,11 @@ struct CacheVC : public CacheVConnection {
       or @c nullptr if there is no fragment table.
   */
   virtual HTTPInfo::FragOffset *get_frag_table();
+  /** Unmarshal every alt in @a doc's header block, selecting the decoder for the
+      version @a doc was written with and repairing anything that version left stale.
+      @return @c true if the whole block was unmarshalled.
+   */
+  static bool unmarshal_http_info(struct Doc *doc, Ptr<IOBufferData> &buf);
   /** Load alt pointers from an already unmarshalled header block.
       The block may be shared with other readers, so it must not be modified here.
       @return Length of header data used for alternates.

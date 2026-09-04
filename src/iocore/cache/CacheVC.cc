@@ -318,8 +318,8 @@ CacheVC::dead(int /* event ATS_UNUSED */, Event * /*e ATS_UNUSED */)
   return EVENT_DONE;
 }
 
-static bool
-unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf)
+bool
+CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
 {
   using UnmarshalFunc              = int(char *buf, int len, RefCountObj *block_ref);
   UnmarshalFunc    *unmarshal_func = &HTTPInfo::unmarshal;
@@ -342,7 +342,7 @@ unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf)
     int r = unmarshal_func(tmp, len, buf.get());
 
     if (r < 0) {
-      ink_assert(!"unmarshal_helper: HTTPInfo unmarshal failed");
+      ink_assert(!"CacheVC::unmarshal_http_info: HTTPInfo unmarshal failed");
       return false;
     }
     if (needs_wks_fixup) {
@@ -435,7 +435,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
       if (!http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        okay = unmarshal_helper(doc, buf);
+        okay = CacheVC::unmarshal_http_info(doc, buf);
       }
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
@@ -466,7 +466,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       } // end VIO::READ check
       // If it could be compressed, unmarshal after
       if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        okay = unmarshal_helper(doc, buf);
+        okay = CacheVC::unmarshal_http_info(doc, buf);
       }
     } // end io.ok() check
   }
@@ -801,14 +801,14 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // Bounds-check in unsigned domain: doc must lie within the
       // buffer, with room for the Doc header, and doc->hlen must
       // fit in the remaining bytes before doc->hdr() and
-      // unmarshal_helper walk it.
+      // unmarshal_http_info walk it.
       if (io.aiocb.aio_nbytes < doc_off || (io.aiocb.aio_nbytes - doc_off) < sizeof(Doc) ||
           (io.aiocb.aio_nbytes - doc_off - sizeof(Doc)) < doc->hlen) {
         might_need_overlap_read = true;
         goto Lskip;
       }
     }
-    if (!unmarshal_helper(doc, buf)) {
+    if (!CacheVC::unmarshal_http_info(doc, buf)) {
       goto Lskip;
     }
     if (this->load_http_info(&vector, doc) != doc->hlen) {
