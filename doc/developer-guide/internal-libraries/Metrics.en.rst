@@ -188,6 +188,46 @@ sampling point*, not the true peak. There are two ways to arrange this, with dif
 
 Which is appropriate depends on whether the consumer needs to aggregate over time downstream.
 
+Unlisting a metric
+==================
+
+A metric can be taken out of the store's listing after the fact. An unlisted metric is skipped by
+iteration, so it disappears from ``traffic_ctl metric match``, the JSONRPC record lookup and
+``stats_over_http``, without either of those consumers needing to know about it:
+
+.. code-block:: cpp
+
+    auto &m = ts::Metrics::instance();
+
+    m.unlist(id);                       // by id
+    m.unlist("proxy.process.example");  // or by name
+
+    m.relist(id);                       // put it back
+
+The slot, the name and the atomic all survive: an unlisted number that still rings. An unlisted
+metric still resolves through ``lookup``, so an exact name query, a logging field reference and
+``TSStatFindName`` all continue to work, and its value may still be read and written. Creating the
+same name again relists it and returns the same id with its accumulated value intact, so a metric
+that comes and goes with a configuration setting costs nothing to bring back.
+
+``find`` is the exception: it returns ``end()`` for an unlisted metric. Iteration never visits an
+unlisted slot, so an iterator pointing at one would be a range bound that a walk steps straight over
+and never reaches. Use ``lookup`` to read an unlisted metric.
+
+This exists because the decision to publish a name is otherwise made once, when the metric is first
+created, and can never be revisited. Any metric whose name or publication policy depends on a
+runtime changeable setting needs a way to retract a name it has already published.
+
+.. important::
+
+   Unlisting hides; it does not free. The slot and the name remain allocated against the storage
+   limit below. Unlisting does not make an unbounded naming scheme safe.
+
+.. note::
+
+   Iteration is a snapshot taken when the iterator is created. A metric created after ``begin()``
+   is not visited by that iterator.
+
 Storage limits
 ==============
 
