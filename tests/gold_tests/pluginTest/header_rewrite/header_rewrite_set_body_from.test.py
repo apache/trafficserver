@@ -21,7 +21,6 @@ Test.ContinueOnFail = True
 
 
 class HeaderRewriteSetBodyFromTest:
-
     def __init__(self):
         self.setUpOriginServer()
         self.setUpTS()
@@ -72,7 +71,7 @@ class HeaderRewriteSetBodyFromTest:
         binary_body_request_header = {"headers": "GET /binary_body HTTP/1.1\r\nHost: www.example.com\r\n\r\n"}
         binary_body_response_header = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "BeforeNUL\x00AfterNUL_AAAAAAAAAAAAAAAAAAAAAAAA"
+            "body": "BeforeNUL\x00AfterNUL_AAAAAAAAAAAAAAAAAAAAAAAA",
         }
         self.server.addResponse("sessionfile.log", binary_body_request_header, binary_body_response_header)
 
@@ -98,7 +97,8 @@ class HeaderRewriteSetBodyFromTest:
              map http://www.example.com/plugin_fail http://127.0.0.1:{0}/plugin_fail
              map http://www.example.com/404.html http://127.0.0.1:{0}/404.html
              map http://www.example.com/plugin_no_server http://127.0.0.1::{2}/plugin_no_server
-             """.format(self.server.Variables.Port, Test.RunDirectory, Test.GetTcpPort("bad_port")))
+             """.format(self.server.Variables.Port, Test.RunDirectory, Test.GetTcpPort("bad_port"))
+        )
         self.ts.Disk.plugin_config.AddLine('header_rewrite.so {0}/rule_set_body_from_plugin.conf'.format(Test.RunDirectory))
 
     def test_setBodyFromFails_remap(self):
@@ -109,7 +109,8 @@ class HeaderRewriteSetBodyFromTest:
         '''
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_fail"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_fail"'.format(self.ts.Variables.port), ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
@@ -124,24 +125,28 @@ class HeaderRewriteSetBodyFromTest:
         '''
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_success"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/remap_success"'.format(self.ts.Variables.port), ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
-            "(?i)< content-type: application/json", "Expected the fetched Content-Type")
+            "(?i)< content-type: application/json", "Expected the fetched Content-Type"
+        )
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromContentTypeOverride(self) -> None:
         '''Test that an explicit set-body-from Content-Type overrides the fetched value.'''
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_override"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_override"'.format(self.ts.Variables.port), ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
-            "(?i)< content-type: application/problem\\+json", "Expected the configured Content-Type override")
+            "(?i)< content-type: application/problem\\+json", "Expected the configured Content-Type override"
+        )
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromFile(self) -> None:
@@ -152,7 +157,8 @@ class HeaderRewriteSetBodyFromTest:
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("403 Forbidden", "Expected 403 response")
         tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
-            "(?i)< content-type: application/json", "Expected the configured local file Content-Type")
+            "(?i)< content-type: application/json", "Expected the configured local file Content-Type"
+        )
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromSucceeds_plugin(self):
@@ -162,12 +168,14 @@ class HeaderRewriteSetBodyFromTest:
         '''
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_success"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_success"'.format(self.ts.Variables.port), ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_success.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
         tr.Processes.Default.Streams.stderr.Content += Testers.ContainsExpression(
-            "(?i)< content-type: application/json", "Expected the fetched Content-Type")
+            "(?i)< content-type: application/json", "Expected the fetched Content-Type"
+        )
         tr.StillRunningAfter = self.server
 
     def test_setBodyFromFails_plugin(self):
@@ -178,7 +186,8 @@ class HeaderRewriteSetBodyFromTest:
         '''
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
-            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_fail"'.format(self.ts.Variables.port), ts=self.ts)
+            '-s -v --proxy 127.0.0.1:{0} "http://www.example.com/plugin_fail"'.format(self.ts.Variables.port), ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/header_rewrite-set_body_from_conn_fail.gold"
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("404 Not Found", "Expected 404 response")
@@ -211,7 +220,8 @@ class HeaderRewriteSetBodyFromTest:
 
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
-            f'-s --proxy 127.0.0.1:{self.ts.Variables.port} -o {body_path} "http://www.example.com/remap_binary"', ts=self.ts)
+            f'-s --proxy 127.0.0.1:{self.ts.Variables.port} -o {body_path} "http://www.example.com/remap_binary"', ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
 
@@ -220,11 +230,12 @@ class HeaderRewriteSetBodyFromTest:
         # to ship.
         tr = Test.AddTestRun()
         tr.Processes.Default.Command = (
-            f'python3 -c \'import hashlib; '
-            f'print(hashlib.sha256(open("{body_path}", "rb").read()).hexdigest())\'')
+            f'python3 -c \'import hashlib; print(hashlib.sha256(open("{body_path}", "rb").read()).hexdigest())\''
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-            expected_sha, "Client must receive the exact binary body bytes")
+            expected_sha, "Client must receive the exact binary body bytes"
+        )
 
     def runTraffic(self):
         self.test_setBodyFromFails_remap()

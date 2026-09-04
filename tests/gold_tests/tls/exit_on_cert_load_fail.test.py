@@ -64,7 +64,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
@@ -72,7 +73,8 @@ ssl_multicert:
                 'proxy.config.ssl.client.cert.filename': client_cert_path,
                 'proxy.config.ssl.server.multicert.exit_on_load_fail': enable_exit_on_server_cert_load_failure,
                 'proxy.config.ssl.client.cert.exit_on_load_fail': enable_exit_on_client_cert_load_failure,
-            })
+            }
+        )
         # The cert loading happen on startup, so the remap rule is not
         # triggered.
         RANDOM_PORT = 12345
@@ -93,33 +95,43 @@ ssl_multicert:
         if self.enable_exit_on_load:
             self._ts.ReturnCode = 33
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "EMERGENCY: ", "Failure loading the certs results in an emergency error.")
+                "EMERGENCY: ", "Failure loading the certs results in an emergency error."
+            )
             self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                "Traffic Server is fully initialized", "Traffic Server should exit upon the load failure.")
+                "Traffic Server is fully initialized", "Traffic Server should exit upon the load failure."
+            )
         else:
             self._ts.ReturnCode = 0
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "Traffic Server is fully initialized", "Traffic Server should start up successfully.")
+                "Traffic Server is fully initialized", "Traffic Server should start up successfully."
+            )
 
         if self.is_testing_server_side:
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "ERROR:.*failed to load", "Verify that there is a cert loading issue.")
+                "ERROR:.*failed to load", "Verify that there is a cert loading issue."
+            )
         else:
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "ERROR: failed to access cert", "Verify that there is a cert loading issue.")
+                "ERROR: failed to access cert", "Verify that there is a cert loading issue."
+            )
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
                 "Can't initialize the SSL client, HTTPS in remap rules will not function",
-                "There should be an error loading the cert.")
+                "There should be an error loading the cert.",
+            )
 
 
 # Test server cert loading.
 Test_exit_on_cert_load_fail(
-    "load server cert with exit on load disabled", is_testing_server_side=True, enable_exit_on_load=False).run()
+    "load server cert with exit on load disabled", is_testing_server_side=True, enable_exit_on_load=False
+).run()
 Test_exit_on_cert_load_fail(
-    "load server cert with exit on load enabled", is_testing_server_side=True, enable_exit_on_load=True).run()
+    "load server cert with exit on load enabled", is_testing_server_side=True, enable_exit_on_load=True
+).run()
 
 # Test client cert loading.
 Test_exit_on_cert_load_fail(
-    "load client cert with exit on load disabled", is_testing_server_side=False, enable_exit_on_load=False).run()
+    "load client cert with exit on load disabled", is_testing_server_side=False, enable_exit_on_load=False
+).run()
 Test_exit_on_cert_load_fail(
-    "load client cert with exit on load enabled", is_testing_server_side=False, enable_exit_on_load=True).run()
+    "load client cert with exit on load enabled", is_testing_server_side=False, enable_exit_on_load=True
+).run()

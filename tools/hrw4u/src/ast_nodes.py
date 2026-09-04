@@ -98,7 +98,7 @@ class Target:
         dot = name.rfind(".")
         if dot == -1:
             return Target(namespace=None, field=name)
-        return Target(namespace=name[:dot], field=name[dot + 1:])
+        return Target(namespace=name[:dot], field=name[dot + 1 :])
 
 
 @dataclass(frozen=True, kw_only=True)

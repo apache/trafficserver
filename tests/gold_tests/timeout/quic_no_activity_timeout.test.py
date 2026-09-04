@@ -68,7 +68,8 @@ class Test_quic_no_activity_timeout:
                 'proxy.config.diags.debug.tags': 'ssl|net|v_quic|quic|http|socket|inactivity_cop',
                 'proxy.config.quic.no_activity_timeout_in': self.no_activity_timeout_in,
                 'proxy.config.quic.qlog.file_base': f'log/qlog_{Test_quic_no_activity_timeout.server_counter}',
-            })
+            }
+        )
 
         if self.extra_recs:
             self._ts.Disk.records_config.update(self.extra_recs)
@@ -80,7 +81,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: {self._ts.Variables.SSLDir}/cert.crt
     ssl_key_name: {self._ts.Variables.SSLDir}/private-key.key
-""".split("\n"))
+""".split("\n")
+        )
 
     def run(self, check_for_max_idle_timeout=False):
         """Run the test."""
@@ -95,13 +97,15 @@ ssl_multicert:
             f'client-{Test_quic_no_activity_timeout.client_counter}',
             self.replay_file,
             http3_ports=[self._ts.Variables.ssl_port],
-            keys=self.replay_keys)
+            keys=self.replay_keys,
+        )
         Test_quic_no_activity_timeout.client_counter += 1
 
         if check_for_max_idle_timeout:
             tr.Processes.Default.ReturnCode = 1  # timeout
             self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-                "QUIC Idle timeout detected", "We should detect the timeout.")
+                "QUIC Idle timeout detected", "We should detect the timeout."
+            )
         else:
             tr.Processes.Default.ReturnCode = 0
 
@@ -114,7 +118,8 @@ ssl_multicert:
 test0 = Test_quic_no_activity_timeout(
     "Test ts.quic.no_activity_timeout_in(quic max_idle_timeout), no delays",
     no_activity_timeout_in=0,  # no timeout `max_idle_timeout`
-    replay_keys="nodelays")
+    replay_keys="nodelays",
+)
 test0.run()
 
 if Condition.HasATSFeature('TS_HAS_QUICHE'):
@@ -122,7 +127,8 @@ if Condition.HasATSFeature('TS_HAS_QUICHE'):
         "Test ts.quic.no_activity_timeout_in(quic max_idle_timeout) with a 5s delay",
         no_activity_timeout_in=3000,  # 3s `max_idle_timeout`
         replay_keys="delay5s",
-        gold_file="gold/quic_no_activity_timeout.gold")
+        gold_file="gold/quic_no_activity_timeout.gold",
+    )
     test1.run(check_for_max_idle_timeout=True)
 
     # QUIC Ignores the default_inactivity_timeout config, so the ts.quic.no_activity_timeout_in
@@ -131,5 +137,6 @@ if Condition.HasATSFeature('TS_HAS_QUICHE'):
         "Ignoring default_inactivity_timeout and use the ts.quic.no_activity_timeout_in instead",
         replay_keys="delay5s",
         no_activity_timeout_in=3000,
-        extra_recs={'proxy.config.net.default_inactivity_timeout': 1})
+        extra_recs={'proxy.config.net.default_inactivity_timeout': 1},
+    )
     test2.run(check_for_max_idle_timeout=True)

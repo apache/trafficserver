@@ -58,7 +58,8 @@ class TestOriginTrailers:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            })
+            }
+        )
 
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -66,7 +67,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
         return ts
@@ -80,7 +82,8 @@ ssl_multicert:
         tr.Processes.Default.Command = f'{sys.executable} h1_trailer_client.py 127.0.0.1 {self._h1_ts.Variables.port}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'No H2 origin trailers were forwarded to the HTTP/1 client.', 'The HTTP/1 response must end at its terminal chunk.')
+            'No H2 origin trailers were forwarded to the HTTP/1 client.', 'The HTTP/1 response must end at its terminal chunk.'
+        )
 
     def _configure_h2_client(self):
         tr = Test.AddTestRun('HTTP/2 origin trailers are forwarded to HTTP/2 clients')
@@ -88,7 +91,8 @@ ssl_multicert:
         client.StartBefore(self._h2_server)
         client.StartBefore(self._h2_ts)
         client.Streams.All += Testers.ContainsExpression(
-            'x-ats-h2-trailer: smuggled', 'The HTTP/2 client must receive the origin trailer.')
+            'x-ats-h2-trailer: smuggled', 'The HTTP/2 client must receive the origin trailer.'
+        )
 
 
 TestOriginTrailers()

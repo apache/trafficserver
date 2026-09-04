@@ -37,7 +37,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 4\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "TEST"
+    "body": "TEST",
 }
 server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -45,7 +45,8 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts = Test.MakeATSProcess("ts", enable_proxy_protocol=True)
 
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=proxy_protocol.lua')
+    'map / http://127.0.0.1:{0}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=proxy_protocol.lua'
+)
 
 ts.Setup.Copy("proxy_protocol.lua", ts.Variables.CONFIGDIR)
 
@@ -54,8 +55,8 @@ ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.con
 # ---- Test with PROXY protocol ----
 tr = Test.AddTestRun("Test with PROXY protocol v1")
 tr.Processes.Default.Command = (
-    f"curl --haproxy-protocol --haproxy-clientip 192.168.1.100 "
-    f"http://127.0.0.1:{ts.Variables.proxy_protocol_port}/")
+    f"curl --haproxy-protocol --haproxy-clientip 192.168.1.100 http://127.0.0.1:{ts.Variables.proxy_protocol_port}/"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(ts)
@@ -66,7 +67,8 @@ tr.StillRunningAfter = ts
 # Check debug log for PROXY protocol info
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"PP-Version: 1", "PROXY protocol version should be logged")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"PP-Source: 192\.168\.1\.100", "PROXY protocol source address should be logged")
+    r"PP-Source: 192\.168\.1\.100", "PROXY protocol source address should be logged"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"PP-Protocol: 2", "PROXY protocol IP family should be logged")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(r"PP-SocketType: 1", "PROXY protocol socket type should be logged")
 

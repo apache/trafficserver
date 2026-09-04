@@ -51,7 +51,8 @@ PAYLOAD = (
     b"Host: localhost\r\n"
     b"uuid: 2\r\n"
     b"Connection: close\r\n"
-    b"\r\n")
+    b"\r\n"
+)
 
 # Byte offset at which to split the payload across two sends, right after the
 # opening DQUOTE and before the CR inside it, so the proxy must suspend parsing

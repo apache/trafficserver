@@ -39,19 +39,17 @@ def main() -> int:
     parser.add_argument('-p', '--proxy-port', type=int, required=True, help='ATS HTTP port')
     parser.add_argument('-s', '--size', type=int, default=64 * 1024 * 1024, help='request body size in bytes')
     parser.add_argument(
-        '-t', '--threshold', type=float, default=8.0, help='maximum seconds from request start until ATS fails the transaction')
+        '-t', '--threshold', type=float, default=8.0, help='maximum seconds from request start until ATS fails the transaction'
+    )
     parser.add_argument('--timeout', type=float, default=60.0, help='give up entirely after this many seconds')
     parser.add_argument(
-        '--pause-after', type=int, default=0, help='stop sending body bytes after this many (0: keep sending until done)')
+        '--pause-after', type=int, default=0, help='stop sending body bytes after this many (0: keep sending until done)'
+    )
     args = parser.parse_args()
 
     start = time.monotonic()
     sock = socket.create_connection(('127.0.0.1', args.proxy_port), timeout=10)
-    request = (f'POST /post HTTP/1.1\r\n'
-               f'Host: origin\r\n'
-               f'Content-Length: {args.size}\r\n'
-               f'Connection: close\r\n'
-               f'\r\n').encode()
+    request = (f'POST /post HTTP/1.1\r\nHost: origin\r\nContent-Length: {args.size}\r\nConnection: close\r\n\r\n').encode()
     sock.sendall(request)
     sock.setblocking(False)
 
@@ -77,7 +75,7 @@ def main() -> int:
                 break
         if writable:
             try:
-                sent += sock.send(chunk[:min(len(chunk), args.size - sent)])
+                sent += sock.send(chunk[: min(len(chunk), args.size - sent)])
             except (ConnectionResetError, BrokenPipeError, OSError) as e:
                 outcome = f'connection error while sending: {e.__class__.__name__}'
                 break

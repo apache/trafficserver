@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -61,8 +60,7 @@ else:
             host.WriteVerbose(['ats'], "Using Proxy Verifier found in PATH: ", ENV['VERIFIER_BIN'])
         else:
             prepare_proxy_verifier_path = os.path.join(test_root, "prepare_proxy_verifier.sh")
-            host.WriteError("Could not find Proxy Verifier binaries. "
-                            "Try running: ", prepare_proxy_verifier_path)
+            host.WriteError("Could not find Proxy Verifier binaries. Try running: ", prepare_proxy_verifier_path)
 
 required_pv_version = Version(proxy_verifer_version[1:])
 verifier_client = os.path.join(ENV['VERIFIER_BIN'], 'verifier-client')
@@ -70,8 +68,8 @@ pv_version_out = subprocess.check_output([verifier_client, "--version"])
 pv_version = Version(pv_version_out.decode("utf-8").split()[1])
 if pv_version < required_pv_version:
     host.WriteError(
-        f"Proxy Verifier at {verifier_client} is too old. "
-        f"Version required: {required_pv_version}, version found: {pv_version}")
+        f"Proxy Verifier at {verifier_client} is too old. Version required: {required_pv_version}, version found: {pv_version}"
+    )
 else:
     host.WriteVerbose(['ats'], f"Proxy Verifier at {verifier_client} has version: {pv_version}")
 
@@ -85,8 +83,7 @@ if ENV['ATS_BIN'] is not None:
     if not os.path.isfile(traffic_layout):
         hint = ''
         if os.path.isfile(os.path.join(ENV['ATS_BIN'], 'bin', 'traffic_layout')):
-            hint = "\nDid you mean '--ats-bin {}'?".\
-                format(os.path.join(ENV['ATS_BIN'], 'bin'))
+            hint = "\nDid you mean '--ats-bin {}'?".format(os.path.join(ENV['ATS_BIN'], 'bin'))
         host.WriteError("traffic_layout is not found. Aborting tests - Bad build or install.{}".format(hint), show_stack=False)
     try:
         out = subprocess.check_output([traffic_layout, "--json"])

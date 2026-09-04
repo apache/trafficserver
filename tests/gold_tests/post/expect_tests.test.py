@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -20,7 +19,6 @@ import sys
 
 
 class ExpectTest:
-
     _expect_client: str = 'expect_client.py'
     _http_utils: str = 'http_utils.py'
     _replay_file: str = 'replay/expect-continue.replay.yaml'
@@ -63,7 +61,8 @@ class ExpectTest:
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.http.send_100_continue_response': 1,
-            })
+            }
+        )
 
     def _setup_client(self, tr: 'TestRun') -> None:
         '''Set up the client.
@@ -72,16 +71,17 @@ class ExpectTest:
         '''
         tr.Setup.CopyAs(self._expect_client)
         tr.Setup.CopyAs(self._http_utils)
-        tr.Processes.Default.Command = \
-            f'{sys.executable} {self._expect_client} 127.0.0.1 {self._ts.Variables.port} -s example.com'
+        tr.Processes.Default.Command = f'{sys.executable} {self._expect_client} 127.0.0.1 {self._ts.Variables.port} -s example.com'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._dns)
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'HTTP/1.1 100', 'Verify the 100 Continue response was received.')
+            'HTTP/1.1 100', 'Verify the 100 Continue response was received.'
+        )
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'HTTP/1.1 200', 'Verify the 200 OK response was received.')
+            'HTTP/1.1 200', 'Verify the 200 OK response was received.'
+        )
 
 
 Test.Summary = 'Verify Expect: 100-Continue handling.'

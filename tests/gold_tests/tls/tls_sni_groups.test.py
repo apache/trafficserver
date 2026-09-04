@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -43,7 +42,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.records_config.update(
     {
@@ -52,7 +52,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl_sni',
-    })
+    }
+)
 
 ts.Disk.sni_yaml.AddLines(
     [
@@ -69,45 +70,57 @@ ts.Disk.sni_yaml.AddLines(
         '  server_groups_list: ABC123',
         '  valid_tls_versions_in: [ TLSv1_2 ]',
         '  server_cipher_suite: ECDHE-RSA-AES256-GCM-SHA384',
-    ])
+    ]
+)
 
 tr = Test.AddTestRun("Test 0: x25519")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
     "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'bbb.com:{0}:127.0.0.1' -k  https://bbb.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Setting groups list from server_groups_list to x25519", "Should log setting the server groups")
+    "Setting groups list from server_groups_list to x25519", "Should log setting the server groups"
+)
 tr.Processes.Default.Streams.All = Testers.IncludesExpression(
-    f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection")
+    f"SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / x25519", "Curl should log using x25519 in the SSL connection"
+)
 
 tr = Test.AddTestRun("Test 1: fail")
 tr.MakeCurlCommand(
     "-v --ciphers ECDHE-RSA-AES256-GCM-SHA384 --resolve 'ccc.com:{0}:127.0.0.1' -k  https://ccc.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 # The error code is 35, which indicates there was a ssl connection error
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "ERROR: Invalid server_groups_list: ABC123", "Curl attempt should have failed")
+    "ERROR: Invalid server_groups_list: ABC123", "Curl attempt should have failed"
+)
 
 # Hybrid ECDH PQ key exchange TLS groups were added in OpenSSL 3.5
 if Condition.HasOpenSSLVersion("3.5.0"):
     tr = Test.AddTestRun("Test 2: X25519MLKEM768")
     tr.MakeCurlCommand(
         "-v --tls13-ciphers TLS_AES_256_GCM_SHA384 --resolve 'aaa.com:{0}:127.0.0.1' -k  https://aaa.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
+            ts.Variables.ssl_port
+        ),
+        ts=ts,
+    )
     tr.ReturnCode = 0
     tr.StillRunningAfter = ts
     ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-        "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups")
+        "Setting groups list from server_groups_list to X25519MLKEM768", "Should log setting the server groups"
+    )
     tr.Processes.Default.Streams.All = Testers.IncludesExpression(
         f"SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768",
-        f"Curl should log using X25519MLKEM768 in the SSL connection")
+        f"Curl should log using X25519MLKEM768 in the SSL connection",
+    )

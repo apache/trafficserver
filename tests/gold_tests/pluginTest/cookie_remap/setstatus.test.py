@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -37,13 +36,15 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
-    })
+    }
+)
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/statusconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/statusconfig.txt')
+    'map http://www.example.com/magic http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/statusconfig.txt'
+)
 
 # Plugin sets the HTTP status because first rule matches
 tr = Test.AddTestRun("Sets the status to 205")
@@ -54,7 +55,8 @@ tr.MakeCurlCommand(
 -H "Proxy-Connection: keep-alive" \
 --verbose \
 '''.format(ts.Variables.port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
@@ -70,7 +72,8 @@ tr.MakeCurlCommand(
 -H "Proxy-Connection: keep-alive" \
 --verbose \
 '''.format(ts.Variables.port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 

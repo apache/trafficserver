@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -37,7 +36,8 @@ ts = Test.MakeATSProcess("ts")
 ts.Disk.remap_config.AddLine(f'map /httpbin/ http://127.0.0.1:{httpbin.Variables.Port}/')
 
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSHttpTxnVerifiedAddr.so'), ts)
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSHttpTxnVerifiedAddr.so'), ts
+)
 
 ts.Setup.CopyAs('hrw_verified_addr.conf', Test.RunDirectory)
 ts.Disk.plugin_config.AddLine(f'header_rewrite.so --inbound-ip-source=PLUGIN {Test.RunDirectory}/hrw_verified_addr.conf')
@@ -46,7 +46,8 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|test_TSHttpTxnVerifiedAddr',
-    })
+    }
+)
 
 # ----
 # Test Cases
@@ -60,6 +61,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression(
-    "ip: 1.1.1.1", "Verifiy header_rewrite picked the verified address")
+    "ip: 1.1.1.1", "Verifiy header_rewrite picked the verified address"
+)
 tr.StillRunningAfter = httpbin
 tr.StillRunningAfter = ts

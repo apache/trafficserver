@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -62,7 +61,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secret_load_test.so'), ts)
 
@@ -74,14 +74,14 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.ssl.server.cert.path': '{0}/../'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -91,7 +91,8 @@ tr = Test.AddTestRun("bar.com cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -106,7 +107,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
 tr2.MakeCurlCommand(
-    "-v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -118,7 +120,8 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Shoul
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
 tr2.MakeCurlCommand(
-    "-v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -132,8 +135,8 @@ tr2.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Shoul
 # SNI name and returned cert name will not match, so must use -k to avoid cert verification
 tr2 = Test.AddTestRun("Bad SNI")
 tr2.MakeCurlCommand(
-    "-v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -162,7 +165,8 @@ tr = Test.AddTestRun("Test new version of bar cert with good CA")
 tr.DelayStart = 4
 tr.MakeCurlCommandMulti(
     "date; {{curl}} -v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port),
-    ts=ts)
+    ts=ts,
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -173,7 +177,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(HTTP_404, "Should
 
 tr = Test.AddTestRun("Test new version of bar cert with bad CA")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 60
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

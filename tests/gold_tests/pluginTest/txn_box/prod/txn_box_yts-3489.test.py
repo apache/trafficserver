@@ -36,17 +36,16 @@ tr = Test.TxnBoxTestAndRun(
         ['http://base.ex/', ('--key=meta.txn-box.remap', replay_file)],
         ['http://alt.ex/', ('--key=meta.txn-box.remap-alt', replay_file)],
         ['http://join.ex/', ('--key=meta.txn-box.remap-join', replay_file)],
-        ['http://concat.ex/', ('--key=meta.txn-box.remap-concat', replay_file)], ['http://unmatched.ex/']
+        ['http://concat.ex/', ('--key=meta.txn-box.remap-concat', replay_file)],
+        ['http://unmatched.ex/'],
     ],
-    verifier_client_args="--verbose info")
+    verifier_client_args="--verbose info",
+)
 
 ts = tr.Variables.TS
 
 ts.Setup.Copy(replay_file, ts.Variables.CONFIGDIR)  # because it's remap only - not auto-copied.
 
 ts.Disk.records_config.update(
-    {
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'txn_box',
-        'proxy.config.http.cache.http': 0
-    })
+    {'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'txn_box', 'proxy.config.http.cache.http': 0}
+)

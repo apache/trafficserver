@@ -65,8 +65,7 @@ class QuickServerTest:
         server = tr.Processes.Process(f'server-{QuickServerTest._server_counter}')
         QuickServerTest._server_counter += 1
         port = get_port(server, "http_port")
-        server.Command = \
-            f'{sys.executable} {self._quick_server} 127.0.0.1 {port} '
+        server.Command = f'{sys.executable} {self._quick_server} 127.0.0.1 {port} '
         if self._should_drain_request:
             server.Command += '--drain-request '
         if self._should_abort_response_headers:
@@ -88,14 +87,16 @@ class QuickServerTest:
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-            })
+            }
+        )
 
     def run(self):
         """Run the test."""
         tr = Test.AddTestRun(
             f'Aborting request: {self._should_abort_request}, '
             f'Draining request: {self._should_drain_request}, '
-            f'Aborting response headers: {self._should_abort_response_headers}')
+            f'Aborting response headers: {self._should_abort_response_headers}'
+        )
 
         self._configure_dns(tr)
         self._configure_server(tr)
@@ -108,9 +109,7 @@ class QuickServerTest:
         tr.Setup.CopyAs(self._slow_post_client, Test.RunDirectory)
         tr.Setup.CopyAs(self._quick_server, Test.RunDirectory)
 
-        client_command = (f'{sys.executable} {self._slow_post_client} '
-                          '127.0.0.1 '
-                          f'{self._ts.Variables.port} ')
+        client_command = f'{sys.executable} {self._slow_post_client} 127.0.0.1 {self._ts.Variables.port} '
         if not self._should_abort_request:
             client_command += '--finish-request '
         p = tr.Processes.Default

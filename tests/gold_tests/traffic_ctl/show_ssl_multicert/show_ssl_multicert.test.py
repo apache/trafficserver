@@ -21,7 +21,6 @@ Test.Summary = 'Test traffic_ctl config ssl-multicert show command.'
 
 
 class ShowSSLMulticert:
-
     def __init__(self):
         self.setup_ts()
         self.setup_show_default()
@@ -37,12 +36,14 @@ ssl_multicert:
   - ssl_cert_name: server.pem
     dest_ip: "*"
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{self._ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{self._ts.Variables.SSLDir}',
-            })
+            }
+        )
 
     def setup_show_default(self):
         tr = Test.AddTestRun("Test ssl-multicert show (default YAML format)")

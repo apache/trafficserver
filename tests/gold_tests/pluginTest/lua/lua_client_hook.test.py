@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -22,7 +21,9 @@ Test.Summary = '''
 Test lua functionality
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = True
 # Define default ATS
@@ -38,7 +39,8 @@ response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "t
 server.addResponse("sessionfile.log", request_header, response_header)
 
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=client_hook.lua')
+    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=client_hook.lua'
+)
 
 # Configure the tslua's configuration file.
 ts.Setup.Copy("client_hook.lua", ts.Variables.CONFIGDIR)

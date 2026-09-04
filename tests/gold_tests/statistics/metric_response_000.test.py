@@ -46,7 +46,7 @@ class MetricResponse000Test:
         response_header = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self._server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -56,10 +56,12 @@ class MetricResponse000Test:
         MetricResponse000Test._ts_counter += 1
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}/')
-        self._ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'http',
-        })
+        self._ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 0,
+                'proxy.config.diags.debug.tags': 'http',
+            }
+        )
 
     def _configure_abort_client(self) -> None:
         """Configure a client to send a partial request and abort."""
@@ -100,7 +102,8 @@ class MetricResponse000Test:
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            'proxy.process.http.000_responses 1', 'The 000_responses stat should be 1')
+            'proxy.process.http.000_responses 1', 'The 000_responses stat should be 1'
+        )
         tr.StillRunningAfter = self._ts
 
 

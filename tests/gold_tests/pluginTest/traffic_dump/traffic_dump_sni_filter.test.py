@@ -24,12 +24,15 @@ Test.Summary = '''
 Verify traffic_dump functionality.
 '''
 
-Test.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('traffic_dump.so'),
+)
 
 schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
 replay_file = "replay/various_sni.yaml"
 server = Test.MakeVerifierServerProcess(
-    "server-various-sni", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+    "server-various-sni", replay_file, ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem"
+)
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -51,7 +54,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.host_sni_policy': 2,
         'proxy.config.ssl.TLSv1_3.enabled': 0,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -59,32 +63,37 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bob.com',
-    '  verify_client: NONE',
-    '  host_sni_policy: PERMISSIVE',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bob.com',
+        '  verify_client: NONE',
+        '  host_sni_policy: PERMISSIVE',
+    ]
+)
 
 # Configure traffic_dump's SNI filter to only dump connections with SNI bob.com.
 sni_filter = "bob.com"
-ts.Disk.plugin_config.AddLine(f'traffic_dump.so --logdir {replay_dir} --sample 1 '
-                              f'--sni-filter "{sni_filter}"')
+ts.Disk.plugin_config.AddLine(f'traffic_dump.so --logdir {replay_dir} --sample 1 --sni-filter "{sni_filter}"')
 
 # Set up trafficserver expectations.
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"Filtering to only dump connections with SNI: {sni_filter}", "Verify filtering for the expected SNI.")
+    f"Filtering to only dump connections with SNI: {sni_filter}", "Verify filtering for the expected SNI."
+)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Ignore HTTPS session with non-filtered SNI: dave", "Verify that the non-desired SNI session was filtered out.")
+    "Ignore HTTPS session with non-filtered SNI: dave", "Verify that the non-desired SNI session was filtered out."
+)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Initialized with sample pool size of 1 bytes and unlimited disk utilization",
-    "Verify traffic_dump initialized with the configured disk limit.")
+    "Verify traffic_dump initialized with the configured disk limit.",
+)
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(replay_dir, "127", "0000000000000000")
@@ -110,7 +119,8 @@ tr.AddVerifierClientProcess(
     replay_file,
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
-    ca_cert="ssl/signer.pem")
+    ca_cert="ssl/signer.pem",
+)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = server
@@ -122,7 +132,8 @@ session_1_protocols = "http,tls,tcp,ip"
 session_1_tls_features = 'sni:bob.com,proxy-verify-mode:0,proxy-provided-cert:true'
 verify_replay = "verify_replay.py"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
-     f'--client-protocols "{session_1_protocols}" --client-tls-features "{session_1_tls_features}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
+    f'--client-protocols "{session_1_protocols}" --client-tls-features "{session_1_tls_features}"'
+)
 tr.Processes.Default.ReturnCode = 0

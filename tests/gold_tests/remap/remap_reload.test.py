@@ -51,7 +51,8 @@ tm.Disk.remap_config.AddLines(
         f"map http://bravo.ex http://bravo.ex:{pv_port}",
         f"map http://charlie.ex http://charlie.ex:{pv_port}",
         f"map http://delta.ex http://delta.ex:{pv_port}",
-    ])
+    ]
+)
 tm.Disk.records_config.update({'proxy.config.url_remap.min_rules_required': 3})
 
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
@@ -61,7 +62,8 @@ tm.Disk.records_config.update(
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'remap|config|file|rpc',
-    })
+    }
+)
 
 tr = Test.AddTestRun("verify load")
 tr.Processes.Default.StartBefore(pv)
@@ -75,10 +77,13 @@ p.Env = tm.Env
 p.Command = 'echo "Change remap.config, two lines"'
 p.Setup.Lambda(
     lambda: update_remap_config(
-        remap_cfg_path, [
+        remap_cfg_path,
+        [
             f"map http://alpha.ex http://alpha.ex:{pv_port}",
             f"map http://bravo.ex http://bravo.ex:{pv_port}",
-        ]))
+        ],
+    )
+)
 
 tr = Test.AddConfigReload(tm, expect="fail", expect_tasks=["remap.config"], delay_start=2, description="remap_config reload, fails")
 
@@ -91,16 +96,20 @@ p.Env = tm.Env
 p.Command = 'echo "Change remap.config, more than three lines"'
 p.Setup.Lambda(
     lambda: update_remap_config(
-        remap_cfg_path, [
+        remap_cfg_path,
+        [
             f"map http://echo.ex http://echo.ex:{pv_port}",
             f"map http://foxtrot.ex http://foxtrot.ex:{pv_port}",
             f"map http://golf.ex http://golf.ex:{pv_port}",
             f"map http://hotel.ex http://hotel.ex:{pv_port}",
             f"map http://india.ex http://india.ex:{pv_port}",
-        ]))
+        ],
+    )
+)
 
 tr = Test.AddConfigReload(
-    tm, expect="success", expect_tasks=["remap.config"], delay_start=2, description="remap_config reload, succeeds")
+    tm, expect="success", expect_tasks=["remap.config"], delay_start=2, description="remap_config reload, succeeds"
+)
 
 tr = Test.AddTestRun("post update charlie")
 tr.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.port])

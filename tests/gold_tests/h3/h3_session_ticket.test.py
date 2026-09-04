@@ -41,7 +41,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
     else:
         ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
@@ -74,7 +75,8 @@ class TestHttp3SessionTicket:
                 'proxy.config.ssl.server.session_ticket.enable': 1,
                 'proxy.config.ssl.server.session_ticket.number': 2,
                 'proxy.config.ssl.server.ticket_key.filename': self.ticket_file,
-            })
+            }
+        )
 
         self._ts = ts
 
@@ -87,9 +89,11 @@ class TestHttp3SessionTicket:
         """Verify that OpenSSL completed the QUIC handshake."""
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            "CONNECTION ESTABLISHED", "OpenSSL should complete the QUIC handshake.")
+            "CONNECTION ESTABLISHED", "OpenSSL should complete the QUIC handshake."
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            "Protocol version: QUICv1", "OpenSSL should negotiate QUICv1.")
+            "Protocol version: QUICv1", "OpenSSL should negotiate QUICv1."
+        )
 
     def _configure_ticket_save(self):
         """Configure the ticket save test run."""

@@ -23,7 +23,9 @@ hosts, non-http(s) schemes, and attacker-controlled variable expansion,
 while still allowing ordinary includes to the configured upstream.
 '''
 
-Test.SkipUnless(Condition.PluginExists('esi.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('esi.so'),
+)
 
 
 class EsiSsrfTest:
@@ -50,15 +52,18 @@ class EsiSsrfTest:
         # not mapped to this verifier.
         server.Streams.All += Testers.ContainsExpression('GET /allowed.php', 'Verify the allowed top-level request reached origin.')
         server.Streams.All += Testers.ContainsExpression(
-            'GET /snippet.html', 'Verify the snippet for the allowed include was fetched.')
+            'GET /snippet.html', 'Verify the snippet for the allowed include was fetched.'
+        )
 
     def _create_ats(self, tr: 'TestRun') -> None:
         ts = tr.MakeATSProcess("ts")
         self._ts = ts
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|plugin_esi',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|plugin_esi',
+            }
+        )
 
         server_port = self._server.Variables.http_port
         ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{server_port}')
@@ -77,19 +82,24 @@ class EsiSsrfTest:
         # default, so each regex stays single-line.
         ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r'Rejecting include URL.*169\.254\.169\.254.*private-host',
-            'Cloud-metadata IPv4 literal must be rejected as private-host.')
+            'Cloud-metadata IPv4 literal must be rejected as private-host.',
+        )
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'Rejecting include URL.*127\.0\.0\.1/admin.*private-host', 'Loopback IPv4 literal must be rejected as private-host.')
+            r'Rejecting include URL.*127\.0\.0\.1/admin.*private-host', 'Loopback IPv4 literal must be rejected as private-host.'
+        )
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'Rejecting include URL.*gopher://internal\.svc/x.*bad-scheme', 'Non-http(s) scheme must be rejected as bad-scheme.')
+            r'Rejecting include URL.*gopher://internal\.svc/x.*bad-scheme', 'Non-http(s) scheme must be rejected as bad-scheme.'
+        )
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
             r'Rejecting include URL.*10\.0\.0\.5/secret.*private-host',
-            'Attacker-influenced variable expansion must be rejected after \\$\\(...\\) is expanded.')
+            'Attacker-influenced variable expansion must be rejected after \\$\\(...\\) is expanded.',
+        )
 
         # The allowed case must NOT show up as a rejection.
         ts.Disk.diags_log.Content += Testers.ExcludesExpression(
             r'Rejecting include URL.*www\.example\.com/snippet\.html',
-            'The legitimate include to the mapped upstream must not be rejected.')
+            'The legitimate include to the mapped upstream must not be rejected.',
+        )
 
     def _create_client(self, tr: 'TestRun') -> None:
         # Proxy Verifier's default --keys format in this codebase keys
@@ -102,7 +112,8 @@ class EsiSsrfTest:
             "client",
             self._replay_file,
             http_ports=[self._ts.Variables.port],
-            other_args='--format "{url}" --keys /metadata.php /loopback.php /badscheme.php /varinject.php /allowed.php')
+            other_args='--format "{url}" --keys /metadata.php /loopback.php /badscheme.php /varinject.php /allowed.php',
+        )
         p.ReturnCode = 0
         p.StartBefore(self._server)
         p.StartBefore(self._ts)

@@ -32,10 +32,12 @@ Test.ContinueOnFail = True
 
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'config',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'config',
+    }
+)
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:8080')
 
@@ -70,8 +72,10 @@ tr.StillRunningAfter = ts
 
 # The releaser runs on ET_TASK, so it destroys the replaced config there.
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r"Destroyed config \d+ in \d+ ns on thread \[ET_TASK", "a replaced config should be destroyed on a task thread")
+    r"Destroyed config \d+ in \d+ ns on thread \[ET_TASK", "a replaced config should be destroyed on a task thread"
+)
 
 # Destroying a config on a network thread is the regression this test guards against.
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    r"Destroyed config \d+ in \d+ ns on thread \[ET_NET", "no config should be destroyed on a network thread")
+    r"Destroyed config \d+ in \d+ ns on thread \[ET_NET", "no config should be destroyed on a network thread"
+)

@@ -25,5 +25,6 @@ checker.Command = 'sleep 5; traffic_ctl metric get proxy.process.http.current_se
 checker.ReturnCode = 0
 checker.Env = replay_run.Processes.ts.Env
 checker.Streams.stdout = Testers.ContainsExpression(
-    r'^proxy\.process\.http\.current_server_connections\s+1$', 'The origin connection pool should retain exactly one connection.')
+    r'^proxy\.process\.http\.current_server_connections\s+1$', 'The origin connection pool should retain exactly one connection.'
+)
 checker.StartBefore(replay_run.Processes.ts)

@@ -1,5 +1,5 @@
-'''
-'''
+''' '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -58,12 +58,13 @@ ts = Test.MakeATSProcess("ts")
 # set up slice plugin with remap host into cache_range_requests
 ts.Disk.remap_config.AddLines(
     [
-        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
-        ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
-        f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' +
-        '  @plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident' +
-        ' @plugin=header_rewrite.so @pparam=hdr_rw.conf',
-    ])
+        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/'
+        + ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
+        f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/'
+        + '  @plugin=cache_range_requests.so @pparam=--consider-ims @pparam=--consider-ident'
+        + ' @plugin=header_rewrite.so @pparam=hdr_rw.conf',
+    ]
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -74,7 +75,8 @@ logging:
  logs:
   - filename: transaction
     format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
@@ -82,13 +84,19 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'cache_range_requests|header_rewrite|slice|log',
-    })
+    }
+)
 
 ts.Disk.MakeConfigFile("hdr_rw.conf").AddLines(
     [
-        'cond %{SEND_REQUEST_HDR_HOOK}', 'cond %{HEADER:Range} ="bytes=0-2" [AND]', 'set-header UID %{CLIENT-HEADER:UID} 0'
-        '', 'cond %{SEND_REQUEST_HDR_HOOK}', 'cond %{HEADER:Range} ="bytes=3-5" [AND]', 'set-header UID %{CLIENT-HEADER:UID} 1'
-    ])
+        'cond %{SEND_REQUEST_HDR_HOOK}',
+        'cond %{HEADER:Range} ="bytes=0-2" [AND]',
+        'set-header UID %{CLIENT-HEADER:UID} 0',
+        'cond %{SEND_REQUEST_HDR_HOOK}',
+        'cond %{HEADER:Range} ="bytes=3-5" [AND]',
+        'set-header UID %{CLIENT-HEADER:UID} 1',
+    ]
+)
 
 # Test case: short lived asset. second slice should be HIT_FRESH
 
@@ -99,11 +107,15 @@ req_header_plain_0 = {
 }
 
 res_header_plain_0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-        "Content-Range: bytes 0-2/5\r\n" + 'Etag: "plain"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=1\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "plain"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "aaa"
+    "body": "aaa",
 }
 
 server.addResponse("sessionlog.json", req_header_plain_0, res_header_plain_0)
@@ -115,11 +127,15 @@ req_header_plain_1 = {
 }
 
 res_header_plain_1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-        "Content-Range: bytes 3-4/5\r\n" + 'Etag: "plain"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=1\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "plain"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "BB"
+    "body": "BB",
 }
 
 server.addResponse("sessionlog.json", req_header_plain_1, res_header_plain_1)
@@ -157,11 +173,15 @@ req_header_chg_0 = {
 }
 
 res_header_chg_0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=60\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "chg"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=60\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "chg"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "AAA"
+    "body": "AAA",
 }
 
 server.addResponse("sessionlog.json", req_header_chg_0, res_header_chg_0)
@@ -173,11 +193,15 @@ req_header_chg_1 = {
 }
 
 res_header_chg_1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=60\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "chg"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=60\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "chg"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bb"
+    "body": "bb",
 }
 
 server.addResponse("sessionlog.json", req_header_chg_1, res_header_chg_1)
@@ -215,6 +239,6 @@ Test.AddAwaitFileContainsTestRun('Await ts transactions to finish logging.', tsl
 
 # 6 Check logs
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f"cat {tslog}")
+tr.Processes.Default.Command = f"cat {tslog}"
 tr.Streams.stdout = "gold/slice_crr_ident.gold"
 tr.Processes.Default.ReturnCode = 0

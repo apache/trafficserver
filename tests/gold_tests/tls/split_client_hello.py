@@ -28,8 +28,7 @@ import time
 #
 # NOTE: if this changes, update EXPECTED_CLIENT_HELLO_LENGTH in the
 # corresponding receive_split_client_hello.py script.
-client_hello_b64 = \
-"FgMBB8QBAAfAAwM013ShumVXiKSeR/GFb2h7fWlKwxuxCLqm+Du0j2+87CBy2kdreMM30M3SudUY\
+client_hello_b64 = "FgMBB8QBAAfAAwM013ShumVXiKSeR/GFb2h7fWlKwxuxCLqm+Du0j2+87CBy2kdreMM30M3SudUY\
 GQLokivaj/UPCgc1QmweB1bXUwAgmpoTARMCEwPAK8AvwCzAMMypzKjAE8AUAJwAnQAvADUBAAdX\
 enoAAAANABIAEAQDCAQEAQUDCAUFAQgGBgEAEgAAACsABwZ6egMEAwMAIwAA/wEAAQAAEAAOAAwC\
 aDIIaHR0cC8xLjEAAAARAA8AAAxzbGFzaGRvdC5vcmcAMwTvBO0KCgABAGOZBMD1UJ/4SJ3Zqnat\
@@ -89,11 +88,11 @@ def send_clienthello(dest_host: str, dest_port: int, split_size: int, num_data_p
             return 1
         print('Connection successful.')
         split_size = split_size if split_size > 0 else len(client_hello)
-        client_hello_packets = [client_hello[i:i+split_size] \
-                                for i in range(0, len(client_hello), split_size)]
+        client_hello_packets = [client_hello[i : i + split_size] for i in range(0, len(client_hello), split_size)]
         print(
             f'Sending ClientHello of {len(client_hello)} bytes in {split_size} '
-            f'byte packets, {len(client_hello_packets)} total packets.')
+            f'byte packets, {len(client_hello_packets)} total packets.'
+        )
         for packet in client_hello_packets:
             print(f'Sending packet of size {len(packet)} bytes.')
             s.send(packet)
@@ -159,8 +158,8 @@ def parse_args() -> argparse.Namespace:
         '-s',
         type=int,
         default=1100,
-        help="Size of each split packet. Default is 1100 bytes. "
-        "0 means no split, send the whole packet at once.")
+        help="Size of each split packet. Default is 1100 bytes. 0 means no split, send the whole packet at once.",
+    )
     parser.add_argument('--num_data_packets', '-d', type=int, default=2, help="Number of data packets to send. Default is 2.")
     return parser.parse_args()
 

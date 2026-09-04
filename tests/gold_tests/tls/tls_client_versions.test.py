@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -48,7 +47,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 cipher_suite = 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2'
 if Condition.HasOpenSSLVersion("3.0.0"):
@@ -64,17 +64,20 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.TLSv1': 0,
         'proxy.config.ssl.TLSv1_1': 0,
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.TLSv1_2': 1
-    })
+        'proxy.config.ssl.TLSv1_2': 1,
+    }
+)
 
 # foo.com should only offer the older TLS protocols
 # bar.com should terminate.
 # empty SNI should tunnel to server_bar
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: foo.com',
-    '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: foo.com',
+        '  valid_tls_versions_in: [ TLSv1, TLSv1_1 ]',
+    ]
+)
 
 # Target foo.com for TLSv1_2.  Should fail
 tr = Test.AddTestRun("foo.com TLSv1_2")
@@ -86,8 +89,10 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 # https://www.openssl.org/docs/manmaster/man3/SSL_CTX_set_security_level.html
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.2 --tlsv1.2 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
@@ -96,8 +101,10 @@ if has_curl_tlsv1:
     tr = Test.AddTestRun("foo.com TLSv1")
     tr.MakeCurlCommand(
         "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
+            ts.Variables.ssl_port
+        ),
+        ts=ts,
+    )
     tr.ReturnCode = 0
     tr.StillRunningAfter = ts
 
@@ -106,8 +113,10 @@ if has_curl_tlsv1:
     tr = Test.AddTestRun("bar.com TLSv1")
     tr.MakeCurlCommand(
         "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
-            ts.Variables.ssl_port),
-        ts=ts)
+            ts.Variables.ssl_port
+        ),
+        ts=ts,
+    )
     tr.ReturnCode = 35
     tr.StillRunningAfter = ts
 
@@ -115,7 +124,9 @@ if has_curl_tlsv1:
 tr = Test.AddTestRun("bar.com TLSv1_2")
 tr.MakeCurlCommand(
     "-v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.2 --tlsv1.2 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts

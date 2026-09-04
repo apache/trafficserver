@@ -43,7 +43,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
         'proxy.config.http.server_session_sharing.pool': 'thread',
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
-    })
+    }
+)
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -51,7 +52,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr = Test.AddTestRun('Client sends RST_STREAM after DATA frame')
 tr.Processes.Default.StartBefore(server)
@@ -59,10 +61,12 @@ tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client0", replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Submitting RST_STREAM frame for key 1 after DATA frame with error code INTERNAL_ERROR.', 'Detect client abort flag.')
+    'Submitting RST_STREAM frame for key 1 after DATA frame with error code INTERNAL_ERROR.', 'Detect client abort flag.'
+)
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Submitted RST_STREAM frame for key 1 on stream 1.', 'Send RST_STREAM frame.')
+    'Submitted RST_STREAM frame for key 1 on stream 1.', 'Send RST_STREAM frame.'
+)
 
 server.Streams.All += Testers.ExcludesExpression('RST_STREAM', 'Server is not affected.')
 
@@ -93,7 +97,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
         'proxy.config.http.server_session_sharing.pool': 'thread',
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
-    })
+    }
+)
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -101,7 +106,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr = Test.AddTestRun('Client sends RST_STREAM after HEADERS frame')
 tr.Processes.Default.StartBefore(server)
@@ -109,10 +115,12 @@ tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client1", replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Submitting RST_STREAM frame for key 1 after HEADERS frame with error code STREAM_CLOSED.', 'Detect client abort flag.')
+    'Submitting RST_STREAM frame for key 1 after HEADERS frame with error code STREAM_CLOSED.', 'Detect client abort flag.'
+)
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Submitted RST_STREAM frame for key 1 on stream 1', 'Send RST_STREAM frame.')
+    'Submitted RST_STREAM frame for key 1 on stream 1', 'Send RST_STREAM frame.'
+)
 
 server.Streams.All += Testers.ExcludesExpression('RST_STREAM', 'Server is not affected.')
 
@@ -143,7 +151,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
         'proxy.config.http.server_session_sharing.pool': 'thread',
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
-    })
+    }
+)
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.https_port}')
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -151,7 +160,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr = Test.AddTestRun('Server sends RST_STREAM after HEADERS frame')
 tr.Processes.Default.StartBefore(server)
@@ -159,7 +169,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess("client2", replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Received RST_STREAM frame with stream id 1, error code 0', 'Client received RST_STREAM frame.')
+    'Received RST_STREAM frame with stream id 1, error code 0', 'Client received RST_STREAM frame.'
+)
 
 server.Streams.All += "gold/server_after_headers.gold"
 

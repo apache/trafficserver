@@ -22,6 +22,8 @@ Verify the slice plugin handles long ETag values (4000 chars) without crashing
 when copying between internal buffers during multi-block range requests.
 '''
 
-Test.SkipUnless(Condition.PluginExists('slice.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('slice.so'),
+)
 
 Test.ATSReplayTest(replay_file="replay/slice_long_etag.replay.yaml")

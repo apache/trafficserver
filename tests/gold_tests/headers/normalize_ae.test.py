@@ -52,29 +52,37 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 
 def baselineTsSetup(ts):
 
-    ts.Disk.records_config.update({
-        # 'proxy.config.diags.debug.enabled': 1,
-    })
+    ts.Disk.records_config.update(
+        {
+            # 'proxy.config.diags.debug.enabled': 1,
+        }
+    )
 
     ts.Disk.remap_config.AddLine('map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port))
     ts.Disk.remap_config.AddLine(
-        'map http://www.ae-0.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=0')
+        'map http://www.ae-0.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+        + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=0'
+    )
     ts.Disk.remap_config.AddLine(
-        'map http://www.ae-1.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1')
+        'map http://www.ae-1.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+        + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1'
+    )
     ts.Disk.remap_config.AddLine(
-        'map http://www.ae-2.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2')
+        'map http://www.ae-2.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+        + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2'
+    )
     ts.Disk.remap_config.AddLine(
-        'map http://www.ae-3.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3')
+        'map http://www.ae-3.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+        + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3'
+    )
     ts.Disk.remap_config.AddLine(
-        'map http://www.ae-4.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4')
+        'map http://www.ae-4.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+        + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4'
+    )
     ts.Disk.remap_config.AddLine(
-        'map http://www.ae-5.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-        ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5')
+        'map http://www.ae-5.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+        + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5'
+    )
 
 
 baselineTsSetup(ts)
@@ -193,8 +201,10 @@ ts2 = Test.MakeATSProcess("ts2")
 
 baselineTsSetup(ts2)
 
-ts2.Disk.records_config.update({
-    'proxy.config.http.normalize_ae': 0,
-})
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.http.normalize_ae': 0,
+    }
+)
 
 perTsTest(False, ts2)

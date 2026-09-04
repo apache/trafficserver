@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -35,7 +34,8 @@ def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', option
       - ssl_cert_name: server.pem
         ssl_key_name: server.pem
         dest_ip: "*"
-    """.split("\n"))
+    """.split("\n")
+    )
 
     # MicroServer setup - NOTE: expand to multiple microserver in future?
     server = obj.MakeOriginServer("server", both=True, lookup_key='{%uuid}')
@@ -69,7 +69,8 @@ def Replay(obj, name, replay_dir, key=None, cert=None, conn_type='mixed', option
         cert = os.path.join(obj.Variables["AtsTestToolsDir"], "microserver", "ssl", "server.crt")
 
     command = 'traffic-replay --log_dir {0} --type {1} --verify --host {2} --port {3} --s_port {4} '.format(
-        data_dir, conn_type, hostIP, ts.Variables.port, ts.Variables.ssl_port)
+        data_dir, conn_type, hostIP, ts.Variables.port, ts.Variables.ssl_port
+    )
 
     if key:
         command += "-k {0} ".format(key)

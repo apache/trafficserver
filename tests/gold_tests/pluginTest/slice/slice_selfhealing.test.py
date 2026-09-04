@@ -1,5 +1,5 @@
-'''
-'''
+''' '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -66,14 +66,16 @@ server.addResponse("sessionlog.json", req_header_chk, res_header_chk)
 # set up slice plugin with remap host into cache_range_requests
 ts.Disk.remap_config.AddLines(
     [
-        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
-        ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
+        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/'
+        + ' @plugin=slice.so @pparam=--blockbytes-test=3 @pparam=--remap-host=crr',
         f'map http://crr/ http://127.0.0.1:{server.Variables.Port}/' + '  @plugin=cache_range_requests.so @pparam=--consider-ident',
-        f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=slice.so @pparam=--blockbytes-test=3' +
-        ' @pparam=--remap-host=crrhdr @pparam=--crr-ident-header=crr-foo',
+        f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}/'
+        + ' @plugin=slice.so @pparam=--blockbytes-test=3'
+        + ' @pparam=--remap-host=crrhdr @pparam=--crr-ident-header=crr-foo',
         f'map http://crrhdr/ http://127.0.0.1:{server.Variables.Port}/'
         '  @plugin=cache_range_requests.so @pparam=--ident-header=crr-foo',
-    ])
+    ]
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
@@ -81,59 +83,69 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'cache_range_requests|slice',
-    })
+    }
+)
 
 curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 
 # Test case: 2nd slice out of date (refetch and continue)
 
 req_header_2ndold1 = {
-    "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-1\r\n" + "Range: bytes=3-5\r\n"
-               "\r\n",
+    "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-1\r\n" + "Range: bytes=3-5\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_2ndold1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagold"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "etagold"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "aa"
+    "body": "aa",
 }
 
 server.addResponse("sessionlog.json", req_header_2ndold1, res_header_2ndold1)
 
 req_header_2ndnew0 = {
-    "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-0\r\n" + "Range: bytes=0-2\r\n"
-               "\r\n",
+    "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-0\r\n" + "Range: bytes=0-2\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_2ndnew0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "etagnew"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bbb"
+    "body": "bbb",
 }
 
 server.addResponse("sessionlog.json", req_header_2ndnew0, res_header_2ndnew0)
 
 req_header_2ndnew1 = {
-    "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-1\r\n" + "Range: bytes=3-5\r\n"
-               "\r\n",
+    "headers": "GET /second HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-1\r\n" + "Range: bytes=3-5\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_2ndnew1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "etagnew"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bb"
+    "body": "bb",
 }
 
 server.addResponse("sessionlog.json", req_header_2ndnew1, res_header_2ndnew1)
@@ -179,52 +191,61 @@ tr.StillRunningAfter = ts
 # Test case: reference slice out of date (abort connection, heal reference)
 
 req_header_refold0 = {
-    "headers": "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-0\r\n" + "Range: bytes=0-2\r\n"
-               "\r\n",
+    "headers": "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-0\r\n" + "Range: bytes=0-2\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_refold0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagold"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "etagold"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "aaa"
+    "body": "aaa",
 }
 
 server.addResponse("sessionlog.json", req_header_refold0, res_header_refold0)
 
 req_header_refnew0 = {
-    "headers": "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-0\r\n" + "Range: bytes=0-2\r\n"
-               "\r\n",
+    "headers": "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-0\r\n" + "Range: bytes=0-2\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_refnew0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "etagnew"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bbb"
+    "body": "bbb",
 }
 
 server.addResponse("sessionlog.json", req_header_refnew0, res_header_refnew0)
 
 req_header_refnew1 = {
-    "headers": "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-1\r\n" + "Range: bytes=3-5\r\n"
-               "\r\n",
+    "headers": "GET /reference HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-1\r\n" + "Range: bytes=3-5\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_refnew1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "etagnew"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bb"
+    "body": "bb",
 }
 
 server.addResponse("sessionlog.json", req_header_refnew1, res_header_refnew1)
@@ -270,8 +291,7 @@ tr.StillRunningAfter = ts
 # Request results in 200, not 206 (server not support range requests)
 
 req_header_200 = {
-    "headers": "GET /code200 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: code200\r\n" + "Range: bytes=3-5\r\n"
-               "\r\n",
+    "headers": "GET /code200 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: code200\r\n" + "Range: bytes=3-5\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
@@ -279,7 +299,7 @@ req_header_200 = {
 res_header_200 = {
     "headers": "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=5000\r\n" + "Connection: close\r\n" + 'Etag: "etag"\r\n' + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "ccccc"
+    "body": "ccccc",
 }
 
 server.addResponse("sessionlog.json", req_header_200, res_header_200)
@@ -297,18 +317,21 @@ tr.StillRunningAfter = ts
 
 # Preload
 req_header_assetgone0 = {
-    "headers": "GET /assetgone HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: assetgone-0\r\n" + "Range: bytes=0-2\r\n"
-               "\r\n",
+    "headers": "GET /assetgone HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: assetgone-0\r\n" + "Range: bytes=0-2\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_assetgone0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etag"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "etag"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "aaa"
+    "body": "aaa",
 }
 
 server.addResponse("sessionlog.json", req_header_assetgone0, res_header_assetgone0)
@@ -345,55 +368,73 @@ tr.StillRunningAfter = ts
 # Test case: 2nd slice out of date (refetch and continue)
 
 req_header_custom_2ndold1 = {
-    "headers":
-        "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagold-custom-1\r\n" + "Range: bytes=3-5\r\n"
-        "\r\n",
+    "headers": "GET /second-custom HTTP/1.1\r\n"
+    + "Host: www.example.com\r\n"
+    + "uuid: etagold-custom-1\r\n"
+    + "Range: bytes=3-5\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_custom_2ndold1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagold-custom"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "etagold-custom"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "aa"
+    "body": "aa",
 }
 
 server.addResponse("sessionlog.json", req_header_custom_2ndold1, res_header_custom_2ndold1)
 
 req_header_custom_2ndnew0 = {
-    "headers":
-        "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-custom-0\r\n" + "Range: bytes=0-2\r\n"
-        "\r\n",
+    "headers": "GET /second-custom HTTP/1.1\r\n"
+    + "Host: www.example.com\r\n"
+    + "uuid: etagnew-custom-0\r\n"
+    + "Range: bytes=0-2\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_custom_2ndnew0 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 0-2/5\r\n" + 'Etag: "etagnew-custom"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 0-2/5\r\n"
+    + 'Etag: "etagnew-custom"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bbb"
+    "body": "bbb",
 }
 
 server.addResponse("sessionlog.json", req_header_custom_2ndnew0, res_header_custom_2ndnew0)
 
 req_header_custom_2ndnew1 = {
-    "headers":
-        "GET /second-custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: etagnew-custom-1\r\n" + "Range: bytes=3-5\r\n"
-        "\r\n",
+    "headers": "GET /second-custom HTTP/1.1\r\n"
+    + "Host: www.example.com\r\n"
+    + "uuid: etagnew-custom-1\r\n"
+    + "Range: bytes=3-5\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 res_header_custom_2ndnew1 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=5000\r\n" +
-        "Connection: close\r\n" + "Content-Range: bytes 3-4/5\r\n" + 'Etag: "etagnew-custom"\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=5000\r\n"
+    + "Connection: close\r\n"
+    + "Content-Range: bytes 3-4/5\r\n"
+    + 'Etag: "etagnew-custom"\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "bb"
+    "body": "bb",
 }
 
 server.addResponse("sessionlog.json", req_header_custom_2ndnew1, res_header_custom_2ndnew1)

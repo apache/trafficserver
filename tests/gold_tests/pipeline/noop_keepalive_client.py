@@ -41,8 +41,7 @@ def recv_one(s: socket.socket) -> bytes:
 
 
 body = b"xxxxx"
-r1 = (f"DELETE /coldpath HTTP/1.1\r\nHost: {host}\r\nMax-Forwards: 0\r\n"
-      f"Content-Length: {len(body)}\r\n\r\n").encode() + body
+r1 = (f"DELETE /coldpath HTTP/1.1\r\nHost: {host}\r\nMax-Forwards: 0\r\nContent-Length: {len(body)}\r\n\r\n").encode() + body
 r2 = (f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n").encode()
 s = socket.create_connection((addr, port), timeout=8)
 s.sendall(r1)

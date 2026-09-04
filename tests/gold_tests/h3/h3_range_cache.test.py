@@ -41,7 +41,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
     else:
         ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
@@ -62,20 +63,19 @@ class TestHttp3RangeCache:
         """Configure the origin server."""
         server = Test.MakeOriginServer("server-h3-range-cache")
         server.addResponse(
-            "sessionlog.json", {
-                "headers": "GET /h3-range-cache HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            "sessionlog.json",
+            {"headers": "GET /h3-range-cache HTTP/1.1\r\nHost: localhost\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+            {
+                "headers": (
+                    "HTTP/1.1 200 OK\r\n"
+                    "Connection: close\r\n"
+                    "Cache-Control: public, max-age=60\r\n"
+                    f"Content-Length: {len(self.response_body)}\r\n\r\n"
+                ),
                 "timestamp": "1469733493.993",
-                "body": ""
-            }, {
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\n"
-                        "Connection: close\r\n"
-                        "Cache-Control: public, max-age=60\r\n"
-                        f"Content-Length: {len(self.response_body)}\r\n\r\n"),
-                "timestamp": "1469733493.993",
-                "body": self.response_body
-            })
+                "body": self.response_body,
+            },
+        )
         self._server = server
 
     def _configure_traffic_server(self):
@@ -91,7 +91,8 @@ class TestHttp3RangeCache:
                 'proxy.config.quic.server.stateless_retry_enabled': 0,
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         self._ts = ts
 
@@ -100,7 +101,8 @@ class TestHttp3RangeCache:
         return (
             '--silent --show-error --fail --ipv4 --http3-only --insecure '
             f'--resolve "range.example.com:{self._ts.Variables.ssl_port}:127.0.0.1" '
-            f'https://range.example.com:{self._ts.Variables.ssl_port}/h3-range-cache')
+            f'https://range.example.com:{self._ts.Variables.ssl_port}/h3-range-cache'
+        )
 
     def _configure_clients(self):
         """Configure the cache fill and range request clients."""
@@ -113,11 +115,13 @@ class TestHttp3RangeCache:
         tr.MakeCurlCommand(
             f'{self._curl_base()} --output "{full_body_path}" '
             '--write-out "\\nhttp_code=%{http_code}\\nsize_download=%{size_download}\\n"',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("http_code=200", "The fill request should return 200.")
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            f"size_download={len(self.response_body)}", "The fill request should receive the full object.")
+            f"size_download={len(self.response_body)}", "The fill request should receive the full object."
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
@@ -125,14 +129,16 @@ class TestHttp3RangeCache:
         tr.MakeCurlCommand(
             f'{self._curl_base()} --header "Range: bytes=16-31" --output "{range_body_path}" '
             '--write-out "\\nhttp_code=%{http_code}\\nsize_download=%{size_download}\\n"',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("http_code=206", "The range request should return 206.")
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "size_download=16", "The range request should receive 16 bytes.")
-        Test.Disk.File(
-            range_body_path, exists=True).Content = Testers.ContainsExpression(
-                self.range_body, "The cached range response body should match the requested byte range.")
+            "size_download=16", "The range request should receive 16 bytes."
+        )
+        Test.Disk.File(range_body_path, exists=True).Content = Testers.ContainsExpression(
+            self.range_body, "The cached range response body should match the requested byte range."
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 

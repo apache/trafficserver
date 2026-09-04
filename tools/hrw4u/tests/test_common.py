@@ -21,6 +21,7 @@ The existing test_cli.py tests these paths via subprocess, which coverage
 cannot track. These tests call the same functions directly so coverage
 can see them.
 """
+
 from __future__ import annotations
 
 import io
@@ -102,20 +103,23 @@ class TestCreateParseTree:
 
     def test_valid_input_with_error_collection(self):
         tree, parser_obj, errors = create_parse_tree(
-            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         assert tree is not None
         assert errors is not None
         assert not errors.has_errors()
 
     def test_valid_input_without_error_collection(self):
         tree, parser_obj, errors = create_parse_tree(
-            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=False)
+            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=False
+        )
         assert tree is not None
         assert errors is None
 
     def test_invalid_input_collects_errors(self):
         tree, parser_obj, errors = create_parse_tree(
-            '{{{{ totally broken syntax !!! }}}}', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            '{{{{ totally broken syntax !!! }}}}', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         assert errors is not None
         assert errors.has_errors()
 
@@ -125,7 +129,8 @@ class TestGenerateOutput:
 
     def test_normal_output(self, capsys):
         tree, parser_obj, errors = create_parse_tree(
-            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         args = SimpleNamespace(ast=False, debug=False, no_comments=False)
         generate_output(tree, parser_obj, HRW4UVisitor, "<test>", args, errors)
         out = capsys.readouterr().out
@@ -133,7 +138,8 @@ class TestGenerateOutput:
 
     def test_ast_output(self, capsys):
         tree, parser_obj, errors = create_parse_tree(
-            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         args = SimpleNamespace(ast=True, debug=False)
         generate_output(tree, parser_obj, HRW4UVisitor, "<test>", args, errors)
         out = capsys.readouterr().out
@@ -141,7 +147,8 @@ class TestGenerateOutput:
 
     def test_ast_mode_with_parse_errors(self, capsys):
         tree, parser_obj, errors = create_parse_tree(
-            '{{{{ broken }}}}', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            '{{{{ broken }}}}', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         args = SimpleNamespace(ast=True, debug=False)
         generate_output(tree, parser_obj, HRW4UVisitor, "<test>", args, errors)
         captured = capsys.readouterr()
@@ -149,7 +156,8 @@ class TestGenerateOutput:
 
     def test_error_collector_summary_on_errors(self, capsys):
         tree, parser_obj, errors = create_parse_tree(
-            '{{{{ broken }}}}', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            '{{{{ broken }}}}', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         args = SimpleNamespace(ast=False, debug=False, no_comments=False)
         generate_output(tree, parser_obj, HRW4UVisitor, "<test>", args, errors)
         err = capsys.readouterr().err
@@ -177,7 +185,6 @@ class TestGenerateOutput:
         """When visitor.visit() raises, error is collected and reported."""
 
         class BrokenVisitor:
-
             def __init__(self, **kwargs):
                 pass
 
@@ -187,7 +194,8 @@ class TestGenerateOutput:
                 raise exc
 
         tree, parser_obj, errors = create_parse_tree(
-            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True)
+            'REMAP { no-op(); }', "<test>", hrw4uLexer, hrw4uParser, "hrw4u", collect_errors=True
+        )
         args = SimpleNamespace(ast=False, debug=False, no_comments=False)
         generate_output(tree, parser_obj, BrokenVisitor, "<test>", args, errors)
         err = capsys.readouterr().err

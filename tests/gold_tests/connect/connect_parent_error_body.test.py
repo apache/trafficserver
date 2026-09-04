@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -30,16 +29,19 @@ class ConnectParentErrorBodyTest:
     def _setupParentProxy(self):
         self.parent = Test.MakeVerifierServerProcess('parent-proxy', self.replay_file)
         self.parent.Streams.stdout += Testers.ContainsExpression(
-            'CONNECT www.example.com:443 HTTP/1.1', 'Verify that ATS forwards the CONNECT request to the parent proxy.')
+            'CONNECT www.example.com:443 HTTP/1.1', 'Verify that ATS forwards the CONNECT request to the parent proxy.'
+        )
         self.parent.Streams.stdout += Testers.ContainsExpression(
-            'GET http://www.example.com/next HTTP/1.1', 'Verify that ATS reuses the parent connection for the next request.')
+            'GET http://www.example.com/next HTTP/1.1', 'Verify that ATS reuses the parent connection for the next request.'
+        )
         # Each no-DNS-forward request must reach the parent for that request's
         # host. The parent receiving the third request with its own Host
         # header confirms ATS did not short-circuit to a destination derived
         # from earlier State (the dns_info.addr stale-data case).
         self.parent.Streams.stdout += Testers.ContainsExpression(
             'GET http://other.example.org/page HTTP/1.1',
-            'Verify that ATS forwards a different host on the same session to the parent.')
+            'Verify that ATS forwards a different host on the same session to the parent.',
+        )
 
     def _setupTS(self):
         self.ts = Test.MakeATSProcess('ts', enable_cache=False)
@@ -54,10 +56,12 @@ class ConnectParentErrorBodyTest:
                 'proxy.config.http.server_ports': f'{self.ts.Variables.port}',
                 'proxy.config.http.server_session_sharing.pool': 'global',
                 'proxy.config.url_remap.remap_required': 0,
-            })
+            }
+        )
 
         self.ts.Disk.parent_config.AddLine(
-            f'dest_domain=. parent="127.0.0.1:{self.parent.Variables.http_port}|1" go_direct=false parent_is_proxy=true')
+            f'dest_domain=. parent="127.0.0.1:{self.parent.Variables.http_port}|1" go_direct=false parent_is_proxy=true'
+        )
         self.ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
 
     def run(self):

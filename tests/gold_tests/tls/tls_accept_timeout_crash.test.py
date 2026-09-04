@@ -48,7 +48,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.accept_no_activity_timeout': 1,
         'proxy.config.http2.accept_no_activity_timeout': 1,
         'proxy.config.url_remap.remap_required': 0,
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -56,7 +57,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}/')
 
@@ -69,9 +71,11 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'hook_add_
 # Assert traffic_server never hits the release_assert landmine in the session
 # acceptors when an inactivity timer fires during the SSN_START hook window.
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    r'failed assertion `event == NET_EVENT_ACCEPT', 'session acceptors must not abort on stale inactivity timeouts')
+    r'failed assertion `event == NET_EVENT_ACCEPT', 'session acceptors must not abort on stale inactivity timeouts'
+)
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    r'FATAL.*Assertion', 'traffic_server must not abort on a stale accept-path inactivity timeout')
+    r'FATAL.*Assertion', 'traffic_server must not abort on a stale accept-path inactivity timeout'
+)
 
 tr = Test.AddTestRun("TLS request through delayed SSN_START hook")
 tr.Processes.Default.StartBefore(server)

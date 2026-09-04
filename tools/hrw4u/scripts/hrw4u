@@ -36,13 +36,15 @@ def _add_args(parser: argparse.ArgumentParser, output_group: argparse._MutuallyE
         "--output",
         choices=["hrw", "hrw4u"],
         default="hrw",
-        help="Output format: hrw (header_rewrite, default) or hrw4u (expand procedures inline)")
+        help="Output format: hrw (header_rewrite, default) or hrw4u (expand procedures inline)",
+    )
     parser.add_argument(
         "--procedures-path",
         metavar="DIR[:DIR...]",
         dest="procedures_path",
         default="",
-        help="Colon-separated list of directories to search for procedure files")
+        help="Colon-separated list of directories to search for procedure files",
+    )
     parser.add_argument("--sandbox", metavar="FILE", type=Path, help="Path to sandbox YAML configuration file")
 
 
@@ -66,7 +68,8 @@ def main() -> None:
         output_flag_name="hrw",
         output_flag_help="Produce the HRW output (default)",
         add_args=_add_args,
-        visitor_kwargs=_visitor_kwargs)
+        visitor_kwargs=_visitor_kwargs,
+    )
 
 
 if __name__ == "__main__":

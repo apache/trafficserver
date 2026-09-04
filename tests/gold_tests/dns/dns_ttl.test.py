@@ -74,16 +74,15 @@ class TtlDnsTest:
                 "proxy.config.diags.debug.tags": "dns",
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns_port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-
                 # Configure ATS to treat each resolved name to have a 1 second
                 # time to live.
                 "proxy.config.hostdb.ttl_mode": 1,
                 "proxy.config.hostdb.timeout": self.dnsTTL,
-
                 # MicroDNS will be down for the second transaction. Have ATS give
                 # up trying to talk to it after one second.
                 "proxy.config.hostdb.lookup_timeout": self.queryTimeout,
-            })
+            }
+        )
         if self.configure_serve_stale:
             if self.exceed_serve_stale:
                 stale_timeout = 1
@@ -101,7 +100,8 @@ class TtlDnsTest:
         dns = self.addDNSServerToTestRun(tr)
         process_number = TtlDnsTest.get_unique_process_counter()
         tr.AddVerifierClientProcess(
-            f"client-{process_number}", TtlDnsTest.single_transaction_replay, http_ports=[self.ts.Variables.port])
+            f"client-{process_number}", TtlDnsTest.single_transaction_replay, http_ports=[self.ts.Variables.port]
+        )
 
         tr.Processes.Default.StartBefore(dns)
         tr.Processes.Default.StartBefore(self.server)

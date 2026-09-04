@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -19,9 +18,11 @@
 Test.Summary = "Test start up of Traffic server with configuration modification of starting port"
 
 ts = Test.MakeATSProcess("ts")
-ts.Disk.records_config.update({
-    'proxy.config.http.server_ports': str(ts.Variables.port) + f" {ts.Variables.uds_path}",
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.server_ports': str(ts.Variables.port) + f" {ts.Variables.uds_path}",
+    }
+)
 ts.Ready = When.PortOpen(ts.Variables.port)
 t = Test.AddTestRun("Test traffic server started properly")
 t.Processes.Default.StartBefore(ts)

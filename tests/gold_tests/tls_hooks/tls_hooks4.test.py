@@ -40,7 +40,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'ssl_hook_test',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -48,10 +49,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-cert=1 -sni=1 -preaccept=1')
 
@@ -69,14 +72,17 @@ snistring = "SNI callback 0"
 preacceptstring = "Pre accept callback 0"
 certstring = "Cert callback 0"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring), "SNI message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring), "SNI message appears only once", reflags=re.S | re.M
+)
 # the preaccept may get triggered twice because the test framework creates a TCP connection before handing off to traffic_server
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     r"\A(?:(?!{0}).)*{0}.*({0})?(?!.*{0}).*\Z".format(preacceptstring),
     "Pre accept message appears only once or twice",
-    reflags=re.S | re.M)
+    reflags=re.S | re.M,
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring), "Cert message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring), "Cert message appears only once", reflags=re.S | re.M
+)
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15

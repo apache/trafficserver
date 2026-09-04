@@ -49,7 +49,6 @@ import copy
 # Remap or header rewrite config file.
 #
 class CfgFile:
-
     def __init__(self, param):
         if isinstance(param, CfgFile):
             # Making copy of header rewrite config file to use when header rewrite is first plugin for remap
@@ -122,7 +121,6 @@ class CfgFile:
 # A generic object.
 #
 class Obj:
-
     def __init__(self):
         pass
 
@@ -318,8 +316,7 @@ def handle_remap(filepath):
                         else:
                             ofst2 += ofst
 
-                        if ((ln[ofst:ofst2].find("@pparam=pristine") < 0) and (ln[ofst:ofst2].find("@pparam=no-pristine") < 0)):
-
+                        if (ln[ofst:ofst2].find("@pparam=pristine") < 0) and (ln[ofst:ofst2].find("@pparam=no-pristine") < 0):
                             new_ln = ln[:ofst2]
 
                             if not new_ln[-1].isspace():
@@ -445,7 +442,7 @@ def handle_header_rewrite(pathspec, obj):
                     rc.changed = True
                     ln = rc.lines[pair[1]]
                     ofst = ln.find(old_pparam) + len("@pparam=")
-                    rc.lines[pair[1]] = ln[:ofst] + self._first.pathspec + ln[ofst + len(self._base.pathspec):]
+                    rc.lines[pair[1]] = ln[:ofst] + self._first.pathspec + ln[ofst + len(self._base.pathspec) :]
 
     # Returns a pair: length of string before # comment, and a flag indicating if %< (beginning of a variable
     # expansion) was in any of the double-quoted strings.
@@ -537,14 +534,15 @@ def handle_header_rewrite(pathspec, obj):
         if hrc.has_first():
             lnc_save = lnc
             ofst = lnc.find("set-destination")
-            if (ofst >= 0):
+            if ofst >= 0:
                 if (ofst == 0) or lnc[:ofst].isspace():
                     ofst += len("set-destination")
                     ofst2 = lnc[ofst:].find("PATH")
-                    if (ofst2 > 0) and lnc[ofst:(ofst + ofst2)].isspace():
+                    if (ofst2 > 0) and lnc[ofst : (ofst + ofst2)].isspace():
                         eprint(
-                            f"error: {pathspec}, line {ln_num + 1}: the functionality of set-destination PATH" +
-                            " for the first remap plugin does not exist in ATS9")
+                            f"error: {pathspec}, line {ln_num + 1}: the functionality of set-destination PATH"
+                            + " for the first remap plugin does not exist in ATS9"
+                        )
                         prepend_error = True
 
             lnc = lnc.replace("%{URL:", "%{CLIENT-URL:")

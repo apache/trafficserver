@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -26,17 +25,13 @@ ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
 server_foo = Test.MakeOriginServer(
     "server_foo",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)},
+)
 server_bar = Test.MakeOriginServer(
     "server_bar",
     ssl=True,
-    options={
-        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)},
+)
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -71,7 +66,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -79,8 +75,7 @@ ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
         # set global policy
         'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
         'proxy.config.ssl.client.verify.server.properties': 'ALL',
@@ -89,8 +84,9 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'ssl'
-    })
+        'proxy.config.diags.debug.tags': 'ssl',
+    }
+)
 
 tr = Test.AddTestRun("default-enforce-bad-sig")
 tr.Setup.Copy("ssl/signed-foo.key")
@@ -110,13 +106,12 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Conn
 tr2 = Test.AddTestRun("Update config files")
 recordspath = ts.Disk.records_config.AbsPath
 # recreate the records.config with the cert filename changed
-tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),
+(tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),)
 tr2.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
         # set global policy
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
         'proxy.config.ssl.client.verify.server.properties': 'ALL',
@@ -125,8 +120,9 @@ tr2.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'ssl'
-    })
+        'proxy.config.diags.debug.tags': 'ssl',
+    }
+)
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
@@ -147,13 +143,12 @@ tragain.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not
 tr2 = Test.AddTestRun("Update config files to enforced")
 recordspath = ts.Disk.records_config.AbsPath
 # recreate the records.config with the cert filename changed
-tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),
+(tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),)
 tr2.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
         # set global policy
         'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
         'proxy.config.ssl.client.verify.server.properties': 'ALL',
@@ -162,8 +157,9 @@ tr2.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'ssl'
-    })
+        'proxy.config.diags.debug.tags': 'ssl',
+    }
+)
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs to ENFORCED'
@@ -183,6 +179,8 @@ tragain.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not
 
 # No name checking for the sig-only permissive override for bad_bar
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"Core server certificate verification failed for \(random3.com\). Action=Continue", "Permissive can connect")
+    r"Core server certificate verification failed for \(random3.com\). Action=Continue", "Permissive can connect"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"Core server certificate verification failed for \(random2.com\). Action=Terminate", "Enforced cannot connect")
+    r"Core server certificate verification failed for \(random2.com\). Action=Terminate", "Enforced cannot connect"
+)

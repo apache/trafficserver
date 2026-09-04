@@ -54,24 +54,31 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'rpc|config|config.reload|cfg_plugin_test',
-    })
+    }
+)
 
 # Write initial valid plugin config file
 plugin_config_file = os.path.join(ts.Variables.CONFIGDIR, 'cfg_plugin_test.conf')
-ts.Disk.MakeConfigFile('cfg_plugin_test.conf').AddLines([
-    'greeting: hello',
-])
+ts.Disk.MakeConfigFile('cfg_plugin_test.conf').AddLines(
+    [
+        'greeting: hello',
+    ]
+)
 
 # Write companion file for TSCfgAddFileDependency
 companion_file = os.path.join(ts.Variables.CONFIGDIR, 'cfg_plugin_companion.conf')
-ts.Disk.MakeConfigFile('cfg_plugin_companion.conf').AddLines([
-    'companion: data',
-])
+ts.Disk.MakeConfigFile('cfg_plugin_companion.conf').AddLines(
+    [
+        'companion: data',
+    ]
+)
 
 # Load the test plugin with main config + companion file
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'jsonrpc', 'plugins', '.libs', 'cfg_plugin_test.so'), ts,
-    'cfg_plugin_test.conf cfg_plugin_companion.conf')
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'jsonrpc', 'plugins', '.libs', 'cfg_plugin_test.so'),
+    ts,
+    'cfg_plugin_test.conf cfg_plugin_companion.conf',
+)
 
 # ============================================================================
 # Test A: Plugin startup — TSCfgRegister + TSCfgAttachReloadTrigger + TSCfgAddFileDependency
@@ -94,11 +101,13 @@ ts.Disk.diags_log.Content = All(
     # Reload summaries should land in diags.log (escape brackets for regex)
     Testers.IncludesExpression(r'Config reload \[rpc-greet\] completed', 'Reload summary for rpc-greet should appear in diags'),
     Testers.IncludesExpression(
-        r'Config reload \[rpc-fail\] finished with failures', 'Reload summary for rpc-fail should report failure in diags'),
+        r'Config reload \[rpc-fail\] finished with failures', 'Reload summary for rpc-fail should report failure in diags'
+    ),
     Testers.IncludesExpression(r'Config reload \[rpc-subtask\] completed', 'Reload summary for rpc-subtask should appear in diags'),
     Testers.IncludesExpression(
         r'Config reload \[rpc-subtask-fail\] finished with failures',
-        'Reload summary for rpc-subtask-fail should report failure in diags'),
+        'Reload summary for rpc-subtask-fail should report failure in diags',
+    ),
     Testers.IncludesExpression(r'Config reload \[core-check\] completed', 'Reload summary for core-check should appear in diags'),
     Testers.ExcludesExpression('ignoring transition from', 'No terminal state conflicts'),
 )
@@ -140,9 +149,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("RPC reload with fail_on_purpose")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
-    ts, Request.admin_config_reload(token='rpc-fail', configs={'cfg_plugin_test': {
-        'fail_on_purpose': True
-    }}, force=True))
+    ts, Request.admin_config_reload(token='rpc-fail', configs={'cfg_plugin_test': {'fail_on_purpose': True}}, force=True)
+)
 
 
 def validate_rpc_fail(resp: Response):
@@ -176,9 +184,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("RPC reload with subtask")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
-    ts, Request.admin_config_reload(token='rpc-subtask', configs={'cfg_plugin_test': {
-        'with_subtask': True
-    }}, force=True))
+    ts, Request.admin_config_reload(token='rpc-subtask', configs={'cfg_plugin_test': {'with_subtask': True}}, force=True)
+)
 
 
 def validate_rpc_subtask(resp: Response):
@@ -208,9 +215,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("RPC reload with failing subtask")
 tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
-    ts, Request.admin_config_reload(token='rpc-subtask-fail', configs={'cfg_plugin_test': {
-        'subtask_fail': True
-    }}, force=True))
+    ts, Request.admin_config_reload(token='rpc-subtask-fail', configs={'cfg_plugin_test': {'subtask_fail': True}}, force=True)
+)
 
 
 def validate_rpc_subtask_fail(resp: Response):
@@ -250,7 +256,8 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 # The record-triggered reload should show our plugin task
 tr.Processes.Default.Streams.stdout = Testers.IncludesExpression(
-    'cfg_plugin_test', 'Plugin handler should have been called by record trigger')
+    'cfg_plugin_test', 'Plugin handler should have been called by record trigger'
+)
 tr.StillRunningAfter = ts
 
 # ============================================================================
@@ -269,5 +276,6 @@ tr.Processes.Default.Command = "traffic_ctl config status -t core-check"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(
-    'ip_allow [plugin]', 'Core task ip_allow must not have [plugin] tag')
+    'ip_allow [plugin]', 'Core task ip_allow must not have [plugin] tag'
+)
 tr.StillRunningAfter = ts

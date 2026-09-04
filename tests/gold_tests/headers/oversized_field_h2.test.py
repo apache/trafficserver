@@ -51,9 +51,11 @@ class OversizedFieldH2Test:
         # them (the pre-fix behavior), the verifier server would log a request
         # for these paths / serve the marker bodies.
         self._server.Streams.All += Testers.ExcludesExpression(
-            'h2-oversized-value', 'Origin must not receive the oversized-value request.')
+            'h2-oversized-value', 'Origin must not receive the oversized-value request.'
+        )
         self._server.Streams.All += Testers.ExcludesExpression(
-            'h2-oversized-name', 'Origin must not receive the oversized-name request.')
+            'h2-oversized-name', 'Origin must not receive the oversized-name request.'
+        )
         # Regression guard: the normal, under-limit request MUST reach the origin.
         self._server.Streams.All += Testers.ContainsExpression('h2-normal', 'Origin must receive the normal under-limit request.')
 
@@ -77,7 +79,8 @@ class OversizedFieldH2Test:
                 # storage path end to end through config.
                 'proxy.config.http.header_field_max_size': 65535,
                 'proxy.config.http2.max_header_list_size': 8 * 1024 * 1024,
-            })
+            }
+        )
         # Rejecting the oversized field is an HPACK connection error, so ATS
         # intentionally logs "ERROR: HTTP/2 connection error code=0x09 ...
         # compression error". Whitelist exactly that line; the default check
@@ -85,7 +88,8 @@ class OversizedFieldH2Test:
         # expected line is present instead.
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r"ERROR: HTTP/2 connection error code=0x09 .* compression error",
-            "ATS must log the expected HTTP/2 COMPRESSION_ERROR for the oversized field.")
+            "ATS must log the expected HTTP/2 COMPRESSION_ERROR for the oversized field.",
+        )
         self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}")
         self._ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -93,7 +97,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
     def __setupClient(self):
         self._ts.Setup.CopyAs(f"clients/{self.clientScript}", Test.RunDirectory)
@@ -105,25 +110,31 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self._ts)
         port = self._ts.Variables.ssl_port
         tr.Processes.Default.Command = (
-            f"{sys.executable} {self.clientScript} /h2-oversized-value 0 {self.oversizedSize} 127.0.0.1 {port} example.com")
+            f"{sys.executable} {self.clientScript} /h2-oversized-value 0 {self.oversizedSize} 127.0.0.1 {port} example.com"
+        )
         tr.Processes.Default.ReturnCode = 0
         # No :status (connection error, not a response) and GOAWAY COMPRESSION_ERROR (0x9).
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'status=None', 'Client must not get an HTTP response for the oversized header.')
+            'status=None', 'Client must not get an HTTP response for the oversized header.'
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'goaway_error=9', 'ATS must send GOAWAY with COMPRESSION_ERROR (0x9).')
+            'goaway_error=9', 'ATS must send GOAWAY with COMPRESSION_ERROR (0x9).'
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 
         # Case 2: oversized header NAME.
         tr = Test.AddTestRun("oversized H2 header name")
         tr.Processes.Default.Command = (
-            f"{sys.executable} {self.clientScript} /h2-oversized-name {self.oversizedSize} 0 127.0.0.1 {port} example.com")
+            f"{sys.executable} {self.clientScript} /h2-oversized-name {self.oversizedSize} 0 127.0.0.1 {port} example.com"
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'status=None', 'Client must not get an HTTP response for the oversized header.')
+            'status=None', 'Client must not get an HTTP response for the oversized header.'
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'goaway_error=9', 'ATS must send GOAWAY with COMPRESSION_ERROR (0x9).')
+            'goaway_error=9', 'ATS must send GOAWAY with COMPRESSION_ERROR (0x9).'
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 
@@ -131,10 +142,11 @@ ssl_multicert:
         # over-rejection). Sanity mode "0 0" sends a plain GET; the client must
         # get a 200 and the origin must receive it.
         tr = Test.AddTestRun("normal under-limit H2 request")
-        tr.Processes.Default.Command = (f"{sys.executable} {self.clientScript} /h2-normal 0 0 127.0.0.1 {port} example.com")
+        tr.Processes.Default.Command = f"{sys.executable} {self.clientScript} /h2-normal 0 0 127.0.0.1 {port} example.com"
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'status=200', 'Client must get a 200 for the normal under-limit request.')
+            'status=200', 'Client must get a 200 for the normal under-limit request.'
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 

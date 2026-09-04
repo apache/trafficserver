@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -60,7 +59,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secret_load_test.so'), ts)
 
@@ -70,15 +70,15 @@ ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}/../'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}/../'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.diags.debug.tags': 'ssl_secret_load_test',
         'proxy.config.diags.debug.enabled': 1,
-    })
+    }
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -88,7 +88,8 @@ tr = Test.AddTestRun("Default for foo should return EC cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
 tr.Processes.Default.Command = "echo foo | openssl s_client  -CAfile signer.pem -servername foo.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -100,8 +101,11 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client  -CAfile signer.pem -servername foo.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "echo foo | openssl s_client  -CAfile signer.pem -servername foo.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
+        ts.Variables.ssl_port
+    )
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -111,7 +115,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify
 # Should receive a EC cert
 tr = Test.AddTestRun("Default for one.com should return EC cert")
 tr.Processes.Default.Command = "echo foo | openssl s_client  -CAfile signer.pem -servername one.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -121,8 +126,11 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client  -CAfile signer.pem -servername one.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "echo foo | openssl s_client  -CAfile signer.pem -servername one.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
+        ts.Variables.ssl_port
+    )
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -133,7 +141,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify
 # Should receive a RSA cert
 tr = Test.AddTestRun("rsa.com only in rsa cert")
 tr.Processes.Default.Command = "echo foo | openssl s_client  -CAfile signer.pem -servername rsa.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -144,7 +153,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify
 # Should receive a EC cert
 tr = Test.AddTestRun("ec.com only in ec cert")
 tr.Processes.Default.Command = "echo foo | openssl s_client  -CAfile signer.pem -servername ec.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -168,8 +178,11 @@ trupdate.Processes.Default.ReturnCode = 0
 # The plugin will pull every 3 seconds.  So wait 4 seconds and test again.  Request with CA=signer2.pem should work.  Request with CA=signer.pem should fail
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -CAfile signer.pem  -servername foo.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "echo foo | openssl s_client -CAfile signer.pem  -servername foo.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
+        ts.Variables.ssl_port
+    )
+)
 tr.DelayStart = 4
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
@@ -179,8 +192,11 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?foo.com",
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("unable to verify the first certificate", "Different signer")
 
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert with correct CA")
-tr.Processes.Default.Command = "echo foo | openssl s_client -CAfile signer2.pem  -servername foo.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "echo foo | openssl s_client -CAfile signer2.pem  -servername foo.com -sigalgs 'RSA-PSS+SHA256' -connect 127.0.0.1:{0}".format(
+        ts.Variables.ssl_port
+    )
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -191,7 +207,8 @@ tr.Processes.Default.Streams.All += Testers.ExcludesExpression("unable to verify
 # The EC case should be unchanged
 tr = Test.AddTestRun("Offer any cipher")
 tr.Processes.Default.Command = "echo foo | openssl s_client -CAfile signer.pem  -servername foo.com  -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

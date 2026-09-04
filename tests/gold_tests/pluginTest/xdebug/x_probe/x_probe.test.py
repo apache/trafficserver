@@ -55,10 +55,12 @@ class XDebugProbeTest:
         """
         self._ts = Test.MakeATSProcess("ts")
 
-        self._ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "xdebug",
-        })
+        self._ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "xdebug",
+            }
+        )
 
         self._ts.Disk.plugin_config.AddLine('xdebug.so --enable=probe')
         self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}")
@@ -72,7 +74,8 @@ class XDebugProbeTest:
         tr.AddVerifierClientProcess("client", self._replay_file, http_ports=[self._ts.Variables.port])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'ATS xDebug Probe Injection Boundary', "ATS xDebug Probe Injection Boundary should be present")
+            'ATS xDebug Probe Injection Boundary', "ATS xDebug Probe Injection Boundary should be present"
+        )
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('xDebugProbeAt', "xDebugProbeAt should be present")
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("'x-no-value' : ''", "x-no-value should be present")
 

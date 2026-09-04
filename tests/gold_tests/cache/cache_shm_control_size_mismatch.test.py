@@ -109,7 +109,8 @@ class CacheShmControlSizeMismatchTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.cache.shm.enabled': 1,
@@ -119,7 +120,8 @@ class CacheShmControlSizeMismatchTest:
                 'proxy.config.diags.debug.tags': 'cache_shm',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1/ @plugin=generator.so')
         return ts
@@ -127,39 +129,48 @@ class CacheShmControlSizeMismatchTest:
     def _add_diags_log_assertions(self):
         # ts1 cold start, clean shutdown -- a valid, clean segment to resize.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start')
+            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit')
+            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit'
+        )
 
         # ts2 start against the resized segment: report, drop, recreate, rebuild.
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
             r"cache shm: control segment \S+ is \d+ bytes, not this build's \d+; dropping it",
-            'ts2 must report the control segment size mismatch')
+            'ts2 must report the control segment size mismatch',
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts2 must recreate the control segment after the drop')
+            r'cache shm: creating fresh control segment', 'ts2 must recreate the control segment after the drop'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
             r'cache shm: failed to create control segment',
-            'the drop must leave the name free, so the O_EXCL create cannot fail with EEXIST')
+            'the drop must leave the name free, so the O_EXCL create cannot fail with EEXIST',
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'\(fast restart, recovery skipped\)', 'ts2 must rebuild from disk, never fast-attach a foreign-size segment')
+            r'\(fast restart, recovery skipped\)', 'ts2 must rebuild from disk, never fast-attach a foreign-size segment'
+        )
 
         # ts3 fast-attaches what ts2 created: the drop healed, it did not just defer.
         self.ts3.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: attaching up to \d+ stripes \(fast restart', 'ts3 should attach the segment ts2 created')
+            r'cache shm: attaching up to \d+ stripes \(fast restart', 'ts3 should attach the segment ts2 created'
+        )
         self.ts3.Disk.diags_log.Content += Testers.ContainsExpression(
-            r"attaching cached directory from shm for '.+' \(fast restart", 'ts3 should reuse the per-stripe directory from shm')
+            r"attaching cached directory from shm for '.+' \(fast restart", 'ts3 should reuse the per-stripe directory from shm'
+        )
         self.ts3.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: control segment \S+ is \d+ bytes', 'ts3 should see a segment of the expected size')
+            r'cache shm: control segment \S+ is \d+ bytes', 'ts3 should see a segment of the expected size'
+        )
         self.ts3.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: creating fresh control segment', 'ts3 should not have to create another control segment')
+            r'cache shm: creating fresh control segment', 'ts3 should not have to create another control segment'
+        )
 
     def _get(self, ts, description):
         tr = Test.AddTestRun(description)
         tr.Processes.Default.StartBefore(ts)
         tr.MakeCurlCommand(
-            f'-s -o /dev/null -w "%{{http_code}}\\n" '
-            f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{ts.Variables.port}{self._url_path}')
+            f'-s -o /dev/null -w "%{{http_code}}\\n" -H "x-debug: x-cache,via" http://127.0.0.1:{ts.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('200', f'{description}: should return 200')
         tr.StillRunningAfter = ts
@@ -168,8 +179,8 @@ class CacheShmControlSizeMismatchTest:
         tr = Test.AddTestRun(f'Drain and clean-shutdown {name}')
         tr.Processes.Default.Env = ts.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _grow_control_segment(self):
@@ -177,7 +188,8 @@ class CacheShmControlSizeMismatchTest:
         # header, so only its size makes it foreign to this build.
         tr = Test.AddTestRun('Grow the shm control segment past this build\'s size')
         tr.Processes.Default.Command = (
-            f'{sys.executable} ./{self.POKE_SCRIPT} {self._control_file} {self.GROW_OFFSET} {self.GROW_BYTE_HEX}')
+            f'{sys.executable} ./{self.POKE_SCRIPT} {self._control_file} {self.GROW_OFFSET} {self.GROW_BYTE_HEX}'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _cleanup_shm(self):
@@ -186,7 +198,8 @@ class CacheShmControlSizeMismatchTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._get(self.ts1, 'Cold-start ts1 and cache an object')

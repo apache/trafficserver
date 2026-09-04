@@ -35,15 +35,12 @@ def observe(headers):
     seen = False
     for h in headers.items():
         if h[0].lower() == "forwarded":
-
             content = h[1]
 
             if content.startswith("by="):
-
                 byCount += 1
 
                 if ((byCount == 4) or (byCount == 5)) and regexByEqualUuid.match(content):  # "by" should give UUID
-
                     # I don't think there is a way to know what UUID traffic_server generates, so I just do a crude format
                     # check and make sure the same value is used consistently.
 

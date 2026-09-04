@@ -35,7 +35,8 @@ err_run = Test.TxnBoxTestAndRun(
     config_path='Auto',
     config_key="meta.txn_box.global",
     verifier_client_args="--keys base-case no-fixup",
-    suffix=suffix)
+    suffix=suffix,
+)
 err_test = err_run.Variables.TS
 
 err_test.Disk.records_config.update(records_config_tweaks)
@@ -49,7 +50,8 @@ bp_run = Test.TxnBoxTestAndRun(
     config_path='Auto',
     config_key="meta.txn_box.global",
     verifier_client_args="--keys bypass-case",
-    suffix=suffix)
+    suffix=suffix,
+)
 bp_test = bp_run.Variables.TS
 bp_test.Disk.records_config.update(records_config_tweaks)
 

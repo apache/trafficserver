@@ -61,7 +61,8 @@ def print_header():
 
 namespace cripts
 {
-""")
+"""
+    )
 
 
 def print_footer():

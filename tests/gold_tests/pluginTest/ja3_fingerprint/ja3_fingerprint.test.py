@@ -83,13 +83,15 @@ class JA3FingerprintTest:
         if not self._test_remap:
             # The first request has no existing JA3 headers, so headers are added.
             self._server.Streams.All += Testers.ContainsExpression(
-                "x-ja3-raw: .*,", "Verify the new raw header was added.", reflags=re.IGNORECASE)
+                "x-ja3-raw: .*,", "Verify the new raw header was added.", reflags=re.IGNORECASE
+            )
             self._server.Streams.All += Testers.ContainsExpression("x-ja3-via: test.proxy.com", "The x-ja3-via string was added.")
             # The second request has existing JA3 headers. With --preserve,
             # no new JA3 headers are added (including x-ja3-sig). The replay
             # file verifies x-ja3-sig is absent for the http2 transaction.
             self._server.Streams.All += Testers.ContainsExpression(
-                "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.", reflags=re.IGNORECASE)
+                "x-ja3-raw: first-signature", "Verify the already-existing raw header was preserved.", reflags=re.IGNORECASE
+            )
 
     def _configure_trafficserver(self) -> None:
         """Configure Traffic Server to be used in the test."""
@@ -104,14 +106,15 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         server_port = self._server.Variables.https_port
         self._ts.Disk.remap_config.AddLine(f'map https://https.server.com https://https.backend.com:{server_port}')
 
         if self._test_remap:
             self._ts.Disk.remap_config.AddLine(
-                f'map https://http2.server.com https://http2.backend.com:{server_port} '
-                '@plugin=ja3_fingerprint.so @pparam=--ja3log')
+                f'map https://http2.server.com https://http2.backend.com:{server_port} @plugin=ja3_fingerprint.so @pparam=--ja3log'
+            )
         else:
             arguments = '--ja3log --ja3raw --preserve'
             if self._modify_incoming:
@@ -129,7 +132,8 @@ ssl_multicert:
                 'proxy.config.proxy_name': 'test.proxy.com',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|ja3_fingerprint',
-            })
+            }
+        )
 
         ja3log_path = os.path.join(self._ts.Variables.LOGDIR, "ja3_fingerprint.log")
         self._ts.Disk.File(ja3log_path, id='ja3_log')
@@ -142,7 +146,8 @@ ssl_multicert:
             regex = r'(.*JA3.*MD5){2}'
 
         self._ts.Disk.ja3_log.Content += Testers.ContainsExpression(
-            regex, "Verify the JA3 log contains a JA3 line.", reflags=re.MULTILINE | re.DOTALL)
+            regex, "Verify the JA3 log contains a JA3 line.", reflags=re.MULTILINE | re.DOTALL
+        )
 
     def _configure_client(self, tr: 'TestRun') -> None:
         """Configure the TestRun.
@@ -151,7 +156,8 @@ ssl_multicert:
         """
         name = f'client{self._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port]
+        )
         JA3FingerprintTest._client_counter += 1
 
         p.StartBefore(self._dns)

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -28,14 +27,14 @@ logdir = Test.Variables["LOGDIR"]
 
 if bindir.startswith(prefix):
     # get the bin directory based on removing the common prefix
-    binsuffix = bindir[len(prefix) + 1:]
+    binsuffix = bindir[len(prefix) + 1 :]
 else:
     # given a custom setup this might work.. or it might not
     binsuffix = bindir
 
 if logdir.startswith(prefix):
     # get the bin directory based on removing the common prefix
-    logsuffix = bindir[len(prefix) + 1:]
+    logsuffix = bindir[len(prefix) + 1 :]
 else:
     # given a custom setup this might work.. or it might not
     logsuffix = logdir
@@ -56,7 +55,7 @@ tr.Processes.Default.Streams.All = Testers.ContainsExpression(os.path.join(path,
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("PASSED", "contain passed message")
 
 # verify test #2
-bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]
+bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1 :]
 tr = Test.AddTestRun("verify runroot test2")
 tr.Processes.Default.Command = "cd " + path + ";" + os.path.join(bin_path, "traffic_layout") + " verify --path " + path
 

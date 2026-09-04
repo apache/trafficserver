@@ -88,16 +88,17 @@ def TxnBoxRxUrlRewrite(tester, rules, ports):
 
 
 def TxnBoxTest(
-        self,
-        replay_path,
-        config_path=None,
-        config_key="meta.txn_box",
-        remap=None,
-        regex_map=None,
-        command='traffic_server',
-        enable_tls=False,
-        suffix="",
-        verifier_server_args="--verbose info"):
+    self,
+    replay_path,
+    config_path=None,
+    config_key="meta.txn_box",
+    remap=None,
+    regex_map=None,
+    command='traffic_server',
+    enable_tls=False,
+    suffix="",
+    verifier_server_args="--verbose info",
+):
     """
     Create a base test object specialized for TxnBox testing.
 
@@ -153,21 +154,22 @@ def TxnBoxTest(
         {
             'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(self.Variables.TXNBOX_DNS.Variables.Port),
             'proxy.config.dns.resolv_conf': 'NULL',
-            'proxy.config.ssl.client.verify.server.policy': 'DISABLED'
+            'proxy.config.ssl.client.verify.server.policy': 'DISABLED',
             # The following is needed for ATS 9 and later.
             # 'proxy.config.plugin.dynamic_reload': 0
-        })
+        }
+    )
 
     TxnBoxUrlRewrite(
-        ts, remap, {
-            "http": self.Variables.TXNBOX_SERVER.Variables.http_port,
-            "https": self.Variables.TXNBOX_SERVER.Variables.https_port
-        })
+        ts,
+        remap,
+        {"http": self.Variables.TXNBOX_SERVER.Variables.http_port, "https": self.Variables.TXNBOX_SERVER.Variables.https_port},
+    )
     TxnBoxRxUrlRewrite(
-        ts, regex_map, {
-            "http": self.Variables.TXNBOX_SERVER.Variables.http_port,
-            "https": self.Variables.TXNBOX_SERVER.Variables.https_port
-        })
+        ts,
+        regex_map,
+        {"http": self.Variables.TXNBOX_SERVER.Variables.http_port, "https": self.Variables.TXNBOX_SERVER.Variables.https_port},
+    )
 
     if remap == None and regex_map == None:
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(self.Variables.TXNBOX_SERVER.Variables.http_port))
@@ -222,17 +224,18 @@ def TxnBoxRun(self, text, replay_path=None, ssl_cert=None, suffix="", verifier_c
 
 
 def TxnBoxTestAndRun(
-        self,
-        name,
-        replay_path,
-        config_path=None,
-        config_key="meta.txn_box",
-        remap=None,
-        verifier_client_args="--verbose diag",
-        verifier_server_args="--verbose info",
-        command="traffic_server",
-        enable_tls=False,
-        suffix=""):
+    self,
+    name,
+    replay_path,
+    config_path=None,
+    config_key="meta.txn_box",
+    remap=None,
+    verifier_client_args="--verbose diag",
+    verifier_server_args="--verbose info",
+    command="traffic_server",
+    enable_tls=False,
+    suffix="",
+):
     self.TxnBoxTest(
         replay_path,
         config_path,
@@ -241,7 +244,8 @@ def TxnBoxTestAndRun(
         command=command,
         enable_tls=enable_tls,
         suffix=suffix,
-        verifier_server_args=verifier_server_args)
+        verifier_server_args=verifier_server_args,
+    )
     return self.TxnBoxRun(name, verifier_client_args=verifier_client_args, suffix=suffix)
 
 

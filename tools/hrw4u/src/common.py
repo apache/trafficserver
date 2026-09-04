@@ -33,6 +33,7 @@ from hrw4u.types import MagicStrings
 
 class RegexPatterns:
     """Compiled regex patterns for reuse across modules"""
+
     SIMPLE_TOKEN: Final = re.compile(r'^[@a-zA-Z0-9_-]+$')
     HTTP_TOKEN: Final = re.compile(r'^[!#$%&\'*+.^_`|~0-9A-Za-z-]+$')
     HTTP_HEADER_NAME: Final = re.compile(r'^(?:@[!#$%&\'*+^_`|~0-9A-Za-z-]+|[!#$%&\'*+^_`|~0-9A-Za-z-]+)$')
@@ -59,6 +60,7 @@ class RegexPatterns:
 
 class SystemDefaults:
     """System-wide default constants"""
+
     DEFAULT_FILENAME: Final = "<stdin>"
     DEFAULT_DEBUG: Final = False
     DEFAULT_CONFIGURABLE: Final = False
@@ -69,6 +71,7 @@ class SystemDefaults:
 
 class HeaderOperations:
     """Operation constants for various resource types"""
+
     OPERATIONS: Final = (MagicStrings.RM_HEADER.value, MagicStrings.SET_HEADER.value)
     ADD_OPERATION: Final = MagicStrings.ADD_HEADER.value
     COOKIE_OPERATIONS: Final = (MagicStrings.RM_COOKIE.value, MagicStrings.SET_COOKIE.value)
@@ -78,24 +81,19 @@ class HeaderOperations:
 class LexerProtocol(Protocol):  # pragma: no cover
     """Protocol for ANTLR lexers."""
 
-    def removeErrorListeners(self) -> None:
-        ...
+    def removeErrorListeners(self) -> None: ...
 
-    def addErrorListener(self, listener: Any) -> None:
-        ...
+    def addErrorListener(self, listener: Any) -> None: ...
 
 
 class ParserProtocol(Protocol):  # pragma: no cover
     """Protocol for ANTLR parsers."""
 
-    def removeErrorListeners(self) -> None:
-        ...
+    def removeErrorListeners(self) -> None: ...
 
-    def addErrorListener(self, listener: Any) -> None:
-        ...
+    def addErrorListener(self, listener: Any) -> None: ...
 
-    def program(self) -> Any:
-        ...
+    def program(self) -> Any: ...
 
     errorHandler: BailErrorStrategy | DefaultErrorStrategy
 
@@ -103,8 +101,7 @@ class ParserProtocol(Protocol):  # pragma: no cover
 class VisitorProtocol(Protocol):  # pragma: no cover
     """Protocol for ANTLR visitors."""
 
-    def visit(self, tree: Any) -> list[str]:
-        ...
+    def visit(self, tree: Any) -> list[str]: ...
 
 
 def fatal(message: str) -> NoReturn:
@@ -160,7 +157,8 @@ def create_base_parser(description: str) -> tuple[argparse.ArgumentParser, argpa
 
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument(
-        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
+        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)"
+    )
 
     return parser, output_group
 
@@ -179,14 +177,15 @@ def process_input(input_file: TextIO) -> tuple[str, str]:
 
 
 def create_parse_tree(
-        content: str,
-        filename: str,
-        lexer_class: type[LexerProtocol],
-        parser_class: type[ParserProtocol],
-        error_prefix: str,
-        collect_errors: bool = True,
-        max_errors: int = 5,
-        error_format: str = "plain") -> tuple[Any, ParserProtocol, ErrorCollector | None]:
+    content: str,
+    filename: str,
+    lexer_class: type[LexerProtocol],
+    parser_class: type[ParserProtocol],
+    error_prefix: str,
+    collect_errors: bool = True,
+    max_errors: int = 5,
+    error_format: str = "plain",
+) -> tuple[Any, ParserProtocol, ErrorCollector | None]:
     """Create ANTLR parse tree from input content with optional error collection."""
     input_stream = InputStream(content)
     error_collector = None
@@ -232,13 +231,14 @@ def create_parse_tree(
 
 
 def generate_output(
-        tree: Any,
-        parser_obj: ParserProtocol,
-        visitor_class: type[VisitorProtocol],
-        filename: str,
-        args: Any,
-        error_collector: ErrorCollector | None = None,
-        extra_kwargs: dict[str, Any] | None = None) -> None:
+    tree: Any,
+    parser_obj: ParserProtocol,
+    visitor_class: type[VisitorProtocol],
+    filename: str,
+    args: Any,
+    error_collector: ErrorCollector | None = None,
+    extra_kwargs: dict[str, Any] | None = None,
+) -> None:
     """Generate and print output based on mode with optional error collection."""
     if args.ast:
         if tree is not None:
@@ -252,7 +252,7 @@ def generate_output(
                 "filename": filename,
                 "debug": args.debug,
                 "error_collector": error_collector,
-                "preserve_comments": preserve_comments
+                "preserve_comments": preserve_comments,
             }
             if extra_kwargs:
                 kwargs.update(extra_kwargs)
@@ -272,8 +272,9 @@ def generate_output(
                             syntax_error.add_note(note)
                     error_collector.add_error(syntax_error)
                 else:
-                    visitor_err = e if isinstance(e, Hrw4uSyntaxError) else Hrw4uSyntaxError(
-                        filename, 0, 0, f"Visitor error: {e}", "")
+                    visitor_err = (
+                        e if isinstance(e, Hrw4uSyntaxError) else Hrw4uSyntaxError(filename, 0, 0, f"Visitor error: {e}", "")
+                    )
                     emit_fatal_error(getattr(args, 'error_format', 'plain'), visitor_err)
 
     if error_collector and (error_collector.has_errors() or error_collector.has_warnings()):
@@ -283,16 +284,17 @@ def generate_output(
 
 
 def run_main(
-        description: str,
-        lexer_class: type[LexerProtocol],
-        parser_class: type[ParserProtocol],
-        visitor_class: type[VisitorProtocol],
-        error_prefix: str,
-        output_flag_name: str,
-        output_flag_help: str,
-        add_args: Callable[[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup], None] | None = None,
-        pre_process: Callable[[str, str, Any], str] | None = None,
-        visitor_kwargs: Callable[[argparse.Namespace], dict[str, Any]] | None = None) -> None:
+    description: str,
+    lexer_class: type[LexerProtocol],
+    parser_class: type[ParserProtocol],
+    visitor_class: type[VisitorProtocol],
+    error_prefix: str,
+    output_flag_name: str,
+    output_flag_help: str,
+    add_args: Callable[[argparse.ArgumentParser, argparse._MutuallyExclusiveGroup], None] | None = None,
+    pre_process: Callable[[str, str, Any], str] | None = None,
+    visitor_kwargs: Callable[[argparse.Namespace], dict[str, Any]] | None = None,
+) -> None:
     """
     Generic main function for hrw4u and u4wrh scripts with bulk compilation support.
 
@@ -311,10 +313,12 @@ def run_main(
     parser = argparse.ArgumentParser(
         description=description,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="For bulk compilation to files, use: input1.txt:output1.txt input2.txt:output2.txt ...")
+        epilog="For bulk compilation to files, use: input1.txt:output1.txt input2.txt:output2.txt ...",
+    )
 
     parser.add_argument(
-        "files", help="Input file(s) to parse. Use input:output for bulk file output (default: stdin to stdout)", nargs="*")
+        "files", help="Input file(s) to parse. Use input:output for bulk file output (default: stdin to stdout)", nargs="*"
+    )
 
     output_group = parser.add_mutually_exclusive_group()
     output_group.add_argument("--ast", action="store_true", help="Produce the ANTLR parse tree only")
@@ -323,13 +327,15 @@ def run_main(
     parser.add_argument("--no-comments", action="store_true", help="Skip comment preservation (ignore comments in output)")
     parser.add_argument("--debug", action="store_true", help="Enable debug output")
     parser.add_argument(
-        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)")
+        "--stop-on-error", action="store_true", help="Stop processing on first error (default: collect and report multiple errors)"
+    )
     parser.add_argument(
         "--max-errors",
         type=int,
         default=5,
         dest="max_errors",
-        help="Maximum number of errors to report before stopping (default: 5; ignored with --stop-on-error)")
+        help="Maximum number of errors to report before stopping (default: 5; ignored with --stop-on-error)",
+    )
     parser.add_argument(
         "--error-format",
         choices=sorted(FORMATTERS.keys()),
@@ -339,7 +345,9 @@ def run_main(
             "Format used for error and warning output on stderr (default: plain). "
             "'json' emits one compact JSON object per input (NDJSON-friendly in bulk mode); "
             "'markdown' emits a rendered report suitable for PR comments and chat. "
-            "Columns are always 0-based."))
+            "Columns are always 0-based."
+        ),
+    )
 
     if add_args is not None:
         add_args(parser, output_group)
@@ -362,7 +370,8 @@ def run_main(
             except Hrw4uSyntaxError as e:
                 emit_fatal_error(args.error_format, e)
         tree, parser_obj, error_collector = create_parse_tree(
-            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format)
+            content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format
+        )
         generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
         return
 
@@ -371,7 +380,8 @@ def run_main(
             if ':' not in pair:
                 emit_fatal_message(
                     args.error_format,
-                    "Error: Mixed formats not allowed. All files must use 'input:output' format for bulk compilation.")
+                    "Error: Mixed formats not allowed. All files must use 'input:output' format for bulk compilation.",
+                )
 
             input_path, output_path = pair.split(':', 1)
 
@@ -390,8 +400,15 @@ def run_main(
                 except Hrw4uSyntaxError as e:
                     emit_fatal_error(args.error_format, e)
             tree, parser_obj, error_collector = create_parse_tree(
-                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
-                args.error_format)
+                content,
+                filename,
+                lexer_class,
+                parser_class,
+                error_prefix,
+                not args.stop_on_error,
+                args.max_errors,
+                args.error_format,
+            )
 
             try:
                 with open(output_path, 'w', encoding='utf-8') as output_file:
@@ -423,7 +440,14 @@ def run_main(
                 except Hrw4uSyntaxError as e:
                     emit_fatal_error(args.error_format, e)
             tree, parser_obj, error_collector = create_parse_tree(
-                content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
-                args.error_format)
+                content,
+                filename,
+                lexer_class,
+                parser_class,
+                error_prefix,
+                not args.stop_on_error,
+                args.max_errors,
+                args.error_format,
+            )
 
             generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)

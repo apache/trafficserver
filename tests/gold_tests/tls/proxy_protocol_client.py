@@ -23,7 +23,7 @@ import sys
 import struct
 import ssl
 
-VERSION_2_SIGNATURE = b'\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A'
+VERSION_2_SIGNATURE = b'\x0d\x0a\x0d\x0a\x00\x0d\x0a\x51\x55\x49\x54\x0a'
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,7 +72,7 @@ def construct_proxy_header_v2(src_addr: tuple, dst_addr: tuple) -> bytes:
     # TCP over IPv4
     header += b'\x11'
     # address length
-    header += b'\x00\x0C'
+    header += b'\x00\x0c'
     header += socket.inet_pton(socket.AF_INET, src_addr[0])
     header += socket.inet_pton(socket.AF_INET, dst_addr[0])
     header += struct.pack('!H', src_addr[1])
@@ -86,13 +86,14 @@ def construct_proxy_header_v2_local() -> bytes:
 
 
 def send_proxy_header(
-        socket: socket.socket,
-        src_ip: str,
-        src_port: int,
-        dest_ip: str,
-        dest_port: int,
-        proxy_protocol_version: int,
-        addressless: bool = False) -> None:
+    socket: socket.socket,
+    src_ip: str,
+    src_port: int,
+    dest_ip: str,
+    dest_port: int,
+    proxy_protocol_version: int,
+    addressless: bool = False,
+) -> None:
     """Send the specified PROXY protocol header.
 
     :param socket: The socket to send the header on.
@@ -145,8 +146,14 @@ def main() -> None:
     with socket.create_connection((args.server_address, args.server_port)) as sock:
         # send the PROXY header
         send_proxy_header(
-            sock, args.proxy_src_ip, args.proxy_src_port, args.proxy_dest_ip, args.proxy_dest_port, args.protocol_version,
-            args.addressless)
+            sock,
+            args.proxy_src_ip,
+            args.proxy_src_port,
+            args.proxy_dest_ip,
+            args.proxy_dest_port,
+            args.protocol_version,
+            args.addressless,
+        )
         if args.https:
             # https
             context = ssl.create_default_context()

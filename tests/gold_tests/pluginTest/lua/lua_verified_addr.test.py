@@ -21,7 +21,9 @@ Test.Summary = '''
 Test lua verified address get/set functionality
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = True
 
@@ -45,7 +47,8 @@ tr.MakeCurlCommand(f"-s -H 'X-Real-IP: 192.0.2.100' http://127.0.0.1:{ts.Variabl
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "initial:nil;set:success;get:192.0.2.100:2;", "IPv4 verified address should be set and retrieved correctly")
+    "initial:nil;set:success;get:192.0.2.100:2;", "IPv4 verified address should be set and retrieved correctly"
+)
 tr.StillRunningAfter = ts
 
 # Test 2: IPv6 verified address
@@ -55,7 +58,8 @@ tr.MakeCurlCommand(f"-s -H 'X-Real-IP-V6: 2001:db8::1' http://127.0.0.1:{ts.Vari
 ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
-    "initial:nil;setv6:success;getv6:2001:db8::1:10;", "IPv6 verified address should be set and retrieved correctly")
+    "initial:nil;setv6:success;getv6:2001:db8::1:10;", "IPv6 verified address should be set and retrieved correctly"
+)
 tr.StillRunningAfter = ts
 
 # Test 3: Invalid IP address (should be rejected)
@@ -75,5 +79,6 @@ ps.Env = ts.Env
 ps.ReturnCode = 0
 ps.Streams.stdout.Content = Testers.ContainsExpression(
     "initial:nil;set:success;get:203.0.113.42:2;setv6:success;getv6:2001:db8::42:10;",
-    "Both IPv4 and IPv6 verified addresses should work in sequence")
+    "Both IPv4 and IPv6 verified addresses should work in sequence",
+)
 tr.StillRunningAfter = ts

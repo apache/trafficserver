@@ -39,6 +39,7 @@ Prints one line:
 
 Requires: python3 hpack module.
 """
+
 import socket
 import ssl
 import struct
@@ -84,11 +85,11 @@ if name_size > 0:
 block = Encoder().encode(hdrs)
 
 MAXF = 16384
-chunks = [block[i:i + MAXF] for i in range(0, len(block), MAXF)] or [b""]
+chunks = [block[i : i + MAXF] for i in range(0, len(block), MAXF)] or [b""]
 flags = 0x1 | (0x4 if len(chunks) == 1 else 0)  # END_STREAM; END_HEADERS only if single frame
 s.sendall(frame(0x1, flags, 1, chunks[0]))
 for i, c in enumerate(chunks[1:], start=1):
-    last = (i == len(chunks) - 1)
+    last = i == len(chunks) - 1
     s.sendall(frame(0x9, 0x4 if last else 0, 1, c))  # CONTINUATION, END_HEADERS on last
 
 dec = Decoder()
@@ -115,8 +116,8 @@ try:
             fl = buf[4]
             if len(buf) < 9 + ln:
                 break
-            payload = buf[9:9 + ln]
-            buf = buf[9 + ln:]
+            payload = buf[9 : 9 + ln]
+            buf = buf[9 + ln :]
             if ftype == 0x1:  # HEADERS
                 pl = payload
                 pad = 0

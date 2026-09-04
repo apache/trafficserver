@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -45,22 +44,23 @@ default_log_data = {'diags': 'diags.log', 'error': 'error.log', 'manager': 'mana
 
 
 def MakeATSProcess(
-        obj,
-        name,
-        command='traffic_server',
-        select_ports=True,
-        enable_tls=False,
-        enable_cache=True,
-        enable_quic=False,
-        enable_uds=True,
-        enable_cripts=False,
-        block_for_debug=False,
-        log_data=default_log_data,
-        use_traffic_out=True,
-        dump_runroot=True,
-        enable_proxy_protocol=False,
-        enable_proxy_protocol_cp_src=False,
-        disable_log_checks=False):
+    obj,
+    name,
+    command='traffic_server',
+    select_ports=True,
+    enable_tls=False,
+    enable_cache=True,
+    enable_quic=False,
+    enable_uds=True,
+    enable_cripts=False,
+    block_for_debug=False,
+    log_data=default_log_data,
+    use_traffic_out=True,
+    dump_runroot=True,
+    enable_proxy_protocol=False,
+    enable_proxy_protocol_cp_src=False,
+    disable_log_checks=False,
+):
     """Create a traffic server process.
 
     :param block_for_debug: if True, causes traffic_server to run with the
@@ -94,7 +94,7 @@ def MakeATSProcess(
     # runtime dir
     runtime_dir = os.path.join(ts_dir, 'runtime')
 
-    #ssl, storage & cache
+    # ssl, storage & cache
     ssl_dir = os.path.join(ts_dir, 'ssl')
     storage_dir = os.path.join(ts_dir, 'storage')
     cache_dir = os.path.join(ts_dir, 'cache')
@@ -116,8 +116,8 @@ def MakeATSProcess(
     process_cmd = f"{os.path.join(ts_dir, bin_dir)}/{command} {ts_args}"
     # create process
     p = obj.Processes.Process(name, process_cmd)
-    #p_debug = obj.Processes.Process("port-debug", "ss --listen --tcp --process")
-    #p_debug.Env['PATH'] = "/usr/sbin" + os.pathsep + p.ComposeEnv()['PATH']
+    # p_debug = obj.Processes.Process("port-debug", "ss --listen --tcp --process")
+    # p_debug.Env['PATH'] = "/usr/sbin" + os.pathsep + p.ComposeEnv()['PATH']
     # p.StartBefore(p_debug)
     # we want to have a few directories more fixed
     # this helps with debugging as location are common
@@ -247,7 +247,8 @@ def MakeATSProcess(
         p.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", f"Diags log file {fname} should not contain errors")
         p.Disk.diags_log.Content += Testers.ExcludesExpression(
             "Unrecognized configuration value",
-            f"Diags log file {fname} should not contain a warning about an unrecognized configuration")
+            f"Diags log file {fname} should not contain a warning about an unrecognized configuration",
+        )
 
     # traffic.out
     fname = "traffic.out"
@@ -339,7 +340,8 @@ def MakeATSProcess(
                 f'prefix: {ts_dir}',
                 f'logdir: {log_dir}',
                 f'sysconfdir: {config_dir}',
-            ])
+            ]
+        )
         # Add more if needed
         p.Env['TS_RUNROOT'] = os.path.join(config_dir, "runroot.yaml")
 
@@ -347,7 +349,6 @@ def MakeATSProcess(
     # set up default ports
     # get some ports  TODO make it so we can hold on to the socket
     if select_ports:
-
         # some system have a bug in which ipv4 and ipv6 share port space
         # Make two different ports to avoid this
         get_port(p, "port")
@@ -383,9 +384,11 @@ def MakeATSProcess(
         fname = "tls_session_keys.txt"
         tmpname = os.path.join(log_dir, fname)
         p.Disk.File(tmpname, id='tls_session_keys')
-        p.Disk.records_config.update({
-            'proxy.config.ssl.keylog_file': tmpname,
-        })
+        p.Disk.records_config.update(
+            {
+                'proxy.config.ssl.keylog_file': tmpname,
+            }
+        )
 
     # For config reload tests, no need to wait the default 3 seconds to detect the need for a reload.
     p.Disk.records_config.update({'proxy.config.config_update_interval_ms': 20})
@@ -401,23 +404,28 @@ def MakeATSProcess(
                 # Do not accept connections from clients until cache subsystem is
                 # operational.
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
     else:
         # The user wants the cache to be disabled.
         p.Disk.records_config.update({'proxy.config.http.cache.http': 0})
 
     if enable_quic:
-        p.Disk.records_config.update({
-            'proxy.config.udp.threads': 1,
-        })
+        p.Disk.records_config.update(
+            {
+                'proxy.config.udp.threads': 1,
+            }
+        )
 
     if enable_cripts:
         cripts_compiler = os.path.join(bin_path, 'cripts_compiler.sh')
         p.Setup.Copy(os.path.join(p.Variables.RepoDir, 'tools', 'cripts', 'compiler.sh'), cripts_compiler)
         p.Variables.cripts_compiler = cripts_compiler
-        p.Disk.records_config.update({
-            'proxy.config.plugin.compiler_path': cripts_compiler,
-        })
+        p.Disk.records_config.update(
+            {
+                'proxy.config.plugin.compiler_path': cripts_compiler,
+            }
+        )
         # ATS_ROOT is used by compiler.sh to find the ATS install directory.
         p.Env['ATS_ROOT'] = p.Variables.PREFIX
         # Cripts are compiled at startup, which can exceed the default 10s readiness window
@@ -433,25 +441,31 @@ def MakeATSProcess(
         port_str = "{port} {v6_port}:ipv6".format(port=p.Variables.port, v6_port=p.Variables.portv6)
         if enable_tls:
             port_str += " {ssl_port}:ssl {ssl_portv6}:ssl:ipv6".format(
-                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
+                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6
+            )
         if enable_quic:
             port_str += " {ssl_port}:quic {ssl_portv6}:quic:ipv6".format(
-                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6)
+                ssl_port=p.Variables.ssl_port, ssl_portv6=p.Variables.ssl_portv6
+            )
         if enable_proxy_protocol:
             ppcfg = "pp"
             if enable_proxy_protocol_cp_src:
                 ppcfg += ":pp-clnt"
             port_str += f" {p.Variables.proxy_protocol_port}:{ppcfg} {p.Variables.proxy_protocol_portv6}:{ppcfg}:ipv6"
             if enable_tls:
-                port_str += f" {p.Variables.proxy_protocol_ssl_port}:{ppcfg}:ssl {p.Variables.proxy_protocol_ssl_portv6}:{ppcfg}:ssl:ipv6"
+                port_str += (
+                    f" {p.Variables.proxy_protocol_ssl_port}:{ppcfg}:ssl {p.Variables.proxy_protocol_ssl_portv6}:{ppcfg}:ssl:ipv6"
+                )
             if enable_uds:
                 port_str += f" {uds_path}:{ppcfg}"
         elif enable_uds:
             port_str += f" {uds_path}"
-        #p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
-        p.Disk.records_config.update({
-            'proxy.config.http.server_ports': port_str,
-        })
+        # p.Env['PROXY_CONFIG_HTTP_SERVER_PORTS'] = port_str
+        p.Disk.records_config.update(
+            {
+                'proxy.config.http.server_ports': port_str,
+            }
+        )
 
     p.Env['PROXY_CONFIG_PROCESS_MANAGER_MGMT_PORT'] = str(p.Variables.manager_port)
     p.Env['PROXY_CONFIG_ADMIN_SYNTHETIC_PORT'] = str(p.Variables.admin_port)
@@ -517,16 +531,8 @@ class YAMLFile(File):
     '''
 
     def __init__(
-            self,
-            runable,
-            name,
-            exists=None,
-            size=None,
-            content_tester=None,
-            execute=False,
-            runtime=True,
-            content=None,
-            root_tag=None):
+        self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True, content=None, root_tag=None
+    ):
 
         super(YAMLFile, self).__init__(runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True)
         self.__root_tag = root_tag
@@ -541,10 +547,10 @@ class YAMLFile(File):
         host.WriteVerbosef('ats-config-file', "Writing out file {0}", name)
 
         def float_representer(dumper, value):
-            return dumper.represent_scalar(u'tag:yaml.org,2002:float', str(value), style="'")
+            return dumper.represent_scalar('tag:yaml.org,2002:float', str(value), style="'")
 
         def int_representer(dumper, value):
-            return dumper.represent_scalar(u'tag:yaml.org,2002:int', str(value), style="'")
+            return dumper.represent_scalar('tag:yaml.org,2002:int', str(value), style="'")
 
         if len(self.__content) > 0:
             with open(name, 'w') as f:
@@ -595,7 +601,6 @@ class YAMLFile(File):
 
 
 class RecordsYAML(YAMLFile):
-
     def __init__(self, runable, name, exists=None, size=None, content_tester=None, execute=False, runtime=True):
         super(RecordsYAML, self).__init__(runable, name, exists, size, content_tester, execute, runtime, root_tag="records")
 
@@ -612,15 +617,15 @@ class RecordsYAML(YAMLFile):
             if key not in config:
                 config[key] = {}
 
-            self._make_obj_from_legacy_record(config[key], var[index + 1:], value)
+            self._make_obj_from_legacy_record(config[key], var[index + 1 :], value)
 
     def __legacy_update(self, obj, new_doc=False):
         config = {}
         for name, value in obj.items():
             if name.startswith("proxy.config."):
-                name = name[len("proxy.config."):]
+                name = name[len("proxy.config.") :]
             elif name.startswith("local.config."):
-                name = name[len("local.config."):]
+                name = name[len("local.config.") :]
             # Maybe an non standard variable name.
 
             # unwrap the record and make it a YAML field.
@@ -687,12 +692,17 @@ CONNECT_DENY_RULE_MARKER = """  - apply: out
 
 
 def _addPrivateConnectAllowRule(content, methods="CONNECT"):
-    rule = "\n".join([
-        "  - apply: out",
-        "    ip_addrs: 127.0.0.1",
-        "    action: allow",
-        f"    methods: {methods}",
-    ]) + "\n"
+    rule = (
+        "\n".join(
+            [
+                "  - apply: out",
+                "    ip_addrs: 127.0.0.1",
+                "    action: allow",
+                f"    methods: {methods}",
+            ]
+        )
+        + "\n"
+    )
 
     if rule in content:
         return content

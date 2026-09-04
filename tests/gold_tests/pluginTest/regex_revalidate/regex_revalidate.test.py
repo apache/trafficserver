@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -63,39 +62,48 @@ response_header_0 = {
 request_header_1 = {
     "headers": "GET /path1 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header_1 = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path1"\r\n' + "Cache-Control: max-age=600,public\r\n" + "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+    + "Connection: close\r\n"
+    + 'Etag: "path1"\r\n'
+    + "Cache-Control: max-age=600,public\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "abc"
+    "body": "abc",
 }
 
 # cache item path1a
 request_header_2 = {
     "headers": "GET /path1a HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header_2 = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path1a"\r\n' + "Cache-Control: max-age=600,public\r\n" + "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+    + "Connection: close\r\n"
+    + 'Etag: "path1a"\r\n'
+    + "Cache-Control: max-age=600,public\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "cde"
+    "body": "cde",
 }
 
 # cache item path2a
 request_header_3 = {
     "headers": "GET /path2a HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header_3 = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path2a"\r\n' + "Cache-Control: max-age=900,public\r\n" + "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+    + "Connection: close\r\n"
+    + 'Etag: "path2a"\r\n'
+    + "Cache-Control: max-age=900,public\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": "efg"
+    "body": "efg",
 }
 
 server.addResponse("sessionlog.json", request_header_0, response_header_0)
@@ -113,10 +121,11 @@ curl_and_args = '-s -D - -v -H "x-debug: x-cache" -H "Host: www.example.com"'
 path1_rule = 'path1 {}\n'.format(int(time.time()) + 600)
 
 # Define first revision for when trafficserver starts
-ts.Disk.File(
-    regex_revalidate_conf_path, typename="ats:config").AddLines([
+ts.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines(
+    [
         "# Empty\n",
-    ])
+    ]
+)
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{}'.format(server.Variables.Port))
 
@@ -127,7 +136,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'regex_revalidate',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.response_via_str': 3,
-    })
+    }
+)
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("Cache miss path1")
@@ -170,10 +180,11 @@ tr = Test.AddTestRun("Reload config add path1")
 # the old is greater than the granularity of the time stamp used.  (The config file write
 # happens after the delay.)
 tr.DelayStart = 1
-tr.Disk.File(
-    regex_revalidate_conf_path, typename="ats:config").AddLines([
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines(
+    [
         path1_rule,
-    ])
+    ]
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
@@ -204,11 +215,12 @@ tr = Test.AddTestRun("Reload config add path2")
 # the old is greater than the granularity of the time stamp used.  (The config file write
 # happens after the delay.)
 tr.DelayStart = 1
-tr.Disk.File(
-    regex_revalidate_conf_path, typename="ats:config").AddLines([
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines(
+    [
         path1_rule,
         'path2 {}\n'.format(int(time.time()) + 700),
-    ])
+    ]
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())
@@ -242,11 +254,12 @@ tr = Test.AddTestRun("Reload config change path2")
 # the old is greater than the granularity of the time stamp used.  (The config file write
 # happens after the delay.)
 tr.DelayStart = 1
-tr.Disk.File(
-    regex_revalidate_conf_path, typename="ats:config").AddLines([
+tr.Disk.File(regex_revalidate_conf_path, typename="ats:config").AddLines(
+    [
         path1_rule,
         'path2 {}\n'.format(int(time.time()) - 100),
-    ])
+    ]
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload())

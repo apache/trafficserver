@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -23,7 +22,8 @@ Test for using of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
 Test.SkipUnless(
-    Test.Variables.BINDIR.startswith(Test.Variables.PREFIX), "need to guarantee bin path starts with prefix for runroot")
+    Test.Variables.BINDIR.startswith(Test.Variables.PREFIX), "need to guarantee bin path starts with prefix for runroot"
+)
 
 # create two runroot for testing
 path = os.path.join(Test.RunDirectory, "runroot")
@@ -51,7 +51,7 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("PREFIX: " + path, "cwd runroot path")
 
 # 4. use path directly bin
-bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]
+bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1 :]
 tr = Test.AddTestRun("use runroot via bin executable")
 tr.Processes.Default.Command = os.path.join(path, os.path.join(bin_path, "traffic_layout") + " info")
 tr.Processes.Default.ReturnCode = 0

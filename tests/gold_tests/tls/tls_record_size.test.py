@@ -49,11 +49,10 @@ class TestRecordSize:
         body = "x" * self._body_len
         request_header = {"headers": "GET /obj HTTP/1.1\r\nHost: ex.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
         response_header = {
-            "headers":
-                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                f"Cache-Control: max-age=3600\r\nContent-Length: {self._body_len}\r\n\r\n",
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+            f"Cache-Control: max-age=3600\r\nContent-Length: {self._body_len}\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": body
+            "body": body,
         }
         server.addResponse("sessionlog.json", request_header, response_header)
         return server
@@ -73,18 +72,21 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.max_record_size': self._max_record,
-            })
+            }
+        )
         if self._max_record == -1:
             ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
                 r'proxy\.config\.ssl\.max_record_size.*Validity Check error',
-                'The dynamic record-size sentinel should pass records validation')
+                'The dynamic record-size sentinel should pass records validation',
+            )
         return ts
 
     def run(self) -> None:
@@ -107,10 +109,12 @@ ssl_multicert:
         tr.Processes.Default.Command = (
             f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_record_size_client.py")} '
             f'-p {self._ts.Variables.ssl_port} --host ex.test --path /obj '
-            f'{client_option} --expect-bytes {self._body_len}')
+            f'{client_option} --expect-bytes {self._body_len}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            expected_output, 'TLS records must follow the configured sizing strategy')
+            expected_output, 'TLS records must follow the configured sizing strategy'
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 

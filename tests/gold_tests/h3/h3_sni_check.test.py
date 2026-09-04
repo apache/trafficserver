@@ -78,7 +78,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
@@ -87,7 +88,8 @@ ssl_multicert:
                 'proxy.config.quic.no_activity_timeout_in': 0,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            })
+            }
+        )
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
@@ -104,7 +106,8 @@ ssl_multicert:
             f'client-{Test_sni_check.client_counter}',
             self.replay_file,
             http3_ports=[self._ts.Variables.ssl_port],
-            keys=self.replay_keys)
+            keys=self.replay_keys,
+        )
         Test_sni_check.client_counter += 1
 
         if self.expect_request_rejected:
@@ -116,7 +119,8 @@ ssl_multicert:
             # Verify the client request is successful.
             tr.Processes.Default.ReturnCode = 0
             self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-                "SNI not found", "ATS should see the SNI presented by client.")
+                "SNI not found", "ATS should see the SNI presented by client."
+            )
 
         if self.gold_file:
             tr.Processes.Default.Streams.All = self.gold_file

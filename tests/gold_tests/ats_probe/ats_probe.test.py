@@ -28,6 +28,7 @@ Test.SkipUnless(Condition.HasProgram("bpftrace", "Need bpftrace to verify the pr
 
 class TestATSProbe:
     '''Verify SystemTap ATS probes.'''
+
     replay_file: str = 'ats_probe.replay.yaml'
     bt_script: str = 'ats_probe.bt'
 
@@ -74,8 +75,9 @@ class TestATSProbe:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
-                'proxy.config.dns.resolv_conf': 'NULL'
-            })
+                'proxy.config.dns.resolv_conf': 'NULL',
+            }
+        )
         server_port = self._server.Variables.http_port
         ts.Disk.remap_config.AddLine(f'map / http://backend.server.com:{server_port}')
         return ts
@@ -93,7 +95,8 @@ class TestATSProbe:
         bpftrace.Command = f'sudo bpftrace {tr_script}'
         bpftrace.ReturnCode = 0
         bpftrace.Streams.All += Testers.ContainsExpression(
-            'backend.server.com', 'The probe correctly printed the origin servername.')
+            'backend.server.com', 'The probe correctly printed the origin servername.'
+        )
         return bpftrace
 
     def _configure_client(self, tr: 'TestRun') -> 'Process':

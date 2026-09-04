@@ -38,7 +38,8 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 1,
         'proxy.config.diags.debug.enabled': 3,
         'proxy.config.diags.debug.tags': f'{plugin_name}',
-    })
+    }
+)
 
 rp = os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'polite_hook_wait', '.libs', f'{plugin_name}.so')
 ts.Setup.Copy(rp, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
@@ -55,12 +56,14 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand(
-    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port), ts=ts)
+    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port), ts=ts)
+    '--verbose {0} --header "Host:myhost.test" http://localhost:{1}/ 2>curl.txt'.format(ipv4flag, ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

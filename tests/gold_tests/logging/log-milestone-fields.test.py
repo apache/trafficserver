@@ -55,7 +55,8 @@ class MilestoneFieldsTest:
         ' o_body=%<{TS_MILESTONE_SERVER_CLOSE-TS_MILESTONE_UA_BEGIN_WRITE}msdms>'
         ' c_xfer=%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_SERVER_CLOSE}msdms>'
         ' hit_proc=%<{TS_MILESTONE_UA_BEGIN_WRITE-TS_MILESTONE_CACHE_OPEN_READ_END}msdms>'
-        ' hit_xfer=%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_UA_BEGIN_WRITE}msdms>')
+        ' hit_xfer=%<{TS_MILESTONE_SM_FINISH-TS_MILESTONE_UA_BEGIN_WRITE}msdms>'
+    )
 
     def __init__(self):
         self._server = Test.MakeOriginServer("server")
@@ -73,13 +74,9 @@ class MilestoneFieldsTest:
             },
             {
                 'timestamp': 100,
-                "headers":
-                    (
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: text/plain\r\n"
-                        "Cache-Control: max-age=300\r\n"
-                        "Connection: close\r\n"
-                        "\r\n"),
+                "headers": (
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nCache-Control: max-age=300\r\nConnection: close\r\n\r\n"
+                ),
                 "body": "This is a cacheable response body for milestone testing.",
             },
         )
@@ -95,7 +92,8 @@ class MilestoneFieldsTest:
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.http.cache.http': 1,
                 'proxy.config.log.max_secs_per_buffer': 1,
-            })
+            }
+        )
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}/')
 
@@ -109,7 +107,8 @@ logging:
     - filename: milestone_fields
       format: milestone_test
       mode: ascii
-'''.split("\n"))
+'''.split("\n")
+        )
 
     @property
     def _log_path(self) -> str:
@@ -132,8 +131,8 @@ logging:
         tr.Processes.Default.StartBefore(self._nameserver)
         tr.Processes.Default.StartBefore(self._ts)
         tr.MakeCurlCommand(
-            f'--verbose --header "Host: example.com" '
-            f'http://127.0.0.1:{self._ts.Variables.port}/cacheable', ts=self._ts)
+            f'--verbose --header "Host: example.com" http://127.0.0.1:{self._ts.Variables.port}/cacheable', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
@@ -148,8 +147,8 @@ logging:
     def _sendCacheHit(self):
         tr = Test.AddTestRun('Cache hit request')
         tr.MakeCurlCommand(
-            f'--verbose --header "Host: example.com" '
-            f'http://127.0.0.1:{self._ts.Variables.port}/cacheable', ts=self._ts)
+            f'--verbose --header "Host: example.com" http://127.0.0.1:{self._ts.Variables.port}/cacheable', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts

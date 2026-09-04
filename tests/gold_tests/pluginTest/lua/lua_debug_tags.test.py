@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -22,7 +21,9 @@ Test.Summary = '''
 Test lua is_debug_tag_set functionality
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = False
 # Define default ATS
@@ -34,10 +35,12 @@ ts.Disk.remap_config.AddLine('map http://test http://127.0.0.1/ @plugin=tslua.so
 ts.Setup.Copy("tags.lua", ts.Variables.CONFIGDIR)
 ts.Setup.Copy("tags.sh")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'foo|ts_lua',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'foo|ts_lua',
+    }
+)
 
 curl_and_args = f'{{curl}} -s -D /dev/stderr -o /dev/stdout -x localhost:{ts.Variables.port} http://test/test.html'
 

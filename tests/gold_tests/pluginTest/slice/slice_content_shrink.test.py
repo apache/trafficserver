@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -28,7 +27,9 @@ block position (content shrunk between fetches), the plugin must fail gracefully
 rather than underflowing m_blockskip which would corrupt the response.
 '''
 
-Test.SkipUnless(Condition.PluginExists('slice.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('slice.so'),
+)
 Test.ContinueOnFail = False
 
 # Define ATS - no cache so every slice sub-request goes to origin
@@ -56,14 +57,16 @@ origin.Ready = When.PortOpenv4(origin_port)
 # Configure remap to point at our custom origin
 ts.Disk.remap_config.AddLines(
     [
-        f'map http://slice/ http://127.0.0.1:{origin_port}/'
-        ' @plugin=slice.so @pparam=--blockbytes-test=7',
-    ])
+        f'map http://slice/ http://127.0.0.1:{origin_port}/ @plugin=slice.so @pparam=--blockbytes-test=7',
+    ]
+)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'slice',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'slice',
+    }
+)
 
 ps = tr.Processes.Default
 ps.StartBefore(origin)
@@ -72,7 +75,8 @@ ps.Command = (
     f'curl -s -D /dev/stdout -o /dev/stderr'
     f' -x localhost:{ts.Variables.port}'
     f' http://slice/shrink -r 14-20'
-    f' -w "\\nSIZE:%{{size_download}}"')
+    f' -w "\\nSIZE:%{{size_download}}"'
+)
 ps.Streams.stdout = Testers.ContainsExpression(r"SIZE:0\b", "expected zero client-visible body size")
 ps.Streams.stderr = Testers.ExcludesExpression(r".", "expected no client-visible response body")
 tr.StillRunningAfter = ts
@@ -87,7 +91,8 @@ ps.Command = (
     f'curl -s -D /dev/stdout -o /dev/stderr'
     f' -x localhost:{ts.Variables.port}'
     f' http://slice/shrink_mid -r 16-20'
-    f' -w "\\nSIZE:%{{size_download}}"')
+    f' -w "\\nSIZE:%{{size_download}}"'
+)
 tr.StillRunningAfter = ts
 
 # Verify the error was logged (our new guard message)

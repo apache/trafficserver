@@ -21,7 +21,9 @@ Test.Summary = '''
 Verify ts.fetch parses an IPv6 cliaddr and the inner fetch completes.
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = True
 
@@ -33,7 +35,7 @@ inner_req = {"headers": "GET /inner.txt HTTP/1.1\r\nHost: www.example.com\r\n\r\
 inner_resp = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 5\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "AAAAA"
+    "body": "AAAAA",
 }
 server.addResponse("sessionfile.log", inner_req, inner_resp)
 
@@ -43,7 +45,8 @@ outer_resp = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timest
 server.addResponse("sessionfile.log", outer_req, outer_resp)
 
 ts.Disk.remap_config.AddLine(
-    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=fetch_ipv6_cliaddr.lua')
+    'map / http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=tslua.so @pparam=fetch_ipv6_cliaddr.lua'
+)
 
 ts.Setup.Copy("fetch_ipv6_cliaddr.lua", ts.Variables.CONFIGDIR)
 
@@ -55,5 +58,6 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-    "Sub-Body-Len: 5", "Inner fetch using IPv6 cliaddr should return the full origin body")
+    "Sub-Body-Len: 5", "Inner fetch using IPv6 cliaddr should return the full origin body"
+)
 tr.StillRunningAfter = server

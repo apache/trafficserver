@@ -58,9 +58,17 @@ class Test_remap_acl:
     _client_counter: int = 0
 
     def __init__(
-            self, name: str, replay_file: str, ip_allow_content: str, deactivate_ip_allow: bool, acl_behavior_policy: int,
-            acl_configuration: List[str], named_acls: List[Tuple[str,
-                                                                 List[str]]], expected_responses: List[int], proxy_protocol: bool):
+        self,
+        name: str,
+        replay_file: str,
+        ip_allow_content: str,
+        deactivate_ip_allow: bool,
+        acl_behavior_policy: int,
+        acl_configuration: List[str],
+        named_acls: List[Tuple[str, List[str]]],
+        expected_responses: List[int],
+        proxy_protocol: bool,
+    ):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -90,8 +98,7 @@ class Test_remap_acl:
         self._configure_client(tr, proxy_protocol)
 
     def _configure_server(self, tr: 'TestRun', server_port: int) -> None:
-        """Configure the server.
-        """
+        """Configure the server."""
         name = f"server-{Test_remap_acl._server_counter}"
         server = tr.AddVerifierServerProcess(name, self._replay_file, http_ports=[server_port])
         Test_remap_acl._server_counter += 1
@@ -150,7 +157,8 @@ class Test_remap_acl:
             p = tr.Processes.Default
             p.Command = (
                 f'traffic_ctl config set proxy.config.http.connect_ports {server_port} && '
-                f'traffic_ctl config set proxy.config.url_remap.acl_behavior_policy {self._acl_behavior_policy}')
+                f'traffic_ctl config set proxy.config.url_remap.acl_behavior_policy {self._acl_behavior_policy}'
+            )
 
             p.Env = ts.Env
             tr.StillRunningAfter = ts
@@ -159,7 +167,9 @@ class Test_remap_acl:
             ip_allow_path = os.path.join(ts.Variables.CONFIGDIR, 'ip_allow.yaml')
             p.Setup.Lambda(
                 lambda: update_config_file(
-                    remap_yaml_path, '\n'.join(remap_yaml_lines), ip_allow_path, '\n'.join(self._ip_allow_lines)))
+                    remap_yaml_path, '\n'.join(remap_yaml_lines), ip_allow_path, '\n'.join(self._ip_allow_lines)
+                )
+            )
 
             #
             # Kick off the ATS config reload and await completion.
@@ -202,7 +212,8 @@ class Test_remap_acl:
         if self._expected_responses == [None, None]:
             # If there are no expected responses, expect the Warning about the rejected ip.
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "client '127.0.0.1' prohibited by ip-allow policy", "Verify the client rejection warning message.")
+                "client '127.0.0.1' prohibited by ip-allow policy", "Verify the client rejection warning message."
+            )
 
             # Also, the client will complain about the broken connections.
             p.ReturnCode = 1
@@ -210,7 +221,8 @@ class Test_remap_acl:
         else:
             codes = [str(code) for code in self._expected_responses]
             p.Streams.stdout += Testers.ContainsExpression(
-                '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
+                '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE
+            )
 
 
 class Test_old_action:
@@ -245,7 +257,8 @@ class Test_old_action:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|url|remap|ip_allow',
                 'proxy.config.url_remap.acl_behavior_policy': 1,
-            })
+            }
+        )
 
         ts.Disk.remap_yaml.AddLines(
             f'''
@@ -255,7 +268,8 @@ remap:
       url: /
     to:
       url: http://127.0.0.1:8080
-    acl_filter: '''.split("\n"))
+    acl_filter: '''.split("\n")
+        )
 
         for f in acl_filter:
             ts.Disk.remap_yaml.AddLine(f'      {f}')
@@ -332,7 +346,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods_pp = Test_remap_acl(
     "Verify non-allowed methods are blocked (PP).",
@@ -343,7 +358,8 @@ test_ip_allow_optional_methods_pp = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: 1.2.3.4', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=True)
+    proxy_protocol=True,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify add_allow adds an allowed method.",
@@ -354,7 +370,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: add_allow', 'src_ip: 127.0.0.1', 'method: POST'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify add_allow adds allowed methods.",
@@ -365,7 +382,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: add_allow', 'src_ip: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify if no ACLs match, ip_allow.yaml is used.",
@@ -376,7 +394,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: 1.2.3.4', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify @src_ip=all works.",
@@ -387,7 +406,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: all', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify @src_ip_category works.",
@@ -398,7 +418,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip_category: ACME_LOCAL', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify no @src_ip implies all IP addresses.",
@@ -409,7 +430,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify denied methods are blocked.",
@@ -420,7 +442,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_deny', 'src_ip: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[403, 403, 200, 200, 400],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify add_deny adds blocked methods.",
@@ -431,7 +454,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: add_deny', 'src_ip: 127.0.0.1', 'method: GET'],
     named_acls=[],
     expected_responses=[403, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify a default deny filter rule works.",
@@ -442,7 +466,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: 1.2.3.4', 'method: [GET, POST]'],
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[403, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify inverting @src_ip works.",
@@ -453,7 +478,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip_invert: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[403, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify inverting @src_ip works with the rule matching.",
@@ -464,7 +490,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip_invert: 3.4.5.6', 'method: [GET, POST]'],
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify inverting @src_ip_category works.",
@@ -475,7 +502,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip_category_invert: ACME_LOCAL', 'method: [GET, POST]'],
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[403, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify inverting @src_ip_category works with the rule matching.",
@@ -486,7 +514,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip_category_invert: ACME_EXTERNAL', 'method: [GET, POST]'],
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify @src_ip and @src_ip_category AND together.",
@@ -499,7 +528,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     # Therefore, this named deny filter will block.
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[403, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify defined in-line ACLS are evaluated before named ones.",
@@ -510,7 +540,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[('deny', ['action: set_deny'])],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify remap.config line overrides ip_allow rule.",
@@ -521,7 +552,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'src_ip: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify we can deactivate the ip_allow filter.",
@@ -534,7 +566,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     named_acls=[],
     # Nothing will block the request since ip_allow.yaml is off.
     expected_responses=[200, 200, 200, 200, 400],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify in_ip matches on IP as expected.",
@@ -545,7 +578,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'in_ip: 127.0.0.1', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_ip_allow_optional_methods = Test_remap_acl(
     "Verify in_ip rules do not match on other IPs.",
@@ -556,7 +590,8 @@ test_ip_allow_optional_methods = Test_remap_acl(
     acl_configuration=['action: set_allow', 'in_ip: 3.4.5.6', 'method: [GET, POST]'],
     named_acls=[],
     expected_responses=[200, 403, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 test_named_acl_deny = Test_remap_acl(
     "Verify a named ACL is applied if an in-line ACL is absent.",
@@ -567,7 +602,8 @@ test_named_acl_deny = Test_remap_acl(
     acl_configuration=[],
     named_acls=[('deny', ['action: set_deny', 'method: [HEAD, POST]'])],
     expected_responses=[200, 403, 403, 403],
-    proxy_protocol=False)
+    proxy_protocol=False,
+)
 
 
 def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_response):
@@ -596,6 +632,7 @@ def replay_proxy_response(filename, replay_file, get_proxy_response, post_proxy_
 
 from deactivate_ip_allow_yaml import all_deactivate_ip_allow_tests_yaml
 from all_acl_combinations_yaml import all_acl_combination_tests_yaml
+
 """
 Test all acl combinations
 """

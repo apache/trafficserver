@@ -47,14 +47,15 @@ class TestBadSetBody:
         rule_name = f'{name}.conf'
         ts.Disk.MakeConfigFile(rule_name).AddLines(rule_lines)
         ts.Disk.remap_config.AddLine(
-            f'map http://{name}.example.com/ http://127.0.0.1/ '
-            f'@plugin=header_rewrite.so @pparam={rule_name}')
+            f'map http://{name}.example.com/ http://127.0.0.1/ @plugin=header_rewrite.so @pparam={rule_name}'
+        )
 
         ts.ReturnCode = 33
         ts.Ready = 0
         ts.Disk.diags_log.Content = Testers.IncludesExpression(error_marker, f'{name} must report why the rule was rejected')
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            'Traffic Server is fully initialized', f'{name} must prevent startup')
+            'Traffic Server is fully initialized', f'{name} must prevent startup'
+        )
 
         tr = Test.AddTestRun(f'{name} configuration fails startup')
         tr.Processes.Default.Command = 'echo verifying startup rejection'

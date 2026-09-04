@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,7 +24,9 @@ slice regex plugin test
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
 
-Test.SkipUnless(Condition.PluginExists('slice.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('slice.so'),
+)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -58,9 +59,12 @@ request_header_txt = {
 }
 
 response_header_txt = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "path"\r\n' + "Cache-Control: max-age=500\r\n" +
-        "X-Info: notsliced\r\n" + "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+    + "Connection: close\r\n"
+    + 'Etag: "path"\r\n'
+    + "Cache-Control: max-age=500\r\n"
+    + "X-Info: notsliced\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
     "body": body,
 }
@@ -68,17 +72,19 @@ response_header_txt = {
 server.addResponse("sessionlog.json", request_header_txt, response_header_txt)
 
 request_header_mp4 = {
-    "headers": "GET /slice.mp4 HTTP/1.1\r\n" + "Host: sliced\r\n" + "Range: bytes=0-99\r\n"
-               "\r\n",
+    "headers": "GET /slice.mp4 HTTP/1.1\r\n" + "Host: sliced\r\n" + "Range: bytes=0-99\r\n\r\n",
     "timestamp": "1469733493.993",
     "body": "",
 }
 
 response_header_mp4 = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + 'Etag: "path"\r\n' +
-        "Content-Range: bytes 0-{}/{}\r\n".format(len(body) - 1, len(body)) + "Cache-Control: max-age=500\r\n" +
-        "X-Info: sliced\r\n" + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Connection: close\r\n"
+    + 'Etag: "path"\r\n'
+    + "Content-Range: bytes 0-{}/{}\r\n".format(len(body) - 1, len(body))
+    + "Cache-Control: max-age=500\r\n"
+    + "X-Info: sliced\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
     "body": body,
 }
@@ -92,14 +98,19 @@ block_bytes = 100
 # set up whole asset fetch into cache
 ts.Disk.remap_config.AddLines(
     [
-        'map http://exclude/ http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=slice.so' +
-        ' @pparam=--blockbytes-test={}'.format(block_bytes) + ' @pparam=--exclude-regex=\\.txt'
+        'map http://exclude/ http://127.0.0.1:{}/'.format(server.Variables.Port)
+        + ' @plugin=slice.so'
+        + ' @pparam=--blockbytes-test={}'.format(block_bytes)
+        + ' @pparam=--exclude-regex=\\.txt'
         ' @pparam=--remap-host=sliced',
-        'map http://include/ http://127.0.0.1:{}/'.format(server.Variables.Port) + ' @plugin=slice.so' +
-        ' @pparam=--blockbytes-test={}'.format(block_bytes) + ' @pparam=--include-regex=\\.mp4'
+        'map http://include/ http://127.0.0.1:{}/'.format(server.Variables.Port)
+        + ' @plugin=slice.so'
+        + ' @pparam=--blockbytes-test={}'.format(block_bytes)
+        + ' @pparam=--include-regex=\\.mp4'
         ' @pparam=--remap-host=sliced',
         'map http://sliced/ http://127.0.0.1:{}/'.format(server.Variables.Port),
-    ])
+    ]
+)
 
 # minimal configuration
 ts.Disk.records_config.update(
@@ -108,7 +119,8 @@ ts.Disk.records_config.update(
         #  'proxy.config.diags.debug.tags': 'slice',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.response_via_str': 0,
-    })
+    }
+)
 
 # 0 Test - Exclude: ensure txt passes through
 tr = Test.AddTestRun("Exclude - asset passed through")

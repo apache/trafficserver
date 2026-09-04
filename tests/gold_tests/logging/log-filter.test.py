@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -33,8 +32,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'log',
         'proxy.config.net.connections_throttle': 100,
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 # setup some config file for this server
 ts.Disk.remap_config.AddLine('map / http://localhost:{}/'.format(server.Variables.http_port))
 
@@ -70,7 +70,8 @@ logging:
       filters:
       - queryparamescaper_cquuc
       - not_localhost
-'''.split("\n"))
+'''.split("\n")
+)
 
 # #########################################################################
 # at the end of the different test run a custom log file should exist
@@ -95,6 +96,8 @@ Test.AddAwaitFileContainsTestRun(
 # We already waited for the above, so we don't have to wait for this one.
 test_run = Test.AddTestRun()
 test_run.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 1 1 -f ' +
-    os.path.join(ts.Variables.LOGDIR, 'should-not-be-written.log'))
+    os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
+    + ' 1 1 -f '
+    + os.path.join(ts.Variables.LOGDIR, 'should-not-be-written.log')
+)
 test_run.Processes.Default.ReturnCode = 1

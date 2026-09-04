@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -53,7 +52,8 @@ ts.Disk.records_config.update(
       # test multipliers with and without tag
       ram_cache:
         size: 30G
-    ''')
+    '''
+)
 
 # 0 - We want to make sure that the unregistered records are still being detected.
 tr = Test.AddTestRun("Load unregistered records")
@@ -67,9 +67,11 @@ var2 = 'proxy.config.test.not_registered.field2'
 ts.Disk.diags_log.Content += Testers.ContainsExpression(f"Unrecognized configuration value '{var2}", "Field should be ignored")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"Ignoring field 'filenamee' \\[proxy.config.ssl.client.cert.filenamee\\]", "Field should be ignored")
+    f"Ignoring field 'filenamee' \\[proxy.config.ssl.client.cert.filenamee\\]", "Field should be ignored"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"Ignoring field 'filenam' \\[proxy.config.ssl.client.cert.filenam\\]", "Field should be ignored")
+    f"Ignoring field 'filenam' \\[proxy.config.ssl.client.cert.filenam\\]", "Field should be ignored"
+)
 
 # 1
 tr = Test.AddTestRun("Query unregistered records.")
@@ -93,10 +95,8 @@ def check_response(resp: Response):
 
 
 tr.AddJsonRPCClientRequest(
-    ts, Request.admin_lookup_records([{
-        "record_name_regex": "proxy.config.test.not_registered.field",
-        "rec_types": ["1", "16"]
-    }]))
+    ts, Request.admin_lookup_records([{"record_name_regex": "proxy.config.test.not_registered.field", "rec_types": ["1", "16"]}])
+)
 
 # do our own check on the response.
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(check_response)
@@ -107,7 +107,8 @@ tctl.Processes.Default.Command = 'traffic_ctl config get proxy.config.cache.ram_
 tctl.Processes.Default.Env = ts.Env
 tctl.Processes.Default.ReturnCode = 0
 tctl.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    'proxy.config.cache.ram_cache.size: 32212254720', 'Should hold the configured value.')
+    'proxy.config.cache.ram_cache.size: 32212254720', 'Should hold the configured value.'
+)
 
 # The whole idea is to test how ATS handles having multiple docs in the same records.yaml
 # file.
@@ -147,9 +148,11 @@ tr2.Processes.Default.ReturnCode = 0
 
 # Make sure it's what we want.
 tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.diags.debug.enabled: 0', 'Config should show debug disabled')
+    'proxy.config.diags.debug.enabled: 0', 'Config should show debug disabled'
+)
 tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.diags.debug.tags: filemanager', 'Config should show a different tag')
+    'proxy.config.diags.debug.tags: filemanager', 'Config should show a different tag'
+)
 
 ts2.Disk.records_config.append_to_document(
     '''
@@ -161,7 +164,8 @@ ts2.Disk.records_config.append_to_document(
       client:
         cert:
           filename: ~
-    ''')
+    '''
+)
 
 tr3 = Test.AddTestRun("test null string")
 tr3.Processes.Default.Command = 'traffic_ctl config get  proxy.config.dns.resolv_conf proxy.config.dns.local_ipv6 proxy.config.dns.nameservers proxy.config.ssl.client.cert.filename'
@@ -172,7 +176,8 @@ tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression('proxy.config.dns.resolv_conf: null', 'should be set to null')
 tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression('proxy.config.dns.nameservers: null', 'should be set to null')
 tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.ssl.client.cert.filename: null', 'should be set to null')
+    'proxy.config.ssl.client.cert.filename: null', 'should be set to null'
+)
 tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression('proxy.config.dns.local_ipv6: null', 'should be set to null')
 
 ts3 = Test.MakeATSProcess("ts3")
@@ -198,4 +203,5 @@ tr4.Processes.Default.ReturnCode = 0
 # This record should be parsed after the invalid field. Value should be the one
 # configured.
 tr4.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.diags.debug.tags: rpc|rec', 'should be the configured value')
+    'proxy.config.diags.debug.tags: rpc|rec', 'should be the configured value'
+)

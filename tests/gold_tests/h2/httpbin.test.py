@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -52,7 +51,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.http.insert_request_via_str': 1,
@@ -61,7 +61,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http',
-    })
+    }
+)
 ts.Disk.logging_yaml.AddLines(
     '''
 logging:
@@ -72,7 +73,8 @@ logging:
   logs:
     - filename: access
       format: access
-'''.split("\n"))
+'''.split("\n")
+)
 
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'access.log'), exists=True, content='gold/httpbin_access.gold')
 
@@ -109,7 +111,8 @@ test_run.StillRunningAfter = httpbin
 # Test Case 2: Chunked
 test_run = Test.AddTestRun()
 test_run.MakeCurlCommand(
-    '-vs -k --http2 https://127.0.0.1:{0}/stream-bytes/102400?seed=0 | cksum'.format(ts.Variables.ssl_port), ts=ts)
+    '-vs -k --http2 https://127.0.0.1:{0}/stream-bytes/102400?seed=0 | cksum'.format(ts.Variables.ssl_port), ts=ts
+)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_2_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.
@@ -120,8 +123,10 @@ test_run.StillRunningAfter = httpbin
 test_run = Test.AddTestRun()
 test_run.MakeCurlCommand(
     "-vs -k --http2 https://127.0.0.1:{0}/post --data 'key=value' -H 'Expect: 100-continue' --max-time 5 | {1}".format(
-        ts.Variables.ssl_port, json_printer),
-    ts=ts)
+        ts.Variables.ssl_port, json_printer
+    ),
+    ts=ts,
+)
 test_run.Processes.Default.ReturnCode = 0
 test_run.Processes.Default.Streams.stdout = "gold/httpbin_3_stdout.gold"
 # Different versions of curl will have different cases for HTTP/2 field names.

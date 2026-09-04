@@ -48,7 +48,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'crash_test',
         # Enable the crash log helper.
         'proxy.config.crash_log_helper': 'traffic_crashlog',
-    })
+    }
+)
 
 # Copy the crash_test plugin.
 plugin_path = os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'crash_test', '.libs', 'crash_test.so')
@@ -59,9 +60,11 @@ ts.Disk.plugin_config.AddLine("crash_test.so")
 ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}/")
 
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Received crash trigger header - crashing now!", "Expect the log indicating the intentional crash.")
+    "Received crash trigger header - crashing now!", "Expect the log indicating the intentional crash."
+)
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    "This should never be reached.", "Expect to not see the log after the crash.")
+    "This should never be reached.", "Expect to not see the log after the crash."
+)
 
 # Test 1: Make a normal request to verify the server is running.
 tr = Test.AddTestRun("Verify server is running")
@@ -83,19 +86,21 @@ tr.Processes.Default.ReturnCode = 52
 tr = Test.AddTestRun("Wait for crash log")
 crash_log_glob = f'{ts.Variables.LOGDIR}/crash-*.log'
 # Wait up to 60 seconds for a crash log file to appear, then 1 extra second for it to be written.
-tr.Processes.Default.Command = (f"{os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')} 60 1 -f '{crash_log_glob}'")
+tr.Processes.Default.Command = f"{os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')} 60 1 -f '{crash_log_glob}'"
 tr.Processes.Default.ReturnCode = 0
 
 # Test 4: Verify crash log contains expected content.
 tr = Test.AddTestRun("Check crash log content")
-tr.Processes.Default.Command = (f'cat {ts.Variables.LOGDIR}/crash-*.log 2>&1')
+tr.Processes.Default.Command = f'cat {ts.Variables.LOGDIR}/crash-*.log 2>&1'
 tr.Processes.Default.ReturnCode = 0
 # The crash log should contain signal information (always present).
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "Segmentation fault", "Expected crash log to show segmentation fault signal")
+    "Segmentation fault", "Expected crash log to show segmentation fault signal"
+)
 # The crash log should contain the crashing thread information first.
 # The crashing thread should be listed first.
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("Crashing Thread", "Expected crashing thread backtrace first")
 # The other threads should be listed after.
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "Other Non-Crashing Threads:", "Expected other non-crashing threads section")
+    "Other Non-Crashing Threads:", "Expected other non-crashing threads section"
+)

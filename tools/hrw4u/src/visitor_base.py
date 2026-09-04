@@ -38,12 +38,9 @@ class VisitorState:
 
 
 class BaseHRWVisitor:
-
     def __init__(
-            self,
-            filename: str = SystemDefaults.DEFAULT_FILENAME,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector=None) -> None:
+        self, filename: str = SystemDefaults.DEFAULT_FILENAME, debug: bool = SystemDefaults.DEFAULT_DEBUG, error_collector=None
+    ) -> None:
         self.filename = filename
         self.error_collector = error_collector
         self.output: list[str] = []
@@ -142,7 +139,6 @@ class BaseHRWVisitor:
     def debug_context(self, method_name: str, *args: Any):
 
         class DebugContext:
-
             def __init__(self, visitor: BaseHRWVisitor, method: str, arguments: tuple[Any, ...]):
                 self.visitor = visitor
                 self.method = method
@@ -170,7 +166,6 @@ class BaseHRWVisitor:
     def trap(self, ctx, *, note: str | None = None):
 
         class _Trap:
-
             def __enter__(_):
                 return _
 
@@ -231,7 +226,7 @@ class BaseHRWVisitor:
         if term.endswith(' != ""'):
             return term.replace(' != ""', '')
         elif term.endswith(' == ""'):
-            return f"!{term.replace(' == \"\"', '')}"
+            return f"!{term.replace(' == ""', '')}"
         return term
 
     def _build_condition_connector(self, state, is_last_term: bool = False) -> str:

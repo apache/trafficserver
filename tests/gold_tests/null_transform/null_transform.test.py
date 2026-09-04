@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -34,7 +33,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "This is expected response."
+    "body": "This is expected response.",
 }
 
 # Add response the server dictionary
@@ -43,8 +42,9 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.show_location': 0,
-        'proxy.config.diags.debug.tags': 'null_transform'
-    })
+        'proxy.config.diags.debug.tags': 'null_transform',
+    }
+)
 ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 # Load plugin
@@ -53,7 +53,8 @@ Test.PrepareInstalledPlugin('null_transform.so', ts)
 # www.example.com Host
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--proxy 127.0.0.1:{0} "http://www.example.com" --verbose -H "Proxy-Connection: keep-alive"'.format(ts.Variables.port), ts=ts)
+    '--proxy 127.0.0.1:{0} "http://www.example.com" --verbose -H "Proxy-Connection: keep-alive"'.format(ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)

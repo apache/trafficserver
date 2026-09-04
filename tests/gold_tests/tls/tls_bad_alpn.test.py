@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -40,7 +39,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -48,7 +48,8 @@ ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 tr = Test.AddTestRun("alpn banana")
 tr.Processes.Default.Command = "openssl s_client -ign_eof -alpn=banana -connect 127.0.0.1:{}".format(ts.Variables.ssl_port)
@@ -58,8 +59,9 @@ tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("No ALPN negotiated", "Banana should not match a negotiation")
 
 tr = Test.AddTestRun("alpn http/1.1")
-tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n\r\n' | openssl s_client -ign_eof -alpn=http/1.1 -connect 127.0.0.1:{}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "printf 'GET / HTTP/1.1\r\n\r\n' | openssl s_client -ign_eof -alpn=http/1.1 -connect 127.0.0.1:{}".format(ts.Variables.ssl_port)
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN protocol: http/1.1", "Successful ALPN")
@@ -67,7 +69,8 @@ tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/1.1 400 Hos
 
 tr = Test.AddTestRun("no alpn")
 tr.Processes.Default.Command = "printf 'GET / HTTP/1.1\r\n\r\n' | openssl s_client -ign_eof -connect 127.0.0.1:{}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.IncludesExpression("No ALPN negotiated", "No ALPN offered, none negotiated")

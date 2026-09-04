@@ -39,7 +39,8 @@ remap:
       - name: conf_remap.so
         params:
           - {Test.RunDirectory}/ts/config/conf_remap.yaml
-    '''.split("\n"))
+    '''.split("\n")
+)
 
 tr = Test.AddTestRun("traffic_ctl command")
 tr.Env = ts.Env

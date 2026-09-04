@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -37,7 +36,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'ssl_load|http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -46,7 +46,8 @@ ssl_multicert:
     ssl_cert_name: passphrase.pem
     ssl_key_name: passphrase.key
     ssl_key_dialog: "exec:/bin/bash -c 'echo -n passphrase'"
-""".split("\n"))
+""".split("\n")
+)
 
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: bogus\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "success!"}
@@ -56,7 +57,8 @@ tr = Test.AddTestRun("use a key with passphrase")
 tr.Setup.Copy("ssl/signer.pem")
 tr.MakeCurlCommand(
     f"-v --cacert ./signer.pem  --resolve 'passphrase:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase:{ts.Variables.ssl_port}/",
-    ts=ts)
+    ts=ts,
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -68,7 +70,7 @@ tr.StillRunningAfter = ts
 tr2 = Test.AddTestRun("Update config files")
 # Update the multicert config
 sslcertpath = ts.Disk.ssl_multicert_yaml.AbsPath
-tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config"),
+(tr2.Disk.File(sslcertpath, id="ssl_multicert_config", typename="ats:config"),)
 tr2.Disk.ssl_multicert_config.AddLines(
     """
 ssl_multicert:
@@ -76,7 +78,8 @@ ssl_multicert:
     ssl_cert_name: passphrase2.pem
     ssl_key_name: passphrase2.key
     ssl_key_dialog: "exec:/bin/bash -c 'echo -n passphrase'"
-""".split("\n"))
+""".split("\n")
+)
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
@@ -91,7 +94,8 @@ tr3 = Test.AddTestRun("use a key with passphrase")
 tr3.Setup.Copy("ssl/signer.pem")
 tr3.MakeCurlCommand(
     f"-v --cacert ./signer.pem  --resolve 'passphrase2:{ts.Variables.ssl_port}:127.0.0.1' https://passphrase2:{ts.Variables.ssl_port}/",
-    ts=ts)
+    ts=ts,
+)
 tr3.ReturnCode = 0
 tr3.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200", "expected 200 OK response")
 tr3.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression("success!", "expected success")

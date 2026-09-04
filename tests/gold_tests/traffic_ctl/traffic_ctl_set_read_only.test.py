@@ -99,10 +99,16 @@ tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(assert_recor
 # must reject the request with the "Record is not writable" error.
 tr = Test.AddTestRun("Attempt to set the RECA_READ_ONLY record (must be refused)")
 tr.AddJsonRPCClientRequest(
-    ts, Request.admin_config_set_records([{
-        "record_name": READ_ONLY_RECORD,
-        "record_value": ATTEMPTED_VALUE,
-    }]))
+    ts,
+    Request.admin_config_set_records(
+        [
+            {
+                "record_name": READ_ONLY_RECORD,
+                "record_value": ATTEMPTED_VALUE,
+            }
+        ]
+    ),
+)
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(assert_set_was_rejected)
 
 # Step 2: re-look-up the record.  Even if step 1's response had been

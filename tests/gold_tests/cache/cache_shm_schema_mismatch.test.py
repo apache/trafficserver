@@ -107,7 +107,8 @@ class CacheShmSchemaMismatchTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.cache.shm.enabled': 1,
@@ -117,7 +118,8 @@ class CacheShmSchemaMismatchTest:
                 'proxy.config.diags.debug.tags': 'cache_shm',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1/ @plugin=generator.so')
         return ts
@@ -125,20 +127,26 @@ class CacheShmSchemaMismatchTest:
     def _add_diags_log_assertions(self):
         # ts1 cold start, clean shutdown -- a valid, clean segment to tamper with.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start')
+            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit')
+            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit'
+        )
 
         # ts2 start against the poked segment: detect, drop, recreate, rebuild.
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: schema mismatch \(\d+ vs \d+\), dropping', 'ts2 must detect the schema mismatch and drop the segment')
+            r'cache shm: schema mismatch \(\d+ vs \d+\), dropping', 'ts2 must detect the schema mismatch and drop the segment'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts2 must recreate the control segment after the drop')
+            r'cache shm: creating fresh control segment', 'ts2 must recreate the control segment after the drop'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'\(fast restart, recovery skipped\)', 'ts2 must rebuild from disk, never fast-attach the mismatched segment')
+            r'\(fast restart, recovery skipped\)', 'ts2 must rebuild from disk, never fast-attach the mismatched segment'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
             r'cache shm: previous run did not shutdown cleanly',
-            'the drop must be due to the schema mismatch, not an unclean shutdown')
+            'the drop must be due to the schema mismatch, not an unclean shutdown',
+        )
 
     def _populate_cache(self):
         tr = Test.AddTestRun('Cold-start ts1 and cache an object')
@@ -146,7 +154,8 @@ class CacheShmSchemaMismatchTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('200', 'ts1 first GET should return 200')
         tr.StillRunningAfter = self.ts1
@@ -155,16 +164,16 @@ class CacheShmSchemaMismatchTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts1')
         tr.Processes.Default.Env = self.ts1.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shmx_ts1 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shmx_ts1 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _poke_schema_version(self):
         # ts1 is dead; the segment is just a file now. Overwrite schema_version.
         tr = Test.AddTestRun('Tamper schema_version in the shm control segment')
         tr.Processes.Default.Command = (
-            f'{sys.executable} ./{self.POKE_SCRIPT} {self._control_file} '
-            f'{self.SCHEMA_VERSION_OFFSET} {self.BOGUS_SCHEMA_LE_HEX}')
+            f'{sys.executable} ./{self.POKE_SCRIPT} {self._control_file} {self.SCHEMA_VERSION_OFFSET} {self.BOGUS_SCHEMA_LE_HEX}'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _verify_mismatch_drop(self):
@@ -173,18 +182,20 @@ class CacheShmSchemaMismatchTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            '200', 'ts2 should serve correctly after dropping the mismatched segment')
+            '200', 'ts2 should serve correctly after dropping the mismatched segment'
+        )
         tr.StillRunningAfter = self.ts2
 
     def _clean_shutdown_ts2(self):
         tr = Test.AddTestRun('Drain and clean-shutdown ts2')
         tr.Processes.Default.Env = self.ts2.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shmx_ts2 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shmx_ts2 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _cleanup_shm(self):
@@ -193,7 +204,8 @@ class CacheShmSchemaMismatchTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._populate_cache()

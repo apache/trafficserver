@@ -49,7 +49,7 @@ ip_allow:
     methods: [GET, POST]
 '''
 
-# yapf: disable
+# fmt: off
 keys = ["index", "policy", "inline", "named_acl", "ip_allow", "GET response", "POST response"]
 all_acl_combinations = [
     [  0,  "legacy",       "",                             "",                               ALLOW_GET_AND_POST, 200, 200, ],
@@ -157,6 +157,6 @@ all_acl_combinations = [
     [102,  "legacy",       "@action=deny  @src_ip=192.0.2.0/24", "",                         DENY_GET,           403, 200, ],
     [103,  "legacy",       "@action=deny  @src_ip=192.0.2.0/24", "",                         DENY_GET_AND_POST,  403, 403, ],
 ]
-# yapf: enable
+# fmt: on
 
 all_acl_combination_tests = [dict(zip(keys, test)) for test in all_acl_combinations]

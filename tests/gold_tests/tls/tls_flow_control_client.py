@@ -56,8 +56,7 @@ def main() -> int:
         with socket.create_connection(("127.0.0.1", args.port), timeout=args.recv_timeout) as sock:
             with ctx.wrap_socket(sock, server_hostname=args.host) as ssock:
                 ssock.settimeout(args.recv_timeout)
-                request = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\n"
-                           "Connection: close\r\n\r\n").encode()
+                request = (f"GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\nConnection: close\r\n\r\n").encode()
                 ssock.sendall(request)
 
                 # Read until we have the full header block, keeping any body bytes

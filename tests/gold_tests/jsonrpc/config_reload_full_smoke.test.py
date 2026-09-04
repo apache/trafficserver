@@ -37,10 +37,12 @@ Test.ContinueOnFail = True
 
 # --- Setup ---
 ts = Test.MakeATSProcess("ts", enable_cache=True)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'rpc|config|reload',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'rpc|config|reload',
+    }
+)
 
 # ============================================================================
 # Part A: File-based full reload
@@ -51,24 +53,30 @@ ts.Disk.records_config.update({
 # ============================================================================
 
 # Provide valid content for files whose handlers reject empty input.
-ts.Disk.ip_allow_yaml.AddLines([
-    'ip_allow:',
-    '- apply: in',
-    '  ip_addrs: 0/0',
-    '  action: allow',
-    '  methods: ALL',
-])
-ts.Disk.logging_yaml.AddLines([
-    'logging:',
-    '  formats:',
-    '    - name: smoke',
-    '      format: "%<cqtq>"',
-])
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: "*.example.com"',
-    '  verify_client: NONE',
-])
+ts.Disk.ip_allow_yaml.AddLines(
+    [
+        'ip_allow:',
+        '- apply: in',
+        '  ip_addrs: 0/0',
+        '  action: allow',
+        '  methods: ALL',
+    ]
+)
+ts.Disk.logging_yaml.AddLines(
+    [
+        'logging:',
+        '  formats:',
+        '    - name: smoke',
+        '      format: "%<cqtq>"',
+    ]
+)
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: "*.example.com"',
+        '  verify_client: NONE',
+    ]
+)
 # parent.config, cache.config, hosting.config, splitdns.config,
 # ssl_multicert.yaml are fine empty — handlers accept empty/comment-only files.
 

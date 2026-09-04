@@ -164,7 +164,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '-o',
         '--output',
-        help='The output remap.config file. By default, output is written to <input> and a backup file is generated.')
+        help='The output remap.config file. By default, output is written to <input> and a backup file is generated.',
+    )
     parser.add_argument('-n', '--no-backup', action='store_true', help='Do not create a backup file.')
     return parser.parse_args()
 
@@ -192,5 +193,6 @@ def main() -> int:
 
 if __name__ == '__main__':
     import doctest
+
     doctest.testmod()
     sys.exit(main())

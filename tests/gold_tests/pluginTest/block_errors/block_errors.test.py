@@ -21,22 +21,27 @@ Test.Summary = '''
 Verify block_errors plugin message handling via traffic_ctl.
 '''
 
-Test.SkipUnless(Condition.PluginExists('block_errors.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('block_errors.so'),
+)
 
 # Define ATS and configure it.
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'block_errors',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'block_errors',
+    }
+)
 
 # Configure block_errors plugin with initial values.
 ts.Disk.plugin_config.AddLine('block_errors.so')
 
 # Verify the plugin loads.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "loading plugin.*block_errors.so", "Verify the block_errors plugin got loaded.")
+    "loading plugin.*block_errors.so", "Verify the block_errors plugin got loaded."
+)
 
 #
 # Test 1: Verify the plugin starts with default values.
@@ -50,7 +55,8 @@ tr.StillRunningAfter = ts
 # Verify the default values are logged at startup.
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
     "reset limit: 1000 per minute, timeout limit: 4 minutes, shutdown connection: 0 enabled: 1",
-    "Verify block_errors starts with default values.")
+    "Verify block_errors starts with default values.",
+)
 
 #
 # Test 2: Verify changing the 'enabled' setting via traffic_ctl.
@@ -69,10 +75,12 @@ await_enabled.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: com
 tr.Processes.Default.StartBefore(await_enabled)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "msg_hook: command=enabled data=0", "Verify block_errors received the enabled command.")
+    "msg_hook: command=enabled data=0", "Verify block_errors received the enabled command."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "reset limit: 1000 per minute, timeout limit: 4 minutes, shutdown connection: 0 enabled: 0",
-    "Verify block_errors applied the enabled=0 setting.")
+    "Verify block_errors applied the enabled=0 setting.",
+)
 
 #
 # Test 3: Verify changing the 'limit' setting via traffic_ctl.
@@ -91,9 +99,11 @@ await_limit.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: comma
 tr.Processes.Default.StartBefore(await_limit)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "msg_hook: command=limit data=500", "Verify block_errors received the limit command.")
+    "msg_hook: command=limit data=500", "Verify block_errors received the limit command."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "reset limit: 500 per minute", "Verify block_errors applied the limit=500 setting.")
+    "reset limit: 500 per minute", "Verify block_errors applied the limit=500 setting."
+)
 
 #
 # Test 4: Verify changing the 'cycles' setting via traffic_ctl.
@@ -112,9 +122,11 @@ await_cycles.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: comm
 tr.Processes.Default.StartBefore(await_cycles)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "msg_hook: command=cycles data=8", "Verify block_errors received the cycles command.")
+    "msg_hook: command=cycles data=8", "Verify block_errors received the cycles command."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "timeout limit: 8 minutes", "Verify block_errors applied the cycles=8 setting.")
+    "timeout limit: 8 minutes", "Verify block_errors applied the cycles=8 setting."
+)
 
 #
 # Test 5: Verify changing the 'shutdown' setting via traffic_ctl.
@@ -133,9 +145,11 @@ await_shutdown.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: co
 tr.Processes.Default.StartBefore(await_shutdown)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "msg_hook: command=shutdown data=1", "Verify block_errors received the shutdown command.")
+    "msg_hook: command=shutdown data=1", "Verify block_errors received the shutdown command."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "shutdown connection: 1", "Verify block_errors applied the shutdown=1 setting.")
+    "shutdown connection: 1", "Verify block_errors applied the shutdown=1 setting."
+)
 
 #
 # Test 6: Verify an unknown command is handled gracefully.
@@ -154,7 +168,8 @@ await_unknown.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: unk
 tr.Processes.Default.StartBefore(await_unknown)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "msg_hook: unknown command 'unknown_command'", "Verify block_errors logs unknown commands.")
+    "msg_hook: unknown command 'unknown_command'", "Verify block_errors logs unknown commands."
+)
 
 #
 # Test 7: Verify messages for other plugins are ignored.
@@ -173,4 +188,5 @@ await_other.Ready = When.FileContains(ts.Disk.traffic_out.Name, "msg_hook: messa
 tr.Processes.Default.StartBefore(await_other)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "msg_hook: message for a different plugin: other_plugin", "Verify block_errors ignores messages for other plugins.")
+    "msg_hook: message for a different plugin: other_plugin", "Verify block_errors ignores messages for other plugins."
+)

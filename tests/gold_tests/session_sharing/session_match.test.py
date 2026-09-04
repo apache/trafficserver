@@ -35,41 +35,36 @@ class SessionMatchTest:
         request_header = {
             "headers": "GET /one HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response_header = {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\n"
-                       "Content-Length: 0\r\n\r\n",
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nContent-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self._server.addResponse("sessionlog.json", request_header, response_header)
 
         request_header2 = {
-            "headers": "GET /two HTTP/1.1\r\nContent-Length: 0\r\n"
-                       "Host: www.example.com\r\n\r\n",
+            "headers": "GET /two HTTP/1.1\r\nContent-Length: 0\r\nHost: www.example.com\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "a\r\na\r\na\r\n\r\n"
+            "body": "a\r\na\r\na\r\n\r\n",
         }
         response_header2 = {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\n"
-                       "Content-Length: 0\r\n\r\n",
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nContent-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self._server.addResponse("sessionlog.json", request_header2, response_header2)
 
         request_header3 = {
-            "headers": "GET /three HTTP/1.1\r\nContent-Length: 0\r\n"
-                       "Host: www.example.com\r\nConnection: close\r\n\r\n",
+            "headers": "GET /three HTTP/1.1\r\nContent-Length: 0\r\nHost: www.example.com\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "a\r\na\r\na\r\n\r\n"
+            "body": "a\r\na\r\na\r\n\r\n",
         }
         response_header3 = {
-            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\n"
-                       "Connection: close\r\nContent-Length: 0\r\n\r\n",
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self._server.addResponse("sessionlog.json", request_header3, response_header3)
 
@@ -83,15 +78,18 @@ class SessionMatchTest:
                 'proxy.config.http.auth_server_session_private': 1,
                 'proxy.config.http.server_session_sharing.pool': 'global',
                 'proxy.config.http.server_session_sharing.match': self._sharingMatchValue,
-            })
+            }
+        )
 
     def _runTraffic(self):
         self._tr.MakeCurlCommandMulti(
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/one &&'
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/two &&'
             '{{curl}} -v -H\'Host: www.example.com\' -H\'Connection: close\' http://127.0.0.1:{port}/three'.format(
-                port=self._ts.Variables.port),
-            ts=self._ts)
+                port=self._ts.Variables.port
+            ),
+            ts=self._ts,
+        )
         self._tr.Processes.Default.ReturnCode = 0
         self._tr.Processes.Default.StartBefore(self._server)
         self._tr.Processes.Default.StartBefore(self._ts)
@@ -100,12 +98,14 @@ class SessionMatchTest:
     def runAndExpectSharing(self):
         self._runTraffic()
         self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-            "global pool search successful", "Verify that sessions got shared")
+            "global pool search successful", "Verify that sessions got shared"
+        )
 
     def runAndExpectNoSharing(self):
         self._runTraffic()
         self._ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "global pool search successful", "Verify that sessions did not get shared")
+            "global pool search successful", "Verify that sessions did not get shared"
+        )
 
 
 sessionMatchTest = SessionMatchTest(TestSummary='Test that session sharing works with host matching', sharingMatchValue='host')
@@ -115,9 +115,11 @@ sessionMatchTest = SessionMatchTest(TestSummary='Test that session sharing works
 sessionMatchTest.runAndExpectSharing()
 
 sessionMatchTest = SessionMatchTest(
-    TestSummary='Test that session sharing works with matching both ip and host', sharingMatchValue='both')
+    TestSummary='Test that session sharing works with matching both ip and host', sharingMatchValue='both'
+)
 sessionMatchTest.runAndExpectSharing()
 
 sessionMatchTest = SessionMatchTest(
-    TestSummary='Test that session sharing is disabled when matching is set to none', sharingMatchValue='none')
+    TestSummary='Test that session sharing is disabled when matching is set to none', sharingMatchValue='none'
+)
 sessionMatchTest.runAndExpectNoSharing()

@@ -51,7 +51,8 @@ class Http2MaxActiveStreamsTest:
                 'proxy.config.http2.max_active_streams_in': 2,
                 'proxy.config.http2.max_active_streams_policy_in': self._policy,
                 'proxy.config.http2.max_concurrent_streams_in': 100,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -59,27 +60,33 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split('\n'))
+""".split('\n')
+        )
 
         tr.Processes.Default.StartBefore(server)
         tr.Processes.Default.StartBefore(ts)
-        tr.Processes.Default.Command = (f'{sys.executable} {CLIENT_SCRIPT} {ts.Variables.ssl_port} --streams 4 --probe-from 5')
+        tr.Processes.Default.Command = f'{sys.executable} {CLIENT_SCRIPT} {ts.Variables.ssl_port} --streams 4 --probe-from 5'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-            'GOAWAY', 'ATS must not tear down the connection; HPACK dynamic table must stay in sync.')
+            'GOAWAY', 'ATS must not tear down the connection; HPACK dynamic table must stay in sync.'
+        )
 
         if self._policy == 1:
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r'stream 5: RST_STREAM error_code=7', 'stream 5 must be refused with REFUSED_STREAM under enforce policy.')
+                r'stream 5: RST_STREAM error_code=7', 'stream 5 must be refused with REFUSED_STREAM under enforce policy.'
+            )
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
                 r'stream 7: RST_STREAM error_code=7',
-                'stream 7 must also be refused with REFUSED_STREAM, proving HPACK decode happened on stream 5.')
+                'stream 7 must also be refused with REFUSED_STREAM, proving HPACK decode happened on stream 5.',
+            )
             ts.Disk.traffic_out.Content += Testers.ContainsExpression(
                 r'HTTP/2 stream error code=0x07.*active streams cap reached',
-                'ATS should log the cap-reached stream error under enforce policy.')
+                'ATS should log the cap-reached stream error under enforce policy.',
+            )
         else:
             tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-                r'RST_STREAM error_code=7', 'No stream should be refused under advisory policy.')
+                r'RST_STREAM error_code=7', 'No stream should be refused under advisory policy.'
+            )
 
 
 Http2MaxActiveStreamsTest('enforce', 'replay/http2_max_active_streams_enforce.replay.yaml', policy=1).run()

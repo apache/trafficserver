@@ -84,7 +84,6 @@ def _extract_source_context(ctx: object) -> tuple[int, int, str]:
 
 
 class ThrowingErrorListener(ErrorListener):
-
     def __init__(self, filename: str = "<input>") -> None:
         super().__init__()
         self.filename = filename
@@ -108,7 +107,6 @@ class ThrowingErrorListener(ErrorListener):
 
 
 class Hrw4uSyntaxError(Exception):
-
     def __init__(self, filename: str, line: int, column: int, message: str, source_line: str) -> None:
         super().__init__(_format_diagnostic(filename, line, column, "error", message, source_line))
         self.filename = filename
@@ -119,7 +117,6 @@ class Hrw4uSyntaxError(Exception):
 
 
 class SymbolResolutionError(Exception):
-
     def __init__(self, name: str, message: str | None = None) -> None:
         self.name = name
         super().__init__(message or f"Unrecognized symbol: '{name}'")
@@ -152,6 +149,7 @@ def format_diagnostic(filename: str, ctx: object, severity: str, message: str) -
 @dataclass(frozen=True, slots=True)
 class Warning:
     """Structured warning with source location for use by both CLI and LSP."""
+
     filename: str
     line: int
     column: int
@@ -202,12 +200,12 @@ class ErrorCollector:
         formatter = self._formatter
         if formatter is None:
             from hrw4u.formatters import PlainTextFormatter
+
             formatter = PlainTextFormatter()
         return formatter.format_errors(self.errors, self.warnings, self._sandbox_message, self.at_limit, self.max_errors)
 
 
 class CollectingErrorListener(ErrorListener):
-
     def __init__(self, filename: str = "<input>", error_collector: ErrorCollector | None = None) -> None:
         super().__init__()
         self.filename = filename

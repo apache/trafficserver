@@ -33,14 +33,16 @@ ts = Test.TxnBoxTest(
     config_key="txn_box",
     remap=[['https://base.ex/', "http://base.ex/"]],
     enable_tls=True,
-    verifier_server_args='--format "{url}"')
+    verifier_server_args='--format "{url}"',
+)
 
 tr_alpha = Test.TxnBoxRun(
     "Athenz mTLS alpha",
     replay_path="mTLS-alpha.replay.yaml",
     ssl_cert="../ssl/alpha-signed.cert",
     suffix="alpha",
-    verifier_client_args="--verbose info")
+    verifier_client_args="--verbose info",
+)
 
 # These are intended to connect but not be "authorized" because the issuer isn't alpha.
 tr_bravo = Test.TxnBoxRun(
@@ -48,7 +50,8 @@ tr_bravo = Test.TxnBoxRun(
     replay_path="mTLS-bravo.replay.yaml",
     ssl_cert="../ssl/bravo-signed.cert",
     suffix="bravo",
-    verifier_client_args="--verbose info")
+    verifier_client_args="--verbose info",
+)
 
 ts.Setup.Copy("../ssl/server.key", os.path.join(ts.Variables.SSLDir, "server.key"))
 ts.Setup.Copy("../ssl/server.pem", os.path.join(ts.Variables.SSLDir, "server.pem"))
@@ -65,12 +68,14 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.CA.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.CA.cert.filename': 'ca-bundle.pem',
         'proxy.config.ssl.client.certification_level': 2,
-        'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port)
-    })
+        'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
+    }
+)
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)

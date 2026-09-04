@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -41,7 +40,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Set up port 4444 with HTTP1 only, no HTTP/2
 ts.Disk.records_config.update(
@@ -52,16 +52,19 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.accept_threads': 1,
-        'proxy.config.http.server_ports': '{0}:ssl:proto=http {1}'.format(ts.Variables.ssl_port, ts.Variables.port)
-    })
+        'proxy.config.http.server_ports': '{0}:ssl:proto=http {1}'.format(ts.Variables.ssl_port, ts.Variables.port),
+    }
+)
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bar.com',
-    '  http2: on',
-    '- fqdn: "*.foo.com"',
-    '  http2: on',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bar.com',
+        '  http2: on',
+        '- fqdn: "*.foo.com"',
+        '  http2: on',
+    ]
+)
 
 tr = Test.AddTestRun("Do-not-Negotiate-h2")
 tr.MakeCurlCommand("-v -k --ipv4 --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
@@ -87,7 +90,8 @@ tr2.TimeOut = 10
 
 tr2 = Test.AddTestRun("Do negotiate h2")
 tr2.MakeCurlCommand(
-    "-v -k --ipv4 --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v -k --ipv4 --resolve 'bob.foo.com:{0}:127.0.0.1' https://bob.foo.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.Processes.Default.TimeOut = 10

@@ -47,22 +47,25 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.ssl.client.certification_level': 2,
         'proxy.config.ssl.CA.cert.filename': f'{ts.Variables.SSLDir}/aaa-ca.pem',
-        'proxy.config.ssl.TLSv1_3.enabled': 0
-    })
+        'proxy.config.ssl.TLSv1_3.enabled': 0,
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - ssl_cert_name: bbb-signed.pem
     ssl_key_name: bbb-signed.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Just map everything through to origin.  This test is concentrating on the user-agent side.
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
@@ -80,7 +83,8 @@ ts.Disk.sni_yaml.AddLines(
         '  verify_client: STRICT',
         '  verify_client_ca_certs:',
         f'    file: {ts.Variables.SSLDir}/ccc-ca.pem',
-    ])
+    ]
+)
 
 # Success test runs.
 
@@ -91,8 +95,10 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed"),
-    ts=ts)
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed"
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
 
@@ -100,9 +106,11 @@ tr = Test.AddTestRun()
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb-signed:{0}:127.0.0.1'" +
-     " https://bbb-signed:{0}/xyz").format(ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed"),
-    ts=ts)
+    (
+        "-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb-signed:{0}:127.0.0.1'" + " https://bbb-signed:{0}/xyz"
+    ).format(ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed"),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
 
@@ -111,8 +119,10 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed"),
-    ts=ts)
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed"
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("error", "Check response")
 
@@ -123,8 +133,10 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'aaa.com:{0}:127.0.0.1'" + " https://aaa.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed"),
-    ts=ts)
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/bbb-signed"
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 35
 
 tr = Test.AddTestRun()
@@ -132,8 +144,10 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     ("-v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'bbb.com:{0}:127.0.0.1'" + " https://bbb.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed"),
-    ts=ts)
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/ccc-signed"
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 35
 
 tr = Test.AddTestRun()
@@ -141,6 +155,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     (" -v -k --tls-max 1.2  --cert {1}.pem --key {1}.key --resolve 'ccc.com:{0}:127.0.0.1'" + " https://ccc.com:{0}/xyz").format(
-        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed"),
-    ts=ts)
+        ts.Variables.ssl_port, Test.TestDirectory + "/ssl/aaa-signed"
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 35

@@ -79,7 +79,8 @@ class TestDeleteMaxfwdNoopDrain:
         client.Command = f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} {self._hostname}'
         client.ReturnCode = 0
         client.Streams.All += Testers.ContainsExpression(
-            'DELETE_STATUS=404', 'the DELETE must hit the NOOP (miss) path, not a cache hit')
+            'DELETE_STATUS=404', 'the DELETE must hit the NOOP (miss) path, not a cache hit'
+        )
         client.Streams.All += Testers.ExcludesExpression('SECOND_RESPONSE_RECEIVED=True', 'no smuggled second response')
         client.Streams.All += Testers.ExcludesExpression('misspoison', 'no smuggled bytes should reach the client')
         client.StartBefore(self._server)

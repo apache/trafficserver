@@ -43,14 +43,15 @@ class JaxFingerprintTest:
     _client_counter: int = 0
 
     def __init__(
-            self,
-            name: str,
-            method: str,
-            setup: str,
-            mode: str = 'overwrite',
-            http2: bool = False,
-            servernames: str = '',
-            log_field: str = '') -> None:
+        self,
+        name: str,
+        method: str,
+        setup: str,
+        mode: str = 'overwrite',
+        http2: bool = False,
+        servernames: str = '',
+        log_field: str = '',
+    ) -> None:
         '''Configure test processes for the jax_fingerprint plugin.
 
         :param name: Descriptive name for this test run.
@@ -109,13 +110,15 @@ class JaxFingerprintTest:
         self._configure_trafficserver()
         self._configure_client(tr)
         Test.AddAwaitFileContainsTestRun(
-            f'Await jax_fingerprint.log for: {self._name}', self._ts.Disk.jax_log.AbsPath, self._fingerprint_pattern)
+            f'Await jax_fingerprint.log for: {self._name}', self._ts.Disk.jax_log.AbsPath, self._fingerprint_pattern
+        )
 
         if self._log_field:
             log_field_path = os.path.join(self._ts.Variables.LOGDIR, 'jax_log_field.log')
             # Verify the log contains a fingerprint (not just a dash placeholder).
             Test.AddAwaitFileContainsTestRun(
-                f'Await jax_log_field.log for: {self._name}', log_field_path, f'{self._method}: [a-z0-9]')
+                f'Await jax_log_field.log for: {self._name}', log_field_path, f'{self._method}: [a-z0-9]'
+            )
 
     # ------------------------------------------------------------------
     # Helpers
@@ -183,16 +186,19 @@ class JaxFingerprintTest:
             uuid_key = 'hybrid-servernames-in-filter' if self._setup == 'hybrid' else 'servernames-in-filter'
             self._server.Streams.All += Testers.ContainsExpression(uuid_key, 'Verify the allowed-SNI request reached the server.')
             self._server.Streams.All += Testers.ContainsExpression(
-                r'x-jax:', 'Verify the fingerprint header was forwarded for the allowed SNI.', reflags=re.IGNORECASE)
+                r'x-jax:', 'Verify the fingerprint header was forwarded for the allowed SNI.', reflags=re.IGNORECASE
+            )
         elif self._setup in ('remap', 'hybrid'):
             uuid_key = 'remap-tls-plugin-request' if self._needs_tls else 'remap-plugin-request'
             self._server.Streams.All += Testers.ContainsExpression(uuid_key, 'Verify the matched-route request reached the server.')
             self._server.Streams.All += Testers.ContainsExpression(
-                r'x-jax:', 'Verify the fingerprint header was forwarded.', reflags=re.IGNORECASE)
+                r'x-jax:', 'Verify the fingerprint header was forwarded.', reflags=re.IGNORECASE
+            )
         else:
             # global tests - all requests carry the fingerprint header
             self._server.Streams.All += Testers.ContainsExpression(
-                r'x-jax:', 'Verify the fingerprint header was forwarded.', reflags=re.IGNORECASE)
+                r'x-jax:', 'Verify the fingerprint header was forwarded.', reflags=re.IGNORECASE
+            )
 
     def _configure_trafficserver(self) -> None:
         '''Configure Traffic Server and its plugin / remap rules.'''
@@ -207,7 +213,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         if self._needs_tls:
             server_port = self._server.Variables.https_port
@@ -226,23 +233,22 @@ ssl_multicert:
                 'proxy.config.proxy_name': 'test.proxy.test',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'jax_fingerprint|http',
-            })
+            }
+        )
 
         log_path = os.path.join(self._ts.Variables.LOGDIR, 'jax_fingerprint.log')
         self._ts.Disk.File(log_path, id='jax_log')
         self._ts.Disk.jax_log.Content += Testers.ContainsExpression(
-            self._fingerprint_pattern, f'Verify the jax_fingerprint log contains a {self._method} fingerprint.')
+            self._fingerprint_pattern, f'Verify the jax_fingerprint log contains a {self._method} fingerprint.'
+        )
 
         backend = f'{scheme}://jax.backend.test:{server_port}'
         backend_no_plugin = f'{scheme}://jax.backend.test:{server_port}'
 
         if self._setup == 'global':
             global_args = (
-                f'--method {self._method} '
-                f'--header x-jax '
-                f'--via-header x-jax-via '
-                f'--log-filename jax_fingerprint '
-                f'--standalone')
+                f'--method {self._method} --header x-jax --via-header x-jax-via --log-filename jax_fingerprint --standalone'
+            )
             if self._mode != 'overwrite':
                 global_args += f' --mode {self._mode}'
             if self._servernames:
@@ -278,15 +284,18 @@ ssl_multicert:
                 # connection has a context on the vconn, so only that request
                 # gets fingerprint headers even though both routes are mapped.
                 self._ts.Disk.remap_config.AddLine(
-                    f'map https://jax.server.test https://jax.backend.test:{server_port} {remap_line}')
+                    f'map https://jax.server.test https://jax.backend.test:{server_port} {remap_line}'
+                )
                 self._ts.Disk.remap_config.AddLine(
-                    f'map https://jax-filtered.server.test https://jax.backend.test:{server_port} {remap_line}')
+                    f'map https://jax-filtered.server.test https://jax.backend.test:{server_port} {remap_line}'
+                )
             else:
                 # Route without remap plugin: context is captured but no headers set.
                 self._ts.Disk.remap_config.AddLine(f'map https://jax-no-plugin.server.test https://jax.backend.test:{server_port}')
                 # Route with remap plugin: reads shared vconn context, sets headers.
                 self._ts.Disk.remap_config.AddLine(
-                    f'map https://jax.server.test https://jax.backend.test:{server_port} {remap_line}')
+                    f'map https://jax.server.test https://jax.backend.test:{server_port} {remap_line}'
+                )
 
         if self._log_field:
             self._ts.Disk.logging_yaml.AddLines(
@@ -298,13 +307,15 @@ logging:
   logs:
     - filename: jax_log_field
       format: jax_custom
-'''.split("\n"))
+'''.split("\n")
+            )
 
     def _configure_client(self, tr: 'TestRun') -> None:
         '''Configure the verifier client.'''
         name = f'client{JaxFingerprintTest._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port]
+        )
         JaxFingerprintTest._client_counter += 1
 
         p.StartBefore(self._dns)
@@ -423,7 +434,8 @@ class AllMethodsTest:
         # Verify all headers were forwarded to the origin.
         for header in ['x-ja3', 'x-ja4', 'x-ja4h']:
             self._server.Streams.All += Testers.ContainsExpression(
-                rf'{header}:', f'Verify {header} header was forwarded.', reflags=re.IGNORECASE)
+                rf'{header}:', f'Verify {header} header was forwarded.', reflags=re.IGNORECASE
+            )
 
     def _configure_trafficserver(self) -> None:
         '''Configure Traffic Server with multiple methods.'''
@@ -438,7 +450,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         server_port = self._server.Variables.https_port
 
@@ -452,32 +465,39 @@ ssl_multicert:
                 'proxy.config.proxy_name': 'test.proxy.test',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'jax_fingerprint',
-            })
+            }
+        )
 
         # Each of the following pairs makes sure that the expression exists
         # exactly once.
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Reserved shared user_arg slot: type=vconn, index=\d+', 'Verify a shared vconn user arg slot was reserved.')
+            r'Reserved shared user_arg slot: type=vconn, index=\d+', 'Verify a shared vconn user arg slot was reserved.'
+        )
         self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             r'Reserved shared user_arg slot: type=vconn, index=\d+.*Reserved shared user_arg slot: type=vconn, index=\d+',
             'Verify the shared vconn user arg slot was reserved only once.',
-            reflags=re.MULTILINE | re.DOTALL)
+            reflags=re.MULTILINE | re.DOTALL,
+        )
 
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Reserved shared user_arg slot: type=txn, index=\d+', 'Verify a shared txn user arg slot was reserved.')
+            r'Reserved shared user_arg slot: type=txn, index=\d+', 'Verify a shared txn user arg slot was reserved.'
+        )
         self._ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
             r'Reserved shared user_arg slot: type=txn, index=\d+.*Reserved shared user_arg slot: type=txn, index=\d+',
             'Verify the shared txn user arg slot was reserved only once.',
-            reflags=re.MULTILINE | re.DOTALL)
+            reflags=re.MULTILINE | re.DOTALL,
+        )
 
         # Ensure that JA3 and JA4 share the same vconn user arg slot.
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             r'Using shared user_arg: type=vconn, method=JA3, index=(\d+).*Using shared user_arg: type=vconn, method=JA4, index=\1',
             'Verify JA3 and JA4 share the same vconn user arg slot.',
-            reflags=re.MULTILINE | re.DOTALL)
+            reflags=re.MULTILINE | re.DOTALL,
+        )
         # Note that JA4H is on txn not vconn as JA3 and JA4 above.
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            r'Using shared user_arg: type=txn, method=JA4H, index=\d+', 'Verify JA4H uses the shared txn user arg slot.')
+            r'Using shared user_arg: type=txn, method=JA4H, index=\d+', 'Verify JA4H uses the shared txn user arg slot.'
+        )
 
         # Load multiple methods - all share the same user arg slot via ContextMap.
         self._ts.Disk.plugin_config.AddLines(
@@ -485,7 +505,8 @@ ssl_multicert:
                 'jax_fingerprint.so --method JA3 --header x-ja3 --standalone',
                 'jax_fingerprint.so --method JA4 --header x-ja4 --standalone',
                 'jax_fingerprint.so --method JA4H --header x-ja4h --standalone',
-            ])
+            ]
+        )
 
         self._ts.Disk.remap_config.AddLine(f'map https://jax.server.test https://jax.backend.test:{server_port}')
 
@@ -493,7 +514,8 @@ ssl_multicert:
         '''Configure the verifier client.'''
         name = f'client_all{AllMethodsTest._client_counter}'
         p = tr.AddVerifierClientProcess(
-            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+            name, self._replay_file, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port]
+        )
         AllMethodsTest._client_counter += 1
 
         p.StartBefore(self._dns)

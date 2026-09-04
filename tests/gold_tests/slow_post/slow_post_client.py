@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from http_utils import (wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket)
+from http_utils import wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket
 
 import argparse
 import socket
@@ -34,13 +34,15 @@ def parse_args() -> argparse.Namespace:
         '--server-hostname',
         dest="server_hostname",
         default="some.server.com",
-        help="The hostname of the server to connect to.")
+        help="The hostname of the server to connect to.",
+    )
     parser.add_argument("-t", "--send_time", dest="send_time", type=int, default=3, help="The number of seconds to send the POST.")
     parser.add_argument(
         '--finish-request',
         dest="finish_request",
         action='store_true',
-        help="Finish sending the request before closing the connection.")
+        help="Finish sending the request before closing the connection.",
+    )
 
     return parser.parse_args()
 
@@ -69,8 +71,7 @@ def send_slow_post(sock: socket.socket, server_hostname: str, send_time: int, fi
     """
     # Send the POST request.
     host_header = f'Host: {server_hostname}\r\n'.encode()
-    request = (b"POST / HTTP/1.1\r\n" + host_header + b"Transfer-Encoding: chunked\r\n"
-               b"\r\n")
+    request = b"POST / HTTP/1.1\r\n" + host_header + b"Transfer-Encoding: chunked\r\n\r\n"
     sock.sendall(request)
     print('Sent request headers:')
     print(request.decode())

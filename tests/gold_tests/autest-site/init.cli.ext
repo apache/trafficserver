@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -28,7 +27,8 @@ if AuTestVersion() < needed_autest_version:
     host.WriteError(
         f"Tests need AuTest version {needed_autest_version} or better, found version {found_autest_version}\n"
         "Please update AuTest:\n  rm -rf .venv && uv sync\n",
-        show_stack=False)
+        show_stack=False,
+    )
 
 needed_microserver_version = "1.0.8"
 found_microserver_version = microserver.__version__
@@ -36,7 +36,8 @@ if found_microserver_version < needed_microserver_version:
     host.WriteError(
         f"Tests need a MicroServer version {needed_microserver_version} or better, found version {found_microserver_version}\n"
         "Please update MicroServer:\n  rm -rf .venv && uv sync\n",
-        show_stack=False)
+        show_stack=False,
+    )
 
 Settings.path_argument(["--ats-bin"], required=True, help="A user provided directory to ATS bin")
 

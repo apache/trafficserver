@@ -43,16 +43,17 @@ class TestHttp2IncompleteHeaderTimeout:
     counter: int = 0
 
     def __init__(
-            self,
-            name: str,
-            incomplete_header_timeout_in: int,
-            path: str,
-            uuid: str,
-            end_headers: bool = False,
-            continuation_delay: Optional[float] = None,
-            min_elapsed: Optional[float] = None,
-            max_elapsed: Optional[float] = None,
-            expect_timeout: bool = False):
+        self,
+        name: str,
+        incomplete_header_timeout_in: int,
+        path: str,
+        uuid: str,
+        end_headers: bool = False,
+        continuation_delay: Optional[float] = None,
+        min_elapsed: Optional[float] = None,
+        max_elapsed: Optional[float] = None,
+        expect_timeout: bool = False,
+    ):
         """Initialize the test.
 
         :param name: The name of the test run.
@@ -102,7 +103,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: {ts.Variables.SSLDir}/cert.crt
     ssl_key_name: {ts.Variables.SSLDir}/private-key.key
-""".split('\n'))
+""".split('\n')
+        )
 
         ts.Disk.records_config.update(
             {
@@ -111,7 +113,8 @@ ssl_multicert:
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.http2.incomplete_header_timeout_in': self._incomplete_header_timeout_in,
-            })
+            }
+        )
 
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
@@ -121,9 +124,7 @@ ssl_multicert:
         :param tr: The TestRun object to associate the client process with.
         """
         tr.Setup.Copy(self.client_script)
-        command = (
-            f'{sys.executable} {self.client_script} {self._ts.Variables.ssl_port} '
-            f'--path {self._path} --uuid {self._uuid}')
+        command = f'{sys.executable} {self.client_script} {self._ts.Variables.ssl_port} --path {self._path} --uuid {self._uuid}'
         if self._end_headers:
             command += ' --end-headers'
         if self._continuation_delay is not None:
@@ -145,20 +146,25 @@ ssl_multicert:
         if self._expect_timeout:
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
                 f'GOAWAY error_code={HTTP2_ERROR_COMPRESSION_ERROR} last_stream_id=1',
-                'ATS should close the connection with COMPRESSION_ERROR because the HPACK table is out of sync.')
+                'ATS should close the connection with COMPRESSION_ERROR because the HPACK table is out of sync.',
+            )
             self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
                 f'timeout event={VC_EVENT_ACTIVE_TIMEOUT}',
-                'ATS should time out the incomplete header with the stream active timeout.')
+                'ATS should time out the incomplete header with the stream active timeout.',
+            )
             # The default diags.log check rejects any ERROR:, but this test
             # expects the incomplete header timeout to be reported.
             self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-                timeout_error, 'ATS should log the incomplete header timeout.')
+                timeout_error, 'ATS should log the incomplete header timeout.'
+            )
         else:
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                'stream 1: status=200', 'ATS should proxy the request rather than time out the stream.')
+                'stream 1: status=200', 'ATS should proxy the request rather than time out the stream.'
+            )
             tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression('GOAWAY', 'ATS should not close the connection.')
             self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                timeout_error, 'ATS should not report an incomplete header timeout.')
+                timeout_error, 'ATS should not report an incomplete header timeout.'
+            )
 
     def run(self) -> None:
         """Run the test."""
@@ -183,7 +189,8 @@ TestHttp2IncompleteHeaderTimeout(
     continuation_delay=None,
     min_elapsed=2.5,
     max_elapsed=7,
-    expect_timeout=True).run()
+    expect_timeout=True,
+).run()
 
 # A client that completes the header block before the timeout expires should be
 # proxied normally.
@@ -193,7 +200,8 @@ TestHttp2IncompleteHeaderTimeout(
     path='/incomplete',
     uuid='incomplete_header',
     continuation_delay=1,
-    expect_timeout=False).run()
+    expect_timeout=False,
+).run()
 
 # The timeout is canceled when the transaction starts, so a slow origin
 # response must not be mistaken for an incomplete header block.
@@ -204,4 +212,5 @@ TestHttp2IncompleteHeaderTimeout(
     uuid='delayed_response',
     end_headers=True,
     min_elapsed=4.5,
-    expect_timeout=False).run()
+    expect_timeout=False,
+).run()

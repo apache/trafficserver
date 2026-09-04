@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -41,7 +40,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -52,16 +52,19 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.url_remap.pristine_host_hdr': 1,
-        'proxy.config.accept_threads': 1
-    })
+        'proxy.config.accept_threads': 1,
+    }
+)
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bar.com',
-    '  http2: off',
-    '- fqdn: "*.foo.com"',
-    '  http2: off',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bar.com',
+        '  http2: off',
+        '- fqdn: "*.foo.com"',
+        '  http2: off',
+    ]
+)
 
 tr = Test.AddTestRun("Negotiate-h2")
 tr.MakeCurlCommand("-v -k --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -75,21 +74,24 @@ class quiche_qlog_Test:
             tags: vv_quic|v_quic
         quic:
           no_activity_timeout_in: 3000
-        ''')
+        '''
+        )
         if self._generate_qlog:
             self._ts.Disk.records_config.update(
                 '''
                   quic:
                     qlog:
                       file_base: log/test_qlog # we expect to have log/test_qlog-<TRACE ID>.sqlog
-                  ''')
+                  '''
+            )
         self._ts.Disk.ssl_multicert_yaml.AddLines(
             f"""
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: {ts.Variables.SSLDir}/server.pem
     ssl_key_name: {ts.Variables.SSLDir}/server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
@@ -102,7 +104,8 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
         tr.AddVerifierClientProcess(
-            f"client-{quiche_qlog_Test.client_counter}", self.replay_file, http3_ports=[self._ts.Variables.ssl_port])
+            f"client-{quiche_qlog_Test.client_counter}", self.replay_file, http3_ports=[self._ts.Variables.ssl_port]
+        )
         quiche_qlog_Test.client_counter += 1
         tr.Processes.Default.ReturnCode = 0
 
