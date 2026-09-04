@@ -31,6 +31,7 @@ using namespace std::string_view_literals;
 #include "tsutil/PostScript.h"
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/http/HttpSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/remap/RemapProcessor.h"
 #include "records/RecordsConfig.h"
@@ -970,4 +971,28 @@ TEST_CASE("HttpTransact", "[http]")
     REQUIRE(field != nullptr);
     CHECK(field->value_get() == "ok"sv);
   }
+}
+
+TEST_CASE("Compatibility cache writes use canonical object info", "[http][cache][compatibility]")
+{
+  CacheHTTPInfo object_read_info;
+
+  CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, &object_read_info) ==
+        &object_read_info);
+  CHECK(HttpSM::cache_write_info_for_lookup(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, &object_read_info) == nullptr);
+  CHECK(!HttpSM::should_use_compatibility_cache_key(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL));
+  CHECK(HttpSM::should_use_compatibility_cache_key(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92));
+
+  HTTPHdr server_response;
+  CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, server_response));
+
+  server_response.create(HTTPType::RESPONSE);
+  server_response.status_set(HTTPStatus::OK);
+  CHECK(HttpSM::should_use_compatibility_cache_key(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92));
+  CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, server_response));
+
+  server_response.status_set(HTTPStatus::NOT_MODIFIED);
+  CHECK(HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92, server_response));
+  CHECK(!HttpSM::should_invalidate_compatibility_cache(CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL, server_response));
+  server_response.destroy();
 }

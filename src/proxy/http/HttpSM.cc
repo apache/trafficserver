@@ -23,6 +23,7 @@
  */
 
 #include "proxy/http/HttpConfig.h"
+#include "proxy/hdrs/HdrUtils.h"
 #include "tscore/ink_hrtime.h"
 #include "tscore/ink_time.h"
 #include "tsutil/Metrics.h"
@@ -2625,11 +2626,11 @@ HttpSM::state_cache_open_write(int event, void *data)
       t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::FAIL;
       break;
     }
-    if (t_state.txn_conf->cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::DEFAULT)) {
+    if (get_cache_open_write_fail_action() == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::DEFAULT)) {
       t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::FAIL;
       break;
     } else {
-      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+      t_state.cache_open_write_fail_action = get_cache_open_write_fail_action();
       if (!t_state.cache_info.object_read || (t_state.cache_open_write_fail_action ==
                                               static_cast<MgmtByte>(CacheOpenWriteFailAction_t::ERROR_ON_MISS_OR_REVALIDATE))) {
         // cache miss, set wl_state to fail
@@ -2641,9 +2642,10 @@ HttpSM::state_cache_open_write(int event, void *data)
     }
   // INTENTIONAL FALL THROUGH
   // Allow for stale object to be served
-  case CACHE_EVENT_OPEN_READ:
+  case CACHE_EVENT_OPEN_READ: {
+    MgmtByte const write_fail_action = get_cache_open_write_fail_action();
     if (!t_state.cache_info.object_read) {
-      t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+      t_state.cache_open_write_fail_action = write_fail_action;
       // READ_RETRY mode: write lock failed, no stale object available.
       // CACHE_LOOKUP_COMPLETE will fire from HandleCacheOpenReadMiss with MISS result.
       ink_assert(t_state.cache_open_write_fail_action == static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY) ||
@@ -2651,6 +2653,9 @@ HttpSM::state_cache_open_write(int event, void *data)
                    static_cast<MgmtByte>(CacheOpenWriteFailAction_t::READ_RETRY_STALE_ON_REVALIDATE));
       t_state.cache_lookup_result         = HttpTransact::CacheLookupResult_t::NONE;
       t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::READ_RETRY;
+      if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+        compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
+      }
       break;
     }
     // The write vector was locked and the cache_sm retried
@@ -2667,10 +2672,15 @@ HttpSM::state_cache_open_write(int event, void *data)
     t_state.source = HttpTransact::Source_t::CACHE;
     // clear up CacheLookupResult_t::MISS, let Freshness function decide
     // hit status
-    t_state.cache_open_write_fail_action = t_state.txn_conf->cache_open_write_fail_action;
+    t_state.cache_open_write_fail_action = write_fail_action;
     t_state.cache_lookup_result          = HttpTransact::CacheLookupResult_t::NONE;
     t_state.cache_info.write_lock_state  = HttpTransact::CacheWriteLock_t::READ_RETRY;
+    if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+      // Subsequent retry must use canonical key after a compatibility write conflict.
+      compatibility_cache_lookup = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
+    }
     break;
+  }
 
   case HTTP_TUNNEL_EVENT_DONE:
     // In the case where we have issued a cache write for the
@@ -3980,6 +3990,11 @@ HttpSM::tunnel_handler_cache_read(int event, HttpTunnelProducer *p)
   default:
     ink_release_assert(0);
     break;
+  }
+
+  if (compatibility_cache_invalidate_after_read) {
+    compatibility_cache_invalidate_after_read = false;
+    do_cache_delete_all_alts();
   }
 
   Metrics::Gauge::decrement(http_rsb.current_cache_connections);
@@ -5308,7 +5323,7 @@ HttpSM::do_cache_lookup_and_read()
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (compatibility_cache_lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
     Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   } else {
     Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
@@ -5339,8 +5354,13 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                      t_state.txn_conf->cache_generation_number);
+  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
+    Cache::generate_key92(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                          t_state.txn_conf->cache_generation_number);
+  } else {
+    Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
+                        t_state.txn_conf->cache_generation_number);
+  }
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -5419,8 +5439,15 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   HttpCacheKey key;
   Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
 
+  // A compatibility read returns an object stored under the legacy key. Passing
+  // that object to a write using the canonical key turns the write into an
+  // update, but the canonical-key vector does not contain the legacy alternate.
+  // Cache::open_write then fails with ECACHE_NO_DOC instead of creating the
+  // migrated object. Create a new canonical-key object for compatibility reads.
+  CacheHTTPInfo *write_object_read_info = cache_write_info_for_lookup(compatibility_cache_lookup, object_read_info);
+
   pending_action =
-    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, object_read_info,
+    c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, write_object_read_info,
                      static_cast<time_t>((t_state.cache_control.pin_in_cache_for < 0) ? 0 : t_state.cache_control.pin_in_cache_for),
                      retry, allow_multiple);
 }
@@ -6830,7 +6857,12 @@ HttpSM::perform_cache_write_action()
   }
 
   case HttpTransact::CacheAction_t::SERVE_AND_UPDATE: {
-    issue_cache_update();
+    if (should_invalidate_compatibility_cache()) {
+      compatibility_cache_invalidate_after_read = true;
+      cache_sm.abort_write();
+    } else {
+      issue_cache_update();
+    }
     break;
   }
 
@@ -7149,6 +7181,9 @@ HttpSM::setup_cache_read_transfer()
                                               HttpTunnelType_t::CACHE_READ, "cache read");
   tunnel.add_consumer(_ua.get_entry()->vc, cache_sm.cache_read_vc, &HttpSM::tunnel_handler_ua, HttpTunnelType_t::HTTP_CLIENT,
                       "user agent");
+  if (should_invalidate_compatibility_cache() && t_state.cache_info.action == HttpTransact::CacheAction_t::SERVE_AND_UPDATE) {
+    compatibility_cache_invalidate_after_read = true;
+  }
   // if size of a cached item is not known, we'll do chunking for keep-alive HTTP/1.1 clients
   // this only applies to read-while-write cases where origin server sends a dynamically generated chunked content
   // w/o providing a Content-Length header
@@ -8555,12 +8590,22 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::StateMachineAction_t::INTERNAL_CACHE_UPDATE_HEADERS: {
-    issue_cache_update();
-    cache_sm.close_read();
+    if (should_invalidate_compatibility_cache()) {
+      cache_sm.abort_write();
+      cache_sm.close_read();
+      do_cache_delete_all_alts();
 
-    release_server_session();
-    t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
-    do_api_callout();
+      release_server_session();
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
+      do_api_callout();
+    } else {
+      issue_cache_update();
+      cache_sm.close_read();
+
+      release_server_session();
+      t_state.api_next_action = HttpTransact::StateMachineAction_t::API_SEND_RESPONSE_HDR;
+      do_api_callout();
+    }
     break;
   }
 

@@ -230,7 +230,8 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
     break;
 
   case CACHE_EVENT_OPEN_WRITE_FAILED: {
-    if (is_read_retry_write_fail_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
+    err_code = reinterpret_cast<intptr_t>(data);
+    if (is_read_retry_write_fail_action(master_sm->get_cache_open_write_fail_action())) {
       // fall back to open_read_tries
       // Note that when READ_RETRY actions are configured, max_cache_open_write_retries
       // is automatically ignored. Make sure to not disable max_cache_open_read_retries
@@ -268,7 +269,6 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "done retrying...",
           master_sm->sm_id, open_write_tries);
-      err_code = reinterpret_cast<intptr_t>(data);
       master_sm->handleEvent(event, &captive_action);
     }
   } break;
@@ -278,7 +278,7 @@ HttpCacheSM::state_cache_open_write(int event, void *data)
       _read_retry_event = nullptr;
     }
 
-    if (is_read_retry_write_fail_action(master_sm->t_state.txn_conf->cache_open_write_fail_action)) {
+    if (is_read_retry_write_fail_action(master_sm->get_cache_open_write_fail_action())) {
       Dbg(dbg_ctl_http_cache,
           "[%" PRId64 "] [state_cache_open_write] cache open write failure %d. "
           "falling back to read retry...",
