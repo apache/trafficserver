@@ -2985,6 +2985,32 @@ TEST_CASE("HTTP parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
   req_hdr.destroy();
 }
 
+TEST_CASE("HTTP parser normalizes repeated carriage returns in header line endings", "[proxy][hdrtest]")
+{
+  constexpr std::string_view message = "GET / HTTP/1.1\r\nHost: example.com\r\nExtra-CRs: \r\r\r\r\n\r\n"sv;
+
+  HTTPParser parser;
+  http_parser_init(&parser);
+
+  HTTPHdr  req_hdr;
+  HdrHeap *heap = new_HdrHeap(HdrHeap::DEFAULT_SIZE + 64);
+  req_hdr.create(HTTPType::REQUEST, HTTP_1_1, heap);
+
+  auto start = message.data();
+  REQUIRE(req_hdr.parse_req(&parser, &start, message.data() + message.size(), true) == ParseResult::DONE);
+
+  std::string serialized(static_cast<size_t>(req_hdr.length_get()), '\0');
+  int         index  = 0;
+  int         offset = 0;
+  req_hdr.print(serialized.data(), static_cast<int>(serialized.size()), &index, &offset);
+  serialized.resize(static_cast<size_t>(index));
+
+  CHECK(serialized.find("Extra-CRs: \r\n") != std::string::npos);
+  CHECK(serialized.find("Extra-CRs: \r\r") == std::string::npos);
+
+  req_hdr.destroy();
+}
+
 TEST_CASE("HTTP response parser tolerates high-bit bytes without UB", "[proxy][hdrtest]")
 {
   struct Test {
