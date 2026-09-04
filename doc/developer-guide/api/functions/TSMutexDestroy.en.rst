@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSMutexDestroy(TSMutex mutexp)
+.. function:: void TSMutexDestroy(TSMutex mutexp) noexcept
 
 Description
 ===========

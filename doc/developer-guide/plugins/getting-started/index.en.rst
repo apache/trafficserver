@@ -33,7 +33,17 @@ Getting Started
 The Traffic Server API enables you to create plugins, using the C++
 programming language, that customize the behavior of your Traffic Server
 installation. (Your plugin may not work properly if you use a version of C++
-older than C++17.) This chapter contains the following sections:
+older than C++17.)
+
+C++ exceptions are not a supported error channel across the plugin API. API
+functions report failure through their return values, and a plugin must not
+allow one of its own exceptions to propagate into Traffic Server (for example
+out of a continuation handler). API functions that plugins commonly call
+during cleanup are declared ``noexcept``; if an internal error would otherwise
+escape such a call as an exception, Traffic Server aborts with a message
+naming the function rather than raising an exception in the plugin.
+
+This chapter contains the following sections:
 
 -  `Understanding Traffic Server Plugins`_ -- a brief introduction to plugins.
 

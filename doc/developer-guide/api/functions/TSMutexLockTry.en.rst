@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: TSReturnCode TSMutexLockTry(TSMutex mutexp)
+.. function:: TSReturnCode TSMutexLockTry(TSMutex mutexp) noexcept
 
 Description
 ===========

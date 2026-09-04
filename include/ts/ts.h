@@ -85,7 +85,7 @@ TSstrndup(const char *p, int64_t n)
     @param mloc location of the handle to be released.
 
  */
-TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc);
+TSReturnCode TSHandleMLocRelease(TSMBuffer bufp, TSMLoc parent, TSMLoc mloc) noexcept;
 
 /* --------------------------------------------------------------------------
    Install and plugin locations */
@@ -297,13 +297,13 @@ char *TSfgets(TSFile filep, char *buf, size_t length);
     immediate attention.
 
 */
-void TSStatus(const char *fmt, ...) TS_PRINTFLIKE(1, 2);    // Log information
-void TSNote(const char *fmt, ...) TS_PRINTFLIKE(1, 2);      // Log significant information
-void TSWarning(const char *fmt, ...) TS_PRINTFLIKE(1, 2);   // Log concerning information
-void TSError(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log operational failure, fail CI
-void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log recoverable crash, fail CI, exit & restart
-void TSAlert(const char *fmt, ...) TS_PRINTFLIKE(1, 2);     // Log recoverable crash, fail CI, exit & restart, Ops attention
-void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2); // Log unrecoverable crash, fail CI, exit, Ops attention
+void TSStatus(const char *fmt, ...) TS_PRINTFLIKE(1, 2);         // Log information
+void TSNote(const char *fmt, ...) TS_PRINTFLIKE(1, 2);           // Log significant information
+void TSWarning(const char *fmt, ...) TS_PRINTFLIKE(1, 2);        // Log concerning information
+void TSError(const char *fmt, ...) noexcept TS_PRINTFLIKE(1, 2); // Log operational failure, fail CI
+void TSFatal(const char *fmt, ...) TS_PRINTFLIKE(1, 2);          // Log recoverable crash, fail CI, exit & restart
+void TSAlert(const char *fmt, ...) TS_PRINTFLIKE(1, 2);          // Log recoverable crash, fail CI, exit & restart, Ops attention
+void TSEmergency(const char *fmt, ...) TS_PRINTFLIKE(1, 2);      // Log unrecoverable crash, fail CI, exit, Ops attention
 
 /* --------------------------------------------------------------------------
    Assertions */
@@ -331,7 +331,7 @@ TSMBuffer TSMBufferCreate(void);
     @param bufp marshal buffer to be destroyed.
 
  */
-TSReturnCode TSMBufferDestroy(TSMBuffer bufp);
+TSReturnCode TSMBufferDestroy(TSMBuffer bufp) noexcept;
 
 /* --------------------------------------------------------------------------
    URLs */
@@ -817,7 +817,7 @@ TSReturnCode TSMimeHdrCreate(TSMBuffer bufp, TSMLoc *locp);
     @param offset location of the MIME header.
 
  */
-TSReturnCode TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc offset);
+TSReturnCode TSMimeHdrDestroy(TSMBuffer bufp, TSMLoc offset) noexcept;
 
 /**
     Copies a specified MIME header to a specified marshal buffer,
@@ -1059,7 +1059,7 @@ TSReturnCode TSMimeFormatDate(time_t const value_time, char *const value_str, in
    HTTP headers */
 TSHttpParser TSHttpParserCreate(void);
 void         TSHttpParserClear(TSHttpParser parser);
-void         TSHttpParserDestroy(TSHttpParser parser);
+void         TSHttpParserDestroy(TSHttpParser parser) noexcept;
 
 /**
     Parses an HTTP request header. The HTTP header must have already
@@ -1102,7 +1102,7 @@ TSMLoc TSHttpHdrCreate(TSMBuffer bufp);
     call to TSHandleMLocRelease().
 
  */
-void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset);
+void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset) noexcept;
 
 TSReturnCode TSHttpHdrClone(TSMBuffer dest_bufp, TSMBuffer src_bufp, TSMLoc src_hdr, TSMLoc *locp);
 
@@ -1154,19 +1154,19 @@ const char  *TSHttpHdrReasonLookup(TSHttpStatus status);
    Threads */
 TSThread      TSThreadCreate(TSThreadFunc func, void *data);
 TSThread      TSThreadInit(void);
-void          TSThreadDestroy(TSThread thread);
-void          TSThreadWait(TSThread thread);
+void          TSThreadDestroy(TSThread thread) noexcept;
+void          TSThreadWait(TSThread thread) noexcept;
 TSThread      TSThreadSelf(void);
 TSEventThread TSEventThreadSelf(void);
 
 /* --------------------------------------------------------------------------
    Mutexes */
 TSMutex      TSMutexCreate(void);
-void         TSMutexDestroy(TSMutex mutexp);
-void         TSMutexLock(TSMutex mutexp);
-TSReturnCode TSMutexLockTry(TSMutex mutexp);
+void         TSMutexDestroy(TSMutex mutexp) noexcept;
+void         TSMutexLock(TSMutex mutexp) noexcept;
+TSReturnCode TSMutexLockTry(TSMutex mutexp) noexcept;
 
-void TSMutexUnlock(TSMutex mutexp);
+void TSMutexUnlock(TSMutex mutexp) noexcept;
 
 /** Scoped lock guard for a @c TSMutex.
 
@@ -1231,7 +1231,7 @@ TSReturnCode TSCacheKeyPinnedSet(TSCacheKey key, time_t pin_in_cache);
     @param key to be destroyed.
 
  */
-TSReturnCode TSCacheKeyDestroy(TSCacheKey key);
+TSReturnCode TSCacheKeyDestroy(TSCacheKey key) noexcept;
 
 /* --------------------------------------------------------------------------
    cache url */
@@ -1361,9 +1361,9 @@ TSHRTime TShrtime(void);
 /* --------------------------------------------------------------------------
    Continuations */
 TSCont                TSContCreate(TSEventFunc funcp, TSMutex mutexp);
-void                  TSContDestroy(TSCont contp);
-void                  TSContDataSet(TSCont contp, void *data);
-void                 *TSContDataGet(TSCont contp);
+void                  TSContDestroy(TSCont contp) noexcept;
+void                  TSContDataSet(TSCont contp, void *data) noexcept;
+void                 *TSContDataGet(TSCont contp) noexcept;
 TSAction              TSContScheduleOnPool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
 TSAction              TSContScheduleOnThread(TSCont contp, TSHRTime timeout, TSEventThread ethread);
 std::vector<TSAction> TSContScheduleOnEntirePool(TSCont contp, TSHRTime timeout, TSThreadPool tp);
@@ -1433,7 +1433,7 @@ TSReturnCode TSSslSecretUpdate(const char *secret_name, int secret_name_length);
 
 /* Create a new SSL context based on the settings in records.yaml */
 TSSslContext TSSslServerContextCreate(TSSslX509 cert, const char *certname, const char *rsp_file);
-void         TSSslContextDestroy(TSSslContext ctx);
+void         TSSslContextDestroy(TSSslContext ctx) noexcept;
 TSReturnCode TSSslTicketKeyUpdate(char *ticketData, int ticketDataLen);
 TSAcceptor   TSAcceptorGet(TSVConn sslp);
 TSAcceptor   TSAcceptorGetbyID(int ID);
@@ -2150,7 +2150,7 @@ void TSFetchLaunch(TSFetchSM fetch_sm);
  *
  * @param fetch_sm: returned value of TSFetchCreate().
  */
-void TSFetchDestroy(TSFetchSM fetch_sm);
+void TSFetchDestroy(TSFetchSM fetch_sm) noexcept;
 
 /*
  * Set user-defined data in FetchSM
@@ -2185,7 +2185,7 @@ void         TSHttpAltInfoQualitySet(TSHttpAltInfo infop, float quality);
 
 /* --------------------------------------------------------------------------
    Actions */
-void TSActionCancel(TSAction actionp);
+void TSActionCancel(TSAction actionp) noexcept;
 int  TSActionDone(TSAction actionp);
 
 /* --------------------------------------------------------------------------
@@ -2196,9 +2196,9 @@ int   TSVConnClosedGet(TSVConn connp);
 
 TSVIO TSVConnRead(TSVConn connp, TSCont contp, TSIOBuffer bufp, int64_t nbytes);
 TSVIO TSVConnWrite(TSVConn connp, TSCont contp, TSIOBufferReader readerp, int64_t nbytes);
-void  TSVConnClose(TSVConn connp);
-void  TSVConnAbort(TSVConn connp, int error);
-void  TSVConnShutdown(TSVConn connp, int read, int write);
+void  TSVConnClose(TSVConn connp) noexcept;
+void  TSVConnAbort(TSVConn connp, int error) noexcept;
+void  TSVConnShutdown(TSVConn connp, int read, int write) noexcept;
 
 /* --------------------------------------------------------------------------
    Cache VConnections */
@@ -2492,7 +2492,7 @@ int64_t TSIOBufferWaterMarkGet(TSIOBuffer bufp);
  */
 void TSIOBufferWaterMarkSet(TSIOBuffer bufp, int64_t water_mark);
 
-void            TSIOBufferDestroy(TSIOBuffer bufp);
+void            TSIOBufferDestroy(TSIOBuffer bufp) noexcept;
 TSIOBufferBlock TSIOBufferStart(TSIOBuffer bufp);
 int64_t         TSIOBufferCopy(TSIOBuffer bufp, TSIOBufferReader readerp, int64_t length, int64_t offset);
 
@@ -2519,10 +2519,10 @@ int64_t         TSIOBufferBlockWriteAvail(TSIOBufferBlock blockp);
 
 TSIOBufferReader TSIOBufferReaderAlloc(TSIOBuffer bufp);
 TSIOBufferReader TSIOBufferReaderClone(TSIOBufferReader readerp);
-void             TSIOBufferReaderFree(TSIOBufferReader readerp);
+void             TSIOBufferReaderFree(TSIOBufferReader readerp) noexcept;
 TSIOBufferBlock  TSIOBufferReaderStart(TSIOBufferReader readerp);
-void             TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes);
-int64_t          TSIOBufferReaderAvail(TSIOBufferReader readerp);
+void             TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes) noexcept;
+int64_t          TSIOBufferReaderAvail(TSIOBufferReader readerp) noexcept;
 int64_t          TSIOBufferReaderCopy(TSIOBufferReader readerp, void *buf, int64_t length);
 
 struct sockaddr const *TSNetVConnLocalAddrGet(TSVConn vc);
@@ -2702,7 +2702,7 @@ TSReturnCode TSTextLogObjectWrite(TSTextLogObject the_object, const char *format
       flushed.
 
  */
-void TSTextLogObjectFlush(TSTextLogObject the_object);
+void TSTextLogObjectFlush(TSTextLogObject the_object) noexcept;
 
 /**
     Destroys a log object and releases the memory allocated to it.
@@ -2711,7 +2711,7 @@ void TSTextLogObjectFlush(TSTextLogObject the_object);
     @param  the_object custom log to be destroyed.
 
  */
-TSReturnCode TSTextLogObjectDestroy(TSTextLogObject the_object);
+TSReturnCode TSTextLogObjectDestroy(TSTextLogObject the_object) noexcept;
 
 /**
     Set log header.
