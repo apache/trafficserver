@@ -1,0 +1,3 @@
+cond %{TXN_CLOSE_HOOK} [AND]
+cond %{CLIENT-HEADER:@sampleratio} ="0.05"
+  add-header @TCPInfo "TC; %{TCP-INFO}"
