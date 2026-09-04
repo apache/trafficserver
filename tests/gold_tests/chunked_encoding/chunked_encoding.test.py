@@ -255,3 +255,52 @@ class TestChunkedTrailers:
 
 TestChunkedTrailers(configure_drop_trailers=True)
 TestChunkedTrailers(configure_drop_trailers=False)
+
+
+class TestChunkedTrailerResponseCompletes:
+    """Verify a chunked response with a trailer is proxied to completion.
+
+    With trailer dropping enabled (the default), a chunked response that
+    carries a trailer section must still complete: the client should receive
+    the full body and the keep-alive connection must remain usable for a
+    following request. A short inactivity timeout is configured so that, if
+    the response stalls, the test run fails quickly instead of hanging.
+    """
+
+    _replay: str = "replays/chunked_trailer_response.replay.yaml"
+
+    def __init__(self):
+        tr = Test.AddTestRun('Chunked response with trailer completes without stalling')
+        self._dns = tr.MakeDNServer('dns-trailer-response', default='127.0.0.1')
+        self._server = tr.AddVerifierServerProcess('server-trailer-response', self._replay)
+
+        ts = tr.MakeATSProcess('ts-trailer-response', enable_cache=False)
+        port = self._server.Variables.http_port
+        ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{port}/')
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+                'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
+                'proxy.config.dns.resolv_conf': 'NULL',
+                # Keep the timeouts short so a stalled response fails the run
+                # promptly rather than hanging the suite.
+                'proxy.config.http.transaction_no_activity_timeout_out': 5,
+                'proxy.config.http.transaction_no_activity_timeout_in': 5,
+                'proxy.config.net.default_inactivity_timeout': 5,
+            })
+
+        self._client = tr.AddVerifierClientProcess('client-trailer-response', self._replay, http_ports=[ts.Variables.port])
+        self._client.StartBefore(self._dns)
+        self._client.StartBefore(self._server)
+        self._client.StartBefore(ts)
+
+        # If the first response stalls, the client's poll times out and the
+        # second transaction on the reused connection is never served, leaving
+        # its verification rules unprocessed. Both markers must be absent.
+        self._client.Streams.All += Testers.ExcludesExpression('Poll timed out waiting for content', 'The response must not stall.')
+        self._client.Streams.All += Testers.ExcludesExpression(
+            'never processed', 'Every transaction on the connection must be served.')
+
+
+TestChunkedTrailerResponseCompletes()
