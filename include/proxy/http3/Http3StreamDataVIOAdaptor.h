@@ -38,8 +38,9 @@ public:
   Http3ErrorUPtr handle_frame(std::shared_ptr<const Http3Frame> frame, Http3StreamType s_type = Http3StreamType::UNKNOWN) override;
 
   // Http3StreamDataVIOAdaptor
-  void finalize();
-  bool has_data() const;
+  void    finalize();
+  bool    has_data() const;
+  int64_t total_data_length() const;
 
 private:
   VIO            *_sink_vio          = nullptr;

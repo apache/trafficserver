@@ -23,8 +23,13 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
+#include <string_view>
+
+#include "iocore/eventsystem/VIO.h"
 #include "proxy/http3/Http3FrameDispatcher.h"
 #include "proxy/http3/Http3ProtocolEnforcer.h"
+#include "proxy/http3/Http3StreamDataVIOAdaptor.h"
 #include "Mock.h"
 
 namespace
@@ -383,6 +388,75 @@ TEST_CASE("ignore unknown frames", "[http3]")
     CHECK(nread == 0);
     free_MIOBuffer(buf);
   }
+}
+
+TEST_CASE("Http3StreamDataVIOAdaptor buffers only the current DATA frame payload", "[http3]")
+{
+  // The dispatcher hands each handler a reader whose size_limit covers just
+  // one frame. The adaptor must respect that limit, so the body it collects
+  // is the concatenated payloads and nothing else, no matter how the frames
+  // are split across reads.
+  MIOBuffer      *sink_buffer = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+  IOBufferReader *sink_reader = sink_buffer->alloc_reader();
+  VIO             sink_vio;
+
+  sink_vio.mutex = new_ProxyMutex();
+  sink_vio.set_writer(sink_buffer);
+
+  Http3FrameDispatcher      http3FrameDispatcher;
+  Http3StreamDataVIOAdaptor adaptor(&sink_vio);
+  http3FrameDispatcher.add_handler(&adaptor);
+
+  MIOBuffer      *buf    = new_MIOBuffer(BUFFER_SIZE_INDEX_512);
+  IOBufferReader *reader = buf->alloc_reader();
+  uint64_t        nread  = 0;
+
+  uint8_t input[] = {// 1st frame (DATA)
+                     0x00, 0x04, 'A', 'A', 'A', 'A',
+                     // 2nd frame (DATA)
+                     0x00, 0x04, 'B', 'B', 'B', 'B'};
+
+  constexpr std::string_view expected_body = "AAAABBBB";
+
+  SECTION("Both frames arrive in a single read")
+  {
+    // The first frame's payload is followed in the same buffer by the second
+    // frame, so an unbounded copy would pull the trailing header and payload
+    // into the body as well.
+    buf->write(input, sizeof(input));
+
+    Http3ErrorUPtr error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
+    CHECK(!error);
+    CHECK(nread == sizeof(input));
+  }
+
+  SECTION("Frames arrive one byte at a time")
+  {
+    // on_read_ready resets nread on every call, so total it up as we go.
+    uint64_t consumed = 0;
+
+    for (uint8_t *it{input}; it < input + sizeof(input); ++it) {
+      buf->write(it, 1);
+
+      Http3ErrorUPtr error = http3FrameDispatcher.on_read_ready(0, Http3StreamType::UNKNOWN, *reader, nread);
+      CHECK(!error);
+      consumed += nread;
+    }
+    CHECK(consumed == sizeof(input));
+  }
+
+  CHECK(adaptor.total_data_length() == static_cast<int64_t>(expected_body.size()));
+
+  adaptor.finalize();
+  REQUIRE(sink_reader->read_avail() == static_cast<int64_t>(expected_body.size()));
+
+  std::array<char, expected_body.size()> body;
+
+  sink_reader->memcpy(body.data(), body.size());
+  CHECK(std::string_view(body.data(), body.size()) == expected_body);
+
+  free_MIOBuffer(buf);
+  free_MIOBuffer(sink_buffer);
 }
 
 TEST_CASE("HTTP/2 reserved frame type not allowed", "[http3]")

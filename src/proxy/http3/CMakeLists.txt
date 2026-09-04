@@ -64,6 +64,7 @@ if(BUILD_TESTING)
     Http3Config.cc
     Http3Frame.cc
     Http3SettingsHandler.cc
+    Http3StreamDataVIOAdaptor.cc
   )
   target_link_libraries(
     test_http3
