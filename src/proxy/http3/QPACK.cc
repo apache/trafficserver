@@ -1017,18 +1017,24 @@ QPACK::_update_largest_known_received_index_by_insert_count(uint16_t insert_coun
 void
 QPACK::_update_largest_known_received_index_by_stream_id(uint64_t stream_id)
 {
-  uint16_t largest_ref_index = this->_references[stream_id].largest;
-  if (largest_ref_index > this->_largest_known_received_index) {
-    this->_largest_known_received_index = largest_ref_index;
+  auto it = this->_references.find(stream_id);
+  if (it == this->_references.end()) {
+    return;
+  }
+  if (it->second.largest > this->_largest_known_received_index) {
+    this->_largest_known_received_index = it->second.largest;
   }
 }
 
 void
 QPACK::_update_reference_counts(uint64_t stream_id)
 {
-  uint16_t smallest_ref_index = this->_references[stream_id].smallest;
-  if (smallest_ref_index) {
-    this->_dynamic_table.unref_entry(smallest_ref_index);
+  auto it = this->_references.find(stream_id);
+  if (it == this->_references.end()) {
+    return;
+  }
+  if (it->second.smallest) {
+    this->_dynamic_table.unref_entry(it->second.smallest);
   }
 }
 
