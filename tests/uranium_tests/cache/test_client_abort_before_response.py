@@ -61,7 +61,8 @@ def configure_ats(ats_factory: ATSFactory, origin_port: int, allow_half_open: in
             "proxy.config.diags.debug.tags": "http",
             "proxy.config.http.allow_half_open": allow_half_open,
             "proxy.config.http.cache.required_headers": 0,
-        })
+        }
+    )
     if _enable_tls:
         ats.add_default_ssl_files()
     ats.remap_config.add_line(f"map / http://127.0.0.1:{origin_port}/")

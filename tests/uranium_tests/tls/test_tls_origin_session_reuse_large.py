@@ -20,7 +20,8 @@ from tools.uranium.services import ATSFactory, Curl, ServiceFactory, wait_for_fi
 
 
 @pytest.mark.parametrize(
-    "ceiling,override,resumes", [(None, None, True), (4096, None, False), (None, "-1", False), (None, "1048576", True)])
+    "ceiling,override,resumes", [(None, None, True), (4096, None, False), (None, "-1", False), (None, "1048576", True)]
+)
 def test_tls_origin_session_reuse_large(
     ats_factory: ATSFactory,
     services: ServiceFactory,
@@ -40,21 +41,14 @@ def test_tls_origin_session_reuse_large(
     """
     backend = services.origin("backend")
     backend.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-            "body": ""
-        }, {
-            "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-            "body": "large session test"
-        })
+        {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "body": ""},
+        {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "body": "large session test"},
+    )
     origin = ats_factory.create("origin", enable_tls=True)
     origin.copy_to_ssl("ssl/server-large.pem", "ssl/server-large.key")
     origin.set_ssl_multicert_yaml(
-        {"ssl_multicert": [{
-            "dest_ip": "*",
-            "ssl_cert_name": "server-large.pem",
-            "ssl_key_name": "server-large.key"
-        }]})
+        {"ssl_multicert": [{"dest_ip": "*", "ssl_cert_name": "server-large.pem", "ssl_key_name": "server-large.key"}]}
+    )
     origin.records.update({"proxy.config.http.cache.http": 0, "proxy.config.ssl.server.session_ticket.enable": 1})
     origin.remap_config.add_line(f"map / http://127.0.0.1:{backend.port}/")
     ats = ats_factory.create("ts", enable_tls=True)

@@ -24,8 +24,10 @@ def main(port: int) -> None:
     cases = 0
     for version in ('tls1_2', 'tls1_3'):
         for servername, common_name in ((None, 'foo.com'), ('unknown.example', 'foo.com'), ('one.com', 'group.com')):
-            for sigalg, signature in (('rsa_pss_rsae_sha256', r'(RSA-PSS|rsa_pss_)'), ('ecdsa_secp256r1_sha256',
-                                                                                       r'(ECDSA|ecdsa_)')):
+            for sigalg, signature in (
+                ('rsa_pss_rsae_sha256', r'(RSA-PSS|rsa_pss_)'),
+                ('ecdsa_secp256r1_sha256', r'(ECDSA|ecdsa_)'),
+            ):
                 command = [
                     'openssl',
                     's_client',
@@ -43,8 +45,11 @@ def main(port: int) -> None:
                 result = subprocess.run(command, input='', capture_output=True, text=True, timeout=10)
                 output = result.stdout + result.stderr
                 label = f'{version}, SNI={servername}, sigalg={sigalg}'
-                if (result.returncode != 0 or re.search(rf'Signature type: {signature}', output) is None or
-                        re.search(rf'Peer certificate:.*CN\s*=\s*{re.escape(common_name)}(?:\s|$)', output) is None):
+                if (
+                    result.returncode != 0
+                    or re.search(rf'Signature type: {signature}', output) is None
+                    or re.search(rf'Peer certificate:.*CN\s*=\s*{re.escape(common_name)}(?:\s|$)', output) is None
+                ):
                     raise RuntimeError(f'{label} failed (exit {result.returncode}):\n{output}')
                 print(f'PASS: {label}', flush=True)
                 cases += 1

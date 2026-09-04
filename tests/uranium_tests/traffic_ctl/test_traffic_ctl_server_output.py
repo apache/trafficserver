@@ -26,10 +26,12 @@ def configure_ats(ats_factory: ATSFactory) -> ATS:
     """
 
     ats = ats_factory.create("ts")
-    ats.records.update({
-        "proxy.config.exec_thread.autoconfig.enabled": 0,
-        "proxy.config.exec_thread.limit": 4,
-    })
+    ats.records.update(
+        {
+            "proxy.config.exec_thread.autoconfig.enabled": 0,
+            "proxy.config.exec_thread.limit": 4,
+        }
+    )
     return ats
 
 

@@ -48,16 +48,13 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
         requested_end = begin + SLICE_BLOCK_SIZE - 1
         actual_end = min(begin + SLICE_BLOCK_SIZE, len(LARGE_BODY))
         origin.add_response(
-            {"headers": "GET /large HTTP/1.1\r\n"
-                        "Host: www.example.com\r\n"
-                        f"Range: bytes={begin}-{requested_end}\r\n\r\n"},
+            {"headers": f"GET /large HTTP/1.1\r\nHost: www.example.com\r\nRange: bytes={begin}-{requested_end}\r\n\r\n"},
             {
-                "headers":
-                    "HTTP/1.1 206 Partial Content\r\n"
-                    "Connection: close\r\n"
-                    "Accept-Ranges: bytes\r\n"
-                    f"Content-Range: bytes {begin}-{actual_end - 1}/{len(LARGE_BODY)}\r\n"
-                    "Cache-Control: max-age=10,public\r\n\r\n",
+                "headers": "HTTP/1.1 206 Partial Content\r\n"
+                "Connection: close\r\n"
+                "Accept-Ranges: bytes\r\n"
+                f"Content-Range: bytes {begin}-{actual_end - 1}/{len(LARGE_BODY)}\r\n"
+                "Cache-Control: max-age=10,public\r\n\r\n",
                 "body": LARGE_BODY[begin:actual_end],
             },
         )
@@ -80,13 +77,15 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
         f"map http://slice/ http://127.0.0.1:{_origin.port}/ "
         f"@plugin=slice.so @pparam=--blockbytes-test={SLICE_BLOCK_SIZE} "
         "@pparam=--minimum-size=8 @pparam=--metadata-cache-size=4 "
-        "@plugin=cache_range_requests.so")
+        "@plugin=cache_range_requests.so"
+    )
     ats.plugin_config.add_line("xdebug.so --enable=x-cache")
     ats.records.update(
         {
             "proxy.config.diags.debug.enabled": 0,
             "proxy.config.diags.debug.tags": "http|cache|slice|xdebug|cache_range_requests",
-        })
+        }
+    )
     return ats
 
 

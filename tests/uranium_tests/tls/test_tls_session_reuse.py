@@ -54,7 +54,8 @@ def configure_ats(ats_factory: ATSFactory, name: str, *, enabled: bool, _origin:
             "proxy.config.exec_thread.autoconfig.scale": 1.0,
             "proxy.config.ssl.server.session_ticket.enable": int(enabled),
             "proxy.config.ssl.server.session_ticket.number": 2 if enabled else 0,
-        })
+        }
+    )
     return ats
 
 
@@ -72,10 +73,12 @@ def connection_sequence(ats: ATS, name: str, protocol: str, *, expect_resumable:
     version_option = "-tls1_2" if protocol == "TLSv1.2" else "-tls1_3"
     first = (
         f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client "
-        f"-connect 127.0.0.1:{ats.https_port} -sess_out {shlex.quote(str(session))} {version_option}")
+        f"-connect 127.0.0.1:{ats.https_port} -sess_out {shlex.quote(str(session))} {version_option}"
+    )
     resumed = (
         f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client "
-        f"-connect 127.0.0.1:{ats.https_port} -sess_in {shlex.quote(str(session))} {version_option}")
+        f"-connect 127.0.0.1:{ats.https_port} -sess_in {shlex.quote(str(session))} {version_option}"
+    )
     first_result = ats.run_shell(first, timeout=30)
     assert first_result.returncode == 0, first_result.output
     if expect_resumable:
@@ -84,9 +87,7 @@ def connection_sequence(ats: ATS, name: str, protocol: str, *, expect_resumable:
     elif session.is_file():
         followup = resumed
     else:
-        followup = (
-            f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client "
-            f"-connect 127.0.0.1:{ats.https_port} {version_option}")
+        followup = f"printf 'GET / HTTP/1.1\\r\\n\\r\\n' | openssl s_client -connect 127.0.0.1:{ats.https_port} {version_option}"
     result = ats.run_shell(" && ".join([followup] * 5), timeout=60)
     assert result.returncode == 0, result.output
     output = first_result.output + result.output
@@ -113,8 +114,10 @@ def test_tls_session_reuse(ats_factory: ATSFactory, services: ServiceFactory) ->
     assert enabled_first.count("Reused, TLSv1.2") == 5
     assert enabled_second.count("Reused, TLSv1.2") == 5
     disabled_tls12 = connection_sequence(
-        _disabled, "sess3", "TLSv1.2", expect_resumable=False, _session_directory=_session_directory)
+        _disabled, "sess3", "TLSv1.2", expect_resumable=False, _session_directory=_session_directory
+    )
     disabled_tls13 = connection_sequence(
-        _disabled, "sess4", "TLSv1.3", expect_resumable=False, _session_directory=_session_directory)
+        _disabled, "sess4", "TLSv1.3", expect_resumable=False, _session_directory=_session_directory
+    )
     assert "Reused" not in disabled_tls12
     assert "Reused" not in disabled_tls13

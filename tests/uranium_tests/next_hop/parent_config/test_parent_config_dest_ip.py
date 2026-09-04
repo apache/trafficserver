@@ -45,12 +45,14 @@ def configure_dns(services: ServiceFactory) -> DNSServer:
     """
 
     dns = services.dns("dns")
-    dns.add_records({
-        "origin": ["127.0.0.1"],
-        "ts1": ["127.0.0.1"],
-        "ts0": ["127.0.0.1"],
-        "foo.bar": ["142.250.72.14"],
-    })
+    dns.add_records(
+        {
+            "origin": ["127.0.0.1"],
+            "ts1": ["127.0.0.1"],
+            "ts0": ["127.0.0.1"],
+            "foo.bar": ["142.250.72.14"],
+        }
+    )
     return dns
 
 
@@ -103,7 +105,8 @@ def configure_edge(ats_factory: ATSFactory, *, _dns: DNSServer, _mid: ATS) -> AT
         (
             "dest_ip=93.184.216.34 port=80 go_direct=true",
             f'dest_host=foo.bar port=80 parent="ts1:{_mid.http_port}|1;" go_direct="false" parent_is_proxy="true"',
-        ))
+        )
+    )
     return ats
 
 
@@ -128,6 +131,8 @@ def test_parent_config_dest_ip(ats_factory: ATSFactory, services: ServiceFactory
     result = curl.run(
         (
             f"--silent --dump-header /dev/stdout --output /dev/stderr --proxy "
-            f"'http://127.0.0.1:{_edge.http_port}' http://foo.bar/foo.txt"),)
+            f"'http://127.0.0.1:{_edge.http_port}' http://foo.bar/foo.txt"
+        ),
+    )
     assert result.returncode == 0, result.output
     assert re.search(r"Via:.* ts1 .* ts0 ", result.stdout), result.output

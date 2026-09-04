@@ -30,10 +30,7 @@ def configure_origin(services: ServiceFactory) -> OriginServer:
 
     origin = services.origin("origin")
     origin.add_response(
-        {
-            "headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n",
-            "body": ""
-        },
+        {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "body": ""},
         {
             "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: close\r\n\r\n",
             "body": "Hello",
@@ -59,7 +56,8 @@ def configure_ats(ats_factory: ATSFactory, *, _origin: OriginServer) -> ATS:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "crash_test",
             "proxy.config.crash_log_helper": "traffic_crashlog",
-        })
+        }
+    )
     ats.copy_custom_plugin("{AtsBuildUraniumTestsDir}/pluginTest/crash_test/.libs/crash_test.so")
     ats.plugin_config.add_line("crash_test.so")
     ats.remap_config.add_line(f"map / http://127.0.0.1:{_origin.port}/")
@@ -91,10 +89,7 @@ def trigger_throw(*, _ats: ATS, _curl: Curl) -> None:
 
     response = _curl.get(
         _ats,
-        headers={
-            "Host": "example.com",
-            "X-Crash-Test": "throw"
-        },
+        headers={"Host": "example.com", "X-Crash-Test": "throw"},
         options=f"--silent --output /dev/null",
     )
     assert response.returncode in (52, 56), response.output
