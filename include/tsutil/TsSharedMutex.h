@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include <cstdio>
+#include <cstdlib>
 #include <pthread.h>
 #include "tsutil/Strerror.h"
 #include "tsutil/Assert.h"
@@ -172,10 +174,15 @@ private:
   pthread_rwlock_t _lock = PTHREAD_RWLOCK_INITIALIZER;
 #endif
 
-  static void
-  _call_fatal(char const *func_name, void *ptr, int errnum)
-  {
+  [[noreturn]] static void
+  _call_fatal(char const *func_name, void *ptr, int errnum) noexcept
+  try {
     fatal_error("{}({}) failed: {} ({})", func_name, ptr, Strerror(errnum).c_str(), errnum);
+  } catch (...) {
+    // Formatting the message can throw (it allocates); abort with a minimal
+    // breadcrumb rather than let an exception escape into a noexcept destructor.
+    fprintf(stderr, "shared_mutex: %s failed (%d); abort message formatting threw\n", func_name, errnum);
+    std::abort();
   }
 
   // In debug builds, make sure shared vs. exclusive locks and unlocks are properly paired.

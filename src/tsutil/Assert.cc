@@ -28,8 +28,8 @@
 #include <syslog.h>
 
 void
-ts::do_abort(const SourceLocation &loc, const char *expr, const char *message)
-{
+ts::do_abort(const SourceLocation &loc, const char *expr, const char *message) noexcept
+try {
   swoc::LocalBufferWriter<1024> w;
 
   w.print("Fatal: <{}> {}", loc, expr);
@@ -40,5 +40,10 @@ ts::do_abort(const SourceLocation &loc, const char *expr, const char *message)
   fprintf(stderr, "%s\n", w.data());
   syslog(LOG_CRIT, "%s", w.data());
 
+  abort();
+} catch (...) {
+  // Formatting the message must not stop the abort, and an exception must not
+  // escape into callers' noexcept contexts (e.g. destructors).
+  fprintf(stderr, "Fatal: <%s> (abort message formatting threw)\n", expr);
   abort();
 }

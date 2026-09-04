@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset)
+.. function:: void TSHttpHdrDestroy(TSMBuffer bufp, TSMLoc offset) noexcept
 
 Description
 ===========

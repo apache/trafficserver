@@ -88,7 +88,7 @@
  *
  * @private
  */
-void TSError(const char *fmt, ...) ATSCPPAPI_PRINTFLIKE(1, 2);
+void TSError(const char *fmt, ...) noexcept ATSCPPAPI_PRINTFLIKE(1, 2);
 
 // This is weird, but see the following:
 //   http://stackoverflow.com/questions/5641427/how-to-make-preprocessor-generate-a-string-for-line-keyword

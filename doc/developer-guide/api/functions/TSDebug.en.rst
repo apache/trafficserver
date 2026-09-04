@@ -33,7 +33,7 @@ Synopsis
 .. function:: void TSStatus(const char * format, ...)
 .. function:: void TSNote(const char * format, ...)
 .. function:: void TSWarning(const char * format, ...)
-.. function:: void TSError(const char * format, ...)
+.. function:: void TSError(const char * format, ...) noexcept
 .. function:: void TSFatal(const char * format, ...)
 .. function:: void TSAlert(const char * format, ...)
 .. function:: void TSEmergency(const char * format, ...)

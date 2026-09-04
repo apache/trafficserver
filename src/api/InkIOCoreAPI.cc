@@ -28,6 +28,7 @@
  */
 
 #include "tscore/ink_platform.h"
+#include "tscore/ink_error.h"
 #include "ts/ts.h"
 #include "ts/InkAPIPrivateIOCore.h"
 #include "../iocore/net/P_UnixUDPConnection.h"
@@ -160,8 +161,8 @@ TSThreadCreate(TSThreadFunc func, void *data)
 // needs to delete the thread, it must first wait for the thread to
 // complete.
 void
-TSThreadWait(TSThread thread)
-{
+TSThreadWait(TSThread thread) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
   INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
 
@@ -172,6 +173,8 @@ TSThreadWait(TSThread thread)
   }
 
   ink_mutex_release(&ithread->completion.lock);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSThread
@@ -193,8 +196,8 @@ TSThreadInit()
 }
 
 void
-TSThreadDestroy(TSThread thread)
-{
+TSThreadDestroy(TSThread thread) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(thread) == TS_SUCCESS);
 
   INKThreadInternal *ithread = reinterpret_cast<INKThreadInternal *>(thread);
@@ -210,6 +213,8 @@ TSThreadDestroy(TSThread thread)
   }
 
   delete ithread;
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSThread
@@ -246,8 +251,8 @@ TSMutexCreate()
 }
 
 void
-TSMutexDestroy(TSMutex m)
-{
+TSMutexDestroy(TSMutex m) noexcept
+try {
   sdk_assert(sdk_sanity_check_mutex(m) == TS_SUCCESS);
   ProxyMutex *mutexp = reinterpret_cast<ProxyMutex *>(m);
 
@@ -255,6 +260,8 @@ TSMutexDestroy(TSMutex m)
     ink_release_assert(mutexp->refcount() == 0);
     mutexp->free();
   }
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 /* The following two APIs are for Into work, actually, APIs of Mutex
@@ -288,27 +295,33 @@ TSMutexCheck(TSMutex mutex)
 }
 
 void
-TSMutexLock(TSMutex mutexp)
-{
+TSMutexLock(TSMutex mutexp) noexcept
+try {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
   ProxyMutex *proxy_mutex = reinterpret_cast<ProxyMutex *>(mutexp);
   MUTEX_TAKE_LOCK(proxy_mutex, this_ethread());
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSReturnCode
-TSMutexLockTry(TSMutex mutexp)
-{
+TSMutexLockTry(TSMutex mutexp) noexcept
+try {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
   ProxyMutex *proxy_mutex = reinterpret_cast<ProxyMutex *>(mutexp);
   return (MUTEX_TAKE_TRY_LOCK(proxy_mutex, this_ethread()) ? TS_SUCCESS : TS_ERROR);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 void
-TSMutexUnlock(TSMutex mutexp)
-{
+TSMutexUnlock(TSMutex mutexp) noexcept
+try {
   sdk_assert(sdk_sanity_check_mutex(mutexp) == TS_SUCCESS);
   ProxyMutex *proxy_mutex(reinterpret_cast<ProxyMutex *>(mutexp));
   MUTEX_UNTAKE_LOCK(proxy_mutex, this_ethread());
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 /* VIOs */
@@ -447,10 +460,12 @@ TSIOBufferSizedCreate(TSIOBufferSizeIndex index)
 }
 
 void
-TSIOBufferDestroy(TSIOBuffer bufp)
-{
+TSIOBufferDestroy(TSIOBuffer bufp) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(bufp) == TS_SUCCESS);
   free_MIOBuffer((MIOBuffer *)bufp);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSIOBufferBlock
@@ -657,12 +672,14 @@ TSIOBufferReaderClone(TSIOBufferReader readerp)
 }
 
 void
-TSIOBufferReaderFree(TSIOBufferReader readerp)
-{
+TSIOBufferReaderFree(TSIOBufferReader readerp) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
   IOBufferReader *r = (IOBufferReader *)readerp;
   r->mbuf->dealloc_reader(r);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 TSIOBufferBlock
@@ -680,20 +697,24 @@ TSIOBufferReaderStart(TSIOBufferReader readerp)
 }
 
 void
-TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes)
-{
+TSIOBufferReaderConsume(TSIOBufferReader readerp, int64_t nbytes) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
   sdk_assert(nbytes >= 0);
 
   IOBufferReader *r = (IOBufferReader *)readerp;
   r->consume(nbytes);
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }
 
 int64_t
-TSIOBufferReaderAvail(TSIOBufferReader readerp)
-{
+TSIOBufferReaderAvail(TSIOBufferReader readerp) noexcept
+try {
   sdk_assert(sdk_sanity_check_iocore_structure(readerp) == TS_SUCCESS);
 
   IOBufferReader *r = (IOBufferReader *)readerp;
   return r->read_avail();
+} catch (...) {
+  ink_abort("exception escaped %s", __func__);
 }

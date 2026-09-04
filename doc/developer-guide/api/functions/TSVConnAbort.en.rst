@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSVConnAbort(TSVConn connp, int error)
+.. function:: void TSVConnAbort(TSVConn connp, int error) noexcept
 
 Description
 ===========
