@@ -21,6 +21,8 @@
  *  limitations under the License.
  */
 
+#include <limits>
+
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
@@ -165,32 +167,34 @@ QPACK::~QPACK()
 void
 QPACK::on_stream_open(QUICStream &stream)
 {
-  auto *info = new QUICStreamVCAdapter::IOInfo(stream);
+  auto  ret  = this->_streams.emplace(stream.id(), stream);
+  auto &info = ret.first->second;
 
   switch (stream.direction()) {
   case QUICStreamDirection::BIDIRECTIONAL:
     // ink_assert(!"QPACK does not use bidirectional streams");
     // QPACK offline interop uses stream 0 as a encoder stream.
-    info->setup_write_vio(this);
-    info->setup_read_vio(this);
+    info.setup_write_vio(this);
+    info.setup_read_vio(this);
     break;
   case QUICStreamDirection::SEND:
-    info->setup_write_vio(this);
+    info.setup_write_vio(this);
     break;
   case QUICStreamDirection::RECEIVE:
-    info->setup_read_vio(this);
+    info.setup_read_vio(this);
     break;
   default:
     ink_assert(false);
     break;
   }
 
-  stream.set_io_adapter(&info->adapter);
+  stream.set_io_adapter(&info.adapter);
 }
 
 void
-QPACK::on_stream_close(QUICStream & /* stream ATS_UNUSED */)
+QPACK::on_stream_close(QUICStream &stream)
 {
+  this->_streams.erase(stream.id());
 }
 
 int
@@ -1142,20 +1146,30 @@ QPACK::_on_encoder_stream_read_ready(IOBufferReader &reader)
     reader.memcpy(&buf, 1);
     if (buf & 0x80) { // Insert With Name Reference
       bool        is_static;
-      uint16_t    index;
-      const char *name;
-      size_t      name_len;
-      const char *dummy;
-      size_t      dummy_len;
+      uint64_t    index;
+      const char *name      = nullptr;
+      size_t      name_len  = 0;
+      const char *dummy     = nullptr;
+      size_t      dummy_len = 0;
       char       *value;
       size_t      value_len;
       if (this->_read_insert_with_name_ref(reader, is_static, index, this->_arena, &value, value_len) < 0) {
         this->_abort_decode();
         return EVENT_DONE;
       }
-      QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%d, value=%.*s", is_static, index, static_cast<int>(value_len),
-                 value);
-      StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
+      QPACKDebug("Received Insert With Name Ref: is_static=%d, index=%" PRIu64 ", value=%.*s", is_static, index,
+                 static_cast<int>(value_len), value);
+      XpackLookupResult result;
+      if (is_static) {
+        result = StaticTable::lookup(index, &name, &name_len, &dummy, &dummy_len);
+      } else if (index <= std::numeric_limits<uint32_t>::max()) {
+        result = this->_dynamic_table.lookup(static_cast<uint32_t>(index), &name, &name_len, &dummy, &dummy_len);
+      }
+      if (result.match_type != XpackLookupResult::MatchType::EXACT) {
+        this->_arena.str_free(value);
+        this->_abort_decode();
+        return EVENT_DONE;
+      }
       this->_dynamic_table.insert_entry(name, name_len, value, value_len);
       this->_arena.str_free(value);
     } else if (buf & 0x40) { // Insert Without Name Reference
@@ -1219,14 +1233,18 @@ QPACK::estimate_header_block_size(const HTTPHdr & /* hdr ATS_UNUSED */)
 }
 
 const XpackLookupResult
-QPACK::StaticTable::lookup(uint16_t index, const char **name, size_t *name_len, const char **value, size_t *value_len)
+QPACK::StaticTable::lookup(uint64_t index, const char **name, size_t *name_len, const char **value, size_t *value_len)
 {
+  if (index >= countof(STATIC_HEADER_FIELDS)) {
+    return {0, XpackLookupResult::MatchType::NONE};
+  }
+
   const Header &header = STATIC_HEADER_FIELDS[index];
   *name                = header.name;
   *name_len            = header.name_len;
   *value               = header.value;
   *value_len           = header.value_len;
-  return {index, XpackLookupResult::MatchType::EXACT};
+  return {static_cast<uint32_t>(index), XpackLookupResult::MatchType::EXACT};
 }
 
 const XpackLookupResult
@@ -1500,7 +1518,7 @@ QPACK::_write_stream_cancellation(uint64_t stream_id)
 }
 
 int
-QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint16_t &index, Arena &arena, char **value,
+QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint64_t &index, Arena &arena, char **value,
                                   size_t &value_len)
 {
   size_t   read_len = 0;
@@ -1514,10 +1532,9 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
 
   // Name Index
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(index, input, input + input_len, 6)) < 0) {
     return -1;
   }
-  index     = tmp;
   read_len += ret;
 
   // Value
