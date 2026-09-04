@@ -144,6 +144,7 @@ auto_option(UNWIND FEATURE_VAR TS_USE_REMOTE_UNWINDING PACKAGE_DEPENDS unwind)
 
 option(ENABLE_ASAN "Use address sanitizer (default OFF)")
 option(ENABLE_TSAN "Use thread sanitizer (default OFF)")
+option(ENABLE_UBSAN "Use undefined behavior sanitizer (default OFF)")
 option(ENABLE_FUZZING "Enable fuzzing (default OFF)")
 option(ENABLE_FIPS "Enable fips compliance (default OFF)")
 option(ENABLE_EVENT_TRACKER "Enable event tracking (default OFF)")
@@ -447,6 +448,43 @@ elseif(ENABLE_TSAN)
   endif()
   add_compile_options(-g -fsanitize=thread -fno-omit-frame-pointer)
   add_link_options(-g -fsanitize=thread)
+endif()
+
+# UndefinedBehaviorSanitizer. Deliberately not part of the either/or chain above:
+# UBSan instruments arithmetic, shifts, and type loads rather than replacing the
+# allocator or the thread runtime, so it composes with either of them as well as
+# standing on its own: asan gives -fsanitize=address,undefined and tsan gives
+# -fsanitize=thread,undefined. Only the asan pairing has a preset, since that is
+# the combination developers ask for, but the option itself does not restrict it.
+#
+# vptr is excluded. It needs a matching type_info at every polymorphic access, and
+# a plugin loaded with dlopen does not reliably share type identity with the main
+# image, so the check reports the plugin boundary rather than a real bug.
+#
+# Findings recover, so a single run reports every distinct site instead of stopping
+# at the first. That is the default for most checks, but which checks recover by
+# default varies between compilers, so ask for it explicitly rather than inherit it.
+# A few checks cannot recover by construction (unreachable, return) and still abort.
+# Set UBSAN_OPTIONS=halt_on_error=1 at runtime to stop on the first finding, which
+# is what a gating job would want.
+if(ENABLE_UBSAN)
+  # This can fail two ways: the toolchain does not know -fsanitize=undefined at all,
+  # or it knows the flag but cannot link the runtime library, which some distributions
+  # package separately from the compiler. Without the check the second case surfaces as
+  # a bare "cannot find libubsan.so" from the linker after compiling hundreds of
+  # objects, so establish it here and let the message cover both.
+  include(CheckLinkerFlag)
+  check_linker_flag(CXX -fsanitize=undefined HAS_UBSAN_SUPPORT)
+  if(NOT HAS_UBSAN_SUPPORT)
+    message(
+      FATAL_ERROR
+        "ENABLE_UBSAN was requested, but this toolchain cannot link -fsanitize=undefined. Either the compiler does not support the flag, or it does and the sanitizer runtime is missing. GCC ships that runtime in a package separate from the compiler on most distributions, under a name that varies by distribution."
+    )
+  endif()
+  add_compile_options(-g -fsanitize=undefined -fno-sanitize=vptr -fsanitize-recover=undefined -fno-omit-frame-pointer)
+  # Only -fsanitize=undefined matters at link time, to pull in the runtime. The vptr
+  # and recover flags are compile time instrumentation controls and do nothing here.
+  add_link_options(-g -fsanitize=undefined)
 endif()
 
 # Clang Thread Safety Analysis. The TS_* annotations (tsutil/ts_thread_safety.h)
