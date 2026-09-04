@@ -16,7 +16,15 @@
 #######################
 
 # plugin api *only*
-add_library(tsapi SHARED InkAPI.cc InkAPIInternal.cc InkIOCoreAPI.cc)
+add_library(tsapi_objects OBJECT InkAPI.cc InkAPIInternal.cc InkIOCoreAPI.cc)
+set_target_properties(tsapi_objects PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_link_libraries(tsapi_objects PRIVATE libswoc::libswoc yaml-cpp::yaml-cpp OpenSSL::SSL)
+if(ENABLE_PROBES)
+  target_link_libraries(tsapi_objects PRIVATE systemtap::systemtap)
+endif()
+
+add_library(tsapi SHARED)
+target_link_libraries(tsapi PRIVATE tsapi_objects)
 if(BUILD_REGRESSION_TESTING)
   target_sources(tsapi PRIVATE InkAPITest.cc)
 endif()
@@ -63,4 +71,37 @@ if(APPLE)
   target_link_options(tsapi PRIVATE -undefined dynamic_lookup)
 endif()
 
-clang_tidy_check(tsapi)
+if(BUILD_TESTING)
+  add_executable(test_api unit_tests/test_HttpOverridableConfig.cc)
+  target_link_libraries(
+    test_api
+    PRIVATE Catch2::Catch2WithMain
+            ts::tscore
+            tsapi_objects
+            ts::overridable_txn_vars
+            ts::tsutil
+            ts::http
+            ts::http_remap
+            ts::http2
+            ts::logging
+            ts::hdrs
+            ts::diagsconfig
+            ts::inkutils
+            ts::inkdns
+            ts::inkhostdb
+            ts::inkcache
+            ts::aio
+            ts::proxy
+            ts::inknet
+            ts::records
+            ts::inkevent
+            libswoc::libswoc
+            ts::jsonrpc_protocol
+            ts::jsonrpc_server
+            ts::rpcpublichandlers
+            ts::configmanager
+  )
+  add_catch2_test(NAME test_api COMMAND test_api)
+endif()
+
+clang_tidy_check(tsapi_objects)

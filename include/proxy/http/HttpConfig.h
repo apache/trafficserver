@@ -669,9 +669,12 @@ struct OverridableHttpConfigParams {
   //////////////////////////////
   // server verification mode //
   //////////////////////////////
-  char *ssl_client_verify_server_policy     = nullptr;
-  char *ssl_client_verify_server_properties = nullptr;
-  char *ssl_client_sni_policy               = nullptr;
+  char  *ssl_client_verify_server_policy         = nullptr;
+  size_t ssl_client_verify_server_policy_len     = 0;
+  char  *ssl_client_verify_server_properties     = nullptr;
+  size_t ssl_client_verify_server_properties_len = 0;
+  char  *ssl_client_sni_policy                   = nullptr;
+  size_t ssl_client_sni_policy_len               = 0;
 
   MgmtInt proxy_response_hsts_max_age = -1;
 
@@ -786,11 +789,16 @@ struct OverridableHttpConfigParams {
   MgmtFloat background_fill_threshold = 0.5;
 
   // Various strings, good place for them here ...
-  char *ssl_client_cert_filename        = nullptr;
-  char *ssl_client_private_key_filename = nullptr;
-  char *ssl_client_ca_cert_filename     = nullptr;
-  char *ssl_client_ca_cert_path         = nullptr;
-  char *ssl_client_alpn_protocols       = nullptr;
+  char  *ssl_client_cert_filename            = nullptr;
+  size_t ssl_client_cert_filename_len        = 0;
+  char  *ssl_client_private_key_filename     = nullptr;
+  size_t ssl_client_private_key_filename_len = 0;
+  char  *ssl_client_ca_cert_filename         = nullptr;
+  size_t ssl_client_ca_cert_filename_len     = 0;
+  char  *ssl_client_ca_cert_path             = nullptr;
+  size_t ssl_client_ca_cert_path_len         = 0;
+  char  *ssl_client_alpn_protocols           = nullptr;
+  size_t ssl_client_alpn_protocols_len       = 0;
 
   // Host Resolution order
   HostResData host_res_data;
