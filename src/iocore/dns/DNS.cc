@@ -1889,8 +1889,9 @@ dns_process(DNSHandler *handler, HostEnt *buf, int len)
           memcpy((*hap++ = bp), cp, n);
           Dbg(dbg_ctl_dns, "received %s = %s", QtypeName(type),
               inet_ntop(T_AAAA == type ? AF_INET6 : AF_INET, bp, ip_string, sizeof(ip_string)));
-          bp += n;
-          cp += n;
+          bp     += n;
+          cp     += n;
+          buflen  = sizeof(buf->hostbuf) - (bp - buf->hostbuf);
         }
       } else {
         goto Lerror;
