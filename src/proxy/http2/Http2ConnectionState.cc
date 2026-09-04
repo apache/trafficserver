@@ -293,6 +293,42 @@ Http2ConnectionState::rcv_data_frame(const Http2Frame &frame)
  *   2. A HEADERS frame without the END_HEADERS flag set MUST be followed by a
  *      CONTINUATION frame
  */
+namespace
+{
+// An interim (1xx) response received on an outbound
+// (origin) HTTP/2 connection is not the final response. Detect it after the
+// header block is decoded so the caller can discard it and wait for the final
+// response, instead of merging it with the final response headers (which would
+// produce a duplicate :status pseudo-header that fails validation).
+bool
+is_outbound_interim_response(Http2Stream *stream)
+{
+  if (!stream->is_outbound_connection() || stream->trailing_header_is_possible()) {
+    return false;
+  }
+  const MIMEField *status_field = stream->get_receive_header()->field_find(PSEUDO_HEADER_STATUS);
+  if (status_field == nullptr) {
+    return false;
+  }
+  // :status is origin-controlled and HeaderValidator only checks that it is present, so
+  // bound the length before indexing. RFC 9110 15 requires exactly three digits.
+  auto value{status_field->value_get()};
+  return value.length() == 3 && value[0] == '1';
+}
+
+// Discard a decoded interim (1xx) response along with its encoded header block so the
+// following final response is decoded into a clean buffer. Freeing header_blocks here
+// avoids leaking it when the next HEADERS frame allocates a new buffer.
+void
+discard_interim_response(Http2Stream *stream)
+{
+  stream->reset_receive_headers();
+  ats_free(stream->header_blocks);
+  stream->header_blocks        = nullptr;
+  stream->header_blocks_length = 0;
+}
+} // namespace
+
 Http2Error
 Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
 {
@@ -512,6 +548,22 @@ Http2ConnectionState::rcv_headers_frame(const Http2Frame &frame)
     if (stream->receive_end_stream && !stream->payload_length_is_valid()) {
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "recv data bad payload length");
+    }
+
+    // Discard an interim (1xx) response from the
+    // origin and wait for the final response on this stream.
+    if (is_outbound_interim_response(stream)) {
+      // RFC 9113 8.1: a HEADERS frame with END_STREAM carrying an informational (1xx)
+      // status code is malformed. change_state() has already moved the stream toward
+      // closed, so the final response would have nowhere to go; reject as a stream error.
+      if (stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "1xx interim response must not set END_STREAM");
+      }
+      Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
+      discard_interim_response(stream);
+      this->session->interrupt_reading_frames();
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
     }
 
     // Hard-enforce the global active-streams cap on inbound client streams.
@@ -1075,6 +1127,15 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "continuation half close remote");
     case Http2StreamState::HTTP2_STREAM_STATE_IDLE:
       break;
+    case Http2StreamState::HTTP2_STREAM_STATE_HALF_CLOSED_LOCAL:
+      // On an outbound (origin) connection the response is
+      // received while the stream is half-closed (local); its header block may legitimately
+      // span CONTINUATION frames. The per-minute CONTINUATION flood limit still applies below.
+      if (!stream->is_outbound_connection()) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "continuation bad state");
+      }
+      break;
     default:
       return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_CONNECTION, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
                         "continuation bad state");
@@ -1147,6 +1208,22 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
                         "recv data bad payload length");
     }
 
+    // Discard an interim (1xx) response from the
+    // origin and wait for the final response on this stream.
+    if (is_outbound_interim_response(stream)) {
+      // RFC 9113 8.1: a HEADERS frame with END_STREAM carrying an informational (1xx)
+      // status code is malformed. change_state() has already moved the stream toward
+      // closed, so the final response would have nowhere to go; reject as a stream error.
+      if (stream->receive_end_stream) {
+        return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_STREAM, Http2ErrorCode::HTTP2_ERROR_PROTOCOL_ERROR,
+                          "1xx interim response must not set END_STREAM");
+      }
+      Http2StreamDebug(this->session, stream_id, "received interim 1xx response from origin; awaiting final response");
+      discard_interim_response(stream);
+      this->session->interrupt_reading_frames();
+      return Http2Error(Http2ErrorClass::HTTP2_ERROR_CLASS_NONE);
+    }
+
     // Hard-enforce the global active-streams cap on inbound client streams.
     if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible() && Http2::max_active_streams_policy_in == 1 &&
         Http2::max_active_streams_in > 0) {
@@ -1158,14 +1235,22 @@ Http2ConnectionState::rcv_continuation_frame(const Http2Frame &frame)
       }
     }
 
-    // Set up the State Machine
-    SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
-    stream->mark_milestone(Http2StreamMilestone::START_TXN);
-    // This should be fine, need to verify whether we need to replace this with the
-    // "from_early_data" flag from the associated HEADERS frame.
-    stream->new_transaction(frame.is_from_early_data());
-    // Send request header to SM
-    stream->send_headers(*this);
+    // Set up the State Machine. An outbound stream and a trailing header block both
+    // already have a state machine attached, so only a new inbound request may start
+    // one; new_transaction() asserts that none is attached yet. This mirrors the
+    // equivalent branch in rcv_headers_frame().
+    if (!stream->is_outbound_connection() && !stream->trailing_header_is_possible()) {
+      SCOPED_MUTEX_LOCK(stream_lock, stream->mutex, this_ethread());
+      stream->mark_milestone(Http2StreamMilestone::START_TXN);
+      // This should be fine, need to verify whether we need to replace this with the
+      // "from_early_data" flag from the associated HEADERS frame.
+      stream->new_transaction(frame.is_from_early_data());
+      // Send request header to SM
+      stream->send_headers(*this);
+    } else {
+      // Propagate the response (or the trailer) to the existing state machine.
+      stream->send_headers(*this);
+    }
     // Give a chance to send response before reading next frame.
     this->session->interrupt_reading_frames();
   } else {
