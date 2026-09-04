@@ -176,7 +176,7 @@ SniSelector::parseYamlFile(const std::string &yaml_file)
   }
 
   _yaml_file = yaml_file;
-  Dbg(dbg_ctl, "Succesfully loaded YAML file: %s", yaml_file.c_str());
+  Dbg(dbg_ctl, "Successfully loaded YAML file: %s", yaml_file.c_str());
 
   return true;
 }
