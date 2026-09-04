@@ -1,0 +1,95 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# Verify that a chunked response carrying a trailer section is proxied to
+# completion when ATS is configured to drop chunked trailers (the default).
+#
+# The two transactions share a single keep-alive connection. If the proxy
+# over-counts the bytes it expects to write to the client (by including the
+# dropped trailer bytes), the first response never completes, the connection
+# stalls, and the second transaction cannot be served. Both transactions
+# completing proves the response was forwarded without a stall.
+
+sessions:
+- transactions:
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /first
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, 1 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Content-Type, text/html ]
+        - [ Connection, keep-alive ]
+      content:
+        transfer: plain
+        encoding: uri
+        # A 7-byte chunk (abcwxyz), the final 0-size chunk, then a trailer
+        # section (Server and ETag fields) followed by the terminating CRLF.
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0AServer%3A%20ATS%0D%0AETag%3A%20%22def%22%0D%0A%0D%0A
+
+    proxy-response:
+      status: 200
+      content:
+        # The 7-byte body must survive; the trailer must not turn into body.
+        transfer: plain
+        encoding: uri
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
+        verify: { as: equal }
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /second
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Connection, keep-alive ]
+        - [ uuid, 2 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Transfer-Encoding, chunked ]
+        - [ Content-Type, text/html ]
+        - [ Connection, keep-alive ]
+      content:
+        transfer: plain
+        encoding: uri
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0AServer%3A%20ATS%0D%0AETag%3A%20%22ghi%22%0D%0A%0D%0A
+
+    proxy-response:
+      status: 200
+      content:
+        transfer: plain
+        encoding: uri
+        data: 7%0D%0Aabcwxyz%0D%0A0%0D%0A%0D%0A
+        verify: { as: equal }
