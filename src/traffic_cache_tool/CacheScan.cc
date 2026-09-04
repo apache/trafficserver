@@ -343,6 +343,11 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
   }
 
+  // Unlike HTTPInfo::unmarshal(), this does not rebuild the well-known string indexes the object
+  // stores. Those indexes belong to the traffic_server that wrote the object, whose well-known
+  // string table need not match this tool's, so nothing here may read them; the scan reads the URL
+  // through its stored strings only. Anything added here that wants an index must call
+  // HTTPHdrImpl::recompute_wks_indices() first, which means linking libhdrs.
   alt->m_unmarshal_len = orig_len - len;
 
   return zret;
