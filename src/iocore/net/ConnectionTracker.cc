@@ -229,7 +229,7 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
 
   null_bw.print(header_fmt, groups.size()).extent();
-  for (auto g : groups) {
+  for (auto const &g : groups) {
     printer(null_bw, g.get());
   }
   extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
@@ -238,7 +238,7 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
   w.restrict(trailer.size());
   w.print(header_fmt, groups.size());
-  for (auto g : groups) {
+  for (auto const &g : groups) {
     printer(w, g.get());
   }
   w.restore(trailer.size());
@@ -670,7 +670,7 @@ ConnectionTracker::dump_outbound(FILE *f)
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
-    for (std::shared_ptr<Group const> g : groups) {
+    for (std::shared_ptr<Group const> const &g : groups) {
       swoc::LocalBufferWriter<128> w;
       w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
@@ -699,7 +699,7 @@ ConnectionTracker::dump_inbound(FILE *f)
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
-    for (std::shared_ptr<Group const> g : groups) {
+    for (std::shared_ptr<Group const> const &g : groups) {
       swoc::LocalBufferWriter<128> w;
       w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);

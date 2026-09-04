@@ -88,8 +88,8 @@ std::string
 SSLSecret::loadFile(const std::string &name)
 {
   Dbg(dbg_ctl_ssl_secret, "SSLSecret::loadFile(%s)", name.c_str());
-  std::error_code   error;
-  std::string const data = swoc::file::load(swoc::file::path(name), error);
+  std::error_code error;
+  std::string     data = swoc::file::load(swoc::file::path(name), error);
   if (error) {
     Dbg(dbg_ctl_ssl_secret_err, "SSLSecret::loadFile(%s) failed error code=%d message=%s", name.c_str(), error.value(),
         error.message().c_str());
