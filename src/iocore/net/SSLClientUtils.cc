@@ -23,6 +23,7 @@
 #include "P_SSLConfig.h"
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
+#include "SSLRPKUtils.h"
 #include "SSLSessionCache.h"
 #include "TLSCertCompression.h"
 #include "iocore/net/TLSBasicSupport.h"
@@ -36,12 +37,39 @@
 #include <openssl/err.h>
 #include <openssl/pem.h>
 
+#include <mutex>
+
 SSLOriginSessionCache *origin_sess_cache;
 
 namespace
 {
 DbgCtl dbg_ctl_ssl_verify{"ssl_verify"};
 DbgCtl dbg_ctl_ssl_origin_session_cache{"ssl.origin_session_cache"};
+
+#if TS_USE_RPK
+// SSL-level (not SSL_CTX-level, unlike the inbound side) ex_data index holding the trusted
+// next-hop raw public keys for this connection. Outbound cert selection is already per-connection
+// here, and SSLConfigParams::getCTX() caches contexts by (cert, key, CA) -- attaching pins to the
+// shared context would leak one next hop's pin set onto every other hop sharing that cache entry.
+int ssl_server_rpk_index = -1;
+
+void
+ssl_server_rpk_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
+{
+  delete static_cast<std::shared_ptr<const SSLRPKUtils::TrustedKeySet> *>(ptr);
+}
+
+const SSLRPKUtils::TrustedKeySet *
+ssl_get_trusted_rpk(const SSL *ssl)
+{
+  if (ssl_server_rpk_index < 0) {
+    return nullptr;
+  }
+  auto *trusted =
+    static_cast<const std::shared_ptr<const SSLRPKUtils::TrustedKeySet> *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
+  return trusted != nullptr ? trusted->get() : nullptr;
+}
+#endif
 
 } // end anonymous namespace
 
@@ -78,6 +106,50 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   bool enforce_mode = (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::ENFORCED);
   bool check_sig =
     static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::SIGNATURE_MASK);
+
+#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
+  if (EVP_PKEY *peer_rpk = X509_STORE_CTX_get0_rpk(ctx); peer_rpk != nullptr) {
+    // The next hop authenticated with a raw public key. There is no chain to walk and no SAN to
+    // match, so the configured pin set replaces both the signature and name checks below; the
+    // SIGNATURE_MASK/NAME_MASK properties have nothing to act on. verifyServerPolicy still
+    // decides whether a mismatch is fatal, matching the X.509 paths.
+    //
+    // Note `signature_ok` is always 0 here: without DANE enabled, OpenSSL presets
+    // X509_V_ERR_RPK_UNTRUSTED and invokes this callback with `ctx->error == X509_V_OK` being
+    // false (see verify_rpk() in crypto/x509/x509_vfy.c). Our pin match is what decides the
+    // outcome, so on success the preset error has to be cleared -- otherwise it survives into
+    // SSL_get_verify_result() and marks a properly pinned connection as unverified.
+    const SSLRPKUtils::TrustedKeySet *trusted = ssl_get_trusted_rpk(ssl);
+    bool                              pin_ok  = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
+    Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
+    if (pin_ok) {
+      X509_STORE_CTX_set_error(ctx, X509_V_OK);
+    } else {
+      char buff[INET6_ADDRSTRLEN];
+      ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+      Warning("Origin raw public key did not match any trusted key. Action=%s server=%s(%s)",
+              enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
+      if (!enforce_mode) {
+        // Permissive mode continues the handshake, and the X.509 paths likewise leave the
+        // recorded error in place for a failure that is only warned about.
+        X509_STORE_CTX_set_error(ctx, X509_V_ERR_RPK_UNTRUSTED);
+      }
+    }
+    // The hook always runs, as on the X.509 path below: plugins observe every attempt and may add
+    // rejection, but cannot turn a failed pin match into acceptance.
+    TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
+    if (tbs == nullptr) {
+      Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
+      return false;
+    }
+    if (tbs->verify_certificate(ctx) == 1) {
+      Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
+              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
+      return !enforce_mode;
+    }
+    return pin_ok || !enforce_mode;
+  }
+#endif
 
   if (check_sig) {
     if (!signature_ok) {
@@ -155,6 +227,176 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
   return true;
 }
 
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+// BoringSSL rejects raw public keys outright unless a custom verify callback is installed, and
+// SSL_set_custom_verify() displaces SSL_set_verify() (and with it BoringSSL's automatic chain
+// verification) for the whole connection. So this callback owns both cases: pin the peer's raw
+// public key, or -- when the next hop negotiated X.509 after all, the normal state mid-rollout --
+// rebuild and verify the chain by hand before deferring to the usual policy/name/hook logic.
+static enum ssl_verify_result_t
+ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
+{
+  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
+  if (netvc == nullptr) {
+    Dbg(dbg_ctl_ssl_verify, "WARNING, NetVC is NULL in custom cert verify callback");
+    *out_alert = SSL_AD_INTERNAL_ERROR;
+    return ssl_verify_invalid;
+  }
+  if (netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return ssl_verify_ok;
+  }
+
+  bool const enforce_mode = netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::ENFORCED;
+
+  TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
+  if (tbs == nullptr) {
+    Dbg(dbg_ctl_ssl_verify, "custom verify callback on stale netvc");
+    *out_alert = SSL_AD_INTERNAL_ERROR;
+    return ssl_verify_invalid;
+  }
+
+  if (SSL_get_peer_cert_type(ssl) == TLSEXT_cert_type_rpk) {
+    EVP_PKEY                         *peer_rpk = SSL_get0_peer_rpk(ssl);
+    const SSLRPKUtils::TrustedKeySet *trusted  = ssl_get_trusted_rpk(ssl);
+    bool                              pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
+    Dbg(dbg_ctl_ssl_verify, "Origin authenticated with a raw public key (RFC 7250), pin match=%s", pin_ok ? "yes" : "no");
+    if (!pin_ok) {
+      char buff[INET6_ADDRSTRLEN];
+      ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+      Warning("Origin raw public key did not match any trusted key. Action=%s server=%s(%s)",
+              enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
+    }
+
+    // There is no X509_STORE_CTX to hand the hook for a raw public key, but the hook still runs
+    // on every attempt, as on the X.509 paths.
+    if (tbs->verify_certificate(nullptr) == 1) {
+      Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
+              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
+      if (enforce_mode) {
+        *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+        return ssl_verify_invalid;
+      }
+      return ssl_verify_ok;
+    }
+    if (!pin_ok && enforce_mode) {
+      *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+      return ssl_verify_invalid;
+    }
+    return ssl_verify_ok;
+  }
+
+  // X.509 fallback. Rebuild the chain BoringSSL hands back as CRYPTO_BUFFERs so the shared
+  // verify_callback() logic (signature/name/policy/hook) can run against a real X509_STORE_CTX.
+  const STACK_OF(CRYPTO_BUFFER) *chain = SSL_get0_peer_certificates(ssl);
+  if (chain == nullptr || sk_CRYPTO_BUFFER_num(chain) == 0) {
+    if (enforce_mode) {
+      *out_alert = SSL_AD_CERTIFICATE_REQUIRED;
+      return ssl_verify_invalid;
+    }
+    return ssl_verify_ok;
+  }
+
+  X509 *leaf                    = nullptr;
+  STACK_OF(X509) *intermediates = sk_X509_new_null();
+  if (intermediates == nullptr) {
+    *out_alert = SSL_AD_INTERNAL_ERROR;
+    return ssl_verify_invalid;
+  }
+  for (size_t i = 0; i < sk_CRYPTO_BUFFER_num(chain); i++) {
+    const CRYPTO_BUFFER *buf  = sk_CRYPTO_BUFFER_value(chain, i);
+    const uint8_t       *data = CRYPTO_BUFFER_data(buf);
+    X509                *cert = d2i_X509(nullptr, &data, CRYPTO_BUFFER_len(buf));
+    if (cert == nullptr) {
+      SSLError("failed to parse an origin certificate on a RPK-enabled connection");
+      X509_free(leaf);
+      sk_X509_pop_free(intermediates, X509_free);
+      *out_alert = SSL_AD_BAD_CERTIFICATE;
+      return ssl_verify_invalid;
+    }
+    if (i == 0) {
+      leaf = cert;
+    } else if (!sk_X509_push(intermediates, cert)) {
+      SSLError("failed to append an intermediate certificate on a RPK-enabled connection");
+      X509_free(cert);
+      X509_free(leaf);
+      sk_X509_pop_free(intermediates, X509_free);
+      *out_alert = SSL_AD_INTERNAL_ERROR;
+      return ssl_verify_invalid;
+    }
+  }
+
+  X509_STORE_CTX *store_ctx = X509_STORE_CTX_new();
+  bool const      initialized =
+    store_ctx != nullptr && X509_STORE_CTX_init(store_ctx, SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl)), leaf, intermediates);
+  bool accepted = false;
+  if (initialized) {
+    X509_STORE_CTX_set_depth(store_ctx, SSL_CTX_get_verify_depth(SSL_get_SSL_CTX(ssl)));
+
+    bool const signature_ok = X509_verify_cert(store_ctx) == 1;
+    bool const check_sig =
+      static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::SIGNATURE_MASK);
+    bool const check_name =
+      static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
+
+    char buff[INET6_ADDRSTRLEN];
+    ats_ip_ntop(netvc->get_effective_remote_addr(), buff, INET6_ADDRSTRLEN);
+    std::string_view sni_name = netvc->options.sni_servername ? netvc->options.sni_servername.get() : buff;
+
+    // This mirrors verify_callback()'s terminal-certificate logic rather than delegating to it.
+    // OpenSSL drives that callback once per chain depth and it bails out at the depth that
+    // failed; here X509_verify_cert() has already collapsed the whole chain into one verdict, so
+    // running the remaining checks inline is what keeps permissive mode behaving the same --
+    // a chain failure must still fall through to the name check and the hook, not return early.
+    accepted = true;
+    if (check_sig && !signature_ok) {
+      int const err = X509_STORE_CTX_get_error(store_ctx);
+      Dbg(dbg_ctl_ssl_verify, "verification error:num=%d:%s", err, X509_verify_cert_error_string(err));
+      Warning("Core server certificate verification failed for (%.*s). Action=%s Error=%s server=%s(%s)",
+              static_cast<int>(sni_name.length()), sni_name.data(), enforce_mode ? "Terminate" : "Continue",
+              X509_verify_cert_error_string(err), netvc->options.ssl_servername.get(), buff);
+      accepted = !enforce_mode;
+    }
+
+    if (accepted && check_name) {
+      char *matched_name = nullptr;
+      if (validate_hostname(leaf, sni_name, false, &matched_name)) {
+        Dbg(dbg_ctl_ssl_verify, "Hostname %.*s verified OK, matched %s", static_cast<int>(sni_name.length()), sni_name.data(),
+            matched_name);
+        ats_free(matched_name);
+      } else {
+        Warning("SNI (%.*s) not in certificate. Action=%s server=%s(%s)", static_cast<int>(sni_name.length()), sni_name.data(),
+                enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
+        accepted = !enforce_mode;
+      }
+    }
+
+    // As on the other paths, the hook always runs and may only add rejection.
+    if (tbs->verify_certificate(store_ctx) == 1) {
+      Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for %s.  Action=%s SNI=%.*s",
+              netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue", static_cast<int>(sni_name.length()),
+              sni_name.data());
+      accepted = !enforce_mode;
+    }
+  } else {
+    SSLError("failed to initialize X509_STORE_CTX for origin certificate verification");
+  }
+
+  X509_STORE_CTX_free(store_ctx);
+  X509_free(leaf);
+  sk_X509_pop_free(intermediates, X509_free);
+
+  if (!initialized) {
+    *out_alert = SSL_AD_INTERNAL_ERROR;
+    return ssl_verify_invalid;
+  }
+  if (!accepted) {
+    *out_alert = SSL_AD_CERTIFICATE_UNKNOWN;
+    return ssl_verify_invalid;
+  }
+  return ssl_verify_ok;
+}
+#endif
+
 bool
 validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname)
 {
@@ -167,6 +409,17 @@ validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hos
   if (ssl == nullptr) {
     return true;
   }
+
+#if TS_USE_RPK
+  // A resumed session that originally authenticated with a raw public key has no certificate and
+  // no SAN to match a hostname against; the pin check done during the original handshake stands.
+  // The live connection's negotiation state is gone by now, so this has to consult the session
+  // rather than SSL_get0_peer_rpk().
+  if (SSL_SESSION *session = SSL_get_session(ssl); session != nullptr && SSL_SESSION_get0_peer_rpk(session) != nullptr) {
+    Dbg(dbg_ctl_ssl_verify, "Skipping hostname validation for session reuse: peer authenticated with a raw public key");
+    return true;
+  }
+#endif
 
   bool check_name =
     static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
@@ -235,6 +488,93 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
   // meaning if we return 1, openssl will keep an extra refcount on the session.
   return 0;
 }
+
+#if TS_USE_RPK
+bool
+ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set)
+{
+  if (!offer_rpk && trusted_key_set == nullptr) {
+    return true;
+  }
+  [[maybe_unused]] bool const has_trusted_keys = trusted_key_set != nullptr;
+
+  static std::once_flag rpk_index_once;
+  std::call_once(rpk_index_once, []() {
+    ssl_server_rpk_index = SSL_get_ex_new_index(0, (void *)"Trusted next-hop RPK keys", nullptr, nullptr, ssl_server_rpk_ex_free);
+  });
+  if (ssl_server_rpk_index < 0) {
+    SSLError("failed to reserve an ex_data index for next-hop raw public keys");
+    return false;
+  }
+
+  if (trusted_key_set != nullptr) {
+    // ssl_server_rpk_ex_free() releases this holder (and, via it, the shared TrustedKeySet from
+    // the SNI config the caller parsed it from) when ssl is freed.
+    auto *holder = new std::shared_ptr<const SSLRPKUtils::TrustedKeySet>(std::move(trusted_key_set));
+    if (!SSL_set_ex_data(ssl, ssl_server_rpk_index, holder)) {
+      delete holder;
+      SSLError("failed to attach trusted next-hop raw public keys to the connection");
+      return false;
+    }
+
+    // Accept a raw public key from the next hop, still preferring it over X.509 only when the
+    // peer also supports it.
+    static const unsigned char server_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
+#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
+    if (!SSL_set1_server_cert_type(ssl, server_types, sizeof(server_types))) {
+#else
+    if (!SSL_set1_accepted_peer_cert_types(ssl, server_types, sizeof(server_types))) {
+#endif
+      SSLError("failed to enable RPK server cert type negotiation for the outbound connection");
+      return false;
+    }
+  }
+
+  if (offer_rpk) {
+    static const unsigned char client_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
+    // Both libraries derive/wrap the offered raw public key from the client certificate/key
+    // already configured on the context -- there is nothing to offer if that's unset.
+    if (SSL_CTX_get0_privatekey(SSL_get_SSL_CTX(ssl)) == nullptr) {
+      SSLError("client_rpk_enabled requires a client certificate/key configured for this next hop");
+      return false;
+    }
+#if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
+    // OpenSSL derives the offered raw public key from the certificate/key already on the context.
+    if (!SSL_set1_client_cert_type(ssl, client_types, sizeof(client_types))) {
+      SSLError("failed to enable RPK client cert type negotiation for the outbound connection");
+      return false;
+    }
+#else
+    // BoringSSL needs an explicit credential, wrapping that same already-configured key.
+    EVP_PKEY       *pkey = SSL_CTX_get0_privatekey(SSL_get_SSL_CTX(ssl));
+    SSL_CREDENTIAL *cred = SSL_CREDENTIAL_new_raw_public_key(pkey);
+    if (cred == nullptr || !SSL_add1_credential(ssl, cred)) {
+      SSLError("failed to add the outbound RPK credential");
+      SSL_CREDENTIAL_free(cred);
+      return false;
+    }
+    SSL_CREDENTIAL_free(cred);
+    if (!SSL_set1_available_client_cert_types(ssl, client_types, sizeof(client_types))) {
+      SSLError("failed to advertise RPK client cert types for the outbound connection");
+      return false;
+    }
+#endif
+  }
+
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+  // BoringSSL rejects raw public keys unless a custom verify callback is installed, and this
+  // displaces the SSL_set_verify()/verify_callback() pair the caller already set for this
+  // connection. Only next hops actually prepared to accept/pin an RPK server key take this path
+  // -- an offer-only connection (client_rpk_enabled with no server_rpk_ca) never advertises RPK
+  // acceptance above, so the peer will always present X.509 and the classic callback suffices.
+  if (has_trusted_keys) {
+    SSL_set_custom_verify(ssl, SSL_VERIFY_PEER, ssl_client_custom_verify_callback);
+  }
+#endif
+
+  return true;
+}
+#endif
 
 SSL_CTX *
 SSLInitClientContext(const SSLConfigParams *params)

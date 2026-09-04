@@ -31,6 +31,7 @@
 
 #include "P_SSLUtils.h"
 #include "P_SSLConfig.h"
+#include "SSLRPKUtils.h"
 #include "iocore/net/SSLSNIConfig.h"
 #include "iocore/net/SNIActionItem.h"
 #include "mgmt/config/ConfigContextDiags.h"
@@ -173,6 +174,7 @@ SNIConfigParams::set_next_hop_properties(YamlSNIConfig::Item const &item)
   nps.set_glob_name(item.fqdn);
   nps.prop.verify_server_policy     = item.verify_server_policy;
   nps.prop.verify_server_properties = item.verify_server_properties;
+  nps.prop.client_rpk_enabled       = item.client_rpk_enabled;
 
   return true;
 }
@@ -193,6 +195,20 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
       return false;
     }
   }
+
+#if TS_USE_RPK
+  if (!item.server_rpk_ca.empty()) {
+    SSLConfig::scoped_config params;
+    nps.prop.server_rpk_ca_file = Layout::get()->relative_to(params->clientCACertPath, item.server_rpk_ca.data());
+    // Parsed once here rather than re-parsed from disk on every outbound handshake to this next
+    // hop; also fails the config load now rather than at handshake time if the keys are unreadable.
+    auto trusted = std::make_shared<SSLRPKUtils::TrustedKeySet>();
+    if (!SSLRPKUtils::loadTrustedKeys(nps.prop.server_rpk_ca_file.c_str(), *trusted)) {
+      return false;
+    }
+    nps.prop.server_rpk_ca = std::move(trusted);
+  }
+#endif
 
   return true;
 }
