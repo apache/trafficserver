@@ -40,6 +40,11 @@ int constexpr ALT_MARSHAL_SIZE = HdrHeapMarshalBlocks{swoc::round_up(sizeof(HTTP
 int constexpr N_INTEGRAL       = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS;
 int constexpr FRAG_COUNT       = N_INTEGRAL + 2;
 
+// The static_assert in CacheDefs.h holds CACHE_DB_VERSION at or above {24, 2}, so this stays
+// older than the current version wherever that moves. Subtracting one from
+// CACHE_DB_MINOR_VERSION instead would wrap the minor when a major bump resets it to zero.
+ts::VersionNumber constexpr OLDER_THAN_CURRENT{24, 1};
+
 using FragOffset = HTTPInfo::FragOffset;
 
 /** A Doc followed by a header block, versioned as an on-disk object would be. */
@@ -209,7 +214,7 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
 
   SECTION("an older object is repaired")
   {
-    DocBuffer         doc{CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION - 1, hlen};
+    DocBuffer         doc{OLDER_THAN_CURRENT._major, OLDER_THAN_CURRENT._minor, hlen};
     Ptr<IOBufferData> buf;
 
     load(doc);
@@ -233,7 +238,7 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
   {
     // The block may be shared with other readers at this point, so the repair must not
     // run a second time. This is what the MARSHALED check buys.
-    DocBuffer         doc{CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION - 1, hlen};
+    DocBuffer         doc{OLDER_THAN_CURRENT._major, OLDER_THAN_CURRENT._minor, hlen};
     Ptr<IOBufferData> buf;
 
     load(doc);

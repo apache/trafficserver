@@ -333,12 +333,18 @@ CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
   // presence bits. Repair them only on the MARSHALED to ALIVE transition, since an already
   // ALIVE block may be shared with other readers. All alts of a doc transition together, so
   // the first one answers for the whole header block.
-  bool const needs_wks_fixup = version < CACHE_DB_VERSION && doc->hlen > 0 &&
+  bool const needs_wks_fixup = version < CACHE_DB_VERSION && doc->hlen >= sizeof(HTTPCacheAlt) &&
                                reinterpret_cast<HTTPCacheAlt *>(doc->hdr())->m_magic == CacheAltMagic::MARSHALED;
 
   char *tmp = doc->hdr();
   int   len = doc->hlen;
   while (len > 0) {
+    // The decoders read the alt header before they check any length, so a tail too short
+    // to hold one has to be rejected here rather than passed down.
+    if (static_cast<size_t>(len) < sizeof(HTTPCacheAlt)) {
+      ink_assert(!"CacheVC::unmarshal_http_info: truncated header block");
+      return false;
+    }
     int r = unmarshal_func(tmp, len, buf.get());
 
     if (r < 0) {
