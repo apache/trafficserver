@@ -392,5 +392,5 @@ cmake --build build
 ## ADDITIONAL INFO
 
 - Web page: https://trafficserver.apache.org/
-- Wiki: https://cwiki.apache.org/confluence/display/TS/
+- Documentation: https://docs.trafficserver.apache.org/
 - User mailing list: users@trafficserver.apache.org
