@@ -30,12 +30,11 @@
 #include <mutex>
 #include <atomic>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <variant>
 #include <optional>
-
-#include "swoc/MemSpan.h"
 
 #include "tsutil/Assert.h"
 
@@ -85,8 +84,7 @@ public:
 
   enum class MetricType : int { COUNTER = 0, GAUGE };
 
-  using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
-  using SpanType = swoc::MemSpan<AtomicType>;
+  using IdType = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
 
   static constexpr uint16_t MAX_BLOBS        = 8192;
   static constexpr uint16_t MAX_SIZE         = 1024;                               // For a total of 8M metrics
@@ -147,12 +145,6 @@ public:
   {
     return _storage->lookup(id, out_name, type);
   }
-  bool
-  rename(IdType id, const std::string_view name)
-  {
-    return _storage->rename(id, name);
-  }
-
   AtomicType &
   operator[](IdType id)
   {
@@ -267,9 +259,7 @@ public:
   iterator
   end() const
   {
-    auto [blob, offset] = _storage->current();
-
-    return iterator(*this, _makeId(blob, offset, MetricType::COUNTER));
+    return iterator(*this, _storage->next_free_id());
   }
 
   iterator
@@ -292,12 +282,6 @@ private:
     return _storage->create(name, type);
   }
 
-  SpanType
-  _createSpan(size_t size, MetricType type, IdType *id = nullptr)
-  {
-    return _storage->createSpan(size, type, id);
-  }
-
   // These are little helpers around managing the ID's
   static constexpr std::tuple<uint16_t, uint16_t>
   _splitID(IdType value)
@@ -308,7 +292,7 @@ private:
   static constexpr MetricType
   _extractType(IdType value)
   {
-    return MetricType{value >> METRIC_TYPE_BITS};
+    return MetricType{static_cast<int>((static_cast<uint32_t>(value) >> METRIC_TYPE_BITS) & 0x1)};
   }
 
   static constexpr IdType
@@ -318,13 +302,31 @@ private:
     return (t << METRIC_TYPE_BITS | blob << 16 | offset);
   }
 
+  /// As @c _makeId, without the type bits.
+  static constexpr uint32_t
+  _pack(uint16_t blob, uint16_t offset)
+  {
+    return static_cast<uint32_t>(blob) << 16 | offset;
+  }
+
+  // A packed position must not reach the type bits, and an offset must fit its field.
+  static_assert(MAX_SIZE <= 0x10000);
+  static_assert(MAX_BLOBS <= (1 << (METRIC_TYPE_BITS - 16)));
+
   class Storage
   {
-    BlobStorage        _blobs;
-    uint16_t           _cur_blob = 0;
-    uint16_t           _cur_off  = 0;
-    LookupTable        _lookups;
-    mutable std::mutex _mutex;
+    /* The next free slot, packed as @c _makeId packs one. A single value because a reader that
+     * caught a new offset against an old blob index, or the reverse, would reject ids that exist
+     * or accept ids that do not. Release stored last, after the blob pointer or the slot's name it
+     * publishes. Only ever increases, so an id is allocated exactly when it packs below it.
+     *
+     * A slot's name is written once, before the store that publishes it, and never changes, which
+     * is what lets @c name and @c lookup hand out a view of it without the mutex.
+     */
+    BlobStorage           _blobs;
+    std::atomic<uint32_t> _next_free{0};
+    LookupTable           _lookups;
+    mutable std::mutex    _mutex;
 
   public:
     Storage(const Storage &)            = delete;
@@ -347,22 +349,43 @@ private:
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
     MetricType       type(IdType id) const;
-    SpanType         createSpan(size_t size, const MetricType type = MetricType::COUNTER, IdType *id = nullptr);
-    bool             rename(IdType id, const std::string_view name);
 
-    std::pair<int16_t, int16_t>
-    current() const
+    /// The id the next slot will get, which is also iteration's exclusive bound.
+    IdType
+    next_free_id() const
     {
-      std::lock_guard lock(_mutex);
-      return {_cur_blob, _cur_off};
+      return static_cast<IdType>(_next_free.load(std::memory_order_acquire));
     }
 
     bool
     valid(IdType id) const
     {
-      auto [blob, entry] = _splitID(id);
+      return _is_allocated(id);
+    }
 
-      return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+  private:
+    /** Whether @a id names an allocated slot.
+     *
+     * The gate for every id based accessor, since ids from the @c TSStat* API are untrusted. An id
+     * qualifies when it is non-negative, its offset is one @c _makeId could produce, and its slot
+     * has been handed out.
+     */
+    bool
+    _is_allocated(IdType id) const
+    {
+      if (id < 0) {
+        return false;
+      }
+
+      auto [blob_ix, offset] = _splitID(id);
+
+      // Not implied below: an earlier blob can name an offset past MAX_SIZE and still pack under.
+      if (offset >= MAX_SIZE) {
+        return false;
+      }
+
+      // Acquiring the bound acquires the blob install, so _blobs needs no check of its own.
+      return _pack(blob_ix, offset) < _next_free.load(std::memory_order_acquire);
     }
   };
 
@@ -376,7 +399,6 @@ public:
   {
   public:
     using self_type = Gauge;
-    using SpanType  = Metrics::SpanType;
 
     class AtomicType : public Metrics::AtomicType
     {
@@ -452,14 +474,6 @@ public:
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
     }
 
-    static Metrics::Gauge::SpanType
-    createSpan(size_t size, IdType *id = nullptr)
-    {
-      auto &instance = Metrics::instance();
-
-      return instance._createSpan(size, MetricType::GAUGE, id);
-    }
-
     static void
     increment(AtomicType *metric, uint64_t val = 1)
     {
@@ -494,7 +508,6 @@ public:
   {
   public:
     using self_type = Counter;
-    using SpanType  = Metrics::SpanType;
 
     class AtomicType : public Metrics::AtomicType
     {
@@ -568,14 +581,6 @@ public:
       std::string tmpname  = std::string(prefix) + std::string(name);
 
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));
-    }
-
-    static Metrics::Counter::SpanType
-    createSpan(size_t size, IdType *id = nullptr)
-    {
-      auto &instance = Metrics::instance();
-
-      return instance._createSpan(size, MetricType::COUNTER, id);
     }
 
     static void
