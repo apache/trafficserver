@@ -185,6 +185,8 @@ public:
   static void startup(const std::string &yaml_file);
 
 private:
+  bool parseYamlFile(const std::string &yaml_file); ///< Parses the file, may throw; call via yamlParser().
+
   std::string _yaml_file;
   bool        _needs_queue_cont = false;
   TSCont      _queue_cont       = nullptr;            // Continuation processing the queue periodically
