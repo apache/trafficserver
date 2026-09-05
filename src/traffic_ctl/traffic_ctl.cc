@@ -118,7 +118,7 @@ main([[maybe_unused]] int argc, const char **argv)
     .add_example_usage("traffic_ctl config get [OPTIONS] RECORD [RECORD ...]")
     .add_option("--cold", "-c",
                 "Save the value in a configuration file. This does not save the value in TS. Local file change only",
-                "TS_RECORD_YAML", MORE_THAN_ZERO_ARG_N)
+                "TS_RECORD_YAML", AT_MOST_ONE_ARG_N)
     .add_option("--records", "", "Emit output in YAML format")
     .add_option("--default", "", "Include default value");
   config_command.add_command("match", "Get configuration matching a regular expression", "", MORE_THAN_ONE_ARG_N, Command_Execute)
@@ -186,7 +186,7 @@ main([[maybe_unused]] int argc, const char **argv)
   config_command.add_command("set", "Set a configuration value", "", 2, Command_Execute)
     .add_option("--cold", "-c",
                 "Save the value in a configuration file. This does not save the value in TS. Local file change only",
-                "TS_RECORD_YAML", MORE_THAN_ZERO_ARG_N)
+                "TS_RECORD_YAML", AT_MOST_ONE_ARG_N)
     .add_option("--update", "-u", "Update a configuration value. [only relevant if --cold set]")
     .add_option(
       "--type", "-t",

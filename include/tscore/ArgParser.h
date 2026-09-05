@@ -34,9 +34,22 @@
 constexpr unsigned MORE_THAN_ZERO_ARG_N = ~0;
 // more than one arguments
 constexpr unsigned MORE_THAN_ONE_ARG_N = ~0 - 1;
+// zero or one argument
+constexpr unsigned AT_MOST_ONE_ARG_N = ~0 - 2;
 // customizable indent for help message
 constexpr int INDENT_ONE = 32;
 constexpr int INDENT_TWO = 46;
+
+/** Whether @a arg_num asks for a variable rather than a fixed number of values.
+
+    Use this in preference to comparing against the sentinels, so that adding another
+    variable arity does not silently leave a sentinel being treated as a literal count.
+ */
+constexpr bool
+is_variable_arg_num(unsigned arg_num)
+{
+  return arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N || arg_num == AT_MOST_ONE_ARG_N;
+}
 
 namespace ts
 {
@@ -89,6 +102,12 @@ public:
   ~Arguments();
 
   ArgumentData get(std::string const &name);
+  /** Whether @a name has an entry.
+
+      @return @c true when the command or option has been parsed. Unlike get(), the called
+      flag is left alone, so this can be asked while parsing.
+   */
+  bool has(std::string const &name) const noexcept;
 
   void append(std::string const &key, ArgumentData const &value);
   // Append value to the arg to the map of key
@@ -222,6 +241,10 @@ public:
     void version_message() const;
     // Helper method for parse()
     void append_option_data(Arguments &ret, AP_StrVec &args, int index);
+    // Helper method to collect the values of an option or command into @a ret
+    std::string handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index) const;
+    // Whether @a token names an option registered on this command
+    bool is_registered_option(std::string const &token) const;
     // Helper method to validate mutually exclusive groups
     void validate_mutex_groups(Arguments &ret) const;
     // Helper method to validate option dependencies

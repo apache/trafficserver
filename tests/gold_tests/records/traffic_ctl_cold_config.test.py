@@ -92,3 +92,106 @@ tr.Processes.Default.Command = f'traffic_ctl config set proxy.config.cache.limit
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'
+
+# --cold takes at most one file name, so it does not consume the record names that follow
+# it.  Before that was the case it had to be written after them, which the runs above do.
+records_file = os.path.join(ts.Variables.CONFIGDIR, "records.yaml")
+
+# 6
+tr = Test.AddTestRun("Get a value with the file name given before the record")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The record must still be parsed as a record')
+
+# 7
+tr = Test.AddTestRun("Get several values with the file name given before them")
+tr.Processes.Default.Command = (
+    f'traffic_ctl config get -c {records_file} '
+    'proxy.config.diags.debug.tags proxy.config.cache.limits.http.max_alts')
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The first record must be parsed as a record')
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.cache.limits.http.max_alts: 1', 'The second record must be parsed as a record')
+
+# 8
+tr = Test.AddTestRun("Get a value using the --cold=FILE form")
+tr.Processes.Default.Command = f'traffic_ctl config get --cold={records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+    'proxy.config.diags.debug.tags: http', 'The record must still be parsed as a record')
+
+# 9
+file = os.path.join(ts.Variables.CONFIGDIR, "new_records3.yaml")
+tr = Test.AddTestRun("Set a value with the file name given before the record and the value")
+tr.Processes.Default.Command = f'traffic_ctl config set -c {file} proxy.config.cache.limits.http.max_alts 3'
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Env = ts.Env
+tr.Disk.File(file).Content = 'gold/records.yaml.cold_test5.gold'
+
+# 10
+tr = Test.AddTestRun("--cold takes at most one file name, so repeating it is an error")
+tr.Processes.Default.Command = f'traffic_ctl config get --cold={records_file} --cold={records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'A repeated --cold must be reported rather than the last one winning')
+
+# 11
+tr = Test.AddTestRun("A repeated --cold is an error in the space-separated form too")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} -c {records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'A repeated -c must be reported rather than the last one winning')
+
+# 12
+tr = Test.AddTestRun("Mixing the two --cold spellings cannot smuggle in a second file name")
+tr.Processes.Default.Command = f'traffic_ctl config get -c {records_file} --cold={records_file} proxy.config.diags.debug.tags'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'at most one argument expected by --cold', 'The two forms must be counted together')
+
+# An empty file name reaches traffic_ctl when it is taken from a variable that is unset.  The
+# --cold=FILE form has always rejected it; the space-separated form used to fall through to the
+# default records.yaml instead, so a run meant for another file read or wrote the live one.
+# These runs go through "sh -c" because autest indexes the first character of every argument
+# it splits, so an empty argument written straight into Command raises IndexError before the
+# process starts.
+
+# 13
+tr = Test.AddTestRun("An empty file name is reported rather than taken as the default file")
+tr.Processes.Default.Command = """sh -c 'traffic_ctl config get -c "" proxy.config.diags.debug.tags'"""
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "missing argument for '-c'", 'An empty -c value must be reported, naming the option as written')
+
+# 14
+tr = Test.AddTestRun("An empty file name is reported before anything is written")
+tr.Processes.Default.Command = """sh -c 'traffic_ctl config set -c "" proxy.config.cache.limits.http.max_alts 9'"""
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "missing argument for '-c'", 'A set with an empty -c value must not fall back to the live records.yaml')
+
+# 15
+tr = Test.AddTestRun("The long spelling of an empty file name is reported as written")
+tr.Processes.Default.Command = """sh -c 'traffic_ctl config get --cold "" proxy.config.diags.debug.tags'"""
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "missing argument for '--cold'", 'The error must name the spelling the caller used')
+
+# 16
+tr = Test.AddTestRun("A bare -c before the record leaves set short of its own arguments")
+tr.Processes.Default.Command = 'traffic_ctl config set -c proxy.config.cache.limits.http.max_alts 9'
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    r'2 argument\(s\) expected by set', 'set must report what it was left without, as the docs show')
