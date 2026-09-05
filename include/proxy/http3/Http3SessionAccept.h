@@ -26,6 +26,8 @@
 #include "tscore/ink_platform.h"
 #include "iocore/net/Net.h"
 
+#include <string_view>
+
 #include "proxy/http/HttpSessionAccept.h"
 
 // HTTP/QUIC Session Accept.
@@ -38,11 +40,22 @@
 class Http3SessionAccept : public HttpSessionAcceptBase
 {
 public:
+  /// The HTTP application selected from a negotiated ALPN tag.
+  enum class AppType {
+    HTTP_09, ///< HTTP/0.9 over QUIC (interop only).
+    HTTP_3,  ///< HTTP/3.
+    UNKNOWN, ///< Missing or unrecognized ALPN; the connection must be rejected.
+  };
+
   explicit Http3SessionAccept(OptionsHandle options, HttpProxyPort *proxy_port = nullptr);
   ~Http3SessionAccept();
 
   bool accept(NetVConnection *, MIOBuffer *, IOBufferReader *) override;
   int  mainEvent(int event, void *netvc) override;
+
+  /// Map a negotiated ALPN tag to the HTTP application to run.
+  /// @return @c AppType::UNKNOWN for an empty or unrecognized @a alpn.
+  static AppType select_app_type(std::string_view alpn);
 
 private:
   Http3SessionAccept(const Http3SessionAccept &);
