@@ -38,7 +38,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.cert.path': '{}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.private_key.path': '{}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -46,7 +47,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: one.com.pem
     ssl_key_name: one.com.pem
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.sni_yaml.AddLines(
     [
@@ -55,7 +57,8 @@ ts.Disk.sni_yaml.AddLines(
         '  client_cert: "one.com.pem"',
         '- fqdn: "*two.com"',
         '  client_cert: "two.com.pem"',
-    ])
+    ]
+)
 
 # Set up plugin
 Test.PrepareInstalledPlugin('client_context_dump.so', ts)
@@ -77,5 +80,5 @@ p.StartBefore(Test.Processes.ts)
 # Client contexts test
 tr = Test.AddTestRun()
 tr.Processes.Default.Env = ts.Env
-tr.Processes.Default.Command = ('{0}/traffic_ctl plugin msg client_context_dump.t 1'.format(ts.Variables.BINDIR))
+tr.Processes.Default.Command = '{0}/traffic_ctl plugin msg client_context_dump.t 1'.format(ts.Variables.BINDIR)
 tr.Processes.Default.ReturnCode = 0

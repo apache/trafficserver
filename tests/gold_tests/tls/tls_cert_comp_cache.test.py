@@ -59,7 +59,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}/')
 
@@ -72,7 +73,8 @@ ssl_multicert:
                 'proxy.config.ssl.server.session_ticket.enable': 0,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl_cert_compress',
-            })
+            }
+        )
 
         return ts
 
@@ -89,7 +91,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._ts_mid.Variables.ssl_port}/')
 
@@ -102,7 +105,8 @@ ssl_multicert:
                 'proxy.config.http.keep_alive_enabled_out': 0,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl_cert_compress',
-            })
+            }
+        )
 
         return ts
 
@@ -121,37 +125,36 @@ ssl_multicert:
 
         # Test run 2: Check compression count on mid-tier — should be 2.
         tr = Test.AddTestRun(f'Verify compression count with cache {cache_label}')
-        tr.Processes.Default.Command = (f'traffic_ctl metric get'
-                                        f' proxy.process.ssl.cert_compress.{self._algorithm}')
+        tr.Processes.Default.Command = f'traffic_ctl metric get proxy.process.ssl.cert_compress.{self._algorithm}'
         tr.Processes.Default.Env = self._ts_mid.Env
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'proxy.process.ssl.cert_compress.{self._algorithm} 2', f'Should have 2 {self._algorithm} compressions')
+            f'proxy.process.ssl.cert_compress.{self._algorithm} 2', f'Should have 2 {self._algorithm} compressions'
+        )
         tr.StillRunningAfter = self._ts_mid
         tr.StillRunningAfter = self._ts_edge
         tr.StillRunningAfter = self._server
 
         # Test run 3: Check decompression count on edge — should be 2.
         tr = Test.AddTestRun(f'Verify decompression count with cache {cache_label}')
-        tr.Processes.Default.Command = (f'traffic_ctl metric get'
-                                        f' proxy.process.ssl.cert_decompress.{self._algorithm}')
+        tr.Processes.Default.Command = f'traffic_ctl metric get proxy.process.ssl.cert_decompress.{self._algorithm}'
         tr.Processes.Default.Env = self._ts_edge.Env
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'proxy.process.ssl.cert_decompress.{self._algorithm} 2', f'Should have 2 {self._algorithm} decompressions')
+            f'proxy.process.ssl.cert_decompress.{self._algorithm} 2', f'Should have 2 {self._algorithm} decompressions'
+        )
         tr.StillRunningAfter = self._ts_mid
         tr.StillRunningAfter = self._ts_edge
         tr.StillRunningAfter = self._server
 
         # Test run 4: Verify no compression failures.
         tr = Test.AddTestRun(f'Verify no compression failures with cache {cache_label}')
-        tr.Processes.Default.Command = (f'traffic_ctl metric get'
-                                        f' proxy.process.ssl.cert_compress.{self._algorithm}_failure')
+        tr.Processes.Default.Command = f'traffic_ctl metric get proxy.process.ssl.cert_compress.{self._algorithm}_failure'
         tr.Processes.Default.Env = self._ts_mid.Env
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'proxy.process.ssl.cert_compress.{self._algorithm}_failure 0',
-            f'Should have no {self._algorithm} compression failures')
+            f'proxy.process.ssl.cert_compress.{self._algorithm}_failure 0', f'Should have no {self._algorithm} compression failures'
+        )
         tr.StillRunningAfter = self._ts_mid
         tr.StillRunningAfter = self._ts_edge
         tr.StillRunningAfter = self._server
@@ -163,7 +166,8 @@ ssl_multicert:
             tr.Processes.Default.Env = self._ts_mid.Env
             tr.Processes.Default.ReturnCode = 0
             tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                'proxy.process.ssl.cert_compress.cache_hit 1', 'cache_hit should be 1 when caching is enabled (1 miss + 1 hit)')
+                'proxy.process.ssl.cert_compress.cache_hit 1', 'cache_hit should be 1 when caching is enabled (1 miss + 1 hit)'
+            )
             tr.StillRunningAfter = self._ts_mid
             tr.StillRunningAfter = self._ts_edge
             tr.StillRunningAfter = self._server
@@ -173,7 +177,8 @@ ssl_multicert:
             tr.Processes.Default.Env = self._ts_mid.Env
             tr.Processes.Default.ReturnCode = 0
             tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                'proxy.process.ssl.cert_compress.cache_hit 0', 'cache_hit should be 0 when caching is disabled')
+                'proxy.process.ssl.cert_compress.cache_hit 0', 'cache_hit should be 0 when caching is disabled'
+            )
             tr.StillRunningAfter = self._ts_mid
             tr.StillRunningAfter = self._ts_edge
             tr.StillRunningAfter = self._server

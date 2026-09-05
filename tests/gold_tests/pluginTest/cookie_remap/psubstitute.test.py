@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -33,7 +32,7 @@ server = Test.MakeOriginServer("server", ip='127.0.0.10')
 request_header = {
     "headers": "GET /photos/search?query=magic HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -42,7 +41,7 @@ server.addResponse("sessionfile.log", request_header, response_header)
 request_header = {
     "headers": "GET /photos/search?query=/theunmatchedpath HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -51,17 +50,16 @@ server.addResponse("sessionfile.log", request_header, response_header)
 request_header = {
     "headers": "GET /photos/search/magic/foobar HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
 server.addResponse("sessionfile.log", request_header, response_header)
 
 request_header = {
-    "headers":
-        "GET /photos/search/cr_substitutions?query=%28http%3A%2F%2Fwww%2Eexample%2Ecom%2Fmagic HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "headers": "GET /photos/search/cr_substitutions?query=%28http%3A%2F%2Fwww%2Eexample%2Ecom%2Fmagic HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 
@@ -76,7 +74,8 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'cookie_remap.*|http.*|dns.*',
-    })
+    }
+)
 
 config1 = config1.replace("$PORT", str(server.Variables.Port))
 
@@ -84,7 +83,8 @@ ts.Disk.File(ts.Variables.CONFIGDIR + "/substituteconfig.txt", id="config1")
 ts.Disk.config1.WriteOn(config1)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/magic http://shouldnothit.com/not-used @plugin=cookie_remap.so @pparam=config/substituteconfig.txt')
+    'map http://www.example.com/magic http://shouldnothit.com/not-used @plugin=cookie_remap.so @pparam=config/substituteconfig.txt'
+)
 
 tr = Test.AddTestRun("Substitute $ppath in the dest query")
 tr.MakeCurlCommand(
@@ -94,7 +94,8 @@ tr.MakeCurlCommand(
 -H "Proxy-Connection: keep-alive" \
 --verbose \
 '''.format(ts.Variables.port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -109,7 +110,8 @@ tr.MakeCurlCommand(
 -H "Proxy-Connection: keep-alive" \
 --verbose \
 '''.format(ts.Variables.port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -122,7 +124,8 @@ tr.MakeCurlCommand(
 -H "Proxy-Connection: keep-alive" \
 --verbose \
 '''.format(ts.Variables.port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
@@ -134,7 +137,8 @@ tr.MakeCurlCommand(
 -H "Proxy-Connection: keep-alive" \
 --verbose \
 '''.format(ts.Variables.port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

@@ -58,15 +58,14 @@ server = Test.MakeOriginServer("server")
 body = "x" * (64 * 1024)
 
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /obj HTTP/1.1\r\nHost: *\r\n\r\n",
-        "timestamp": "1",
-        "body": ""
-    }, {
+    "sessionlog.json",
+    {"headers": "GET /obj HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {
         "headers": "HTTP/1.1 200 OK\r\nContent-Length: {0}\r\nCache-Control: max-age=3600\r\n\r\n".format(len(body)),
         "timestamp": "1",
-        "body": body
-    })
+        "body": body,
+    },
+)
 
 ts = Test.MakeATSProcess("ts", enable_cache=True)
 # Force the corrupt-doc path inside openReadStartEarliest for every cache read.
@@ -81,7 +80,8 @@ ts.Disk.records_config.update(
         # asserted below are Warning/Error level and always reach diags.log, and
         # cache_read debug over many fragments would bloat the run's disk use.
         'proxy.config.cache.target_fragment_size': 8192,
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map http://example.com/ http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
@@ -100,7 +100,8 @@ ts.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "ATS must not 
 # First request: cache miss, populate cache from origin.
 tr1 = Test.AddTestRun()
 tr1.MakeCurlCommandMulti(
-    '{curl} -sS -i -x 127.0.0.1:TSPORT http://example.com/obj'.replace('TSPORT', str(ts.Variables.port)), ts=ts)
+    '{curl} -sS -i -x 127.0.0.1:TSPORT http://example.com/obj'.replace('TSPORT', str(ts.Variables.port)), ts=ts
+)
 tr1.Processes.Default.StartBefore(ts)
 tr1.Processes.Default.StartBefore(server)
 tr1.Processes.Default.ReturnCode = 0
@@ -115,7 +116,8 @@ tr1.StillRunningAfter = server
 # recursion counter.
 tr2 = Test.AddTestRun()
 tr2.MakeCurlCommandMulti(
-    '{curl} -sS -i -x 127.0.0.1:TSPORT http://example.com/obj'.replace('TSPORT', str(ts.Variables.port)), ts=ts)
+    '{curl} -sS -i -x 127.0.0.1:TSPORT http://example.com/obj'.replace('TSPORT', str(ts.Variables.port)), ts=ts
+)
 tr2.Processes.Default.ReturnCode = 0
 # Distinguishing assertion: ATS must remain up and respond. Body content
 # doesn't matter; what matters is the proxy didn't crash.

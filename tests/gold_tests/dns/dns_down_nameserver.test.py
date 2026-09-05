@@ -71,8 +71,9 @@ class DownDNSNameserverTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'hostdb|dns',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns_port}',
-                'proxy.config.dns.resolv_conf': 'NULL'
-            })
+                'proxy.config.dns.resolv_conf': 'NULL',
+            }
+        )
 
         # Cause a name resolution for each, unique path.
         self._ts.Disk.remap_config.AddLines(
@@ -80,7 +81,8 @@ class DownDNSNameserverTest:
                 f'map /first/host http://first.host.com:{self._server.Variables.http_port}/',
                 f'map /second/host http://second.host.com:{self._server.Variables.http_port}/',
                 f'map /third/host http://third.host.com:{self._server.Variables.http_port}/',
-            ])
+            ]
+        )
 
     def _run_transaction(self, start_dns: bool, keyname: str):
         """Run a transaction with the name server reachable.
@@ -93,10 +95,8 @@ class DownDNSNameserverTest:
         tr = Test.AddTestRun()
 
         tr.AddVerifierClientProcess(
-            f'client{self._client_counter}',
-            self._replay_file,
-            http_ports=[self._ts.Variables.port],
-            other_args=f'--keys {keyname}')
+            f'client{self._client_counter}', self._replay_file, http_ports=[self._ts.Variables.port], other_args=f'--keys {keyname}'
+        )
         self._client_counter += 1
 
         if start_dns:
@@ -111,7 +111,8 @@ class DownDNSNameserverTest:
 
         # Verify that the client tried to send the transaction.
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f'uuid: {keyname}', f'The client should have sent a transaction with uuid {keyname}')
+            f'uuid: {keyname}', f'The client should have sent a transaction with uuid {keyname}'
+        )
 
         # The client will report an error if ATS could not complete the
         # transaction due to DNS resolution issues.

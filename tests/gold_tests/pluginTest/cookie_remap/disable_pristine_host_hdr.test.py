@@ -55,7 +55,9 @@ class TestUpdateHostHeader:
         self.replay_file = f'disable_pristine_host_hdr_{"true" if disable_pristine_host_hdr else "false"}.replay.yaml'
         self.canary_replay_file = (
             'disable_pristine_host_hdr_server_canary_true.replay.yaml'
-            if disable_pristine_host_hdr else 'disable_pristine_host_hdr_server_canary_false.replay.yaml')
+            if disable_pristine_host_hdr
+            else 'disable_pristine_host_hdr_server_canary_false.replay.yaml'
+        )
         self.stable_replay_file = 'disable_pristine_host_hdr_server_stable.replay.yaml'
         self._setupDns()
         self._setupServers()
@@ -97,7 +99,8 @@ class TestUpdateHostHeader:
                 'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.url_remap.pristine_host_hdr': 1,
-            })
+            }
+        )
 
         # Read and configure the cookie_remap configuration file
         config_filename = f'disable_pristine_host_hdr_config_{"true" if disable_pristine_host_hdr else "false"}.txt'
@@ -111,8 +114,8 @@ class TestUpdateHostHeader:
 
         # Configure remap rule with cookie_remap plugin
         ts.Disk.remap_config.AddLine(
-            'map http://example.com http://shouldnothit.com '
-            f'@plugin=cookie_remap.so @pparam=config/{config_filename}')
+            f'map http://example.com http://shouldnothit.com @plugin=cookie_remap.so @pparam=config/{config_filename}'
+        )
 
     def _setupClient(self):
         """Setup the client for the test."""

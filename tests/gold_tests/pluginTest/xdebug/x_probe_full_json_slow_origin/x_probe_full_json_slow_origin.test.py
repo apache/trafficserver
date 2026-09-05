@@ -39,7 +39,8 @@ ts.Disk.records_config.update(
         # Set reasonable timeouts
         "proxy.config.http.transaction_no_activity_timeout_in": 10,
         "proxy.config.http.transaction_no_activity_timeout_out": 10,
-    })
+    }
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=probe-full-json')
 
@@ -51,7 +52,8 @@ ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{Test.Variables.server_por
 # Start the custom slow-body server
 server = Test.Processes.Process(
     "server",
-    f"bash -c '{Test.TestDirectory}/slow-body-server.sh {Test.Variables.server_port} {Test.RunDirectory}/server_request.txt'")
+    f"bash -c '{Test.TestDirectory}/slow-body-server.sh {Test.Variables.server_port} {Test.RunDirectory}/server_request.txt'",
+)
 
 # Test with probe-full-json=nobody (which triggers the bug most easily)
 tr = Test.AddTestRun("Verify probe-full-json with slow body delivery")
@@ -62,7 +64,8 @@ tr.Processes.Default.Command = (
     f'timeout 8 curl -s -o /dev/null -w "%{{http_code}}" '
     f'-H "Host: example.com" '
     f'-H "X-Debug: probe-full-json=nobody" '
-    f'http://127.0.0.1:{ts.Variables.port}/test')
+    f'http://127.0.0.1:{ts.Variables.port}/test'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -77,4 +80,5 @@ tr2 = Test.AddTestRun("Verify no infinite loop in transform")
 tr2.Processes.Default.Command = f"bash {Test.TestDirectory}/verify_no_loop.sh {ts.Variables.LOGDIR}/traffic.out"
 tr2.Processes.Default.ReturnCode = 0
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "PASS", "Verification script should pass - every 'expected' followed by 'consumed'")
+    "PASS", "Verification script should pass - every 'expected' followed by 'consumed'"
+)

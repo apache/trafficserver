@@ -33,10 +33,12 @@ Verify the ESI plugin processes a legitimate single-level <!--esi ...--> wrapper
 and rejects a nested <!--esi ...--> hidden inside <esi:try>/<esi:attempt>.
 '''
 
-Test.SkipUnless(Condition.PluginExists('esi.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('esi.so'),
+)
 
 
-class EsiHtmlCommentTest():
+class EsiHtmlCommentTest:
     """
     Drive a single request through ATS whose origin response contains an
     `<!--esi <esi:vars>...</esi:vars>-->` wrapper, and verify the plugin
@@ -56,7 +58,8 @@ class EsiHtmlCommentTest():
         self._server = server
 
         server.Streams.All += Testers.ContainsExpression(
-            'GET /esi-html-comment.php', 'Verify the server received the ESI document request.')
+            'GET /esi-html-comment.php', 'Verify the server received the ESI document request.'
+        )
         return server
 
     def _create_ats(self, tr: 'TestRun', plugin_config: str) -> 'Process':
@@ -66,7 +69,8 @@ class EsiHtmlCommentTest():
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|plugin_esi|plugin_esi_procesor',
-            })
+            }
+        )
         server_port = self._server.Variables.http_port
         ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{server_port}')
         ts.Disk.plugin_config.AddLine(plugin_config)
@@ -74,7 +78,8 @@ class EsiHtmlCommentTest():
         # The nested-wrapper guard added for sec-035 must NOT fire on a
         # legitimate single-level <!--esi ... --> wrapper.
         ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-            r'Nested <!--esi \.\.\.--> inside <!--esi \.\.\.-->', 'The nested-wrapper guard must not fire on legitimate input.')
+            r'Nested <!--esi \.\.\.--> inside <!--esi \.\.\.-->', 'The nested-wrapper guard must not fire on legitimate input.'
+        )
         return ts
 
     def _create_client(self, tr: 'TestRun') -> None:
@@ -82,7 +87,8 @@ class EsiHtmlCommentTest():
             "client",
             self._replay_file,
             http_ports=[self._ts.Variables.port],
-            other_args='--format "{url}" --keys /esi-html-comment.php')
+            other_args='--format "{url}" --keys /esi-html-comment.php',
+        )
         p.ReturnCode = 0
         p.StartBefore(self._server)
         p.StartBefore(self._ts)
@@ -92,7 +98,7 @@ class EsiHtmlCommentTest():
         p.Streams.stdout += Testers.ContainsExpression('www.example.com', 'Verify the client received the expanded ESI body.')
 
 
-class EsiNestedHtmlCommentRejectTest():
+class EsiNestedHtmlCommentRejectTest:
     """
     Drive a request whose origin response contains a nested <!--esi ...-->
     hidden inside <esi:try>/<esi:attempt> child_nodes, and verify the
@@ -113,7 +119,8 @@ class EsiNestedHtmlCommentRejectTest():
         self._server = server
 
         server.Streams.All += Testers.ContainsExpression(
-            'GET /esi-nested-reject.php', 'Verify the server received the nested-wrapper request.')
+            'GET /esi-nested-reject.php', 'Verify the server received the nested-wrapper request.'
+        )
         return server
 
     def _create_ats(self, tr: 'TestRun', plugin_config: str) -> 'Process':
@@ -123,7 +130,8 @@ class EsiNestedHtmlCommentRejectTest():
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|plugin_esi|plugin_esi_procesor',
-            })
+            }
+        )
         server_port = self._server.Variables.http_port
         ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{server_port}')
         ts.Disk.plugin_config.AddLine(plugin_config)
@@ -133,7 +141,8 @@ class EsiNestedHtmlCommentRejectTest():
         # than appearing at the top level of the outer wrapper's content.
         ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r'Nested <!--esi \.\.\.--> inside <!--esi \.\.\.--> is not allowed',
-            'The nested-wrapper guard must fire on a nested ESI comment hidden inside <esi:try>/<esi:attempt>.')
+            'The nested-wrapper guard must fire on a nested ESI comment hidden inside <esi:try>/<esi:attempt>.',
+        )
         return ts
 
     def _create_client(self, tr: 'TestRun') -> None:
@@ -141,7 +150,8 @@ class EsiNestedHtmlCommentRejectTest():
             "client-reject",
             self._replay_file,
             http_ports=[self._ts.Variables.port],
-            other_args='--format "{url}" --keys /esi-nested-reject.php')
+            other_args='--format "{url}" --keys /esi-nested-reject.php',
+        )
         p.ReturnCode = 0
         p.StartBefore(self._server)
         p.StartBefore(self._ts)

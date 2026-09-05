@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -38,7 +37,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.transaction_no_activity_timeout_out': 5,
         'proxy.config.diags.debug.enabled': 0,
         'proxy.config.diags.debug.tags': 'http',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map /blocked http://10.1.1.1:{0}'.format(Test.Variables.blocked_upstream_port))
 ts.Disk.remap_config.AddLine('map /not-blocked http://10.1.1.1:{0}'.format(Test.Variables.upstream_port))
@@ -53,7 +53,8 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n"))
+'''.split("\n")
+)
 
 # Set up the network name space.  Requires privilege
 tr = Test.AddTestRun("tr-ns-setup")
@@ -61,7 +62,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.TimeOut = 2
 tr.Setup.Copy('setupnetns.sh')
 tr.Processes.Default.Command = 'echo start; sudo sh -x ./setupnetns.sh {0} {1}'.format(
-    Test.Variables.blocked_upstream_port, Test.Variables.upstream_port)
+    Test.Variables.blocked_upstream_port, Test.Variables.upstream_port
+)
 
 # Request to the port that is blocked in the network ns.  The SYN should never be responded to
 # and the connect timeout should trigger with a 50x return.  If the SYN handshake occurs, the
@@ -70,13 +72,15 @@ tr = Test.AddTestRun("tr-blocking")
 tr.MakeCurlCommand('-i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.TimeOut = 4
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed"
+)
 
 tr = Test.AddTestRun("tr-blocking-post")
 tr.MakeCurlCommand('-d "stuff" -i http://127.0.0.1:{0}/blocked {0}'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.TimeOut = 4
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed")
+    "HTTP/1.1 502 internal error - server connection terminated", "Connect failed"
+)
 
 #  Should not catch the connect timeout.  Even though the first bytes are not sent until after the 2 second connect timeout
 #  But before the no-activity timeout

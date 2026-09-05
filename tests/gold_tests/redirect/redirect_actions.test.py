@@ -49,7 +49,8 @@ try:
             "[{0}]".format(ip.split('%')[0])
             for (family, _, _, _, (ip, *_)) in socket.getaddrinfo(host, port=None)
             if socket.AF_INET6 == family and 'fe80' != ip[0:4]
-        ])  # Skip link-local addresses.
+        ]
+    )  # Skip link-local addresses.
 except socket.gaierror:
     pass
 
@@ -62,31 +63,29 @@ if any(ip.startswith('127.') for ip in ipv4addrs):
 
     ipv4addrs = set(
         [
-            addr["local"] for iface in data if iface["link_type"] != "loopback" for addr in iface.get("addr_info", [])
+            addr["local"]
+            for iface in data
+            if iface["link_type"] != "loopback"
+            for addr in iface.get("addr_info", [])
             if addr["family"] == "inet"
-        ])
+        ]
+    )
     ipv6addrs = set(
         [
-            addr["local"] for iface in data if iface["link_type"] != "loopback" for addr in iface.get("addr_info", [])
+            addr["local"]
+            for iface in data
+            if iface["link_type"] != "loopback"
+            for addr in iface.get("addr_info", [])
             if addr["family"] == "inet6" and addr["scope"] != "link"
-        ])
+        ]
+    )
 
 origin = Test.MakeOriginServer('origin', ip='0.0.0.0')
 ArbitraryTimestamp = '12345678'
 
 # This is for cases when the content is actually fetched from the invalid address.
-request_header = {
-    'headers': ('GET / HTTP/1.1\r\n'
-                'Host: *\r\n\r\n'),
-    'timestamp': ArbitraryTimestamp,
-    'body': ''
-}
-response_header = {
-    'headers': ('HTTP/1.1 204 No Content\r\n'
-                'Connection: close\r\n\r\n'),
-    'timestamp': ArbitraryTimestamp,
-    'body': ''
-}
+request_header = {'headers': ('GET / HTTP/1.1\r\nHost: *\r\n\r\n'), 'timestamp': ArbitraryTimestamp, 'body': ''}
+response_header = {'headers': ('HTTP/1.1 204 No Content\r\nConnection: close\r\n\r\n'), 'timestamp': ArbitraryTimestamp, 'body': ''}
 origin.addResponse('sessionfile.log', request_header, response_header)
 
 # Map scenarios to trafficserver processes.
@@ -142,7 +141,8 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
                 'proxy.config.http.redirect.actions': config,
                 'proxy.config.http.connect_attempts_timeout': 5,
                 'proxy.config.http.connect_attempts_max_retries': 0,
-            })
+            }
+        )
         tr.Processes.Default.StartBefore(trafficservers[config])
     else:
         tr.StillRunningAfter = trafficservers[config]
@@ -155,19 +155,17 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
 
     # A GET request parameterized on the config and on the target.
     request_header = {
-        'headers': ('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
-                    'Host: *\r\n\r\n').format(normConfig, normRedirectTarget),
+        'headers': ('GET /redirect?config={0}&target={1} HTTP/1.1\r\nHost: *\r\n\r\n').format(normConfig, normRedirectTarget),
         'timestamp': ArbitraryTimestamp,
-        'body': ''
+        'body': '',
     }
     # Returns a redirect to the test domain for the given target & the port number for the TS of the given config.
     response_header = {
-        'headers':
-            ('HTTP/1.1 307 Temporary Redirect\r\n'
-             'Location: http://{0}:{1}/\r\n'
-             'Connection: close\r\n\r\n').format(testDomain, origin.Variables.Port),
+        'headers': ('HTTP/1.1 307 Temporary Redirect\r\nLocation: http://{0}:{1}/\r\nConnection: close\r\n\r\n').format(
+            testDomain, origin.Variables.Port
+        ),
         'timestamp': ArbitraryTimestamp,
-        'body': ''
+        'body': '',
     }
     origin.addResponse('sessionfile.log', request_header, response_header)
 
@@ -175,14 +173,14 @@ def makeTestCase(redirectTarget, expectedAction, scenario):
     command_path = os.path.join(data_path, tr.Name)
     with open(command_path, 'w') as f:
         f.write(
-            ('GET /redirect?config={0}&target={1} HTTP/1.1\r\n'
-             'Host: iwillredirect.test:{2}\r\n\r\n').format(normConfig, normRedirectTarget, origin.Variables.Port))
+            ('GET /redirect?config={0}&target={1} HTTP/1.1\r\nHost: iwillredirect.test:{2}\r\n\r\n').format(
+                normConfig, normRedirectTarget, origin.Variables.Port
+            )
+        )
     # Set the command with the appropriate URL.
     port = trafficservers[config].Variables.port
     dir_path = os.path.join(data_dirname, tr.Name)
-    tr.Processes.Default.Command = \
-        (f"bash -o pipefail -c '{sys.executable} tcp_client.py 127.0.0.1 {port} "
-         f"{dir_path} | head -n 1'")
+    tr.Processes.Default.Command = f"bash -o pipefail -c '{sys.executable} tcp_client.py 127.0.0.1 {port} {dir_path} | head -n 1'"
     tr.Processes.Default.ReturnCode = 0
     # Generate and set the 'gold file' to check stdout
     goldFilePath = os.path.join(data_path, '{0}.gold'.format(tr.Name))
@@ -195,8 +193,9 @@ class AddressE(Enum):
     '''
     Classes of addresses are mapped to example addresses.
     '''
+
     Private = ('10.0.0.1', '[fc00::1]')
-    Loopback = (['127.1.2.3'])  # [::1] is omitted here because it is likely overwritten by Self, and there are no others in IPv6.
+    Loopback = ['127.1.2.3']  # [::1] is omitted here because it is likely overwritten by Self, and there are no others in IPv6.
     Multicast = ('224.1.2.3', '[ff42::]')
     Linklocal = ('169.254.0.1', '[fe80::]')
     Routable = ('72.30.35.10', '[2001:4998:58:1836::10]')  # Do not Follow redirects to these in an automated test.

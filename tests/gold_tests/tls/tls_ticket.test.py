@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -47,14 +46,16 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts2.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.records_config.update(
     {
@@ -62,21 +63,24 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.ssl.server.session_ticket.enable': '1',
-        'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
-    })
+        'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket',
+    }
+)
 ts2.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts2.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts2.Variables.SSLDir),
         'proxy.config.ssl.server.session_ticket.enable': '1',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket'
-    })
+        'proxy.config.ssl.server.ticket_key.filename': '../../file.ticket',
+    }
+)
 
 tr = Test.AddTestRun("Create ticket")
 tr.Setup.Copy('file.ticket')
 tr.Command = 'printf "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out ticket.out'.format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -114,7 +118,8 @@ def checkSession(ev):
 tr2 = Test.AddTestRun("Test ticket")
 tr2.Setup.Copy('file.ticket')
 tr2.Command = 'printf "GET / HTTP/1.0\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in ticket.out'.format(
-    ts2.Variables.ssl_port)
+    ts2.Variables.ssl_port
+)
 tr2.Processes.Default.StartBefore(Test.Processes.ts2)
 tr2.ReturnCode = 0
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath

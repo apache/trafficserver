@@ -21,7 +21,9 @@ Test money_trace remap
 
 # Test description:
 
-Test.SkipUnless(Condition.PluginExists('money_trace.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('money_trace.so'),
+)
 Test.ContinueOnFail = False
 Test.testName = "money_trace remap"
 
@@ -50,13 +52,16 @@ ts.Disk.remap_config.AddLines(
         f"map http://cheader/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--header=mt",
         f"map http://cpregen/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--create-if-none=true @pparam=--pregen-header=@pregen",
         f"map http://passthru/ http://127.0.0.1:{server.Variables.Port} @plugin=money_trace.so @pparam=--passthru=true",
-    ])
+    ]
+)
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'money_trace',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'money_trace',
+    }
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -67,7 +72,8 @@ logging:
   logs:
     - filename: remap
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'remap.log'), exists=True, content='gold/remap-log.gold')
 

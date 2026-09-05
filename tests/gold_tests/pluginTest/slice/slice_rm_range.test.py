@@ -46,13 +46,15 @@ class SliceStripRangeForHeadRequestTest:
                 f"map /with/range http://127.0.0.1:{self._server.Variables.http_port} \
                 @plugin=slice.so @pparam=--blockbytes-test=10 \
                 @plugin=cache_range_requests.so",
-            ])
+            ]
+        )
 
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|slice|cache_range_requests',
-            })
+            }
+        )
 
     def _test_head_request_range_header(self):
         tr = Test.AddTestRun()

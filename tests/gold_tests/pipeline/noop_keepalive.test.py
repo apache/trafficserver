@@ -80,11 +80,14 @@ class TestNoopKeepAlive:
         client.Command = f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} {self._hostname}'
         client.ReturnCode = 0
         client.Streams.All += Testers.ContainsExpression(
-            'DELETE_STATUS=404', 'the DELETE to an uncached path must self-answer 404 (NOOP path)')
+            'DELETE_STATUS=404', 'the DELETE to an uncached path must self-answer 404 (NOOP path)'
+        )
         client.Streams.All += Testers.ContainsExpression(
-            'SECOND_REQUEST_STATUS=200', 'the following GET / must be served (keep-alive preserved, drained exactly once)')
+            'SECOND_REQUEST_STATUS=200', 'the following GET / must be served (keep-alive preserved, drained exactly once)'
+        )
         client.Streams.All += Testers.ContainsExpression(
-            'KEEPALIVE_PRESERVED=yes', 'the connection must not be closed by a spurious double-drain')
+            'KEEPALIVE_PRESERVED=yes', 'the connection must not be closed by a spurious double-drain'
+        )
         client.StartBefore(self._server)
         client.StartBefore(self._ts)
 

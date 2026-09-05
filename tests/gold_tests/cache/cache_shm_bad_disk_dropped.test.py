@@ -110,7 +110,8 @@ class CacheShmBadDiskDroppedTest:
                 'proxy.config.diags.debug.tags': 'cache_shm|cache_init',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1/ @plugin=generator.so')
         return ts
@@ -118,30 +119,40 @@ class CacheShmBadDiskDroppedTest:
     def _add_diags_log_assertions(self):
         # ts1 cold start across both disks, clean shutdown.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start')
+            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create the shm-backed stripe segments')
+            r'created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create the shm-backed stripe segments'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit')
+            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit'
+        )
 
         # ts2 warm start with disk_b dropped: partial attach -- the surviving
         # disk_a stripe attaches, the orphaned disk_b segment is reclaimed.
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
             r'attaching up to \d+ stripes \(fast restart, partial -- storage changed\)',
-            'ts2 must enter partial-attach mode after the disk was dropped')
+            'ts2 must enter partial-attach mode after the disk was dropped',
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'attached stripe \S+ \(\d+ bytes\) for key=', 'ts2 must fast-attach the surviving disk_a stripe from shm')
+            r'attached stripe \S+ \(\d+ bytes\) for key=', 'ts2 must fast-attach the surviving disk_a stripe from shm'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: reclaiming orphaned stripe segment', 'ts2 must reclaim the dropped disk_b stripe segment')
+            r'cache shm: reclaiming orphaned stripe segment', 'ts2 must reclaim the dropped disk_b stripe segment'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'reclaimed \d+ orphaned stripe segment\(s\) after attach', 'ts2 must report the reclaim summary')
+            r'reclaimed \d+ orphaned stripe segment\(s\) after attach', 'ts2 must report the reclaim summary'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: creating fresh control segment', 'ts2 must keep the control segment across the disk drop')
+            r'cache shm: creating fresh control segment', 'ts2 must keep the control segment across the disk drop'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
             r'cache shm: previous run did not shutdown cleanly',
-            'the partial attach must be due to the disk drop, not an unclean shutdown')
+            'the partial attach must be due to the disk drop, not an unclean shutdown',
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: (schema|ABI) mismatch', 'the partial attach must be due to the disk drop, not schema/ABI')
+            r'cache shm: (schema|ABI) mismatch', 'the partial attach must be due to the disk drop, not schema/ABI'
+        )
 
     def _populate_cache(self):
         tr = Test.AddTestRun('Populate cache via ts1 (disk_a + disk_b)')
@@ -149,7 +160,8 @@ class CacheShmBadDiskDroppedTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('200', 'ts1 first GET should return 200')
         tr.StillRunningAfter = self.ts1
@@ -158,8 +170,8 @@ class CacheShmBadDiskDroppedTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts1')
         tr.Processes.Default.Env = self.ts1.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shmbd_ts1 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shmbd_ts1 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _dump_shm_state(self):
@@ -183,7 +195,8 @@ class CacheShmBadDiskDroppedTest:
         # The gold's stripe rows end at `present`. A stripe marked untrusted at shutdown appends to that line, so say so
         # explicitly -- otherwise a stray mark (e.g. an AIO write still in flight) surfaces as an opaque gold diff.
         tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-            'untrusted', 'this cache was shut down cleanly, so no stripe should be marked untrusted')
+            'untrusted', 'this cache was shut down cleanly, so no stripe should be marked untrusted'
+        )
 
     def _verify_survivor_attach_and_reclaim(self):
         tr = Test.AddTestRun('Start ts2 (disk_b dropped); verify survivor fast-attach + orphan reclaim')
@@ -191,10 +204,12 @@ class CacheShmBadDiskDroppedTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            '200', 'ts2 should serve correctly after the partial attach')
+            '200', 'ts2 should serve correctly after the partial attach'
+        )
         tr.StillRunningAfter = self.ts2
 
     def _clean_shutdown_ts2(self):
@@ -204,8 +219,8 @@ class CacheShmBadDiskDroppedTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts2')
         tr.Processes.Default.Env = self.ts2.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shmbd_ts2 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shmbd_ts2 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _cleanup_shm(self):
@@ -218,7 +233,8 @@ class CacheShmBadDiskDroppedTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._populate_cache()

@@ -25,7 +25,8 @@ def assert_socket_mode(socket_path: str, expected_octal: str) -> str:
     return (
         f'python3 -c "import os, stat, sys; '
         f'sys.exit(0 if stat.S_IMODE(os.stat(sys.argv[1]).st_mode) == int(sys.argv[2], 8) else 1)" '
-        f'{socket_path} {expected_octal}')
+        f'{socket_path} {expected_octal}'
+    )
 
 
 #
@@ -35,7 +36,8 @@ ts_default = Test.MakeATSProcess("ts_default")
 ts_default.Disk.records_config.update(
     {
         'proxy.config.http.server_ports': f"{ts_default.Variables.port} {ts_default.Variables.uds_path}",
-    })
+    }
+)
 
 tr = Test.AddTestRun("UDS default permission is 0666")
 tr.Processes.Default.Command = assert_socket_mode(ts_default.Variables.uds_path, '0666')
@@ -49,7 +51,8 @@ ts_custom = Test.MakeATSProcess("ts_custom")
 ts_custom.Disk.records_config.update(
     {
         'proxy.config.http.server_ports': f"{ts_custom.Variables.port} {ts_custom.Variables.uds_path}:uds-perm=0660",
-    })
+    }
+)
 
 tr = Test.AddTestRun("UDS custom permission 0660 honored")
 tr.Processes.Default.Command = assert_socket_mode(ts_custom.Variables.uds_path, '0660')

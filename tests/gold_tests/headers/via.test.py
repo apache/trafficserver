@@ -51,11 +51,13 @@ ts.Disk.records_config.update(
         'proxy.config.http.insert_response_via_str': 4,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
+    'map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -63,7 +65,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Set up to check the output after the tests have run.
 via_log_id = Test.Disk.File("via.log")
@@ -88,7 +91,8 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
@@ -97,7 +101,8 @@ tr.StillRunningAfter = ts
 # HTTP 1.0
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.0 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts)
+    '--verbose {0} --http1.0 --proxy localhost:{1} http://www.example.com'.format(ipv4flag, ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr.StillRunningAfter = server
@@ -108,7 +113,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
         '--verbose --ipv4 --http2 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port),
-        ts=ts)
+        ts=ts,
+    )
     tr.Processes.Default.ReturnCode = 0
 
     tr.StillRunningAfter = server
@@ -119,8 +125,10 @@ if not Condition.CurlUsingUnixDomainSocket():
         tr = Test.AddTestRun()
         tr.MakeCurlCommand(
             '--verbose --ipv4 --http3 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-                ts.Variables.ssl_port),
-            ts=ts)
+                ts.Variables.ssl_port
+            ),
+            ts=ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = server
         tr.StillRunningAfter = ts
@@ -129,7 +137,8 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
         '--verbose --ipv4 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(ts.Variables.ssl_port),
-        ts=ts)
+        ts=ts,
+    )
     tr.Processes.Default.ReturnCode = 0
 
     tr.StillRunningAfter = server
@@ -138,7 +147,8 @@ if not Condition.CurlUsingUnixDomainSocket():
 # IPv6
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6), ts=ts)
+    '--verbose {0} --http1.1 --proxy localhost:{1} http://www.example.com'.format(ipv6flag, ts.Variables.portv6), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -147,8 +157,10 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
         '--verbose --ipv6 --http1.1 --insecure --header "Host: www.example.com" https://localhost:{}'.format(
-            ts.Variables.ssl_portv6),
-        ts=ts)
+            ts.Variables.ssl_portv6
+        ),
+        ts=ts,
+    )
     tr.Processes.Default.ReturnCode = 0
 
     tr.StillRunningAfter = server

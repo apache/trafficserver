@@ -1008,10 +1008,10 @@ add_custom_target(
 )
 
 add_custom_target(
-  yapf
-  ${CMAKE_SOURCE_DIR}/tools/yapf.sh ${CMAKE_SOURCE_DIR}
+  ruff
+  ${CMAKE_SOURCE_DIR}/tools/ruff.sh ${CMAKE_SOURCE_DIR}
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  COMMENT "formatting python files"
+  COMMENT "formatting Python files"
   VERBATIM
 )
 
@@ -1034,7 +1034,7 @@ add_custom_target(
 # Add a format target that runs all the formatters.
 add_custom_target(
   format
-  DEPENDS clang-format yapf cmake-format whitespace-format
+  DEPENDS clang-format ruff cmake-format whitespace-format
   COMMENT "formatting all files"
 )
 

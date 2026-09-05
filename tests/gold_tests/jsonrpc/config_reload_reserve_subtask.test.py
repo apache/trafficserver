@@ -45,27 +45,34 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'rpc|config|config.reload|filemanager',
-    })
+    }
+)
 
 # Provide valid content for files whose handlers reject empty input.
-ts.Disk.ip_allow_yaml.AddLines([
-    'ip_allow:',
-    '- apply: in',
-    '  ip_addrs: 0/0',
-    '  action: allow',
-    '  methods: ALL',
-])
-ts.Disk.logging_yaml.AddLines([
-    'logging:',
-    '  formats:',
-    '    - name: reserve_test',
-    '      format: "%<cqtq>"',
-])
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: "*.example.com"',
-    '  verify_client: NONE',
-])
+ts.Disk.ip_allow_yaml.AddLines(
+    [
+        'ip_allow:',
+        '- apply: in',
+        '  ip_addrs: 0/0',
+        '  action: allow',
+        '  methods: ALL',
+    ]
+)
+ts.Disk.logging_yaml.AddLines(
+    [
+        'logging:',
+        '  formats:',
+        '    - name: reserve_test',
+        '      format: "%<cqtq>"',
+    ]
+)
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: "*.example.com"',
+        '  verify_client: NONE',
+    ]
+)
 
 # Files to touch to trigger file-based handlers during reload.
 files_to_touch = [
@@ -85,8 +92,8 @@ tr.Processes.Default.StartBefore(ts)
 # detects it as changed.  The --cold flag modifies the file without
 # notifying the running process (the reload will pick it up).
 tr.Processes.Default.Command = (
-    'sleep 3 && traffic_ctl config set proxy.config.diags.debug.tags '
-    '"rpc|config|config.reload|filemanager|upd" --cold')
+    'sleep 3 && traffic_ctl config set proxy.config.diags.debug.tags "rpc|config|config.reload|filemanager|upd" --cold'
+)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -118,7 +125,8 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 # No subtask should still be in_progress after 15s.
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "in_progress", "No task should remain in progress after 15s delay")
+    "in_progress", "No task should remain in progress after 15s delay"
+)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("success", "Final reload status must be success")
 tr.StillRunningAfter = ts
 
@@ -129,6 +137,8 @@ tr.StillRunningAfter = ts
 # outcome.  This must never happen.
 # ============================================================================
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "ignoring transition from", "No state-transition conflicts should appear in traffic.out")
+    "ignoring transition from", "No state-transition conflicts should appear in traffic.out"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Reserved subtask", "reserve_subtask() must log pre-registration messages")
+    "Reserved subtask", "reserve_subtask() must log pre-registration messages"
+)

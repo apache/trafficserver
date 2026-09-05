@@ -18,6 +18,7 @@ Implement an OrderedSetQueue
 #  limitations under the License.
 
 import collections
+
 try:
     collectionsAbc = collections.abc
 except AttributeError:
@@ -35,7 +36,6 @@ except ImportError:
 
 
 class OrderedSet(collectionsAbc.MutableSet):
-
     def __init__(self, iterable=None):
         self.end = end = []
         end += [None, end, end]  # sentinel node for doubly linked list

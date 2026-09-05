@@ -30,21 +30,17 @@ cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer(
     "server",
     ssl=True,
-    options={
-        "--clientCA": cafile,
-        "--clientverify": ""
-    },
+    options={"--clientCA": cafile, "--clientverify": ""},
     clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-foo.key".format(Test.RunDirectory),
+)
 server2 = Test.MakeOriginServer(
     "server2",
     ssl=True,
-    options={
-        "--clientCA": cafile2,
-        "--clientverify": ""
-    },
+    options={"--clientCA": cafile2, "--clientverify": ""},
     clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-bar.key".format(Test.RunDirectory),
+)
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
 server.Setup.Copy("ssl/signed-foo.pem")
@@ -93,7 +89,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -101,7 +98,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine('map /case1 https://127.0.0.1:{0}/'.format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine('map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port))
@@ -120,7 +118,8 @@ ts.Disk.sni_yaml.AddLines(
         '- fqdn: "foo.com"',
         '  client_cert: {0}/../signed2-foo.pem'.format(ts.Variables.SSLDir),
         '  client_key: {0}/../signed-foo.key'.format(ts.Variables.SSLDir),
-    ])
+    ]
+)
 
 # Should succeed
 tr = Test.AddTestRun("bob.bar.com to server 1")

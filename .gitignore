@@ -4,6 +4,7 @@
 *.a
 *.so
 *.pyc
+/.ruff_cache
 Makefile.in
 *~
 *.tar.gz

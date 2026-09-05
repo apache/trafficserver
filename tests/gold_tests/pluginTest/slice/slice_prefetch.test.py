@@ -1,5 +1,5 @@
-'''
-'''
+''' '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -66,16 +66,19 @@ for block_bytes in [block_bytes_1, block_bytes_2]:
         req_header = {
             "headers": "GET /path HTTP/1.1\r\n" + "Host: *\r\n" + "Accept: */*\r\n" + f"Range: bytes={b0}-{b1}\r\n" + "\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
-        if (b1 > bodylen - 1):
+        if b1 > bodylen - 1:
             b1 = bodylen - 1
         resp_header = {
-            "headers":
-                "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: public, max-age=5\r\n" +
-                f"Content-Range: bytes {b0}-{b1}/{bodylen}\r\n" + "Connection: close\r\n" + "\r\n",
+            "headers": "HTTP/1.1 206 Partial Content\r\n"
+            + "Accept-Ranges: bytes\r\n"
+            + "Cache-Control: public, max-age=5\r\n"
+            + f"Content-Range: bytes {b0}-{b1}/{bodylen}\r\n"
+            + "Connection: close\r\n"
+            + "\r\n",
             "timestamp": "1469733493.993",
-            "body": body[b0:b1 + 1]
+            "body": body[b0 : b1 + 1],
         }
         server.addResponse("sessionlog.json", req_header, resp_header)
 
@@ -83,13 +86,14 @@ curl_and_args = '{{curl}} -s -D /dev/stdout -o /dev/stderr -x http://127.0.0.1:{
 
 ts.Disk.remap_config.AddLines(
     [
-        f'map http://sliceprefetchbytes1/ http://127.0.0.1:{server.Variables.Port}' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_1} @pparam=--prefetch-count=1 \\' +
-        ' @plugin=cache_range_requests.so',
-        f'map http://sliceprefetchbytes2/ http://127.0.0.1:{server.Variables.Port}' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_2} @pparam=--prefetch-count=3 \\' +
-        ' @plugin=cache_range_requests.so',
-    ])
+        f'map http://sliceprefetchbytes1/ http://127.0.0.1:{server.Variables.Port}'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_1} @pparam=--prefetch-count=1 \\'
+        + ' @plugin=cache_range_requests.so',
+        f'map http://sliceprefetchbytes2/ http://127.0.0.1:{server.Variables.Port}'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes_2} @pparam=--prefetch-count=3 \\'
+        + ' @plugin=cache_range_requests.so',
+    ]
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.logging_yaml.AddLines(
@@ -102,13 +106,15 @@ ts.Disk.logging_yaml.AddLines(
         '    - filename: cache',
         '      format: cache',
         '      mode: ascii',
-    ])
+    ]
+)
 
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'slice|cache_range_requests|xdebug',
-    })
+    }
+)
 
 # 0 Test - Full object slice (miss) with only block 14-20 prefetched in background, block bytes= 7
 tr = Test.AddTestRun("Full object slice: first block is miss, only block 14-20 prefetched")

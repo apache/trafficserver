@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -41,7 +40,7 @@ server = Test.MakeOriginServer("server")
 request_header = {
     "headers": "GET /foo/abcde/qrstuvwxyz HTTP/1.1\r\nHost: just.any.thing\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 # expected response from the origin server
 response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -52,31 +51,31 @@ server.addResponse("sessionfile.log", request_header, response_header)
 crossdomain_request = {
     "headers": "GET /crossdomain.xml HTTP/1.1\r\nHost: just.any.thing\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 crossdomain_response = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "crossdomain"
+    "body": "crossdomain",
 }
 server.addResponse("sessionfile.log", crossdomain_request, crossdomain_response)
 
 clientaccess_request = {
     "headers": "GET /clientaccesspolicy.xml HTTP/1.1\r\nHost: just.any.thing\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 clientaccess_response = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "clientaccess"
+    "body": "clientaccess",
 }
 server.addResponse("sessionfile.log", clientaccess_request, clientaccess_response)
 
 test_html_request = {
     "headers": "GET /test.html HTTP/1.1\r\nHost: just.any.thing\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 test_html_response = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "test"}
 server.addResponse("sessionfile.log", test_html_request, test_html_response)
@@ -94,7 +93,8 @@ ts.Disk.records_config.update(
         'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -102,36 +102,42 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Use unchanged incoming URL.
 #
 ts.Setup.Copy("url_sig.config", ts.Variables.CONFIGDIR)
 ts.Disk.remap_config.AddLine(
-    f'map http://one.two.three/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.config')
+    f'map http://one.two.three/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.config'
+)
 
 # Use unchanged incoming HTTPS URL.
 #
 ts.Disk.remap_config.AddLine(
-    f'map https://one.two.three/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.config')
+    f'map https://one.two.three/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.config'
+)
 
 # Use pristine URL, incoming URL unchanged.
 #
 ts.Disk.remap_config.AddLine(
-    f'map http://four.five.six/ http://127.0.0.1:{server.Variables.Port}/' +
-    ' @plugin=url_sig.so @pparam=url_sig.config @pparam=pristineurl')
+    f'map http://four.five.six/ http://127.0.0.1:{server.Variables.Port}/'
+    + ' @plugin=url_sig.so @pparam=url_sig.config @pparam=pristineurl'
+)
 
 # Use pristine URL, incoming URL changed.
 #
 ts.Disk.remap_config.AddLine(
-    f'map http://seven.eight.nine/ http://127.0.0.1:{server.Variables.Port}' +
-    ' @plugin=url_sig.so @pparam=url_sig.config @pparam=PristineUrl')
+    f'map http://seven.eight.nine/ http://127.0.0.1:{server.Variables.Port}'
+    + ' @plugin=url_sig.so @pparam=url_sig.config @pparam=PristineUrl'
+)
 
 # Use config with all settings set
 #
 ts.Setup.Copy("url_sig.all.config", ts.Variables.CONFIGDIR)
 ts.Disk.remap_config.AddLine(
-    f'map http://ten.eleven.twelve/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.all.config')
+    f'map http://ten.eleven.twelve/ http://127.0.0.1:{server.Variables.Port}/' + ' @plugin=url_sig.so @pparam=url_sig.all.config'
+)
 
 # Validation failure tests.
 
@@ -141,9 +147,11 @@ LogTee = f" 2>&1 | grep '^<' | tee -a {Test.RunDirectory}/url_sig_long.log"
 #
 tr = Test.AddTestRun("Bad client IP should fail signature check")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.2&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.2&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.StartBefore(ts)
 p.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 p.ReturnCode = 0
@@ -153,9 +161,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Expired signature should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=1&A=2&K=13&P=010&S=f237aad1fa010234d7bf8108a0e36387'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=1&A=2&K=13&P=010&S=f237aad1fa010234d7bf8108a0e36387'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -163,9 +173,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Missing algorithm parameter should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -173,9 +185,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Invalid algorithm (A=3) should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=3&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=3&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -183,9 +197,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Missing parts parameter should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -193,9 +209,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Invalid parts value (P=10) should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=10&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=10&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -203,9 +221,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Missing signature parameter should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -213,9 +233,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Incorrect signature should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f452d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f452d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -223,9 +245,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Spurious ampersand should fail signature check")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8#'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8#'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -233,9 +257,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Truncated query string with only client IP should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" + "foo/abcde/qrstuvwxyz?C=127.0.0.1'" +
-    LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -243,9 +269,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Client IP as final query parameter should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8&C=127.0.0.1'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8&C=127.0.0.1'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -253,9 +281,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Empty client IP value should fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -266,7 +296,8 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Excluded URL /crossdomain.xml should bypass signature check")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/crossdomain.xml'" + LogTee, ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/crossdomain.xml'" + LogTee, ts=ts
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK without signature")
 
@@ -274,7 +305,8 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 #
 tr = Test.AddTestRun("Excluded URL /clientaccesspolicy.xml should bypass signature check")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/clientaccesspolicy.xml'" + LogTee, ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/clientaccesspolicy.xml'" + LogTee, ts=ts
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK without signature")
 
@@ -282,7 +314,8 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 #
 tr = Test.AddTestRun("Excluded URL /test.html should bypass signature check")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/test.html'" + LogTee, ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/test.html'" + LogTee, ts=ts
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK without signature")
 
@@ -290,7 +323,8 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 #
 tr = Test.AddTestRun("Non-excluded URL /other.html should require signature and fail")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/other.html'" + LogTee, ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/other.html'" + LogTee, ts=ts
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden without signature")
 
@@ -298,9 +332,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 #
 tr = Test.AddTestRun("Valid SHA1 signature with client IP should succeed")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://four.five.six/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046618556&A=1&K=15&P=1&S=f4103561a23adab7723a89b9831d77e0afb61d92'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://four.five.six/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046618556&A=1&K=15&P=1&S=f4103561a23adab7723a89b9831d77e0afb61d92'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 
@@ -308,9 +344,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 #
 tr = Test.AddTestRun("Valid MD5 signature without client IP should succeed")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?E=33046618586&A=2&K=0&P=1&S=0364efa28afe345544596705b92d20ac'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?E=33046618586&A=2&K=0&P=1&S=0364efa28afe345544596705b92d20ac'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 
@@ -318,9 +356,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 #
 tr = Test.AddTestRun("Valid MD5 signature with client IP and P=010 should succeed")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046619717&A=2&K=13&P=010&S=f237aad1fa010234d7bf8108a0e36387'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046619717&A=2&K=13&P=010&S=f237aad1fa010234d7bf8108a0e36387'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 
@@ -328,9 +368,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 #
 tr = Test.AddTestRun("Valid MD5 signature with client IP and P=101 should succeed")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://seven.eight.nine/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=d1f352d4f1d931ad2f441013402d93f8'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 
@@ -357,9 +399,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 # uses url_type pristine in config
 tr = Test.AddTestRun("Valid MD5 signature with pristine URL config should succeed")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
-    "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/"
+    + "foo/abcde/qrstuvwxyz?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 
@@ -368,9 +412,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 O
 # uses url_type pristine in config
 tr = Test.AddTestRun("Bad path parameter injection should fail signature check")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
-    "foo/abcde/qrstuvwxyz;badparam=true?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'" + LogTee,
-    ts=ts)
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/"
+    + "foo/abcde/qrstuvwxyz;badparam=true?C=127.0.0.1&E=33046620008&A=2&K=13&P=101&S=586ef8e808caeeea025c525c89ff2638'"
+    + LogTee,
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 Forbidden")
 
@@ -378,10 +424,11 @@ p.Streams.stdout = Testers.ContainsExpression("HTTP.*403", "Should receive 403 F
 # With client / SHA1 / P=1 / URL pristine / URL altered. Base64 Encoded Path Param
 tr = Test.AddTestRun("Valid base64 encoded path parameter signature should succeed")
 p = tr.MakeCurlCommand(
-    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/" +
-    "foo/abcde;urlsig=Qz0xMjcuMC4wLjE7RT0zMzA0NjYyMDAwODtBPTI7Sz0xMztQPTEwMTtTPTA1MDllZjljY2VlNjUxZWQ1OTQxM2MyZjE3YmVhODZh/qrstuvwxyz'"
+    f"--verbose --proxy http://127.0.0.1:{ts.Variables.port} 'http://ten.eleven.twelve/"
+    + "foo/abcde;urlsig=Qz0xMjcuMC4wLjE7RT0zMzA0NjYyMDAwODtBPTI7Sz0xMztQPTEwMTtTPTA1MDllZjljY2VlNjUxZWQ1OTQxM2MyZjE3YmVhODZh/qrstuvwxyz'"
     + LogTee,
-    ts=ts)
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 
@@ -395,9 +442,11 @@ url = f"https://127.0.0.1:{ts.Variables.ssl_port}/{path}" + sign(to_sign, "dqsgo
 
 tr = Test.AddTestRun("Valid SHA1 signature over HTTPS should succeed")
 p = tr.MakeCurlCommandMulti(
-    f"{{curl_base}} --verbose --http1.1 --insecure --header 'Host: one.two.three' '{url}'" + LogTee +
-    f" ; grep -F -e '< HTTP' -e Authorization {ts.RunDirectory}/url_sig_long.log > {ts.RunDirectory}/url_sig_short.log ",
-    ts=ts)
+    f"{{curl_base}} --verbose --http1.1 --insecure --header 'Host: one.two.three' '{url}'"
+    + LogTee
+    + f" ; grep -F -e '< HTTP' -e Authorization {ts.RunDirectory}/url_sig_long.log > {ts.RunDirectory}/url_sig_short.log ",
+    ts=ts,
+)
 p.ReturnCode = 0
 p.Streams.stdout = Testers.ContainsExpression("HTTP.*200", "Should receive 200 OK")
 

@@ -53,15 +53,18 @@ server.Streams.All += Testers.ExcludesExpression(
     'Malformed NUL request must not reach the origin server.',
 )
 server.addResponse(
-    'sessionlog.json', {
+    'sessionlog.json',
+    {
         'headers': 'GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n',
         'timestamp': '1469733493.993',
         'body': '',
-    }, {
+    },
+    {
         'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
         'timestamp': '1469733493.993',
         'body': '',
-    })
+    },
+)
 
 ts = Test.MakeATSProcess('ts', enable_tls=True, enable_cache=False)
 ts.addDefaultSSLFiles()
@@ -71,21 +74,23 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split('\n'))
+""".split('\n')
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    })
+    }
+)
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
 
 Test.Setup.CopyAs('../connect/' + MALFORMED_CLIENT, Test.RunDirectory)
 
 for i, case in enumerate(CONTROL_CHARACTER_CASES):
     tr = Test.AddTestRun(case['description'])
-    tr.Processes.Default.Command = (f'{sys.executable} {MALFORMED_CLIENT} {ts.Variables.ssl_port} {case["scenario"]}')
+    tr.Processes.Default.Command = f'{sys.executable} {MALFORMED_CLIENT} {ts.Variables.ssl_port} {case["scenario"]}'
     tr.Processes.Default.ReturnCode = 0
     if i == 0:
         tr.Processes.Default.StartBefore(server)

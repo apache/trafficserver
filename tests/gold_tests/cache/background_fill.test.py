@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -32,6 +31,7 @@ class BackgroundFillTest:
         """
         State of process
         """
+
         INIT = 0
         RUNNING = 1
 
@@ -56,12 +56,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+            )
 
             self.ts[name].Disk.records_config.update(
                 {
-                    "proxy.config.http.server_ports":
-                        f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl {self.ts[name].Variables.uds_path}",
+                    "proxy.config.http.server_ports": f"{self.ts[name].Variables.port} {self.ts[name].Variables.ssl_port}:ssl {self.ts[name].Variables.uds_path}",
                     "proxy.config.http.background_fill_active_timeout": "0",
                     "proxy.config.http.background_fill_completed_threshold": "0.0",
                     "proxy.config.http.cache.required_headers": 0,  # Force cache
@@ -76,18 +76,23 @@ ssl_multicert:
                     'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                     "proxy.config.diags.debug.enabled": 3,
                     "proxy.config.diags.debug.tags": "http",
-                })
+                }
+            )
 
             self.ts[name].Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
             if name == 'for_httpbin' or name == 'default':
-                self.ts[name].Disk.remap_config.AddLines([
-                    f"map / http://127.0.0.1:{self.httpbin.Variables.Port}",
-                ])
+                self.ts[name].Disk.remap_config.AddLines(
+                    [
+                        f"map / http://127.0.0.1:{self.httpbin.Variables.Port}",
+                    ]
+                )
             else:
-                self.ts[name].Disk.remap_config.AddLines([
-                    f'map / https://127.0.0.1:{self.pv_server.Variables.https_port}',
-                ])
+                self.ts[name].Disk.remap_config.AddLines(
+                    [
+                        f'map / https://127.0.0.1:{self.pv_server.Variables.https_port}',
+                    ]
+                )
 
     def __checkProcessBefore(self, tr):
         if self.state == self.State.RUNNING:
@@ -103,7 +108,7 @@ ssl_multicert:
             self.state = self.State.RUNNING
 
     def __checkProcessAfter(self, tr):
-        assert (self.state == self.State.RUNNING)
+        assert self.state == self.State.RUNNING
         tr.StillRunningAfter = self.httpbin
         tr.StillRunningAfter = self.pv_server
         tr.StillRunningAfter = self.ts['for_httpbin']
@@ -122,7 +127,8 @@ timeout 1 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variab
 sleep 5;
 {{curl}} --http1.1 -vs http://127.0.0.1:{self.ts['for_httpbin'].Variables.port}/drip?duration=4 -H "x-debug: x-cache"
 """,
-            ts=self.ts['for_httpbin'])
+            ts=self.ts['for_httpbin'],
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/background_fill_0_stderr_H.gold"
         self.__checkProcessAfter(tr)
@@ -140,7 +146,8 @@ timeout 1 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Vari
 sleep 5;
 {{curl}} --http1.1 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4 -H "x-debug: x-cache"
 """,
-            ts=self.ts['for_httpbin'])
+            ts=self.ts['for_httpbin'],
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/background_fill_1_stderr_H.gold"
         self.__checkProcessAfter(tr)
@@ -158,7 +165,8 @@ timeout 1 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variab
 sleep 5;
 {{curl}} --http2 -vsk https://127.0.0.1:{self.ts['for_httpbin'].Variables.ssl_port}/drip?duration=4 -H "x-debug: x-cache"
 """,
-            ts=self.ts['for_httpbin'])
+            ts=self.ts['for_httpbin'],
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/background_fill_2_stderr_H.gold"
         self.__checkProcessAfter(tr)
@@ -173,7 +181,8 @@ sleep 5;
             "pv_client",
             "replay/bg_fill.yaml",
             http_ports=[self.ts['for_pv'].Variables.port],
-            https_ports=[self.ts['for_pv'].Variables.ssl_port])
+            https_ports=[self.ts['for_pv'].Variables.ssl_port],
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/background_fill_3_stdout.gold"
         self.__checkProcessAfter(tr)

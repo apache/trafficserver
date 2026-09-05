@@ -37,10 +37,12 @@ ts = Test.MakeATSProcess('ts', dump_runroot=True)
 Test.testName = 'config_reload_rpc'
 
 # Initial configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'rpc|config',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'rpc|config',
+    }
+)
 
 # ============================================================================
 # Test 1: File-based reload (no configs parameter)
@@ -159,12 +161,9 @@ tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
-        configs={"ip_allow": [{
-            "apply": "in",
-            "ip_addrs": "127.0.0.1",
-            "action": "allow",
-            "methods": ["GET", "HEAD"]
-        }]}))
+        configs={"ip_allow": [{"apply": "in", "ip_addrs": "127.0.0.1", "action": "allow", "methods": ["GET", "HEAD"]}]}
+    ),
+)
 
 
 def validate_rpc_inject_rejected(resp: Response):
@@ -193,23 +192,12 @@ tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
         configs={
-            "ip_allow": [{
-                "apply": "in",
-                "ip_addrs": "0.0.0.0/0",
-                "action": "allow"
-            }],
-            "sni": [{
-                "fqdn": "*.test.com",
-                "verify_client": "NONE"
-            }],
-            "records": {
-                "diags": {
-                    "debug": {
-                        "enabled": 1
-                    }
-                }
-            }
-        }))
+            "ip_allow": [{"apply": "in", "ip_addrs": "0.0.0.0/0", "action": "allow"}],
+            "sni": [{"fqdn": "*.test.com", "verify_client": "NONE"}],
+            "records": {"diags": {"debug": {"enabled": 1}}},
+        }
+    ),
+)
 
 
 def validate_multiple_configs(resp: Response):
@@ -308,19 +296,9 @@ tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
-        configs={"records": {
-            "diags": {
-                "debug": {
-                    "enabled": 1,
-                    "tags": "http|rpc|test"
-                }
-            },
-            "http": {
-                "cache": {
-                    "http": 1
-                }
-            }
-        }}))
+        configs={"records": {"diags": {"debug": {"enabled": 1, "tags": "http|rpc|test"}}, "http": {"cache": {"http": 1}}}}
+    ),
+)
 
 
 def validate_nested_yaml(resp: Response):
@@ -460,17 +438,10 @@ tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
         configs={
-            "ip_allow": {
-                "_reload": {
-                    "validate_only": "true"
-                },
-                "rules": [{
-                    "apply": "in",
-                    "ip_addrs": "0/0",
-                    "action": "allow"
-                }]
-            }
-        }))
+            "ip_allow": {"_reload": {"validate_only": "true"}, "rules": [{"apply": "in", "ip_addrs": "0/0", "action": "allow"}]}
+        }
+    ),
+)
 
 
 def validate_directive_mixed(resp: Response):

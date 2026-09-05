@@ -22,11 +22,13 @@ Test.Summary = '''Verify cache directory SystemTap probes fire on cache fill and
 # Skipping this test generally because it requires privilege. Thus most CI systems will skip it.
 Test.SkipUnless(
     Condition(lambda: os.geteuid() == 0, "Test requires privilege", True),
-    Condition.HasProgram("bpftrace", "Need bpftrace to verify the probe."))
+    Condition.HasProgram("bpftrace", "Need bpftrace to verify the probe."),
+)
 
 
 class CacheDirProbeTest:
     '''Verify cache directory SystemTap probes.'''
+
     bt_script: str = 'cache_dir_probe.bt'
     _cache_path: str = '/cacheable'
 
@@ -45,12 +47,12 @@ class CacheDirProbeTest:
         cache_request = {
             "headers": f"GET {self._cache_path} HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         cache_response = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: max-age=120\r\nContent-Length: 5\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "hello"
+            "body": "hello",
         }
         origin.addResponse("sessionlog.json", cache_request, cache_response)
         origin.addResponse("sessionlog.json", cache_request, cache_response)
@@ -58,12 +60,12 @@ class CacheDirProbeTest:
         purge_request = {
             "headers": f"PURGE {self._cache_path} HTTP/1.1\r\nHost: cache-probe.test\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         purge_response = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         origin.addResponse("sessionlog.json", purge_request, purge_response)
         return origin
@@ -79,7 +81,8 @@ class CacheDirProbeTest:
                 'proxy.config.http.cache.required_headers': 0,
                 # Keep ATS running as the invoking user inside sudo (no privilege drop).
                 'proxy.config.admin.user_id': '#-1',
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._origin.Variables.Port}')
         return ts
 
@@ -109,7 +112,8 @@ class CacheDirProbeTest:
         client.Command = (
             f"sleep 1 && curl -sSf -o /dev/null -H 'Host: cache-probe.test' {cache_url} && "
             f"curl -sSf -o /dev/null -X PURGE -H 'Host: cache-probe.test' {cache_url} && "
-            f"curl -sSf -o /dev/null -H 'Host: cache-probe.test' {cache_url}")
+            f"curl -sSf -o /dev/null -H 'Host: cache-probe.test' {cache_url}"
+        )
         client.ReturnCode = 0
         client.Env = self._ts.Env
 

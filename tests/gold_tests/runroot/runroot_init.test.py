@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -23,7 +22,8 @@ Test for init of runroot from traffic_layout.
 '''
 Test.ContinueOnFail = True
 Test.SkipUnless(
-    Test.Variables.BINDIR.startswith(Test.Variables.PREFIX), "need to guarantee bin path starts with prefix for runroot")
+    Test.Variables.BINDIR.startswith(Test.Variables.PREFIX), "need to guarantee bin path starts with prefix for runroot"
+)
 
 # init from pass in path
 path1 = os.path.join(Test.RunDirectory, "runroot1")
@@ -59,7 +59,7 @@ f = tr.Disk.File(os.path.join(path4, "runroot.yaml"))
 f.Exists = True
 
 # create runroot with junk to guarantee only traffic server related files are copied
-bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1:]
+bin_path = Test.Variables.BINDIR[Test.Variables.BINDIR.find(Test.Variables.PREFIX) + len(Test.Variables.PREFIX) + 1 :]
 path5 = os.path.join(Test.RunDirectory, "runroot5")
 exe_path = os.path.join(bin_path, "traffic_layout")
 junk_file = os.path.join(bin_path, "junk")

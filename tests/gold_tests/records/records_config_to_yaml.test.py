@@ -1,5 +1,5 @@
-'''
-'''
+''' '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -47,7 +47,8 @@ tr.Setup.Copy('legacy_config/override_value.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_value.config --output generated{file_suffix}.yaml --yaml -m'
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "We cannot continue with 'proxy.config.ssl.client.verify.server.policy' at line '3' as a value node will be overridden",
-    "Error should be present")
+    "Error should be present",
+)
 
 tr = Test.AddTestRun("Test errors when trying to override maps")
 tr.Setup.Copy(os.path.join(Test.Variables.RepoDir, "tools/records/convert2yaml.py"))
@@ -55,7 +56,8 @@ tr.Setup.Copy('legacy_config/override_map.config')
 tr.Processes.Default.Command = f'python3 convert2yaml.py -f override_map.config --output generated{file_suffix}.yaml --yaml -m'
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
     "We cannot continue with 'proxy.config.ssl.client.verify.server' at line '3' as an existing YAML map will be overridden.",
-    "Error should be present")
+    "Error should be present",
+)
 
 file_suffix = file_suffix + 1
 

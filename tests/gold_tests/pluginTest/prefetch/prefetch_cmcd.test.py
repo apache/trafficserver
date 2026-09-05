@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -30,21 +29,17 @@ pf_name = 'prefetch.txt'
 pf_header = f'Cmcd-Request: foo=12,nor="{pf_name}",bar=42'
 
 request_header = {
-    "headers":
-        f"GET /tests/{asset_name} HTTP/1.1\r\n"
-        "Host: does.not.matter\r\n"  # But cant be omitted
-        f"{pf_header}\r\n"
-        "\r\n",
+    "headers": f"GET /tests/{asset_name} HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    f"{pf_header}\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=60\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": f"This is the body for {asset_name}\n"
+    "body": f"This is the body for {asset_name}\n",
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
@@ -58,21 +53,17 @@ query_pf_perc_name = urllib.parse.quote(query_pf_name)
 query_pf_perc_header = f'Cmcd-Request: nor="{query_pf_perc_name}"'
 
 request_header = {
-    "headers":
-        f"GET /tests/{query_name} HTTP/1.1\r\n"
-        "Host: does.not.matter\r\n"  # But cant be omitted
-        f"{query_pf_perc_header}\r\n"
-        "\r\n",
+    "headers": f"GET /tests/{query_name} HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    f"{query_pf_perc_header}\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=60\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": f"This is the body for {query_name}\n"
+    "body": f"This is the body for {query_name}\n",
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
@@ -81,20 +72,16 @@ names = [pf_name, query_pf_name]
 
 for name in names:
     request_header = {
-        "headers":
-            f"GET /tests/{name} HTTP/1.1\r\n"
-            "Host: does.not.matter\r\n"  # But cant be omitted
-            "\r\n",
+        "headers": f"GET /tests/{name} HTTP/1.1\r\n"
+        "Host: does.not.matter\r\n"  # But cant be omitted
+        "\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     response_header = {
-        "headers": "HTTP/1.1 200 OK\r\n"
-                   "Connection: close\r\n"
-                   "Cache-control: max-age=60\r\n"
-                   "\r\n",
+        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": f"This is the body for {name}\n"
+        "body": f"This is the body for {name}\n",
     }
     origin.addResponse("sessionlog.json", request_header, response_header)
 
@@ -103,39 +90,31 @@ root_name = 'root.txt'
 root_header = f'Cmcd-Request: nor="rooted"'
 
 request_header = {
-    "headers":
-        f"GET /{root_name} HTTP/1.1\r\n"
-        "Host: does.not.matter\r\n"  # But cant be omitted
-        f"{root_header}\r\n"
-        "\r\n",
+    "headers": f"GET /{root_name} HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    f"{root_header}\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=60\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": f"This is the body for {root_name}\n"
+    "body": f"This is the body for {root_name}\n",
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
 request_header = {
-    "headers":
-        f"GET /rooted HTTP/1.1\r\n"
-        "Host: does.not.matter\r\n"  # But cant be omitted
-        "\r\n",
+    "headers": f"GET /rooted HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=60\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": f"This is the body for rooted\n"
+    "body": f"This is the body for rooted\n",
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
@@ -143,21 +122,17 @@ origin.addResponse("sessionlog.json", request_header, response_header)
 crr_name = 'crr.txt'
 crr_header = f'Cmcd-Request: foo=12,nor="{crr_name}",bar=42,nrr="0-"'
 request_header = {
-    "headers":
-        f"GET /tests/{crr_name} HTTP/1.1\r\n"
-        "Host: does.not.matter\r\n"  # But cant be omitted
-        f"{crr_header}\r\n"
-        "\r\n",
+    "headers": f"GET /tests/{crr_name} HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    f"{crr_header}\r\n"
+    "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=60\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": f"This is the body for {crr_name}\n"
+    "body": f"This is the body for {crr_name}\n",
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
@@ -173,11 +148,13 @@ ts1.Disk.records_config.update(
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",
         'proxy.config.http.parent_proxy.self_detect': 0,
-    })
+    }
+)
 dns.addRecords(records={f"ts1": ["127.0.0.1"]})
 ts1.Disk.remap_config.AddLine(
     f"map / http://127.0.0.1:{origin.Variables.Port}" + " @plugin=cachekey.so @pparam==--sort-params=true"
-    " @plugin=prefetch.so @pparam==--front=false")
+    " @plugin=prefetch.so @pparam==--front=false"
+)
 
 ts1.Disk.logging_yaml.AddLines(
     '''
@@ -188,7 +165,8 @@ logging:
  logs:
   - filename: transaction
     format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 ts0 = Test.MakeATSProcess("ts0")
 ts0.Disk.records_config.update(
@@ -198,12 +176,14 @@ ts0.Disk.records_config.update(
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",
         'proxy.config.http.parent_proxy.self_detect': 0,
-    })
+    }
+)
 
 dns.addRecords(records={f"ts0": ["127.0.0.1"]})
 ts0.Disk.remap_config.AddLine(
     f"map http://ts0 http://ts1:{ts1.Variables.port}" + " @plugin=cachekey.so @pparam=--sort-params=true"
-    " @plugin=prefetch.so" + " @pparam=--front=true" + " @pparam=--fetch-policy=simple" + " @pparam=--cmcd-nor=true")
+    " @plugin=prefetch.so" + " @pparam=--front=true" + " @pparam=--fetch-policy=simple" + " @pparam=--cmcd-nor=true"
+)
 
 ts0.Disk.logging_yaml.AddLines(
     '''
@@ -214,7 +194,8 @@ logging:
  logs:
   - filename: transaction
     format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 # start everything up
 tr = Test.AddTestRun()
@@ -233,7 +214,7 @@ tr.Processes.Default.ReturnCode = 0
 # issue curl form same asset, with prefetch
 tr = Test.AddTestRun()
 tr.DelayStart = 1
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'", ts=ts0)
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H '{pf_header}'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # fetch the prefetched asset (only cached on ts1)
@@ -244,7 +225,7 @@ tr.Processes.Default.ReturnCode = 0
 
 # attempt to prefetch again
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H \'{pf_header}\'", ts=ts0)
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} http://ts0/tests/{asset_name} -H '{pf_header}'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # request the prefetched asset
@@ -255,22 +236,23 @@ tr.Processes.Default.ReturnCode = 0
 # prefetch using query params with query prefetch perc encoded
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_name}\' -H \'{query_pf_perc_header}\'", ts=ts0)
+    f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} 'http://ts0/tests/{query_name}' -H '{query_pf_perc_header}'", ts=ts0
+)
 tr.Processes.Default.ReturnCode = 0
 
 # request the prefetched asset without perc encoding
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/tests/{query_pf_name}\'", ts=ts0)
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} 'http://ts0/tests/{query_pf_name}'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # ensure root path prefetch works
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{root_name}\' -H \'{root_header}\'", ts=ts0)
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} 'http://ts0/{root_name}' -H '{root_header}'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 # ensure request with nrr= field is skipped
 tr = Test.AddTestRun()
-tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} \'http://ts0/{crr_name}\' -H \'{crr_header}\'", ts=ts0)
+tr.MakeCurlCommand(f"--verbose --proxy 127.0.0.1:{ts0.Variables.port} 'http://ts0/{crr_name}' -H '{crr_header}'", ts=ts0)
 tr.Processes.Default.ReturnCode = 0
 
 ts0log = os.path.join(ts0.Variables.LOGDIR, 'transaction.log')
@@ -280,11 +262,11 @@ ts1log = os.path.join(ts1.Variables.LOGDIR, 'transaction.log')
 Test.AddAwaitFileContainsTestRun('Await ts1 transactions to finish logging.', ts1log, 'crr.txt')
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f"cat {ts0log}")
+tr.Processes.Default.Command = f"cat {ts0log}"
 tr.Streams.stdout = "prefetch_cmcd0.gold"
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f"cat {ts1log}")
+tr.Processes.Default.Command = f"cat {ts1log}"
 tr.Streams.stdout = "prefetch_cmcd1.gold"
 tr.Processes.Default.ReturnCode = 0

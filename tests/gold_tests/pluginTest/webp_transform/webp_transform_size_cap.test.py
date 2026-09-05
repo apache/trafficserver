@@ -49,15 +49,14 @@ server = Test.MakeOriginServer("server")
 BIG = 20 * 1024 * 1024
 body = "A" * BIG
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /huge.jpg HTTP/1.1\r\nHost: *\r\n\r\n",
-        "timestamp": "1",
-        "body": ""
-    }, {
+    "sessionlog.json",
+    {"headers": "GET /huge.jpg HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {
         "headers": "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {0}\r\n\r\n".format(BIG),
         "timestamp": "1",
-        "body": body
-    })
+        "body": body,
+    },
+)
 
 ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 ts.addDefaultSSLFiles()
@@ -68,7 +67,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.records_config.update(
     {
@@ -76,7 +76,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'webp_transform',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_webp')
 
@@ -84,7 +85,8 @@ ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_webp')
 # default 16 MiB cap (16777216) proves the plugin actually engaged and declined,
 # rather than the response merely passing through untouched.
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "exceeds cap 16777216", "Plugin must engage and decline at the default 16 MiB cap")
+    "exceeds cap 16777216", "Plugin must engage and decline at the default 16 MiB cap"
+)
 
 # Identity rule for the HTTP/1.1 forward-proxy run, plus a catch-all so the
 # HTTP/2 reverse-proxy run resolves to the same origin.
@@ -97,8 +99,10 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variabl
 tr = Test.AddTestRun("HTTP/1.1 client: oversized body declined, original type preserved")
 tr.MakeCurlCommandMulti(
     '{curl} -sS -D - -o /dev/null -x 127.0.0.1:TSPORT -H "Accept: image/webp" http://127.0.0.1:OPORT/huge.jpg'.replace(
-        'TSPORT', str(ts.Variables.port)).replace('OPORT', str(server.Variables.Port)),
-    ts=ts)
+        'TSPORT', str(ts.Variables.port)
+    ).replace('OPORT', str(server.Variables.Port)),
+    ts=ts,
+)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.ReturnCode = 0
@@ -106,16 +110,21 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 200",
 # The response must keep its truthful image/jpeg type. A mislabeled image/webp
 # would mean the original bytes were forwarded under a transformed Content-Type.
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "[Cc]ontent-[Tt]ype: image/jpeg", "Declined response must keep its original image/jpeg type")
+    "[Cc]ontent-[Tt]ype: image/jpeg", "Declined response must keep its original image/jpeg type"
+)
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "image/webp", "Declined response must not be mislabeled image/webp")
+    "image/webp", "Declined response must not be mislabeled image/webp"
+)
 
 tr2 = Test.AddTestRun("HTTP/2 client: oversized body declined, original type preserved")
 tr2.MakeCurlCommand(
-    '--http2 -k -sS -D - -o /dev/null -H "Accept: image/webp" https://127.0.0.1:{0}/huge.jpg'.format(ts.Variables.ssl_port), ts=ts)
+    '--http2 -k -sS -D - -o /dev/null -H "Accept: image/webp" https://127.0.0.1:{0}/huge.jpg'.format(ts.Variables.ssl_port), ts=ts
+)
 tr2.Processes.Default.ReturnCode = 0
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/2 200", "H2 client must see 200 OK, not a crash")
 tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "[Cc]ontent-[Tt]ype: image/jpeg", "Declined response must keep its original image/jpeg type")
+    "[Cc]ontent-[Tt]ype: image/jpeg", "Declined response must keep its original image/jpeg type"
+)
 tr2.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "image/webp", "Declined response must not be mislabeled image/webp")
+    "image/webp", "Declined response must not be mislabeled image/webp"
+)

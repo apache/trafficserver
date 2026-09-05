@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,17 +24,13 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 server_foo = Test.MakeOriginServer(
     "server_foo",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)},
+)
 server_bar = Test.MakeOriginServer(
     "server_bar",
     ssl=True,
-    options={
-        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)},
+)
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -70,7 +65,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -84,8 +80,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.url_remap.pristine_host_hdr': 1
-    })
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+    }
+)
 
 ts.Disk.sni_yaml.AddLine('sni:')
 ts.Disk.sni_yaml.AddLine('- fqdn: bar.com')
@@ -149,13 +146,18 @@ tr6.StillRunningAfter = ts
 
 # No name checking for the sig-only permissive override for bad_bar
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    r"WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped.")
+    r"WARNING: SNI \(bad_bar.com\) not in certificate", "bad_bar name checked should be skipped."
+)
 ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-    r"WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped.")
+    r"WARNING: SNI \(foo.com\) not in certificate", "foo name checked should be skipped."
+)
 # No checking for the self-signed on random.com.  No messages
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    r"WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped")
+    r"WARNING: Core server certificate verification failed for \(random.com\)", "signature check for random.com should be skipped"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'")
+    r"WARNING: Core server certificate verification failed for \(random2.com\)", "signature check for random.com should fail'"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked.")
+    r"WARNING: SNI \(bad_foo.com\) not in certificate", "bad_foo name checked should be checked."
+)

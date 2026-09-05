@@ -39,17 +39,22 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'rpc|config|config.reload|cfg_plugin_directives_test',
-    })
+    }
+)
 
 # Write initial valid plugin config file
-ts.Disk.MakeConfigFile('cfg_plugin_directives_test.conf').AddLines([
-    'initial: config',
-])
+ts.Disk.MakeConfigFile('cfg_plugin_directives_test.conf').AddLines(
+    [
+        'initial: config',
+    ]
+)
 
 # Load the directives test plugin
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'jsonrpc', 'plugins', '.libs', 'cfg_plugin_directives_test.so'), ts,
-    'cfg_plugin_directives_test.conf')
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'jsonrpc', 'plugins', '.libs', 'cfg_plugin_directives_test.so'),
+    ts,
+    'cfg_plugin_directives_test.conf',
+)
 
 # ============================================================================
 # Test A: Plugin startup — TSCfgRegister succeeds
@@ -65,8 +70,8 @@ tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content = Testers.IncludesExpression('TSCfgRegister OK', 'TSCfgRegister should succeed')
 
 ts.Disk.diags_log.Content = All(
-    Testers.IncludesExpression(r'Config reload \[rpc-with-directives\] completed',
-                               'Reload with directives should appear in diags'),)
+    Testers.IncludesExpression(r'Config reload \[rpc-with-directives\] completed', 'Reload with directives should appear in diags'),
+)
 
 # ============================================================================
 # Test B: RPC reload with _reload directives + config content
@@ -78,12 +83,9 @@ tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
         token='rpc-with-directives',
-        configs={'cfg_plugin_directives_test': {
-            'greeting': 'hello_directives',
-            '_reload': {
-                'version': '2.0'
-            }
-        }}))
+        configs={'cfg_plugin_directives_test': {'greeting': 'hello_directives', '_reload': {'version': '2.0'}}},
+    ),
+)
 
 
 def validate_rpc_directives(resp: Response):
@@ -116,9 +118,7 @@ tr.StillRunningAfter = ts
 # ============================================================================
 tr = Test.AddTestRun("File-based reload (touch config) — no directives")
 tr.DelayStart = 2
-touch_cmd = (
-    f'touch {ts.Variables.CONFIGDIR}/cfg_plugin_directives_test.conf '
-    f'&& traffic_ctl config reload -t file-no-directives')
+touch_cmd = f'touch {ts.Variables.CONFIGDIR}/cfg_plugin_directives_test.conf && traffic_ctl config reload -t file-no-directives'
 tr.Processes.Default.Command = touch_cmd
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
@@ -144,10 +144,9 @@ tr.DelayStart = 2
 tr.AddJsonRPCClientRequest(
     ts,
     Request.admin_config_reload(
-        token='rpc-empty-directives', configs={'cfg_plugin_directives_test': {
-            'greeting': 'empty_dir',
-            '_reload': {}
-        }}, force=True))
+        token='rpc-empty-directives', configs={'cfg_plugin_directives_test': {'greeting': 'empty_dir', '_reload': {}}}, force=True
+    ),
+)
 
 
 def validate_empty_directives(resp: Response):

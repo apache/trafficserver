@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -40,7 +39,8 @@ ts.addSSLfile("ssl/server.ocsp.key")
 ts.addSSLfile("ssl/ocsp_response.der")
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -55,7 +55,8 @@ ssl_multicert:
     ssl_ocsp_name: ocsp_response.der
 
 
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -69,8 +70,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.ocsp.enabled': 1,
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'ssl_ocsp'
-    })
+        'proxy.config.diags.debug.tags': 'ssl_ocsp',
+    }
+)
 
 tr = Test.AddTestRun("Check OCSP response using curl")
 tr.Processes.Default.StartBefore(server)
@@ -79,6 +81,8 @@ tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.MakeCurlCommand(
     "-v --cacert {0} --cert-status -H \")host:example.com\" https://127.0.0.1:{1}".format(
-        os.path.join(ts.Variables.SSLDir, "ca.ocsp.pem"), ts.Variables.ssl_port),
-    ts=ts)
+        os.path.join(ts.Variables.SSLDir, "ca.ocsp.pem"), ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.ReturnCode = 0

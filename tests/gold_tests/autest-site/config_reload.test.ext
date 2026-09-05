@@ -216,7 +216,8 @@ def AddConfigReload(
         vtr = self.AddTestRun(f"Verify [{token}] tasks")
         vtr.AddJsonRPCClientRequest(ts, jsonrpc.Request.get_reload_config_status(token=token))
         vtr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(
-            _make_task_validator(expect_tasks, expect_absent_tasks))
+            _make_task_validator(expect_tasks, expect_absent_tasks)
+        )
         vtr.StillRunningAfter = ts
 
     return tr

@@ -45,11 +45,13 @@ class RateLimitSniRejectTest:
         # handshake is rejected outright (TS_EVENT_ERROR) rather than queued. Named .config
         # (not .yaml) so autest treats it as a plain config file; the plugin parses it as
         # YAML regardless (YAML::LoadFile).
-        ts.Disk.MakeConfigFile('rate_limit.config').AddLines([
-            'selector:',
-            '  - sni: rate.limited.com',
-            '    limit: 1',
-        ])
+        ts.Disk.MakeConfigFile('rate_limit.config').AddLines(
+            [
+                'selector:',
+                '  - sni: rate.limited.com',
+                '    limit: 1',
+            ]
+        )
         ts.Disk.plugin_config.AddLine(f'rate_limit.so {ts.Variables.CONFIGDIR}/rate_limit.config')
 
         # Disable the freelist / ProxyAllocator so a freed SSLNetVConnection is really
@@ -63,13 +65,15 @@ class RateLimitSniRejectTest:
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'rate_limit',
-            })
+            }
+        )
 
         # The reject disposition is reached...
         ts.Disk.traffic_out.Content = Testers.ContainsExpression('Rejecting connection', 'over-limit handshakes were rejected')
         # ...and ATS tears every rejected handshake VC down without a memory-safety fault.
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            'use-after-free|attempting free|SEGV|received signal', 'ATS must survive the reject churn')
+            'use-after-free|attempting free|SEGV|received signal', 'ATS must survive the reject churn'
+        )
 
     def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts

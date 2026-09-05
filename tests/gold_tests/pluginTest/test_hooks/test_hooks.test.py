@@ -20,7 +20,9 @@ Test.Summary = '''
 Test TS API Hooks.
 '''
 
-Test.SkipUnless(Condition.HasCurlFeature('http2'),)
+Test.SkipUnless(
+    Condition.HasCurlFeature('http2'),
+)
 Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server")
@@ -47,7 +49,8 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 0,
         'proxy.config.diags.debug.enabled': 0,
         'proxy.config.diags.debug.tags': 'http|test_hooks',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -55,7 +58,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_hooks.so'), ts)
 
@@ -77,13 +81,14 @@ tr.Processes.Default.ReturnCode = 0
 if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '--verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port), ts=ts)
+        '--verbose --ipv4 --http2 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port), ts=ts
+    )
     tr.Processes.Default.ReturnCode = 0
 
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '--verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port),
-        ts=ts)
+        '--verbose --ipv4 --http1.1 --insecure --header "Host: one" https://localhost:{0}/argh'.format(ts.Variables.ssl_port), ts=ts
+    )
     tr.Processes.Default.ReturnCode = 0
 
 # The probing of the ATS port to detect when ATS is ready may be seen by ATS as a VCONN start/close, so filter out these

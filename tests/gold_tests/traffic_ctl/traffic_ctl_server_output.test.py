@@ -41,7 +41,8 @@ traffic_ctl = Make_traffic_ctl(Test, records_yaml)
 ######
 # traffic_ctl server status
 traffic_ctl.server().status().validate_json_contains(
-    initialized_done='true', is_ssl_handshaking_stopped='false', is_draining='false', is_event_system_shut_down='false')
+    initialized_done='true', is_ssl_handshaking_stopped='false', is_draining='false', is_event_system_shut_down='false'
+)
 # Drain ats so we can check the output.
 traffic_ctl.server().drain().exec()
 
@@ -49,17 +50,18 @@ traffic_ctl.server().drain().exec()
 traffic_ctl.server().status().validate_json_contains(initialized_done='true', is_draining='true')
 
 # Get basic and empty connection tracker info.
-traffic_ctl.rpc().invoke(
-    handler="get_connection_tracker_info", params='"table: both"').validate_result_with_text(
-        '{"outbound": {"count": "0", "list": []}, "inbound": {"count": "0", "list": []}}')
+traffic_ctl.rpc().invoke(handler="get_connection_tracker_info", params='"table: both"').validate_result_with_text(
+    '{"outbound": {"count": "0", "list": []}, "inbound": {"count": "0", "list": []}}'
+)
 # default = outbound only
-traffic_ctl.rpc().invoke(
-    handler="get_connection_tracker_info").validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
+traffic_ctl.rpc().invoke(handler="get_connection_tracker_info").validate_result_with_text(
+    '{"outbound": {"count": "0", "list": []}}'
+)
 # request inbound only
-traffic_ctl.rpc().invoke(
-    handler="get_connection_tracker_info",
-    params='"table: inbound"').validate_result_with_text('{"inbound": {"count": "0", "list": []}}')
+traffic_ctl.rpc().invoke(handler="get_connection_tracker_info", params='"table: inbound"').validate_result_with_text(
+    '{"inbound": {"count": "0", "list": []}}'
+)
 # request outbound only
-traffic_ctl.rpc().invoke(
-    handler="get_connection_tracker_info",
-    params='"table: outbound"').validate_result_with_text('{"outbound": {"count": "0", "list": []}}')
+traffic_ctl.rpc().invoke(handler="get_connection_tracker_info", params='"table: outbound"').validate_result_with_text(
+    '{"outbound": {"count": "0", "list": []}}'
+)

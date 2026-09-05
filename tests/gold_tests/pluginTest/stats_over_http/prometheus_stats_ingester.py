@@ -26,7 +26,8 @@ HELP_RE = re.compile(r"^# HELP (?P<name>[a-zA-Z_:][a-zA-Z0-9_:]*) (?P<doc>.*)$")
 TYPE_RE = re.compile(r"^# TYPE (?P<name>[a-zA-Z_:][a-zA-Z0-9_:]*) (?P<type>[a-zA-Z]+)$")
 SAMPLE_RE = re.compile(
     r"^(?P<name>[a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{(?P<labels>.*)\})?\s+"
-    r"(?P<value>(?:[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)|(?:[+-]?(?:Inf|inf))|(?:NaN|nan))$")
+    r"(?P<value>(?:[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)|(?:[+-]?(?:Inf|inf))|(?:NaN|nan))$"
+)
 LABEL_RE = re.compile(r'(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)="(?P<value>(?:\\.|[^"\\])*)"')
 
 
@@ -266,36 +267,43 @@ def validate_prometheus_v2_label_coverage(samples_by_family: dict[str, list[dict
     require_sample(
         require_family(samples_by_family, "proxy_process_http_disallowed_continue"),
         "proxy_process_http_disallowed_continue",
-        {
-            "method": "post",
-            "status": "100"
-        },
+        {"method": "post", "status": "100"},
     )
     require_label_values(
-        require_family(samples_by_family, "proxy_process_http_cache_ims"), "proxy_process_http_cache_ims", "result",
-        {"hit", "miss"})
+        require_family(samples_by_family, "proxy_process_http_cache_ims"), "proxy_process_http_cache_ims", "result", {"hit", "miss"}
+    )
     require_label_values(
-        require_family(samples_by_family, "proxy_process_http_cache_fresh"), "proxy_process_http_cache_fresh", "result", {"hit"})
+        require_family(samples_by_family, "proxy_process_http_cache_fresh"), "proxy_process_http_cache_fresh", "result", {"hit"}
+    )
     require_sample(
         require_family(samples_by_family, "proxy_process_http_transaction_counts_failed"),
         "proxy_process_http_transaction_counts_failed",
-        {
-            "result": "errors",
-            "method": "connect"
-        },
+        {"result": "errors", "method": "connect"},
     )
     require_label_values(
-        require_family(samples_by_family, "proxy_process_eventloop_count"), "proxy_process_eventloop_count", "le",
-        {"10s", "100s", "1000s"})
+        require_family(samples_by_family, "proxy_process_eventloop_count"),
+        "proxy_process_eventloop_count",
+        "le",
+        {"10s", "100s", "1000s"},
+    )
     require_label_values(
-        require_family(samples_by_family, "proxy_process_eventloop_time"), "proxy_process_eventloop_time", "le",
-        {"0ms", "100ms", "2560ms"})
+        require_family(samples_by_family, "proxy_process_eventloop_time"),
+        "proxy_process_eventloop_time",
+        "le",
+        {"0ms", "100ms", "2560ms"},
+    )
     require_label_values(
-        require_family(samples_by_family, "proxy_process_cache_volume_lookup_active"), "proxy_process_cache_volume_lookup_active",
-        "volume", {"0"})
+        require_family(samples_by_family, "proxy_process_cache_volume_lookup_active"),
+        "proxy_process_cache_volume_lookup_active",
+        "volume",
+        {"0"},
+    )
     require_label_values(
-        require_family(samples_by_family, "proxy_process_cache_volume_lookup_success"), "proxy_process_cache_volume_lookup_success",
-        "volume", {"0"})
+        require_family(samples_by_family, "proxy_process_cache_volume_lookup_success"),
+        "proxy_process_cache_volume_lookup_success",
+        "volume",
+        {"0"},
+    )
 
     for family, samples in samples_by_family.items():
         for sample in samples:

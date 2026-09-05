@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -76,12 +75,12 @@ path1_rule = sep.join([path1_regex, path1_expiry, path1_type])
 
 # Create gold files
 gold_path_good = reval_state_path + ".good"
-ts.Disk.File(
-    gold_path_good, typename="ats:config").AddLines(
-        [
-            sep.join([path0_regex, "``", path0_expiry, path0_type]),
-            sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
-        ])
+ts.Disk.File(gold_path_good, typename="ats:config").AddLines(
+    [
+        sep.join([path0_regex, "``", path0_expiry, path0_type]),
+        sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
+    ]
+)
 
 # It seems there's no API for negative gold file matching
 '''
@@ -93,19 +92,20 @@ ts.Disk.File(gold_path_bad, typename="ats:config").AddLines([
 '''
 
 # Create a state file, second line will be discarded and not merged
-ts.Disk.File(
-    reval_state_path, typename="ats:config").AddLines(
-        [
-            sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
-            sep.join(["dummy", path1_epoch, path1_expiry, path1_type]),
-        ])
+ts.Disk.File(reval_state_path, typename="ats:config").AddLines(
+    [
+        sep.join([path1_regex, path1_epoch, path1_expiry, path1_type]),
+        sep.join(["dummy", path1_epoch, path1_expiry, path1_type]),
+    ]
+)
 
 # Write out reval.conf file
-ts.Disk.File(
-    reval_conf_path, typename="ats:config").AddLines([
+ts.Disk.File(reval_conf_path, typename="ats:config").AddLines(
+    [
         path0_rule,
         path1_rule,
-    ])
+    ]
+)
 
 ts.chownForATSProcess(reval_state_path)
 
@@ -117,7 +117,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'regex_revalidate',
         'proxy.config.http.wait_for_cache': 1,
-    })
+    }
+)
 
 # This TestRun creates the state file so it exists when the ts process's Setup
 # logic is run so that it can be chowned at that point.

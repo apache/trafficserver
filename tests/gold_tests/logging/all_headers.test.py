@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -35,14 +34,16 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: does.not.matter\r\n\r\n", 
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"
+    "body": "xxx",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'http|dns',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'http|dns',
+    }
+)
 
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
@@ -57,7 +58,8 @@ logging:
   logs:
     - filename: test_all_headers
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 # Configure comparison of "sanitized" log file with gold file at end of test.
 #
@@ -85,7 +87,8 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand(
         '"http://127.0.0.1:{0}" --user-agent "007" -H "Host: 127.0.0.1:{0}" --verbose '.format(ts.Variables.port) + reallyLong(),
-        ts=ts)
+        ts=ts,
+    )
 else:
     tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
 tr.Processes.Default.ReturnCode = 0
@@ -96,7 +99,8 @@ tr = Test.AddTestRun()
 if Condition.CurlUsingUnixDomainSocket():
     tr.MakeCurlCommand(
         '"http://127.0.0.1:{0}" --user-agent "007" -H "Host: 127.0.0.1:{0}" --verbose '.format(ts.Variables.port) + reallyLong(),
-        ts=ts)
+        ts=ts,
+    )
 else:
     tr.MakeCurlCommand('"http://127.0.0.1:{0}" --user-agent "007" --verbose '.format(ts.Variables.port) + reallyLong(), ts=ts)
 tr.Processes.Default.ReturnCode = 0
@@ -109,7 +113,8 @@ log_path = os.path.join(ts.Variables.LOGDIR, 'test_all_headers.log')
 sanitizer_python_script = os.path.join(Test.TestDirectory, 'all_headers_sanitizer.py')
 sanitizer_shell_script = os.path.join(Test.TestDirectory, 'all_headers_sanitizer.sh')
 
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {sanitizer_python_script} {log_path} {server.Variables.Port} | '
-     f'sh {sanitizer_shell_script} > {sanitized_log_path}')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {sanitizer_python_script} {log_path} {server.Variables.Port} | '
+    f'sh {sanitizer_shell_script} > {sanitized_log_path}'
+)
 tr.Processes.Default.ReturnCode = 0

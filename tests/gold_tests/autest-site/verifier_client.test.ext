@@ -22,21 +22,22 @@ from verifier_common import create_address_argument, substitute_context_in_repla
 
 
 def _configure_client(
-        obj,
-        process,
-        name,
-        replay_path,
-        http_ports=None,
-        https_ports=None,
-        http3_ports=None,
-        keys=None,
-        ssl_cert='',
-        ca_cert='',
-        verbose=True,
-        other_args='',
-        run_parallel=False,
-        context=None,
-        poll_timeout=None):
+    obj,
+    process,
+    name,
+    replay_path,
+    http_ports=None,
+    https_ports=None,
+    http3_ports=None,
+    keys=None,
+    ssl_cert='',
+    ca_cert='',
+    verbose=True,
+    other_args='',
+    run_parallel=False,
+    context=None,
+    poll_timeout=None,
+):
     """
     Configure the process for running the verifier-client.
 
@@ -105,8 +106,7 @@ def _configure_client(
             ssl_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "client.pem")
 
             if not os.path.isfile(ssl_cert):
-                raise ValueError(f"Tried to use '{ssl_cert}' for --client-cert, but it is not "
-                                 "a valid file.")
+                raise ValueError(f"Tried to use '{ssl_cert}' for --client-cert, but it is not a valid file.")
         if ssl_cert:
             run_ssl_cert = os.path.join(client_dir, os.path.basename(ssl_cert))
             process.Setup.Copy(ssl_cert, run_ssl_cert, CopyLogic.SoftFiles)
@@ -121,8 +121,7 @@ def _configure_client(
             ca_cert = os.path.join(obj.Variables["AtsTestToolsDir"], "proxy-verifier", "ssl", "ca.pem")
 
             if not os.path.isfile(ca_cert):
-                raise ValueError(f"Tried to use '{ca_cert}' for --ca-certs, but it is not "
-                                 "a valid file.")
+                raise ValueError(f"Tried to use '{ca_cert}' for --ca-certs, but it is not a valid file.")
         if ca_cert:
             run_ca_cert = os.path.join(client_dir, os.path.basename(ca_cert))
             process.Setup.Copy(ca_cert, run_ca_cert, CopyLogic.SoftFiles)
@@ -149,24 +148,26 @@ def _configure_client(
     process.ReturnCode = 0
 
     process.Streams.stdout = Testers.ExcludesExpression(
-        "Violation|Invalid status", "There should be no Proxy Verifier violation errors.")
+        "Violation|Invalid status", "There should be no Proxy Verifier violation errors."
+    )
 
 
 def AddVerifierClientProcess(
-        run,
-        name,
-        replay_path,
-        http_ports=None,
-        https_ports=None,
-        http3_ports=None,
-        keys=None,
-        ssl_cert='',
-        ca_cert='',
-        verbose=True,
-        other_args='',
-        run_parallel=False,
-        context=None,
-        poll_timeout=None):
+    run,
+    name,
+    replay_path,
+    http_ports=None,
+    https_ports=None,
+    http3_ports=None,
+    keys=None,
+    ssl_cert='',
+    ca_cert='',
+    verbose=True,
+    other_args='',
+    run_parallel=False,
+    context=None,
+    poll_timeout=None,
+):
     """
     Set the Default process of the test run to a verifier-client Process.
 
@@ -221,8 +222,22 @@ def AddVerifierClientProcess(
 
     p = run.Processes.Default
     _configure_client(
-        run, p, name, replay_path, http_ports, https_ports, http3_ports, keys, ssl_cert, ca_cert, verbose, other_args, run_parallel,
-        context, poll_timeout)
+        run,
+        p,
+        name,
+        replay_path,
+        http_ports,
+        https_ports,
+        http3_ports,
+        keys,
+        ssl_cert,
+        ca_cert,
+        verbose,
+        other_args,
+        run_parallel,
+        context,
+        poll_timeout,
+    )
     return p
 
 

@@ -30,10 +30,8 @@ class TestAlpnFunctionality:
     _client_counter: int = 0
 
     def __init__(
-            self,
-            records_config_alpn: Optional[str] = None,
-            conf_remap_alpn: Optional[str] = None,
-            alpn_is_malformed: bool = False):
+        self, records_config_alpn: Optional[str] = None, conf_remap_alpn: Optional[str] = None, alpn_is_malformed: bool = False
+    ):
         """Declare the various test Processes.
 
         :param records_config_alpn: The string with which to configure the ATS
@@ -76,14 +74,13 @@ class TestAlpnFunctionality:
             protocols = expected_alpn.split(',')
             for protocol in protocols:
                 server.Streams.stdout = Testers.ContainsExpression(
-                    f'ALPN.*:.*{protocol}', 'Verify that the server parsed the configured ALPN string from ATS.')
+                    f'ALPN.*:.*{protocol}', 'Verify that the server parsed the configured ALPN string from ATS.'
+                )
         return server
 
     def _configure_trafficserver(
-            self,
-            records_config_alpn: Optional[str] = None,
-            conf_remap_alpn: Optional[str] = None,
-            alpn_is_malformed: bool = False):
+        self, records_config_alpn: Optional[str] = None, conf_remap_alpn: Optional[str] = None, alpn_is_malformed: bool = False
+    ):
         """Configure a Traffic Server process.
 
         :param records_config_alpn: See the description of this parameter in
@@ -100,12 +97,15 @@ class TestAlpnFunctionality:
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
                 'proxy.config.diags.debug.enabled': 3,
                 'proxy.config.diags.debug.tags': 'ssl|http',
-            })
+            }
+        )
 
         if records_config_alpn is not None:
-            ts.Disk.records_config.update({
-                'proxy.config.ssl.client.alpn_protocols': records_config_alpn,
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.ssl.client.alpn_protocols': records_config_alpn,
+                }
+            )
 
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -113,13 +113,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         conf_remap_specification = ''
         if conf_remap_alpn is not None:
-            conf_remap_specification = (
-                '@plugin=conf_remap.so '
-                f'@pparam=proxy.config.ssl.client.alpn_protocols={conf_remap_alpn}')
+            conf_remap_specification = f'@plugin=conf_remap.so @pparam=proxy.config.ssl.client.alpn_protocols={conf_remap_alpn}'
 
         ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._server.Variables.https_port} {conf_remap_specification}')
 
@@ -138,7 +137,8 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self._ts)
 
         tr.AddVerifierClientProcess(
-            f'client-{TestAlpnFunctionality._client_counter}', self._replay_file, https_ports=[self._ts.Variables.ssl_port])
+            f'client-{TestAlpnFunctionality._client_counter}', self._replay_file, https_ports=[self._ts.Variables.ssl_port]
+        )
         TestAlpnFunctionality._client_counter += 1
 
 

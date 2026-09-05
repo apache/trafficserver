@@ -46,7 +46,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.server_session_sharing.pool': 'hybrid',
         'proxy.config.http.server_session_sharing.match': 'hostonly',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.https_port))
 ts.Disk.ssl_multicert_yaml.AddLines(
@@ -55,7 +56,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -67,7 +69,8 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n"))
+'''.split("\n")
+)
 
 tr = Test.AddTestRun("Test traffic to origin using HTTP/2")
 tr.Processes.Default.StartBefore(server)

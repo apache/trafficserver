@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -49,7 +48,8 @@ ts2.Disk.remap_config.AddLines(
     [
         'map /reuse_session https://127.0.0.1:{0}'.format(ts1.Variables.ssl_port),
         'map /remove_oldest https://127.0.1.1:{0}'.format(ts1.Variables.ssl_port),
-    ])
+    ]
+)
 ts3.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts4.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(ts3.Variables.ssl_port))
 
@@ -59,28 +59,32 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts2.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts3.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts4.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts1.Disk.records_config.update(
     {
@@ -92,7 +96,8 @@ ts1.Disk.records_config.update(
         'proxy.config.ssl.origin_session_cache.enabled': 1,
         'proxy.config.ssl.origin_session_cache.size': 1,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 ts2.Disk.records_config.update(
     {
         'proxy.config.http.cache.http': 0,
@@ -105,7 +110,8 @@ ts2.Disk.records_config.update(
         'proxy.config.ssl.origin_session_cache.enabled': 1,
         'proxy.config.ssl.origin_session_cache.size': 1,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 ts3.Disk.records_config.update(
     {
         'proxy.config.http.cache.http': 0,
@@ -116,7 +122,8 @@ ts3.Disk.records_config.update(
         'proxy.config.ssl.origin_session_cache.enabled': 1,
         'proxy.config.ssl.origin_session_cache.size': 1,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 ts4.Disk.records_config.update(
     {
         'proxy.config.http.cache.http': 0,
@@ -129,13 +136,16 @@ ts4.Disk.records_config.update(
         'proxy.config.ssl.origin_session_cache.enabled': 0,
         'proxy.config.ssl.origin_session_cache.size': 1,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 tr = Test.AddTestRun('new session then reuse')
 tr.MakeCurlCommandMulti(
     '{{curl}} https://127.0.0.1:{0}/reuse_session -k && {{curl}} https://127.0.0.1:{0}/reuse_session -k'.format(
-        ts2.Variables.ssl_port),
-    ts=ts2)
+        ts2.Variables.ssl_port
+    ),
+    ts=ts2,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts1)
@@ -150,8 +160,10 @@ tr.StillRunningAfter += ts2
 tr = Test.AddTestRun('remove oldest session, new session then reuse')
 tr.MakeCurlCommandMulti(
     '{{curl}} https://127.0.0.1:{0}/remove_oldest -k && {{curl}} https://127.0.0.1:{0}/remove_oldest -k'.format(
-        ts2.Variables.ssl_port),
-    ts=ts2)
+        ts2.Variables.ssl_port
+    ),
+    ts=ts2,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('curl test', 'Making sure the basics still work')
 ts2.Disk.traffic_out.Content = Testers.ContainsExpression('remove oldest session', '')
@@ -161,7 +173,8 @@ tr.StillRunningAfter = server
 
 tr = Test.AddTestRun('disable origin session reuse, reuse should fail')
 tr.MakeCurlCommandMulti(
-    '{{curl}} https://127.0.0.1:{0} -k && {{curl}} https://127.0.0.1:{0} -k'.format(ts4.Variables.ssl_port), ts=ts4)
+    '{{curl}} https://127.0.0.1:{0} -k && {{curl}} https://127.0.0.1:{0} -k'.format(ts4.Variables.ssl_port), ts=ts4
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts3)
 tr.Processes.Default.StartBefore(ts4)

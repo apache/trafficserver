@@ -24,7 +24,9 @@ Test.Summary = '''
 Verify correct stale_response plugin behavior
 '''
 
-Test.SkipUnless(Condition.PluginExists('stale_response.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('stale_response.so'),
+)
 
 
 class OptionType(Enum):
@@ -81,7 +83,7 @@ class TestStaleResponse:
         self.verify_plugin_log()
 
     def setupOriginServer(self, tr: 'TestRun') -> None:
-        """ Configure the server.
+        """Configure the server.
 
         :param tr: The test run to add the server to.
         """
@@ -119,7 +121,9 @@ class TestStaleResponse:
             # Configure the stale_response plugin for the remap rule.
             remap_plugin_config = "@plugin=stale_response.so @pparam=--log-all @pparam=--log-filename @pparam=stale_responses"
             if self._option_type == OptionType.DEFAULT_DIRECTIVES:
-                remap_plugin_config += ' @pparam=--stale-while-revalidate-default @pparam=30 @pparam=--stale-if-error-default @pparam=30'
+                remap_plugin_config += (
+                    ' @pparam=--stale-while-revalidate-default @pparam=30 @pparam=--stale-if-error-default @pparam=30'
+                )
             elif self._option_type == OptionType.FORCE_SWR:
                 remap_plugin_config += ' @pparam=--force-stale-while-revalidate @pparam=30'
             elif self._option_type == OptionType.FORCE_SIE:
@@ -136,7 +140,8 @@ class TestStaleResponse:
                 "proxy.config.http.negative_revalidating_enabled": 0,
                 # Keep the active log filename available for the final content check if the test spans UTC midnight.
                 "proxy.config.log.rolling_enabled": 0,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}/ {remap_plugin_config}")
 
     def setupClient(self, tr: 'TestRun') -> None:
@@ -153,9 +158,11 @@ class TestStaleResponse:
         if self._option_type == OptionType.MAX_MEMORY_USAGE:
             diagnostic = "response exceeded memory limit; sending stale data"
             Test.AddAwaitFileContainsTestRun(
-                "Verify stale_response max-memory diagnostic", self._ts.Disk.traffic_out.Name, diagnostic)
+                "Verify stale_response max-memory diagnostic", self._ts.Disk.traffic_out.Name, diagnostic
+            )
             self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                diagnostic, "Verify max-memory stale-if-error fallback is logged")
+                diagnostic, "Verify max-memory stale-if-error fallback is logged"
+            )
             return
 
         swr_log_pattern = "stale-while-revalidate:.*stale.jpeg"

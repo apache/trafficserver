@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -43,15 +42,20 @@ ts.Disk.records_config.update(
         'proxy.config.http.referer_filter': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.hostdb.ip_resolve': 'ipv4'
-    })
+        'proxy.config.hostdb.ip_resolve': 'ipv4',
+    }
+)
 
 ts.Disk.remap_config.AddLine(
-    'map http://testDNS.com http://test.ipv4.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;ipv4;client'
-    .format(server.Variables.Port))
+    'map http://testDNS.com http://test.ipv4.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;ipv4;client'.format(
+        server.Variables.Port
+    )
+)
 ts.Disk.remap_config.AddLine(
-    'map http://testDNS2.com http://test.ipv6.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;only'
-    .format(server_v6.Variables.Port))
+    'map http://testDNS2.com http://test.ipv6.only.com:{0}  @plugin=conf_remap.so @pparam=proxy.config.hostdb.ip_resolve=ipv6;only'.format(
+        server_v6.Variables.Port
+    )
+)
 
 dns.addRecords(records={"test.ipv4.only.com.": ["127.0.0.1"]})
 dns.addRecords(records={"test.ipv6.only.com": ["127.0.0.1", "::1"]})

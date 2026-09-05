@@ -32,13 +32,13 @@ response_header_ip = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
 request_header_unix = {
     "headers": "GET /unix HTTP/1.1\r\nHost: origin.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header_unix = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "unix"}
 request_header_error = {
     "headers": "GET /error HTTP/1.1\r\nHost: origin.example.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_header_error = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "error"}
 server.addResponse("sessionfile.log", request_header_ip, response_header_ip)
@@ -50,8 +50,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|dns',
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 
 # This map rule should not match
 ts.Disk.remap_yaml.AddLines(
@@ -72,7 +73,8 @@ remap:
       url: http+unix://test.example.com
     to:
       url: http://origin.example.com:{server.Variables.Port}/unix
-    '''.split("\n"))
+    '''.split("\n")
+)
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand('-H"Host: test.example.com" http://127.0.0.1:{0}/ --verbose'.format(ts.Variables.port), ts)

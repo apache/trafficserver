@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,10 +24,8 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 server_foo = Test.MakeOriginServer(
     "server_foo",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)},
+)
 server = Test.MakeOriginServer("server", ssl=True)
 dns = Test.MakeDNServer("dns")
 
@@ -49,9 +46,11 @@ ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
+    'map https://bar.com:{0}/ https://foo.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port))
+    'map https://foo.com:{0}/ https://bar.com:{1}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port)
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -59,7 +58,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -75,8 +75,9 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.pristine_host_hdr': 0,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -107,4 +108,5 @@ tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression("Could Not Con
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"WARNING: SNI \(bar.com\) not in certificate", "Make sure bad_bar name checked failed.")
+    r"WARNING: SNI \(bar.com\) not in certificate", "Make sure bad_bar name checked failed."
+)

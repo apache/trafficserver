@@ -18,6 +18,7 @@
 Test.Summary = __doc__
 
 Test.SkipUnless(
-    Condition.HasOpenSSLVersion('1.1.1'), Condition.HasProxyVerifierVersion('2.8.0'), Condition.PluginExists('null_transform.so'))
+    Condition.HasOpenSSLVersion('1.1.1'), Condition.HasProxyVerifierVersion('2.8.0'), Condition.PluginExists('null_transform.so')
+)
 
 Test.ATSReplayTest(replay_file="replay/http2_client_reset_keeps_session_reading.replay.yaml")

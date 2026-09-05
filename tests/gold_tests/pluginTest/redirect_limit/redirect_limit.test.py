@@ -37,50 +37,34 @@ ORIGIN = "http://127.0.0.1:{0}".format(server.Variables.Port)
 
 for i in range(1, 5):
     server.addResponse(
-        "sessionlog.json", {
-            "headers": "GET /r{i} HTTP/1.1\r\nHost: *\r\n\r\n".format(i=i),
-            "timestamp": "1",
-            "body": ""
-        }, {
+        "sessionlog.json",
+        {"headers": "GET /r{i} HTTP/1.1\r\nHost: *\r\n\r\n".format(i=i), "timestamp": "1", "body": ""},
+        {
             "headers": "HTTP/1.1 302 Found\r\nLocation: {0}/r{nxt}\r\nContent-Length: 0\r\n\r\n".format(ORIGIN, nxt=i + 1),
             "timestamp": "1",
-            "body": ""
-        })
+            "body": "",
+        },
+    )
 
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /r5 HTTP/1.1\r\nHost: *\r\n\r\n",
-        "timestamp": "1",
-        "body": ""
-    }, {
-        "headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n",
-        "timestamp": "1",
-        "body": "final"
-    })
+    "sessionlog.json",
+    {"headers": "GET /r5 HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n", "timestamp": "1", "body": "final"},
+)
 
 # A short chain (/s1 -> /s2 -> 200) that stays within number_of_redirections=2.
 # This is the positive case: a legitimate plugin-initiated redirect within the
 # limit must still be followed all the way to the terminal 200.
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /s1 HTTP/1.1\r\nHost: *\r\n\r\n",
-        "timestamp": "1",
-        "body": ""
-    }, {
-        "headers": "HTTP/1.1 302 Found\r\nLocation: {0}/s2\r\nContent-Length: 0\r\n\r\n".format(ORIGIN),
-        "timestamp": "1",
-        "body": ""
-    })
+    "sessionlog.json",
+    {"headers": "GET /s1 HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {"headers": "HTTP/1.1 302 Found\r\nLocation: {0}/s2\r\nContent-Length: 0\r\n\r\n".format(ORIGIN), "timestamp": "1", "body": ""},
+)
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /s2 HTTP/1.1\r\nHost: *\r\n\r\n",
-        "timestamp": "1",
-        "body": ""
-    }, {
-        "headers": "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n",
-        "timestamp": "1",
-        "body": "shortfinal"
-    })
+    "sessionlog.json",
+    {"headers": "GET /s2 HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n", "timestamp": "1", "body": "shortfinal"},
+)
 
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 
@@ -90,7 +74,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'redirect_rearm|http_redirect|http',
         'proxy.config.http.number_of_redirections': 2,
         'proxy.config.http.redirect.actions': 'self:follow,private:follow',
-    })
+    }
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'redirect_rearm.so'), ts)
 
@@ -99,8 +84,10 @@ ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.f
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-sS -i -x 127.0.0.1:TSPORT http://127.0.0.1:OPORT/r1'.replace('TSPORT', str(ts.Variables.port)).replace(
-        'OPORT', str(server.Variables.Port)),
-    ts=ts)
+        'OPORT', str(server.Variables.Port)
+    ),
+    ts=ts,
+)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.ReturnCode = 0
@@ -108,16 +95,19 @@ tr.Processes.Default.ReturnCode = 0
 # followed hop's response). Without the fix the plugin re-arms the counter on
 # every hop and the client sees the final 200 with body "final".
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "HTTP/1.1 302 ", "Client's terminal response must be a 302 from the limit firing, not the final 200")
+    "HTTP/1.1 302 ", "Client's terminal response must be a 302 from the limit firing, not the final 200"
+)
 # Pin the boundary: with number_of_redirections=2 the follower advances r1 -> r2
 # -> r3 and returns r3's response, whose Location points at /r4. Asserting the
 # terminal Location is /r4 proves exactly two hops were followed, so this case
 # cannot pass if a regression instead followed zero hops (Location /r2) or the
 # whole chain.
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "[Ll]ocation: .*/r4", "Terminal 302 must be the third hop's response, proving exactly two redirects were followed")
+    "[Ll]ocation: .*/r4", "Terminal 302 must be the third hop's response, proving exactly two redirects were followed"
+)
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "final", "Client must NOT receive the final body (limit bypassed)")
+    "final", "Client must NOT receive the final body (limit bypassed)"
+)
 
 # Positive case: a redirect chain within the limit (one hop) must still be
 # followed to completion. Guards against the fix over-correcting and refusing
@@ -125,10 +115,14 @@ tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '-sS -i -x 127.0.0.1:TSPORT http://127.0.0.1:OPORT/s1'.replace('TSPORT', str(ts.Variables.port)).replace(
-        'OPORT', str(server.Variables.Port)),
-    ts=ts)
+        'OPORT', str(server.Variables.Port)
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "HTTP/1.1 200 ", "A within-limit plugin-initiated redirect must reach the terminal 200")
+    "HTTP/1.1 200 ", "A within-limit plugin-initiated redirect must reach the terminal 200"
+)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "shortfinal", "Client must receive the terminal body for a within-limit redirect")
+    "shortfinal", "Client must receive the terminal body for a within-limit redirect"
+)

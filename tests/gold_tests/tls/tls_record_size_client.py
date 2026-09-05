@@ -72,7 +72,8 @@ def verify_dynamic_records(app_lengths: list[int]) -> bool:
     if plaintext_before_ramp < DYNAMIC_BYTE_THRESHOLD:
         print(
             f'FAIL: dynamic sizing ramped after only {plaintext_before_ramp} plaintext bytes; '
-            f'expected at least {DYNAMIC_BYTE_THRESHOLD}')
+            f'expected at least {DYNAMIC_BYTE_THRESHOLD}'
+        )
         return False
 
     max_record = max(app_lengths)
@@ -82,7 +83,8 @@ def verify_dynamic_records(app_lengths: list[int]) -> bool:
 
     print(
         f'PASS: TLS records ramp from small to large after the dynamic threshold '
-        f'(first_large={first_large}, plaintext_before_ramp={plaintext_before_ramp}, max_record_len={max_record})')
+        f'(first_large={first_large}, plaintext_before_ramp={plaintext_before_ramp}, max_record_len={max_record})'
+    )
     return True
 
 
@@ -109,7 +111,8 @@ def main() -> int:
     ctx.set_ciphers(
         'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:'
         'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:'
-        'AES128-GCM-SHA256:AES256-GCM-SHA384@SECLEVEL=0')
+        'AES128-GCM-SHA256:AES256-GCM-SHA384@SECLEVEL=0'
+    )
 
     incoming, outgoing = ssl.MemoryBIO(), ssl.MemoryBIO()
     tls = ctx.wrap_bio(incoming, outgoing, server_hostname=args.host)
@@ -141,9 +144,7 @@ def main() -> int:
                 return 2
     flush()
 
-    request = (f'GET {args.path} HTTP/1.1\r\n'
-               f'Host: {args.host}\r\n'
-               f'Connection: close\r\n\r\n').encode()
+    request = (f'GET {args.path} HTTP/1.1\r\nHost: {args.host}\r\nConnection: close\r\n\r\n').encode()
     tls.write(request)
     flush()
 

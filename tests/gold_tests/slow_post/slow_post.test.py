@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -22,7 +21,6 @@ Test.SkipUnless(Condition.PluginExists('request_buffer.so'))
 
 
 class SlowPostAttack:
-
     def __init__(cls):
         Test.Summary = 'Test how ATS handles the slow-post attack'
         cls._origin_max_connections = 3
@@ -37,18 +35,18 @@ class SlowPostAttack:
         response_header = {
             "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self._server.addResponse("sessionlog.json", request_header, response_header)
         request_header2 = {
             "headers": "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\nHost: www.example.com\r\nConnection: keep-alive\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "a\r\na\r\na\r\n\r\n"
+            "body": "a\r\na\r\na\r\n\r\n",
         }
         response_header2 = {
             "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self._server.addResponse("sessionlog.json", request_header2, response_header2)
 
@@ -62,12 +60,14 @@ class SlowPostAttack:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.per_server.connection.max': self._origin_max_connections,
-            })
+            }
+        )
 
     def run(self):
         tr = Test.AddTestRun()
-        tr.Processes.Default.Command = \
+        tr.Processes.Default.Command = (
             f'{sys.executable} {self._slow_post_client} -p {self._ts.Variables.port} -c {self._origin_max_connections}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(Test.Processes.ts)

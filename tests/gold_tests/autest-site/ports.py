@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -36,6 +35,7 @@ class PortQueueSelectionError(Exception):
     An exception for when there are problems selecting a port from the port
     queue.
     """
+
     pass
 
 
@@ -69,20 +69,14 @@ def PortOpen(port: int, address: str = None, bound_ports: Set[int] = None) -> bo
     try:
         # Try to connect on that port. If we can connect on it, then someone is
         # listening on that port and therefore the port is open.
-        s = socket.create_connection(address, timeout=.5)
+        s = socket.create_connection(address, timeout=0.5)
         s.close()
         ret = True
-        host.WriteDebug(
-            'PortOpen', f"Connection to port {port} succeeded, the port is open, "
-            "and a future connection cannot use it")
+        host.WriteDebug('PortOpen', f"Connection to port {port} succeeded, the port is open, and a future connection cannot use it")
     except OSError:
-        host.WriteDebug(
-            'PortOpen', f"socket error for port {port}, port is closed, "
-            "and therefore a future connection can use it")
+        host.WriteDebug('PortOpen', f"socket error for port {port}, port is closed, and therefore a future connection can use it")
     except socket.timeout:
-        host.WriteDebug(
-            'PortOpen', f"Timeout error for port {port}, port is closed, "
-            "and therefore a future connection can use it")
+        host.WriteDebug('PortOpen', f"Timeout error for port {port}, port is closed, and therefore a future connection can use it")
 
     return ret
 
@@ -122,8 +116,10 @@ def _get_available_port(queue):
 def _is_bound(conn) -> bool:
     """Return whether an internet socket connection occupies its local port."""
     return bool(
-        conn.family in (socket.AF_INET, socket.AF_INET6) and conn.laddr and
-        (conn.status == psutil.CONN_LISTEN or conn.type == socket.SOCK_DGRAM))
+        conn.family in (socket.AF_INET, socket.AF_INET6)
+        and conn.laddr
+        and (conn.status == psutil.CONN_LISTEN or conn.type == socket.SOCK_DGRAM)
+    )
 
 
 def _get_bound_ports() -> Set[int]:
@@ -192,8 +188,9 @@ def _setup_port_queue(amount=1000):
             dmin = subprocess.check_output(["sysctl", "net.inet.ip.portrange.first"], env=new_env).decode().split(":")[1].split()[0]
             dmax = subprocess.check_output(["sysctl", "net.inet.ip.portrange.last"], env=new_env).decode().split(":")[1].split()[0]
         else:
-            dmin, dmax = subprocess.check_output(["sysctl", "net.ipv4.ip_local_port_range"],
-                                                 env=new_env).decode().split("=")[1].split()
+            dmin, dmax = (
+                subprocess.check_output(["sysctl", "net.ipv4.ip_local_port_range"], env=new_env).decode().split("=")[1].split()
+            )
         dmin = int(dmin)
         dmax = int(dmax)
     except Exception:
@@ -306,7 +303,8 @@ def get_port(obj, name):
     port, recycle_port = _reserve_port()
     if recycle_port:
         obj.Setup.Lambda(
-            func_cleanup=lambda: g_ports.put(port), description=f"recycling port: {port}, queue size: {g_ports.qsize()}")
+            func_cleanup=lambda: g_ports.put(port), description=f"recycling port: {port}, queue size: {g_ports.qsize()}"
+        )
 
     # Assign to the named variable.
     obj.Variables[name] = port

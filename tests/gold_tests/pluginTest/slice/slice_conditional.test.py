@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -56,7 +55,7 @@ req_large = {
 }
 res_large = {
     "headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "Cache-Control: max-age=10,public\r\n" + "\r\n",
-    "body": "unsliced large object!"
+    "body": "unsliced large object!",
 }
 server.addResponse("sessionlog.json", req_large, res_large)
 
@@ -66,7 +65,7 @@ large_body = "large object sliced!"
 body_len = len(large_body)
 slice_begin = 0
 slice_block_size = 10
-while (slice_begin < body_len):
+while slice_begin < body_len:
     slice_end = slice_begin + slice_block_size
     req_large_slice = {
         "headers": "GET /large HTTP/1.1\r\n" + "Host: www.example.com\r\n" + f"Range: bytes={slice_begin}-{slice_end - 1}" + "\r\n",
@@ -75,10 +74,13 @@ while (slice_begin < body_len):
     if slice_end > body_len:
         slice_end = body_len
     res_large_slice = {
-        "headers":
-            "HTTP/1.1 206 Partial Content\r\n" + "Connection: close\r\n" + "Accept-Ranges: bytes\r\n" +
-            f"Content-Range: bytes {slice_begin}-{slice_end - 1}/{body_len}\r\n" + "Cache-Control: max-age=10,public\r\n" + "\r\n",
-        "body": large_body[slice_begin:slice_end]
+        "headers": "HTTP/1.1 206 Partial Content\r\n"
+        + "Connection: close\r\n"
+        + "Accept-Ranges: bytes\r\n"
+        + f"Content-Range: bytes {slice_begin}-{slice_end - 1}/{body_len}\r\n"
+        + "Cache-Control: max-age=10,public\r\n"
+        + "\r\n",
+        "body": large_body[slice_begin:slice_end],
     }
     server.addResponse("sessionlog.json", req_large_slice, res_large_slice)
     slice_begin += slice_block_size
@@ -86,16 +88,18 @@ while (slice_begin < body_len):
 # set up slice plugin with remap host into cache_range_requests
 ts.Disk.remap_config.AddLines(
     [
-        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={slice_block_size} @pparam=--minimum-size=8 @pparam=--metadata-cache-size=4 @plugin=cache_range_requests.so'
-    ])
+        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}/'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={slice_block_size} @pparam=--minimum-size=8 @pparam=--metadata-cache-size=4 @plugin=cache_range_requests.so'
+    ]
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': '0',
         'proxy.config.diags.debug.tags': 'http|cache|slice|xdebug|cache_range_requests',
-    })
+    }
+)
 
 curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{}'.format(ts.Variables.port) + ' -H "x-debug: x-cache"'
 

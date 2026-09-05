@@ -50,7 +50,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.TLSv1_3.enabled': 0,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -58,7 +59,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Just map everything through to origin.  This test is concentrating on the user-agent side
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
@@ -82,7 +84,8 @@ ts.Disk.sni_yaml.AddLines(
         '  http2: off',
         '- fqdn: ipallow_nomatch.example.com',
         '  ip_allow: 192.168.1.1',
-    ])
+    ]
+)
 
 # case 1
 # sni=Bob and host=dave.  Do not provide client cert.  This should match fqdn bOb which has
@@ -93,7 +96,8 @@ tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(ts.Variables.ssl_port), ts=ts)
+    "-v --tls-max 1.2 -k -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 35
 
 # case 2
@@ -105,9 +109,11 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave' --resolve 'Bob:{0}:127.0.0.1' https://Bob:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 
 # case 3
@@ -117,7 +123,8 @@ tr = Test.AddTestRun("Connect to dave without cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k -H 'host:Bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(ts.Variables.ssl_port), ts=ts)
+    "-v --tls-max 1.2 -k -H 'host:Bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -128,9 +135,11 @@ tr = Test.AddTestRun("Connect to dave with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave:{0}:127.0.0.1' https://dave:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -140,9 +149,11 @@ tr = Test.AddTestRun("Connect to bob with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:boB' --resolve 'Bob:{0}:127.0.0.1' https://bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:boB' --resolve 'Bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
@@ -154,8 +165,10 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
@@ -166,9 +179,11 @@ tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:Boblite' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
@@ -179,7 +194,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     "-v --tls-max 1.2 -k -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(ts.Variables.ssl_port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
@@ -189,9 +205,11 @@ tr = Test.AddTestRun("Connect to ellen with cert")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:fran' --resolve 'ellen:{0}:127.0.0.1' https://ellen:{0}/warnonly".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "Check response")
 
@@ -202,9 +220,11 @@ tr = Test.AddTestRun("Connect with SNI longer than host sharing prefix")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'bob.bar.com:{0}:127.0.0.1' https://bob.bar.com:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -215,9 +235,11 @@ tr = Test.AddTestRun("Connect with host longer than SNI sharing prefix")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob.bar.com' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob.bar.com' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -228,9 +250,11 @@ tr = Test.AddTestRun("Connect with host ending with SNI value")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave.bob' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:dave.bob' --resolve 'bob:{0}:127.0.0.1' https://bob:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -241,9 +265,11 @@ tr = Test.AddTestRun("Connect with SNI ending with host value")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave.bob:{0}:127.0.0.1' https://dave.bob:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key -H 'host:bob' --resolve 'dave.bob:{0}:127.0.0.1' https://dave.bob:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Check response")
 
@@ -255,9 +281,11 @@ tr = Test.AddTestRun("Connect with ip_allow SNI entry not matching client IP sho
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k -H 'host:ipallow_nomatch.example.com' --resolve 'other.example.com:{0}:127.0.0.1' https://other.example.com:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k -H 'host:ipallow_nomatch.example.com' --resolve 'other.example.com:{0}:127.0.0.1' https://other.example.com:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("Access Denied", "Should get 403 due to host_sni_policy enforcement")
 
@@ -269,9 +297,11 @@ tr = Test.AddTestRun("Connect with SNI entry having no ip_allow should not enfor
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --tls-max 1.2 -k -H 'host:noipallow.example.com' --resolve 'other.example.com:{0}:127.0.0.1' https://other.example.com:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v --tls-max 1.2 -k -H 'host:noipallow.example.com' --resolve 'other.example.com:{0}:127.0.0.1' https://other.example.com:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Access Denied", "No 403 for non-ip_allow SNI entry")
 
@@ -283,24 +313,33 @@ test_run = Test.AddAwaitFileContainsTestRun(
 )
 
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch")
+    "WARNING: SNI/hostname mismatch sni=dave host=bob action=terminate", "Should have warning on mismatch"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch")
+    "WARNING: SNI/hostname mismatch sni=ellen host=Boblite action=continue", "Should have warning on mismatch"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate", "Should have warning on prefix mismatch")
+    "WARNING: SNI/hostname mismatch sni=bob.bar.com host=bob action=terminate", "Should have warning on prefix mismatch"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate", "Should have warning on prefix mismatch")
+    "WARNING: SNI/hostname mismatch sni=bob host=bob.bar.com action=terminate", "Should have warning on prefix mismatch"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=bob host=dave.bob action=terminate", "Should have warning on suffix mismatch")
+    "WARNING: SNI/hostname mismatch sni=bob host=dave.bob action=terminate", "Should have warning on suffix mismatch"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "WARNING: SNI/hostname mismatch sni=dave.bob host=bob action=terminate", "Should have warning on suffix mismatch")
+    "WARNING: SNI/hostname mismatch sni=dave.bob host=bob action=terminate", "Should have warning on suffix mismatch"
+)
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    "WARNING: SNI/hostname mismatch sni=ellen host=fran", "Should not have warning on mismatch with non-policy host")
+    "WARNING: SNI/hostname mismatch sni=ellen host=fran", "Should not have warning on mismatch with non-policy host"
+)
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
     "WARNING: SNI/hostname mismatch sni=other.example.com host=noipallow.example.com",
-    "Should not have warning for SNI entry with no ip_allow")
+    "Should not have warning for SNI entry with no ip_allow",
+)
 
 test_run.Processes.Default.ReturnCode = 0
 ts.Disk.error_log.Content += Testers.ContainsExpression(
     "SNI/hostname mismatch: connecting to .* for host='bob' sni='dave', returning a 403",
-    "error.log should contain information about the 403 response.")
+    "error.log should contain information about the 403 response.",
+)

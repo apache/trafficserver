@@ -67,7 +67,8 @@ class TestDeleteBodyDrain:
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.cache.http': 1,
                 'proxy.config.http.insert_age_in_response': 1,
-            })
+            }
+        )
         return ts
 
     def _configure_client(self, tr: 'TestRun') -> 'Process':
@@ -80,7 +81,8 @@ class TestDeleteBodyDrain:
         client.Streams.All += Testers.ContainsExpression('DELETE_STATUS=200', 'the DELETE must self-answer 200 from a warm cache')
         # The desync signatures: a second (smuggled) response, or smuggled bytes.
         client.Streams.All += Testers.ExcludesExpression(
-            'SECOND_RESPONSE_RECEIVED=True', 'the client must not receive a smuggled second response')
+            'SECOND_RESPONSE_RECEIVED=True', 'the client must not receive a smuggled second response'
+        )
         client.Streams.All += Testers.ExcludesExpression('poisoned', 'no smuggled response bytes should reach the client')
         client.StartBefore(self._server)
         client.StartBefore(self._ts)

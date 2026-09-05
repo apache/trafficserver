@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -34,7 +33,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: double_h2.test\r\n\r\n", "
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 # add response to the server dictionary
@@ -43,10 +42,12 @@ server.addResponse("sessionfile.log", request_header, response_header)
 # add port and remap rule
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'continuations_verify.*',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'continuations_verify.*',
+    }
+)
 
 # add plugin to assist with test metrics
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'continuations_verify.so'), ts)
@@ -95,7 +96,8 @@ def make_done_stat_ready(tsenv):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            env=tsenv)
+            env=tsenv,
+        )
         return retval.returncode == 0 and b'1' in retval.stdout
 
     return done_stat_ready
@@ -121,9 +123,11 @@ tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_verify.txn.close.1 0", 'should be nonzero')
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("continations_verify.txn.close.2 0", 'should be nonzero')
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "continuations_verify.txn.close.1 {}".format(numberOfRequests), 'should be the number of transactions we made')
+    "continuations_verify.txn.close.1 {}".format(numberOfRequests), 'should be the number of transactions we made'
+)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "continuations_verify.txn.close.2 {}".format(numberOfRequests), 'should be the number of transactions we made')
+    "continuations_verify.txn.close.2 {}".format(numberOfRequests), 'should be the number of transactions we made'
+)
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Check Txn")

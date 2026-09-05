@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -34,7 +33,8 @@ ts.Disk.records_config.update(
       debug:
         enabled: 0
         tags: http|dns
-    ''')
+    '''
+)
 
 # 0 - We want to make sure that the unregistered records are still being detected.
 tr = Test.AddTestRun("Test Append value to existing records.yaml")
@@ -52,7 +52,8 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.diags.debug.tags: rpc', 'Config should show the right tags')
+    'proxy.config.diags.debug.tags: rpc', 'Config should show the right tags'
+)
 
 # 2
 tr = Test.AddTestRun("Test modify latest yaml document from records.yaml")
@@ -68,7 +69,8 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    'proxy.config.diags.debug.tags: http', 'Config should show the right tags')
+    'proxy.config.diags.debug.tags: http', 'Config should show the right tags'
+)
 
 # 4
 tr = Test.AddTestRun("Append a new field node using a tag")

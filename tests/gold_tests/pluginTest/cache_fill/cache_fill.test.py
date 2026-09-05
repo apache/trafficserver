@@ -32,7 +32,6 @@ Test.testName = "cache_fill"
 
 
 class CacheFillTest:
-
     def __init__(self):
         self.setUpOriginServer()
         self.setUpTS()
@@ -45,14 +44,16 @@ class CacheFillTest:
         req = {
             "headers": "GET /nostore HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*" + "Range: bytes=0-4\r\n" + "\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
 
         res = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Cache-Control: nostore\r\n" + "Connection: close\r\n" + 'Etag: 994324f6-78f6bc3e8d639\r\n',
+            "headers": "HTTP/1.1 200 OK\r\n"
+            + "Cache-Control: nostore\r\n"
+            + "Connection: close\r\n"
+            + 'Etag: 994324f6-78f6bc3e8d639\r\n',
             "timestamp": "1469733493.993",
-            "body": "hello hello"
+            "body": "hello hello",
         }
 
         self.server.addResponse("sessionlog.json", req, res)
@@ -60,11 +61,12 @@ class CacheFillTest:
         req = {"headers": "GET /200 HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 
         res = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-                'Etag: 772102f4-56f4bc1e6d417\r\n',
+            "headers": "HTTP/1.1 200 OK\r\n"
+            + "Cache-Control: max-age=1\r\n"
+            + "Connection: close\r\n"
+            + 'Etag: 772102f4-56f4bc1e6d417\r\n',
             "timestamp": "1469733493.993",
-            "body": "hello hello"
+            "body": "hello hello",
         }
 
         self.server.addResponse("sessionlog.json", req, res)
@@ -72,14 +74,15 @@ class CacheFillTest:
         req = {
             "headers": "GET /range HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*" + "Range: bytes=0-4\r\n" + "\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         res = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-                'Etag: 883213f5-67f5bc2e7d528\r\n',
+            "headers": "HTTP/1.1 200 OK\r\n"
+            + "Cache-Control: max-age=1\r\n"
+            + "Connection: close\r\n"
+            + 'Etag: 883213f5-67f5bc2e7d528\r\n',
             "timestamp": "1469733493.993",
-            "body": "hello hello"
+            "body": "hello hello",
         }
 
         self.server.addResponse("sessionlog.json", req, res)
@@ -92,11 +95,14 @@ class CacheFillTest:
             [
                 'map http://www.example.com/200 http://127.0.0.1:{}/200 @plugin=cache_fill.so'.format(self.server.Variables.Port),
                 'map http://www.example.com/range http://127.0.0.1:{}/range @plugin=cache_fill.so'.format(
-                    self.server.Variables.Port),
+                    self.server.Variables.Port
+                ),
                 'map http://www.example.com/nostore http://127.0.0.1:{}/nostore @plugin=cache_fill.so'.format(
-                    self.server.Variables.Port),
+                    self.server.Variables.Port
+                ),
                 'map http://www.example.com/304 http://127.0.0.1:{}/range @plugin=cache_fill.so'.format(self.server.Variables.Port),
-            ])
+            ]
+        )
 
         self.ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,x-cache-key')
 
@@ -104,7 +110,8 @@ class CacheFillTest:
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'cache_fill|.*cache.*',
-            })
+            }
+        )
 
     def test_cacheMiss(self):
         # Cache miss; background fetch should fill cache
@@ -147,7 +154,8 @@ class CacheFillTest:
         ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: hit-fresh", "expected cache hit")
         ps.Streams.stdout.Content += Testers.ContainsExpression("206 Partial Content", "Expected 206 status")
         ps.Streams.stdout.Content += Testers.ContainsExpression(
-            "Content-Range: bytes 0-4/11", "Expected Content-Range: bytes 0-4/11")
+            "Content-Range: bytes 0-4/11", "Expected Content-Range: bytes 0-4/11"
+        )
         tr.StillRunningAfter = self.ts
 
     def test_noStore_noFill(self):
@@ -175,19 +183,21 @@ class CacheFillTest:
         self.ts.Disk.plugin_config.AddLine('cache_fill.so')
 
         self.ts.Disk.remap_config.AddLines(
-            ['map http://www.example.com/global http://127.0.0.1:{}/global'.format(self.server.Variables.Port)])
+            ['map http://www.example.com/global http://127.0.0.1:{}/global'.format(self.server.Variables.Port)]
+        )
 
         req = {
             "headers": "GET /global HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         res = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=1\r\n" + "Connection: close\r\n" +
-                'Etag: 661091f3-45f3bc0e5d306\r\n',
+            "headers": "HTTP/1.1 200 OK\r\n"
+            + "Cache-Control: max-age=1\r\n"
+            + "Connection: close\r\n"
+            + 'Etag: 661091f3-45f3bc0e5d306\r\n',
             "timestamp": "1469733493.993",
-            "body": "hello hello"
+            "body": "hello hello",
         }
 
         self.server.addResponse("sessionlog.json", req, res)

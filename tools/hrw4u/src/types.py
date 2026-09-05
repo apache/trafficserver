@@ -85,19 +85,46 @@ class SuffixGroup(Enum):
     GEO_FIELDS = frozenset({"COUNTRY", "COUNTRY-ISO", "ASN", "ASN-NAME"})
     CONN_FIELDS = frozenset(
         {
-            "LOCAL-ADDR", "LOCAL-PORT", "REMOTE-ADDR", "REMOTE-PORT", "TLS", "H2", "IPV4", "IPV6", "IP-FAMILY", "STACK",
-            "client-cert", "server-cert"
-        })
+            "LOCAL-ADDR",
+            "LOCAL-PORT",
+            "REMOTE-ADDR",
+            "REMOTE-PORT",
+            "TLS",
+            "H2",
+            "IPV4",
+            "IPV6",
+            "IP-FAMILY",
+            "STACK",
+            "client-cert",
+            "server-cert",
+        }
+    )
     HTTP_CNTL_FIELDS = frozenset(
-        {"LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP"})
+        {"LOGGING", "INTERCEPT_RETRY", "RESP_CACHEABLE", "REQ_CACHEABLE", "SERVER_NO_STORE", "TXN_DEBUG", "SKIP_REMAP"}
+    )
     ID_FIELDS = frozenset({"REQUEST", "PROCESS", "UNIQUE"})
     DATE_FIELDS = frozenset({"YEAR", "MONTH", "DAY", "HOUR", "MINUTE", "WEEKDAY", "YEARDAY"})
     BOOL_FIELDS = frozenset({"TRUE", "FALSE", "YES", "NO", "ON", "OFF", "0", "1"})
     CERT_FIELDS = frozenset(
         {
-            "PEM", "pem", "SIG", "sig", "SUBJECT", "subject", "ISSUER", "issuer", "SERIAL", "serial", "NOT_BEFORE", "not_before",
-            "NOT_AFTER", "not_after", "VERSION", "version"
-        })
+            "PEM",
+            "pem",
+            "SIG",
+            "sig",
+            "SUBJECT",
+            "subject",
+            "ISSUER",
+            "issuer",
+            "SERIAL",
+            "serial",
+            "NOT_BEFORE",
+            "not_before",
+            "NOT_AFTER",
+            "not_after",
+            "VERSION",
+            "version",
+        }
+    )
     SAN_FIELDS = frozenset({"DNS", "dns", "IP", "ip", "EMAIL", "email", "URI", "uri"})
     PLUGIN_CNTL_MAPPING = {"TIMEZONE": frozenset({"GMT", "LOCAL"}), "INBOUND_IP_SOURCE": frozenset({"PEER", "PROXY"})}
     PLUGIN_CNTL_FIELDS = frozenset(PLUGIN_CNTL_MAPPING.keys())
@@ -110,16 +137,16 @@ class SuffixGroup(Enum):
                 bool_msg = f"Invalid boolean value '{suffix}'. Must be one of: {', '.join(sorted(self.value))}"
 
                 # Check if this is a quoted boolean value
-                is_double_quoted = (suffix.startswith('"') and suffix.endswith('"'))
-                is_single_quoted = (suffix.startswith("'") and suffix.endswith("'"))
-                if ((is_double_quoted or is_single_quoted) and len(suffix) > 2 and suffix[1:-1].upper() in allowed_upper):
+                is_double_quoted = suffix.startswith('"') and suffix.endswith('"')
+                is_single_quoted = suffix.startswith("'") and suffix.endswith("'")
+                if (is_double_quoted or is_single_quoted) and len(suffix) > 2 and suffix[1:-1].upper() in allowed_upper:
                     raise ValueError(f"{bool_msg} and must not be quoted")
                 else:
                     raise ValueError(bool_msg)
             else:
                 raise ValueError(
-                    f"Invalid suffix '{suffix}' for group '{self.name}'. "
-                    f"Must be one of: {', '.join(sorted(self.value))}")
+                    f"Invalid suffix '{suffix}' for group '{self.name}'. Must be one of: {', '.join(sorted(self.value))}"
+                )
 
 
 class VarScope(Enum):
@@ -194,28 +221,31 @@ class Symbol:
 
 
 class MapParams:
-    """Map parameters for table entries combining flags and metadata.
-    """
+    """Map parameters for table entries combining flags and metadata."""
 
     def __init__(
-            self,
-            upper: bool = False,
-            add: bool = False,
-            prefix: bool = False,
-            validate: Callable[[str], None] | None = None,
-            sections: set[SectionType] | None = None,
-            rev: dict | None = None,
-            target: str | list[str] | tuple[str, ...] | None = None) -> None:
+        self,
+        upper: bool = False,
+        add: bool = False,
+        prefix: bool = False,
+        validate: Callable[[str], None] | None = None,
+        sections: set[SectionType] | None = None,
+        rev: dict | None = None,
+        target: str | list[str] | tuple[str, ...] | None = None,
+    ) -> None:
         object.__setattr__(
-            self, '_params', {
+            self,
+            '_params',
+            {
                 'upper': upper,
                 'add': add,
                 'prefix': prefix,
                 'validate': validate,
                 'sections': sections,
                 'rev': rev,
-                'target': target
-            })
+                'target': target,
+            },
+        )
 
     def __getattr__(self, name: str):
         if name.startswith('_'):

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -43,8 +42,9 @@ ts.Disk.records_config.update(
         'proxy.config.http.referer_filter': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.hostdb.ip_resolve': 'ipv4'
-    })
+        'proxy.config.hostdb.ip_resolve': 'ipv4',
+    }
+)
 
 ts.Disk.remap_yaml.AddLines(
     f'''
@@ -67,7 +67,8 @@ remap:
       - name: conf_remap.so
         params:
           - proxy.config.hostdb.ip_resolve=ipv6;only
-    '''.split("\n"))
+    '''.split("\n")
+)
 
 dns.addRecords(records={"test.ipv4.only.com.": ["127.0.0.1"]})
 dns.addRecords(records={"test.ipv6.only.com": ["127.0.0.1", "::1"]})

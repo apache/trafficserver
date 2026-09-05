@@ -42,9 +42,11 @@ class TestPortDescriptor:
         plugin_path = os.path.join(Test.Variables.AtsTestPluginsDir, 'port_descriptor.so')
         Test.PrepareTestPlugin(plugin_path, ts, f'{ts.Variables.descriptor_port}:ipv4')
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'port_descriptor.*accepted connection', 'Verify the plugin handled the accepted connection.')
+            r'port_descriptor.*accepted connection', 'Verify the plugin handled the accepted connection.'
+        )
         ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'port_descriptor.*unexpected accept event', 'Verify the plugin received the expected accept event.')
+            r'port_descriptor.*unexpected accept event', 'Verify the plugin received the expected accept event.'
+        )
         return ts
 
     def _configure_client(self, tr: 'TestRun') -> 'Process':

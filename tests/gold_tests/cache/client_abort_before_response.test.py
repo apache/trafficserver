@@ -75,21 +75,24 @@ class ClientAbortBeforeResponseTest:
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.allow_half_open': self._allow_half_open,
                 'proxy.config.http.cache.required_headers': 0,
-            })
+            }
+        )
         if self._enable_tls:
             self._ts.addDefaultSSLFiles()
             self._ts.Disk.records_config.update(
                 {
                     'proxy.config.ssl.server.cert.path': self._ts.Variables.SSLDir,
                     'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
-                })
+                }
+            )
             self._ts.Disk.ssl_multicert_yaml.AddLines(
                 [
                     'ssl_multicert:',
                     '  - dest_ip: "*"',
                     '    ssl_cert_name: server.pem',
                     '    ssl_key_name: server.key',
-                ])
+                ]
+            )
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._origin_port}/')
 
     def _client_url(self) -> str:
@@ -107,7 +110,8 @@ class ClientAbortBeforeResponseTest:
         tr = Test.AddTestRun(f'Client abort over {protocol} with allow_half_open {self._allow_half_open}')
 
         origin = tr.Processes.Process(
-            f'origin_{self._name}', f'{sys.executable} {ORIGIN_SCRIPT} {self._origin_port} --delay {ORIGIN_DELAY_SECONDS}')
+            f'origin_{self._name}', f'{sys.executable} {ORIGIN_SCRIPT} {self._origin_port} --delay {ORIGIN_DELAY_SECONDS}'
+        )
         origin.Ready = When.PortOpen(self._origin_port)
         origin.ReturnCode = 0
 
@@ -125,7 +129,8 @@ class ClientAbortBeforeResponseTest:
         tr.MakeCurlCommandMulti(
             f'{{curl}} -s -k -o /dev/null {http_version_option}--max-time {CLIENT_TIMEOUT_SECONDS} {self._client_url()}; '
             f'sleep {ORIGIN_WAIT_SECONDS}',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.StartBefore(origin)
@@ -135,22 +140,27 @@ class ClientAbortBeforeResponseTest:
 # The operator disabled half open connections, so ATS should not keep the origin
 # connection open for a client that hung up.
 ClientAbortBeforeResponseTest(
-    'http_half_open_disabled', enable_tls=False, use_http2=False, allow_half_open=0, expect_abort=True).run()
+    'http_half_open_disabled', enable_tls=False, use_http2=False, allow_half_open=0, expect_abort=True
+).run()
 
 if not Condition.CurlUsingUnixDomainSocket():
     ClientAbortBeforeResponseTest(
-        'https_half_open_disabled', enable_tls=True, use_http2=False, allow_half_open=0, expect_abort=True).run()
+        'https_half_open_disabled', enable_tls=True, use_http2=False, allow_half_open=0, expect_abort=True
+    ).run()
 
     # TLS connections cannot be half closed, but half open connections are
     # configured, so ATS finishes the fetch to fill the cache.
     ClientAbortBeforeResponseTest(
-        'https_half_open_enabled', enable_tls=True, use_http2=False, allow_half_open=1, expect_abort=False).run()
+        'https_half_open_enabled', enable_tls=True, use_http2=False, allow_half_open=1, expect_abort=False
+    ).run()
 
     if Condition.HasCurlFeature('http2'):
         ClientAbortBeforeResponseTest(
-            'h2_half_open_disabled', enable_tls=True, use_http2=True, allow_half_open=0, expect_abort=True).run()
+            'h2_half_open_disabled', enable_tls=True, use_http2=True, allow_half_open=0, expect_abort=True
+        ).run()
 
         # HTTP/2 connections cannot be half closed, but half open connections
         # are configured, so ATS finishes the fetch to fill the cache.
         ClientAbortBeforeResponseTest(
-            'h2_half_open_enabled', enable_tls=True, use_http2=True, allow_half_open=1, expect_abort=False).run()
+            'h2_half_open_enabled', enable_tls=True, use_http2=True, allow_half_open=1, expect_abort=False
+        ).run()

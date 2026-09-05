@@ -26,8 +26,7 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 tr = Test.AddTestRun("Test basic storage.config + volume.config conversion")
 tr.Setup.Copy('legacy_config/basic.storage.config')
 tr.Setup.Copy('legacy_config/basic.volume.config')
-tr.Processes.Default.Command = \
-    'traffic_ctl config convert storage basic.storage.config basic.volume.config -'
+tr.Processes.Default.Command = 'traffic_ctl config convert storage basic.storage.config basic.volume.config -'
 tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -38,8 +37,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Test storage.config with exclusive volume=N span assignments")
 tr.Setup.Copy('legacy_config/exclusive.storage.config')
 tr.Setup.Copy('legacy_config/exclusive.volume.config')
-tr.Processes.Default.Command = \
-    'traffic_ctl config convert storage exclusive.storage.config exclusive.volume.config -'
+tr.Processes.Default.Command = 'traffic_ctl config convert storage exclusive.storage.config exclusive.volume.config -'
 tr.Processes.Default.Streams.stdout = "gold/exclusive.yaml"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -48,8 +46,7 @@ tr.StillRunningAfter = ts
 # Test 3: Spans only, no volume.config (missing volume.config is treated as empty).
 tr = Test.AddTestRun("Test storage.config with no volume.config (spans only)")
 tr.Setup.Copy('legacy_config/no_volumes.storage.config')
-tr.Processes.Default.Command = \
-    'traffic_ctl config convert storage no_volumes.storage.config /nonexistent/volume.config -'
+tr.Processes.Default.Command = 'traffic_ctl config convert storage no_volumes.storage.config /nonexistent/volume.config -'
 tr.Processes.Default.Streams.stdout = "gold/no_volumes.yaml"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
@@ -59,9 +56,9 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Test output to file")
 tr.Setup.Copy('legacy_config/basic.storage.config')
 tr.Setup.Copy('legacy_config/basic.volume.config')
-tr.Processes.Default.Command = \
-    'traffic_ctl config convert storage basic.storage.config basic.volume.config generated.yaml' \
-    ' > /dev/null && cat generated.yaml'
+tr.Processes.Default.Command = (
+    'traffic_ctl config convert storage basic.storage.config basic.volume.config generated.yaml > /dev/null && cat generated.yaml'
+)
 tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env

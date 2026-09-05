@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -62,12 +61,16 @@ def getHeaderFieldVal(request_header, field):
 # addResponse adds customized response with respect to request_header. request_header and response_header are both dictionaries
 def addResponse(self, filename, request_header, response_header):
     client_request = Request.fromRequestLine(
-        request_header["headers"], "" if "body" not in request_header else request_header["body"],
-        None if "options" not in request_header else request_header["options"])
+        request_header["headers"],
+        "" if "body" not in request_header else request_header["body"],
+        None if "options" not in request_header else request_header["options"],
+    )
 
     server_response = Response.fromRequestLine(
-        response_header["headers"], "" if "body" not in response_header else response_header["body"],
-        None if "options" not in response_header else response_header["options"])
+        response_header["headers"],
+        "" if "body" not in response_header else response_header["body"],
+        None if "options" not in response_header else response_header["options"],
+    )
 
     # timestamp field is left None because that needs to be revised for better implementation
     txn = Transaction(client_request, None, server_response, None, None, None)
@@ -171,18 +174,19 @@ AddWhenFunction(uServerUpAndRunning)
 
 
 def MakeOriginServer(
-        obj,
-        name,
-        port=None,
-        s_port=None,
-        ip='INADDR_LOOPBACK',
-        delay=None,
-        ssl=False,
-        lookup_key=DEFAULT_LOOKUP_KEY,
-        clientcert='',
-        clientkey='',
-        both=False,
-        options={}):
+    obj,
+    name,
+    port=None,
+    s_port=None,
+    ip='INADDR_LOOPBACK',
+    delay=None,
+    ssl=False,
+    lookup_key=DEFAULT_LOOKUP_KEY,
+    clientcert='',
+    clientkey='',
+    both=False,
+    options={},
+):
     data_dir = os.path.join(obj.RunDirectory, name)
     p = obj.Processes.Process(name)
 
@@ -235,19 +239,21 @@ def MakeOriginServer(
     healthcheck_request = {
         "headers": "GET /ruok HTTP/1.1\r\nHost: {0}\r\n{1}\r\n".format(ipaddr, custom_lookup_header),
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
 
     # Set up health check.
     addResponse(
-        p, "healthcheck.json", healthcheck_request, {
+        p,
+        "healthcheck.json",
+        healthcheck_request,
+        {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
             "body": "imok",
-            "options": {
-                "skipHooks": None
-            }
-        })
+            "options": {"skipHooks": None},
+        },
+    )
 
     p.Ready = When.uServerUpAndRunning(
         ipaddr,
@@ -256,7 +262,8 @@ def MakeOriginServer(
         IPConstants.isIPv6(ip),
         healthcheck_request["headers"],
         clientcert=clientcert,
-        clientkey=clientkey)
+        clientkey=clientkey,
+    )
     p.ReturnCode = Any(None, 0)
 
     return p

@@ -30,7 +30,6 @@ Test.ContinueOnFail = True
 
 
 class CriptsBasicTest:
-
     def __init__(self):
         self.setUpOriginServer()
         self.setUpTS()
@@ -42,19 +41,19 @@ class CriptsBasicTest:
         response_header = {
             "headers": "HTTP/1.1 200 OK\r\nresponseHeader: unchanged\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self.server.addResponse("sessionfile.log", request_header, response_header)
 
         query_request_header = {
             "headers": "GET /path/to/resource?foo=1&bar=2&baz=3 HTTP/1.1\r\nHost: does.not.matter\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         query_response_header = {
             "headers": "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         self.server.addResponse("sessionfile.log", query_request_header, query_response_header)
 
@@ -68,7 +67,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         self.ts.Setup.Copy('files/basic.cript', self.ts.Variables.CONFIGDIR)
         self.ts.Setup.Copy('files/query_copy.cript', self.ts.Variables.CONFIGDIR)
@@ -78,15 +78,18 @@ ssl_multicert:
                 'proxy.config.plugin.dynamic_reload_mode': 1,
                 "proxy.config.ssl.server.cert.path": f"{self.ts.Variables.SSLDir}",
                 "proxy.config.ssl.server.private_key.path": f"{self.ts.Variables.SSLDir}",
-            })
+            }
+        )
 
         self.ts.Disk.remap_config.AddLine(
-            f'map http://www.example.com http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript')
+            f'map http://www.example.com http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript'
+        )
         self.ts.Disk.remap_config.AddLine(
             f'map https://www.example.com:{self.ts.Variables.ssl_port} http://127.0.0.1:{self.server.Variables.Port} @plugin=basic.cript'
         )
         self.ts.Disk.remap_config.AddLine(
-            f'map http://query.example.com http://127.0.0.1:{self.server.Variables.Port} @plugin=query_copy.cript')
+            f'map http://query.example.com http://127.0.0.1:{self.server.Variables.Port} @plugin=query_copy.cript'
+        )
 
     def runHeaderTest(self):
         tr = Test.AddTestRun('Exercise traffic through cripts.')
@@ -101,7 +104,8 @@ ssl_multicert:
         tr = Test.AddTestRun('Exercise Cripts certificate introspection.')
         tr.MakeCurlCommand(
             f'-v --http1.1 -k -H "Host: www.example.com:{self.ts.Variables.ssl_port}" https://127.0.0.1:{self.ts.Variables.ssl_port}',
-            ts=self.ts)
+            ts=self.ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/certs_cript.gold"
         tr.StillRunningAfter = self.server
@@ -110,26 +114,33 @@ ssl_multicert:
         tr = Test.AddTestRun('Exercise Query/Path copy ctor / copy-assign in cripts.')
         tr.MakeCurlCommand(
             f'-v -H "Host: query.example.com" "http://127.0.0.1:{self.ts.Variables.port}/path/to/resource?foo=1&bar=2&baz=3"',
-            ts=self.ts)
+            ts=self.ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         # Live URL is untouched: original query is preserved.
         tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-            r"X-Original-Query: foo=1&bar=2&baz=3", "Original query must round-trip unchanged")
+            r"X-Original-Query: foo=1&bar=2&baz=3", "Original query must round-trip unchanged"
+        )
         # Mutating the copy (Erase "foo") must not have leaked into the original.
         tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
-            r"X-Copy-Query: bar=2&baz=3", "Erase on the copy must drop foo without affecting the original")
+            r"X-Copy-Query: bar=2&baz=3", "Erase on the copy must drop foo without affecting the original"
+        )
         # Copy-assignment path produces a snapshot equal to the original.
         tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
-            r"X-Assigned-Query: foo=1&bar=2&baz=3", "Copy-assigned query must equal the original")
+            r"X-Assigned-Query: foo=1&bar=2&baz=3", "Copy-assigned query must equal the original"
+        )
         # Live URL path is untouched: original path is preserved.
         tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
-            r"X-Original-Path: path/to/resource", "Original path must round-trip unchanged")
+            r"X-Original-Path: path/to/resource", "Original path must round-trip unchanged"
+        )
         # Mutating the copy (segment[0] = "edited") must not have leaked into the original.
         tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
-            r"X-Copy-Path: edited/to/resource", "Segment edit on the copy must not affect the original")
+            r"X-Copy-Path: edited/to/resource", "Segment edit on the copy must not affect the original"
+        )
         # Copy-assignment path produces a snapshot equal to the original.
         tr.Processes.Default.Streams.stderr += Testers.ContainsExpression(
-            r"X-Assigned-Path: path/to/resource", "Copy-assigned path must equal the original")
+            r"X-Assigned-Path: path/to/resource", "Copy-assigned path must equal the original"
+        )
         tr.StillRunningAfter = self.server
 
     def run(self):

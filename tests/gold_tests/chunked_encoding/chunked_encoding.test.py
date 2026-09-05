@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -34,38 +33,37 @@ server2 = Test.MakeOriginServer("server2", ssl=True)
 server3 = Test.MakeOriginServer("server3")
 
 server4 = Test.Processes.Process(
-    "server4", "bash -c '" + Test.TestDirectory + "/server4.sh {} outserver4'".format(Test.Variables.upstream_port))
+    "server4", "bash -c '" + Test.TestDirectory + "/server4.sh {} outserver4'".format(Test.Variables.upstream_port)
+)
 
 testName = ""
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 request_header2 = {
-    "headers":
-        "POST / HTTP/1.1\r\nHost: www.anotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
+    "headers": "POST / HTTP/1.1\r\nHost: www.anotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
     "timestamp": "1415926535.898",
-    "body": "knock knock"
+    "body": "knock knock",
 }
 response_header2 = {
     "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
     "timestamp": "1415926535.898",
-    "body": "12345678901234567890"
+    "body": "12345678901234567890",
 }
 
 request_header3 = {
-    "headers":
-        "POST / HTTP/1.1\r\nHost: www.yetanotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
+    "headers": "POST / HTTP/1.1\r\nHost: www.yetanotherexample.com\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
     "timestamp": "1415926535.898",
-    "body": "knock knock"
+    "body": "knock knock",
 }
 response_header3 = {
     "headers": "HTTP/1.1 200 OK\r\nServer: uServer\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n",
     "timestamp": "1415926535.898",
-    "body": ""
+    "body": "",
 }
 
 server.addResponse("sessionlog.json", request_header, response_header)
@@ -82,12 +80,14 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map http://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine('map http://www.yetanotherexample.com http://127.0.0.1:{0}'.format(server3.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(Test.Variables.upstream_port))
 
 ts.Disk.ssl_multicert_yaml.AddLines(
@@ -96,7 +96,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # smuggle-client is built via `make`. Here we copy the built binary down to the
 # test directory so that the test runs in this file can use it.
@@ -128,8 +129,10 @@ if not Condition.CurlUsingUnixDomainSocket():
     tr.TimeOut = 5
     tr.MakeCurlCommand(
         '--http2 -k https://127.0.0.1:{0} --verbose -H "Host: www.anotherexample.com" -d "Knock knock"'.format(
-            ts.Variables.ssl_port),
-        ts=ts)
+            ts.Variables.ssl_port
+        ),
+        ts=ts,
+    )
     tr.Processes.Default.ReturnCode = 0
     tr.Processes.Default.Streams.stderr = "gold/h2_chunked_POST_200.gold"
 
@@ -137,7 +140,8 @@ if not Condition.CurlUsingUnixDomainSocket():
 tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.MakeCurlCommand(
-    'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port), ts=ts)
+    'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -d "knock knock"'.format(ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server
@@ -147,8 +151,10 @@ tr = Test.AddTestRun()
 tr.TimeOut = 5
 tr.MakeCurlCommand(
     'http://127.0.0.1:{0} -H "Host: www.yetanotherexample.com" --verbose -H "Transfer-Encoding: chunked" -d "Knock knock"'.format(
-        ts.Variables.port),
-    ts=ts)
+        ts.Variables.port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/chunked_POST_200.gold"
 tr.StillRunningAfter = server
@@ -230,12 +236,15 @@ class TestChunkedTrailers:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
-                'proxy.config.dns.resolv_conf': 'NULL'
-            })
+                'proxy.config.dns.resolv_conf': 'NULL',
+            }
+        )
         if not self._configure_drop_trailers:
-            ts.Disk.records_config.update({
-                'proxy.config.http.drop_chunked_trailers': 0,
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.http.drop_chunked_trailers': 0,
+                }
+            )
         return ts
 
     def _configure_client(self, tr: 'TestRun') -> 'Process':

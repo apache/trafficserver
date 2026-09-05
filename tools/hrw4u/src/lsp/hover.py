@@ -37,7 +37,8 @@ class HoverInfoProvider:
 
     @staticmethod
     def create_field_interpolation_hover(
-            expression: str, field_display: str, field_desc: str, context: str, maps_to: str, usage: str = None) -> dict[str, Any]:
+        expression: str, field_display: str, field_desc: str, context: str, maps_to: str, usage: str = None
+    ) -> dict[str, Any]:
         """Create hover info for field interpolations with a standard format."""
         usage_text = usage or "Used in string value interpolation."
 
@@ -46,17 +47,15 @@ class HoverInfoProvider:
             f"**Context:** {context}\n\n"
             f"**Description:** {field_desc}\n\n"
             f"**Maps to:** `{maps_to}`\n\n"
-            f"{usage_text}")
+            f"{usage_text}"
+        )
 
         return HoverInfoProvider.create_hover_info(description)
 
     @staticmethod
-    def create_field_hover(expression: str,
-                           field_display: str,
-                           field_desc: str,
-                           context: str,
-                           maps_to: str,
-                           usage: str = None) -> dict[str, Any]:
+    def create_field_hover(
+        expression: str, field_display: str, field_desc: str, context: str, maps_to: str, usage: str = None
+    ) -> dict[str, Any]:
         """Create hover info for field expressions with a standard format."""
         usage_text = usage or "Used in expression evaluation."
 
@@ -65,7 +64,8 @@ class HoverInfoProvider:
             f"**Context:** {context}\n\n"
             f"**Description:** {field_desc}\n\n"
             f"**Maps to:** `{maps_to}`\n\n"
-            f"{usage_text}")
+            f"{usage_text}"
+        )
 
         return HoverInfoProvider.create_hover_info(description)
 
@@ -99,8 +99,13 @@ class InterpolationHoverProvider:
         if expression in doc.IP_PATTERNS:
             ip_info = doc.IP_PATTERNS[expression]
             return HoverInfoProvider.create_field_interpolation_hover(
-                expression, ip_info.name, ip_info.description, "IP Address Field", ip_info.maps_to,
-                "Used for IP-based routing and logging in string values.")
+                expression,
+                ip_info.name,
+                ip_info.description,
+                "IP Address Field",
+                ip_info.maps_to,
+                "Used for IP-based routing and logging in string values.",
+            )
 
         # Handle URL patterns using table-driven approach
         parsed_url = doc.URLPattern.parse_url_expression(expression, is_interpolation=True)
@@ -129,9 +134,13 @@ class InterpolationHoverProvider:
             if suffix_key in field_dict:
                 field_info = field_dict[suffix_key]
                 return HoverInfoProvider.create_field_interpolation_hover(
-                    expression, field_info.name, field_info.description, match.context_type, match.maps_to or
-                    f"%{{{match.context_type.upper()}:{suffix_key}}}",
-                    f"Used for {match.context_type.lower()} information in string values.")
+                    expression,
+                    field_info.name,
+                    field_info.description,
+                    match.context_type,
+                    match.maps_to or f"%{{{match.context_type.upper()}:{suffix_key}}}",
+                    f"Used for {match.context_type.lower()} information in string values.",
+                )
 
         return None
 
@@ -168,7 +177,8 @@ class DottedExpressionHoverProvider:
                 f"**{full_expression}** - {ip_info.name}\n\n"
                 f"**Context:** {ip_info.description}\n\n"
                 f"**Maps to:** `{ip_info.maps_to}`\n\n"
-                f"{ip_info.usage}")
+                f"{ip_info.usage}"
+            )
             return HoverInfoProvider.create_hover_info(description)
 
         # Handle HTTP control patterns (http.cntl.*)
@@ -182,7 +192,8 @@ class DottedExpressionHoverProvider:
                     f"**{full_expression}** - {cntl_doc.name}\n\n"
                     f"**Description:** {cntl_doc.description}\n\n"
                     f"**Default Value:** `{cntl_doc.default_value}`\n\n"
-                    f"**Usage:** {cntl_doc.usage}")
+                    f"**Usage:** {cntl_doc.usage}"
+                )
 
                 if cntl_doc.examples:
                     description += "\n\n**Examples:**\n"
@@ -197,7 +208,8 @@ class DottedExpressionHoverProvider:
                     f"**{full_expression}** - HTTP Transaction Control Field\n\n"
                     f"**Context:** HTTP Transaction Control\n\n"
                     f"**Description:** Controls ATS transaction processing behavior\n\n"
-                    "Used for fine-grained control of HTTP transaction processing.")
+                    "Used for fine-grained control of HTTP transaction processing."
+                )
                 return HoverInfoProvider.create_hover_info(description)
 
         if full_expression in ['inbound.req', 'inbound.resp', 'outbound.req', 'outbound.resp']:
@@ -224,7 +236,8 @@ class DottedExpressionHoverProvider:
                     f"**{cookie_doc.name}** - {context}\n\n"
                     f"**Context:** {cookie_doc.context}\n\n"
                     f"**Description:** {cookie_doc.description}\n\n"
-                    f"**Usage:** {cookie_doc.usage}")
+                    f"**Usage:** {cookie_doc.usage}"
+                )
 
                 if cookie_doc.examples:
                     description += "\n\n**Examples:**\n"
@@ -269,10 +282,7 @@ class DottedExpressionHoverProvider:
             else:
                 additional_info = "HTTP header used in request/response processing."
 
-            description = (
-                f"**{header_name}** - {header_type}\n\n"
-                f"**Context:** {context_desc} Headers\n\n"
-                f"{additional_info}")
+            description = f"**{header_name}** - {header_type}\n\n**Context:** {context_desc} Headers\n\n{additional_info}"
 
             return HoverInfoProvider.create_hover_info(description)
         return None
@@ -289,7 +299,8 @@ class DottedExpressionHoverProvider:
                 f"**Context:** {direction} Request Cookie\n\n"
                 f"**Description:** HTTP cookie named '{cookie_name}' {action}. "
                 f"Used for session management, user authentication, preferences, and client state tracking.\n\n"
-                f"**Usage:** Access or modify this specific cookie value for request processing.")
+                f"**Usage:** Access or modify this specific cookie value for request processing."
+            )
 
             return HoverInfoProvider.create_hover_info(description)
         return None
@@ -309,7 +320,8 @@ class DottedExpressionHoverProvider:
                     f"**{parts[2]}** - {field_info.name}\n\n"
                     f"**Context:** {direction} Connection {field_info.name}\n\n"
                     f"**Description:** {field_info.description}\n\n"
-                    f"**Maps to:** `set-conn-{parts[2].lower()}`")
+                    f"**Maps to:** `set-conn-{parts[2].lower()}`"
+                )
 
                 return HoverInfoProvider.create_hover_info(description)
         return None
@@ -322,9 +334,13 @@ class DottedExpressionHoverProvider:
         if suffix_key in field_dict:
             field_info = field_dict[suffix_key]
             return HoverInfoProvider.create_field_hover(
-                full_expression, field_info.name, field_info.description, match.context_type, match.maps_to or
-                f"%{{{match.context_type.upper()}:{suffix_key}}}",
-                f"Used for {match.context_type.lower()} information and conditional logic.")
+                full_expression,
+                field_info.name,
+                field_info.description,
+                match.context_type,
+                match.maps_to or f"%{{{match.context_type.upper()}:{suffix_key}}}",
+                f"Used for {match.context_type.lower()} information and conditional logic.",
+            )
         return None
 
 
@@ -369,7 +385,8 @@ class OperatorHoverProvider:
                 description = (
                     f"**{operator}** - {method_doc.name}\n\n"
                     f"**Description:** {method_doc.description}\n\n"
-                    f"**Usage:** {method_doc.usage}")
+                    f"**Usage:** {method_doc.usage}"
+                )
 
                 if method_doc.examples:
                     description += "\n\n**Examples:**\n"
@@ -384,7 +401,8 @@ class OperatorHoverProvider:
                 f"**{operator}** - HRW4U URL Context\n\n"
                 f"**Context:** {prefix} URL Components\n\n"
                 f"Use this prefix to access URL components. Available: host, port, path, query, scheme, fragment.\n\n"
-                f"**Example:** `{operator}.host` for the hostname portion of the URL.")
+                f"**Example:** `{operator}.host` for the hostname portion of the URL."
+            )
 
         # Special handling for inbound/outbound header contexts
         if operator in doc.LSP_SUB_NAMESPACE_DOCUMENTATION:
@@ -443,20 +461,28 @@ class OperatorHoverProvider:
         for key, params in table.items():
             if key.endswith('.') and operator.startswith(key):
                 cmd_str = cls._format_target(params)
-                suffix = operator[len(key):]
+                suffix = operator[len(key) :]
                 section_info = cls._format_section_info(params)
                 return HoverInfoProvider.create_hover_info(
                     f"**{operator}** - HRW4U {kind}\n\n"
                     f"**Base:** `{key}`\n**Suffix:** `{suffix}`\n"
-                    f"**Maps to:** `{cmd_str}`{section_info}")
+                    f"**Maps to:** `{cmd_str}`{section_info}"
+                )
 
         return None
 
     @staticmethod
     def _format_namespace_doc(key: str, ns_doc) -> dict[str, Any]:
         sections = [
-            f"**{key}** - {ns_doc.name}", "", f"**Context:** {ns_doc.context}", "", f"**Description:** {ns_doc.description}", "",
-            f"**Available items:** {', '.join(ns_doc.available_items)}", "", f"**Usage:** {ns_doc.usage}"
+            f"**{key}** - {ns_doc.name}",
+            "",
+            f"**Context:** {ns_doc.context}",
+            "",
+            f"**Description:** {ns_doc.description}",
+            "",
+            f"**Available items:** {', '.join(ns_doc.available_items)}",
+            "",
+            f"**Usage:** {ns_doc.usage}",
         ]
 
         if ns_doc.examples:
@@ -518,7 +544,11 @@ class FunctionHoverProvider:
 
             # Combine all documentation
             sections = [
-                f"**{func_doc.name}** - {func_doc.category}", "", func_doc.description, "", f"**Syntax:** `{func_doc.syntax}`"
+                f"**{func_doc.name}** - {func_doc.category}",
+                "",
+                func_doc.description,
+                "",
+                f"**Syntax:** `{func_doc.syntax}`",
             ]
 
             if param_docs:
@@ -539,14 +569,18 @@ class FunctionHoverProvider:
         if function_name in FUNCTION_MAP:
             params = FUNCTION_MAP[function_name]
             return HoverInfoProvider.create_hover_info(
-                f"**{function_name}()** - HRW4U Function\n\n" + f"**Maps to:** `{params.target}`\n\n" +
-                f"Used in conditional expressions.")
+                f"**{function_name}()** - HRW4U Function\n\n"
+                + f"**Maps to:** `{params.target}`\n\n"
+                + f"Used in conditional expressions."
+            )
 
         if function_name in STATEMENT_FUNCTION_MAP:
             params = STATEMENT_FUNCTION_MAP[function_name]
             return HoverInfoProvider.create_hover_info(
-                f"**{function_name}()** - HRW4U Statement Function\n\n" + f"**Maps to:** `{params.target}`\n\n" +
-                f"Used as statements in code blocks.")
+                f"**{function_name}()** - HRW4U Statement Function\n\n"
+                + f"**Maps to:** `{params.target}`\n\n"
+                + f"Used as statements in code blocks."
+            )
 
         return HoverInfoProvider.create_hover_info(f"**{function_name}()** - Unknown HRW4U function")
 
@@ -566,8 +600,9 @@ class VariableHoverProvider:
             return HoverInfoProvider.create_hover_info(f"**{var_type}** - Unknown Variable Type")
 
     @staticmethod
-    def get_variable_hover_info(variable_declarations: Dict[str, dict[str, Any]], uri: str,
-                                variable_name: str) -> dict[str, Any] | None:
+    def get_variable_hover_info(
+        variable_declarations: Dict[str, dict[str, Any]], uri: str, variable_name: str
+    ) -> dict[str, Any] | None:
         """Get hover info for declared variables."""
         variables = variable_declarations.get(uri, {})
         if variable_name in variables:
@@ -577,8 +612,11 @@ class VariableHoverProvider:
             declaration_line = var_info['line'] + 1
 
             return HoverInfoProvider.create_hover_info(
-                f"**{variable_name}** - HRW4U Variable\n\n" + f"**Type:** `{var_type}`\n\n" +
-                f"**Description:** {description}\n\n" + f"**Declared at:** Line {declaration_line}")
+                f"**{variable_name}** - HRW4U Variable\n\n"
+                + f"**Type:** `{var_type}`\n\n"
+                + f"**Description:** {description}\n\n"
+                + f"**Declared at:** Line {declaration_line}"
+            )
         return None
 
 
@@ -600,12 +638,15 @@ class SectionHoverProvider:
         try:
             section_type = SectionType(section_name)
             return HoverInfoProvider.create_hover_info(
-                f"**{section_name}** - HRW4U Section\n\n" + f"**Hook:** `{section_type.hook_name}`\n\n" +
-                section_type.lsp_description)
+                f"**{section_name}** - HRW4U Section\n\n"
+                + f"**Hook:** `{section_type.hook_name}`\n\n"
+                + section_type.lsp_description
+            )
         except ValueError:
             return HoverInfoProvider.create_hover_info(
-                f"**{section_name}** - ❌ Invalid Section Name\n\n" +
-                f"Valid sections are: {', '.join([s.value for s in SectionType])}")
+                f"**{section_name}** - ❌ Invalid Section Name\n\n"
+                + f"Valid sections are: {', '.join([s.value for s in SectionType])}"
+            )
 
 
 class ModifierHoverProvider:

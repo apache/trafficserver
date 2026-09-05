@@ -31,21 +31,17 @@ cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer(
     "server",
     ssl=True,
-    options={
-        "--clientCA": cafile,
-        "--clientverify": ""
-    },
+    options={"--clientCA": cafile, "--clientverify": ""},
     clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-foo.key".format(Test.RunDirectory),
+)
 server2 = Test.MakeOriginServer(
     "server2",
     ssl=True,
-    options={
-        "--clientCA": cafile2,
-        "--clientverify": ""
-    },
+    options={"--clientCA": cafile2, "--clientverify": ""},
     clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-bar.key".format(Test.RunDirectory),
+)
 server3 = Test.MakeOriginServer("server3")
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
@@ -96,7 +92,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.private_key.filename': 'signed-foo.key',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -104,7 +101,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine('map /case1 https://127.0.0.1:{0}/'.format(server.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine('map /case2 https://127.0.0.1:{0}/'.format(server2.Variables.SSL_Port))
@@ -157,13 +155,13 @@ tr2 = Test.AddTestRun("Update config files")
 # Update the SNI config
 snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr2.Disk.File(snipath, id="sni_yaml", typename="ats:config"),
+(tr2.Disk.File(snipath, id="sni_yaml", typename="ats:config"),)
 tr2.Disk.sni_yaml.AddLine('sni:')
 tr2.Disk.sni_yaml.AddLine('- fqdn: bar.com')
 tr2.Disk.sni_yaml.AddLine('  client_cert: {0}/../signed-bar.pem'.format(ts.Variables.SSLDir))
 tr2.Disk.sni_yaml.AddLine('  client_key: {0}/../signed-bar.key'.format(ts.Variables.SSLDir))
 # recreate the records.yaml with the cert filename changed
-tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),
+(tr2.Disk.File(recordspath, id="records_config", typename="ats:config:records"),)
 tr2.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -176,7 +174,8 @@ tr2.Disk.records_config.update(
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl_secret_load_test|ssl',
-    })
+    }
+)
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = server2
@@ -236,8 +235,11 @@ trupdate.StillRunningAfter = server2
 trupdate.Setup.CopyAs("ssl/signed2-bar.pem", ".", "{0}/signed-bar.pem".format(ts.Variables.SSLDir))
 # in the config/ssl directory for records.yaml
 trupdate.Setup.CopyAs("ssl/signed-foo.pem", ".", "{0}/signed2-foo.pem".format(ts.Variables.SSLDir))
-trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/../; touch {1}; touch {2}'.format(
-    ts.Variables.SSLDir, snipath, recordspath)
+trupdate.Processes.Default.Command = (
+    'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/../; touch {1}; touch {2}'.format(
+        ts.Variables.SSLDir, snipath, recordspath
+    )
+)
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0

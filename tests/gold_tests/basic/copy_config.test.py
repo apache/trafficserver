@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -16,19 +15,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Test.Summary = "Test start up of Traffic server with configuration modification of starting port of different servers at the same time"
+Test.Summary = (
+    "Test start up of Traffic server with configuration modification of starting port of different servers at the same time"
+)
 
 # set up some ATS processes with dynamic port selection
 ts1 = Test.MakeATSProcess("ts1")
-ts1.Disk.records_config.update({
-    'proxy.config.http.server_ports': str(ts1.Variables.port) + f" {ts1.Variables.uds_path}",
-})
+ts1.Disk.records_config.update(
+    {
+        'proxy.config.http.server_ports': str(ts1.Variables.port) + f" {ts1.Variables.uds_path}",
+    }
+)
 ts1.Ready = When.PortOpen(ts1.Variables.port)
 
 ts2 = Test.MakeATSProcess("ts2", enable_uds=False)
-ts2.Disk.records_config.update({
-    'proxy.config.http.server_ports': str(ts2.Variables.port),
-})
+ts2.Disk.records_config.update(
+    {
+        'proxy.config.http.server_ports': str(ts2.Variables.port),
+    }
+)
 ts2.Ready = When.PortOpen(ts2.Variables.port)
 
 # setup a testrun

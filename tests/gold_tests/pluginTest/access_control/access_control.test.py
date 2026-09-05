@@ -1,6 +1,7 @@
 '''
 Test access control plugin behaviors
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -45,7 +46,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self.ts.Disk.records_config.update(
             {
                 "proxy.config.diags.debug.enabled": 1,
@@ -55,7 +57,8 @@ ssl_multicert:
                 'proxy.config.ssl.server.private_key.path': f"{self.ts.Variables.SSLDir}",
                 'proxy.config.ssl.client.alpn_protocols': 'http/1.1',
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-            })
+            }
+        )
 
         self.ts.Setup.Copy("etc/hmac_keys.txt")
         self.ts.Disk.remap_config.AddLines(
@@ -68,12 +71,14 @@ ssl_multicert:
     @pparam=--extract-tokenid-to-header=@TokenId \
     @pparam=--extract-status-to-header=@TokenStatus \
     @pparam=--token-response-header=TokenRespHdr'''
-            })
+            }
+        )
 
     def run(self):
         tr = Test.AddTestRun("Session Cookie")
         tr.AddVerifierClientProcess(
-            "verifier-client", self.replayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+            "verifier-client", self.replayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port]
+        )
         tr.Processes.Default.StartBefore(self.ts)
         tr.Processes.Default.StartBefore(self.server)
         tr.StillRunningAfter = self.ts

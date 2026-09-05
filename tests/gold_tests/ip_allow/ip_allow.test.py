@@ -30,18 +30,11 @@ ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 server = Test.MakeOriginServer("server", ssl=True)
 
 testName = ""
-request = {
-    "headers": "GET /get HTTP/1.1\r\n"
-               "Host: www.example.com:80\r\n\r\n",
-    "timestamp": "1469733493.993",
-    "body": ""
-}
+request = {"headers": "GET /get HTTP/1.1\r\nHost: www.example.com:80\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Content-Length: 3\r\n"
-               "Connection: close\r\n\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nContent-Length: 3\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"
+    "body": "xxx",
 }
 server.addResponse("sessionlog.json", request, response)
 
@@ -49,31 +42,25 @@ server.addResponse("sessionlog.json", request, response)
 # bug in ip_allow and they are sent through, have them return a 200 OK. This
 # will fail the match with the gold file which expects a 403.
 request = {
-    "headers": "CONNECT www.example.com:80/connect HTTP/1.1\r\n"
-               "Host: www.example.com:80\r\n\r\n",
+    "headers": "CONNECT www.example.com:80/connect HTTP/1.1\r\nHost: www.example.com:80\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Content-Length: 3\r\n"
-               "Connection: close\r\n\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nContent-Length: 3\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"
+    "body": "xxx",
 }
 server.addResponse("sessionlog.json", request, response)
 request = {
-    "headers": "PUSH www.example.com:80/h2_push HTTP/2\r\n"
-               "Host: www.example.com:80\r\n\r\n",
+    "headers": "PUSH www.example.com:80/h2_push HTTP/2\r\nHost: www.example.com:80\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response = {
-    "headers": "HTTP/2 200 OK\r\n"
-               "Content-Length: 3\r\n"
-               "Connection: close\r\n\r\n",
+    "headers": "HTTP/2 200 OK\r\nContent-Length: 3\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"
+    "body": "xxx",
 }
 server.addResponse("sessionlog.json", request, response)
 
@@ -86,7 +73,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.records_config.update(
     {
@@ -99,7 +87,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
         'proxy.config.http2.active_timeout_in': 3,
         'proxy.config.http2.max_concurrent_streams_in': 65535,
-    })
+    }
+)
 
 format_string = (
     'scheme=%<pqus> %<cqtd>-%<cqtt> %<stms> %<ttms> %<chi> %<crc>/%<pssc> %<psql> '
@@ -107,7 +96,8 @@ format_string = (
     '%<{Y-YPCS}pqh> %<{Host}cqh> %<{CHAD}pqh>  '
     'sftover=%<{x-safet-overlimit-rules}cqh> sftmat=%<{x-safet-matched-rules}cqh> '
     'sftcls=%<{x-safet-classification}cqh> '
-    'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> status_setter=%<prscs>')
+    'sftbadclf=%<{x-safet-bad-classifiers}cqh> yra=%<{Y-RA}cqh> status_setter=%<prscs>'
+)
 
 ts.Disk.logging_yaml.AddLines(
     f''' logging:
@@ -117,7 +107,8 @@ ts.Disk.logging_yaml.AddLines(
   logs:
     - filename: squid.log
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 
@@ -133,12 +124,15 @@ ts.Disk.ip_allow_yaml.AddLines(
     action: allow
     methods: [GET, HEAD, POST ]
 
-'''.split("\n"))
+'''.split("\n")
+)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Line 1 denial for 'CONNECT' from 127.0.0.1", "The CONNECT request should be denied by ip_allow")
+    "Line 1 denial for 'CONNECT' from 127.0.0.1", "The CONNECT request should be denied by ip_allow"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Line 1 denial for 'PUSH' from 127.0.0.1", "The PUSH request should be denied by ip_allow")
+    "Line 1 denial for 'PUSH' from 127.0.0.1", "The PUSH request should be denied by ip_allow"
+)
 
 #
 # TEST 1: Perform a GET request. Should be allowed because GET is in the allowlist.
@@ -159,7 +153,8 @@ tr.StillRunningAfter = server
 #
 tr = Test.AddTestRun('Denied CONNECT request')
 tr.MakeCurlCommand(
-    '--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port), ts=ts)
+    '--verbose -X CONNECT -H "Host: localhost" http://localhost:{ts_port}/connect'.format(ts_port=ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403.gold'
 tr.StillRunningAfter = ts
@@ -172,7 +167,8 @@ tr.StillRunningAfter = server
 tr = Test.AddTestRun('Denied PUSH request over HTTP/2')
 tr.MakeCurlCommand(
     '--http2 --verbose -k -X PUSH -H "Host: localhost" https://localhost:{ts_port}/h2_push'.format(ts_port=ts.Variables.ssl_port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = 'gold/403_h2.gold'
 tr.StillRunningAfter = ts
@@ -180,9 +176,9 @@ tr.StillRunningAfter = server
 
 tr = Test.AddTestRun('Await and verify the transaction log file')
 squid_log = os.path.join(ts.Variables.LOGDIR, 'squid.log')
-tr.Processes.Default.Command = (
-    os.path.join(Test.Variables.AtsTestToolsDir, 'stdout_wait') + ' 60 "{} {}" {}'.format(
-        os.path.join(Test.TestDirectory, 'run_sed.sh'), squid_log, os.path.join(Test.TestDirectory, 'gold/log.gold')))
+tr.Processes.Default.Command = os.path.join(Test.Variables.AtsTestToolsDir, 'stdout_wait') + ' 60 "{} {}" {}'.format(
+    os.path.join(Test.TestDirectory, 'run_sed.sh'), squid_log, os.path.join(Test.TestDirectory, 'gold/log.gold')
+)
 tr.Processes.Default.ReturnCode = 0
 
 IP_ALLOW_CONFIG_ALLOW_ALL = '''ip_allow:
@@ -208,14 +204,15 @@ class Test_ip_allow:
     server_counter: int = 0
 
     def __init__(
-            self,
-            name: str,
-            replay_file: str,
-            ip_allow_config: str,
-            gold_file="",
-            replay_keys="",
-            is_h3=False,
-            expect_request_rejected=False):
+        self,
+        name: str,
+        replay_file: str,
+        ip_allow_config: str,
+        gold_file="",
+        replay_keys="",
+        is_h3=False,
+        expect_request_rejected=False,
+    ):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -248,7 +245,8 @@ class Test_ip_allow:
         :param tr: The TestRun object to associate the ts process with.
         """
         ts = tr.MakeATSProcess(
-            f"ts-{Test_ip_allow.ts_counter}", enable_quic=self.is_h3, enable_tls=True, enable_proxy_protocol=True)
+            f"ts-{Test_ip_allow.ts_counter}", enable_quic=self.is_h3, enable_tls=True, enable_proxy_protocol=True
+        )
 
         Test_ip_allow.ts_counter += 1
         self._ts = ts
@@ -260,7 +258,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self._ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
@@ -272,7 +271,8 @@ ssl_multicert:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.http.connect_ports': f"{self._server.Variables.http_port}",
                 'proxy.config.acl.subjects': 'PROXY,PEER',
-            })
+            }
+        )
 
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
@@ -294,7 +294,8 @@ ssl_multicert:
             http_ports=[self._ts.Variables.proxy_protocol_port],
             https_ports=[self._ts.Variables.ssl_port],
             http3_ports=[self._ts.Variables.ssl_port],
-            keys=self.replay_keys)
+            keys=self.replay_keys,
+        )
         Test_ip_allow.client_counter += 1
 
         if self.expect_request_rejected:
@@ -302,12 +303,14 @@ ssl_multicert:
             # not send a response.
             tr.Processes.Default.ReturnCode = 1
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "client.*prohibited by ip-allow policy", "Request should be rejected by ip_allow")
+                "client.*prohibited by ip-allow policy", "Request should be rejected by ip_allow"
+            )
         else:
             # Verify the client request is successful.
             tr.Processes.Default.ReturnCode = 0
             self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                "client.*allowed by ip-allow policy", "Request should be allowed by ip_allow")
+                "client.*allowed by ip-allow policy", "Request should be allowed by ip_allow"
+            )
 
         if self.gold_file:
             tr.Processes.Default.Streams.All = self.gold_file
@@ -315,14 +318,14 @@ ssl_multicert:
 
 # ip_allow tests for h3.
 if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
-
     # TEST 4: Perform a request in h3 with ip_allow configured to allow all IPs.
     test0 = Test_ip_allow(
         "h3_allow_all",
         replay_file='replays/h3.replay.yaml',
         ip_allow_config=IP_ALLOW_CONFIG_ALLOW_ALL,
         is_h3=True,
-        expect_request_rejected=False)
+        expect_request_rejected=False,
+    )
     test0.run()
 
     # TEST 5: Perform a request in h3 with ip_allow configured to deny all IPs.
@@ -331,7 +334,8 @@ if Condition.HasATSFeature('TS_USE_QUIC') and Condition.HasCurlFeature('http3'):
         replay_file='replays/h3.replay.yaml',
         ip_allow_config=IP_ALLOW_CONFIG_DENY_ALL,
         is_h3=True,
-        expect_request_rejected=True)
+        expect_request_rejected=True,
+    )
     test1.run()
 
 # TEST 6: Verify rules are applied to all methods if methods is not specified.
@@ -345,7 +349,8 @@ test_ip_allow_optional_methods = Test_ip_allow(
     replay_file='replays/https_multiple_methods.replay.yaml',
     ip_allow_config=IP_ALLOW_CONFIG_METHODS_UNSPECIFIED,
     is_h3=False,
-    expect_request_rejected=False)
+    expect_request_rejected=False,
+)
 test_ip_allow_optional_methods.run()
 
 # TEST 7: Verify IP address from PROXY protocol is used.
@@ -362,5 +367,6 @@ test_ip_allow_proxy_protocol = Test_ip_allow(
     replay_file='replays/http_proxy_protocol.replay.yaml',
     ip_allow_config=IP_ALLOW_CONFIG_PROXY_PROTOCOL,
     is_h3=False,
-    expect_request_rejected=False)
+    expect_request_rejected=False,
+)
 test_ip_allow_proxy_protocol.run()

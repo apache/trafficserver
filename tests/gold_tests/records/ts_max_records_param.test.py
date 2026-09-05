@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -31,7 +30,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts
 ts.Streams.All = Testers.ContainsExpression(
     f"Passed maxRecords value={maxRecords} is lower than the default value 2048. Default will be used.",
-    "It should use the default value")
+    "It should use the default value",
+)
 
 # 1  - maxRecords with just invalid number. Traffic server should warn about this and use the default value.
 maxRecords = "abc"
@@ -42,7 +42,8 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 tr.StillRunningAfter = ts
 ts.Streams.All = Testers.ContainsExpression(
-    f"Invalid 0 value for maxRecords. Default  2048 will be used.", "It should use the default value")
+    f"Invalid 0 value for maxRecords. Default  2048 will be used.", "It should use the default value"
+)
 
 # 2  - maxRecords over the default value
 maxRecords = 5000

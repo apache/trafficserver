@@ -46,7 +46,8 @@ class HostDownRangeRecursionTest:
                 'proxy.config.diags.debug.tags': 'http|host_statuses',
                 'proxy.config.http.cache.range.write': 1,
                 'proxy.config.http.insert_response_via_str': 3,
-            })
+            }
+        )
 
         self._ts.Disk.remap_config.AddLine(f'map http://backend.example.com/ http://127.0.0.1:{self._server.Variables.http_port}/')
 
@@ -62,7 +63,8 @@ class HostDownRangeRecursionTest:
         # Phase 2: mark the origin host DOWN via JSON-RPC.
         mark_down = Test.AddTestRun("Mark host DOWN")
         mark_down.AddJsonRPCClientRequest(
-            self._ts, Request.admin_host_set_status(operation='down', host=['127.0.0.1'], reason='manual', time='0'))
+            self._ts, Request.admin_host_set_status(operation='down', host=['127.0.0.1'], reason='manual', time='0')
+        )
         mark_down.StillRunningAfter = self._server
         mark_down.StillRunningAfter = self._ts
 

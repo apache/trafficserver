@@ -36,7 +36,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl|http',
         'proxy.config.diags.output.debug': 'L',
-    })
+    }
+)
 
 ts.addDefaultSSLFiles()
 ts.addSSLfile("ssl/signed-foo.pem")
@@ -51,7 +52,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -59,7 +61,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.sni_yaml.AddLines(
     f"""
@@ -69,7 +72,8 @@ ts.Disk.sni_yaml.AddLines(
         client_cert: {ts.Variables.SSLDir}/signed-foo.pem
         client_key: {ts.Variables.SSLDir}/signed-foo.key
         verify_client: STRICT
-      """.split('\n'))
+      """.split('\n')
+)
 
 tr = Test.AddTestRun(f'ensure we can connect for SNI {sni_domain}')
 tr.Setup.Copy("ssl/signed-foo.pem")
@@ -80,7 +84,8 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
     f"-q --tls-max 1.2 -s -v -k  --cert ./signed-foo.pem --key ./signed-foo.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Verify curl could successfully connect")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", f"Verify curl used the {sni_domain} SNI")
@@ -98,7 +103,8 @@ trupd.Disk.sni_yaml.AddLines(
         client_cert: {ts.Variables.SSLDir}/signed-notexist.pem
         client_key: {ts.Variables.SSLDir}/signed-notexist.key
         verify_client: STRICT
-      """.split('\n'))
+      """.split('\n')
+)
 
 trupd.StillRunningAfter = ts
 trupd.StillRunningAfter = server
@@ -117,7 +123,8 @@ tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
     f"-q --tls-max 1.2 -s -v -k  --cert ./signed-bar.pem --key ./signed-bar.key --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}",
-    ts=ts)
+    ts=ts,
+)
 tr3.Processes.Default.ReturnCode = 0
 # since the 2nd config with http2 turned on should have failed and used the prior config, verify http2 was not used
 tr3.Processes.Default.Streams.stderr = Testers.ExcludesExpression("GET / HTTP/2", "Confirm that HTTP2 is still not used")

@@ -56,11 +56,12 @@ class Http2FlowControlTest:
         HTTP2 = 2
 
     def __init__(
-            self,
-            description: str,
-            initial_window_size: Optional[int] = None,
-            max_concurrent_streams: Optional[int] = None,
-            flow_control_policy: Optional[int] = None):
+        self,
+        description: str,
+        initial_window_size: Optional[int] = None,
+        max_concurrent_streams: Optional[int] = None,
+        flow_control_policy: Optional[int] = None,
+    ):
         """Declare the various test Processes.
 
         :param description: A description of the test.
@@ -85,18 +86,22 @@ class Http2FlowControlTest:
 
         self._initial_window_size = initial_window_size
         self._expected_initial_stream_window_size = (
-            initial_window_size if initial_window_size is not None else self._default_initial_window_size)
+            initial_window_size if initial_window_size is not None else self._default_initial_window_size
+        )
 
         self._max_concurrent_streams = max_concurrent_streams
         self._expected_max_concurrent_streams = (
-            max_concurrent_streams if max_concurrent_streams is not None else self._default_max_concurrent_streams)
+            max_concurrent_streams if max_concurrent_streams is not None else self._default_max_concurrent_streams
+        )
 
         self._flow_control_policy = flow_control_policy
         self._expected_flow_control_policy = (
-            flow_control_policy if flow_control_policy is not None else self._default_flow_control_policy)
+            flow_control_policy if flow_control_policy is not None else self._default_flow_control_policy
+        )
 
         self._flow_control_policy_is_malformed = (
-            self._flow_control_policy is not None and self._flow_control_policy not in self._valid_policy_values)
+            self._flow_control_policy is not None and self._flow_control_policy not in self._valid_policy_values
+        )
 
     def _configure_dns(self, tr: 'TestRun') -> 'Process':
         """Configure the DNS."""
@@ -133,39 +138,48 @@ class Http2FlowControlTest:
                 'proxy.config.http.insert_age_in_response': 0,
                 'proxy.config.diags.debug.enabled': 3,
                 'proxy.config.diags.debug.tags': 'http',
-            })
+            }
+        )
 
         if server_type == self.ServerType.HTTP2:
-            ts.Disk.records_config.update({
-                'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
+                }
+            )
 
         if self._initial_window_size is not None:
             if is_outbound:
                 configuration = 'proxy.config.http2.initial_window_size_out'
             else:
                 configuration = 'proxy.config.http2.initial_window_size_in'
-            ts.Disk.records_config.update({
-                configuration: self._initial_window_size,
-            })
+            ts.Disk.records_config.update(
+                {
+                    configuration: self._initial_window_size,
+                }
+            )
 
         if self._flow_control_policy is not None:
             if is_outbound:
                 configuration = 'proxy.config.http2.flow_control.policy_out'
             else:
                 configuration = 'proxy.config.http2.flow_control.policy_in'
-            ts.Disk.records_config.update({
-                configuration: self._flow_control_policy,
-            })
+            ts.Disk.records_config.update(
+                {
+                    configuration: self._flow_control_policy,
+                }
+            )
 
         if self._max_concurrent_streams is not None:
             if is_outbound:
                 configuration = 'proxy.config.http2.max_concurrent_streams_out'
             else:
                 configuration = 'proxy.config.http2.max_concurrent_streams_in'
-            ts.Disk.records_config.update({
-                configuration: self._max_concurrent_streams,
-            })
+            ts.Disk.records_config.update(
+                {
+                    configuration: self._max_concurrent_streams,
+                }
+            )
 
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -173,7 +187,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         if self._server is not None:
             ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._server.Variables.https_port}')
@@ -184,7 +199,8 @@ ssl_multicert:
             else:
                 configuration = 'proxy.config.http2.flow_control.policy_in'
             ts.Disk.diags_log.Content = Testers.ContainsExpression(
-                f"ERROR.*{configuration}", "Expected an error about an invalid flow control policy.")
+                f"ERROR.*{configuration}", "Expected an error about an invalid flow control policy."
+            )
 
         return ts
 
@@ -197,7 +213,8 @@ ssl_multicert:
         :param tr: The TestRun to associate the client with.
         """
         tr.AddVerifierClientProcess(
-            f'client-{Http2FlowControlTest._client_counter}', self._replay_file, https_ports=[self._ts.Variables.ssl_port])
+            f'client-{Http2FlowControlTest._client_counter}', self._replay_file, https_ports=[self._ts.Variables.ssl_port]
+        )
         Http2FlowControlTest._client_counter += 1
 
     def _configure_log_expectations(self, host):
@@ -211,34 +228,38 @@ ssl_multicert:
         # ATS currently always sends a MAX_CONCURRENT_STREAMS setting.
         host.Streams.stdout += Testers.ContainsExpression(
             f'MAX_CONCURRENT_STREAMS:{self._expected_max_concurrent_streams}',
-            f"{hostname} should receive a MAX_CONCURRENT_STREAMS setting.")
+            f"{hostname} should receive a MAX_CONCURRENT_STREAMS setting.",
+        )
 
         if self._initial_window_size is not None:
             host.Streams.stdout += Testers.ContainsExpression(
                 f'INITIAL_WINDOW_SIZE:{self._expected_initial_stream_window_size}',
-                f"{hostname} should receive an INITIAL_WINDOW_SIZE setting.")
+                f"{hostname} should receive an INITIAL_WINDOW_SIZE setting.",
+            )
 
         if self._expected_flow_control_policy == 0:
-            update_window_size = (self._expected_initial_stream_window_size - self._default_initial_window_size)
+            update_window_size = self._expected_initial_stream_window_size - self._default_initial_window_size
             if update_window_size > 0:
                 host.Streams.stdout += Testers.ContainsExpression(
-                    f'WINDOW_UPDATE.*id 0: {update_window_size}', f"{hostname} should receive a session WINDOW_UPDATE.")
+                    f'WINDOW_UPDATE.*id 0: {update_window_size}', f"{hostname} should receive a session WINDOW_UPDATE."
+                )
 
         if self._expected_flow_control_policy in (1, 2):
             # Verify the larger window size.
 
-            session_window_size = (self._expected_initial_stream_window_size * self._expected_max_concurrent_streams)
+            session_window_size = self._expected_initial_stream_window_size * self._expected_max_concurrent_streams
 
             # ATS will send a WINDOW_UPDATE frame to the client to increase
             # the session window size to the configured value from the default
             # value.
-            update_window_size = (session_window_size - self._expected_initial_stream_window_size)
+            update_window_size = session_window_size - self._expected_initial_stream_window_size
 
             # A WINDOW_UPDATE can only increase the window size. So make sure that
             # the new window size is greater than the default window size.
             if update_window_size > Http2FlowControlTest._default_initial_window_size:
                 host.Streams.stdout += Testers.ContainsExpression(
-                    f'WINDOW_UPDATE.*id 0: {update_window_size}', f"{hostname} should receive an initial session WINDOW_UPDATE.")
+                    f'WINDOW_UPDATE.*id 0: {update_window_size}', f"{hostname} should receive an initial session WINDOW_UPDATE."
+                )
             else:
                 # Our test traffic is large enough that eventually we should
                 # send a session WINDOW_UPDATE frame for the smaller window.
@@ -247,7 +268,8 @@ ssl_multicert:
                 # if the client is sending DATA frames in 10 byte chunks due to
                 # a smaller stream window.
                 host.Streams.stdout += Testers.ContainsExpression(
-                    'WINDOW_UPDATE.*id 0: ', f"{hostname} should receive a session WINDOW_UPDATE.")
+                    'WINDOW_UPDATE.*id 0: ', f"{hostname} should receive a session WINDOW_UPDATE."
+                )
 
             if self._expected_flow_control_policy == 2:
                 # Verify the streams window sizes get updated.
@@ -260,18 +282,20 @@ ssl_multicert:
                     # SETTINGS frame which reduces the stream window size.
                     # Allow for either scenario.
                     host.Streams.stdout += Testers.ContainsExpression(
-                        (f'INITIAL_WINDOW_SIZE:{stream_window_1}.*'
-                         f'INITIAL_WINDOW_SIZE:{stream_window_2}.*'),
+                        (f'INITIAL_WINDOW_SIZE:{stream_window_1}.*INITIAL_WINDOW_SIZE:{stream_window_2}.*'),
                         f"{hostname} should stream receive window updates",
-                        reflags=re.DOTALL | re.MULTILINE)
+                        reflags=re.DOTALL | re.MULTILINE,
+                    )
                 else:
                     host.Streams.stdout += Testers.ContainsExpression(
                         (
                             f'INITIAL_WINDOW_SIZE:{stream_window_1}.*'
                             f'INITIAL_WINDOW_SIZE:{stream_window_2}.*'
-                            f'INITIAL_WINDOW_SIZE:{stream_window_3}'),
+                            f'INITIAL_WINDOW_SIZE:{stream_window_3}'
+                        ),
                         f"{hostname} should stream receive window updates",
-                        reflags=re.DOTALL | re.MULTILINE)
+                        reflags=re.DOTALL | re.MULTILINE,
+                    )
 
         if self._expected_initial_stream_window_size < 1000:
             first_id = 5 if self._server else 3
@@ -286,13 +310,16 @@ ssl_multicert:
                 window_update_size = f'{self._expected_initial_stream_window_size}'
             # For the smaller session window sizes, we expect WINDOW_UPDATE frames.
             host.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id {first_id}: {window_update_size}', f"{hostname} should receive a stream WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id {first_id}: {window_update_size}', f"{hostname} should receive a stream WINDOW_UPDATE."
+            )
 
             host.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id {first_id + 2}: {window_update_size}', f"{hostname} should receive a stream WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id {first_id + 2}: {window_update_size}', f"{hostname} should receive a stream WINDOW_UPDATE."
+            )
 
             host.Streams.stdout += Testers.ContainsExpression(
-                f'WINDOW_UPDATE.*id {first_id + 4}: {window_update_size}', f"{hostname} should receive a stream WINDOW_UPDATE.")
+                f'WINDOW_UPDATE.*id {first_id + 4}: {window_update_size}', f"{hostname} should receive a stream WINDOW_UPDATE."
+            )
 
     def _configure_test_run_common(self, tr, is_outbound: bool, server_type: ServerType) -> None:
         """Perform the common Process configuration."""
@@ -310,13 +337,11 @@ ssl_multicert:
 
     def _configure_inbound_http1_to_origin_test_run(self) -> None:
         """Configure the TestRun for inbound stream configuration."""
-        tr = Test.AddTestRun(f'{self._description} - inbound, '
-                             'HTTP/1 Content-Length origin')
+        tr = Test.AddTestRun(f'{self._description} - inbound, HTTP/1 Content-Length origin')
         self._configure_test_run_common(tr, self.IS_INBOUND, self.ServerType.HTTP1_CONTENT_LENGTH)
         self._configure_log_expectations(tr.Processes.Default)
 
-        tr = Test.AddTestRun(f'{self._description} - inbound, '
-                             'HTTP/1 chunked origin')
+        tr = Test.AddTestRun(f'{self._description} - inbound, HTTP/1 chunked origin')
         self._configure_test_run_common(tr, self.IS_INBOUND, self.ServerType.HTTP1_CHUNKED)
         self._configure_log_expectations(tr.Processes.Default)
 
@@ -362,7 +387,8 @@ class Http2DynamicWindowSettingsCapTest:
                 'proxy.config.http2.active_timeout_in': 5,
                 'proxy.config.http2.flow_control.policy_in': 2,
                 'proxy.config.http2.max_concurrent_streams_in': 2,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_port}')
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -370,17 +396,20 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         tr.Processes.Default.StartBefore(server)
         tr.Processes.Default.StartBefore(ts)
         tr.Processes.Default.Command = f'{sys.executable} h2_settings_ack_stall.py {ts.Variables.ssl_port}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'GOAWAY error_code=4', 'ATS should close the connection with SETTINGS_TIMEOUT.')
+            'GOAWAY error_code=4', 'ATS should close the connection with SETTINGS_TIMEOUT.'
+        )
         ts.Disk.diags_log.Content = Testers.ContainsExpression(
             'ERROR: HTTP/2 connection error code=0x04.*send settings too many outstanding SETTINGS frames',
-            'ATS should log the expected SETTINGS_TIMEOUT connection error.')
+            'ATS should log the expected SETTINGS_TIMEOUT connection error.',
+        )
 
 
 #
@@ -410,19 +439,22 @@ test.run()
 test = Http2FlowControlTest(
     description="Flow control policy 0 (default): small initial_window_size",
     initial_window_size=500,  # The default is 65 KB.
-    flow_control_policy=0)
+    flow_control_policy=0,
+)
 test.run()
 test = Http2FlowControlTest(
     description="Flow control policy 1: 100 byte session, 10 byte streams",
     max_concurrent_streams=10,
     initial_window_size=10,
-    flow_control_policy=1)
+    flow_control_policy=1,
+)
 test.run()
 test = Http2FlowControlTest(
     description="Flow control policy 2: 100 byte session, dynamic streams",
     max_concurrent_streams=10,
     initial_window_size=10,
-    flow_control_policy=2)
+    flow_control_policy=2,
+)
 test.run()
 
 test = Http2DynamicWindowSettingsCapTest()

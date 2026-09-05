@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -28,32 +27,28 @@ server = Test.MakeOriginServer("server")
 request_header = {'timestamp': 100, "headers": "GET /test-1 HTTP/1.1\r\nHost: test-1\r\n\r\n", "body": ""}
 response_header = {
     'timestamp': 100,
-    "headers":
-        "HTTP/1.1 200 OK\r\nTest: 1\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n",
-    "body": "Test 1"
+    "headers": "HTTP/1.1 200 OK\r\nTest: 1\r\nContent-Type: application/json\r\nConnection: close\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\n\r\n",
+    "body": "Test 1",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 server.addResponse(
-    "sessionlog.json", {
+    "sessionlog.json",
+    {'timestamp': 101, "headers": "GET /test-2 HTTP/1.1\r\nHost: test-2\r\n\r\n", "body": ""},
+    {
         'timestamp': 101,
-        "headers": "GET /test-2 HTTP/1.1\r\nHost: test-2\r\n\r\n",
-        "body": ""
-    }, {
-        'timestamp': 101,
-        "headers":
-            "HTTP/1.1 200 OK\r\nTest: 2\r\nContent-Type: application/jason\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
-        "body": "Test 2"
-    })
+        "headers": "HTTP/1.1 200 OK\r\nTest: 2\r\nContent-Type: application/jason\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
+        "body": "Test 2",
+    },
+)
 server.addResponse(
-    "sessionlog.json", {
-        'timestamp': 102,
-        "headers": "GET /test-3 HTTP/1.1\r\nHost: test-3\r\n\r\n",
-        "body": ""
-    }, {
+    "sessionlog.json",
+    {'timestamp': 102, "headers": "GET /test-3 HTTP/1.1\r\nHost: test-3\r\n\r\n", "body": ""},
+    {
         'timestamp': 102,
         "headers": "HTTP/1.1 200 OK\r\nTest: 3\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n",
-        "body": "Test 3"
-    })
+        "body": "Test 3",
+    },
+)
 
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 
@@ -64,7 +59,8 @@ ts.Disk.records_config.update(
         #        'proxy.config.net.connections_throttle': 100,
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
         'proxy.config.dns.resolv_conf': 'NULL',
-    })
+    }
+)
 # setup some config file for this server
 ts.Disk.remap_config.AddLine('map / http://localhost:{}/'.format(server.Variables.Port))
 
@@ -77,7 +73,8 @@ logging:
   logs:
     - filename: field-mstsms
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 # first test is a miss for default
 tr = Test.AddTestRun()

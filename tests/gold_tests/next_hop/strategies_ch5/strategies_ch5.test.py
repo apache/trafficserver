@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,21 +24,16 @@ Validates mapWrapped and chashIter work at full ring capacity.
 #
 server = Test.MakeOriginServer("server")
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=85000\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "This is the body.\n"
+    "body": "This is the body.\n",
 }
 num_objects = 32
 for i in range(num_objects):
     request_header = {
-        "headers": f"GET /obj{i} HTTP/1.1\r\n"
-                   "Host: does.not.matter\r\n"
-                   "\r\n",
+        "headers": f"GET /obj{i} HTTP/1.1\r\nHost: does.not.matter\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -60,7 +54,8 @@ for ii in range(num_hosts):
             'proxy.config.diags.debug.tags': 'http|dns',
             'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
             'proxy.config.dns.resolv_conf': "NULL",
-        })
+        }
+    )
     line = f"map / http://127.0.0.1:{server.Variables.Port}"
     if ii < (num_hosts - hosts_per_ring):
         line += " @plugin=header_rewrite.so @pparam=hdr_rw.conf"
@@ -84,7 +79,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
         'proxy.config.http.down_server.cache_time': 1,
         'proxy.config.http.parent_proxy.self_detect': 0,
-    })
+    }
+)
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
 s = ts.Disk.strategies
@@ -131,7 +127,7 @@ tr = Test.AddTestRun()
 ps = tr.Processes.Default
 ps.StartBefore(server)
 ps.StartBefore(dns)
-#for idx in range((num_rings - 1) * hosts_per_ring, len(ts_nh)):
+# for idx in range((num_rings - 1) * hosts_per_ring, len(ts_nh)):
 for idx in range(len(ts_nh)):
     ps.StartBefore(ts_nh[idx])
 ps.StartBefore(Test.Processes.ts)
@@ -148,6 +144,6 @@ for i in range(num_objects):
 
 tr = Test.AddTestRun()
 ps = tr.Processes.Default
-ps.Command = ("grep -F ParentResultType::SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
+ps.Command = "grep -F ParentResultType::SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'"
 ps.Streams.stdout = "trace.gold"
 ps.ReturnCode = 0

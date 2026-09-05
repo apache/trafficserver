@@ -25,13 +25,13 @@ dispatch), .bytes and .transfers (PluginVC intercept transport).
 '''
 
 Test.SkipUnless(
-    Condition.PluginExists('header_rewrite.so'), Condition.PluginExists('conf_remap.so'), Condition.PluginExists('generator.so'))
+    Condition.PluginExists('header_rewrite.so'), Condition.PluginExists('conf_remap.so'), Condition.PluginExists('generator.so')
+)
 
 Test.ContinueOnFail = True
 
 
 class TestPerPluginWorkloadCounters:
-
     def __init__(self):
         self.setUpOriginServer()
         self.setUpTS()
@@ -51,13 +51,16 @@ class TestPerPluginWorkloadCounters:
         self.ts.Disk.plugin_config.AddLine(f'header_rewrite.so {Test.RunDirectory}/global.conf')
         self.ts.Disk.remap_config.AddLine(
             f'map http://test.example http://127.0.0.1:{self.server.Variables.Port} '
-            f'@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1')
+            f'@plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1'
+        )
         self.ts.Disk.remap_config.AddLine('map http://gen.example http://127.0.0.1/ @plugin=generator.so')
 
-        self.ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 0,
-            'proxy.config.diags.debug.tags': 'plugin',
-        })
+        self.ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 0,
+                'proxy.config.diags.debug.tags': 'plugin',
+            }
+        )
 
     def driveTraffic(self):
         # curl as a forward proxy sends an absolute-URI request so the named remap rule (conf_remap)
@@ -68,14 +71,16 @@ class TestPerPluginWorkloadCounters:
         tr.MakeCurlCommand(f'-s -D - -o /dev/null --proxy 127.0.0.1:{self.ts.Variables.port} "http://test.example/"', ts=self.ts)
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            '200 OK', 'request should match the remap rule and be served')
+            '200 OK', 'request should match the remap rule and be served'
+        )
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts
 
         # Drive a generator request: it serves a 4096-byte body through a PluginVC intercept.
         tr = Test.AddTestRun("Drive traffic through a PluginVC intercept plugin")
         tr.MakeCurlCommand(
-            f'-s -o /dev/null --proxy 127.0.0.1:{self.ts.Variables.port} "http://gen.example/nocache/4096"', ts=self.ts)
+            f'-s -o /dev/null --proxy 127.0.0.1:{self.ts.Variables.port} "http://gen.example/nocache/4096"', ts=self.ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.ts
         tr.StillRunningAfter = self.server
@@ -91,17 +96,25 @@ class TestPerPluginWorkloadCounters:
 
     def checkMetrics(self):
         self.checkMetric(
-            "Global plugin invocation counter is non-zero", 'proxy.process.plugin.header_rewrite.invocations',
-            'global header_rewrite invocations should be counted')
+            "Global plugin invocation counter is non-zero",
+            'proxy.process.plugin.header_rewrite.invocations',
+            'global header_rewrite invocations should be counted',
+        )
         self.checkMetric(
-            "Remap plugin invocation counter is non-zero", 'proxy.process.plugin.conf_remap.invocations',
-            'remap conf_remap invocations should be counted')
+            "Remap plugin invocation counter is non-zero",
+            'proxy.process.plugin.conf_remap.invocations',
+            'remap conf_remap invocations should be counted',
+        )
         self.checkMetric(
-            "PluginVC intercept bytes counter is non-zero", 'proxy.process.plugin.generator.bytes',
-            'generator PluginVC transport bytes should be counted')
+            "PluginVC intercept bytes counter is non-zero",
+            'proxy.process.plugin.generator.bytes',
+            'generator PluginVC transport bytes should be counted',
+        )
         self.checkMetric(
-            "PluginVC intercept transfers counter is non-zero", 'proxy.process.plugin.generator.transfers',
-            'generator PluginVC transfer events should be counted')
+            "PluginVC intercept transfers counter is non-zero",
+            'proxy.process.plugin.generator.transfers',
+            'generator PluginVC transfer events should be counted',
+        )
 
     def run(self):
         self.driveTraffic()

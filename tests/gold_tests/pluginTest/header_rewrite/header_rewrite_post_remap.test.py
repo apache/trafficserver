@@ -21,4 +21,6 @@ Test.Summary = '''
 Test header_rewrite attaching a ruleset to the POST_REMAP_HOOK.
 '''
 
-Test.ATSReplayTest(replay_file="header_rewrite_post_remap.replay.yaml",)
+Test.ATSReplayTest(
+    replay_file="header_rewrite_post_remap.replay.yaml",
+)

@@ -159,7 +159,6 @@ class Request(Notification):
 
 
 class BatchRequest(list):
-
     def __init__(self, *args: typing.Union[Request, Notification]):
         for r in args:
             self.append(r)

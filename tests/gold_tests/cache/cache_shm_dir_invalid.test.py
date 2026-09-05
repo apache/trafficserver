@@ -131,7 +131,8 @@ class CacheShmDirInvalidTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.cache.shm.enabled': 1,
@@ -141,7 +142,8 @@ class CacheShmDirInvalidTest:
                 'proxy.config.diags.debug.tags': 'cache_shm',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.http_port}/')
         return ts
@@ -150,30 +152,40 @@ class CacheShmDirInvalidTest:
         # The shm segments themselves are still attached -- the control segment is
         # untouched and clean, so this is specifically the per-stripe directory gate.
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: attaching up to \d+ stripes \(fast restart', f'{label} should attach the existing control segment')
+            r'cache shm: attaching up to \d+ stripes \(fast restart', f'{label} should attach the existing control segment'
+        )
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: attached stripe \S+ \(\d+ bytes\) for key=', f'{label} should attach the existing stripe segment')
+            r'cache shm: attached stripe \S+ \(\d+ bytes\) for key=', f'{label} should attach the existing stripe segment'
+        )
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            r"shm directory invalid for '.+'; falling back to disk read", f'{label} must reject the tampered shm directory')
+            r"shm directory invalid for '.+'; falling back to disk read", f'{label} must reject the tampered shm directory'
+        )
         ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'attaching cached directory from shm for', f'{label} must not fast-attach the tampered directory')
+            r'attaching cached directory from shm for', f'{label} must not fast-attach the tampered directory'
+        )
         # The rejection is per-stripe: the control segment stays valid, so none of
         # the whole-segment drop reasons should appear.
         ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: (schema|ABI) mismatch', f'{label} should reject the directory, not the control segment')
+            r'cache shm: (schema|ABI) mismatch', f'{label} should reject the directory, not the control segment'
+        )
         ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: previous run did not shutdown cleanly', f'{label} should see the shm marked clean')
+            r'cache shm: previous run did not shutdown cleanly', f'{label} should see the shm marked clean'
+        )
 
     def _add_diags_log_assertions(self):
         # ts1 cold start, clean shutdown -- a valid, clean stripe segment to tamper with.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start')
+            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create the shm-backed stripe segment')
+            r'cache shm: created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create the shm-backed stripe segment'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit')
+            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'shm directory invalid for', 'ts1 has no shm directory to reject on cold start')
+            r'shm directory invalid for', 'ts1 has no shm directory to reject on cold start'
+        )
 
         self._add_reject_assertions(self.ts2, 'ts2 (write_pos)')
         self._add_reject_assertions(self.ts3, 'ts3 (freelist[0])')
@@ -181,7 +193,8 @@ class CacheShmDirInvalidTest:
     def _fill(self):
         tr = Test.AddTestRun('Cold-start ts1 and cache an object')
         tr.AddVerifierClientProcess(
-            'shmd-fill-client', self.REPLAY_FILE, http_ports=[self.ts1.Variables.port], keys='fill', other_args='--thread-limit 1')
+            'shmd-fill-client', self.REPLAY_FILE, http_ports=[self.ts1.Variables.port], keys='fill', other_args='--thread-limit 1'
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts1)
         tr.StillRunningAfter = self.server
@@ -191,22 +204,23 @@ class CacheShmDirInvalidTest:
         tr = Test.AddTestRun(f'Drain and clean-shutdown {name}')
         tr.Processes.Default.Env = ts.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
 
     def _poke(self, description, offset, hex_bytes):
         # The previous ts is dead; the stripe segment is just a file now.
         tr = Test.AddTestRun(description)
-        tr.Processes.Default.Command = (f'{sys.executable} ./{self.POKE_SCRIPT} {self._stripe_file} {offset} {hex_bytes}')
+        tr.Processes.Default.Command = f'{sys.executable} ./{self.POKE_SCRIPT} {self._stripe_file} {offset} {hex_bytes}'
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
 
     def _verify_reject(self, ts, key, description):
         tr = Test.AddTestRun(description)
         tr.AddVerifierClientProcess(
-            f'shmd-{key}-client', self.REPLAY_FILE, http_ports=[ts.Variables.port], keys=key, other_args='--thread-limit 1')
+            f'shmd-{key}-client', self.REPLAY_FILE, http_ports=[ts.Variables.port], keys=key, other_args='--thread-limit 1'
+        )
         tr.Processes.Default.StartBefore(ts)
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = ts
@@ -217,7 +231,8 @@ class CacheShmDirInvalidTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._fill()

@@ -56,11 +56,13 @@ class TestOriginOpenFailed:
                 'proxy.config.http.connect_attempts_max_retries': 1,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|ssl',
-            })
+            }
+        )
 
         # Tearing down the failed outbound TLS connect must not crash ATS.
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "received signal|failed assertion", "ATS must not crash on a failed outbound TLS connect")
+            "received signal|failed assertion", "ATS must not crash on a failed outbound TLS connect"
+        )
         return ts
 
     def run(self) -> None:
@@ -68,7 +70,8 @@ class TestOriginOpenFailed:
         tr = Test.AddTestRun("a failed outbound TLS connect is surfaced cleanly")
         tr.Processes.Default.StartBefore(self._ts)
         tr.MakeCurlCommand(
-            f'-s -o /dev/null -w "%{{http_code}}" -H "Host: dead.test" http://127.0.0.1:{self._ts.Variables.port}/', ts=self._ts)
+            f'-s -o /dev/null -w "%{{http_code}}" -H "Host: dead.test" http://127.0.0.1:{self._ts.Variables.port}/', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         # A failed origin connection is surfaced as a 5xx (502 Bad Gateway).
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("50[02]", "a failed origin connect yields a 5xx")

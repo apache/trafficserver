@@ -21,6 +21,7 @@
 '''
 Basic smoke tests.
 '''
+
 Test.Summary = '''
 Test basic functions and directives via remaps.
 '''
@@ -35,5 +36,6 @@ Test.TxnBoxTestAndRun(
     config_key="meta.txn_box.global",
     remap=[
         ['http://alpha.ex/', ('--key=meta.txn_box.remap.alpha', replay_file)],
-        ['http://bravo.ex/', ('--key=meta.txn_box.remap.bravo', replay_file)]
-    ])
+        ['http://bravo.ex/', ('--key=meta.txn_box.remap.bravo', replay_file)],
+    ],
+)

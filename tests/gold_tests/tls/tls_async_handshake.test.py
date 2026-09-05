@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -37,17 +36,15 @@ if os.path.isfile(async_handshake):
     Test.PrepareTestPlugin(async_handshake, ts)
 
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n",
+    "sessionlog.json",
+    {"headers": "GET / HTTP/1.1\r\nuuid: basic\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+    {
+        "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+        "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
-    }, {
-        "headers":
-            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-            "Cache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "ok"
-    })
+        "body": "ok",
+    },
+)
 
 ts.addSSLfile("ssl/server.pem")
 ts.addSSLfile("ssl/server.key")
@@ -60,7 +57,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -68,8 +66,9 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.ssl.async.handshake.enabled': 1,
         'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'ssl|http'
-    })
+        'proxy.config.diags.debug.tags': 'ssl|http',
+    }
+)
 
 tr = Test.AddTestRun("Run-Test")
 tr.MakeCurlCommand("-k -v -H uuid:basic -H host:example.com  https://127.0.0.1:{0}/".format(ts.Variables.ssl_port), ts=ts)

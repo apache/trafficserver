@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,17 +24,13 @@ ts = Test.MakeATSProcess("ts")
 server1 = Test.MakeOriginServer(
     "server1",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)},
+)
 server2 = Test.MakeOriginServer(
     "server2",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed2-foo.pem".format(Test.RunDirectory)},
+)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 request_bad_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: bad_foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -62,21 +57,22 @@ ts.addSSLfile("ssl/signer2.key")
 def ca_cert_overrides(filename):
     return (
         f'@pparam=proxy.config.ssl.client.CA.cert.path={ts.Variables.SSLDir} '
-        f'@pparam=proxy.config.ssl.client.CA.cert.filename={filename}')
+        f'@pparam=proxy.config.ssl.client.CA.cert.filename={filename}'
+    )
 
 
 ts.Disk.remap_config.AddLine(
-    f'map /case1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
-    f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
+    f'map /case1 https://127.0.0.1:{server1.Variables.SSL_Port}/ @plugin=conf_remap.so {ca_cert_overrides("signer.pem")}'
+)
 ts.Disk.remap_config.AddLine(
-    f'map /badcase1 https://127.0.0.1:{server1.Variables.SSL_Port}/ '
-    f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
+    f'map /badcase1 https://127.0.0.1:{server1.Variables.SSL_Port}/ @plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}'
+)
 ts.Disk.remap_config.AddLine(
-    f'map /case2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
-    f'@plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}')
+    f'map /case2 https://127.0.0.1:{server2.Variables.SSL_Port}/ @plugin=conf_remap.so {ca_cert_overrides("signer2.pem")}'
+)
 ts.Disk.remap_config.AddLine(
-    f'map /badcase2 https://127.0.0.1:{server2.Variables.SSL_Port}/ '
-    f'@plugin=conf_remap.so {ca_cert_overrides("signer.pem")}')
+    f'map /badcase2 https://127.0.0.1:{server2.Variables.SSL_Port}/ @plugin=conf_remap.so {ca_cert_overrides("signer.pem")}'
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -84,7 +80,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -98,12 +95,13 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.path': '/tmp',
         'proxy.config.ssl.client.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.url_remap.pristine_host_hdr': 1
-    })
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+    }
+)
 
 # Should succeed
 tr = Test.AddTestRun("Use correct ca bundle for server 1")
-tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand('-k -H "host: foo.com"  http://127.0.0.1:{0}/case1'.format(ts.Variables.port), ts=ts)
 tr.ReturnCode = 0
 tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")

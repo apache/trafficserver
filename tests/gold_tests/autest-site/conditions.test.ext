@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -142,7 +141,8 @@ def HasOpenSSLVersion(self, version):
     exe_ver = match.group(0)
     return self.Condition(
         lambda: _version_tuple(exe_ver) >= _version_tuple(version),
-        "OpenSSL library version is " + exe_ver + ", must be at least " + version)
+        "OpenSSL library version is " + exe_ver + ", must be at least " + version,
+    )
 
 
 def HasOpenSSLQuicClient(self):
@@ -166,7 +166,8 @@ def IsBoringSSL(self):
     return self.Condition(
         # OpenSSL 1.1.1 (compatible; BoringSSL)
         lambda: "compatible; BoringSSL" in openssl_str,
-        "SSL library is not BoringSSL")
+        "SSL library is not BoringSSL",
+    )
 
 
 def IsOpenSSL(self):
@@ -176,7 +177,8 @@ def IsOpenSSL(self):
     return self.Condition(
         # OpenSSL 1.1.1k  25 Mar 2021
         lambda: "OpenSSL" in openssl_str and "compatible; BoringSSL" not in openssl_str,
-        "SSL library is not OpenSSL")
+        "SSL library is not OpenSSL",
+    )
 
 
 def HasLegacyTLSSupport(self):
@@ -218,7 +220,8 @@ def HasLegacyTLSSupport(self):
                     capture_output=True,
                     text=True,
                     timeout=5,
-                    input='Q\n')
+                    input='Q\n',
+                )
                 output = result.stdout + result.stderr
                 return result.returncode == 0 and 'Protocol version: TLSv1' in output
             except subprocess.TimeoutExpired:
@@ -269,7 +272,7 @@ def HasCurlFeature(self, feature):
             # look for line with starting with the Features
             if line.startswith(FEATURE_TAG):
                 # get a features and lower case then for safety
-                line = line[len(FEATURE_TAG):].lower()
+                line = line[len(FEATURE_TAG) :].lower()
                 tokens = line.split()
                 for t in tokens:
                     if t == tag:
@@ -344,7 +347,8 @@ def HasCurlTLSVersionSupport(self, tls_version):
         return _probe_openssl_server(tls_version, client_probe)
 
     return self.Condition(
-        check_curl_tls_support, "Curl does not support TLSv{version} in this environment".format(version=tls_version))
+        check_curl_tls_support, "Curl does not support TLSv{version} in this environment".format(version=tls_version)
+    )
 
 
 def HasATSFeature(self, feature):

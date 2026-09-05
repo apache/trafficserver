@@ -46,7 +46,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': ssl_dir,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'config.reload',
-    })
+    }
+)
 
 # Startup with just the default cert — simple and reliable
 ts.Disk.ssl_multicert_yaml.AddLines(
@@ -55,13 +56,16 @@ ts.Disk.ssl_multicert_yaml.AddLines(
         '  - dest_ip: "*"',
         '    ssl_cert_name: server.pem',
         '    ssl_key_name: server.key',
-    ])
+    ]
+)
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: "*.example.com"',
-    '  verify_client: NONE',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: "*.example.com"',
+        '  verify_client: NONE',
+    ]
+)
 
 ts.Disk.parent_config.AddLine("# empty")
 ts.Disk.cache_config.AddLine("# empty")
@@ -74,7 +78,8 @@ copy_cmds = " && ".join(
     [
         f"cp {ssl_dir}/server.pem {ssl_dir}/cert-{i:02d}.pem && cp {ssl_dir}/server.key {ssl_dir}/cert-{i:02d}.key"
         for i in range(1, NUM_CERTS + 1)
-    ])
+    ]
+)
 
 # Build the 20-entry ssl_multicert.yaml content
 multicert_content = "ssl_multicert:\\n"
@@ -99,7 +104,8 @@ tr.Processes.Default.Command = (
     f'{copy_cmds}'
     f' && printf "{multicert_content}" > {multicert_path}'
     f' && touch {sni_path}'
-    f' && traffic_ctl config reload -t ssl-bulk-ok')
+    f' && traffic_ctl config reload -t ssl-bulk-ok'
+)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -116,7 +122,8 @@ tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("FAIL", "Basel
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("ssl_client_coordinator", "Coordinator should appear")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("SSLCertificateConfig", "SSLCertificateConfig should appear")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "ssl_multicert.yaml finished loading", "ssl_multicert.yaml should finish loading")
+    "ssl_multicert.yaml finished loading", "ssl_multicert.yaml should finish loading"
+)
 tr.StillRunningAfter = ts
 
 # ============================================================================
@@ -130,7 +137,8 @@ break_cmds = [
 ]
 tr = Test.AddTestRun("Break 4 certs in different ways and reload")
 tr.Processes.Default.Command = (
-    " && ".join(break_cmds) + f' && touch {multicert_path} {sni_path}' + f' && traffic_ctl config reload -t ssl-bulk-partial')
+    " && ".join(break_cmds) + f' && touch {multicert_path} {sni_path}' + f' && traffic_ctl config reload -t ssl-bulk-partial'
+)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -147,7 +155,8 @@ tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("FAIL", "Shoul
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("\\[Err\\]", "Error entries should carry [Err] tag")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("cert-05", "Garbage cert-05 should appear in error")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "ssl_multicert.yaml failed to load", "Overall multicert failure should appear")
+    "ssl_multicert.yaml failed to load", "Overall multicert failure should appear"
+)
 tr.StillRunningAfter = ts
 
 # ============================================================================
@@ -169,7 +178,8 @@ fix_cmds = [
 ]
 tr = Test.AddTestRun("Fix all broken certs and recover")
 tr.Processes.Default.Command = (
-    " && ".join(fix_cmds) + f' && touch {multicert_path} {sni_path}' + f' && traffic_ctl config reload -t ssl-bulk-recover')
+    " && ".join(fix_cmds) + f' && touch {multicert_path} {sni_path}' + f' && traffic_ctl config reload -t ssl-bulk-recover'
+)
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -184,19 +194,23 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("FAIL", "Recovery should have no failures")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "ssl_multicert.yaml finished loading", "ssl_multicert.yaml should finish loading after recovery")
+    "ssl_multicert.yaml finished loading", "ssl_multicert.yaml should finish loading after recovery"
+)
 tr.StillRunningAfter = ts
 
 # ============================================================================
 # Global diags.log assertions
 # ============================================================================
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "Config reload \\[ssl-bulk-ok\\] completed", "Baseline reload summary in diags.log")
+    "Config reload \\[ssl-bulk-ok\\] completed", "Baseline reload summary in diags.log"
+)
 
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Config reload \\[ssl-bulk-partial\\] finished with failures", "Partial failure summary in diags.log")
+    "Config reload \\[ssl-bulk-partial\\] finished with failures", "Partial failure summary in diags.log"
+)
 
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Config reload \\[ssl-bulk-recover\\] completed", "Recovery reload summary in diags.log")
+    "Config reload \\[ssl-bulk-recover\\] completed", "Recovery reload summary in diags.log"
+)
 
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("ignoring transition from", "No conflicting terminal state transitions")

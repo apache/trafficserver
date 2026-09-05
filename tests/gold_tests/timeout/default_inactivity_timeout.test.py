@@ -59,25 +59,29 @@ class TestDefaultInactivityTimeout:
         self._ts = ts
 
         debug_tags = 'http|cache|socket|net_queue|inactivity_cop|conf_remap'
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': debug_tags,
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': debug_tags,
+            }
+        )
 
         origin_port = self._server.Variables.http_port
         remap_line = f'map / http://127.0.0.1:{origin_port}'
 
         if self.use_override:
-            remap_line += (' @plugin=conf_remap.so '
-                           '@pparam=proxy.config.net.default_inactivity_timeout=2')
+            remap_line += ' @plugin=conf_remap.so @pparam=proxy.config.net.default_inactivity_timeout=2'
         else:
-            ts.Disk.records_config.update({
-                'proxy.config.net.default_inactivity_timeout': 2,
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.net.default_inactivity_timeout': 2,
+                }
+            )
 
         ts.Disk.remap_config.AddLine(remap_line)
         ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            'timed out due to default inactivity timeout', 'Verify that the default inactivity timeout was triggered.')
+            'timed out due to default inactivity timeout', 'Verify that the default inactivity timeout was triggered.'
+        )
 
     def run(self) -> None:
         """Run the test."""
@@ -88,7 +92,8 @@ class TestDefaultInactivityTimeout:
         tr.Processes.Default.StartBefore(self._server)
         tr.Processes.Default.StartBefore(self._ts)
         tr.AddVerifierClientProcess(
-            f'client-{TestDefaultInactivityTimeout.client_counter}', self.replay_file, http_ports=[self._ts.Variables.port])
+            f'client-{TestDefaultInactivityTimeout.client_counter}', self.replay_file, http_ports=[self._ts.Variables.port]
+        )
         TestDefaultInactivityTimeout.client_counter += 1
 
         # Set up expectectations for the timeout closing the connection.

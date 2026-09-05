@@ -57,27 +57,32 @@ class TestBadRunPlugin:
         self._configure_failed_reload()
         self._configure_post_reload_request()
         self._ts.Disk.diags_log.Content = Testers.IncludesExpression(
-            self.ERROR_MARKER, 'the rejected reload should log the run-plugin failure')
+            self.ERROR_MARKER, 'the rejected reload should log the run-plugin failure'
+        )
 
     def _configure_startup_rejection(self) -> None:
         '''Verify a bad top-level run-plugin fails startup cleanly.'''
         ts = Test.MakeATSProcess("ts-startup", disable_log_checks=True)
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'header_rewrite',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'header_rewrite',
+            }
+        )
         ts.Disk.MakeConfigFile('bad_run_plugin.conf').AddLines(self.BAD_RULE_LINES)
         ts.Disk.remap_config.AddLine(
-            'map http://startup.example.com/ http://127.0.0.1/ '
-            '@plugin=header_rewrite.so @pparam=bad_run_plugin.conf')
+            'map http://startup.example.com/ http://127.0.0.1/ @plugin=header_rewrite.so @pparam=bad_run_plugin.conf'
+        )
 
         # Invalid remap.config triggers a controlled exit rather than SIGABRT.
         ts.ReturnCode = 33
         ts.Ready = 0
         ts.Disk.diags_log.Content = Testers.IncludesExpression(
-            self.ERROR_MARKER, 'header_rewrite must report the failed run-plugin load')
+            self.ERROR_MARKER, 'header_rewrite must report the failed run-plugin load'
+        )
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            'Traffic Server is fully initialized', 'ATS must not initialize with a bad run-plugin config')
+            'Traffic Server is fully initialized', 'ATS must not initialize with a bad run-plugin config'
+        )
 
         tr = Test.AddTestRun("Bad run-plugin config fails startup instead of crashing")
         tr.Processes.Default.Command = 'echo verifying startup rejection'
@@ -90,7 +95,7 @@ class TestBadRunPlugin:
         request_header = {
             "headers": "GET / HTTP/1.1\r\nHost: reload.example.com\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
         server.addResponse("sessionfile.log", request_header, response_header)
@@ -99,10 +104,12 @@ class TestBadRunPlugin:
     def _configure_traffic_server(self) -> 'Process':
         '''Configure ATS with a valid initial remap table.'''
         ts = Test.MakeATSProcess("ts-reload", disable_log_checks=True)
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'header_rewrite',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'header_rewrite',
+            }
+        )
         ts.Disk.MakeConfigFile('nested_bad_run_plugin.conf').AddLines(self.NESTED_BAD_RULE_LINES)
         ts.Disk.remap_config.AddLine(f'map http://reload.example.com http://127.0.0.1:{self._server.Variables.Port}')
         return ts
@@ -111,9 +118,9 @@ class TestBadRunPlugin:
         '''Configure a request that verifies ATS still serves traffic.'''
         tr = Test.AddTestRun(name)
         tr.MakeCurlCommand(
-            f'--proxy 127.0.0.1:{self._ts.Variables.port} "http://reload.example.com" '
-            '-H "Proxy-Connection: keep-alive" --verbose',
-            ts=self._ts)
+            f'--proxy 127.0.0.1:{self._ts.Variables.port} "http://reload.example.com" -H "Proxy-Connection: keep-alive" --verbose',
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.IncludesExpression('200 OK', expectation)
         tr.StillRunningAfter = self._ts
@@ -133,7 +140,8 @@ class TestBadRunPlugin:
         tr.Disk.File(remap_path, id="remap_bad", typename="ats:config")
         tr.Disk.remap_bad.AddLine(
             f'map http://reload.example.com http://127.0.0.1:{self._server.Variables.Port} '
-            '@plugin=header_rewrite.so @pparam=nested_bad_run_plugin.conf')
+            '@plugin=header_rewrite.so @pparam=nested_bad_run_plugin.conf'
+        )
         tr.Processes.Default.Command = 'echo installed bad remap.config'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Env = self._ts.Env
@@ -143,14 +151,16 @@ class TestBadRunPlugin:
     def _configure_failed_reload(self) -> None:
         '''Verify the bad remap table is rejected without stopping ATS.'''
         tr = Test.AddConfigReload(
-            self._ts, expect="fail", delay_start=2, description="Reload with bad run-plugin must be rejected, not fatal")
+            self._ts, expect="fail", delay_start=2, description="Reload with bad run-plugin must be rejected, not fatal"
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 
     def _configure_post_reload_request(self) -> None:
         '''Verify the rejected reload leaves the old configuration active.'''
         self._configure_curl_run(
-            "Server still serves the old config after the rejected reload", 'old config should still serve after a rejected reload')
+            "Server still serves the old config after the rejected reload", 'old config should still serve after a rejected reload'
+        )
 
 
 TestBadRunPlugin()

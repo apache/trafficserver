@@ -76,14 +76,16 @@ class SliceHierarchyTest:
         phases without holding any state.
         """
         self._origin = Test.MakeVerifierServerProcess(
-            f'origin-{self._name}', self._server_replay, other_args=self._origin_key_format)
+            f'origin-{self._name}', self._server_replay, other_args=self._origin_key_format
+        )
 
     def _slice_remap(self, source: str, upstream: str) -> str:
         """Build a remap rule carrying slice in front of cache_range_requests."""
         return (
             f'map {source} {upstream}'
             f' @plugin=slice.so @pparam=--blockbytes-test={self._block_bytes}'
-            ' @plugin=cache_range_requests.so')
+            ' @plugin=cache_range_requests.so'
+        )
 
     def _records(self, ts: 'Process', debug: int) -> None:
         """Apply the records.yaml settings common to both tiers."""
@@ -94,13 +96,15 @@ class SliceHierarchyTest:
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.http.parent_proxy.self_detect': 0,
-            })
+            }
+        )
 
     def _configure_parent(self) -> None:
         """Configure the parent, which the child's block requests reach."""
         self._parent = Test.MakeATSProcess(f'ts-parent-{self._name}')
         self._parent.Disk.remap_config.AddLine(
-            self._slice_remap('http://origin.test/', f'http://127.0.0.1:{self._origin.Variables.http_port}/'))
+            self._slice_remap('http://origin.test/', f'http://127.0.0.1:{self._origin.Variables.http_port}/')
+        )
         self._parent.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
         self._records(self._parent, debug=1)
 
@@ -110,17 +114,19 @@ class SliceHierarchyTest:
         # traffic.out, not diags.log.
         self._parent.Disk.traffic_out.Content = Testers.ContainsExpression(
             'slice passing GET or HEAD request through to next plugin',
-            "The child's block requests should bypass the parent's slice.")
+            "The child's block requests should bypass the parent's slice.",
+        )
         self._parent.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            'slice accepting and slicing', 'The parent should never slice a child block request.')
+            'slice accepting and slicing', 'The parent should never slice a child block request.'
+        )
 
     def _make_child(self, label: str) -> 'Process':
         """Create a child tier that slices and forwards to the parent."""
         ts = Test.MakeATSProcess(f'ts-{label}-{self._name}')
         ts.Disk.remap_config.AddLine(self._slice_remap('http://slice/', 'http://origin.test/'))
         ts.Disk.parent_config.AddLine(
-            f'dest_domain=. parent=127.0.0.1:{self._parent.Variables.port}'
-            ' round_robin=consistent_hash go_direct=false')
+            f'dest_domain=. parent=127.0.0.1:{self._parent.Variables.port} round_robin=consistent_hash go_direct=false'
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
         self._records(ts, debug=1)
         return ts
@@ -140,7 +146,8 @@ class SliceHierarchyTest:
         """Replay the client transaction for one phase against a child."""
         ts = self._child if ts is None else ts
         return tr.AddVerifierClientProcess(
-            f'client-{phase}-{self._name}', self._client_replay, http_ports=[ts.Variables.port], keys=phase)
+            f'client-{phase}-{self._name}', self._client_replay, http_ports=[ts.Variables.port], keys=phase
+        )
 
     def _still_running(self, tr: 'TestRun') -> None:
         """Assert both tiers survive the TestRun."""
@@ -183,14 +190,17 @@ class SliceStaleGenerationTest(SliceHierarchyTest):
 
         for key in self._unreachable_keys:
             self._origin.Streams.stdout += Testers.ExcludesExpression(
-                f'request with key {key}', 'The stale object should never be refetched after the origin object changed.')
+                f'request with key {key}', 'The stale object should never be refetched after the origin object changed.'
+            )
 
         # Debug is enabled on the child, so Config::canLogError cannot suppress a
         # block stitch error by pacing. The stale response is served with none.
         self._child.Disk.diags_log.Content = Testers.ExcludesExpression(
-            'logSliceError', 'The stale response should be served with no block stitch error.')
+            'logSliceError', 'The stale response should be served with no block stitch error.'
+        )
         self._child.Disk.diags_log.Content += Testers.ExcludesExpression(
-            'Mismatch/Bad block Content-Range', 'The stale blocks agree with each other, so nothing should mismatch.')
+            'Mismatch/Bad block Content-Range', 'The stale blocks agree with each other, so nothing should mismatch.'
+        )
 
     def _fill_cache(self) -> None:
         """Cache the whole object while the origin holds the first generation."""
@@ -268,17 +278,21 @@ class SliceMixedGenerationTest(SliceHierarchyTest):
         # block against the reference block, then the refetch against the interior.
         self._child.Disk.diags_log.Content = Testers.ContainsExpression(
             'Mismatch/Bad block Content-Range.*blk_range="16-31".*etag_got="%22v1%22"',
-            'The interior block should disagree with the reference block.')
+            'The interior block should disagree with the reference block.',
+        )
         self._child.Disk.diags_log.Content += Testers.ContainsExpression(
             'Mismatch/Bad block Content-Range.*blk_range="0-15".*etag_got="%22v2%22"',
-            'The refetched reference block should disagree in turn, leaving no way out.')
+            'The refetched reference block should disagree in turn, leaving no way out.',
+        )
 
         # The parent never compares blocks, so it never complains about the mix
         # it is storing and serving to the child.
         self._parent.Disk.diags_log.Content += Testers.ExcludesExpression(
-            'logSliceError', 'The parent should not notice the version mix it holds.')
+            'logSliceError', 'The parent should not notice the version mix it holds.'
+        )
         self._parent.Disk.diags_log.Content += Testers.ExcludesExpression(
-            'Mismatch/Bad block Content-Range', 'The parent should not compare blocks at all.')
+            'Mismatch/Bad block Content-Range', 'The parent should not compare blocks at all.'
+        )
 
     def _fill_interior_block(self) -> None:
         """Cache an interior block at the first generation, on both tiers."""
@@ -300,10 +314,12 @@ class SliceMixedGenerationTest(SliceHierarchyTest):
         # shows up is timing, so accept either. verifier-client exits 1 for both.
         client.ReturnCode = 1
         client.Streams.stdout += Testers.ContainsExpression(
-            'Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE'
-            '|Content-Length body underrun for key mixed', 'The client should not receive a complete response.')
+            'Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE|Content-Length body underrun for key mixed',
+            'The client should not receive a complete response.',
+        )
         client.Streams.stdout += Testers.ContainsExpression(
-            'Failed HTTP/1 transaction with key: mixed', 'The transaction should fail.')
+            'Failed HTTP/1 transaction with key: mixed', 'The transaction should fail.'
+        )
         self._still_running(tr)
 
     def _verify_mix_is_on_the_parent(self) -> None:
@@ -313,9 +329,11 @@ class SliceMixedGenerationTest(SliceHierarchyTest):
         client = self._replay_phase(tr, 'cold-child', ts=self._cold_child)
         client.ReturnCode = 1
         client.Streams.stdout += Testers.ContainsExpression(
-            'Failed HTTP/1 transaction with key: cold-child', 'A node that never saw the old generation should fail the same way.')
+            'Failed HTTP/1 transaction with key: cold-child', 'A node that never saw the old generation should fail the same way.'
+        )
         self._cold_child.Disk.diags_log.Content = Testers.ContainsExpression(
-            'Mismatch/Bad block Content-Range', 'The cold child should hit the same mismatch.')
+            'Mismatch/Bad block Content-Range', 'The cold child should hit the same mismatch.'
+        )
         tr.StillRunningAfter = self._cold_child
         self._still_running(tr)
 

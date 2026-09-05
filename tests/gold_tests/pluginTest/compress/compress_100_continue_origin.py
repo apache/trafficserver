@@ -85,7 +85,8 @@ def handle_connection(conn, addr):
             b'Content-Type: text/javascript\r\n'
             b'Cache-Control: public, max-age=3600\r\n'
             b'Content-Length: ' + str(len(body)).encode() + b'\r\n'
-            b'\r\n' + body)
+            b'\r\n' + body
+        )
         conn.sendall(response)
     except Exception as e:
         print(f'Error handling connection from {addr}: {e}', file=sys.stderr)

@@ -101,7 +101,8 @@ class PacketMarkTest:
                 'proxy.config.url_remap.remap_required': 0,
                 # Keep ATS running as the invoking user inside sudo (no privilege drop).
                 'proxy.config.admin.user_id': '#-1',
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.Port}")
 
     def _add_case(self, echo_header: str, description: str, set_header: str):
@@ -119,10 +120,12 @@ class PacketMarkTest:
             self._started = True
         tr.MakeCurlCommand(
             f'--verbose --ipv4 --header "{set_header}: 0x{self.SET_MARK:08x}" http://localhost:{self._ts.Variables.port}/',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f"{echo_header}: 0x{self.SET_MARK:08x}", f"Observed packet mark should be 0x{self.SET_MARK:08x}")
+            f"{echo_header}: 0x{self.SET_MARK:08x}", f"Observed packet mark should be 0x{self.SET_MARK:08x}"
+        )
 
 
 class ClientPacketMarkTest(PacketMarkTest):
@@ -140,7 +143,8 @@ class ClientPacketMarkTest(PacketMarkTest):
                 'proxy.config.net.sock_option_flag_in': SOCK_OPT_FLAG_PACKET_MARK,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|client_packet_mark',
-            })
+            }
+        )
         Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, f'client_packet_mark.so'), ts)
 
     def run(self):
@@ -168,13 +172,15 @@ class ServerPacketMarkTest(PacketMarkTest):
                 'proxy.config.net.sock_option_flag_out': SOCK_OPT_FLAG_PACKET_MARK,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|server_packet_mark',
-            })
+            }
+        )
         Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, f'server_packet_mark.so'), ts)
 
     def run(self):
         self._add_case(self.ECHO_HEADER, "server_packet_mark sets the server-side mark on the live connection", "X-Set-Mark")
         self._add_case(
-            self.ECHO_HEADER, "server_packet_mark seeds the mark for a future origin connection", "X-Set-Mark-Preconnect")
+            self.ECHO_HEADER, "server_packet_mark seeds the mark for a future origin connection", "X-Set-Mark-Preconnect"
+        )
 
 
 ClientPacketMarkTest().run()

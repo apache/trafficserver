@@ -33,7 +33,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
         'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
-    })
+    }
+)
 
 ts.addDefaultSSLFiles()
 
@@ -45,7 +46,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr = Test.AddTestRun("ensure we can connect for SNI $sni_domain")
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -53,7 +55,8 @@ tr.Processes.Default.StartBefore(server)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}", ts=ts)
+    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}", ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
@@ -71,7 +74,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem_doesnotexist
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Command = 'echo Updated configs'
@@ -88,12 +92,14 @@ tr3.Processes.Default.StartBefore(server2)
 tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}", ts=ts)
+    f"-q -s -v -k --resolve '{sni_domain}:{ts.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts.Variables.ssl_port}", ts=ts
+)
 tr3.Processes.Default.ReturnCode = 0
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr3.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")
 ts.Disk.diags_log.Content = Testers.ExcludesExpression(
-    r'\(quic\).*ssl_multicert', 'QUIC certificates should not load without a configured QUIC listener')
+    r'\(quic\).*ssl_multicert', 'QUIC certificates should not load without a configured QUIC listener'
+)
 
 ##########################################################################
 # Ensure ATS fails/exits when non-existent cert is specified
@@ -107,7 +113,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem_doesnotexist
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr4 = Test.AddTestRun()
 tr4.Processes.Default.Command = 'echo Waiting'
@@ -117,7 +124,8 @@ tr4.Processes.Default.StartBefore(ts2)
 ts2.ReturnCode = 33  # ink_emergency will exit with UNRECOVERABLE_EXIT.
 ts2.Ready = 0  # Need this to be 0 because we are testing shutdown, this is to make autest not think ats went away for a bad reason.
 ts2.Disk.traffic_out.Content = Testers.ExcludesExpression(
-    'Traffic Server is fully initialized', 'process should fail when invalid certificate specified')
+    'Traffic Server is fully initialized', 'process should fail when invalid certificate specified'
+)
 ts2.Disk.diags_log.Content = Testers.IncludesExpression('EMERGENCY: failed to load SSL certificate file', 'check diags.log"')
 
 ##########################################################################
@@ -132,7 +140,8 @@ ts3.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': f'{ts3.Variables.SSLDir}',
         'proxy.config.ssl.server.private_key.path': f'{ts3.Variables.SSLDir}',
-    })
+    }
+)
 
 ts3.addDefaultSSLFiles()
 
@@ -147,7 +156,8 @@ ssl_multicert:
     ssl_key_name: server.key
   - ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr5 = Test.AddTestRun("Verify parallel cert loading")
 tr5.Processes.Default.StartBefore(ts3)
@@ -155,8 +165,8 @@ tr5.Processes.Default.StartBefore(server3)
 tr5.StillRunningAfter = ts3
 tr5.StillRunningAfter = server3
 tr5.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts3.Variables.ssl_port}",
-    ts=ts3)
+    f"-q -s -v -k --resolve '{sni_domain}:{ts3.Variables.ssl_port}:127.0.0.1' https://{sni_domain}:{ts3.Variables.ssl_port}", ts=ts3
+)
 tr5.Processes.Default.ReturnCode = 0
 tr5.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Check response")
 tr5.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_domain}", "Check response")

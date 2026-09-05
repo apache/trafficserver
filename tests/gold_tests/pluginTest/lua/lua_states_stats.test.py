@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -20,7 +19,9 @@ Test.Summary = '''
 Test lua states and stats functionality
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = True
 # Define default ATS
@@ -45,9 +46,10 @@ server.addResponse("sessionfile.log", request_header, response_header)
 ts.Disk.remap_config.AddLines(
     {
         'map / http://127.0.0.1:{}/'.format(server.Variables.Port),
-        'map http://hello http://127.0.0.1:{}/'.format(server.Variables.Port) +
-        ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.RunDirectory)
-    })
+        'map http://hello http://127.0.0.1:{}/'.format(server.Variables.Port)
+        + ' @plugin=tslua.so @pparam={}/hello.lua'.format(Test.RunDirectory),
+    }
+)
 
 ts.Disk.plugin_config.AddLine('tslua.so {}/global.lua'.format(Test.RunDirectory))
 
@@ -56,7 +58,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ts_lua',
         'proxy.config.plugin.lua.max_states': 4,
-    })
+    }
+)
 
 curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} '.format(ts.Variables.port)
 

@@ -30,13 +30,11 @@ tr = Test.TxnBoxTestAndRun(
     remap=[
         ['http://alpha.ex', ['--key=meta.txn-box.alpha', replay_file]],
         ['http://bravo.ex', ['--key=meta.txn-box.bravo', replay_file]],
-        ['http://charlie.ex', ['--key=meta.txn-box.charlie', replay_file]]
-    ])
+        ['http://charlie.ex', ['--key=meta.txn-box.charlie', replay_file]],
+    ],
+)
 ts = tr.Variables.TS
 ts.Setup.Copy(replay_file, ts.Variables.CONFIGDIR)  # because it's remap only - not auto-copied.
 ts.Disk.records_config.update(
-    {
-        'proxy.config.http.cache.http': 0,
-        'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'txn_box'
-    })
+    {'proxy.config.http.cache.http': 0, 'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'txn_box'}
+)

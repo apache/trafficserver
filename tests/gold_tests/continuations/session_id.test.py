@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -30,7 +29,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "tim
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -40,7 +39,8 @@ ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 ts.addDefaultSSLFiles()
 
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'continuations', 'plugins', '.libs', 'session_id_verify.so'), ts)
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'continuations', 'plugins', '.libs', 'session_id_verify.so'), ts
+)
 
 ts.Disk.records_config.update(
     {
@@ -49,7 +49,8 @@ ts.Disk.records_config.update(
         'proxy.config.cache.enable_read_while_writer': 0,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
@@ -59,7 +60,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 #
 # Run some HTTP/1 traffic.
@@ -107,7 +109,7 @@ def verify_session_count(output):
         nReq = numberOfRequests
     else:
         nReq = numberOfRequests * 2
-    session_ids = [line[0:line.find("\n")] for line in str(output).split("session id: ")[1:]]
+    session_ids = [line[0 : line.find("\n")] for line in str(output).split("session id: ")[1:]]
     if len(session_ids) != nReq:
         return "Found {} session_id's, expected {}".format(len(session_ids), nReq)
     return ""

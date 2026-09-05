@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -27,7 +26,9 @@ Slice plugin test for sending ident header
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
 
-Test.SkipUnless(Condition.PluginExists('slice.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('slice.so'),
+)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -61,9 +62,12 @@ request_etag = {
 }
 
 response_etag = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + f'Etag: {etag}\r\n' + f'Last-Modified: {last_modified}\r\n' +
-        "Cache-Control: max-age=500\r\n" + "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+    + "Connection: close\r\n"
+    + f'Etag: {etag}\r\n'
+    + f'Last-Modified: {last_modified}\r\n'
+    + "Cache-Control: max-age=500\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
     "body": body,
 }
@@ -77,9 +81,11 @@ request_lm = {
 }
 
 response_lm = {
-    "headers":
-        "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + f'Last-Modified: {last_modified}\r\n' + "Cache-Control: max-age=500\r\n" +
-        "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\n"
+    + "Connection: close\r\n"
+    + f'Last-Modified: {last_modified}\r\n'
+    + "Cache-Control: max-age=500\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
     "body": body,
 }
@@ -90,19 +96,23 @@ server.addResponse("sessionlog.json", request_lm, response_lm)
 
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts")
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'slice',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'slice',
+    }
+)
 
 ts.Disk.remap_config.AddLines(
     [
         f"map http://preload/ http://127.0.0.1:{server.Variables.Port}",
-        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
-        f'map http://slicecustom/ http://127.0.0.1:{server.Variables.Port}' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}' + ' @pparam=--crr-ident-header=CrrIdent',
-    ])
+        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
+        f'map http://slicecustom/ http://127.0.0.1:{server.Variables.Port}'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}'
+        + ' @pparam=--crr-ident-header=CrrIdent',
+    ]
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -113,7 +123,8 @@ logging:
  logs:
   - filename: transaction
     format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 # helpers for curl
 curl_and_args = f'-s -D /dev/stdout -o /dev/stderr -x localhost:{ts.Variables.port}'
@@ -182,6 +193,6 @@ Test.AddAwaitFileContainsTestRun('Await ts transactions to finish logging.', tsl
 
 # 8 Check logs
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f"cat {tslog}")
+tr.Processes.Default.Command = f"cat {tslog}"
 tr.Streams.stdout = "gold/slice_ident.gold"
 tr.Processes.Default.ReturnCode = 0

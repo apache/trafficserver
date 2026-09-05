@@ -23,7 +23,9 @@ Test.Summary = '''
 Verify correct statichit plugin behavior
 '''
 
-Test.SkipUnless(Condition.PluginExists('statichit.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('statichit.so'),
+)
 
 
 class RemapData:
@@ -82,10 +84,12 @@ remap_data = [
 
 ts = Test.MakeATSProcess('ts')
 
-ts.Disk.records_config.update({
-    "proxy.config.diags.debug.enabled": 1,
-    "proxy.config.diags.debug.tags": "http|statichit",
-})
+ts.Disk.records_config.update(
+    {
+        "proxy.config.diags.debug.enabled": 1,
+        "proxy.config.diags.debug.tags": "http|statichit",
+    }
+)
 
 for d in remap_data:
     arg_str = ''
@@ -96,13 +100,14 @@ for d in remap_data:
 # Dummy test run for copying a file.
 tr = Test.AddTestRun()
 p = tr.Processes.Default
-p.Command = (f'mkdir {Test.RunDirectory}/body_dir ; ' + f'cp {Test.TestDirectory}/small_body.txt {Test.RunDirectory}/body_dir/.')
+p.Command = f'mkdir {Test.RunDirectory}/body_dir ; ' + f'cp {Test.TestDirectory}/small_body.txt {Test.RunDirectory}/body_dir/.'
 
 # Dummy test run for copying a file.
 tr = Test.AddTestRun()
 p = tr.Processes.Default
 p.Command = (
-    f'mkdir {ts.Variables.CONFIGDIR}/statichit ; ' + f'cp {Test.TestDirectory}/small_body.txt {ts.Variables.CONFIGDIR}/statichit/.')
+    f'mkdir {ts.Variables.CONFIGDIR}/statichit ; ' + f'cp {Test.TestDirectory}/small_body.txt {ts.Variables.CONFIGDIR}/statichit/.'
+)
 p.StartBefore(ts)
 p.StillRunningAfter = ts
 

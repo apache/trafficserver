@@ -98,7 +98,8 @@ class CacheShmStorageMismatchTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.cache.shm.enabled': 1,
@@ -108,7 +109,8 @@ class CacheShmStorageMismatchTest:
                 'proxy.config.diags.debug.tags': 'cache_shm',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1/ @plugin=generator.so')
         return ts
@@ -116,34 +118,45 @@ class CacheShmStorageMismatchTest:
     def _add_diags_log_assertions(self):
         # ts1 cold start against storage A, clean shutdown.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start')
+            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create at least one shm-backed stripe segment')
+            r'created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create at least one shm-backed stripe segment'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit')
+            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit'
+        )
 
         # ts2 start against storage B: the storage signature differs, so the
         # control segment is kept (partial attach) but the relocated stripe
         # creates a fresh segment rather than fast-attaching the stale one.
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
             r'attaching up to \d+ stripes \(fast restart, partial -- storage changed\)',
-            'ts2 must enter partial-attach mode after the storage change')
+            'ts2 must enter partial-attach mode after the storage change',
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'created stripe \S+ \(\d+ bytes\) for key=', 'ts2 must create a fresh stripe segment for its own layout')
+            r'created stripe \S+ \(\d+ bytes\) for key=', 'ts2 must create a fresh stripe segment for its own layout'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: reclaiming orphaned stripe segment', "ts2 must reclaim ts1's orphaned stripe segment")
+            r'cache shm: reclaiming orphaned stripe segment', "ts2 must reclaim ts1's orphaned stripe segment"
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'reclaimed \d+ orphaned stripe segment\(s\) after attach', 'ts2 must report the reclaim summary')
+            r'reclaimed \d+ orphaned stripe segment\(s\) after attach', 'ts2 must report the reclaim summary'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
             r'attached stripe \S+ \(\d+ bytes\) for key=',
-            'ts2 must never fast-attach a stripe segment built for a different layout')
+            'ts2 must never fast-attach a stripe segment built for a different layout',
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: creating fresh control segment', 'ts2 must keep the control segment across the storage change')
+            r'cache shm: creating fresh control segment', 'ts2 must keep the control segment across the storage change'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: (schema|ABI) mismatch', 'the recreate must be due to the storage change, not schema/ABI')
+            r'cache shm: (schema|ABI) mismatch', 'the recreate must be due to the storage change, not schema/ABI'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
             r'cache shm: previous run did not shutdown cleanly',
-            'the recreate must be due to the storage change, not an unclean shutdown')
+            'the recreate must be due to the storage change, not an unclean shutdown',
+        )
 
     def _populate_cache(self):
         tr = Test.AddTestRun('Populate cache via ts1 (storage A)')
@@ -151,7 +164,8 @@ class CacheShmStorageMismatchTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('200', 'ts1 first GET should return 200')
         tr.StillRunningAfter = self.ts1
@@ -160,8 +174,8 @@ class CacheShmStorageMismatchTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts1')
         tr.Processes.Default.Env = self.ts1.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shms_ts1 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shms_ts1 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _verify_partial_attach_and_reclaim(self):
@@ -170,10 +184,12 @@ class CacheShmStorageMismatchTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            '200', 'ts2 should serve correctly after the partial attach')
+            '200', 'ts2 should serve correctly after the partial attach'
+        )
         tr.StillRunningAfter = self.ts2
 
     def _clean_shutdown_ts2(self):
@@ -183,8 +199,8 @@ class CacheShmStorageMismatchTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts2')
         tr.Processes.Default.Env = self.ts2.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shms_ts2 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shms_ts2 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _cleanup_shm(self):
@@ -197,7 +213,8 @@ class CacheShmStorageMismatchTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._populate_cache()

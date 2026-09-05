@@ -40,7 +40,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
     else:
         ts.Disk.ssl_multicert_config.AddLine("dest_ip=* ssl_cert_name=server.pem ssl_key_name=server.key")
 
@@ -60,7 +61,8 @@ class TestHttp3PythonClient:
     def _configure_server(self):
         """Configure the Proxy Verifier origin server."""
         self._server = Test.MakeVerifierServerProcess(
-            "server-python-h3-client", self.replay_file, verbose=False, other_args="--poll-timeout 30000")
+            "server-python-h3-client", self.replay_file, verbose=False, other_args="--poll-timeout 30000"
+        )
 
     def _configure_traffic_server(self):
         """Configure Traffic Server."""
@@ -78,7 +80,8 @@ class TestHttp3PythonClient:
                 'proxy.config.quic.server.stateless_retry_enabled': 0,
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
         ts.Disk.logging_yaml.AddLines(
             '''
@@ -90,15 +93,18 @@ logging:
   logs:
     - filename: h3_python_access
       format: h3_python_access
-'''.split("\n"))
+'''.split("\n")
+        )
 
         self._access_log = Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'h3_python_access.log'), exists=True)
         self._access_log.Content = Testers.ContainsExpression(
             r'c_alpn=h3 client_version=http/3 c_method=GET c_url=https://py\.example\.com:[0-9]+/py-get-empty',
-            "ATS should log the aioquic request as HTTP/3")
+            "ATS should log the aioquic request as HTTP/3",
+        )
         self._access_log.Content += Testers.ContainsExpression(
             r'c_alpn=h3 client_version=http/3 c_method=PUT c_url=https://py\.example\.com:[0-9]+/py-put-large',
-            "ATS should log the aioquic large PUT as HTTP/3")
+            "ATS should log the aioquic large PUT as HTTP/3",
+        )
 
         self._ts = ts
 
@@ -113,17 +119,21 @@ logging:
             f'"{sys.executable}" "{os.path.join(client_dir, "h3_client.py")}" '
             f'--addr 127.0.0.1:{self._ts.Variables.ssl_port} '
             f'--authority py.example.com:{self._ts.Variables.ssl_port} '
-            '--server-name py.example.com')
+            '--server-name py.example.com'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            "completed 18 Python HTTP/3 checks", "The aioquic client should complete all HTTP/3 checks.")
+            "completed 18 Python HTTP/3 checks", "The aioquic client should complete all HTTP/3 checks."
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Wait for aioquic HTTP/3 access log")
         tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self._ts.Variables.LOGDIR, 'h3_python_access.log'))
+            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
+            + ' 60 1 -f '
+            + os.path.join(self._ts.Variables.LOGDIR, 'h3_python_access.log')
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts

@@ -39,7 +39,8 @@ def parse_args() -> argparse.Namespace:
         default='pipeline',
         choices=['pipeline', 'conflicting_cl'],
         help="Which request to send: a body-less POST followed by a pipelined "
-        "request, or a request with conflicting Content-Length headers.")
+        "request, or a request with conflicting Content-Length headers.",
+    )
     return parser.parse_args()
 
 
@@ -66,7 +67,8 @@ def build_request(mode: str, host: str) -> bytes:
             f'GET /second HTTP/1.1\r\n'
             f'Host: {host}\r\n'
             f'X-Marker: second-request\r\n'
-            f'\r\n').encode()
+            f'\r\n'
+        ).encode()
 
     return (
         f'POST / HTTP/1.1\r\n'
@@ -77,7 +79,8 @@ def build_request(mode: str, host: str) -> bytes:
         f'GET /second HTTP/1.1\r\n'
         f'Host: {host}\r\n'
         f'X-Marker: second-request\r\n'
-        f'\r\n').encode()
+        f'\r\n'
+    ).encode()
 
 
 def main() -> int:

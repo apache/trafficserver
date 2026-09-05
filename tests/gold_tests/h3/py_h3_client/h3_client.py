@@ -133,7 +133,8 @@ class H3ClientProtocol(QuicConnectionProtocol):
                 [
                     (b"content-type", b"application/octet-stream"),
                     (b"content-length", str(request_case.request_size).encode()),
-                ])
+                ]
+            )
 
         request_body = generated_body(request_case.request_size)
         self._http.send_headers(stream_id, headers, end_stream=not request_body)
@@ -150,7 +151,8 @@ class H3ClientProtocol(QuicConnectionProtocol):
             if response is None:
                 raise TimeoutError(
                     f"{request_case.name}: timed out before receiving response headers; raw QUIC stream bytes={raw_response_bytes}; "
-                    f"events=[{event_summary}]") from e
+                    f"events=[{event_summary}]"
+                ) from e
             raise TimeoutError(
                 f"{request_case.name}: timed out after receiving {len(response.header_blocks)} header block(s) and "
                 f"{len(response.body)} response byte(s); raw QUIC stream bytes={raw_response_bytes}; events=[{event_summary}]"
@@ -273,9 +275,11 @@ async def run_edge_cases(host: str, port: int, authority: str, server_name: str)
         print("ok py-unknown-unidirectional-stream")
 
     await expect_connection_error(
-        host, port, server_name, "py-client-push-stream-rejected", lambda client: client.send_client_push_stream())
+        host, port, server_name, "py-client-push-stream-rejected", lambda client: client.send_client_push_stream()
+    )
     await expect_connection_error(
-        host, port, server_name, "py-duplicate-control-stream-rejected", lambda client: client.send_duplicate_control_stream())
+        host, port, server_name, "py-duplicate-control-stream-rejected", lambda client: client.send_duplicate_control_stream()
+    )
     async with await connect_h3(host, port, server_name) as client:
         client.send_reserved_request_frame()
         request_case = RequestCase("py-edge-after-reserved", b"GET", "/py-edge-after-reserved", response_size=100)
@@ -284,7 +288,8 @@ async def run_edge_cases(host: str, port: int, authority: str, server_name: str)
         print("ok py-reserved-request-frame-ignored")
 
     await expect_connection_error(
-        host, port, server_name, "py-data-before-headers-rejected", lambda client: client.send_data_before_headers())
+        host, port, server_name, "py-data-before-headers-rejected", lambda client: client.send_data_before_headers()
+    )
 
 
 async def async_main() -> None:

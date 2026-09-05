@@ -30,10 +30,12 @@ Test parent.config reload via ConfigRegistry.
 Test.ContinueOnFail = True
 
 ts = Test.MakeATSProcess("ts")
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'parent_select|config',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'parent_select|config',
+    }
+)
 
 # Initial parent.config with a simple rule
 ts.Disk.parent_config.AddLine('dest_domain=example.com parent="origin.example.com:80"')
@@ -61,8 +63,7 @@ tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Change parent retry_time record value")
 p = tr.Processes.Process("reload-2")
-p.Command = ("traffic_ctl config set proxy.config.http.parent_proxy.retry_time 60; "
-             "sleep 30")
+p.Command = "traffic_ctl config set proxy.config.http.parent_proxy.retry_time 60; sleep 30"
 p.Env = ts.Env
 p.ReturnCode = Any(0, -2)
 # Wait for the 3rd "finished loading"

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -20,11 +19,12 @@ Test.Summary = '''
 Verify transaction data sink.
 '''
 
-Test.SkipUnless(Condition.PluginExists('txn_data_sink.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('txn_data_sink.so'),
+)
 
 
 class TransactionDataSyncTest:
-
     replay_file = "transaction-with-body.replays.yaml"
 
     def __init__(self):
@@ -48,7 +48,8 @@ class TransactionDataSyncTest:
                 "proxy.config.dns.nameservers": f"127.0.0.1:{self.nameserver.Variables.Port}",
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|txn_data_sink',
-            })
+            }
+        )
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.remap_config.AddLine(f'map / http://localhost:{self.server.Variables.http_port}/')
         self.ts.Disk.ssl_multicert_yaml.AddLines(
@@ -57,7 +58,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self.ts.Disk.plugin_config.AddLine('txn_data_sink.so')
 
         # All of the bodies that contained "not_dumped" were not configured to
@@ -66,17 +68,23 @@ ssl_multicert:
 
         # Verify that each of the configured transaction bodies were dumped.
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            'http1.1_cl_response_body_dumped', "The expected HTTP/1.1 Content-Length response body was dumped.")
+            'http1.1_cl_response_body_dumped', "The expected HTTP/1.1 Content-Length response body was dumped."
+        )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            'http1.1_chunked_response_body_dumped', "The expected HTTP/1.1 chunked response body was dumped.")
+            'http1.1_chunked_response_body_dumped', "The expected HTTP/1.1 chunked response body was dumped."
+        )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            'http1.1_cl_request_body_dumped', "The expected HTTP/1.1 Content-Length request body was dumped.")
+            'http1.1_cl_request_body_dumped', "The expected HTTP/1.1 Content-Length request body was dumped."
+        )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            'http1.1_chunked_request_body_dumped', "The expected HTTP/1.1 chunked request body was dumped.")
+            'http1.1_chunked_request_body_dumped', "The expected HTTP/1.1 chunked request body was dumped."
+        )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            '"http2_response_body_dumped"', "The expected HTTP/2 response body was dumped.")
+            '"http2_response_body_dumped"', "The expected HTTP/2 response body was dumped."
+        )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            'http2_request_body_dumped', "The expected HTTP/2 request body was dumped.")
+            'http2_request_body_dumped', "The expected HTTP/2 request body was dumped."
+        )
 
     def run(self):
         """Configure a TestRun for the test."""
@@ -85,7 +93,8 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self.nameserver)
         tr.Processes.Default.StartBefore(self.ts)
         tr.AddVerifierClientProcess(
-            "client", self.replay_file, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+            "client", self.replay_file, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port]
+        )
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.nameserver
         tr.StillRunningAfter = self.ts

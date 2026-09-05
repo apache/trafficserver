@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -38,7 +37,7 @@ request_bar_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "tim
 request_pp_header = {
     "headers": "GET /proxy_protocol HTTP/1.1\r\nHost: proxy.protocol.port.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 response_foo_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "foo ok"}
 response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "bar ok"}
@@ -80,7 +79,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: signed-foo.pem
     ssl_key_name: signed-foo.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -88,8 +88,9 @@ ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.http.connect_ports':
-            '{0} {1} {2}'.format(ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port),
+        'proxy.config.http.connect_ports': '{0} {1} {2}'.format(
+            ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port
+        ),
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
@@ -97,8 +98,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
         'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 ts.addPrivateConnectAllowYaml()
 
 # foo.com should not terminate.  Just tunnel to server_foo
@@ -129,7 +131,8 @@ ts.Disk.sni_yaml.AddLines(
         "  tunnel_route: backend.$1.with.incoming.port.com:{inbound_local_port}",
         "- fqdn: '*.with.proxy.protocol.port.com'",
         "  tunnel_route: backend.$1.with.proxy.protocol.port.com:{proxy_protocol_port}",
-    ])
+    ]
+)
 
 tr = Test.AddTestRun("foo.com Tunnel-test")
 tr.TimeOut = 5
@@ -145,7 +148,8 @@ tr.StillRunningAfter = server_bar
 tr.StillRunningAfter = dns
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
@@ -158,7 +162,8 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
@@ -180,7 +185,8 @@ tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should get a response from bar")
@@ -188,12 +194,14 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should
 tr = Test.AddTestRun("one.match.com Tunnel-test")
 tr.TimeOut = 5
 tr.MakeCurlCommand(
-    "-vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-vvv --resolve 'one.match.com:{0}:127.0.0.1' -k  https://one.match.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
@@ -202,12 +210,14 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should
 tr = Test.AddTestRun("one.ok.two.com Tunnel-test")
 tr.TimeOut = 5
 tr.MakeCurlCommand(
-    "-vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https://one.ok.two.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-vvv --resolve 'one.ok.two.com:{0}:127.0.0.1' -k  https://one.ok.two.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("ATS", "Do not terminate on Traffic Server")
@@ -216,7 +226,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("foo ok", "Should
 tr = Test.AddTestRun("test {inbound_local_port}")
 tr.TimeOut = 5
 tr.MakeCurlCommand(
-    "-vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-vvv --resolve 'incoming.port.com:{0}:127.0.0.1' -k  https://incoming.port.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 # The tunnel connecting to the outgoing port which is the same as the incoming
 # port (per the `inbound_local_port` configuration) will result in ATS
 # connecting back to itself. This will result in a connection close and a
@@ -225,7 +236,8 @@ tr.MakeCurlCommand(
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"CONNECT tunnel://backend.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1", "Verify a CONNECT request is handled")
+    f"CONNECT tunnel://backend.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1", "Verify a CONNECT request is handled"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Cycle Detected", "The loop should be detected")
 
 tr = Test.AddTestRun("test {proxy_protocol_port}")
@@ -235,7 +247,8 @@ tr.Processes.Default.Command = (
     f'{sys.executable} proxy_protocol_client.py '
     f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} proxy.protocol.port.com '
     f'127.0.0.1 127.0.0.1 60123 {server_foo.Variables.SSL_Port} '
-    f'2 --https')
+    f'2 --https'
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify a successful response is received")
@@ -253,29 +266,35 @@ tr.Processes.Default.Command = (
     f'{sys.executable} proxy_protocol_client.py '
     f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} proxy.protocol.port.com '
     f'127.0.0.1 127.0.0.1 60123 {rejected_port} '
-    f'2 --https')
+    f'2 --https'
+)
 tr.ReturnCode = 1
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify a the handshake failed")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    f"Rejected a tunnel to port {rejected_port} not in connect_ports", "Verify the tunnel was rejected")
+    f"Rejected a tunnel to port {rejected_port} not in connect_ports", "Verify the tunnel was rejected"
+)
 
 tr = Test.AddTestRun("test wildcard with inbound_local_port")
 tr.TimeOut = 5
 tr.MakeCurlCommand(
     "-vvv --resolve 'wildcard.with.incoming.port.com:{0}:127.0.0.1' -k  https://wildcard.with.incoming.port.com:{0}".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 
 # See the inbound_local_port test above for the explanation of the return code.
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     rf"Destination now is \[backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port}\]",
-    "Verify the tunnel destination is expanded correctly.")
+    "Verify the tunnel destination is expanded correctly.",
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"CONNECT tunnel://backend.wildcard.with.incoming.port.com:{ts.Variables.ssl_port} HTTP/1.1",
-    "Verify a CONNECT request is handled")
+    "Verify a CONNECT request is handled",
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression("HTTP/1.1 400 Cycle Detected", "The loop should be detected")
 
 tr = Test.AddTestRun("test wildcard with proxy_protocol_port")
@@ -285,12 +304,14 @@ tr.Processes.Default.Command = (
     f'{sys.executable} proxy_protocol_client.py '
     f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
     f'127.0.0.1 127.0.0.1 60123 {server_foo.Variables.SSL_Port} '
-    f'2 --https')
+    f'2 --https'
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     rf"Destination now is \[backend.wildcard.with.proxy.protocol.port.com:{server_foo.Variables.SSL_Port}\]",
-    "Verify the tunnel destination is expanded correctly.")
+    "Verify the tunnel destination is expanded correctly.",
+)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify a successful response is received")
 
 # Regression: a tunnel_route that combines $N match groups with a port variable
@@ -304,25 +325,29 @@ tr.Processes.Default.Command = (
     f'{sys.executable} proxy_protocol_client.py '
     f'127.0.0.1 {ts.Variables.proxy_protocol_ssl_port} wildcard.with.proxy.protocol.port.com '
     f'127.0.0.1 127.0.0.1 60123 {wildcard_rejected_port} '
-    f'2 --https')
+    f'2 --https'
+)
 tr.ReturnCode = 1
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ssl.SSL.*Error:.*EOF", "Verify the handshake failed")
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     f"Rejected a tunnel to port {wildcard_rejected_port} not in connect_ports",
-    "Verify the tunnel was rejected even though the route uses a $N match group")
+    "Verify the tunnel was rejected even though the route uses a $N match group",
+)
 
 # Update sni file and reload
 tr = Test.AddTestRun("Update config files")
 # Update the SNI config
 snipath = ts.Disk.sni_yaml.AbsPath
 recordspath = ts.Disk.records_config.AbsPath
-tr.Disk.File(snipath, id="sni_yaml", typename="ats:config"),
-tr.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bar.com',
-    '  tunnel_route: localhost:{0}'.format(server_bar.Variables.SSL_Port),
-])
+(tr.Disk.File(snipath, id="sni_yaml", typename="ats:config"),)
+tr.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bar.com',
+        '  tunnel_route: localhost:{0}'.format(server_bar.Variables.SSL_Port),
+    ]
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server_foo
 tr.StillRunningAfter = server_bar
@@ -385,20 +410,31 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("bar ok", "Should
 
 tr = Test.AddTestRun("Test Metrics")
 tr.Processes.Default.Command = (
-    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
-    " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
-    " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
-    " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
-    " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
-    " proxy.process.tunnel.current_client_connections_blind_tcp" + " proxy.process.tunnel.total_server_connections_blind_tcp" +
-    " proxy.process.tunnel.current_server_connections_blind_tcp" + " proxy.process.tunnel.total_client_connections_tls_tunnel" +
-    " proxy.process.tunnel.current_client_connections_tls_tunnel" + " proxy.process.tunnel.total_client_connections_tls_forward" +
-    " proxy.process.tunnel.current_client_connections_tls_forward" +
-    " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
-    " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
-    " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
-    " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
-    f" {Test.TestDirectory}/gold/tls-tunnel-metrics.gold")
+    f"{Test.Variables.AtsTestToolsDir}/stdout_wait"
+    + " 'traffic_ctl metric get"
+    + " proxy.process.http.total_incoming_connections"
+    + " proxy.process.http.total_client_connections"
+    + " proxy.process.http.total_client_connections_ipv4"
+    + " proxy.process.http.total_client_connections_ipv6"
+    + " proxy.process.http.total_server_connections"
+    + " proxy.process.http2.total_client_connections"
+    + " proxy.process.http.connect_requests"
+    + " proxy.process.tunnel.total_client_connections_blind_tcp"
+    + " proxy.process.tunnel.current_client_connections_blind_tcp"
+    + " proxy.process.tunnel.total_server_connections_blind_tcp"
+    + " proxy.process.tunnel.current_server_connections_blind_tcp"
+    + " proxy.process.tunnel.total_client_connections_tls_tunnel"
+    + " proxy.process.tunnel.current_client_connections_tls_tunnel"
+    + " proxy.process.tunnel.total_client_connections_tls_forward"
+    + " proxy.process.tunnel.current_client_connections_tls_forward"
+    + " proxy.process.tunnel.total_client_connections_tls_partial_blind"
+    + " proxy.process.tunnel.current_client_connections_tls_partial_blind"
+    + " proxy.process.tunnel.total_client_connections_tls_http"
+    + " proxy.process.tunnel.current_client_connections_tls_http"
+    + " proxy.process.tunnel.total_server_connections_tls"
+    + " proxy.process.tunnel.current_server_connections_tls'"
+    + f" {Test.TestDirectory}/gold/tls-tunnel-metrics.gold"
+)
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0

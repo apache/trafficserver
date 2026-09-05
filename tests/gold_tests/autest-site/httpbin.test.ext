@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -27,7 +26,8 @@ def MakeHttpBinServer(self, name, ip='127.0.0.1', port=None, options={}) -> 'Pro
         port = get_port(p, "Port")
 
     self._RootRunable.SkipUnless(
-        Condition.HasProgram("go-httpbin", "go-httpbin needs be installed and in PATH for this extension to run"))
+        Condition.HasProgram("go-httpbin", "go-httpbin needs be installed and in PATH for this extension to run")
+    )
 
     command = f"go-httpbin -host {ip} -port {port} "
     for flag, value in options.items():

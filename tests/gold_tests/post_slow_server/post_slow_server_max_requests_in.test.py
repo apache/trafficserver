@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -34,7 +33,8 @@ class PostAndMaxRequestsInTest:
     def __setupOriginServer(self):
         Test.GetTcpPort("server_port")
         self.origin_server = Test.Processes.Process(
-            "server", "bash -c '" + Test.TestDirectory + "/server.sh {}'".format(Test.Variables.server_port))
+            "server", "bash -c '" + Test.TestDirectory + "/server.sh {}'".format(Test.Variables.server_port)
+        )
 
     def __setupTS(self):
         self.ts = Test.MakeATSProcess("ts")
@@ -46,11 +46,14 @@ class PostAndMaxRequestsInTest:
                 'proxy.config.http.connect_attempts_timeout': 1,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|socket|v_net_queue",
-            })
+            }
+        )
 
-        self.ts.Disk.remap_config.AddLines([
-            f"map / https://127.0.0.1:{Test.Variables.server_port}/",
-        ])
+        self.ts.Disk.remap_config.AddLines(
+            [
+                f"map / https://127.0.0.1:{Test.Variables.server_port}/",
+            ]
+        )
 
     def __testCase0(self):
         """

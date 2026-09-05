@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -31,10 +30,11 @@ server_foo = Test.MakeOriginServer(
         "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
         "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory),
         "--clientCA": cafile,
-        "--clientverify": ""
+        "--clientverify": "",
     },
     clientcert="{0}/signed-bar.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-bar.key".format(Test.RunDirectory),
+)
 server_bar = Test.MakeOriginServer(
     "server_bar",
     ssl=True,
@@ -42,10 +42,11 @@ server_bar = Test.MakeOriginServer(
         "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
         "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory),
         "--clientCA": cafile,
-        "--clientverify": ""
+        "--clientverify": "",
     },
     clientcert="{0}/signed-bar.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-bar.key".format(Test.RunDirectory),
+)
 
 dns = Test.MakeDNServer("dns")
 
@@ -77,11 +78,15 @@ ts.addSSLfile("ssl/signer.key")
 ts.Disk.remap_config.AddLine('map http://foo.com/defaultbar https://bar.com:{0}'.format(server_bar.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine('map http://foo.com/default https://foo.com:{0}'.format(server_foo.Variables.SSL_Port))
 ts.Disk.remap_config.AddLine(
-    'map http://foo.com/overridepolicy https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'
-    .format(server_foo.Variables.SSL_Port))
+    'map http://foo.com/overridepolicy https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.policy=ENFORCED'.format(
+        server_foo.Variables.SSL_Port
+    )
+)
 ts.Disk.remap_config.AddLine(
-    'map http://foo.com/overrideproperties https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE'
-    .format(server_foo.Variables.SSL_Port))
+    'map http://foo.com/overrideproperties https://bar.com:{0} @plugin=conf_remap.so @pparam=proxy.config.ssl.client.verify.server.properties=SIGNATURE'.format(
+        server_foo.Variables.SSL_Port
+    )
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -89,7 +94,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # global config policy=permissive properties=all
 ts.Disk.records_config.update(
@@ -107,8 +113,9 @@ ts.Disk.records_config.update(
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.ssl.client.sni_policy': 'remap'
-    })
+        'proxy.config.ssl.client.sni_policy': 'remap',
+    }
+)
 
 ts.Disk.sni_yaml.AddLines(
     [
@@ -116,7 +123,8 @@ ts.Disk.sni_yaml.AddLines(
         '- fqdn: bar.com',
         '  client_cert: "{0}/signed-foo.pem"'.format(ts.Variables.SSLDir),
         '  client_key: "{0}/signed-foo.key"'.format(ts.Variables.SSLDir),
-    ])
+    ]
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -129,7 +137,7 @@ tr.Setup.Copy("ssl/signed-foo.key")
 tr.Setup.Copy("ssl/signed-foo.pem")
 tr.Setup.Copy("ssl/signed-bar.key")
 tr.Setup.Copy("ssl/signed-bar.pem")
-tr.MakeCurlCommand('-k -H \"host: foo.com\"  http://127.0.0.1:{0}/defaultbar'.format(ts.Variables.port), ts=ts)
+tr.MakeCurlCommand('-k -H "host: foo.com"  http://127.0.0.1:{0}/defaultbar'.format(ts.Variables.port), ts=ts)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(dns)
 tr.Processes.Default.StartBefore(server_foo)
@@ -154,6 +162,8 @@ tr2.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 
 # Over riding the built in ERROR check since we expect some cases to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    r"WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing")
+    r"WARNING: SNI \(bar.com\) not in certificate. Action=Continue server=bar.com", "Warning for mismatch name not enforcing"
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r" WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch")
+    r" WARNING: SNI \(bar.com\) not in certificate. Action=Terminate server=bar.com", "Warning for enforcing mismatch"
+)

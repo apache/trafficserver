@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -46,7 +45,8 @@ ssl_multicert:
     ssl_key_name: signed-bar.key
   - dest_ip: "*"
     ssl_cert_name: combo.pem
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -58,15 +58,17 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
         'proxy.config.diags.debug.tags': 'ssl|http|lm',
-        'proxy.config.diags.debug.enabled': 1
-    })
+        'proxy.config.diags.debug.enabled': 1,
+    }
+)
 
 # Should receive a bar.com cert issued by first signer
 tr = Test.AddTestRun("bar.com cert signer1")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -79,12 +81,14 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 
 tr = Test.AddTestRun("bar.com cert signer2")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 60
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "unable to get local issuer certificate", "Server certificate not issued by expected signer")
+    "unable to get local issuer certificate", "Server certificate not issued by expected signer"
+)
 
 # Pause a little to ensure mtime will be updated
 tr = Test.AddTestRun("Pause a little to ensure mtime will be different")
@@ -107,14 +111,17 @@ tr.Processes.Default.StartBefore(server3)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 60
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "unable to get local issuer certificate", "Server certificate not issued by expected signer")
+    "unable to get local issuer certificate", "Server certificate not issued by expected signer"
+)
 
 tr = Test.AddTestRun("Try with signer 2 again")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}/random".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
