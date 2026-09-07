@@ -514,9 +514,13 @@ QUICNetVConnection::negotiated_version() const
 std::string_view
 QUICNetVConnection::negotiated_application_name() const
 {
-  const uint8_t *name;
+  const uint8_t *name     = nullptr;
   size_t         name_len = 0;
   quiche_conn_application_proto(this->_quiche_con, &name, &name_len);
+
+  if (name == nullptr) {
+    return std::string_view{""};
+  }
 
   return std::string_view(reinterpret_cast<const char *>(name), name_len);
 }
