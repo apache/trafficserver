@@ -429,7 +429,8 @@ Display the current value of a configuration record.
       - ``directive_key`` — the directive name understood by that handler
       - ``value`` — the directive value (always passed as a string on the wire)
 
-      Multiple directives are passed as space-separated values after a single ``-D``:
+      Multiple directives are passed as space-separated values after a single ``-D``, or by
+      repeating the option. Both spellings accumulate, and they may be mixed:
 
       .. code-block:: bash
 
@@ -441,6 +442,12 @@ Display the current value of a configuration record.
 
          # Directives for different handlers in the same reload
          $ traffic_ctl config reload -D myconfig.id=foo sni.fqdn=example.com
+
+         # The same, written as a repeated option
+         $ traffic_ctl config reload -D myconfig.id=foo -D sni.fqdn=example.com
+
+         # Repeating it is how a directive is written after another option
+         $ traffic_ctl config reload -D myconfig.id=foo --monitor -D sni.fqdn=example.com
 
       On the wire, ``-D myconfig.id=foo`` translates to:
 
@@ -456,11 +463,23 @@ Display the current value of a configuration record.
 
       .. note::
 
-         ``-D`` uses variable-argument parsing and must appear as the **last option**
-         on the command line. Any flags placed after ``-D`` will be consumed as directive
-         values. ``-D`` and ``-d`` cannot be combined in the same invocation due to this
-         same constraint. Use ``-d`` with full YAML when you need both directives and
-         inline content in a single reload request.
+         ``-D`` accepts values until the next option or the end of the command line, so it
+         may appear anywhere among the options and can be combined with ``-d`` — directives
+         and inline content merge under the same config key:
+
+         .. code-block:: bash
+
+            $ traffic_ctl config reload -D myconfig.id=foo --monitor
+            $ traffic_ctl config reload -D myconfig.id=foo -d 'myconfig: {rules: [a]}'
+
+         To pass a directive value that begins with ``-``, place ``--`` before it. Option
+         recognition then stays off for the rest of the line, so every remaining token becomes
+         a directive value and any option written afterwards is swallowed. Use
+         ``--directive=-value`` instead when options still have to follow:
+
+         .. code-block:: bash
+
+            $ traffic_ctl config reload --directive=-weird.id=foo --monitor
 
       .. note::
 
@@ -562,6 +581,42 @@ Display the current value of a configuration record.
 
    Specifying the file name is not needed as `traffic_ctl` will try to use the build(or the runroot if used) information to figure
    out the path to the `records.yaml`.
+
+   ``-c`` accepts at most one file name, so it may be written before or after the record
+   names:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config get -c records.yaml proxy.config.diags.debug.enabled
+      $ traffic_ctl config get proxy.config.diags.debug.enabled -c records.yaml
+      $ traffic_ctl config get --cold=records.yaml proxy.config.diags.debug.enabled
+
+   When no file name is given, write ``-c`` last, or use the ``--cold=`` form for the
+   explicit file. A bare ``-c`` followed by a record name takes the record as the file name,
+   which leaves the command short of its own arguments. Each command reports this in terms of
+   what it was left without:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config get proxy.config.diags.debug.enabled -c    # default records.yaml
+      $ traffic_ctl config get -c proxy.config.diags.debug.enabled
+      Error: at least one argument expected by get
+
+      $ traffic_ctl config set proxy.config.diags.debug.enabled 1 -c  # default records.yaml
+      $ traffic_ctl config set -c proxy.config.diags.debug.enabled 1
+      Error: 2 argument(s) expected by set
+
+   An empty file name is not a file name, so it is reported rather than taken as a request for
+   the default file. This matters when the name comes from a variable that is unset, where
+   reading or writing the live :file:`records.yaml` is unlikely to be what was meant:
+
+   .. code-block:: bash
+
+      $ traffic_ctl config set -c "" proxy.config.diags.debug.enabled 1
+      Error: missing argument for '-c'
+
+   ``-c`` is also given at most once, so repeating it is a usage error rather than the last
+   file name silently winning.
 
    If the file exists and is empty a new document will be created. If a file does not exist, an attempt to create a new file will be done.
 

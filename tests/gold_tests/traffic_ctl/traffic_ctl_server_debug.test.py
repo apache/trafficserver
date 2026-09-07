@@ -78,3 +78,21 @@ tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
     "Option \'--append\' requires \'--tags\' to be specified", "Should show error that --append requires --tags")
 tr.StillRunningAfter = traffic_ctl._ts
+
+# Test 15: An option written where the tags are expected leaves them missing, rather than being
+# applied as the tags themselves.
+tr = Test.AddTestRun("test --tags followed by another option")
+tr.Processes.Default.Env = traffic_ctl._ts.Env
+tr.Processes.Default.Command = "traffic_ctl server debug enable --tags --append"
+tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    "1 argument\\(s\\) expected by tags", "Should report the tags as missing")
+tr.StillRunningAfter = traffic_ctl._ts
+
+# Test 16: Tags that are shaped like an option are passed after "--".
+tr = Test.AddTestRun("test tags shaped like an option")
+tr.Processes.Default.Env = traffic_ctl._ts.Env
+tr.Processes.Default.Command = "traffic_ctl server debug enable --tags -- -a"
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('tags »"-a"«', "The value after -- must be taken as the tags")
+tr.StillRunningAfter = traffic_ctl._ts
