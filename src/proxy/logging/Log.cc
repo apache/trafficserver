@@ -307,7 +307,7 @@ struct LoggingFlushContinuation : public Continuation {
 void
 Log::register_field(LogField *field)
 {
-  global_field_list.add(field, false);
+  global_field_list.add(field);
   field_symbol_hash.emplace(field->symbol(), field);
 }
 
@@ -319,8 +319,8 @@ Log::register_field(LogField *field)
   standalone programs that do not require more services (e.g., that do not
   need to read records.yaml) can just call init_fields.
 
-  Note that the LogFields are added to the list with the copy flag false so
-  that the LogFieldList destructor will reclaim this memory.
+  The LogFields are added to the global list without copying so that the
+  LogFieldList destructor will reclaim this memory.
   -------------------------------------------------------------------------*/
 void
 Log::init_fields()

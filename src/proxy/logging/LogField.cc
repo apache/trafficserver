@@ -1010,15 +1010,11 @@ LogFieldList::clear()
 }
 
 void
-LogFieldList::add(LogField *field, bool copy)
+LogFieldList::add(LogField *field)
 {
   ink_assert(field != nullptr);
 
-  if (copy) {
-    m_field_list.enqueue(new LogField(*field));
-  } else {
-    m_field_list.enqueue(field);
-  }
+  m_field_list.enqueue(field);
 
   if (field->type() == LogField::Type::sINT) {
     m_marshal_len += INK_MIN_ALIGN;
