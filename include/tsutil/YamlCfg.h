@@ -43,8 +43,13 @@ namespace Yaml
   //
   // yaml-cpp has no JSON output mode. The nearest equivalent is flow style with every scalar double quoted. For the
   // node shapes the callers here emit -- maps, sequences, scalars and nulls, carrying no tags, anchors or aliases --
-  // that is JSON-compatible except for null: yaml-cpp writes `~`, which JSON parsers reject. LowerNull writes the
+  // that parses as JSON except for null: yaml-cpp writes `~`, which JSON parsers reject. LowerNull writes the
   // literal `null` instead. YAML resolves `~` and `null` to the same value, so the output still reads as YAML.
+  //
+  // Parses as JSON is the whole guarantee. It is not type-faithful JSON: `DoubleQuoted` quotes every scalar, so
+  // numbers and booleans arrive as strings -- `"12"` rather than `12`, `"true"` rather than `true`. A consumer
+  // validating against a schema that declares `integer` or `boolean` will reject that, and no manipulator here
+  // changes it. Preserving scalar types needs a real JSON serializer, not a yaml-cpp emitter.
   //
   // This is not a general YAML to JSON converter. A node that carries a tag, an anchor or an alias still emits YAML
   // syntax that JSON does not accept.

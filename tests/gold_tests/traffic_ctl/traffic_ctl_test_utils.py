@@ -165,6 +165,30 @@ class Common():
         self._finish()
         return self
 
+    def validate_is_valid_json(self):
+        """
+        Validate that stdout parses as JSON. Performs no field checks.
+
+        Use this as a regression guard on any command documented to emit JSON.
+        A gold file cannot do this job: yaml-cpp spells null as `~`, which a
+        gold file matches happily but no JSON parser accepts.
+
+        The raw output is echoed to stderr so it survives in the stream files
+        even though the pipeline consumes stdout.
+
+        Example:
+            traffic_ctl.hostdb().status().validate_is_valid_json()
+        """
+        self._cmd = (
+            f'{self._cmd} | python3 -c "'
+            f"import sys, json; "
+            f"raw = sys.stdin.read(); "
+            f"sys.stderr.write(raw); "
+            f"json.loads(raw)"
+            f'"')
+        self._finish()
+        return self
+
 
 class ConfigReload(Common):
     """
@@ -467,6 +491,48 @@ class RPC(Common):
         return self
 
 
+class HostDB(Common):
+    """
+        Handy class to map traffic_ctl hostdb options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr)
+        self._cmd = "traffic_ctl hostdb "
+        self._dir = dir
+        self._tn = tn
+
+    def status(self, hostname: str = ""):
+        """Get HostDB info (traffic_ctl hostdb status [HOSTNAME])"""
+        self._cmd = f'{self._cmd} status {hostname} '
+        return self
+
+    def as_json(self):
+        self._cmd = f'{self._cmd} -f json'
+        return self
+
+
+class Plugin(Common):
+    """
+        Handy class to map traffic_ctl plugin options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr)
+        self._cmd = "traffic_ctl plugin "
+        self._dir = dir
+        self._tn = tn
+
+    def list(self):
+        """Show globally loaded plugins and their status (traffic_ctl plugin list)"""
+        self._cmd = f'{self._cmd} list '
+        return self
+
+    def as_json(self):
+        self._cmd = f'{self._cmd} -f json'
+        return self
+
+
 '''
 
 Handy wrapper around traffic_ctl, ATS and the autest output validation mechanism.
@@ -533,6 +599,14 @@ class TrafficCtl(Config, Server):
     def rpc(self):
         self.add_test()
         return RPC(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
+
+    def hostdb(self):
+        self.add_test()
+        return HostDB(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
+
+    def plugin(self):
+        self.add_test()
+        return Plugin(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
 
 def Make_traffic_ctl(test, records_yaml=None, retcode=0):
