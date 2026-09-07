@@ -26,6 +26,7 @@
 #include <memory>
 #include <vector>
 
+#include "iocore/eventsystem/Lock.h"
 #include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "proxy/http3/Http3Frame.h"
@@ -86,6 +87,16 @@ TEST_CASE("Http3StreamDataVIOAdaptor delivers a multi-frame body intact", "[http
 
     CHECK(sink_reader->read_avail() == expected);
     CHECK(sink_vio.nbytes == expected);
+
+    // Frame i filled its payload with 'A' + i, so the sink bytes pin down
+    // order and block identity, not just the total length.
+    std::vector<uint8_t> want;
+    for (int i = 0; i < frame_count; ++i) {
+      want.insert(want.end(), per_frame_bytes, static_cast<uint8_t>('A' + i));
+    }
+    std::vector<uint8_t> got(expected);
+    REQUIRE(sink_reader->read(got.data(), expected) == expected);
+    CHECK(got == want);
   }
 
   free_MIOBuffer(sink_buffer);
