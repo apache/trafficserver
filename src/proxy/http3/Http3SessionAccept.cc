@@ -50,6 +50,21 @@ Http3SessionAccept::Http3SessionAccept(OptionsHandle options, HttpProxyPort *pro
 
 Http3SessionAccept::~Http3SessionAccept() {}
 
+Http3SessionAccept::AppType
+Http3SessionAccept::select_app_type(std::string_view alpn)
+{
+  if (alpn.empty()) {
+    return AppType::UNKNOWN;
+  }
+  if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
+    return AppType::HTTP_09;
+  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0 ||
+             IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
+    return AppType::HTTP_3;
+  }
+  return AppType::UNKNOWN;
+}
+
 bool
 Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSED */, IOBufferReader * /* reader ATS_UNUSED */)
 {
@@ -79,11 +94,12 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
   }
   std::string_view alpn = qc->negotiated_application_name();
 
-  if (IP_PROTO_TAG_HTTP_QUIC.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_QUIC_D29.compare(alpn) == 0) {
+  switch (select_app_type(alpn)) {
+  case AppType::HTTP_09:
     Dbg(dbg_ctl_http3, "[%s] start HTTP/0.9 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
     new Http09App(netvc, qc, std::move(session_acl), this);
-  } else if (IP_PROTO_TAG_HTTP_3.compare(alpn) == 0 || IP_PROTO_TAG_HTTP_3_D29.compare(alpn) == 0 ||
-             IP_PROTO_TAG_H3QX.compare(alpn) == 0) {
+    break;
+  case AppType::HTTP_3: {
     Dbg(dbg_ctl_http3, "[%s] start HTTP/3 app (ALPN=%.*s)", qc->cids().data(), static_cast<int>(alpn.length()), alpn.data());
 
     Http3App *app = new Http3App(netvc, qc, std::move(session_acl), this);
@@ -103,8 +119,17 @@ Http3SessionAccept::accept(NetVConnection *netvc, MIOBuffer * /* iobuf ATS_UNUSE
 #endif
 
     app->start();
-  } else {
-    ink_abort("Negotiated App Name is unknown");
+    break;
+  }
+  case AppType::UNKNOWN:
+  default: {
+    // QUIC/TLS can complete without an ALPN extension, leaving the negotiated
+    // name empty, and a client may also offer an unrecognized tag.
+    ip_port_text_buffer ipb;
+    Dbg(dbg_ctl_http3, "[%s] unknown or missing ALPN (ALPN=%.*s) from %s, closing connection", qc->cids().data(),
+        static_cast<int>(alpn.length()), alpn.data(), ats_ip_nptop(client_ip, ipb, sizeof(ipb)));
+    return false;
+  }
   }
 
   return true;
