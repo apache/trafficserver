@@ -307,8 +307,16 @@ struct LoggingFlushContinuation : public Continuation {
 void
 Log::register_field(LogField *field)
 {
+  ink_assert(field != nullptr);
+
+  auto [it, inserted] = field_symbol_hash.emplace(field->symbol(), field);
+  if (!inserted) {
+    Error("Log field symbol '%s' is already registered", field->symbol());
+    delete field;
+    return;
+  }
+
   global_field_list.add(field);
-  field_symbol_hash.emplace(field->symbol(), field);
 }
 
 /*-------------------------------------------------------------------------
