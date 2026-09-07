@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -37,11 +36,8 @@ class ProxyProtocolInTest:
 
     def setupTS(self, name, enable_cp):
         self.ts = Test.MakeATSProcess(
-            f"ts_in_{name}",
-            enable_tls=True,
-            enable_cache=False,
-            enable_proxy_protocol=True,
-            enable_proxy_protocol_cp_src=enable_cp)
+            f"ts_in_{name}", enable_tls=True, enable_cache=False, enable_proxy_protocol=True, enable_proxy_protocol_cp_src=enable_cp
+        )
 
         self.ts.addDefaultSSLFiles()
         self.ts.Disk.ssl_multicert_yaml.AddLines(
@@ -50,7 +46,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
 
@@ -64,7 +61,8 @@ ssl_multicert:
                 "proxy.config.ssl.server.private_key.path": self.ts.Variables.SSLDir,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "proxyprotocol",
-            })
+            }
+        )
 
         self.ts.Disk.logging_yaml.AddLines(
             '''
@@ -76,7 +74,8 @@ logging:
   logs:
     - filename: access
       format: access
-'''.split("\n"))
+'''.split("\n")
+        )
 
     def runTraffic(self):
         tr = Test.AddTestRun(f"Verify correct handling of incoming PROXY header. {self.name}")
@@ -84,7 +83,8 @@ logging:
             f"pp-in-client-{self.name}",
             self.replay_file,
             http_ports=[self.ts.Variables.proxy_protocol_port],
-            https_ports=[self.ts.Variables.proxy_protocol_ssl_port])
+            https_ports=[self.ts.Variables.proxy_protocol_ssl_port],
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -137,7 +137,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
 
@@ -148,7 +149,8 @@ ssl_multicert:
                 "proxy.config.ssl.server.private_key.path": self.ts.Variables.SSLDir,
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "proxyprotocol",
-            })
+            }
+        )
 
     def addCurlRun(self, name, args, return_code=0, expect_status=None, start_processes=False):
         tr = Test.AddTestRun(name)
@@ -171,21 +173,25 @@ ssl_multicert:
             "Non-PP HTTP traffic bypasses proxy_protocol_allowlist",
             f'-sS -o /dev/null -w "%{{http_code}}" -H "uuid: 1" http://127.0.0.1:{self.ts.Variables.proxy_protocol_port}/get',
             expect_status="200",
-            start_processes=True)
+            start_processes=True,
+        )
         self.addCurlRun(
-            "Non-PP TLS traffic bypasses proxy_protocol_allowlist", f'-k -sS -o /dev/null -w "%{{http_code}}" -H "uuid: 2" '
+            "Non-PP TLS traffic bypasses proxy_protocol_allowlist",
+            f'-k -sS -o /dev/null -w "%{{http_code}}" -H "uuid: 2" '
             f'https://127.0.0.1:{self.ts.Variables.proxy_protocol_ssl_port}/get',
-            expect_status="200")
+            expect_status="200",
+        )
         self.addCurlRun(
             "PP-prefaced HTTP traffic is rejected when peer is not allowlisted",
-            f'-sS -o /dev/null --max-time 5 --haproxy-protocol '
-            f'http://127.0.0.1:{self.ts.Variables.proxy_protocol_port}/get',
-            return_code=Any(52, 56))
+            f'-sS -o /dev/null --max-time 5 --haproxy-protocol http://127.0.0.1:{self.ts.Variables.proxy_protocol_port}/get',
+            return_code=Any(52, 56),
+        )
         self.addCurlRun(
             "PP-prefaced TLS traffic is rejected when peer is not allowlisted",
             f'-k -sS -o /dev/null --max-time 5 --haproxy-protocol '
             f'https://127.0.0.1:{self.ts.Variables.proxy_protocol_ssl_port}/get',
-            return_code=Any(35, 52, 56))
+            return_code=Any(35, 52, 56),
+        )
 
 
 class ProxyProtocolOutTest:
@@ -212,10 +218,10 @@ class ProxyProtocolOutTest:
         self._is_tls_to_origin = is_tls_to_origin
 
     def setupOriginServer(self) -> None:
-        """Configure the origin server.
-        """
+        """Configure the origin server."""
         self._server = Test.MakeVerifierServerProcess(
-            f"pp-out-server-{ProxyProtocolOutTest._server_counter}", self._pp_out_replay_file)
+            f"pp-out-server-{ProxyProtocolOutTest._server_counter}", self._pp_out_replay_file
+        )
         ProxyProtocolOutTest._server_counter += 1
 
     def setupDNS(self, tr: 'TestRun') -> None:
@@ -239,7 +245,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         scheme = 'https' if self._is_tls_to_origin else 'http'
         server_port = self._server.Variables.https_port if self._is_tls_to_origin else self._server.Variables.http_port
         self._ts.Disk.remap_config.AddLine(f"map / {scheme}://backend.pp.origin.com:{server_port}/")
@@ -253,13 +260,16 @@ ssl_multicert:
                 "proxy.config.http.proxy_protocol_out": self._pp_version,
                 "proxy.config.dns.nameservers": f"127.0.0.1:{self._dns.Variables.Port}",
                 "proxy.config.dns.resolv_conf": 'NULL',
-                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE'
-            })
+                "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
+            }
+        )
 
         if self._is_tunnel:
-            self._ts.Disk.records_config.update({
-                "proxy.config.http.connect_ports": f'{self._server.Variables.https_port}',
-            })
+            self._ts.Disk.records_config.update(
+                {
+                    "proxy.config.http.connect_ports": f'{self._server.Variables.https_port}',
+                }
+            )
             self._ts.addPrivateConnectAllowYaml()
 
             self._ts.Disk.sni_yaml.AddLines(
@@ -267,28 +277,35 @@ ssl_multicert:
                     'sni:',
                     '- fqdn: pp.origin.com',
                     f'  tunnel_route: backend.pp.origin.com:{self._server.Variables.https_port}',
-                ])
+                ]
+            )
 
     def setLogExpectations(self, tr: 'TestRun') -> None:
 
         tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Verify the client got a 200 response.")
 
         if self._pp_version in (1, 2):
-            expected_pp = ('PROXY TCP4 127.0.0.1 127.0.0.1 '
-                           rf'\d+ {self._ts.Variables.ssl_port}')
+            expected_pp = (
+                'PROXY TCP4 127.0.0.1 127.0.0.1 '
+                rf'\d+ {self._ts.Variables.ssl_port}'
+            )
             self._server.Streams.All += Testers.ContainsExpression(
-                expected_pp, "Verify the server got the expected Proxy Protocol string.")
+                expected_pp, "Verify the server got the expected Proxy Protocol string."
+            )
 
             self._server.Streams.All += Testers.ContainsExpression(
-                f'Received PROXY header v{self._pp_version}', "Verify the server got the expected Proxy Protocol version.")
+                f'Received PROXY header v{self._pp_version}', "Verify the server got the expected Proxy Protocol version."
+            )
 
         if self._pp_version == -1:
             self._server.Streams.All += Testers.ContainsExpression(
-                'No valid PROXY header found', 'There should be no Proxy Protocol string.')
+                'No valid PROXY header found', 'There should be no Proxy Protocol string.'
+            )
 
         if self._is_tunnel:
             self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                'CONNECT tunnel://backend.pp.origin.com', 'Verify ATS establishes a blind tunnel to the server.')
+                'CONNECT tunnel://backend.pp.origin.com', 'Verify ATS establishes a blind tunnel to the server.'
+            )
 
     def run(self) -> None:
         """Run the test."""
@@ -309,7 +326,8 @@ ssl_multicert:
             f"pp-out-client-{ProxyProtocolOutTest._client_counter}",
             self._pp_out_replay_file,
             http_ports=[self._ts.Variables.port],
-            https_ports=[self._ts.Variables.ssl_port])
+            https_ports=[self._ts.Variables.ssl_port],
+        )
         ProxyProtocolOutTest._client_counter += 1
         self._ts.StartBefore(self._server)
         self._ts.StartBefore(self._dns)

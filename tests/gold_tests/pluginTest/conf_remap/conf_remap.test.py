@@ -24,7 +24,6 @@ Test.SkipUnless(Condition.PluginExists('conf_remap.so'))
 
 
 class ConfRemapPluginTest:
-
     def __init__(self):
         self._tr = Test.AddTestRun("conf_remap")
         self._replay_file = "replay/conf_remap.replay.yaml"
@@ -46,8 +45,9 @@ class ConfRemapPluginTest:
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|conf_remap",
                 "proxy.config.http.insert_response_via_str": 2,
-                "proxy.config.http.negative_caching_enabled": 0
-            })
+                "proxy.config.http.negative_caching_enabled": 0,
+            }
+        )
 
         self._ts.Setup.Copy("etc/negative_caching_list.yaml")
 
@@ -62,7 +62,8 @@ map /custom_negative_caching_list/ \
     http://127.0.0.1:{self._server.Variables.http_port}/custom_negative_caching_list/ \
     @plugin=conf_remap.so @pparam={Test.RunDirectory}/negative_caching_list.yaml
     """
-            })
+            }
+        )
 
     def run(self):
         self._tr.Processes.Default.StartBefore(self._ts)

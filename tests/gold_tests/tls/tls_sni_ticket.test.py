@@ -50,24 +50,25 @@ class TlsSniTicketTest:
         request_header = {
             'headers': 'GET / HTTP/1.1\r\nHost: tickets.example.com\r\n\r\n',
             'timestamp': '1469733493.993',
-            'body': ''
+            'body': '',
         }
         response_header = {
             'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n',
             'timestamp': '1469733493.993',
-            'body': 'ticket test'
+            'body': 'ticket test',
         }
         self.server = Test.MakeOriginServer('server')
         self.server.addResponse('sessionlog.json', request_header, response_header)
 
     def setupTS(
-            self,
-            name: str,
-            sni_name: str,
-            global_ticket_enabled: int,
-            global_ticket_number: int,
-            sni_ticket_enabled: int,
-            sni_ticket_number: int | None = None) -> Any:
+        self,
+        name: str,
+        sni_name: str,
+        global_ticket_enabled: int,
+        global_ticket_number: int,
+        sni_ticket_enabled: int,
+        sni_ticket_number: int | None = None,
+    ) -> Any:
         """
         Configure an ATS process for one SNI ticket override scenario.
 
@@ -90,7 +91,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         ts.Disk.records_config.update(
             {
@@ -102,7 +104,8 @@ ssl_multicert:
                 'proxy.config.ssl.server.session_ticket.enable': global_ticket_enabled,
                 'proxy.config.ssl.server.session_ticket.number': global_ticket_number,
                 'proxy.config.ssl.server.ticket_key.filename': self.ticket_file,
-            })
+            }
+        )
 
         sni_lines = [
             'sni:',
@@ -128,7 +131,8 @@ ssl_multicert:
         self.ts_off = self.setupTS('ts_off', 'tickets-off.com', 1, 2, 0)
 
     def start_processes_if_needed(
-            self, tr: Any, start_server: bool = False, start_ts_on: bool = False, start_ts_off: bool = False) -> None:
+        self, tr: Any, start_server: bool = False, start_ts_on: bool = False, start_ts_off: bool = False
+    ) -> None:
         """
         Register one-time StartBefore hooks for the processes needed by a test run.
 
@@ -190,7 +194,8 @@ ssl_multicert:
             f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
             f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2 && '
             f'printf "GET / HTTP/1.1\\r\\nHost: {servername}\\r\\n\\r\\n" | '
-            f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2')
+            f'openssl s_client -connect 127.0.0.1:{port} -servername {servername} -sess_in "$$session_path" -tls1_2'
+        )
 
     def add_tls12_enabled_run(self) -> None:
         """
@@ -202,8 +207,12 @@ ssl_multicert:
         self.start_processes_if_needed(tr, start_server=True, start_ts_on=True)
         tr.Processes.Default.Streams.All.Content = Testers.Lambda(
             lambda info, tester: TlsSniTicketTest.check_regex_count(
-                tr.Processes.Default.Streams.All.AbsPath, r'Reused, TLSv1\.2', 5,
-                'Check that tickets-on.com reuses TLSv1.2 sessions'))
+                tr.Processes.Default.Streams.All.AbsPath,
+                r'Reused, TLSv1\.2',
+                5,
+                'Check that tickets-on.com reuses TLSv1.2 sessions',
+            )
+        )
         tr.StillRunningAfter += self.server
         tr.StillRunningAfter += self.ts_on
 
@@ -214,7 +223,8 @@ ssl_multicert:
         tr = Test.AddTestRun('sni.yaml sets TLSv1.3 ticket count')
         tr.Command = (
             f'printf "GET / HTTP/1.1\\r\\nHost: tickets-on.com\\r\\nConnection: close\\r\\n\\r\\n" | '
-            f'openssl s_client -connect 127.0.0.1:{self.ts_on.Variables.ssl_port} -servername tickets-on.com -tls1_3 -msg -ign_eof')
+            f'openssl s_client -connect 127.0.0.1:{self.ts_on.Variables.ssl_port} -servername tickets-on.com -tls1_3 -msg -ign_eof'
+        )
         tr.ReturnCode = 0
         self.start_processes_if_needed(tr, start_server=True, start_ts_on=True)
 
@@ -231,7 +241,9 @@ ssl_multicert:
 
         tr.Processes.Default.Streams.All.Content = Testers.Lambda(
             lambda info, tester: TlsSniTicketTest.check_regex_count(
-                tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', expected_count, description))
+                tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', expected_count, description
+            )
+        )
         tr.StillRunningAfter += self.server
         tr.StillRunningAfter += self.ts_on
 
@@ -259,8 +271,12 @@ ssl_multicert:
         self.start_processes_if_needed(tr, start_server=True, start_ts_off=True)
         tr.Processes.Default.Streams.All.Content = Testers.Lambda(
             lambda info, tester: TlsSniTicketTest.check_regex_count(
-                tr.Processes.Default.Streams.All.AbsPath, r'NewSessionTicket', 0,
-                'Check that tickets-off.com receives no TLSv1.3 tickets'))
+                tr.Processes.Default.Streams.All.AbsPath,
+                r'NewSessionTicket',
+                0,
+                'Check that tickets-off.com receives no TLSv1.3 tickets',
+            )
+        )
         tr.StillRunningAfter += self.server
         tr.StillRunningAfter += self.ts_off
 

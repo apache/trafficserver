@@ -85,7 +85,8 @@ class TestDefaultSecretUpdate:
                 'proxy.config.ssl.server.multicert.concurrency': 1,
                 'proxy.config.exec_thread.autoconfig.scale': 1.0,
                 'proxy.config.url_remap.pristine_host_hdr': 1,
-            })
+            }
+        )
 
         ts.Disk.ssl_multicert_yaml.AddLines(
             [
@@ -96,7 +97,8 @@ class TestDefaultSecretUpdate:
                 '  - dest_ip: "*"',
                 f'    ssl_cert_name: {self.shadowed_cert}',
                 f'    ssl_key_name: {self.shadowed_key_file}',
-            ])
+            ]
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         return ts
 
@@ -146,7 +148,8 @@ class TestDefaultSecretUpdate:
             expected_cn='signer.yahoo.com',
             unexpected_cn='signer2.yahoo.com',
             expected_description='Initial cert uses signer.',
-            unexpected_description='Initial cert is not updated yet.')
+            unexpected_description='Initial cert is not updated yet.',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(r'subject:.*CN=bar\.com', 'Default cert is bar.com.')
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(r'subject:.*CN=foo\.com', 'Shadowed cert is not served.')
         return tr
@@ -175,10 +178,12 @@ class TestDefaultSecretUpdate:
             expected_cn='signer.yahoo.com',
             unexpected_cn='signer2.yahoo.com',
             expected_description='Default cert still uses signer.',
-            unexpected_description='Shadowed wildcard cert did not become the default.')
+            unexpected_description='Shadowed wildcard cert did not become the default.',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(r'subject:.*CN=bar\.com', 'Default cert is still bar.com.')
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            r'subject:.*CN=foo\.com', 'Shadowed foo.com cert is not served.')
+            r'subject:.*CN=foo\.com', 'Shadowed foo.com cert is not served.'
+        )
         return tr
 
     def _add_default_certificate_update_run(self) -> 'TestRun':
@@ -197,7 +202,8 @@ class TestDefaultSecretUpdate:
         tr.Processes.Default.ReturnCode = 0
         await_update = tr.Processes.Process('await_update', 'sleep 30')
         await_update.Ready = When.FileContains(
-            self._ts.Disk.traffic_out.Name, f'updated cert for secret .*{re.escape(secret_name)}')
+            self._ts.Disk.traffic_out.Name, f'updated cert for secret .*{re.escape(secret_name)}'
+        )
         tr.Processes.Default.StartBefore(await_update)
         self._keep_processes_running(tr)
         return tr
@@ -209,20 +215,23 @@ class TestDefaultSecretUpdate:
             expected_cn='signer2.yahoo.com',
             unexpected_cn='signer.yahoo.com',
             expected_description='Updated cert uses signer2.',
-            unexpected_description='Updated cert no longer uses signer.')
+            unexpected_description='Updated cert no longer uses signer.',
+        )
 
     def _add_curl_run(
-            self, name: str, expected_cn: str, unexpected_cn: str, expected_description: str,
-            unexpected_description: str) -> 'TestRun':
+        self, name: str, expected_cn: str, unexpected_cn: str, expected_description: str, unexpected_description: str
+    ) -> 'TestRun':
         '''Add a curl run against ATS without SNI.'''
         tr = Test.AddTestRun(name)
         self._keep_processes_running(tr)
         tr.MakeCurlCommand(
-            f"-k -v --http1.1 -H 'host: doesnotmatter' https://127.0.0.1:{self._ts.Variables.ssl_port}/", ts=self._ts)
+            f"-k -v --http1.1 -H 'host: doesnotmatter' https://127.0.0.1:{self._ts.Variables.ssl_port}/", ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(f'issuer:.*CN={re.escape(expected_cn)}', expected_description)
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            f'issuer:.*CN={re.escape(unexpected_cn)}', unexpected_description)
+            f'issuer:.*CN={re.escape(unexpected_cn)}', unexpected_description
+        )
         return tr
 
     def _keep_processes_running(self, tr: 'TestRun') -> None:

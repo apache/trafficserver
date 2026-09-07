@@ -29,9 +29,9 @@ import hrw4u.types as types
 
 
 class SymbolResolverBase:
-
     def __init__(
-            self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None) -> None:
+        self, debug: bool = SystemDefaults.DEFAULT_DEBUG, sandbox: SandboxConfig | None = None, dbg: Dbg | None = None
+    ) -> None:
         self._dbg = dbg if dbg is not None else Dbg(debug)
         self._sandbox = sandbox or SandboxConfig.empty()
         self._sandbox_warnings: list[str] = []
@@ -101,7 +101,6 @@ class SymbolResolverBase:
     def debug_context(self, method_name: str, *args: Any):
 
         class DebugContext:
-
             def __init__(self, resolver: SymbolResolverBase, method: str, arguments: tuple[Any, ...]):
                 self.resolver = resolver
                 self.method = method

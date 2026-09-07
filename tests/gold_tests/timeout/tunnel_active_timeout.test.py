@@ -40,7 +40,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split('\n'))
+""".split('\n')
+)
 
 ts.Disk.records_config.update(
     {
@@ -54,7 +55,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.transaction_active_timeout_in': 2,
         # Force log flush every second for test reliability
         'proxy.config.log.max_secs_per_buffer': 1,
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{server.Variables.SSL_Port}')
 ts.addPrivateConnectAllowYaml()
@@ -69,7 +71,8 @@ logging:
   logs:
     - filename: squid.log
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 # Test: Perform a CONNECT request that will time out
 tr = Test.AddTestRun("Tunnel active timeout test")
@@ -82,8 +85,8 @@ tr.Setup.Copy('tunnel_timeout_client.py')
 
 # Connect, establish tunnel, then sleep to trigger active timeout
 tr.Processes.Default.Command = (
-    f'{sys.executable} tunnel_timeout_client.py 127.0.0.1 {ts.Variables.port} '
-    f'127.0.0.1 {server.Variables.SSL_Port} 5')
+    f'{sys.executable} tunnel_timeout_client.py 127.0.0.1 {ts.Variables.port} 127.0.0.1 {server.Variables.SSL_Port} 5'
+)
 # The connection will be closed by ATS due to timeout
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -97,4 +100,5 @@ tr.Processes.Default.ReturnCode = 0
 
 # Verify the squid code in the access log
 ts.Disk.File(os.path.join(ts.Variables.LOGDIR, 'squid.log')).Content = Testers.ContainsExpression(
-    'ERR_TUN_ACTIVE_TIMEOUT.*CONNECT', 'Verify the tunnel timeout squid code is logged')
+    'ERR_TUN_ACTIVE_TIMEOUT.*CONNECT', 'Verify the tunnel timeout squid code is logged'
+)

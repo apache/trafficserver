@@ -24,8 +24,7 @@ import sys
 
 
 class Http2FrameDefs:
-
-    RESERVE_BIT_MASK = 0x7fffffff
+    RESERVE_BIT_MASK = 0x7FFFFFFF
 
     DATA_FRAME = 0x00
     HEADERS_FRAME = 0x01
@@ -48,7 +47,7 @@ class Http2FrameDefs:
         PING_FRAME: 'PING',
         GOAWAY_FRAME: 'GOAWAY',
         WINDOW_UPDATE_FRAME: 'WINDOW_UPDATE',
-        CONTINUATION_FRAME: 'CONTINUATION'
+        CONTINUATION_FRAME: 'CONTINUATION',
     }
 
     SETTINGS_HEADER_TABLE_SIZE = 0x01
@@ -64,7 +63,7 @@ class Http2FrameDefs:
         SETTINGS_MAX_CONCURRENT_STREAMS: 'MAX_CONCURRENT_STREAMS',
         SETTINGS_INITIAL_WINDOW_SIZE: 'INITIAL_WINDOW_SIZE',
         SETTINGS_MAX_FRAME_SIZE: 'MAX_FRAME_SIZE',
-        SETTINGS_MAX_HEADER_LIST_SIZE: 'MAX_HEADER_LIST_SIZE'
+        SETTINGS_MAX_HEADER_LIST_SIZE: 'MAX_HEADER_LIST_SIZE',
     }
 
     RST_STREAM_NO_ERROR = 0x0
@@ -77,10 +76,10 @@ class Http2FrameDefs:
     RST_STREAM_REFUSED_STREAM = 0x7
     RST_STREAM_CANCEL = 0x8
     RST_STREAM_COMPRESSION_ERROR = 0x9
-    RST_STREAM_CONNECT_ERROR = 0xa
-    RST_STREAM_ENHANCE_YOUR_CALM = 0xb
-    RST_STREAM_INADEQUATE_SECURITY = 0xc
-    RST_STREAM_HTTP_1_1_REQUIRED = 0xd
+    RST_STREAM_CONNECT_ERROR = 0xA
+    RST_STREAM_ENHANCE_YOUR_CALM = 0xB
+    RST_STREAM_INADEQUATE_SECURITY = 0xC
+    RST_STREAM_HTTP_1_1_REQUIRED = 0xD
 
     RST_STREAM_ERROR_CODES = {
         RST_STREAM_NO_ERROR: 'NO_ERROR',
@@ -96,12 +95,11 @@ class Http2FrameDefs:
         RST_STREAM_CONNECT_ERROR: 'CONNECT_ERROR',
         RST_STREAM_ENHANCE_YOUR_CALM: 'ENHANCE_YOUR_CALM',
         RST_STREAM_INADEQUATE_SECURITY: 'INADEQUATE_SECURITY',
-        RST_STREAM_HTTP_1_1_REQUIRED: 'HTTP_1_1_REQUIRED'
+        RST_STREAM_HTTP_1_1_REQUIRED: 'HTTP_1_1_REQUIRED',
     }
 
 
 class Http2Frame:
-
     def __init__(self, length, frame_type, flags, stream_id):
         self.length = length
         self.frame_type = frame_type
@@ -149,8 +147,8 @@ class Http2Frame:
         if self.frame_type == Http2FrameDefs.SETTINGS_FRAME:
             settings_str = ''
             for i in range(0, self.length, 6):
-                settings_id = int(self.payload[i:i + 2].hex(), 16)
-                settings_val = int(self.payload[i + 2:i + 6].hex(), 16)
+                settings_id = int(self.payload[i : i + 2].hex(), 16)
+                settings_val = int(self.payload[i + 2 : i + 6].hex(), 16)
                 settings_str += '\n{0} = {1}'.format(Http2FrameDefs.SETTINGS_ID[settings_id], settings_val)
             return settings_str
         else:
@@ -162,7 +160,8 @@ class Http2Frame:
             error_code = int(self.payload[4:8].hex(), 16)
             debug_data = self.payload[8:].hex()
             return '\nLast Stream ID = 0x{0:08x}\nError Code = 0x{1:08x}\nDebug Data = {2}'.format(
-                last_stream_id, error_code, debug_data)
+                last_stream_id, error_code, debug_data
+            )
         else:
             return '\nError: Frame type mismatch: {0}'.format(Http2FrameDefs.FRAME_TYPES[self.frame_type])
 
@@ -191,7 +190,8 @@ class Http2Frame:
 
     def print(self):
         output = 'Length: {0}\nType: {1}\nFlags: {2}\nStream ID: {3}\nPayload: {4}\n'.format(
-            self.length, Http2FrameDefs.FRAME_TYPES[self.frame_type], self.flags, self.stream_id, self.print_payload())
+            self.length, Http2FrameDefs.FRAME_TYPES[self.frame_type], self.flags, self.stream_id, self.print_payload()
+        )
         if self.decode_error is not None:
             output += self.decode_error + '\n'
         return output
@@ -201,13 +201,13 @@ class Http2Frame:
 
 
 class Decoder:
-
     def read_frame_header(self, data):
         frame = Http2Frame(
             length=int(data[0:3].hex(), 16),
             frame_type=int(data[3:4].hex(), 16),
             flags=int(data[4:5].hex(), 16),
-            stream_id=int(data[5:9].hex(), 16) & Http2FrameDefs.RESERVE_BIT_MASK)
+            stream_id=int(data[5:9].hex(), 16) & Http2FrameDefs.RESERVE_BIT_MASK,
+        )
         return frame
 
     def decode(self, data):
@@ -223,9 +223,9 @@ class Decoder:
                 frame.add_payload(temp_data[9:])
                 frames.append(frame)
             else:
-                frame.add_payload(temp_data[9:9 + frame.length])
+                frame.add_payload(temp_data[9 : 9 + frame.length])
                 frames.append(frame)
-                temp_data = temp_data[9 + frame.length:]
+                temp_data = temp_data[9 + frame.length :]
         return frames
 
 
@@ -247,9 +247,11 @@ def main():
 
     data = b''
     for line in lines:
-        if line.startswith(bytes('SSL_connect:', 'utf-8')) or \
-                line.startswith(bytes('SSL3 alert', 'utf-8')) or \
-                bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
+        if (
+            line.startswith(bytes('SSL_connect:', 'utf-8'))
+            or line.startswith(bytes('SSL3 alert', 'utf-8'))
+            or bytes('Can\'t use SSL_get_servername', 'utf-8') in line
+        ):
             continue
         data += line
 

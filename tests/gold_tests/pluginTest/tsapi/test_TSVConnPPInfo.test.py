@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -55,18 +54,21 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSVConnPPInfo.so'), ts)
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSVConnPPInfo.so'), ts
+)
 
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|proxyprotocol|test_TSVConnPPInfo',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
-    })
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    }
+)
 
 # http2_info.so will output test logging to this file.
 log_path = os.path.join(ts.Variables.LOGDIR, "test_TSVConnPPInfo_plugin_log.txt")
@@ -80,8 +82,8 @@ Test.Env["OUTPUT_FILE"] = log_path
 tr = Test.AddTestRun()
 tr.TimeOut = 10
 tr.Processes.Default.Command = (
-    f"curl --haproxy-protocol --haproxy-clientip 1.2.3.4 "
-    f"'http://127.0.0.1:{ts.Variables.proxy_protocol_port}/httpbin/get'")
+    f"curl --haproxy-protocol --haproxy-clientip 1.2.3.4 'http://127.0.0.1:{ts.Variables.proxy_protocol_port}/httpbin/get'"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
@@ -93,8 +95,8 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun()
 tr.TimeOut = 10
 tr.Processes.Default.Command = (
-    f"curl --haproxy-protocol --haproxy-clientip 5.6.7.8 -k "
-    f"'https://127.0.0.1:{ts.Variables.proxy_protocol_ssl_port}/httpbin/get'")
+    f"curl --haproxy-protocol --haproxy-clientip 5.6.7.8 -k 'https://127.0.0.1:{ts.Variables.proxy_protocol_ssl_port}/httpbin/get'"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "test_TSVConnPPInfo_curl1.gold"
 tr.StillRunningAfter = httpbin
@@ -107,6 +109,8 @@ f = tr.Disk.File(log_path)
 f.Content = "test_TSVConnPPInfo_plugin_log.gold"
 # curl 8.20+ intentionally uses --haproxy-clientip for both PROXY addresses so the address family matches.
 f.Content += Testers.ContainsExpression(
-    r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", "Expected information should be received")
+    r"PP Info Received:V1,P2,T1,SRC1\.2\.3\.4,DST(127\.0\.0\.1|1\.2\.3\.4)", "Expected information should be received"
+)
 f.Content += Testers.ContainsExpression(
-    r"PP Info Received:V1,P2,T1,SRC5\.6\.7\.8,DST(127\.0\.0\.1|5\.6\.7\.8)", "Expected information should be received")
+    r"PP Info Received:V1,P2,T1,SRC5\.6\.7\.8,DST(127\.0\.0\.1|5\.6\.7\.8)", "Expected information should be received"
+)

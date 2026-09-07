@@ -35,5 +35,5 @@ def get_tcp_port(obj, *newVariables):
         get_port(obj, v)
 
 
-#AddTestEntityMember(get_tcp_port, name="GetTcpPort")
+# AddTestEntityMember(get_tcp_port, name="GetTcpPort")
 ExtendTest(get_tcp_port, name="GetTcpPort")

@@ -47,7 +47,8 @@ def configure_ts(name):
             "proxy.config.diags.debug.tags": "http|ip_allow",
             "proxy.config.http.connect_ports": f"{server.Variables.SSL_Port}",
             "proxy.config.url_remap.remap_required": 0,
-        })
+        }
+    )
     return ts
 
 
@@ -80,7 +81,8 @@ ts_allowed.Disk.ip_allow_yaml.AddLines(
         "      - ::ffff:0:0/96",
         "    action: deny",
         "    methods: CONNECT",
-    ])
+    ]
+)
 
 ts_sni_default = Test.MakeATSProcess("ts-sni-default", enable_cache=False, enable_tls=True)
 ts_sni_default.addDefaultSSLFiles()
@@ -91,22 +93,26 @@ ts_sni_default.Disk.records_config.update(
         "proxy.config.http.connect_ports": f"{server.Variables.SSL_Port}",
         "proxy.config.ssl.server.cert.path": ts_sni_default.Variables.SSLDir,
         "proxy.config.ssl.server.private_key.path": ts_sni_default.Variables.SSLDir,
-    })
+    }
+)
 ts_sni_default.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts_sni_default.Disk.sni_yaml.AddLines(
     [
         "sni:",
         "- fqdn: sni-denied.example.com",
         f"  tunnel_route: 127.0.0.1:{server.Variables.SSL_Port}",
-    ])
+    ]
+)
 ts_sni_default.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"server '127\.0\.0\.1.*' prohibited by ip-allow policy", "SNI tunnel_route should be denied by outbound ip_allow.")
+    r"server '127\.0\.0\.1.*' prohibited by ip-allow policy", "SNI tunnel_route should be denied by outbound ip_allow."
+)
 
 loopback_url = f"https://127.0.0.1:{server.Variables.SSL_Port}/"
 unspecified_url = f"https://0.0.0.0:{server.Variables.SSL_Port}/"
@@ -122,10 +128,12 @@ def add_denied_connect_run(name, url, http_connect="403"):
     tr.MakeCurlCommand(
         f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_default.Variables.port} '
         f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {url}',
-        ts=ts_default)
+        ts=ts_default,
+    )
     tr.Processes.Default.ReturnCode = Any(7, 56)
     tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        f"http_code=000 http_connect={http_connect}", "CONNECT should be rejected before tunneling.")
+        f"http_code=000 http_connect={http_connect}", "CONNECT should be rejected before tunneling."
+    )
     tr.StillRunningAfter = server
     tr.StillRunningAfter = ts_default
     return tr
@@ -137,10 +145,12 @@ tr.Processes.Default.StartBefore(ts_default)
 tr.MakeCurlCommand(
     f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_default.Variables.port} '
     f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {loopback_url}',
-    ts=ts_default)
+    ts=ts_default,
+)
 tr.Processes.Default.ReturnCode = Any(7, 56)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "http_code=000 http_connect=403", "CONNECT to loopback should be rejected by the default outbound policy.")
+    "http_code=000 http_connect=403", "CONNECT to loopback should be rejected by the default outbound policy."
+)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts_default
 
@@ -156,7 +166,8 @@ tr.Processes.Default.StartBefore(ts_sni_default)
 tr.MakeCurlCommand(
     f"-skv --resolve sni-denied.example.com:{ts_sni_default.Variables.ssl_port}:127.0.0.1 "
     f"https://sni-denied.example.com:{ts_sni_default.Variables.ssl_port}/",
-    ts=ts_sni_default)
+    ts=ts_sni_default,
+)
 tr.Processes.Default.ReturnCode = Any(35, 52, 56)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts_sni_default
@@ -166,9 +177,11 @@ tr.Processes.Default.StartBefore(ts_allowed)
 tr.MakeCurlCommand(
     f'-sk --noproxy does-not-match --proxy http://127.0.0.1:{ts_allowed.Variables.port} '
     f'-o /dev/null -w "http_code=%{{http_code}} http_connect=%{{http_connect}}\\n" {loopback_url}',
-    ts=ts_allowed)
+    ts=ts_allowed,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "http_code=200 http_connect=200", "Explicit outbound allow should permit the CONNECT tunnel.")
+    "http_code=200 http_connect=200", "Explicit outbound allow should permit the CONNECT tunnel."
+)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts_allowed

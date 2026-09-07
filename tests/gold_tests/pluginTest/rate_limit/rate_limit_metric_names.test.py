@@ -28,15 +28,10 @@ Test.ContinueOnFail = True
 
 server = Test.MakeOriginServer("server")
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /health HTTP/1.1\r\nHost: metrics.example.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }, {
-        "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "OK"
-    })
+    "sessionlog.json",
+    {"headers": "GET /health HTTP/1.1\r\nHost: metrics.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+    {"headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "OK"},
+)
 
 ts = Test.MakeATSProcess("ts")
 
@@ -44,30 +39,32 @@ ts = Test.MakeATSProcess("ts")
 # The defaults are the metric prefix and the SNI respectively, so a swap is
 # visible in every one of them.
 rate_limit_yaml = os.path.join(ts.Variables.CONFIGDIR, 'rate_limit.yaml')
-ts.Disk.File(
-    rate_limit_yaml, typename="ats:config").AddLines(
-        [
-            'selector:',
-            '  - sni: both.example.com',
-            '    limit: 100',
-            '    metrics:',
-            '      prefix: myprefix',
-            '      tag: mytag',
-            '  - sni: tagonly.example.com',
-            '    limit: 100',
-            '    metrics:',
-            '      tag: onlytag',
-            '  - sni: prefixonly.example.com',
-            '    limit: 100',
-            '    metrics:',
-            '      prefix: onlyprefix',
-            '',
-        ])
+ts.Disk.File(rate_limit_yaml, typename="ats:config").AddLines(
+    [
+        'selector:',
+        '  - sni: both.example.com',
+        '    limit: 100',
+        '    metrics:',
+        '      prefix: myprefix',
+        '      tag: mytag',
+        '  - sni: tagonly.example.com',
+        '    limit: 100',
+        '    metrics:',
+        '      tag: onlytag',
+        '  - sni: prefixonly.example.com',
+        '    limit: 100',
+        '    metrics:',
+        '      prefix: onlyprefix',
+        '',
+    ]
+)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'rate_limit',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'rate_limit',
+    }
+)
 
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
 ts.Disk.plugin_config.AddLine(f'rate_limit.so {rate_limit_yaml}')
@@ -83,15 +80,20 @@ tr.Processes.Default.Env = ts.Env
 tr.StillRunningAfter = ts
 
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    'myprefix.sni.mytag.queued', 'prefix and tag should keep their configured positions')
+    'myprefix.sni.mytag.queued', 'prefix and tag should keep their configured positions'
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('mytag.sni.myprefix', 'the prefix and tag must not be swapped')
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'plugin.rate_limiter.sni.onlytag.queued', 'an unset prefix should fall back to the default prefix')
+    'plugin.rate_limiter.sni.onlytag.queued', 'an unset prefix should fall back to the default prefix'
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    'onlytag.sni.plugin.rate_limiter', 'the default prefix must not be used as the tag')
+    'onlytag.sni.plugin.rate_limiter', 'the default prefix must not be used as the tag'
+)
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'onlyprefix.sni.prefixonly.example.com.queued', 'an unset tag should fall back to the SNI')
+    'onlyprefix.sni.prefixonly.example.com.queued', 'an unset tag should fall back to the SNI'
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    'prefixonly.example.com.sni.onlyprefix', 'the SNI must not be used as the prefix')
+    'prefixonly.example.com.sni.onlyprefix', 'the SNI must not be used as the prefix'
+)

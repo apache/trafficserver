@@ -52,7 +52,9 @@ tr.StillRunningAfter = ts
 # Test 4: Output to file instead of stdout.
 tr = Test.AddTestRun("Test output to file")
 tr.Setup.Copy('legacy_config/basic.config')
-tr.Processes.Default.Command = 'traffic_ctl config convert plugin_config basic.config generated.yaml > /dev/null && cat generated.yaml'
+tr.Processes.Default.Command = (
+    'traffic_ctl config convert plugin_config basic.config generated.yaml > /dev/null && cat generated.yaml'
+)
 tr.Processes.Default.Streams.stdout = "gold/basic.yaml"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env

@@ -23,14 +23,17 @@ Test.Summary = '''
 Test the ESI plugin when origin returns 304 response.
 '''
 
-Test.SkipUnless(Condition.PluginExists('esi.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('esi.so'),
+)
 
 
-class EsiTest():
+class EsiTest:
     """
     A class that encapsulates the configuration and execution of a set of ESI
     test cases.
     """
+
     """ static: The same server Process is used across all tests. """
     _server = None
     """ static: A counter to keep the ATS process names unique across tests. """
@@ -61,10 +64,12 @@ class EsiTest():
 
         # Generate the set of ESI responses.
         request_header = {
-            "headers":
-                "GET /esi_etag.php HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: first\r\n" + "Content-Length: 0\r\n\r\n",
+            "headers": "GET /esi_etag.php HTTP/1.1\r\n"
+            + "Host: www.example.com\r\n"
+            + "uuid: first\r\n"
+            + "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         esi_body = r'''<html>
 <body>
@@ -73,44 +78,55 @@ Hello, ESI 304 test
 </html>
 '''
         response_header = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "X-Esi: 1\r\n" + "Cache-Control: public, max-age=0\r\n" + 'Etag: "esi_304_test"\r\n' +
-                "Content-Type: text/html\r\n" + "Connection: close\r\n" + "Content-Length: {}\r\n".format(len(esi_body)) + "\r\n",
+            "headers": "HTTP/1.1 200 OK\r\n"
+            + "X-Esi: 1\r\n"
+            + "Cache-Control: public, max-age=0\r\n"
+            + 'Etag: "esi_304_test"\r\n'
+            + "Content-Type: text/html\r\n"
+            + "Connection: close\r\n"
+            + "Content-Length: {}\r\n".format(len(esi_body))
+            + "\r\n",
             "timestamp": "1469733493.993",
-            "body": esi_body
+            "body": esi_body,
         }
         server.addResponse("sessionfile.log", request_header, response_header)
 
         request_header = {
-            "headers":
-                "GET /esi_etag.php HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: second\r\n" +
-                'If-None-Match: "esi_304_test"\r\n' + "Content-Length: 0\r\n\r\n",
+            "headers": "GET /esi_etag.php HTTP/1.1\r\n"
+            + "Host: www.example.com\r\n"
+            + "uuid: second\r\n"
+            + 'If-None-Match: "esi_304_test"\r\n'
+            + "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response_header = {
-            "headers":
-                "HTTP/1.1 304 Not Modified\r\n" + "Content-Type: text/html\r\n" + "Connection: close\r\n" +
-                "Content-Length: 0\r\n" + "\r\n",
+            "headers": "HTTP/1.1 304 Not Modified\r\n"
+            + "Content-Type: text/html\r\n"
+            + "Connection: close\r\n"
+            + "Content-Length: 0\r\n"
+            + "\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         server.addResponse("sessionfile.log", request_header, response_header)
 
         request_header = {
             "headers": "GET /date.php HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: date\r\n" + "Content-Length: 0\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         date_body = r'''ESI 304 test
 No Date
 '''
         response_header = {
-            "headers":
-                "HTTP/1.1 200 OK\r\n" + "Content-Type: text/html\r\n" + "Connection: close\r\n" +
-                "Content-Length: {}\r\n".format(len(date_body)) + "\r\n",
+            "headers": "HTTP/1.1 200 OK\r\n"
+            + "Content-Type: text/html\r\n"
+            + "Connection: close\r\n"
+            + "Content-Length: {}\r\n".format(len(date_body))
+            + "\r\n",
             "timestamp": "1469733493.993",
-            "body": date_body
+            "body": date_body,
         }
         server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -132,10 +148,12 @@ No Date
 
         # Configure ATS with a vanilla ESI plugin configuration.
         ts = Test.MakeATSProcess("ts{}".format(EsiTest._ts_counter))
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|plugin_esi',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|plugin_esi',
+            }
+        )
         ts.Disk.remap_config.AddLine('map http://www.example.com/ http://127.0.0.1:{0}'.format(EsiTest._server.Variables.Port))
         ts.Disk.plugin_config.AddLine(plugin_config)
 
@@ -153,7 +171,8 @@ No Date
         tr.MakeCurlCommand(
             'http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
             '-H"Accept: */*" -H"uuid: first" --verbose -o /dev/stderr'.format(self._ts.Variables.port),
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
         tr.StillRunningAfter = self._server
@@ -164,7 +183,8 @@ No Date
         tr.MakeCurlCommand(
             'http://127.0.0.1:{0}/esi_etag.php -H"Host: www.example.com" '
             '-H"Accept: */*" -H"uuid: second" --verbose -o /dev/stderr'.format(self._ts.Variables.port),
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = "gold/esi_private_headers.gold"
         tr.StillRunningAfter = self._server

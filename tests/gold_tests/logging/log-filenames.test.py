@@ -26,8 +26,7 @@ Verify log file naming behavior.
 
 
 class LogFilenamesTest:
-    """ Common test configuration logic across the filename tests.
-    """
+    """Common test configuration logic across the filename tests."""
 
     # A counter for the ATS process to make each of them unique.
     __ts_counter = 1
@@ -36,7 +35,7 @@ class LogFilenamesTest:
     default_log_data = {'diags': 'diags.log', 'error': 'error.log'}
 
     def __init__(self, description, log_data=default_log_data):
-        ''' Handle initialization tasks common across the tests.
+        '''Handle initialization tasks common across the tests.
 
         Args:
             description (str): The description of the test. This is passed to
@@ -51,7 +50,7 @@ class LogFilenamesTest:
         self.__configure_await_TestRun(self.sentinel_log_path)
 
     def __configure_traffic_server(self, log_data):
-        ''' Common ATS configuration logic.
+        '''Common ATS configuration logic.
 
         Args:
             log_data (dict): The log name information passed to the
@@ -68,7 +67,8 @@ class LogFilenamesTest:
                 'proxy.config.diags.debug.enabled': 0,
                 'proxy.config.diags.debug.tags': 'log',
                 'proxy.config.log.periodic_tasks_interval': 1,
-            })
+            }
+        )
 
         # Intentionally retrieve a port that is closed, that is no server is
         # listening on it. We will use this to attempt talking with a
@@ -78,7 +78,8 @@ class LogFilenamesTest:
             [
                 f'map /server/down http://127.0.0.1:{self.ts.Variables.closed_port}',
                 'map / https://trafficserver.apache.org @action=deny',
-            ])
+            ]
+        )
 
         # The following log is configured so that we can wait upon it being
         # written so we know that ATS is done writing logs.
@@ -92,14 +93,15 @@ class LogFilenamesTest:
               logs:
                 - filename: {self.sentinel_log_filename}
                   format: url_and_return_code
-            ''')
+            '''
+        )
 
         self.sentinel_log_path = os.path.join(self.ts.Variables.LOGDIR, f"{self.sentinel_log_filename}.log")
 
         return self.ts
 
     def __configure_await_TestRun(self, log_path):
-        ''' Configure a TestRun that awaits upon the provided log_path to
+        '''Configure a TestRun that awaits upon the provided log_path to
         contain the sentinel log entry.
 
         Args:
@@ -113,7 +115,7 @@ class LogFilenamesTest:
         )
 
     def __configure_traffic_TestRun(self, description):
-        ''' Configure a TestRun to run the expected transactions.
+        '''Configure a TestRun to run the expected transactions.
 
         Args:
             description (str): The description to use for the TestRun.
@@ -122,12 +124,13 @@ class LogFilenamesTest:
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self.ts.Variables.port}/some/path --verbose --next '
             f'http://127.0.0.1:{self.ts.Variables.port}/server/down --verbose',
-            ts=self.ts)
+            ts=self.ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.ts)
 
     def configure_named_custom_log(self, custom_log_filename):
-        """ Configure ATS to log to the custom log file via logging.yaml.
+        """Configure ATS to log to the custom log file via logging.yaml.
 
         Args:
             custom_log_filename (str): The name of the custom log file to
@@ -141,7 +144,8 @@ class LogFilenamesTest:
             f'''
                 - filename: {custom_log_filename}
                   format: url_and_return_code
-            ''')
+            '''
+        )
 
         if custom_log_filename in ('stdout', 'stderr'):
             self.custom_log_path = custom_log_filename
@@ -155,25 +159,28 @@ class LogFilenamesTest:
         return self.custom_log_path
 
     def set_log_expectations(self):
-        ''' Configure sanity checks for each of the log types (diags, error,
+        '''Configure sanity checks for each of the log types (diags, error,
         etc.) to verify they are emitting the expected content.
         '''
 
         diags_path = self.ts.Disk.diags_log.AbsPath
         self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            "logging.yaml finished loading", f"{diags_path} should contain traffic_server diag messages")
+            "logging.yaml finished loading", f"{diags_path} should contain traffic_server diag messages"
+        )
 
         error_log_path = self.ts.Disk.error_log.AbsPath
         self.ts.Disk.error_log.Content += Testers.ContainsExpression(
-            "CONNECT: attempt fail", f"{error_log_path} should contain connection error messages")
+            "CONNECT: attempt fail", f"{error_log_path} should contain connection error messages"
+        )
 
         custom_log_path = self.ts.Disk.custom_log.AbsPath
         self.ts.Disk.custom_log.Content += Testers.ContainsExpression(
-            "https://trafficserver.apache.org/some/path: 403", f"{custom_log_path} should contain the custom transaction logs")
+            "https://trafficserver.apache.org/some/path: 403", f"{custom_log_path} should contain the custom transaction logs"
+        )
 
 
 class DefaultNamedTest(LogFilenamesTest):
-    ''' Verify that if custom names are not configured, then the default
+    '''Verify that if custom names are not configured, then the default
     'diags.log' and 'error.log' are written to.
     '''
 
@@ -185,8 +192,7 @@ class DefaultNamedTest(LogFilenamesTest):
 
 
 class CustomNamedTest(LogFilenamesTest):
-    ''' Verify that the user can assign custom filenames to diags.log, etc.
-    '''
+    '''Verify that the user can assign custom filenames to diags.log, etc.'''
 
     def __init__(self):
         log_data = {'diags': 'my_diags.log', 'error': 'my_error.log'}
@@ -197,15 +203,15 @@ class CustomNamedTest(LogFilenamesTest):
             {
                 'proxy.config.diags.logfile.filename': 'my_diags.log',
                 'proxy.config.error.logfile.filename': 'my_error.log',
-            })
+            }
+        )
 
         self.configure_named_custom_log('my_custom_log')
         self.set_log_expectations()
 
 
 class stdoutTest(LogFilenamesTest):
-    ''' Verify that we can configure the logs to go to stdout.
-    '''
+    '''Verify that we can configure the logs to go to stdout.'''
 
     def __init__(self):
 
@@ -217,7 +223,8 @@ class stdoutTest(LogFilenamesTest):
             {
                 'proxy.config.diags.logfile.filename': 'stdout',
                 'proxy.config.error.logfile.filename': 'stdout',
-            })
+            }
+        )
 
         self.configure_named_custom_log('stdout')
 
@@ -242,7 +249,8 @@ class stderrTest(LogFilenamesTest):
             {
                 'proxy.config.diags.logfile.filename': 'stderr',
                 'proxy.config.error.logfile.filename': 'stderr',
-            })
+            }
+        )
 
         self.configure_named_custom_log('stderr')
 

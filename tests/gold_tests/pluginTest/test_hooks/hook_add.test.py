@@ -36,7 +36,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.show_location': 0,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.url_remap.remap_required': 0,
-    })
+    }
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'hook_add_plugin.so'), ts)
 

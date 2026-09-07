@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -33,16 +32,14 @@ server = Test.MakeOriginServer("server")
 
 # Test Case 0:
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
+    "sessionlog.json",
+    {"headers": "GET /bigfile HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+    {
+        "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
-    }, {
-        "headers":
-            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 1048576\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    })
+        "body": "",
+    },
+)
 
 # ----
 # Setup ATS
@@ -58,7 +55,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.http2.stream_priority_enabled': 1,
@@ -67,7 +65,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http2',
-    })
+    }
+)
 
 # ----
 # Test Cases

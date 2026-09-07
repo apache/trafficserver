@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -58,7 +57,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -72,8 +72,9 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.diags.debug.tags': 'ssl',
-        'proxy.config.diags.debug.enabled': 1
-    })
+        'proxy.config.diags.debug.enabled': 1,
+    }
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -103,7 +104,8 @@ with open(os.path.join(Test.TestDirectory, 'ssl', 'signed-san.pem'), 'r') as myf
 tr = Test.AddTestRun("Default for foo should return EC cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port, foo_ec_string)
+    ts.Variables.ssl_port, foo_ec_string
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -114,8 +116,11 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_ec_string, "S
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername foo.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "echo foo | openssl s_client -tls1_2 -servername foo.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
+        ts.Variables.ssl_port
+    )
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -124,7 +129,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression(foo_rsa_string, "
 # Should receive a EC cert
 tr = Test.AddTestRun("Default for two.com should return EC cert")
 tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -133,8 +139,11 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com
 
 # Should receive a RSA cert
 tr = Test.AddTestRun("Only offer RSA ciphers, should receive RSA cert")
-tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername two.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+tr.Processes.Default.Command = (
+    "echo foo | openssl s_client -tls1_2 -servername two.com -cipher 'ECDHE-RSA-AES128-GCM-SHA256' -connect 127.0.0.1:{0}".format(
+        ts.Variables.ssl_port
+    )
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -144,7 +153,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com
 # Should receive a RSA cert
 tr = Test.AddTestRun("rsa.com only in rsa cert")
 tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername rsa.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -154,7 +164,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("CN ?= ?group.com
 # Should receive a EC cert
 tr = Test.AddTestRun("ec.com only in ec cert")
 tr.Processes.Default.Command = "echo foo | openssl s_client -tls1_2 -servername ec.com -connect 127.0.0.1:{0}".format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 tr.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

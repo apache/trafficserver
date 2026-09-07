@@ -1,6 +1,7 @@
 '''
 Static file serving and handling.
 '''
+
 import os.path
 
 # @file
@@ -35,14 +36,16 @@ r = Test.TxnBoxTestAndRun(
     "static_file.replay.yaml",
     config_path='Auto',
     config_key="meta.txn-box.global",
-    remap=[['http://base.ex', ['--key=meta.txn-box.remap', 'static_file.replay.yaml']]])
+    remap=[['http://base.ex', ['--key=meta.txn-box.remap', 'static_file.replay.yaml']]],
+)
 ts = r.Variables.TS
 ts.Setup.Copy("static_file.txt", ts.Variables.CONFIGDIR)
 ts.Setup.Copy("unreadable.txt", ts.Variables.CONFIGDIR)
 ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'txn_box|http'})
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     'Unable to read file ".*unreadable.txt" for text block "unreadable"',
-    "Verify that losing access to text block content is logged.")
+    "Verify that losing access to text block content is logged.",
+)
 
 r.StillRunningAfter = ts
 

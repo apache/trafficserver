@@ -59,27 +59,34 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'rpc|config|config.reload|configproc',
-    })
+    }
+)
 
 # Provide valid content for config files whose handlers reject empty input.
-ts.Disk.ip_allow_yaml.AddLines([
-    'ip_allow:',
-    '- apply: in',
-    '  ip_addrs: 0/0',
-    '  action: allow',
-    '  methods: ALL',
-])
-ts.Disk.logging_yaml.AddLines([
-    'logging:',
-    '  formats:',
-    '    - name: dedup_test',
-    '      format: "%<cqtq>"',
-])
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: "*.example.com"',
-    '  verify_client: NONE',
-])
+ts.Disk.ip_allow_yaml.AddLines(
+    [
+        'ip_allow:',
+        '- apply: in',
+        '  ip_addrs: 0/0',
+        '  action: allow',
+        '  methods: ALL',
+    ]
+)
+ts.Disk.logging_yaml.AddLines(
+    [
+        'logging:',
+        '  formats:',
+        '    - name: dedup_test',
+        '      format: "%<cqtq>"',
+    ]
+)
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: "*.example.com"',
+        '  verify_client: NONE',
+    ]
+)
 
 # Files to touch — sni.yaml is key because it also triggers
 # ssl_client_coordinator via add_file_and_node_dependency.
@@ -101,7 +108,7 @@ touch_cmd = "touch " + " ".join([f.AbsRunTimePath for f in files_to_touch])
 # ============================================================================
 tr = Test.AddTestRun("Change trigger record value in records.yaml via --cold")
 tr.Processes.Default.StartBefore(ts)
-tr.Processes.Default.Command = ('sleep 3 && traffic_ctl config set proxy.config.ssl.server.session_ticket.enable 0 --cold')
+tr.Processes.Default.Command = 'sleep 3 && traffic_ctl config set proxy.config.ssl.server.session_ticket.enable 0 --cold'
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
@@ -144,10 +151,12 @@ tr.Processes.Default.Command = "traffic_ctl config status -t dedup_test"
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "in_progress", "No task should remain in progress after 15s delay")
+    "in_progress", "No task should remain in progress after 15s delay"
+)
 # ssl_client_coordinator must be present in the output (it was triggered)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "ssl_client_coordinator", "ssl_client_coordinator subtask must appear in status")
+    "ssl_client_coordinator", "ssl_client_coordinator subtask must appear in status"
+)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("success", "Final status must be success")
 tr.StillRunningAfter = ts
 
@@ -155,6 +164,8 @@ tr.StillRunningAfter = ts
 # Test 5: No state-transition conflicts anywhere in the logs
 # ============================================================================
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "ignoring transition from", "No state-transition conflicts should appear in traffic.out")
+    "ignoring transition from", "No state-transition conflicts should appear in traffic.out"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Reserved subtask", "reserve_subtask() must log pre-registration messages")
+    "Reserved subtask", "reserve_subtask() must log pre-registration messages"
+)

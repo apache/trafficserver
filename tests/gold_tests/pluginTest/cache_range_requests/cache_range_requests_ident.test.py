@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -42,7 +41,7 @@ server = Test.MakeOriginServer("server")
 req_chk = {
     "headers": "GET / HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "uuid: none\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 res_chk = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -59,16 +58,24 @@ etag = '"772102f4-56f4bc1e6d417"'
 req_both = {
     "headers": "GET /both HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 res_both = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag + '\r\n' +
-        'Last-Modified: ' + last_modified + '\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=1\r\n"
+    + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen)
+    + "Connection: close\r\n"
+    + 'Etag: '
+    + etag
+    + '\r\n'
+    + 'Last-Modified: '
+    + last_modified
+    + '\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": body
+    "body": body,
 }
 
 server.addResponse("sessionlog.json", req_both, res_both)
@@ -76,15 +83,21 @@ server.addResponse("sessionlog.json", req_both, res_both)
 req_etag = {
     "headers": "GET /etag HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 res_etag = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag + '\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=1\r\n"
+    + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen)
+    + "Connection: close\r\n"
+    + 'Etag: '
+    + etag
+    + '\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": body
+    "body": body,
 }
 
 server.addResponse("sessionlog.json", req_etag, res_etag)
@@ -92,16 +105,21 @@ server.addResponse("sessionlog.json", req_etag, res_etag)
 req_lm = {
     "headers": "GET /lm HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 res_lm = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Last-Modified: ' + last_modified +
-        '\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=1\r\n"
+    + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen)
+    + "Connection: close\r\n"
+    + 'Last-Modified: '
+    + last_modified
+    + '\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": body
+    "body": body,
 }
 
 server.addResponse("sessionlog.json", req_lm, res_lm)
@@ -110,17 +128,23 @@ server.addResponse("sessionlog.json", req_lm, res_lm)
 req_custom = {
     "headers": "GET /custom HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 etag_custom = 'foo'
 
 res_custom = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=1\r\n" +
-        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag_custom + '\r\n' + '\r\n',
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=1\r\n"
+    + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen)
+    + "Connection: close\r\n"
+    + 'Etag: '
+    + etag_custom
+    + '\r\n'
+    + '\r\n',
     "timestamp": "1469733493.993",
-    "body": body
+    "body": body,
 }
 
 server.addResponse("sessionlog.json", req_custom, res_custom)
@@ -129,18 +153,27 @@ server.addResponse("sessionlog.json", req_custom, res_custom)
 req_fresh = {
     "headers": "GET /fresh HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "Accept: */*\r\n" + "Range: bytes=0-\r\n" + "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 etag_fresh = 'fresh'
 
 res_fresh = {
-    "headers":
-        "HTTP/1.1 206 Partial Content\r\n" + "Accept-Ranges: bytes\r\n" + "Cache-Control: max-age=3600\r\n" +
-        "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen) + "Connection: close\r\n" + 'Etag: ' + etag_fresh + '\r\n' + '\r\n' +
-        'Last-Modified: ' + last_modified + '\r\n' + "\r\n",
+    "headers": "HTTP/1.1 206 Partial Content\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Cache-Control: max-age=3600\r\n"
+    + "Content-Range: bytes 0-{0}/{0}\r\n".format(bodylen)
+    + "Connection: close\r\n"
+    + 'Etag: '
+    + etag_fresh
+    + '\r\n'
+    + '\r\n'
+    + 'Last-Modified: '
+    + last_modified
+    + '\r\n'
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": body
+    "body": body,
 }
 
 server.addResponse("sessionlog.json", req_fresh, res_fresh)
@@ -152,18 +185,22 @@ ts = Test.MakeATSProcess("ts")
 ts.Disk.remap_config.AddLines(
     [
         f'map http://ident http://127.0.0.1:{server.Variables.Port}' + ' @plugin=cache_range_requests.so @pparam=--consider-ident',
-        f'map http://identheader http://127.0.0.1:{server.Variables.Port}' +
-        ' @plugin=cache_range_requests.so @pparam=--consider-ident' + ' @pparam=--ident-header=CrrIdent',
-    ])
+        f'map http://identheader http://127.0.0.1:{server.Variables.Port}'
+        + ' @plugin=cache_range_requests.so @pparam=--consider-ident'
+        + ' @pparam=--ident-header=CrrIdent',
+    ]
+)
 
 # cache debug
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache')
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'cache_range_requests',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'cache_range_requests',
+    }
+)
 
 curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} -H "x-debug: x-cache"'.format(ts.Variables.port)
 

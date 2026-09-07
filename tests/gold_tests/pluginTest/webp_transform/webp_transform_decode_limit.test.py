@@ -65,7 +65,7 @@ padded_payload = vp8l_payload + (b'\x00' if len(vp8l_payload) % 2 else b'')
 webp_chunk = b'VP8L' + struct.pack('<I', len(vp8l_payload)) + padded_payload
 webp_body_bytes = b'WEBP' + webp_chunk
 webp_body_bytes = b'RIFF' + struct.pack('<I', len(webp_body_bytes)) + webp_body_bytes
-assert all(b <= 0x7f for b in webp_body_bytes)
+assert all(b <= 0x7F for b in webp_body_bytes)
 webp_body = webp_body_bytes.decode('ascii')
 WEBP_LEN = len(webp_body)
 
@@ -75,22 +75,24 @@ server = Test.MakeOriginServer("server")
 # through to ImageMagick, which reads the over-limit dimensions from the VP8L
 # header.
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n",
+    "sessionlog.json",
+    {"headers": "GET /overwide.webp HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {
+        "headers": "HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\nContent-Length: {0}\r\nConnection: close\r\n\r\n".format(
+            WEBP_LEN
+        ),
         "timestamp": "1",
-        "body": ""
-    }, {
-        "headers":
-            "HTTP/1.1 200 OK\r\nContent-Type: image/webp\r\nContent-Length: {0}\r\nConnection: close\r\n\r\n".format(WEBP_LEN),
-        "timestamp": "1",
-        "body": webp_body
-    })
+        "body": webp_body,
+    },
+)
 
 ts = Test.MakeATSProcess("ts", enable_cache=False)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'webp_transform',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'webp_transform',
+    }
+)
 ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_jpeg')
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
@@ -98,13 +100,15 @@ ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.f
 # level. Asserting it confirms the resource limit engaged (not the byte cap) and
 # tells autest the ERROR line is expected.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "ImageMagick.. error", "The decode-side ResourceLimit must reject the over-dimension image")
+    "ImageMagick.. error", "The decode-side ResourceLimit must reject the over-dimension image"
+)
 
 tr = Test.AddTestRun("over-dimension image reverts to original instead of crashing")
 tr.MakeCurlCommand(
     '-sS -D - -o /dev/null -w "size_download=%{{size_download}}" -x 127.0.0.1:{0} '
     '-H "Accept: image/jpeg" http://127.0.0.1:{1}/overwide.webp'.format(ts.Variables.port, server.Variables.Port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
@@ -112,6 +116,8 @@ tr.Processes.Default.ReturnCode = 0
 # cap is not exceeded). The reverted body is the original bytes, so its size
 # equals the source image, not a smaller converted jpeg.
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "HTTP/1.1 200", "Client must get a 200 (decode failed over the limit, original forwarded), not a crash or 502")
+    "HTTP/1.1 200", "Client must get a 200 (decode failed over the limit, original forwarded), not a crash or 502"
+)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "size_download={0}".format(WEBP_LEN), "Original bytes must be forwarded unchanged, not a converted jpeg")
+    "size_download={0}".format(WEBP_LEN), "Original bytes must be forwarded unchanged, not a converted jpeg"
+)

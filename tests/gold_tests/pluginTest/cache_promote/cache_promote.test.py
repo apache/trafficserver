@@ -23,7 +23,6 @@ Test.SkipUnless(Condition.PluginExists('cache_promote.so'))
 
 
 class CachePromotePluginTest:
-
     def __init__(self):
         self._tr = Test.AddTestRun("cache_promote")
         self.__setupOriginServer()
@@ -53,7 +52,8 @@ class CachePromotePluginTest:
                 "proxy.config.diags.debug.tags": "http|cache_promote",
                 "proxy.config.http.number_of_redirections": 1,  # follow redirect
                 "proxy.config.http.redirect.actions": "self:follow",  # redirects to self are not followed by default
-            })
+            }
+        )
         self._ts.Disk.plugin_config.AddLine("xdebug.so --enable=x-cache,x-cache-key")
         self._ts.Disk.remap_config.AddLines(
             {
@@ -65,7 +65,8 @@ map /test_1/ http://127.0.0.1:{self._httpbin.Variables.Port}/ \
     @plugin=cache_promote.so @pparam=--policy=lru @pparam=--hits=2 @pparam=--buckets=15000000 @pparam=--disable-on-redirect \
     @plugin=cachekey.so @pparam=--static-prefix=trafficserver.apache.org/443
 """
-            })
+            }
+        )
 
     def run(self):
         self._tr.Processes.Default.StartBefore(self._ts)

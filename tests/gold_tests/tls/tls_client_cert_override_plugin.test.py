@@ -28,21 +28,17 @@ cafile2 = "{0}/signer2.pem".format(Test.RunDirectory)
 server = Test.MakeOriginServer(
     "server",
     ssl=True,
-    options={
-        "--clientCA": cafile,
-        "--clientverify": ""
-    },
+    options={"--clientCA": cafile, "--clientverify": ""},
     clientcert="{0}/signed-foo.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-foo.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-foo.key".format(Test.RunDirectory),
+)
 server2 = Test.MakeOriginServer(
     "server2",
     ssl=True,
-    options={
-        "--clientCA": cafile2,
-        "--clientverify": ""
-    },
+    options={"--clientCA": cafile2, "--clientverify": ""},
     clientcert="{0}/signed2-bar.pem".format(Test.RunDirectory),
-    clientkey="{0}/signed-bar.key".format(Test.RunDirectory))
+    clientkey="{0}/signed-bar.key".format(Test.RunDirectory),
+)
 server3 = Test.MakeOriginServer("server3")
 server.Setup.Copy("ssl/signer.pem")
 server.Setup.Copy("ssl/signer2.pem")
@@ -63,14 +59,14 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: example.com\r\n\r\n", "tim
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-Control: no-cache\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: bar.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nCache-Control: no-cache\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -90,7 +86,7 @@ snipath = ts.Disk.sni_yaml.AbsPath
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secret_load_test.so'), ts)
 
-shortdir = ts.Variables.SSLDir[0:ts.Variables.SSLDir.rfind("/")]
+shortdir = ts.Variables.SSLDir[0 : ts.Variables.SSLDir.rfind("/")]
 
 ts.Disk.records_config.update(
     {
@@ -105,7 +101,8 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl_secret_load|http|ssl',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -113,20 +110,29 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-    .format(server.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key"))
+    'map /case1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key"
+    )
+)
 ts.Disk.remap_config.AddLine(
-    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-    .format(server.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key"))
+    'map /badcase1 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key"
+    )
+)
 ts.Disk.remap_config.AddLine(
-    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-    .format(server2.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key"))
+    'map /case2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server2.Variables.SSL_Port, "signed2-foo.pem", "signed-foo.key"
+    )
+)
 ts.Disk.remap_config.AddLine(
-    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'
-    .format(server2.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key"))
+    'map /badcase2 https://127.0.0.1:{0}/ @plugin=conf_remap.so @pparam=proxy.config.ssl.client.cert.filename={1} plugin=conf_remap.so @pparam=proxy.config.ssl.client.private_key.filename={2}'.format(
+        server2.Variables.SSL_Port, "signed-foo.pem", "signed-foo.key"
+    )
+)
 
 # Should succeed
 tr = Test.AddTestRun("Connect with correct client cert to first server")
@@ -175,7 +181,8 @@ trupdate.StillRunningAfter = server2
 # in the config/ssl directory for records.yaml
 trupdate.Setup.CopyAs("ssl/signed-foo.pem", ".", "{0}/signed2-foo.pem".format(ts.Variables.SSLDir))
 trupdate.Processes.Default.Command = 'traffic_ctl config set proxy.config.ssl.client.cert.path {0}/; touch {1}'.format(
-    shortdir, snipath)
+    shortdir, snipath
+)
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 trupdate.Processes.Default.Env = ts.Env
 trupdate.Processes.Default.ReturnCode = 0

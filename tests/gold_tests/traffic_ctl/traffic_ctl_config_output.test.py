@@ -47,16 +47,17 @@ traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().validate_
 # Test 1: Default output
 traffic_ctl.config().get("proxy.config.diags.debug.enabled").validate_with_text("proxy.config.diags.debug.enabled: 1")
 # Test 2: Default output with default.
-traffic_ctl.config().get("proxy.config.diags.debug.tags").with_default() \
-    .validate_with_text("proxy.config.diags.debug.tags: rpc # default http|dns")
+traffic_ctl.config().get("proxy.config.diags.debug.tags").with_default().validate_with_text(
+    "proxy.config.diags.debug.tags: rpc # default http|dns"
+)
 
 # Test 3: Now same output test but with defaults, traffic_ctl supports adding default value
 # when using --records.
 traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().with_default().validate_with_goldfile("t2_yaml.gold")
 # Test 4:
 traffic_ctl.config().get(
-    "proxy.config.diags.debug.tags proxy.config.diags.debug.enabled proxy.config.diags.debug.throttling_interval_msec").as_records(
-    ).with_default().validate_with_goldfile("t3_yaml.gold")
+    "proxy.config.diags.debug.tags proxy.config.diags.debug.enabled proxy.config.diags.debug.throttling_interval_msec"
+).as_records().with_default().validate_with_goldfile("t3_yaml.gold")
 
 ##### CONFIG MATCH
 # Test 5:
@@ -85,8 +86,8 @@ traffic_ctl.config().describe("proxy.config.http.server_ports").validate_with_go
 # Test 10: Reset a single modified record (proxy.config.diags.debug.tags is set to "rpc" in records_yaml,
 # default is "http|dns", so it should be reset)
 traffic_ctl.config().reset("proxy.config.diags.debug.tags").validate_with_text(
-    "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync "
-    "configuration, restart is not required")
+    "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync configuration, restart is not required"
+)
 # Test 11: Validate the record was reset to its default value
 traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
 
@@ -95,7 +96,8 @@ traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("pr
 traffic_ctl.config().set("proxy.config.diags.debug.tags", "rpc").exec()
 # Test 13: Resetting proxy.config.diags should reset all matching modified records under that path
 traffic_ctl.config().reset("proxy.config.diags").validate_contains_all(
-    "Set proxy.config.diags.debug.tags", "Set proxy.config.diags.debug.enabled")
+    "Set proxy.config.diags.debug.tags", "Set proxy.config.diags.debug.enabled"
+)
 # Test 14: Validate the record was reset to its default value
 traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
 
@@ -123,8 +125,8 @@ traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("pr
 traffic_ctl.config().set("proxy.config.diags.debug.tags", "yaml_test").exec()
 # Test 20: Reset using YAML-style path (records.diags.debug.tags instead of proxy.config.diags.debug.tags)
 traffic_ctl.config().reset("records.diags.debug.tags").validate_with_text(
-    "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync "
-    "configuration, restart is not required")
+    "Set proxy.config.diags.debug.tags, please wait 10 seconds for traffic server to sync configuration, restart is not required"
+)
 # Test 21: Validate the record was reset to its default value
 traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
 
@@ -133,7 +135,8 @@ traffic_ctl.config().set("proxy.config.diags.debug.tags", "yaml_partial_test").e
 traffic_ctl.config().set("proxy.config.diags.debug.enabled", "1").exec()
 # Test 23: Reset using records.diags (YAML format)
 traffic_ctl.config().reset("records.diags").validate_contains_all(
-    "Set proxy.config.diags.debug.tags", "Set proxy.config.diags.debug.enabled")
+    "Set proxy.config.diags.debug.tags", "Set proxy.config.diags.debug.enabled"
+)
 # Test 24: Validate record was reset
 traffic_ctl.config().get("proxy.config.diags.debug.tags").validate_with_text("proxy.config.diags.debug.tags: http|dns")
 

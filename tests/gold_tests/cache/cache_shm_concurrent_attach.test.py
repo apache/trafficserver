@@ -99,7 +99,8 @@ class CacheShmConcurrentAttachTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.cache.shm.enabled': 1,
@@ -109,7 +110,8 @@ class CacheShmConcurrentAttachTest:
                 'proxy.config.diags.debug.tags': 'cache_shm',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1/ @plugin=generator.so')
         return ts
@@ -117,17 +119,21 @@ class CacheShmConcurrentAttachTest:
     def _add_diags_log_assertions(self):
         # ts1 is the owner: it creates the fresh control segment.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create and own the shm control segment')
+            r'cache shm: creating fresh control segment', 'ts1 should create and own the shm control segment'
+        )
 
         # ts2 starts while ts1 owns the segment: it must refuse and disable shm.
         # The message head differs by platform (flock vs owner_pid backstop); the
         # tail is common, so anchor on it.
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'disabling shm this run to avoid concurrent attach', 'ts2 must refuse to attach while ts1 owns the segment')
+            r'disabling shm this run to avoid concurrent attach', 'ts2 must refuse to attach while ts1 owns the segment'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: creating fresh control segment', 'ts2 must not create a control segment when it refuses shm')
+            r'cache shm: creating fresh control segment', 'ts2 must not create a control segment when it refuses shm'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: attaching up to \d+ stripes \(fast restart', "ts2 must not attach ts1's live control segment")
+            r'cache shm: attaching up to \d+ stripes \(fast restart', "ts2 must not attach ts1's live control segment"
+        )
 
     def _start_owner(self):
         tr = Test.AddTestRun('Cold-start ts1 (becomes the shm owner)')
@@ -135,7 +141,8 @@ class CacheShmConcurrentAttachTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts1.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression('200', 'ts1 GET should return 200')
         tr.StillRunningAfter = self.ts1
@@ -148,10 +155,12 @@ class CacheShmConcurrentAttachTest:
         tr.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}\\n" '
             f'-H "x-debug: x-cache,via" '
-            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}')
+            f'http://127.0.0.1:{self.ts2.Variables.port}{self._url_path}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            '200', 'ts2 should serve from its own disk cache with shm disabled')
+            '200', 'ts2 should serve from its own disk cache with shm disabled'
+        )
         tr.StillRunningAfter = self.ts1
         tr.StillRunningAfter = self.ts2
 
@@ -159,8 +168,8 @@ class CacheShmConcurrentAttachTest:
         tr = Test.AddTestRun(f'Drain and clean-shutdown {name}')
         tr.Processes.Default.Env = ts.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _cleanup_shm(self):
@@ -171,7 +180,8 @@ class CacheShmConcurrentAttachTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._start_owner()

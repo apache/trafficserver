@@ -37,7 +37,8 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 0,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'header_rewrite|plugin',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine("map http://example.com http://127.0.0.1:{0}".format(server.Variables.Port))
 
@@ -46,19 +47,19 @@ ts.Disk.remap_config.AddLine("map http://example.com http://127.0.0.1:{0}".forma
 # to set a custom response header.  xdebug.so is listed but disabled.
 ts.Disk.MakeConfigFile("plugin.yaml").update(
     {
-        "plugins":
-            [
-                {
-                    "path": "header_rewrite.so",
-                    "config": "cond %{SEND_RESPONSE_HDR_HOOK}\n  set-header X-Plugin-YAML \"loaded-from-inline\"\n",
-                },
-                {
-                    "path": "xdebug.so",
-                    "enabled": False,
-                    "params": ["--enable=x-cache"],
-                },
-            ]
-    })
+        "plugins": [
+            {
+                "path": "header_rewrite.so",
+                "config": "cond %{SEND_RESPONSE_HDR_HOOK}\n  set-header X-Plugin-YAML \"loaded-from-inline\"\n",
+            },
+            {
+                "path": "xdebug.so",
+                "enabled": False,
+                "params": ["--enable=x-cache"],
+            },
+        ]
+    }
+)
 
 # Test 1: Verify header_rewrite loaded via plugin.yaml sets the response header.
 tr = Test.AddTestRun("Verify inline config sets response header")
@@ -67,7 +68,8 @@ tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand('-s -D- -o /dev/null -H "Host: example.com" http://127.0.0.1:{0}/test'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "X-Plugin-YAML: loaded-from-inline", "Response should contain X-Plugin-YAML header set by inline config")
+    "X-Plugin-YAML: loaded-from-inline", "Response should contain X-Plugin-YAML header set by inline config"
+)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
@@ -75,10 +77,12 @@ tr.StillRunningAfter = ts
 # header and confirm the X-Cache header is absent from the response.
 tr = Test.AddTestRun("Verify disabled plugin is not loaded")
 tr.MakeCurlCommand(
-    '-s -D- -o /dev/null -H "Host: example.com" -H "X-Debug: x-cache" http://127.0.0.1:{0}/test'.format(ts.Variables.port), ts=ts)
+    '-s -D- -o /dev/null -H "Host: example.com" -H "X-Debug: x-cache" http://127.0.0.1:{0}/test'.format(ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression(
-    "X-Cache:", "Response should NOT contain X-Cache header since xdebug is disabled")
+    "X-Cache:", "Response should NOT contain X-Cache header since xdebug is disabled"
+)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 

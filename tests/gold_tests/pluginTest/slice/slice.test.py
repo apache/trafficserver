@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,7 +24,9 @@ Basic slice plugin test
 # Reload remap rule with slice plugin
 # Request content through the slice plugin
 
-Test.SkipUnless(Condition.PluginExists('slice.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('slice.so'),
+)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -73,16 +74,20 @@ ts.Disk.remap_config.AddLines(
     [
         f'map http://preload/ http://127.0.0.1:{server.Variables.Port}',
         f'map http://slice_only/ http://127.0.0.1:{server.Variables.Port}',
-        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
-        f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}' +
-        f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}' + ' @pparam=--skip-header=SkipSlice',
-    ])
+        f'map http://slice/ http://127.0.0.1:{server.Variables.Port}'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}',
+        f'map http://slicehdr/ http://127.0.0.1:{server.Variables.Port}'
+        + f' @plugin=slice.so @pparam=--blockbytes-test={block_bytes}'
+        + ' @pparam=--skip-header=SkipSlice',
+    ]
+)
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'slice',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'slice',
+    }
+)
 
 # 0 Test - Prefetch entire asset into cache
 tr = Test.AddTestRun("Fetch first slice range")

@@ -82,7 +82,8 @@ class ASTVisitor(hrw4uVisitor):
 
     def _visit_var_decl(self, ctx) -> VarDecl:
         return VarDecl(
-            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, line=ctx.start.line)
+            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, line=ctx.start.line
+        )
 
     def _visit_body(self, items) -> list[BodyNode]:
         """Shared helper for sectionBody and blockItem lists."""

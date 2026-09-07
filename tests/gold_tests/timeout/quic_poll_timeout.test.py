@@ -51,7 +51,8 @@ class TestPollTimeout:
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'net|v_quic|quic|socket|inactivity_cop|v_iocore_net_poll',
-            })
+            }
+        )
 
         if self.udp_poll_timeout_in is not None:
             self._ts.Disk.records_config.update({'proxy.config.udp.poll_timeout': self.udp_poll_timeout_in})
@@ -65,7 +66,8 @@ class TestPollTimeout:
         tr.Processes.Default.StartBefore(self._ts)
 
         self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-            f"ET_UDP.*timeout: {self.expected_udp_poll_timeout},", "Verify UDP poll timeout.")
+            f"ET_UDP.*timeout: {self.expected_udp_poll_timeout},", "Verify UDP poll timeout."
+        )
 
 
 # Tests start.

@@ -84,8 +84,8 @@ class PerClientConnectionMaxTest:
         elif exempt_list_file:
             exempt_description = 'exempt list file'
         tr = Test.AddTestRun(
-            f'proxy.config.net.per_client.connection.max: {protocol_string}, '
-            f'{exempt_description}: {exempt_list_description}')
+            f'proxy.config.net.per_client.connection.max: {protocol_string}, {exempt_description}: {exempt_list_description}'
+        )
         self._configure_dns(tr)
         self._configure_server(tr)
         self._configure_trafficserver()
@@ -131,7 +131,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         if self._protocol == Protocol.HTTP:
             server_port = self._server.Variables.http_port
             scheme = 'http'
@@ -153,22 +154,27 @@ ssl_multicert:
                 # transactions are done. This allows us to verify cleanup is working
                 # per the ConnectionTracker metrics.
                 'proxy.config.http.keep_alive_enabled_in': 0,
-            })
+            }
+        )
         if self._exempt_list_file:
             exempt_list_absolute = os.path.join(self._ts.Variables.CONFIGDIR, os.path.basename(self._exempt_list_file))
             self._ts.Setup.Copy(self._exempt_list_file, exempt_list_absolute)
             self._ts.Disk.plugin_config.AddLine(f'connection_exempt_list.so {exempt_list_absolute}')
         elif self._exempt_list:
-            self._ts.Disk.records_config.update({
-                'proxy.config.http.per_client.connection.exempt_list': self._exempt_list,
-            })
+            self._ts.Disk.records_config.update(
+                {
+                    'proxy.config.http.per_client.connection.exempt_list': self._exempt_list,
+                }
+            )
         if self._exempt_list_applies:
             self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                f'WARNING:.*too many connections:', 'Connections should not be throttled due to the exempt list.')
+                f'WARNING:.*too many connections:', 'Connections should not be throttled due to the exempt list.'
+            )
         else:
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
                 f'WARNING:.*too many connections:.*limit={self._max_client_connections}',
-                'Verify the user is warned about the connection limit being hit.')
+                'Verify the user is warned about the connection limit being hit.',
+            )
 
     def _configure_client(self, tr: 'TestRun') -> None:
         """Configure the TestRun.
@@ -181,7 +187,8 @@ ssl_multicert:
             self._replay_file,
             http_ports=[self._ts.Variables.port],
             https_ports=[self._ts.Variables.ssl_port],
-            run_parallel=True)
+            run_parallel=True,
+        )
 
         p.StartBefore(self._dns)
         p.StartBefore(self._server)
@@ -201,12 +208,15 @@ ssl_multicert:
             if self._protocol == Protocol.HTTP:
                 p.Streams.All += Testers.ContainsExpression(
                     "The peer closed the connection while reading.",
-                    "A connection should be closed due to too many client connections.")
+                    "A connection should be closed due to too many client connections.",
+                )
                 p.Streams.All += Testers.ContainsExpression(
-                    "Failed HTTP/1 transaction with key: fourth-request", "The fourth request should fail.")
+                    "Failed HTTP/1 transaction with key: fourth-request", "The fourth request should fail."
+                )
             else:
                 p.Streams.All += Testers.ContainsExpression(
-                    "ECONNRESET: Connection reset by peer", "A connection should be closed due to too many client connections.")
+                    "ECONNRESET: Connection reset by peer", "A connection should be closed due to too many client connections."
+                )
                 p.Streams.All += Testers.ExcludesExpression("fourth-request", "The fourth request should fail.")
 
     def _verify_metrics(self) -> None:
@@ -217,21 +227,26 @@ ssl_multicert:
             'traffic_ctl metric get '
             'proxy.process.net.per_client.connections_throttled_in '
             'proxy.process.net.per_client.connections_exempt_in '
-            'proxy.process.net.connection_tracker_table_size')
+            'proxy.process.net.connection_tracker_table_size'
+        )
         tr.Processes.Default.ReturnCode = 0
         if self._exempt_list_applies:
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'proxy.process.net.per_client.connections_throttled_in 0', 'Verify no connections were recorded as throttled.')
+                'proxy.process.net.per_client.connections_throttled_in 0', 'Verify no connections were recorded as throttled.'
+            )
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'proxy.process.net.per_client.connections_exempt_in 5',
-                'Verify that the connections were all recorded as exempted.')
+                'proxy.process.net.per_client.connections_exempt_in 5', 'Verify that the connections were all recorded as exempted.'
+            )
         else:
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'proxy.process.net.per_client.connections_throttled_in 1', 'Verify the connection was recorded as throttled.')
+                'proxy.process.net.per_client.connections_throttled_in 1', 'Verify the connection was recorded as throttled.'
+            )
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                'proxy.process.net.per_client.connections_exempt_in 0', 'Verify no connections were recorded as exempt.')
+                'proxy.process.net.per_client.connections_exempt_in 0', 'Verify no connections were recorded as exempt.'
+            )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'proxy.process.net.connection_tracker_table_size 0', 'Verify the table was cleaned up correctly.')
+            'proxy.process.net.connection_tracker_table_size 0', 'Verify the table was cleaned up correctly.'
+        )
 
 
 PerClientConnectionMaxTest(Protocol.HTTP)

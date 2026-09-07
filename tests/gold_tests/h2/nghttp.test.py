@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -22,7 +21,9 @@ Test.Summary = '''
 Test with nghttp
 '''
 
-Test.SkipUnless(Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),)
+Test.SkipUnless(
+    Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
+)
 Test.ContinueOnFail = True
 
 # ----
@@ -49,8 +50,10 @@ ts.Setup.CopyAs('rules/graceful_shutdown.conf', Test.RunDirectory)
 ts.Disk.remap_config.AddLines(
     [
         'map /httpbin/ http://127.0.0.1:{0}/ @plugin=header_rewrite.so @pparam={1}/graceful_shutdown.conf'.format(
-            httpbin.Variables.Port, Test.RunDirectory)
-    ])
+            httpbin.Variables.Port, Test.RunDirectory
+        )
+    ]
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -58,15 +61,17 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http2_cs',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
-    })
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    }
+)
 
 # ----
 # Test Cases
@@ -75,7 +80,9 @@ ts.Disk.records_config.update(
 # Test Case 0: Trailer
 tr = Test.AddTestRun()
 tr.TimeOut = 10
-tr.Processes.Default.Command = f"nghttp -vn --no-dep 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/post' --trailer 'foo: bar' -d 'post_body'"
+tr.Processes.Default.Command = (
+    f"nghttp -vn --no-dep 'https://127.0.0.1:{ts.Variables.ssl_port}/httpbin/post' --trailer 'foo: bar' -d 'post_body'"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(httpbin)
 tr.Processes.Default.StartBefore(Test.Processes.ts)

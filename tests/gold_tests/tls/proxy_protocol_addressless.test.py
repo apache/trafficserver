@@ -36,7 +36,7 @@ def add_addressless_proxy_protocol_run(protocol_version: int, description: str, 
     request_header = {
         "headers": f"GET /proxy_protocol HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     response_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": "ok"}
     server.addResponse("sessionlog.json", request_header, response_header)
@@ -49,7 +49,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
     ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}/')
     records_config = {
@@ -62,7 +63,8 @@ ssl_multicert:
             {
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            })
+            }
+        )
     ts.Disk.records_config.update(records_config)
 
     tr = Test.AddTestRun(description)
@@ -72,7 +74,8 @@ ssl_multicert:
     tr.Processes.Default.Command = (
         f'{sys.executable} proxy_protocol_client.py 127.0.0.1 {port} {host} '
         f'127.0.0.1 127.0.0.1 60123 {server.Variables.Port} '
-        f'{protocol_version} --addressless')
+        f'{protocol_version} --addressless'
+    )
     if use_tls:
         tr.Processes.Default.Command += ' --https'
     tr.Processes.Default.StartBefore(server)

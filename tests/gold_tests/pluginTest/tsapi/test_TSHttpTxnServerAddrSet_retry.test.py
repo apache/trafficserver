@@ -51,7 +51,8 @@ class TestServerAddrSetRetry:
                 # Enable retries so we can see if OS_DNS is called multiple times
                 'proxy.config.http.connect_attempts_max_retries': 3,
                 'proxy.config.http.connect_attempts_timeout': 1,
-            })
+            }
+        )
 
         # Remap to a nonexisting server - the plugin will set addresses
         bogus_port = get_port(ts, "bogus_port")
@@ -77,13 +78,16 @@ class TestServerAddrSetRetry:
         ts.Disk.diags_log.Content = Testers.ContainsExpression("OS_DNS hook called, count=1", "First OS_DNS call logged")
 
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            "SUCCESS: OS_DNS hook was called", "Plugin was able to retry with different address")
+            "SUCCESS: OS_DNS hook was called", "Plugin was able to retry with different address"
+        )
 
         if enable_cache:
             ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-                "failed assertion", "ATS should not hit the redirect write-lock assertion")
+                "failed assertion", "ATS should not hit the redirect write-lock assertion"
+            )
             ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-                "received signal 6", "ATS should not abort while retrying origin selection")
+                "received signal 6", "ATS should not abort while retrying origin selection"
+            )
 
 
 test = TestServerAddrSetRetry()

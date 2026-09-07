@@ -24,7 +24,7 @@ from typing import Any
 
 from .documentation import LSP_STRING_LITERAL_INFO
 from .hover import HoverInfoProvider, InterpolationHoverProvider
-from .types import (CompletionContext, VariableDeclaration)
+from .types import CompletionContext, VariableDeclaration
 
 
 class StringLiteralHandler:
@@ -34,7 +34,8 @@ class StringLiteralHandler:
     def _create_string_literal_hover() -> dict[str, Any]:
         """Create standardized string literal hover info."""
         return HoverInfoProvider.create_hover_info(
-            f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}")
+            f"**{LSP_STRING_LITERAL_INFO['name']}** - HRW4U String Literal\n\n{LSP_STRING_LITERAL_INFO['description']}"
+        )
 
     @staticmethod
     def check_string_literal(line: str, character: int) -> dict[str, Any] | None:
@@ -50,7 +51,7 @@ class StringLiteralHandler:
                     quote_start = i
                 else:
                     if quote_start <= character <= i:
-                        string_content = line[quote_start + 1:i]
+                        string_content = line[quote_start + 1 : i]
                         cursor_in_string = character - quote_start - 1
 
                         interpolation_info = InterpolationHandler.check_interpolated_expression(string_content, cursor_in_string)
@@ -66,7 +67,7 @@ class StringLiteralHandler:
                     quote_start = i
                 else:
                     if quote_start <= character <= i:
-                        string_content = line[quote_start + 1:i]
+                        string_content = line[quote_start + 1 : i]
                         cursor_in_string = character - quote_start - 1
 
                         interpolation_info = InterpolationHandler.check_interpolated_expression(string_content, cursor_in_string)
@@ -98,7 +99,8 @@ class InterpolationHandler:
 
                 # Fallback for unrecognized interpolations
                 return HoverInfoProvider.create_hover_info(
-                    f"**{{{expression}}}** - HRW4U String Interpolation\n\nVariable substitution in string literals.")
+                    f"**{{{expression}}}** - HRW4U String Interpolation\n\nVariable substitution in string literals."
+                )
 
         return None
 
@@ -119,7 +121,7 @@ class ContextAnalyzer:
             "is_function_context": False,
             "allows_keywords": False,
             "current_section": None,
-            "replacement_range": None
+            "replacement_range": None,
         }
 
         stripped_prefix = prefix.strip()
@@ -138,14 +140,8 @@ class ContextAnalyzer:
 
                     word_start = len(prefix) - len(last_part)
                     context["replacement_range"] = {
-                        "start": {
-                            "line": line,
-                            "character": word_start
-                        },
-                        "end": {
-                            "line": line,
-                            "character": character
-                        }
+                        "start": {"line": line, "character": word_start},
+                        "end": {"line": line, "character": character},
                     }
 
         if not context["has_dot"] and not context["is_section_context"]:
@@ -154,6 +150,7 @@ class ContextAnalyzer:
 
         # Determine current section
         from hrw4u.states import SectionType
+
         for i in range(line, -1, -1):
             line_text = lines[i].strip()
             if '{' in line_text and not line_text.startswith('{'):
@@ -213,8 +210,12 @@ class DocumentAnalyzer:
                 continue
 
             # Check for VARS or SESSION_VARS section start
-            if stripped == 'VARS {' or stripped.startswith('VARS {') or \
-               stripped == 'SESSION_VARS {' or stripped.startswith('SESSION_VARS {'):
+            if (
+                stripped == 'VARS {'
+                or stripped.startswith('VARS {')
+                or stripped == 'SESSION_VARS {'
+                or stripped.startswith('SESSION_VARS {')
+            ):
                 in_vars_section = True
                 brace_count = 1
                 continue
@@ -241,7 +242,8 @@ class DocumentAnalyzer:
                                 description = f"Variable of type {var_type}"
 
                             variable_declarations[var_name] = VariableDeclaration(
-                                type=var_type, description=description, line=line_num)
+                                type=var_type, description=description, line=line_num
+                            )
                     except Exception:
                         continue
 

@@ -40,21 +40,17 @@ response_header_chk = {
 origin.addResponse("sessionlog.json", request_header_chk, response_header_chk)
 
 request_header = {
-    "headers":
-        f"GET /foo.txt HTTP/1.1\r\n"
-        "Host: does.not.matter\r\n"  # But cant be omitted
-        "\r\n",
+    "headers": f"GET /foo.txt HTTP/1.1\r\n"
+    "Host: does.not.matter\r\n"  # But cant be omitted
+    "\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=60\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=60\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": f"This is the body for foo.txt\n"
+    "body": f"This is the body for foo.txt\n",
 }
 origin.addResponse("sessionlog.json", request_header, response_header)
 
@@ -80,7 +76,8 @@ ts1.Disk.records_config.update(
         'proxy.config.http.parent_proxy.self_detect': 0,
         'proxy.config.http.insert_response_via_str': 1,
         'proxy.config.proxy_name': 'ts1',
-    })
+    }
+)
 
 # Configure Traffic Server Edge
 ts0 = Test.MakeATSProcess("ts0")
@@ -97,13 +94,15 @@ ts0.Disk.records_config.update(
         'proxy.config.http.parent_proxy.self_detect': 0,
         'proxy.config.http.insert_response_via_str': 1,
         'proxy.config.proxy_name': 'ts0',
-    })
+    }
+)
 
 ts0.Disk.parent_config.AddLines(
     [
         f"dest_ip=93.184.216.34 port=80 go_direct=true",  # example.com
         f'dest_host=foo.bar port=80 parent="ts1:{ts1.Variables.port}|1;" go_direct="false" parent_is_proxy="true"',
-    ])
+    ]
+)
 
 # Start everything up
 tr = Test.AddTestRun("init")

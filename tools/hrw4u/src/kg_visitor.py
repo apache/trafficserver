@@ -27,7 +27,7 @@ from hrw4u.symbols import SymbolResolver
 from hrw4u.states import SectionType
 from hrw4u.visitor_base import BaseHRWVisitor
 from hrw4u.common import SystemDefaults
-from hrw4u.tables import (OPERATOR_MAP, CONDITION_MAP, FUNCTION_MAP, STATEMENT_FUNCTION_MAP, LSPPatternMatcher)
+from hrw4u.tables import OPERATOR_MAP, CONDITION_MAP, FUNCTION_MAP, STATEMENT_FUNCTION_MAP, LSPPatternMatcher
 from hrw4u.types import SuffixGroup
 
 
@@ -53,7 +53,7 @@ class KGEdge:
             'source_id': self.source_id,
             'target_id': self.target_id,
             'relationship': self.relationship,
-            'properties': self.properties
+            'properties': self.properties,
         }
 
 
@@ -77,12 +77,9 @@ class KGData:
 
 
 class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
-
     def __init__(
-            self,
-            filename: str = SystemDefaults.DEFAULT_FILENAME,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector=None) -> None:
+        self, filename: str = SystemDefaults.DEFAULT_FILENAME, debug: bool = SystemDefaults.DEFAULT_DEBUG, error_collector=None
+    ) -> None:
         super().__init__(filename, debug, error_collector)
 
         self.symbol_resolver = SymbolResolver(debug)
@@ -120,17 +117,24 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
         """Create nodes representing the semantic knowledge from grammar and libraries."""
 
         grammar_rules = [
-            "program", "section", "varSection", "statement", "conditional", "expression", "term", "factor", "comparison",
-            "functionCall"
+            "program",
+            "section",
+            "varSection",
+            "statement",
+            "conditional",
+            "expression",
+            "term",
+            "factor",
+            "comparison",
+            "functionCall",
         ]
 
         for rule in grammar_rules:
             self._add_node(
-                "GrammarRule", {
-                    "name": rule,
-                    "type": "parser_rule",
-                    "description": f"ANTLR grammar rule for {rule}"
-                }, f"grammar:{rule}")
+                "GrammarRule",
+                {"name": rule, "type": "parser_rule", "description": f"ANTLR grammar rule for {rule}"},
+                f"grammar:{rule}",
+            )
 
         section_mappings = {
             "TXN_START": "TXN_START_HOOK",
@@ -140,30 +144,36 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
             "SEND_REQUEST": "SEND_REQUEST_HDR_HOOK",
             "READ_RESPONSE": "READ_RESPONSE_HDR_HOOK",
             "SEND_RESPONSE": "SEND_RESPONSE_HDR_HOOK",
-            "TXN_CLOSE": "TXN_CLOSE_HOOK"
+            "TXN_CLOSE": "TXN_CLOSE_HOOK",
         }
 
         for hrw4u_section, ats_hook in section_mappings.items():
             self._add_node(
-                "ATSHook", {
+                "ATSHook",
+                {
                     "name": ats_hook,
                     "hrw4u_section": hrw4u_section,
-                    "description": f"Apache Traffic Server hook for {hrw4u_section}"
-                }, f"ats_hook:{ats_hook}")
+                    "description": f"Apache Traffic Server hook for {hrw4u_section}",
+                },
+                f"ats_hook:{ats_hook}",
+            )
 
         for op_pattern, params in OPERATOR_MAP.items():
             validator = params.validate if params else None
             restricted_sections = params.sections if params else None
             command = params.target if params else None
             self._add_node(
-                "SemanticOperator", {
+                "SemanticOperator",
+                {
                     "pattern": op_pattern,
                     "hrw_operator": str(command) if isinstance(command, str) else str(command),
                     "validates_uppercase": params.upper if params else False,
                     "has_validator": validator is not None,
                     "restricted_sections": [s.value for s in restricted_sections] if restricted_sections else None,
-                    "description": f"Operator pattern {op_pattern} -> {command}"
-                }, f"sem_op:{op_pattern}")
+                    "description": f"Operator pattern {op_pattern} -> {command}",
+                },
+                f"sem_op:{op_pattern}",
+            )
 
         for cond_pattern, params in CONDITION_MAP.items():
             validator = params.validate if params else None
@@ -171,7 +181,8 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
             reverse_info = params.rev if params else None
             tag = params.target if params else None
             self._add_node(
-                "SemanticCondition", {
+                "SemanticCondition",
+                {
                     "pattern": cond_pattern,
                     "hrw_condition": tag,
                     "validates_uppercase": params.upper if params else False,
@@ -179,36 +190,47 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                     "restricted_sections": [s.value for s in restricted] if restricted else None,
                     "has_default_expression": params.prefix if params else False,
                     "reverse_mapping": reverse_info,
-                    "description": f"Condition pattern {cond_pattern} -> {tag}"
-                }, f"sem_cond:{cond_pattern}")
+                    "description": f"Condition pattern {cond_pattern} -> {tag}",
+                },
+                f"sem_cond:{cond_pattern}",
+            )
 
         for func_name, params in FUNCTION_MAP.items():
             self._add_node(
-                "SemanticFunction", {
+                "SemanticFunction",
+                {
                     "name": func_name,
                     "hrw_condition": params.target,
                     "has_validator": params.validate is not None,
                     "type": "condition_function",
-                    "description": f"Function {func_name} -> %{{{params.target}}}"
-                }, f"sem_func:{func_name}")
+                    "description": f"Function {func_name} -> %{{{params.target}}}",
+                },
+                f"sem_func:{func_name}",
+            )
 
         for func_name, params in STATEMENT_FUNCTION_MAP.items():
             self._add_node(
-                "SemanticFunction", {
+                "SemanticFunction",
+                {
                     "name": func_name,
                     "hrw_operator": params.target,
                     "has_validator": params.validate is not None,
                     "type": "statement_function",
-                    "description": f"Statement function {func_name} -> {params.target}"
-                }, f"sem_stmt_func:{func_name}")
+                    "description": f"Statement function {func_name} -> {params.target}",
+                },
+                f"sem_stmt_func:{func_name}",
+            )
 
         for suffix_group in SuffixGroup:
             self._add_node(
-                "SuffixGroup", {
+                "SuffixGroup",
+                {
                     "name": suffix_group.name,
                     "values": list(suffix_group.value),
-                    "description": f"Valid suffixes for {suffix_group.name}"
-                }, f"suffix_group:{suffix_group.name}")
+                    "description": f"Valid suffixes for {suffix_group.name}",
+                },
+                f"suffix_group:{suffix_group.name}",
+            )
 
     def get_kg_data(self) -> KGData:
         return self.kg_data
@@ -223,12 +245,15 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                 display_path = self.filename
 
             self.current_file_id = self._add_node(
-                "File", {
+                "File",
+                {
                     "path": display_path,
                     "name": file_path.name,
                     "extension": file_path.suffix,
-                    "size_lines": len(ctx.getText().split('\n'))
-                }, display_path)
+                    "size_lines": len(ctx.getText().split('\n')),
+                },
+                display_path,
+            )
 
             for item in ctx.programItem():
                 if item.section():
@@ -257,14 +282,17 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                 hook_name = "UNKNOWN"
 
             self.current_section_id = self._add_node(
-                "Section", {
+                "Section",
+                {
                     "name": section_name,
                     "hook": hook_name,
                     "line_start": ctx.start.line if ctx.start else None,
                     "line_end": ctx.stop.line if ctx.stop else None,
                     "description": f"HRW4U section mapping to ATS hook {hook_name}",
-                    "execution_phase": self._get_execution_phase(section_name)
-                }, f"{self.filename}:{section_name}")
+                    "execution_phase": self._get_execution_phase(section_name),
+                },
+                f"{self.filename}:{section_name}",
+            )
 
             if self.current_file_id:
                 self._add_edge(self.current_file_id, self.current_section_id, "CONTAINS")
@@ -281,10 +309,10 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
     def visitVarSection(self, ctx) -> None:
         with self.debug_context("visitVarSection"):
             vars_section_id = self._add_node(
-                "VarSection", {
-                    "line_start": ctx.start.line if ctx.start else None,
-                    "line_end": ctx.stop.line if ctx.stop else None
-                }, f"{self.filename}:VARS")
+                "VarSection",
+                {"line_start": ctx.start.line if ctx.start else None, "line_end": ctx.stop.line if ctx.stop else None},
+                f"{self.filename}:VARS",
+            )
 
             if self.current_file_id:
                 self._add_edge(self.current_file_id, vars_section_id, "CONTAINS")
@@ -299,11 +327,14 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
     def visitSessionVarSection(self, ctx) -> None:
         with self.debug_context("visitSessionVarSection"):
             vars_section_id = self._add_node(
-                "VarSection", {
+                "VarSection",
+                {
                     "scope": "session",
                     "line_start": ctx.start.line if ctx.start else None,
-                    "line_end": ctx.stop.line if ctx.stop else None
-                }, f"{self.filename}:SESSION_VARS")
+                    "line_end": ctx.stop.line if ctx.stop else None,
+                },
+                f"{self.filename}:SESSION_VARS",
+            )
 
             if self.current_file_id:
                 self._add_edge(self.current_file_id, vars_section_id, "CONTAINS")
@@ -324,11 +355,10 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
             var_type = ctx.typeName.text
 
             var_id = self._add_node(
-                "Variable", {
-                    "name": var_name,
-                    "type": var_type,
-                    "line": ctx.start.line if ctx.start else None
-                }, f"{self.filename}:{var_name}")
+                "Variable",
+                {"name": var_name, "type": var_type, "line": ctx.start.line if ctx.start else None},
+                f"{self.filename}:{var_name}",
+            )
 
             if self.current_section_id:
                 self._add_edge(self.current_section_id, var_id, "DECLARES")
@@ -410,8 +440,9 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                             {
                                 "pattern_type": pattern_match.context_type,
                                 "matched_pattern": pattern_match.pattern,
-                                "suffix": pattern_match.suffix
-                            })
+                                "suffix": pattern_match.suffix,
+                            }
+                        )
                         break
 
         elif symbol := self.symbol_resolver.symbol_for(lhs):
@@ -423,12 +454,14 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
     def visitConditional(self, ctx) -> None:
         with self.debug_context("visitConditional"):
             cond_id = self._add_node(
-                "Conditional", {
+                "Conditional",
+                {
                     "line_start": ctx.start.line if ctx.start else None,
                     "line_end": ctx.stop.line if ctx.stop else None,
                     "has_elif": len(ctx.elifClause()) > 0,
-                    "has_else": ctx.elseClause() is not None
-                })
+                    "has_else": ctx.elseClause() is not None,
+                },
+            )
 
             if self.current_section_id:
                 self._add_edge(self.current_section_id, cond_id, "CONTAINS")
@@ -487,6 +520,7 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
 
     def _extract_field_references(self, condition_text: str, condition_id: str) -> None:
         import re
+
         field_pattern = r'\b(inbound|outbound)\.[a-zA-Z0-9_.-]+\b'
 
         for match in re.finditer(field_pattern, condition_text):
@@ -503,8 +537,9 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                             {
                                 "pattern_type": pattern_match.context_type,
                                 "matched_pattern": pattern_match.pattern,
-                                "suffix": pattern_match.suffix
-                            })
+                                "suffix": pattern_match.suffix,
+                            }
+                        )
                         break
 
                 sem_cond_id = f"sem_cond:{pattern_match.pattern}"
@@ -535,6 +570,7 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
                 break
 
         import re
+
         strings = re.findall(r'"([^"]*)"', condition_text)
         regexes = re.findall(r'/([^/]*?)/', condition_text)
 
@@ -568,7 +604,7 @@ class KnowledgeGraphVisitor(hrw4uVisitor, BaseHRWVisitor):
             "SEND_REQUEST": "pre_origin",
             "READ_RESPONSE": "post_origin",
             "SEND_RESPONSE": "pre_client",
-            "TXN_CLOSE": "transaction_end"
+            "TXN_CLOSE": "transaction_end",
         }
         return phase_map.get(section_name, "unknown")
 

@@ -88,7 +88,8 @@ class TestRedirectToSameOriginOnCache:
         server = tr.AddVerifierServerProcess(
             f"server{TestRedirectToSameOriginOnCache.server_counter}.{domain}",
             TestRedirectToSameOriginOnCache.replay_filepath_one,
-            other_args="--format \"{url}\"")
+            other_args="--format \"{url}\"",
+        )
         TestRedirectToSameOriginOnCache.server_counter += 1
 
         return server
@@ -104,7 +105,8 @@ class TestRedirectToSameOriginOnCache:
         :param tr: The TestRun object to associate the ts process with.
         """
         ts = tr.MakeATSProcess(
-            f"ts-{TestRedirectToSameOriginOnCache.ts_counter}", select_ports=False, enable_tls=True, enable_cache=True)
+            f"ts-{TestRedirectToSameOriginOnCache.ts_counter}", select_ports=False, enable_tls=True, enable_cache=True
+        )
         TestRedirectToSameOriginOnCache.ts_counter += 1
 
         self._port_one = get_port(ts, "PortOne")
@@ -118,7 +120,8 @@ class TestRedirectToSameOriginOnCache:
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.http.redirect.actions': "self:follow",
                 'proxy.config.http.number_of_redirections': 1,
-            })
+            }
+        )
 
         ts.Disk.remap_config.AddLine(f"map oof.com http://oof.backend.com:{server_one.Variables.http_port}")
         ts.Disk.plugin_config.AddLine("xdebug.so --enable=x-cache,x-cache-key,via")
@@ -135,7 +138,8 @@ def test1(params: TestParams) -> None:
         f"client0",
         TestRedirectToSameOriginOnCache.replay_filepath_one,
         http_ports=[params["port_one"]],
-        other_args="--format \"{url}\" --keys \"/a/path/resource\"")
+        other_args="--format \"{url}\" --keys \"/a/path/resource\"",
+    )
 
     params["tr"].Processes.Default.ReturnCode = 0
     params["tr"].Processes.Default.Streams.stdout.Content += Testers.IncludesExpression("200 OK", "We should get the resource.")

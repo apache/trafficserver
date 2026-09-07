@@ -21,4 +21,6 @@ Test.Summary = '''
 A set of remap rules and tests for header_rewrite.
 '''
 
-Test.ATSReplayTest(replay_file="header_rewrite_bundle.replay.yaml",)
+Test.ATSReplayTest(
+    replay_file="header_rewrite_bundle.replay.yaml",
+)

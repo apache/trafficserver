@@ -21,6 +21,7 @@ import argparse
 import socket
 import sys
 import time
+
 """A flag indicating whether all three requests have been received."""
 received_third_request: bool = False
 
@@ -79,7 +80,7 @@ def receive_requests(sock: socket.socket) -> None:
     # the second to have a Content-Length body, and the third, if we receive it,
     # to have no body.
     end_of_first_request: bytes = b'\r\n0\r\n\r\n'
-    #end_of_first_request: bytes = b'67891' # < revert this eventually.
+    # end_of_first_request: bytes = b'67891' # < revert this eventually.
     end_of_second_request: bytes = b'12345'
     end_of_third_request: bytes = b'\r\n\r\n'
     while not received_third_request:
@@ -102,11 +103,11 @@ def receive_requests(sock: socket.socket) -> None:
                     # Need more data.
                     break
                 print('  Received the first request:')
-                print(f'  {this_request[:end_of_request_index + len(end_of_first_request)]}')
+                print(f'  {this_request[: end_of_request_index + len(end_of_first_request)]}')
                 processing_first_request = False
                 processing_second_request = True
                 # Remove the first request from the buffer.
-                this_request = this_request[end_of_request_index + len(end_of_first_request):]
+                this_request = this_request[end_of_request_index + len(end_of_first_request) :]
                 print('  Sending response to the first request:')
                 print(f'  {first_response_bytes}')
                 print()
@@ -120,11 +121,11 @@ def receive_requests(sock: socket.socket) -> None:
                     # Need more data.
                     break
                 print('  Received the second request:')
-                print(f'  {this_request[:end_of_request_index + len(end_of_second_request)]}')
+                print(f'  {this_request[: end_of_request_index + len(end_of_second_request)]}')
                 processing_second_request = False
                 processing_third_request = True
                 # Remove the second request from the buffer.
-                this_request = this_request[end_of_request_index + len(end_of_second_request):]
+                this_request = this_request[end_of_request_index + len(end_of_second_request) :]
                 print('  Sending response to the second request:')
                 print(f'  {second_response_bytes}')
                 print()
@@ -139,10 +140,10 @@ def receive_requests(sock: socket.socket) -> None:
                     # Need more data.
                     break
                 print('  Received the third request:')
-                print(f'  {this_request[:end_of_request_index + len(end_of_third_request)]}')
+                print(f'  {this_request[: end_of_request_index + len(end_of_third_request)]}')
                 processing_third_request = False
                 # Remove the third request from the buffer.
-                this_request = this_request[end_of_request_index + len(end_of_third_request):]
+                this_request = this_request[end_of_request_index + len(end_of_third_request) :]
                 print('  Sending response to the third request:')
                 print(f'  {third_response_bytes}')
                 print()

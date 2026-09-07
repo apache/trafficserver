@@ -32,7 +32,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", 
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nFoo : 123\r\nFoo: 456\r\n",
     "timestamp": "1469733493.993",
-    "body": "xxx"
+    "body": "xxx",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -47,7 +47,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
-    '-s -D - -v {0} --http1.1 -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port), ts=ts)
+    '-s -D - -v {0} --http1.1 -H "Host: www.example.com" http://localhost:{1}/'.format(ipv4flag, ts.Variables.port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/field_name_space.gold"
 tr.StillRunningAfter = ts

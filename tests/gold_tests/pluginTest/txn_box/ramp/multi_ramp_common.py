@@ -28,7 +28,7 @@ class State:
         "v1/video/alias": [30, 0],
         "v1/audio": [0, 0],
         "v2/video": [0, 0],
-        "v1/video/sub": [100, 0]
+        "v1/video/sub": [100, 0],
     }
 
     def validate(self, log_path):
@@ -89,21 +89,21 @@ def ramp_test_fixup(tr):
             'proxy.config.diags.debug.tags': 'txn_box',
             'proxy.config.http.cache.http': 0,
             'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
+            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
             # enable ssl port
-            ,
             'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
             'proxy.config.ssl.client.verify.server.policy': 'DISABLED',
-            'proxy.config.ssl.server.cipher_suite':
-                'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2'
-        })
+            'proxy.config.ssl.server.cipher_suite': 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:AES128-GCM-SHA256:AES256-GCM-SHA384:ECDHE-RSA-RC4-SHA:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA:RC4-SHA:RC4-MD5:AES128-SHA:AES256-SHA:DES-CBC3-SHA!SRP:!DSS:!PSK:!aNULL:!eNULL:!SSLv2',
+        }
+    )
     ts.Disk.ssl_multicert_yaml.AddLines(
         """
     ssl_multicert:
       - dest_ip: "*"
         ssl_cert_name: server.pem
         ssl_key_name: server.key
-    """.split("\n"))
+    """.split("\n")
+    )
 
     pv_client = tr.Variables.CLIENT
 
@@ -116,9 +116,9 @@ def ramp_test_fixup(tr):
     watcher.Command = "sleep 1000"
     watcher.StartupTimeout = 120
     # This doesn't work either
-    #watcher.Ready = lambda : LogCheck(os.path.join(ts.Variables.LOGDIR, "ramp.log" ))
+    # watcher.Ready = lambda : LogCheck(os.path.join(ts.Variables.LOGDIR, "ramp.log" ))
     # ready flag doesn't work here.
-    #watcher.StartBefore(pv_client, ready=lambda : LogCheck(os.path.join(ts.Variables.LOGDIR, "ramp.log" )))
+    # watcher.StartBefore(pv_client, ready=lambda : LogCheck(os.path.join(ts.Variables.LOGDIR, "ramp.log" )))
     # Only this works
     log_path = os.path.join(ts.Variables.LOGDIR, "ramp.log")
     pv_client.StartAfter(watcher, ready=lambda: state.log_check(log_path))

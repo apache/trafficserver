@@ -75,7 +75,8 @@ class ConnectDownPolicy3Test:
                 'proxy.config.http.transaction_no_activity_timeout_out': INACTIVITY_TIMEOUT,
                 # Keep the host marked down long enough to verify.
                 'proxy.config.hostdb.fail.timeout': 60,
-            })
+            }
+        )
 
     def _test_inactive_timeout(self):
         tr = Test.AddTestRun(f"policy={self._policy}: inactive timeout triggers 504")
@@ -91,7 +92,8 @@ class ConnectDownPolicy3Test:
                 "marking down",
             )
             self._ts.Disk.error_log.Content = Testers.ContainsExpression(
-                "marking down", f"policy={self._policy}: origin should be marked down after inactive timeout")
+                "marking down", f"policy={self._policy}: origin should be marked down after inactive timeout"
+            )
         else:
             # Pre-create error.log so ExcludesExpression can read it even if ATS
             # never writes to it (policy=2 should not mark the host down).
@@ -99,7 +101,8 @@ class ConnectDownPolicy3Test:
             tr = Test.AddTestRun(f"policy={self._policy}: verify no mark-down in error.log")
             tr.Processes.Default.Command = f"touch {error_log_path}"
             self._ts.Disk.error_log.Content = Testers.ExcludesExpression(
-                "marking down", f"policy={self._policy}: origin should NOT be marked down after inactive timeout")
+                "marking down", f"policy={self._policy}: origin should NOT be marked down after inactive timeout"
+            )
 
     def run(self):
         self._test_inactive_timeout()

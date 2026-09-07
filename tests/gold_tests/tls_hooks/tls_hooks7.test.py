@@ -40,7 +40,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'ssl_hook_test',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -48,10 +49,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-sni=2')
 
@@ -69,9 +72,11 @@ ts.Disk.traffic_out.Content = "gold/ts-sni-2.gold"
 snistring0 = "SNI callback 0"
 snistring1 = "SNI callback 1"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring0), "SNI message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring0), "SNI message appears only once", reflags=re.S | re.M
+)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring1), "SNI message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(snistring1), "SNI message appears only once", reflags=re.S | re.M
+)
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15

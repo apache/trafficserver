@@ -30,15 +30,16 @@ server = Test.MakeOriginServer("server")
 DEFAULT_204_HOST = 'www.default204.test'
 CUSTOM_TEMPLATE_204_HOST = 'www.customtemplate204.test'
 
-ts.Disk.records_config.update({
-    # enable domain specific body factory
-    'proxy.config.body_factory.enable_customizations': 3,
-})
+ts.Disk.records_config.update(
+    {
+        # enable domain specific body factory
+        'proxy.config.body_factory.enable_customizations': 3,
+    }
+)
 
 # Create a template body for a 204.
 body_factory_dir = ts.Variables.BODY_FACTORY_TEMPLATE_DIR
-ts.Disk.File(os.path.join(body_factory_dir, 'default', CUSTOM_TEMPLATE_204_HOST + '_default')).\
-    WriteOn(
+ts.Disk.File(os.path.join(body_factory_dir, 'default', CUSTOM_TEMPLATE_204_HOST + '_default')).WriteOn(
     """<HTML>
 <HEAD>
 <TITLE>Spec-breaking 204!</TITLE>
@@ -53,16 +54,21 @@ Description: According to rfc7231 I should not have been sent to you!
 </B></FONT>
 <HR>
 </BODY>
-""")
+"""
+)
 
 regex_remap_conf_file = "maps.reg"
 
 ts.Disk.remap_config.AddLine(
     'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host'.format(
-        DEFAULT_204_HOST, server.Variables.Port, regex_remap_conf_file))
+        DEFAULT_204_HOST, server.Variables.Port, regex_remap_conf_file
+    )
+)
 ts.Disk.remap_config.AddLine(
-    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host @plugin=conf_remap.so @pparam=proxy.config.body_factory.template_base={0}'
-    .format(CUSTOM_TEMPLATE_204_HOST, server.Variables.Port, regex_remap_conf_file))
+    'map http://{0} http://127.0.0.1:{1} @plugin=regex_remap.so @pparam={2} @pparam=no-query-string @pparam=host @plugin=conf_remap.so @pparam=proxy.config.body_factory.template_base={0}'.format(
+        CUSTOM_TEMPLATE_204_HOST, server.Variables.Port, regex_remap_conf_file
+    )
+)
 ts.Disk.MakeConfigFile(regex_remap_conf_file).AddLine('//.*/ http://127.0.0.1:{0} @status=204'.format(server.Variables.Port))
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
@@ -72,7 +78,9 @@ defaultTr = Test.AddTestRun("Test domain {0}".format(DEFAULT_204_HOST))
 defaultTr.Processes.Default.StartBefore(Test.Processes.ts)
 defaultTr.StillRunningAfter = ts
 
-defaultTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{DEFAULT_204_HOST}_get.txt"
+defaultTr.Processes.Default.Command = (
+    f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{DEFAULT_204_HOST}_get.txt"
+)
 defaultTr.Processes.Default.TimeOut = 5  # seconds
 defaultTr.Processes.Default.ReturnCode = 0
 defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
@@ -80,7 +88,9 @@ defaultTr.Processes.Default.Streams.stdout = "gold/http-204.gold"
 customTemplateTr = Test.AddTestRun(f"Test domain {CUSTOM_TEMPLATE_204_HOST}")
 customTemplateTr.StillRunningBefore = ts
 customTemplateTr.StillRunningAfter = ts
-customTemplateTr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_TEMPLATE_204_HOST}_get.txt"
+customTemplateTr.Processes.Default.Command = (
+    f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{CUSTOM_TEMPLATE_204_HOST}_get.txt"
+)
 customTemplateTr.Processes.Default.TimeOut = 5  # seconds
 customTemplateTr.Processes.Default.ReturnCode = 0
 customTemplateTr.Processes.Default.Streams.stdout = "gold/http-204-custom.gold"

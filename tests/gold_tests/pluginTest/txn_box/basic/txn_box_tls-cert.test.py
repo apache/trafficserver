@@ -33,9 +33,11 @@ tr = Test.TxnBoxTestAndRun(
     config_key="meta.txn_box.global",
     enable_tls=True,
     remap=[
-        ['https://alpha.ex/', "https://alpha.ex/"], ['http://alpha.ex/', 'https://alpha.ex/'],
-        ['http://charlie.ex/', 'https://charlie.ex/']
-    ])
+        ['https://alpha.ex/', "https://alpha.ex/"],
+        ['http://alpha.ex/', 'https://alpha.ex/'],
+        ['http://charlie.ex/', 'https://charlie.ex/'],
+    ],
+)
 
 ts = tr.Variables.TS
 
@@ -49,19 +51,20 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'txn_box|http|ssl',
         'proxy.config.http.cache.http': 0,
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
-        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir
+        'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
         # enable ssl port
-        ,
         'proxy.config.http.server_ports': '{0} {1}:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
         'proxy.config.ssl.client.certification_level': 0,
         'proxy.config.ssl.client.verify.server.policy': 'DISABLED',
         'proxy.config.ssl.client.cert.path': ts.Variables.SSLDir,
-        'proxy.config.ssl.client.cert.filename': "bravo-signed.cert"
-    })
+        'proxy.config.ssl.client.cert.filename': "bravo-signed.cert",
+    }
+)
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)

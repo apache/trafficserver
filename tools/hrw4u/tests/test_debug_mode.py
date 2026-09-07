@@ -22,6 +22,7 @@ The examples group exercises the most diverse visitor code paths
 100% coverage of the Dbg class. Running all groups in debug mode
 is redundant since debug tracing doesn't affect output correctness.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -31,7 +31,9 @@ tr = Test.TxnBoxTestAndRun(
     config_key="meta.txn_box.global",
     remap=[
         ['http://app.ex', 'http://app.ex', ['--key=meta.txn_box.remap', 'rxp.replay.yaml']],
-        ['http://one.ex/path/', 'http://two.ex/path/'], ['http://one.ex']
-    ])
+        ['http://one.ex/path/', 'http://two.ex/path/'],
+        ['http://one.ex'],
+    ],
+)
 ts = tr.Variables.TS
 ts.Disk.records_config.update({'proxy.config.diags.debug.enabled': 1, 'proxy.config.diags.debug.tags': 'txn_box'})

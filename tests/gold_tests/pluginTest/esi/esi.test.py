@@ -24,20 +24,23 @@ Test.Summary = '''
 Test the ESI plugin.
 '''
 
-Test.SkipUnless(Condition.PluginExists('esi.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('esi.so'),
+)
 
 
 # An enum of expected plugin behaviors for Cache-Control headers.
-class CcBehaviorT():
+class CcBehaviorT:
     REMOVE_CC = 0
     MAKE_PRIVATE = 1
 
 
-class EsiTest():
+class EsiTest:
     """
     A class that encapsulates the configuration and execution of a set of EPI
     test cases.
     """
+
     """ static: The same server Process is used across all tests. """
     _server = None
     """ static: A counter to keep the ATS process names unique across tests. """
@@ -74,11 +77,9 @@ class EsiTest():
         # See:
         #   doc/admin-guide/plugins/esi.en.rst
         request_header = {
-            "headers": ("GET /esi.php HTTP/1.1\r\n"
-                        "Host: www.example.com\r\n"
-                        "Content-Length: 0\r\n\r\n"),
+            "headers": ("GET /esi.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"),
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         esi_body = r'''<?php   header('X-Esi: 1'); ?>
 <html>
@@ -88,25 +89,23 @@ Hello, <esi:include src="http://www.example.com/date.php"/>
 </html>
 '''
         response_header = {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "X-Esi: 1\r\n"
-                    "Connection: close\r\n"
-                    "Content-Length: {}\r\n"
-                    "Cache-Control: max-age=300\r\n"
-                    "\r\n".format(len(esi_body))),
+            "headers": (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: text/html\r\n"
+                "X-Esi: 1\r\n"
+                "Connection: close\r\n"
+                "Content-Length: {}\r\n"
+                "Cache-Control: max-age=300\r\n"
+                "\r\n".format(len(esi_body))
+            ),
             "timestamp": "1469733493.993",
-            "body": esi_body
+            "body": esi_body,
         }
         server.addResponse("sessionfile.log", request_header, response_header)
         request_header = {
-            "headers": ("GET /date.php HTTP/1.1\r\n"
-                        "Host: www.example.com\r\n"
-                        "Content-Length: 0\r\n\r\n"),
+            "headers": ("GET /date.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"),
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         date_body = r'''<?php
 header ("Cache-control: no-cache");
@@ -114,37 +113,35 @@ echo date('l jS \of F Y h:i:s A');
 ?>
 '''
         response_header = {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/html\r\n"
-                    "Connection: close\r\n"
-                    "Content-Length: {}\r\n"
-                    "Cache-Control: max-age=300\r\n"
-                    "\r\n".format(len(date_body))),
+            "headers": (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: text/html\r\n"
+                "Connection: close\r\n"
+                "Content-Length: {}\r\n"
+                "Cache-Control: max-age=300\r\n"
+                "\r\n".format(len(date_body))
+            ),
             "timestamp": "1469733493.993",
-            "body": date_body
+            "body": date_body,
         }
         server.addResponse("sessionfile.log", request_header, response_header)
         # Verify correct functionality with an empty body.
         request_header = {
-            "headers": ("GET /expect_empty_body HTTP/1.1\r\n"
-                        "Host: www.example.com\r\n"
-                        "Content-Length: 0\r\n\r\n"),
+            "headers": ("GET /expect_empty_body HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"),
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response_header = {
-            "headers":
-                (
-                    "HTTP/1.1 200 OK\r\n"
-                    "X-ESI: On\r\n"
-                    "Content-Length: 0\r\n"
-                    "Connection: close\r\n"
-                    "Content-Type: text/html; charset=UTF-8\r\n"
-                    "\r\n"),
+            "headers": (
+                "HTTP/1.1 200 OK\r\n"
+                "X-ESI: On\r\n"
+                "Content-Length: 0\r\n"
+                "Connection: close\r\n"
+                "Content-Type: text/html; charset=UTF-8\r\n"
+                "\r\n"
+            ),
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -166,10 +163,12 @@ echo date('l jS \of F Y h:i:s A');
 
         # Configure ATS with a vanilla ESI plugin configuration.
         ts = Test.MakeATSProcess("ts{}".format(EsiTest._ts_counter))
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http|plugin_esi',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http|plugin_esi',
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{EsiTest._server.Variables.Port}')
         ts.Disk.plugin_config.AddLine(plugin_config)
 
@@ -186,24 +185,27 @@ echo date('l jS \of F Y h:i:s A');
         client_process.Streams.stdout = "gold/esi_body.gold"
         if self._cc_behavior == CcBehaviorT.REMOVE_CC:
             client_process.Streams.stderr += Testers.ExcludesExpression(
-                'cache-control:', 'The Cache-Control field should not be present in the response', reflags=re.IGNORECASE)
+                'cache-control:', 'The Cache-Control field should not be present in the response', reflags=re.IGNORECASE
+            )
             client_process.Streams.stderr += Testers.ExcludesExpression(
-                'expires:', 'The Expires field should not be present in the response', reflags=re.IGNORECASE)
+                'expires:', 'The Expires field should not be present in the response', reflags=re.IGNORECASE
+            )
         if self._cc_behavior == CcBehaviorT.MAKE_PRIVATE:
             client_process.Streams.stderr += Testers.ContainsExpression(
                 'cache-control:.*max-age=0, private',
                 'The private response directive should be present in the response',
-                reflags=re.IGNORECASE)
+                reflags=re.IGNORECASE,
+            )
             client_process.Streams.stderr += Testers.ContainsExpression(
-                'expires: -1', 'The Expires field should be set to -1', reflags=re.IGNORECASE)
+                'expires: -1', 'The Expires field should be set to -1', reflags=re.IGNORECASE
+            )
 
     def run_cases_expecting_gzip(self):
         # Test 1: Verify basic ESI functionality.
         tr = Test.AddTestRun(f"First request for esi.php: not cached: {self._plugin_config}")
         tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose',
-            ts=self._ts)
+            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" -H"Accept: */*" --verbose', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -212,9 +214,8 @@ echo date('l jS \of F Y h:i:s A');
         # Test 2: Repeat the above, should now be cached.
         tr = Test.AddTestRun(f"Second request for esi.php: will be cached: {self._plugin_config}")
         tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
-            '-H"Accept: */*" --verbose',
-            ts=self._ts)
+            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" -H"Accept: */*" --verbose', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -228,7 +229,8 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" '
             f'-H "Accept-Encoding: gzip" -H"Accept: */*" --verbose --output {gzipped_body_file}',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_body_file)
         tr.Processes.Default.Streams.stderr = "gold/esi_gzipped.gold"
@@ -254,7 +256,8 @@ echo date('l jS \of F Y h:i:s A');
             f'http://127.0.0.1:{self._ts.Variables.port}/expect_empty_body '
             '-H"Host: www.example.com" -H"Accept-Encoding: gzip" -H"Accept: */*" '
             f'--verbose --output {gzipped_empty_body}',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Ready = When.FileExists(gzipped_empty_body)
         tr.Processes.Default.Streams.stderr = "gold/empty_response_body.gold"
@@ -276,13 +279,13 @@ echo date('l jS \of F Y h:i:s A');
     def run_case_max_doc_size_too_small(self):
         tr = Test.AddTestRun(f"Max doc size too small: {self._plugin_config}")
         tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-            '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-            ts=self._ts)
+            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" -H"Accept: */*" --verbose', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
             r"ERROR: \[_setup\] Cannot allow attempted doc of size 121; Max allowed size is 100 for URL \[.*esi\.php.*\]",
-            "max doc size test should have doc size error log")
+            "max doc size test should have doc size error log",
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
@@ -290,9 +293,8 @@ echo date('l jS \of F Y h:i:s A');
         # Test 1: Run an ESI test where the client does not accept gzip.
         tr = Test.AddTestRun(f"First request for esi.php: gzip not accepted: {self._plugin_config}")
         tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-            '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-            ts=self._ts)
+            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" -H"Accept: */*" --verbose', ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -304,7 +306,8 @@ echo date('l jS \of F Y h:i:s A');
         tr.MakeCurlCommand(
             f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
             '-H"Host: www.example.com" -H "Accept-Encoding: gzip" -H"Accept: */*" --verbose',
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         self._configure_client_output_expectations(tr.Processes.Default)
         tr.StillRunningAfter = self._server
@@ -313,16 +316,16 @@ echo date('l jS \of F Y h:i:s A');
     def run_cases_expecting_no_transformation(self):
         tr = Test.AddTestRun(f"Verify the ESI plugin does not transform responses: {self._plugin_config}")
         client = tr.MakeCurlCommand(
-            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php '
-            '-H"Host: www.example.com" -H"Accept: */*" --verbose',
-            ts=self._ts)
+            f'http://127.0.0.1:{self._ts.Variables.port}/esi.php -H"Host: www.example.com" -H"Accept: */*" --verbose', ts=self._ts
+        )
         client.ReturnCode = 0
 
         # Expect no transformation: the tag should be present without any transformation.
         client.Streams.stdout += Testers.ContainsExpression(
             'Hello, <esi:include src="http://www.example.com/date.php"/>',
             'The response should not be transformed',
-            reflags=re.IGNORECASE)
+            reflags=re.IGNORECASE,
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 

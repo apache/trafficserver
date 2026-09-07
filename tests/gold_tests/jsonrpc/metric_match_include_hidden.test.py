@@ -30,12 +30,14 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(ts)
 # Proves the query actually ran against the server and matched a real, published metric.
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    r'proxy\.process\.proxy\.reconfigure_time', 'Expected the published reconfigure_time metric to be present in the output.')
+    r'proxy\.process\.proxy\.reconfigure_time', 'Expected the published reconfigure_time metric to be present in the output.'
+)
 # Proves the new rec type bit was not rejected by the JSONRPC request decoder.
 # NOTE: must be "+=", not "=". Assigning a stream tester replaces any previously assigned
 # tester for that stream, which would silently drop the check above.
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    'INVALID_INCOMING_DATA', 'The --include-hidden flag must not cause the JSONRPC request to be rejected as invalid.')
+    'INVALID_INCOMING_DATA', 'The --include-hidden flag must not cause the JSONRPC request to be rejected as invalid.'
+)
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("a normal metric match must not return hidden metrics")
@@ -44,6 +46,7 @@ tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
 # RECT_HIDDEN_METRIC sits outside RECT_ALL, so a plain query still works and is unaffected.
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    r'proxy\.process\.proxy\.reconfigure_time', 'Expected the published reconfigure_time metric without --include-hidden too.')
+    r'proxy\.process\.proxy\.reconfigure_time', 'Expected the published reconfigure_time metric without --include-hidden too.'
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression('INVALID_INCOMING_DATA', 'A plain metric match must remain valid.')
 tr.StillRunningAfter = ts

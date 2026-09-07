@@ -57,43 +57,40 @@ class TableGenerator:
         """Generate status target mappings based on section restrictions."""
         return {
             frozenset({SectionType.REMAP, SectionType.SEND_RESPONSE}): "inbound.status",
-            frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST,
-                       SectionType.READ_RESPONSE}): "outbound.status"
+            frozenset(
+                {SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE}
+            ): "outbound.status",
         }
 
     def generate_context_mappings(self) -> dict[str, dict[SectionType | frozenset[SectionType], str]]:
         """Generate context type mappings for headers, URLs, etc."""
         return {
-            "HEADER_CONTEXT_MAP":
-                {
-                    SectionType.REMAP: "inbound.req.",
-                    frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}): "outbound.req.",
-                    SectionType.READ_RESPONSE: "outbound.resp."
-                },
-            "URL_CONTEXT_MAP":
-                {
-                    SectionType.REMAP: "inbound.url.",
-                    frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}): "outbound.url."
-                }
+            "HEADER_CONTEXT_MAP": {
+                SectionType.REMAP: "inbound.req.",
+                frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}): "outbound.req.",
+                SectionType.READ_RESPONSE: "outbound.resp.",
+            },
+            "URL_CONTEXT_MAP": {
+                SectionType.REMAP: "inbound.url.",
+                frozenset({SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST}): "outbound.url.",
+            },
         }
 
     def generate_ambiguous_tag_resolution(self) -> dict[str, dict[str, Any]]:
         """Generate ambiguous tag resolution mappings."""
         return {
-            "STATUS":
-                {
-                    "outbound_sections":
-                        frozenset(
-                            {SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE}),
-                    "outbound_result": "outbound.status",
-                    "inbound_result": "inbound.status"
-                },
-            "METHOD":
-                {
-                    "outbound_sections": frozenset({SectionType.SEND_REQUEST}),
-                    "outbound_result": "outbound.method",
-                    "inbound_result": "inbound.method"
-                }
+            "STATUS": {
+                "outbound_sections": frozenset(
+                    {SectionType.PRE_REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE}
+                ),
+                "outbound_result": "outbound.status",
+                "inbound_result": "inbound.status",
+            },
+            "METHOD": {
+                "outbound_sections": frozenset({SectionType.SEND_REQUEST}),
+                "outbound_result": "outbound.method",
+                "inbound_result": "inbound.method",
+            },
         }
 
     def generate_complete_reverse_resolution_map(self) -> dict[str, Any]:
@@ -121,6 +118,7 @@ class TableGenerator:
 
         # Add context type mappings
         from hrw4u.tables import CONTEXT_TYPE_MAP, FALLBACK_TAG_MAP
+
         reverse_map["CONTEXT_TYPE_MAP"] = CONTEXT_TYPE_MAP.copy()
 
         # Add fallback tag mappings

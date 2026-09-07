@@ -24,14 +24,17 @@ Test.Summary = '''
 Verify traffic_dump functionality.
 '''
 
-Test.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('traffic_dump.so'),
+)
 
 schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
 
 # Configure the origin server.
 replay_file = "replay/traffic_dump.yaml"
 server = Test.MakeVerifierServerProcess(
-    "server", "replay/traffic_dump_server.yaml", ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem")
+    "server", "replay/traffic_dump_server.yaml", ssl_cert="ssl/server_combined.pem", ca_cert="ssl/signer.pem"
+)
 
 # Define ATS and configure it.
 ts = Test.MakeATSProcess("ts", enable_tls=True)
@@ -58,7 +61,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.TLSv1_3.enabled': 0,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
         'proxy.config.http.connect_ports': f"{server.Variables.http_port}",
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -66,7 +70,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLines(
     [
@@ -74,13 +79,15 @@ ts.Disk.remap_config.AddLines(
         f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}',
         f'map http://www.connect_target.com/ http://127.0.0.1:{server.Variables.http_port}',
         f'map / http://127.0.0.1:{server.Variables.http_port}',
-    ])
+    ]
+)
 ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET, POST ]')
 
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(
     f'traffic_dump.so --logdir {replay_dir} --sample 1 --limit 1000000000 '
-    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"')
+    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'
+)
 # Configure logging of transactions. This is helpful for the cache test below.
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -91,18 +98,23 @@ logging:
   logs:
     - filename: transactions
       format: basic
-'''.split('\n'))
+'''.split('\n')
+)
 
 # Set up trafficserver expectations.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "loading plugin.*traffic_dump.so", "Verify the traffic_dump plugin got loaded.")
+    "loading plugin.*traffic_dump.so", "Verify the traffic_dump plugin got loaded."
+)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    f"Initialized with log directory: {replay_dir}", "Verify traffic_dump initialized with the configured directory.")
+    f"Initialized with log directory: {replay_dir}", "Verify traffic_dump initialized with the configured directory."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Initialized with sample pool size of 1 bytes and disk limit of 1000000000 bytes",
-    "Verify traffic_dump initialized with the configured disk limit.")
+    "Verify traffic_dump initialized with the configured disk limit.",
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Finish a session with log file of.*bytes", "Verify traffic_dump sees the end of sessions and accounts for it.")
+    "Finish a session with log file of.*bytes", "Verify traffic_dump sees the end of sessions and accounts for it."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression("Dumping body bytes: false", "Verify that dumping body bytes is enabled.")
 
 # Set up the json replay file expectations.
@@ -151,7 +163,8 @@ tr.AddVerifierClientProcess(
     http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
-    ca_cert="ssl/signer.pem")
+    ca_cert="ssl/signer.pem",
+)
 
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -167,15 +180,14 @@ tr = Test.AddTestRun("Verify the json content of the first session")
 http_protocols = "tcp,ip"
 verify_replay = "verify_replay.py"
 sensitive_fields_arg = (
-    "--sensitive-fields cookie "
-    "--sensitive-fields set-cookie "
-    "--sensitive-fields x-request-1 "
-    "--sensitive-fields x-request-2 ")
+    "--sensitive-fields cookie --sensitive-fields set-cookie --sensitive-fields x-request-1 --sensitive-fields x-request-2 "
+)
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
-     f'{sensitive_fields_arg} --client-http-version "1.1" '
-     f'--client-protocols "{http_protocols}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
+    f'{sensitive_fields_arg} --client-http-version "1.1" '
+    f'--client-protocols "{http_protocols}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -183,10 +195,11 @@ tr.StillRunningAfter = ts
 # Verify the properties of the replay file for the second transaction.
 tr = Test.AddTestRun("Verify the json content of the second session")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_2} '
-     f'{sensitive_fields_arg} --client-http-version "1.1" '
-     '--request-target "/two"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_2} '
+    f'{sensitive_fields_arg} --client-http-version "1.1" '
+    '--request-target "/two"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -199,9 +212,10 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the replay file has the explicit target.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
-tr.Processes.Default.Command = \
-    (f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_3} {sensitive_fields_arg} "
-     "--request-target 'http://www.some.host.com/candy'")
+tr.Processes.Default.Command = (
+    f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_3} {sensitive_fields_arg} "
+    "--request-target 'http://www.some.host.com/candy'"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -215,9 +229,10 @@ tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
 size_of_verify_replay_file = os.path.getsize(os.path.join(Test.TestDirectory, verify_replay))
 expected_body_size = 12345
-tr.Processes.Default.Command = \
-    (f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_4} {sensitive_fields_arg} "
-     f"--client-request-size {expected_body_size}")
+tr.Processes.Default.Command = (
+    f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_4} {sensitive_fields_arg} "
+    f"--client-request-size {expected_body_size}"
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -227,9 +242,9 @@ tr.StillRunningAfter = ts
 #
 tr = Test.AddTestRun("Verify that the cached response's replay file looks appropriate.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_6} '
-     f'--client-protocols "{http_protocols}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_6} --client-protocols "{http_protocols}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -239,9 +254,9 @@ tr.StillRunningAfter = ts
 #
 tr = Test.AddTestRun("Verify the dump file of two transactions in a session.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_7} '
-     f'--client-protocols "{http_protocols}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_7} --client-protocols "{http_protocols}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -253,9 +268,10 @@ tr = Test.AddTestRun("Verify the client protocol stack of a TLS session.")
 https_protocols = "tls,tcp,ip"
 client_tls_features = "sni:www.tls.com,proxy-verify-mode:0,proxy-provided-cert:true"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_8} '
-     f'--client-protocols "{https_protocols}" --client-tls-features "{client_tls_features}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_8} '
+    f'--client-protocols "{https_protocols}" --client-tls-features "{client_tls_features}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -264,9 +280,10 @@ tr = Test.AddTestRun("Verify the server TLS protocol stack.")
 https_server_stack = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 server_tls_features = 'proxy-provided-cert:false,sni:www.tls.com,proxy-verify-mode:1'
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_8} --server-protocols '
-     f'"{https_server_stack}" --server-tls-features "{server_tls_features}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_8} --server-protocols '
+    f'"{https_server_stack}" --server-tls-features "{server_tls_features}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -277,19 +294,21 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the client HTTP/2 protocol stack.")
 h2_protocols = "http,tls,tcp,ip"
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_9} '
-     f'--client-http-version "2" --client-protocols "{h2_protocols}" '
-     f'--client-tls-features "{client_tls_features}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_9} '
+    f'--client-http-version "2" --client-protocols "{h2_protocols}" '
+    f'--client-tls-features "{client_tls_features}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Verify the server HTTP/2 protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_9} '
-     f'--server-protocols "{https_server_stack}" --server-tls-features "{server_tls_features}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_9} '
+    f'--server-protocols "{https_server_stack}" --server-tls-features "{server_tls_features}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -299,9 +318,10 @@ tr.StillRunningAfter = ts
 #
 tr = Test.AddTestRun("Verify the client TLS protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_10} '
-     f'--client-http-version "1.1" --client-protocols "{https_protocols}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_10} '
+    f'--client-http-version "1.1" --client-protocols "{https_protocols}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -309,9 +329,9 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify the server HTTP protocol stack.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 http_server_stack = "http,tcp,ip"
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_10} '
-     f'--server-protocols "{http_server_stack}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_10} --server-protocols "{http_server_stack}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -323,8 +343,7 @@ tr.StillRunningAfter = ts
 tr = Test.AddTestRun("Verify handling of a CONNECT request.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
 
-tr.Processes.Default.Command = \
-    (f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_11} {sensitive_fields_arg} ")
+tr.Processes.Default.Command = f"{sys.executable} {verify_replay} {schema_path} {replay_file_session_11} {sensitive_fields_arg} "
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -351,7 +370,8 @@ tr.AddVerifierClientProcess(
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
     ca_cert="ssl/signer.pem",
-    other_args='--keys 1')
+    other_args='--keys 1',
+)
 
 # Since the limit is zero, we should not see any new replay file created.
 tr = Test.AddTestRun("Verify no new traffic was dumped")
@@ -383,7 +403,8 @@ tr.AddVerifierClientProcess(
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
     ca_cert="ssl/signer.pem",
-    other_args='--keys 1')
+    other_args='--keys 1',
+)
 
 # Since the limit is zero, we should not see any new replay file created.
 tr = Test.AddTestRun("Verify the new traffic was dumped")
@@ -418,7 +439,8 @@ tr.AddVerifierClientProcess(
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
     ca_cert="ssl/signer.pem",
-    other_args='--keys 1')
+    other_args='--keys 1',
+)
 
 # Since the limit is zero, we should not see any new replay file created.
 tr = Test.AddTestRun("Verify no new traffic was dumped")

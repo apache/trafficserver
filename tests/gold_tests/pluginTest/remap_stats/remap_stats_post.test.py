@@ -40,7 +40,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.transaction_active_timeout_out': 2,
         'proxy.config.http.transaction_no_activity_timeout_out': 2,
         'proxy.config.http.connect_attempts_timeout': 2,
-    })
+    }
+)
 
 # 0 Test - Curl host One
 tr = Test.AddTestRun("curl host one")

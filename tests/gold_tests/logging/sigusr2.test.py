@@ -60,11 +60,11 @@ class Sigusr2Test:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'log',
                 'proxy.config.log.periodic_tasks_interval': 1,
-
                 # All log rotation should be handled externally.
                 'proxy.config.log.rolling_enabled': 0,
                 'proxy.config.log.auto_delete_rolled_files': 0,
-            })
+            }
+        )
         return ts, ts_name
 
     def _configure_server(self):
@@ -74,14 +74,12 @@ class Sigusr2Test:
             request_header = {
                 'headers': f'GET {path} HTTP/1.1\r\nHost: does.not.matter\r\n\r\n',
                 'timestamp': '1469733493.993',
-                'body': ''
+                'body': '',
             }
             response_header = {
-                'headers': 'HTTP/1.1 200 OK\r\n'
-                           'Connection: close\r\n'
-                           'Cache-control: max-age=85000\r\n\r\n',
+                'headers': 'HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n',
                 'timestamp': '1469733493.993',
-                'body': 'xxx'
+                'body': 'xxx',
             }
             server.addResponse('sessionlog.json', request_header, response_header)
 
@@ -95,16 +93,20 @@ class Sigusr2Test:
         ts.Disk.File(rotated_diags_log, id='diags_log_old')
 
         tr.Processes.Default.Command = self._make_script_command(
-            ROTATE_DIAGS_SCRIPT, sys.executable, f'./{TS_PID_SCRIPT}', ts_name, ts.Disk.diags_log.AbsPath, rotated_diags_log)
+            ROTATE_DIAGS_SCRIPT, sys.executable, f'./{TS_PID_SCRIPT}', ts_name, ts.Disk.diags_log.AbsPath, rotated_diags_log
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(ts)
 
         ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-            'traffic server running', 'The new diags.log should not reference the running traffic server')
+            'traffic server running', 'The new diags.log should not reference the running traffic server'
+        )
         ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            'Reseated diags.log', 'The new diags.log should indicate the newly opened diags.log')
+            'Reseated diags.log', 'The new diags.log should indicate the newly opened diags.log'
+        )
         ts.Disk.diags_log_old.Content += Testers.ContainsExpression(
-            'traffic server running', 'The rotated diags.log should keep the original startup message')
+            'traffic server running', 'The rotated diags.log should keep the original startup message'
+        )
 
     def add_configured_log_test(self):
         tr = Test.AddTestRun('Verify yaml.log logs can be rotated')
@@ -121,7 +123,8 @@ class Sigusr2Test:
               logs:
                 - filename: test_rotation
                   format: has_path
-            ''')
+            '''
+        )
 
         configured_log = os.path.join(ts.Variables.LOGDIR, 'test_rotation.log')
         ts.Disk.File(configured_log, id='configured_log')
@@ -131,24 +134,36 @@ class Sigusr2Test:
 
         ts.StartBefore(server)
         tr.Processes.Default.Command = self._make_script_command(
-            ROTATE_CUSTOM_LOG_SCRIPT, sys.executable, f'./{TS_PID_SCRIPT}', ts_name, ts.Variables.port, configured_log,
-            rotated_configured_log)
+            ROTATE_CUSTOM_LOG_SCRIPT,
+            sys.executable,
+            f'./{TS_PID_SCRIPT}',
+            ts_name,
+            ts.Variables.port,
+            configured_log,
+            rotated_configured_log,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(ts)
 
         ts.Disk.configured_log.Content += Testers.ExcludesExpression(
-            '/first', 'The new test_rotation.log should not have the first GET retrieval in it.')
+            '/first', 'The new test_rotation.log should not have the first GET retrieval in it.'
+        )
         ts.Disk.configured_log.Content += Testers.ExcludesExpression(
-            '/second', 'The new test_rotation.log should not have the second GET retrieval in it.')
+            '/second', 'The new test_rotation.log should not have the second GET retrieval in it.'
+        )
         ts.Disk.configured_log.Content += Testers.ContainsExpression(
-            '/third', 'The new test_rotation.log should have the third GET retrieval in it.')
+            '/third', 'The new test_rotation.log should have the third GET retrieval in it.'
+        )
 
         ts.Disk.configured_log_old.Content += Testers.ContainsExpression(
-            '/first', 'test_rotation.log_old should have the first GET retrieval in it.')
+            '/first', 'test_rotation.log_old should have the first GET retrieval in it.'
+        )
         ts.Disk.configured_log_old.Content += Testers.ContainsExpression(
-            '/second', 'test_rotation.log_old should have the second GET retrieval in it.')
+            '/second', 'test_rotation.log_old should have the second GET retrieval in it.'
+        )
         ts.Disk.configured_log_old.Content += Testers.ExcludesExpression(
-            '/third', 'test_rotation.log_old should not have the third GET retrieval in it.')
+            '/third', 'test_rotation.log_old should not have the third GET retrieval in it.'
+        )
 
 
 Test.Summary = '''

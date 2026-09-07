@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -44,7 +43,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -56,17 +56,20 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 ts.addPrivateConnectAllowYaml()
 
 # foo.com should not terminate.  Just tunnel to server_foo
 # bar.com should terminate.  Forward its tcp stream to server_bar
-ts.Disk.sni_yaml.AddLines([
-    "sni:",
-    "- fqdn: bar.com",
-    "  forward_route: localhost:{0}".format(ts.Variables.s_client_port),
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        "sni:",
+        "- fqdn: bar.com",
+        "  forward_route: localhost:{0}".format(ts.Variables.s_client_port),
+    ]
+)
 
 tr = Test.AddTestRun("forward-non-http")
 tr.Setup.Copy("test-nc-s_client.sh")

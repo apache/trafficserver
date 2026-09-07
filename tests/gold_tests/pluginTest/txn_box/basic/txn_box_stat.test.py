@@ -33,7 +33,8 @@ tr = Test.TxnBoxTestAndRun(
     config_path='Auto',
     config_key='meta.txn_box.global',
     verifier_client_args="--verbose info",
-    command="traffic_server")
+    command="traffic_server",
+)
 
 ts = tr.Variables.TS
 ts.Setup.Copy("stat.replay.yaml", ts.Variables.CONFIGDIR)
@@ -43,8 +44,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.http.cache.http': 0,
-        'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port)
-    })
+        'proxy.config.http.server_ports': '{0}'.format(ts.Variables.port),
+    }
+)
 
 probe_r = tr.Variables.TEST.AddTestRun()
 probe_r.DelayStart = 20

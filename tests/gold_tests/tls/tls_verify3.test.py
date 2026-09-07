@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,17 +24,13 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 server_foo = Test.MakeOriginServer(
     "server_foo",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)},
+)
 server_bar = Test.MakeOriginServer(
     "server_bar",
     ssl=True,
-    options={
-        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)},
+)
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -59,13 +54,17 @@ ts.addSSLfile("ssl/signer.pem")
 ts.addSSLfile("ssl/signer.key")
 
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://bob.foo.com:{1}/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://bob.foo.com:{1}/ https://127.0.0.1:{0}'.format(server_foo.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://bob.bar.com:{1}/ https://127.0.0.1:{0}'.format(server_bar.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(server.Variables.SSL_Port))
 
 ts.Disk.ssl_multicert_yaml.AddLines(
@@ -74,7 +73,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -88,8 +88,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.url_remap.pristine_host_hdr': 1
-    })
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+    }
+)
 
 ts.Disk.sni_yaml.AddLines(
     [
@@ -102,7 +103,8 @@ ts.Disk.sni_yaml.AddLines(
         '  verify_server_properties: SIGNATURE',
         "- fqdn: '*.bar.com'",
         '  verify_server_policy: DISABLED',
-    ])
+    ]
+)
 
 tr = Test.AddTestRun("foo.com Permissive-Test")
 tr.Setup.Copy("ssl/signed-foo.key")
@@ -142,7 +144,8 @@ tr3.StillRunningAfter = ts
 
 tr3 = Test.AddTestRun("random.bar.com override-no-test")
 tr3.MakeCurlCommand(
-    "-v -k --resolve 'random.bar.com:{0}:127.0.0.1' https://random.bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v -k --resolve 'random.bar.com:{0}:127.0.0.1' https://random.bar.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should not fail")
 tr3.ReturnCode = 0
 tr3.StillRunningAfter = server
@@ -150,7 +153,9 @@ tr3.StillRunningAfter = ts
 
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    r"WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed.")
+    r"WARNING: SNI \(bob.bar.com\) not in certificate", "Make sure bob.bar name checked failed."
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     r"WARNING: Core server certificate verification failed for \(my.random.com\). Action=Continue",
-    "Make sure default permissive action takes")
+    "Make sure default permissive action takes",
+)

@@ -29,13 +29,14 @@ class Test_http2_no_activity_timeout:
     server_counter: int = 0
 
     def __init__(
-            self,
-            name: str,
-            replay_keys: Optional[str] = None,
-            no_activity_timeout_in: Optional[int] = None,
-            expect_in_timeout=False,
-            no_activity_timeout_out: Optional[int] = None,
-            expect_out_timeout=False):
+        self,
+        name: str,
+        replay_keys: Optional[str] = None,
+        no_activity_timeout_in: Optional[int] = None,
+        expect_in_timeout=False,
+        no_activity_timeout_out: Optional[int] = None,
+        expect_out_timeout=False,
+    ):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -81,7 +82,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: {self._ts.Variables.SSLDir}/cert.crt
     ssl_key_name: {self._ts.Variables.SSLDir}/private-key.key
-""".split("\n"))
+""".split("\n")
+        )
 
         self._ts.Disk.records_config.update(
             {
@@ -91,16 +93,21 @@ ssl_multicert:
                 'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
                 'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
-            })
+            }
+        )
 
         if self._no_activity_timeout_in is not None:
-            self._ts.Disk.records_config.update({
-                'proxy.config.http2.no_activity_timeout_in': self._no_activity_timeout_in,
-            })
+            self._ts.Disk.records_config.update(
+                {
+                    'proxy.config.http2.no_activity_timeout_in': self._no_activity_timeout_in,
+                }
+            )
         if self._no_activity_timeout_out is not None:
-            self._ts.Disk.records_config.update({
-                'proxy.config.http2.no_activity_timeout_out': self._no_activity_timeout_out,
-            })
+            self._ts.Disk.records_config.update(
+                {
+                    'proxy.config.http2.no_activity_timeout_out': self._no_activity_timeout_out,
+                }
+            )
 
         self._ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._server.Variables.https_port}')
 
@@ -117,14 +124,17 @@ ssl_multicert:
             f'client-{Test_http2_no_activity_timeout.client_counter}',
             self.replay_file,
             https_ports=[self._ts.Variables.ssl_port],
-            keys=self._replay_keys)
+            keys=self._replay_keys,
+        )
         Test_http2_no_activity_timeout.client_counter += 1
 
         if self._expect_in_timeout:
             tr.Processes.Default.Streams.All += Testers.IncludesExpression(
-                "SSL_read error", "The client should have a read error due to an ATS timeout.")
+                "SSL_read error", "The client should have a read error due to an ATS timeout."
+            )
             self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-                "http2_cs.*Closing event:.*TIMEOUT", "We should detect a client side timeout.")
+                "http2_cs.*Closing event:.*TIMEOUT", "We should detect a client side timeout."
+            )
         elif self._expect_out_timeout:
             # There should be two origin connections:
             # 1. For the first no delay transaction.
@@ -132,9 +142,11 @@ ssl_multicert:
             self._server.Streams.All += Testers.IncludesExpression(
                 "Negotiated ALPN from client ALPN.*Negotiated ALPN from client ALPN",
                 "A second server side connection should be needed after the first times out.",
-                reflags=re.MULTILINE | re.DOTALL)
+                reflags=re.MULTILINE | re.DOTALL,
+            )
             self._ts.Disk.traffic_out.Content += Testers.IncludesExpression(
-                "http2_cs.*Closing event:.*TIMEOUT", "We should detect a server side timeout.")
+                "http2_cs.*Closing event:.*TIMEOUT", "We should detect a server side timeout."
+            )
 
 
 test0 = Test_http2_no_activity_timeout("Default no activity timeout", expect_in_timeout=False, expect_out_timeout=False)
@@ -145,7 +157,8 @@ test1 = Test_http2_no_activity_timeout(
     no_activity_timeout_in=1,
     replay_keys="no_delay 3_second_request_delay",
     expect_in_timeout=True,
-    expect_out_timeout=False)
+    expect_out_timeout=False,
+)
 test1.run()
 
 test2 = Test_http2_no_activity_timeout(
@@ -153,5 +166,6 @@ test2 = Test_http2_no_activity_timeout(
     no_activity_timeout_out=1,
     replay_keys="no_delay 3_second_request_delay",
     expect_in_timeout=False,
-    expect_out_timeout=True)
+    expect_out_timeout=True,
+)
 test2.run()

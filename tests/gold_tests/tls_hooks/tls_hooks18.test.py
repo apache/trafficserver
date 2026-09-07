@@ -24,7 +24,9 @@ Test.Summary = '''
 Test different combinations of TLS handshake hooks to ensure they are applied consistently.
 '''
 
-Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"),)
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion("1.1.1"),
+)
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
@@ -42,7 +44,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'ssl_hook_test',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -50,10 +53,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
+    'map https://example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-client_hello=2 -close=1')
 
@@ -71,9 +76,11 @@ ts.Disk.traffic_out.Content = "gold/ts-client-hello-2.gold"
 certstring0 = "Client Hello callback 0"
 certstring1 = "Client Hello callback 1"
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring0), "Cert message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring0), "Cert message appears only once", reflags=re.S | re.M
+)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring1), "Cert message appears only once", reflags=re.S | re.M)
+    r"\A(?:(?!{0}).)*{0}(?!.*{0}).*\Z".format(certstring1), "Cert message appears only once", reflags=re.S | re.M
+)
 
 tr.Processes.Default.TimeOut = 15
 tr.TimeOut = 15

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -22,7 +21,9 @@ Test.Summary = '''
 Test TS API to get H2 Session info and H2 metrics
 '''
 
-Test.SkipUnless(Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),)
+Test.SkipUnless(
+    Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
+)
 Test.ContinueOnFail = True
 
 # ----
@@ -55,18 +56,21 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSHttpSsnInfo.so'), ts)
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', 'test_TSHttpSsnInfo.so'), ts
+)
 
 ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http2|http3|quic|test_TSHttpSsnInfo',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
-    })
+        'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+    }
+)
 
 # http2_info.so will output test logging to this file.
 log_path = os.path.join(ts.Variables.LOGDIR, "test_TSHttpSsnInfo_plugin_log.txt")
@@ -105,9 +109,11 @@ tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File(log_path)
 f.Content = "test_TSHttpSsnInfo_plugin_log.gold"
 f.Content += Testers.ContainsExpression(
-    "H2 Frames Received:D1,H1,PR.,RS0,S2,PP0,P0,G1,WU0,C1,U0", "Expected numbers of frames should be received")
+    "H2 Frames Received:D1,H1,PR.,RS0,S2,PP0,P0,G1,WU0,C1,U0", "Expected numbers of frames should be received"
+)
 f.Content += Testers.ContainsExpression(
-    "H2 OOB\\(11\\)=0,OOB\\(1000\\)=0", "OOB sub_key values should map to UNKNOWN bucket without crashing")
+    "H2 OOB\\(11\\)=0,OOB\\(1000\\)=0", "OOB sub_key values should map to UNKNOWN bucket without crashing"
+)
 # We cannot test this on H3 now because the test plugin does not work on H3 sessions
 # f.Content += Testers.ContainsExpression("H3 Frames Received:D1,H1,Ra0,CP0,S1,PP0,Rb0,G0,Rc0,Rd0,UND0,UND0,UND0,MPI0,U0",
 #                                        "Expected numbers of frames should be received")

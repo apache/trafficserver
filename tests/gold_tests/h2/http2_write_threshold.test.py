@@ -21,7 +21,7 @@ from ports import get_port
 import sys
 
 
-class TestGrpc():
+class TestGrpc:
     """Test proxy.config.http2.write_size_threshold and its associated timeout."""
 
     def __init__(self, description: str, write_threshold: int, write_timeout: int) -> None:
@@ -68,15 +68,15 @@ class TestGrpc():
         self._server.Setup.Copy(server_key)
 
         port = get_port(self._server, 'port')
-        command = (f'{sys.executable} {tr.RunDirectory}/trickle_server.py {port} '
-                   f'server.pem server.key {write_timeout}')
+        command = f'{sys.executable} {tr.RunDirectory}/trickle_server.py {port} server.pem server.key {write_timeout}'
         self._server.Command = command
         self._server.ReturnCode = 0
         self._server.Ready = When.PortOpen(port)
         return self._server
 
     def _configure_traffic_server(
-            self, tr: 'TestRun', dns_port: int, server_port: int, write_threshold: int, write_timeout: int) -> 'Process':
+        self, tr: 'TestRun', dns_port: int, server_port: int, write_threshold: int, write_timeout: int
+    ) -> 'Process':
         """Configure the traffic server process.
 
         :param tr: The TestRun with which to associate the traffic server.
@@ -95,7 +95,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         self._ts.Disk.remap_config.AddLine(f"map / https://example.com:{server_port}/")
 
@@ -110,13 +111,13 @@ ssl_multicert:
                 'proxy.config.dns.resolv_conf': "NULL",
                 'proxy.config.http2.write_size_threshold': write_threshold,
                 'proxy.config.http2.write_time_threshold': write_timeout,
-
                 # Only enable debug logging during manual exectution. All the
                 # DATA frames get multiple logs and it makes the traffic.out too
                 # unwieldy.
                 "proxy.config.diags.debug.enabled": 0,
                 "proxy.config.diags.debug.tags": "http",
-            })
+            }
+        )
         return self._ts
 
     def _configure_h2_client(self, tr: 'TestRun', proxy_port: int, write_timeout: int) -> None:
@@ -133,8 +134,7 @@ ssl_multicert:
         self._server.Setup.Copy(key)
         # The cert is for example.com, so we must use that domain.
         hostname = 'example.com'
-        command = (f'{sys.executable} {tr.RunDirectory}/trickle_client.py '
-                   f'{hostname} {proxy_port} server.pem {write_timeout}')
+        command = f'{sys.executable} {tr.RunDirectory}/trickle_client.py {hostname} {proxy_port} server.pem {write_timeout}'
         p = tr.Processes.Default
         p.Command = command
         p.ReturnCode = 0

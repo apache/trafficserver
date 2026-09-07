@@ -41,8 +41,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.verify.server.policy': 'ENFORCED',
         'proxy.config.ssl.client.verify.server.properties': 'NONE',
-        'proxy.config.url_remap.pristine_host_hdr': 1
-    })
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -50,21 +51,26 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 
 ts.Disk.sni_yaml.AddLine('sni:')
 ts.Disk.sni_yaml.AddLine('- fqdn: bar.com')
 ts.Disk.sni_yaml.AddLine('  verify_server_policy: PERMISSIVE')
 
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com')
+    os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_verify_test.so'), ts, '-count=2 -bad=random.com -bad=bar.com'
+)
 
 tr = Test.AddTestRun("request good name")
 tr.Processes.Default.StartBefore(server)
@@ -92,22 +98,30 @@ tr3.Processes.Default.Streams.stdout = Testers.ExcludesExpression("Could Not Con
 # Overriding the built in ERROR check since we expect tr2 to fail
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     "WARNING: TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for 127.0.0.1.  Action=Terminate SNI=random.com",
-    "random.com should fail")
+    "random.com should fail",
+)
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
     "WARNING: TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin certificate check for 127.0.0.1.  Action=Continue SNI=bar.com",
-    "bar.com should fail but continue")
+    "bar.com should fail but continue",
+)
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("SNI=foo.com", "foo.com should not fail in any way")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Server verify callback 0 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
+    r"Server verify callback 0 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Server verify callback 1 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times")
+    r"Server verify callback 1 [\da-fx]+? - event is good SNI=foo.com good HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Server verify callback 0 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 0 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 1 [\da-fx]+? - event is good SNI=random.com error HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 0 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times")
+    r"Server verify callback 1 [\da-fx]+? - event is good SNI=bar.com error HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression("Server verify callback SNI APIs match=true", "verify SNI names match")

@@ -100,7 +100,8 @@ class TestJA4Fingerprint:
     @staticmethod
     def configure_server(domain: str, replay_filepath: str):
         server = Test.MakeVerifierServerProcess(
-            f'server{TestJA4Fingerprint.server_counter + 1}.{domain}', replay_filepath, other_args="--format '{url}'")
+            f'server{TestJA4Fingerprint.server_counter + 1}.{domain}', replay_filepath, other_args="--format '{url}'"
+        )
         TestJA4Fingerprint.server_counter += 1
 
         return server
@@ -123,7 +124,8 @@ class TestJA4Fingerprint:
                 'proxy.config.proxy_name': 'test.proxy.com',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ja4_fingerprint|http',
-            })
+            }
+        )
 
         ts.Disk.remap_config.AddLine(f'map / http://localhost:{server_one.Variables.http_port}')
 
@@ -133,7 +135,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         plugin_args = 'ja4_fingerprint.so'
         if self.use_preserve:
@@ -153,17 +156,18 @@ ssl_multicert:
 # Tests start.
 
 
-@TestJA4Fingerprint.runner('When we send a request, ' \
-                 'then a JA4 header should be attached.')
+@TestJA4Fingerprint.runner('When we send a request, then a JA4 header should be attached.')
 def test1(params: TestParams) -> None:
     client = params['tr'].Processes.Default
     params['tr'].MakeCurlCommand(
-        '-k -v -H "uuid: no-existing-headers" "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
+        '-k -v -H "uuid: no-existing-headers" "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts']
+    )
 
     client.ReturnCode = 0
     client.Streams.stdout += Testers.ContainsExpression(r'Yay!', 'We should receive the expected body.')
     params['ts'].Disk.traffic_out.Content += Testers.ContainsExpression(
-        r'JA4 fingerprint:', 'We should receive the expected log message.')
+        r'JA4 fingerprint:', 'We should receive the expected log message.'
+    )
 
 
 @TestJA4Fingerprint.runner('With --preserve, existing JA4 headers should be preserved.', use_preserve=True)
@@ -175,7 +179,8 @@ def test_preserve(params: TestParams) -> None:
 
     # Request 1: No existing JA4 headers - should add them.
     tr.MakeCurlCommand(
-        '-k -v -H "uuid: no-existing-headers" "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts'])
+        '-k -v -H "uuid: no-existing-headers" "https://localhost:{0}/resource"'.format(params['port_one']), ts=params['ts']
+    )
     client.ReturnCode = 0
     client.Streams.stdout += Testers.ContainsExpression(r'Yay!', 'First request should succeed.')
 
@@ -184,16 +189,19 @@ def test_preserve(params: TestParams) -> None:
     tr2.MakeCurlCommand(
         '-k -v -H "uuid: existing-ja4-headers" -H "ja4: upstream-fingerprint" -H "x-ja4-via: upstream.proxy.com" '
         '"https://localhost:{0}/resource-with-headers"'.format(params['port_one']),
-        ts=params['ts'])
+        ts=params['ts'],
+    )
     tr2.Processes.Default.ReturnCode = 0
     tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(r'Preserved!', 'Second request should preserve headers.')
 
     # Request 3: With only x-ja4-via - should also trigger preserve.
     tr3 = Test.AddTestRun('Verify preserve triggers when only x-ja4-via exists.')
     tr3.MakeCurlCommand(
-        '-k -v -H "uuid: existing-via-only" -H "x-ja4-via: upstream.proxy.com" '
-        '"https://localhost:{0}/resource-via-only"'.format(params['port_one']),
-        ts=params['ts'])
+        '-k -v -H "uuid: existing-via-only" -H "x-ja4-via: upstream.proxy.com" "https://localhost:{0}/resource-via-only"'.format(
+            params['port_one']
+        ),
+        ts=params['ts'],
+    )
     tr3.Processes.Default.ReturnCode = 0
     tr3.Processes.Default.Streams.stdout += Testers.ContainsExpression(r'Via only!', 'Third request should succeed.')
 
@@ -202,6 +210,8 @@ def test_preserve(params: TestParams) -> None:
     server.Streams.All += Testers.ContainsExpression(
         r'Equals Success.*"/resource-with-headers".*ja4.*upstream-fingerprint',
         'Preserved ja4 header should match original value.',
-        reflags=re.DOTALL)
+        reflags=re.DOTALL,
+    )
     server.Streams.All += Testers.ContainsExpression(
-        r'Absence Success.*"/resource-via-only".*ja4', 'ja4 should be absent when only x-ja4-via exists.', reflags=re.DOTALL)
+        r'Absence Success.*"/resource-via-only".*ja4', 'ja4 should be absent when only x-ja4-via exists.', reflags=re.DOTALL
+    )

@@ -37,8 +37,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http.*|dns|conf_remap',
         'proxy.config.http.referer_filter': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 
 ts.Disk.remap_yaml.AddLines(
     rf'''
@@ -53,7 +54,8 @@ remap:
       url: https://\b(?!(.*one|two|three|four|five|six)).+\b\.seven\.eight\.nine\.com/blah12345.html
     to:
       url: https://www.example.com:{server.Variables.Port}/one/two/three/blah12345.html
-    '''.split("\n"))
+    '''.split("\n")
+)
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand('-H"Host: zero.one.two.three.com" http://127.0.0.1:{0}/ --verbose'.format(ts.Variables.port), ts=ts)

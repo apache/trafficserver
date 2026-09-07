@@ -67,7 +67,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
@@ -80,12 +81,14 @@ ssl_multicert:
                 # So the renegotiation-detection log line below is emitted.
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl_load',
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
 
         # The refused renegotiation must not abort the process.
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "received signal|failed assertion", "ATS must refuse the renegotiation without crashing")
+            "received signal|failed assertion", "ATS must refuse the renegotiation without crashing"
+        )
         # ...and, on OpenSSL, it must actually reach ATS's renegotiation-detection
         # path (otherwise a no-crash pass could mean the client never managed to
         # renegotiate at all). BoringSSL rejects a peer-initiated renegotiation inside
@@ -94,7 +97,8 @@ ssl_multicert:
         # detection line is never logged. The no-crash check above still covers it.
         if Condition.IsOpenSSL():
             ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                "trying to renegotiate from the client", "ATS must detect the client-initiated renegotiation")
+                "trying to renegotiate from the client", "ATS must detect the client-initiated renegotiation"
+            )
         return ts
 
     def run(self) -> None:
@@ -106,7 +110,8 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.Command = (
             f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_renegotiation_client.py")} '
-            f'-p {self._ts.Variables.ssl_port} -s example.com')
+            f'-p {self._ts.Variables.ssl_port} -s example.com'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
@@ -117,12 +122,15 @@ ssl_multicert:
             (
                 "-v --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 -k "
                 f"--resolve 'example.com:{self._ts.Variables.ssl_port}:127.0.0.1' "
-                f"https://example.com:{self._ts.Variables.ssl_port}/"),
-            ts=self._ts)
+                f"https://example.com:{self._ts.Variables.ssl_port}/"
+            ),
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         # curl -v writes the response status line to stderr.
         tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-            "HTTP/1.1 200 OK", "request after renegotiation should succeed")
+            "HTTP/1.1 200 OK", "request after renegotiation should succeed"
+        )
         tr.StillRunningAfter = self._ts
 
 

@@ -49,7 +49,8 @@ ts.Disk.records_config.update(
         # Force the crash log helper on regardless of the build's TS_USE_REMOTE_UNWINDING
         # default (it is NULL on platforms without remote unwinding, e.g. Darwin).
         'proxy.config.crash_log_helper': os.path.join(ts.Variables.BINDIR, 'traffic_crashlog'),
-    })
+    }
+)
 
 tr = Test.AddTestRun('Start traffic_server with the crash log helper armed, then let AuTest SIGTERM it')
 tr.Processes.Default.Command = 'printf "crash log helper armed"'
@@ -63,11 +64,14 @@ tr.StillRunningAfter = ts
 # log helper itself is forced on via proxy.config.crash_log_helper above, and debug/DIAG
 # output is emitted to traffic.out.)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    'received exit signal, shutting down', 'traffic_server should have run the graceful shutdown path')
+    'received exit signal, shutting down', 'traffic_server should have run the graceful shutdown path'
+)
 
 # The crash log helper shares traffic_server's stderr (bound to traffic.out). On a clean
 # shutdown it must neither wake nor write a crash log.
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    'crashlog started', 'the crash log helper must not wake on a clean SIGTERM shutdown')
+    'crashlog started', 'the crash log helper must not wake on a clean SIGTERM shutdown'
+)
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    'wrote crash log', 'a clean SIGTERM shutdown must not produce a crash log')
+    'wrote crash log', 'a clean SIGTERM shutdown must not produce a crash log'
+)

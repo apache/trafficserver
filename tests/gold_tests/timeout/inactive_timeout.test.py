@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -36,7 +35,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.url_remap.remap_required': 1,
         'proxy.config.http.transaction_no_activity_timeout_out': 2,
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
@@ -46,22 +46,26 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommand('-i  http://127.0.0.1:{0}/file'.format(ts.Variables.port), ts=ts)
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "Inactivity Timeout", "Request should fail with inactivity timeout")
+    "Inactivity Timeout", "Request should fail with inactivity timeout"
+)
 
 if not Condition.CurlUsingUnixDomainSocket():
     tr2 = Test.AddTestRun("tr")
     tr2.MakeCurlCommand('-k -i --http1.1 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        "Inactivity Timeout", "Request should fail with inactivity timeout")
+        "Inactivity Timeout", "Request should fail with inactivity timeout"
+    )
 
     tr3 = Test.AddTestRun("tr")
     tr3.MakeCurlCommand('-k -i --http2 https://127.0.0.1:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
     tr3.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-        "Inactivity Timeout", "Request should fail with inactivity timeout")
+        "Inactivity Timeout", "Request should fail with inactivity timeout"
+    )

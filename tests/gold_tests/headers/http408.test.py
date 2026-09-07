@@ -39,9 +39,11 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts.Disk.remap_config.AddLine('map http://{0} http://127.0.0.1:{1}'.format(HTTP_408_HOST, server.Variables.Port))
 
 TIMEOUT = 2
-ts.Disk.records_config.update({
-    'proxy.config.http.transaction_no_activity_timeout_in': TIMEOUT,
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.http.transaction_no_activity_timeout_in': TIMEOUT,
+    }
+)
 
 Test.Setup.Copy(os.path.join(os.pardir, os.pardir, 'tools', 'tcp_client.py'))
 Test.Setup.Copy('data')
@@ -50,7 +52,9 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 DELAY = TIMEOUT + 2
-tr.Processes.Default.Command = f'{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HTTP_408_HOST}.txt --delay-after-send {DELAY}'
+tr.Processes.Default.Command = (
+    f'{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} data/{HTTP_408_HOST}.txt --delay-after-send {DELAY}'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.TimeOut = 10
 tr.Processes.Default.Streams.stdout = "http408.gold"

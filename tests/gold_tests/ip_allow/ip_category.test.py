@@ -68,7 +68,8 @@ ip_categories:
     ip_addrs: 127.0.0.1
   - name: ALL
     ip_addrs: 127.0.0.1
-''')
+'''
+)
 
 localhost_is_external = CategoryFile(
     '''
@@ -87,7 +88,8 @@ ip_categories:
     ip_addrs:
       - 1.2.3.4
       - 127.0.0.1
-''')
+'''
+)
 
 localhost_is_neither = CategoryFile(
     '''
@@ -102,7 +104,8 @@ ip_categories:
     ip_addrs:
       - 1.2.3.4
       - 127.0.0.1
-''')
+'''
+)
 
 # Keep this below the above content instantiations.
 CategoryFile.write_all()
@@ -127,8 +130,14 @@ class Test_ip_category:
     _server_replay = 'replays/https_categories_server.replay.yaml'
 
     def __init__(
-            self, name: str, replay_file: str, ip_allow_config: str, ip_category_config: 'CategoryFile', acl_configuration: str,
-            expected_responses: List[int]):
+        self,
+        name: str,
+        replay_file: str,
+        ip_allow_config: str,
+        ip_category_config: 'CategoryFile',
+        acl_configuration: str,
+        expected_responses: List[int],
+    ):
         """Initialize the test.
 
         :param name: The name of the test.
@@ -212,7 +221,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
@@ -225,10 +235,12 @@ ssl_multicert:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.http.connect_ports': Test_ip_category._server.Variables.http_port,
                 'proxy.config.url_remap.acl_behavior_policy': 1,  # TODO: adjust expected_responses with the default config
-            })
+            }
+        )
 
         ts.Disk.remap_config.AddLine(
-            f'map / http://127.0.0.1:{Test_ip_category._server.Variables.http_port} {self._acl_configuration}')
+            f'map / http://127.0.0.1:{Test_ip_category._server.Variables.http_port} {self._acl_configuration}'
+        )
         ts.Disk.ip_allow_yaml.AddLines(self._ip_allow_config.split("\n"))
 
     def _configure_client(self, tr: 'TestRun') -> None:
@@ -245,17 +257,20 @@ ssl_multicert:
             Test_ip_category._ts_is_started = True
 
         p = tr.AddVerifierClientProcess(
-            f'client-{Test_ip_category._client_counter}', self._replay_file, https_ports=[Test_ip_category._ts.Variables.ssl_port])
+            f'client-{Test_ip_category._client_counter}', self._replay_file, https_ports=[Test_ip_category._ts.Variables.ssl_port]
+        )
         Test_ip_category._client_counter += 1
 
         if self._expected_responses:
             codes = [str(code) for code in self._expected_responses]
             p.Streams.stdout += Testers.ContainsExpression(
-                '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE)
+                '.*'.join(codes), "Verifying the expected order of responses", reflags=re.DOTALL | re.MULTILINE
+            )
         else:
             # If there are no expected responses, expect the Warning about the rejected ip.
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "client '127.0.0.1' prohibited by ip-allow policy", "Verify the client rejection warning message.")
+                "client '127.0.0.1' prohibited by ip-allow policy", "Verify the client rejection warning message."
+            )
 
             # Also, the client will complain about the broken connections.
             p.ReturnCode = 1
@@ -293,7 +308,8 @@ test_ip_allow_optional_methods = Test_ip_category(
     ip_allow_config=IP_ALLOW_CONTENT,
     ip_category_config=localhost_is_internal_and_external,
     acl_configuration='',
-    expected_responses=[200, 200, 400, 403])
+    expected_responses=[200, 200, 400, 403],
+)
 
 test_ip_allow_optional_methods = Test_ip_category(
     "IP Category: EXTERNAL",
@@ -301,7 +317,8 @@ test_ip_allow_optional_methods = Test_ip_category(
     ip_allow_config=IP_ALLOW_CONTENT,
     ip_category_config=localhost_is_external,
     acl_configuration='',
-    expected_responses=[200, 403, 403])
+    expected_responses=[200, 403, 403],
+)
 
 # Because all requests are outright rejected for 127.0.0.1, ATS will
 # reject all incoming transactions and not even give a 403 response.
@@ -311,7 +328,8 @@ test_ip_allow_optional_methods = Test_ip_category(
     ip_allow_config=IP_ALLOW_CONTENT,
     ip_category_config=localhost_is_neither,
     acl_configuration='',
-    expected_responses=None)
+    expected_responses=None,
+)
 
 # Deny GET via remap.config ACL.
 test_ip_allow_optional_methods = Test_ip_category(
@@ -320,4 +338,5 @@ test_ip_allow_optional_methods = Test_ip_category(
     ip_allow_config=IP_ALLOW_CONTENT,
     ip_category_config=localhost_is_external,
     acl_configuration='@action=set_deny @src_ip_category=ACME_REMAP_EXTERNAL @method=GET',
-    expected_responses=[403, 200, 200])
+    expected_responses=[403, 200, 200],
+)

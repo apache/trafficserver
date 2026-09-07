@@ -28,7 +28,9 @@ Test.SkipUnless(
     Condition.PluginExists('traffic_dump.so'),
     Condition.HasATSFeature('TS_USE_QUIC'),
 )
-Test.SkipIf(Condition.true("Skip this test until the TS_EVENT_HTTP_SSN are supported for QUIC connections."),)
+Test.SkipIf(
+    Condition.true("Skip this test until the TS_EVENT_HTTP_SSN are supported for QUIC connections."),
+)
 
 schema_path = os.path.join(Test.Variables.AtsTestToolsDir, 'lib', 'replay_schema.json')
 
@@ -58,7 +60,8 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.http.host_sni_policy': 2,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -66,7 +69,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(f'map https://www.client_only_tls.com/ http://127.0.0.1:{server.Variables.http_port}')
 ts.Disk.remap_config.AddLine(f'map https://www.tls.com/ https://127.0.0.1:{server.Variables.https_port}')
@@ -75,7 +79,8 @@ ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.http_por
 # Configure traffic_dump.
 ts.Disk.plugin_config.AddLine(
     f'traffic_dump.so --logdir {ts_log_dir} --sample 1 --limit 1000000000 '
-    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"')
+    '--sensitive-fields "cookie,set-cookie,x-request-1,x-request-2"'
+)
 # Configure logging of transactions. This is helpful for the cache test below.
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -86,18 +91,23 @@ logging:
   logs:
     - filename: transactions
       format: basic
-'''.split('\n'))
+'''.split('\n')
+)
 
 # Set up trafficserver expectations.
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "loading plugin.*traffic_dump.so", "Verify the traffic_dump plugin got loaded.")
+    "loading plugin.*traffic_dump.so", "Verify the traffic_dump plugin got loaded."
+)
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    f"Initialized with log directory: {ts_log_dir}", "Verify traffic_dump initialized with the configured directory.")
+    f"Initialized with log directory: {ts_log_dir}", "Verify traffic_dump initialized with the configured directory."
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
     "Initialized with sample pool size of 1 bytes and disk limit of 1000000000 bytes",
-    "Verify traffic_dump initialized with the configured disk limit.")
+    "Verify traffic_dump initialized with the configured disk limit.",
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Finish a session with log file of.*bytes", "Verify traffic_dump sees the end of sessions and accounts for it.")
+    "Finish a session with log file of.*bytes", "Verify traffic_dump sees the end of sessions and accounts for it."
+)
 
 # Set up the json replay file expectations.
 replay_file_session_1 = os.path.join(ts_log_dir, "127", "0000000000000000")
@@ -112,7 +122,8 @@ tr.AddVerifierClientProcess(
     https_ports=[ts.Variables.ssl_port],
     http3_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
-    ca_cert="ssl/signer.pem")
+    ca_cert="ssl/signer.pem",
+)
 
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -128,15 +139,14 @@ tr = Test.AddTestRun("Verify the json content of the first session")
 http_protocols = "tcp,ip"
 verify_replay = "verify_replay.py"
 sensitive_fields_arg = (
-    "--sensitive-fields cookie "
-    "--sensitive-fields set-cookie "
-    "--sensitive-fields x-request-1 "
-    "--sensitive-fields x-request-2 ")
+    "--sensitive-fields cookie --sensitive-fields set-cookie --sensitive-fields x-request-1 --sensitive-fields x-request-2 "
+)
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    (f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
-     f'{sensitive_fields_arg} --client-http-version "3" '
-     f'--client-protocols "{http_protocols}"')
+tr.Processes.Default.Command = (
+    f'{sys.executable} {verify_replay} {schema_path} {replay_file_session_1} '
+    f'{sensitive_fields_arg} --client-http-version "3" '
+    f'--client-protocols "{http_protocols}"'
+)
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

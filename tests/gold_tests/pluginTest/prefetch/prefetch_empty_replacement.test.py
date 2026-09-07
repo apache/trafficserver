@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -28,20 +27,16 @@ prefetching the URL itself.  The plugin must instead log and stop; the client re
 server = Test.MakeOriginServer("server")
 for i in list(range(1, 1 + 2)):
     request_header = {
-        "headers":
-            f"GET /texts/demo-{i} HTTP/1.1\r\n"
-            "Host: does.not.matter\r\n"  # But cannot be omitted.
-            "\r\n",
+        "headers": f"GET /texts/demo-{i} HTTP/1.1\r\n"
+        "Host: does.not.matter\r\n"  # But cannot be omitted.
+        "\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     response_header = {
-        "headers": "HTTP/1.1 200 OK\r\n"
-                   "Connection: close\r\n"
-                   "Cache-control: max-age=85000\r\n"
-                   "\r\n",
+        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": f"This is the body for demo-{i}.\n"
+        "body": f"This is the body for demo-{i}.\n",
     }
     server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -54,18 +49,24 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http|dns|prefetch',
         'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
         'proxy.config.dns.resolv_conf': "NULL",
-    })
+    }
+)
 # A valid pattern (3 defined groups, $3 in range) whose replacement is only the optional $3 group.
 ts.Disk.remap_config.AddLine(
     f"map http://domain.in http://127.0.0.1:{server.Variables.Port}" + " @plugin=cachekey.so @pparam=--remove-all-params=true"
-    " @plugin=prefetch.so" + " @pparam=--front=true" + " @pparam=--fetch-policy=simple" +
-    r" @pparam=--fetch-path-pattern=/(.*-)(\d+)(\?.*)?$/$3/" + " @pparam=--fetch-count=3")
+    " @plugin=prefetch.so"
+    + " @pparam=--front=true"
+    + " @pparam=--fetch-policy=simple"
+    + r" @pparam=--fetch-path-pattern=/(.*-)(\d+)(\?.*)?$/$3/"
+    + " @pparam=--fetch-count=3"
+)
 ts.ReturnCode = Any(0, -2)
 
 # The empty replacement must be logged and skipped.  This ContainsExpression both asserts the message
 # and replaces the default "diags.log must not contain ERROR:" check (it is logged via TSError).
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "produced an empty path", "an empty replacement must be logged and skipped, not self-prefetched")
+    "produced an empty path", "an empty replacement must be logged and skipped, not self-prefetched"
+)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -85,6 +86,6 @@ Test.AddAwaitFileContainsTestRun('Await the empty-path skip to be logged.', ts.D
 # stops before scheduling, so "failed to process the pattern" (the old second-iteration symptom on the
 # emptied working path) must never appear.
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (f"grep -c 'failed to process the pattern' {ts.Disk.traffic_out.Name} || true")
+tr.Processes.Default.Command = f"grep -c 'failed to process the pattern' {ts.Disk.traffic_out.Name} || true"
 tr.Streams.stdout = Testers.ContainsExpression("0", "no per-request pattern-processing failure")
 tr.Processes.Default.ReturnCode = 0

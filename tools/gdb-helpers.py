@@ -348,7 +348,7 @@ if hasattr(gdb, 'pretty_printers'):
 def ats_str(addr, addr_len):
     if addr_len == 0:
         return ''
-    #print("addr {} len {}".format(addr, addr_len))
+    # print("addr {} len {}".format(addr, addr_len))
     inferior = gdb.selected_inferior()
     try:
         buff = inferior.read_memory(addr, addr_len)
@@ -373,7 +373,6 @@ def wks_or_str(idx, addr, addr_len):
 
 
 class URL:
-
     def __init__(self, val):
         self.impl = val['m_url_impl'].dereference()
 
@@ -391,7 +390,6 @@ class URL:
 
 
 class HTTPHdr:
-
     def __init__(self, val):
         self.impl = val['m_http']
         self.val = val
@@ -429,8 +427,8 @@ class HTTPHdr:
         while fblock_ptr != 0:
             fblock = fblock_ptr.dereference()
             slots = fblock['m_field_slots']
-            #print("slots type {} address {} size {}".format(slots.type, slots.address, slots.type.sizeof))
-            #print("next idx {} len {} next {}".format(fblock['m_freetop'], fblock['m_length'], fblock['m_next']))
+            # print("slots type {} address {} size {}".format(slots.type, slots.address, slots.type.sizeof))
+            # print("next idx {} len {} next {}".format(fblock['m_freetop'], fblock['m_length'], fblock['m_next']))
 
             for slot_idx in range(fblock['m_freetop']):
                 fld = slots[slot_idx]
@@ -453,13 +451,12 @@ class HTTPHdr:
 
 
 class ConnectionAttributes:
-
     def __init__(self, val):
         self.val = val
 
     def http_version(self):
         v = self.val['http_version']['m_version']
-        return (v >> 16, v & 0xffff)
+        return (v >> 16, v & 0xFFFF)
 
     def src_addr(self):
         ip = self.val['src_addr']
@@ -473,7 +470,6 @@ class ConnectionAttributes:
 
 
 class HttpSM:
-
     def __init__(self, val):
         ptr_type = gdb.lookup_type('struct HttpSM').pointer()
         self.val = None
@@ -567,7 +563,6 @@ def usage():
 
 
 class ATSPrintCommand(gdb.Command):
-
     def __init__(self):
         super(ATSPrintCommand, self).__init__('atspr', gdb.COMMAND_DATA)
 

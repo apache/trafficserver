@@ -45,7 +45,8 @@ class BodyFactoryContentTypeTest:
             {
                 'proxy.config.body_factory.enable_customizations': 1,
                 'proxy.config.url_remap.remap_required': 1,
-            })
+            }
+        )
         self._ts_default.Disk.remap_config.AddLine('map http://mapped.example.com http://127.0.0.1:65535')
 
         body_factory_dir = self._ts_default.Variables.BODY_FACTORY_TEMPLATE_DIR
@@ -59,7 +60,8 @@ class BodyFactoryContentTypeTest:
             {
                 'proxy.config.body_factory.enable_customizations': 1,
                 'proxy.config.url_remap.remap_required': 1,
-            })
+            }
+        )
         self._ts_custom.Disk.remap_config.AddLine('map http://mapped.example.com http://127.0.0.1:65535')
 
         body_factory_dir = self._ts_custom.Variables.BODY_FACTORY_TEMPLATE_DIR
@@ -76,14 +78,14 @@ class BodyFactoryContentTypeTest:
         tr = Test.AddTestRun('Default body factory Content-Type is text/html')
         tr.Processes.Default.StartBefore(self._ts_default)
         tr.Processes.Default.Command = (
-            f'curl -s -D- -o /dev/null'
-            f' -H "Host: unmapped.example.com"'
-            f' http://127.0.0.1:{self._ts_default.Variables.port}/')
+            f'curl -s -D- -o /dev/null -H "Host: unmapped.example.com" http://127.0.0.1:{self._ts_default.Variables.port}/'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 5
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             '(?i)Content-Type:\\s*text/html\\s*;\\s*charset=utf-8(?:\\s|\\r|$)',
-            'Default body factory should produce text/html with charset')
+            'Default body factory should produce text/html with charset',
+        )
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('HTTP/1.1 404', 'Unmapped request should get 404')
         tr.StillRunningAfter = self._ts_default
 
@@ -92,13 +94,13 @@ class BodyFactoryContentTypeTest:
         tr = Test.AddTestRun('Custom body factory Content-Type is text/plain')
         tr.Processes.Default.StartBefore(self._ts_custom)
         tr.Processes.Default.Command = (
-            f'curl -s -D- -o /dev/null'
-            f' -H "Host: unmapped.example.com"'
-            f' http://127.0.0.1:{self._ts_custom.Variables.port}/')
+            f'curl -s -D- -o /dev/null -H "Host: unmapped.example.com" http://127.0.0.1:{self._ts_custom.Variables.port}/'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 5
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            '(?i)Content-Type:\\s*text/plain(?:\\s|\\r|$)', 'Custom body factory should produce text/plain')
+            '(?i)Content-Type:\\s*text/plain(?:\\s|\\r|$)', 'Custom body factory should produce text/plain'
+        )
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression('HTTP/1.1 404', 'Unmapped request should get 404')
         tr.StillRunningAfter = self._ts_custom
 

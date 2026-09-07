@@ -41,7 +41,8 @@ class Http2ConcurrentStreamsTest:
                 'proxy.config.ssl.server.cert.path': f"{self._ts.Variables.SSLDir}",
                 'proxy.config.ssl.server.private_key.path': f"{self._ts.Variables.SSLDir}",
                 'proxy.config.http.insert_response_via_str': 2,
-            })
+            }
+        )
         self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}")
         self._ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -49,12 +50,14 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
     def run(self):
         tr = Test.AddTestRun()
         tr.AddVerifierClientProcess(
-            "verifier-client", self.replayFile, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port])
+            "verifier-client", self.replayFile, http_ports=[self._ts.Variables.port], https_ports=[self._ts.Variables.ssl_port]
+        )
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.StartBefore(self._server)
         tr.StillRunningAfter = self._ts

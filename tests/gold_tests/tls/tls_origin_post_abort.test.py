@@ -60,11 +60,13 @@ class TestOriginPostAbort:
                 'proxy.config.ssl.client.verify.server.policy': 'DISABLED',
                 'proxy.config.diags.debug.enabled': 0,
                 'proxy.config.diags.debug.tags': 'http|ssl|ssl_io',
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map /post https://127.0.0.1:{Test.Variables.origin_port}')
 
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            'received signal|failed assertion', 'ATS must not crash handling the mid-body origin abort')
+            'received signal|failed assertion', 'ATS must not crash handling the mid-body origin abort'
+        )
         return ts
 
     def _configure_origin(self) -> 'Process':
@@ -81,7 +83,8 @@ class TestOriginPostAbort:
             f'origin-{TestOriginPostAbort._origin_counter}',
             f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_post_abort_origin.py")} '
             f'-p {Test.Variables.origin_port} '
-            f'-c {os.path.join(Test.Variables.AtsTestToolsDir, "ssl", "server.pem")} -d 1.0')
+            f'-c {os.path.join(Test.Variables.AtsTestToolsDir, "ssl", "server.pem")} -d 1.0',
+        )
         TestOriginPostAbort._origin_counter += 1
 
         # These markers prove the reset path was actually exercised: the origin
@@ -90,9 +93,11 @@ class TestOriginPostAbort:
         # any prompt response -- e.g. a broken remap or a never-started origin that
         # yields a fast 5xx without the body ever reaching a resetting origin.
         origin.Streams.stdout = Testers.ContainsExpression(
-            'request headers received', 'the origin must receive the forwarded request headers')
+            'request headers received', 'the origin must receive the forwarded request headers'
+        )
         origin.Streams.stdout += Testers.ContainsExpression(
-            'connection reset sent', 'the origin must reset the connection mid-body')
+            'connection reset sent', 'the origin must reset the connection mid-body'
+        )
         return origin
 
     def run(self) -> None:
@@ -101,13 +106,15 @@ class TestOriginPostAbort:
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.StartBefore(self._origin, ready=When.PortOpen(Test.Variables.origin_port))
         tr.Processes.Default.Command = (
-            f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_post_abort_client.py")} '
-            f'-p {self._ts.Variables.port} -t 8')
+            f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_post_abort_client.py")} -p {self._ts.Variables.port} -t 8'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'PASS: transaction failed promptly', 'the POST must fail promptly on the origin RST')
+            'PASS: transaction failed promptly', 'the POST must fail promptly on the origin RST'
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'status-code: 5', 'ATS must surface the mid-body origin reset as a 5xx')
+            'status-code: 5', 'ATS must surface the mid-body origin reset as a 5xx'
+        )
         tr.StillRunningAfter = self._ts
 
 

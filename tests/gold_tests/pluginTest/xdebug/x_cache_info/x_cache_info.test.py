@@ -30,11 +30,8 @@ server.addResponse("sessionlog.json", request_header, response_header)
 ts = Test.MakeATSProcess("ts")
 
 ts.Disk.records_config.update(
-    {
-        'proxy.config.url_remap.remap_required': 0,
-        'proxy.config.diags.debug.enabled': 0,
-        'proxy.config.diags.debug.tags': 'http'
-    })
+    {'proxy.config.url_remap.remap_required': 0, 'proxy.config.diags.debug.enabled': 0, 'proxy.config.diags.debug.tags': 'http'}
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache-info')
 

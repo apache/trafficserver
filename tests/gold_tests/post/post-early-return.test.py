@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -50,14 +49,16 @@ ts.Disk.remap_config.AddLines(
         'map /four http://127.0.0.1:{0}'.format(Test.Variables.upstream_port4),
         'map /five http://127.0.0.1:{0}'.format(Test.Variables.upstream_port5),
         'map /six http://127.0.0.1:{0}'.format(Test.Variables.upstream_port6),
-    ])
+    ]
+)
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -65,23 +66,30 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 0,
         # 'proxy.config.http2.initial_window_size_in': 2*16384, # Make a ludacrisly small window
         'proxy.config.diags.debug.tags': 'http',
-    })
+    }
+)
 
 mock_origin = os.path.join(Test.Variables.AtsTestToolsDir, 'mock_origin.py')
 mock_origin_args = '--status 420 --reason "Be Calm"'
 
 server1 = Test.Processes.Process(
-    "server1", f"python3 {mock_origin} {Test.Variables.upstream_port1} {mock_origin_args} --output outserver1")
+    "server1", f"python3 {mock_origin} {Test.Variables.upstream_port1} {mock_origin_args} --output outserver1"
+)
 server2 = Test.Processes.Process(
-    "server2", f"python3 {mock_origin} {Test.Variables.upstream_port2} {mock_origin_args} --output outserver1")
+    "server2", f"python3 {mock_origin} {Test.Variables.upstream_port2} {mock_origin_args} --output outserver1"
+)
 server3 = Test.Processes.Process(
-    "server3", f"python3 {mock_origin} {Test.Variables.upstream_port3} {mock_origin_args} --output outserver1")
+    "server3", f"python3 {mock_origin} {Test.Variables.upstream_port3} {mock_origin_args} --output outserver1"
+)
 server4 = Test.Processes.Process(
-    "server4", f"python3 {mock_origin} {Test.Variables.upstream_port4} {mock_origin_args} --output outserver1")
+    "server4", f"python3 {mock_origin} {Test.Variables.upstream_port4} {mock_origin_args} --output outserver1"
+)
 server5 = Test.Processes.Process(
-    "server5", f"python3 {mock_origin} {Test.Variables.upstream_port5} {mock_origin_args} --output outserver1")
+    "server5", f"python3 {mock_origin} {Test.Variables.upstream_port5} {mock_origin_args} --output outserver1"
+)
 server6 = Test.Processes.Process(
-    "server6", f"python3 {mock_origin} {Test.Variables.upstream_port6} {mock_origin_args} --output outserver1")
+    "server6", f"python3 {mock_origin} {Test.Variables.upstream_port6} {mock_origin_args} --output outserver1"
+)
 server1.Ready = When.PortOpen(Test.Variables.upstream_port1)
 server2.Ready = When.PortOpen(Test.Variables.upstream_port2)
 server3.Ready = When.PortOpen(Test.Variables.upstream_port3)
@@ -100,7 +108,8 @@ test_run = Test.AddTestRun("http1.1 Post with small body early return")
 test_run.Processes.Default.StartBefore(Test.Processes.ts)
 test_run.Processes.Default.StartBefore(server1)
 test_run.MakeCurlCommand(
-    '-v -o /dev/null --http1.1 -d "small body" -k https://127.0.0.1:{}/one'.format(ts.Variables.ssl_port), ts=ts)
+    '-v -o /dev/null --http1.1 -d "small body" -k https://127.0.0.1:{}/one'.format(ts.Variables.ssl_port), ts=ts
+)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Receive the early response")
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
@@ -108,7 +117,8 @@ test_run.Processes.Default.ReturnCode = 0
 test_run = Test.AddTestRun("http1.1 Post with large body early return")
 test_run.Processes.Default.StartBefore(server2)
 test_run.MakeCurlCommand(
-    '-H "Expect:" -v -o /dev/null --http1.1 -d @big_post_body -k https://127.0.0.1:{}/two'.format(ts.Variables.ssl_port), ts=ts)
+    '-H "Expect:" -v -o /dev/null --http1.1 -d @big_post_body -k https://127.0.0.1:{}/two'.format(ts.Variables.ssl_port), ts=ts
+)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 420 Be Calm", "Receive the early response")
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0
@@ -116,7 +126,8 @@ test_run.Processes.Default.ReturnCode = 0
 test_run = Test.AddTestRun("http2 Post with large body, small window and early return")
 test_run.Processes.Default.StartBefore(server3)
 test_run.MakeCurlCommand(
-    '-v -o /dev/null --http2 -d @big_post_body -k https://127.0.0.1:{}/three'.format(ts.Variables.ssl_port), ts=ts)
+    '-v -o /dev/null --http2 -d @big_post_body -k https://127.0.0.1:{}/three'.format(ts.Variables.ssl_port), ts=ts
+)
 test_run.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 420", "Receive the early response")
 test_run.StillRunningAfter = ts
 test_run.Processes.Default.ReturnCode = 0

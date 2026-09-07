@@ -52,11 +52,10 @@ class TestTlsFlowControl:
 
         request_header = {"headers": "GET /obj HTTP/1.1\r\nHost: ex.test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
         response_header = {
-            "headers":
-                "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
-                f"Content-Length: {TestTlsFlowControl._body_len}\r\n\r\n",
+            "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n"
+            f"Content-Length: {TestTlsFlowControl._body_len}\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "x" * TestTlsFlowControl._body_len
+            "body": "x" * TestTlsFlowControl._body_len,
         }
         server.addResponse("sessionlog.json", request_header, response_header)
         return server
@@ -76,7 +75,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.Port}')
         ts.Disk.records_config.update(
             {
@@ -87,12 +87,15 @@ ssl_multicert:
                 'proxy.config.http.flow_control.enabled': 1,
                 'proxy.config.http.flow_control.high_water': TestTlsFlowControl._high_water,
                 'proxy.config.http.flow_control.low_water': TestTlsFlowControl._low_water,
-            })
+            }
+        )
 
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "received signal|failed assertion", "ATS must not crash under TLS flow control")
+            "received signal|failed assertion", "ATS must not crash under TLS flow control"
+        )
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            "AddressSanitizer|use-after-free|runtime error:", "no memory-safety error under TLS flow control")
+            "AddressSanitizer|use-after-free|runtime error:", "no memory-safety error under TLS flow control"
+        )
         return ts
 
     def run(self) -> None:
@@ -103,12 +106,15 @@ ssl_multicert:
         tr.Processes.Default.Command = (
             f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_flow_control_client.py")} '
             f'-p {self._ts.Variables.ssl_port} --host ex.test --path /obj '
-            f'--expect-bytes {TestTlsFlowControl._body_len}')
+            f'--expect-bytes {TestTlsFlowControl._body_len}'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            "RESULT=PASS", "the full body must be delivered under flow control")
+            "RESULT=PASS", "the full body must be delivered under flow control"
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f"BODY_BYTES={TestTlsFlowControl._body_len}", "every body byte must arrive (no flow-control stall)")
+            f"BODY_BYTES={TestTlsFlowControl._body_len}", "every body byte must arrive (no flow-control stall)"
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 

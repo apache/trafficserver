@@ -75,7 +75,8 @@ You can't use both --token and --count options together. Ignoring --count
 ``
 Message: Token 'test1' not found, Code: 6001
 ``
-""")
+"""
+)
 ##### CONFIG RELOAD
 
 # basic reload, no params. no existing reload in progress, we expect this to start a new reload.
@@ -108,7 +109,8 @@ tr.Processes.Default.Command = f"touch {os.path.join(traffic_ctl._ts.Variables.C
 tr.Processes.Default.ReturnCode = 0
 
 traffic_ctl.config().reload().token("reload_ip_allow").show_details().validate_contains_all(
-    "reload_ip_allow", "success", "ip_allow.yaml")
+    "reload_ip_allow", "success", "ip_allow.yaml"
+)
 
 ##### FORCE RELOAD
 
@@ -126,7 +128,8 @@ tr.Processes.Default.Env = traffic_ctl._ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 1, 2)
 tr.StillRunningAfter = traffic_ctl._ts
 tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
-    r'not registered|No configs were scheduled', "Should report config not registered")
+    r'not registered|No configs were scheduled', "Should report config not registered"
+)
 
 # Verify no stuck task - new reload should work immediately after
 traffic_ctl.config().reload().token("after_inline_test").validate_with_text(
@@ -157,7 +160,8 @@ tr.Processes.Default.Env = traffic_ctl._ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 1, 2)
 tr.StillRunningAfter = traffic_ctl._ts
 tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
-    r'not registered|No configs were scheduled|error', "Should process multi-key file")
+    r'not registered|No configs were scheduled|error', "Should process multi-key file"
+)
 
 ##### FORCE WITH INLINE DATA
 
@@ -169,7 +173,8 @@ tr.Processes.Default.Env = traffic_ctl._ts.Env
 tr.Processes.Default.ReturnCode = Any(0, 1, 2)
 tr.StillRunningAfter = traffic_ctl._ts
 tr.Processes.Default.Streams.All.Content = Testers.ContainsExpression(
-    r'not registered|No configs were scheduled|scheduled', "Should handle force with inline data")
+    r'not registered|No configs were scheduled|scheduled', "Should handle force with inline data"
+)
 
 ##### EXIT CODE TESTS
 # Exit codes: 0 = success, 2 = error, 75 = temporary failure / in-progress (EX_TEMPFAIL from sysexits.h)

@@ -68,11 +68,13 @@ class PerServerMetricEnabledTest:
                 'proxy.config.http.per_server.connection.min': 0,
                 'proxy.config.http.keep_alive_no_activity_timeout_out': self._keep_alive_timeout,
                 'proxy.config.http.server_session_sharing.pool': 'global',
-            })
+            }
+        )
         # The connection count should never be decremented below zero.
         self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
             'Number of tracked connections should be greater than or equal to zero',
-            'Verify the group connection count is not double decremented.')
+            'Verify the group connection count is not double decremented.',
+        )
 
     def _test_connection_is_reaped(self) -> None:
         """Verify the idle origin connection is closed once it times out."""
@@ -80,18 +82,22 @@ class PerServerMetricEnabledTest:
         tr.Processes.Default.Command = (
             f'sleep {self._keep_alive_timeout * 3}; '
             'traffic_ctl metric get proxy.process.http.current_server_connections; '
-            'traffic_ctl metric match per_server')
+            'traffic_ctl metric match per_server'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             'proxy.process.http.current_server_connections 0',
-            'The idle origin connection should have been closed by the keep-alive timeout.')
+            'The idle origin connection should have been closed by the keep-alive timeout.',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             f'per_server.current_connection.bar.127.0.0.1:{self._server.Variables.http_port} 0',
-            'The per_server connection gauge should have been decremented back to zero.')
+            'The per_server connection gauge should have been decremented back to zero.',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             f'per_server.total_connection.bar.127.0.0.1:{self._server.Variables.http_port} 1',
-            'A single origin connection should have been tracked.')
+            'A single origin connection should have been tracked.',
+        )
 
     def _test_tracker_info(self) -> None:
         """Verify the JSONRPC connection tracker report agrees with the metrics."""
@@ -103,7 +109,8 @@ class PerServerMetricEnabledTest:
         # group is removed from the table, so either the table is empty or the
         # remaining group reports no current connections.
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            r'"(count|current)":\s*"?0"?', 'The tracker should report no current outbound connections.')
+            r'"(count|current)":\s*"?0"?', 'The tracker should report no current outbound connections.'
+        )
 
     def run(self) -> None:
         """Configure the TestRuns."""

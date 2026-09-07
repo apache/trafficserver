@@ -41,8 +41,7 @@ def prepare_plugin_helper(so_name, tsproc, plugin_args="", copy_plugin=True):
 
     filename, extension = os.path.splitext(so_name)
     if extension != ".so":
-        raise ValueError('so_name argument must have a ".so" extension. '
-                         'Received: {}'.format(so_name))
+        raise ValueError('so_name argument must have a ".so" extension. Received: {}'.format(so_name))
 
     plugin_dir = tsproc.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR']
     if copy_plugin:
@@ -91,8 +90,7 @@ def prepare_installed_plugin(self, so_name, tsproc, plugin_args=""):
         plugin.config.
     """
     if os.path.dirname(so_name):
-        raise ValueError('PrepareInstalledPlugin expects a filename not a path: '
-                         '"{}"'.format(so_name))
+        raise ValueError('PrepareInstalledPlugin expects a filename not a path: "{}"'.format(so_name))
     prepare_plugin_helper(so_name, tsproc, plugin_args, copy_plugin=False)
 
 

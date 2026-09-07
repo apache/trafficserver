@@ -66,7 +66,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-'''.split('\n'))
+'''.split('\n')
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
@@ -74,7 +75,8 @@ ssl_multicert:
                 'proxy.config.http.server_ports': (f'{ts.Variables.port} {ts.Variables.ssl_port}:ssl:proto=h3qx-01'),
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
         ts.Disk.logging_yaml.AddLines(
             '''
@@ -86,17 +88,20 @@ logging:
   logs:
     - filename: qmux_access
       format: qmux_access
-'''.split('\n'))
+'''.split('\n')
+        )
 
         access_log = Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'qmux_access.log'), exists=True)
         access_log.Content = Testers.ContainsExpression(
             r'c_alpn=h3qx-01 client_version=http/3 c_method=GET '
             r'c_url=https://qmux\.example\.com:[0-9]+/qmux-get-empty',
-            'ATS should log the empty QMux request as HTTP/3 over the h3qx-01 ALPN.')
+            'ATS should log the empty QMux request as HTTP/3 over the h3qx-01 ALPN.',
+        )
         access_log.Content += Testers.ContainsExpression(
             r'c_alpn=h3qx-01 client_version=http/3 c_method=POST '
             r'c_url=https://qmux\.example\.com:[0-9]+/qmux-post-large',
-            'ATS should log the large QMux request as HTTP/3 over the h3qx-01 ALPN.')
+            'ATS should log the large QMux request as HTTP/3 over the h3qx-01 ALPN.',
+        )
         return ts
 
     def _configure_client(self, tr: 'TestRun') -> 'Process':
@@ -115,11 +120,13 @@ logging:
             f'cd "{os.path.join(tr.RunDirectory, "go_qmux_client")}" && '
             f'go run . --addr 127.0.0.1:{self._ts.Variables.ssl_port} '
             f'--authority qmux.example.com:{self._ts.Variables.ssl_port} '
-            '--server-name qmux.example.com')
+            '--server-name qmux.example.com'
+        )
         client.ReturnCode = 0
         client.Streams.stdout = Testers.ContainsExpression(
             'completed 3 QMux HTTP/3 requests: alpn=h3qx-01',
-            'The Go client should complete all HTTP/3 requests over one QMux session.')
+            'The Go client should complete all HTTP/3 requests over one QMux session.',
+        )
         client.StartBefore(self._server)
         client.StartBefore(self._ts)
         return client

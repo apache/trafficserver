@@ -1,6 +1,7 @@
 '''
 Verify ATS handles down origin servers with domain cached correctly.
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -53,7 +54,8 @@ class DownCachedOriginServerTest:
                 'proxy.config.http.connect_attempts_timeout': 2,
                 'proxy.config.hostdb.host_file.interval': 1,
                 'proxy.config.hostdb.host_file.path': os.path.join(Test.TestDirectory, "hosts_file"),
-            })
+            }
+        )
 
     def _test_host_mark_down(self):
         tr = Test.AddTestRun()
@@ -71,7 +73,8 @@ class DownCachedOriginServerTest:
             "/dns/mark/down' fail_count='1' marking down",
         )
         self._ts.Disk.error_log.Content = Testers.ContainsExpression(
-            "/dns/mark/down' fail_count='1' marking down", "host should be marked down")
+            "/dns/mark/down' fail_count='1' marking down", "host should be marked down"
+        )
 
     # Verify down_server_no_requests metric is incremented:
     #   - once when the first request marks the origin DOWN (502)
@@ -83,7 +86,8 @@ class DownCachedOriginServerTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
             'proxy.process.http.down_server.no_requests 2',
-            'down_server.no_requests should be 2 (mark-down on first txn, no-live-address on second)')
+            'down_server.no_requests should be 2 (mark-down on first txn, no-live-address on second)',
+        )
         tr.StillRunningAfter = self._ts
 
     def run(self):

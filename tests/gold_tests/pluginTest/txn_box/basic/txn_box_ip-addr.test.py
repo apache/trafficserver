@@ -30,5 +30,6 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
-        'proxy.config.http.insert_request_via_str': 0
-    })
+        'proxy.config.http.insert_request_via_str': 0,
+    }
+)

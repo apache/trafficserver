@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,7 +24,9 @@ Test combo_handler plugin
 
 # Skip if plugin not present.
 #
-Test.SkipUnless(Condition.PluginExists('combo_handler.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('combo_handler.so'),
+)
 
 # Function to generate a unique data file path (in the top level of the test's run directory),  put data (in string 'data') into
 # the file, and return the file name.
@@ -66,14 +67,22 @@ def add_server_obj(content_type, path, cache_control="public, max-age=31536000")
     request_header = {
         "headers": "GET " + path + " HTTP/1.1\r\n" + "Host: just.any.thing\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     response_header = {
-        "headers":
-            "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + 'Etag: "359670651"\r\n' + "Cache-Control: " + cache_control + "\r\n" +
-            "Accept-Ranges: bytes\r\n" + "Content-Type: " + content_type + "\r\n" + "\r\n",
+        "headers": "HTTP/1.1 200 OK\r\n"
+        + "Connection: close\r\n"
+        + 'Etag: "359670651"\r\n'
+        + "Cache-Control: "
+        + cache_control
+        + "\r\n"
+        + "Accept-Ranges: bytes\r\n"
+        + "Content-Type: "
+        + content_type
+        + "\r\n"
+        + "\r\n",
         "timestamp": "1469733493.993",
-        "body": "Content for " + path + "\n"
+        "body": "Content for " + path + "\n",
     }
     server.addResponse("sessionfile.log", request_header, response_header)
 
@@ -98,10 +107,12 @@ add_server_obj("text/javascript", "/obj_revalidate", cache_control="public, max-
 
 ts = Test.MakeATSProcess("ts")
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|combo_handler',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|combo_handler',
+    }
+)
 
 ts.Disk.plugin_config.AddLine("combo_handler.so - - - ctwl.txt")
 
@@ -121,29 +132,36 @@ tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client(
-    "127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+    "127.0.0.1",
+    ts.Variables.port,
+    "GET /admin/v1/combo?obj1&sub:obj2&obj3 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n",
+)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/1-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr1.gold"
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client(
-    "127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+    "127.0.0.1",
+    ts.Variables.port,
+    "GET /admin/v1/combo?obj1&sub:obj2&obj4 HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n",
+)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/2-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr2.gold"
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client(
-    "127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?s:assets/module:variant_v1.js HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+    "127.0.0.1",
+    ts.Variables.port,
+    "GET /admin/v1/combo?s:assets/module:variant_v1.js HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n",
+)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/3-tr-Default/stream.all.txt")
 f.Content = Testers.ContainsExpression("HTTP/1.1 200 OK", "Should successfully combine an object with a colon in its path")
 f.Content += Testers.ContainsExpression(
-    "Content for /s/assets/module:variant_v1.js", "Should fetch the object path after the first colon")
+    "Content for /s/assets/module:variant_v1.js", "Should fetch the object path after the first colon"
+)
 
 # An object whose Content-Type header is present but empty must not slip
 # past the allowlist. Pairing it with the allowed obj1 ensures the request
@@ -151,8 +169,10 @@ f.Content += Testers.ContainsExpression(
 # here is a regression check for the bypass fix.
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client(
-    "127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&obj_empty_ct HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+    "127.0.0.1",
+    ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_empty_ct HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n",
+)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/4-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/tr3.gold"
@@ -162,8 +182,10 @@ f.Content = "combo_handler_files/tr3.gold"
 # both parse paths in the refactored parse_cache_control_value().
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client(
-    "127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&obj_priv_short HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+    "127.0.0.1",
+    ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_priv_short HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n",
+)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/5-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/cache_control_aggregation.gold"
@@ -173,8 +195,10 @@ f.Content = "combo_handler_files/cache_control_aggregation.gold"
 # with the long-TTL obj1 to confirm the min-merge respects zero.
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = tcp_client(
-    "127.0.0.1", ts.Variables.port,
-    "GET /admin/v1/combo?obj1&obj_revalidate HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n")
+    "127.0.0.1",
+    ts.Variables.port,
+    "GET /admin/v1/combo?obj1&obj_revalidate HTTP/1.1\n" + "Host: xyz\n" + "Connection: close\n" + "\n",
+)
 tr.Processes.Default.ReturnCode = 0
 f = tr.Disk.File("_output/6-tr-Default/stream.all.txt")
 f.Content = "combo_handler_files/max_age_zero.gold"

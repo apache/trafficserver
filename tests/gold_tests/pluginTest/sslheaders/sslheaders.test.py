@@ -49,11 +49,13 @@ ts.Disk.records_config.update(
         'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.http.server_ports':
-            (
-                'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(
-                    ts.Variables.port, ts.Variables.ssl_port)),
-    })
+        'proxy.config.http.server_ports': (
+            'ipv4:{0} ipv4:{1}:proto=http2;http:ssl ipv6:{0} ipv6:{1}:proto=http2;http:ssl'.format(
+                ts.Variables.port, ts.Variables.ssl_port
+            )
+        ),
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -61,7 +63,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine('map http://bar.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine('map https://bar.com http://127.0.0.1:{0}'.format(server.Variables.Port))
@@ -72,7 +75,8 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.MakeCurlCommand(
-    '-H "SSL-Client-ID: My Fake Client ID" --verbose --ipv4 --insecure --header "Host: bar.com"' +
-    ' https://localhost:{}'.format(ts.Variables.ssl_port),
-    ts=ts)
+    '-H "SSL-Client-ID: My Fake Client ID" --verbose --ipv4 --insecure --header "Host: bar.com"'
+    + ' https://localhost:{}'.format(ts.Variables.ssl_port),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0

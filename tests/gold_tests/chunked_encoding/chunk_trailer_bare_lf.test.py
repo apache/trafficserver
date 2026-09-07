@@ -28,7 +28,6 @@ A chunked trailer terminated by a bare LF instead of CRLF is rejected.
 
 
 class ChunkTrailerBareLfTest:
-
     def __init__(self):
         self._setup_origin()
         self._setup_ts()
@@ -47,7 +46,8 @@ class ChunkTrailerBareLfTest:
                 'proxy.config.diags.debug.enabled': 0,
                 'proxy.config.diags.debug.tags': 'http',
                 'proxy.config.http.strict_chunk_parsing': 1,
-            })
+            }
+        )
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
     def _check(self, tr):
@@ -61,7 +61,8 @@ class ChunkTrailerBareLfTest:
         # generate its own 400).
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression("responses=1", "the client must get exactly one response")
         tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-            "SECOND-ENDPOINT", "the embedded GET must not be smuggled to the origin")
+            "SECOND-ENDPOINT", "the embedded GET must not be smuggled to the origin"
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 

@@ -45,17 +45,22 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'rpc|config|config.reload|cfg_plugin_deferred_test',
-    })
+    }
+)
 
 # Write initial valid plugin config file (no "defer_fail" -> success path)
-ts.Disk.MakeConfigFile('cfg_plugin_deferred_test.conf').AddLines([
-    'mode: success',
-])
+ts.Disk.MakeConfigFile('cfg_plugin_deferred_test.conf').AddLines(
+    [
+        'mode: success',
+    ]
+)
 
 # Load the deferred test plugin
 Test.PrepareTestPlugin(
-    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'jsonrpc', 'plugins', '.libs', 'cfg_plugin_deferred_test.so'), ts,
-    'cfg_plugin_deferred_test.conf')
+    os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'jsonrpc', 'plugins', '.libs', 'cfg_plugin_deferred_test.so'),
+    ts,
+    'cfg_plugin_deferred_test.conf',
+)
 
 # ============================================================================
 # Test A: Plugin startup — TSCfgRegister
@@ -72,10 +77,12 @@ ts.Disk.traffic_out.Content = Testers.IncludesExpression('TSCfgRegister OK', 'TS
 
 ts.Disk.diags_log.Content = All(
     Testers.IncludesExpression(
-        r'Config reload \[full-deferred-ok\] completed', 'Full reload with deferred success should eventually complete'),
+        r'Config reload \[full-deferred-ok\] completed', 'Full reload with deferred success should eventually complete'
+    ),
     Testers.IncludesExpression(
         r'Config reload \[full-deferred-fail\] finished with failures',
-        'Full reload with deferred fail should eventually report failure'),
+        'Full reload with deferred fail should eventually report failure',
+    ),
 )
 
 # ============================================================================
@@ -89,7 +96,8 @@ touch_cmd = (
     f'touch {ts.Variables.CONFIGDIR}/ip_allow.yaml '
     f'{ts.Variables.CONFIGDIR}/sni.yaml '
     f'{ts.Variables.CONFIGDIR}/cfg_plugin_deferred_test.conf '
-    f'&& traffic_ctl config reload -t full-deferred-ok')
+    f'&& traffic_ctl config reload -t full-deferred-ok'
+)
 tr.Processes.Default.Command = touch_cmd
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0
@@ -136,7 +144,8 @@ fail_cmd = (
     f'echo "defer_fail: true" > {ts.Variables.CONFIGDIR}/cfg_plugin_deferred_test.conf '
     f'&& touch {ts.Variables.CONFIGDIR}/ip_allow.yaml '
     f'{ts.Variables.CONFIGDIR}/sni.yaml '
-    f'&& traffic_ctl config reload -t full-deferred-fail')
+    f'&& traffic_ctl config reload -t full-deferred-fail'
+)
 tr.Processes.Default.Command = fail_cmd
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0

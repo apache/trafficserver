@@ -21,7 +21,9 @@ Test.Summary = '''
 Test __shutdown__ lua global plugin hook
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = True
 
@@ -39,10 +41,12 @@ ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{}/'.format(server.Variable
 # Use 2 states so the shutdown handler is called a predictable number of times.
 ts.Disk.plugin_config.AddLine('tslua.so --states=2 {}/global_shutdown.lua'.format(Test.RunDirectory))
 
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'ts_lua',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'ts_lua',
+    }
+)
 
 curl_and_args = '-s -D /dev/stdout -o /dev/stderr -x localhost:{} '.format(ts.Variables.port)
 
@@ -57,7 +61,8 @@ tr.StillRunningAfter = ts
 
 # Verify do_global_read_request was invoked for the HTTP request above.
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    r'do_global_read_request called', 'do_global_read_request should be called for HTTP requests')
+    r'do_global_read_request called', 'do_global_read_request should be called for HTTP requests'
+)
 
 # After all test runs complete AuTest stops ATS, which fires TS_LIFECYCLE_SHUTDOWN_HOOK.
 # The shutdown handler calls __shutdown__ once per Lua state (2 states configured).

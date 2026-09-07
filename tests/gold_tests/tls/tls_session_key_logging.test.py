@@ -25,7 +25,6 @@ Test TLS secrets logging.
 
 
 class TlsKeyloggingTest:
-
     replay_file = "tls_session_key_logging.replay.yaml"
 
     server_counter = 0
@@ -53,15 +52,17 @@ class TlsKeyloggingTest:
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
                 'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'ssl_keylog'
-            })
+                'proxy.config.diags.debug.tags': 'ssl_keylog',
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self.ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self.server.Variables.https_port}')
 
         keylog_file = os.path.join(self.ts.Variables.LOGDIR, "tls_secrets.txt")
@@ -74,12 +75,15 @@ ssl_multicert:
         ''')
 
         if enable_secrets_logging:
-            self.ts.Disk.records_config.update({
-                'proxy.config.ssl.keylog_file': keylog_file,
-            })
+            self.ts.Disk.records_config.update(
+                {
+                    'proxy.config.ssl.keylog_file': keylog_file,
+                }
+            )
 
             self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                f"Opened {keylog_file} for TLS key logging", "Verify the user was notified of TLS secrets logging.")
+                f"Opened {keylog_file} for TLS key logging", "Verify the user was notified of TLS secrets logging."
+            )
             self.ts.Disk.File(keylog_file, id="keylog", exists=True)
             # It would be nice to verify the content of certain lines in the
             # keylog file, but the content is dependent upon the particular TLS

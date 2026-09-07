@@ -78,8 +78,7 @@ class TestEarlyHints:
         tr.Setup.Copy(self._early_hints_server)
         server = tr.Processes.Process(f'server_{self._protocol_str}')
         server_port = get_port(server, "http_port")
-        server.Command = \
-            f'{sys.executable} {self._early_hints_server} 127.0.0.1 {server_port} '
+        server.Command = f'{sys.executable} {self._early_hints_server} 127.0.0.1 {server_port} '
         server.Ready = When.PortOpenv4(server_port)
 
         self._server = server
@@ -100,7 +99,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
@@ -109,7 +109,8 @@ ssl_multicert:
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http',
-            })
+            }
+        )
         return ts
 
     def _copy_scripts(self, tr: 'TestRun', ts: 'TestATSProcess'):
@@ -149,7 +150,8 @@ ssl_multicert:
             f'--resolve "server.com:{ts_port}:127.0.0.1" '
             f'-H "Host: server.com" '
             f'{scheme}://server.com:{ts_port}/{self._protocol_str}',
-            ts=self._ts)
+            ts=self._ts,
+        )
 
         client.ReturnCode = 0
         self._ts.StartBefore(self._dns)
@@ -158,11 +160,11 @@ ssl_multicert:
 
         # Note that the server is configured to send two 103 responses.
         client.Streams.All += Testers.ContainsExpression(
-            'HTTP/.* 103.*HTTP/.* 103',
-            'Verify that two 103 Early Hints responses were received.',
-            reflags=re.MULTILINE | re.DOTALL)
+            'HTTP/.* 103.*HTTP/.* 103', 'Verify that two 103 Early Hints responses were received.', reflags=re.MULTILINE | re.DOTALL
+        )
         client.Streams.All += Testers.ContainsExpression(
-            'ink: </style.css>; rel=preload', 'Verify preload link header was received.')
+            'ink: </style.css>; rel=preload', 'Verify preload link header was received.'
+        )
         client.Streams.All += Testers.ContainsExpression('HTTP/.* 200', 'Verify 200 OK response was received.')
         client.Streams.All += Testers.ContainsExpression('10bytebody', 'Verify the body to the 200 OK was received.')
 

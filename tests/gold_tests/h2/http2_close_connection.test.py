@@ -33,7 +33,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         "proxy.config.http.server_ports": f"{ts.Variables.port} {ts.Variables.ssl_port}:ssl",
@@ -47,7 +48,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.alpn_protocols': 'h2,http/1.1',
         'proxy.config.http.server_session_sharing.pool': 'thread',
         'proxy.config.http.server_session_sharing.match': 'ip,sni,cert',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLines([f'map / https://127.0.0.1:{pv_server.Variables.https_port}'])
 
@@ -57,14 +59,18 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(pv_server)
 tr.Processes.Default.StartBefore(ts)
 tr.AddVerifierClientProcess(
-    "pv_client", "http2_close_connection.yaml", http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
+    "pv_client", "http2_close_connection.yaml", http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port]
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Equals Success: Key: "1", Content Data: "body", Value: "server_test_1"', 'Response check')
+    'Equals Success: Key: "1", Content Data: "body", Value: "server_test_1"', 'Response check'
+)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Received GOAWAY frame with last stream id 2147483647, error code 0', 'initial GOAWAY frame with last stream id set to max')
+    'Received GOAWAY frame with last stream id 2147483647, error code 0', 'initial GOAWAY frame with last stream id set to max'
+)
 tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-    'Received GOAWAY frame with last stream id 1, error code 0', 'updated GOAWAY frame with last stream id set to 1')
+    'Received GOAWAY frame with last stream id 1, error code 0', 'updated GOAWAY frame with last stream id set to 1'
+)
 
 pv_server.Streams.All += Testers.ExcludesExpression('server_test_2', 'Only one response should be sent')

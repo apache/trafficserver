@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -42,7 +41,8 @@ path_inside = os.path.join(path, "runroot")
 tr = Test.AddTestRun("create runroot inside runroot")
 tr.Processes.Default.Command = "$ATS_BIN/traffic_layout init --path " + path_inside
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Cannot create runroot inside another runroot", "init incorrect usage")
+    "Cannot create runroot inside another runroot", "init incorrect usage"
+)
 f = tr.Disk.File(os.path.join(path_inside, "runroot.yaml"))
 f.Exists = False
 

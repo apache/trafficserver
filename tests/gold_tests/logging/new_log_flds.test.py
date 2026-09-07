@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -43,15 +42,18 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'snowflake|http',
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.port, httpbin.Variables.Port))
 
 ts.Disk.remap_config.AddLine(
-    'map https://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port))
+    'map https://127.0.0.1:{0} http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port)
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://reallyreallyreallyreallylong.com http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port))
+    'map https://reallyreallyreallyreallylong.com http://127.0.0.1:{1}/ip'.format(ts.Variables.ssl_port, httpbin.Variables.Port)
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -59,7 +61,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -70,7 +73,8 @@ logging:
   logs:
     - filename: test_new_log_flds
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 tr = Test.AddTestRun()
 # Delay on readiness of ssl port
@@ -91,15 +95,18 @@ tr.Processes.Default.ReturnCode = 0
 if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '"https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port), ts=ts)
+        '"https://127.0.0.1:{0}" "https://127.0.0.1:{0}" --http2 --insecure --verbose'.format(ts.Variables.ssl_port), ts=ts
+    )
     tr.Processes.Default.ReturnCode = 0
 
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
         (
-            '"https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose' +
-            ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1').format(ts.Variables.ssl_port),
-        ts=ts)
+            '"https://reallyreallyreallyreallylong.com:{0}" --http2 --insecure --verbose'
+            + ' --resolve reallyreallyreallyreallylong.com:{0}:127.0.0.1'
+        ).format(ts.Variables.ssl_port),
+        ts=ts,
+    )
     tr.Processes.Default.ReturnCode = 0
 
 # Wait for the final log line to be written.

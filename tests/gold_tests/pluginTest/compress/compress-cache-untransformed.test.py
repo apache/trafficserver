@@ -48,7 +48,6 @@ Test.SkipUnless(Condition.PluginExists('compress.so'))
 
 
 class CompressCacheUntransformedTest:
-
     def __init__(self):
         self.setupTS()
         self.run()
@@ -66,8 +65,7 @@ class CompressCacheUntransformedTest:
         # Create and configure the custom origin server process.
         origin = tr.Processes.Process("origin")
         origin_port = get_port(origin, 'http_port')
-        origin.Command = (f'{sys.executable} compress_100_continue_origin.py'
-                          f' --port {origin_port}')
+        origin.Command = f'{sys.executable} compress_100_continue_origin.py --port {origin_port}'
         origin.Ready = When.PortOpenv4(origin_port)
         origin.ReturnCode = 0
 
@@ -85,12 +83,12 @@ class CompressCacheUntransformedTest:
                 # the cache write path where the stale client_response_hdr_bytes
                 # causes the crash.
                 "proxy.config.http.cache.post_method": 1,
-            })
+            }
+        )
 
         self.ts.Disk.remap_config.AddLine(
-            f'map / http://127.0.0.1:{origin_port}/'
-            f' @plugin=compress.so'
-            f' @pparam={Test.RunDirectory}/compress-cache-false.config')
+            f'map / http://127.0.0.1:{origin_port}/ @plugin=compress.so @pparam={Test.RunDirectory}/compress-cache-false.config'
+        )
 
         # Client sends a POST with Expect: 100-continue but does not wait for
         # the 100 response before sending the body (--expect100-timeout 0).
@@ -104,7 +102,8 @@ class CompressCacheUntransformedTest:
             f' -H "Expect: 100-continue"'
             f' --expect100-timeout 0'
             f' --data "test body data"'
-            f' http://127.0.0.1:{self.ts.Variables.port}/test/resource.js')
+            f' http://127.0.0.1:{self.ts.Variables.port}/test/resource.js'
+        )
         client.ReturnCode = 0
         client.StartBefore(origin)
         client.StartBefore(self.ts)

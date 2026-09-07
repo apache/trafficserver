@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -24,22 +23,18 @@ Test next hop selection using strategies.yaml with consistent hashing, with fall
 #
 server = Test.MakeOriginServer("server")
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=85000\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "This is the body.\n"
+    "body": "This is the body.\n",
 }
 num_objects = 32
 for i in range(num_objects):
     request_header = {
-        "headers":
-            f"GET /obj{i} HTTP/1.1\r\n"
-            "Host: does.not.matter\r\n"  # But cannot be omitted.
-            "\r\n",
+        "headers": f"GET /obj{i} HTTP/1.1\r\n"
+        "Host: does.not.matter\r\n"  # But cannot be omitted.
+        "\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -57,7 +52,8 @@ for i in range(num_nh):
             'proxy.config.diags.debug.tags': 'http|dns',
             'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
             'proxy.config.dns.resolv_conf': "NULL",
-        })
+        }
+    )
     ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}")
     ts_nh.append(ts)
 
@@ -76,7 +72,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
         'proxy.config.http.down_server.cache_time': 1,
         'proxy.config.http.parent_proxy.self_detect': 0,
-    })
+    }
+)
 
 ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
 s = ts.Disk.strategies
@@ -104,7 +101,8 @@ s.AddLines(
         "    groups:",
         "      - *g1",
         "    scheme: http",
-    ])
+    ]
+)
 
 # Use default fallover config.
 #
@@ -150,6 +148,7 @@ for i in range(num_objects):
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    "grep -F ParentResultType::SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
+    "grep -F ParentResultType::SPECIFIED trace.log | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'"
+)
 tr.Processes.Default.Streams.stdout = "trace.gold"
 tr.Processes.Default.ReturnCode = 0

@@ -24,7 +24,9 @@ Test.Summary = '''
 Verify traffic_dump response body functionality.
 '''
 
-Test.SkipUnless(Condition.PluginExists('traffic_dump.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('traffic_dump.so'),
+)
 
 # Configure the origin server.
 replay_file = "replay/response_body.yaml"
@@ -50,7 +52,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.host_sni_policy': 2,
         'proxy.config.ssl.TLSv1_3.enabled': 0,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -58,11 +61,14 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
-ts.Disk.remap_config.AddLines([
-    f'map / http://127.0.0.1:{server.Variables.http_port}',
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f'map / http://127.0.0.1:{server.Variables.http_port}',
+    ]
+)
 
 # Configure traffic_dump to dump body bytes (-b).
 ts.Disk.plugin_config.AddLine(f'traffic_dump.so --logdir {replay_dir} --sample 1 --limit 1000000000 -b')
@@ -89,7 +95,8 @@ tr.AddVerifierClientProcess(
     http_ports=[ts.Variables.port],
     https_ports=[ts.Variables.ssl_port],
     ssl_cert="ssl/server_combined.pem",
-    ca_cert="ssl/signer.pem")
+    ca_cert="ssl/signer.pem",
+)
 
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
@@ -116,8 +123,7 @@ tr.StillRunningAfter = ts
 #
 tr = Test.AddTestRun("Verify the json content of the transaction with a response body.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    f'{verify_command_prefix} {ts_dump_1} --response_body "0000000 0000001 "'
+tr.Processes.Default.Command = f'{verify_command_prefix} {ts_dump_1} --response_body "0000000 0000001 "'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -127,8 +133,7 @@ tr.StillRunningAfter = ts
 #
 tr = Test.AddTestRun("Verify the json content of the response body with a character to be escaped.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    rf'{verify_command_prefix} {ts_dump_2} --response_body 12\"34'
+tr.Processes.Default.Command = rf'{verify_command_prefix} {ts_dump_2} --response_body 12\"34'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
@@ -137,8 +142,7 @@ tr.StillRunningAfter = ts
 #
 tr = Test.AddTestRun("Verify the json content of the response body of an HTTP/2 transaction.")
 tr.Setup.CopyAs(verify_replay, Test.RunDirectory)
-tr.Processes.Default.Command = \
-    f'{verify_command_prefix} {ts_dump_3} --response_body "0000000 0000001 0000002 "'
+tr.Processes.Default.Command = f'{verify_command_prefix} {ts_dump_3} --response_body "0000000 0000001 0000002 "'
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

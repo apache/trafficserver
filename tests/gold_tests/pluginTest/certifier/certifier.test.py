@@ -1,6 +1,7 @@
 '''
 Test certifier plugin behaviors
 '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -65,26 +66,32 @@ class DynamicCertTest:
                 "proxy.config.diags.debug.tags": "http|certifier|ssl",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            })
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
-        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+""".split("\n")
+        )
+        self.ts.Disk.remap_config.AddLine(
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        )
         self.ts.Disk.plugin_config.AddLine(
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
         )
         # Verify logs for dynamic generation of certs
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "creating shadow certs", "Verify the certifier plugin generates the certificate dynamically.")
+            "creating shadow certs", "Verify the certifier plugin generates the certificate dynamically."
+        )
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")
         tr.AddVerifierClientProcess(
-            "client1", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+            "client1", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port]
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -96,11 +103,13 @@ ssl_multicert:
         tr.Processes.Default.ReturnCode = 0
         # Verify certificate content
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            "Subject: CN ?= ?www.tls.com", "Subject should match the host in the request")
+            "Subject: CN ?= ?www.tls.com", "Subject should match the host in the request"
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             r"X509v3 extensions:\n.*X509v3 Subject Alternative Name:.*\n.*DNS:www.tls.com",
             "Should contain the SAN extension",
-            reflags=re.MULTILINE)
+            reflags=re.MULTILINE,
+        )
 
     def verifyCertNotExist(self, certPath):
         tr = Test.AddTestRun("Verify the cert doesn't exist in the store")
@@ -111,7 +120,8 @@ ssl_multicert:
         # the certifier plugin generates the cert and store it in a directory
         # named with the first three character of the md5 hash of the hostname
         genCertPath = os.path.join(
-            self.certPathDest, 'store', str(hashlib.md5(self.host.encode('utf-8')).hexdigest()[:3]), self.host + ".crt")
+            self.certPathDest, 'store', str(hashlib.md5(self.host.encode('utf-8')).hexdigest()[:3]), self.host + ".crt"
+        )
         self.verifyCertNotExist(genCertPath)
         self.runHTTPSTraffic()
         self.verifyCert(genCertPath)
@@ -145,26 +155,32 @@ class ReuseExistingCertTest:
                 "proxy.config.diags.debug.tags": "http|certifier|ssl",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            })
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
-        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+""".split("\n")
+        )
+        self.ts.Disk.remap_config.AddLine(
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        )
         self.ts.Disk.plugin_config.AddLine(
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
         )
         # Verify logs for reusing existing cert
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "reusing existing cert and context for www.tls.com", "Should reuse the existing certificate")
+            "reusing existing cert and context for www.tls.com", "Should reuse the existing certificate"
+        )
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test dynamic generation of certs")
         tr.AddVerifierClientProcess(
-            "client2", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+            "client2", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port]
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -201,25 +217,31 @@ class UnsafeSniTest:
                 "proxy.config.diags.debug.tags": "http|certifier|ssl",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            })
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
-        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+""".split("\n")
+        )
+        self.ts.Disk.remap_config.AddLine(
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        )
         self.ts.Disk.plugin_config.AddLine(
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
         )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "rejecting unsafe SNI for certificate storage", "Should reject SNI values that cannot be used safely as file names.")
+            "rejecting unsafe SNI for certificate storage", "Should reject SNI values that cannot be used safely as file names."
+        )
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test unsafe SNI is rejected")
         tr.AddVerifierClientProcess(
-            "client3", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+            "client3", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port]
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server
@@ -263,25 +285,31 @@ class NoSniTest:
                 "proxy.config.diags.debug.tags": "http|certifier|ssl",
                 "proxy.config.ssl.server.cert.path": f'{self.ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{self.ts.Variables.SSLDir}',
-            })
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
-        self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/",)
+""".split("\n")
+        )
+        self.ts.Disk.remap_config.AddLine(
+            f"map / http://127.0.0.1:{self.server.Variables.http_port}/",
+        )
         self.ts.Disk.plugin_config.AddLine(
             f'certifier.so -s {os.path.join(self.certPathDest, "store")} -m 1000 -c {os.path.join(self.certPathDest, "ca.cert")} -k {os.path.join(self.certPathDest, "ca.key")} -r {os.path.join(self.certPathDest, "ca-serial.txt")}'
         )
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-            "no SNI available; using default certificate", "Should continue the handshake when no SNI is available.")
+            "no SNI available; using default certificate", "Should continue the handshake when no SNI is available."
+        )
 
     def runHTTPSTraffic(self):
         tr = Test.AddTestRun("Test missing SNI falls back to default cert")
         tr.AddVerifierClientProcess(
-            "client4", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port])
+            "client4", self.httpsReplayFile, http_ports=[self.ts.Variables.port], https_ports=[self.ts.Variables.ssl_port]
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.StillRunningAfter = self.server

@@ -41,8 +41,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1,
-        'proxy.config.http.negative_caching_lifetime': 2
-    })
+        'proxy.config.http.negative_caching_lifetime': 2,
+    }
+)
 # This should all behave the same as the default enabled case above.
 tr = Test.AddTestRun("Add a 404 response to the cache")
 replay_file = "replay/negative-caching-default.replay.yaml"
@@ -78,8 +79,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1,
-        'proxy.config.http.negative_caching_lifetime': 2
-    })
+        'proxy.config.http.negative_caching_lifetime': 2,
+    }
+)
 tr = Test.AddTestRun("Add a 404 response with explicit max-age=300 to the cache")
 replay_file = "replay/negative-caching-300-second-timeout.replay.yaml"
 server = tr.AddVerifierServerProcess("server-lifetime-cc", replay_file)
@@ -122,8 +124,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http',
         'proxy.config.http.insert_age_in_response': 0,
         'proxy.config.http.negative_caching_enabled': 1,
-        'proxy.config.http.negative_caching_lifetime': 2
-    })
+        'proxy.config.http.negative_caching_lifetime': 2,
+    }
+)
 ts.Disk.remap_config.AddLine(f'map / http://backend.example.com:{server_port}')
 # Configure cache.config with a long ttl-in-cache that should NOT override
 # negative_caching_lifetime for negative responses.

@@ -46,13 +46,13 @@ server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: www.forwarded-by-unknown.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: www.forwarded-by-server-name.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {"headers": "GET / HTTP/1.1\r\nHost: www.forwarded-by-uuid.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -64,19 +64,19 @@ server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: www.forwarded-connection-compact.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: www.forwarded-connection-std.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 request_header = {
     "headers": "GET / HTTP/1.1\r\nHost: www.forwarded-connection-full.com\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -96,8 +96,9 @@ def baselineTsSetup(ts):
             'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
             'proxy.config.proxy_name': 'Poxy_Proxy',  # This will be the server name.
             'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
-            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir)
-        })
+            'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
+        }
+    )
 
     ts.Disk.ssl_multicert_yaml.AddLines(
         """
@@ -105,7 +106,8 @@ def baselineTsSetup(ts):
       - dest_ip: "*"
         ssl_cert_name: server.pem
         ssl_key_name: server.key
-    """.split("\n"))
+    """.split("\n")
+    )
 
     ts.Disk.remap_config.AddLine('map http://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
@@ -117,38 +119,49 @@ ts = Test.MakeATSProcess("ts", enable_tls=True, enable_cache=False)
 baselineTsSetup(ts)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-none.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=none')
+    'map http://www.forwarded-none.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=none'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-for.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=for')
+    'map http://www.forwarded-for.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=for'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-by-ip.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=ip')
+    'map http://www.forwarded-by-ip.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=ip'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-by-unknown.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=unknown')
+    'map http://www.forwarded-by-unknown.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=unknown'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-by-server-name.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=serverName')
+    'map http://www.forwarded-by-server-name.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=serverName'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-by-uuid.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=uuid')
+    'map http://www.forwarded-by-uuid.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=by=uuid'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-proto.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=proto')
+    'map http://www.forwarded-proto.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=proto'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-host.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=host')
+    'map http://www.forwarded-host.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=host'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-connection-compact.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=compact')
+    'map http://www.forwarded-connection-compact.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=compact'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-connection-std.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=std')
+    'map http://www.forwarded-connection-std.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=std'
+)
 ts.Disk.remap_config.AddLine(
-    'map http://www.forwarded-connection-full.com http://127.0.0.1:{0}'.format(server.Variables.Port) +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=full')
+    'map http://www.forwarded-connection-full.com http://127.0.0.1:{0}'.format(server.Variables.Port)
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.insert_forwarded=connection=full'
+)
 
 # Basic HTTP 1.1 -- No Forwarded by default
 tr = Test.AddTestRun()
@@ -197,8 +210,9 @@ ts2.Disk.records_config.update(
     {
         # 'proxy.config.diags.debug.enabled': 1,
         'proxy.config.url_remap.pristine_host_hdr': 1,  # Retain Host header in original incoming client request.
-        'proxy.config.http.insert_forwarded': 'by=uuid'
-    })
+        'proxy.config.http.insert_forwarded': 'by=uuid',
+    }
+)
 
 ts2.Disk.remap_config.AddLine('map https://www.no-oride.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 
@@ -213,8 +227,9 @@ tr.Processes.Default.ReturnCode = 0
 # Call traffic_ctrl to set insert_forwarded
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
-    'traffic_ctl --debug config set proxy.config.http.insert_forwarded' +
-    ' "for|by=ip|by=unknown|by=servername|by=uuid|proto|host|connection=compact|connection=std|connection=full"')
+    'traffic_ctl --debug config set proxy.config.http.insert_forwarded'
+    + ' "for|by=ip|by=unknown|by=servername|by=uuid|proto|host|connection=compact|connection=std|connection=full"'
+)
 tr.Processes.Default.ForceUseShell = False
 tr.Processes.Default.Env = ts2.Env
 tr.Processes.Default.ReturnCode = 0
@@ -234,24 +249,27 @@ tr.Processes.Default.ReturnCode = 0
 # HTTP 1.0 -- Forwarded headers already present
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    "--verbose -H 'forwarded:for=0.6.6.6' -H 'forwarded:for=_argh' --ipv4 --http1.0" +
-    " --proxy localhost:{} http://www.no-oride.com".format(ts2.Variables.port),
-    ts=ts2)
+    "--verbose -H 'forwarded:for=0.6.6.6' -H 'forwarded:for=_argh' --ipv4 --http1.0"
+    + " --proxy localhost:{} http://www.no-oride.com".format(ts2.Variables.port),
+    ts=ts2,
+)
 tr.Processes.Default.ReturnCode = 0
 
 # HTTP 2
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--verbose --ipv4 --http2 --insecure --header "Host: www.no-oride.com"' +
-    ' https://localhost:{}'.format(ts2.Variables.ssl_port),
-    ts=ts2)
+    '--verbose --ipv4 --http2 --insecure --header "Host: www.no-oride.com"'
+    + ' https://localhost:{}'.format(ts2.Variables.ssl_port),
+    ts=ts2,
+)
 tr.Processes.Default.ReturnCode = 0
 
 # TLS
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--verbose --ipv4 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_port),
-    ts=ts2)
+    ts=ts2,
+)
 tr.Processes.Default.ReturnCode = 0
 
 # IPv6
@@ -263,5 +281,6 @@ tr.Processes.Default.ReturnCode = 0
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
     '--verbose --ipv6 --http1.1 --insecure --header "Host: www.no-oride.com" https://localhost:{}'.format(ts2.Variables.ssl_portv6),
-    ts=ts2)
+    ts=ts2,
+)
 tr.Processes.Default.ReturnCode = 0

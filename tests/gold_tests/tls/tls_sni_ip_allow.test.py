@@ -30,6 +30,7 @@ class ConnectionType:
 
 class TestSniIpAllow:
     '''Verify ip_allow of sni.yaml.'''
+
     _dns_counter: int = 0
     _server_counter: int = 0
     _ts_counter: int = 0
@@ -76,7 +77,8 @@ class TestSniIpAllow:
         server.Streams.All += Testers.ContainsExpression('allowed-request', 'The allowed request should be recieved.')
         server.Streams.All += Testers.ExcludesExpression('blocked-request', 'The blocked request should not have been recieved.')
         server.Streams.All += Testers.ExcludesExpression(
-            'block.me.com', 'Nothing about the block.me.com sni should have been recieved.')
+            'block.me.com', 'Nothing about the block.me.com sni should have been recieved.'
+        )
 
         return server
 
@@ -96,30 +98,40 @@ class TestSniIpAllow:
                 'sni:',
                 '- fqdn: block.me.com',
                 '  ip_allow: 192.168.10.1',  # Therefore 127.0.0.1 should be blocked.
-            ])
+            ]
+        )
         if connect_type == ConnectionType.TUNNEL:
-            ts.Disk.sni_yaml.AddLines([
-                f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
-            ])
+            ts.Disk.sni_yaml.AddLines(
+                [
+                    f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
+                ]
+            )
         if connect_type == ConnectionType.PROXY:
             ts.Disk.sni_yaml.AddLines(
                 [
                     '- fqdn: pp.block.me.com',
                     '  ip_allow: 192.168.10.1',  # Therefore 1.2.3.4 should be blocked.
-                ])
-        ts.Disk.sni_yaml.AddLines([
-            '- fqdn: allow.me.com',
-            '  ip_allow: 127.0.0.1',
-        ])
+                ]
+            )
+        ts.Disk.sni_yaml.AddLines(
+            [
+                '- fqdn: allow.me.com',
+                '  ip_allow: 127.0.0.1',
+            ]
+        )
         if connect_type == ConnectionType.TUNNEL:
-            ts.Disk.sni_yaml.AddLines([
-                f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
-            ])
+            ts.Disk.sni_yaml.AddLines(
+                [
+                    f'  tunnel_route: backend.server.com:{server.Variables.https_port}',
+                ]
+            )
         if connect_type == ConnectionType.PROXY:
-            ts.Disk.sni_yaml.AddLines([
-                '- fqdn: pp.allow.me.com',
-                '  ip_allow: 1.2.3.4',
-            ])
+            ts.Disk.sni_yaml.AddLines(
+                [
+                    '- fqdn: pp.allow.me.com',
+                    '  ip_allow: 1.2.3.4',
+                ]
+            )
         ts.addDefaultSSLFiles()
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -127,7 +139,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.remap_config.AddLine(f'map / http://remapped.backend.server.com:{server.Variables.http_port}/')
         ts.Disk.records_config.update(
             {
@@ -139,16 +152,20 @@ ssl_multicert:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|ssl|proxyprotocol',
                 'proxy.config.acl.subjects': 'PROXY,PEER',
-            })
+            }
+        )
         if connect_type == ConnectionType.TUNNEL:
-            ts.Disk.records_config.update({
-                'proxy.config.http.connect_ports': f"{server.Variables.https_port}",
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.http.connect_ports': f"{server.Variables.https_port}",
+                }
+            )
             ts.addPrivateConnectAllowYaml()
         return ts
 
     def _configure_client(
-            self, tr: 'TestRun', dns: 'Process', server: 'Process', ts: 'Process', connect_type: ConnectionType.GET) -> None:
+        self, tr: 'TestRun', dns: 'Process', server: 'Process', ts: 'Process', connect_type: ConnectionType.GET
+    ) -> None:
         """Configure the client for the TestRun.
         :param tr: The TestRun to configure with the client.
         :param dns: The DNS Process.
@@ -161,10 +178,12 @@ ssl_multicert:
                 name,
                 self._replay_file,
                 http_ports=[ts.Variables.proxy_protocol_port],
-                https_ports=[ts.Variables.proxy_protocol_ssl_port])
+                https_ports=[ts.Variables.proxy_protocol_ssl_port],
+            )
         else:
             p = tr.AddVerifierClientProcess(
-                name, self._replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port])
+                name, self._replay_file, http_ports=[ts.Variables.port], https_ports=[ts.Variables.ssl_port]
+            )
         TestSniIpAllow._client_counter += 1
         ts.StartBefore(server)
         ts.StartBefore(dns)
@@ -176,7 +195,8 @@ ssl_multicert:
 
         p.Streams.All += Testers.ContainsExpression('allowed-response', 'The response to the allowed request should be recieved.')
         p.Streams.All += Testers.ExcludesExpression(
-            'blocked-response', 'The response to the blocked request should not have been recieved.')
+            'blocked-response', 'The response to the blocked request should not have been recieved.'
+        )
 
 
 TestSniIpAllow(ConnectionType.GET)

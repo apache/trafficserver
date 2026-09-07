@@ -50,7 +50,8 @@ class ConnectHandshakeTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|iocore_net',
                 'proxy.config.http.connect_ports': f'{origin_port}',
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{origin_port}')
         ts.addPrivateConnectAllowYaml()
         return ts

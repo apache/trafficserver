@@ -47,7 +47,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         ts.Disk.records_config.update(
             {
@@ -55,12 +56,12 @@ ssl_multicert:
                 "proxy.config.ssl.server.private_key.path": ts.Variables.SSLDir,
                 "proxy.config.ssl.server.version.min": 2,
                 "proxy.config.ssl.server.version.max": 2,
-                "proxy.config.ssl.server.cipher_suite":
-                    "ECDHE-RSA-AES128-GCM-SHA256:"
-                    "AES128-GCM-SHA256:"
-                    "ECDHE-RSA-AES128-SHA256:"
-                    "@SECLEVEL=0",
-            })
+                "proxy.config.ssl.server.cipher_suite": "ECDHE-RSA-AES128-GCM-SHA256:"
+                "AES128-GCM-SHA256:"
+                "ECDHE-RSA-AES128-SHA256:"
+                "@SECLEVEL=0",
+            }
+        )
         return ts
 
     def _configure_allowed_cipher_test(self) -> None:
@@ -68,7 +69,8 @@ ssl_multicert:
         tr = Test.AddTestRun("Allow HTTP/2 with an ephemeral AEAD cipher")
         tr.Processes.Default.Command = (
             "openssl s_client -tls1_2 -cipher ECDHE-RSA-AES128-GCM-SHA256 "
-            f"-alpn h2,http/1.1 -connect 127.0.0.1:{self._ts.Variables.ssl_port} </dev/null")
+            f"-alpn h2,http/1.1 -connect 127.0.0.1:{self._ts.Variables.ssl_port} </dev/null"
+        )
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN protocol: h2", "HTTP/2 should be negotiated")
         tr.ReturnCode = 0
@@ -84,7 +86,8 @@ ssl_multicert:
         tr.Processes.Default.Command = (
             "printf 'GET / HTTP/1.1\\r\\nHost: example.com\\r\\nConnection: close\\r\\n\\r\\n' | "
             f"openssl s_client -ign_eof -tls1_2 -cipher {cipher} "
-            f"-alpn h2,http/1.1 -connect 127.0.0.1:{self._ts.Variables.ssl_port}")
+            f"-alpn h2,http/1.1 -connect 127.0.0.1:{self._ts.Variables.ssl_port}"
+        )
         tr.Processes.Default.Streams.All += Testers.IncludesExpression("ALPN protocol: http/1.1", "HTTP/1.1 should be negotiated")
         tr.Processes.Default.Streams.All += Testers.IncludesExpression("HTTP/1.1 404", "The HTTP/1.1 request should be processed")
         tr.ReturnCode = 0

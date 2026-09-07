@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -47,15 +46,19 @@ ts.Disk.records_config.update(
         # enable ssl port
         'proxy.config.http.server_ports': '{0} {1}:proto=http2;http:ssl'.format(ts.Variables.port, ts.Variables.ssl_port),
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map https://www.example.com http://127.0.0.1:{0}'.format(server.Variables.Port))
 ts.Disk.remap_config.AddLine(
-    'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
+    'map https://www.example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map_with_recv_port https://www.example3.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
+    'map_with_recv_port https://www.example3.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://www.anotherexample.com https://127.0.0.1:{0}'.format(server2.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -63,7 +66,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # call localhost straight
 tr = Test.AddTestRun()
@@ -86,14 +90,16 @@ tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 # www.example.com:80 host
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:443" --verbose'.format(ts.Variables.ssl_port), ts=ts)
+    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:443" --verbose'.format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
 # www.example.com:8080 host
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:{0}" --verbose'.format(ts.Variables.ssl_port), ts=ts)
+    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:{0}" --verbose'.format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200.gold"
 
@@ -112,14 +118,16 @@ tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 # bad port
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(ts.Variables.ssl_port), ts=ts)
+    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.example.com:1234" --verbose'.format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-hitATS-404.gold"
 
 # map www.anotherexample.com to https://<IP of microserver>.com
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.anotherexample.com" --verbose'.format(ts.Variables.ssl_port), ts=ts)
+    '--http1.1 -k https://127.0.0.1:{0} -H "Host: www.anotherexample.com" --verbose'.format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stderr = "gold/remap-https-200_2.gold"
 tr.StillRunningAfter = server2

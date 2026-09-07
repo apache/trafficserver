@@ -40,7 +40,8 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 1,
         'proxy.config.diags.debug.enabled': 3,
         'proxy.config.diags.debug.tags': f'{plugin_name}',
-    })
+    }
+)
 
 rp = os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'TSVConnFd', '.libs', f'{plugin_name}.so')
 ts.Setup.Copy(rp, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
@@ -60,13 +61,14 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.MakeCurlCommandMulti(
-    f'touch {InProgressFilePathspec} ; ' +
-    f'{{curl}} --verbose {ipv4flag} --header "Host:myhost.test" http://localhost:{ts.Variables.port}/',
-    ts=ts)
+    f'touch {InProgressFilePathspec} ; '
+    + f'{{curl}} --verbose {ipv4flag} --header "Host:myhost.test" http://localhost:{ts.Variables.port}/',
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 
 # Give tests up to 10 seconds to complete.
 #
 tr = Test.AddTestRun()
-tr.Processes.Default.Command = (os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 15 1 -f ' + InProgressFilePathspec)
+tr.Processes.Default.Command = os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 15 1 -f ' + InProgressFilePathspec
 tr.Processes.Default.ReturnCode = 0

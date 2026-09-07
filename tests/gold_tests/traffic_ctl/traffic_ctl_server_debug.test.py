@@ -76,7 +76,8 @@ tr.Processes.Default.Env = traffic_ctl._ts.Env
 tr.Processes.Default.Command = "traffic_ctl server debug enable --append"
 tr.Processes.Default.ReturnCode = 64  # EX_USAGE - command line usage error
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    "Option \'--append\' requires \'--tags\' to be specified", "Should show error that --append requires --tags")
+    "Option '--append' requires '--tags' to be specified", "Should show error that --append requires --tags"
+)
 tr.StillRunningAfter = traffic_ctl._ts
 
 # Test 15: An option written where the tags are expected leaves them missing, rather than being

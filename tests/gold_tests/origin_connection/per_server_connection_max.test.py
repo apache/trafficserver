@@ -108,10 +108,12 @@ class PerServerConnectionMaxTest:
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.metric_prefix': 'foo',
                 'proxy.config.http.per_server.connection.match': 'port',
-            })
+            }
+        )
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
             f'WARNING:.*too many connections:.*limit={self._origin_max_connections}',
-            'Verify the user is warned about the connection limit being hit.')
+            'Verify the user is warned about the connection limit being hit.',
+        )
 
     def _test_metrics(self) -> None:
         """Use traffic_ctl to test metrics."""
@@ -125,16 +127,20 @@ class PerServerConnectionMaxTest:
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'per_server.total_connection.{group_name} 4', 'incorrect statistic return, or possible error.')
+            f'per_server.total_connection.{group_name} 4', 'incorrect statistic return, or possible error.'
+        )
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            'INVALID_INCOMING_DATA', 'The metric query must not be rejected.')
+            'INVALID_INCOMING_DATA', 'The metric query must not be rejected.'
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f'per_server.blocked_connection.{group_name} 1', 'incorrect statistic return, or possible error.')
+            f'per_server.blocked_connection.{group_name} 1', 'incorrect statistic return, or possible error.'
+        )
 
         # A 'port' match has one group per address:port and no hostname, so no aggregate should be
         # registered for it at all.
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            'per_server.current_connection_max.', 'A non-"both" match type must not register a hostname aggregate.')
+            'per_server.current_connection_max.', 'A non-"both" match type must not register a hostname aggregate.'
+        )
 
     def run(self) -> None:
         """Configure the TestRun."""
@@ -197,11 +203,14 @@ class ConnectMethodTest:
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.metric_aggregate': metric_aggregate,
                 'proxy.config.http.per_server.connection.max': max_conn,
-            })
+            }
+        )
 
-        self._ts.Disk.remap_config.AddLines([
-            f"map http://foo.com/ http://www.this.origin.com:{self._server.Variables.Port}/",
-        ])
+        self._ts.Disk.remap_config.AddLines(
+            [
+                f"map http://foo.com/ http://www.this.origin.com:{self._server.Variables.Port}/",
+            ]
+        )
         self._ts.addPrivateConnectAllowYaml()
 
     def _configure_client_with_slow_response(self, tr) -> 'Test.Process':
@@ -224,21 +233,25 @@ class ConnectMethodTest:
 
         # The per hostname aggregate is published in both modes under test.
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'per_server.total_connection.{host_name} 5', 'incorrect statistic return, or possible error.')
+            f'per_server.total_connection.{host_name} 5', 'incorrect statistic return, or possible error.'
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f'per_server.blocked_connection.{host_name} {blocked}', 'incorrect statistic return, or possible error.')
+            f'per_server.blocked_connection.{host_name} {blocked}', 'incorrect statistic return, or possible error.'
+        )
 
         if self._metric_aggregate == 1:
             # AGGREGATE_GROUP additionally mirrors the per group metrics into the published store.
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-                f'per_server.total_connection.{group_name} 5', 'The per group metric should be published at AGGREGATE_GROUP.')
+                f'per_server.total_connection.{group_name} 5', 'The per group metric should be published at AGGREGATE_GROUP.'
+            )
         else:
             # AGGREGATE_ONLY keeps the per group metrics hidden, so none of the three per group
             # names may appear in a normal query. current_connection_max is not among them: it only
             # ever exists as a hostname aggregate, never per group.
             for counter in ('current_connection', 'total_connection', 'blocked_connection'):
                 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-                    f'per_server.{counter}.{group_name} ', f'per_server.{counter}.{group_name} must stay hidden at AGGREGATE_ONLY.')
+                    f'per_server.{counter}.{group_name} ', f'per_server.{counter}.{group_name} must stay hidden at AGGREGATE_ONLY.'
+                )
 
         # The per group metrics must be visible with --include-hidden at either level. This is also
         # the end to end test for that traffic_ctl option.
@@ -250,9 +263,11 @@ class ConnectMethodTest:
         # unlike the derived aggregates.
         tr2.Processes.Default.Streams.All = Testers.ContainsExpression(
             f'per_server.total_connection.{group_name} 5',
-            'The per group metric should be visible with --include-hidden at any level.')
+            'The per group metric should be visible with --include-hidden at any level.',
+        )
         tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            'INVALID_INCOMING_DATA', 'The --include-hidden query must not be rejected by the RPC decoder.')
+            'INVALID_INCOMING_DATA', 'The --include-hidden query must not be rejected by the RPC decoder.'
+        )
 
     def run(self, blocked, gold_file) -> None:
         """Verify per_server.connection.max with CONNECT traffic."""
@@ -275,7 +290,8 @@ class ConnectMethodTest:
         tr.MakeCurlCommandMulti(
             f"sleep 1; {{curl}} -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'"
             f"--next -v --fail -s -p -x 127.0.0.1:{self._ts.Variables.port} 'http://foo.com/get'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         # Curl will have a 22 exit code if it receives a 5XX response (and we
         # expect a 503).
         tr.Processes.Default.ReturnCode = 22 if blocked else 0
@@ -344,12 +360,14 @@ class MultiGroupAggregateTest:
                 # about reading through the aggregate.
                 'proxy.config.http.per_server.connection.metric_aggregate': 2,
                 'proxy.config.http.per_server.connection.match': 'both',
-            })
+            }
+        )
         self._ts.Disk.remap_config.AddLines(
             [
                 f"map http://multi.origin.com/a/ http://multi.origin.com:{self._server_a.Variables.Port}/",
                 f"map http://multi.origin.com/b/ http://multi.origin.com:{self._server_b.Variables.Port}/",
-            ])
+            ]
+        )
 
     def _make_slow_client(self, tr, path) -> 'Test.Process':
         """Configure a client which makes a slow request through one of the two remapped groups."""
@@ -359,7 +377,8 @@ class MultiGroupAggregateTest:
             f"-v --fail -s -x 127.0.0.1:{self._ts.Variables.port} "
             f"'http://multi.origin.com/{path}/delay/{MultiGroupAggregateTest._hold_seconds}'",
             p=p,
-            ts=self._ts)
+            ts=self._ts,
+        )
         return p
 
     def _test_metrics_while_held(self) -> None:
@@ -375,15 +394,18 @@ class MultiGroupAggregateTest:
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
             f'per_server.total_connection.multi.origin.com {total}',
             'The host aggregate total_connection should be the SUM across both groups '
-            f'({MultiGroupAggregateTest._group_a_concurrency} + {MultiGroupAggregateTest._group_b_concurrency}).')
+            f'({MultiGroupAggregateTest._group_a_concurrency} + {MultiGroupAggregateTest._group_b_concurrency}).',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             f'per_server.current_connection.multi.origin.com {total}',
             'While held open, the host aggregate current_connection should be the SUM of the '
-            'currently open connections across both groups.')
+            'currently open connections across both groups.',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             f'per_server.current_connection_max.multi.origin.com {group_max}',
             'While held open, current_connection_max should be the largest single group current '
-            'count (MAX), not the sum across the two groups.')
+            'count (MAX), not the sum across the two groups.',
+        )
 
     def _test_metrics_after_drain(self) -> None:
         """After traffic drains and a further sync tick passes, both live gauges must read 0.
@@ -401,11 +423,13 @@ class MultiGroupAggregateTest:
         tr.Processes.Default.TimeOut = wait + 30
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
             'per_server.current_connection.multi.origin.com 0',
-            'Once all connections close, the host aggregate current_connection must drain to 0.')
+            'Once all connections close, the host aggregate current_connection must drain to 0.',
+        )
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
             'per_server.current_connection_max.multi.origin.com 0',
             'Once all connections close, current_connection_max must also come back down to 0: it '
-            'is a live gauge, not a monotone peak.')
+            'is a live gauge, not a monotone peak.',
+        )
 
     def run(self) -> None:
         """Drive concurrent traffic through both groups, then check the aggregate metrics."""
@@ -458,14 +482,16 @@ class MetricOverrideTest:
                 # Enabled globally; the second remap rule below opts out.
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
                 'proxy.config.http.per_server.connection.match': 'port',
-            })
+            }
+        )
         self._ts.Disk.remap_config.AddLines(
             [
                 f'map http://metric-on.com/ http://127.0.0.1:{self._server_on.Variables.Port}/',
                 f'map http://metric-off.com/ http://127.0.0.1:{self._server_off.Variables.Port}/'
                 ' @plugin=conf_remap.so'
                 ' @pparam=proxy.config.http.per_server.connection.metric_enabled=0',
-            ])
+            ]
+        )
 
     def _test_metrics(self) -> None:
         """Use traffic_ctl to verify which per server metrics exist."""
@@ -478,20 +504,24 @@ class MetricOverrideTest:
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'per_server.total_connection.{on_group} 1', 'The remap with metrics enabled should have per server metrics.')
+            f'per_server.total_connection.{on_group} 1', 'The remap with metrics enabled should have per server metrics.'
+        )
         # The group for the overridden remap must not exist at all, hidden or otherwise, so this
         # also holds with --include-hidden below.
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            f'per_server.total_connection.{off_group}', 'The remap with metrics disabled should have no per server metrics.')
+            f'per_server.total_connection.{off_group}', 'The remap with metrics disabled should have no per server metrics.'
+        )
 
         tr2 = Test.AddTestRun("The overridden remap has no hidden per server metrics either")
         tr2.Processes.Default.Command = 'traffic_ctl metric match per_server --include-hidden'
         tr2.Processes.Default.ReturnCode = 0
         tr2.Processes.Default.Env = self._ts.Env
         tr2.Processes.Default.Streams.All = Testers.ContainsExpression(
-            f'per_server.total_connection.{on_group} 1', 'The enabled remap group should be present in the hidden store.')
+            f'per_server.total_connection.{on_group} 1', 'The enabled remap group should be present in the hidden store.'
+        )
         tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            f'per_server.total_connection.{off_group}', 'No group should be created at all for the overridden remap.')
+            f'per_server.total_connection.{off_group}', 'No group should be created at all for the overridden remap.'
+        )
 
     def run(self) -> None:
         """Configure the TestRun."""
@@ -502,7 +532,8 @@ class MetricOverrideTest:
         tr.Processes.Default.StartBefore(self._ts)
         tr.MakeCurlCommandMulti(
             f"{{curl}} -v -s -H 'Host: metric-on.com' http://127.0.0.1:{self._ts.Variables.port}/get"
-            f" --next -v -s -H 'Host: metric-off.com' http://127.0.0.1:{self._ts.Variables.port}/get")
+            f" --next -v -s -H 'Host: metric-off.com' http://127.0.0.1:{self._ts.Variables.port}/get"
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.TimeOut = 30
         tr.StillRunningAfter += self._ts
@@ -544,7 +575,8 @@ class AggregateOnlyWithoutHostAggregateTest:
                 'proxy.config.http.per_server.connection.metric_aggregate': 2,
                 # 'port' has no per hostname aggregate, which is the point of this test.
                 'proxy.config.http.per_server.connection.match': 'port',
-            })
+            }
+        )
         self._ts.Disk.remap_config.AddLine(f'map http://agg-only.com/ http://127.0.0.1:{self._server.Variables.Port}/')
 
     def _test_metrics(self) -> None:
@@ -559,12 +591,13 @@ class AggregateOnlyWithoutHostAggregateTest:
         # Published, not just hidden: this query does not pass --include-hidden.
         tr.Processes.Default.Streams.All = Testers.ContainsExpression(
             f'per_server.total_connection.{group} 1',
-            'At metric_aggregate 2 with a match type that has no aggregate, the per group metric '
-            'must still be published.')
+            'At metric_aggregate 2 with a match type that has no aggregate, the per group metric must still be published.',
+        )
         # The hostname never appears in a metric name under match 'port', so its absence confirms
         # the published metric came from the per group fallback and not from an aggregate.
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            'per_server.total_connection.agg-only.com', 'No per hostname aggregate should exist for match "port".')
+            'per_server.total_connection.agg-only.com', 'No per hostname aggregate should exist for match "port".'
+        )
 
     def run(self) -> None:
         """Drive one request through the origin, then check the metrics."""

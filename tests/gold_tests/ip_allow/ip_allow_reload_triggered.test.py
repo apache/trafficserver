@@ -39,7 +39,7 @@ request = {"headers": "GET /test HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "ti
 response = {
     "headers": "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "ok"
+    "body": "ok",
 }
 server.addResponse("sessionlog.json", request, response)
 
@@ -72,7 +72,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ip_allow|config',
         'proxy.config.cache.ip_categories.filename': categories_file,
-    })
+    }
+)
 
 # ip_allow config:
 #   Rule 1: INTERNAL category → allow ALL methods
@@ -92,7 +93,8 @@ ts.Disk.ip_allow_yaml.AddLines(
     action: allow
     methods:
       - HEAD
-'''.split("\n"))
+'''.split("\n")
+)
 
 ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
 
@@ -154,8 +156,7 @@ tr = Test.AddConfigReload(ts, expect_absent_tasks=["ip_allow.yaml"], description
 
 # 4a: Verify initial state: GET → 200 (127.0.0.1 is in INTERNAL)
 tr = Test.AddTestRun("GET should succeed (127.0.0.1 in INTERNAL category)")
-tr.Processes.Default.Command = (f"curl -s -o /dev/null -w '%{{http_code}}' "
-                                f"http://127.0.0.1:{ts.Variables.port}/test")
+tr.Processes.Default.Command = f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:{ts.Variables.port}/test"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("200", "Should get 200 when 127.0.0.1 is in INTERNAL category")
 tr.StillRunningAfter = ts
@@ -174,8 +175,7 @@ tr.StillRunningAfter = ts
 
 # 4d: GET should now be denied (falls to catch-all: only HEAD allowed)
 tr = Test.AddTestRun("GET should be denied (127.0.0.1 NOT in INTERNAL)")
-tr.Processes.Default.Command = (f"curl -s -o /dev/null -w '%{{http_code}}' "
-                                f"http://127.0.0.1:{ts.Variables.port}/test")
+tr.Processes.Default.Command = f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:{ts.Variables.port}/test"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("403", "Should get 403 when 127.0.0.1 is not in INTERNAL category")
 tr.StillRunningAfter = ts
@@ -196,8 +196,7 @@ tr.StillRunningAfter = server
 reload_counter += 1
 tr = Test.AddTestRun("Change ip_categories record value to new file")
 p = tr.Processes.Process(f"reload-{reload_counter}")
-p.Command = (f"traffic_ctl config set proxy.config.cache.ip_categories.filename "
-             f"'{categories_restore}'; sleep 30")
+p.Command = f"traffic_ctl config set proxy.config.cache.ip_categories.filename '{categories_restore}'; sleep 30"
 p.Env = ts.Env
 p.ReturnCode = Any(0, -2)
 p.Ready = When.FileContains(ts.Disk.diags_log.Name, "ip_allow.yaml finished loading", 1 + reload_counter)
@@ -209,10 +208,10 @@ tr.StillRunningAfter = ts
 
 # 5b: GET should succeed again (new file has 127.0.0.1 in INTERNAL)
 tr = Test.AddTestRun("GET should succeed after record value change")
-tr.Processes.Default.Command = (f"curl -s -o /dev/null -w '%{{http_code}}' "
-                                f"http://127.0.0.1:{ts.Variables.port}/test")
+tr.Processes.Default.Command = f"curl -s -o /dev/null -w '%{{http_code}}' http://127.0.0.1:{ts.Variables.port}/test"
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "200", "Should get 200 after restoring INTERNAL category via record change")
+    "200", "Should get 200 after restoring INTERNAL category via record change"
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

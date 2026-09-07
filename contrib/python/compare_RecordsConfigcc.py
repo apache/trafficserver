@@ -37,7 +37,7 @@ ignore_keys = {
     "proxy.config.ssl.server.private_key.path": 1,
     "proxy.config.proxy_name": 1,
     "proxy.config.ssl.client.private_key.path": 1,
-    "proxy.config.net.defer_accept": 1  # Specified in RecordsConfig.cc funny
+    "proxy.config.net.defer_accept": 1,  # Specified in RecordsConfig.cc funny
 }
 
 rc_cc = {}  # RecordsConfig.cc values
@@ -104,7 +104,7 @@ if len(defaults) > 0:
 
 # Search for stale documentation ...
 stale = [k for k in rc_doc if k not in rc_cc]
-if (len(stale) > 0):
+if len(stale) > 0:
     print()
     print("Stale documentation:")
     for s in sorted(stale):

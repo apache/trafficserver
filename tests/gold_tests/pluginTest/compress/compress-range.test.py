@@ -40,7 +40,8 @@ class CompressPluginTest:
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|compress",
                 "proxy.config.http.insert_response_via_str": 2,
-            })
+            }
+        )
 
         self.ts.Setup.Copy("etc/cache-true-remove-range.config")
         self.ts.Setup.Copy("etc/cache-true-remove-accept-encoding.config")
@@ -59,7 +60,8 @@ map /cache-true-no-compression/ http://127.0.0.1:{self.server.Variables.http_por
     @plugin=compress.so \
     @pparam={Test.RunDirectory}/cache-true-no-compression.config
 """
-            })
+            }
+        )
 
     def run(self):
         tr = Test.AddTestRun()

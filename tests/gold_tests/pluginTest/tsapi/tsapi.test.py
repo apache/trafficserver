@@ -20,7 +20,9 @@ Test.Summary = '''
 Test TS API.
 '''
 
-Test.SkipUnless(Condition.HasCurlFeature('http2'),)
+Test.SkipUnless(
+    Condition.HasCurlFeature('http2'),
+)
 Test.ContinueOnFail = True
 
 plugin_name = "test_tsapi"
@@ -53,7 +55,8 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 1,
         'proxy.config.diags.debug.enabled': 3,
         'proxy.config.diags.debug.tags': f'http|{plugin_name}',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -61,15 +64,18 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 rp = os.path.join(Test.Variables.AtsBuildGoldTestsDir, 'pluginTest', 'tsapi', '.libs', f'{plugin_name}.so')
 ts.Setup.Copy(rp, ts.Env['PROXY_CONFIG_PLUGIN_PLUGIN_DIR'])
 
 ts.Disk.remap_config.AddLine(
-    "map http://myhost.test http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, f"{plugin_name}.so"))
+    "map http://myhost.test http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, f"{plugin_name}.so")
+)
 ts.Disk.remap_config.AddLine(
-    "map https://myhost.test:123 http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, f"{plugin_name}.so"))
+    "map https://myhost.test:123 http://127.0.0.1:{0} @plugin={1} @plugin={1}".format(server.Variables.Port, f"{plugin_name}.so")
+)
 
 ipv4flag = ""
 if not Condition.CurlUsingUnixDomainSocket():
@@ -95,9 +101,10 @@ tr.MakeCurlCommand('--verbose {0} --proxy localhost:{1} http://mYhOsT.teSt/xYz'.
 if not Condition.CurlUsingUnixDomainSocket():
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        '--verbose --ipv4 --http2 --insecure --header ' +
-        '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port),
-        ts=ts)
+        '--verbose --ipv4 --http2 --insecure --header '
+        + '"Host: myhost.test:123" HttPs://LocalHost:{}/'.format(ts.Variables.ssl_port),
+        ts=ts,
+    )
     tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()

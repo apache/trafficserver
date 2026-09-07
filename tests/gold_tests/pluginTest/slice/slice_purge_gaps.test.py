@@ -107,20 +107,24 @@ class SlicePurgeGapsTest:
 
         self._ts.Disk.traffic_out.Content = Testers.ContainsExpression(
             'Purge suffix range widened to the whole object',
-            'A suffix range purge should be widened rather than guessing at its start.')
+            'A suffix range purge should be widened rather than guessing at its start.',
+        )
 
         self._ts_bound.Disk.traffic_out.Content = Testers.ContainsExpression(
             f'gave up after {self._low_miss_bound} consecutive uncached block',
-            'The walk should stop at its configured miss bound rather than scanning the whole range.')
+            'The walk should stop at its configured miss bound rather than scanning the whole range.',
+        )
         self._ts_bound.Disk.diags_log.Content = Testers.ContainsExpression(
-            'Ignoring invalid X-Slice-Purge-Probe', 'A malformed override should be rejected, not acted on.')
+            'Ignoring invalid X-Slice-Purge-Probe', 'A malformed override should be rejected, not acted on.'
+        )
 
         # A purge issues nothing but block PURGEs. request_block logs every request
         # header it builds at debug, so an only-if-cached here would mean a
         # read-only length probe had been reintroduced.
         for ts in (self._ts, self._ts_bound):
             ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-                'only-if-cached', 'A purge should not issue a read-only length probe.')
+                'only-if-cached', 'A purge should not issue a read-only length probe.'
+            )
 
     def _configure_origin(self) -> None:
         """Configure the origin."""
@@ -129,7 +133,8 @@ class SlicePurgeGapsTest:
         # ATS answers PURGE itself and the plugin issues no other request kind, so
         # neither may ever be seen upstream.
         self._origin.Streams.stdout += Testers.ExcludesExpression(
-            'PURGE', 'A PURGE should be answered by ATS and never forwarded to the origin.')
+            'PURGE', 'A PURGE should be answered by ATS and never forwarded to the origin.'
+        )
         self._origin.Streams.stdout += Testers.ExcludesExpression('HEAD /', 'A purge should never issue a HEAD upstream.')
 
     def _make_ts(self, label: str, miss_bound: int = None, fail_rules: bool = False) -> 'Process':
@@ -153,12 +158,14 @@ class SlicePurgeGapsTest:
         ts.Disk.remap_config.AddLine(
             f'map http://slice/ http://127.0.0.1:{self._origin.Variables.http_port}/'
             f'{rules} @plugin=slice.so @pparam=--blockbytes-test={self._block_bytes} @pparam=--ref-relative{bound}'
-            ' @plugin=cache_range_requests.so')
+            ' @plugin=cache_range_requests.so'
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'slice|cache_range_requests',
-            })
+            }
+        )
         return ts
 
     def _run(self, summary: str, phases: str, ts: 'Process' = None) -> None:
@@ -176,7 +183,8 @@ class SlicePurgeGapsTest:
             tr.Processes.Default.StartBefore(self._ts_bound)
             self._started = True
         tr.AddVerifierClientProcess(
-            f"client-{phases.replace(' ', '-')}", self._client_replay, http_ports=[ts.Variables.port], keys=phases)
+            f"client-{phases.replace(' ', '-')}", self._client_replay, http_ports=[ts.Variables.port], keys=phases
+        )
         tr.StillRunningAfter = ts
 
     def _origin_saw(self, phase: str, block: str, why: str) -> None:
@@ -194,8 +202,10 @@ class SlicePurgeGapsTest:
         self._run(summary, ' '.join(f'{url}-fill-{block}' for block in blocks), ts)
         for block in blocks:
             self._origin_saw(
-                f'{url}-fill-{block}', f'{url}bytes={block * 10}-{block * 10 + 9}',
-                f'Block {block} of /{url} should have been fetched and cached.')
+                f'{url}-fill-{block}',
+                f'{url}bytes={block * 10}-{block * 10 + 9}',
+                f'Block {block} of /{url} should have been fetched and cached.',
+            )
 
     def _purged(self, phase: str, block: str, why: str) -> None:
         """Assert a phase's block request reached the origin, so it was purged."""
@@ -259,7 +269,8 @@ class SlicePurgeGapsTest:
         self._run('PURGE /outside for block 0 only, which is not cached', 'outside-purge')
         self._run('Block 1 of /outside survived a purge that did not name it', 'outside-check-1')
         self._survived(
-            'outside-check-1', 'outsidebytes=10-19', 'A purge should stop at the end of its range, not at the miss bound.')
+            'outside-check-1', 'outsidebytes=10-19', 'A purge should stop at the end of its range, not at the miss bound.'
+        )
 
     def _suffix_range(self) -> None:
         """A "bytes=-N" purge is widened to the whole object."""
@@ -268,8 +279,10 @@ class SlicePurgeGapsTest:
         self._run('Every cached block of /endbytes went, not just the named tail', 'endbytes-check-0 endbytes-check-2')
         self._purged('endbytes-check-2', 'endbytesbytes=20-29', 'The block covering the suffix range must be purged.')
         self._purged(
-            'endbytes-check-0', 'endbytesbytes=0-9',
-            'A widened suffix purge removes the whole object, which is a superset of what was named.')
+            'endbytes-check-0',
+            'endbytesbytes=0-9',
+            'A widened suffix purge removes the whole object, which is a superset of what was named.',
+        )
 
     def _miss_bound_and_override(self) -> None:
         """The miss bound stops a walk that has found nothing, and is overridable.
@@ -301,7 +314,8 @@ class SlicePurgeGapsTest:
         self._run('Block 0 of /badrange survived the refused purge', 'badrange-check-0')
         self._survived('badrange-check-0', 'badrangebytes=0-9', 'A refused purge must not have removed anything.')
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            'Refusing PURGE with an unparseable range', 'The refusal should be visible in the error log.')
+            'Refusing PURGE with an unparseable range', 'The refusal should be visible in the error log.'
+        )
 
     def _block_failure(self) -> None:
         """A block that could not be purged is not a block that was absent.
@@ -317,17 +331,21 @@ class SlicePurgeGapsTest:
         self._run('/failblock was purged up to the failing block only', 'failblock-check-0 failblock-check-3')
         self._purged('failblock-check-0', 'failblockbytes=0-9', 'A block removed before the failure should stay removed.')
         self._survived(
-            'failblock-check-3', 'failblockbytes=30-39',
-            'The walk should stop at the failing block, leaving what is behind it cached.')
+            'failblock-check-3',
+            'failblockbytes=30-39',
+            'The walk should stop at the failing block, leaving what is behind it cached.',
+        )
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            'Purge of block 1 failed', 'The block that ended the walk should be logged.')
+            'Purge of block 1 failed', 'The block that ended the walk should be logged.'
+        )
 
         self._fill('Cache block 0 of /denied', 'denied', [0])
         self._run('PURGE /denied, whose every block answers 403', 'denied-purge')
         self._run('Block 0 of /denied survived the refused purge', 'denied-check-0')
         self._survived('denied-check-0', 'deniedbytes=0-9', 'A purge refused at its first block must not remove anything.')
         self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-            'Purge of block 0 failed', 'A purge refused outright should be logged rather than reported as a 404.')
+            'Purge of block 0 failed', 'A purge refused outright should be logged rather than reported as a 404.'
+        )
 
     def run(self) -> None:
         """Configure the test runs."""

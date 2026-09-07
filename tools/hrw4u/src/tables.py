@@ -28,11 +28,16 @@ from hrw4u.common import HeaderOperations
 # HTTP_SECTIONS: All hooks where HTTP transaction data is available (excludes TXN_START/TXN_CLOSE)
 HTTP_SECTIONS: Final[frozenset[SectionType]] = frozenset(
     {
-        SectionType.PRE_REMAP, SectionType.REMAP, SectionType.READ_REQUEST, SectionType.SEND_REQUEST, SectionType.READ_RESPONSE,
-        SectionType.SEND_RESPONSE
-    })
+        SectionType.PRE_REMAP,
+        SectionType.REMAP,
+        SectionType.READ_REQUEST,
+        SectionType.SEND_REQUEST,
+        SectionType.READ_RESPONSE,
+        SectionType.SEND_RESPONSE,
+    }
+)
 
-# yapf: disable
+# fmt: off
 OPERATOR_MAP: dict[str, MapParams] = {
     "http.cntl.": MapParams(target="set-http-cntl", upper=True, validate=Validator.suffix_group(SuffixGroup.HTTP_CNTL_FIELDS), sections=HTTP_SECTIONS),
     "http.status.reason": MapParams(target="set-status-reason", validate=Validator.quoted_or_simple(), sections=HTTP_SECTIONS),
@@ -171,7 +176,7 @@ OPERATOR_COMMAND_MAP: dict[str, tuple[str, str, Callable, Callable]] = {
     "set-destination": ("destination_ops", "destination", lambda toks: toks[1].lower(), lambda qual: qual),
     "rm-destination": ("destination_ops", "destination", lambda toks: toks[1].lower(), lambda qual: qual)
 }
-# yapf: enable
+# fmt: on
 
 REVERSE_RESOLUTION_MAP = get_complete_reverse_resolution_map()
 
@@ -179,6 +184,7 @@ REVERSE_RESOLUTION_MAP = get_complete_reverse_resolution_map()
 @dataclass(slots=True, frozen=True)
 class PatternMatch:
     """Represents a matched pattern with context information."""
+
     pattern: str
     matched_part: str
     suffix: str
@@ -188,7 +194,6 @@ class PatternMatch:
 
 
 class LSPPatternMatcher:
-
     FIELD_PATTERNS: Final[dict[str, tuple[str, str, str]]] = {
         'now.': ('TIME_FIELDS', 'Current Date/Time Field', 'NOW'),
         'id.': ('ID_FIELDS', 'Transaction/Process Identifier', 'ID'),
@@ -198,7 +203,11 @@ class LSPPatternMatcher:
     HEADER_PATTERNS: Final[list[str]] = ['inbound.req.', 'inbound.resp.', 'outbound.req.', 'outbound.resp.']
     COOKIE_PATTERNS: Final[list[str]] = ['inbound.cookie.', 'outbound.cookie.']
     CERTIFICATE_PATTERNS: Final[tuple[str, ...]] = (
-        'inbound.conn.client-cert.', 'inbound.conn.server-cert.', 'outbound.conn.client-cert.', 'outbound.conn.server-cert.')
+        'inbound.conn.client-cert.',
+        'inbound.conn.server-cert.',
+        'outbound.conn.client-cert.',
+        'outbound.conn.server-cert.',
+    )
     CONNECTION_PATTERNS: Final[list[str]] = ['inbound.conn.', 'outbound.conn.']
 
     @classmethod
@@ -206,14 +215,15 @@ class LSPPatternMatcher:
         """Match field patterns (now., id., geo.) against expression."""
         for pattern, (field_dict, context, tag) in cls.FIELD_PATTERNS.items():
             if expression.startswith(pattern):
-                suffix = expression[len(pattern):]
+                suffix = expression[len(pattern) :]
                 return PatternMatch(
                     pattern=pattern,
                     matched_part=expression,
                     suffix=suffix,
                     context_type=context,
                     field_dict_key=field_dict,
-                    maps_to=f"%{{{tag}:{suffix.upper()}}}")
+                    maps_to=f"%{{{tag}:{suffix.upper()}}}",
+                )
         return None
 
     @classmethod
@@ -221,9 +231,10 @@ class LSPPatternMatcher:
         """Match header patterns against expression."""
         for pattern in cls.HEADER_PATTERNS:
             if expression.startswith(pattern):
-                suffix = expression[len(pattern):]
+                suffix = expression[len(pattern) :]
                 return PatternMatch(
-                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Header', field_dict_key=None)
+                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Header', field_dict_key=None
+                )
         return None
 
     @classmethod
@@ -231,9 +242,10 @@ class LSPPatternMatcher:
         """Match cookie patterns against expression."""
         for pattern in cls.COOKIE_PATTERNS:
             if expression.startswith(pattern):
-                suffix = expression[len(pattern):]
+                suffix = expression[len(pattern) :]
                 return PatternMatch(
-                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Cookie', field_dict_key=None)
+                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Cookie', field_dict_key=None
+                )
         return None
 
     @classmethod
@@ -241,9 +253,10 @@ class LSPPatternMatcher:
         """Match certificate patterns against expression."""
         for pattern in cls.CERTIFICATE_PATTERNS:
             if expression.startswith(pattern):
-                suffix = expression[len(pattern):]
+                suffix = expression[len(pattern) :]
                 return PatternMatch(
-                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Certificate', field_dict_key=None)
+                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Certificate', field_dict_key=None
+                )
         return None
 
     @classmethod
@@ -251,13 +264,10 @@ class LSPPatternMatcher:
         """Match connection patterns against expression."""
         for pattern in cls.CONNECTION_PATTERNS:
             if expression.startswith(pattern):
-                suffix = expression[len(pattern):]
+                suffix = expression[len(pattern) :]
                 return PatternMatch(
-                    pattern=pattern,
-                    matched_part=expression,
-                    suffix=suffix,
-                    context_type='Connection',
-                    field_dict_key='CONN_FIELDS')
+                    pattern=pattern, matched_part=expression, suffix=suffix, context_type='Connection', field_dict_key='CONN_FIELDS'
+                )
         return None
 
     @classmethod

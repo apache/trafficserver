@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -39,14 +38,14 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: http-test\r\n\r\n", "times
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
 # expected response from the origin server
 response_tunnel_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'hook_tunnel_plugin.so'), ts)
@@ -61,8 +60,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
-    })
+        'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port),
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -70,25 +70,32 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://http-test:{0}/ https://127.0.0.1:{1}/'.format(ts.Variables.ssl_port, server.Variables.SSL_Port))
+    'map https://http-test:{0}/ https://127.0.0.1:{1}/'.format(ts.Variables.ssl_port, server.Variables.SSL_Port)
+)
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: tunnel-test',
-    "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: tunnel-test',
+        "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
+    ]
+)
 ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
 cmd_http = '-k --http1.1 -H "Connection: close" -vs --resolve "http-test:{0}:127.0.0.1" https://http-test:{0}/'.format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
-    ts.Variables.ssl_port)
+    ts.Variables.ssl_port
+)
 cmd_connect = '-k --http1.1 -H "Connection: close" -vs --resolve "connect-proxy:{0}:127.0.0.1" -x http://connect-proxy:{0} --resolve "http-test:{1}:127.0.0.1"  https://http-test:{1}/'.format(
-    ts.Variables.port, ts.Variables.ssl_port)
+    ts.Variables.port, ts.Variables.ssl_port
+)
 
 # Send the http request
 tr = Test.AddTestRun("send http request")
@@ -141,7 +148,8 @@ def make_done_stat_ready(tsenv):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            env=tsenv)
+            env=tsenv,
+        )
         return b'1' in retval.stdout
 
     return done_stat_ready
@@ -156,7 +164,8 @@ tr.Processes.Default.Command = 'traffic_ctl metric get txn_type_verify.error'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    'txn_type_verify.error 0', 'incorrect statistic return, or possible error.')
+    'txn_type_verify.error 0', 'incorrect statistic return, or possible error.'
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 

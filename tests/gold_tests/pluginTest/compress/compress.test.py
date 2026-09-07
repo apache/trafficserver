@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,8 +24,11 @@ Test compress plugin
 # Skip if plugins not present.
 #
 Test.SkipUnless(
-    Condition.PluginExists('compress.so'), Condition.PluginExists('conf_remap.so'), Condition.HasATSFeature('TS_HAS_BROTLI'),
-    Condition.HasATSFeature('TS_HAS_ZSTD'))
+    Condition.PluginExists('compress.so'),
+    Condition.PluginExists('conf_remap.so'),
+    Condition.HasATSFeature('TS_HAS_BROTLI'),
+    Condition.HasATSFeature('TS_HAS_ZSTD'),
+)
 
 server = Test.MakeOriginServer("server", options={'--load': f'{Test.TestDirectory}/compress_observer.py'})
 
@@ -38,11 +40,14 @@ open(orig_path, 'w').write(body)
 
 # expected response from the origin server
 response_header = {
-    "headers":
-        "HTTP/1.1 200 OK\r\nConnection: close\r\n" + 'Etag: "359670651"\r\n' + "Cache-Control: public, max-age=31536000\r\n" +
-        "Accept-Ranges: bytes\r\n" + "Content-Type: text/javascript\r\n" + "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n"
+    + 'Etag: "359670651"\r\n'
+    + "Cache-Control: public, max-age=31536000\r\n"
+    + "Accept-Ranges: bytes\r\n"
+    + "Content-Type: text/javascript\r\n"
+    + "\r\n",
     "timestamp": "1469733493.993",
-    "body": body
+    "body": body,
 }
 for i in range(6):
     # add request/response to the server dictionary
@@ -51,10 +56,9 @@ for i in range(6):
 
 # post for the origin server
 post_request_header = {
-    "headers":
-        "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
+    "headers": "POST /obj3 HTTP/1.1\r\nHost: just.any.thing\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 11\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "knock knock"
+    "body": "knock knock",
 }
 server.addResponse("sessionfile.log", post_request_header, response_header)
 
@@ -64,7 +68,8 @@ def curl(ts, idx, encodingList, out_path):
         f"-o {out_path} --verbose --proxy http://127.0.0.1:{ts.Variables.port}"
         f" --header 'X-Ats-Compress-Test: {idx}/{encodingList}'"
         f" --header 'Accept-Encoding: {encodingList}' 'http://ae-{idx}/obj{idx}'"
-        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log")
+        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
+    )
 
 
 def curl_post(ts, idx, encodingList, out_path):
@@ -72,7 +77,8 @@ def curl_post(ts, idx, encodingList, out_path):
         f"-o {out_path} --verbose -d 'knock knock' --proxy http://127.0.0.1:{ts.Variables.port}"
         f" --header 'X-Ats-Compress-Test: {idx}/{encodingList}'"
         f" --header 'Accept-Encoding: {encodingList}' 'http://ae-{idx}/obj{idx}'"
-        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log")
+        " 2>> compress_long.log ; printf '\n===\n' >> compress_long.log"
+    )
 
 
 waitForServer = True
@@ -86,35 +92,42 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'compress',
         'proxy.config.http.normalize_ae': 0,
-    })
+    }
+)
 
 ts.Setup.Copy("compress.config")
 ts.Setup.Copy("compress2.config")
 ts.Setup.Copy("compress3.config")
 
 ts.Disk.remap_config.AddLine(
-    f'map http://ae-0/ http://127.0.0.1:{server.Variables.Port}/' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress.config')
+    f'map http://ae-0/ http://127.0.0.1:{server.Variables.Port}/'
+    + f' @plugin=compress.so @pparam={Test.RunDirectory}/compress.config'
+)
 ts.Disk.remap_config.AddLine(
-    f'map http://ae-1/ http://127.0.0.1:{server.Variables.Port}/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress.config')
+    f'map http://ae-1/ http://127.0.0.1:{server.Variables.Port}/'
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=1'
+    + f' @plugin=compress.so @pparam={Test.RunDirectory}/compress.config'
+)
 ts.Disk.remap_config.AddLine(
-    f'map http://ae-2/ http://127.0.0.1:{server.Variables.Port}/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress2.config')
+    f'map http://ae-2/ http://127.0.0.1:{server.Variables.Port}/'
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=2'
+    + f' @plugin=compress.so @pparam={Test.RunDirectory}/compress2.config'
+)
 ts.Disk.remap_config.AddLine(
-    f'map http://ae-3/ http://127.0.0.1:{server.Variables.Port}/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress2.config')
+    f'map http://ae-3/ http://127.0.0.1:{server.Variables.Port}/'
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=3'
+    + f' @plugin=compress.so @pparam={Test.RunDirectory}/compress2.config'
+)
 ts.Disk.remap_config.AddLine(
-    f'map http://ae-4/ http://127.0.0.1:{server.Variables.Port}/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress3.config')
+    f'map http://ae-4/ http://127.0.0.1:{server.Variables.Port}/'
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=4'
+    + f' @plugin=compress.so @pparam={Test.RunDirectory}/compress3.config'
+)
 ts.Disk.remap_config.AddLine(
-    f'map http://ae-5/ http://127.0.0.1:{server.Variables.Port}/' +
-    ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5' +
-    f' @plugin=compress.so @pparam={Test.RunDirectory}/compress3.config')
+    f'map http://ae-5/ http://127.0.0.1:{server.Variables.Port}/'
+    + ' @plugin=conf_remap.so @pparam=proxy.config.http.normalize_ae=5'
+    + f' @plugin=compress.so @pparam={Test.RunDirectory}/compress3.config'
+)
 
 out_path_counter = 0
 
@@ -134,12 +147,11 @@ def get_verify_command(out_path, decrompressor):
 
 
 for i in range(6):
-
     tr = Test.AddTestRun(f'gzip, deflate, sdch, br, zstd: {i}')
-    if (waitForTs):
+    if waitForTs:
         tr.Processes.Default.StartBefore(ts)
     waitForTs = False
-    if (waitForServer):
+    if waitForServer:
         tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Port))
     waitForServer = False
     tr.Processes.Default.ReturnCode = 0
@@ -290,7 +302,8 @@ tr.MakeCurlCommand(
     f" --header 'X-Ats-Compress-Test: vary-no-accept-encoding'"
     f" 'http://ae-0/obj0'"
     " 2>> compress_vary.log",
-    ts=ts)
+    ts=ts,
+)
 
 # Test Vary header: compressible content with unsupported Accept-Encoding should get Vary: Accept-Encoding
 tr = Test.AddTestRun('vary header test: unsupported accept-encoding')
@@ -301,8 +314,7 @@ tr.MakeCurlCommand(curl(ts, 0, "compress, identity", out_path).replace("compress
 # Verify Vary header is present in both cases
 tr = Test.AddTestRun('verify vary headers')
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Command = (
-    r"tr -d '\r' < compress_vary.log | grep -i 'vary:.*accept-encoding' | sort > compress_vary_short.log")
+tr.Processes.Default.Command = r"tr -d '\r' < compress_vary.log | grep -i 'vary:.*accept-encoding' | sort > compress_vary_short.log"
 f = tr.Disk.File("compress_vary_short.log")
 f.Content = "compress_vary.gold"
 
@@ -315,7 +327,9 @@ tr = Test.AddTestRun()
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Command = (
     r"tr -d '\r' < compress_long.log | sed 's/\(..*\)\([<>]\)/\1\n\2/' | {0}/greplog.sh > compress_short.log".format(
-        Test.TestDirectory))
+        Test.TestDirectory
+    )
+)
 f = tr.Disk.File("compress_short.log")
 f.Content = "compress.gold"
 

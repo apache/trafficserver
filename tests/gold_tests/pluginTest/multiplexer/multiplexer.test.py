@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -57,63 +56,82 @@ class MultiplexerTestBase:
 
         # The origin should never receive "X-Multiplexer: copy"
         self.server_origin.Streams.All += Testers.ExcludesExpression(
-            'X-Multiplexer: copy', 'Verify the original server target never receives a "copy".')
+            'X-Multiplexer: copy', 'Verify the original server target never receives a "copy".'
+        )
 
         # Nor should the multiplexed hosts receive an "original" X-Multiplexer value.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            'X-Multiplexer: original', 'Verify the HTTP multiplexed host does not receive an "original".')
+            'X-Multiplexer: original', 'Verify the HTTP multiplexed host does not receive an "original".'
+        )
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            'X-Multiplexer: original', 'Verify the HTTPS multiplexed host does not receive an "original".')
+            'X-Multiplexer: original', 'Verify the HTTPS multiplexed host does not receive an "original".'
+        )
         self.server_https.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
         # In addition, the original server should always receive the POST and
         # PUT requests.
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'uuid: POST', "Verify the client's original target received the POST transaction.")
+            'uuid: POST', "Verify the client's original target received the POST transaction."
+        )
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'uuid: PUT', "Verify the client's original target received the PUT transaction.")
+            'uuid: PUT', "Verify the client's original target received the PUT transaction."
+        )
         self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
         # The chunked POST should go to the origin.
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'uuid: CHUNKED_POST', "Verify the client's original target received the chunked POST transaction.")
+            'uuid: CHUNKED_POST', "Verify the client's original target received the chunked POST transaction."
+        )
 
         # Under all configurations, the GET request should be multiplexed.
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'X-Multiplexer: original', 'Verify the client\'s original target received the "original" request.')
+            'X-Multiplexer: original', 'Verify the client\'s original target received the "original" request.'
+        )
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'uuid: GET', "Verify the client's original target received the GET request.")
+            'uuid: GET', "Verify the client's original target received the GET request."
+        )
 
         self.server_http.Streams.All += Testers.ContainsExpression(
-            'X-Multiplexer: copy', 'Verify the HTTP server received a "copy" of the request.')
+            'X-Multiplexer: copy', 'Verify the HTTP server received a "copy" of the request.'
+        )
         self.server_http.Streams.All += Testers.ContainsExpression('uuid: GET', "Verify the HTTP server received the GET request.")
         self.server_http.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
         # Chunked POST requests are not supported for multiplexing.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
+            'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.'
+        )
 
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'X-Multiplexer: copy', 'Verify the HTTPS server received a "copy" of the request.')
+            'X-Multiplexer: copy', 'Verify the HTTPS server received a "copy" of the request.'
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'uuid: GET', "Verify the HTTPS server received the GET request.")
+            'uuid: GET', "Verify the HTTPS server received the GET request."
+        )
         # Chunked POST requests are not supported for multiplexing.
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.')
+            'uuid: CHUNKED_POST', 'We do not expect a multiplexed chunked POST.'
+        )
 
         # Verify that the CUSTOM_METHOD is sent to all servers.
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'uuid: MYCUSTOMMETHOD', "Verify the client's original target received the MYCUSTOMMETHOD transaction.")
+            'uuid: MYCUSTOMMETHOD', "Verify the client's original target received the MYCUSTOMMETHOD transaction."
+        )
         self.server_http.Streams.All += Testers.ContainsExpression(
-            'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the MYCUSTOMMETHOD request.")
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the MYCUSTOMMETHOD request."
+        )
         self.server_http.Streams.All += Testers.ContainsExpression(
-            'x-response: fifth', "Verify the HTTP server sent the MYCUSTOMMETHOD response.")
+            'x-response: fifth', "Verify the HTTP server sent the MYCUSTOMMETHOD response."
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the MYCUSTOMMETHOD request.")
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the MYCUSTOMMETHOD request."
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'x-response: fifth', "Verify the HTTPS server sent the MYCUSTOMMETHOD response.")
+            'x-response: fifth', "Verify the HTTPS server sent the MYCUSTOMMETHOD response."
+        )
 
         # Verify that the HTTPS server receives a TLS connection.
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server.")
+            'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server."
+        )
 
     def setupTS(self, skip_post):
         counter = MultiplexerTestBase.ts_counter
@@ -129,14 +147,16 @@ class MultiplexerTestBase:
                 'proxy.config.diags.debug.tags': 'http|multiplexer',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-            })
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         skip_remap_param = ''
         if skip_post:
             skip_remap_param = ' @pparam=proxy.config.multiplexer.skip_post_put=1'
@@ -145,12 +165,12 @@ ssl_multicert:
                 f'map https://origin.server.com https://backend.origin.server.com:{self.server_origin.Variables.https_port} '
                 f'@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com'
                 f'{skip_remap_param}',
-
                 # Now create remap entries for the multiplexed hosts: one that
                 # verifies HTTP, and another that verifies HTTPS.
                 f'map http://nontls.server.com http://backend.nontls.server.com:{self.server_http.Variables.http_port}',
                 f'map http://tls.server.com https://backend.tls.server.com:{self.server_https.Variables.https_port}',
-            ])
+            ]
+        )
 
     def run(self):
         tr = Test.AddTestRun()
@@ -183,26 +203,34 @@ class MultiplexerTest(MultiplexerTestBase):
         # Both of the multiplexed hosts should receive the POST because skip_post
         # is disabled.
         self.server_http.Streams.All += Testers.ContainsExpression(
-            'uuid: POST', "Verify the HTTP server received the POST request.")
+            'uuid: POST', "Verify the HTTP server received the POST request."
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'uuid: POST', "Verify the HTTPS server received the POST request.")
+            'uuid: POST', "Verify the HTTPS server received the POST request."
+        )
         self.server_http.Streams.All += Testers.ContainsExpression(
-            'x-response: second', "Verify the HTTP server sent the POST response.")
+            'x-response: second', "Verify the HTTP server sent the POST response."
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'x-response: second', "Verify the HTTPS server sent the POST response.")
+            'x-response: second', "Verify the HTTPS server sent the POST response."
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'x-response: fifth', "Verify the HTTPS server sent the custom method response.")
+            'x-response: fifth', "Verify the HTTPS server sent the custom method response."
+        )
 
         # Same with PUT
         self.server_http.Streams.All += Testers.ContainsExpression('uuid: PUT', "Verify the HTTP server received the PUT request.")
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'uuid: PUT', "Verify the HTTPS server received the PUT request.")
+            'uuid: PUT', "Verify the HTTPS server received the PUT request."
+        )
 
         # Same with MYCUSTOMMETHOD
         self.server_http.Streams.All += Testers.ContainsExpression(
-            'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the custom method request.")
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTP server received the custom method request."
+        )
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the custom method request.")
+            'uuid: MYCUSTOMMETHOD', "Verify the HTTPS server received the custom method request."
+        )
 
 
 class MultiplexerSkipPostTest(MultiplexerTestBase):
@@ -222,15 +250,19 @@ class MultiplexerSkipPostTest(MultiplexerTestBase):
         # Neither of the multiplexed hosts should receive the POST because skip_post
         # is enabled.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            'uuid: POST', "Verify the HTTP server did not receive the POST request.")
+            'uuid: POST', "Verify the HTTP server did not receive the POST request."
+        )
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            'uuid: POST', "Verify the HTTPS server did not receive the POST request.")
+            'uuid: POST', "Verify the HTTPS server did not receive the POST request."
+        )
 
         # Same with PUT.
         self.server_http.Streams.All += Testers.ExcludesExpression(
-            'uuid: PUT', "Verify the HTTP server did not receive the PUT request.")
+            'uuid: PUT', "Verify the HTTP server did not receive the PUT request."
+        )
         self.server_https.Streams.All += Testers.ExcludesExpression(
-            'uuid: PUT', "Verify the HTTPS server did not receive the PUT request.")
+            'uuid: PUT', "Verify the HTTPS server did not receive the PUT request."
+        )
 
 
 class MultiplexerInvalidChunkedResponseTest:
@@ -260,20 +292,25 @@ class MultiplexerInvalidChunkedResponseTest:
         self.server_https = Test.MakeVerifierServerProcess(f"server_https_{counter}", self.multiplexed_host_replay_file)
 
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'uuid: INVALID_CHUNK', "Verify the original server received the invalid chunk test request.")
+            'uuid: INVALID_CHUNK', "Verify the original server received the invalid chunk test request."
+        )
         self.server_origin.Streams.All += Testers.ContainsExpression(
-            'X-Multiplexer: original', 'Verify the original target received the "original" request.')
+            'X-Multiplexer: original', 'Verify the original target received the "original" request.'
+        )
         self.server_origin.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
         for server in [self.server_http, self.server_https]:
             server.Streams.All += Testers.ContainsExpression(
-                'uuid: INVALID_CHUNK', "Verify the multiplexed server received the invalid chunk test request.")
+                'uuid: INVALID_CHUNK', "Verify the multiplexed server received the invalid chunk test request."
+            )
             server.Streams.All += Testers.ContainsExpression(
-                'X-Multiplexer: copy', 'Verify the multiplexed server received a "copy" of the request.')
+                'X-Multiplexer: copy', 'Verify the multiplexed server received a "copy" of the request.'
+            )
             server.Streams.All += Testers.ExcludesExpression(r'\[ERROR\]', 'Verify there were no errors in the replay.')
 
         self.server_https.Streams.All += Testers.ContainsExpression(
-            'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server.")
+            'Finished accept using TLSSession', "Verify the HTTPS was indeed used by the HTTPS server."
+        )
 
     def setupTS(self):
         counter = MultiplexerTestBase.ts_counter
@@ -289,21 +326,24 @@ class MultiplexerInvalidChunkedResponseTest:
                 'proxy.config.diags.debug.tags': 'http|multiplexer',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self.dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-            })
+            }
+        )
         self.ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self.ts.Disk.remap_config.AddLines(
             [
                 f'map https://origin.server.com https://backend.origin.server.com:{self.server_origin.Variables.https_port} '
                 f'@plugin=multiplexer.so @pparam=nontls.server.com @pparam=tls.server.com',
                 f'map http://nontls.server.com http://backend.nontls.server.com:{self.server_http.Variables.http_port}',
                 f'map http://tls.server.com https://backend.tls.server.com:{self.server_https.Variables.https_port}',
-            ])
+            ]
+        )
 
     def run(self):
         tr = Test.AddTestRun("Multiplexed response with oversized chunk-size")

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -26,16 +25,12 @@ ts = Test.MakeATSProcess("ts", enable_cache=False)
 server = Test.MakeOriginServer("server")
 
 request_header = {
-    "headers": "GET /test HTTP/1.1\r\n"
-               "Host: whatever\r\n"
-               "\r\n",
+    "headers": "GET /test HTTP/1.1\r\nHost: whatever\r\n\r\n",
     "body": "",
     'timestamp': "1469733493.993",
 }
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
     "body": "body\n",
     'timestamp': "1469733493.993",
 }
@@ -49,7 +44,8 @@ ts.Disk.records_config.update(
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.http.cache.http': 1,
         'proxy.config.http.cache.required_headers': 0,
-    })
+    }
+)
 ts.Disk.remap_config.AddLine('map / http://localhost:{}/'.format(server.Variables.Port))
 
 ts.Disk.logging_yaml.AddLines(
@@ -61,7 +57,8 @@ logging:
   logs:
     - filename: field-test
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)

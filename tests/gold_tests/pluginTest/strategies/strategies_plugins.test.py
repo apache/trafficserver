@@ -1,5 +1,5 @@
-'''
-'''
+''' '''
+
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -93,7 +93,8 @@ ts.Disk.records_config.update(
         'proxy.config.http.parent_proxy.self_detect': 0,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': "next_hop|dns|http|parent|regex_remap|header_rewrite|tslua",
-    })
+    }
+)
 
 ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
     [
@@ -107,7 +108,8 @@ ts.Disk.MakeConfigFile("hdr_rw.config").AddLines(
         "set-next-hop-strategy null",
         'cond %{CLIENT-HEADER:Strategy} ="clear"',
         'set-next-hop-strategy ""',
-    ])
+    ]
+)
 ts.Disk.MakeConfigFile("regex_remap.config").AddLines(
     [
         "/nh0 http://origin/path @strategy=nh1",
@@ -117,7 +119,8 @@ ts.Disk.MakeConfigFile("regex_remap.config").AddLines(
         "/nemo http://origin/path @strategy=nemo",
         "# fallthrough",
         "/ http://origin/path",
-    ])
+    ]
+)
 ts.Disk.MakeConfigFile("strategies.lua").AddLines(
     [
         'function do_remap()',
@@ -136,11 +139,13 @@ ts.Disk.MakeConfigFile("strategies.lua").AddLines(
         ' ts.client_request.set_uri("path")',
         ' return 0',
         'end',
-    ])
+    ]
+)
 
 # parent.config
 ts.Disk.parent_config.AddLines(
-    [f'dest_domain=. parent="nh2:{origins[2].Variables.Port}" round_robin=false go_direct=false parent_is_proxy=false'])
+    [f'dest_domain=. parent="nh2:{origins[2].Variables.Port}" round_robin=false go_direct=false parent_is_proxy=false']
+)
 
 # build strategies.yaml file
 ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
@@ -159,7 +164,8 @@ for ind in range(len(origins)):
             f"      - scheme: http",
             f"        port: {org.Variables.Port}",
             f"      weight: 1.0",
-        ])
+        ]
+    )
 
 s.AddLine("strategies:")
 
@@ -176,7 +182,8 @@ for char in chars:
             f"    groups:",
             f"      - *g{char}",
             f"    scheme: http",
-        ])
+        ]
+    )
 
 ts.Disk.remap_config.AddLines(
     [
@@ -203,7 +210,8 @@ ts.Disk.remap_config.AddLines(
         "map http://nh0_lua http://origin @strategy=nh0 @plugin=tslua.so @pparam=strategies.lua",
         "map http://nh1_lua http://origin @strategy=nh1 @plugin=tslua.so @pparam=strategies.lua",
         "map http://nh2_lua http://origin @plugin=tslua.so @pparam=strategies.lua",
-    ])
+    ]
+)
 
 # Tests
 

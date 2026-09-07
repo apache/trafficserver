@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,8 +24,8 @@ Test interaction of H2 and chunked encoding
 Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 Test.SkipUnless(
-    Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"),
-    Condition.HasCurlFeature('http2'))
+    Condition.HasProgram("nghttp", "Nghttp need to be installed on system for this test to work"), Condition.HasCurlFeature('http2')
+)
 Test.ContinueOnFail = True
 
 Test.GetTcpPort("upstream_port")
@@ -41,11 +40,14 @@ ts.addDefaultSSLFiles()
 
 origin_server = os.path.join(Test.TestDirectory, "chunked_encoding_h2_server.py")
 delay_server = Test.Processes.Process(
-    "delay-server", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port} outserver1 delayed-chunked')
+    "delay-server", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port} outserver1 delayed-chunked'
+)
 server2 = Test.Processes.Process(
-    "server2", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port2} outserver2 content-length')
+    "server2", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port2} outserver2 content-length'
+)
 server3 = Test.Processes.Process(
-    "server3", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port3} outserver3 chunked')
+    "server3", f'{sys.executable} "{origin_server}" 127.0.0.1 {Test.Variables.upstream_port3} outserver3 chunked'
+)
 
 ts.Disk.records_config.update(
     {
@@ -54,7 +56,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map /delay-chunked-response http://127.0.0.1:{0}'.format(Test.Variables.upstream_port))
 ts.Disk.remap_config.AddLine('map /post-full http://127.0.0.1:{0}'.format(Test.Variables.upstream_port2))
@@ -66,7 +69,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Use a raw origin server in case 1 so the final chunk can be delayed. Use it
 # for cases 2 and 3 as well because microserver rejects chunked request headers.
@@ -93,8 +97,10 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server2, ready=When.PortOpen(Test.Variables.upstream_port2))
 tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-full --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("< content-length:", "Response should include content length")
@@ -109,8 +115,10 @@ tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server3, ready=When.PortOpen(Test.Variables.upstream_port3))
 tr.MakeCurlCommand(
     '--http2 -k https://127.0.0.1:{}/post-chunked --verbose -H "Transfer-encoding: chunked" -d "Knock knock"'.format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/2 200", "Request should succeed")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("< content-length:", "Response should not include content length")

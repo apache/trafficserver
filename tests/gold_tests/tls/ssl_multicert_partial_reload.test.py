@@ -38,7 +38,8 @@ ts_strict.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_strict.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         # partial_reload intentionally left at default (0)
-    })
+    }
+)
 
 ts_strict.addDefaultSSLFiles()
 ts_strict.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_strict.Variables.Port}')
@@ -49,7 +50,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_strict_1 = Test.AddTestRun("Strict: initial request succeeds")
 tr_strict_1.Processes.Default.StartBefore(Test.Processes.ts_strict)
@@ -58,7 +60,8 @@ tr_strict_1.StillRunningAfter = ts_strict
 tr_strict_1.MakeCurlCommand(
     f"-q -s -v -k --resolve '{sni_valid}:{ts_strict.Variables.ssl_port}:127.0.0.1' "
     f"https://{sni_valid}:{ts_strict.Variables.ssl_port}",
-    ts=ts_strict)
+    ts=ts_strict,
+)
 tr_strict_1.Processes.Default.ReturnCode = 0
 
 # Overwrite config with one bad entry (missing file) + keep the good default
@@ -73,7 +76,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 tr_strict_update.StillRunningAfter = ts_strict
 tr_strict_update.Processes.Default.Command = 'echo Updated strict config'
 tr_strict_update.Processes.Default.Env = ts_strict.Env
@@ -81,7 +85,8 @@ tr_strict_update.Processes.Default.ReturnCode = 0
 
 # Reload should fail - strict mode rejects the whole config
 tr_strict_reload = Test.AddConfigReload(
-    ts_strict, expect="fail", expect_tasks=["ssl_multicert.yaml"], description="Strict: reload expected to fail")
+    ts_strict, expect="fail", expect_tasks=["ssl_multicert.yaml"], description="Strict: reload expected to fail"
+)
 tr_strict_reload.StillRunningAfter = server_strict
 
 # Old cert still served because reload was rolled back
@@ -90,23 +95,26 @@ tr_strict_2.StillRunningAfter = ts_strict
 tr_strict_2.MakeCurlCommand(
     f"-q -s -v -k --resolve '{sni_valid}:{ts_strict.Variables.ssl_port}:127.0.0.1' "
     f"https://{sni_valid}:{ts_strict.Variables.ssl_port}",
-    ts=ts_strict)
+    ts=ts_strict,
+)
 tr_strict_2.Processes.Default.ReturnCode = 0
 tr_strict_2.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    "CN=example.com", "Old default cert should still be served")
+    "CN=example.com", "Old default cert should still be served"
+)
 
 # The counter must be incremented even in strict mode so operators can alert on failures
 # regardless of which reload policy is active.
 tr_strict_metric = Test.AddTestRun("Strict: ssl_multicert_load_failures counter incremented")
 tr_strict_metric.StillRunningAfter = ts_strict
 tr_strict_metric.Processes.Default.Command = (
-    f"{ts_strict.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_strict.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_strict_metric.Processes.Default.Env = ts_strict.Env
 tr_strict_metric.Processes.Default.ReturnCode = 0
 tr_strict_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
-    "Failure counter must be incremented even when strict mode rolls back the config")
+    "Failure counter must be incremented even when strict mode rolls back the config",
+)
 
 # ---------------------------------------------------------------------------
 # Scenario B - partial_reload=1: a bad cert is skipped, valid certs are
@@ -123,7 +131,8 @@ ts_partial.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_partial.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         'proxy.config.ssl.server.multicert.partial_reload': 1,
-    })
+    }
+)
 
 ts_partial.addDefaultSSLFiles()
 ts_partial.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_partial.Variables.Port}')
@@ -134,7 +143,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_partial_1 = Test.AddTestRun("Partial: initial request succeeds")
 tr_partial_1.Processes.Default.StartBefore(Test.Processes.ts_partial)
@@ -143,7 +153,8 @@ tr_partial_1.StillRunningAfter = ts_partial
 tr_partial_1.MakeCurlCommand(
     f"-q -s -v -k --resolve '{sni_valid}:{ts_partial.Variables.ssl_port}:127.0.0.1' "
     f"https://{sni_valid}:{ts_partial.Variables.ssl_port}",
-    ts=ts_partial)
+    ts=ts_partial,
+)
 tr_partial_1.Processes.Default.ReturnCode = 0
 
 # Inject a mix: one bad entry, one NEWLY-GENERATED good default (different CN)
@@ -160,7 +171,8 @@ gen_cmd = (
     f"openssl req -x509 -newkey rsa:2048 "
     f"-keyout {new_key} -out {new_cert} "
     f"-days 365 -nodes -subj '/CN=reloaded.example.com' "
-    f"2>/dev/null")
+    f"2>/dev/null"
+)
 
 tr_partial_update.Disk.File(partial_yaml_path, id="partial_yaml", typename="ats:config")
 tr_partial_update.Disk.partial_yaml.AddLines(
@@ -171,7 +183,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: newdefault.pem
     ssl_key_name: newdefault.key
-""".split("\n"))
+""".split("\n")
+)
 tr_partial_update.StillRunningAfter = ts_partial
 tr_partial_update.Processes.Default.Command = f"{gen_cmd} && echo Updated partial config"
 tr_partial_update.Processes.Default.Env = ts_partial.Env
@@ -182,7 +195,8 @@ tr_partial_reload = Test.AddConfigReload(
     ts_partial,
     expect="success",
     expect_tasks=["ssl_multicert.yaml"],
-    description="Partial: reload expected to succeed despite bad cert")
+    description="Partial: reload expected to succeed despite bad cert",
+)
 tr_partial_reload.StillRunningAfter = server_partial
 
 # Default cert is still reachable and the CN proves the NEW config was committed,
@@ -192,30 +206,33 @@ tr_partial_2.StillRunningAfter = ts_partial
 tr_partial_2.MakeCurlCommand(
     f"-q -s -v -k --resolve '{sni_valid}:{ts_partial.Variables.ssl_port}:127.0.0.1' "
     f"https://{sni_valid}:{ts_partial.Variables.ssl_port}",
-    ts=ts_partial)
+    ts=ts_partial,
+)
 tr_partial_2.Processes.Default.ReturnCode = 0
 tr_partial_2.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    "CN=reloaded.example.com", "New default cert (not old server.pem) must be served")
+    "CN=reloaded.example.com", "New default cert (not old server.pem) must be served"
+)
 
 # Match the specific loader error message so the assertion fails if the wrong
 # (or no) cert-load error was logged, not merely any unrelated ERROR entry.
 # The actual diags.log message comes from SSLError() in SSLUtils.cc:
 #   "failed to load certificate secret for <path>/does_not_exist.pem ..."
 ts_partial.Disk.diags_log.Content = Testers.IncludesExpression(
-    "failed to load certificate secret for.*does_not_exist\\.pem",
-    "bad cert should produce a specific cert-load error in diags.log")
+    "failed to load certificate secret for.*does_not_exist\\.pem", "bad cert should produce a specific cert-load error in diags.log"
+)
 
 # Verify the ssl_multicert_load_failures metric was incremented
 tr_metric = Test.AddTestRun("Partial: ssl_multicert_load_failures metric incremented")
 tr_metric.StillRunningAfter = ts_partial
 tr_metric.Processes.Default.Command = (
-    f"{ts_partial.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_partial.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_metric.Processes.Default.Env = ts_partial.Env
 tr_metric.Processes.Default.ReturnCode = 0
 tr_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
-    "Failure counter must be at least 1 after a partial reload with a bad cert")
+    "Failure counter must be at least 1 after a partial reload with a bad cert",
+)
 
 # ---------------------------------------------------------------------------
 # Scenario C - SNI-only deployment (no dest_ip: "*"): partial_reload=1 must
@@ -233,7 +250,8 @@ ts_sni_only.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_sni_only.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         'proxy.config.ssl.server.multicert.partial_reload': 1,
-    })
+    }
+)
 
 ts_sni_only.addDefaultSSLFiles()
 ts_sni_only.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_sni_only.Variables.Port}')
@@ -248,7 +266,8 @@ ts_sni_only.Disk.ssl_multicert_yaml.AddLines(
 ssl_multicert:
   - ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_sni_only_1 = Test.AddTestRun("SNI-only: initial request succeeds")
 tr_sni_only_1.Processes.Default.StartBefore(Test.Processes.ts_sni_only)
@@ -257,7 +276,8 @@ tr_sni_only_1.StillRunningAfter = ts_sni_only
 tr_sni_only_1.MakeCurlCommand(
     f"-q -s -v -k --resolve '{sni_valid}:{ts_sni_only.Variables.ssl_port}:127.0.0.1' "
     f"https://{sni_valid}:{ts_sni_only.Variables.ssl_port}",
-    ts=ts_sni_only)
+    ts=ts_sni_only,
+)
 tr_sni_only_1.Processes.Default.ReturnCode = 0
 
 # Update: inject bad cert + a newly-generated SNI cert with a distinct CN.
@@ -271,7 +291,8 @@ gen_sni_c_cmd = (
     f"openssl req -x509 -newkey rsa:2048 "
     f"-keyout {new_sni_c_key} -out {new_sni_c_cert} "
     f"-days 365 -nodes -subj '/CN={sni_c_new}' "
-    f"2>/dev/null")
+    f"2>/dev/null"
+)
 tr_sni_only_update.Disk.File(sni_yaml_path, id="sni_yaml", typename="ats:config")
 tr_sni_only_update.Disk.sni_yaml.AddLines(
     """
@@ -280,7 +301,8 @@ ssl_multicert:
     ssl_key_name: does_not_exist.key
   - ssl_cert_name: sni_c_new.pem
     ssl_key_name: sni_c_new.key
-""".split("\n"))
+""".split("\n")
+)
 tr_sni_only_update.StillRunningAfter = ts_sni_only
 tr_sni_only_update.Processes.Default.Command = f"{gen_sni_c_cmd} && echo Updated SNI-only config"
 tr_sni_only_update.Processes.Default.Env = ts_sni_only.Env
@@ -292,7 +314,8 @@ tr_sni_only_reload = Test.AddConfigReload(
     ts_sni_only,
     expect="success",
     expect_tasks=["ssl_multicert.yaml"],
-    description="SNI-only: partial reload succeeds even without dest_ip: '*' entry")
+    description="SNI-only: partial reload succeeds even without dest_ip: '*' entry",
+)
 tr_sni_only_reload.StillRunningAfter = server_sni_only
 
 # The new SNI cert must be served, and the distinct CN proves the NEW config
@@ -302,21 +325,24 @@ tr_sni_only_2.StillRunningAfter = ts_sni_only
 tr_sni_only_2.MakeCurlCommand(
     f"-q -s -v -k --resolve '{sni_c_new}:{ts_sni_only.Variables.ssl_port}:127.0.0.1' "
     f"https://{sni_c_new}:{ts_sni_only.Variables.ssl_port}",
-    ts=ts_sni_only)
+    ts=ts_sni_only,
+)
 tr_sni_only_2.Processes.Default.ReturnCode = 0
 tr_sni_only_2.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    f"CN={sni_c_new}", "New SNI cert (not old server.pem) must be served, proving commit happened")
+    f"CN={sni_c_new}", "New SNI cert (not old server.pem) must be served, proving commit happened"
+)
 
 tr_sni_only_metric = Test.AddTestRun("SNI-only: ssl_multicert_load_failures metric incremented")
 tr_sni_only_metric.StillRunningAfter = ts_sni_only
 tr_sni_only_metric.Processes.Default.Command = (
-    f"{ts_sni_only.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_sni_only.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_sni_only_metric.Processes.Default.Env = ts_sni_only.Env
 tr_sni_only_metric.Processes.Default.ReturnCode = 0
 tr_sni_only_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
-    "Failure counter must be incremented for the skipped cert in SNI-only mode")
+    "Failure counter must be incremented for the skipped cert in SNI-only mode",
+)
 
 # ---------------------------------------------------------------------------
 # Scenario D - dest_ip: "*" fails but SNI-specific cert succeeds: partial
@@ -334,7 +360,8 @@ ts_d.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_d.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         'proxy.config.ssl.server.multicert.partial_reload': 1,
-    })
+    }
+)
 
 ts_d.addDefaultSSLFiles()
 ts_d.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_d.Variables.Port}')
@@ -349,16 +376,17 @@ ssl_multicert:
     ssl_key_name: server.key
   - ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_d_1 = Test.AddTestRun("Default-fails: initial request succeeds")
 tr_d_1.Processes.Default.StartBefore(Test.Processes.ts_d)
 tr_d_1.Processes.Default.StartBefore(server_d)
 tr_d_1.StillRunningAfter = ts_d
 tr_d_1.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_valid}:{ts_d.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_valid}:{ts_d.Variables.ssl_port}",
-    ts=ts_d)
+    f"-q -s -v -k --resolve '{sni_valid}:{ts_d.Variables.ssl_port}:127.0.0.1' https://{sni_valid}:{ts_d.Variables.ssl_port}",
+    ts=ts_d,
+)
 tr_d_1.Processes.Default.ReturnCode = 0
 
 # Update: break the dest_ip: "*" entry, keep the SNI cert valid
@@ -371,7 +399,8 @@ gen_sni_cmd_d = (
     f"openssl req -x509 -newkey rsa:2048 "
     f"-keyout {new_sni_key_d} -out {new_sni_cert_d} "
     f"-days 365 -nodes -subj '/CN=sni-d.example.com' "
-    f"2>/dev/null")
+    f"2>/dev/null"
+)
 tr_d_update.Disk.File(d_yaml_path, id="d_yaml", typename="ats:config")
 tr_d_update.Disk.d_yaml.AddLines(
     """
@@ -381,7 +410,8 @@ ssl_multicert:
     ssl_key_name: does_not_exist.key
   - ssl_cert_name: sni_cert_d.pem
     ssl_key_name: sni_cert_d.key
-""".split("\n"))
+""".split("\n")
+)
 tr_d_update.StillRunningAfter = ts_d
 tr_d_update.Processes.Default.Command = f"{gen_sni_cmd_d} && echo Updated default-fails config"
 tr_d_update.Processes.Default.Env = ts_d.Env
@@ -392,19 +422,21 @@ tr_d_reload = Test.AddConfigReload(
     ts_d,
     expect="success",
     expect_tasks=["ssl_multicert.yaml"],
-    description="Default-fails: partial reload succeeds because SNI cert is healthy")
+    description="Default-fails: partial reload succeeds because SNI cert is healthy",
+)
 tr_d_reload.StillRunningAfter = server_d
 
 tr_d_metric = Test.AddTestRun("Default-fails: ssl_multicert_load_failures metric incremented")
 tr_d_metric.StillRunningAfter = ts_d
 tr_d_metric.Processes.Default.Command = (
-    f"{ts_d.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_d.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_d_metric.Processes.Default.Env = ts_d.Env
 tr_d_metric.Processes.Default.ReturnCode = 0
 tr_d_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
-    "Failure counter must be incremented when the wildcard default cert fails")
+    "Failure counter must be incremented when the wildcard default cert fails",
+)
 
 # Handshake to sni-d.example.com must present CN=sni-d.example.com, confirming
 # the SNI cert was actually committed and is being served after the partial reload.
@@ -413,10 +445,12 @@ tr_d_2.StillRunningAfter = ts_d
 tr_d_2.MakeCurlCommand(
     f"-q -s -v -k --resolve 'sni-d.example.com:{ts_d.Variables.ssl_port}:127.0.0.1' "
     f"https://sni-d.example.com:{ts_d.Variables.ssl_port}",
-    ts=ts_d)
+    ts=ts_d,
+)
 tr_d_2.Processes.Default.ReturnCode = 0
 tr_d_2.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    "CN=sni-d.example.com", "SNI cert must be served for the matching hostname after partial reload")
+    "CN=sni-d.example.com", "SNI cert must be served for the matching hostname after partial reload"
+)
 
 # ---------------------------------------------------------------------------
 # Scenario E - all certs fail with partial_reload=1: user_cert_count==0 so
@@ -437,7 +471,8 @@ ts_e.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_e.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         'proxy.config.ssl.server.multicert.partial_reload': 1,
-    })
+    }
+)
 
 ts_e.addDefaultSSLFiles()
 ts_e.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_e.Variables.Port}')
@@ -449,16 +484,17 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_e_1 = Test.AddTestRun("All-fail: initial request succeeds")
 tr_e_1.Processes.Default.StartBefore(Test.Processes.ts_e)
 tr_e_1.Processes.Default.StartBefore(server_e)
 tr_e_1.StillRunningAfter = ts_e
 tr_e_1.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_valid}:{ts_e.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_valid}:{ts_e.Variables.ssl_port}",
-    ts=ts_e)
+    f"-q -s -v -k --resolve '{sni_valid}:{ts_e.Variables.ssl_port}:127.0.0.1' https://{sni_valid}:{ts_e.Variables.ssl_port}",
+    ts=ts_e,
+)
 tr_e_1.Processes.Default.ReturnCode = 0
 
 # Replace config with ONLY non-existent certs, every entry will fail, user_cert_count==0.
@@ -472,7 +508,8 @@ ssl_multicert:
     ssl_key_name: does_not_exist_1.key
   - ssl_cert_name: does_not_exist_2.pem
     ssl_key_name: does_not_exist_2.key
-""".split("\n"))
+""".split("\n")
+)
 tr_e_update.StillRunningAfter = ts_e
 tr_e_update.Processes.Default.Command = 'echo Updated all-fail config'
 tr_e_update.Processes.Default.Env = ts_e.Env
@@ -484,31 +521,34 @@ tr_e_reload = Test.AddConfigReload(
     ts_e,
     expect="fail",
     expect_tasks=["ssl_multicert.yaml"],
-    description="All-fail: reload must fail even with partial_reload=1 when user_cert_count==0")
+    description="All-fail: reload must fail even with partial_reload=1 when user_cert_count==0",
+)
 tr_e_reload.StillRunningAfter = server_e
 
 # Old cert must still be served because the reload was rolled back.
 tr_e_2 = Test.AddTestRun("All-fail: old cert still served after all-fail reload")
 tr_e_2.StillRunningAfter = ts_e
 tr_e_2.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_valid}:{ts_e.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_valid}:{ts_e.Variables.ssl_port}",
-    ts=ts_e)
+    f"-q -s -v -k --resolve '{sni_valid}:{ts_e.Variables.ssl_port}:127.0.0.1' https://{sni_valid}:{ts_e.Variables.ssl_port}",
+    ts=ts_e,
+)
 tr_e_2.Processes.Default.ReturnCode = 0
 tr_e_2.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    "CN=example.com", "Old default cert must still be served when all new certs failed")
+    "CN=example.com", "Old default cert must still be served when all new certs failed"
+)
 
 # Counter must be incremented for each cert that failed, even though nothing was committed.
 tr_e_metric = Test.AddTestRun("All-fail: ssl_multicert_load_failures counter incremented")
 tr_e_metric.StillRunningAfter = ts_e
 tr_e_metric.Processes.Default.Command = (
-    f"{ts_e.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_e.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_e_metric.Processes.Default.Env = ts_e.Env
 tr_e_metric.Processes.Default.ReturnCode = 0
 tr_e_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
-    "Failure counter must be incremented for each cert that could not be loaded")
+    "Failure counter must be incremented for each cert that could not be loaded",
+)
 
 # ---------------------------------------------------------------------------
 # Scenario F - EC certificate (prime256v1): partial_reload=1 with a good EC cert
@@ -525,7 +565,8 @@ ts_f.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_f.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         'proxy.config.ssl.server.multicert.partial_reload': 1,
-    })
+    }
+)
 
 ts_f.addDefaultSSLFiles()
 ts_f.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_f.Variables.Port}')
@@ -540,16 +581,17 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_f_1 = Test.AddTestRun("EC: initial request succeeds")
 tr_f_1.Processes.Default.StartBefore(Test.Processes.ts_f)
 tr_f_1.Processes.Default.StartBefore(server_f)
 tr_f_1.StillRunningAfter = ts_f
 tr_f_1.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_valid}:{ts_f.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_valid}:{ts_f.Variables.ssl_port}",
-    ts=ts_f)
+    f"-q -s -v -k --resolve '{sni_valid}:{ts_f.Variables.ssl_port}:127.0.0.1' https://{sni_valid}:{ts_f.Variables.ssl_port}",
+    ts=ts_f,
+)
 tr_f_1.Processes.Default.ReturnCode = 0
 
 # Inject: one bad RSA entry + one good EC cert (prime256v1, CN=ec.example.com).
@@ -570,12 +612,11 @@ rsa_key_f = f"{ssl_dir_f}/rsagood.key"
 gen_ec_cmd = (
     f"openssl ecparam -name prime256v1 -genkey -noout -out {ec_key_f} 2>/dev/null && "
     f"openssl req -new -x509 -key {ec_key_f} -out {ec_cert_f} "
-    f"-days 365 -nodes -subj '/CN={sni_ec}' 2>/dev/null")
+    f"-days 365 -nodes -subj '/CN={sni_ec}' 2>/dev/null"
+)
 gen_rsa_f_cmd = (
-    f"openssl req -x509 -newkey rsa:2048 "
-    f"-keyout {rsa_key_f} -out {rsa_cert_f} "
-    f"-days 365 -nodes -subj '/CN={sni_rsa_f}' "
-    f"2>/dev/null")
+    f"openssl req -x509 -newkey rsa:2048 -keyout {rsa_key_f} -out {rsa_cert_f} -days 365 -nodes -subj '/CN={sni_rsa_f}' 2>/dev/null"
+)
 
 tr_f_update.Disk.File(f_yaml_path, id="f_yaml", typename="ats:config")
 tr_f_update.Disk.f_yaml.AddLines(
@@ -587,7 +628,8 @@ ssl_multicert:
     ssl_key_name: ecgood.key
   - ssl_cert_name: rsagood.pem
     ssl_key_name: rsagood.key
-""".split("\n"))
+""".split("\n")
+)
 tr_f_update.StillRunningAfter = ts_f
 tr_f_update.Processes.Default.Command = f"{gen_ec_cmd} && {gen_rsa_f_cmd} && echo Updated EC+RSA config"
 tr_f_update.Processes.Default.Env = ts_f.Env
@@ -599,40 +641,44 @@ tr_f_reload = Test.AddConfigReload(
     ts_f,
     expect="success",
     expect_tasks=["ssl_multicert.yaml"],
-    description="EC+RSA: partial reload succeeds with both EC and RSA certs committed")
+    description="EC+RSA: partial reload succeeds with both EC and RSA certs committed",
+)
 tr_f_reload.StillRunningAfter = server_f
 
 # EC handshake: CN=ec.example.com proves the EC cert was committed and served.
 tr_f_2 = Test.AddTestRun("EC+RSA: EC cert committed and served after partial reload")
 tr_f_2.StillRunningAfter = ts_f
 tr_f_2.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_ec}:{ts_f.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_ec}:{ts_f.Variables.ssl_port}", ts=ts_f)
+    f"-q -s -v -k --resolve '{sni_ec}:{ts_f.Variables.ssl_port}:127.0.0.1' https://{sni_ec}:{ts_f.Variables.ssl_port}", ts=ts_f
+)
 tr_f_2.Processes.Default.ReturnCode = 0
 tr_f_2.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    "CN=ec.example.com", "EC cert must be served after partial reload committed it")
+    "CN=ec.example.com", "EC cert must be served after partial reload committed it"
+)
 
 # RSA handshake: CN=rsa-f.example.com proves the RSA cert was committed alongside EC.
 # Verifies both EC and RSA certs were committed by the partial reload.
 tr_f_3 = Test.AddTestRun("EC+RSA: RSA cert also committed and served after partial reload")
 tr_f_3.StillRunningAfter = ts_f
 tr_f_3.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_rsa_f}:{ts_f.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_rsa_f}:{ts_f.Variables.ssl_port}",
-    ts=ts_f)
+    f"-q -s -v -k --resolve '{sni_rsa_f}:{ts_f.Variables.ssl_port}:127.0.0.1' https://{sni_rsa_f}:{ts_f.Variables.ssl_port}",
+    ts=ts_f,
+)
 tr_f_3.Processes.Default.ReturnCode = 0
 tr_f_3.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    f"CN={sni_rsa_f}", "RSA cert must also be served when committed alongside EC cert")
+    f"CN={sni_rsa_f}", "RSA cert must also be served when committed alongside EC cert"
+)
 
 tr_f_metric = Test.AddTestRun("EC+RSA: ssl_multicert_load_failures counter incremented")
 tr_f_metric.StillRunningAfter = ts_f
 tr_f_metric.Processes.Default.Command = (
-    f"{ts_f.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_f.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_f_metric.Processes.Default.Env = ts_f.Env
 tr_f_metric.Processes.Default.ReturnCode = 0
 tr_f_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
-    "proxy.process.ssl.ssl_multicert_load_failures [1-9]", "Failure counter must be incremented for the bad cert that was skipped")
+    "proxy.process.ssl.ssl_multicert_load_failures [1-9]", "Failure counter must be incremented for the bad cert that was skipped"
+)
 
 # ---------------------------------------------------------------------------
 # Scenario G - previously-good SNI host stops serving its cert after it fails
@@ -652,7 +698,8 @@ ts_g.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': f'{ts_g.Variables.SSLDir}',
         'proxy.config.ssl.server.multicert.exit_on_load_fail': 0,
         'proxy.config.ssl.server.multicert.partial_reload': 1,
-    })
+    }
+)
 
 ts_g.addDefaultSSLFiles()
 ts_g.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server_g.Variables.Port}')
@@ -667,11 +714,11 @@ beta_cert = f"{ssl_dir_g}/beta.pem"
 beta_key = f"{ssl_dir_g}/beta.key"
 
 gen_alpha_cmd = (
-    f"openssl req -x509 -newkey rsa:2048 -keyout {alpha_key} -out {alpha_cert} "
-    f"-days 365 -nodes -subj '/CN={sni_alpha}' 2>/dev/null")
+    f"openssl req -x509 -newkey rsa:2048 -keyout {alpha_key} -out {alpha_cert} -days 365 -nodes -subj '/CN={sni_alpha}' 2>/dev/null"
+)
 gen_beta_cmd = (
-    f"openssl req -x509 -newkey rsa:2048 -keyout {beta_key} -out {beta_cert} "
-    f"-days 365 -nodes -subj '/CN={sni_beta}' 2>/dev/null")
+    f"openssl req -x509 -newkey rsa:2048 -keyout {beta_key} -out {beta_cert} -days 365 -nodes -subj '/CN={sni_beta}' 2>/dev/null"
+)
 
 # Alpha and beta certs must exist before ATS starts so both are available at
 # startup. A dedicated setup step generates them ahead of ts_g.StartBefore.
@@ -679,7 +726,7 @@ gen_beta_cmd = (
 # at this point: ts_g has not been started and AuTest only creates the process
 # directory tree when the process first runs.
 tr_g_setup = Test.AddTestRun("G: generate alpha and beta certs before ATS starts")
-tr_g_setup.Processes.Default.Command = (f"mkdir -p {ssl_dir_g} && {gen_alpha_cmd} && {gen_beta_cmd} && echo G certs generated")
+tr_g_setup.Processes.Default.Command = f"mkdir -p {ssl_dir_g} && {gen_alpha_cmd} && {gen_beta_cmd} && echo G certs generated"
 tr_g_setup.Processes.Default.Env = ts_g.Env
 tr_g_setup.Processes.Default.ReturnCode = 0
 
@@ -697,25 +744,25 @@ ssl_multicert:
     ssl_key_name: alpha.key
   - ssl_cert_name: beta.pem
     ssl_key_name: beta.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr_g_1 = Test.AddTestRun("G: initial alpha request succeeds with CN=alpha.example.com")
 tr_g_1.Processes.Default.StartBefore(Test.Processes.ts_g)
 tr_g_1.Processes.Default.StartBefore(server_g)
 tr_g_1.StillRunningAfter = ts_g
 tr_g_1.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_alpha}:{ts_g.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_alpha}:{ts_g.Variables.ssl_port}",
-    ts=ts_g)
+    f"-q -s -v -k --resolve '{sni_alpha}:{ts_g.Variables.ssl_port}:127.0.0.1' https://{sni_alpha}:{ts_g.Variables.ssl_port}",
+    ts=ts_g,
+)
 tr_g_1.Processes.Default.ReturnCode = 0
 tr_g_1.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_alpha}", "alpha cert must be served before reload")
 
 tr_g_1b = Test.AddTestRun("G: initial beta request succeeds with CN=beta.example.com")
 tr_g_1b.StillRunningAfter = ts_g
 tr_g_1b.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_beta}:{ts_g.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_beta}:{ts_g.Variables.ssl_port}",
-    ts=ts_g)
+    f"-q -s -v -k --resolve '{sni_beta}:{ts_g.Variables.ssl_port}:127.0.0.1' https://{sni_beta}:{ts_g.Variables.ssl_port}", ts=ts_g
+)
 tr_g_1b.Processes.Default.ReturnCode = 0
 tr_g_1b.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_beta}", "beta cert must be served before reload")
 
@@ -724,8 +771,8 @@ tr_g_1b.Processes.Default.Streams.stderr = Testers.IncludesExpression(f"CN={sni_
 gamma_cert = f"{ssl_dir_g}/gamma.pem"
 gamma_key = f"{ssl_dir_g}/gamma.key"
 gen_gamma_cmd = (
-    f"openssl req -x509 -newkey rsa:2048 -keyout {gamma_key} -out {gamma_cert} "
-    f"-days 365 -nodes -subj '/CN={sni_gamma}' 2>/dev/null")
+    f"openssl req -x509 -newkey rsa:2048 -keyout {gamma_key} -out {gamma_cert} -days 365 -nodes -subj '/CN={sni_gamma}' 2>/dev/null"
+)
 
 tr_g_update = Test.AddTestRun("G: break alpha, keep beta, add gamma")
 g_yaml_path = ts_g.Disk.ssl_multicert_yaml.AbsPath
@@ -742,7 +789,8 @@ ssl_multicert:
     ssl_key_name: beta.key
   - ssl_cert_name: gamma.pem
     ssl_key_name: gamma.key
-""".split("\n"))
+""".split("\n")
+)
 tr_g_update.StillRunningAfter = ts_g
 tr_g_update.Processes.Default.Command = f"{gen_gamma_cmd} && echo G config updated"
 tr_g_update.Processes.Default.Env = ts_g.Env
@@ -753,7 +801,8 @@ tr_g_reload = Test.AddConfigReload(
     ts_g,
     expect="success",
     expect_tasks=["ssl_multicert.yaml"],
-    description="G: partial reload succeeds with server, beta, gamma committed")
+    description="G: partial reload succeeds with server, beta, gamma committed",
+)
 tr_g_reload.StillRunningAfter = server_g
 
 # alpha.example.com must no longer present CN=alpha.example.com: that cert was
@@ -763,45 +812,48 @@ tr_g_reload.StillRunningAfter = server_g
 tr_g_alpha = Test.AddTestRun("G: alpha SNI falls back to default context after its cert fails reload")
 tr_g_alpha.StillRunningAfter = ts_g
 tr_g_alpha.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_alpha}:{ts_g.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_alpha}:{ts_g.Variables.ssl_port}",
-    ts=ts_g)
+    f"-q -s -v -k --resolve '{sni_alpha}:{ts_g.Variables.ssl_port}:127.0.0.1' https://{sni_alpha}:{ts_g.Variables.ssl_port}",
+    ts=ts_g,
+)
 tr_g_alpha.Processes.Default.ReturnCode = 0
 tr_g_alpha.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-    f"CN={sni_alpha}", "alpha.example.com must no longer present the old alpha cert after it failed to reload")
+    f"CN={sni_alpha}", "alpha.example.com must no longer present the old alpha cert after it failed to reload"
+)
 
 # beta.example.com must still serve its cert unchanged.
 tr_g_beta = Test.AddTestRun("G: beta SNI still served with its cert after partial reload")
 tr_g_beta.StillRunningAfter = ts_g
 tr_g_beta.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_beta}:{ts_g.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_beta}:{ts_g.Variables.ssl_port}",
-    ts=ts_g)
+    f"-q -s -v -k --resolve '{sni_beta}:{ts_g.Variables.ssl_port}:127.0.0.1' https://{sni_beta}:{ts_g.Variables.ssl_port}", ts=ts_g
+)
 tr_g_beta.Processes.Default.ReturnCode = 0
 tr_g_beta.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    f"CN={sni_beta}", "beta cert must still be served after partial reload committed it")
+    f"CN={sni_beta}", "beta cert must still be served after partial reload committed it"
+)
 
 # gamma.example.com must now be served: newly committed cert.
 tr_g_gamma = Test.AddTestRun("G: gamma SNI newly served after partial reload")
 tr_g_gamma.StillRunningAfter = ts_g
 tr_g_gamma.MakeCurlCommand(
-    f"-q -s -v -k --resolve '{sni_gamma}:{ts_g.Variables.ssl_port}:127.0.0.1' "
-    f"https://{sni_gamma}:{ts_g.Variables.ssl_port}",
-    ts=ts_g)
+    f"-q -s -v -k --resolve '{sni_gamma}:{ts_g.Variables.ssl_port}:127.0.0.1' https://{sni_gamma}:{ts_g.Variables.ssl_port}",
+    ts=ts_g,
+)
 tr_g_gamma.Processes.Default.ReturnCode = 0
 tr_g_gamma.Processes.Default.Streams.stderr = Testers.IncludesExpression(
-    f"CN={sni_gamma}", "gamma cert must be served now that it was committed by partial reload")
+    f"CN={sni_gamma}", "gamma cert must be served now that it was committed by partial reload"
+)
 
 tr_g_metric = Test.AddTestRun("G: ssl_multicert_load_failures counter incremented")
 tr_g_metric.StillRunningAfter = ts_g
 tr_g_metric.Processes.Default.Command = (
-    f"{ts_g.Variables.BINDIR}/traffic_ctl metric get"
-    f" proxy.process.ssl.ssl_multicert_load_failures")
+    f"{ts_g.Variables.BINDIR}/traffic_ctl metric get proxy.process.ssl.ssl_multicert_load_failures"
+)
 tr_g_metric.Processes.Default.Env = ts_g.Env
 tr_g_metric.Processes.Default.ReturnCode = 0
 tr_g_metric.Processes.Default.Streams.stdout = Testers.IncludesExpression(
     "proxy.process.ssl.ssl_multicert_load_failures [1-9]",
-    "Failure counter must be incremented for the alpha cert that failed to reload")
+    "Failure counter must be incremented for the alpha cert that failed to reload",
+)
 
 # ---------------------------------------------------------------------------
 # Scenarios H and I: startup with partial_reload=1
@@ -853,14 +905,16 @@ ssl_multicert:
     ssl_key_name: server.key
   - ssl_cert_name: does_not_exist.pem
     ssl_key_name: does_not_exist.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
                 'proxy.config.ssl.server.multicert.exit_on_load_fail': 1 if self.enable_exit_on_load else 0,
                 'proxy.config.ssl.server.multicert.partial_reload': 1,
-            })
+            }
+        )
         RANDOM_PORT = 12345
         ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{RANDOM_PORT}/')
 
@@ -875,7 +929,8 @@ ssl_multicert:
 
         # Override the default exclusion of error log; we expect cert errors.
         self._ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            "ERROR:", "A cert load failure must be logged as ERROR in diags.log")
+            "ERROR:", "A cert load failure must be logged as ERROR in diags.log"
+        )
 
         if self.enable_exit_on_load:
             # Scenario I: exit_on_load_fail=1 + partial_reload=1.
@@ -883,22 +938,27 @@ ssl_multicert:
             # false and raises Emergency.
             self._ts.ReturnCode = 33
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "EMERGENCY: ", "startup() must raise Emergency when retStatus is false")
+                "EMERGENCY: ", "startup() must raise Emergency when retStatus is false"
+            )
             self._ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-                "Traffic Server is fully initialized", "ATS must exit before reaching fully initialized with exit_on_load_fail=1")
+                "Traffic Server is fully initialized", "ATS must exit before reaching fully initialized with exit_on_load_fail=1"
+            )
         else:
             # Scenario H: exit_on_load_fail=0 + partial_reload=1.
             # retStatus stays false (initialLoad guard), but exit_on_load_fail=0
             # means startup() does not raise Emergency. ATS starts normally.
             self._ts.ReturnCode = 0
             self._ts.Disk.diags_log.Content += Testers.ContainsExpression(
-                "Traffic Server is fully initialized", "ATS must start normally when exit_on_load_fail=0 even with a bad cert")
+                "Traffic Server is fully initialized", "ATS must start normally when exit_on_load_fail=0 even with a bad cert"
+            )
 
 
 # Scenario H: partial_reload=1, exit_on_load_fail=0 - ATS starts normally.
 Test_startup_partial_reload(
-    "Startup H: partial_reload=1 + exit_on_load_fail=0 - ATS starts normally", enable_exit_on_load=False).run()
+    "Startup H: partial_reload=1 + exit_on_load_fail=0 - ATS starts normally", enable_exit_on_load=False
+).run()
 
 # Scenario I: partial_reload=1, exit_on_load_fail=1 - ATS raises Emergency.
 Test_startup_partial_reload(
-    "Startup I: partial_reload=1 + exit_on_load_fail=1 - ATS raises Emergency", enable_exit_on_load=True).run()
+    "Startup I: partial_reload=1 + exit_on_load_fail=1 - ATS raises Emergency", enable_exit_on_load=True
+).run()

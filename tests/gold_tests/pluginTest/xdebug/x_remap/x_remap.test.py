@@ -34,7 +34,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 0,
         # 'proxy.config.diags.debug.tags': 'http|xdebug'
         # 'proxy.config.diags.debug.tags': 'xdebug'
-    })
+    }
+)
 
 ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-remap,probe')
 
@@ -54,7 +55,8 @@ def sendMsg(msgFile):
     tr = Test.AddTestRun()
     tr.Processes.Default.Command = (
         f"( {sys.executable} {Test.RunDirectory}/tcp_client.py 127.0.0.1 {ts.Variables.port} {Test.TestDirectory}/{msgFile}.in"
-        f" ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  {Test.RunDirectory}/out.log 2>&1 ")
+        f" ; echo '======' ) | sed 's/:{server.Variables.Port}/:SERVER_PORT/' >>  {Test.RunDirectory}/out.log 2>&1 "
+    )
     tr.Processes.Default.ReturnCode = 0
 
 

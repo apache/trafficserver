@@ -38,7 +38,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+    )
 
 
 class TestHttp3GoClient:
@@ -56,7 +57,8 @@ class TestHttp3GoClient:
     def _configure_server(self):
         """Configure the Proxy Verifier origin server."""
         self._server = Test.MakeVerifierServerProcess(
-            "server-go-h3-client", self.replay_file, verbose=False, other_args="--poll-timeout 30000")
+            "server-go-h3-client", self.replay_file, verbose=False, other_args="--poll-timeout 30000"
+        )
 
     def _configure_traffic_server(self):
         """Configure Traffic Server."""
@@ -73,7 +75,8 @@ class TestHttp3GoClient:
                 'proxy.config.quic.server.stateless_retry_enabled': 0,
                 'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
         ts.Disk.logging_yaml.AddLines(
             '''
@@ -85,15 +88,18 @@ logging:
   logs:
     - filename: h3_go_access
       format: h3_go_access
-'''.split("\n"))
+'''.split("\n")
+        )
 
         self._access_log = Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'h3_go_access.log'), exists=True)
         self._access_log.Content = Testers.ContainsExpression(
             r'c_alpn=h3 client_version=http/3 c_method=GET c_url=https://go\.example\.com:[0-9]+/go-get-empty',
-            "ATS should log the quic-go request as HTTP/3")
+            "ATS should log the quic-go request as HTTP/3",
+        )
         self._access_log.Content += Testers.ContainsExpression(
             r'c_alpn=h3 client_version=http/3 c_method=POST c_url=https://go\.example\.com:[0-9]+/go-post-large',
-            "ATS should log the quic-go large POST as HTTP/3")
+            "ATS should log the quic-go large POST as HTTP/3",
+        )
 
         self._ts = ts
 
@@ -111,17 +117,21 @@ logging:
             f'cd "{os.path.join(tr.RunDirectory, "go_h3_client")}" && '
             f'go run . --addr 127.0.0.1:{self._ts.Variables.ssl_port} '
             f'--authority go.example.com:{self._ts.Variables.ssl_port} '
-            '--server-name go.example.com')
+            '--server-name go.example.com'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            "completed 13 HTTP/3 requests", "The quic-go client should complete all HTTP/3 requests.")
+            "completed 13 HTTP/3 requests", "The quic-go client should complete all HTTP/3 requests."
+        )
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts
 
         tr = Test.AddTestRun("Wait for quic-go HTTP/3 access log")
         tr.Processes.Default.Command = (
-            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' +
-            os.path.join(self._ts.Variables.LOGDIR, 'h3_go_access.log'))
+            os.path.join(Test.Variables.AtsTestToolsDir, 'condwait')
+            + ' 60 1 -f '
+            + os.path.join(self._ts.Variables.LOGDIR, 'h3_go_access.log')
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter = self._ts

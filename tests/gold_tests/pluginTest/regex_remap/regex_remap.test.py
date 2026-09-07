@@ -28,7 +28,9 @@ Test regex_remap
 # remap.config compiles a new shared generation instead of reusing the live one.
 # No rule here uses a $n / $h substitution, so that path is not covered.
 
-Test.SkipUnless(Condition.PluginExists('regex_remap.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('regex_remap.so'),
+)
 Test.ContinueOnFail = False
 
 # configure origin server
@@ -59,21 +61,24 @@ regex_remap_lines = [
 
 ts.Disk.File(regex_remap_conf_path, typename="ats:config").AddLines(regex_remap_lines)
 
-ts.Disk.File(
-    regex_remap2_conf_path, typename="ats:config").AddLines(
-        [
-            "# 2nd regex_remap configuration\n"
-            "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " + f"http://localhost:{server.Variables.Port}\n"
-        ])
+ts.Disk.File(regex_remap2_conf_path, typename="ats:config").AddLines(
+    [
+        "# 2nd regex_remap configuration\n"
+        "^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$ " + f"http://localhost:{server.Variables.Port}\n"
+    ]
+)
 
 ts.Disk.remap_config.AddLine(
-    "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port))
+    "map http://example.one/ http://localhost:{}/ @plugin=regex_remap.so @pparam=regex_remap.conf\n".format(server.Variables.Port)
+)
 ts.Disk.remap_config.AddLine(
-    "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port) +
-    "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n")
+    "map http://example.two/ http://localhost:{}/ ".format(server.Variables.Port)
+    + "@plugin=regex_remap.so @pparam=regex_remap.conf @pparam=pristine\n"
+)
 ts.Disk.remap_config.AddLine(
-    "map http://example.three/ http://wrong.com/ ".format(server.Variables.Port) +
-    "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n")
+    "map http://example.three/ http://wrong.com/ ".format(server.Variables.Port)
+    + "@plugin=regex_remap.so @pparam=regex_remap2.conf @pparam=pristine\n"
+)
 
 # The cache assertions below depend on regex_remap remaining in the debug tags.
 ts.Disk.records_config.update(
@@ -81,8 +86,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|regex_remap',
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 
 # 0 Test - Load cache (miss) (path1)
 tr = Test.AddTestRun("smoke test")
@@ -98,9 +104,11 @@ tr.StillRunningAfter = ts
 # 1 Test - Match and redirect
 tr = Test.AddTestRun("pristine test")
 tr.MakeCurlCommand(
-    curl_and_args + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
-    f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'",
-    ts=ts)
+    curl_and_args
+    + "'http://example.two/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'"
+    + f" | grep -e '^HTTP/' -e '^Location' | sed 's/{server.Variables.Port}/SERVER_PORT/'",
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
 tr.StillRunningAfter = ts
@@ -108,10 +116,12 @@ tr.StillRunningAfter = ts
 # 2 Test - Match and remap
 tr = Test.AddTestRun("2nd pristine test")
 tr.MakeCurlCommand(
-    curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) +
-    " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'" +
-    " | grep -e '^HTTP/' -e '^Content-Length'",
-    ts=ts)
+    curl_and_args
+    + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1])
+    + " 'http://example.three/alpha/bravo/?action=newsfed;param0001=00003E;param0002=00004E;param0003=00005E'"
+    + " | grep -e '^HTTP/' -e '^Content-Length'",
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
@@ -119,23 +129,27 @@ tr.StillRunningAfter = ts
 # 3 Test - Match limit test 0
 tr = Test.AddTestRun("match limit 0")
 creq = replay_txns[1]['client-request']
-tr.MakeCurlCommand(curl_and_args + \
-    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
+tr.MakeCurlCommand(
+    curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
+    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded"
+)
 tr.StillRunningAfter = ts
 
 # 4 Test - Match limit test 1
 tr = Test.AddTestRun("match limit 1")
 creq = replay_txns[2]['client-request']
-tr.MakeCurlCommand(curl_and_args + \
-    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
+tr.MakeCurlCommand(
+    curl_and_args + '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
+    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded"
+)
 tr.StillRunningAfter = ts
 
 
@@ -187,7 +201,8 @@ class TestRegexRemapRuleCache:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 302", "New rule returns a redirect")
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "Location: https://updated.example/", "New rule generation is active")
+            "Location: https://updated.example/", "New rule generation is active"
+        )
         tr.StillRunningAfter = self._ts
         return tr
 
@@ -198,7 +213,8 @@ class TestRegexRemapRuleCache:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 302", "Sharing mapping returns a redirect")
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "Location: https://updated.example/", "Sharing mapping is on the new generation")
+            "Location: https://updated.example/", "Sharing mapping is on the new generation"
+        )
         tr.StillRunningAfter = self._ts
         return tr
 
@@ -206,18 +222,21 @@ class TestRegexRemapRuleCache:
         '''Verify a different rule file does not reuse the changed generation.'''
         tr = Test.AddTestRun("different rule file remains isolated")
         tr.MakeCurlCommand(
-            self._curl_args + "'http://example.three/cache-generation' | grep -e '^HTTP/' -e '^Location'", ts=self._ts)
+            self._curl_args + "'http://example.three/cache-generation' | grep -e '^HTTP/' -e '^Location'", ts=self._ts
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ExcludesExpression("HTTP/1.1 302", "Different file does not redirect")
         tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-            "Location: https://updated.example/", "Different file does not use the changed generation")
+            "Location: https://updated.example/", "Different file does not use the changed generation"
+        )
         tr.StillRunningAfter = self._ts
         return tr
 
     def _add_cache_verification_run(self) -> 'TestRun':
         '''Verify each distinct generation is compiled only once.'''
         await_tr = Test.AddAwaitFileContainsTestRun(
-            "await rule cache debug output", self._ts.Disk.traffic_out.Name, "Reusing cached regular expressions from", 3)
+            "await rule cache debug output", self._ts.Disk.traffic_out.Name, "Reusing cached regular expressions from", 3
+        )
         await_tr.StillRunningAfter = self._ts
 
         # Compiles: regex_remap.conf gen1, regex_remap2.conf gen1, and
@@ -240,7 +259,8 @@ class TestRegexRemapRuleCache:
             "reused_primary=$$reused_primary reused_secondary=$$reused_secondary; "
             "test $$cached -eq 3 -a $$reused -eq 3 -a $$compiled -eq 6 -a "
             "$$cached_primary -eq 2 -a $$cached_secondary -eq 1 -a "
-            "$$reused_primary -eq 2 -a $$reused_secondary -eq 1")
+            "$$reused_primary -eq 2 -a $$reused_secondary -eq 1"
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self._ts
         return tr

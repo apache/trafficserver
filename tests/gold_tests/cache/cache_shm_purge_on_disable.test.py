@@ -56,7 +56,6 @@ Test.ContinueOnFail = True
 
 
 class CacheShmPurgeOnDisableTest:
-
     TS_PID_SCRIPT = 'ts_process_handler.py'
     DISK_SIZE_BYTES = 256 * 1024 * 1024  # 256 MiB; matches the other shm gold tests.
 
@@ -100,7 +99,8 @@ class CacheShmPurgeOnDisableTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.remap_config.AddLine('map / http://127.0.0.1:8080/')  # never exercised; keeps remap.config non-empty
         ts.Disk.records_config.update(
             {
@@ -112,7 +112,8 @@ class CacheShmPurgeOnDisableTest:
                 'proxy.config.diags.debug.tags': 'cache_shm',
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         return ts
 
     def _ensure_disk(self, disk_name):
@@ -129,23 +130,29 @@ class CacheShmPurgeOnDisableTest:
         # that is the "fast-attachable but now stale" state the purge must clean up.
         for seed in (self.seed_purge, self.seed_keep):
             seed.Disk.diags_log.Content += Testers.ContainsExpression(
-                r'cache shm: creating fresh control segment', 'seed should create a fresh shm control segment')
+                r'cache shm: creating fresh control segment', 'seed should create a fresh shm control segment'
+            )
             seed.Disk.diags_log.Content += Testers.ContainsExpression(
-                r'cache shm: marking clean shutdown', 'seed should mark the shm clean before exit')
+                r'cache shm: marking clean shutdown', 'seed should mark the shm clean before exit'
+            )
 
         # Positive: the disabled+purge instance logs the purge of at least one segment.
         self.run_purge.Disk.diags_log.Content += Testers.ContainsExpression(
-            self.PURGE_NOTE, 'disabled instance with purge_stale_on_start=1 should purge the leftover segments')
+            self.PURGE_NOTE, 'disabled instance with purge_stale_on_start=1 should purge the leftover segments'
+        )
 
         # Negative: purge_stale_on_start=0 must never purge.
         self.run_keep.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: purged stale segments', 'purge_stale_on_start=0 must not purge')
+            r'cache shm: purged stale segments', 'purge_stale_on_start=0 must not purge'
+        )
 
         # No-op: nothing exists for this prefix, so neither a purge nor an error.
         self.run_noop.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: purged stale segments', 'no leftover means nothing is purged')
+            r'cache shm: purged stale segments', 'no leftover means nothing is purged'
+        )
         self.run_noop.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: cannot open control segment', 'a missing control segment is a quiet no-op, not a warning')
+            r'cache shm: cannot open control segment', 'a missing control segment is a quiet no-op, not a warning'
+        )
 
     def _shm_status(self, description, ts, prefix, expect_present):
         """Run `traffic_ctl cache shm status` and assert the control segment is (not) there."""
@@ -156,11 +163,13 @@ class CacheShmPurgeOnDisableTest:
         if expect_present:
             tr.Processes.Default.ReturnCode = 0
             tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-                r'Control segment:\s+' + re.escape(control_name), 'control segment should be present')
+                r'Control segment:\s+' + re.escape(control_name), 'control segment should be present'
+            )
         else:
             tr.Processes.Default.ReturnCode = self.CTRL_EX_ERROR
             tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-                r"control segment '" + re.escape(control_name) + r"' not found", 'control segment should be gone')
+                r"control segment '" + re.escape(control_name) + r"' not found", 'control segment should be gone'
+            )
         return tr
 
     def _start_seed(self, description, seed, prefix):
@@ -175,8 +184,8 @@ class CacheShmPurgeOnDisableTest:
         tr = Test.AddTestRun(description)
         tr.Processes.Default.Env = seed.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} {name} --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def _start_disabled(self, description, ts, prefix, expect_present):
@@ -193,7 +202,8 @@ class CacheShmPurgeOnDisableTest:
         tr.Processes.Default.Command = (
             f'traffic_ctl cache shm clear --prefix {self._prefix_purge} ; '
             f'traffic_ctl cache shm clear --prefix {self._prefix_keep} ; '
-            f'traffic_ctl cache shm clear --prefix {self._prefix_noop}')
+            f'traffic_ctl cache shm clear --prefix {self._prefix_noop}'
+        )
         tr.Processes.Default.ReturnCode = 0
 
     def run(self):
@@ -203,20 +213,20 @@ class CacheShmPurgeOnDisableTest:
         # Probe with a Env whose bin/ autest has already populated (seed_purge was
         # started above); run_purge has not started yet, so its bin/ does not exist.
         self._shm_status(
-            'PURGE: precondition -- clean leftover segment is present', self.seed_purge, self._prefix_purge,
-            expect_present=True).Processes.Default.Streams.stdout += Testers.ContainsExpression(
-                r'clean_shutdown:\s+1 \(clean\)', 'leftover segment should be marked clean (the stale-but-attachable case)')
+            'PURGE: precondition -- clean leftover segment is present', self.seed_purge, self._prefix_purge, expect_present=True
+        ).Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            r'clean_shutdown:\s+1 \(clean\)', 'leftover segment should be marked clean (the stale-but-attachable case)'
+        )
         self._start_disabled(
-            'PURGE: start disabled+purge=1; leftover segments are removed',
-            self.run_purge,
-            self._prefix_purge,
-            expect_present=False)
+            'PURGE: start disabled+purge=1; leftover segments are removed', self.run_purge, self._prefix_purge, expect_present=False
+        )
 
         # KEEP (negative)
         self._start_seed('KEEP: start shm-enabled seed; control segment is created', self.seed_keep, self._prefix_keep)
         self._clean_shutdown('KEEP: clean-shutdown seed (leaves a clean segment)', self.seed_keep, 'cshm_seed_k')
         self._start_disabled(
-            'KEEP: start disabled+purge=0; leftover segments remain', self.run_keep, self._prefix_keep, expect_present=True)
+            'KEEP: start disabled+purge=0; leftover segments remain', self.run_keep, self._prefix_keep, expect_present=True
+        )
 
         # NOOP (no leftover)
         tr = Test.AddTestRun('NOOP: start disabled+purge=1 against an unused prefix; nothing to do')

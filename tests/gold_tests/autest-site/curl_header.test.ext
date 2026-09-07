@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -24,7 +23,6 @@ import re
 
 
 class CurlHeader(Tester):
-
     def __init__(self, value, test_value=None, kill_on_failure=False, description_group=None, description=None):
 
         self._stack = host.getCurrentStack(1)
@@ -38,14 +36,16 @@ class CurlHeader(Tester):
         headers = tuple(gold_dict.keys())
         if description is None:
             description = 'Checking that all {} headers exist and have matching values: {}'.format(
-                len(headers), ', '.join(headers) if len(headers) <= 10 else ', '.join(headers[0:10]) + ', etc.')
+                len(headers), ', '.join(headers) if len(headers) <= 10 else ', '.join(headers[0:10]) + ', etc.'
+            )
 
         # sanity check for input dictionary format
         for header, target in gold_dict.items():
             if not isinstance(header, str):
                 host.WriteError(
                     'CurlHeader Input: Unsupported type for header {}. Header needs to be a string.'.format(header),
-                    stack=self._stack)
+                    stack=self._stack,
+                )
 
             if target is None or isinstance(target, str):
                 continue
@@ -53,35 +53,44 @@ class CurlHeader(Tester):
                 for op, pos_val in target.items():
                     if op not in ops:
                         host.WriteError(
-                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'
-                            .format(op, header, ', '.join(ops)),
-                            stack=self._stack)
+                            'CurlHeader Input: Unsupported operation \'{}\' for value at header \'{}\'. The available operations are: {}.'.format(
+                                op, header, ', '.join(ops)
+                            ),
+                            stack=self._stack,
+                        )
                     elif pos_val is None or isinstance(pos_val, str):
                         continue
                     elif isinstance(pos_val, list):
                         for str_ in pos_val:
                             if not isinstance(str_, str) and str_ is not None:
                                 host.WriteError(
-                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'
-                                    .format(str_, str_.__class__.__name__, header),
-                                    stack=self._stack)
+                                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string or None.'.format(
+                                        str_, str_.__class__.__name__, header
+                                    ),
+                                    stack=self._stack,
+                                )
                     else:
                         host.WriteError(
-                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'
-                            .format(pos_val, pos_val.__class__.__name__, header),
-                            stack=self._stack)
+                            'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide a string, a list or None for possible curl values.'.format(
+                                pos_val, pos_val.__class__.__name__, header
+                            ),
+                            stack=self._stack,
+                        )
             else:
                 host.WriteError(
-                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'
-                    .format(target, target.__class__.__name__, header),
-                    stack=self._stack)
+                    'CurlHeader Input: Value {} has unsupported type \'{}\' for header \'{}\'. Need to provide either a string, a dictionary or None.'.format(
+                        target, target.__class__.__name__, header
+                    ),
+                    stack=self._stack,
+                )
 
         super(CurlHeader, self).__init__(
             value=value,
             test_value=test_value,
             kill_on_failure=kill_on_failure,
             description_group=description_group,
-            description=description)
+            description=description,
+        )
 
     def test(self, eventinfo, **kw):
         # Get curl output file to test against
@@ -142,7 +151,8 @@ class CurlHeader(Tester):
             if self.KillOnFailure:
                 raise KillOnFailureError
         host.WriteVerbose(
-            ["testers.CurlHeader", "testers"], "{0} - ".format(tester.ResultType.to_color_string(self.Result)), self.Reason)
+            ["testers.CurlHeader", "testers"], "{0} - ".format(tester.ResultType.to_color_string(self.Result)), self.Reason
+        )
 
     # Optional operations to do:
     #       equal: complete string match
@@ -160,8 +170,7 @@ class CurlHeader(Tester):
             return None
         elif isinstance(target, str):
             # if given a string, check for an exact match
-            return 'Not an exact match.\nExpected : {}\nActual   : {}'.format(target, val_value) \
-                if target != val_value else None
+            return 'Not an exact match.\nExpected : {}\nActual   : {}'.format(target, val_value) if target != val_value else None
 
         elif isinstance(target, dict):
             # if given a dict, check for valid operations indicated by the keys
@@ -197,8 +206,11 @@ class CurlHeader(Tester):
             ops = {'equal': 'Any of the following strings: ', 'equal_re': 'Any of the following regular expression: '}
 
             for op, pos_val in target.items():
-                ret += '    {}: \'{}\'\n'.format(ops[op], '\', \''.join(pos_val)) if isinstance(pos_val, list) \
+                ret += (
+                    '    {}: \'{}\'\n'.format(ops[op], '\', \''.join(pos_val))
+                    if isinstance(pos_val, list)
                     else '    {}: \'{}\'\n'.format(ops[op], pos_val)
+                )
 
             return 'Value \'{}\' matches none of: \n{}'.format(val_value, ret.strip('\n'))
 

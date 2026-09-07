@@ -54,7 +54,8 @@ class RateLimitSniQueueTest:
                 '    limit: 1',
                 '    queue:',
                 '      size: 1',
-            ])
+            ]
+        )
         ts.Disk.plugin_config.AddLine(f'rate_limit.so {ts.Variables.CONFIGDIR}/rate_limit.config')
 
         # Disable the freelist / ProxyAllocator so freed objects are really released rather
@@ -67,14 +68,16 @@ class RateLimitSniQueueTest:
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'rate_limit',
-            })
+            }
+        )
 
         # The queue path is reached...
         ts.Disk.traffic_out.Content = Testers.ContainsExpression('Queueing the VC', 'a connection was queued')
         # ...and the active-slot counter never underflows into the release assertion. Match
         # both the specific assertion (pins the failure to this bug) and the generic abort.
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            '_active <= _limit|received signal', 'the active-slot counter must not underflow and abort ATS')
+            '_active <= _limit|received signal', 'the active-slot counter must not underflow and abort ATS'
+        )
 
     def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts
@@ -83,7 +86,8 @@ class RateLimitSniQueueTest:
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(ts)
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            'rate_limit-queue-crash-done', 'the client ran to completion')
+            'rate_limit-queue-crash-done', 'the client ran to completion'
+        )
 
 
 RateLimitSniQueueTest()

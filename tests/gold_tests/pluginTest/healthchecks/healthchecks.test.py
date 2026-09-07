@@ -74,20 +74,24 @@ class TestFileChangeBehavior:
                 "proxy.config.ssl.server.cert.path": f'{ts.Variables.SSLDir}',
                 "proxy.config.ssl.server.private_key.path": f'{ts.Variables.SSLDir}',
                 "proxy.config.ssl.client.verify.server.policy": 'PERMISSIVE',
-            })
+            }
+        )
         ts.Disk.ssl_multicert_yaml.AddLines(
             """
 ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
         # Other configuration.
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'healthchecks',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'healthchecks',
+            }
+        )
         return ts
 
     def _expect_positive_healthchecks(self) -> None:
@@ -187,7 +191,7 @@ ssl_multicert:
         tr = Test.AddTestRun('Expect a full-sized healthcheck response body')
         acme_file = os.path.join(Test.RunDirectory, 'acme')
         url = f'http://127.0.0.1:{self._ts.Variables.port}/acme'
-        command = (f'dd if=/dev/zero of={acme_file} bs=16384 count=1 2>/dev/null && sleep 1 && ' + '{curl} -s ' + url + ' | wc -c')
+        command = f'dd if=/dev/zero of={acme_file} bs=16384 count=1 2>/dev/null && sleep 1 && ' + '{curl} -s ' + url + ' | wc -c'
         tr.MakeCurlCommandMulti(command, ts=self._ts)
         p = tr.Processes.Default
         p.ReturnCode = 0

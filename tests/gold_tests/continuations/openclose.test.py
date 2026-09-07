@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -35,7 +34,7 @@ request_header = {"headers": "GET / HTTP/1.1\r\nHost: oc.test\r\n\r\n", "timesta
 response_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssntxnorder_verify.so'), ts)
@@ -46,8 +45,9 @@ ts.Disk.records_config.update(
     {
         'proxy.config.diags.debug.enabled': 0,
         'proxy.config.diags.debug.tags': 'ssntxnorder_verify.*',
-        'proxy.config.cache.enable_read_while_writer': 0
-    })
+        'proxy.config.cache.enable_read_while_writer': 0,
+    }
+)
 
 ts.Disk.remap_config.AddLine('map http://oc.test:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, server.Variables.Port))
 
@@ -91,7 +91,8 @@ def make_done_stat_ready(tsenv):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            env=tsenv)
+            env=tsenv,
+        )
         return retval.returncode == 0 and b'1' in retval.stdout
 
     return done_stat_ready
@@ -106,7 +107,8 @@ tr.Processes.Default.Command = 'traffic_ctl metric get ssntxnorder_verify.err'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    'ssntxnorder_verify.err 0', 'incorrect statistic return, or possible error.')
+    'ssntxnorder_verify.err 0', 'incorrect statistic return, or possible error.'
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -137,6 +139,7 @@ tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("yes", 'should 
 tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression("ssntxnorder_verify.txn.start 0", 'should be nonzero')
 # and we receive the same number of transactions as we asked it to make
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "ssntxnorder_verify.txn.start {}".format(numberOfRequests), 'should be the number of transactions we made')
+    "ssntxnorder_verify.txn.start {}".format(numberOfRequests), 'should be the number of transactions we made'
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server

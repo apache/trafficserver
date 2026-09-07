@@ -23,7 +23,8 @@ Verify HTTP/2 origin session reuse re-checks the origin certificate name.
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeVerifierServerProcess(
-    "h2-origin", "replay_h2_origin_cert_reverify.yaml", ssl_cert="../tls/ssl/signed-foo.pem", ca_cert="../tls/ssl/signer.pem")
+    "h2-origin", "replay_h2_origin_cert_reverify.yaml", ssl_cert="../tls/ssl/signed-foo.pem", ca_cert="../tls/ssl/signer.pem"
+)
 
 ts.addDefaultSSLFiles()
 ts.addSSLfile("../tls/ssl/signer.pem")
@@ -44,7 +45,8 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.limit': 1,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|ssl_verify',
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -52,7 +54,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(f"map / https://127.0.0.1:{server.Variables.https_port}/")
 
@@ -69,10 +72,12 @@ tr = Test.AddTestRun("Reject reuse for bar.com")
 tr.MakeCurlCommand(f"-v -H 'Host: bar.com' http://127.0.0.1:{ts.Variables.port}/bar", ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "Could Not Connect", "bar.com should fail certificate name verification")
+    "Could Not Connect", "bar.com should fail certificate name verification"
+)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
     r"WARNING: Origin hostname \(bar.com\) not in certificate. Action=Terminate",
-    "The pooled H2 origin session should be rejected for bar.com.")
+    "The pooled H2 origin session should be rejected for bar.com.",
+)

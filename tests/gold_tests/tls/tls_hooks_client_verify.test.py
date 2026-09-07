@@ -47,8 +47,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.CA.cert.filename': '{0}/signer.pem'.format(ts.Variables.SSLDir),
         # The origin serves a self-signed cert; this test verifies inbound client certs.
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        'proxy.config.url_remap.pristine_host_hdr': 1
-    })
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -56,22 +57,28 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://foo.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://bar.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 ts.Disk.remap_config.AddLine(
-    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port))
+    'map https://random.com:{1}/ https://127.0.0.1:{0}'.format(server.Variables.SSL_Port, ts.Variables.ssl_port)
+)
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: bar.com',
-    '  verify_client: STRICT',
-    '- fqdn: foo.com',
-    '  verify_client: STRICT',
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: bar.com',
+        '  verify_client: STRICT',
+        '- fqdn: foo.com',
+        '  verify_client: STRICT',
+    ]
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_client_verify_test.so'), ts, '-count=2 -good=foo.com')
 
@@ -85,9 +92,11 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "--tls-max 1.2 -k --cert ./signed-foo.pem --key ./signed-foo.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 
@@ -95,9 +104,11 @@ tr2 = Test.AddTestRun("request bad name")
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.MakeCurlCommand(
-    "--tls-max 1.2 -k --cert ./signed-bar.pem --key ./signed-bar.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1"
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    "--tls-max 1.2 -k --cert ./signed-bar.pem --key ./signed-bar.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr2.Processes.Default.ReturnCode = 35
 tr2.Processes.Default.Streams.All = Testers.ContainsExpression("error", "Curl attempt should have failed")
 
@@ -108,16 +119,22 @@ tr3.StillRunningAfter = ts
 tr3.StillRunningAfter = server
 tr3.MakeCurlCommand(
     "--tls-max 1.2 -k --cert ./server.pem --key ./server.key --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}/case1".format(
-        ts.Variables.ssl_port),
-    ts=ts)
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr3.Processes.Default.ReturnCode = 35
 tr3.Processes.Default.Streams.All = Testers.ContainsExpression("error", "Curl attempt should have failed")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Client verify callback 0 [\da-fx]+? - event is good good HS", "verify callback happens 2 times")
+    r"Client verify callback 0 [\da-fx]+? - event is good good HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Client verify callback 1 [\da-fx]+? - event is good good HS", "verify callback happens 2 times")
+    r"Client verify callback 1 [\da-fx]+? - event is good good HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Client verify callback 0 [\da-fx]+? - event is good error HS", "verify callback happens 2 times")
+    r"Client verify callback 0 [\da-fx]+? - event is good error HS", "verify callback happens 2 times"
+)
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    r"Client verify callback 1 [\da-fx]+? - event is good error HS", "verify callback happens 2 times")
+    r"Client verify callback 1 [\da-fx]+? - event is good error HS", "verify callback happens 2 times"
+)

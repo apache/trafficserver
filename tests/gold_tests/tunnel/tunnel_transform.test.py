@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -42,7 +41,7 @@ request_tunnel_header = {"headers": "GET / HTTP/1.1\r\nHost: tunnel-test\r\n\r\n
 response_tunnel_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length:0\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": ""
+    "body": "",
 }
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'tunnel_transform.so'), ts)
@@ -56,8 +55,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-        'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port)
-    })
+        'proxy.config.http.connect_ports': '{0}'.format(server.Variables.SSL_Port),
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -65,13 +65,16 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
-ts.Disk.sni_yaml.AddLines([
-    'sni:',
-    '- fqdn: tunnel-test',
-    "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
-])
+ts.Disk.sni_yaml.AddLines(
+    [
+        'sni:',
+        '- fqdn: tunnel-test',
+        "  tunnel_route: localhost:{0}".format(server.Variables.SSL_Port),
+    ]
+)
 ts.addPrivateConnectAllowYaml()
 
 # Set up simple forwarding proxy to keep track of TLS bytes for both
@@ -89,7 +92,8 @@ proxy_output = dumb_proxy.Streams.stdout.AbsPath
 
 # Add connection close to ensure that the client connection closes promptly after completing the transaction
 cmd_tunnel = '-k --http1.1 -H "Connection: close" -vs --resolve "tunnel-test:{0}:127.0.0.1"  https://tunnel-test:{0}/'.format(
-    proxy_port)
+    proxy_port
+)
 
 # Send the tunnel request
 tr.Processes.Default.Env = ts.Env
@@ -124,7 +128,8 @@ def make_done_stat_ready(tsenv):
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            env=tsenv)
+            env=tsenv,
+        )
         return b'1' in retval.stdout
 
     return done_stat_ready
@@ -139,7 +144,8 @@ tr.Processes.Default.Command = 'traffic_ctl metric get tunnel_transform.error'
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-    'tunnel_transform.error 0', 'incorrect statistic return, or possible error.')
+    'tunnel_transform.error 0', 'incorrect statistic return, or possible error.'
+)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 
@@ -185,7 +191,8 @@ tr2.Processes.Default.Env = ts.Env
 tr2.StillRunningAfter = ts
 tr2.StillRunningAfter = server
 tr2.Processes.Default.Streams.stdout = Testers.Lambda(
-    lambda info, tester: check_byte_count(path1, proxy_output, 'client-to-server'))
+    lambda info, tester: check_byte_count(path1, proxy_output, 'client-to-server')
+)
 
 path2 = tr2.Processes.Default.Streams.stdout.AbsPath
 

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -31,14 +30,18 @@ Test.GetTcpPort("get_block_connect_port")
 Test.GetTcpPort("get_block_ttfb_port")
 
 delay_post_connect = Test.Processes.Process(
-    "delay post connect", './ssl-delay-server {0} 3 0 server.pem'.format(Test.Variables.block_connect_port))
+    "delay post connect", './ssl-delay-server {0} 3 0 server.pem'.format(Test.Variables.block_connect_port)
+)
 delay_post_ttfb = Test.Processes.Process(
-    "delay post ttfb", './ssl-delay-server {0} 0 6 server.pem'.format(Test.Variables.block_ttfb_port))
+    "delay post ttfb", './ssl-delay-server {0} 0 6 server.pem'.format(Test.Variables.block_ttfb_port)
+)
 
 delay_get_connect = Test.Processes.Process(
-    "delay get connect", './ssl-delay-server {0} 3 0 server.pem'.format(Test.Variables.get_block_connect_port))
+    "delay get connect", './ssl-delay-server {0} 3 0 server.pem'.format(Test.Variables.get_block_connect_port)
+)
 delay_get_ttfb = Test.Processes.Process(
-    "delay get ttfb", './ssl-delay-server {0} 0 6 server.pem'.format(Test.Variables.get_block_ttfb_port))
+    "delay get ttfb", './ssl-delay-server {0} 0 6 server.pem'.format(Test.Variables.get_block_ttfb_port)
+)
 
 ts.Disk.records_config.update(
     {
@@ -49,7 +52,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 0,
         'proxy.config.diags.debug.tags': 'http|ssl',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map /connect_blocked https://127.0.0.1:{0}'.format(Test.Variables.block_connect_port))
 ts.Disk.remap_config.AddLine('map /ttfb_blocked https://127.0.0.1:{0}'.format(Test.Variables.block_ttfb_port))
@@ -68,7 +72,8 @@ tr.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, "ssl", "server.pem"))
 tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.Processes.Default.StartBefore(delay_post_connect, ready=When.PortOpen(Test.Variables.block_connect_port))
 tr.MakeCurlCommand(
-    '-H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(ts.Variables.port), ts=ts)
+    '-H"Connection:close" -d "bob" -i http://127.0.0.1:{0}/connect_blocked --tlsv1.2'.format(ts.Variables.port), ts=ts
+)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression("HTTP/1.1 502 Connection timed out", "Connect failed")
 tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_post_connect
@@ -104,14 +109,17 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = delay_get_ttfb
 
 delay_post_connect.Streams.All = Testers.ContainsExpression(
-    "Accept try", "Should appear at least two times (may be an extra one due to port ready test)")
+    "Accept try", "Should appear at least two times (may be an extra one due to port ready test)"
+)
 delay_post_connect.Streams.All += Testers.ExcludesExpression("TTFB delay", "Should not reach the TTFB delay logic")
 delay_post_ttfb.Streams.All = Testers.ContainsExpression("Accept try", "Should appear one time")
 delay_post_ttfb.Streams.All += Testers.ContainsExpression("TTFB delay", "Should reach the TTFB delay logic")
 
 delay_get_connect.Streams.All = Testers.ContainsExpression(
-    "Accept try", "Should appear at least two times (may be an extra one due to port ready test)")
+    "Accept try", "Should appear at least two times (may be an extra one due to port ready test)"
+)
 delay_get_connect.Streams.All += Testers.ExcludesExpression("TTFB delay", "Should not reach the TTFB delay logic")
 delay_get_ttfb.Streams.All = Testers.ContainsExpression(
-    "Accept try", "Should appear at least two times (may be an extra one due to the port ready test)")
+    "Accept try", "Should appear at least two times (may be an extra one due to the port ready test)"
+)
 delay_get_ttfb.Streams.All += Testers.ContainsExpression("TTFB delay", "Should reach the TTFB delay logic")

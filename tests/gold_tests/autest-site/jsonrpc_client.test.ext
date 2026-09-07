@@ -141,7 +141,10 @@ def AddJsonRPCClientRequest(obj, ts, request='', file=None, schema_file_name=Non
         process.SetupEvent.Connect(
             Testers.Lambda(
                 lambda ev: SchemaValidator().validate_request_schema(
-                    ev, fileName, True, schema_file_name, params_field_schema_file_name)))
+                    ev, fileName, True, schema_file_name, params_field_schema_file_name
+                )
+            )
+        )
     return process
 
 
@@ -192,12 +195,13 @@ class CustomJSONRPCResponse(Tester):
     '''
 
     def __init__(
-            self,
-            func: typing.Any,
-            test_value=None,
-            kill_on_failure: bool = False,
-            description_group: typing.Optional[str] = None,
-            description: typing.Optional[str] = None):
+        self,
+        func: typing.Any,
+        test_value=None,
+        kill_on_failure: bool = False,
+        description_group: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+    ):
         if description is None:
             description = "Validating JSONRPC 2.0 response"
 
@@ -206,7 +210,8 @@ class CustomJSONRPCResponse(Tester):
             test_value=test_value,
             kill_on_failure=kill_on_failure,
             description_group=description_group,
-            description=description)
+            description=description,
+        )
 
     def test(self, eventinfo, **kw):
 
@@ -220,7 +225,8 @@ class CustomJSONRPCResponse(Tester):
             self.Result = tester.ResultType.Passed
             self.Reason = f"Returned value: {reason}"
             host.WriteVerbose(
-                ["testers.CustomJSONRPCResponse", "testers"], f"tester.ResultType.to_color_string(self.Result) - ", self.Reason)
+                ["testers.CustomJSONRPCResponse", "testers"], f"tester.ResultType.to_color_string(self.Result) - ", self.Reason
+            )
         else:
             self.Result = tester.ResultType.Failed
             self.Reason = f"Returned value: {reason}"
@@ -245,14 +251,15 @@ class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
     '''
 
     def __init__(
-            self,
-            schema_file_name,
-            result_field_schema_file_name=None,
-            value=None,
-            test_value=None,
-            kill_on_failure: bool = False,
-            description_group: typing.Optional[str] = None,
-            description: typing.Optional[str] = None):
+        self,
+        schema_file_name,
+        result_field_schema_file_name=None,
+        value=None,
+        test_value=None,
+        kill_on_failure: bool = False,
+        description_group: typing.Optional[str] = None,
+        description: typing.Optional[str] = None,
+    ):
         if description is None:
             description = "Validating JSONRPC 2.0 response schema"
         self._schema_file_name = schema_file_name
@@ -263,7 +270,8 @@ class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
             test_value=test_value,
             kill_on_failure=kill_on_failure,
             description_group=description_group,
-            description=description)
+            description=description,
+        )
 
     def test(self, eventinfo, **kw):
         response_text = {}
@@ -271,14 +279,17 @@ class JSONRPCResponseSchemaValidator(Tester, SchemaValidator):
             response_text = resp.read()
 
         (testPassed, reason, cmm) = self.validate_request_schema(
-            eventinfo, self._GetContent(eventinfo), False, self._schema_file_name, self._result_field_schema_file_name)
+            eventinfo, self._GetContent(eventinfo), False, self._schema_file_name, self._result_field_schema_file_name
+        )
 
         if testPassed:
             self.Result = tester.ResultType.Passed
             self.Reason = f"Returned value: {reason}"
             host.WriteVerbose(
-                ["testers.JSONRPCResponseSchemaValidator", "testers"], f"tester.ResultType.to_color_string(self.Result) - ",
-                self.Reason)
+                ["testers.JSONRPCResponseSchemaValidator", "testers"],
+                f"tester.ResultType.to_color_string(self.Result) - ",
+                self.Reason,
+            )
         else:
             self.Result = tester.ResultType.Failed
             self.Reason = f"Returned value: {reason}"

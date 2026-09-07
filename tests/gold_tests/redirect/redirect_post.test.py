@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -39,34 +38,35 @@ ts.Disk.records_config.update(
         'proxy.config.http.redirect.actions': 'self:follow',  # redirects to self are not followed by default
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http',
-    })
+    }
+)
 
 redirect_request_header = {
     "headers": "POST /redirect1 HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n",
     "timestamp": "5678",
-    "body": ""
+    "body": "",
 }
 redirect_response_header = {
     "headers": "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{0}/redirect2\r\n\r\n".format(redirect_serv2.Variables.Port),
     "timestamp": "5678",
-    "body": ""
+    "body": "",
 }
 
 redirect_request_header2 = {
     "headers": "POST /redirect2 HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n",
     "timestamp": "5678",
-    "body": ""
+    "body": "",
 }
 redirect_response_header2 = {
     "headers": "HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:{0}/redirectDest\r\n\r\n".format(dest_serv.Variables.Port),
     "timestamp": "5678",
-    "body": ""
+    "body": "",
 }
 
 dest_request_header = {
     "headers": "POST /redirectDest HTTP/1.1\r\nHost: *\r\nContent-Length: 52428800\r\n\r\n",
     "timestamp": "11",
-    "body": ""
+    "body": "",
 }
 dest_response_header = {"headers": "HTTP/1.1 204 No Content\r\n\r\n", "timestamp": "22", "body": ""}
 
@@ -75,13 +75,16 @@ redirect_serv2.addResponse("sessionfile.log", redirect_request_header2, redirect
 dest_serv.addResponse("sessionfile.log", dest_request_header, dest_response_header)
 
 ts.Disk.remap_config.AddLine(
-    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv1.Variables.Port))
+    'map http://127.0.0.1:{0} http://127.0.0.1:{1}'.format(ts.Variables.port, redirect_serv1.Variables.Port)
+)
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommandMulti(
-    'touch largefile.txt && truncate -s 50M largefile.txt && {{curl}} -H "Expect: " -i http://127.0.0.1:{0}/redirect1 -F "filename=@./largefile.txt" && rm -f largefile.txt'
-    .format(ts.Variables.port),
-    ts=ts)
+    'touch largefile.txt && truncate -s 50M largefile.txt && {{curl}} -H "Expect: " -i http://127.0.0.1:{0}/redirect1 -F "filename=@./largefile.txt" && rm -f largefile.txt'.format(
+        ts.Variables.port
+    ),
+    ts=ts,
+)
 tr.TimeOut = 10
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.StartBefore(redirect_serv1)

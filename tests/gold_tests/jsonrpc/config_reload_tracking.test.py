@@ -36,10 +36,12 @@ ts = Test.MakeATSProcess('ts', dump_runroot=True)
 Test.testName = 'config_reload_tracking'
 
 # Initial configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'rpc|config',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'rpc|config',
+    }
+)
 
 # Store tokens for later tests
 stored_tokens = []

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -38,7 +37,8 @@ http:
     request_buffer_enabled: 1
     number_of_redirections: 1
 
-''')
+'''
+)
 
 test_run = Test.AddTestRun("post buffer test")
 test_run.Processes.Default.StartBefore(server)

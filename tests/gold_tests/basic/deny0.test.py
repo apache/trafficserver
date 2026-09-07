@@ -41,8 +41,9 @@ ts.Disk.records_config.update(
         'proxy.config.http.number_of_redirections': 1,
         'proxy.config.dns.nameservers': '127.0.0.1:{0}'.format(dns.Variables.Port),
         'proxy.config.dns.resolv_conf': 'NULL',
-        'proxy.config.url_remap.remap_required': 0  # need this so the domain gets a chance to be evaluated through DNS
-    })
+        'proxy.config.url_remap.remap_required': 0,  # need this so the domain gets a chance to be evaluated through DNS
+    }
+)
 
 Test.Setup.Copy(os.path.join(Test.Variables.AtsTestToolsDir, 'tcp_client.py'))
 
@@ -68,9 +69,7 @@ def buildMetaTest(testName, requestString):
     requestCommandPath = os.path.join(data_path, tr.Name)
     with open(requestCommandPath, 'w') as f:
         f.write(requestString)
-    tr.Processes.Default.Command = \
-        (f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} "
-         f"{requestCommandPath} | head -1")
+    tr.Processes.Default.Command = f"{sys.executable} tcp_client.py 127.0.0.1 {ts.Variables.port} {requestCommandPath} | head -1"
     tr.ReturnCode = 0
     tr.Processes.Default.Streams.stdout = gold_filepath
     tr.StillRunningAfter = ts
@@ -79,35 +78,39 @@ def buildMetaTest(testName, requestString):
 
 
 buildMetaTest(
-    'RejectInterfaceAnyIpv4', 'GET / HTTP/1.1\r\nHost: 0:{port}\r\nConnection: close\r\n\r\n'.format(port=ts.Variables.port))
+    'RejectInterfaceAnyIpv4', 'GET / HTTP/1.1\r\nHost: 0:{port}\r\nConnection: close\r\n\r\n'.format(port=ts.Variables.port)
+)
 
 buildMetaTest(
-    'RejectInterfaceAnyIpv6', 'GET / HTTP/1.1\r\nHost: [::]:{port}\r\nConnection: close\r\n\r\n'.format(port=ts.Variables.portv6))
+    'RejectInterfaceAnyIpv6', 'GET / HTTP/1.1\r\nHost: [::]:{port}\r\nConnection: close\r\n\r\n'.format(port=ts.Variables.portv6)
+)
 
 # Sets up redirect to IPv4 ANY address
 redirect_request_header = {"headers": "GET /redirect-0 HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
 redirect_response_header = {
     "headers": "HTTP/1.1 302 Found\r\nLocation: http://0:{0}/\r\nConnection: close\r\n\r\n".format(ts.Variables.port),
     "timestamp": "5678",
-    "body": ""
+    "body": "",
 }
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 
 buildMetaTest(
     'RejectRedirectToInterfaceAnyIpv4',
-    'GET /redirect-0 HTTP/1.1\r\nHost: {host}:{port}\r\n\r\n'.format(host=HOST1, port=redirect_serv.Variables.Port))
+    'GET /redirect-0 HTTP/1.1\r\nHost: {host}:{port}\r\n\r\n'.format(host=HOST1, port=redirect_serv.Variables.Port),
+)
 
 # Sets up redirect to IPv6 ANY address
 redirect_request_header = {"headers": "GET /redirect-0v6 HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "5678", "body": ""}
 redirect_response_header = {
     "headers": "HTTP/1.1 302 Found\r\nLocation: http://[::]:{0}/\r\nConnection: close\r\n\r\n".format(ts.Variables.port),
     "timestamp": "5678",
-    "body": ""
+    "body": "",
 }
 redirect_serv.addResponse("sessionfile.log", redirect_request_header, redirect_response_header)
 
 buildMetaTest(
     'RejectRedirectToInterfaceAnyIpv6',
-    'GET /redirect-0v6 HTTP/1.1\r\nHost: {host}:{port}\r\n\r\n'.format(host=HOST1, port=redirect_serv.Variables.Port))
+    'GET /redirect-0v6 HTTP/1.1\r\nHost: {host}:{port}\r\n\r\n'.format(host=HOST1, port=redirect_serv.Variables.Port),
+)
 
 Test.Setup.Copy(data_path)

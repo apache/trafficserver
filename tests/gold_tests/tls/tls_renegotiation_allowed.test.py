@@ -89,7 +89,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
@@ -99,12 +100,14 @@ ssl_multicert:
                 # Renegotiation requires a sub-TLS1.3 protocol.
                 'proxy.config.ssl.TLSv1_3.enabled': 0,
                 'proxy.config.ssl.TLSv1_2': 1,
-            })
+            }
+        )
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}')
 
         # The renegotiation must not abort the process.
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "received signal|failed assertion", "ATS must service the renegotiation without crashing")
+            "received signal|failed assertion", "ATS must service the renegotiation without crashing"
+        )
         return ts
 
     def run(self) -> None:
@@ -118,12 +121,15 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self._ts)
         tr.Processes.Default.Command = (
             f'{sys.executable} {os.path.join(Test.TestDirectory, "tls_renegotiation_allowed_client.py")} '
-            f'-p {self._ts.Variables.ssl_port} -s example.com')
+            f'-p {self._ts.Variables.ssl_port} -s example.com'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            "RENEGOTIATION-COMPLETED|RENEGOTIATION-REFUSED-PROMPTLY", "the renegotiation must be answered, not stranded")
+            "RENEGOTIATION-COMPLETED|RENEGOTIATION-REFUSED-PROMPTLY", "the renegotiation must be answered, not stranded"
+        )
         tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-            "RENEGOTIATION-STALLED", "the client must not hang waiting for the renegotiation answer")
+            "RENEGOTIATION-STALLED", "the client must not hang waiting for the renegotiation answer"
+        )
         tr.StillRunningAfter = self._ts
         tr.StillRunningAfter = self._server
 
@@ -133,12 +139,15 @@ ssl_multicert:
             (
                 "-v --http1.1 --tls-max 1.2 --tlsv1.2 --ciphers DEFAULT@SECLEVEL=0 -k "
                 f"--resolve 'example.com:{self._ts.Variables.ssl_port}:127.0.0.1' "
-                f"https://example.com:{self._ts.Variables.ssl_port}/"),
-            ts=self._ts)
+                f"https://example.com:{self._ts.Variables.ssl_port}/"
+            ),
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         # curl -v writes the response status line to stderr.
         tr.Processes.Default.Streams.stderr = Testers.ContainsExpression(
-            "HTTP/1.1 200 OK", "request after renegotiation should succeed")
+            "HTTP/1.1 200 OK", "request after renegotiation should succeed"
+        )
         tr.StillRunningAfter = self._ts
 
 

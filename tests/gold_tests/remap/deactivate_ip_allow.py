@@ -58,7 +58,7 @@ ip_allow:
     methods: ALL
 '''
 
-# yapf: disable
+# fmt: off
 keys = ["index", "policy", "inline", "named_acl", "deactivate_ip_allow", "ip_allow", "GET response", "POST response"]
 deactivate_ip_allow_combinations = [
     [  0,  "legacy",  "",                                   "", False, ALLOW_GET_AND_POST, 200, 200,   ],
@@ -123,4 +123,4 @@ deactivate_ip_allow_combinations = [
     [ 57,  "legacy",  "@action=add_deny  @method=GET",      "", True,  DENY_ALL,           403, 200,   ],
 ]
 all_deactivate_ip_allow_tests = [dict(zip(keys, test)) for test in deactivate_ip_allow_combinations]
-# yapf: enable
+# fmt: on

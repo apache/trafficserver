@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -51,7 +50,8 @@ ssl_multicert:
     ssl_key_name: signed-bar.key
   - dest_ip: "*"
     ssl_cert_name: combo.pem
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -64,7 +64,8 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -74,7 +75,8 @@ tr = Test.AddTestRun("bar.com cert")
 tr.Setup.Copy("ssl/signer.pem")
 tr.Setup.Copy("ssl/signer2.pem")
 tr.MakeCurlCommand(
-    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer2.pem  --resolve 'bar.com:{0}:127.0.0.1' https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(dns)
@@ -89,7 +91,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 # Should receive a foo.com cert
 tr2 = Test.AddTestRun("foo.com cert")
 tr2.MakeCurlCommand(
-    "-v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v --cacert ./signer.pem --resolve 'foo.com:{0}:127.0.0.1' https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -101,7 +104,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 # Should receive random.server.com
 tr2 = Test.AddTestRun("random.server.com cert")
 tr2.MakeCurlCommand(
-    "-v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v -k --resolve 'random.server.com:{0}:127.0.0.1' https://random.server.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts
@@ -115,8 +119,8 @@ tr.Processes.Default.Streams.All += Testers.ContainsExpression("404", "Should ma
 # SNI name and returned cert name will not match, so must use -k to avoid cert verification
 tr2 = Test.AddTestRun("Bad SNI")
 tr2.MakeCurlCommand(
-    "-v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port),
-    ts=ts)
+    "-v -k --cacert ./signer.pem --resolve 'bad.sni.com:{0}:127.0.0.1' https://bad.sni.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server
 tr2.StillRunningAfter = ts

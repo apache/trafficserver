@@ -105,11 +105,14 @@ class TestPipelining:
                 'proxy.config.diags.debug.tags': 'http|ip_allow',
                 'proxy.config.dns.nameservers': f'127.0.0.1:{self._dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-            })
+            }
+        )
         if buffer_requests:
-            ts.Disk.records_config.update({
-                'proxy.config.http.request_buffer_enabled': 1,
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.http.request_buffer_enabled': 1,
+                }
+            )
         ts.Disk.ip_allow_yaml.AddLines(IP_ALLOW_CONTENT.split("\n"))
         return ts
 
@@ -121,8 +124,7 @@ class TestPipelining:
         """
         client = tr.Processes.Default
         tr.Setup.Copy(self._client_script)
-        client.Command = (f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} '
-                          'server.com server.com')
+        client.Command = f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} server.com server.com'
         client.ReturnCode = 0
         client.Streams.All += Testers.ContainsExpression('X-Response: first', "Should receive the origin's first response.")
         client.Streams.All += Testers.ContainsExpression('X-Response: second', "Should receive the origin's second response.")
@@ -183,24 +185,31 @@ class TestRequestFraming:
             # would see a single request or the second request's bytes inside
             # the POST body.
             server.Streams.All += Testers.ContainsExpression(
-                r'REQUEST_LINE: POST / HTTP/1.1', 'Origin should receive the POST as its own request.')
+                r'REQUEST_LINE: POST / HTTP/1.1', 'Origin should receive the POST as its own request.'
+            )
             server.Streams.All += Testers.ContainsExpression(
-                r'REQUEST_LINE: GET /second HTTP/1.1', 'Origin should receive the GET as its own request.')
+                r'REQUEST_LINE: GET /second HTTP/1.1', 'Origin should receive the GET as its own request.'
+            )
             server.Streams.All += Testers.ContainsExpression(
-                r'ORIGIN_REQUEST_COUNT: 2', 'Origin should receive the second request as a distinct request.')
+                r'ORIGIN_REQUEST_COUNT: 2', 'Origin should receive the second request as a distinct request.'
+            )
             server.Streams.All += Testers.ExcludesExpression(
-                r'ORIGIN_REQUEST_COUNT: 3', 'Origin should receive exactly two requests, no more.')
+                r'ORIGIN_REQUEST_COUNT: 3', 'Origin should receive exactly two requests, no more.'
+            )
             # The second request's bytes must never appear inside the first
             # (POST) request's body.
             server.Streams.All += Testers.ExcludesExpression(
-                r"BODY:.*GET /second", 'The GET request must not appear inside the POST body.')
+                r"BODY:.*GET /second", 'The GET request must not appear inside the POST body.'
+            )
             server.Streams.All += Testers.ExcludesExpression(
-                r"BODY:.*X-Marker", 'The second request header must not appear in the POST body.')
+                r"BODY:.*X-Marker", 'The second request header must not appear in the POST body.'
+            )
         else:
             # An ambiguously-framed request must be rejected by ATS before it
             # ever reaches the origin.
             server.Streams.All += Testers.ExcludesExpression(
-                r'REQUEST_LINE:', 'Origin must not receive an ambiguously-framed request.')
+                r'REQUEST_LINE:', 'Origin must not receive an ambiguously-framed request.'
+            )
         self._server = server
         return server
 
@@ -209,37 +218,42 @@ class TestRequestFraming:
         ts = tr.MakeATSProcess(f'ts_{self._name}', enable_cache=False)
         self._ts = ts
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}/')
-        ts.Disk.records_config.update({
-            'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'http',
-        })
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http',
+            }
+        )
         return ts
 
     def _configure_client(self, tr: 'TestRun') -> 'Process':
         """Configure the client that sends the framed request."""
         client = tr.Processes.Default
         tr.Setup.Copy(self._client_script)
-        client.Command = (
-            f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} '
-            f'www.example.com {self._mode}')
+        client.Command = f'{sys.executable} {self._client_script} 127.0.0.1 {self._ts.Variables.port} www.example.com {self._mode}'
         client.ReturnCode = 0
         if self._mode == 'pipeline':
             # Two independent responses must come back, one per request.
             client.Streams.All += Testers.ContainsExpression(
-                r'STATUS_LINE_COUNT: 2', 'Client should receive two independent responses.')
+                r'STATUS_LINE_COUNT: 2', 'Client should receive two independent responses.'
+            )
             client.Streams.All += Testers.ContainsExpression(
-                r'X-Origin-Response: first', 'Client should receive the response to the POST.')
+                r'X-Origin-Response: first', 'Client should receive the response to the POST.'
+            )
             client.Streams.All += Testers.ContainsExpression(
-                r'X-Origin-Response: second', 'Client should receive the response to the GET.')
+                r'X-Origin-Response: second', 'Client should receive the response to the GET.'
+            )
         else:
             # The conflicting Content-Length request must be rejected with a
             # 400, exactly one response must come back, and the second request
             # must never be answered.
             client.Streams.All += Testers.ContainsExpression(
-                r'HTTP/1.1 400', 'Client should receive a 400 for the ambiguous request.')
+                r'HTTP/1.1 400', 'Client should receive a 400 for the ambiguous request.'
+            )
             client.Streams.All += Testers.ContainsExpression(r'STATUS_LINE_COUNT: 1', 'Client should receive exactly one response.')
             client.Streams.All += Testers.ExcludesExpression(
-                r'X-Origin-Response: second', 'The second request must not be answered.')
+                r'X-Origin-Response: second', 'The second request must not be answered.'
+            )
         client.StartBefore(self._server)
         client.StartBefore(self._ts)
 

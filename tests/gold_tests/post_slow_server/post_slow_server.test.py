@@ -39,7 +39,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.http.transaction_no_activity_timeout_out': 150,
         'proxy.config.http2.no_activity_timeout_in': 150,
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -47,7 +48,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 Test.GetTcpPort("server_port")
 
@@ -57,9 +59,10 @@ server = Test.Processes.Process("server", "bash -c '" + Test.TestDirectory + "/s
 
 tr = Test.AddTestRun()
 tr.MakeCurlCommand(
-    '--request POST --verbose --ipv4 --http2 --insecure --header "Content-Length: 0"' +
-    " --header 'Host: localhost' https://localhost:{}/xyz >curl.log 2>curl.err".format(ts.Variables.ssl_port),
-    ts=ts)
+    '--request POST --verbose --ipv4 --http2 --insecure --header "Content-Length: 0"'
+    + " --header 'Host: localhost' https://localhost:{}/xyz >curl.log 2>curl.err".format(ts.Variables.ssl_port),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)

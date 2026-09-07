@@ -98,7 +98,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split('\n'))
+""".split('\n')
+        )
 
         self._ts.Disk.records_config.update(
             {
@@ -108,7 +109,8 @@ ssl_multicert:
                 'proxy.config.ssl.server.private_key.path': self._ts.Variables.SSLDir,
                 'proxy.config.http.server_ports': f'{self._ts.Variables.ssl_port}:ssl',
                 'proxy.config.http.connect_ports': self._server.Variables.http_port,
-            })
+            }
+        )
         self._ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self._server.Variables.http_port}/')
         self._ts.addPrivateConnectAllowYaml(methods='[ CONNECT, GET ]')
         self._ts.Disk.logging_yaml.AddLines(
@@ -121,7 +123,8 @@ logging:
     - filename: squid
       format: malformed_h2_request
       mode: ascii
-""".split('\n'))
+""".split('\n')
+        )
         self._ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             'recv headers malformed request',
             'ATS should reject malformed requests at the HTTP/2 layer.',
@@ -129,7 +132,8 @@ logging:
         for index, case in enumerate(self.MALFORMED_CASES):
             expected = (
                 rf'uuid={case["uuid"]} cqpv=http/2 cqhm={case["method"]} '
-                rf'crc=ERR_INVALID_REQ sstc=0 pqu={re.escape(case["pqu"])}')
+                rf'crc=ERR_INVALID_REQ sstc=0 pqu={re.escape(case["pqu"])}'
+            )
             tester = Testers.ContainsExpression(
                 expected,
                 f'{case["description"]} should be logged with ERR_INVALID_REQ.',
@@ -159,7 +163,8 @@ logging:
         for case in self.MALFORMED_CASES:
             tr = Test.AddTestRun(case['description'])
             tr.Processes.Default.Command = (
-                f'{sys.executable} {self.MALFORMED_CLIENT} {self._ts.Variables.ssl_port} {case["scenario"]}')
+                f'{sys.executable} {self.MALFORMED_CLIENT} {self._ts.Variables.ssl_port} {case["scenario"]}'
+            )
             tr.Processes.Default.ReturnCode = 0
             self._keep_support_processes_running(tr)
             tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(

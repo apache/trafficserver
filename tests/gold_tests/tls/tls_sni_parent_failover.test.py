@@ -58,7 +58,7 @@ request_bar_header = {"headers": "GET /path HTTP/1.1\r\nHost: bar.com\r\n\r\n", 
 response_bar_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "path bar ok"
+    "body": "path bar ok",
 }
 
 server_bar.addResponse("sessionlog.json", request_bar_header, response_bar_header)
@@ -81,7 +81,8 @@ ts.Disk.records_config.update(
         'proxy.config.dns.resolv_conf': 'NULL',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.http.connect.down.policy': 1,  # tls failures don't mark down
-    })
+    }
+)
 
 dns.addRecords(records={"foo.com.": ["127.0.0.1"]})
 dns.addRecords(records={"bar.com.": ["127.0.0.1"]})
@@ -94,11 +95,14 @@ ts.Disk.remap_config.AddLines(
         "map http://strategy https://strategy @strategy=strat",
         "map http://parent_prist https://parent @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
         "map http://strategy_prist https://strategy @strategy=strat @plugin=conf_remap.so @pparam=proxy.config.url_remap.pristine_host_hdr=1",
-    ])
+    ]
+)
 
 ts.Disk.parent_config.AddLine(
-    'dest_domain=. port=443 parent="foo.com:{0}|1;bar.com:{1}|1" parent_retry=simple_retry parent_is_proxy=false go_direct=false simple_server_retry_responses="404" host_override=true'
-    .format(server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port))
+    'dest_domain=. port=443 parent="foo.com:{0}|1;bar.com:{1}|1" parent_retry=simple_retry parent_is_proxy=false go_direct=false simple_server_retry_responses="404" host_override=true'.format(
+        server_foo.Variables.SSL_Port, server_bar.Variables.SSL_Port
+    )
+)
 
 # build strategies.yaml file
 ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
@@ -118,7 +122,8 @@ s.AddLines(
         f"      - scheme: https",
         f"        port: {server_bar.Variables.SSL_Port}",
         f"      weight: 1.0",
-    ])
+    ]
+)
 
 s.AddLine("strategies:")
 
@@ -137,7 +142,8 @@ s.AddLines(
         f"      ring_mode: exhaust_ring",
         f"      response_codes:",
         f"        - 404",
-    ])
+    ]
+)
 
 curl_args = f"-s -L -o /dev/stdout -D /dev/stderr -x localhost:{ts.Variables.port} "
 

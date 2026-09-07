@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -32,8 +31,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 1,
         'proxy.config.cache.threads_per_disk': 1,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 ts.Setup.CopyAs('check_threads.py', Test.RunDirectory)
 
 tr = Test.AddTestRun()
@@ -52,8 +52,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 2,
         'proxy.config.cache.threads_per_disk': 8,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -71,8 +72,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 10,
         'proxy.config.cache.threads_per_disk': 32,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -90,8 +92,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 1,
         'proxy.config.cache.threads_per_disk': 1,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -109,8 +112,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 2,
         'proxy.config.cache.threads_per_disk': 8,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -128,8 +132,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 10,
         'proxy.config.cache.threads_per_disk': 32,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -147,8 +152,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 1,
         'proxy.config.cache.threads_per_disk': 1,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -166,8 +172,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 2,
         'proxy.config.cache.threads_per_disk': 8,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -185,8 +192,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 10,
         'proxy.config.cache.threads_per_disk': 32,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -204,8 +212,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 1,
         'proxy.config.cache.threads_per_disk': 1,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -223,8 +232,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 2,
         'proxy.config.cache.threads_per_disk': 8,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']
@@ -242,8 +252,9 @@ ts.Disk.records_config.update(
         'proxy.config.task_threads': 10,
         'proxy.config.cache.threads_per_disk': 32,
         'proxy.config.diags.debug.enabled': 1,
-        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start'
-    })
+        'proxy.config.diags.debug.tags': 'iocore_thread_start|iocore_net_accept_start',
+    }
+)
 
 tr = Test.AddTestRun()
 TS_ROOT = ts.Env['TS_ROOT']

@@ -112,7 +112,8 @@ class CacheShmFastRestartTest:
                 '    - id: 1',
                 '      scheme: http',
                 '      size: 100%',
-            ])
+            ]
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.cache.shm.enabled': 1,
@@ -125,7 +126,8 @@ class CacheShmFastRestartTest:
                 # ContainsExpression assertions below can match them.
                 'proxy.config.diags.output.diag': 'L',
                 'proxy.config.http.wait_for_cache': 1,
-            })
+            }
+        )
         ts.Disk.plugin_config.AddLine('xdebug.so --enable=x-cache,via')
         ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{self.server.Variables.http_port}/')
         return ts
@@ -145,44 +147,59 @@ class CacheShmFastRestartTest:
         # ts1 (cold start): creates fresh shm, marks it clean on shutdown, and must
         # NOT report any "drop" reason since there is nothing to drop.
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start')
+            r'cache shm: creating fresh control segment', 'ts1 should create a fresh shm control segment on first start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create at least one shm-backed stripe segment')
+            r'cache shm: created stripe \S+ \(\d+ bytes\) for key=', 'ts1 should create at least one shm-backed stripe segment'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit')
+            r'cache shm: marking clean shutdown', 'ts1 should mark the shm clean before exit'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: (schema|ABI) mismatch', 'ts1 should not detect any shm mismatch on cold start')
+            r'cache shm: (schema|ABI) mismatch', 'ts1 should not detect any shm mismatch on cold start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: previous run did not shutdown cleanly', 'ts1 should not see a dirty shm on cold start')
+            r'cache shm: previous run did not shutdown cleanly', 'ts1 should not see a dirty shm on cold start'
+        )
         self.ts1.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: stripe \S+ size mismatch', 'ts1 should not see a stripe size mismatch on cold start')
+            r'cache shm: stripe \S+ size mismatch', 'ts1 should not see a stripe size mismatch on cold start'
+        )
 
         # ts2 (warm start): attaches the existing control segment, fast-attaches the
         # per-stripe segment, reuses the cached directory, and must NOT fall back to
         # the disk-rebuild path.
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: attaching up to \d+ stripes \(fast restart', 'ts2 should attach the existing shm (fast restart)')
+            r'cache shm: attaching up to \d+ stripes \(fast restart', 'ts2 should attach the existing shm (fast restart)'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r'cache shm: attached stripe \S+ \(\d+ bytes\) for key=', 'ts2 should attach at least one shm-backed stripe segment')
+            r'cache shm: attached stripe \S+ \(\d+ bytes\) for key=', 'ts2 should attach at least one shm-backed stripe segment'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ContainsExpression(
-            r"attaching cached directory from shm for '.+' \(fast restart", 'ts2 should reuse the per-stripe directory from shm')
+            r"attaching cached directory from shm for '.+' \(fast restart", 'ts2 should reuse the per-stripe directory from shm'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: creating fresh control segment', 'ts2 should not create a fresh control segment')
+            r'cache shm: creating fresh control segment', 'ts2 should not create a fresh control segment'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: (schema|ABI) mismatch', 'ts2 should not detect any shm mismatch on warm start')
+            r'cache shm: (schema|ABI) mismatch', 'ts2 should not detect any shm mismatch on warm start'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: previous run did not shutdown cleanly', 'ts2 should see the shm marked clean')
+            r'cache shm: previous run did not shutdown cleanly', 'ts2 should see the shm marked clean'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'shm directory invalid for', 'ts2 should not fall back from shm to disk read')
+            r'shm directory invalid for', 'ts2 should not fall back from shm to disk read'
+        )
         self.ts2.Disk.diags_log.Content += Testers.ExcludesExpression(
-            r'cache shm: stripe \S+ size mismatch', 'ts2 should fast-attach without a stripe size-mismatch recreate')
+            r'cache shm: stripe \S+ size mismatch', 'ts2 should fast-attach without a stripe size-mismatch recreate'
+        )
 
     def _start_ts1(self):
         # Cold start ts1 against the verifier-server origin and replay the
         # "fill" transaction: a cache miss that ATS fetches and stores.
         tr = Test.AddTestRun('Start ts1, then cache contents (fill)')
         tr.AddVerifierClientProcess(
-            'shm-fill-client', self.REPLAY_FILE, http_ports=[self.ts1.Variables.port], keys='fill', other_args='--thread-limit 1')
+            'shm-fill-client', self.REPLAY_FILE, http_ports=[self.ts1.Variables.port], keys='fill', other_args='--thread-limit 1'
+        )
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts1)
         tr.StillRunningAfter = self.server
@@ -195,8 +212,8 @@ class CacheShmFastRestartTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts1')
         tr.Processes.Default.Env = self.ts1.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shm_ts1 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shm_ts1 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
 
@@ -207,7 +224,8 @@ class CacheShmFastRestartTest:
         # would otherwise surface as a proxy-response mismatch.
         tr = Test.AddTestRun('Start ts2; verify shm fast-attach and cache HIT')
         tr.AddVerifierClientProcess(
-            'shm-hit-client', self.REPLAY_FILE, http_ports=[self.ts2.Variables.port], keys='hit', other_args='--thread-limit 1')
+            'shm-hit-client', self.REPLAY_FILE, http_ports=[self.ts2.Variables.port], keys='hit', other_args='--thread-limit 1'
+        )
         tr.Processes.Default.StartBefore(self.ts2)
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts2
@@ -219,8 +237,8 @@ class CacheShmFastRestartTest:
         tr = Test.AddTestRun('Drain and clean-shutdown ts2')
         tr.Processes.Default.Env = self.ts2.Env
         tr.Processes.Default.Command = (
-            f'traffic_ctl server drain && sleep 1 && '
-            f'{sys.executable} ./{self.TS_PID_SCRIPT} shm_ts2 --signal TERM && sleep 3')
+            f'traffic_ctl server drain && sleep 1 && {sys.executable} ./{self.TS_PID_SCRIPT} shm_ts2 --signal TERM && sleep 3'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
 
@@ -234,7 +252,8 @@ class CacheShmFastRestartTest:
         tr.Processes.Default.Command = f'traffic_ctl cache shm clear --prefix {self._shm_prefix}'
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr = Testers.ExcludesExpression(
-            'Invalid argument', 'clear must skip tombstoned slots, not fail on them')
+            'Invalid argument', 'clear must skip tombstoned slots, not fail on them'
+        )
 
     def run(self):
         self._start_ts1()

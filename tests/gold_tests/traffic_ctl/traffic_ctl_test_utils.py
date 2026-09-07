@@ -61,9 +61,9 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
     return gold_filepath
 
 
-class Common():
+class Common:
     """
-        Handy class to map common traffic_ctl test options.
+    Handy class to map common traffic_ctl test options.
     """
 
     def __init__(self, tr):
@@ -71,8 +71,8 @@ class Common():
 
     def _finish(self):
         """
-            Sets the command to the test. Make sure this gets called after
-            validation is set. Without this call the test will fail.
+        Sets the command to the test. Make sure this gets called after
+        validation is set. Without this call the test will fail.
         """
         self._tr.Processes.Default.Command = self._cmd
 
@@ -85,7 +85,7 @@ class Common():
 
     def validate_with_exit_code(self, exit_code: int):
         """
-            Sets the exit code for the test.
+        Sets the exit code for the test.
         """
         self._tr.Processes.Default.ReturnCode = exit_code
         self._finish()
@@ -116,6 +116,7 @@ class Common():
             )
         """
         import sys
+
         # Testers and All are injected by autest into the test file's globals
         caller_globals = sys._getframe(1).f_globals
         _Testers = caller_globals['Testers']
@@ -134,7 +135,7 @@ class Common():
                 '{"outbound": {"count": "0", "list": []}}'
             )
         """
-        full_text = f'{{\"jsonrpc\": \"2.0\", \"result\": {text}, \"id\": {"``"}}}'
+        full_text = f'{{"jsonrpc": "2.0", "result": {text}, "id": {"``"}}}'
         self._tr.Processes.Default.Streams.stdout = MakeGoldFileWithText(full_text, self._dir, self._tn)
         self._finish()
         return self
@@ -151,6 +152,7 @@ class Common():
             )
         """
         import json
+
         checks_str = ', '.join(f"'{k}': '{v}'" for k, v in field_checks.items())
         self._cmd = (
             f'{self._cmd} | python3 -c "'
@@ -161,24 +163,25 @@ class Common():
             f"[print(f'FAIL: {{k}} = {{actual}} (expected {{expected}})', file=sys.stderr) "
             f"for k, expected, actual in failed]; "
             f"exit(0 if not failed else 1)"
-            f'"')
+            f'"'
+        )
         self._finish()
         return self
 
 
 class ConfigReload(Common):
     """
-        Handy class to map traffic_ctl config reload options.
+    Handy class to map traffic_ctl config reload options.
 
-        Options (in command order):
-            --token, -t          Configuration token
-            --monitor, -m        Monitor reload progress until completion
-            --show-details, -s   Show detailed information of the reload
-            --include-logs, -l   Include logs (with --show-details)
-            --refresh-int, -r    Refresh interval in seconds (with --monitor). Accepts fractional values
-            --force, -F          Force reload even if one in progress
-            --data, -d           Inline config data (@file1 @file2, @- for stdin, or yaml string)
-            --initial-wait, -w   Initial wait before first poll (seconds). Accepts fractional values
+    Options (in command order):
+        --token, -t          Configuration token
+        --monitor, -m        Monitor reload progress until completion
+        --show-details, -s   Show detailed information of the reload
+        --include-logs, -l   Include logs (with --show-details)
+        --refresh-int, -r    Refresh interval in seconds (with --monitor). Accepts fractional values
+        --force, -F          Force reload even if one in progress
+        --data, -d           Inline config data (@file1 @file2, @- for stdin, or yaml string)
+        --initial-wait, -w   Initial wait before first poll (seconds). Accepts fractional values
     """
 
     def __init__(self, dir, tr, tn):
@@ -190,8 +193,8 @@ class ConfigReload(Common):
 
     def __finish(self):
         """
-            Sets the command to the test. Make sure this gets called after
-            validation is set. Without this call the test will fail.
+        Sets the command to the test. Make sure this gets called after
+        validation is set. Without this call the test will fail.
         """
         self._tr.Processes.Default.Command = self._cmd
 
@@ -257,7 +260,7 @@ class ConfigReload(Common):
 
 class ConfigStatus(Common):
     """
-        Handy class to map traffic_ctl config status.
+    Handy class to map traffic_ctl config status.
     """
 
     def __init__(self, dir, tr, tn):
@@ -269,8 +272,8 @@ class ConfigStatus(Common):
 
     def __finish(self):
         """
-            Sets the command to the test. Make sure this gets called after
-            validation is set. Without this call the test will fail.
+        Sets the command to the test. Make sure this gets called after
+        validation is set. Without this call the test will fail.
         """
         self._tr.Processes.Default.Command = self._cmd
 
@@ -289,7 +292,7 @@ class ConfigStatus(Common):
 
 class Config(Common):
     """
-        Handy class to map traffic_ctl config options.
+    Handy class to map traffic_ctl config options.
     """
 
     def __init__(self, dir, tr, tn):
@@ -369,7 +372,7 @@ class Config(Common):
 
 class Debug(Common):
     """
-        Handy class to map traffic_ctl server debug options.
+    Handy class to map traffic_ctl server debug options.
     """
 
     def __init__(self, dir, tr, tn):
@@ -413,7 +416,7 @@ class Debug(Common):
 
 class Server(Common):
     """
-        Handy class to map traffic_ctl server options.
+    Handy class to map traffic_ctl server options.
     """
 
     def __init__(self, dir, tr, tn):
@@ -449,7 +452,7 @@ class Server(Common):
 
 class RPC(Common):
     """
-        Handy class to map traffic_ctl server options.
+    Handy class to map traffic_ctl server options.
     """
 
     def __init__(self, dir, tr, tn):
@@ -490,8 +493,8 @@ traffic_ctl.config().get("proxy.config.diags.debug.tags").as_records().validate_
 
 class TrafficCtl(Config, Server):
     """
-        Single TS instance with multiple tests.
-        Every time a config() is called, a new test is created.
+    Single TS instance with multiple tests.
+    Every time a config() is called, a new test is created.
     """
 
     def __init__(self, test, records_yaml=None, retcode=0):

@@ -42,10 +42,12 @@ Test.ContinueOnFail = True
 server = Test.MakeVerifierServerProcess("server", "replay/webp_chunked_cap.replay.yaml")
 
 ts = Test.MakeATSProcess("ts", enable_cache=False)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'webp_transform',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'webp_transform',
+    }
+)
 ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_webp')
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.format(server.Variables.http_port))
 
@@ -54,7 +56,8 @@ ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.f
 # both confirms the in-transform cap engaged and tells autest the ERROR line is
 # expected (the default check fails on any ERROR in diags.log).
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "response body exceeds cap", "The in-transform cap must trip for a chunked body with no Content-Length")
+    "response body exceeds cap", "The in-transform cap must trip for a chunked body with no Content-Length"
+)
 
 tr = Test.AddTestRun("over-cap chunked body is refused with a 502 and no body")
 # -w reports the downloaded body size; braces are doubled so str.format leaves
@@ -62,8 +65,10 @@ tr = Test.AddTestRun("over-cap chunked body is refused with a 502 and no body")
 tr.MakeCurlCommand(
     '-sS -D - -o /dev/null -w "size_download=%{{size_download}}" -x 127.0.0.1:{0} '
     '-H "Accept: image/webp" -H "uuid: chunked-huge" http://127.0.0.1:{1}/chunked-huge.jpg'.format(
-        ts.Variables.port, server.Variables.http_port),
-    ts=ts)
+        ts.Variables.port, server.Variables.http_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
@@ -71,4 +76,5 @@ tr.Processes.Default.ReturnCode = 0
 # not forwarded. A full response would download 20 MiB.
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 502", "Over-cap image must be refused with a 502")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "size_download=0", "Body must be empty; the full 20 MiB image must not be forwarded")
+    "size_download=0", "Body must be empty; the full 20 MiB image must not be forwarded"
+)

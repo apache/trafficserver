@@ -57,7 +57,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: signed-bar.pem
     ssl_key_name: signed-bar.key
-""".split("\n"))
+""".split("\n")
+        )
         ts.Disk.records_config.update(
             {
                 'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
@@ -65,16 +66,20 @@ ssl_multicert:
                 'proxy.config.exec_thread.autoconfig.scale': 1.0,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'ssl',
-            })
+            }
+        )
 
         # The reload must actually have run (otherwise the test would be vacuous).
         ts.Disk.diags_log.Content = Testers.ContainsExpression(
-            "ssl_multicert.yaml finished loading", "the cert configuration must reload while load is in flight")
+            "ssl_multicert.yaml finished loading", "the cert configuration must reload while load is in flight"
+        )
         # The reload-under-load must not crash or trip an assertion / sanitizer.
         ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
-            "received signal|failed assertion", "ATS must not crash reloading certs under load")
+            "received signal|failed assertion", "ATS must not crash reloading certs under load"
+        )
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            "AddressSanitizer|use-after-free|runtime error:", "no memory-safety error reloading certs under load")
+            "AddressSanitizer|use-after-free|runtime error:", "no memory-safety error reloading certs under load"
+        )
         return ts
 
     def run(self) -> None:
@@ -86,14 +91,16 @@ ssl_multicert:
             f'-p {self._ts.Variables.ssl_port} --sni bar.com --ssldir {self._ts.Variables.SSLDir} '
             f'--live-cert signed-bar.pem '
             f'--v2-cert {os.path.join(self._ts.Variables.SSLDir, "signed2-bar.pem")} '
-            f'--reloads 3 --duration 8 --concurrency 4')
+            f'--reloads 3 --duration 8 --concurrency 4'
+        )
         # traffic_ctl (invoked by the client to reload) needs the runroot environment.
         tr.Processes.Default.Env = self._ts.Env
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.All = Testers.ContainsExpression("RESULT=PASS", "load + reload run must pass")
         tr.Processes.Default.Streams.All += Testers.ContainsExpression("FAILURES=0", "no handshake may fail across the reload")
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            "CERT_CHANGED=1", "the swapped-in certificate must be served after the reload")
+            "CERT_CHANGED=1", "the swapped-in certificate must be served after the reload"
+        )
         tr.StillRunningAfter = self._ts
 
 

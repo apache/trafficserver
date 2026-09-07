@@ -21,7 +21,9 @@ Test.Summary = '''
 Test HTTP/2 with httpspec
 '''
 
-Test.SkipUnless(Condition.HasProgram("h2spec", "h2spec need to be installed on system for this test to work"),)
+Test.SkipUnless(
+    Condition.HasProgram("h2spec", "h2spec need to be installed on system for this test to work"),
+)
 Test.ContinueOnFail = True
 
 # ----
@@ -44,7 +46,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.http.insert_request_via_str': 1,
@@ -53,7 +56,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http',
-    })
+    }
+)
 
 # ----
 # Test Cases

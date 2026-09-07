@@ -24,7 +24,9 @@ MAX_REQ_LEN (32 KB), logging an error rather than allocating a buffer
 sized by an overflowed size_t.
 '''
 
-Test.SkipUnless(Condition.PluginExists('esi.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('esi.so'),
+)
 
 # Matches MAX_REQ_LEN in plugins/esi/fetcher/HttpDataFetcherImpl.cc.
 MAX_REQ_LEN = 32 * 1024
@@ -38,36 +40,37 @@ MAX_REQ_LEN = 32 * 1024
 # A path one byte longer than MAX_REQ_LEN guarantees the cap is tripped
 # regardless of how many headers end up being forwarded.
 oversized_path = 'A' * (MAX_REQ_LEN + 1)
-esi_body = ('<html>\n<body>\n'
-            f'Hello, <esi:include src="http://www.example.com/{oversized_path}"/>\n'
-            '</body>\n</html>\n')
+esi_body = f'<html>\n<body>\nHello, <esi:include src="http://www.example.com/{oversized_path}"/>\n</body>\n</html>\n'
 
 server = Test.MakeOriginServer("server")
 server.addResponse(
-    "sessionfile.log", {
-        "headers": ("GET /oversized.php HTTP/1.1\r\n"
-                    "Host: www.example.com\r\n"
-                    "Content-Length: 0\r\n\r\n"),
+    "sessionfile.log",
+    {
+        "headers": ("GET /oversized.php HTTP/1.1\r\nHost: www.example.com\r\nContent-Length: 0\r\n\r\n"),
         "timestamp": "1469733493.993",
-        "body": ""
-    }, {
-        "headers":
-            (
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html\r\n"
-                "X-Esi: 1\r\n"
-                "Connection: close\r\n"
-                f"Content-Length: {len(esi_body)}\r\n"
-                "Cache-Control: max-age=300\r\n\r\n"),
+        "body": "",
+    },
+    {
+        "headers": (
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "X-Esi: 1\r\n"
+            "Connection: close\r\n"
+            f"Content-Length: {len(esi_body)}\r\n"
+            "Cache-Control: max-age=300\r\n\r\n"
+        ),
         "timestamp": "1469733493.993",
-        "body": esi_body
-    })
+        "body": esi_body,
+    },
+)
 
 ts = Test.MakeATSProcess("ts")
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'http|plugin_esi',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'http|plugin_esi',
+    }
+)
 ts.Disk.remap_config.AddLine(f'map http://www.example.com/ http://127.0.0.1:{server.Variables.Port}')
 ts.Disk.plugin_config.AddLine('esi.so')
 
@@ -81,11 +84,12 @@ tr.StillRunningAfter = ts
 
 tr = Test.AddTestRun("Issue a request whose ESI include URL exceeds the 32 KB fetch cap.")
 tr.MakeCurlCommand(
-    f'http://127.0.0.1:{ts.Variables.port}/oversized.php '
-    '-H"Host: www.example.com" -H"Accept: */*" --output /dev/null --silent',
-    ts=ts)
+    f'http://127.0.0.1:{ts.Variables.port}/oversized.php -H"Host: www.example.com" -H"Accept: */*" --output /dev/null --silent',
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    r"HTTP request size exceeds maximum 32768", "ESI fetcher must log the MAX_REQ_LEN cap error for oversize requests")
+    r"HTTP request size exceeds maximum 32768", "ESI fetcher must log the MAX_REQ_LEN cap error for oversize requests"
+)
 tr.StillRunningAfter = server
 tr.StillRunningAfter = ts

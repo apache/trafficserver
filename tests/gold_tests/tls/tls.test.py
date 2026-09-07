@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -49,16 +48,14 @@ for i in range(0, 1000):
 
 # Add info the origin server responses
 server.addResponse(
-    "sessionlog.json", {
-        "headers": header_string,
+    "sessionlog.json",
+    {"headers": header_string, "timestamp": "1469733493.993", "body": post_body},
+    {
+        "headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
         "timestamp": "1469733493.993",
-        "body": post_body
-    }, {
-        "headers":
-            "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\nCache-Control: max-age=3600\r\nContent-Length: 2\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": "ok"
-    })
+        "body": "ok",
+    },
+)
 
 # add ssl materials like key, certificates for the server
 ts.addDefaultSSLFiles()
@@ -71,7 +68,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -79,7 +77,8 @@ ts.Disk.records_config.update(
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl',
-    })
+    }
+)
 
 tr = Test.AddTestRun("Run-Test")
 tr.Command = './ssl-post 127.0.0.1 40 {0} {1}'.format(header_count, ts.Variables.ssl_port)

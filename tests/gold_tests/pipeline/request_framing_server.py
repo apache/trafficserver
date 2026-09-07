@@ -74,13 +74,15 @@ def response_for(path: str) -> bytes:
             b'HTTP/1.1 200 OK\r\n'
             b'X-Origin-Response: second\r\n'
             b'Content-Type: text/plain\r\n'
-            b'Content-Length: ' + str(len(body)).encode() + b'\r\n\r\n' + body)
+            b'Content-Length: ' + str(len(body)).encode() + b'\r\n\r\n' + body
+        )
     body = b'first response body\n'
     return (
         b'HTTP/1.1 200 OK\r\n'
         b'X-Origin-Response: first\r\n'
         b'Content-Type: text/plain\r\n'
-        b'Content-Length: ' + str(len(body)).encode() + b'\r\n\r\n' + body)
+        b'Content-Length: ' + str(len(body)).encode() + b'\r\n\r\n' + body
+    )
 
 
 def handle_connection(sock: socket.socket) -> None:

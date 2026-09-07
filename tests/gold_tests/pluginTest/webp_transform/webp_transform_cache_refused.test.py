@@ -50,27 +50,33 @@ ts.Disk.records_config.update(
         # makes the poisoning observable if the fix regresses.
         'proxy.config.http.cache.required_headers': 0,
         'proxy.config.http.cache.ignore_client_cc_max_age': 1,
-    })
+    }
+)
 ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_webp')
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.format(server.Variables.http_port))
 
 ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    "response body exceeds cap", "The in-transform cap must trip for the chunked body with no Content-Length")
+    "response body exceeds cap", "The in-transform cap must trip for the chunked body with no Content-Length"
+)
 
 # Request 1: origin is contacted, the cap trips mid-stream, client gets a 502.
 tr = Test.AddTestRun("first request: over-cap chunked body refused with 502")
 tr.MakeCurlCommand(
     '-sS -D - -o /dev/null -w "size_download=%{{size_download}}" -x 127.0.0.1:{0} '
     '-H "Accept: image/webp" -H "uuid: chunked-huge" http://127.0.0.1:{1}/chunked-huge.jpg'.format(
-        ts.Variables.port, server.Variables.http_port),
-    ts=ts)
+        ts.Variables.port, server.Variables.http_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "HTTP/1.1 502", "First over-cap request must be refused with a 502")
+    "HTTP/1.1 502", "First over-cap request must be refused with a 502"
+)
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "size_download=0", "First refused response must have an empty body")
+    "size_download=0", "First refused response must have an empty body"
+)
 
 # Request 2: if the refused response was cached, this hit would serve a poisoned
 # 200 with an empty (or mislabeled) body. The fix marks the refused response
@@ -79,12 +85,17 @@ tr2 = Test.AddTestRun("second request: must not be served a cached poisoned 200"
 tr2.MakeCurlCommand(
     '-sS -D - -o /dev/null -w "size_download=%{{size_download}}" -x 127.0.0.1:{0} '
     '-H "Accept: image/webp" -H "uuid: chunked-huge" http://127.0.0.1:{1}/chunked-huge.jpg'.format(
-        ts.Variables.port, server.Variables.http_port),
-    ts=ts)
+        ts.Variables.port, server.Variables.http_port
+    ),
+    ts=ts,
+)
 tr2.Processes.Default.ReturnCode = 0
 tr2.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-    "HTTP/1.1 502", "Second request must also be a 502, not a cached poisoned 200")
+    "HTTP/1.1 502", "Second request must also be a 502, not a cached poisoned 200"
+)
 tr2.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
-    "HTTP/1.1 200", "Second request must not be served a cached 200 (cache poisoning)")
+    "HTTP/1.1 200", "Second request must not be served a cached 200 (cache poisoning)"
+)
 tr2.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "size_download=0", "Second response body must be empty; no cached oversized/empty image")
+    "size_download=0", "Second response body must be empty; no cached oversized/empty image"
+)

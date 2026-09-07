@@ -35,6 +35,7 @@ import lsp_asserts
 @dataclass
 class LSPTestCase:
     """Represents a single test case for batch execution."""
+
     name: str
     content: str
     position: dict[str, int]
@@ -64,7 +65,8 @@ class LSPClient:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=False,  # Binary mode for proper LSP framing
-            bufsize=0)
+            bufsize=0,
+        )
 
         # Start background threads for stdout and stderr
         self.reader_thread = threading.Thread(target=self._read_responses, daemon=True)
@@ -151,24 +153,15 @@ class LSPClient:
             "jsonrpc": "2.0",
             "id": self.request_id,
             "method": "initialize",
-            "params":
-                {
-                    "processId": None,
-                    "capabilities":
-                        {
-                            "textDocument":
-                                {
-                                    "completion": {
-                                        "completionItem": {
-                                            "snippetSupport": True
-                                        }
-                                    },
-                                    "hover": {
-                                        "contentFormat": ["markdown", "plaintext"]
-                                    }
-                                }
-                        }
-                }
+            "params": {
+                "processId": None,
+                "capabilities": {
+                    "textDocument": {
+                        "completion": {"completionItem": {"snippetSupport": True}},
+                        "hover": {"contentFormat": ["markdown", "plaintext"]},
+                    }
+                },
+            },
         }
 
         self.send_message(init_message)
@@ -227,14 +220,7 @@ class LSPClient:
         open_message = {
             "jsonrpc": "2.0",
             "method": "textDocument/didOpen",
-            "params": {
-                "textDocument": {
-                    "uri": uri,
-                    "languageId": "hrw4u",
-                    "version": 1,
-                    "text": content
-                }
-            }
+            "params": {"textDocument": {"uri": uri, "languageId": "hrw4u", "version": 1, "text": content}},
         }
         self.send_message(open_message)
 
@@ -244,15 +230,7 @@ class LSPClient:
             "jsonrpc": "2.0",
             "id": self.request_id,
             "method": "textDocument/completion",
-            "params": {
-                "textDocument": {
-                    "uri": uri
-                },
-                "position": {
-                    "line": line,
-                    "character": character
-                }
-            }
+            "params": {"textDocument": {"uri": uri}, "position": {"line": line, "character": character}},
         }
 
         expected_id = self.request_id
@@ -267,15 +245,7 @@ class LSPClient:
             "jsonrpc": "2.0",
             "id": self.request_id,
             "method": "textDocument/hover",
-            "params": {
-                "textDocument": {
-                    "uri": uri
-                },
-                "position": {
-                    "line": line,
-                    "character": character
-                }
-            }
+            "params": {"textDocument": {"uri": uri}, "position": {"line": line, "character": character}},
         }
 
         expected_id = self.request_id
@@ -384,12 +354,14 @@ def shared_lsp_client():
 
 
 @pytest.mark.parametrize(
-    "section,prefix,should_allow", [
+    "section,prefix,should_allow",
+    [
         ("REMAP", "inbound.req.", True),
         ("SEND_REQUEST", "outbound.req.", True),
         ("SEND_REQUEST", "outbound.req.", True),
         ("READ_RESPONSE", "outbound.resp.", True),
-    ])
+    ],
+)
 def test_section_restrictions_batch(shared_lsp_client, section, prefix, should_allow) -> None:
     """Batch test section restrictions to reduce overhead."""
     test_content = f"""{section} {{
@@ -500,14 +472,16 @@ REMAP {
 
 
 @pytest.mark.parametrize(
-    "namespace,expected_content", [
+    "namespace,expected_content",
+    [
         ("geo", "Geographic Information Namespace"),
         ("id", "Transaction Identifier Namespace"),
         ("inbound", "Inbound Request Context"),
         ("outbound", "Outbound Request Context"),
         ("client", "Client Information Namespace"),
         ("http", "HTTP Transaction Control Namespace"),
-    ])
+    ],
+)
 def test_namespace_hover_documentation(shared_lsp_client, namespace, expected_content) -> None:
     """Test that namespace prefixes provide comprehensive hover documentation."""
     test_content = f"""READ_REQUEST {{
@@ -557,13 +531,15 @@ def test_now_condition_vs_namespace(shared_lsp_client) -> None:
 
 
 @pytest.mark.parametrize(
-    "expression,field_type", [
+    "expression,field_type",
+    [
         ("geo.COUNTRY", "Country Code"),
         ("id.UNIQUE", "Unique Identifier"),
         ("now.HOUR", "Current Hour"),
         ("inbound.method", "HTTP Request Method"),
         ("outbound.status", "HTTP status"),
-    ])
+    ],
+)
 def test_specific_field_hover(shared_lsp_client, expression, field_type) -> None:
     """Test hover documentation for specific namespace fields."""
     test_content = f"""READ_REQUEST {{
@@ -588,7 +564,8 @@ def test_specific_field_hover(shared_lsp_client, expression, field_type) -> None
 
 
 @pytest.mark.parametrize(
-    "sub_namespace,expected_content", [
+    "sub_namespace,expected_content",
+    [
         ("inbound.conn", "Inbound Connection Properties"),
         ("outbound.conn", "Outbound Connection Properties"),
         ("inbound.req", "Inbound Request Headers"),
@@ -597,7 +574,8 @@ def test_specific_field_hover(shared_lsp_client, expression, field_type) -> None
         ("outbound.resp", "Outbound Response Headers"),
         ("inbound.cookie", "Inbound Request Cookies"),
         ("outbound.cookie", "Outbound Response Cookies"),
-    ])
+    ],
+)
 def test_sub_namespace_hover_documentation(shared_lsp_client, sub_namespace, expected_content) -> None:
     """Test that sub-namespace patterns provide comprehensive hover documentation."""
     test_content = f"""READ_REQUEST {{
@@ -618,7 +596,14 @@ def test_sub_namespace_hover_documentation(shared_lsp_client, sub_namespace, exp
     assert "HRW4U symbol" not in content or expected_content in content
 
     meaningful_indicators = [
-        "Available items:", "Usage:", "Description:", "Context:", "HTTP headers", "cookies", "connection", "URL components"
+        "Available items:",
+        "Usage:",
+        "Description:",
+        "Context:",
+        "HTTP headers",
+        "cookies",
+        "connection",
+        "URL components",
     ]
     has_meaningful_content = any(indicator in content for indicator in meaningful_indicators)
     assert has_meaningful_content, f"Expected meaningful content for {sub_namespace}, got: {content[:200]}..."
@@ -697,8 +682,9 @@ def test_sandbox_denied_function_produces_diagnostic(sandbox_lsp_client) -> None
     sandbox_lsp_client.open_document(uri, content)
     diagnostics = sandbox_lsp_client.wait_for_diagnostics(uri)
 
-    assert any("denied by sandbox policy" in d.get("message", "") for d in diagnostics), \
+    assert any("denied by sandbox policy" in d.get("message", "") for d in diagnostics), (
         f"Expected sandbox denial diagnostic, got: {diagnostics}"
+    )
 
 
 @pytest.mark.sandbox
@@ -709,8 +695,9 @@ def test_sandbox_denied_section_produces_diagnostic(sandbox_lsp_client) -> None:
     sandbox_lsp_client.open_document(uri, content)
     diagnostics = sandbox_lsp_client.wait_for_diagnostics(uri)
 
-    assert any("denied by sandbox policy" in d.get("message", "") for d in diagnostics), \
+    assert any("denied by sandbox policy" in d.get("message", "") for d in diagnostics), (
         f"Expected sandbox denial diagnostic, got: {diagnostics}"
+    )
 
 
 @pytest.mark.sandbox

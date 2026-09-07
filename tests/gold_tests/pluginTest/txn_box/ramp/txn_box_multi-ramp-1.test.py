@@ -34,7 +34,8 @@ tr = Test.TxnBoxTestAndRun(
     remap=[['http://base.ex/', 'http://base.ex/', [CFG_PATH]], ['https://base.ex/', 'https://base.ex/', [CFG_PATH]]],
     verifier_client_args='--verbose info --format "{{url}}" --repeat {}'.format(RepeatCount),
     verifier_server_args='--verbose info --format "{url}"',
-    enable_tls=True)
+    enable_tls=True,
+)
 
 with open(f"{tr.TestDirectory}/multi_ramp_common.py") as f:
     code = compile(f.read(), "multi_ramp_common.py", 'exec')

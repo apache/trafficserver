@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -32,13 +31,12 @@ cache:
     - name: disk.0
       path: storage
       size: 256M
-'''
+''',
     },
     {
         "case": 1,
         "description": "four equally divided volumes",
-        "storage":
-            '''
+        "storage": '''
 cache:
   spans:
     - name: disk.0
@@ -53,13 +51,12 @@ cache:
       size: 25%
     - id: 4
       size: 25%
-'''
+''',
     },
     {
         "case": 2,
         "description": "exclusive span",
-        "storage":
-            '''
+        "storage": '''
 cache:
   spans:
     - name: disk.0
@@ -73,13 +70,12 @@ cache:
 ''',
         "hosting": '''
 hostname=* volume=1
-'''
+''',
     },
     {
         "case": 3,
         "description": "two equally divided volumes without size option",
-        "storage":
-            '''
+        "storage": '''
 cache:
   spans:
     - name: disk.0
@@ -88,7 +84,7 @@ cache:
   volumes:
     - id: 1
     - id: 2
-'''
+''',
     },
 ]
 
@@ -111,10 +107,12 @@ class StorageMetricsTest:
             if "hosting" in config:
                 ts.Disk.hosting_config.AddLine(config["hosting"])
 
-            ts.Disk.records_config.update({
-                'proxy.config.diags.debug.enabled': 1,
-                'proxy.config.diags.debug.tags': 'cache',
-            })
+            ts.Disk.records_config.update(
+                {
+                    'proxy.config.diags.debug.enabled': 1,
+                    'proxy.config.diags.debug.tags': 'cache',
+                }
+            )
 
             tr = Test.AddTestRun()
 

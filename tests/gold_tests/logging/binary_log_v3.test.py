@@ -29,7 +29,7 @@ Test.SkipIf(Condition.CurlUsingUnixDomainSocket())
 
 
 class BinaryLogV3Test:
-    ''' Drive traffic into a v3 binary log, then decode it with traffic_logcat
+    '''Drive traffic into a v3 binary log, then decode it with traffic_logcat
     and compare the ASCII and JSON output against gold files.
     '''
 
@@ -55,7 +55,7 @@ class BinaryLogV3Test:
         self.__configure_decode_test_runs()
 
     def __configure_traffic_server(self):
-        ''' Configure ATS with the ASCII, v2, and v3 binary log objects.
+        '''Configure ATS with the ASCII, v2, and v3 binary log objects.
 
         Return:
             The traffic_server process.
@@ -71,7 +71,8 @@ class BinaryLogV3Test:
                 # Flush quickly so the .blog is on disk shortly after the requests.
                 'proxy.config.log.max_secs_per_buffer': 1,
                 'proxy.config.log.periodic_tasks_interval': 1,
-            })
+            }
+        )
 
         ts.Disk.remap_config.AddLine(f'map http://127.0.0.1:{ts.Variables.port}/ http://127.0.0.1:{self.httpbin.Variables.Port}/')
 
@@ -93,7 +94,8 @@ class BinaryLogV3Test:
                 - filename: ascii
                   format: custom_fmt
                   mode: ascii
-            '''.split("\n"))
+            '''.split("\n")
+        )
 
         logdir = ts.Variables.LOGDIR
         self.v2_blog = os.path.join(logdir, 'v2.blog')
@@ -102,7 +104,7 @@ class BinaryLogV3Test:
         return ts
 
     def __configure_traffic_test_run(self):
-        ''' Generate num_requests identical origin-backed transactions. '''
+        '''Generate num_requests identical origin-backed transactions.'''
         url = f'http://127.0.0.1:{self.ts.Variables.port}/get'
         for i in range(BinaryLogV3Test.num_requests):
             tr = Test.AddTestRun(f'Generate binary log traffic #{i + 1}')
@@ -113,7 +115,7 @@ class BinaryLogV3Test:
             tr.Processes.Default.ReturnCode = 0
 
     def __configure_decode_test_runs(self):
-        ''' Decode the binary logs with traffic_logcat and compare to gold. '''
+        '''Decode the binary logs with traffic_logcat and compare to gold.'''
         logcat = os.path.join(self.ts.Variables.BINDIR, 'traffic_logcat')
 
         # Wait until the ASCII companion has every entry; the binary logs are

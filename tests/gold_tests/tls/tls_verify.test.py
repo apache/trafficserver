@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -25,24 +24,18 @@ ts = Test.MakeATSProcess("ts", enable_tls=True)
 server_foo = Test.MakeOriginServer(
     "server_foo",
     ssl=True,
-    options={
-        "--key": "{0}/signed-foo.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-foo.key".format(Test.RunDirectory), "--cert": "{0}/signed-foo.pem".format(Test.RunDirectory)},
+)
 server_bar = Test.MakeOriginServer(
     "server_bar",
     ssl=True,
-    options={
-        "--key": "{0}/signed-bar.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-bar.key".format(Test.RunDirectory), "--cert": "{0}/signed-bar.pem".format(Test.RunDirectory)},
+)
 server_wild = Test.MakeOriginServer(
     "server_wild",
     ssl=True,
-    options={
-        "--key": "{0}/signed-wild.key".format(Test.RunDirectory),
-        "--cert": "{0}/signed-wild.pem".format(Test.RunDirectory)
-    })
+    options={"--key": "{0}/signed-wild.key".format(Test.RunDirectory), "--cert": "{0}/signed-wild.pem".format(Test.RunDirectory)},
+)
 server = Test.MakeOriginServer("server", ssl=True)
 
 request_foo_header = {"headers": "GET / HTTP/1.1\r\nHost: foo.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""}
@@ -82,7 +75,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -96,8 +90,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.url_remap.pristine_host_hdr': 1
-    })
+        'proxy.config.url_remap.pristine_host_hdr': 1,
+    }
+)
 
 ts.Disk.sni_yaml.AddLines(
     [
@@ -111,7 +106,8 @@ ts.Disk.sni_yaml.AddLines(
         '- fqdn: bad_bar.com',
         '  verify_server_policy: ENFORCED',
         '  verify_server_properties: ALL',
-    ])
+    ]
+)
 
 tr = Test.AddTestRun("Permissive-Test")
 tr.Setup.Copy("ssl/signed-foo.key")
@@ -162,4 +158,5 @@ tr5.StillRunningAfter = ts
 # Over riding the built in ERROR check since we expect tr3 to fail
 ts.Disk.diags_log.Content = Testers.ExcludesExpression("verification failed", "Make sure the signatures didn't fail")
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
-    r"WARNING: SNI \(bad_bar.com\) not in certificate", "Make sure bad_bar name checked failed.")
+    r"WARNING: SNI \(bad_bar.com\) not in certificate", "Make sure bad_bar name checked failed."
+)

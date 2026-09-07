@@ -68,16 +68,15 @@ remap:
       url: http://delta.ex
     to:
       url: http://delta.ex:{pv_port}
-    '''.split("\n"))
+    '''.split("\n")
+)
 
 tm.Disk.records_config.update({'proxy.config.url_remap.min_rules_required': 3})
 
 nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 tm.Disk.records_config.update(
-    {
-        'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+    {'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}", 'proxy.config.dns.resolv_conf': 'NULL'}
+)
 
 tr = Test.AddTestRun("verify load")
 tr.Processes.Default.StartBefore(pv)
@@ -91,7 +90,8 @@ p.Env = tm.Env
 p.Command = 'echo "Change remap.yaml, two lines"'
 p.Setup.Lambda(
     lambda: update_remap_yaml(
-        remap_cfg_path, f'''
+        remap_cfg_path,
+        f'''
 remap:
   - type: map
     from:
@@ -103,7 +103,9 @@ remap:
       url: http://bravo.ex
     to:
       url: http://bravo.ex:{pv_port}
-    '''.split("\n")))
+    '''.split("\n"),
+    )
+)
 
 tr = Test.AddConfigReload(tm, expect="fail", expect_tasks=["remap.yaml"], delay_start=2, description="remap_yaml reload, fails")
 
@@ -116,7 +118,8 @@ p.Env = tm.Env
 p.Command = 'echo "Change remap.yaml, more than three lines"'
 p.Setup.Lambda(
     lambda: update_remap_yaml(
-        remap_cfg_path, f'''
+        remap_cfg_path,
+        f'''
 remap:
   - type: map
     from:
@@ -143,10 +146,13 @@ remap:
       url: http://india.ex
     to:
       url: http://india.ex:{pv_port}
-    '''.split("\n")))
+    '''.split("\n"),
+    )
+)
 
 tr = Test.AddConfigReload(
-    tm, expect="success", expect_tasks=["remap.yaml"], delay_start=2, description="remap_yaml reload, succeeds")
+    tm, expect="success", expect_tasks=["remap.yaml"], delay_start=2, description="remap_yaml reload, succeeds"
+)
 
 tr = Test.AddTestRun("post update charlie")
 tr.AddVerifierClientProcess("client_3", replay_file_3, http_ports=[tm.Variables.port])

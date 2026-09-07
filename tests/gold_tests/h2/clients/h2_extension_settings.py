@@ -106,7 +106,8 @@ def run(port: int) -> int:
             (":scheme", "https"),
             (":authority", "www.example.com"),
             (":path", "/"),
-        ])
+        ]
+    )
 
     with make_socket(port) as sock:
         sock.sendall(H2_PREFACE)

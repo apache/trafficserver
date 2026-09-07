@@ -41,68 +41,81 @@ server = Test.MakeOriginServer("server")
 # would not.
 TWO_MIB = 2 * 1024 * 1024
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET /two_mib.jpg HTTP/1.1\r\nHost: *\r\n\r\n",
+    "sessionlog.json",
+    {"headers": "GET /two_mib.jpg HTTP/1.1\r\nHost: *\r\n\r\n", "timestamp": "1", "body": ""},
+    {
+        "headers": "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {0}\r\nConnection: close\r\n\r\n".format(
+            TWO_MIB
+        ),
         "timestamp": "1",
-        "body": ""
-    }, {
-        "headers":
-            "HTTP/1.1 200 OK\r\nContent-Type: image/jpeg\r\nContent-Length: {0}\r\nConnection: close\r\n\r\n".format(TWO_MIB),
-        "timestamp": "1",
-        "body": "A" * TWO_MIB
-    })
+        "body": "A" * TWO_MIB,
+    },
+)
 
 ts = Test.MakeATSProcess("ts", enable_cache=False)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'webp_transform',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'webp_transform',
+    }
+)
 ts.Disk.plugin_config.AddLine('webp_transform.so convert_to_webp max_buffer_size=1M')
 ts.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 # 1M == 1048576. Seeing the decline name 1048576 (not the 16777216 default)
 # proves parse_size parsed the M suffix and the override is what is enforced.
 ts.Disk.traffic_out.Content = Testers.ContainsExpression(
-    "exceeds cap 1048576", "max_buffer_size=1M must override the default and decline at 1 MiB")
+    "exceeds cap 1048576", "max_buffer_size=1M must override the default and decline at 1 MiB"
+)
 
 tr = Test.AddTestRun("2 MiB body declined at the 1 MiB override")
 tr.MakeCurlCommand(
     '-sS -D - -o /dev/null -x 127.0.0.1:{0} -H "Accept: image/webp" http://127.0.0.1:{1}/two_mib.jpg'.format(
-        ts.Variables.port, server.Variables.Port),
-    ts=ts)
+        ts.Variables.port, server.Variables.Port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.StartBefore(server)
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = Testers.ContainsExpression("HTTP/1.1 200", "Declined response is a 200 passthrough")
 tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-    "[Cc]ontent-[Tt]ype: image/jpeg", "Declined response keeps its original image/jpeg type")
+    "[Cc]ontent-[Tt]ype: image/jpeg", "Declined response keeps its original image/jpeg type"
+)
 
 # ---- Instance 2: malformed values are rejected and keep the default ----
 ts_bad = Test.MakeATSProcess("ts_bad", enable_cache=False)
-ts_bad.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'webp_transform',
-})
+ts_bad.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'webp_transform',
+    }
+)
 # Negative (sign guard), bad suffix, and a value that fits in u64 but overflows
 # size_t when multiplied by the G suffix (multiply-overflow guard). All must be
 # rejected; none may install a cap, so the 16 MiB default must survive.
 ts_bad.Disk.plugin_config.AddLine(
-    'webp_transform.so convert_to_webp max_buffer_size=-1 max_buffer_size=8X max_buffer_size=20000000000G')
+    'webp_transform.so convert_to_webp max_buffer_size=-1 max_buffer_size=8X max_buffer_size=20000000000G'
+)
 ts_bad.Disk.remap_config.AddLine('map http://127.0.0.1:{0}/ http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
 # TSError() writes these to diags.log at ERROR level. Asserting them here both
 # confirms parse_size rejected each value and tells autest the ERROR lines are
 # expected (the default check fails on any ERROR in diags.log).
 ts_bad.Disk.diags_log.Content = Testers.ContainsExpression(
-    "invalid max_buffer_size=-1, keeping default 16777216", "Negative value must be rejected")
+    "invalid max_buffer_size=-1, keeping default 16777216", "Negative value must be rejected"
+)
 ts_bad.Disk.diags_log.Content += Testers.ContainsExpression(
-    "invalid max_buffer_size=8X, keeping default 16777216", "Bad suffix must be rejected")
+    "invalid max_buffer_size=8X, keeping default 16777216", "Bad suffix must be rejected"
+)
 ts_bad.Disk.diags_log.Content += Testers.ContainsExpression(
-    "invalid max_buffer_size=20000000000G, keeping default 16777216", "Suffix-multiply overflow must be rejected")
+    "invalid max_buffer_size=20000000000G, keeping default 16777216", "Suffix-multiply overflow must be rejected"
+)
 
 tr_bad = Test.AddTestRun("malformed max_buffer_size values are rejected, default retained")
 tr_bad.MakeCurlCommand(
     '-sS -o /dev/null -x 127.0.0.1:{0} http://127.0.0.1:{1}/two_mib.jpg'.format(ts_bad.Variables.port, server.Variables.Port),
-    ts=ts_bad)
+    ts=ts_bad,
+)
 tr_bad.Processes.Default.StartBefore(ts_bad)
 tr_bad.Processes.Default.ReturnCode = 0

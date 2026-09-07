@@ -117,7 +117,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
                 {
                     'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
                     'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-                })
+                }
+            )
 
             ssl_multicert_yaml = [
                 "ssl_multicert:",
@@ -193,7 +194,8 @@ def configure_ats(obj: 'TestRun', server: 'Process', ats_config: dict, dns: Opti
             {
                 'proxy.config.dns.nameservers': f'127.0.0.1:{dns.Variables.Port}',
                 'proxy.config.dns.resolv_conf': 'NULL',
-            })
+            }
+        )
 
     for item in ats_config.get('copy_to_config_dir', []):
         item_path = os.path.join(obj.TestDirectory, item)
@@ -364,7 +366,8 @@ def ATSReplayTest(obj, replay_file: str):
     https_ports = process_config.pop('https_ports', [ts.Variables.ssl_port] if enable_tls else None)
     http3_ports = process_config.pop('http3_ports', [ts.Variables.ssl_port] if enable_quic else None)
     client = tr.AddVerifierClientProcess(
-        name, replay_file, http_ports=http_ports, https_ports=https_ports, http3_ports=http3_ports, **process_config)
+        name, replay_file, http_ports=http_ports, https_ports=https_ports, http3_ports=http3_ports, **process_config
+    )
 
     # Set expected return code if specified. A list of codes is wrapped in
     # Any() so that any of the listed values is accepted.
@@ -406,7 +409,8 @@ def ATSReplayTest(obj, replay_file: str):
                 check_tr.Processes.Default.Env = ts.Env
                 check_tr.Processes.Default.ReturnCode = 0
                 check_tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                    f'^{re.escape(metric_name)}\\s+{expected_value}$', f'{metric_name} should be {expected_value}')
+                    f'^{re.escape(metric_name)}\\s+{expected_value}$', f'{metric_name} should be {expected_value}'
+                )
                 check_tr.StillRunningAfter = ts
             elif 'min' in check:
                 minimum = check['min']
@@ -415,7 +419,8 @@ def ATSReplayTest(obj, replay_file: str):
                 # $$ escapes the awk field ref from autest's command templating.
                 check_tr.Processes.Default.Command = (
                     f"traffic_ctl metric get {metric_name} | "
-                    f"awk 'BEGIN {{ rc = 1 }} {{ if ($$2 + 0 >= {minimum}) rc = 0 }} END {{ exit rc }}'")
+                    f"awk 'BEGIN {{ rc = 1 }} {{ if ($$2 + 0 >= {minimum}) rc = 0 }} END {{ exit rc }}'"
+                )
                 check_tr.Processes.Default.Env = ts.Env
                 check_tr.Processes.Default.ReturnCode = 0
                 check_tr.StillRunningAfter = ts
@@ -426,7 +431,8 @@ def ATSReplayTest(obj, replay_file: str):
     if log_validation and log_validation.get('error_log'):
         wait_for_log = obj.AddTestRun('Wait for logs of ' + ats_config.get('name', 'ts'))
         wait_for_log.Processes.Default.Command = (
-            os.path.join(obj.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'error.log'))
+            os.path.join(obj.Variables.AtsTestToolsDir, 'condwait') + ' 60 1 -f ' + os.path.join(ts.Variables.LOGDIR, 'error.log')
+        )
         wait_for_log.Processes.Default.ReturnCode = 0
 
     return tr

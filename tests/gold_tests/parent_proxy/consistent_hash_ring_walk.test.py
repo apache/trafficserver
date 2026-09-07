@@ -95,15 +95,16 @@ class ParentDownRingWalkTest:
                 'proxy.config.http.parent_proxy.retry_time': 300,
                 'proxy.config.http.parent_proxy.self_detect': 0,
                 'proxy.config.url_remap.remap_required': 0,
-            })
+            }
+        )
 
         # Consistent-hash pool of distinct parent hostnames, go_direct=false so an
         # all-down pool yields 502 (not a direct-to-origin fallback).
         self._parents = list(zip(self.parent_hostnames, self._parent_ports))
         parent_list = ', '.join(f'{host}:{port}|1' for host, port in self._parents)
         self.ts.Disk.parent_config.AddLine(
-            f'dest_domain=. parent="{parent_list}" round_robin=consistent_hash '
-            'go_direct=false parent_is_proxy=true')
+            f'dest_domain=. parent="{parent_list}" round_robin=consistent_hash go_direct=false parent_is_proxy=true'
+        )
 
         # The all-down selection is a single findParent call. selectParent reads
         # each distinct parent's HostStatus at most once and stops once all are
@@ -111,11 +112,13 @@ class ParentDownRingWalkTest:
         # parent count -- not the ~2*N*1024 five-figure ring walk it cost before.
         self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
             r'getHostStatus calls: %d\b' % NUM_PARENTS,
-            'selectParent read each distinct parent once (O(num_parents)), not the full ring.')
+            'selectParent read each distinct parent once (O(num_parents)), not the full ring.',
+        )
         # It must NOT take the HostStatus lock once per ring replica node (the old
         # bug reported a five-figure count).
         self.ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            r'getHostStatus calls: [0-9]{5}', 'selectParent must not read HostStatus once per ring replica node.')
+            r'getHostStatus calls: [0-9]{5}', 'selectParent must not read HostStatus once per ring replica node.'
+        )
 
     def run(self):
         traffic_ctl = os.path.join(self.ts.Variables.BINDIR, 'traffic_ctl')
@@ -134,7 +137,8 @@ class ParentDownRingWalkTest:
         load = Test.AddTestRun('Request through the all-down pool -> bounded selection -> 502')
         load.MakeCurlCommand(
             f'-s -o /dev/null -w "%{{http_code}}" --proxy 127.0.0.1:{self.ts.Variables.port} http://example.com/ring-walk-probe',
-            ts=self.ts)
+            ts=self.ts,
+        )
         load.Processes.Default.Streams.stdout = Testers.ContainsExpression('502', 'All parents down => 502.')
         load.Processes.Default.ReturnCode = 0
         load.StillRunningAfter = self.ts

@@ -129,13 +129,13 @@ class InverseSymbolResolver(SymbolResolverBase):
 
     def _resolve_ambiguous_exact(self, tag: str, section: SectionType | None) -> str | None:
         if tag == "STATUS":
-            if (mapping := tables.REVERSE_RESOLUTION_MAP.get("STATUS")):
+            if mapping := tables.REVERSE_RESOLUTION_MAP.get("STATUS"):
                 outbound_sections = mapping["outbound_sections"]
                 if section in outbound_sections or section == SectionType.READ_RESPONSE:
                     return mapping["outbound_result"]
                 return mapping["inbound_result"]
         elif tag == "METHOD":
-            if (mapping := tables.REVERSE_RESOLUTION_MAP.get("METHOD")):
+            if mapping := tables.REVERSE_RESOLUTION_MAP.get("METHOD"):
                 outbound_sections = mapping["outbound_sections"]
                 if section in outbound_sections:
                     return mapping["outbound_result"]
@@ -239,7 +239,8 @@ class InverseSymbolResolver(SymbolResolverBase):
         return repl
 
     def _handle_set_rm_operation(
-            self, cmd: str, toks: list[str], prefix: str, qualifier: str, section: SectionType | None = None) -> str:
+        self, cmd: str, toks: list[str], prefix: str, qualifier: str, section: SectionType | None = None
+    ) -> str:
         if cmd.startswith("rm-"):
             return f'{prefix}{qualifier} = ""'
         if len(toks) < 3:
@@ -249,7 +250,8 @@ class InverseSymbolResolver(SymbolResolverBase):
         return f"{prefix}{qualifier} = {value}"
 
     def _handle_operator_command(
-            self, cmd: str, toks: list[str], lhs_key: str, uppercase: bool, section: SectionType | None) -> str:
+        self, cmd: str, toks: list[str], lhs_key: str, uppercase: bool, section: SectionType | None
+    ) -> str:
         if cmd == "set-status":
             if len(toks) < 2:
                 raise SymbolResolutionError(" ".join(toks), "Missing value")
@@ -329,7 +331,7 @@ class InverseSymbolResolver(SymbolResolverBase):
             inner = inner[:-1]
         if ":" in inner:
             # Check for multi-part certificate tags first
-            if (fallback_map := tables.REVERSE_RESOLUTION_MAP.get("FALLBACK_TAG_MAP")):
+            if fallback_map := tables.REVERSE_RESOLUTION_MAP.get("FALLBACK_TAG_MAP"):
                 parts = inner.split(":")
                 for i in range(len(parts) - 1, 0, -1):
                     potential_tag = ":".join(parts[:i])
@@ -396,7 +398,7 @@ class InverseSymbolResolver(SymbolResolverBase):
         if ' == ""' in t:
             return t.replace(' == ""', '')
         if ' != ""' in t:
-            return f"!{t.replace(' != \"\"', '')}"
+            return f"!{t.replace(' != ""', '')}"
         if "==" in t:
             return t.replace("==", "!=", 1)
         if " !=" in t or "!=" in t:
@@ -426,8 +428,9 @@ class InverseSymbolResolver(SymbolResolverBase):
         # Multi-colon parsing for certificate tags (CLIENT-CERT, SERVER-CERT) and query parameter tags (QUERY)
         original_inner = percent[2:-1]
         if ":" in original_inner:
-            if (any(cert_tag in original_inner for cert_tag in ["CLIENT-CERT", "SERVER-CERT"]) or
-                (payload and payload.startswith("QUERY:"))):
+            if any(cert_tag in original_inner for cert_tag in ["CLIENT-CERT", "SERVER-CERT"]) or (
+                payload and payload.startswith("QUERY:")
+            ):
                 new_tag, new_payload = self.parse_percent_block(percent)
                 if new_tag != tag or new_payload != payload:
                     tag, payload = new_tag, new_payload

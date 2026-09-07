@@ -25,20 +25,17 @@ A connection that closes while parked in a TLS handshake hook must still deliver
 TS_VCONN_CLOSE_HOOK to the plugin.
 '''
 
-Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"),)
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion("1.1.1"),
+)
 
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 server.addResponse(
-    "sessionlog.json", {
-        "headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    }, {
-        "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
-        "timestamp": "1469733493.993",
-        "body": ""
-    })
+    "sessionlog.json",
+    {"headers": "GET / HTTP/1.1\r\nHost: www.example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+    {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+)
 
 ts.addDefaultSSLFiles()
 
@@ -51,7 +48,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.handshake_timeout_in': 1,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-    })
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -59,10 +57,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port))
+    'map https://example.com:{1} http://127.0.0.1:{0}'.format(server.Variables.Port, ts.Variables.ssl_port)
+)
 
 # The delayed client hello callback parks the handshake for 2 seconds before it reenables.
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_hook_test.so'), ts, '-client_hello=1 -close=1')
@@ -85,4 +85,5 @@ ts.Disk.traffic_out.Content = Testers.ContainsExpression("Client Hello callback 
 # The close hook must still fire, with the correct event. Before the fix, callHooks() advanced
 # curHook within the client hello hook list instead of the close hook list, so this never ran.
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Close callback 0 .* - event is good", "the close hook ran for the parked connection")
+    "Close callback 0 .* - event is good", "the close hook ran for the parked connection"
+)

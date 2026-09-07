@@ -28,7 +28,6 @@ Test.ContinueOnFail = True
 
 
 class SplitDNSReloadTest:
-
     def __init__(self):
         self.setupDNSServer()
         self.setupOriginServer()
@@ -41,8 +40,10 @@ class SplitDNSReloadTest:
     def setupOriginServer(self):
         self.origin_server = Test.MakeOriginServer("origin_server")
         self.origin_server.addResponse(
-            "sessionlog.json", {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
-            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"})
+            "sessionlog.json",
+            {"headers": "GET / HTTP/1.1\r\nHost: localhost\r\n\r\n"},
+            {"headers": "HTTP/1.1 200 OK\r\nServer: microserver\r\nConnection: close\r\n\r\n"},
+        )
 
     def setupTS(self):
         self.ts = Test.MakeATSProcess("ts", enable_cache=False)
@@ -51,7 +52,8 @@ class SplitDNSReloadTest:
                 'proxy.config.dns.splitDNS.enabled': 1,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'splitdns|config',
-            })
+            }
+        )
         self.ts.Disk.splitdns_config.AddLine(f"dest_domain=foo.ts.a.o named=127.0.0.1:{self.dns.Variables.Port}")
         self.ts.Disk.remap_config.AddLine(f"map /foo/ http://foo.ts.a.o:{self.origin_server.Variables.Port}/")
 
@@ -69,7 +71,7 @@ class SplitDNSReloadTest:
 
         # Test 2: Touch splitdns.config -> reload -> handler fires
         tr = Test.AddTestRun("Touch splitdns.config")
-        tr.Processes.Default.Command = (f"touch {os.path.join(config_dir, 'splitdns.config')} && sleep 1")
+        tr.Processes.Default.Command = f"touch {os.path.join(config_dir, 'splitdns.config')} && sleep 1"
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.ts
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -48,13 +47,15 @@ def main():
         alpn_str = ''
 
     s_client_cmd_1 = shlex.split(
-        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_out {sess_file_path} {sni_str} {alpn_str}')
+        f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_out {sess_file_path} {sni_str} {alpn_str}'
+    )
     s_client_cmd_2 = shlex.split(
         f'openssl s_client -connect 127.0.0.1:{args.ats_port} -tls1_3 -quiet -sess_in {sess_file_path} -early_data {early_data_file_path} {sni_str} {alpn_str}'
     )
 
     create_sess_proc = subprocess.Popen(
-        s_client_cmd_1, env=os.environ.copy(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        s_client_cmd_1, env=os.environ.copy(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     try:
         output = create_sess_proc.communicate(input=bytes(b'GET / HTTP/1.0\r\n\r\n'), timeout=1)[0]
     except subprocess.TimeoutExpired:
@@ -62,7 +63,8 @@ def main():
         output = create_sess_proc.communicate()[0]
 
     reuse_sess_proc = subprocess.Popen(
-        s_client_cmd_2, env=os.environ.copy(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        s_client_cmd_2, env=os.environ.copy(), stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     try:
         output = reuse_sess_proc.communicate(timeout=1)[0]
     except subprocess.TimeoutExpired:
@@ -74,10 +76,12 @@ def main():
         data = b''
         for line in lines:
             line += b'\n'
-            if line.startswith(bytes('Connecting to', 'utf-8')) or \
-                    line.startswith(bytes('SSL_connect:', 'utf-8')) or \
-                    line.startswith(bytes('SSL3 alert', 'utf-8')) or \
-                    bytes('Can\'t use SSL_get_servername', 'utf-8') in line:
+            if (
+                line.startswith(bytes('Connecting to', 'utf-8'))
+                or line.startswith(bytes('SSL_connect:', 'utf-8'))
+                or line.startswith(bytes('SSL3 alert', 'utf-8'))
+                or bytes('Can\'t use SSL_get_servername', 'utf-8') in line
+            ):
                 continue
             data += line
         d = h2_early_decode.Decoder()

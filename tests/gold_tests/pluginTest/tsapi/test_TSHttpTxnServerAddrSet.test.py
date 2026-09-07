@@ -26,6 +26,7 @@ plugin_name = "test_TSHttpTxnServerAddrSet"
 
 class TestTSHttpTxnServerAddrSet:
     """Verify that TSHttpTxnServerAddrSet() works as expected."""
+
     _replay_file = "test_TSHttpTxnServerAddrSet.replay.yaml"
 
     def _configure_server(self, tr: 'TestRun') -> 'Process':
@@ -63,7 +64,8 @@ class TestTSHttpTxnServerAddrSet:
                 'proxy.config.dns.resolv_conf': 'NULL',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|test_plugin',
-            })
+            }
+        )
 
         # Remap to a nonexisting server and port. The plugin should use
         # TSHttpTxnServerAddrSet() to set an actual server address and port. We
@@ -72,7 +74,7 @@ class TestTSHttpTxnServerAddrSet:
         ts.Disk.remap_config.AddLine(f'map / http://non.existent.server.com:{bogus_port}')
 
     def run(self):
-        """ Configure the TestRun."""
+        """Configure the TestRun."""
         tr = Test.AddTestRun("Verify TSHttpTxnServerAddrSet() works as expected.")
         self._configure_dns(tr)
         self._configure_server(tr)
@@ -80,7 +82,8 @@ class TestTSHttpTxnServerAddrSet:
         tr.AddVerifierClientProcess("client", self._replay_file, http_ports=[self._ts.Variables.port])
 
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "redirect-succeeded", "Verify that the client received the response.")
+            "redirect-succeeded", "Verify that the client received the response."
+        )
 
         tr.Processes.Default.StartBefore(self._dns)
         tr.Processes.Default.StartBefore(self._server)

@@ -25,6 +25,7 @@ class ParentRetryTest:
     """
     Test loading parent.config with parent_retry setting enabled
     """
+
     ts_parent_hostname = "localhost:8081"
 
     def __init__(self):

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -44,7 +43,8 @@ def get_ts(logging_config, disable_log_checks=False):
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'log-file',
             'proxy.config.log.max_secs_per_buffer': 1,
-        })
+        }
+    )
 
     # Since we're only verifying logs and not traffic, we don't need an origin
     # server. The following will simply deny the requests and emit a log
@@ -71,18 +71,22 @@ logging:
     - filename: '{}'
       mode: ascii_pipe
       format: custom
-'''.format(pipe_name).split("\n"))
+'''.format(pipe_name).split("\n")
+)
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created")
+    "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created"
+)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "no readers for pipe .*{}".format(pipe_name), "Verify that no readers for the pipe was detected.")
+    "no readers for pipe .*{}".format(pipe_name), "Verify that no readers for the pipe was detected."
+)
 
 ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-    "New buffer size for pipe".format(pipe_name), "Verify that the default pipe size was used.")
+    "New buffer size for pipe".format(pipe_name), "Verify that the default pipe size was used."
+)
 
 curl = tr.Processes.Process("client_request", 'curl "http://127.0.0.1:{0}" --verbose'.format(ts.Variables.port))
 
@@ -127,22 +131,27 @@ logging:
       format: custom
       pipe_buffer_size: {}
       '''.format(pipe_name, pipe_size).split("\n"),
-    disable_log_checks=True)
+    disable_log_checks=True,
+)
 
 pipe_path = os.path.join(ts.Variables.LOGDIR, pipe_name)
 
 ts.Disk.diags_log.Content += Testers.ExcludesExpression(
-    r"ERROR:(?! Set pipe size failed for pipe .*: Operation not permitted)", "The diagnostics should contain no unexpected errors.")
+    r"ERROR:(?! Set pipe size failed for pipe .*: Operation not permitted)", "The diagnostics should contain no unexpected errors."
+)
 ts.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "The diagnostics should contain no fatal errors.")
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created")
+    "Created named pipe .*{}".format(pipe_name), "Verify that the named pipe was created"
+)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "no readers for pipe .*{}".format(pipe_name), "Verify that no readers for the pipe was detected.")
+    "no readers for pipe .*{}".format(pipe_name), "Verify that no readers for the pipe was detected."
+)
 
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "Previous buffer size for pipe .*{}".format(pipe_name), "Verify that the named pipe's size was adjusted")
+    "Previous buffer size for pipe .*{}".format(pipe_name), "Verify that the named pipe's size was adjusted"
+)
 
 # See fcntl:
 #   "Attempts to set the pipe capacity below the page size
@@ -153,11 +162,13 @@ ts.Disk.traffic_out.Content += Testers.ContainsExpression(
 # pipe_buffer_is_larger_than.py helper script to verify that the pipe grew in
 # size.
 ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-    "New buffer size for pipe.*{}".format(pipe_name), "Verify that the named pipe's size was adjusted")
+    "New buffer size for pipe.*{}".format(pipe_name), "Verify that the named pipe's size was adjusted"
+)
 buffer_verifier = "pipe_buffer_is_larger_than.py"
 tr.Setup.Copy(buffer_verifier)
 verify_buffer_size = tr.Processes.Process(
-    "verify_buffer_size", f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size} {ts.Disk.diags_log.AbsPath}")
+    "verify_buffer_size", f"{sys.executable} {buffer_verifier} {pipe_path} {pipe_size} {ts.Disk.diags_log.AbsPath}"
+)
 verify_buffer_size.Return = 0
 verify_buffer_size.Streams.All += Testers.ContainsExpression("Success", "The buffer size verifier should report success.")
 

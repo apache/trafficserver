@@ -29,7 +29,8 @@ Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'test_log_
 
 plugin_log = Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'test_log_interface.log'), exists=True)
 plugin_log.Content = Testers.ContainsExpression(
-    'Writing during plugin initialization', 'The pre-initialization log buffer should be flushed')
+    'Writing during plugin initialization', 'The pre-initialization log buffer should be flushed'
+)
 
 tr = Test.AddTestRun('Start ATS with a plugin that fills a text log buffer during initialization')
 tr.Processes.Default.Command = 'printf "traffic_server remained running"'

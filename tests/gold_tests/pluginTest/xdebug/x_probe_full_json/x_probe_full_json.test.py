@@ -45,19 +45,19 @@ class XDebugProbeFullJsonTest:
         self._setupJqValidation()
 
     def _setupOriginServer(self) -> None:
-        """Configure the origin server using Proxy Verifier.
-        """
+        """Configure the origin server using Proxy Verifier."""
         self._server = Test.MakeVerifierServerProcess("server", self._replay_file)
 
     def _setupTS(self) -> None:
-        """Configure ATS with xdebug plugin enabled for probe-full-json functionality.
-        """
+        """Configure ATS with xdebug plugin enabled for probe-full-json functionality."""
         self._ts = Test.MakeATSProcess("ts")
 
-        self._ts.Disk.records_config.update({
-            "proxy.config.diags.debug.enabled": 1,
-            "proxy.config.diags.debug.tags": "xdebug",
-        })
+        self._ts.Disk.records_config.update(
+            {
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.diags.debug.tags": "xdebug",
+            }
+        )
 
         self._ts.Disk.plugin_config.AddLine('xdebug.so --enable=probe-full-json')
         self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.http_port}")
@@ -72,32 +72,33 @@ class XDebugProbeFullJsonTest:
             self._servers_are_started = True
 
     def _setupClient(self) -> None:
-        """Test basic probe-full-json functionality with JSON output.
-        """
+        """Test basic probe-full-json functionality with JSON output."""
         tr = Test.AddTestRun("Verify probe-full-json functionality")
         self._startServersIfNeeded(tr)
         tr.AddVerifierClientProcess("client", self._replay_file, http_ports=[self._ts.Variables.port])
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            'X-Original-Content-Type: text/html', "X-Original-Content-Type of text/html should be present")
+            'X-Original-Content-Type: text/html', "X-Original-Content-Type of text/html should be present"
+        )
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
             'X-Original-Content-Type: application/octet-stream',
-            "X-Original-Content-Type of application/octet-stream should be present")
+            "X-Original-Content-Type of application/octet-stream should be present",
+        )
         # CSP test should produce valid JSON (single quotes not escaped)
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "default-src 'self'; script-src 'self' 'unsafe-inline'",
-            "CSP header with single quotes should be present in valid JSON")
+            "default-src 'self'; script-src 'self' 'unsafe-inline'", "CSP header with single quotes should be present in valid JSON"
+        )
 
     def _setupJqValidation(self) -> None:
-        """Use curl to get the response body and pipe through jq to validate JSON.
-        """
+        """Use curl to get the response body and pipe through jq to validate JSON."""
         tr = Test.AddTestRun("Escaped text/html content.")
         self._startServersIfNeeded(tr)
         tr.MakeCurlCommand(
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
             "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout = "gold/jq_escaped.gold"
 
@@ -107,7 +108,8 @@ class XDebugProbeFullJsonTest:
             f'-s -H"uuid: 2" -H "Host: example.com" -H "X-Debug: probe-full-json" '
             f'http://127.0.0.1:{self._ts.Variables.port}/binary | '
             "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += "gold/jq_hex.gold"
 
@@ -117,10 +119,12 @@ class XDebugProbeFullJsonTest:
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=hex" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
             "jq '.\"server-body\"'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            '3c21444f43545950452068746d6c3e', "Should contain hex-encoded HTML content (forced hex override)")
+            '3c21444f43545950452068746d6c3e', "Should contain hex-encoded HTML content (forced hex override)"
+        )
 
         tr = Test.AddTestRun("=escape")
         self._startServersIfNeeded(tr)
@@ -128,7 +132,8 @@ class XDebugProbeFullJsonTest:
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=escape" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
             "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += "gold/jq_escaped.gold"
 
@@ -138,7 +143,8 @@ class XDebugProbeFullJsonTest:
             f'-s -H"uuid: 1" -H "Host: example.com" -H "X-Debug: probe-full-json=nobody" '
             f'http://127.0.0.1:{self._ts.Variables.port}/test | '
             "jq '.\"client-request\".\"uuid\",.\"server-body\",.\"proxy-response\".\"x-response\"'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stdout += "gold/jq_nobody.gold"
 
@@ -148,14 +154,17 @@ class XDebugProbeFullJsonTest:
             f'-s -H"uuid: 3" -H "Host: example.com" -H "X-Debug: probe-full-json" '
             f'http://127.0.0.1:{self._ts.Variables.port}/csp-test | '
             "jq '.\"server-response\".\"content-security-policy\"'",
-            ts=self._ts)
+            ts=self._ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         # Verify jq can parse it (would fail if single quotes were escaped as \')
         # and that the CSP header contains single quotes
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "'self'", "CSP header should contain single quotes (not escaped)")
+            "'self'", "CSP header should contain single quotes (not escaped)"
+        )
         tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
-            "'unsafe-inline'", "CSP header should contain 'unsafe-inline' directive")
+            "'unsafe-inline'", "CSP header should contain 'unsafe-inline' directive"
+        )
 
 
 # Execute the test

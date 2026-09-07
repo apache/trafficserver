@@ -1,5 +1,4 @@
-"""
-"""
+""" """
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -48,10 +47,12 @@ class ForwardProxyTest:
         ForwardProxyTest._server_counter += 1
         if self._scheme_proto_mismatch_policy in (2, None):
             self.server.Streams.All = Testers.ExcludesExpression(
-                'Received an HTTP/1 request with key 1', 'Verify that the server did not receive the request.')
+                'Received an HTTP/1 request with key 1', 'Verify that the server did not receive the request.'
+            )
         else:
             self.server.Streams.All = Testers.ContainsExpression(
-                'Received an HTTP/1 request with key 1', 'Verify that the server received the request.')
+                'Received an HTTP/1 request with key 1', 'Verify that the server received the request.'
+            )
 
     def setupTS(self):
         """Configure the Traffic Server process."""
@@ -65,7 +66,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
         self.ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self.server.Variables.http_port}/")
 
         self.ts.Disk.records_config.update(
@@ -75,13 +77,15 @@ ssl_multicert:
                 'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': "http",
-            })
+            }
+        )
 
         if self._scheme_proto_mismatch_policy is not None:
             self.ts.Disk.records_config.update(
                 {
                     'proxy.config.ssl.client.scheme_proto_mismatch_policy': self._scheme_proto_mismatch_policy,
-                })
+                }
+            )
 
     def addProxyHttpsToHttpCase(self):
         """Test ATS as an HTTPS forward proxy behind an HTTP server."""
@@ -89,20 +93,21 @@ ssl_multicert:
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
         tr.MakeCurlCommand(
-            f'--proxy-insecure -v -H "uuid: 1" '
-            f'--proxy "https://127.0.0.1:{self.ts.Variables.ssl_port}/" '
-            f'http://example.com/',
-            ts=self.ts)
+            f'--proxy-insecure -v -H "uuid: 1" --proxy "https://127.0.0.1:{self.ts.Variables.ssl_port}/" http://example.com/',
+            ts=self.ts,
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.StillRunningAfter = self.server
         tr.StillRunningAfter = self.ts
 
         if self._scheme_proto_mismatch_policy in (2, None):
             tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                '< HTTP/1.1 400 Invalid HTTP Request', 'Verify that the request was rejected.')
+                '< HTTP/1.1 400 Invalid HTTP Request', 'Verify that the request was rejected.'
+            )
         else:
             tr.Processes.Default.Streams.All = Testers.ContainsExpression(
-                '< HTTP/1.1 200 OK', 'Verify that curl received a 200 OK response.')
+                '< HTTP/1.1 200 OK', 'Verify that curl received a 200 OK response.'
+            )
 
     def run(self):
         """Configure the TestRun instances for this set of tests."""

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -74,7 +73,8 @@ ts1.Disk.stek_share_conf_1.AddLines(
         'server_cert_file: {0}'.format(cert_path),
         'server_key_file: {0}'.format(key_path),
         'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
-    ])
+    ]
+)
 
 ts2.Disk.stek_share_conf_2.AddLines(
     [
@@ -94,7 +94,8 @@ ts2.Disk.stek_share_conf_2.AddLines(
         'server_cert_file: {0}'.format(cert_path),
         'server_key_file: {0}'.format(key_path),
         'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
-    ])
+    ]
+)
 
 ts3.Disk.stek_share_conf_3.AddLines(
     [
@@ -114,7 +115,8 @@ ts3.Disk.stek_share_conf_3.AddLines(
         'server_cert_file: {0}'.format(cert_path),
         'server_key_file: {0}'.format(key_path),
         'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
-    ])
+    ]
+)
 
 ts4.Disk.stek_share_conf_4.AddLines(
     [
@@ -134,7 +136,8 @@ ts4.Disk.stek_share_conf_4.AddLines(
         'server_cert_file: {0}'.format(cert_path),
         'server_key_file: {0}'.format(key_path),
         'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
-    ])
+    ]
+)
 
 ts5.Disk.stek_share_conf_5.AddLines(
     [
@@ -154,7 +157,8 @@ ts5.Disk.stek_share_conf_5.AddLines(
         'server_cert_file: {0}'.format(cert_path),
         'server_key_file: {0}'.format(key_path),
         'cert_verify_str: /C=US/ST=IL/O=Yahoo/OU=Edge/CN=stek-share',
-    ])
+    ]
+)
 
 ts1.Disk.records_config.update(
     {
@@ -165,9 +169,9 @@ ts1.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.session_ticket.enable': 1,
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-    })
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+    }
+)
 ts1.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_1))
 ts1.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -175,7 +179,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: self_signed.crt
     ssl_key_name: self_signed.key
-""".split("\n"))
+""".split("\n")
+)
 ts1.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 ts2.Disk.records_config.update(
@@ -187,9 +192,9 @@ ts2.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.session_ticket.enable': 1,
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-    })
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+    }
+)
 ts2.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_2))
 ts2.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -197,7 +202,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: self_signed.crt
     ssl_key_name: self_signed.key
-""".split("\n"))
+""".split("\n")
+)
 ts2.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 ts3.Disk.records_config.update(
@@ -209,9 +215,9 @@ ts3.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.session_ticket.enable': 1,
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-    })
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+    }
+)
 ts3.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_3))
 ts3.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -219,7 +225,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: self_signed.crt
     ssl_key_name: self_signed.key
-""".split("\n"))
+""".split("\n")
+)
 ts3.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 ts4.Disk.records_config.update(
@@ -231,9 +238,9 @@ ts4.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.session_ticket.enable': 1,
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-    })
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+    }
+)
 ts4.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_4))
 ts4.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -241,7 +248,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: self_signed.crt
     ssl_key_name: self_signed.key
-""".split("\n"))
+""".split("\n")
+)
 ts4.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 ts5.Disk.records_config.update(
@@ -253,9 +261,9 @@ ts5.Disk.records_config.update(
         'proxy.config.ssl.server.cert.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(Test.RunDirectory),
         'proxy.config.ssl.server.session_ticket.enable': 1,
-        'proxy.config.ssl.server.cipher_suite':
-            'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA'
-    })
+        'proxy.config.ssl.server.cipher_suite': 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA',
+    }
+)
 ts5.Disk.plugin_config.AddLine('stek_share.so {0}'.format(stek_share_conf_path_5))
 ts5.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -263,7 +271,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: self_signed.crt
     ssl_key_name: self_signed.key
-""".split("\n"))
+""".split("\n")
+)
 ts5.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
 
 
@@ -312,20 +321,20 @@ tr1.StillRunningAfter += ts4
 tr1.StillRunningAfter += ts5
 
 tr2 = Test.AddTestRun("TLSv1.2 Session Ticket")
-tr2.Command = \
-    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {5} && ' \
-    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {5} && ' \
-    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{1} -sess_in {5} && ' \
-    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{2} -sess_in {5} && ' \
-    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{3} -sess_in {5} && ' \
-    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{4} -sess_in {5}' \
-    .format(
+tr2.Command = (
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_out {5} && '
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{0} -sess_in {5} && '
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{1} -sess_in {5} && '
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{2} -sess_in {5} && '
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{3} -sess_in {5} && '
+    'printf "GET / HTTP/1.1\r\n" | openssl s_client -tls1_2 -connect 127.0.0.1:{4} -sess_in {5}'.format(
         ts1.Variables.ssl_port,
         ts2.Variables.ssl_port,
         ts3.Variables.ssl_port,
         ts4.Variables.ssl_port,
         ts5.Variables.ssl_port,
-        os.path.join(Test.RunDirectory, 'sess.dat')
+        os.path.join(Test.RunDirectory, 'sess.dat'),
     )
+)
 tr2.ReturnCode = 0
 tr2.Processes.Default.Streams.All.Content = Testers.Lambda(check_session)

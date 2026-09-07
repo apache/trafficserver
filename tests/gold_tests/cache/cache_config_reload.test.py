@@ -31,10 +31,12 @@ Test.ContinueOnFail = True
 
 # Create ATS with cache enabled (needed for hosting.config registration in open_done)
 ts = Test.MakeATSProcess("ts", enable_cache=True)
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 1,
-    'proxy.config.diags.debug.tags': 'rpc|config',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 1,
+        'proxy.config.diags.debug.tags': 'rpc|config',
+    }
+)
 
 # Set up initial cache.config with a caching rule
 ts.Disk.cache_config.AddLine('dest_domain=example.com ttl-in-cache=30d')
@@ -50,7 +52,8 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 tr = Test.AddConfigReload(
-    ts, expect="any", expect_tasks=["cache.config"], token="reload_cache_test", description="Reload after cache.config touch")
+    ts, expect="any", expect_tasks=["cache.config"], token="reload_cache_test", description="Reload after cache.config touch"
+)
 
 # --- Test 2: Touch hosting.config and reload ---
 
@@ -61,4 +64,5 @@ tr.Processes.Default.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 tr = Test.AddConfigReload(
-    ts, expect="any", expect_tasks=["hosting.config"], token="reload_hosting_test", description="Reload after hosting.config touch")
+    ts, expect="any", expect_tasks=["hosting.config"], token="reload_hosting_test", description="Reload after hosting.config touch"
+)

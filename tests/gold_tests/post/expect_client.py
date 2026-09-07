@@ -17,7 +17,7 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from http_utils import (wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket)
+from http_utils import wait_for_headers_complete, determine_outstanding_bytes_to_read, drain_socket
 
 import argparse
 import socket
@@ -37,7 +37,8 @@ def parse_args() -> argparse.Namespace:
         '--server-hostname',
         dest="server_hostname",
         default="some.server.com",
-        help="The hostname of the server to connect to.")
+        help="The hostname of the server to connect to.",
+    )
     return parser.parse_args()
 
 
@@ -67,7 +68,8 @@ def send_expect_request(sock: socket.socket, server_hostname: str) -> None:
         b"Content-Length: 3\r\n"
         b"uuid: expect\r\n"
         b"Expect: 100-Continue\r\n"
-        b"\r\n")
+        b"\r\n"
+    )
     sock.sendall(request)
     print('Sent Expect: 100-Continue request:')
     print(request.decode())

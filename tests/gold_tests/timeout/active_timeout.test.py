@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -39,7 +38,8 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.url_remap.remap_required': 1,
         'proxy.config.http.transaction_active_timeout_out': 2,
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}/'.format(server.Variables.Port))
 
@@ -49,7 +49,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 tr = Test.AddTestRun("tr")
 tr.Processes.Default.StartBefore(server)
@@ -70,4 +71,5 @@ if not Condition.CurlUsingUnixDomainSocket():
         tr4 = Test.AddTestRun("tr")
         tr4.MakeCurlCommand('-k -i --http3 https://localhost:{0}/file'.format(ts.Variables.ssl_port), ts=ts)
         tr4.Processes.Default.Streams.stdout = Testers.ContainsExpression(
-            "Activity Timeout", "Request should fail with active timeout")
+            "Activity Timeout", "Request should fail with active timeout"
+        )

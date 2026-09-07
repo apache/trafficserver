@@ -22,7 +22,6 @@ Verify Empty DATA Frame Handling
 
 
 class Http2EmptyDataFrameTest:
-
     def __init__(self):
         self.__setupOriginServer()
         self.__setupTS()
@@ -42,8 +41,9 @@ class Http2EmptyDataFrameTest:
                 'proxy.config.ssl.server.private_key.path': f"{self._ts.Variables.SSLDir}",
                 'proxy.config.http.insert_response_via_str': 2,
                 'proxy.config.http2.active_timeout_in': 3,
-                'proxy.config.http2.stream_error_rate_threshold': 0.1  # default
-            })
+                'proxy.config.http2.stream_error_rate_threshold': 0.1,  # default
+            }
+        )
         self._ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{self._server.Variables.Port}")
         self._ts.Disk.ssl_multicert_yaml.AddLines(
             """
@@ -51,7 +51,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+        )
 
     def __setupClient(self):
         self._ts.Setup.CopyAs("clients/h2empty_data_frame.py", Test.RunDirectory)

@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -35,7 +34,7 @@ response_bar_header = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
 response_random_header = {
     "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "ok random"
+    "body": "ok random",
 }
 server_foo.addResponse("sessionlog_foo.json", request_foo_header, response_foo_header)
 server_bar.addResponse("sessionlog_bar.json", request_bar_header, response_bar_header)
@@ -60,7 +59,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: signed-foo.pem
     ssl_key_name: signed-foo.key
-""".split("\n"))
+""".split("\n")
+)
 
 # Case 1, global config policy=permissive properties=signature
 #         override for foo.com policy=enforced properties=all
@@ -68,16 +68,17 @@ ts.Disk.records_config.update(
     {
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
-        'proxy.config.http.connect_ports':
-            '{0} {1} {2} {3}'.format(
-                ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.Port, server_random.Variables.Port),
+        'proxy.config.http.connect_ports': '{0} {1} {2} {3}'.format(
+            ts.Variables.ssl_port, server_foo.Variables.SSL_Port, server_bar.Variables.Port, server_random.Variables.Port
+        ),
         'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.client.CA.cert.filename': 'signer.pem',
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
         'proxy.config.url_remap.pristine_host_hdr': 1,
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
-    })
+        'proxy.config.dns.resolv_conf': 'NULL',
+    }
+)
 ts.addPrivateConnectAllowYaml()
 
 # foo.com should not terminate.  Just tunnel to server_foo
@@ -91,7 +92,8 @@ ts.Disk.sni_yaml.AddLines(
         "  forward_route: 'localhost:{0}'".format(server_bar.Variables.Port),
         "- fqdn: ''",  # default case
         "  forward_route: 'localhost:{0}'".format(server_random.Variables.Port),
-    ])
+    ]
+)
 
 tr = Test.AddTestRun("Tunnel-test")
 tr.MakeCurlCommand("-v  --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(ts.Variables.ssl_port), ts=ts)
@@ -104,20 +106,23 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr.Processes.Default.Streams.All += Testers.ExcludesExpression("CN=foo.com", "Should not TLS terminate on Traffic Server")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr.Processes.Default.Streams.All += Testers.ContainsExpression("ok foo", "Body is expected")
 
 tr2 = Test.AddTestRun("Forward-test")
 tr2.MakeCurlCommand(
-    "-v --http1.1  -H 'host:bar.com' --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts)
+    "-v --http1.1  -H 'host:bar.com' --resolve 'bar.com:{0}:127.0.0.1' -k https://bar.com:{0}".format(ts.Variables.ssl_port), ts=ts
+)
 tr2.ReturnCode = 0
 tr2.StillRunningAfter = server_bar
 tr2.StillRunningAfter = ts
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr2.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Should TLS terminate on Traffic Server")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr2.Processes.Default.Streams.All += Testers.ContainsExpression("ok bar", "Body is expected")
@@ -129,27 +134,39 @@ tr3.StillRunningAfter = server_random
 tr3.StillRunningAfter = ts
 tr3.Processes.Default.Streams.All += Testers.ExcludesExpression("Could Not Connect", "Curl attempt should have succeeded")
 tr3.Processes.Default.Streams.All += Testers.ExcludesExpression(
-    "Not Found on Accelerato", "Should not try to remap on Traffic Server")
+    "Not Found on Accelerato", "Should not try to remap on Traffic Server"
+)
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("CN=foo.com", "Should TLS terminate on Traffic Server")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("HTTP/1.1 200 OK", "Should get a successful response")
 tr3.Processes.Default.Streams.All += Testers.ContainsExpression("ok random", "Body is expected")
 
 tr = Test.AddTestRun("Test Metrics")
 tr.Processes.Default.Command = (
-    f"{Test.Variables.AtsTestToolsDir}/stdout_wait" + " 'traffic_ctl metric get" +
-    " proxy.process.http.total_incoming_connections" + " proxy.process.http.total_client_connections" +
-    " proxy.process.http.total_client_connections_ipv4" + " proxy.process.http.total_client_connections_ipv6" +
-    " proxy.process.http.total_server_connections" + " proxy.process.http2.total_client_connections" +
-    " proxy.process.http.connect_requests" + " proxy.process.tunnel.total_client_connections_blind_tcp" +
-    " proxy.process.tunnel.current_client_connections_blind_tcp" + " proxy.process.tunnel.total_server_connections_blind_tcp" +
-    " proxy.process.tunnel.current_server_connections_blind_tcp" + " proxy.process.tunnel.total_client_connections_tls_tunnel" +
-    " proxy.process.tunnel.current_client_connections_tls_tunnel" + " proxy.process.tunnel.total_client_connections_tls_forward" +
-    " proxy.process.tunnel.current_client_connections_tls_forward" +
-    " proxy.process.tunnel.total_client_connections_tls_partial_blind" +
-    " proxy.process.tunnel.current_client_connections_tls_partial_blind" +
-    " proxy.process.tunnel.total_client_connections_tls_http" + " proxy.process.tunnel.current_client_connections_tls_http" +
-    " proxy.process.tunnel.total_server_connections_tls" + " proxy.process.tunnel.current_server_connections_tls'" +
-    f" {Test.TestDirectory}/gold/tls-tunnel-forward-metrics.gold")
+    f"{Test.Variables.AtsTestToolsDir}/stdout_wait"
+    + " 'traffic_ctl metric get"
+    + " proxy.process.http.total_incoming_connections"
+    + " proxy.process.http.total_client_connections"
+    + " proxy.process.http.total_client_connections_ipv4"
+    + " proxy.process.http.total_client_connections_ipv6"
+    + " proxy.process.http.total_server_connections"
+    + " proxy.process.http2.total_client_connections"
+    + " proxy.process.http.connect_requests"
+    + " proxy.process.tunnel.total_client_connections_blind_tcp"
+    + " proxy.process.tunnel.current_client_connections_blind_tcp"
+    + " proxy.process.tunnel.total_server_connections_blind_tcp"
+    + " proxy.process.tunnel.current_server_connections_blind_tcp"
+    + " proxy.process.tunnel.total_client_connections_tls_tunnel"
+    + " proxy.process.tunnel.current_client_connections_tls_tunnel"
+    + " proxy.process.tunnel.total_client_connections_tls_forward"
+    + " proxy.process.tunnel.current_client_connections_tls_forward"
+    + " proxy.process.tunnel.total_client_connections_tls_partial_blind"
+    + " proxy.process.tunnel.current_client_connections_tls_partial_blind"
+    + " proxy.process.tunnel.total_client_connections_tls_http"
+    + " proxy.process.tunnel.current_client_connections_tls_http"
+    + " proxy.process.tunnel.total_server_connections_tls"
+    + " proxy.process.tunnel.current_server_connections_tls'"
+    + f" {Test.TestDirectory}/gold/tls-tunnel-forward-metrics.gold"
+)
 # Need to copy over the environment so traffic_ctl knows where to find the unix domain socket
 tr.Processes.Default.Env = ts.Env
 tr.Processes.Default.ReturnCode = 0

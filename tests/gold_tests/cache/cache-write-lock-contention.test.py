@@ -39,7 +39,10 @@ Test.ContinueOnFail = True
 Test.SkipUnless(
     Condition(
         lambda: os.environ.get('RUN_CACHE_CONTENTION_TEST', '').lower() in ('1', 'true', 'yes'),
-        "Set RUN_CACHE_CONTENTION_TEST=1 to run this timing-sensitive test", True))
+        "Set RUN_CACHE_CONTENTION_TEST=1 to run this timing-sensitive test",
+        True,
+    )
+)
 
 
 def make_parallel_curl(url, count, stagger_delay=None):
@@ -57,8 +60,8 @@ def make_parallel_curl(url, count, stagger_delay=None):
         if i > 1 and stagger_delay:
             parts.append(f'sleep {stagger_delay} && ')
         parts.append(
-            f'{{curl}} -s -o /dev/null -w "req{i}: %{{{{http_code}}}}\\n" "{url}" '
-            f'-H "Host: example.com" -H "X-Request: req{i}" & ')
+            f'{{curl}} -s -o /dev/null -w "req{i}: %{{{{http_code}}}}\\n" "{url}" -H "Host: example.com" -H "X-Request: req{i}" & '
+        )
     parts.append('wait)')
     return ''.join(parts)
 
@@ -84,20 +87,18 @@ class ContentionTest:
 
         max_age = 1 if self.stale_scenario else 300
         self.server.addResponse(
-            "sessionlog.json", {
-                "headers": f"GET /test-{self.name} HTTP/1.1\r\nHost: example.com\r\n\r\n",
+            "sessionlog.json",
+            {"headers": f"GET /test-{self.name} HTTP/1.1\r\nHost: example.com\r\n\r\n", "timestamp": "1469733493.993", "body": ""},
+            {
+                "headers": f"HTTP/1.1 200 OK\r\n"
+                f"Content-Length: 100\r\n"
+                f"Cache-Control: max-age={max_age}\r\n"
+                f"X-Origin: {self.name}\r\n"
+                f"Connection: close\r\n\r\n",
                 "timestamp": "1469733493.993",
-                "body": ""
-            }, {
-                "headers":
-                    f"HTTP/1.1 200 OK\r\n"
-                    f"Content-Length: 100\r\n"
-                    f"Cache-Control: max-age={max_age}\r\n"
-                    f"X-Origin: {self.name}\r\n"
-                    f"Connection: close\r\n\r\n",
-                "timestamp": "1469733493.993",
-                "body": "X" * 100
-            })
+                "body": "X" * 100,
+            },
+        )
 
         self.ts = Test.MakeATSProcess(f"ts_{self.name}", enable_cache=True)
 
@@ -115,7 +116,8 @@ class ContentionTest:
                 'proxy.config.http.cache.open_read_retry_time': retry_time,
                 'proxy.config.cache.enable_read_while_writer': 1,
                 'proxy.config.http.cache.max_stale_age': 300,
-            })
+            }
+        )
         self.ts.Disk.remap_config.AddLine(f'map http://example.com/ http://127.0.0.1:{self.server.Variables.Port}/')
 
     def run(self):
@@ -160,10 +162,12 @@ class ContentionTest:
 
         if self.stale_scenario and self.action == 6:
             self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                "serving stale \\(action 6\\)|object stale, serving stale", "Stale fallback triggered")
+                "serving stale \\(action 6\\)|object stale, serving stale", "Stale fallback triggered"
+            )
         else:
             self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
-                "cache open read failure.*retrying|read while write", "Cache contention occurred")
+                "cache open read failure.*retrying|read while write", "Cache contention occurred"
+            )
 
 
 # Action 5: READ_RETRY - retries cache reads, goes to origin if exhausted

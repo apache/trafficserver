@@ -67,12 +67,12 @@ class S3UrlEncodingTest:
         request1 = {
             "headers": "GET /bucket/app/(channel)/test.js HTTP/1.1\r\nHost: s3.amazonaws.com\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response1 = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 7\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "test1ok"
+            "body": "test1ok",
         }
         self.server.addResponse("sessionlog.log", request1, response1)
 
@@ -82,12 +82,12 @@ class S3UrlEncodingTest:
         request2 = {
             "headers": "GET /bucket/app/%28channel%29/test.js HTTP/1.1\r\nHost: s3.amazonaws.com\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response2 = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 7\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "test2ok"
+            "body": "test2ok",
         }
         self.server.addResponse("sessionlog.log", request2, response2)
 
@@ -103,12 +103,12 @@ class S3UrlEncodingTest:
         request3 = {
             "headers": "GET /bucket/app/(channel)/%5B%5Bparts%5D%5D/page.js HTTP/1.1\r\nHost: s3.amazonaws.com\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": ""
+            "body": "",
         }
         response3 = {
             "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 7\r\n\r\n",
             "timestamp": "1469733493.993",
-            "body": "test3ok"
+            "body": "test3ok",
         }
         self.server.addResponse("sessionlog.log", request3, response3)
 
@@ -121,7 +121,8 @@ class S3UrlEncodingTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'origin_server_auth',
                 'proxy.config.url_remap.pristine_host_hdr': 1,
-            })
+            }
+        )
 
         # Copy the config file to the test directory and use it
         self.ts.Setup.CopyAs('rules/s3_url_encoding.test_input', Test.RunDirectory)
@@ -130,7 +131,8 @@ class S3UrlEncodingTest:
         self.ts.Disk.remap_config.AddLine(
             f'map http://s3.amazonaws.com/ http://127.0.0.1:{self.server.Variables.Port}/ '
             f'@plugin=origin_server_auth.so '
-            f'@pparam=--config @pparam={Test.RunDirectory}/s3_url_encoding.test_input')
+            f'@pparam=--config @pparam={Test.RunDirectory}/s3_url_encoding.test_input'
+        )
 
     def test_unencoded_parentheses(self):
         """
@@ -141,7 +143,8 @@ class S3UrlEncodingTest:
         tr.Processes.Default.Command = (
             f'curl -s -v -o /dev/null '
             f'-H "Host: s3.amazonaws.com" '
-            f'"http://127.0.0.1:{self.ts.Variables.port}/bucket/app/(channel)/test.js"')
+            f'"http://127.0.0.1:{self.ts.Variables.port}/bucket/app/(channel)/test.js"'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.StartBefore(self.server)
         tr.Processes.Default.StartBefore(self.ts)
@@ -157,7 +160,8 @@ class S3UrlEncodingTest:
         tr.Processes.Default.Command = (
             f'curl -s -v -o /dev/null '
             f'-H "Host: s3.amazonaws.com" '
-            f'"http://127.0.0.1:{self.ts.Variables.port}/bucket/app/%28channel%29/test.js"')
+            f'"http://127.0.0.1:{self.ts.Variables.port}/bucket/app/%28channel%29/test.js"'
+        )
         tr.Processes.Default.ReturnCode = 0
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression("200 OK", "Expected 200 OK response")
         tr.StillRunningAfter = self.ts
@@ -181,12 +185,14 @@ class S3UrlEncodingTest:
         tr.Processes.Default.Command = (
             f'curl -s -v -o /dev/null '
             f'-H "Host: s3.amazonaws.com" '
-            f'"http://127.0.0.1:{self.ts.Variables.port}/bucket/app/(channel)/%5B%5Bparts%5D%5D/page.js"')
+            f'"http://127.0.0.1:{self.ts.Variables.port}/bucket/app/(channel)/%5B%5Bparts%5D%5D/page.js"'
+        )
         tr.Processes.Default.ReturnCode = 0
         # This should succeed with our mock server, but would fail with real S3
         # The test documents the bug - when fixed, the signature would be correct
         tr.Processes.Default.Streams.stderr.Content = Testers.ContainsExpression(
-            "200 OK", "Expected 200 OK response (mock server accepts any signature)")
+            "200 OK", "Expected 200 OK response (mock server accepts any signature)"
+        )
         tr.StillRunningAfter = self.ts
 
     def run(self):

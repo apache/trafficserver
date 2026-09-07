@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -38,13 +37,15 @@ ts.Disk.records_config.update(
         'proxy.config.url_remap.remap_required': 1,
         'proxy.config.http.transaction_no_activity_timeout_in': 2,
         'proxy.config.ssl.client.verify.server.policy': 'PERMISSIVE',
-    })
+    }
+)
 
 ts.Disk.remap_config.AddLines(
     [
         'map https://www.tls.com/ https://127.0.0.1:{0}'.format(server.Variables.https_port),
         'map / http://127.0.0.1:{0}'.format(server.Variables.http_port),
-    ])
+    ]
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -52,7 +53,8 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 #
 # Test 1: Verify that server delay does not trigger client activity timeout.

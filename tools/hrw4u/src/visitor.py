@@ -70,13 +70,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     _PARAM_REF_PATTERN = re.compile(r'\$([a-zA-Z_][a-zA-Z0-9_-]*)')
 
     def __init__(
-            self,
-            filename: str = SystemDefaults.DEFAULT_FILENAME,
-            debug: bool = SystemDefaults.DEFAULT_DEBUG,
-            error_collector=None,
-            preserve_comments: bool = True,
-            proc_search_paths: list[Path] | None = None,
-            sandbox: SandboxConfig | None = None) -> None:
+        self,
+        filename: str = SystemDefaults.DEFAULT_FILENAME,
+        debug: bool = SystemDefaults.DEFAULT_DEBUG,
+        error_collector=None,
+        preserve_comments: bool = True,
+        proc_search_paths: list[Path] | None = None,
+        sandbox: SandboxConfig | None = None,
+    ) -> None:
         super().__init__(filename, debug, error_collector)
 
         self._cond_state = CondState()
@@ -257,7 +258,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if symbol == name:
             if '.' not in name and ':' not in name:
                 error = SymbolResolutionError(
-                    "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section.")
+                    "identifier", f"Undefined variable: '{name}'. Variables must be declared in a VARS section."
+                )
                 suggestions = self.symbol_resolver.get_variable_suggestions(name, self.current_section)
                 if suggestions:
                     error.add_symbol_suggestion(suggestions)
@@ -279,8 +281,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 except Exception:
                     source_line = ""
                 raise Hrw4uSyntaxError(
-                    self.filename, val_ctx.start.line, val_ctx.start.column, f"'${name}' used outside procedure context",
-                    source_line)
+                    self.filename,
+                    val_ctx.start.line,
+                    val_ctx.start.column,
+                    f"'${name}' used outside procedure context",
+                    source_line,
+                )
             return self._proc_bindings[name]
         return val_ctx.getText()
 
@@ -300,7 +306,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         # 'Apple::Common' → 'Apple::', 'Apple::Simple::All' → 'Apple::Simple::'
         expected_ns = None
         if use_spec and '::' in use_spec:
-            expected_ns = use_spec[:use_spec.rindex('::') + 2]
+            expected_ns = use_spec[: use_spec.rindex('::') + 2]
 
         text = path.read_text(encoding='utf-8')
         listener = ThrowingErrorListener(filename=str(path))
@@ -325,8 +331,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 sub_path = resolve_use_path(spec, self._proc_search_paths)
                 if sub_path is None:
                     raise Hrw4uSyntaxError(
-                        str(path),
-                        item.useDirective().start.line, 0, f"use '{spec}': file not found in procedures path", "")
+                        str(path), item.useDirective().start.line, 0, f"use '{spec}': file not found in procedures path", ""
+                    )
                 self._load_proc_file(sub_path, new_stack, use_spec=spec)
                 found_proc = True
             elif item.procedureDecl():
@@ -334,17 +340,25 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 name = ctx.QUALIFIED_IDENT().getText()
                 if '::' not in name:
                     raise Hrw4uSyntaxError(
-                        str(path), ctx.start.line, ctx.start.column, f"procedure name '{name}' must be qualified (e.g. 'ns::name')",
-                        "")
+                        str(path),
+                        ctx.start.line,
+                        ctx.start.column,
+                        f"procedure name '{name}' must be qualified (e.g. 'ns::name')",
+                        "",
+                    )
                 if expected_ns and not name.startswith(expected_ns):
                     raise Hrw4uSyntaxError(
-                        str(path), ctx.start.line, ctx.start.column,
-                        f"procedure '{name}' does not match namespace '{expected_ns[:-2]}' "
-                        f"(expected from 'use {use_spec}')", "")
+                        str(path),
+                        ctx.start.line,
+                        ctx.start.column,
+                        f"procedure '{name}' does not match namespace '{expected_ns[:-2]}' (expected from 'use {use_spec}')",
+                        "",
+                    )
                 if name in self._proc_registry:
                     existing = self._proc_registry[name]
                     raise Hrw4uSyntaxError(
-                        str(path), ctx.start.line, 0, f"procedure '{name}' already declared in {existing.source_file}", "")
+                        str(path), ctx.start.line, 0, f"procedure '{name}' already declared in {existing.source_file}", ""
+                    )
                 params = self._collect_proc_params(ctx.paramList()) if ctx.paramList() else []
                 self._proc_registry[name] = ProcSig(name, params, ctx.block(), str(path), text)
                 found_proc = True
@@ -384,8 +398,12 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         if not (required <= len(call_args) <= len(sig.params)):
             expected = f"{required}-{len(sig.params)}" if required < len(sig.params) else str(len(sig.params))
             raise Hrw4uSyntaxError(
-                self.filename, call_ctx.start.line, call_ctx.start.column,
-                f"procedure '{sig.qualified_name}': expected {expected} arg(s), got {len(call_args)}", "")
+                self.filename,
+                call_ctx.start.line,
+                call_ctx.start.column,
+                f"procedure '{sig.qualified_name}': expected {expected} arg(s), got {len(call_args)}",
+                "",
+            )
 
         bindings: dict[str, str] = {}
         for i, param in enumerate(sig.params):
@@ -481,12 +499,14 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
 
         if sig is None:
             raise Hrw4uSyntaxError(
-                self.filename, call_ctx.start.line, call_ctx.start.column, f"unknown procedure '{name}': not loaded via 'use'", "")
+                self.filename, call_ctx.start.line, call_ctx.start.column, f"unknown procedure '{name}': not loaded via 'use'", ""
+            )
 
         if name in self._proc_call_stack:
             cycle = ' -> '.join([*self._proc_call_stack, name])
             raise Hrw4uSyntaxError(
-                self.filename, call_ctx.start.line, call_ctx.start.column, f"circular procedure call: {cycle}", "")
+                self.filename, call_ctx.start.line, call_ctx.start.column, f"circular procedure call: {cycle}", ""
+            )
 
         bindings = self._bind_proc_args(sig, call_ctx)
 
@@ -496,7 +516,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
     @staticmethod
     def _get_source_text(ctx, source_text: str) -> str:
         """Extract original source text for a parse tree node."""
-        return source_text[ctx.start.start:ctx.stop.stop + 1]
+        return source_text[ctx.start.start : ctx.stop.stop + 1]
 
     def _flatten_substitute_params(self, text: str, bindings: dict[str, str]) -> str:
         """Replace $param references in source text with bound values."""
@@ -518,10 +538,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 continue
 
             if source_indent is None:
-                source_indent = line[:len(line) - len(line.lstrip())]
+                source_indent = line[: len(line) - len(line.lstrip())]
 
             if line.startswith(source_indent):
-                lines.append(f"{indent}{line[len(source_indent):]}")
+                lines.append(f"{indent}{line[len(source_indent) :]}")
             else:
                 lines.append(f"{indent}{stripped}")
 
@@ -654,7 +674,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 output.extend(body_lines)
                 output.append("}")
 
-                remaining = program_items[idx + 1:]
+                remaining = program_items[idx + 1 :]
                 if any(r.section() for r in remaining):
                     output.append("")
 
@@ -664,30 +684,41 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
         spec = ctx.QUALIFIED_IDENT().getText()
         if not self._proc_search_paths:
             raise Hrw4uSyntaxError(
-                self.filename, ctx.start.line, ctx.start.column, "use directive requires --procedures-path to be set", "")
+                self.filename, ctx.start.line, ctx.start.column, "use directive requires --procedures-path to be set", ""
+            )
         path = resolve_use_path(spec, self._proc_search_paths)
         if path is None:
             raise Hrw4uSyntaxError(
-                self.filename, ctx.start.line, ctx.start.column, f"use '{spec}': file not found in procedures path", "")
+                self.filename, ctx.start.line, ctx.start.column, f"use '{spec}': file not found in procedures path", ""
+            )
         self._load_proc_file(path, [], use_spec=spec)
 
     def visitProcedureDecl(self, ctx) -> None:
         name = ctx.QUALIFIED_IDENT().getText()
         if '::' not in name:
             raise Hrw4uSyntaxError(
-                self.filename, ctx.start.line, ctx.start.column, f"procedure name '{name}' must be qualified (e.g. 'ns::name')", "")
+                self.filename, ctx.start.line, ctx.start.column, f"procedure name '{name}' must be qualified (e.g. 'ns::name')", ""
+            )
         if name in self._proc_registry:
             existing = self._proc_registry[name]
             raise Hrw4uSyntaxError(
-                self.filename, ctx.start.line, ctx.start.column, f"procedure '{name}' already declared in {existing.source_file}",
-                "")
+                self.filename,
+                ctx.start.line,
+                ctx.start.column,
+                f"procedure '{name}' already declared in {existing.source_file}",
+                "",
+            )
         params = self._collect_proc_params(ctx.paramList()) if ctx.paramList() else []
         seen_default = False
         for p in params:
             if p.default_ctx is None and seen_default:
                 raise Hrw4uSyntaxError(
-                    self.filename, ctx.start.line, ctx.start.column,
-                    f"procedure '{name}': required parameter '${p.name}' must not follow an optional parameter", "")
+                    self.filename,
+                    ctx.start.line,
+                    ctx.start.column,
+                    f"procedure '{name}': required parameter '${p.name}' must not follow an optional parameter",
+                    "",
+                )
             if p.default_ctx is not None:
                 seen_default = True
         self._proc_registry[name] = ProcSig(name, params, ctx.block(), self.filename, self._source_text)
@@ -701,8 +732,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 if item.useDirective():
                     if seen_sections:
                         error = hrw4u_error(
-                            self.filename, item.useDirective(),
-                            ValueError("'use' directives must appear before any section blocks"))
+                            self.filename, item.useDirective(), ValueError("'use' directives must appear before any section blocks")
+                        )
                         if self.error_collector:
                             self.error_collector.add_error(error)
                             continue
@@ -712,8 +743,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 elif item.procedureDecl():
                     if seen_sections:
                         error = hrw4u_error(
-                            self.filename, item.procedureDecl(),
-                            ValueError("'procedure' declarations must appear before any section blocks"))
+                            self.filename,
+                            item.procedureDecl(),
+                            ValueError("'procedure' declarations must appear before any section blocks"),
+                        )
                         if self.error_collector:
                             self.error_collector.add_error(error)
                             continue
@@ -724,7 +757,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     seen_sections = True
                     self.visit(item.section())
                     if idx < len(program_items) - 1 and len(self.output) > start_length:
-                        next_items = program_items[idx + 1:]
+                        next_items = program_items[idx + 1 :]
                         if any(next_item.section() for next_item in next_items):
                             self.emit_separator()
                 elif item.commentLine() and self.preserve_comments:
@@ -883,7 +916,10 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                         raise Hrw4uSyntaxError(
                             self.filename,
                             ctx.functionCall().start.line,
-                            ctx.functionCall().start.column, f"unknown procedure '{func}': not loaded via 'use'", "")
+                            ctx.functionCall().start.column,
+                            f"unknown procedure '{func}': not loaded via 'use'",
+                            "",
+                        )
                     subst_args = [
                         self._substitute_strings(arg, ctx) if arg.startswith('"') and arg.endswith('"') else arg for arg in args
                     ]
@@ -962,8 +998,11 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                 name = getattr(ctx, 'name', None)
                 type_name = getattr(ctx, 'typeName', None)
                 slot = getattr(ctx, 'slot', None)
-                note = f"Variable declaration: {name.text}:{type_name.text}" + \
-                    (f" @{slot.text}" if slot else "") if name and type_name else None
+                note = (
+                    f"Variable declaration: {name.text}:{type_name.text}" + (f" @{slot.text}" if slot else "")
+                    if name and type_name
+                    else None
+                )
                 with self.trap(ctx, note=note):
                     raise e
                 return

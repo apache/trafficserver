@@ -27,12 +27,7 @@ TERMINAL_CHUNK = b"0\r\n\r\n"
 
 def send_request_and_read_response(host: str, port: int) -> bytes:
     """Return the raw bytes from a single HTTP/1 response."""
-    request = (
-        b"GET /trailers HTTP/1.1\r\n"
-        b"Host: example.data.com\r\n"
-        b"uuid: h2-origin-trailers-h1\r\n"
-        b"Connection: keep-alive\r\n"
-        b"\r\n")
+    request = b"GET /trailers HTTP/1.1\r\nHost: example.data.com\r\nuuid: h2-origin-trailers-h1\r\nConnection: keep-alive\r\n\r\n"
     response = bytearray()
     saw_terminal_chunk = False
 

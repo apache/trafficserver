@@ -24,7 +24,9 @@ registered during do_remap returns nil and does not crash, while the
 same call inside do_remap returns the from-URL host.
 '''
 
-Test.SkipUnless(Condition.PluginExists('tslua.so'),)
+Test.SkipUnless(
+    Condition.PluginExists('tslua.so'),
+)
 
 Test.ContinueOnFail = True
 
@@ -36,8 +38,9 @@ resp = {"headers": "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n", "timestamp": 
 server.addResponse("sessionfile.log", req, resp)
 
 ts.Disk.remap_config.AddLine(
-    'map http://www.example.com/ http://127.0.0.1:{}/'.format(server.Variables.Port) +
-    ' @plugin=tslua.so @pparam=remap_after_hook.lua')
+    'map http://www.example.com/ http://127.0.0.1:{}/'.format(server.Variables.Port)
+    + ' @plugin=tslua.so @pparam=remap_after_hook.lua'
+)
 
 ts.Setup.Copy("remap_after_hook.lua", ts.Variables.CONFIGDIR)
 
@@ -49,7 +52,9 @@ tr.Processes.Default.StartBefore(server, ready=When.PortOpen(server.Variables.Po
 tr.Processes.Default.StartBefore(ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout.Content = Testers.ContainsExpression(
-    "Remap-From-Host: www.example.com", "ts.remap.* should return the from-URL host inside do_remap")
+    "Remap-From-Host: www.example.com", "ts.remap.* should return the from-URL host inside do_remap"
+)
 tr.Processes.Default.Streams.stdout.Content += Testers.ContainsExpression(
-    "Hook-From-Host: <nil>", "ts.remap.* should return nil when called outside do_remap")
+    "Hook-From-Host: <nil>", "ts.remap.* should return nil when called outside do_remap"
+)
 tr.StillRunningAfter = server

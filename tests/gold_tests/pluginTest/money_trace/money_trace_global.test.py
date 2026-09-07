@@ -24,7 +24,8 @@ Test money_trace global
 
 Test.SkipUnless(
     #    Condition.PluginExists('xdebug.so'),
-    Condition.PluginExists('money_trace.so'),)
+    Condition.PluginExists('money_trace.so'),
+)
 Test.ContinueOnFail = False
 Test.testName = "money_trace global"
 
@@ -42,18 +43,23 @@ req_hdr = {"headers": "GET /path HTTP/1.1\r\n" + "Host: www.example.com\r\n" + "
 res_hdr = {"headers": "HTTP/1.1 200 OK\r\n" + "Connection: close\r\n" + "\r\n", "timestamp": "1469733493.993", "body": ""}
 server.addResponse("sessionlog.json", req_hdr, res_hdr)
 
-ts.Disk.remap_config.AddLines([
-    f"map http://ats http://127.0.0.1:{server.Variables.Port}",
-])
+ts.Disk.remap_config.AddLines(
+    [
+        f"map http://ats http://127.0.0.1:{server.Variables.Port}",
+    ]
+)
 
 ts.Disk.plugin_config.AddLine(
-    "money_trace.so --pregen-header=@pregen --header=MoneyTrace --create-if-none=true --global-skip-header=Skip-Global-MoneyTrace")
+    "money_trace.so --pregen-header=@pregen --header=MoneyTrace --create-if-none=true --global-skip-header=Skip-Global-MoneyTrace"
+)
 
 # minimal configuration
-ts.Disk.records_config.update({
-    'proxy.config.diags.debug.enabled': 0,
-    'proxy.config.diags.debug.tags': 'money_trace',
-})
+ts.Disk.records_config.update(
+    {
+        'proxy.config.diags.debug.enabled': 0,
+        'proxy.config.diags.debug.tags': 'money_trace',
+    }
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -64,7 +70,8 @@ logging:
   logs:
     - filename: global
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 Test.Disk.File(os.path.join(ts.Variables.LOGDIR, 'global.log'), exists=True, content='gold/global-log.gold')
 

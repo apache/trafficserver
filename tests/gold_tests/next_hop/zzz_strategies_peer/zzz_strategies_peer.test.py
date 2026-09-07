@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -27,22 +26,18 @@ Test next hop selection using strategies.yaml with consistent hashing, with peer
 #
 server = Test.MakeOriginServer("server")
 response_header = {
-    "headers": "HTTP/1.1 200 OK\r\n"
-               "Connection: close\r\n"
-               "Cache-control: max-age=85000\r\n"
-               "\r\n",
+    "headers": "HTTP/1.1 200 OK\r\nConnection: close\r\nCache-control: max-age=85000\r\n\r\n",
     "timestamp": "1469733493.993",
-    "body": "This is the body.\n"
+    "body": "This is the body.\n",
 }
 num_object = 16
 for i in range(num_object):
     request_header = {
-        "headers":
-            f"GET /obj{i} HTTP/1.1\r\n"
-            "Host: does.not.matter\r\n"  # But cannot be omitted.
-            "\r\n",
+        "headers": f"GET /obj{i} HTTP/1.1\r\n"
+        "Host: does.not.matter\r\n"  # But cannot be omitted.
+        "\r\n",
         "timestamp": "1469733493.993",
-        "body": ""
+        "body": "",
     }
     server.addResponse("sessionlog.json", request_header, response_header)
 
@@ -61,7 +56,8 @@ for i in range(num_upstream):
             'proxy.config.diags.debug.tags': 'http|dns',
             'proxy.config.dns.nameservers': f"127.0.0.1:{dns.Variables.Port}",
             'proxy.config.dns.resolv_conf': "NULL",
-        })
+        }
+    )
     ts.Disk.remap_config.AddLine(f"map / http://127.0.0.1:{server.Variables.Port}")
     ts_upstream.append(ts)
 
@@ -89,7 +85,8 @@ for i in range(num_peer):
             'proxy.config.http.no_dns_just_forward_to_parent': 1,
             'proxy.config.http.parent_proxy.mark_down_hostdb': 0,
             'proxy.config.http.parent_proxy.self_detect': 1,
-        })
+        }
+    )
 
     ts.Disk.File(ts.Variables.CONFIGDIR + "/strategies.yaml", id="strategies", typename="ats:config")
     s = ts.Disk.strategies
@@ -129,19 +126,21 @@ for i in range(num_peer):
             "    failover:",
             "      ring_mode: peering_ring",
             f"      self: ts_peer{i}",
-            #"      max_simple_retries: 2",
-            #"      response_codes:",
-            #"        - 404",
-            #"      health_check:",
-            #"        - passive",
-        ])
+            # "      max_simple_retries: 2",
+            # "      response_codes:",
+            # "        - 404",
+            # "      health_check:",
+            # "        - passive",
+        ]
+    )
 
     suffix = " @strategy=the-strategy @plugin=cachekey.so @pparam=--uri-type=remap @pparam=--capture-prefix=/(.*):(.*)/$1/"
     ts.Disk.remap_config.AddLines(
         [
             "map http://dummy.com http://not_used" + suffix,
             "map http://not_used http://also_not_used" + suffix,
-        ])
+        ]
+    )
 
 tr = Test.AddTestRun()
 tr.Processes.Default.StartBefore(server)
@@ -156,7 +155,8 @@ tr.Processes.Default.ReturnCode = 0
 for i in range(num_object):
     tr = Test.AddTestRun()
     tr.MakeCurlCommand(
-        f'--verbose --proxy 127.0.0.1:{ts_peer[i % num_peer].Variables.port} http://dummy.com/obj{i}', ts=ts_peer[i % num_peer])
+        f'--verbose --proxy 127.0.0.1:{ts_peer[i % num_peer].Variables.port} http://dummy.com/obj{i}', ts=ts_peer[i % num_peer]
+    )
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
 
@@ -165,13 +165,15 @@ for i in range(num_object):
     # num_peer must not be a multiple of 3
     tr.MakeCurlCommand(
         f'--verbose --proxy 127.0.0.1:{ts_peer[(i * 3) % num_peer].Variables.port} http://dummy.com/obj{i}',
-        ts=ts_peer[(i * 3) % num_peer])
+        ts=ts_peer[(i * 3) % num_peer],
+    )
     tr.Processes.Default.Streams.stdout = "body.gold"
     tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun()
 tr.Processes.Default.Command = (
     "grep -e '^+++' -e '^[A-Z].*TTP/' -e '^.alts. --' -e 'ParentResultType::SPECIFIED' trace_peer*.log"
-    " | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'")
+    " | sed 's/^.*(next_hop) [^ ]* //' | sed 's/[.][0-9]*$$//'"
+)
 tr.Processes.Default.Streams.stdout = "trace.gold"
 tr.Processes.Default.ReturnCode = 0

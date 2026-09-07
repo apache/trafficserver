@@ -1,5 +1,4 @@
-'''
-'''
+''' '''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -41,7 +40,8 @@ logging:
   logs:
     - filename: test_log_field
       format: custom
-'''.split("\n"))
+'''.split("\n")
+)
 
 # #########################################################################
 # at the end of the different test run a custom log file should exist

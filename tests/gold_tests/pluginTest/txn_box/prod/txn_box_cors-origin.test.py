@@ -30,7 +30,8 @@ Test.SkipUnless(Condition.PluginExists("txn_box.so"))
 replay_file = "cors-origin.replay.yaml"
 
 tr = Test.TxnBoxTestAndRun(
-    "Redirect", replay_file, config_path='Auto', config_key="meta.txn-box.global", verifier_client_args="--verbose info")
+    "Redirect", replay_file, config_path='Auto', config_key="meta.txn-box.global", verifier_client_args="--verbose info"
+)
 
 ts = tr.Variables.TS
 
@@ -41,5 +42,6 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'txn_box',
         'proxy.config.http.cache.http': 0,
-        'proxy.config.url_remap.remap_required': 0
-    })
+        'proxy.config.url_remap.remap_required': 0,
+    }
+)

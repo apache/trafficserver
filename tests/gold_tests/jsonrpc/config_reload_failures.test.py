@@ -40,7 +40,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'config|ssl|ip_allow',
         'proxy.config.ssl.server.cert.path': ts.Variables.SSLDir,
         'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
-    })
+    }
+)
 
 # Add valid SSL certs for baseline
 ts.addDefaultSSLFiles()
@@ -51,7 +52,8 @@ ts.Disk.ssl_multicert_yaml.AddLines(
         '  - dest_ip: "*"',
         '    ssl_cert_name: server.pem',
         '    ssl_key_name: server.key',
-    ])
+    ]
+)
 
 # Override default diags check — this test intentionally triggers SSL errors
 ts.Disk.diags_log.Content = Testers.ContainsExpression("ERROR", "Expected errors from invalid SSL cert injection")
@@ -170,7 +172,8 @@ tr.Disk.ssl_multicert_yaml.AddLines(
         '  - dest_ip: 1.2.3.4',
         '    ssl_cert_name: /nonexistent/bad.pem',
         '    ssl_key_name: /nonexistent/bad.key',
-    ])
+    ]
+)
 
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
 
@@ -214,7 +217,7 @@ def validate_failed_subtasks(resp: Response):
             status = t.get('status', 'unknown')
             logs = t.get('logs', [])
 
-            info = f"{'  '*depth}{desc}: {status}"
+            info = f"{'  ' * depth}{desc}: {status}"
             if status == 'fail' and logs:
                 info += f" - {logs[0][:50]}..."
 
@@ -343,7 +346,8 @@ tr.Disk.ssl_multicert_yaml.AddLines(
         '  - dest_ip: "*"',
         '    ssl_cert_name: server.pem',
         '    ssl_key_name: server.key',
-    ])
+    ]
+)
 
 tr.AddJsonRPCClientRequest(ts, Request.admin_config_reload(force=True))
 

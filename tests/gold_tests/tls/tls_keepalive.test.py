@@ -41,8 +41,9 @@ ts.Disk.records_config.update(
         'proxy.config.ssl.server.private_key.path': '{0}'.format(ts.Variables.SSLDir),
         'proxy.config.ssl.TLSv1_3.enabled': 0,
         'proxy.config.exec_thread.autoconfig.scale': 1.0,
-        'proxy.config.log.max_secs_per_buffer': 1
-    })
+        'proxy.config.log.max_secs_per_buffer': 1,
+    }
+)
 
 ts.Disk.ssl_multicert_yaml.AddLines(
     """
@@ -50,10 +51,12 @@ ssl_multicert:
   - dest_ip: "*"
     ssl_cert_name: server.pem
     ssl_key_name: server.key
-""".split("\n"))
+""".split("\n")
+)
 
 ts.Disk.remap_config.AddLine(
-    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port))
+    'map https://example.com:{0} http://127.0.0.1:{1}'.format(ts.Variables.ssl_port, server.Variables.Port)
+)
 
 ts.Disk.logging_yaml.AddLines(
     '''
@@ -65,7 +68,8 @@ logging:
     - mode: ascii
       format: testformat
       filename: squid
-'''.split("\n"))
+'''.split("\n")
+)
 
 Test.PrepareTestPlugin(os.path.join(Test.Variables.AtsTestPluginsDir, 'ssl_secret_load_test.so'), ts)
 
@@ -75,16 +79,19 @@ tr.Processes.Default.StartBefore(Test.Processes.ts)
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommand(
-    '-k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(ts.Variables.ssl_port), ts=ts)
+    '-k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(ts.Variables.ssl_port), ts=ts
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Test two HTTP/1.1 requests over two TLS connections")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommandMulti(
-    '{{curl}} -k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; {{curl}} -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    '{{curl}} -k -v --http1.1  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; {{curl}} -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'.format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Test two HTTP/2 requests over one TLS connection")
@@ -92,16 +99,19 @@ tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommandMulti(
     '{{curl}} -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0} https://127.0.0.1:{0}'.format(ts.Variables.ssl_port),
-    ts=ts)
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 
 tr = Test.AddTestRun("Test two HTTP/2 requests over two TLS connections")
 tr.StillRunningAfter = ts
 tr.StillRunningAfter = server
 tr.MakeCurlCommandMulti(
-    '{{curl}} -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; {{curl}} -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'
-    .format(ts.Variables.ssl_port),
-    ts=ts)
+    '{{curl}} -k -v --http2  -H \'host:example.com:{0}\' https://127.0.0.1:{0}; {{curl}} -k -v --http1.1 -H \'host:example.com:{0}\'  https://127.0.0.1:{0}'.format(
+        ts.Variables.ssl_port
+    ),
+    ts=ts,
+)
 tr.Processes.Default.ReturnCode = 0
 
 # Just a check to flush out the traffic log until we have a clean shutdown for traffic_server

@@ -48,7 +48,8 @@ tr = Test.TxnBoxTestAndRun(
     replay_file,
     remap=[('http://one.ex', 'http://three.ex', ('--key=meta.txn_box.remap', replay_file))],
     verifier_client_args=f"--verbose diag --repeat {RepeatCount}",
-    verifier_server_args=f"--verbose diag")
+    verifier_server_args=f"--verbose diag",
+)
 
 ts = tr.Variables.TS
 ts.StartBefore(server_ramp)

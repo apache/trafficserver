@@ -63,6 +63,7 @@ def _is_matched(name: str, name_set: frozenset[str]) -> bool:
 @dataclass(frozen=True)
 class PolicySets:
     """A set of sandbox policy entries for one severity level (deny or warn)."""
+
     sections: frozenset[str] = frozenset()
     functions: frozenset[str] = frozenset()
     conditions: frozenset[str] = frozenset()
@@ -84,14 +85,16 @@ class PolicySets:
         if unknown_lang:
             raise ValueError(
                 f"Unknown language constructs in sandbox.{prefix}: {', '.join(sorted(unknown_lang))}. "
-                f"Valid: {', '.join(sorted(_VALID_LANGUAGE_CONSTRUCTS))}")
+                f"Valid: {', '.join(sorted(_VALID_LANGUAGE_CONSTRUCTS))}"
+            )
 
         modifiers = frozenset(s.upper() for s in _load_set(data, "modifiers", prefix))
         unknown_mods = modifiers - _VALID_MODIFIERS
         if unknown_mods:
             raise ValueError(
                 f"Unknown modifiers in sandbox.{prefix}: {', '.join(sorted(unknown_mods))}. "
-                f"Valid: {', '.join(sorted(_VALID_MODIFIERS))}")
+                f"Valid: {', '.join(sorted(_VALID_MODIFIERS))}"
+            )
 
         return cls(
             sections=_load_set(data, "sections", prefix),

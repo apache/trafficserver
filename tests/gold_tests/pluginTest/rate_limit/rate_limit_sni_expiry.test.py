@@ -54,7 +54,8 @@ class RateLimitSniExpiryTest:
                 '    queue:',
                 '      size: 1',
                 '      max_age: 1',
-            ])
+            ]
+        )
         ts.Disk.plugin_config.AddLine(f'rate_limit.so {ts.Variables.CONFIGDIR}/rate_limit.config')
 
         # Disable the freelist / ProxyAllocator so allocation behavior is not a confound; the
@@ -67,13 +68,15 @@ class RateLimitSniExpiryTest:
                 'proxy.config.ssl.server.private_key.path': ts.Variables.SSLDir,
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'rate_limit',
-            })
+            }
+        )
 
         # The expiry branch is actually reached...
         ts.Disk.traffic_out.Content = Testers.ContainsExpression('too old', 'a queued connection was expired')
         # ...and expiring it does not underflow the active-slot counter into the release assertion.
         ts.Disk.traffic_out.Content += Testers.ExcludesExpression(
-            '_active <= _limit|received signal', 'expiring a queued connection must not underflow and abort ATS')
+            '_active <= _limit|received signal', 'expiring a queued connection must not underflow and abort ATS'
+        )
 
     def _configure_client(self, tr: 'TestRun') -> None:
         ts = self._ts

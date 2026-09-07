@@ -38,7 +38,8 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.show_location': 0,
         'proxy.config.diags.debug.tags': 'header',
-    })
+    }
+)
 ts.Setup.CopyAs('rules/glob_set_redirect.conf', Test.RunDirectory)
 
 ts.Disk.plugin_config.AddLine(f'header_rewrite.so {Test.RunDirectory}/glob_set_redirect.conf')
