@@ -98,7 +98,8 @@ Data Structures
 
 .. class:: CacheControlResult
 
-   Holds the data from a line in :file:`cache.config`.
+   Holds the actions and match state from the selected cache rule
+   configuration.
 
 .. class:: CacheHTTPInfoVector
 

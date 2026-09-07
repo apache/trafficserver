@@ -90,10 +90,12 @@ TEST_CASE("UrlMatcher does not insert invalid records", "[ControlMatcher]")
 
   matcher.AllocateSpace(1);
   parse_line(config, line, 1);
+  line.config_file_path = "/etc/trafficserver/cache.config";
 
   Result result = matcher.NewEntry(&line);
 
   CHECK(result.failed());
+  CHECK(std::string_view{result.message()}.find("/etc/trafficserver/cache.config") != std::string_view::npos);
   CHECK(matcher.num_el == 0);
 }
 

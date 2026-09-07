@@ -1,6 +1,9 @@
 #
 # cache.config
 #
+# Legacy configuration. New deployments should use cache.yaml. To continue
+# using this file, set proxy.config.cache.control.filename to cache.config.
+#
 # Documentation:
 #    https://docs.trafficserver.apache.org/en/latest/admin-guide/files/cache.config.en.html
 #

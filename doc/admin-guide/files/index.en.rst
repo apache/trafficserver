@@ -26,6 +26,7 @@ Configuration Files
    :hidden:
 
    cache.config.en
+   cache.yaml.en
    hosting.config.en
    ip_allow.yaml.en
    logging.yaml.en
@@ -42,9 +43,12 @@ Configuration Files
    strategies.yaml.en
    jsonrpc.yaml.en
 
-:doc:`cache.config.en`
+:doc:`cache.yaml.en`
    Defines if, how, and for what durations |TS| caches objects, based on
    destinations, clients, URL components, and more.
+
+:doc:`cache.config.en`
+   Documents the deprecated line-based cache rule format.
 
 :doc:`hosting.config.en`
    Allows |TS| administrators to assign cache volumes to specific origin
