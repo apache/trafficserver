@@ -15,8 +15,11 @@
 #  limitations under the License.
 
 import atexit
+import json
 import os
+import shlex
 import shutil
+import sys
 import tempfile
 
 _gold_tmpdir = None
@@ -59,6 +62,56 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
         gold_file.write(content)
 
     return gold_filepath
+
+
+def _test_file_globals():
+    """Return the globals of the calling test file.
+
+    autest injects `Testers` and `All` into each test file's globals rather
+    than exposing them for import, so a helper module has to reach up the
+    stack to find them. The search walks outward until it reaches a frame
+    that carries the injected names, rather than assuming the immediate
+    caller is the test file. That way it works from inside this module and
+    from any intermediate helper module.
+    """
+    frame = sys._getframe(1)
+    while frame is not None and 'Testers' not in frame.f_globals:
+        frame = frame.f_back
+    if frame is None:
+        raise RuntimeError('No autest test file frame found. These helpers only work when called from a test file.')
+    return frame.f_globals
+
+
+def _read_stdout(path):
+    """Read a captured stream file, tolerating output that is not valid UTF-8."""
+    with open(path, errors='replace') as stream:
+        return stream.read()
+
+
+def _check_is_valid_json(path):
+    """Tester callback: the captured output must parse as JSON."""
+    desc = "Check that the output parses as JSON"
+    raw = _read_stdout(path)
+    try:
+        json.loads(raw)
+    except ValueError as ex:
+        return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
+    return (True, desc, "Output parses as JSON")
+
+
+def _check_json_fields(path, expected):
+    """Tester callback: every expected field must match its value in the parsed output."""
+    desc = "Check that the JSON output contains the expected fields"
+    raw = _read_stdout(path)
+    try:
+        doc = json.loads(raw)
+    except ValueError as ex:
+        return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
+
+    failed = [f"{key} = {doc.get(key)} (expected {value})" for key, value in expected.items() if str(doc.get(key)) != value]
+    if failed:
+        return (False, desc, "FAIL: " + "; ".join(failed) + f"\nOutput was:\n{raw}")
+    return (True, desc, "All expected fields matched")
 
 
 class Common():
@@ -115,9 +168,7 @@ class Common():
                 "Set proxy.config.diags.debug.enabled"
             )
         """
-        import sys
-        # Testers and All are injected by autest into the test file's globals
-        caller_globals = sys._getframe(1).f_globals
+        caller_globals = _test_file_globals()
         _Testers = caller_globals['Testers']
         _All = caller_globals['All']
         testers = [_Testers.IncludesExpression(s, f"should contain: {s}") for s in strings]
@@ -142,26 +193,22 @@ class Common():
     def validate_json_contains(self, **field_checks):
         """
         Validate JSON output contains specific field:value pairs. Only checks specified fields.
-        Prints detailed error on failure: "FAIL: field_name = actual_value (expected expected_value)"
-        stream.all.txt will contain the actual output with the failed fields.
+        Every mismatch is reported as "field_name = actual_value (expected expected_value)",
+        followed by the raw output.
+
+        The check runs in the autest process against the captured stdout file. Piping
+        traffic_ctl into a JSON parser instead would hide failures: the exit status of a shell
+        pipeline is the parser's, so a non-zero traffic_ctl exit would never reach the
+        ReturnCode check.
 
         Example:
             traffic_ctl.server().status().validate_json_contains(
                 initialized_done='true', is_draining='false'
             )
         """
-        import json
-        checks_str = ', '.join(f"'{k}': '{v}'" for k, v in field_checks.items())
-        self._cmd = (
-            f'{self._cmd} | python3 -c "'
-            f"import sys, json; "
-            f"d = json.load(sys.stdin); "
-            f"c = {{{checks_str}}}; "
-            f"failed = [(k, v, str(d.get(k))) for k, v in c.items() if str(d.get(k)) != v]; "
-            f"[print(f'FAIL: {{k}} = {{actual}} (expected {{expected}})', file=sys.stderr) "
-            f"for k, expected, actual in failed]; "
-            f"exit(0 if not failed else 1)"
-            f'"')
+        _Testers = _test_file_globals()['Testers']
+        self._tr.Processes.Default.Streams.stdout = _Testers.Lambda(
+            lambda info, tester: _check_json_fields(tester.GetContent(info), field_checks))
         self._finish()
         return self
 
@@ -173,19 +220,17 @@ class Common():
         A gold file cannot do this job: yaml-cpp spells null as `~`, which a
         gold file matches happily but no JSON parser accepts.
 
-        The raw output is echoed to stderr so it survives in the stream files
-        even though the pipeline consumes stdout.
+        The check runs in the autest process against the captured stdout file, so
+        traffic_ctl stays the only process in the test run and the exit status the
+        harness compares against ReturnCode is still traffic_ctl's own. The raw
+        output is reported on failure.
 
         Example:
             traffic_ctl.hostdb().status().validate_is_valid_json()
         """
-        self._cmd = (
-            f'{self._cmd} | python3 -c "'
-            f"import sys, json; "
-            f"raw = sys.stdin.read(); "
-            f"sys.stderr.write(raw); "
-            f"json.loads(raw)"
-            f'"')
+        _Testers = _test_file_globals()['Testers']
+        self._tr.Processes.Default.Streams.stdout = _Testers.Lambda(
+            lambda info, tester: _check_is_valid_json(tester.GetContent(info)))
         self._finish()
         return self
 
@@ -503,8 +548,13 @@ class HostDB(Common):
         self._tn = tn
 
     def status(self, hostname: str = ""):
-        """Get HostDB info (traffic_ctl hostdb status [HOSTNAME])"""
-        self._cmd = f'{self._cmd} status {hostname} '
+        """Get HostDB info (traffic_ctl hostdb status [HOSTNAME])
+
+        The hostname is shell quoted. It is omitted entirely when empty, since
+        passing an empty argument is not the same as passing none.
+        """
+        arg = f' {shlex.quote(hostname)}' if hostname else ''
+        self._cmd = f'{self._cmd} status{arg} '
         return self
 
     def as_json(self):
