@@ -89,7 +89,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 16 ]
-        - [ Cache-Control, max-age=1 ]
+        - [ Cache-Control, max-age=300 ]
         - [ ETag, '"legacy-object"' ]
 
     proxy-response:
@@ -113,8 +113,11 @@ sessions:
         - [ uuid, 2-client-conditional-stripped ]
         - [ Host, example.com ]
         - [ If-None-Match, '"something-the-client-has"' ]
-      # Outlive the max-age=1 above so the object is stale.
-      delay: 2s
+        # when_to_revalidate 4 is "stale if IMS", so this both forces the
+        # revalidation and supplies a second conditional to be stripped. No
+        # waiting for the object to age out.
+        - [ If-Modified-Since, 'Tue, 01 Jan 2030 00:00:00 GMT' ]
+      delay: 100ms
 
     proxy-request:
       headers:

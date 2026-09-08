@@ -5344,15 +5344,18 @@ HttpSM::do_cache_delete_all_alts()
   // Do not delete a non-existent object.
   ink_assert(t_state.cache_info.object_read);
 
-  SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", t_state.cache_info.lookup_url->string_get_ref());
+  // Address the object that was looked up. A redirect follow can look up a
+  // different URL than cache_info.lookup_url, which is set once and does not
+  // track the redirect when the pristine host header is maintained.
+  URL *url = cache_lookup_url();
+
+  SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", url->string_get_ref());
 
   HttpCacheKey key;
   if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
-    Cache::generate_key92(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                          t_state.txn_conf->cache_generation_number);
+    Cache::generate_key92(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   } else {
-    Cache::generate_key(&key, t_state.cache_info.lookup_url, t_state.txn_conf->cache_ignore_query,
-                        t_state.txn_conf->cache_generation_number);
+    Cache::generate_key(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   }
   cacheProcessor.remove(nullptr, &key);
 }
@@ -5371,7 +5374,8 @@ HttpSM::do_cache_delete_compat_alts()
 {
   ink_assert(should_use_compatibility_cache_key(compatibility_cache_lookup));
 
-  URL *url = t_state.cache_info.lookup_url;
+  // Same URL the lookup used; see do_cache_delete_all_alts().
+  URL *url = cache_lookup_url();
 
   if (url == nullptr || !url->valid()) {
     return;

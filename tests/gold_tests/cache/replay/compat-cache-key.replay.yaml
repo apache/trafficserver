@@ -51,6 +51,9 @@ autest:
       proxy.config.diags.debug.tags: 'http|http_cache|url_cachekey'
       proxy.config.http.insert_age_in_response: 0
       proxy.config.http.cache.try_compat_key_read: 1
+      # Honour Cache-Control in the client request, which is how these
+      # transactions force revalidation without waiting for an object to age.
+      proxy.config.http.cache.ignore_client_cc_max_age: 0
 
     remap_config:
       - from: "http://example.com/"
@@ -87,7 +90,7 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 16 ]
-        - [ Cache-Control, max-age=2 ]
+        - [ Cache-Control, max-age=300 ]
         - [ ETag, '"legacy-object"' ]
 
     proxy-response:
@@ -140,8 +143,11 @@ sessions:
         fields:
         - [ uuid, 3-compat-migrate ]
         - [ Host, example.com ]
-      # Outlive the max-age=2 above so the object is stale.
-      delay: 3s
+        # Ask for a revalidation rather than sleeping until the object ages out.
+        # Freshness is decided before any of the compatibility handling, so the
+        # path under test is the same either way.
+        - [ Cache-Control, max-age=0 ]
+      delay: 100ms
 
     proxy-request:
       headers:
@@ -209,6 +215,8 @@ sessions:
         fields:
         - [ uuid, 5-legacy-key-retained ]
         - [ Host, example.com ]
+        # Force the revalidation that reveals the stored ETag.
+        - [ Cache-Control, max-age=0 ]
       delay: 100ms
 
     proxy-request:
