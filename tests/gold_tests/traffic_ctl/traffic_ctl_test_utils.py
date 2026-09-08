@@ -117,7 +117,19 @@ def _check_is_valid_json(path):
 
 
 def _check_json_fields(path, expected):
-    """Tester callback: every expected field must match its value in the parsed output."""
+    """Tester callback: every expected field must match its value in the parsed output.
+
+    The expectation is compared against `str()` of the parsed value, so write
+    it the way Python renders that value rather than the way JSON spells it.
+    `[]` and `'[]'` are both fine because they agree, but a JSON boolean reads
+    as `'true'`, not `True`, and a list of strings reads as `"['a']"`, not
+    `'["a"]'`. `validate_result_with_text` does take JSON-spelled text, so the
+    two are not interchangeable.
+
+    A missing key and a JSON `null` both render as `'None'` and cannot be told
+    apart here, which means `field=None` passes for a misspelled `field` too.
+    Asserting a null needs its own `key in doc` check.
+    """
     desc = "Check that the JSON output contains the expected fields"
     raw = _read_stdout(path)
     try:
@@ -125,7 +137,7 @@ def _check_json_fields(path, expected):
     except ValueError as ex:
         return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
 
-    failed = [f"{key} = {doc.get(key)} (expected {value})" for key, value in expected.items() if str(doc.get(key)) != value]
+    failed = [f"{key} = {doc.get(key)} (expected {value})" for key, value in expected.items() if str(doc.get(key)) != str(value)]
     if failed:
         return (False, desc, "FAIL: " + "; ".join(failed) + f"\nOutput was:\n{raw}")
     return (True, desc, "All expected fields matched")
