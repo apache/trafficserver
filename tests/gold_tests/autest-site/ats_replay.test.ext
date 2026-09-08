@@ -209,6 +209,20 @@ def ATSReplayTest(obj, replay_file: str):
         rc = client_config['return_code']
         client.ReturnCode = Any(*rc) if isinstance(rc, list) else rc
 
+    # Configure client log validation if specified. The client logs the response
+    # headers as it received them, so this is how a replay asserts on what did or
+    # did not reach the client.
+    client_log_validation = client_config.get('log_validation', {})
+    if client_log_validation:
+        for contains_entry in client_log_validation.get('contains', []):
+            expression = contains_entry['expression']
+            description = contains_entry.get('description', f'Verify client output contains: {expression}')
+            client.Streams.All += Testers.ContainsExpression(expression, description)
+        for excludes_entry in client_log_validation.get('excludes', []):
+            expression = excludes_entry['expression']
+            description = excludes_entry.get('description', f'Verify client output excludes: {expression}')
+            client.Streams.All += Testers.ExcludesExpression(expression, description)
+
     if dns:
         ts.StartBefore(dns)
     ts.StartBefore(server)

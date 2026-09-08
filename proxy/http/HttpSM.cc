@@ -2103,37 +2103,21 @@ HttpSM::state_read_server_response_header(int event, void *data)
   }
 
   switch (state) {
-  case PARSE_RESULT_ERROR: {
-    // Many broken servers send really badly formed 302 redirects.
-    //  Even if the parser doesn't like the redirect forward
-    //  if it's got a Location header.  We check the type of the
-    //  response to make sure that the parser was able to parse
-    //  something  and didn't just throw up it's hands (INKqa05339)
-    bool allow_error = false;
-    if (t_state.hdr_info.server_response.type_get() == HTTP_TYPE_RESPONSE &&
-        t_state.hdr_info.server_response.status_get() == HTTP_STATUS_MOVED_TEMPORARILY) {
-      if (t_state.hdr_info.server_response.field_find(MIME_FIELD_LOCATION, MIME_LEN_LOCATION)) {
-        allow_error = true;
-      }
-    }
+  case PARSE_RESULT_ERROR:
+    SMDebug("http_seq", "Error parsing server response header");
+    t_state.current.state = HttpTransact::PARSE_ERROR;
+    // retry_server_connection_not_open() asserts that a cause of death was recorded.
+    t_state.set_connect_fail(EBADMSG);
 
-    if (allow_error == false) {
-      SMDebug("http_seq", "Error parsing server response header");
-      t_state.current.state = HttpTransact::PARSE_ERROR;
-
-      // If the server closed prematurely on us, use the
-      //   server setup error routine since it will forward
-      //   error to a POST tunnel if any
-      if (event == VC_EVENT_EOS) {
-        handle_server_setup_error(VC_EVENT_EOS, data);
-      } else {
-        call_transact_and_set_next_state(HttpTransact::HandleResponse);
-      }
-      break;
+    // If the server closed prematurely on us, use the
+    //   server setup error routine since it will forward
+    //   error to a POST tunnel if any
+    if (event == VC_EVENT_EOS) {
+      handle_server_setup_error(VC_EVENT_EOS, data);
+    } else {
+      call_transact_and_set_next_state(HttpTransact::HandleResponse);
     }
-    // FALLTHROUGH (since we are allowing the parse error)
-  }
-    // fallthrough
+    break;
 
   case PARSE_RESULT_DONE:
 
