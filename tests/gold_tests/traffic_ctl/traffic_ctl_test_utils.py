@@ -19,8 +19,10 @@ import json
 import os
 import shlex
 import shutil
-import sys
 import tempfile
+
+import autest.testers as Testers
+from autest.testers import All
 
 _gold_tmpdir = None
 
@@ -64,51 +66,39 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
     return gold_filepath
 
 
-# Names autest injects into every test file's globals, which this module needs.
-_INJECTED_NAMES = ('Testers', 'All')
-
-
-def _test_file_globals():
-    """Return the globals of the calling test file.
-
-    autest injects the names in `_INJECTED_NAMES` into each test file's
-    globals rather than exposing them for import, so a helper module has to
-    reach up the stack to find them. The search walks outward until it
-    reaches a frame carrying all of them, rather than assuming the immediate
-    caller is the test file. That way it works from inside this module and
-    from any intermediate helper module, and a frame that carries only some
-    of the names cannot satisfy the search and fail later on the rest.
-    """
-    frame = sys._getframe(1)
-    while frame is not None and not all(name in frame.f_globals for name in _INJECTED_NAMES):
-        frame = frame.f_back
-    if frame is None:
-        raise RuntimeError(
-            f"No autest test file frame found. These helpers only work when called from a test file, "
-            f"whose globals carry {', '.join(_INJECTED_NAMES)}.")
-    return frame.f_globals
-
-
 def _read_stdout(path):
-    """Read a captured stream file as UTF-8.
+    """Read a captured stream file as strict UTF-8, as `(text, error)`.
 
-    JSON is defined to be UTF-8, and naming the encoding keeps the decode
-    from following the runner's locale: under `LC_ALL=C` the default is
-    US-ASCII, so identical output bytes would decode differently there.
+    JSON has to be UTF-8, so output that does not decode is not valid JSON
+    either and the callers report it as a failure. Replacing the bad bytes
+    instead would hide exactly that: U+FFFD is a legal character inside a
+    JSON string, so undecodable output would go on to parse cleanly and pass
+    a check whose whole job is to reject output that is not JSON.
 
-    Undecodable bytes are replaced rather than raising. autest treats an
-    exception from a tester callback as fatal, setting KillOnFailure and
-    abandoning the rest of the test run, whereas a replaced byte simply
-    fails the JSON parse and is reported with the output attached.
+    No command wrapped here reaches that branch today. yaml-cpp substitutes
+    U+FFFD itself when writing a double quoted scalar, so traffic_ctl cannot
+    put undecodable bytes on stdout on any of these paths. Decoding strictly
+    states the requirement rather than resting on that staying true.
+
+    The failure comes back as a value rather than an exception because autest
+    treats an exception from a tester callback as fatal, setting KillOnFailure
+    and abandoning the rest of the test run. On failure the text is still
+    rendered, lossily, so the caller can show what arrived.
     """
-    with open(path, encoding='utf-8', errors='replace') as stream:
-        return stream.read()
+    with open(path, 'rb') as stream:
+        raw = stream.read()
+    try:
+        return raw.decode('utf-8'), None
+    except UnicodeDecodeError as ex:
+        return raw.decode('utf-8', errors='replace'), str(ex)
 
 
 def _check_is_valid_json(path):
     """Tester callback: the captured output must parse as JSON."""
     desc = "Check that the output parses as JSON"
-    raw = _read_stdout(path)
+    raw, decode_error = _read_stdout(path)
+    if decode_error:
+        return (False, desc, f"Output is not valid UTF-8, so it is not JSON: {decode_error}\nOutput was:\n{raw}")
     try:
         json.loads(raw)
     except ValueError as ex:
@@ -139,11 +129,15 @@ def _check_json_fields(path, expected):
     Asserting a null needs its own `key in doc` check.
     """
     desc = "Check that the JSON output contains the expected fields"
-    raw = _read_stdout(path)
+    raw, decode_error = _read_stdout(path)
+    if decode_error:
+        return (False, desc, f"Output is not valid UTF-8, so it is not JSON: {decode_error}\nOutput was:\n{raw}")
     try:
         doc = json.loads(raw)
     except ValueError as ex:
         return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
+    if not isinstance(doc, dict):
+        return (False, desc, f"Output is a JSON {type(doc).__name__}, not an object, so it has no fields\nOutput was:\n{raw}")
 
     failed = []
     for key, want in expected.items():
@@ -209,11 +203,8 @@ class Common():
                 "Set proxy.config.diags.debug.enabled"
             )
         """
-        caller_globals = _test_file_globals()
-        _Testers = caller_globals['Testers']
-        _All = caller_globals['All']
-        testers = [_Testers.IncludesExpression(s, f"should contain: {s}") for s in strings]
-        self._tr.Processes.Default.Streams.stdout = _All(*testers)
+        testers = [Testers.IncludesExpression(s, f"should contain: {s}") for s in strings]
+        self._tr.Processes.Default.Streams.stdout = All(*testers)
         self._finish()
         return self
 
@@ -247,8 +238,7 @@ class Common():
                 initialized_done='true', is_draining='false'
             )
         """
-        _Testers = _test_file_globals()['Testers']
-        self._tr.Processes.Default.Streams.stdout = _Testers.Lambda(
+        self._tr.Processes.Default.Streams.stdout = Testers.Lambda(
             lambda info, tester: _check_json_fields(tester.GetContent(info), field_checks))
         self._finish()
         return self
@@ -269,8 +259,7 @@ class Common():
         Example:
             traffic_ctl.hostdb().status().validate_is_valid_json()
         """
-        _Testers = _test_file_globals()['Testers']
-        self._tr.Processes.Default.Streams.stdout = _Testers.Lambda(
+        self._tr.Processes.Default.Streams.stdout = Testers.Lambda(
             lambda info, tester: _check_is_valid_json(tester.GetContent(info)))
         self._finish()
         return self
