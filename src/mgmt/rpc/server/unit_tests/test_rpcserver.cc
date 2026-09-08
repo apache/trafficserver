@@ -96,7 +96,9 @@ public:
   ~ScopedMethodHandler()
   {
     if (_registered) {
-      rpc::test_remove_handler(_name);
+      // CHECK rather than REQUIRE: this runs during stack unwinding when a SECTION failed, and a
+      // fatal assertion there would abort instead of reporting.
+      CHECK(rpc::test_remove_handler(_name));
     }
   }
 
