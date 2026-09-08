@@ -61,17 +61,6 @@ public:
   void increment_transactions_stat() override;
   void decrement_transactions_stat() override;
 
-  /** Full-width QUIC stream identifier for this transaction.
-   *
-   *  @c get_transaction_id returns @c int and exists primarily for compact log
-   *  fields and probe arguments; QUIC stream IDs are 62-bit values, so callers
-   *  that route or compare by stream ID must use this accessor to avoid
-   *  truncation.
-   *
-   *  @return The QUIC stream ID owned by this transaction.
-   */
-  QUICStreamId get_quic_stream_id() const;
-
   // VConnection interface
   virtual VIO *do_io_read(Continuation *c, int64_t nbytes = INT64_MAX, MIOBuffer *buf = 0) override;
   virtual VIO *do_io_write(Continuation *c = nullptr, int64_t nbytes = INT64_MAX, IOBufferReader *buf = 0,
@@ -84,6 +73,17 @@ public:
   virtual int             state_stream_open(int event, Event *data)   = 0;
   virtual int             state_stream_closed(int event, Event *data) = 0;
   NetVConnectionContext_t direction() const;
+
+  /** Full-width QUIC stream identifier for this transaction.
+   *
+   *  @c get_transaction_id returns @c int and exists primarily for compact log
+   *  fields and probe arguments; QUIC stream IDs are 62-bit values, so callers
+   *  that route or compare by stream ID must use this accessor to avoid
+   *  truncation.
+   *
+   *  @return The QUIC stream ID owned by this transaction.
+   */
+  QUICStreamId get_quic_stream_id() const;
 
   // For Queue from tscore/Link.h
   LINK(HQTransaction, link);
