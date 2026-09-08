@@ -45,6 +45,12 @@ nameserver = Test.MakeDNServer("dns", default='127.0.0.1')
 # Define ATS and configure
 ts = Test.MakeATSProcess("ts", enable_cache=False)
 
+# This test deliberately exhausts matching work for one rule. Replace the
+# default blanket error exclusion once, then append all rule-specific checks.
+ts.Disk.diags_log.Content = Testers.ExcludesExpression(
+    r'ERROR: (?!\[regex_remap\] Bad regular expression result -47 \("match limit exceeded"\) from "\^/match_limit/)',
+    "Only the deliberate excessive-backtracking error is allowed")
+
 testName = "regex_remap"
 
 regex_remap_conf_path = os.path.join(ts.Variables.CONFIGDIR, 'regex_remap.conf')
@@ -116,26 +122,28 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
 
-# 3 Test - Match limit test 0
-tr = Test.AddTestRun("match limit 0")
+# 3 Test - A valid long query needs more than PCRE2's fallback 32 KiB JIT stack.
+tr = Test.AddTestRun("long query with nested captures redirects")
 creq = replay_txns[1]['client-request']
-tr.MakeCurlCommand(curl_and_args + \
-    '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
+tr.MakeCurlCommand(
+    curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'" + " | grep -e '^HTTP/' -e '^Location'",
+    ts=ts)
 tr.Processes.Default.ReturnCode = 0
-tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
+ts.Disk.diags_log.Content += Testers.ExcludesExpression(
+    r'Bad regular expression result .*alpha/bravo', "The valid long query must not fail regex matching")
 tr.StillRunningAfter = ts
 
-# 4 Test - Match limit test 1
-tr = Test.AddTestRun("match limit 1")
+# 4 Test - The nested quantifiers must exceed PCRE2's default matching-work limit.
+tr = Test.AddTestRun("excessive backtracking reaches the match limit")
 creq = replay_txns[2]['client-request']
 tr.MakeCurlCommand(curl_and_args + \
     '--header "uuid: {}" '.format(creq["headers"]["fields"][1][1]) + '"{}"'.format(creq["url"]), ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
-ts.Disk.diags_log.Content = Testers.ContainsExpression(
-    'ERROR: .regex_remap. Bad regular expression result -47', "Match limit exceeded")
+ts.Disk.diags_log.Content += Testers.ContainsExpression(
+    r'ERROR: \[regex_remap\] Bad regular expression result -47.*\^/match_limit/',
+    "The excessive-backtracking rule must reach the match limit")
 tr.StillRunningAfter = ts
 
 

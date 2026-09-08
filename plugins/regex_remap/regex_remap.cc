@@ -55,9 +55,8 @@
 static const char *PLUGIN_NAME = "regex_remap";
 
 // Constants
-static const int     MATCHCOUNT        = 15;   // We support $0 - $9 x2 ints, and this needs to be 1.5x that
-static const int     MAX_SUBS          = 32;   // No more than 32 substitution variables in the subst string
-static const int32_t REGEX_MATCH_LIMIT = 1750; // POOMA - also dependent on actual stack size. Crashes with previous value of 2047
+static const int MATCHCOUNT = 15; // We support $0 - $9 x2 ints, and this needs to be 1.5x that
+static const int MAX_SUBS   = 32; // No more than 32 substitution variables in the subst string
 
 // Substitutions other than regex matches
 enum ExtraSubstitutions {
@@ -116,10 +115,10 @@ struct UrlComponents {
 // is const, and it is read concurrently and without locks by every ET_NET
 // thread of every RemapInstance that loaded the same rule file. Nothing here
 // may be mutated after that point, and nothing per-instance or per-transaction
-// may be stored here. That is why the match context and profiling hit counts
-// are passed in as arguments rather than kept as members: they belong to
-// RemapInstance. Put new per-instance state on RemapInstance, indexed in
-// lockstep with RuleSet::rules(), never on this class.
+// may be stored here. Profiling hit counts belong to RemapInstance and are
+// passed in as arguments rather than kept as members. Put new per-instance
+// state on RemapInstance, indexed in lockstep with RuleSet::rules(), never on
+// this class.
 //
 class RemapRegex
 {
@@ -159,9 +158,9 @@ public:
 
   // number of matches, or negative if failed
   int
-  match(std::string_view const str, RegexMatches &matches, RegexMatchContext const *match_context) const
+  match(std::string_view const str, RegexMatches &matches) const
   {
-    int const stat = _rex.exec(str, matches, 0, match_context);
+    int const stat = _rex.exec(str, matches);
     if (0 <= stat) {
       Dbg(dbg_ctl, "Regex match (%d): %.*s", stat, (int)str.length(), str.data());
       return matches.size();
@@ -806,18 +805,17 @@ private:
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  SharedRuleSet     rule_set;
-  std::vector<int>  rule_hits;
-  RegexMatchContext match_context = {};
-  bool              pristine_url  = false;
-  bool              profile       = false;
-  bool              method        = false;
-  bool              query_string  = true;
-  bool              host          = false;
-  int               hits          = 0;
-  int               misses        = 0;
-  int               failures      = 0;
-  std::string       filename;
+  SharedRuleSet    rule_set;
+  std::vector<int> rule_hits;
+  bool             pristine_url = false;
+  bool             profile      = false;
+  bool             method       = false;
+  bool             query_string = true;
+  bool             host         = false;
+  int              hits         = 0;
+  int              misses       = 0;
+  int              failures     = 0;
+  std::string      filename;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -917,7 +915,6 @@ TSRemapNewInstance(int argc, char *argv[], void **ih, char * /* errbuf ATS_UNUSE
   if (!ri->rule_set) {
     return TS_ERROR;
   }
-  ri->match_context.set_match_limit(REGEX_MATCH_LIMIT);
   if (ri->profile) {
     ri->rule_hits.resize(ri->rule_set->rules().size());
   }
@@ -1059,7 +1056,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     auto const &re = rules[rule_ix];
 
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf.data(), matches, &(ri->match_context));
+    auto match_result = re->match(match_buf.data(), matches);
     if (match_result >= 0) {
       int new_len = re->get_lengths(matches, lengths, rri, &req_url);
 
