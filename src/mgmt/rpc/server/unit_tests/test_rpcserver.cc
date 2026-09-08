@@ -98,6 +98,7 @@ public:
     if (_registered) {
       // CHECK rather than REQUIRE: this runs during stack unwinding when a SECTION failed, and a
       // fatal assertion there would abort instead of reporting.
+      INFO("handler: " << _name);
       CHECK(rpc::test_remove_handler(_name));
     }
   }
@@ -105,7 +106,7 @@ public:
   ScopedMethodHandler(ScopedMethodHandler const &)            = delete;
   ScopedMethodHandler &operator=(ScopedMethodHandler const &) = delete;
 
-  bool
+  [[nodiscard]] bool
   registered() const
   {
     return _registered;
