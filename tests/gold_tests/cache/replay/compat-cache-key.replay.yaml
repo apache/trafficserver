@@ -30,7 +30,7 @@ meta:
   version: "1.0"
 
 autest:
-  description: 'Verify 92x compatibility cache lookups serve, migrate and drain'
+  description: 'Verify 92x compatibility cache lookups serve and migrate to the current key'
 
   dns:
     name: 'dns-compat-cache-key'
@@ -207,7 +207,7 @@ sessions:
       url: /migrate;
       headers:
         fields:
-        - [ uuid, 5-legacy-key-drained ]
+        - [ uuid, 5-legacy-key-retained ]
         - [ Host, example.com ]
       delay: 100ms
 

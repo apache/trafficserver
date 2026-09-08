@@ -341,19 +341,19 @@ public:
   void           set_http_schedule(Continuation *);
   int            get_http_schedule(int event, void *data);
 
-  static CacheHTTPInfo *
-  cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
-  {
-    if (lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92) {
-      return nullptr;
-    }
-    return object_read_info;
-  }
-
   static bool
   should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
   {
     return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+  }
+
+  static CacheHTTPInfo *
+  cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+  {
+    if (should_use_compatibility_cache_key(lookup)) {
+      return nullptr;
+    }
+    return object_read_info;
   }
 
 private:

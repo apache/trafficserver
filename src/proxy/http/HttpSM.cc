@@ -5283,9 +5283,9 @@ HttpSM::do_range_setup_if_necessary()
   }
 }
 
-// YTS Team, yamsat Plugin
-// Changed the lookup_url to c_url which enables even
-// the new redirect url to perform a CACHE_LOOKUP
+// The URL this transaction looks up in the cache. A redirect follow looks up the
+// redirected URL rather than the original, unless the transaction is configured
+// to keep the original cache key.
 URL *
 HttpSM::cache_lookup_url()
 {
