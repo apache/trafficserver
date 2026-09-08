@@ -2586,8 +2586,15 @@ HttpTransact::issue_revalidate(State *s)
   // write that would apply a 304 is a create on the canonical key rather than
   // an update of the legacy vector, so the cache discards it. Ask for the full
   // response instead, which migrates the object to the canonical key.
-  if (s->state_machine != nullptr && HttpSM::should_use_compatibility_cache_key(s->state_machine->compatibility_cache_lookup)) {
+  if (s->state_machine != nullptr && should_use_compatibility_cache_key(s->state_machine->compatibility_cache_lookup)) {
+    // build_request() already strips the client's conditionals for a request it
+    // expects to cache, but keeps them when the request does not look cacheable
+    // or when cache_when_to_revalidate is 4. Either way the origin could answer
+    // 304, so drop them here too. The client still gets its 304: a conditional
+    // client request is matched against the full response in
+    // handle_cache_operation_on_forward_server_response().
     TxnDbg(dbg_ctl_http_trans, "compatibility key hit, revalidating without conditional headers");
+    HttpTransactHeaders::remove_conditional_headers(&s->hdr_info.server_request);
     return;
   }
 

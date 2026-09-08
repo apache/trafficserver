@@ -179,6 +179,22 @@ enum class CompatibilityCacheLookup {
   COMPAT_CACHE_LAST,
 };
 
+/// Whether this lookup addresses the cache with the previous (9.2) key.
+inline bool
+should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
+{
+  return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+}
+
+/// The object info to hand to a cache write, which a compatibility read must not
+/// carry: it belongs to the legacy key and would turn the write into an update
+/// of a vector the canonical key does not have.
+inline CacheHTTPInfo *
+cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+{
+  return should_use_compatibility_cache_key(lookup) ? nullptr : object_read_info;
+}
+
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
   friend class HttpTransact;
@@ -340,21 +356,6 @@ public:
   SNIRoutingType get_tunnel_type() const;
   void           set_http_schedule(Continuation *);
   int            get_http_schedule(int event, void *data);
-
-  static bool
-  should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
-  {
-    return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
-  }
-
-  static CacheHTTPInfo *
-  cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
-  {
-    if (should_use_compatibility_cache_key(lookup)) {
-      return nullptr;
-    }
-    return object_read_info;
-  }
 
 private:
   void start_sub_sm();
