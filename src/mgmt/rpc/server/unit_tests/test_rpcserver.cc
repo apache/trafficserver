@@ -43,6 +43,7 @@
 #include <cstdlib>
 #include <vector>
 #include <functional>
+#include <iostream>
 
 #include "swoc/swoc_file.h"
 
@@ -77,7 +78,10 @@ add_method_handler(const std::string &name, Func &&call)
 {
   return rpc::JsonRPCManager::instance().add_method_handler(name, std::forward<Func>(call), nullptr, {});
 }
+} // namespace rpc
 
+namespace
+{
 /// Registers a method handler and removes it when the scope ends.
 ///
 /// Catch2 re-runs a TEST_CASE body once per leaf SECTION. Registering at the top of the body and
@@ -93,13 +97,21 @@ public:
     _registered = rpc::add_method_handler(_name, std::forward<Func>(call));
   }
 
-  ~ScopedMethodHandler()
+  ~ScopedMethodHandler() noexcept
   {
-    if (_registered) {
-      // CHECK rather than REQUIRE: this runs during stack unwinding when a SECTION failed, and a
-      // fatal assertion there would abort instead of reporting.
+    if (!_registered) {
+      return;
+    }
+    // CHECK rather than REQUIRE: this runs during stack unwinding when a SECTION failed, and a
+    // fatal assertion there would abort instead of reporting. The try/catch is for the same
+    // reason -- taking the dispatcher lock or building the diagnostic can throw, and an
+    // exception escaping here would take the whole test binary down with it.
+    try {
       INFO("handler: " << _name);
       CHECK(rpc::test_remove_handler(_name));
+    } catch (...) {
+      // CHECK is unavailable here: it may be what threw.
+      std::cerr << "ScopedMethodHandler: exception while removing '" << _name << "'\n";
     }
   }
 
@@ -116,10 +128,7 @@ private:
   std::string _name;
   bool        _registered{false};
 };
-} // namespace rpc
 
-namespace
-{
 constexpr std::string_view rpc_test_dir_template{"ats_rpc_XXXXXX"};
 constexpr std::string_view rpc_test_socket_name{"s"};
 constexpr std::string_view rpc_test_lock_name{"l"};
@@ -463,8 +472,8 @@ TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
 {
   SECTION("A registered handlers")
   {
-    rpc::ScopedMethodHandler some_foo_handler{"some_foo", &some_foo};
-    rpc::ScopedMethodHandler some_foo2_handler{"some_foo2", &some_foo};
+    ScopedMethodHandler some_foo_handler{"some_foo", &some_foo};
+    ScopedMethodHandler some_foo2_handler{"some_foo2", &some_foo};
     REQUIRE(some_foo_handler.registered());
     REQUIRE(some_foo2_handler.registered());
 
@@ -521,7 +530,7 @@ DEFINE_JSONRPC_PROTO_FUNCTION(do_nothing) // id, params, resp
 
 TEST_CASE("Basic message sending to a running server", "[socket]")
 {
-  rpc::ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
   REQUIRE(handler.registered());
   SECTION("Basic single request to the rpc server")
   {
@@ -576,7 +585,7 @@ TEST_CASE("JSONRPC socket inode permissions reflect restricted_api config", "[so
 
 TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
 {
-  rpc::ScopedMethodHandler handler{"do_nothing32000", &do_nothing};
+  ScopedMethodHandler handler{"do_nothing32000", &do_nothing};
   REQUIRE(handler.registered());
   const int S{32000}; // + the rest of the json message.
   auto json{R"({"jsonrpc": "2.0", "method": "do_nothing32000", "params": {"msg":")" + random_string(S) + R"("}, "id":"32k_1"})"};
@@ -615,7 +624,7 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
 
 TEST_CASE("Test with invalid json message", "[socket]")
 {
-  rpc::ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
   REQUIRE(handler.registered());
 
   SECTION("A rpc server")
@@ -633,7 +642,7 @@ TEST_CASE("Test with invalid json message", "[socket]")
 
 TEST_CASE("Test with chunks", "[socket][chunks]")
 {
-  rpc::ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
   REQUIRE(handler.registered());
 
   SECTION("Sending request by chunks")
@@ -655,7 +664,7 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
 
 TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
 {
-  rpc::ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
   REQUIRE(handler.registered());
 
   SECTION("Sending request by chunks")
@@ -678,7 +687,7 @@ TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
 
 TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
 {
-  rpc::ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
   REQUIRE(handler.registered());
 
   SECTION("Sending request by chunks, broken message")
