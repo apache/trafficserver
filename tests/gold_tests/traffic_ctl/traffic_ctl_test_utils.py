@@ -64,27 +64,44 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
     return gold_filepath
 
 
+# Names autest injects into every test file's globals, which this module needs.
+_INJECTED_NAMES = ('Testers', 'All')
+
+
 def _test_file_globals():
     """Return the globals of the calling test file.
 
-    autest injects `Testers` and `All` into each test file's globals rather
-    than exposing them for import, so a helper module has to reach up the
-    stack to find them. The search walks outward until it reaches a frame
-    that carries the injected names, rather than assuming the immediate
+    autest injects the names in `_INJECTED_NAMES` into each test file's
+    globals rather than exposing them for import, so a helper module has to
+    reach up the stack to find them. The search walks outward until it
+    reaches a frame carrying all of them, rather than assuming the immediate
     caller is the test file. That way it works from inside this module and
-    from any intermediate helper module.
+    from any intermediate helper module, and a frame that carries only some
+    of the names cannot satisfy the search and fail later on the rest.
     """
     frame = sys._getframe(1)
-    while frame is not None and 'Testers' not in frame.f_globals:
+    while frame is not None and not all(name in frame.f_globals for name in _INJECTED_NAMES):
         frame = frame.f_back
     if frame is None:
-        raise RuntimeError('No autest test file frame found. These helpers only work when called from a test file.')
+        raise RuntimeError(
+            f"No autest test file frame found. These helpers only work when called from a test file, "
+            f"whose globals carry {', '.join(_INJECTED_NAMES)}.")
     return frame.f_globals
 
 
 def _read_stdout(path):
-    """Read a captured stream file, tolerating output that is not valid UTF-8."""
-    with open(path, errors='replace') as stream:
+    """Read a captured stream file as UTF-8.
+
+    JSON is defined to be UTF-8, and naming the encoding keeps the decode
+    from following the runner's locale: under `LC_ALL=C` the default is
+    US-ASCII, so identical output bytes would decode differently there.
+
+    Undecodable bytes are replaced rather than raising. autest treats an
+    exception from a tester callback as fatal, setting KillOnFailure and
+    abandoning the rest of the test run, whereas a replaced byte simply
+    fails the JSON parse and is reported with the output attached.
+    """
+    with open(path, encoding='utf-8', errors='replace') as stream:
         return stream.read()
 
 
