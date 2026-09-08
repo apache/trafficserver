@@ -19,6 +19,7 @@
  */
 
 #include <cstdio>
+#include <memory>
 #include <vector>
 
 #include <catch2/catch_test_macros.hpp>
@@ -859,17 +860,30 @@ TEST_CASE("UrlPathGet", "[url][path_get]")
 // current key of the same URL with exactly one ";" between path and query.
 namespace
 {
+/// A failing REQUIRE unwinds out of these helpers, so the heap is released by
+/// scope exit rather than by a call that the unwind would skip.
+struct HdrHeapDeleter {
+  void
+  operator()(HdrHeap *heap) const
+  {
+    heap->destroy();
+  }
+};
+
+using HdrHeapPtr = std::unique_ptr<HdrHeap, HdrHeapDeleter>;
+
 CryptoHash
 hash92(char const *text)
 {
-  URL      url;
-  HdrHeap *heap = new_HdrHeap();
-  url.create(heap);
+  HdrHeapPtr heap{new_HdrHeap()};
+  URL        url;
+
+  url.create(heap.get());
   REQUIRE(url.parse(text, strlen(text)) == ParseResult::DONE);
 
   CryptoHash hash;
+
   url.hash_get92(&hash);
-  heap->destroy();
 
   return hash;
 }
@@ -877,14 +891,15 @@ hash92(char const *text)
 CryptoHash
 hash_current(char const *text)
 {
-  URL      url;
-  HdrHeap *heap = new_HdrHeap();
-  url.create(heap);
+  HdrHeapPtr heap{new_HdrHeap()};
+  URL        url;
+
+  url.create(heap.get());
   REQUIRE(url.parse(text, strlen(text)) == ParseResult::DONE);
 
   CryptoHash hash;
+
   url.hash_get(&hash);
-  heap->destroy();
 
   return hash;
 }
@@ -892,15 +907,13 @@ hash_current(char const *text)
 bool
 has_params(char const *text)
 {
-  URL      url;
-  HdrHeap *heap = new_HdrHeap();
-  url.create(heap);
+  HdrHeapPtr heap{new_HdrHeap()};
+  URL        url;
+
+  url.create(heap.get());
   REQUIRE(url.parse(text, strlen(text)) == ParseResult::DONE);
 
-  bool result = url.has_path_params();
-  heap->destroy();
-
-  return result;
+  return url.has_path_params();
 }
 } // namespace
 
