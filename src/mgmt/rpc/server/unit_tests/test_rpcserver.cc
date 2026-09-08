@@ -43,7 +43,6 @@
 #include <cstdlib>
 #include <vector>
 #include <functional>
-#include <iostream>
 
 #include "swoc/swoc_file.h"
 
@@ -92,7 +91,7 @@ namespace
 class ScopedMethodHandler
 {
 public:
-  template <typename Func> ScopedMethodHandler(std::string name, Func &&call) : _name{std::move(name)}
+  template <typename Func> explicit ScopedMethodHandler(std::string name, Func &&call) : _name{std::move(name)}
   {
     _registered = rpc::add_method_handler(_name, std::forward<Func>(call));
   }
@@ -102,16 +101,17 @@ public:
     if (!_registered) {
       return;
     }
-    // CHECK rather than REQUIRE: this runs during stack unwinding when a SECTION failed, and a
-    // fatal assertion there would abort instead of reporting. The try/catch is for the same
-    // reason -- taking the dispatcher lock or building the diagnostic can throw, and an
-    // exception escaping here would take the whole test binary down with it.
+    // Non-fatal assertions throughout: this runs during stack unwinding when a SECTION failed,
+    // and a fatal one would abort instead of reporting. The try/catch is for the same reason --
+    // taking the dispatcher lock or building the diagnostic can throw, and an exception escaping
+    // a destructor ends the whole test binary rather than the one assertion.
     try {
       INFO("handler: " << _name);
       CHECK(rpc::test_remove_handler(_name));
+    } catch (std::exception const &ex) {
+      FAIL_CHECK("exception while removing handler '" << _name << "': " << ex.what());
     } catch (...) {
-      // CHECK is unavailable here: it may be what threw.
-      std::cerr << "ScopedMethodHandler: exception while removing '" << _name << "'\n";
+      FAIL_CHECK("unknown exception while removing handler '" << _name << "'");
     }
   }
 
