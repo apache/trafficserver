@@ -253,7 +253,7 @@ class yamlcpp_json_encoder
     if (!resp.id.empty()) {
       json << YAML::Key << "id" << YAML::Value << resp.id;
     }
-    // else: the field is omitted rather than set to null. Emitting it would be valid json now that LowerNull is set, but the
+    // else: the field is omitted rather than set to null. Emitting it would be valid JSON now that LowerNull is set, but the
     // omission is deliberate, see the id note in mgmt/rpc/schema/jsonrpc_response_schema.json.
 
     json << YAML::EndMap;

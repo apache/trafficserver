@@ -121,10 +121,18 @@ def _check_json_fields(path, expected):
 
     The expectation is compared against `str()` of the parsed value, so write
     it the way Python renders that value rather than the way JSON spells it.
-    `[]` and `'[]'` are both fine because they agree, but a JSON boolean reads
-    as `'true'`, not `True`, and a list of strings reads as `"['a']"`, not
-    `'["a"]'`. `validate_result_with_text` does take JSON-spelled text, so the
-    two are not interchangeable.
+    `[]` and `'[]'` agree, but a list of strings renders as `"['a']"`, not
+    `'["a"]'`.
+
+    Booleans need care, because the emitters these tests cover set
+    `YAML::DoubleQuoted` and so encode every scalar as a JSON string.
+    `get_server_status` sends `"is_draining": "false"`, which parses to the
+    string `'false'` and is matched by `is_draining='false'`. A genuine JSON
+    boolean would instead parse to Python `True` or `False` and render as
+    `'True'` or `'False'`.
+
+    `validate_result_with_text` does take JSON-spelled text, so the two
+    helpers are not interchangeable.
 
     A missing key and a JSON `null` both render as `'None'` and cannot be told
     apart here, which means `field=None` passes for a misspelled `field` too.
@@ -137,7 +145,11 @@ def _check_json_fields(path, expected):
     except ValueError as ex:
         return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
 
-    failed = [f"{key} = {doc.get(key)} (expected {value})" for key, value in expected.items() if str(doc.get(key)) != str(value)]
+    failed = []
+    for key, want in expected.items():
+        actual = doc.get(key)
+        if str(actual) != str(want):
+            failed.append(f"{key} = {actual} (expected {want})")
     if failed:
         return (False, desc, "FAIL: " + "; ".join(failed) + f"\nOutput was:\n{raw}")
     return (True, desc, "All expected fields matched")
