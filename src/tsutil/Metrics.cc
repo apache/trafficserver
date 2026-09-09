@@ -58,12 +58,16 @@ Metrics::Storage::addBlob() // The mutex must be held before calling this!
 {
   auto blob = std::make_unique<Metrics::NamesAndAtomics>();
 
-  debug_assert(blob);
-  // The write below is to _blobs[_cur_blob + 1], so the last usable blob index is MAX_BLOBS - 1.
-  release_assert(_cur_blob < MAX_BLOBS - 1);
+  auto const cur_blob = static_cast<uint16_t>(_next_free.load(std::memory_order_relaxed) >> 16);
 
-  _blobs[++_cur_blob] = std::move(blob);
-  _cur_off            = 0;
+  debug_assert(blob);
+  // The write below is to _blobs[cur_blob + 1], so the last usable blob index is MAX_BLOBS - 1.
+  release_assert(cur_blob < MAX_BLOBS - 1);
+
+  _blobs[cur_blob + 1] = std::move(blob);
+
+  // One store publishes both; the install above is sequenced before it.
+  _next_free.store(_pack(cur_blob + 1, 0), std::memory_order_release);
 }
 
 Metrics::IdType
@@ -76,22 +80,27 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
     return it->second;
   }
 
-  // The slot is written below and the bookkeeping only then advances, calling addBlob() once
-  // _cur_off reaches MAX_SIZE. Refusing the final slot of the final blob keeps addBlob() from
-  // ever being reached in an exhausted store, at a cost of one slot out of MAX_BLOBS * MAX_SIZE.
-  if (_cur_blob >= MAX_BLOBS - 1 && _cur_off >= MAX_SIZE - 1) {
+  // The slot is written below and the bookkeeping only then advances, calling addBlob() once the
+  // offset reaches MAX_SIZE. Refusing the final slot of the final blob keeps addBlob() from ever
+  // being reached in an exhausted store, at a cost of one slot out of MAX_BLOBS * MAX_SIZE.
+  auto const [cur_blob, cur_off] = _splitID(static_cast<IdType>(_next_free.load(std::memory_order_relaxed)));
+
+  if (cur_blob >= MAX_BLOBS - 1 && cur_off >= MAX_SIZE - 1) {
     return 0; // Slot 0 is the reserved bad_id. Cannot grow further.
   }
 
-  Metrics::IdType           id    = _makeId(_cur_blob, _cur_off, type);
-  Metrics::NamesAndAtomics *blob  = _blobs[_cur_blob].get();
+  Metrics::IdType           id    = _makeId(cur_blob, cur_off, type);
+  Metrics::NamesAndAtomics *blob  = _blobs[cur_blob].get();
   Metrics::NameStorage     &names = std::get<0>(*blob);
 
-  names[_cur_off] = std::make_tuple(std::string(name), id);
-  _lookups.emplace(std::get<0>(names[_cur_off]), id);
+  names[cur_off] = std::make_tuple(std::string(name), id);
+  _lookups.emplace(std::get<0>(names[cur_off]), id);
 
-  if (++_cur_off >= MAX_SIZE) {
-    addBlob(); // This resets _cur_off to 0 as well
+  if (cur_off + 1 >= MAX_SIZE) {
+    addBlob();
+  } else {
+    // Publishes the slot's name.
+    _next_free.store(_pack(cur_blob, cur_off + 1), std::memory_order_release);
   }
 
   return id;
@@ -113,14 +122,15 @@ Metrics::Storage::lookup(const std::string_view name) const
 Metrics::AtomicType *
 Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics::MetricType *out_type) const
 {
-  auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+  auto [blob_ix, offset] = _splitID(id);
 
-  // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
-  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-    blob   = _blobs[0].get();
-    offset = 0;
+  // Anything not naming an allocated slot resolves to the reserved bad_id slot.
+  if (!_is_allocated(id)) {
+    blob_ix = 0;
+    offset  = 0;
   }
+
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   if (out_name) {
     *out_name = std::get<0>(std::get<0>(*blob)[offset]);
@@ -159,14 +169,15 @@ Metrics::Storage::lookup(const std::string_view name, Metrics::IdType *out_id, M
 std::string_view
 Metrics::Storage::name(Metrics::IdType id) const
 {
-  auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+  auto [blob_ix, offset] = _splitID(id);
 
-  // Do a sanity check on the ID, to make sure we don't index outside of the realm of possibility.
-  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-    blob   = _blobs[0].get();
-    offset = 0;
+  // Anything not naming an allocated slot resolves to the reserved bad_id slot.
+  if (!_is_allocated(id)) {
+    blob_ix = 0;
+    offset  = 0;
   }
+
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   const std::string &result = std::get<0>(std::get<0>(*blob)[offset]);
 
@@ -177,72 +188,6 @@ Metrics::MetricType
 Metrics::Storage::type(IdType id) const
 {
   return _extractType(id);
-}
-
-Metrics::SpanType
-Metrics::Storage::createSpan(size_t size, Metrics::MetricType type, Metrics::IdType *id)
-{
-  release_assert(size <= MAX_SIZE);
-  std::lock_guard lock(_mutex);
-
-  // On the final blob there is nowhere left to grow, so refuse a span that would fill or overflow
-  // it rather than letting addBlob() assert. Same intent as the guard in create(), and the same
-  // cost: some slots of the last blob go unused.
-  if (_cur_blob >= MAX_BLOBS - 1 && _cur_off + size >= MAX_SIZE) {
-    if (id) {
-      *id = 0; // Slot 0 is the reserved bad_id.
-    }
-    return {};
-  }
-
-  // A span has to be contiguous, so one that does not fit in the current blob starts a new one.
-  if (_cur_off + size > MAX_SIZE) {
-    addBlob();
-  }
-
-  Metrics::IdType           span_start = _makeId(_cur_blob, _cur_off, type);
-  Metrics::NamesAndAtomics *blob       = _blobs[_cur_blob].get();
-  Metrics::AtomicStorage   &atomics    = std::get<1>(*blob);
-  Metrics::SpanType         span       = Metrics::SpanType(&atomics[_cur_off], size);
-
-  if (id) {
-    *id = span_start;
-  }
-
-  _cur_off += size;
-
-  // create() grows as soon as it consumes the last slot; do the same here. Otherwise a span ending
-  // exactly on the boundary leaves _cur_off at MAX_SIZE, and the next create() writes one past the
-  // end of the blob's name array. It also makes end() unreachable for iterator::next(), which
-  // wraps on ++offset == MAX_SIZE.
-  if (_cur_off >= MAX_SIZE) {
-    addBlob();
-  }
-
-  return span;
-}
-
-bool
-Metrics::Storage::rename(Metrics::IdType id, std::string_view name)
-{
-  auto [blob_ix, offset]         = _splitID(id);
-  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
-
-  // We can only rename Metrics that are already allocated
-  if (!blob || (blob_ix == _cur_blob && offset > _cur_off)) {
-    return false;
-  }
-
-  std::string    &cur = std::get<0>(std::get<0>(*blob)[offset]);
-  std::lock_guard lock(_mutex);
-
-  if (cur.length() > 0) {
-    _lookups.erase(cur);
-  }
-  cur = name;
-  _lookups.emplace(cur, id);
-
-  return true;
 }
 
 // Iterator implementation
