@@ -608,6 +608,7 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
         e->data = copy_data_in(data, len);
         e->size = size;
       }
+      e->len = len; // get() and the compressor read e->len bytes out of e->data
       check_accounting(this);
       e->flag_bits.copy       = copy;
       e->flag_bits.compressed = 0;
