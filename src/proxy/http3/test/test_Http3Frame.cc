@@ -166,6 +166,8 @@ TEST_CASE("Load SETTINGS Frame", "[http3]")
     CHECK(settings_frame->get(Http3SettingsId::MAX_FIELD_SECTION_SIZE) == 0x0400);
     CHECK(settings_frame->get(Http3SettingsId::NUM_PLACEHOLDERS) == 0x0f);
 
+    // ~Http3Frame deallocates the reader through its MIOBuffer, so release the
+    // frames before freeing that buffer.
     settings_frame.reset();
     frame.reset();
     free_MIOBuffer(input);
