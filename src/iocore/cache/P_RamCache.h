@@ -27,7 +27,6 @@
 
 #include "iocore/eventsystem/IOBuffer.h"
 #include "tscore/CryptoHash.h"
-#include "tscore/ink_memory.h"
 
 #include <cstring>
 
@@ -56,12 +55,9 @@ protected:
   static Ptr<IOBufferData>
   copy_data_in(IOBufferData *data, uint32_t len)
   {
-    char *b = static_cast<char *>(ats_malloc(len));
+    Ptr<IOBufferData> d = make_ptr(new_IOBufferData(BUFFER_SIZE_INDEX_FOR_XMALLOC_SIZE(len), DEFAULT_ALLOC));
 
-    memcpy(b, data->data(), len);
-    Ptr<IOBufferData> d = make_ptr(new_xmalloc_IOBufferData(b, len));
-
-    d->_mem_type = DEFAULT_ALLOC;
+    memcpy(d->data(), data->data(), len);
     return d;
   }
 
