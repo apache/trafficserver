@@ -85,16 +85,32 @@ my_free(void *ptr, void * /*caller*/)
 // bake in the stack owned by whichever thread built the context, and two threads
 // matching at once on one stack corrupts memory. PCRE2 accepts a callback for
 // exactly this case and invokes it at match time, on the matching thread.
+// The stack is held in a raw thread local pointer and freed by a separate thread
+// local object, rather than by one object that owns both. Touching a thread local
+// with a destructor runs the TLS init function, which calls __cxa_thread_atexit and
+// takes the loader mutex. Doing that from inside this callback, which PCRE2 invokes
+// during a match, deadlocked. This split is how the pre-PCRE2 implementation solved
+// it; the arrangement was lost when the JIT stack moved into RegexContext.
+thread_local pcre2_jit_stack *jit_stack = nullptr;
+
+struct JitStackCleanup {
+  ~JitStackCleanup()
+  {
+    if (jit_stack != nullptr) {
+      pcre2_jit_stack_free(jit_stack);
+    }
+  }
+};
+
+thread_local JitStackCleanup jit_stack_cleanup;
+
 pcre2_jit_stack *
 jit_stack_for_this_thread(void *)
 {
-  struct ThreadStack {
-    ThreadStack() : stack{pcre2_jit_stack_create(4096, 1024 * 1024, nullptr)} {} // 1 page min and 1MB max
-    ~ThreadStack() { pcre2_jit_stack_free(stack); }
-    pcre2_jit_stack *stack;
-  };
-  thread_local ThreadStack owner;
-  return owner.stack;
+  if (jit_stack == nullptr) {
+    jit_stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
+  }
+  return jit_stack;
 }
 
 //----------------------------------------------------------------------------
