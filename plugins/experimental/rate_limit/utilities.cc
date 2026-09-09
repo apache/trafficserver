@@ -22,6 +22,7 @@
 #include "utilities.h"
 
 #include <algorithm>
+#include <yaml-cpp/yaml.h>
 
 namespace rate_limit_ns
 {

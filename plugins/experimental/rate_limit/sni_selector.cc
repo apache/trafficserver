@@ -66,7 +66,7 @@ SniSelector::parseConfig(const YAML::Node &config, const std::string &yaml_file)
 
   for (const auto *key : {"lists", "ip-rep", "selector"}) {
     if (config[key] && !config[key].IsSequence()) {
-      TSError("[%s] The %s node must be a sequence", PLUGIN_NAME, key);
+      TSError("[%s] The %s node must be a sequence at line %d", PLUGIN_NAME, key, config[key].Mark().line + 1);
       return false;
     }
   }
@@ -146,7 +146,9 @@ SniSelector::parseConfig(const YAML::Node &config, const std::string &yaml_file)
         return false;
       }
 
-      if (sni["sni"].IsScalar()) {
+      // On a const node, operator[] yields a zombie for a missing key, and IsScalar() throws on it.
+      // The boolean test is safe, so it has to come first.
+      if (sni["sni"] && sni["sni"].IsScalar()) {
         auto name = sni["sni"].as<std::string>();
 
         if (nullptr != findLimiter(name)) {
@@ -200,7 +202,7 @@ SniSelector::parseConfig(const YAML::Node &config, const std::string &yaml_file)
     }
   }
 
-  Dbg(dbg_ctl, "Succesfully loaded YAML file: %s", yaml_file.c_str());
+  Dbg(dbg_ctl, "Successfully loaded YAML file: %s", yaml_file.c_str());
 
   return true;
 }

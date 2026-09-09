@@ -83,6 +83,7 @@ class TestYamlKeys:
             self._configure(name, invalid, f"Unknown key '{key}' in {context} node at line [0-9]+")
         for name, config, error in [
             ('misspelled-sni', {'selector': [{'sin': 'test'}]}, "Unknown key 'sin' in selector node at line [0-9]+"),
+            ('no-sni', {'selector': [{'limit': 10}]}, 'selector node is not a map or without a name'),
             ('bad-queue', {'selector': [{'sni': 'test', 'queue': []}]}, 'The queue node must be a map'),
             ('bad-metrics', {'selector': [{'sni': 'test', 'metrics': []}]}, 'The metrics node must be a map'),
             ('bad-selector', {'selector': {'sni': 'test'}}, 'The selector node must be a sequence'),
@@ -114,12 +115,13 @@ class TestYamlKeys:
             ts.Disk.diags_log.Content += Testers.ExcludesExpression(
                 'Traffic Server is fully initialized', 'Invalid configuration prevents startup')
             watcher = Test.Processes.Process(f'{name}-watcher')
-            watcher.Command = 'sleep 30'
+            watcher.Command = 'sleep 10'
             watcher.Ready = When.FileContains(ts.Disk.diags_log.Name, 'Failed to parse YAML file')
             watcher.StartBefore(ts)
+            tr.TimeOut = 5
             tr.Processes.Default.StartBefore(watcher)
         else:
-            ts.Disk.traffic_out.Content += Testers.ContainsExpression('Succesfully loaded YAML file', 'Accept all supported keys')
+            ts.Disk.traffic_out.Content += Testers.ContainsExpression('Successfully loaded YAML file', 'Accept all supported keys')
             tr.Processes.Default.StartBefore(ts)
 
 

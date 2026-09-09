@@ -21,9 +21,13 @@
 #include <initializer_list>
 #include <string>
 #include <string_view>
-#include <yaml-cpp/yaml.h>
 
 #include "ts/ts.h"
+
+namespace YAML
+{
+class Node;
+}
 
 constexpr char const PLUGIN_NAME[] = "rate_limit";
 
