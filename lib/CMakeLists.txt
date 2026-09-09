@@ -59,6 +59,12 @@ if(BUILD_TESTING)
     cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND;ENVIRONMENT" ${ARGN})
 
     list(GET CATCH2_TEST_COMMAND 0 _catch2_command)
+    list(LENGTH CATCH2_TEST_COMMAND _catch2_command_length)
+    if(NOT _catch2_command_length EQUAL 1)
+      # Per-case discovery appends the case name to the command line, so there is
+      # nowhere to put caller-supplied runner arguments. Fail rather than drop them.
+      message(FATAL_ERROR "add_catch2_test(${CATCH2_TEST_NAME}): COMMAND must be a single test executable")
+    endif()
     if(_catch2_command MATCHES "^\\$<TARGET_FILE:(.+)>$")
       set(_catch2_target "${CMAKE_MATCH_1}")
     else()
@@ -70,8 +76,17 @@ if(BUILD_TESTING)
       # into one ;-joined string, so a multi-variable ENVIRONMENT loses every
       # variable but the first and turns the rest into junk property names. The
       # emulator prefix survives intact and also applies to test discovery.
+      #
+      # Prepend rather than replace: a cross-compiling build may already have an
+      # emulator here, and it has to keep running the executable.
+      get_property(
+        _catch2_emulator
+        TARGET ${_catch2_target}
+        PROPERTY CROSSCOMPILING_EMULATOR
+      )
       set_property(
         TARGET ${_catch2_target} PROPERTY CROSSCOMPILING_EMULATOR "${CMAKE_COMMAND}" -E env ${CATCH2_TEST_ENVIRONMENT}
+                                          ${_catch2_emulator}
       )
     endif()
 
