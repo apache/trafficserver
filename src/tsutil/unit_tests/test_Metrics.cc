@@ -882,6 +882,28 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
     REQUIRE(first != Metrics::NOT_FOUND);
   }
 
+  SECTION("a subrange from iterators made at different times terminates")
+  {
+    // Each iterator snapshots its own bound at construction. If exhaustion is judged against each
+    // one's own bound, the walk can pass its own end while the stop iterator, made later and so
+    // holding a larger bound, is still live -- they never compare equal and ++ makes no progress.
+    Metrics::Counter::create("unlisted.snap.start");
+
+    auto start = m.find("unlisted.snap.start");
+    REQUIRE(start != m.end());
+
+    Metrics::Counter::create("unlisted.snap.stop");
+
+    auto stop = m.find("unlisted.snap.stop");
+    REQUIRE(stop != m.end());
+
+    int steps = 0;
+
+    for (auto it = start; it != stop; ++it) {
+      REQUIRE(++steps < 64); // fails rather than spinning if the two never meet
+    }
+  }
+
   SECTION("find() works for a gauge, whose id carries type bits")
   {
     // A metric id encodes its type at METRIC_TYPE_BITS, while the iteration bound is built with

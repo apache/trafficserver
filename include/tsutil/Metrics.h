@@ -304,6 +304,11 @@ public:
      * Three way rather than a plain position compare: any exhausted iterator equals the end
      * sentinel, and equals any other exhausted iterator, since two of them may have skipped a
      * different number of unlisted slots. Two live iterators still compare by position.
+     *
+     * Two positional iterators may hold different snapshots, so exhaustion between them is judged
+     * against the earlier bound. Otherwise a walk could pass its own bound while a stop iterator
+     * made later was still live: they would never compare equal and @c operator++ could not make
+     * progress. The sentinel keeps its own answer, since its bound is meaningless.
      */
     bool
     operator==(const iterator &o) const
@@ -312,7 +317,12 @@ public:
         return false;
       }
 
-      bool const a = at_end(), b = o.at_end();
+      if (_end || o._end) {
+        return at_end() == o.at_end();
+      }
+
+      auto const bound = _bound < o._bound ? _bound : o._bound;
+      bool const a = _it >= bound, b = o._it >= bound;
 
       if (a || b) {
         return a && b;
