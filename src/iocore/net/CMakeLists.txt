@@ -225,7 +225,7 @@ if(BUILD_TESTING)
   if(APPLE)
     add_catch2_test(NAME test_net COMMAND test_net)
   else()
-    # Disable ORD violation caused by double definition inside a stub file libinknet_stub.cc
+    # Disable ODR violation caused by double definition inside a stub file libinknet_stub.cc
     # see remap_test_dlopen_leak_suppression.txt for more info.
     add_catch2_test(NAME test_net COMMAND test_net ENVIRONMENT "ASAN_OPTIONS=detect_odr_violation=0")
   endif()

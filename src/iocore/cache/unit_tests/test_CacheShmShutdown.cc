@@ -47,13 +47,15 @@ bool reuse_existing_cache = false;
 namespace
 {
 
-// Our own prefix so these can never touch a real instance's segments, short enough to stay under the 31-char POSIX limit.
+// Our own prefix so these can never touch a real instance's segments.
 // Per process: POSIX shm names are system global and every TEST_CASE runs as its own
 // ctest process, so a fixed word would let concurrent cases fight over one segment.
+// Length budget: the word becomes "/<word>-control", so len(word) must stay under
+// MAX_SHM_NAME_LEN - 9 == 22. Seven characters plus a pid leaves ample room.
 std::string const &
 test_prefix_word()
 {
-  static std::string const word{"atsunittest" + std::to_string(getpid())};
+  static std::string const word{"atsunit" + std::to_string(getpid())};
   return word;
 }
 

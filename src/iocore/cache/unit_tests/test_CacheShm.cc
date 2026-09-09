@@ -248,10 +248,12 @@ namespace
 // A prefix of our own so these tests can never touch a real instance's segments.
 // Per process: POSIX shm names are system global and every TEST_CASE runs as its own
 // ctest process, so a fixed word would let concurrent cases fight over one segment.
+// Length budget: the word becomes "/<word>-control", so len(word) must stay under
+// MAX_SHM_NAME_LEN - 9 == 22. Eight characters plus a pid leaves ample room.
 std::string const &
 purge_prefix_word()
 {
-  static std::string const word{"atspurgetest" + std::to_string(getpid())};
+  static std::string const word{"atspurge" + std::to_string(getpid())};
   return word;
 }
 

@@ -84,7 +84,11 @@ public:
     ofs << content;
   }
 
-  ~TempFile() { std::filesystem::remove(_path); }
+  ~TempFile()
+  {
+    std::error_code ec; // Best effort: cleanup must not throw out of a destructor.
+    std::filesystem::remove(_path, ec);
+  }
 
   std::string
   path() const

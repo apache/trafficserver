@@ -47,7 +47,11 @@ public:
     f << content;
   }
 
-  ~TempYAML() { std::filesystem::remove(_path); }
+  ~TempYAML()
+  {
+    std::error_code ec; // Best effort: cleanup must not throw out of a destructor.
+    std::filesystem::remove(_path, ec);
+  }
 
   const char *
   path() const
