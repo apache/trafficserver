@@ -115,10 +115,10 @@ struct UrlComponents {
 // is const, and it is read concurrently and without locks by every ET_NET
 // thread of every RemapInstance that loaded the same rule file. Nothing here
 // may be mutated after that point, and nothing per-instance or per-transaction
-// may be stored here. Profiling hit counts belong to RemapInstance and are
-// passed in as arguments rather than kept as members. Put new per-instance
-// state on RemapInstance, indexed in lockstep with RuleSet::rules(), never on
-// this class.
+// may be stored here. That is why the match context and profiling hit counts
+// are passed in as arguments rather than kept as members: they belong to
+// RemapInstance. Put new per-instance state on RemapInstance, indexed in
+// lockstep with RuleSet::rules(), never on this class.
 //
 class RemapRegex
 {
@@ -158,9 +158,9 @@ public:
 
   // number of matches, or negative if failed
   int
-  match(std::string_view const str, RegexMatches &matches) const
+  match(std::string_view const str, RegexMatches &matches, RegexMatchContext const *match_context) const
   {
-    int const stat = _rex.exec(str, matches);
+    int const stat = _rex.exec(str, matches, 0, match_context);
     if (0 <= stat) {
       Dbg(dbg_ctl, "Regex match (%d): %.*s", stat, (int)str.length(), str.data());
       return matches.size();
@@ -805,17 +805,18 @@ private:
 struct RemapInstance {
   RemapInstance() : filename("unknown") {}
 
-  SharedRuleSet    rule_set;
-  std::vector<int> rule_hits;
-  bool             pristine_url = false;
-  bool             profile      = false;
-  bool             method       = false;
-  bool             query_string = true;
-  bool             host         = false;
-  int              hits         = 0;
-  int              misses       = 0;
-  int              failures     = 0;
-  std::string      filename;
+  SharedRuleSet     rule_set;
+  std::vector<int>  rule_hits;
+  RegexMatchContext match_context = {};
+  bool              pristine_url  = false;
+  bool              profile       = false;
+  bool              method        = false;
+  bool              query_string  = true;
+  bool              host          = false;
+  int               hits          = 0;
+  int               misses        = 0;
+  int               failures      = 0;
+  std::string       filename;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1056,7 +1057,7 @@ TSRemapDoRemap(void *ih, TSHttpTxn txnp, TSRemapRequestInfo *rri)
     auto const &re = rules[rule_ix];
 
     // Since we check substitutions on parse time, we don't need to reset ovector
-    auto match_result = re->match(match_buf.data(), matches);
+    auto match_result = re->match(match_buf.data(), matches, &(ri->match_context));
     if (match_result >= 0) {
       int new_len = re->get_lengths(matches, lengths, rri, &req_url);
 
