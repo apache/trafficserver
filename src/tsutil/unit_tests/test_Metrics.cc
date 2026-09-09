@@ -813,9 +813,12 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
   SECTION("an unlisted run at the end of the store terminates iteration")
   {
     // Skipping the last slots in the store is the case where the skip loop has nothing unmarked
-    // left to land on.
+    // left to land on. The anchor is a listed metric of this section's own, so the loop below is
+    // known to have run without depending on what other sections left in the shared store.
     constexpr int            COUNT = 8;
     std::vector<std::string> names;
+
+    Metrics::Counter::create("unlisted.tail.anchor");
 
     names.reserve(COUNT);
     for (int i = 0; i < COUNT; ++i) {
@@ -823,14 +826,16 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
       REQUIRE(m.unlist(Metrics::Counter::create(names[i])));
     }
 
-    auto count = std::distance(m.begin(), m.end());
-    REQUIRE(count > 0);
+    bool saw_anchor = false;
 
     for (auto &&[name, type, value] : m) {
+      saw_anchor |= (name == "unlisted.tail.anchor");
       for (auto const &n : names) {
         REQUIRE(name != n);
       }
     }
+
+    REQUIRE(saw_anchor);
   }
 
   SECTION("iterator comparison")
