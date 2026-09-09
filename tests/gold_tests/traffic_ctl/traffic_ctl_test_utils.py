@@ -124,9 +124,10 @@ def _check_json_fields(path, expected):
     `validate_result_with_text` does take JSON-spelled text, so the two
     helpers are not interchangeable.
 
-    A missing key and a JSON `null` both render as `'None'` and cannot be told
-    apart here, which means `field=None` passes for a misspelled `field` too.
-    Asserting a null needs its own `key in doc` check.
+    A key the output does not carry is reported as missing rather than
+    compared, so a misspelled field name fails instead of quietly matching an
+    expectation of `None`. Asserting that a field is present and null is
+    therefore written `field=None`, which only passes when the key is there.
     """
     desc = "Check that the JSON output contains the expected fields"
     raw, decode_error = _read_stdout(path)
@@ -141,7 +142,10 @@ def _check_json_fields(path, expected):
 
     failed = []
     for key, want in expected.items():
-        actual = doc.get(key)
+        if key not in doc:
+            failed.append(f"{key} is missing (expected {want})")
+            continue
+        actual = doc[key]
         if str(actual) != str(want):
             failed.append(f"{key} = {actual} (expected {want})")
     if failed:
