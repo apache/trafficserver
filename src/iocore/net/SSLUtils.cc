@@ -38,8 +38,10 @@
 #include "iocore/net/SSLAPIHooks.h"
 #include "iocore/net/SSLDiags.h"
 #include "iocore/net/TLSBasicSupport.h"
+#include "iocore/net/TLSSNISupport.h"
 #include "iocore/net/TLSSessionResumptionSupport.h"
 #include "records/RecHttp.h"
+#include "tsutil/Convert.h"
 #include "tscore/MatcherUtils.h"
 #include "tscore/ink_config.h"
 #include "tscore/SimpleTokenizer.h"
@@ -66,6 +68,7 @@
 #include <openssl/objects.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
+#include <openssl/sha.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #if HAVE_OPENSSL_TS_H
@@ -73,7 +76,10 @@
 #endif
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <filesystem>
+#include <memory>
 #include <thread>
 #include <utility>
 #include <string>
@@ -94,6 +100,21 @@ static constexpr char SSL_CERT_SEPARATE_DELIM = ',';
 #endif
 
 static int ssl_vc_index = -1;
+
+/**
+   Register the client CA bundle with the reload machinery.
+
+   The bundle is loaded into each SSL_CTX as it is built, so replacing it in place only takes effect
+   when the contexts are rebuilt. Tracking it alongside the certificate files lets a configuration
+   reload notice the change.
+ */
+static void
+track_client_ca_bundle(const char *file)
+{
+  if (SSLConfigParams::load_ssl_file_cb != nullptr && file != nullptr && file[0] != '\0') {
+    SSLConfigParams::load_ssl_file_cb(file);
+  }
+}
 
 static ink_mutex *mutex_buf            = nullptr;
 static bool       open_ssl_initialized = false;
@@ -206,6 +227,8 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
   return preverify_ok;
 }
 
+static bool bind_session_id_context_to_verify_scope(SSL *ssl);
+
 #if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
 // Pausable callback
 static int
@@ -259,6 +282,16 @@ ssl_client_hello_callback(const SSL_CLIENT_HELLO *client_hello)
     Dbg(dbg_ctl_ssl_error, "ssl_client_hello_callback call back on stale netvc");
     return CLIENT_HELLO_ERROR;
   }
+
+#if HAVE_SSL_CTX_SET_CLIENT_HELLO_CB
+  // The last point before OpenSSL creates the session it will issue and looks up the one it was
+  // asked to resume. On BoringSSL this is instead done at the tail of the select_certificate_cb
+  // lambda, because the SSL_CTX switch that certificate selection performs there would discard a
+  // context set now.
+  if (!bind_session_id_context_to_verify_scope(s)) {
+    return CLIENT_HELLO_ERROR;
+  }
+#endif
 
   return CLIENT_HELLO_SUCCESS;
 }
@@ -370,6 +403,13 @@ ssl_servername_callback(SSL *ssl, int *al, void *arg)
     // Only call the SNI actions here if not already performed in the HELLO_CB
     int ret = snis->perform_sni_action(*ssl);
     if (ret != SSL_TLSEXT_ERR_OK) {
+      return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
+
+    // Without a ClientHello callback this is the earliest hook available, which is later than the
+    // TLS library's session lookup. Sessions are still scoped from here on, but a cross-scope
+    // resumption can be admitted before this runs.
+    if (!bind_session_id_context_to_verify_scope(ssl)) {
       return SSL_TLSEXT_ERR_ALERT_FATAL;
     }
 #endif
@@ -1125,6 +1165,12 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
       ink_assert(!"unhandled cert result");
     }
 
+    // After ssl_cert_callback(), so this survives the SSL_CTX switch certificate selection performs,
+    // and still ahead of BoringSSL's session lookup.
+    if (res == ssl_select_cert_success && !bind_session_id_context_to_verify_scope(client_hello->ssl)) {
+      res = ssl_select_cert_error;
+    }
+
     return res;
   });
 #endif
@@ -1151,13 +1197,173 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
 
+/**
+   Bind the sessions this connection creates or resumes to its client verification scope.
+
+   A resumed handshake never asks the client for a certificate again, so a session may only be
+   resumed under the policy that already verified it. The session id context, which both TLS
+   libraries compare before admitting a resumption, therefore has to cover everything that decides
+   how a client certificate is verified: the server name, the verify mode and depth, and the trust
+   anchors in force. RFC 6066 section 3 requires this of session ID resumption; RFC 8446 does not
+   require it of tickets.
+
+   It must be set before the TLS library creates the session it will issue or looks up the one it
+   was asked to resume, which is why this runs from the ClientHello callback and unconditionally,
+   rather than from setClientCertCACerts().
+
+   On OpenSSL that is also before the TS_EVENT_SSL_CERT hooks, so a plugin changing verify settings
+   from those hooks leaves the session bound to a scope that is not the one enforced; the
+   TS_EVENT_SSL_CLIENT_HELLO hooks run first and are captured. BoringSSL binds after the
+   certificate hooks and does capture them.
+
+   @return false if the context could not be established, in which case the caller must fail the
+     handshake rather than proceed with one that would permit resumption across scopes.
+ */
+static bool
+bind_session_id_context_to_verify_scope(SSL *ssl)
+{
+  auto *tbs = TLSBasicSupport::getInstance(ssl);
+
+  if (tbs == nullptr) {
+    // Not an inbound connection this applies to, so there is nothing to scope.
+    return true;
+  }
+
+  const char *servername = "";
+
+  if (auto *snis = TLSSNISupport::getInstance(ssl); snis != nullptr) {
+    servername = snis->get_sni_server_name();
+  }
+
+  const int     verify_mode  = SSL_get_verify_mode(ssl);
+  const int     verify_depth = SSL_get_verify_depth(ssl);
+  unsigned char hash_buf[SHA256_DIGEST_LENGTH];
+  SHA256_CTX    ctx;
+  auto          update    = [&ctx](const void *data, size_t len) { SHA256_Update(&ctx, data, len); };
+  auto          update_sv = [&update](std::string_view sv) {
+    const uint32_t len = static_cast<uint32_t>(sv.size());
+
+    update(&len, sizeof(len));
+    update(sv.data(), sv.size());
+  };
+  auto update_trust_store = [&]() -> bool {
+    // Sessions that never verified a certificate do not need to be retired when the CA store changes.
+    if ((verify_mode & SSL_VERIFY_PEER) == 0) {
+      return true;
+    }
+    // A store that was selected but could not be digested must not resolve to some other scope.
+    if (tbs->verify_scope_digest_failed()) {
+      return false;
+    }
+    // verify_client_ca_certs installed a store, digested where it was loaded.
+    if (auto const &scope_digest = tbs->get_verify_scope_digest(); scope_digest.has_value()) {
+      update(scope_digest->data(), scope_digest->size());
+      return true;
+    }
+    // Otherwise proxy.config.ssl.CA.cert.filename applies, digested when that configuration loaded.
+    SSLConfig::scoped_config params;
+
+    if (params->clientCADigestFailed) {
+      return false;
+    }
+    if (params->clientCADigest.has_value()) {
+      update(params->clientCADigest->data(), params->clientCADigest->size());
+      return true;
+    }
+    // No global bundle is configured, so there is no trust-anchor term to add.
+    return true;
+  };
+
+  static_assert(SHA256_DIGEST_LENGTH <= SSL_MAX_SID_CTX_LENGTH);
+
+  // Folded because SNIConfigParams::get() lowercases the name before matching, so two spellings
+  // select one policy and have to land in one scope.
+  char folded[TS_MAX_HOST_NAME_LEN + 1];
+
+  ts::transform_lower(servername, folded);
+
+  SHA256_Init(&ctx);
+  update_sv(folded);
+  update(&verify_mode, sizeof(verify_mode));
+  update(&verify_depth, sizeof(verify_depth));
+
+  if (!update_trust_store()) {
+    return false;
+  }
+
+  SHA256_Final(hash_buf, &ctx);
+
+  if (SSL_set_session_id_context(ssl, hash_buf, sizeof(hash_buf)) != 1) {
+    SSLError("SSL_set_session_id_context failed for the client verification scope");
+    return false;
+  }
+
+  return true;
+}
+
+/**
+   Digest the client CA scope named by @a file and @a dir, for the session id context.
+
+   A bundle file is covered by its contents, so replacing one in place retires the sessions it
+   verified. This has to be recomputed per connection rather than cached at configuration load,
+   because setClientCertCACerts() reloads the store from disk on every connection: a cached digest
+   would let a resumed session outlive trust anchors that fresh handshakes have already stopped
+   accepting. The cost is one file read, on a path that already reads and parses the same file.
+
+   A hashed directory is covered only by its path. Its certificates are read lazily during
+   verification, so enumerating them here would not see what a later handshake loads.
+
+   @return The digest, or no value when neither location is set. A set location that cannot be read
+     also yields no value, with @a failed set, so the caller refuses to resume rather than falling
+     back to a different scope.
+ */
+std::optional<TLSBasicSupport::VerifyScopeDigest>
+digestClientCAScope(std::string_view file, std::string_view dir, bool &failed)
+{
+  failed = false;
+
+  if (file.empty() && dir.empty()) {
+    return std::nullopt;
+  }
+
+  TLSBasicSupport::VerifyScopeDigest scope_digest;
+  SHA256_CTX                         ctx;
+  auto                               update_sv = [&ctx](std::string_view sv) {
+    const uint32_t len = static_cast<uint32_t>(sv.size());
+
+    SHA256_Update(&ctx, &len, sizeof(len));
+    SHA256_Update(&ctx, sv.data(), sv.size());
+  };
+
+  static_assert(TLSBasicSupport::VERIFY_SCOPE_DIGEST_LENGTH == SHA256_DIGEST_LENGTH);
+
+  SHA256_Init(&ctx);
+  update_sv(file);
+  update_sv(dir);
+
+  if (!file.empty()) {
+    std::error_code ec;
+    std::string     contents = swoc::file::load(swoc::file::path{std::string{file}}, ec);
+
+    if (ec) {
+      // Deliberately not naming verify_client_ca_certs: this also digests the bundle from
+      // proxy.config.ssl.CA.cert.filename.
+      SSLError("failed to read client CA file '%.*s' for the session id context", static_cast<int>(file.size()), file.data());
+      failed = true;
+      return std::nullopt;
+    }
+    update_sv(contents);
+  }
+
+  SHA256_Final(scope_digest.data(), &ctx);
+
+  return scope_digest;
+}
+
 void
 setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 {
-  // Remembered on the connection because a resumed session's peer certificate has to be re-verified
-  // against whichever store the current SNI selected, and the TLS libraries do not uniformly expose
-  // a way to read that store back off the SSL object.
-  X509_STORE *verify_store = nullptr;
+  bool store_failed = false;
 
   if ((file != nullptr && file[0] != '\0') || (dir != nullptr && dir[0] != '\0')) {
 #if TS_HAS_VERIFY_CERT_STORE
@@ -1166,9 +1372,12 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
     if (ctx != nullptr &&
         X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
       SSL_set0_verify_cert_store(ssl, ctx);
-      verify_store = ctx;
     } else {
+      // Leaving this unset would silently verify the client against whichever store the SSL_CTX
+      // carries, which is not the one sni.yaml asked for. The connection is failed instead.
+      SSLError("failed to load verify_client_ca_certs file '%s' dir '%s'", file != nullptr ? file : "", dir != nullptr ? dir : "");
       X509_STORE_free(ctx);
+      store_failed = true;
     }
 
     // SSL_set_client_CA_list takes ownership of the STACK_OF(X509) structure
@@ -1181,8 +1390,17 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
 #endif
   }
 
+  // Recorded rather than applied here: the session id context has to be in place before the TLS
+  // library creates or looks up a session, which on OpenSSL is before this function's callers run.
   if (auto *tbs = TLSBasicSupport::getInstance(ssl); tbs != nullptr) {
-    tbs->set_verify_cert_store(verify_store);
+    bool digest_failed = false;
+    auto scope_digest  = digestClientCAScope(file != nullptr ? file : "", dir != nullptr ? dir : "", digest_failed);
+
+    if (store_failed || digest_failed) {
+      tbs->mark_verify_scope_digest_failed();
+    } else {
+      tbs->set_verify_scope_digest(scope_digest);
+    }
   }
 }
 
@@ -1426,6 +1644,7 @@ SSLMultiCertConfigLoader::_set_verify_path(SSL_CTX *ctx, const SSLMultiCertConfi
                (!params->serverCACertPath || params->serverCACertPath[0] == '\0') ? "[empty path]" : params->serverCACertPath);
       return false;
     }
+    track_client_ca_bundle(params->serverCACertFilename);
   }
   return true;
 }
@@ -1462,6 +1681,7 @@ SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
                  (!params->serverCACertPath || params->serverCACertPath[0] == '\0') ? "[empty path]" : params->serverCACertPath);
         return false;
       }
+      track_client_ca_bundle(params->serverCACertFilename);
     }
 
     if (params->clientCertLevel == 2) {
