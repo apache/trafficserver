@@ -94,6 +94,7 @@ my_free(void *ptr, void * /*caller*/)
 thread_local pcre2_jit_stack *jit_stack = nullptr;
 
 struct JitStackCleanup {
+  bool armed = true;
   ~JitStackCleanup()
   {
     if (jit_stack != nullptr) {
@@ -103,6 +104,18 @@ struct JitStackCleanup {
 };
 
 thread_local JitStackCleanup jit_stack_cleanup;
+
+// Reading the member forces the thread local to be initialized, which registers its
+// destructor. That has to happen here, on the matching thread but before the match,
+// rather than inside the callback. A thread that only ever reached the callback
+// would otherwise never initialize the cleanup object and would leak its stack.
+void
+arm_jit_stack_cleanup()
+{
+  if (!jit_stack_cleanup.armed) {
+    return;
+  }
+}
 
 pcre2_jit_stack *
 jit_stack_for_this_thread(void *)
@@ -531,6 +544,8 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
 
   bool const     full_match  = (flags & RE_FULL_MATCH) != 0;
   uint32_t const pcre2_flags = flags & ~RE_FULL_MATCH;
+
+  arm_jit_stack_cleanup();
 
   int rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, pcre2_flags,
                        RegexMatches::_MatchData::get(matches._match_data), match_context);
