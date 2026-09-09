@@ -43,18 +43,51 @@ class RegexPatterns:
     SUBSTITUTE_PATTERN: Final = re.compile(
         r"""(?P<escaped>\{\{.*?\}\})
             |
-            (?<!%)\{\s*(?P<func>[a-zA-Z_][a-zA-Z0-9_-]*)\s*\((?P<args>[^)]*)\)\s*\}
+            (?<!%)\{\s*(?P<func>[a-zA-Z_][a-zA-Z0-9_-]*)\s*\((?P<args>[^)]*)\)
+                (?:\s+with\s+(?P<fmods>[A-Za-z][A-Za-z0-9,\s]*?))?\s*\}
             |
             (?<!%)\{(?P<var>[^{}()]+)\}
         """,
         re.VERBOSE | re.DOTALL,
     )
 
+    # An interpolated symbol may carry modifiers, spelled as on a condition: {inbound.url.path with NORM}
+    INTERPOLATION_MODS: Final = re.compile(r'^\s*(?P<name>\S+?)\s+with\s+(?P<mods>[A-Za-z][A-Za-z0-9,\s]*?)\s*$')
+
+    # Trailing [MODS] inside a %{} block, which u4wrh turns back into a "with" clause
+    PERCENT_MODS: Final = re.compile(r'^(?P<body>.*?)\s+\[(?P<mods>[A-Za-z][A-Za-z0-9,\s]*)\]$')
+
     # Additional performance patterns
     IDENTIFIER: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
     WHITESPACE: Final = re.compile(r'\s+')
     COMMENT_BLOCK: Final = re.compile(r'/\*.*?\*/', re.DOTALL)
     STRING_INTERPOLATION: Final = re.compile(r'\{([a-zA-Z_][a-zA-Z0-9_.-]*(?:\([^)]*\))?)\}', re.MULTILINE)
+
+
+def split_interpolation_mods(text: str) -> tuple[str, list[str]]:
+    """Split '<symbol> with MOD,MOD' into the symbol and its modifiers."""
+    if match := RegexPatterns.INTERPOLATION_MODS.match(text):
+        return match.group("name"), [mod.strip().upper() for mod in match.group("mods").split(",") if mod.strip()]
+    return text.strip(), []
+
+
+def apply_percent_mods(percent: str, mods: list[str]) -> str:
+    """Write modifiers into a %{} block the way header_rewrite spells them: %{TAG:PAYLOAD [MODS]}."""
+    if not mods or not (percent.startswith("%{") and percent.endswith("}")):
+        return percent
+    return f"{percent[:-1]} [{','.join(mods)}]}}"
+
+
+def split_percent_mods(percent: str) -> tuple[str, list[str]]:
+    """Inverse of apply_percent_mods()."""
+    if not (percent.startswith("%{") and percent.endswith("}")):
+        return percent, []
+
+    if match := RegexPatterns.PERCENT_MODS.match(percent[2:-1]):
+        mods = [mod.strip().upper() for mod in match.group("mods").split(",") if mod.strip()]
+        return f'%{{{match.group("body")}}}', mods
+
+    return percent, []
 
 
 class SystemDefaults:

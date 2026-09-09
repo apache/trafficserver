@@ -48,7 +48,7 @@ public:
   void operator=(const ConditionTrue &) = delete;
 
   void
-  append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
+  do_append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
   {
     s += "TRUE";
   }
@@ -73,7 +73,7 @@ public:
   void operator=(const ConditionFalse &) = delete;
 
   void
-  append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
+  do_append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override
   {
     s += "FALSE";
   }
@@ -102,7 +102,7 @@ public:
   void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -124,7 +124,7 @@ public:
   void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -145,7 +145,7 @@ public:
   void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -166,7 +166,7 @@ public:
   void operator=(const ConditionAccess &)  = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -191,7 +191,7 @@ public:
   void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -267,7 +267,7 @@ public:
   void operator=(const SelfType &)  = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -294,7 +294,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -336,7 +336,7 @@ public:
   void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -356,7 +356,7 @@ class ConditionInternalTxn : public Condition
 
 public:
   void
-  append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
+  do_append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
   {
   }
 
@@ -380,7 +380,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool
@@ -410,7 +410,7 @@ public:
   void operator=(const SelfType &)         = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -432,7 +432,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -463,7 +463,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
   // Make sure we know if the type is an int-type or a string.
   bool
@@ -509,7 +509,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -537,7 +537,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool
@@ -572,7 +572,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
   static constexpr const char *TAG = "INBOUND";
 
@@ -590,7 +590,7 @@ private:
 #if TS_HAS_CRIPTS
   bool _mtls_cert = false;
 #endif
-  void append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
+  void do_append_value(std::string &s, const Resources &res, NetworkSessionQualifiers qual);
 };
 
 class ConditionStringLiteral : public Condition
@@ -606,7 +606,7 @@ public:
   ConditionStringLiteral(const SelfType &) = delete;
   void operator=(const SelfType &)         = delete;
 
-  void append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
+  void do_append_value(std::string &s, const Resources & /* res ATS_UNUSED */) override;
 
 protected:
   bool eval(const Resources & /* res ATS_UNUSED */) override;
@@ -630,7 +630,7 @@ public:
   void operator=(const SelfType &)                = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -651,7 +651,7 @@ public:
   void operator=(const SelfType &)   = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -673,7 +673,7 @@ public:
   void operator=(const SelfType &) = delete;
 
   void initialize(Parser &p) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -697,7 +697,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -719,7 +719,7 @@ public:
   void operator=(const SelfType &)    = delete;
 
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -762,7 +762,7 @@ public:
   }
 
   void
-  append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
+  do_append_value(std::string & /* s ATS_UNUSED */, const Resources & /* res ATS_UNUSED */) override
   {
     TSAssert(!"%{GROUP} should never be used as a condition value!");
     TSError("[%s] %%{GROUP} should never be used as a condition value!", PLUGIN_NAME);
@@ -820,7 +820,7 @@ public:
   void operator=(const SelfType &)     = delete;
 
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -863,7 +863,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -915,7 +915,7 @@ public:
 
   void initialize(Parser &p) override;
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;
@@ -959,7 +959,7 @@ public:
   void operator=(const SelfType &)       = delete;
 
   void set_qualifier(const std::string &q) override;
-  void append_value(std::string &s, const Resources &res) override;
+  void do_append_value(std::string &s, const Resources &res) override;
 
 protected:
   bool eval(const Resources &res) override;

@@ -1,0 +1,4 @@
+cond %{SEND_RESPONSE_HDR_HOOK} [AND]
+    set-header X-Decoded-Path "%{CLIENT-URL:PATH [NORM]}"
+    set-header X-Raw-Path "%{CLIENT-URL:PATH}"
+    set-header X-Both "raw %{CLIENT-URL:PATH} decoded %{CLIENT-URL:PATH [NORM]}"

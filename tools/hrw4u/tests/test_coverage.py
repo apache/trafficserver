@@ -278,6 +278,15 @@ class TestInverseSymbolResolver:
         r = self._resolver()
         assert r.negate_expression('foo != "bar"') == 'foo != "bar"'
 
+    def test_percent_mods_become_with_clause(self):
+        r = self._resolver()
+        assert r.percent_to_ident_or_func("%{CLIENT-URL:PATH [NORM]}", None) == ("inbound.url.path with NORM", False)
+
+    def test_percent_mods_kept_on_unmapped_block(self):
+        # A tag with no DSL equivalent comes back verbatim; the mods have to survive with it.
+        r = self._resolver()
+        assert r.percent_to_ident_or_func("%{READ_RESPONSE_HDR_HOOK [NORM]}", None) == ("%{READ_RESPONSE_HDR_HOOK [NORM]}", False)
+
     def test_negate_regex(self):
         r = self._resolver()
         assert r.negate_expression("x ~ /pat/") == "x !~ /pat/"

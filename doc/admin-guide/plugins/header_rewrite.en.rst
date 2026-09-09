@@ -1030,12 +1030,38 @@ the brackets:
    MID    Make a substring match on a string comparison.
    EXT    The substring match only applies to the file extension following a dot.
           This is generally mostly useful for the ``URL:PATH`` part.
+   NORM   Normalize the value before using it, which today means percent-decoding
+          it. Only the value read from the transaction is decoded, not the operand
+          in the rule, and the request itself is left unchanged.
    ====== ========================================================================
 
 .. note::
     At most, one of ``[PRE]``, ``[SUF]``, ``[MID]``, or ``[EXT]`` may be
     used at any time. They can however be used together with ``[NOCASE]`` and the
     other flags.
+
+Use ``[NORM]`` where a client could otherwise evade a match by escaping the
+pattern, since ``pr%69vate`` is not ``private``. It composes with every
+match type, regular expressions included::
+
+    cond %{CLIENT-URL:PATH} /private-/ [NORM]
+
+It is also the one flag that applies to a ``%{...}`` expansion in an operator
+value, written inside the braces so that it affects only that expansion::
+
+    set-header X-Decoded-Path %{CLIENT-URL:PATH [NORM]}
+
+Decoding happens exactly once, as :rfc:`3986` section 2.4 requires: decoding an
+already decoded string would misread a literal ``%`` in the data as the start of
+an escape. So ``pr%2569vate`` yields ``pr%69vate``, not ``private``, and a value
+that arrives multiply encoded stays partly encoded.
+
+``[NORM]`` therefore does not promise a value free of ``%``. A single decode of
+``50%25-off`` is ``50%-off``, where the ``%`` is data. If a rule needs to care
+about what is left, test for it, which also catches the multiply encoded case::
+
+    cond %{CLIENT-URL:PATH} /%/ [NORM]
+      set-status 400
 
 Operators
 ---------
