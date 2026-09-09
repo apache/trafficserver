@@ -94,12 +94,19 @@ public:
   static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
 private:
-  using NameAndId       = std::tuple<std::string, IdType>;
-  using LookupTable     = std::unordered_map<std::string_view, IdType>;
-  using NameStorage     = std::array<NameAndId, MAX_SIZE>;
-  using AtomicStorage   = std::array<AtomicType, MAX_SIZE>;
-  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage>;
+  using NameAndId     = std::tuple<std::string, IdType>;
+  using LookupTable   = std::unordered_map<std::string_view, IdType>;
+  using NameStorage   = std::array<NameAndId, MAX_SIZE>;
+  using AtomicStorage = std::array<AtomicType, MAX_SIZE>;
+  /// Per slot flag bits, see @c UNLISTED. A parallel array rather than a member of @c NameAndId
+  /// because an atomic member would make that tuple neither copyable nor movable, and the slot is
+  /// written there with a tuple assignment.
+  using FlagStorage     = std::array<std::atomic<uint8_t>, MAX_SIZE>;
+  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage, FlagStorage>;
   using BlobStorage     = std::array<std::unique_ptr<NamesAndAtomics>, MAX_BLOBS>;
+
+  /// The slot exists and is still resolvable by name or id, but is skipped by iteration.
+  static constexpr uint8_t UNLISTED = 0x01;
 
 public:
   Metrics(const self_type &)              = delete;
@@ -144,6 +151,57 @@ public:
   lookup(IdType id, std::string_view *out_name = nullptr, Metrics::MetricType *type = nullptr) const
   {
     return _storage->lookup(id, out_name, type);
+  }
+
+  /** Take @a id out of the store's listing.
+   *
+   * An unlisted metric keeps its slot, its name and its atomic. It is skipped by iteration, so it
+   * vanishes from everything that enumerates the store, but it still resolves through @c lookup and
+   * its value may still be read and written -- an unlisted number that still rings. Creating the
+   * same name again relists it and returns the same id.
+   *
+   * @return @c false if @a id does not name an allocated slot.
+   */
+  bool
+  unlist(IdType id)
+  {
+    return _storage->set_listed(id, false);
+  }
+
+  /// Put @a id back in the listing. @see unlist
+  bool
+  relist(IdType id)
+  {
+    return _storage->set_listed(id, true);
+  }
+
+  /** Whether @a id is enumerated.
+   *
+   * @return @c false for an unlisted metric, and also for an id that names no allocated slot --
+   *   neither appears in iteration.
+   */
+  bool
+  listed(IdType id) const
+  {
+    return _storage->listed(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see unlist
+  bool
+  unlist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && unlist(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see relist
+  bool
+  relist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && relist(id);
   }
   AtomicType &
   operator[](IdType id)
@@ -194,14 +252,24 @@ public:
   // Static methods to encapsulate access to the atomic's
   class iterator
   {
+    friend class Metrics;
+
+    /// Tag for the end sentinel, which has no position and reads no storage.
+    struct end_tag {
+    };
+
+    // Only Metrics hands these out, through begin(), end() and find(). A caller that could name an
+    // arbitrary position could name an unlisted one, which iteration must never visit.
+    explicit iterator(const Metrics &m);
+    iterator(const Metrics &m, IdType pos);
+    iterator(const Metrics &m, end_tag);
+
   public:
     using iterator_category = std::input_iterator_tag;
     using value_type        = std::tuple<std::string_view, MetricType, int64_t>;
     using difference_type   = ptrdiff_t;
     using pointer           = value_type *;
     using reference         = value_type &;
-
-    iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos) {}
 
     iterator &
     operator++()
@@ -231,35 +299,55 @@ public:
       return std::make_tuple(name, type, metric->_value.load());
     }
 
+    /** Equality.
+     *
+     * Three way rather than a plain position compare: any exhausted iterator equals the end
+     * sentinel, and equals any other exhausted iterator, since two of them may have skipped a
+     * different number of unlisted slots. Two live iterators still compare by position.
+     */
     bool
     operator==(const iterator &o) const
     {
-      return _it == o._it && std::addressof(_metrics) == std::addressof(o._metrics);
-    }
+      if (std::addressof(_metrics) != std::addressof(o._metrics)) {
+        return false;
+      }
 
-    bool
-    operator!=(const iterator &o) const
-    {
-      return _it != o._it || std::addressof(_metrics) != std::addressof(o._metrics);
+      bool const a = at_end(), b = o.at_end();
+
+      if (a || b) {
+        return a && b;
+      }
+      return _it == o._it;
     }
 
   private:
     void next();
+    void advance();
+    void skip_unlisted();
+
+    bool
+    at_end() const
+    {
+      return _end || _it >= _bound;
+    }
 
     const Metrics  &_metrics;
-    Metrics::IdType _it;
+    Metrics::IdType _it{0};
+    /// One past the last slot allocated when this iterator was made. Iteration is a snapshot.
+    Metrics::IdType _bound{0};
+    bool            _end{false};
   };
 
   iterator
   begin() const
   {
-    return iterator(*this, 0);
+    return iterator(*this);
   }
 
   iterator
   end() const
   {
-    return iterator(*this, _storage->next_free_id());
+    return iterator(*this, iterator::end_tag{});
   }
 
   iterator
@@ -267,7 +355,9 @@ public:
   {
     auto id = lookup(name);
 
-    if (id == NOT_FOUND) {
+    // An unlisted slot is never visited by iteration, so handing out an iterator to one would
+    // produce a bound that a skipping walk steps straight over. Reach it with lookup() instead.
+    if (id == NOT_FOUND || !listed(id)) {
       return end();
     } else {
       return iterator(*this, id);
@@ -349,6 +439,8 @@ private:
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
     MetricType       type(IdType id) const;
+    bool             set_listed(IdType id, bool listed);
+    bool             listed(IdType id) const;
 
     /// The id the next slot will get, which is also iteration's exclusive bound.
     IdType

@@ -115,3 +115,59 @@ TEST_CASE("RecLookupMatchingRecords - hidden metrics", "[librecords][RecLookup][
     }
   }
 }
+
+TEST_CASE("RecLookupMatchingRecords - unlisted metrics", "[librecords][RecLookup][unlisted]")
+{
+  const std::string name = "proxy.test.lookup.unlisted_gauge";
+  auto             *m    = ts::Metrics::Gauge::createPtr(name);
+
+  REQUIRE(m != nullptr);
+  m->store(7);
+
+  auto &metrics = ts::Metrics::instance();
+  auto  id      = metrics.lookup(name);
+
+  REQUIRE(id != ts::Metrics::NOT_FOUND);
+  REQUIRE(metrics.unlist(id));
+
+  SECTION("an unlisted metric is not enumerated")
+  {
+    std::vector<LookupEntry> entries;
+
+    REQUIRE(RecLookupMatchingRecords(RECT_ALL, name.c_str(), collect, &entries) == REC_ERR_OKAY);
+
+    for (const auto &e : entries) {
+      CHECK(e.name != name);
+    }
+  }
+
+  SECTION("an unlisted metric is still found by exact name")
+  {
+    // RecLookupRecord resolves through Metrics::lookup() rather than iteration, which is what keeps
+    // logging fields and TSStatFindName working across an unlisting.
+    std::vector<LookupEntry> entries;
+
+    REQUIRE(RecLookupRecord(name.c_str(), collect, &entries) == REC_ERR_OKAY);
+    REQUIRE(entries.size() == 1);
+    CHECK(entries[0].name == name);
+    CHECK(entries[0].int_value == 7);
+  }
+
+  SECTION("relisting puts it back in enumeration")
+  {
+    REQUIRE(metrics.relist(id));
+
+    std::vector<LookupEntry> entries;
+    bool                     found = false;
+
+    REQUIRE(RecLookupMatchingRecords(RECT_ALL, name.c_str(), collect, &entries) == REC_ERR_OKAY);
+    for (const auto &e : entries) {
+      if (e.name == name) {
+        found = true;
+        CHECK(e.int_value == 7);
+      }
+    }
+
+    REQUIRE(found);
+  }
+}

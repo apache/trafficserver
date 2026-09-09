@@ -77,6 +77,10 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   auto            it = _lookups.find(name);
 
   if (it != _lookups.end()) {
+    // Re-creating a name relists it: same slot, same atomic, and whatever value it accumulated
+    // while it was out of the listing. A name in _lookups always names an allocated slot.
+    set_listed(it->second, true);
+
     return it->second;
   }
 
@@ -190,9 +194,61 @@ Metrics::Storage::type(IdType id) const
   return _extractType(id);
 }
 
+bool
+Metrics::Storage::set_listed(Metrics::IdType id, bool listed)
+{
+  if (!_is_allocated(id)) {
+    return false;
+  }
+
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  // Only this bit, so a flag added later is not clobbered by unlisting or relisting.
+  if (listed) {
+    std::get<2>(*blob)[offset].fetch_and(static_cast<uint8_t>(~UNLISTED), MEMORY_ORDER);
+  } else {
+    std::get<2>(*blob)[offset].fetch_or(UNLISTED, MEMORY_ORDER);
+  }
+
+  return true;
+}
+
+bool
+Metrics::Storage::listed(Metrics::IdType id) const
+{
+  if (!_is_allocated(id)) {
+    return false;
+  }
+
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  return (std::get<2>(*blob)[offset].load(MEMORY_ORDER) & UNLISTED) == 0;
+}
+
 // Iterator implementation
+Metrics::iterator::iterator(const Metrics &m) : _metrics(m), _it(0), _bound(m._storage->next_free_id())
+{
+  skip_unlisted();
+}
+
+Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _bound(m._storage->next_free_id())
+{
+  // A metric id carries its type at METRIC_TYPE_BITS, but positions are compared numerically
+  // against a bound with no type bits. Keep only the blob and offset, as advance() does, or a GAUGE
+  // id would compare past the end of the store and the iterator would look exhausted.
+  auto [blob, offset] = _metrics._splitID(pos);
+
+  _it = _makeId(blob, offset, MetricType::COUNTER);
+
+  skip_unlisted();
+}
+
+Metrics::iterator::iterator(const Metrics &m, end_tag) : _metrics(m), _end(true) {}
+
 void
-Metrics::iterator::next()
+Metrics::iterator::advance()
 {
   auto [blob, offset] = _metrics._splitID(_it);
 
@@ -202,6 +258,23 @@ Metrics::iterator::next()
   }
 
   _it = _makeId(blob, offset, MetricType::COUNTER);
+}
+
+void
+Metrics::iterator::skip_unlisted()
+{
+  // Bounded by the snapshot so a slot created and unlisted after this iterator was made cannot draw
+  // the scan past the end of what this iterator agreed to visit.
+  while (!at_end() && !_metrics._storage->listed(_it)) {
+    advance();
+  }
+}
+
+void
+Metrics::iterator::next()
+{
+  advance();
+  skip_unlisted();
 }
 
 namespace details

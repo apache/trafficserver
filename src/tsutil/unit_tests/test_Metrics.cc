@@ -707,3 +707,251 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
   // would mean the sweep above never left the first one.
   REQUIRE(hi - lo > Metrics::MAX_SIZE);
 }
+
+TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("an unlisted metric is skipped by iteration")
+  {
+    Metrics::Counter::create("unlisted.iter.before");
+    auto target = Metrics::Counter::create("unlisted.iter.target");
+    Metrics::Counter::create("unlisted.iter.after");
+
+    REQUIRE(m.unlist(target));
+
+    bool saw_before = false, saw_target = false, saw_after = false;
+
+    for (auto &&[name, type, value] : m) {
+      saw_before |= (name == "unlisted.iter.before");
+      saw_target |= (name == "unlisted.iter.target");
+      saw_after  |= (name == "unlisted.iter.after");
+    }
+
+    REQUIRE(saw_before);
+    REQUIRE_FALSE(saw_target);
+    REQUIRE(saw_after);
+  }
+
+  SECTION("creating an unlisted name again relists it")
+  {
+    auto p  = Metrics::Counter::createPtr("unlisted.resurrect");
+    auto id = m.lookup("unlisted.resurrect");
+
+    Metrics::Counter::increment(p, 5);
+    REQUIRE(m.unlist(id));
+    REQUIRE_FALSE(m.listed(id));
+
+    // Same name, same id, same atomic, and the mark is gone.
+    auto p2 = Metrics::Counter::createPtr("unlisted.resurrect");
+    REQUIRE(p2 == p);
+    REQUIRE(m.lookup("unlisted.resurrect") == id);
+    REQUIRE(m.listed(id));
+
+    // Visible again, with its value intact.
+    bool found = false;
+    for (auto &&[name, type, value] : m) {
+      if (name == "unlisted.resurrect") {
+        found = true;
+        REQUIRE(value == 5);
+      }
+    }
+    REQUIRE(found);
+  }
+
+  SECTION("unlist and relist by name")
+  {
+    auto id = Metrics::Counter::create("unlisted.byname");
+
+    REQUIRE(m.unlist("unlisted.byname"));
+    REQUIRE_FALSE(m.listed(id));
+
+    REQUIRE(m.relist("unlisted.byname"));
+    REQUIRE(m.listed(id));
+
+    bool found = false;
+    for (auto &&[name, type, value] : m) {
+      found |= (name == "unlisted.byname");
+    }
+    REQUIRE(found);
+
+    // A name that was never created cannot be marked.
+    REQUIRE_FALSE(m.unlist("unlisted.byname.never.created"));
+  }
+
+  SECTION("an unlisted metric is still resolvable and still counts")
+  {
+    auto p  = Metrics::Counter::createPtr("unlisted.resolvable");
+    auto id = m.lookup("unlisted.resolvable");
+
+    REQUIRE(m.unlist(id));
+
+    // Hidden from enumeration is not gone: by name, by id, and through the atomic it is unchanged.
+    REQUIRE(m.lookup("unlisted.resolvable") == id);
+    REQUIRE(m.lookup(id) == p);
+    REQUIRE(m.valid(id));
+    REQUIRE(m.name(id) == "unlisted.resolvable");
+    REQUIRE(m.type(id) == Metrics::MetricType::COUNTER);
+
+    Metrics::Counter::increment(p, 3);
+    REQUIRE(Metrics::Counter::load(p) == 3);
+  }
+
+  SECTION("begin() skips an unlisted first slot")
+  {
+    // Slot 0 is the reserved bad_id and is what begin() would otherwise return.
+    auto bad_id = m.lookup("proxy.process.api.metrics.bad_id");
+    REQUIRE(bad_id == 0);
+
+    REQUIRE(m.unlist(bad_id));
+    REQUIRE(std::get<0>(*m.begin()) != "proxy.process.api.metrics.bad_id");
+
+    REQUIRE(m.relist(bad_id));
+    REQUIRE(std::get<0>(*m.begin()) == "proxy.process.api.metrics.bad_id");
+  }
+
+  SECTION("an unlisted run at the end of the store terminates iteration")
+  {
+    // Skipping the last slots in the store is the case where the skip loop has nothing unmarked
+    // left to land on.
+    constexpr int            COUNT = 8;
+    std::vector<std::string> names;
+
+    names.reserve(COUNT);
+    for (int i = 0; i < COUNT; ++i) {
+      names.push_back("unlisted.tail." + std::to_string(i));
+      REQUIRE(m.unlist(Metrics::Counter::create(names[i])));
+    }
+
+    auto count = std::distance(m.begin(), m.end());
+    REQUIRE(count > 0);
+
+    for (auto &&[name, type, value] : m) {
+      for (auto const &n : names) {
+        REQUIRE(name != n);
+      }
+    }
+  }
+
+  SECTION("iterator comparison")
+  {
+    auto a = m.begin();
+    auto b = m.begin();
+    auto e = m.end();
+
+    REQUIRE(a == b);
+
+    ++a;
+    REQUIRE(a != b); // two live iterators still compare by position
+
+    while (a != e) {
+      ++a;
+    }
+    REQUIRE(a == e); // exhausted equals the sentinel
+
+    while (b != e) {
+      ++b;
+    }
+    REQUIRE(b == a); // and equals another exhausted iterator
+  }
+
+  SECTION("iterating to a bound that is not end()")
+  {
+    // A sub-range delimited by a positional iterator has to terminate even when marked slots fall
+    // inside it. Both ends skip by the same rule, so the walk still lands exactly on the bound.
+    auto first = Metrics::Counter::create("unlisted.range.1");
+    auto skip1 = Metrics::Counter::create("unlisted.range.2");
+    auto skip2 = Metrics::Counter::create("unlisted.range.3");
+    Metrics::Counter::create("unlisted.range.4");
+    Metrics::Counter::create("unlisted.range.5");
+
+    REQUIRE(m.unlist(skip1));
+    REQUIRE(m.unlist(skip2));
+
+    auto stop = m.find("unlisted.range.5");
+    REQUIRE(stop != m.end());
+
+    std::vector<std::string> seen;
+
+    for (auto it = m.find("unlisted.range.1"); it != stop; ++it) {
+      seen.push_back(std::string(std::get<0>(*it)));
+      REQUIRE(seen.size() <= 4); // do not spin if the bound is never reached
+    }
+
+    REQUIRE(seen == std::vector<std::string>{"unlisted.range.1", "unlisted.range.4"});
+    REQUIRE(first != Metrics::NOT_FOUND);
+  }
+
+  SECTION("find() works for a gauge, whose id carries type bits")
+  {
+    // A metric id encodes its type at METRIC_TYPE_BITS, while the iteration bound is built with
+    // COUNTER type bits. Comparing a GAUGE id against that bound numerically makes it look past
+    // the end of the store.
+    Metrics::Gauge::createPtr("unlisted.typed.gauge");
+    Metrics::Counter::createPtr("unlisted.typed.counter");
+
+    auto g = m.find("unlisted.typed.gauge");
+    REQUIRE(g != m.end());
+    REQUIRE(std::get<0>(*g) == "unlisted.typed.gauge");
+    REQUIRE(std::get<1>(*g) == Metrics::MetricType::GAUGE);
+
+    auto c = m.find("unlisted.typed.counter");
+    REQUIRE(c != m.end());
+    REQUIRE(std::get<0>(*c) == "unlisted.typed.counter");
+  }
+
+  SECTION("find() on an unlisted metric yields end()")
+  {
+    // Iteration never visits a marked slot, so there must be no way to get an iterator that points
+    // at one. Otherwise using it as a range bound is a walk that never terminates: the skipping
+    // iterator steps straight over the bound and runs off the end of the store.
+    auto id = Metrics::Counter::create("unlisted.unfindable");
+
+    REQUIRE(m.find("unlisted.unfindable") != m.end());
+    REQUIRE(m.unlist(id));
+    REQUIRE(m.find("unlisted.unfindable") == m.end());
+
+    // lookup() is the supported way to reach a unlisted metric, and is unaffected.
+    REQUIRE(m.lookup("unlisted.unfindable") == id);
+  }
+
+  SECTION("an id that names no allocated slot is neither listed nor unlistable")
+  {
+    // Storage::_is_allocated is the gate; this only checks that unlist and listed go through it.
+    // Blob 100 was never allocated, the largest id names an offset past MAX_SIZE, and create()
+    // advances after writing so the id one past the last one created is not allocated yet.
+    auto last = Metrics::Counter::create("unlisted.next.free");
+
+    for (auto id : {Metrics::IdType{100 << 16}, std::numeric_limits<Metrics::IdType>::max(), last + 1}) {
+      CHECK_FALSE(m.unlist(id));
+      CHECK_FALSE(m.listed(id));
+    }
+  }
+
+  SECTION("the hidden store unlists independently")
+  {
+    auto &h = Metrics::hidden_instance();
+
+    Metrics::Counter::createPtr("unlisted.dual");
+    Metrics::Counter::createHiddenPtr("unlisted.dual");
+
+    auto pub_id = m.lookup("unlisted.dual");
+    auto hid_id = h.lookup("unlisted.dual");
+
+    REQUIRE(h.unlist(hid_id));
+    REQUIRE_FALSE(h.listed(hid_id));
+    REQUIRE(m.listed(pub_id));
+
+    bool in_published = false, in_hidden = false;
+
+    for (auto &&[name, type, value] : m) {
+      in_published |= (name == "unlisted.dual");
+    }
+    for (auto &&[name, type, value] : h) {
+      in_hidden |= (name == "unlisted.dual");
+    }
+
+    REQUIRE(in_published);
+    REQUIRE_FALSE(in_hidden);
+  }
+}
