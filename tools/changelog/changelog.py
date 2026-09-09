@@ -273,8 +273,11 @@ def changelog_via_git(git_range: str, verbose: bool, doc: bool) -> list[dict]:
         if not record:
             continue
         sha, subject, body = record.split(field_sep, 2)
-        matches = re.findall(r"#(\d+)", subject)
-        number = int(matches[-1]) if matches else None
+        # Only a trailing "(#N)" is a PR number. A bare "#N" anywhere in the subject
+        # is usually an issue reference, and treating it as a PR number would merge
+        # unrelated entries in merge_changelogs().
+        match = re.search(r"\(#(\d+)\)$", subject)
+        number = int(match.group(1)) if match else None
         if verbose:
             label = f"#{number}" if number else sha[:12]
             print(f"{label} - {subject} added.", file=sys.stderr)
@@ -370,7 +373,17 @@ def _is_merged(client: httpx.Client, owner: str, repo: str, pr_number: int) -> b
 
 
 def _check_rate_limit(resp: httpx.Response) -> None:
-    if resp.status_code == 403:
+    """Exit if @a resp is a rate-limit response, leaving other errors to the caller.
+
+    A 403 alone does not identify a rate limit -- GitHub also uses it for a missing
+    token or insufficient scopes, where "try using an auth token" is wrong and hides
+    the real cause. A primary limit zeroes x-ratelimit-remaining, a secondary limit
+    sends retry-after, and a 429 is always a limit. Everything else falls through to
+    the raise_for_status() that follows each call site.
+    """
+    if resp.status_code not in (403, 429):
+        return
+    if (resp.status_code == 429 or resp.headers.get("x-ratelimit-remaining") == "0" or "retry-after" in resp.headers):
         print(
             "You have exceeded your rate limit. Try using an auth token.",
             file=sys.stderr,
