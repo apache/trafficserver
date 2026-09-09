@@ -529,6 +529,13 @@ SSLConfigParams::initialize()
   REC_ReadConfigStringAlloc(CACertRelativePath, "proxy.config.ssl.CA.cert.path");
 
   set_paths_helper(CACertRelativePath, ssl_server_ca_cert_filename, &serverCACertPath, &serverCACertFilename);
+
+  // Digested here, once per configuration load, so that the handshake path never reads the bundle.
+  // Both locations are covered, matching what _set_verify_path() hands to
+  // SSL_CTX_load_verify_locations(), so that retargeting either one retires the sessions it verified.
+  clientCADigest = digestClientCAScope(serverCACertFilename != nullptr ? serverCACertFilename : "",
+                                       serverCACertPath != nullptr ? serverCACertPath : "", clientCADigestFailed);
+
   ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
 

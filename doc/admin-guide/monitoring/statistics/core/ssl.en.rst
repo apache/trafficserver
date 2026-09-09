@@ -191,11 +191,16 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.user_agent_resumed_cert_rejected integer
    :type: counter
 
-   Incoming client SSL connections rejected because the session they resumed did
-   not satisfy the current SNI's :file:`sni.yaml` ``verify_client`` policy, either
-   carrying no client certificate where one is required or carrying one that is
-   not trusted by the certificate authorities configured for that SNI, since
-   statistics collection began.
+   Incoming client SSL connections rejected because the session they resumed
+   carried no client certificate where the current SNI's :file:`sni.yaml`
+   ``verify_client`` policy requires one, since statistics collection began.
+   Sessions are normally bound to the SNI and ``verify_client`` policy that
+   issued them, and a session offered under a different policy is declined by
+   the TLS library and completes a full handshake instead, so this counter is
+   usually zero. It can still be reached where that binding cannot be applied
+   before the TLS library selects a session: on a build providing neither
+   ClientHello callback, and on |TS| built against OpenSSL when a plugin changes
+   client verification from a ``TS_EVENT_SSL_CERT`` hook.
 
 .. ts:stat:: global proxy.process.ssl.user_agent_revoked_cert integer
    :type: counter

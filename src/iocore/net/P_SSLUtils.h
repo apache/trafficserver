@@ -23,6 +23,7 @@
 
 #include "P_SSLCertLookup.h"
 #include "iocore/net/SSLTypes.h"
+#include "iocore/net/TLSBasicSupport.h"
 #include "tscore/Diags.h"
 
 #define OPENSSL_THREAD_DEFINES
@@ -31,6 +32,8 @@
 #endif
 #include <openssl/ssl.h>
 #include <memory>
+#include <optional>
+#include <string_view>
 
 class SSLNetVConnection;
 
@@ -77,7 +80,15 @@ SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
 void setClientCertCACerts(SSL *ssl, const char *file, const char *dir);
-void setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
+
+/** Digest the client CA scope named by @a file and @a dir, for the session id context.
+
+    @return The digest, or no value when neither location is set. A set location that cannot be read
+      also yields no value, with @a failed set, so the caller refuses to resume rather than falling
+      back to a different scope.
+ */
+std::optional<TLSBasicSupport::VerifyScopeDigest> digestClientCAScope(std::string_view file, std::string_view dir, bool &failed);
+void                                              setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
 
 // Helper functions to retrieve sni name or ip address from a SSL object
 // Used as part of the lookup key into the origin server session cache
