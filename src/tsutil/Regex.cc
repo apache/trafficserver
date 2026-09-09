@@ -80,17 +80,12 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
-// PCRE2 needs a distinct JIT stack per thread, and a match context can be copied
-// and then used on a different thread. Handing over a plain stack pointer would
-// bake in the stack owned by whichever thread built the context, and two threads
-// matching at once on one stack corrupts memory. PCRE2 accepts a callback for
-// exactly this case and invokes it at match time, on the matching thread.
-// The stack is held in a raw thread local pointer and freed by a separate thread
-// local object, rather than by one object that owns both. Touching a thread local
-// with a destructor runs the TLS init function, which calls __cxa_thread_atexit and
-// takes the loader mutex. Doing that from inside this callback, which PCRE2 invokes
-// during a match, deadlocked. This split is how the pre-PCRE2 implementation solved
-// it; the arrangement was lost when the JIT stack moved into RegexContext.
+// A match context can be copied and used on another thread, and PCRE2 requires a
+// distinct JIT stack per thread, so the stack comes from a callback invoked at
+// match time rather than a pointer baked in when the context is built.
+// The pointer and the cleanup object are separate thread locals on purpose:
+// touching a thread local with a destructor here registers it via
+// __cxa_thread_atexit, which takes the loader mutex during a match and deadlocks.
 thread_local pcre2_jit_stack *jit_stack = nullptr;
 
 struct JitStackCleanup {
