@@ -80,6 +80,12 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
+// PCRE2 requires a distinct JIT stack per thread. A match context may be copied
+// and used on another thread, so the stack is supplied through a callback that
+// resolves to the calling thread's stack rather than assigned directly.
+pcre2_jit_stack *thread_jit_stack(void *);
+
+//----------------------------------------------------------------------------
 class RegexContext
 {
 public:
@@ -119,6 +125,11 @@ public:
   {
     return _match_context;
   }
+  pcre2_jit_stack *
+  get_jit_stack()
+  {
+    return _jit_stack;
+  }
 
 private:
   RegexContext()
@@ -127,13 +138,19 @@ private:
     _compile_context = pcre2_compile_context_create(_general_context);
     _match_context   = pcre2_match_context_create(_general_context);
     _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
-    pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
+    pcre2_jit_stack_assign(_match_context, &thread_jit_stack, nullptr);
   }
   pcre2_general_context *_general_context = nullptr;
   pcre2_compile_context *_compile_context = nullptr;
   pcre2_match_context   *_match_context   = nullptr;
   pcre2_jit_stack       *_jit_stack       = nullptr;
 };
+
+pcre2_jit_stack *
+thread_jit_stack(void *)
+{
+  return RegexContext::get_instance()->get_jit_stack();
+}
 
 } // namespace
 
@@ -257,7 +274,11 @@ struct RegexMatchContext::_MatchContext {
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext()
 {
-  auto ctx = pcre2_match_context_create(nullptr);
+  // Copy the shared context rather than building a blank one. A blank context
+  // silently drops everything the shared context configures, which is how this
+  // type came to run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB
+  // one every other caller gets. Callers override only the fields they mean to.
+  auto ctx = pcre2_match_context_copy(RegexContext::get_instance()->get_match_context());
   debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
   _MatchContext::set(_match_context, ctx);
 }

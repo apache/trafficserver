@@ -1050,3 +1050,51 @@ TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
   CHECK(r.exec("cdn.example.com.evil.com", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
 }
+
+// A caller-supplied RegexMatchContext must behave like the shared context that
+// Regex::exec uses when none is supplied. A context built from scratch silently
+// drops everything the shared one configures, which is how regex_remap came to
+// run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB one.
+TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexMatchContext]")
+{
+  // Quantified alternation of capture groups: every subject character pushes a
+  // backtracking frame, so the JIT stack size is what bounds this.
+  Regex re;
+  REQUIRE(re.compile(R"(^(?:(a)|(b))+$)"));
+
+  std::string const subject(1000, 'a');
+
+  RegexMatches      shared_matches;
+  RegexMatchContext match_context;
+  RegexMatches      own_matches;
+
+  int const shared_rc = re.exec(subject, shared_matches);
+  int const own_rc    = re.exec(subject, own_matches, 0, &match_context);
+  CAPTURE(shared_rc, own_rc);
+
+  REQUIRE(shared_rc > 0);
+  REQUIRE(own_rc == shared_rc);
+}
+
+// The guard from #5762: a pattern that backtracks once per character must fail
+// cleanly rather than run the thread out of stack. PCRE1 recursed on the machine
+// stack and a long enough subject crashed the server; PCRE2 must report an error
+// instead. If this ever crashes rather than fails, that regression is back.
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
+{
+  Regex re;
+  REQUIRE(re.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+
+  // Well past what a 1MiB JIT stack can hold, so the bound is still exercised
+  // now that the plugin no longer sets its own smaller one.
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(2 * 1024 * 1024, 'x');
+
+  RegexMatches matches;
+  int const    rc = re.exec(subject, matches);
+  CAPTURE(rc);
+
+  // Reaching this line at all is the crash assertion.
+  REQUIRE(rc < 0);
+  REQUIRE(rc != RE_ERROR_NOMATCH);
+}
