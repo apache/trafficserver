@@ -366,10 +366,14 @@ RamCacheS3FIFO::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy
           if (e->freq < FREQ_MAX) {
             e->freq++;
           }
-          if (copy) {
+          if (copy && !e->copy) {
             // The entry may still be sharing a caller's buffer from a put
             // made while copy semantics were not requested; refresh it with a
-            // private copy before the caller mutates its buffer.
+            // private copy before the caller mutates its buffer. Once it holds
+            // a private copy there is nothing to refresh: get() never exposes
+            // that buffer, so a further copy=true put (two requests that both
+            // missed and both read the object from disk) would only allocate
+            // and copy the object again to the same effect.
             //
             // A refresh only ever gives bytes back, so unlike an insert it
             // needs no eviction pass: the private copy is charged its exact

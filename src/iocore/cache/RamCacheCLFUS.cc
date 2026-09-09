@@ -586,6 +586,17 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       this->_move_compressed(e);
       this->_lru[e->flag_bits.lru].remove(e);
       this->_lru[e->flag_bits.lru].enqueue(e);
+      if (copy && e->flag_bits.copy && !e->flag_bits.compressed) {
+        // Already an uncompressed private copy of this object: get() never
+        // exposes that buffer, so re-copying it (two requests that both missed
+        // and both read the object from disk) changes nothing. Everything
+        // below is a no-op for such an entry apart from the allocation and
+        // memcpy -- size is already len, so delta is 0 -- except when the
+        // entry is compressed, where the swap is what decompresses it and
+        // skipping it would leave compressed bytes behind a cleared flag.
+        DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d HIT (private, unchanged)", key->slice32(3), auxkey, e->size);
+        return 1;
+      }
       int64_t delta  = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
       this->_bytes  += delta;
       ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);

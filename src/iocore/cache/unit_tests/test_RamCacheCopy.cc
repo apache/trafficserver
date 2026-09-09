@@ -507,3 +507,61 @@ TEST_CASE("RamCache refresh credits the counter eviction runs off", "[cache][ram
     CHECK(rc->get(&keys[i], &got) >= 1);
   }
 }
+
+TEST_CASE("RamCache copy=true put onto a private entry leaves it alone", "[cache][ramcache][copy]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  const PolicyCase pc = GENERATE(from_range(std::begin(policy_cases), std::end(policy_cases)));
+  INFO("policy: " << pc.name);
+
+  // Two requests that both miss and both read the object from disk will both
+  // put it with copy=true; whichever lands second finds a private copy already
+  // resident. Re-copying it is pure cost -- get() never exposes that buffer --
+  // so the refresh is reserved for the shared-to-private transition.
+  //
+  // The cache cannot tell the caller's buffers apart, and the gauge does not
+  // move either way (a private copy is already charged len), so the only way
+  // to see which happened is to re-put different bytes under the same key and
+  // auxkey and read back which ones the cache kept. Real callers never do that;
+  // the same key and auxkey name one on-disk doc.
+  auto rc     = make_cache(pc, stripe);
+  auto first  = pattern_bytes(PAYLOAD_LEN, 'A');
+  auto second = pattern_bytes(PAYLOAD_LEN, 'a');
+  auto buf1   = make_buffer(first);
+  auto buf2   = make_buffer(second);
+  auto key    = fresh_key();
+
+  REQUIRE(rc->put(&key, buf1.get(), first.size(), true) == 1);
+
+  const int64_t before = ts::Metrics::Gauge::load(cache_rsb.ram_cache_bytes);
+
+  REQUIRE(rc->put(&key, buf2.get(), second.size(), true) == 1);
+  CHECK(ts::Metrics::Gauge::load(cache_rsb.ram_cache_bytes) == before);
+
+  Ptr<IOBufferData> got;
+
+  REQUIRE(rc->get(&key, &got) >= 1);
+  REQUIRE(got.get() != nullptr);
+  CHECK(std::memcmp(got->data(), first.data(), first.size()) == 0);
+
+  // A shared entry, by contrast, must still be refreshed to a private copy on
+  // the first copy=true put -- the guard is on the entry's state, not on how
+  // many puts it has seen.
+  auto shared     = pattern_bytes(PAYLOAD_LEN, 'S');
+  auto shared_buf = make_buffer(shared);
+  auto shared_key = fresh_key();
+
+  REQUIRE(rc->put(&shared_key, shared_buf.get(), shared.size(), false) == 1);
+  REQUIRE(rc->put(&shared_key, shared_buf.get(), shared.size(), true) == 1);
+  std::memset(shared_buf->data(), 0x5a, shared.size());
+
+  Ptr<IOBufferData> got_shared;
+
+  REQUIRE(rc->get(&shared_key, &got_shared) >= 1);
+  CHECK(std::memcmp(got_shared->data(), shared.data(), shared.size()) == 0);
+}
