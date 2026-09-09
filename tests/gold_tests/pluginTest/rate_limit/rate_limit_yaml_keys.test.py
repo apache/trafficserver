@@ -88,18 +88,21 @@ class TestYamlKeys:
             ('bad-selector', {'selector': {'sni': 'test'}}, 'The selector node must be a sequence'),
             ('non-scalar-key', {'selector': [{'sni': 'test', 'queue': {('bad', 'key'): 1}}]},
              'The queue node has a non-scalar key at line [0-9]+'),
+            ('bad-value', {'selector': [{'sni': 'test', 'limit': 'abc'}]}, 'Invalid value in configuration file'),
+            ('empty-config', None, 'The configuration file is empty'),
         ]:
             self._configure(name, config, error)
 
     @staticmethod
-    def _configure(name: str, config: dict, error: str | None = None) -> None:
+    def _configure(name: str, config: dict | None, error: str | None = None) -> None:
         ts = Test.MakeATSProcess(name, disable_log_checks=error is not None)
         ts.Disk.records_config.update({
             'proxy.config.diags.debug.enabled': 1,
             'proxy.config.diags.debug.tags': 'rate_limit',
         })
-        ts.Disk.File(
-            f'{ts.Variables.CONFIGDIR}/rate_limit.yaml', typename='ats:config').AddLines(yaml.safe_dump(config).splitlines())
+        # A None config stands for a file that declares no rules at all.
+        lines = yaml.safe_dump(config).splitlines() if config is not None else ['# no rate limiting rules']
+        ts.Disk.File(f'{ts.Variables.CONFIGDIR}/rate_limit.yaml', typename='ats:config').AddLines(lines)
         ts.Disk.plugin_config.AddLine(f'rate_limit.so {ts.Variables.CONFIGDIR}/rate_limit.yaml')
         tr = Test.AddTestRun(f'{name}: rate_limit YAML configuration')
         tr.Processes.Default.Command = 'echo configuration checked'
@@ -108,7 +111,7 @@ class TestYamlKeys:
             ts.ReturnCode = 70  # EX_SOFTWARE from TSFatal.
             ts.Ready = 0
             ts.Disk.diags_log.Content = Testers.ContainsExpression(error, 'Report the invalid configuration')
-            ts.Disk.traffic_out.Content = Testers.ExcludesExpression(
+            ts.Disk.diags_log.Content += Testers.ExcludesExpression(
                 'Traffic Server is fully initialized', 'Invalid configuration prevents startup')
             watcher = Test.Processes.Process(f'{name}-watcher')
             watcher.Command = 'sleep 30'

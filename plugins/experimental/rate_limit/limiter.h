@@ -202,7 +202,7 @@ public:
     }
 
     if (node["rate"]) {
-      _limit = node["rate"].as<uint32_t>();
+      _rate = node["rate"].as<uint32_t>();
     }
 
     // ToDo: One or both of these should be required

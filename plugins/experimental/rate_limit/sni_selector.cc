@@ -42,6 +42,24 @@ SniSelector::yamlParser(const std::string &yaml_file)
     return false;
   }
 
+  // yaml-cpp throws out of as<T>() on a malformed value, e.g. "limit: abc". Contain it here so such
+  // a configuration fails the load rather than terminating the process during a reload.
+  try {
+    return parseConfig(config, yaml_file);
+  } catch (YAML::Exception const &e) {
+    TSError("[%s] Invalid value in configuration file: %s.", PLUGIN_NAME, e.what());
+    return false;
+  }
+}
+
+bool
+SniSelector::parseConfig(const YAML::Node &config, const std::string &yaml_file)
+{
+  if (config.IsNull()) {
+    TSError("[%s] The configuration file is empty, use 'selector: []' to configure no rules", PLUGIN_NAME);
+    return false;
+  }
+
   if (!validate_yaml_keys(config, "configuration", {"lists", "ip-rep", "selector"})) {
     return false;
   }
