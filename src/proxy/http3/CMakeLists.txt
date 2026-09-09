@@ -58,12 +58,14 @@ if(BUILD_TESTING)
     test/stub.cc
     test/test_Http3Frame.cc
     test/test_Http3FrameDispatcher.cc
+    test/test_Http3StreamDataVIOAdaptor.cc
     Http3ProtocolEnforcer.cc
     Http3FrameDispatcher.cc
     Http3DebugNames.cc
     Http3Config.cc
     Http3Frame.cc
     Http3SettingsHandler.cc
+    Http3StreamDataVIOAdaptor.cc
   )
   target_link_libraries(
     test_http3
