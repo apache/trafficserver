@@ -80,10 +80,22 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
-// PCRE2 requires a distinct JIT stack per thread. A match context may be copied
-// and used on another thread, so the stack is supplied through a callback that
-// resolves to the calling thread's stack rather than assigned directly.
-pcre2_jit_stack *thread_jit_stack(void *);
+// PCRE2 needs a distinct JIT stack per thread, and a match context can be copied
+// and then used on a different thread. Handing over a plain stack pointer would
+// bake in the stack owned by whichever thread built the context, and two threads
+// matching at once on one stack corrupts memory. PCRE2 accepts a callback for
+// exactly this case and invokes it at match time, on the matching thread.
+pcre2_jit_stack *
+jit_stack_for_this_thread(void *)
+{
+  struct ThreadStack {
+    ThreadStack() : stack{pcre2_jit_stack_create(4096, 1024 * 1024, nullptr)} {} // 1 page min and 1MB max
+    ~ThreadStack() { pcre2_jit_stack_free(stack); }
+    pcre2_jit_stack *stack;
+  };
+  thread_local ThreadStack owner;
+  return owner.stack;
+}
 
 //----------------------------------------------------------------------------
 class RegexContext
@@ -106,9 +118,6 @@ public:
     if (_match_context != nullptr) {
       pcre2_match_context_free(_match_context);
     }
-    if (_jit_stack != nullptr) {
-      pcre2_jit_stack_free(_jit_stack);
-    }
   }
   pcre2_general_context *
   get_general_context()
@@ -125,11 +134,6 @@ public:
   {
     return _match_context;
   }
-  pcre2_jit_stack *
-  get_jit_stack()
-  {
-    return _jit_stack;
-  }
 
 private:
   RegexContext()
@@ -137,20 +141,12 @@ private:
     _general_context = pcre2_general_context_create(my_malloc, my_free, nullptr);
     _compile_context = pcre2_compile_context_create(_general_context);
     _match_context   = pcre2_match_context_create(_general_context);
-    _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
-    pcre2_jit_stack_assign(_match_context, &thread_jit_stack, nullptr);
+    pcre2_jit_stack_assign(_match_context, jit_stack_for_this_thread, nullptr);
   }
   pcre2_general_context *_general_context = nullptr;
   pcre2_compile_context *_compile_context = nullptr;
   pcre2_match_context   *_match_context   = nullptr;
-  pcre2_jit_stack       *_jit_stack       = nullptr;
 };
-
-pcre2_jit_stack *
-thread_jit_stack(void *)
-{
-  return RegexContext::get_instance()->get_jit_stack();
-}
 
 } // namespace
 
