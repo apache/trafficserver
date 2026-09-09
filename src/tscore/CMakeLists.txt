@@ -140,6 +140,10 @@ endif()
 
 if(TS_NEEDS_LIBATOMIC_FOR_CAS)
   target_link_libraries(tscore PUBLIC atomic)
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(tscore PUBLIC "-Wno-error=atomic-alignment")
+  endif()
 endif()
 
 if(BUILD_SHARED_LIBS)
