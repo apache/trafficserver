@@ -75,7 +75,17 @@ traffic_ctl.rpc().invoke(handler="get_hostdb_status", params='"hostname: \\"\\""
 # plugin list ignores the format flag today and prints a human table, so only
 # the RPC path is assertable. Once plugin list honours -f json, add:
 #   traffic_ctl.plugin().list().as_json().validate_is_valid_json()
-traffic_ctl.rpc().invoke(handler="admin_plugin_get_list").validate_is_valid_json()
+#
+# Assert the shape rather than mere parseability: `plugins` has to be `[]`,
+# matching what the hostdb case above asserts for `partitions`. The field sits
+# at result.data.plugins, which validate_json_contains cannot reach, so this
+# compares the whole result, as the connection tracker cases in
+# traffic_ctl_server_output.test.py do. Before the fix the field emitted `~`,
+# which fails this comparison as surely as it fails a JSON parser. Nothing
+# forces plugin.config to be empty here, and nothing needs to: should a
+# default ever load a plugin, this assertion fails rather than going quiet.
+traffic_ctl.rpc().invoke(
+    handler="admin_plugin_get_list").validate_result_with_text('{"data": {"source": "plugin.config", "plugins": []}}')
 
 ######
 # Commands that were already valid JSON -- guard against the shared emitter
