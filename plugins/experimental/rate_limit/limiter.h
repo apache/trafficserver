@@ -211,6 +211,10 @@ public:
 
     // If enabled, we default to UINT32_MAX, but the object default is still 0 (no queue)
     if (queue) {
+      if (!validate_yaml_keys(queue, "queue", {"size", "max_age"})) {
+        return false;
+      }
+
       _max_queue = queue["size"] ? queue["size"].as<uint32_t>() : UINT32_MAX;
 
       if (queue["max_age"]) {
@@ -221,6 +225,10 @@ public:
     const YAML::Node &metrics = node["metrics"];
 
     if (metrics) {
+      if (!validate_yaml_keys(metrics, "metrics", {"prefix", "tag"})) {
+        return false;
+      }
+
       std::string prefix = metrics["prefix"] ? metrics["prefix"].as<std::string>() : RATE_LIMITER_METRIC_PREFIX;
       std::string tag    = metrics["tag"] ? metrics["tag"].as<std::string>() : name();
 

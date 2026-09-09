@@ -42,6 +42,17 @@ SniSelector::yamlParser(const std::string &yaml_file)
     return false;
   }
 
+  if (!validate_yaml_keys(config, "configuration", {"lists", "ip-rep", "selector"})) {
+    return false;
+  }
+
+  for (const auto *key : {"lists", "ip-rep", "selector"}) {
+    if (config[key] && !config[key].IsSequence()) {
+      TSError("[%s] The %s node must be a sequence", PLUGIN_NAME, key);
+      return false;
+    }
+  }
+
   _yaml_file = yaml_file;
 
   // First build the Lists, if any
@@ -113,7 +124,11 @@ SniSelector::yamlParser(const std::string &yaml_file)
     for (const auto &i : sel) {
       const YAML::Node &sni = i;
 
-      if (sni.IsMap() && !sni["sni"].IsSequence()) {
+      if (!validate_yaml_keys(sni, "selector", {"sni", "aliases", "limit", "rate", "queue", "metrics", "ip-rep", "exclude"})) {
+        return false;
+      }
+
+      if (sni["sni"].IsScalar()) {
         auto name = sni["sni"].as<std::string>();
 
         if (nullptr != findLimiter(name)) {

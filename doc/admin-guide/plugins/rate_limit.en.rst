@@ -142,7 +142,10 @@ configuration file. The basic use is as::
 
 
 The YAML configuration can have the following format, where the various sections
-and nodes are documented below.
+and nodes are documented below. Unknown keys at any level cause configuration
+loading to fail, with a diagnostic identifying the key, node, and line number.
+A failed reload keeps the previous configuration active. Use ``max_age`` (with
+an underscore) for queue, IP reputation, and permanent-block aging settings.
 
    .. code-block:: yaml
 
