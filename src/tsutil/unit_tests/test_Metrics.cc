@@ -24,8 +24,10 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <string>
 #include <thread>
@@ -91,37 +93,6 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
     m[storeid].store(42);
 
     REQUIRE(m[storeid].load() == 42);
-  }
-
-  SECTION("Span allocation")
-  {
-    ts::Metrics::IdType span_id;
-    auto                fooid = m.lookup("foo");
-    auto                span  = Metrics::Counter::createSpan(17, &span_id);
-
-    REQUIRE(span.size() == 17);
-    // Not fixed offsets: those only hold against a virgin store. Assert instead that the span
-    // was allocated above the earlier metric and that every id in it is valid. Both ids are
-    // counters, so they are directly comparable -- ids encode the metric type, and so are not
-    // ordered across differing types.
-    REQUIRE(fooid != ts::Metrics::NOT_FOUND);
-    REQUIRE(span_id != ts::Metrics::NOT_FOUND);
-    REQUIRE(span_id > fooid);
-    for (size_t i = 0; i < span.size(); ++i) {
-      REQUIRE(m.valid(span_id + static_cast<ts::Metrics::IdType>(i)));
-    }
-
-    m.rename(span_id + 0, "span.0");
-    m.rename(span_id + 1, "span.1");
-    m.rename(span_id + 2, "span.2");
-    REQUIRE(m.name(fooid) == "foo");
-    REQUIRE(m.name(span_id + 0) == "span.0");
-    REQUIRE(m.name(span_id + 1) == "span.1");
-    REQUIRE(m.name(span_id + 2) == "span.2");
-    m.rename(fooid, "foo-new");
-    REQUIRE(m.name(fooid) == "foo-new");
-    REQUIRE(m.lookup("foo") == ts::Metrics::NOT_FOUND);
-    REQUIRE(m.lookup("foo-new") == fooid);
   }
 
   SECTION("lookup")
@@ -608,35 +579,131 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
   REQUIRE(std::adjacent_find(sorted_ptrs.begin(), sorted_ptrs.end()) == sorted_ptrs.end());
 }
 
-TEST_CASE("Metrics span lands exactly on a blob boundary", "[libtsapi][Metrics]")
+TEST_CASE("Metrics malformed id offsets resolve to bad_id", "[libtsapi][Metrics]")
 {
-  // A span has to be contiguous, so createSpan(MAX_SIZE) always starts a fresh blob and then fills
-  // it completely, whatever the current offset was. That makes this the one span size that reaches
-  // the boundary case deterministically: the offset ends up at MAX_SIZE, and unlike create(),
-  // createSpan used not to grow a new blob afterwards. The next create() then indexed one past the
-  // end of the blob's name array, and end() became an id that iterator::next() can never reach
-  // because it wraps at ++offset == MAX_SIZE.
+  // An id's offset field is 16 bits but a real offset is below MAX_SIZE, so a malformed one must
+  // not index past a blob's arrays. Filling past one blob puts the ids below in earlier blobs,
+  // where they pack under the bound and only the MAX_SIZE test rejects them.
+  auto &h = Metrics::hidden_instance();
+
+  for (int i = 0; i < Metrics::MAX_SIZE + 8; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr("f1.fill." + std::to_string(i)) != nullptr);
+  }
+
+  auto const *bad = h.lookup(Metrics::IdType{0}); // the reserved bad_id slot
+  REQUIRE(bad != nullptr);
+
+  for (Metrics::IdType id : {Metrics::IdType{0x0000FFFF}, Metrics::IdType{0x00000400}, Metrics::IdType{0x0001FFFF}}) {
+    REQUIRE(h.valid(id) == false);
+    REQUIRE(h.lookup(id) == bad);
+    REQUIRE(h.name(id) == h.name(Metrics::IdType{0}));
+  }
+}
+
+TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][Metrics]")
+{
+  // The id based read paths take no lock, so resolving an id races a concurrent create. Run both
+  // sides at once, over enough metrics to cross several blob boundaries. Under the tsan preset a
+  // non-atomic allocation counter reports a data race here; relaxing the memory orders does not,
+  // since atomics are race free at any ordering.
   //
-  // createSpan only ever targets the published store, so this necessarily allocates there.
-  Metrics::IdType span_id = Metrics::NOT_FOUND;
-  auto            span    = Metrics::Counter::createSpan(Metrics::MAX_SIZE, &span_id);
+  // Readers take ids from what the writer has registered rather than counting integers: an id packs
+  // the blob index above the offset, so consecutive integers only ever name the first blob. The
+  // store is relaxed, so a reader can pick up an id whose slot is not published yet, which is the
+  // case of interest.
+  constexpr int N_READERS = 4;
+  constexpr int N_CREATE  = Metrics::MAX_SIZE * 2 + 64;
 
-  REQUIRE(span.size() == Metrics::MAX_SIZE);
-  REQUIRE(span_id != Metrics::NOT_FOUND);
-  REQUIRE(span_id != 0); // 0 is the reserved bad_id, returned only when the store cannot grow.
+  auto             &h = Metrics::hidden_instance();
+  std::atomic<bool> stop{false};
+  std::atomic<int>  ready{0};
+  std::atomic<int>  mismatches{0};
+  std::atomic<int>  resolved{0};
 
-  // The store must still be usable, and the new metric must be a real, resolvable entry rather
-  // than something written past the end of a blob.
-  auto p = Metrics::Counter::createPtr("span.boundary.after");
-  REQUIRE(p != nullptr);
+  std::vector<std::atomic<Metrics::IdType>> created(N_CREATE);
 
-  auto &m  = Metrics::instance();
-  auto  id = m.lookup("span.boundary.after");
-  REQUIRE(id != Metrics::NOT_FOUND);
-  REQUIRE(m.valid(id));
+  for (auto &c : created) {
+    c.store(Metrics::NOT_FOUND, std::memory_order_relaxed);
+  }
 
-  // And it must behave like any other metric.
-  Metrics::Counter::increment(p, 7);
-  REQUIRE(Metrics::Counter::load(p) == 7);
-  REQUIRE(Metrics::Counter::createPtr("span.boundary.after") == p);
+  // A clamped lookup resolves to the bad_id slot, whose name is not empty, so only the expected
+  // name detects one.
+  std::vector<std::string> names;
+
+  names.reserve(N_CREATE);
+  for (int i = 0; i < N_CREATE; ++i) {
+    names.push_back("pub.order." + std::to_string(i));
+  }
+
+  std::vector<std::thread> readers;
+
+  for (int t = 0; t < N_READERS; ++t) {
+    readers.emplace_back([&]() {
+      ready.fetch_add(1, std::memory_order_release);
+
+      while (!stop.load(std::memory_order_relaxed)) {
+        for (int i = 0; i < N_CREATE; ++i) {
+          auto const id = created[i].load(std::memory_order_relaxed);
+
+          if (id == Metrics::NOT_FOUND || !h.valid(id)) {
+            continue;
+          }
+
+          // valid() accepted the id, so lookup() must return that metric and not clamp.
+          std::string_view    name;
+          Metrics::MetricType type;
+          auto               *m = h.lookup(id, &name, &type);
+
+          if (m == nullptr || name != names[i]) {
+            mismatches.fetch_add(1, std::memory_order_relaxed);
+          }
+
+          // Published as it happens so the writer can wait for one.
+          resolved.fetch_add(1, std::memory_order_relaxed);
+        }
+      }
+    });
+  }
+
+  // Readers must be in their loops before the writer starts, or nothing races.
+  while (ready.load(std::memory_order_acquire) < N_READERS) {
+    std::this_thread::yield();
+  }
+
+  for (int i = 0; i < N_CREATE; ++i) {
+    REQUIRE(Metrics::Counter::createHiddenPtr(names[i]) != nullptr);
+    created[i].store(h.lookup(names[i]), std::memory_order_relaxed);
+  }
+
+  // Being in the loop is not doing work: on one CPU the writer can finish first and every reader
+  // would then see stop. Wait for a real resolution so the check below cannot pass vacuously.
+  while (resolved.load(std::memory_order_relaxed) == 0) {
+    std::this_thread::yield();
+  }
+
+  stop.store(true, std::memory_order_relaxed);
+  for (auto &r : readers) {
+    r.join();
+  }
+
+  CHECK(mismatches.load() == 0);
+  CHECK(resolved.load() > 0);
+
+  auto lo = std::numeric_limits<Metrics::IdType>::max();
+  auto hi = std::numeric_limits<Metrics::IdType>::min();
+
+  for (int i = 0; i < N_CREATE; ++i) {
+    auto const id = h.lookup(names[i]);
+
+    REQUIRE(id != Metrics::NOT_FOUND);
+    REQUIRE(h.valid(id));
+    REQUIRE(h.name(id) == names[i]);
+
+    lo = std::min(lo, id);
+    hi = std::max(hi, id);
+  }
+
+  // More metrics than fit in one blob, so the ids must span blobs. A spread no wider than a blob
+  // would mean the sweep above never left the first one.
+  REQUIRE(hi - lo > Metrics::MAX_SIZE);
 }
