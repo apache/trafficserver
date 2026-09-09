@@ -65,10 +65,22 @@ Build
 #. Check the version in ``CMakeLists.txt``. There is a ``project`` line near the
    top with the version number.  Make sure that is correct for the release.
 
-#. Generate or update the CHANGELOG for the next release.  ::
+#. Generate or update the CHANGELOG for the next release. This needs
+   `uv <https://docs.astral.sh/uv/>`__, and ``--use-gh`` additionally needs the
+   `GitHub CLI <https://cli.github.com/>`__ already authenticated with
+   ``gh auth login``.  ::
 
       uv run --project tools/changelog python tools/changelog/changelog.py \
         -o apache -r trafficserver -m X.Y.Z --use-gh > CHANGELOG-X.Y.Z
+
+   Without the GitHub CLI, omit ``--use-gh`` and supply a token through the
+   ``GH_TOKEN`` environment variable instead. A token is not optional here: an
+   unauthenticated run exceeds the GitHub API rate limit partway through a
+   release-sized milestone and exits without writing a changelog.  ::
+
+      GH_TOKEN=<token> uv run --project tools/changelog \
+        python tools/changelog/changelog.py \
+        -o apache -r trafficserver -m X.Y.Z > CHANGELOG-X.Y.Z
 
 #. Commit this file to the repository and push it to the release branch.
 

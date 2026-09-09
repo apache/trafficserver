@@ -25,5 +25,6 @@ dependencies = [
     "pyyaml>=6.0",
 ]
 
-[project.scripts]
-changelog = "changelog:main"
+# No [build-system] and no [project.scripts]: this is a uv virtual project, used
+# only to pin the dependencies for the in-tree script. Run it as
+# `uv run --project tools/changelog python tools/changelog/changelog.py`.

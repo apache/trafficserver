@@ -490,7 +490,7 @@ def main() -> None:
                 "repo": args.repo,
                 "entries": changelog,
             }
-            yaml.dump(output, sys.stdout, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            yaml.safe_dump(output, sys.stdout, default_flow_style=False, sort_keys=False, allow_unicode=True)
         else:
             print(f"Changes with Apache Traffic Server {args.milestone}")
             for entry in changelog:
