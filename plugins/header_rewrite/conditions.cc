@@ -1812,6 +1812,16 @@ ConditionStateInt16::eval(const Resources &res)
 
 // ConditionLastCapture
 void
+ConditionLastCapture::initialize(Parser &p)
+{
+  Condition::initialize(p);
+  auto match = std::make_unique<MatcherType>(_cond_op);
+
+  match->set(p.get_arg(), mods());
+  _matcher = std::move(match);
+}
+
+void
 ConditionLastCapture::set_qualifier(const std::string &q)
 {
   Condition::set_qualifier(q);
