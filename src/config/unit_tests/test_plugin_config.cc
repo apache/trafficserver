@@ -25,6 +25,8 @@
 #include <filesystem>
 #include <fstream>
 
+#include <unistd.h>
+
 #include <yaml-cpp/yaml.h>
 
 #include "config/plugin_config.h"
@@ -32,12 +34,27 @@
 namespace
 {
 
+// Test cases run as separate, concurrent ctest processes, so they cannot share one
+// temp directory: a fixed file name would let one case delete another's file mid-read.
+// A directory per process rather than a unique file name keeps the file names these
+// tests depend on, e.g. a legacy storage.config finding its sibling volume.config.
+std::filesystem::path const &
+per_process_temp_dir()
+{
+  static std::filesystem::path const dir = [] {
+    auto d = std::filesystem::temp_directory_path() / ("ats_config_test." + std::to_string(getpid()));
+    std::filesystem::create_directories(d);
+    return d;
+  }();
+  return dir;
+}
+
 class TempFile
 {
 public:
   TempFile(std::string const &filename, std::string const &content)
   {
-    _path = std::filesystem::temp_directory_path() / filename;
+    _path = per_process_temp_dir() / filename;
     std::ofstream ofs(_path);
     ofs << content;
   }

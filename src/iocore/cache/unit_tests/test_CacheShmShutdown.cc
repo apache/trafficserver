@@ -48,14 +48,22 @@ namespace
 {
 
 // Our own prefix so these can never touch a real instance's segments, short enough to stay under the 31-char POSIX limit.
-constexpr const char *TEST_PREFIX_WORD = "atsunittest";
+// Per process: POSIX shm names are system global and every TEST_CASE runs as its own
+// ctest process, so a fixed word would let concurrent cases fight over one segment.
+std::string const &
+test_prefix_word()
+{
+  static std::string const word{"atsunittest" + std::to_string(getpid())};
+  return word;
+}
 
 // False when shm is unavailable here, e.g. a sandbox forbidding shm_open, so the test skips rather than fails.
 bool
 enable_shm()
 {
   REQUIRE(RecSetRecordInt("proxy.config.cache.shm.enabled", 1, REC_SOURCE_EXPLICIT) == REC_ERR_OKAY);
-  REQUIRE(RecSetRecordString("proxy.config.cache.shm.name_prefix", TEST_PREFIX_WORD, REC_SOURCE_EXPLICIT) == REC_ERR_OKAY);
+  REQUIRE(RecSetRecordString("proxy.config.cache.shm.name_prefix", test_prefix_word().c_str(), REC_SOURCE_EXPLICIT) ==
+          REC_ERR_OKAY);
 
   Store store;
   CacheShm::initialize(store);
@@ -66,7 +74,7 @@ enable_shm()
 void
 unlink_test_segments()
 {
-  const std::string prefix = cache_shm::normalize_name_prefix(TEST_PREFIX_WORD);
+  const std::string prefix = cache_shm::normalize_name_prefix(test_prefix_word());
   shm_unlink(cache_shm::control_segment_name(prefix).c_str());
   for (uint32_t i = 0; i < 4; ++i) {
     shm_unlink(cache_shm::stripe_segment_name(prefix, i).c_str());
@@ -78,7 +86,7 @@ unlink_test_segments()
 bool
 stripe_marked_untrusted(uint32_t idx)
 {
-  const std::string prefix = cache_shm::normalize_name_prefix(TEST_PREFIX_WORD);
+  const std::string prefix = cache_shm::normalize_name_prefix(test_prefix_word());
   int               fd     = shm_open(cache_shm::control_segment_name(prefix).c_str(), O_RDONLY, 0600);
   REQUIRE(fd >= 0);
   void *addr = mmap(nullptr, cache_shm::CONTROL_SIZE, PROT_READ, MAP_SHARED, fd, 0);
@@ -94,7 +102,7 @@ stripe_marked_untrusted(uint32_t idx)
 uint32_t
 control_stripe_count()
 {
-  const std::string prefix = cache_shm::normalize_name_prefix(TEST_PREFIX_WORD);
+  const std::string prefix = cache_shm::normalize_name_prefix(test_prefix_word());
   int               fd     = shm_open(cache_shm::control_segment_name(prefix).c_str(), O_RDONLY, 0600);
   REQUIRE(fd >= 0);
   void *addr = mmap(nullptr, cache_shm::CONTROL_SIZE, PROT_READ, MAP_SHARED, fd, 0);

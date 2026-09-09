@@ -31,11 +31,6 @@
 
 TEST_CASE("Convert HTTPHdr", "[HTTP2]")
 {
-  url_init();
-  mime_init();
-  http_init();
-  http2_init();
-
   HTTPParser     parser;
   ts::PostScript parser_defer([&]() -> void { http_parser_clear(&parser); });
   http_parser_init(&parser);
