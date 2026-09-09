@@ -33,7 +33,7 @@
 struct RamCacheLRUEntry {
   CryptoHash key;
   uint64_t   auxkey;
-  uint32_t   len;  // data length; block_size() only bounds it, so copy entries need it recorded
+  uint32_t   len;  // data length, so get() does not depend on copy_data_in allocating exactly len
   bool       copy; // copy-in-copy-out: buffers are never shared with callers
   LINK(RamCacheLRUEntry, lru_link);
   LINK(RamCacheLRUEntry, hash_link);

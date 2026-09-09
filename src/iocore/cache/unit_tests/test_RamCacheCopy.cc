@@ -29,6 +29,7 @@
 // contract for every RamCache implementation.
 
 #include "main.h"
+#include "test_doubles.h"
 
 #include "../P_CacheInternal.h"
 #include "../P_RamCache.h"
@@ -52,22 +53,6 @@ namespace
 // arithmetic a no-op (delta == 0) and leaves it untested.
 constexpr std::size_t PAYLOAD_LEN = 5000;
 
-// What make_buffer()'s rounded-up allocation costs the cache: the amount a
-// copy=false put of PAYLOAD_LEN bytes is charged.
-int64_t
-payload_block_len()
-{
-  return index_to_buffer_size(iobuffer_size_to_index(PAYLOAD_LEN, MAX_BUFFER_SIZE_INDEX));
-}
-
-// Bytes a copy=true put gives back relative to a copy=false put of the same
-// object, because the private copy is an exact-size allocation.
-int64_t
-copy_savings()
-{
-  return payload_block_len() - static_cast<int64_t>(PAYLOAD_LEN);
-}
-
 struct PolicyCase {
   RamCache *(*factory)();
   const char *name;
@@ -84,19 +69,6 @@ const PolicyCase policy_cases[] = {
   {new_RamCacheCLFUS,  "CLFUS",  false},
   {new_RamCacheS3FIFO, "S3FIFO", true },
 };
-
-// Minimal CacheDisk wiring needed to construct a StripeSM. Mirrors the helper
-// in test_Stripe.cc.
-void
-init_disk(CacheDisk &disk)
-{
-  disk.path                = static_cast<char *>(ats_malloc(1));
-  disk.path[0]             = '\0';
-  disk.disk_stripes        = static_cast<DiskStripe **>(ats_malloc(sizeof(DiskStripe *)));
-  disk.disk_stripes[0]     = nullptr;
-  disk.header              = static_cast<DiskHeader *>(ats_malloc(sizeof(DiskHeader)));
-  disk.header->num_volumes = 0;
-}
 
 // The RamCache get/put paths touch only these metrics and the stripe mutex.
 void
@@ -116,6 +88,7 @@ std::vector<char>
 pattern_bytes(std::size_t len, char base)
 {
   std::vector<char> bytes(len);
+
   for (std::size_t i = 0; i < len; i++) {
     bytes[i] = static_cast<char>(base + (i % 26));
   }
@@ -132,20 +105,41 @@ make_buffer(const std::vector<char> &bytes)
   return data;
 }
 
+// What make_buffer()'s rounded-up allocation costs the cache: the amount a
+// copy=false put of PAYLOAD_LEN bytes is charged, read off the same accessor
+// the policies charge.
+int64_t
+payload_block_len()
+{
+  return make_buffer(std::vector<char>(PAYLOAD_LEN))->block_size();
+}
+
+// Bytes a copy=true put gives back relative to a copy=false put of the same
+// object, because the private copy is an exact-size allocation.
+int64_t
+copy_savings()
+{
+  return payload_block_len() - static_cast<int64_t>(PAYLOAD_LEN);
+}
+
 CryptoHash
 fresh_key()
 {
   static uint64_t salt = 0;
 
   ++salt;
+
+  // The policies bucket on slice32(3), the high half of u64[1]; vary it so
+  // entries spread across hash buckets.
   CryptoHash key;
+
   key.u64[0] = 0xc0ffee00 + salt;
-  key.u64[1] = 0xdeadbeef + salt;
+  key.u64[1] = (uint64_t{0xdeadbeef} + salt) << 32 | 0x5eed;
   return key;
 }
 
 RamCache *
-make_cache(const PolicyCase &pc, StripeSM &stripe, int64_t max_bytes = 1 << 20)
+make_cache(RamCache *(*factory)(), StripeSM &stripe, int64_t max_bytes = 1 << 20)
 {
   // No compression: CLFUS must not schedule its background compressor (which
   // would retain a pointer to this cache), and the seen filter would
@@ -158,7 +152,7 @@ make_cache(const PolicyCase &pc, StripeSM &stripe, int64_t max_bytes = 1 << 20)
   // for leak checkers. Keep every cache reachable for the life of the
   // process instead.
   static std::vector<RamCache *> &all_caches = *new std::vector<RamCache *>;
-  RamCache                       *rc         = pc.factory();
+  RamCache                       *rc         = factory();
 
   all_caches.push_back(rc);
   rc->init(max_bytes, &stripe);
@@ -178,7 +172,7 @@ TEST_CASE("RamCache copy=true entries are immune to caller-side mutation after p
   const PolicyCase pc = GENERATE(from_range(std::begin(policy_cases), std::end(policy_cases)));
   INFO("policy: " << pc.name);
 
-  auto rc      = make_cache(pc, stripe);
+  auto rc      = make_cache(pc.factory, stripe);
   auto payload = pattern_bytes(PAYLOAD_LEN, 'A');
   auto buf     = make_buffer(payload);
   auto key     = fresh_key();
@@ -207,7 +201,7 @@ TEST_CASE("RamCache copy=true entries are immune to caller-side mutation after g
   const PolicyCase pc = GENERATE(from_range(std::begin(policy_cases), std::end(policy_cases)));
   INFO("policy: " << pc.name);
 
-  auto rc      = make_cache(pc, stripe);
+  auto rc      = make_cache(pc.factory, stripe);
   auto payload = pattern_bytes(PAYLOAD_LEN, 'A');
   auto buf     = make_buffer(payload);
   auto key     = fresh_key();
@@ -240,7 +234,7 @@ TEST_CASE("RamCache resident entries are refreshed by a copy=true put", "[cache]
   const PolicyCase pc = GENERATE(from_range(std::begin(policy_cases), std::end(policy_cases)));
   INFO("policy: " << pc.name);
 
-  auto rc      = make_cache(pc, stripe);
+  auto rc      = make_cache(pc.factory, stripe);
   auto payload = pattern_bytes(PAYLOAD_LEN, 'A');
   auto buf     = make_buffer(payload);
   auto key     = fresh_key();
@@ -271,7 +265,7 @@ TEST_CASE("RamCache copy=false entries still share the caller's buffer", "[cache
   const PolicyCase pc = GENERATE(from_range(std::begin(policy_cases), std::end(policy_cases)));
   INFO("policy: " << pc.name);
 
-  auto rc      = make_cache(pc, stripe);
+  auto rc      = make_cache(pc.factory, stripe);
   auto payload = pattern_bytes(PAYLOAD_LEN, 'A');
   auto buf     = make_buffer(payload);
   auto key     = fresh_key();
@@ -306,7 +300,7 @@ TEST_CASE("RamCache byte accounting survives the copy=true resident refresh", "[
   ts::Metrics::Gauge::store(cache_vol.vol_rsb.ram_cache_bytes, 0);
 
   constexpr int64_t cache_bytes = 128 * 1024;
-  auto              rc          = make_cache(pc, stripe, cache_bytes);
+  auto              rc          = make_cache(pc.factory, stripe, cache_bytes);
   auto              payload     = pattern_bytes(PAYLOAD_LEN, 'A');
 
   // Small enough to fit without evicting, so the numbers below are only the
@@ -322,6 +316,7 @@ TEST_CASE("RamCache byte accounting survives the copy=true resident refresh", "[
   }
 
   const int64_t after_puts = ts::Metrics::Gauge::load(cache_rsb.ram_cache_bytes);
+
   CHECK(after_puts > 0);
   CHECK(rc->size() > 0);
   if (pc.size_tracks_gauge) {
@@ -338,6 +333,7 @@ TEST_CASE("RamCache byte accounting survives the copy=true resident refresh", "[
   }
 
   const int64_t after_refresh = ts::Metrics::Gauge::load(cache_rsb.ram_cache_bytes);
+
   CHECK(after_refresh == after_puts - n_objects * copy_savings());
   // The per-volume gauge is updated alongside the global one on every path.
   CHECK(ts::Metrics::Gauge::load(cache_vol.vol_rsb.ram_cache_bytes) == after_refresh);
@@ -382,9 +378,8 @@ TEST_CASE("RamCacheS3FIFO honors copy on a ghost readmit", "[cache][ramcache][co
   // A ghost readmit is the one insert that lands in the main queue, so it is
   // the only way `copy` accounting reaches _m_bytes. Charging len instead of
   // block_size() there is otherwise untested.
-  const PolicyCase  s3fifo{new_RamCacheS3FIFO, "S3FIFO", true};
   constexpr int64_t cache_bytes = 128 * 1024;
-  auto              rc          = make_cache(s3fifo, stripe, cache_bytes);
+  auto              rc          = make_cache(new_RamCacheS3FIFO, stripe, cache_bytes);
   auto              payload     = pattern_bytes(PAYLOAD_LEN, 'A');
 
   auto key = fresh_key();
@@ -468,7 +463,7 @@ TEST_CASE("RamCache refresh credits the counter eviction runs off", "[cache][ram
   // beforehand. They only fit if the refresh really did give the bytes back,
   // and if it did, nothing resident is evicted to make space.
   constexpr int64_t cache_bytes = 128 * 1024;
-  auto              rc          = make_cache(pc, stripe, cache_bytes);
+  auto              rc          = make_cache(pc.factory, stripe, cache_bytes);
   auto              payload     = pattern_bytes(PAYLOAD_LEN, 'A');
 
   // n_objects shared copies just fit; the n_extra that follow fit only out of
@@ -529,7 +524,7 @@ TEST_CASE("RamCache copy=true put onto a private entry leaves it alone", "[cache
   // to see which happened is to re-put different bytes under the same key and
   // auxkey and read back which ones the cache kept. Real callers never do that;
   // the same key and auxkey name one on-disk doc.
-  auto rc     = make_cache(pc, stripe);
+  auto rc     = make_cache(pc.factory, stripe);
   auto first  = pattern_bytes(PAYLOAD_LEN, 'A');
   auto second = pattern_bytes(PAYLOAD_LEN, 'a');
   auto buf1   = make_buffer(first);
