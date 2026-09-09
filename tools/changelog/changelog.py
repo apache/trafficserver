@@ -62,11 +62,7 @@ import subprocess
 import sys
 
 import httpx
-
-try:
-    import yaml
-except ImportError:
-    yaml = None
+import yaml
 
 API_URL = "https://api.github.com"
 
@@ -300,17 +296,29 @@ def merge_changelogs(milestone_entries: list[dict], git_entries: list[dict]) -> 
     git range (e.g. folded into a combined backport) are appended, sorted by number.
     """
     ms_by_number = {e["number"]: e for e in milestone_entries}
-    git_numbers = {e["number"] for e in git_entries if e.get("number")}
 
+    # A PR can appear more than once in a git range -- a revert and reapply, or the
+    # same commit cherry-picked twice -- and both commits carry the same trailing
+    # "(#N)". Keep the first, so the surviving entry is the chronological one.
+    deduped: list[dict] = []
+    seen: set[int] = set()
     for ge in git_entries:
+        num = ge.get("number")
+        if num is not None:
+            if num in seen:
+                continue
+            seen.add(num)
+        deduped.append(ge)
+
+    for ge in deduped:
         num = ge.get("number")
         if num in ms_by_number and ms_by_number[num].get("labels") and "labels" not in ge:
             ge["labels"] = ms_by_number[num]["labels"]
 
-    extras = [e for e in milestone_entries if e["number"] not in git_numbers]
+    extras = [e for e in milestone_entries if e["number"] not in seen]
     extras.sort(key=lambda x: x["number"])
 
-    return git_entries + extras
+    return deduped + extras
 
 
 def _lookup_milestone(client: httpx.Client, owner: str, repo: str, title: str) -> int | None:
@@ -482,9 +490,6 @@ def main() -> None:
                 "repo": args.repo,
                 "entries": changelog,
             }
-            if yaml is None:
-                print("ERROR: --format yaml requires PyYAML. Install it with: pip install pyyaml", file=sys.stderr)
-                sys.exit(1)
             yaml.dump(output, sys.stdout, default_flow_style=False, sort_keys=False, allow_unicode=True)
         else:
             print(f"Changes with Apache Traffic Server {args.milestone}")
