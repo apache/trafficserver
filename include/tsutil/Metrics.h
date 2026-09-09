@@ -309,6 +309,12 @@ public:
      * against the earlier bound. Otherwise a walk could pass its own bound while a stop iterator
      * made later was still live: they would never compare equal and @c operator++ could not make
      * progress. The sentinel keeps its own answer, since its bound is meaningless.
+     *
+     * @note Only iterators taken from the same snapshot are meaningfully comparable with each
+     *   other. Because exhaustion is a property of an iterator's own bound, two taken at different
+     *   times can compare equal to each other while disagreeing about @c end, so this is not a
+     *   total equivalence relation and these are not iterators to hand to a generic algorithm.
+     *   Use @c end to test for exhaustion.
      */
     bool
     operator==(const iterator &o) const
