@@ -257,13 +257,17 @@ static enum ssl_verify_result_t
 ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
 {
   Dbg(dbg_ctl_ssl_verify, "Callback: custom verify client cert (RPK-enabled ctx)");
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  TLSBasicSupport   *tbs   = TLSBasicSupport::getInstance(ssl);
+  TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
   if (tbs == nullptr) {
     Dbg(dbg_ctl_ssl_verify, "ssl_custom_verify_client_callback call back on stale netvc");
     *out_alert = SSL_AD_INTERNAL_ERROR;
     return ssl_verify_invalid;
   }
+  // QUIC binds TLSBasicSupport without ever calling SSLNetVCAttach(), so this is null on an H3
+  // connection even though tbs is not. Only the per-connection CA override below needs it.
+  SSLNetVConnection *netvc      = SSLNetVCAccess(ssl);
+  TLSSNISupport     *snis       = TLSSNISupport::getInstance(ssl);
+  const char        *servername = snis != nullptr ? snis->get_sni_server_name() : "";
 
   SSL_CTX *ctx = SSL_get_SSL_CTX(ssl);
 
@@ -272,7 +276,7 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     auto     *trusted  = static_cast<SSLRPKUtils::TrustedKeySet *>(SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index));
     bool      pin_ok   = trusted != nullptr && SSLRPKUtils::pinnedKeyMatches(peer_rpk, *trusted);
     if (!pin_ok) {
-      Warning("client raw public key did not match any trusted key for %s", netvc->options.sni_servername.get());
+      Warning("client raw public key did not match any trusted key for %s", servername);
     }
     // As above: the hook always runs, and can add rejection but not override a failed pin match.
     if (tbs->verify_certificate(nullptr) == 1 || !pin_ok) {
@@ -294,16 +298,14 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   }
   X509 *leaf = sk_X509_value(chain, 0);
 
-  // A per-SNI verify_client action (VerifyClient::SNIAction) may have pinned a CA file/dir onto
-  // this connection via setClientCertCACerts()/SSL_set0_verify_cert_store() -- that call only
-  // takes effect for the classic SSL_set_verify() path, since BoringSSL has no public getter for
-  // whatever store it attached. Rebuild the same override here rather than falling back to the
-  // SSL_CTX's default store and silently ignoring a per-connection CA that was configured for
-  // this exact SNI.
+  // A per-SNI verify_client action may have pinned a CA file/dir onto this connection via
+  // setClientCertCACerts()/SSL_set0_verify_cert_store(), which only takes effect for the classic
+  // SSL_set_verify() path. Rebuild the same override rather than silently widening trust to the
+  // SSL_CTX default store.
   X509_STORE *verify_store = nullptr;
   bool        owns_store   = false;
-  const char *ca_cert_file = netvc->get_ca_cert_file();
-  const char *ca_cert_dir  = netvc->get_ca_cert_dir();
+  const char *ca_cert_file = netvc != nullptr ? netvc->get_ca_cert_file() : nullptr;
+  const char *ca_cert_dir  = netvc != nullptr ? netvc->get_ca_cert_dir() : nullptr;
   if ((ca_cert_file != nullptr && ca_cert_file[0] != '\0') || (ca_cert_dir != nullptr && ca_cert_dir[0] != '\0')) {
     verify_store = X509_STORE_new();
     if (verify_store != nullptr &&
@@ -313,6 +315,9 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
     } else {
       X509_STORE_free(verify_store);
       verify_store = nullptr;
+      SSLError("failed to load the per-connection client CA store for %s", servername);
+      *out_alert = SSL_AD_INTERNAL_ERROR;
+      return ssl_verify_invalid;
     }
   }
   if (verify_store == nullptr) {
