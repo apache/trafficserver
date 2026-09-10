@@ -1124,10 +1124,12 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   Regex re;
   REQUIRE(re.compile(pattern));
 
-  // Past what a 1MiB JIT stack holds for this pattern, which starts failing at
-  // roughly 43KiB of subject, so the bound is still exercised.
+  // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
+  // stack, measured identically on x86_64 and arm64. 256KiB keeps a six times
+  // margin for a platform whose JIT frames are larger, without allocating more
+  // than the bound needs. Do not trim this to just above 43KiB.
   std::string subject{"/alpha/bravo/?"};
-  subject.append(2 * 1024 * 1024, 'x');
+  subject.append(256 * 1024, 'x');
 
   RegexMatches matches;
   int const    rc = re.exec(subject, matches);
