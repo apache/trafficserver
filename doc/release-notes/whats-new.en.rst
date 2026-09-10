@@ -36,6 +36,36 @@ public pull requests, so they do not carry PR numbers; they are listed by commit
 subject at the end of ``CHANGELOG-10.2.0``. Refer to the advisory for the CVE
 identifiers, severities, and affected version ranges.
 
+Most of that work tightens what |TS| accepts rather than adding anything, so the
+operator-visible effect -- changed defaults, messages now refused, ACL conditions
+that now apply as written, and plugins that now require configuration -- is
+described under ``Security Hardening`` in :ref:`upgrading`. Read that section
+before upgrading.
+
+Further security fixes have landed on this branch since the ``10.2.0`` tag and
+ship in this maintenance release. Refer to the security advisory for this release
+for their identifiers, severities and affected version ranges. ``Security
+Hardening`` covers both sets. The surface those later fixes add, which a ``10.2.0``
+installation does not have, is:
+
+* :ts:cv:`proxy.config.http.reject_head_with_content`, controlling whether a
+  ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is
+  refused. Enabled by default.
+* :ts:cv:`proxy.config.regex.anchor_policy_rules`, which can require a regex
+  driving a security or routing decision to match the whole subject. Disabled by
+  default.
+* :ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`, counting inbound
+  connections rejected because the session they resumed carried no client
+  certificate where the current SNI's ``verify_client`` policy requires one.
+  Sessions are bound to the policy that issued them, so an out-of-scope session
+  completes a full handshake rather than reaching this counter, which is normally
+  zero.
+* ``tsmemcache`` binds to the loopback address by default, with an optional second
+  plugin argument to set the bind address. Earlier builds bound the wildcard
+  address.
+* ``magick`` requires a signing key and will not load without one, and allowlists
+  the ImageMagick ``convert`` operators it will run.
+
 Configuration Reload
 --------------------
 
@@ -167,6 +197,14 @@ New :file:`records.yaml` settings in this release:
 
 Other configuration changes:
 
+* :ts:cv:`proxy.config.http2.default_buffer_water_mark` now defaults to ``32768``
+  and no longer accepts values below ``1024``.
+* :ts:cv:`proxy.config.http.header_field_max_size` and
+  :ts:cv:`proxy.config.hostdb.round_robin_max_count` are now range checked, at
+  ``0`` to ``65535`` and ``1`` to ``1024`` respectively. Their defaults are
+  unchanged, but a value outside the range is no longer accepted.
+* :file:`ip_allow.yaml` ships default outbound rules denying ``CONNECT`` tunnels
+  to unspecified, loopback, private, link-local and IPv4-mapped IPv6 destinations.
 * :ts:cv:`proxy.config.ssl.max_record_size` now accepts the documented ``-1``
   value, making dynamic TLS record sizing reachable from :file:`records.yaml`.
 * :ts:cv:`proxy.config.ssl.client.CA.cert.filename` is now overridable.
