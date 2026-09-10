@@ -6260,6 +6260,36 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
+  // The keep_alive recomputed above reflects only what the origin said.  It says nothing
+  // about whether ATS held up its own end of the exchange.  If a request head declaring a
+  // body went to the origin and that body was never written in full, the origin's parser
+  // is still waiting for those bytes, and reusing the connection would hand the next
+  // request to the origin as the leftover body of this one.
+  //
+  // Only the origin side is decided here.  The client connection is handled later by
+  // do_drain_request_body(), reached from the SERVER_READ action, which consumes an
+  // undelivered body when all of it is already buffered and drops client keep-alive when it
+  // cannot.  Forcing the client side here would run before that and leave its
+  // keep-alive-preserving case unreachable.
+  //
+  // The one exception is the branch just below, which drops client keep-alive when the
+  // client 4-tuple is also the outbound one.  There the two connections are the same
+  // socket, so closing the origin side necessarily takes the client side with it.
+  //
+  // Only a response that leaves the exchange in progress is exempt, because there the body
+  // may still be on its way.  That is the ordinary Expect: 100-continue case.  The exempt
+  // set has to match the one handle_forward_server_connection_open() routes to
+  // handle_100_continue_response(), namely 100 and 103 alone.  Every other 1xx is dispatched
+  // as a final response and ends the transaction, so testing for 1xx here would leave the
+  // connection poolable while the origin is still mid-message.
+  HTTPStatus const status_code          = incoming_response->status_get();
+  bool const       exchange_in_progress = status_code == HTTPStatus::CONTINUE || status_code == HTTPStatus::EARLY_HINTS;
+
+  if (s->state_machine->server_owed_request_body && !exchange_in_progress) {
+    TxnDbg(dbg_ctl_http_hdrs, "Origin is owed request body bytes that will not be sent, not reusing the connection");
+    s->current.server->keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
+  }
+
   if (s->current.server->keep_alive == HTTPKeepAlive::KEEPALIVE) {
     TxnDbg(dbg_ctl_http_hdrs, "Server is keep-alive.");
   } else if (s->state_machine->get_ua_txn() && s->state_machine->get_ua_txn()->is_outbound_transparent() &&
@@ -6271,7 +6301,6 @@ HttpTransact::initialize_state_variables_from_response(State *s, HTTPHdr *incomi
     s->state_machine->t_state.client_info.keep_alive = HTTPKeepAlive::NO_KEEPALIVE;
   }
 
-  HTTPStatus status_code = incoming_response->status_get();
   if (is_response_body_precluded(status_code, s->method)) {
     s->hdr_info.response_content_length = 0;
     s->hdr_info.trust_response_cl       = true;
