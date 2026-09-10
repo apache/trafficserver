@@ -26,6 +26,7 @@
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#include <pthread.h>
 
 #include <array>
 #include <vector>
@@ -83,42 +84,40 @@ my_free(void *ptr, void * /*caller*/)
 // One match context is shared by every thread that matches through it, and PCRE2
 // requires a distinct JIT stack per thread, so the stack comes from a callback
 // invoked at match time rather than a pointer baked in when the context is built.
-// The pointer and the cleanup object are separate thread locals on purpose:
-// touching a thread local with a destructor here registers it via
-// __cxa_thread_atexit, which takes the loader mutex during a match and deadlocks.
-thread_local pcre2_jit_stack *jit_stack = nullptr;
+//
+// The per thread stack is held in a pthread key rather than a thread_local. A
+// thread_local with a destructor registers it through __cxa_thread_atexit, which
+// takes the dynamic loader lock; doing that from a match would invert lock order
+// against a dlopen caller running a plugin's static initialization. See the same
+// hazard described at Diags::tag_activated. A pthread key registers its destructor
+// once, at key creation, and never from the matching path.
+pthread_key_t  jit_stack_key;
+pthread_once_t jit_stack_key_once = PTHREAD_ONCE_INIT;
 
-struct JitStackCleanup {
-  ~JitStackCleanup()
-  {
-    if (jit_stack != nullptr) {
-      pcre2_jit_stack_free(jit_stack);
-      // Clear it so a match from a thread local destroyed after this one gets a
-      // fresh stack rather than the freed pointer.
-      jit_stack = nullptr;
-    }
-  }
-};
-
-thread_local JitStackCleanup jit_stack_cleanup;
-
-// Taking the address forces this thread's initialization of the cleanup object, which
-// registers its destructor. That has to happen on the matching thread but outside the
-// callback: a thread that only ever reached the callback would never initialize the
-// object and would leak its stack.
 void
-arm_jit_stack_cleanup()
+destroy_jit_stack(void *stack)
 {
-  [[maybe_unused]] auto const *cleanup = &jit_stack_cleanup;
+  if (stack != nullptr) {
+    pcre2_jit_stack_free(static_cast<pcre2_jit_stack *>(stack));
+  }
+}
+
+void
+make_jit_stack_key()
+{
+  pthread_key_create(&jit_stack_key, destroy_jit_stack);
 }
 
 pcre2_jit_stack *
 jit_stack_for_this_thread(void *)
 {
-  if (jit_stack == nullptr) {
-    jit_stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
+  pthread_once(&jit_stack_key_once, make_jit_stack_key);
+  auto *stack = static_cast<pcre2_jit_stack *>(pthread_getspecific(jit_stack_key));
+  if (stack == nullptr) {
+    stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
+    pthread_setspecific(jit_stack_key, stack);
   }
-  return jit_stack;
+  return stack;
 }
 
 //----------------------------------------------------------------------------
@@ -513,8 +512,6 @@ Regex::exec(std::string_view subject, RegexMatches &matches, uint32_t flags, Reg
 
   bool const     full_match  = (flags & RE_FULL_MATCH) != 0;
   uint32_t const pcre2_flags = flags & ~RE_FULL_MATCH;
-
-  arm_jit_stack_cleanup();
 
   int rc = pcre2_match(code, reinterpret_cast<PCRE2_SPTR>(subject.data()), subject.size(), 0, pcre2_flags,
                        RegexMatches::_MatchData::get(matches._match_data), match_context);
