@@ -311,8 +311,9 @@ UnixNetVConnection::set_mptcp_state()
 inline bool
 UnixNetVConnection::get_tcp_info(TcpInfoSnapshot &info) const
 {
-#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
-  struct tcp_info tinfo;
+#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO) && \
+  (HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS || HAVE_STRUCT_TCP_INFO___TCPI_RETRANS)
+  struct tcp_info tinfo     = {};
   int             tinfo_len = sizeof(tinfo);
   int const       fd        = con.sock.get_fd();
 
@@ -320,6 +321,7 @@ UnixNetVConnection::get_tcp_info(TcpInfoSnapshot &info) const
     Dbg(_dbg_ctl_socket_tcp_info, "failed getsockopt(%d, TCP_INFO): %s", fd, strerror(errno));
     return false;
   }
+
   info.rtt      = tinfo.tcpi_rtt;
   info.rttvar   = tinfo.tcpi_rttvar;
   info.snd_cwnd = tinfo.tcpi_snd_cwnd;

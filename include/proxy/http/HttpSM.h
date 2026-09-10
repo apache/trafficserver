@@ -50,6 +50,7 @@
 // inknet
 #include "proxy/http/PreWarmManager.h"
 #include "iocore/net/TLSTunnelSupport.h"
+#include "iocore/net/TcpInfoSnapshot.h"
 
 #include "tscore/History.h"
 #include "tscore/PendingAction.h"

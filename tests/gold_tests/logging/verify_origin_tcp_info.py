@@ -29,11 +29,13 @@ def verify(log_path: Path, mode: str) -> None:
     # Wait for the asynchronous log writer, rather than sleeping a fixed time.
     deadline = time.monotonic() + 15
     while True:
-        lines = log_path.read_text().splitlines() if log_path.exists() else []
+        contents = log_path.read_text() if log_path.exists() else ''
+        # A final record without its newline may still be partially written.
+        lines = contents.split('\n')[:-1]
         if len(lines) >= len(expected_keys):
             break
         if time.monotonic() >= deadline:
-            raise AssertionError(f'Timed out waiting for access-log records for {expected_keys}: {lines}')
+            raise AssertionError(f'Timed out waiting for access-log records for {expected_keys}: {contents!r}')
         time.sleep(0.1)
 
     if len(lines) != len(expected_keys):
