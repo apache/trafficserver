@@ -38,6 +38,7 @@
 #include <openssl/pem.h>
 
 #include <mutex>
+#include <string_view>
 #include <strings.h>
 
 SSLOriginSessionCache *origin_sess_cache;
@@ -334,11 +335,12 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
                            // The library's own path does this; without it a clientAuth-only leaf
                            // from a trusted CA authenticates the next hop.
                            X509_STORE_CTX_set_default(store_ctx, "ssl_server") &&
+                           // Carries the connection's verify params (depth included) over the
+                           // store's, as the library path does.
+                           X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(store_ctx), SSL_get0_param(ssl)) &&
                            X509_STORE_CTX_set_ex_data(store_ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl);
   bool accepted = false;
   if (initialized) {
-    X509_STORE_CTX_set_depth(store_ctx, SSL_CTX_get_verify_depth(SSL_get_SSL_CTX(ssl)));
-
     bool const signature_ok = X509_verify_cert(store_ctx) == 1;
     bool const check_sig =
       static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::SIGNATURE_MASK);
