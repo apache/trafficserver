@@ -38,6 +38,7 @@
 #include <openssl/pem.h>
 
 #include <mutex>
+#include <strings.h>
 
 SSLOriginSessionCache *origin_sess_cache;
 
@@ -416,13 +417,17 @@ validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hos
   }
 
 #if TS_USE_RPK
-  // A resumed session that originally authenticated with a raw public key has no certificate and
-  // no SAN to match a hostname against; the pin check done during the original handshake stands.
-  // The live connection's negotiation state is gone by now, so this has to consult the session
-  // rather than SSL_get0_peer_rpk().
-  if (SSL_SESSION *session = SSL_get_session(ssl); session != nullptr && SSL_SESSION_get0_peer_rpk(session) != nullptr) {
-    Dbg(dbg_ctl_ssl_verify, "Skipping hostname validation for session reuse: peer authenticated with a raw public key");
-    return true;
+  // A raw public key carries no SAN, so the next hop's pin set stands in for the name check. That
+  // pin set is per sni.yaml entry, and this function gates origin session-pool reuse, so a
+  // connection authenticated this way is only reusable for the name it was established for.
+  if (SSL_get0_peer_rpk(ssl) != nullptr) {
+    std::string_view established{netvc->options.sni_servername.get() != nullptr ? netvc->options.sni_servername.get() : ""};
+    if (established.size() == hostname.size() && strncasecmp(established.data(), hostname.data(), hostname.size()) == 0) {
+      return true;
+    }
+    Dbg(dbg_ctl_ssl_verify, "Refusing to reuse a raw public key session established for '%.*s' on a request for '%.*s'",
+        static_cast<int>(established.size()), established.data(), static_cast<int>(hostname.size()), hostname.data());
+    return false;
   }
 #endif
 
