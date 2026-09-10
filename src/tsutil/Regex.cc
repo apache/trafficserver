@@ -80,9 +80,9 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
-// A match context can be copied and used on another thread, and PCRE2 requires a
-// distinct JIT stack per thread, so the stack comes from a callback invoked at
-// match time rather than a pointer baked in when the context is built.
+// One match context is shared by every thread that matches through it, and PCRE2
+// requires a distinct JIT stack per thread, so the stack comes from a callback
+// invoked at match time rather than a pointer baked in when the context is built.
 // The pointer and the cleanup object are separate thread locals on purpose:
 // touching a thread local with a destructor here registers it via
 // __cxa_thread_atexit, which takes the loader mutex during a match and deadlocks.
