@@ -2996,6 +2996,55 @@ LogAccess::marshal_server_connect_attempts(char *buf)
 }
 
 /*-------------------------------------------------------------------------
+  The origin connection TCP_INFO fields. Each reports -1 when there is no
+  sample for the current origin response, including cache hits and disabled
+  sampling.
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_tcp_info(char *buf, int64_t TcpInfoSnapshot::*member)
+{
+  if (buf) {
+    std::optional<TcpInfoSnapshot> info = m_data->get_server_tcp_info();
+    marshal_int(buf, info.has_value() ? (*info).*member : -1);
+  }
+  return INK_MIN_ALIGN;
+}
+
+int
+LogAccess::marshal_server_tcp_rtt(char *buf)
+{
+  return marshal_server_tcp_info(buf, &TcpInfoSnapshot::rtt);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_tcp_rttvar(char *buf)
+{
+  return marshal_server_tcp_info(buf, &TcpInfoSnapshot::rttvar);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_tcp_retrans(char *buf)
+{
+  return marshal_server_tcp_info(buf, &TcpInfoSnapshot::retrans);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+int
+LogAccess::marshal_server_tcp_snd_cwnd(char *buf)
+{
+  return marshal_server_tcp_info(buf, &TcpInfoSnapshot::snd_cwnd);
+}
+
+/*-------------------------------------------------------------------------
   -------------------------------------------------------------------------*/
 
 int

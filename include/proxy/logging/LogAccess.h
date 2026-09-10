@@ -30,6 +30,7 @@
 #include "proxy/logging/LogField.h"
 
 class TransactionLogData;
+struct TcpInfoSnapshot;
 class IpClass;
 union IpEndpoint;
 
@@ -231,6 +232,10 @@ public:
   int marshal_server_simple_retry_count(char *);      // INT
   int marshal_server_unavailable_retry_count(char *); // INT
   int marshal_server_connect_attempts(char *);        // INT
+  int marshal_server_tcp_rtt(char *);                 // INT
+  int marshal_server_tcp_rttvar(char *);              // INT
+  int marshal_server_tcp_retrans(char *);             // INT
+  int marshal_server_tcp_snd_cwnd(char *);            // INT
   int marshal_server_resp_all_header_fields(char *);  // STR
 
   //
@@ -390,6 +395,8 @@ public:
   LogAccess &operator=(LogAccess &rhs) = delete; // or assignment
 
 private:
+  int marshal_server_tcp_info(char *buf, int64_t TcpInfoSnapshot::*member);
+
   TransactionLogData *m_data = nullptr;
 
   Arena m_arena;

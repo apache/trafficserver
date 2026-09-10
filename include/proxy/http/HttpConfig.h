@@ -877,6 +877,8 @@ public:
 
   MgmtByte enable_http_stats = 1; // Can be "slow"
 
+  MgmtByte log_server_tcp_info = 0; // Sample origin TCP_INFO for access logging.
+
   MgmtByte push_method_enabled = 0;
 
   MgmtByte referer_filter_enabled  = 0;

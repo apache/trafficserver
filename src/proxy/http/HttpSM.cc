@@ -2139,6 +2139,19 @@ HttpSM::state_read_server_response_header(int event, void *data)
     ATS_PROBE1(milestone_server_read_header_done, sm_id);
     milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = ink_get_hrtime();
 
+    // Sample while this transaction still owns the origin connection. By log time,
+    // the connection may have been closed or released for reuse.
+    if (state == ParseResult::DONE && t_state.http_config_param->log_server_tcp_info && Log::transaction_logging_enabled() &&
+        t_state.api_info.logging_enabled) {
+      NetVConnection *server_vc = server_txn->get_netvc();
+      if (server_vc != nullptr) {
+        TcpInfoSnapshot info;
+        if (server_vc->get_tcp_info(info)) {
+          server_tcp_info = info;
+        }
+      }
+    }
+
     // Any other events to the end
     if (server_entry->vc_type == HttpVC_t::SERVER_VC) {
       server_entry->vc_read_handler  = &HttpSM::tunnel_handler;
@@ -5650,6 +5663,9 @@ HttpSM::open_prewarmed_connection()
 void
 HttpSM::do_http_server_open(bool raw, bool only_direct)
 {
+  // A failed new attempt must not report a previous origin's TCP_INFO.
+  server_tcp_info.reset();
+
   int  ip_family = t_state.current.server->dst_addr.sa.sa_family;
   auto fam_name  = ats_ip_family_name(ip_family);
   SMDbg(dbg_ctl_http_track, "[%.*s]", static_cast<int>(fam_name.size()), fam_name.data());
@@ -7098,6 +7114,7 @@ HttpSM::setup_server_read_response_header()
   http_parser_clear(&http_parser);
   server_response_hdr_bytes                        = 0;
   milestones[TS_MILESTONE_SERVER_READ_HEADER_DONE] = 0;
+  server_tcp_info.reset();
 
   // The tunnel from OS to UA is now setup.  Ready to read the response
   server_entry->read_vio = server_txn->do_io_read(this, INT64_MAX, server_txn->get_remote_reader()->mbuf);
@@ -8304,6 +8321,9 @@ HttpSM::set_next_state()
   }
 
   case HttpTransact::StateMachineAction_t::DNS_LOOKUP: {
+    // A retry can fail during resolution, before opening its connection.
+    server_tcp_info.reset();
+
     if (sockaddr const *addr; t_state.http_config_param->use_client_target_addr == 2 &&              // no CTA verification
                               !t_state.url_remap_success &&                                          // wasn't remapped
                               t_state.parent_result.result != ParentResultType::SPECIFIED &&         // no parent.

@@ -1,0 +1,137 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify origin TCP_INFO on a miss, a hit, and a transaction disabled at sampling time'
+  server:
+    name: server_enabled
+  client:
+    name: client_enabled
+  ats:
+    name: ts_enabled
+    process_config:
+      enable_cache: true
+    records_config:
+      proxy.config.http.log_server_tcp_info: 1
+      proxy.config.http.response_header_max_size: 256
+      proxy.config.log.max_secs_per_buffer: 1
+      proxy.config.log.periodic_tasks_interval: 1
+    remap_config:
+    - from: 'http://origin-tcp-info.test/'
+      to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+    copy_to_config_dir:
+    - origin-tcp-info.rewrite.config
+    plugin_config:
+    - name: header_rewrite.so
+      args: [origin-tcp-info.rewrite.config]
+    logging_yaml:
+      logging:
+        formats:
+        - name: origin_tcp_info
+          format: '%<{uuid}cqh> %<crc> %<srtt> %<srtv> %<sret> %<scwn>'
+        logs:
+        - filename: origin_tcp_info
+          format: origin_tcp_info
+          mode: ascii
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, miss]
+    server-response: &origin_response
+      status: 200
+      headers:
+        fields:
+        - [Content-Length, 16]
+        - [Cache-Control, 'public, max-age=300']
+    proxy-response:
+      status: 200
+
+  - client-request:
+      delay: 100ms
+      method: GET
+      url: /cacheable
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, hit]
+    # An unexpected origin request must fail the response check.
+    server-response:
+      status: 404
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: GET
+      url: /guard
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, guard]
+    server-response: *origin_response
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: GET
+      url: /oversized
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, oversized]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [Content-Length, 0]
+        - - X-Large
+          - >-
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+            aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+    proxy-response:
+      status: 502
+
+  - client-request:
+      method: GET
+      url: /malformed
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, malformed]
+    server-response:
+      status: 200
+      headers:
+        fields:
+        - [Content-Length, 0]
+        # A NUL in a header is rejected by the MIME parser.
+        - [X-Bad, "before\0after"]
+    proxy-response:
+      status: 502

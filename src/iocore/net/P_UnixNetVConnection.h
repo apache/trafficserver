@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include <cinttypes>
 #include <memory>
 
 #include "tscore/ink_sock.h"
@@ -203,6 +204,7 @@ public:
 
   void set_local_addr() override;
   void set_mptcp_state() override;
+  bool get_tcp_info(TcpInfoSnapshot &info) const override;
   void set_remote_addr() override;
   void set_remote_addr(const sockaddr *) override;
   int  set_tcp_congestion_control(tcp_congestion_control_side side) override;
@@ -245,6 +247,7 @@ private:
 
   inline static DbgCtl _dbg_ctl_socket{"socket"};
   inline static DbgCtl _dbg_ctl_socket_mptcp{"socket_mptcp"};
+  inline static DbgCtl _dbg_ctl_socket_tcp_info{"socket_tcp_info"};
 
   /** The shared group across all connections for this IP to track incoming
    * connections for connection limiting. */
@@ -301,6 +304,39 @@ UnixNetVConnection::set_mptcp_state()
     mptcp_state = 0;
     Dbg(_dbg_ctl_socket_mptcp, "MPTCP failed getsockopt(%d, MPTCP_INFO): %s", get_fd(), strerror(errno));
   }
+#endif
+}
+
+// Copy the TCP_INFO fields ATS reports out of the kernel.
+inline bool
+UnixNetVConnection::get_tcp_info(TcpInfoSnapshot &info) const
+{
+#if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO)
+  struct tcp_info tinfo;
+  int             tinfo_len = sizeof(tinfo);
+  int const       fd        = con.sock.get_fd();
+
+  if (0 != safe_getsockopt(fd, IPPROTO_TCP, TCP_INFO, &tinfo, &tinfo_len)) {
+    Dbg(_dbg_ctl_socket_tcp_info, "failed getsockopt(%d, TCP_INFO): %s", fd, strerror(errno));
+    return false;
+  }
+  info.rtt      = tinfo.tcpi_rtt;
+  info.rttvar   = tinfo.tcpi_rttvar;
+  info.snd_cwnd = tinfo.tcpi_snd_cwnd;
+#if HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
+  info.retrans = tinfo.tcpi_total_retrans;
+#elif HAVE_STRUCT_TCP_INFO___TCPI_RETRANS
+  // FreeBSD spells the cumulative count differently; __tcpi_retrans is the
+  // currently outstanding count, which is not what this reports.
+  info.retrans = tinfo.tcpi_snd_rexmitpack;
+#endif
+
+  Dbg(_dbg_ctl_socket_tcp_info, "fd %d rtt=%" PRId64 " rttvar=%" PRId64 " retrans=%" PRId64 " cwnd=%" PRId64, fd, info.rtt,
+      info.rttvar, info.retrans, info.snd_cwnd);
+  return true;
+#else
+  (void)info;
+  return false;
 #endif
 }
 

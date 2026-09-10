@@ -2433,6 +2433,29 @@ Security
    post body larger than this limit the response will be terminated with
    413 - Request Entity Too Large and logged accordingly.
 
+.. ts:cv:: CONFIG proxy.config.http.log_server_tcp_info INT 0
+   :reloadable:
+
+   Enables sampling of ``TCP_INFO`` on the origin connection, so that the round
+   trip time to the origin can be logged.
+
+   When this is enabled, |TS| reads ``TCP_INFO`` from the origin socket at the
+   point it successfully parses the origin response header, and keeps the values for
+   the access log. By log time, the connection may have been closed or released
+   for reuse by another transaction. The values feed the :ref:`srtt <srtt>`,
+   :ref:`srtv <srtv>`, :ref:`sret <sret>` and :ref:`scwn <scwn>` log fields,
+   which report -1 when no sample was taken. Starting another origin attempt or
+   reading another response header clears the previous sample.
+
+   Sampling is skipped if access logging is disabled globally or transaction
+   logging is disabled through ``TS_HTTP_CNTL_LOGGING_MODE`` at that point.
+   Enabling logging later does not collect a sample retroactively; the fields
+   remain -1 unless another response header is successfully parsed with logging
+   enabled. Later log filtering can still discard a transaction that was sampled.
+
+   This costs one ``getsockopt`` per sampled origin response, so it is disabled
+   by default. Only sockets carrying TCP supply the information.
+
 .. ts:cv:: CONFIG proxy.config.http.allow_multi_range INT 0
    :reloadable:
    :overridable:
