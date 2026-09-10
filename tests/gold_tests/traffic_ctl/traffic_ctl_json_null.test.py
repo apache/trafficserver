@@ -55,7 +55,7 @@ traffic_ctl.hostdb().status().validate_is_valid_json()
 
 # ... and it must be an empty array, not null. hostdb_status_schema.json
 # declares partitions as "type": "array".
-traffic_ctl.hostdb().status().validate_json_contains(partitions='[]')
+traffic_ctl.hostdb().status().validate_json_contains(partitions=[])
 
 # -f json goes through the full envelope. Same emitter, different entry point.
 traffic_ctl.hostdb().status().as_json().validate_is_valid_json()

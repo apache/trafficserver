@@ -109,17 +109,19 @@ def _check_is_valid_json(path):
 def _check_json_fields(path, expected):
     """Tester callback: every expected field must match its value in the parsed output.
 
-    The expectation is compared against `str()` of the parsed value, so write
-    it the way Python renders that value rather than the way JSON spells it.
-    `[]` and `'[]'` agree, but a list of strings renders as `"['a']"`, not
-    `'["a"]'`.
+    The expectation is compared to the parsed value with `==`, so write it as
+    the Python value the JSON parses to: `[]` for a JSON array, `'[]'` only
+    for the JSON string `"[]"`. Comparing `str()` of both sides instead would
+    equate those two and let a field regress from an array to a string
+    without failing, which is the class of bug these tests exist to catch.
 
-    Booleans need care, because the emitters these tests cover set
-    `YAML::DoubleQuoted` and so encode every scalar as a JSON string.
-    `get_server_status` sends `"is_draining": "false"`, which parses to the
-    string `'false'` and is matched by `is_draining='false'`. A genuine JSON
-    boolean would instead parse to Python `True` or `False` and render as
-    `'True'` or `'False'`.
+    Scalars and sequences therefore read differently. The emitters these
+    tests cover set `YAML::DoubleQuoted`, which encodes every *scalar* as a
+    JSON string: `get_server_status` sends `"is_draining": "false"`, matched
+    by `is_draining='false'`. A genuine JSON boolean would parse to Python
+    `True` or `False` and needs `is_draining=False`. A sequence is not a
+    scalar and is untouched by `DoubleQuoted`, so `hostdb status` sends a
+    real `"partitions": []`, matched by `partitions=[]`.
 
     `validate_result_with_text` does take JSON-spelled text, so the two
     helpers are not interchangeable.
@@ -143,11 +145,11 @@ def _check_json_fields(path, expected):
     failed = []
     for key, want in expected.items():
         if key not in doc:
-            failed.append(f"{key} is missing (expected {want})")
+            failed.append(f"{key} is missing (expected {want!r})")
             continue
         actual = doc[key]
-        if str(actual) != str(want):
-            failed.append(f"{key} = {actual} (expected {want})")
+        if actual != want:
+            failed.append(f"{key} = {actual!r} (expected {want!r})")
     if failed:
         return (False, desc, "FAIL: " + "; ".join(failed) + f"\nOutput was:\n{raw}")
     return (True, desc, "All expected fields matched")
