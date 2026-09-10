@@ -804,14 +804,9 @@ QPACK::_decode_literal_header_field_without_name_ref(const uint8_t *buf, size_t 
   }
   read_len += ret;
 
-  char    *value = nullptr;
+  char    *value;
   uint64_t value_len;
   if ((ret = xpack_decode_string(this->_arena, &value, value_len, buf + read_len, buf + buf_len, _header_field_max_size, 7)) < 0) {
-    // xpack_decode_string may allocate before returning failure (Huffman
-    // path). Free value first when present, then name, to preserve LIFO.
-    if (value != nullptr) {
-      this->_arena.str_free(value);
-    }
     this->_arena.str_free(name);
     return -1;
   }
