@@ -58,7 +58,7 @@ class ParserTest : public Parser
 public:
   ParserTest(const std::string &line) : res(true)
   {
-    Parser::parse_line(line);
+    parse_succeeded = Parser::parse_line(line);
     std::cout << "Finished parser test: " << line << std::endl;
   }
 
@@ -79,6 +79,7 @@ public:
   }
 
   bool res;
+  bool parse_succeeded = false;
 };
 
 class SimpleTokenizerTest : public HRWSimpleTokenizer
@@ -432,6 +433,22 @@ test_parsing()
     ParserTest p(R"(cond %{CLIENT-HEADER:non_existent_header} =a"b [AND])");
 
     CHECK_EQ(p.getTokens().size(), 0UL);
+
+    END_TEST();
+  }
+
+  { /* modifiers with no condition or operator to attach them to */
+    ParserTest p("[L]");
+
+    CHECK_EQ(p.parse_succeeded, false);
+
+    END_TEST();
+  }
+
+  { /* same, but long enough that the token is heap allocated rather than SSO */
+    ParserTest p("[AND,NOCASE,NOT,L,QSA,I,EXT,PRE]");
+
+    CHECK_EQ(p.parse_succeeded, false);
 
     END_TEST();
   }

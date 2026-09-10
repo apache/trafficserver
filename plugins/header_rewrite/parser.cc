@@ -171,11 +171,12 @@ Parser::preprocess(std::vector<std::string> tokens)
 {
   // The last token might be the "flags" section, lets consume it if it is
   if (tokens.size() > 0) {
-    std::string m = tokens[tokens.size() - 1];
+    const std::string flags = tokens[tokens.size() - 1];
 
-    if (!m.empty() && (m[0] == '[')) {
-      if (m[m.size() - 1] == ']') {
-        m = m.substr(1, m.size() - 2);
+    if (!flags.empty() && (flags[0] == '[')) {
+      if (flags[flags.size() - 1] == ']') {
+        std::string m = flags.substr(1, flags.size() - 2);
+
         if (m.find_first_of(',') != std::string::npos) {
           std::istringstream iss(m);
           std::string        t;
@@ -192,6 +193,11 @@ Parser::preprocess(std::vector<std::string> tokens)
           _mods.push_back(m);
         }
         tokens.pop_back(); // consume it, so we don't concatenate it into the value
+
+        if (tokens.empty()) {
+          TSError("[%s] modifiers must follow a condition or operator: %s", PLUGIN_NAME, flags.c_str());
+          return false;
+        }
       } else {
         TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
         return false;
