@@ -472,3 +472,65 @@ TEST_CASE("Decoding", "[qpack-decode]")
     }
   }
 }
+
+// Decodes one Literal Header Field Without Name Reference. That is the field
+// representation whose name and value are both allocated out of QPACK's
+// per-connection arena and released again once the header is attached, so it is
+// the path that cares about the order those releases happen in.
+TEST_CASE("Decoding a literal header field without name reference", "[qpack-literal-decode]")
+{
+  QUICApplicationDriver  driver;
+  QPACK                 *qpack         = new QPACK(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
+
+  // Header Data Prefix: Required Insert Count 0, Delta Base 0.
+  // Then 0x23: 001 N H <Name Length (3+)>, no never-index, no huffman, name of
+  // 3 bytes. Then 0x03: H <Value Length (7+)>, no huffman, value of 3 bytes.
+  // clang-format off
+  const uint8_t header_block[] = {
+    0x00, 0x00,
+    0x23, 'a', 'b', 'c',
+    0x03, 'x', 'y', 'z',
+  };
+  // clang-format on
+
+  SECTION("the name and value survive the decode")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, event_handler, eventProcessor.all_ethreads[0]) == 0);
+
+    MIMEField *field = hdr.field_find("abc");
+
+    REQUIRE(field != nullptr);
+
+    auto value = field->value_get();
+
+    CHECK(value.length() == 3);
+    CHECK(memcmp(value.data(), "xyz", 3) == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("repeated decodes keep returning the same field")
+  {
+    for (int i = 0; i < 200; i++) {
+      HTTPHdr hdr;
+      hdr.create(HTTPType::REQUEST);
+
+      REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, event_handler, eventProcessor.all_ethreads[0]) == 0);
+
+      MIMEField *field = hdr.field_find("abc");
+
+      REQUIRE(field != nullptr);
+
+      auto value = field->value_get();
+
+      REQUIRE(value.length() == 3);
+      REQUIRE(memcmp(value.data(), "xyz", 3) == 0);
+
+      hdr.destroy();
+    }
+  }
+}
