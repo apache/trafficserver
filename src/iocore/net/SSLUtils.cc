@@ -330,10 +330,13 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
                      // library's own path does this; without it a serverAuth-only leaf from the
                      // trusted client CA authenticates as a client.
                      X509_STORE_CTX_set_default(store_ctx, "ssl_client") &&
+                     // Carries the connection's verify params (depth included) over the store's,
+                     // as the library path does. Anything set per-connection wins; purpose and
+                     // trust from set_default() above survive because ATS never sets them here.
+                     X509_VERIFY_PARAM_set1(X509_STORE_CTX_get0_param(store_ctx), SSL_get0_param(ssl)) &&
                      X509_STORE_CTX_set_ex_data(store_ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl);
   bool verified = false;
   if (initialized) {
-    X509_STORE_CTX_set_depth(store_ctx, SSL_CTX_get_verify_depth(ctx));
     verified = X509_verify_cert(store_ctx) == 1;
     if (!verified) {
       Dbg(dbg_ctl_ssl_verify, "client certificate chain verification failed: %s",
