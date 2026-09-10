@@ -23,7 +23,7 @@
 
 #include <openssl/evp.h>
 
-#include <vector>
+#include "iocore/net/SSLTypes.h"
 
 /**
    Shared helpers for RFC 7250 Raw Public Key (RPK) support.
@@ -36,14 +36,12 @@
  */
 namespace SSLRPKUtils
 {
-/// One trusted peer key, DER-encoded as a SubjectPublicKeyInfo.
-using TrustedKey    = std::vector<unsigned char>;
-using TrustedKeySet = std::vector<TrustedKey>;
-
 /** Load a PEM file containing one or more concatenated SubjectPublicKeyInfo
     blocks (bare public keys, not certificates) as a set of trusted/pinned
     peer keys. Supporting more than one key in the same file allows an
     operator to roll an "old" and "new" key during rotation.
+    @a out is appended to as the file is parsed, so on failure it holds an
+    arbitrary prefix of the file; callers must discard it rather than use it.
     @return true if at least one key was loaded, false on I/O or parse failure.
 */
 bool loadTrustedKeys(const char *path, TrustedKeySet &out);
