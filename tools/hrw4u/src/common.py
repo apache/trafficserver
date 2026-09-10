@@ -50,6 +50,9 @@ class RegexPatterns:
         re.VERBOSE | re.DOTALL,
     )
 
+    # Grammar IDENT rule from hrw4u.g4 (header names, qualifiers)
+    GRAMMAR_IDENT: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_@.-]*$')
+
     # Additional performance patterns
     IDENTIFIER: Final = re.compile(r'^[a-zA-Z_][a-zA-Z0-9_]*$')
     WHITESPACE: Final = re.compile(r'\s+')

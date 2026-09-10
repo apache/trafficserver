@@ -3,3 +3,6 @@
 #
 # Explicit slot assignment syntax cannot be reversed
 explicit_slots.input: hrw4u
+
+# HRW accepts quoted header names but hrw4u emits them bare when IDENT-safe
+hyphen_header.input: u4wrh
