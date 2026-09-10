@@ -373,6 +373,26 @@ If you pass in a `Txn` pointer, it behaves as a transaction user arg slot. If yo
 Version 9.2.x Updates
 =====================
 
+Security
+--------
+
+This release carries a large body of security work. Most of it tightens what |TS|
+accepts rather than adding anything, so the operator-visible effect -- changed
+defaults, messages now refused, ACL conditions that now apply as written, and
+plugins that now require configuration -- is described in
+:ref:`upgrading`. Read that section before upgrading.
+
+Several fixes in this release carry CVE identifiers. Refer to the security
+advisory for this release for the identifiers, severities and affected version
+ranges.
+
+A metric was added, :ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`,
+counting inbound connections rejected because the session they resumed carried no
+client certificate where the current SNI's ``verify_client`` policy requires one.
+Sessions are bound to the policy that issued them, so an out-of-scope session
+completes a full handshake rather than reaching this counter, which is normally
+zero.
+
 New Features
 ------------
 
@@ -440,11 +460,22 @@ New configuration options
   :ts:cv:`proxy.config.ssl.keylog_file` setting specifies the log file to write to.
 * The setting :ts:cv:`proxy.config.net.sock_notsent_lowat` was added, allowing for better control
   over the TCP send buffer. This can both reduce memory usage and reduce buffer bloat.
+* :ts:cv:`proxy.config.http.reject_head_with_content` was added to control whether a
+  ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is refused.
+  Enabled by default.
+* :file:`ip_allow.yaml` ships default outbound rules denying ``CONNECT`` tunnels
+  to unspecified, loopback, private, link-local and IPv4-mapped IPv6 destinations.
 
 Misc changes
 ------------
 
 * The default for :ts:cv:`proxy.config.ssl.origin_session_cache` is now `1` (enabled).
+* :ts:cv:`proxy.config.http2.default_buffer_water_mark` now defaults to ``32768``
+  instead of ``-1``.
+* :ts:cv:`proxy.config.http.header_field_max_size` and
+  :ts:cv:`proxy.config.hostdb.round_robin_max_count` are now range checked, at
+  ``0`` to ``65535`` and ``1`` to ``1024`` respectively. Their defaults are
+  unchanged, but a value outside the range is no longer accepted.
 * A new log tag is available for custom log formats, ``pqssr``. This is an indicator if
   TLS session reuse to origin was succesful.
 * Two new metrics around loop detection was added, :ts:stat:`proxy.process.http.http_proxy_loop_detected`
@@ -543,6 +574,18 @@ http_stats
 
 This new plugin provides stats over HTTP, but is implemented as a remap plugin. This should
 make the older ``stats_over_http`` obsolete.
+
+tsmemcache
+~~~~~~~~~~
+
+The listener binds to the loopback address by default. An optional second plugin
+argument sets the address to bind instead.
+
+magick
+~~~~~~
+
+A signing key is now required. The plugin refuses to load without one, and the
+ImageMagick ``convert`` operators it will run are allowlisted.
 
 Plugin APIs
 -----------
