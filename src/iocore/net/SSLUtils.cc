@@ -510,28 +510,32 @@ ssl_cert_callback(SSL *ssl, [[maybe_unused]] void *arg)
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
   if (retval == 1) {
-    // BoringSSL's select_certificate_cb (which drives this callback) runs before any ClientHello
-    // extension is evaluated, so switching ctx above is early enough to affect RPK negotiation.
-    // But SSL_set_SSL_CTX() only duplicates the cert/credential list; it never refreshes
-    // accepted_peer_cert_types or the custom_verify callback, both of which BoringSSL still caches
-    // on the SSL object from whichever ctx SSL_new() started with (the default "*" entry).
-    // Re-apply both from the now-matched ctx, or ssl_client_rpk_ca_name on any non-default
-    // multicert entry is silently inert.
+    // SSL_set_SSL_CTX() above duplicates the cert/credential list, but not accepted_peer_cert_types
+    // or the custom_verify callback, which were cached from the default "*" ctx at SSL_new().
     SSL_CTX *matched_ctx = SSL_get_SSL_CTX(ssl);
     auto    *trusted     = static_cast<SSLRPKUtils::TrustedKeySet *>(SSL_CTX_get_ex_data(matched_ctx, ssl_client_rpk_ca_index));
-    int      mode        = SSL_CTX_get_verify_mode(matched_ctx);
+    // Per-connection, not per-ctx: a verify_client SNI action has already run and may have
+    // overridden the mode this connection inherited.
+    int const mode = SSL_get_verify_mode(ssl);
     if (trusted != nullptr) {
       static const unsigned char accepted_types[] = {TLSEXT_cert_type_rpk, TLSEXT_cert_type_x509};
       if (!SSL_set1_accepted_peer_cert_types(ssl, accepted_types, sizeof(accepted_types))) {
         SSLError("failed to reapply RPK client cert type acceptance for the matched entry");
         retval = 0;
-      } else if (mode != SSL_VERIFY_NONE) {
+      } else {
         SSL_set_custom_verify(ssl, mode, ssl_custom_verify_client_callback);
       }
-    } else if (mode != SSL_VERIFY_NONE) {
-      // This entry didn't configure ssl_client_rpk_ca_name -- make sure the connection isn't left
-      // on a custom_verify callback inherited from an RPK-enabled default ctx.
-      SSL_set_verify(ssl, mode, ssl_verify_client_callback);
+    } else {
+      // SSL_set_verify() leaves custom_verify_callback alone, and that takes precedence when set,
+      // so an RPK-enabled default ctx has to be undone explicitly.
+      static const unsigned char x509_only[] = {TLSEXT_cert_type_x509};
+      if (!SSL_set1_accepted_peer_cert_types(ssl, x509_only, sizeof(x509_only))) {
+        SSLError("failed to reset client cert type acceptance for the matched entry");
+        retval = 0;
+      } else {
+        SSL_set_custom_verify(ssl, mode, nullptr);
+        SSL_set_verify(ssl, mode, ssl_verify_client_callback);
+      }
     }
   }
 #endif
@@ -1345,20 +1349,9 @@ setClientCertLevel(SSL *ssl, uint8_t certLevel)
   }
 
   Dbg(dbg_ctl_ssl_load, "setting cert level to %d", server_verify_client);
-#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-  // Mirror _setup_client_cert_verification()'s choice for this connection's ctx: BoringSSL rejects
-  // raw public keys outright unless a custom_verify callback is installed, and installing the
-  // classic callback here unconditionally would silently override that ctx's own RPK-aware setup
-  // (or lack of it, if global clientCertLevel is 0, which skips installing anything at ctx-build
-  // time) whenever a per-SNI verify_client action fires.
-  if (SSL_CTX_get_ex_data(SSL_get_SSL_CTX(ssl), ssl_client_rpk_ca_index) != nullptr) {
-    SSL_set_custom_verify(ssl, server_verify_client, ssl_custom_verify_client_callback);
-  } else {
-    SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
-  }
-#else
+  // Only the mode matters here. ssl_cert_callback() runs after this and picks the classic or
+  // custom_verify callback from the entry it actually matched, which this early is not yet known.
   SSL_set_verify(ssl, server_verify_client, ssl_verify_client_callback);
-#endif
   SSL_set_verify_depth(ssl, params->verify_depth); // might want to make configurable at some point.
 }
 
@@ -1676,10 +1669,9 @@ SSLMultiCertConfigLoader::_setup_client_cert_verification(SSL_CTX *ctx)
     }
     SSL_CTX_set_verify_depth(ctx, params->verify_depth); // might want to make configurable at some point.
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-    // On BoringSSL, SSL_CTX_set_verify() and SSL_CTX_set_custom_verify() are mutually exclusive
-    // per SSL_CTX, and only the latter can see an RPK client cert at all. Only entries that
-    // configured ssl_client_rpk_ca_name (checked via the ex_data load_certs() attached) take the
-    // custom_verify path -- everything else keeps today's classic verify behavior unchanged.
+    // On BoringSSL only a custom_verify callback can see an RPK client cert, and it takes precedence
+    // over the classic one when both are set. Entries that configured ssl_client_rpk_ca_name (via
+    // the ex_data load_certs() attached) take that path; everything else keeps classic verify.
     if (SSL_CTX_get_ex_data(ctx, ssl_client_rpk_ca_index) != nullptr) {
       SSL_CTX_set_custom_verify(ctx, server_verify_client, ssl_custom_verify_client_callback);
     } else {
