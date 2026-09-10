@@ -58,8 +58,9 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
     long           len    = 0;
 
     if (PEM_read_bio(bio.get(), &name, &header, &data, &len) != 1) {
-      unsigned long err    = ERR_peek_last_error();
-      bool const    at_eof = ERR_GET_REASON(err) == PEM_R_NO_START_LINE;
+      unsigned long err = ERR_peek_last_error();
+      // Reason codes 100-255 are per-sub-library, so the library has to be checked too.
+      bool const at_eof = ERR_GET_LIB(err) == ERR_LIB_PEM && ERR_GET_REASON(err) == PEM_R_NO_START_LINE;
       ERR_clear_error();
       if (at_eof && !out.empty()) {
         break;
@@ -104,9 +105,15 @@ loadTrustedKeys(const char *path, TrustedKeySet &out)
       return false;
     }
     TrustedKey     canonical(canonical_len);
-    unsigned char *cp = canonical.data();
-    i2d_PUBKEY(pkey, &cp);
+    unsigned char *cp      = canonical.data();
+    int const      written = i2d_PUBKEY(pkey, &cp);
     EVP_PKEY_free(pkey);
+    if (written != canonical_len) {
+      // A short write would leave the pin zero padded, so it could never match a peer's key --
+      // presenting as a mismatch against the peer rather than as a bad pin file.
+      SSLError("SSLRPKUtils: inconsistent raw public key encoding from %s", path);
+      return false;
+    }
 
     out.push_back(std::move(canonical));
   }

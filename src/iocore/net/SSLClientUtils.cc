@@ -136,8 +136,9 @@ verify_callback(int signature_ok, X509_STORE_CTX *ctx)
         X509_STORE_CTX_set_error(ctx, X509_V_ERR_RPK_UNTRUSTED);
       }
     }
-    // The hook always runs, as on the X.509 path below: plugins observe every attempt and may add
-    // rejection, but cannot turn a failed pin match into acceptance.
+    // The hook runs on every raw public key attempt, and may add rejection but cannot turn a
+    // failed pin match into acceptance. (The X.509 paths below return early in some cases without
+    // reaching their hook call, so this is not a claim about the whole function.)
     TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
     if (tbs == nullptr) {
       Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
@@ -268,8 +269,8 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
               enforce_mode ? "Terminate" : "Continue", netvc->options.ssl_servername.get(), buff);
     }
 
-    // There is no X509_STORE_CTX to hand the hook for a raw public key, but the hook still runs
-    // on every attempt, as on the X.509 paths.
+    // There is no X509_STORE_CTX to hand the hook for a raw public key, but the hook still runs on
+    // every raw public key attempt.
     if (tbs->verify_certificate(nullptr) == 1) {
       Warning("TS_EVENT_SSL_VERIFY_SERVER plugin failed the origin raw public key check for %s. Action=%s",
               netvc->options.ssl_servername.get(), enforce_mode ? "Terminate" : "Continue");
