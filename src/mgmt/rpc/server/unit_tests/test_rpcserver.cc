@@ -81,6 +81,54 @@ add_method_handler(const std::string &name, Func &&call)
 
 namespace
 {
+/// Registers a method handler and removes it when the scope ends.
+///
+/// Catch2 re-runs a TEST_CASE body once per leaf SECTION. Registering at the top of the body and
+/// removing at the bottom only works while every assertion passes: REQUIRE is fatal, so a failure
+/// inside a SECTION unwinds before the trailing removal and the handler survives into the next
+/// SECTION's run, where re-registering it fails. One real failure then reports as two, and the
+/// second points at a registration that was never the problem.
+class ScopedMethodHandler
+{
+public:
+  template <typename Func> explicit ScopedMethodHandler(std::string name, Func &&call) : _name{std::move(name)}
+  {
+    _registered = rpc::add_method_handler(_name, std::forward<Func>(call));
+  }
+
+  ~ScopedMethodHandler() noexcept
+  {
+    if (!_registered) {
+      return;
+    }
+    // Non-fatal assertions throughout: this runs during stack unwinding when a SECTION failed,
+    // and a fatal one would abort instead of reporting. The try/catch is for the same reason --
+    // taking the dispatcher lock or building the diagnostic can throw, and an exception escaping
+    // a destructor ends the whole test binary rather than the one assertion.
+    try {
+      INFO("handler: " << _name);
+      CHECK(rpc::test_remove_handler(_name));
+    } catch (std::exception const &ex) {
+      FAIL_CHECK("exception while removing handler '" << _name << "': " << ex.what());
+    } catch (...) {
+      FAIL_CHECK("unknown exception while removing handler '" << _name << "'");
+    }
+  }
+
+  ScopedMethodHandler(ScopedMethodHandler const &)            = delete;
+  ScopedMethodHandler &operator=(ScopedMethodHandler const &) = delete;
+
+  [[nodiscard]] bool
+  registered() const
+  {
+    return _registered;
+  }
+
+private:
+  std::string _name;
+  bool        _registered{false};
+};
+
 constexpr std::string_view rpc_test_dir_template{"ats_rpc_XXXXXX"};
 constexpr std::string_view rpc_test_socket_name{"s"};
 constexpr std::string_view rpc_test_lock_name{"l"};
@@ -424,8 +472,10 @@ TEST_CASE("Sending 'concurrent' requests to the rpc server.", "[thread]")
 {
   SECTION("A registered handlers")
   {
-    rpc::add_method_handler("some_foo", &some_foo);
-    rpc::add_method_handler("some_foo2", &some_foo);
+    ScopedMethodHandler some_foo_handler{"some_foo", &some_foo};
+    ScopedMethodHandler some_foo2_handler{"some_foo2", &some_foo};
+    REQUIRE(some_foo_handler.registered());
+    REQUIRE(some_foo2_handler.registered());
 
     std::promise<std::string> p1;
     std::promise<std::string> p2;
@@ -480,7 +530,8 @@ DEFINE_JSONRPC_PROTO_FUNCTION(do_nothing) // id, params, resp
 
 TEST_CASE("Basic message sending to a running server", "[socket]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  REQUIRE(handler.registered());
   SECTION("Basic single request to the rpc server")
   {
     const int S{500};
@@ -492,7 +543,6 @@ TEST_CASE("Basic message sending to a running server", "[socket]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "EfGh-1"})");
     }());
   }
-  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("JSONRPC socket inode permissions reflect restricted_api config", "[socket][permissions]")
@@ -535,7 +585,8 @@ TEST_CASE("JSONRPC socket inode permissions reflect restricted_api config", "[so
 
 TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "[buffer][error]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing32000", &do_nothing));
+  ScopedMethodHandler handler{"do_nothing32000", &do_nothing};
+  REQUIRE(handler.registered());
   const int S{32000}; // + the rest of the json message.
   auto json{R"({"jsonrpc": "2.0", "method": "do_nothing32000", "params": {"msg":")" + random_string(S) + R"("}, "id":"32k_1"})"};
 
@@ -569,12 +620,12 @@ TEST_CASE("Sending a message bigger than the internal server's buffer. 32000", "
       REQUIRE(resp.empty());
     }());
   }
-  REQUIRE(rpc::test_remove_handler("do_nothing32000"));
 }
 
 TEST_CASE("Test with invalid json message", "[socket]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  REQUIRE(handler.registered());
 
   SECTION("A rpc server")
   {
@@ -587,12 +638,12 @@ TEST_CASE("Test with invalid json message", "[socket]")
       CHECK(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
   }
-  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks", "[socket][chunks]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  REQUIRE(handler.registered());
 
   SECTION("Sending request by chunks")
   {
@@ -609,12 +660,12 @@ TEST_CASE("Test with chunks", "[socket][chunks]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "result": {"size": ")" + std::to_string(S) + R"("}, "id": "chunk-parts-3"})");
     }());
   }
-  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  REQUIRE(handler.registered());
 
   SECTION("Sending request by chunks")
   {
@@ -632,12 +683,12 @@ TEST_CASE("Test with chunks - disconnect after second part", "[socket][chunks]")
       REQUIRE(resp == "");
     }());
   }
-  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
 {
-  REQUIRE(rpc::add_method_handler("do_nothing", &do_nothing));
+  ScopedMethodHandler handler{"do_nothing", &do_nothing};
+  REQUIRE(handler.registered());
 
   SECTION("Sending request by chunks, broken message")
   {
@@ -655,7 +706,6 @@ TEST_CASE("Test with chunks - incomplete message", "[socket][chunks]")
       REQUIRE(resp == R"({"jsonrpc": "2.0", "error": {"code": -32700, "message": "Parse error"}})");
     }());
   }
-  REQUIRE(rpc::test_remove_handler("do_nothing"));
 }
 
 // Enable toggle
