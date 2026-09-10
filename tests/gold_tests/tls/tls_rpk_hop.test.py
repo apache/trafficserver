@@ -35,17 +35,20 @@ response_header = {
 server.addResponse("sessionlog.json", request_header, response_header)
 
 
-def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0):
+def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0, client_ca_file=None):
     """An upstream (parent) ATS: terminates TLS from the edge, forwards to the origin.
 
     `client_rpk_ca_file`, if set, configures ssl_client_rpk_ca_name to pin the edge's raw public
     key for mTLS; `client_cert_level` then requires/requests a client cert accordingly.
+    `client_ca_file`, if set, is the CA bundle X.509 client certificates are verified against.
     """
     ts = Test.MakeATSProcess(name, enable_tls=True)
     ts.addSSLfile("ssl/server.pem")
     ts.addSSLfile("ssl/server.key")
     if client_rpk_ca_file is not None:
         ts.addSSLfile("ssl/{0}".format(client_rpk_ca_file))
+    if client_ca_file is not None:
+        ts.addSSLfile("ssl/{0}".format(client_ca_file))
     ts.Disk.remap_config.AddLine('map / http://127.0.0.1:{0}'.format(server.Variables.Port))
     multicert_lines = [
         'ssl_multicert:',
@@ -71,23 +74,36 @@ def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0)
     if client_cert_level:
         records['proxy.config.ssl.client.certification_level'] = client_cert_level
         records['proxy.config.ssl.CA.cert.path'] = '{0}'.format(ts.Variables.SSLDir)
+    if client_ca_file is not None:
+        records['proxy.config.ssl.CA.cert.filename'] = client_ca_file
     ts.Disk.records_config.update(records)
     return ts
 
 
-def make_edge(name, parent, pin_file, policy='ENFORCED', offer_client_rpk=False, offer_client_x509=False):
+def make_edge(
+        name,
+        parent,
+        pin_file,
+        policy='ENFORCED',
+        offer_client_rpk=False,
+        offer_client_x509=False,
+        client_cert="server.pem",
+        client_key="server.key"):
     """A downstream (edge) ATS: connects to `parent` over TLS, pinning its raw public key.
 
     `offer_client_rpk`, if set, also offers a raw public key (derived from ssl/server.pem/.key,
     the same identity the edge uses inbound) as its own client cert toward `parent`, for `parent`
-    to pin via ssl_client_rpk_ca_name. `offer_client_x509`, if set instead, offers the same
-    identity as a classic X.509 client cert rather than a raw public key.
+    to pin via ssl_client_rpk_ca_name. `offer_client_x509`, if set instead, offers a classic X.509
+    client cert -- `client_cert` names which one, defaulting to the edge's own identity.
     """
     ts = Test.MakeATSProcess(name, enable_tls=True)
     ts.addSSLfile("ssl/server.pem")
     ts.addSSLfile("ssl/server.key")
     ts.addSSLfile("ssl/server.pubkey.pem")
     ts.addSSLfile("ssl/server.wrongpubkey.pem")
+    if client_cert != "server.pem":
+        ts.addSSLfile("ssl/{0}".format(client_cert))
+        ts.addSSLfile("ssl/{0}".format(client_key))
     ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(parent.Variables.ssl_port))
     ts.Disk.ssl_multicert_yaml.AddLines(
         [
@@ -124,8 +140,8 @@ def make_edge(name, parent, pin_file, policy='ENFORCED', offer_client_rpk=False,
             ]
         elif offer_client_x509:
             sni_lines += [
-                '  client_cert: server.pem',
-                '  client_key: server.key',
+                '  client_cert: {0}'.format(client_cert),
+                '  client_key: {0}'.format(client_key),
             ]
         ts.Disk.sni_yaml.AddLines(sni_lines)
     return ts
@@ -197,11 +213,49 @@ edge_scoped = make_edge("edge_scoped", parent_scoped, "server.pubkey.pem", offer
 #    to accept it via BoringSSL's already-parsed chain (SSL_get_peer_full_cert_chain()), since
 #    installing custom_verify (mandatory for the RPK branch above to work at all) disables
 #    BoringSSL's own automatic X.509 verification for this ctx entirely.
-parent_mtls_x509 = make_parent("parent_mtls_x509", rpk_enabled=True, client_rpk_ca_file="server.pubkey.pem", client_cert_level=2)
-# server.pem is self-signed; trusting it directly lets the edge's X.509 client cert (the same
-# file) verify successfully.
-parent_mtls_x509.Disk.records_config.update({'proxy.config.ssl.CA.cert.filename': 'server.pem'})
+parent_mtls_x509 = make_parent(
+    "parent_mtls_x509",
+    rpk_enabled=True,
+    client_rpk_ca_file="server.pubkey.pem",
+    client_cert_level=2,
+    # server.pem is self-signed, so trusting it directly lets the edge's client cert (the same
+    # file) verify successfully.
+    client_ca_file="server.pem")
 edge_mtls_x509 = make_edge("edge_mtls_x509", parent_mtls_x509, "server.pubkey.pem", offer_client_x509=True)
+
+# 9. The X.509 fallback must still reject a chain it cannot build. The edge offers a client cert
+#    signed by signer.pem, which this parent does not trust.
+parent_mtls_untrusted = make_parent(
+    "parent_mtls_untrusted",
+    rpk_enabled=True,
+    client_rpk_ca_file="server.pubkey.pem",
+    client_cert_level=2,
+    client_ca_file="server.pem")
+edge_mtls_untrusted = make_edge(
+    "edge_mtls_untrusted",
+    parent_mtls_untrusted,
+    "server.pubkey.pem",
+    offer_client_x509=True,
+    client_cert="signed-foo.pem",
+    client_key="signed-foo.key")
+
+# 10. The X.509 fallback must enforce certificate purpose, not just chain signatures. server.ocsp.pem
+#     chains cleanly to ca.ocsp.pem but carries extendedKeyUsage = serverAuth only, so it must not
+#     authenticate as a client. Without X509_STORE_CTX_set_default(..., "ssl_client") the purpose
+#     check never runs and this connection is accepted.
+parent_mtls_purpose = make_parent(
+    "parent_mtls_purpose",
+    rpk_enabled=True,
+    client_rpk_ca_file="server.pubkey.pem",
+    client_cert_level=2,
+    client_ca_file="ca.ocsp.pem")
+edge_mtls_purpose = make_edge(
+    "edge_mtls_purpose",
+    parent_mtls_purpose,
+    "server.pubkey.pem",
+    offer_client_x509=True,
+    client_cert="server.ocsp.pem",
+    client_key="server.ocsp.key")
 
 tr = Test.AddTestRun("RPK negotiated and pin matches")
 tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_ok.Variables.ssl_port))
@@ -316,3 +370,25 @@ parent_mtls_x509.Disk.traffic_out.Content += Testers.ExcludesExpression(
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_mtls_x509
 tr.StillRunningAfter += edge_mtls_x509
+
+tr = Test.AddTestRun("X.509 fallback: an untrusted client chain is rejected")
+tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_mtls_untrusted.Variables.ssl_port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(parent_mtls_untrusted)
+tr.Processes.Default.StartBefore(edge_mtls_untrusted)
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
+    'origin response', 'a client cert from an untrusted CA must not authenticate')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += parent_mtls_untrusted
+tr.StillRunningAfter += edge_mtls_untrusted
+
+tr = Test.AddTestRun("X.509 fallback: a serverAuth-only client cert is rejected")
+tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_mtls_purpose.Variables.ssl_port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(parent_mtls_purpose)
+tr.Processes.Default.StartBefore(edge_mtls_purpose)
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
+    'origin response', 'a serverAuth-only cert must not authenticate as a client')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += parent_mtls_purpose
+tr.StillRunningAfter += edge_mtls_purpose

@@ -325,9 +325,14 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
     }
   }
 
-  X509_STORE_CTX *store_ctx = X509_STORE_CTX_new();
-  bool const      initialized =
-    store_ctx != nullptr && X509_STORE_CTX_init(store_ctx, SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl)), leaf, intermediates);
+  X509_STORE_CTX *store_ctx   = X509_STORE_CTX_new();
+  bool const      initialized = store_ctx != nullptr &&
+                           X509_STORE_CTX_init(store_ctx, SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl)), leaf, intermediates) &&
+                           // Sets param->purpose and param->trust, which gate X509_check_purpose().
+                           // The library's own path does this; without it a clientAuth-only leaf
+                           // from a trusted CA authenticates the next hop.
+                           X509_STORE_CTX_set_default(store_ctx, "ssl_server") &&
+                           X509_STORE_CTX_set_ex_data(store_ctx, SSL_get_ex_data_X509_STORE_CTX_idx(), ssl);
   bool accepted = false;
   if (initialized) {
     X509_STORE_CTX_set_depth(store_ctx, SSL_CTX_get_verify_depth(SSL_get_SSL_CTX(ssl)));
