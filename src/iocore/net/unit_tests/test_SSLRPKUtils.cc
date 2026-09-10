@@ -147,4 +147,14 @@ TEST_CASE("SSLRPKUtils rejects everything when no keys are trusted", "[rpk]")
   EVP_PKEY_free(peer);
 }
 
+#else // TS_USE_RPK
+
+// Without this, the whole file compiles to zero test cases on a build lacking RFC 7250 support and
+// the suite reports green with nothing to distinguish that from real coverage.
+TEST_CASE("SSLRPKUtils is not built without RFC 7250 support", "[ssl][rpk][skipped]")
+{
+  WARN("TS_USE_RPK is off in this build: raw public key unit tests are not compiled");
+  SUCCEED();
+}
+
 #endif // TS_USE_RPK
