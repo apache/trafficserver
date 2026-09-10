@@ -1051,6 +1051,32 @@ TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
   CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
 }
 
+namespace
+{
+/** Does PCRE2 have JIT code for this pattern?
+ *
+ * The two tests below are about the JIT stack, and PCRE2 consults it only when it
+ * has JIT code to run. Without it both a blank context and the shared one take the
+ * interpreter and return the same answer, so the tests would pass whether or not
+ * the behaviour they describe is present. Ask PCRE2 rather than assume.
+ */
+bool
+pattern_has_jit(char const *pattern)
+{
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+  if (code == nullptr) {
+    return false;
+  }
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+  size_t jit_size = 0;
+  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+  pcre2_code_free(code);
+  return jit_size > 0;
+}
+} // namespace
+
 // A caller-supplied RegexMatchContext must behave like the shared context that
 // Regex::exec uses when none is supplied. A context built from scratch silently
 // drops everything the shared one configures, which is how regex_remap came to
@@ -1059,8 +1085,13 @@ TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexM
 {
   // Quantified alternation of capture groups: every subject character pushes a
   // backtracking frame, so the JIT stack size is what bounds this.
+  char const *const pattern = R"(^(?:(a)|(b))+$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so the JIT stack is never consulted");
+  }
+
   Regex re;
-  REQUIRE(re.compile(R"(^(?:(a)|(b))+$)"));
+  REQUIRE(re.compile(pattern));
 
   std::string const subject(1000, 'a');
 
@@ -1082,8 +1113,16 @@ TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexM
 // instead. If this ever crashes rather than fails, that regression is back.
 TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
 {
+  // Only the JIT path has a bound to exhaust here. PCRE2's interpreter keeps its
+  // backtracking frames on the heap, so it matches this subject rather than running
+  // out of anything, and there is no resource error to assert.
+  char const *const pattern = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so there is no stack bound to exhaust");
+  }
+
   Regex re;
-  REQUIRE(re.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+  REQUIRE(re.compile(pattern));
 
   // Past what a 1MiB JIT stack holds for this pattern, which starts failing at
   // roughly 43KiB of subject, so the bound is still exercised.

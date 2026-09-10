@@ -93,6 +93,9 @@ struct JitStackCleanup {
   {
     if (jit_stack != nullptr) {
       pcre2_jit_stack_free(jit_stack);
+      // Clear it so a match from a thread local destroyed after this one gets a
+      // fresh stack rather than the freed pointer.
+      jit_stack = nullptr;
     }
   }
 };
