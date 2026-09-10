@@ -15,6 +15,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import dataclasses
+
 import pytest
 
 from hrw4u.ast_nodes import Span
@@ -32,14 +34,9 @@ class TestSpan:
 
     def test_is_immutable(self):
         span = Span(file="a", line=1, column=0)
-        with pytest.raises(Exception):
+        with pytest.raises(dataclasses.FrozenInstanceError):
             span.line = 2
 
-    def test_rejects_unknown_attributes(self):
-        # slots=True: a typo'd field must fail loudly rather than sit unread on the instance.
-        with pytest.raises(AttributeError):
-            Span(file="a", line=1, column=0).lineno = 2
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    def test_carries_no_instance_dict(self):
+        # slots=True: frozen already blocks assignment, so check the layout itself.
+        assert not hasattr(Span(file="a", line=1, column=0), "__dict__")

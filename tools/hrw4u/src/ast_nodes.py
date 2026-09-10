@@ -93,6 +93,8 @@ class IpRangeValue:
     raw: str
 
 
+# IpRangeValue is a ValueExpr but SetValue is not, because the grammar's `value` rule admits
+# `iprange` and not `set_`: an iprange is legal anywhere a value is, a set only after `in`.
 ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, IpRangeValue]
 
 

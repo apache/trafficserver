@@ -37,6 +37,10 @@ class ASTVisitor(hrw4uVisitor):
     def _span(self, ctx) -> Span:
         return Span(file=self.filename, line=ctx.start.line, column=ctx.start.column)
 
+    def _unhandled(self, what: str, ctx) -> ValueError:
+        span = self._span(ctx)
+        return ValueError(f"Unhandled {what} at {span.file}:{span.line}:{span.column}")
+
     def _visit_comment(self, ctx) -> Comment:
         return Comment(text=ctx.COMMENT().getText(), span=self._span(ctx))
 
@@ -57,7 +61,7 @@ class ASTVisitor(hrw4uVisitor):
             elif item.commentLine() is not None:
                 items.append(self._visit_comment(item.commentLine()))
             else:
-                raise ValueError(f"Unhandled programItem alternative at line {item.start.line}")
+                raise self._unhandled("programItem alternative", item)
         return HRW4UAST(body=tuple(items))
 
     def _visit_use_directive(self, ctx) -> UseDirective:
@@ -93,7 +97,7 @@ class ASTVisitor(hrw4uVisitor):
             elif var_item.commentLine() is not None:
                 items.append(self._visit_comment(var_item.commentLine()))
             else:
-                raise ValueError(f"Unhandled variablesItem alternative at line {var_item.start.line}")
+                raise self._unhandled("variablesItem alternative", var_item)
         return VarSection(scope=scope, items=tuple(items), span=self._span(ctx))
 
     def _visit_var_decl(self, ctx) -> VarDecl:
@@ -111,7 +115,7 @@ class ASTVisitor(hrw4uVisitor):
             elif item.commentLine() is not None:
                 result.append(self._visit_comment(item.commentLine()))
             else:
-                raise ValueError(f"Unhandled body item alternative at line {item.start.line}")
+                raise self._unhandled("body item alternative", item)
         return result
 
     def _visit_statement(self, ctx) -> BodyNode:
@@ -125,7 +129,7 @@ class ASTVisitor(hrw4uVisitor):
             return Assignment(name=ctx.lhs.text, operator="+=", value=self._extract_value(ctx.value()), span=self._span(ctx))
         if ctx.op:
             return FunctionCall(name=ctx.op.text, args=(), span=self._span(ctx))
-        raise ValueError(f"Unhandled statement alternative at line {ctx.start.line}")
+        raise self._unhandled("statement alternative", ctx)
 
     def _visit_function_call(self, ctx) -> FunctionCall:
         name = ctx.funcName.text
@@ -151,7 +155,7 @@ class ASTVisitor(hrw4uVisitor):
             return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.paramRef():
             return ParamRef(raw=ctx.paramRef().IDENT().getText())
-        raise ValueError(f"Unhandled value alternative at line {ctx.start.line}")
+        raise self._unhandled("value alternative", ctx)
 
     def _visit_conditional(self, ctx) -> IfBlock:
         if_stmt = ctx.ifStatement()
@@ -203,7 +207,7 @@ class ASTVisitor(hrw4uVisitor):
             return BoolLiteral(value=True, span=self._span(ctx))
         if ctx.FALSE():
             return BoolLiteral(value=False, span=self._span(ctx))
-        raise ValueError(f"Unhandled factor alternative at line {ctx.start.line}")
+        raise self._unhandled("factor alternative", ctx)
 
     def _visit_comparison(self, ctx) -> Comparison:
         comp = ctx.comparable()
@@ -236,7 +240,7 @@ class ASTVisitor(hrw4uVisitor):
                 if hasattr(child, "getText") and child.getText() == "!":
                     return "!in"
             return "in"
-        raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
+        raise self._unhandled("comparison operator", ctx)
 
     def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | SetValue:
         if operator in ("~", "!~"):
@@ -248,7 +252,7 @@ class ASTVisitor(hrw4uVisitor):
                 return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.value():
             return self._extract_value(ctx.value())
-        raise ValueError(f"Unhandled comparison RHS at line {ctx.start.line}")
+        raise self._unhandled("comparison RHS", ctx)
 
     def _extract_modifiers(self, ctx) -> tuple[str, ...]:
         if ctx.modifier():
