@@ -25,10 +25,46 @@
 #include "tscore/Diags.h"
 #include "tscore/ink_string.h"
 
+#include <cstring>
+#include <limits>
+#include <string_view>
+
 namespace
 {
 
 DbgCtl dbg_ctl_log_utils{"log-utils"};
+
+constexpr std::string_view HTML_AMPERSAND{"&amp;"};
+constexpr std::string_view HTML_NO_BREAK_SPACE{"&nbsp;"};
+constexpr std::string_view HTML_LESS_THAN{"&lt;"};
+constexpr std::string_view HTML_GREATER_THAN{"&gt;"};
+constexpr std::string_view HTML_QUOTATION_MARK{"&quot;"};
+
+struct HtmlCharacterReference {
+  std::string_view encoded;
+  std::string_view decoded;
+};
+
+constexpr HtmlCharacterReference HTML_CHARACTER_REFERENCES[] = {
+  {HTML_AMPERSAND,      "&"       },
+  {HTML_NO_BREAK_SPACE, "\xC2\xA0"},
+  {HTML_LESS_THAN,      "<"       },
+  {HTML_GREATER_THAN,   ">"       },
+  {HTML_QUOTATION_MARK, "\""      },
+};
+
+HtmlCharacterReference const *
+html_character_reference_at(std::string_view input, size_t offset)
+{
+  auto remaining = input.substr(offset);
+
+  for (auto const &reference : HTML_CHARACTER_REFERENCES) {
+    if (remaining.starts_with(reference.encoded)) {
+      return &reference;
+    }
+  }
+  return nullptr;
+}
 
 /*-------------------------------------------------------------------------
   Encoding::escapify_url_common
@@ -186,5 +222,121 @@ char *
 pure_escapify_url(Arena *arena, char *url, size_t len_in, int *len_out, char *dst, size_t dst_size, const unsigned char *map)
 {
   return escapify_url_common(arena, url, len_in, len_out, dst, dst_size, map, true);
+}
+
+bool
+html_escape(std::string_view input, char *dst, size_t dst_size, size_t *length, bool use_attribute_mode)
+{
+  if (length) {
+    *length = 0;
+  }
+  if (!dst) {
+    return false;
+  }
+
+  auto replacement_for = [use_attribute_mode](std::string_view source, size_t offset) -> std::string_view {
+    switch (static_cast<unsigned char>(source[offset])) {
+    case '&':
+      return HTML_AMPERSAND;
+    case '<':
+      return HTML_LESS_THAN;
+    case '>':
+      return HTML_GREATER_THAN;
+    case '"':
+      return use_attribute_mode ? HTML_QUOTATION_MARK : std::string_view{};
+    case 0xC2:
+      if (offset + 1 < source.size() && static_cast<unsigned char>(source[offset + 1]) == 0xA0) {
+        return HTML_NO_BREAK_SPACE;
+      }
+      break;
+    default:
+      break;
+    }
+    return {};
+  };
+
+  size_t output_size = input.size();
+  for (size_t offset = 0; offset < input.size(); ++offset) {
+    auto replacement = replacement_for(input, offset);
+
+    if (!replacement.empty()) {
+      size_t consumed = replacement == HTML_NO_BREAK_SPACE ? 2 : 1;
+      size_t growth   = replacement.size() - consumed;
+
+      if (output_size > std::numeric_limits<size_t>::max() - growth) {
+        return false;
+      }
+      output_size += growth;
+      offset      += consumed - 1;
+    }
+  }
+
+  if (output_size == std::numeric_limits<size_t>::max() || dst_size < output_size + 1) {
+    return false;
+  }
+
+  size_t output_offset = 0;
+  for (size_t input_offset = 0; input_offset < input.size(); ++input_offset) {
+    auto replacement = replacement_for(input, input_offset);
+
+    if (replacement.empty()) {
+      dst[output_offset++] = input[input_offset];
+    } else {
+      std::memcpy(dst + output_offset, replacement.data(), replacement.size());
+      output_offset += replacement.size();
+      if (replacement == HTML_NO_BREAK_SPACE) {
+        ++input_offset;
+      }
+    }
+  }
+  dst[output_offset] = '\0';
+
+  if (length) {
+    *length = output_offset;
+  }
+  return true;
+}
+
+bool
+html_unescape(std::string_view input, char *dst, size_t dst_size, size_t *length)
+{
+  if (length) {
+    *length = 0;
+  }
+  if (!dst) {
+    return false;
+  }
+
+  size_t output_size = input.size();
+  for (size_t offset = 0; offset < input.size();) {
+    if (auto const *reference = html_character_reference_at(input, offset); reference) {
+      output_size -= reference->encoded.size() - reference->decoded.size();
+      offset      += reference->encoded.size();
+    } else {
+      ++offset;
+    }
+  }
+
+  if (dst_size <= output_size) {
+    return false;
+  }
+
+  size_t input_offset  = 0;
+  size_t output_offset = 0;
+  while (input_offset < input.size()) {
+    if (auto const *reference = html_character_reference_at(input, input_offset); reference) {
+      std::memcpy(dst + output_offset, reference->decoded.data(), reference->decoded.size());
+      input_offset  += reference->encoded.size();
+      output_offset += reference->decoded.size();
+    } else {
+      dst[output_offset++] = input[input_offset++];
+    }
+  }
+  dst[output_offset] = '\0';
+
+  if (length) {
+    *length = output_offset;
+  }
+  return true;
 }
 }; // namespace Encoding
