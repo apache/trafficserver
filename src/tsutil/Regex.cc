@@ -92,7 +92,8 @@ my_free(void *ptr, void * /*caller*/)
 // hazard described at Diags::tag_activated. A pthread key registers its destructor
 // once, at key creation, and never from the matching path.
 pthread_key_t  jit_stack_key;
-pthread_once_t jit_stack_key_once = PTHREAD_ONCE_INIT;
+bool           jit_stack_key_valid = false;
+pthread_once_t jit_stack_key_once  = PTHREAD_ONCE_INIT;
 
 void
 destroy_jit_stack(void *stack)
@@ -105,13 +106,20 @@ destroy_jit_stack(void *stack)
 void
 make_jit_stack_key()
 {
-  pthread_key_create(&jit_stack_key, destroy_jit_stack);
+  jit_stack_key_valid = pthread_key_create(&jit_stack_key, destroy_jit_stack) == 0;
 }
 
 pcre2_jit_stack *
 jit_stack_for_this_thread(void *)
 {
   pthread_once(&jit_stack_key_once, make_jit_stack_key);
+  if (!jit_stack_key_valid) {
+    // Without a key there is nowhere to keep a stack, and jit_stack_key holds a
+    // default value that may name an unrelated key. Returning null tells PCRE2 to
+    // use its own default stack, which pcre2jit documents as thread safe.
+    return nullptr;
+  }
+
   auto *stack = static_cast<pcre2_jit_stack *>(pthread_getspecific(jit_stack_key));
   if (stack == nullptr) {
     stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
