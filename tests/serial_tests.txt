@@ -13,3 +13,7 @@ slow_post/quick_server.test.py
 # Each must run after tls_conn_timeout and starts 14 ATS instances at once.
 next_hop/zzz_strategies_peer/zzz_strategies_peer.test.py
 next_hop/zzz_strategies_peer2/zzz_strategies_peer2.test.py
+
+# Pins exec_thread.limit to 1 and asserts origin connection reuse from a single
+# shared pool; parallel load skews the pooling window this depends on.
+post/post-early-response-100-continue.test.py
