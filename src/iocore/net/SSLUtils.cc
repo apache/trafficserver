@@ -108,6 +108,13 @@ ssl_client_rpk_ca_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/,
 }
 #endif
 
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+// SSL-level, non-owning: the store setClientCertCACerts() built and handed to
+// SSL_set0_verify_cert_store(), which owns it. BoringSSL has no getter for that store, and
+// ssl_custom_verify_client_callback() needs it to honor a per-SNI CA override.
+static int ssl_verify_store_index = -1;
+#endif
+
 static ink_mutex *mutex_buf            = nullptr;
 static bool       open_ssl_initialized = false;
 
@@ -293,34 +300,31 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   // would otherwise require here.
   STACK_OF(X509) *chain = SSL_get_peer_full_cert_chain(ssl);
   if (chain == nullptr || sk_X509_num(chain) == 0) {
+    // Defensive only: BoringSSL gates ssl_verify_peer_cert() on ssl_session_has_peer_cred(), so a
+    // peer that sent no certificate never reaches this callback, and SSL_VERIFY_FAIL_IF_NO_PEER_CERT
+    // is enforced before that point. Optional client certs are unaffected.
     *out_alert = SSL_AD_CERTIFICATE_REQUIRED;
     return ssl_verify_invalid;
   }
   X509 *leaf = sk_X509_value(chain, 0);
 
   // A per-SNI verify_client action may have pinned a CA file/dir onto this connection via
-  // setClientCertCACerts()/SSL_set0_verify_cert_store(), which only takes effect for the classic
-  // SSL_set_verify() path. Rebuild the same override rather than silently widening trust to the
-  // SSL_CTX default store.
-  X509_STORE *verify_store = nullptr;
-  bool        owns_store   = false;
+  // setClientCertCACerts(), which BoringSSL exposes no getter for. Use the store it stashed rather
+  // than opening and parsing the same files again on the event thread, once per connection.
   const char *ca_cert_file = netvc != nullptr ? netvc->get_ca_cert_file() : nullptr;
   const char *ca_cert_dir  = netvc != nullptr ? netvc->get_ca_cert_dir() : nullptr;
-  if ((ca_cert_file != nullptr && ca_cert_file[0] != '\0') || (ca_cert_dir != nullptr && ca_cert_dir[0] != '\0')) {
-    verify_store = X509_STORE_new();
-    if (verify_store != nullptr &&
-        X509_STORE_load_locations(verify_store, ca_cert_file != nullptr && ca_cert_file[0] != '\0' ? ca_cert_file : nullptr,
-                                  ca_cert_dir != nullptr && ca_cert_dir[0] != '\0' ? ca_cert_dir : nullptr)) {
-      owns_store = true;
-    } else {
-      X509_STORE_free(verify_store);
-      verify_store = nullptr;
-      SSLError("failed to load the per-connection client CA store for %s", servername);
+  bool const  ca_configured =
+    (ca_cert_file != nullptr && ca_cert_file[0] != '\0') || (ca_cert_dir != nullptr && ca_cert_dir[0] != '\0');
+  X509_STORE *verify_store =
+    ssl_verify_store_index >= 0 ? static_cast<X509_STORE *>(SSL_get_ex_data(ssl, ssl_verify_store_index)) : nullptr;
+  if (verify_store == nullptr) {
+    if (ca_configured) {
+      // Configured but never materialized, so falling back to the SSL_CTX store here would widen
+      // trust past what the SNI action asked for.
+      SSLError("no per-connection client CA store for %s despite one being configured", servername);
       *out_alert = SSL_AD_INTERNAL_ERROR;
       return ssl_verify_invalid;
     }
-  }
-  if (verify_store == nullptr) {
     verify_store = SSL_CTX_get_cert_store(ctx);
   }
 
@@ -353,9 +357,6 @@ ssl_custom_verify_client_callback(SSL *ssl, uint8_t *out_alert)
   bool hook_ok = initialized && tbs->verify_certificate(store_ctx) == 0;
 
   X509_STORE_CTX_free(store_ctx);
-  if (owns_store) {
-    X509_STORE_free(verify_store);
-  }
 
   if (!initialized || !verified || !hook_ok) {
     *out_alert = initialized ? SSL_AD_CERTIFICATE_UNKNOWN : SSL_AD_INTERNAL_ERROR;
@@ -1115,6 +1116,9 @@ SSLInitializeLibrary()
   ssl_client_rpk_ca_index =
     SSL_CTX_get_ex_new_index(0, (void *)"Trusted client RPK keys", nullptr, nullptr, ssl_client_rpk_ca_ex_free);
 #endif
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+  ssl_verify_store_index = SSL_get_ex_new_index(0, (void *)"Per-connection verify store", nullptr, nullptr, nullptr);
+#endif
 
   TLSBasicSupport::initialize();
   TLSEventSupport::initialize();
@@ -1380,6 +1384,12 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
     if (ctx != nullptr &&
         X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
       SSL_set0_verify_cert_store(ssl, ctx);
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+      // Stash it non-owningly for ssl_custom_verify_client_callback(), which cannot read it back.
+      if (ssl_verify_store_index >= 0 && !SSL_set_ex_data(ssl, ssl_verify_store_index, ctx)) {
+        SSLError("failed to record the per-connection verify store");
+      }
+#endif
     } else {
       X509_STORE_free(ctx);
     }
