@@ -549,6 +549,19 @@ public:
   bool    server_connection_is_ssl        = false;
   bool    is_waiting_for_full_body        = false;
   bool    is_buffering_request_body       = false;
+  // Set once the client's request declared a body that ATS undertook to forward, and the
+  // request head has been written to the origin.  Cleared once that body has reached the
+  // origin in full, measured against the length in server_request.  While it is set the
+  // origin's parser is mid-message and is still waiting for body bytes, so the connection
+  // cannot carry another request.
+  //
+  // The set side uses the same has_request_body() predicate that governs tunnel setup, so
+  // the two cannot diverge.  attach_server_session() appends its chunked Transfer-Encoding
+  // under that same predicate, so an outbound-only body cannot arise there.  The one
+  // outbound body not covered is the plugin-supplied one behind api_server_request_body_set,
+  // and that needs no debt: it is written into the same buffer as the request head, so
+  // WRITE_COMPLETE already means it went out in full.
+  bool server_owed_request_body = false;
   // hooks_set records whether there are any hooks relevant
   //  to this transaction.  Used to avoid costly calls
   //  do_api_callout_internal()

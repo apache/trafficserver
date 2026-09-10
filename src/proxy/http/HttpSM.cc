@@ -2226,6 +2226,11 @@ HttpSM::state_send_server_request_header(int event, void *data)
       if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
           _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
                                           t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED)) {
+        // The origin has now been told to expect a body.  Record that it is owed those
+        // bytes, whether or not a tunnel to deliver them is started below.  When the
+        // client asked for a 100 Continue the body is withheld until the origin sends
+        // one, so there is no tunnel to infer this from.
+        server_owed_request_body = true;
         if (post_transform_info.vc) {
           setup_transform_to_server_transfer();
         } else {
@@ -4240,11 +4245,61 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     ink_assert(tunnel.is_tunnel_alive() == false);
     break;
 
-  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_WRITE_COMPLETE: {
     // Completed successfully
     c->write_success        = true;
     server_entry->in_tunnel = false;
+    // A tunnel can complete having written fewer bytes than the request head declared, so
+    // the debt is cleared on the byte count rather than on the event alone.  Only a body
+    // matching the framing ATS declared leaves the origin able to parse a following request.
+    //
+    // Both routes to a short write here are narrow.  A half close makes HttpTunnel clamp the
+    // consumer write to whatever had already arrived, but the only trigger for that flag
+    // before the request body tunnel starts is a plugin calling TSHttpTxnCloseAfterResponse.
+    // A client FIN is not one: it aborts the tunnel in tunnel_handler_post_ua, so this
+    // consumer never completes.  A truncated chunked body sets chunked_handler.truncation,
+    // which reaches this event only when producer_handler_chunked sees a completion with the
+    // body unfinished.  Neither route is exercised by post-early-response-100-continue.test.py,
+    // so the check rests on the code path above rather than on a regression test; it is kept
+    // because clearing the debt on a short body is exactly what pools a connection the
+    // origin is still parsing.
+    //
+    // The length has to come from server_request rather than from the client's
+    // request_content_length.  A request body transform rewrites the outbound
+    // Content-Length to the transformed size and leaves the client's value alone, so
+    // comparing against the client's would hold the debt open for every transformed body
+    // that came out smaller than it went in.
+    // A null producer should not be read as a complete body, because the debt must only be
+    // cleared on positive evidence that the origin got what it was promised.
+    bool const body_truncated = c->producer == nullptr || c->producer->chunked_handler.truncation;
+    bool       body_complete  = !body_truncated;
+    int64_t    declared_bytes = HTTP_UNDEFINED_CL;
+
+    // Note the truncation flag above is only set by HttpTunnel::producer_handler_chunked(),
+    // so it covers dechunking and chunked passthrough.  When ATS is the one adding chunking
+    // the framing is correct by construction, because generate_chunked_content() emits the
+    // terminating chunk even for a body cut short.  A chunked request carries no declared
+    // length either way, so there is no byte count to check against.
+    if (t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+      declared_bytes = t_state.hdr_info.server_request.get_content_length();
+    }
+
+    if (body_complete && declared_bytes != HTTP_UNDEFINED_CL) {
+      // Count from the consumer rather than from server_request_body_bytes.  That member is
+      // first write wins and is never re-armed, so on a retry it still holds the previous
+      // attempt's total and would clear the debt for a second attempt that fell short.
+      // HttpTunnel::reset() zeroes the consumers, so this count is per attempt.
+      body_complete = c->bytes_written >= declared_bytes;
+    }
+
+    if (body_complete) {
+      server_owed_request_body = false;
+    } else if (server_owed_request_body) {
+      SMDbg(dbg_ctl_http_tproxy, "Post tunnel completed but origin is still owed body bytes, wrote %" PRId64 " of %" PRId64,
+            c->bytes_written, declared_bytes);
+    }
     break;
+  }
   default:
     ink_release_assert(0);
   }
