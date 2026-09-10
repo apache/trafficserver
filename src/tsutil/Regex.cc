@@ -296,7 +296,7 @@ RegexMatchContext::RegexMatchContext()
   // type came to run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB
   // one every other caller gets. Callers override only the fields they mean to.
   auto ctx = pcre2_match_context_copy(RegexContext::get_instance()->get_match_context());
-  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
+  debug_assert_message(ctx, "Failed to copy the shared pcre2 match context");
   _MatchContext::set(_match_context, ctx);
 }
 
