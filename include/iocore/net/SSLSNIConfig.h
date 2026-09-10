@@ -30,7 +30,6 @@
  ****************************************************************************/
 #pragma once
 
-#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -43,6 +42,7 @@
 
 #include "iocore/eventsystem/ConfigProcessor.h"
 #include "iocore/net/SNIActionItem.h"
+#include "iocore/net/SSLTypes.h"
 #include "iocore/net/YamlSNIConfig.h"
 #include "mgmt/config/ConfigContext.h"
 
@@ -55,10 +55,9 @@ struct NextHopProperty {
   bool        client_rpk_enabled = false; // offer a RFC 7250 raw public key (derived from the configured client
                                           // cert/key) alongside X.509 when connecting to this next hop
   std::string server_rpk_ca_file;         // full path to the PEM of trusted next-hop raw public keys to pin against
-  // Parsed contents of server_rpk_ca_file (SSLRPKUtils::TrustedKeySet, i.e. a set of DER
-  // SubjectPublicKeyInfo blobs), loaded once at config load rather than re-parsed from disk on
-  // every outbound handshake to this next hop.
-  std::shared_ptr<const std::vector<std::vector<unsigned char>>> server_rpk_ca;
+  // Parsed once at config load rather than re-parsed from disk on every outbound handshake to
+  // this next hop.
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> server_rpk_ca;
   YamlSNIConfig::Policy   verify_server_policy     = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verify_server_properties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
 };
