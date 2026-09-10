@@ -15,27 +15,31 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-from hrw4u.ast_nodes import Target
+import pytest
+
+from hrw4u.ast_nodes import Span
 
 
-class TestTarget:
+class TestSpan:
 
-    def test_dotted_path(self):
-        t = Target.from_dotted("inbound.req.X-Foo")
-        assert t.namespace == "inbound.req"
-        assert t.field == "X-Foo"
+    def test_equality_is_by_value(self):
+        assert Span(file="a", line=1, column=0) == Span(file="a", line=1, column=0)
+        assert Span(file="a", line=1, column=0) != Span(file="b", line=1, column=0)
 
-    def test_two_segments(self):
-        t = Target.from_dotted("inbound.ip")
-        assert t.namespace == "inbound"
-        assert t.field == "ip"
+    def test_is_hashable_so_it_can_key_a_span_index(self):
+        first = Span(file="a", line=1, column=0)
+        assert {first: "node"}[Span(file="a", line=1, column=0)] == "node"
 
-    def test_no_dots(self):
-        t = Target.from_dotted("bool_0")
-        assert t.namespace is None
-        assert t.field == "bool_0"
+    def test_is_immutable(self):
+        span = Span(file="a", line=1, column=0)
+        with pytest.raises(Exception):
+            span.line = 2
 
-    def test_deep_namespace(self):
-        t = Target.from_dotted("http.cntl.TXN_DEBUG")
-        assert t.namespace == "http.cntl"
-        assert t.field == "TXN_DEBUG"
+    def test_rejects_unknown_attributes(self):
+        # slots=True: a typo'd field must fail loudly rather than sit unread on the instance.
+        with pytest.raises(AttributeError):
+            Span(file="a", line=1, column=0).lineno = 2
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

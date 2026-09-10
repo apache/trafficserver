@@ -21,20 +21,24 @@ from dataclasses import dataclass
 from typing import Union
 
 __all__ = [
+    "Span",
     "LiteralStringValue",
     "IdentValue",
     "IPValue",
     "ParamRef",
     "RegexValue",
+    "SetValue",
+    "IpRangeValue",
     "ValueExpr",
     "Node",
-    "Target",
     "Assignment",
     "FunctionCall",
     "Break",
+    "Comment",
     "Comparison",
     "LogicalOp",
     "NotOp",
+    "Group",
     "BoolLiteral",
     "IdentCondition",
     "ElifBranch",
@@ -77,33 +81,37 @@ class RegexValue:
     raw: str
 
 
-ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, tuple[IPValue, ...]]
+@dataclass(frozen=True, kw_only=True)
+class SetValue:
+    """An `in [...]` operand. Emitted as `(raw)`, so the brackets are stripped but quoting is not."""
+    raw: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class IpRangeValue:
+    """An `in {...}` operand. Emitted verbatim, braces included."""
+    raw: str
+
+
+ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, IpRangeValue]
+
+
+@dataclass(frozen=True, slots=True)
+class Span:
+    """Start position of a node. `line` is 1-based and `column` 0-based, matching ANTLR tokens."""
+    file: str
+    line: int
+    column: int
 
 
 @dataclass(frozen=True, kw_only=True)
 class Node:
-    line: int
-
-
-@dataclass(frozen=True)
-class Target:
-    namespace: str | None
-    field: str
-
-    @staticmethod
-    def from_dotted(name: str) -> Target:
-        # TODO: the grammar lexes dotted paths as a single IDENT token;
-        # ideally the grammar would split namespace/field so this
-        # heuristic isn't needed.
-        dot = name.rfind(".")
-        if dot == -1:
-            return Target(namespace=None, field=name)
-        return Target(namespace=name[:dot], field=name[dot + 1:])
+    span: Span
 
 
 @dataclass(frozen=True, kw_only=True)
 class Assignment(Node):
-    target: Target
+    name: str
     operator: str  # "=" or "+="
     value: ValueExpr
 
@@ -120,10 +128,15 @@ class Break(Node):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Comment(Node):
+    text: str
+
+
+@dataclass(frozen=True, kw_only=True)
 class Comparison(Node):
     left: IdentValue | FunctionCall
     operator: str  # "==", "!=", ">", "<", "~", "!~", "in", "!in"
-    right: ValueExpr | RegexValue | tuple[ValueExpr, ...]
+    right: ValueExpr | RegexValue | SetValue
     modifiers: tuple[str, ...]
 
 
@@ -137,6 +150,11 @@ class LogicalOp(Node):
 @dataclass(frozen=True, kw_only=True)
 class NotOp(Node):
     operand: ConditionExpr
+
+
+@dataclass(frozen=True, kw_only=True)
+class Group(Node):
+    inner: ConditionExpr
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -185,7 +203,7 @@ class VarDecl(Node):
 @dataclass(frozen=True, kw_only=True)
 class VarSection(Node):
     scope: str
-    declarations: tuple[VarDecl, ...]
+    items: tuple[VarDecl | Comment, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -206,6 +224,6 @@ class HRW4UAST:
 
 
 # Type aliases: must follow all class definitions (evaluated at runtime).
-ConditionExpr = Union[Comparison, LogicalOp, NotOp, BoolLiteral, IdentCondition, FunctionCall]
-BodyNode = Union[Assignment, FunctionCall, IfBlock, Break]
-TopLevelNode = Union[UseDirective, VarSection, ProcedureDecl, Section]
+ConditionExpr = Union[Comparison, LogicalOp, NotOp, Group, BoolLiteral, IdentCondition, FunctionCall]
+BodyNode = Union[Assignment, FunctionCall, IfBlock, Break, Comment]
+TopLevelNode = Union[UseDirective, VarSection, ProcedureDecl, Section, Comment]
