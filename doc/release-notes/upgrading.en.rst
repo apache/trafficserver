@@ -38,6 +38,192 @@ caches by hostname, which includes browsers and curl, are unaffected. Sessions
 issued by a previous release may not resume after the upgrade and complete a
 full handshake instead. See :ref:`admin-mtls` for details.
 
+Security Hardening
+------------------
+
+A series of security fixes changed defaults and tightened validation. Many of
+them refuse traffic, or reject configuration, that earlier releases accepted, so
+review this section before upgrading. Where a fix has a published CVE identifier
+it is noted inline; refer to the security advisory for this release for the full
+set of identifiers, severities and affected version ranges.
+
+This section covers only changes with operator-visible effect. The same work
+included a larger number of memory-safety and bounds fixes -- use-after-free,
+out-of-bounds access, integer overflow and stack-allocation fixes across the
+core, the protocol stacks and the plugins -- which change no behavior a
+configuration can observe and are not listed individually.
+
+Changed Defaults
+~~~~~~~~~~~~~~~~
+
+* :file:`ip_allow.yaml` now ships outbound rules that deny ``CONNECT`` tunnels to
+  unspecified, loopback, private, link-local and IPv4-mapped IPv6 destination
+  addresses. If a deployment intentionally proxies ``CONNECT`` to one of those
+  ranges, add a more specific ``apply: out`` allow rule *before* the deny rule:
+  the first matching range determines the outcome.
+
+* :ts:cv:`proxy.config.http2.default_buffer_water_mark` now defaults to ``32768``
+  instead of ``-1``, and its accepted range is now ``1024`` to ``4294967295``. A
+  configuration that explicitly set this to ``-1``, or to any value below
+  ``1024``, is no longer valid and must be updated or removed.
+
+* The ``tsmemcache`` plugin now binds only to the loopback address by default. It
+  previously bound the wildcard address, which exposed the |TS| cache to every
+  host able to reach the port. To bind a specific address, pass it as the second
+  plugin argument, and read the security notes in
+  :doc:`../admin-guide/plugins/memcache.en` first.
+
+* Two settings that were previously accepted unchecked are now range checked, so a
+  configuration carrying an out-of-range value fails to load rather than being
+  silently clamped or overflowing. Their defaults are unchanged.
+  :ts:cv:`proxy.config.http.header_field_max_size` accepts ``0`` to ``65535``, and
+  :ts:cv:`proxy.config.hostdb.round_robin_max_count` accepts ``1`` to ``1024``.
+
+Stricter Request and Response Validation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Each of the following refuses a message earlier releases would have processed.
+The common theme is framing that can be read two ways.
+
+* A ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is
+  rejected. Set :ts:cv:`proxy.config.http.reject_head_with_content` to ``0`` to
+  restore the previous behavior.
+
+* A ``Transfer-Encoding`` whose final coding is not ``chunked`` is rejected, as is
+  any ``Transfer-Encoding`` appearing in HTTP/2 or HTTP/3 request headers, where
+  the field has no meaning.
+
+* Chunked parsing is stricter in two further ways: a bare ``LF`` terminating a
+  chunked trailer is rejected under strict parsing, and a chunk extension
+  quoted-string value containing ``CR`` or ``LF`` is rejected.
+
+* A header field longer than the 16-bit field-length limit is rejected rather
+  than silently truncated to its low 16 bits. A ``Host`` header longer than its
+  buffer is likewise bounded rather than overrunning it (CVE-2026-33930).
+
+* A response that cannot be parsed is refused whatever status it claims. Earlier
+  releases relayed a ``302`` carrying a ``Location`` header even when parsing its
+  header block failed; that exemption keyed only off the status code and never
+  accounted for why the parse failed. The responses a broken origin actually
+  depends on resolve as a completed parse and are unaffected.
+
+* A URL whose port is outside the 16-bit range is rejected, and response status
+  code parsing is bounded rather than allowed to overflow. An IPv6 literal with an
+  out-of-range hextet is rejected where it was previously accepted, which can
+  affect a configuration file carrying a malformed address.
+
+* Body preclusion for ``CONNECT`` now applies only to successful responses, so an
+  error response to a ``CONNECT`` is framed by its own headers.
+
+* HTTP/2 and HTTP/3 header decoding enforces a per-field size limit, rejects
+  oversized HPACK indexes and rejects integers that overflow during XPACK
+  decoding. ``CONTINUATION`` accumulation that would overflow the header block
+  length is rejected. Outstanding HTTP/2 ``SETTINGS`` frames are bounded, and an
+  unnecessary ``SETTINGS`` frame closes the connection.
+
+* HTTP/2 ``Content-Length`` is compared against the payload length at full width,
+  so a mismatch cannot be hidden by truncation.
+
+* HTTP/2 origin trailers are no longer forwarded to HTTP/1 clients, which cannot
+  frame them.
+
+Headers Now Removed
+~~~~~~~~~~~~~~~~~~~
+
+* Client-supplied headers whose name begins with ``@`` are stripped before any
+  plugin hook runs, in both directions. ``@`` headers are |TS| internal, and
+  accepting one from a client let a request set state a plugin would read as
+  |TS|'s own. A plugin that relied on reading a client-supplied ``@`` header will
+  no longer see it. The log line reporting a strip is throttled, so a client
+  sending them in volume does not flood the diagnostics (CVE-2026-33267).
+
+* Headers named in the ``Connection`` field are removed per RFC 9110 section
+  7.6.1, rather than being forwarded to the next hop.
+
+Proxy Protocol
+~~~~~~~~~~~~~~
+
+* A PROXY v1 header whose port is out of range is rejected.
+
+* A PROXY header carrying no addresses is handled rather than assumed to carry
+  them, including on TLS connections.
+
+Access Control Corrections
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These rules now apply as written. Re-check any configuration that relies on them.
+
+* Nonstandard method matching in remap ACL filtering applies as written.
+
+* The client SNI action test in ``SNI_IpAllow`` applies as written.
+
+* Loop detection is retained on outbound-transparent ports.
+
+Connection Reuse and TLS
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+* An inbound TLS session is bound to the SNI and ``verify_client`` policy that
+  issued it, so a session offered outside that scope completes a full handshake
+  instead of resuming. See `TLS Session Resumption`_ above. This supersedes the
+  narrower check that rejected a resumed session presenting no client certificate
+  where the matching :file:`sni.yaml` entry required one; that check is retained
+  as a last line of defense and is normally unreachable.
+
+* Reusing a pooled outbound session requires that its client certificate match
+  the one the current transaction would present, so a transaction cannot inherit
+  another's authenticated identity. HTTP/2 origin certificates are likewise
+  verified on session reuse.
+
+* A server session is not returned to the pool while unread bytes remain on it,
+  so a later request cannot be answered from another transaction's leftover
+  response data. Related to this, an origin connection owed an unsent request
+  body is closed rather than pooled, including under ``Expect: 100-continue``
+  (CVE-2025-31699), and the unread body of an ``Expect: 100-continue`` ``POST``
+  is no longer forwarded as a new request (CVE-2025-55702).
+
+* The outbound ``server_name`` SNI policy is validated before use, and the bytes
+  it names are owned across a configuration reload rather than referenced into a
+  freed configuration.
+
+Origin Selection
+~~~~~~~~~~~~~~~~
+
+* ``parent.config`` retries are capped at one per window, so a parent that is
+  failing cannot be retried repeatedly within the same window.
+
+Plugins
+~~~~~~~
+
+* ``origin_server_auth`` strips client-supplied ``x-amz-`` request headers that
+  fall outside the scope its signature covers, rather than forwarding headers the
+  signature does not authenticate.
+
+* ``magick`` requires a signing key and allowlists the ``convert`` operators it
+  will run. An existing configuration without a signing key will not load.
+
+* ``esi`` bounds nested ESI comments and request length, and validates
+  ``esi:include`` URLs before fetching them.
+
+* ``certifier`` rejects SNI names that are unsafe to use as a filename, rather
+  than deriving a path from them.
+
+* Several plugins now bound input they previously accepted without limit, so an
+  input larger than the bound is refused instead of being processed:
+  ``webp_transform`` bounds both the buffered body and the ImageMagick decode,
+  ``stale_response`` caps its buffering, ``xdebug`` caps the ``X-Remap`` header to
+  the buffer content, ``multiplexer`` rejects oversized chunks, and ``url_sig``
+  requires the delimiter in its ``C=`` parameter.
+
+* ``combo_handler`` rejects an empty ``Content-Type`` when an allowlist is
+  configured; ``compress`` stops the transform after a ``deflate()`` error rather
+  than continuing; ``prefetch`` constrains relative paths; ``rate_limit`` no
+  longer allows the queue to be bypassed.
+
+* ``regex_map`` in :file:`remap.config` (CVE-2026-22068) and ``fqdn`` in
+  :file:`sni.yaml` now require a regex to match the whole hostname, so a pattern
+  matching only part of a subject can no longer satisfy a rule meant for
+  something else. See :ref:`admin-regex-best-practices`.
+
 Upgrading to ATS v10.x
 ======================
 

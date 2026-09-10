@@ -23,6 +23,19 @@
 What's New in ATS v10.1
 =======================
 
+Security
+--------
+
+This release carries a large body of security work. Most of it tightens what |TS|
+accepts rather than adding anything, so the operator-visible effect -- changed
+defaults, messages now refused, ACL conditions that now apply as written, and
+plugins that now require configuration -- is described in
+:ref:`upgrading`. Read that section before upgrading.
+
+Several fixes in this release carry CVE identifiers. Refer to the security
+advisory for this release for the identifiers, severities and affected version
+ranges.
+
 Metrics
 -------
 
@@ -35,6 +48,12 @@ Metrics
 * Added ``proxy.process.ssl.group.user_agent.P-224``
 * Added ``proxy.process.ssl.group.user_agent.X448``
 * Added ``proxy.process.ssl.group.user_agent.X25519MLKEM768``
+* Added ``proxy.process.ssl.user_agent_resumed_cert_rejected``, counting inbound
+  connections rejected because the session they resumed carried no client
+  certificate where the current SNI's ``verify_client`` policy requires one.
+  Sessions are bound to the policy that issued them, so an out-of-scope session
+  completes a full handshake rather than reaching this counter, which is
+  normally zero
 
 Plugins
 -------
@@ -65,6 +84,10 @@ Plugins
   ja* fields.
 * ja4_fingerprint: Added this new plugin
 * rate_limit: Add a ``--rate`` option to limit by RPS
+* tsmemcache: The listener binds to the loopback address by default, and an
+  optional second plugin argument sets the address to bind instead.
+* magick: A signing key is now required. The plugin refuses to load without one,
+  and the ImageMagick ``convert`` operators it will run are allowlisted.
 
 TS API
 ------
@@ -119,6 +142,20 @@ Configuration
   setting provides a clear and consistent interface going forward.  For backward
   compatibility, ``.enabled`` is now implemented, but both ``.enabled`` and
   ``.value`` will be removed in ATS 11.x.
+* Added :ts:cv:`proxy.config.http.reject_head_with_content` to control whether a
+  ``HEAD`` request carrying ``Content-Length`` or ``Transfer-Encoding`` is
+  refused. Enabled by default.
+* :ts:cv:`proxy.config.http2.default_buffer_water_mark` now defaults to ``32768``
+  and no longer accepts values below ``1024``.
+* :ts:cv:`proxy.config.http.header_field_max_size` and
+  :ts:cv:`proxy.config.hostdb.round_robin_max_count` are now range checked, at
+  ``0`` to ``65535`` and ``1`` to ``1024`` respectively. Their defaults are
+  unchanged, but a value outside the range is no longer accepted.
+* :file:`ip_allow.yaml` ships default outbound rules denying ``CONNECT`` tunnels
+  to unspecified, loopback, private, link-local and IPv4-mapped IPv6 destinations.
+* The ``uds-perm``, ``uds-user`` and ``uds-group`` options were added to
+  :ts:cv:`proxy.config.http.server_ports` to control ownership and permissions of
+  a Unix domain socket listener.
 
 
 
