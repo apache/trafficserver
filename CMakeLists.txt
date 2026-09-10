@@ -549,6 +549,7 @@ if(ENABLE_HIGHWAY_DISPATCH)
 endif()
 
 include(Check128BitCas)
+include(Check128BitAtomic)
 include(ConfigureTransparentProxy)
 
 # Find ccache

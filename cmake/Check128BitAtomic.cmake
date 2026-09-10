@@ -15,43 +15,46 @@
 #
 #######################
 
-# Check128BitCas.cmake
+# Check128BitAtomic.cmake
 #
 # This will define the following variables
 #
-#     TS_HAS_128BIT_CAS
-#     TS_NEEDS_MCX16_FOR_CAS
+#     TS_HAS_128BIT_ATOMIC
+#     TS_NEEDS_MCX16_FOR_128BIT_ATOMIC
 #
 
 set(CHECK_PROGRAM
     "
-    int main(void)
+    #include <atomic>
+
+    int main()
     {
-        __int128_t x = 0;
-        return __sync_bool_compare_and_swap(&x,0,10);
+        std::atomic<__int128> x{0};
+        __int128 expected{x.load()};
+        return x.compare_exchange_strong(expected, 10);
     }
     "
 )
 
-include(CheckCSourceCompiles)
-check_c_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_ATOMIC)
 
 set(NEED_MCX16 FALSE)
 
-if(NOT TS_HAS_128BIT_CAS)
-  unset(TS_HAS_128BIT_CAS CACHE)
+if(NOT TS_HAS_128BIT_ATOMIC)
+  unset(TS_HAS_128BIT_ATOMIC CACHE)
   set(CMAKE_REQUIRED_FLAGS "-Werror -mcx16")
-  check_c_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_CAS)
-  set(NEED_MCX16 ${TS_HAS_128BIT_CAS})
+  check_cxx_source_compiles("${CHECK_PROGRAM}" TS_HAS_128BIT_ATOMIC)
+  set(NEED_MCX16 ${TS_HAS_128BIT_ATOMIC})
   unset(CMAKE_REQUIRED_FLAGS)
 endif()
 
-set(TS_NEEDS_MCX16_FOR_CAS
+set(TS_NEEDS_MCX16_FOR_128BIT_ATOMIC
     ${NEED_MCX16}
-    CACHE BOOL "Whether -mcx16 is needed to compile CAS"
+    CACHE BOOL "Whether -mcx16 is needed to compile 128bit atomics"
 )
 
 unset(CHECK_PROGRAM)
 unset(NEED_MCX16)
 
-mark_as_advanced(TS_HAS_128BIT_CAS TS_NEEDS_MCX16_FOR_CAS)
+mark_as_advanced(TS_HAS_128BIT_ATOMIC TS_NEEDS_MCX16_FOR_128BIT_ATOMIC)
