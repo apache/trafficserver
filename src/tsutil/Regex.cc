@@ -89,7 +89,6 @@ my_free(void *ptr, void * /*caller*/)
 thread_local pcre2_jit_stack *jit_stack = nullptr;
 
 struct JitStackCleanup {
-  bool armed = true;
   ~JitStackCleanup()
   {
     if (jit_stack != nullptr) {
@@ -100,16 +99,14 @@ struct JitStackCleanup {
 
 thread_local JitStackCleanup jit_stack_cleanup;
 
-// Reading the member forces the thread local to be initialized, which registers its
-// destructor. That has to happen here, on the matching thread but before the match,
-// rather than inside the callback. A thread that only ever reached the callback
-// would otherwise never initialize the cleanup object and would leak its stack.
+// Taking the address forces this thread's initialization of the cleanup object, which
+// registers its destructor. That has to happen on the matching thread but outside the
+// callback: a thread that only ever reached the callback would never initialize the
+// object and would leak its stack.
 void
 arm_jit_stack_cleanup()
 {
-  if (!jit_stack_cleanup.armed) {
-    return;
-  }
+  [[maybe_unused]] auto const *cleanup = &jit_stack_cleanup;
 }
 
 pcre2_jit_stack *

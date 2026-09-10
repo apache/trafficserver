@@ -1085,8 +1085,8 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   Regex re;
   REQUIRE(re.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
 
-  // Well past what a 1MiB JIT stack can hold, so the bound is still exercised
-  // now that the plugin no longer sets its own smaller one.
+  // Past what a 1MiB JIT stack holds for this pattern, which starts failing at
+  // roughly 43KiB of subject, so the bound is still exercised.
   std::string subject{"/alpha/bravo/?"};
   subject.append(2 * 1024 * 1024, 'x');
 
