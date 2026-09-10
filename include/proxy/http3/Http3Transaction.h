@@ -74,6 +74,17 @@ public:
   virtual int             state_stream_closed(int event, Event *data) = 0;
   NetVConnectionContext_t direction() const;
 
+  /** Full-width QUIC stream identifier for this transaction.
+   *
+   *  @c get_transaction_id returns @c int and exists primarily for compact log
+   *  fields and probe arguments; QUIC stream IDs are 62-bit values, so callers
+   *  that route or compare by stream ID must use this accessor to avoid
+   *  truncation.
+   *
+   *  @return The QUIC stream ID owned by this transaction.
+   */
+  QUICStreamId get_quic_stream_id() const;
+
   // For Queue from tscore/Link.h
   LINK(HQTransaction, link);
 
