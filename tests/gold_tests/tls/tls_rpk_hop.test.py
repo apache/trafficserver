@@ -88,7 +88,8 @@ def make_edge(
         offer_client_rpk=False,
         offer_client_x509=False,
         client_cert="server.pem",
-        client_key="server.key"):
+        client_key="server.key",
+        server_ca_file=None):
     """A downstream (edge) ATS: connects to `parent` over TLS, pinning its raw public key.
 
     `offer_client_rpk`, if set, also offers a raw public key (derived from ssl/server.pem/.key,
@@ -104,6 +105,8 @@ def make_edge(
     if client_cert != "server.pem":
         ts.addSSLfile("ssl/{0}".format(client_cert))
         ts.addSSLfile("ssl/{0}".format(client_key))
+    if server_ca_file is not None:
+        ts.addSSLfile("ssl/{0}".format(server_ca_file))
     ts.Disk.remap_config.AddLine('map / https://127.0.0.1:{0}'.format(parent.Variables.ssl_port))
     ts.Disk.ssl_multicert_yaml.AddLines(
         [
@@ -125,6 +128,12 @@ def make_edge(
             # Pin the exact key instead of matching a name: a raw public key carries no SAN.
             'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
         })
+    if server_ca_file is not None:
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.ssl.client.CA.cert.path': '{0}'.format(ts.Variables.SSLDir),
+                'proxy.config.ssl.client.CA.cert.filename': server_ca_file,
+            })
     if pin_file is not None or offer_client_rpk or offer_client_x509:
         sni_lines = [
             'sni:',
@@ -153,7 +162,9 @@ edge_ok = make_edge("edge_ok", parent_rpk, "server.pubkey.pem")
 
 # 2. The parent has not been upgraded (no RPK), the edge is configured for it ->
 #    negotiation must fall back to X.509 rather than failing. This is the steady state
-#    for the whole duration of a rolling upgrade.
+#    for the whole duration of a rolling upgrade. This covers negotiation only: the edge does not
+#    trust server.pem, so the chain check fails and PERMISSIVE is what lets the request through.
+#    Scenarios 11 and 12 cover the chain verdict itself, under ENFORCED.
 parent_x509 = make_parent("parent_x509", rpk_enabled=False)
 edge_fallback = make_edge("edge_fallback", parent_x509, "server.pubkey.pem", policy='PERMISSIVE')
 
@@ -256,6 +267,16 @@ edge_mtls_purpose = make_edge(
     offer_client_x509=True,
     client_cert="server.ocsp.pem",
     client_key="server.ocsp.key")
+
+# 11. Outbound X.509 fallback under ENFORCED, chain does not verify: the parent offers no raw public
+#     key, so the edge's custom_verify path takes its X.509 fallback, and the edge does not trust
+#     the parent's self-signed certificate. ENFORCED must reject rather than serve.
+edge_fallback_untrusted = make_edge("edge_fallback_untrusted", parent_x509, "server.pubkey.pem", policy='ENFORCED')
+
+# 12. The same path with a chain that does verify -- the rolling upgrade case the feature exists to
+#     serve, which until now was only exercised under PERMISSIVE where the verdict is discarded.
+edge_fallback_enforced = make_edge(
+    "edge_fallback_enforced", parent_x509, "server.pubkey.pem", policy='ENFORCED', server_ca_file="server.pem")
 
 tr = Test.AddTestRun("RPK negotiated and pin matches")
 tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_ok.Variables.ssl_port))
@@ -367,6 +388,8 @@ parent_mtls_x509.Disk.traffic_out.Content = Testers.ContainsExpression(
     'Callback: custom verify client cert|Callback: verify client cert', 'a client-cert verify callback must run for this entry')
 parent_mtls_x509.Disk.traffic_out.Content += Testers.ExcludesExpression(
     'client certificate chain verification failed', 'the X.509 fallback must accept a validly-signed chain')
+parent_mtls_x509.Disk.traffic_out.Content += Testers.ExcludesExpression(
+    'Client authenticated with a raw public key', 'this connection must take the X.509 path, not the RPK one')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_mtls_x509
 tr.StillRunningAfter += edge_mtls_x509
@@ -392,3 +415,25 @@ tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_mtls_purpose
 tr.StillRunningAfter += edge_mtls_purpose
+
+tr = Test.AddTestRun("outbound X.509 fallback: an unverifiable origin chain is rejected under ENFORCED")
+tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_fallback_untrusted.Variables.ssl_port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(edge_fallback_untrusted)
+tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
+    'origin response', 'an origin chain that does not verify must not be served under ENFORCED')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += parent_x509
+tr.StillRunningAfter += edge_fallback_untrusted
+
+tr = Test.AddTestRun("outbound X.509 fallback: a verifiable origin chain succeeds under ENFORCED")
+tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_fallback_enforced.Variables.ssl_port))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(edge_fallback_enforced)
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'origin response', 'a trusted origin chain must be served under ENFORCED during a rolling upgrade')
+edge_fallback_enforced.Disk.traffic_out.Content = Testers.ExcludesExpression(
+    'Origin authenticated with a raw public key', 'this hop must fall back to X.509, not negotiate RPK')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += parent_x509
+tr.StillRunningAfter += edge_fallback_enforced
