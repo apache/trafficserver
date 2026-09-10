@@ -155,6 +155,11 @@ ssl_client_rpk_ca_name: FILENAME (optional)
   An unmatched pin is always fatal to the connection, the same as a failed certificate check --
   there is no separate log-only mode.
 
+  This key only has an effect where a client certificate is actually requested, which means either
+  a non-zero :ts:cv:`proxy.config.ssl.client.certification_level` or a
+  :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, the entry
+  advertises raw public key acceptance, no credential is ever requested, and nothing is pinned.
+
   Only available in builds linked against a TLS library with RFC 7250 support; see
   ``ssl_rpk_enabled`` above.
 
