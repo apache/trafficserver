@@ -48,6 +48,14 @@ def run_hrw4u(args: list[str], stdin: str | None = None) -> subprocess.Completed
     return subprocess.run(cmd, capture_output=True, text=True, input=stdin, cwd=Path.cwd())
 
 
+def run_u4wrh(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+    """Run u4wrh script with given arguments."""
+    script = Path("scripts/u4wrh").resolve()
+    cmd = [sys.executable, str(script)] + args
+
+    return subprocess.run(cmd, capture_output=True, text=True, input=stdin, cwd=Path.cwd())
+
+
 def test_cli_single_file_to_stdout(sample_hrw4u_files: tuple[Path, Path, Path]) -> None:
     """Test compiling a single file to stdout."""
     file1, _, _ = sample_hrw4u_files
@@ -294,3 +302,14 @@ def test_cli_multi_file_exits_nonzero_if_any_fails(sample_hrw4u_files: tuple[Pat
 
     assert result.returncode != 0
     assert "no-op" in result.stdout, "processing must continue past the failing file"
+
+
+def test_cli_u4wrh_exits_nonzero_on_error(tmp_path: Path) -> None:
+    """u4wrh shares run_main(), so it must honor the same exit-status contract."""
+    bad = tmp_path / "bad.conf"
+    bad.write_text("cond %{READ_REQUEST_HDR_HOOK}\n  set-header X-Foo\n")
+
+    result = run_u4wrh([str(bad)])
+
+    assert result.returncode != 0
+    assert ": error:" in result.stderr
