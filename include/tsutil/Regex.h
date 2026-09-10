@@ -113,12 +113,13 @@ public:
   RegexMatchContext();
   ~RegexMatchContext();
 
-  /// uses pcre2_match_context_copy for a deep copy.
-  RegexMatchContext(RegexMatchContext const &orig);
-  RegexMatchContext &operator=(RegexMatchContext const &orig);
-
-  RegexMatchContext(RegexMatchContext &&)            = default;
-  RegexMatchContext &operator=(RegexMatchContext &&) = default;
+  /// Not copyable or movable. Nothing copies one, the defaulted move copied the
+  /// raw pointer and left both objects freeing it, and the copy constructor could
+  /// leave the pointer null for its own destructor to assert on.
+  RegexMatchContext(RegexMatchContext const &)            = delete;
+  RegexMatchContext &operator=(RegexMatchContext const &) = delete;
+  RegexMatchContext(RegexMatchContext &&)                 = delete;
+  RegexMatchContext &operator=(RegexMatchContext &&)      = delete;
 
   /** Limits the amount of backtracking that can take place.
    * Any regex exec call that fails will return PCRE2_ERROR_MATCHLIMIT(-47)

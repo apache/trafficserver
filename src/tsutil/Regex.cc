@@ -304,32 +304,6 @@ RegexMatchContext::RegexMatchContext()
 }
 
 //----------------------------------------------------------------------------
-RegexMatchContext::RegexMatchContext(RegexMatchContext const &other)
-{
-  auto ptr = _MatchContext::get(other._match_context);
-  if (nullptr != ptr) {
-    pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
-    _MatchContext::set(_match_context, ctx);
-  }
-}
-
-//----------------------------------------------------------------------------
-RegexMatchContext &
-RegexMatchContext::operator=(RegexMatchContext const &other)
-{
-  if (&other != this) {
-    auto ptr = _MatchContext::get(other._match_context);
-    if (nullptr != ptr) {
-      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
-      _MatchContext::set(_match_context, ctx);
-    } else {
-      _MatchContext::set(_match_context, nullptr);
-    }
-  }
-  return *this;
-}
-
-//----------------------------------------------------------------------------
 RegexMatchContext::~RegexMatchContext()
 {
   auto ptr = _MatchContext::get(_match_context);
