@@ -555,6 +555,22 @@ public:
   bool server_connection_is_ssl       = false;
   bool is_waiting_for_full_body       = false;
   bool is_using_post_buffer           = false;
+  // Set once the client's request declared a body that ATS undertook to forward, and the
+  // request head has been written to the origin.  Cleared once that body has reached the
+  // origin in full, measured against the length in server_request.  While it is set the
+  // origin's parser is mid-message and is still waiting for body bytes, so the connection
+  // cannot carry another request.
+  //
+  // The set side uses the same has_request_body() predicate that governs tunnel setup, so
+  // the two cannot diverge.  attach_server_session() appends its chunked Transfer-Encoding
+  // under that same predicate, so an outbound-only body cannot arise there.  The one
+  // outbound body not covered is the plugin-supplied one behind api_server_request_body_set,
+  // and that needs no debt: it is written into the same buffer as the request head, so
+  // WRITE_COMPLETE already means it went out in full.
+  //
+  // See _request_body_tunnel_abandoned below for the narrower flag this one subsumes, and
+  // for why that one is still needed.
+  bool server_owed_request_body = false;
   std::optional<bool> mptcp_state; // Don't initialize, that marks it as "not defined".
   const char *client_protocol     = "-";
   const char *server_protocol     = "-";
@@ -601,12 +617,18 @@ protected:
   bool kill_this_async_done = false;
   bool parse_range_done     = false;
 
-  // Set when the request body tunnel is abandoned because the origin answered
-  // before we finished writing the body. The origin is then still owed the rest
-  // of that body, so the connection must not be reused. This has to be recorded
-  // rather than inferred from current.server->keep_alive, because the response
-  // path recomputes that field from the response headers.
-  bool _server_owed_request_body = false;
+  // Set when a live request body tunnel is abandoned because the origin answered before we
+  // finished writing the body.  Narrower than server_owed_request_body, which covers the
+  // same debt however it arose, including with no tunnel at all; every state that sets this
+  // one also sets that one.  Kept separate because the two act differently and this one is
+  // still load-bearing: alongside it the abort site marks the server session private, and a
+  // private session is never pooled, whereas server_owed_request_body works by forcing
+  // keep_alive off and exempts the interim statuses 100 and 103.  For a POST whose origin
+  // answers 103 with Connection: keep-alive, the exemption lets the recompute in
+  // HttpTransact::initialize_state_variables_from_response() restore keep_alive, and the
+  // private session is the only thing left keeping that connection out of the pool.  Do not
+  // retire this as redundant without covering that case.
+  bool _request_body_tunnel_abandoned = false;
   void kill_this();
   void update_stats();
   void transform_cleanup(TSHttpHookID hook, HttpTransformInfo *info);

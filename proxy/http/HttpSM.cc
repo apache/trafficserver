@@ -2082,6 +2082,10 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     // If there is a post body in transit, give up on it
     if (tunnel.is_tunnel_alive()) {
+      // Logged so a test can tell which of the two paths a scenario took: whether a request
+      // body tunnel was still active when the origin response was parsed, or whether the
+      // body was withheld and there was never a tunnel to infer the debt from.
+      SMDebug("http_tproxy", "Tunnel alive");
       tunnel.abort_tunnel();
       // Make sure client connection is closed when we are done in case there is cruft left over
       t_state.client_info.keep_alive = HTTP_NO_KEEPALIVE;
@@ -2092,7 +2096,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
       // after this and recomputes current.server->keep_alive from the response
       // headers, so a response carrying Keep-Alive would otherwise put this
       // connection back in the pool with a partial body outstanding.
-      _server_owed_request_body = true;
+      _request_body_tunnel_abandoned = true;
       // Marking the session private is what covers the release paths that never
       // reach tunnel_handler_server. A 304 builds no response tunnel, so the
       // check there cannot run, but release_server_session() will still pool the
@@ -2193,10 +2197,21 @@ HttpSM::state_send_server_request_header(int event, void *data)
     //  our buffer and then decide what to do next
     free_MIOBuffer(server_entry->write_buffer);
     server_entry->write_buffer = nullptr;
-    method                     = t_state.hdr_info.server_request.method_get_wksidx();
+    // The debt belongs to the attempt that incurred it, not to the transaction.  A retry or
+    // a redirect reaches this point again with a freshly built request head, so clear it
+    // here and let the predicate below re-establish it.  Without this a second attempt
+    // whose request declares no body would inherit the first attempt's debt and close a
+    // connection that was never owed anything.
+    server_owed_request_body = false;
+    method                   = t_state.hdr_info.server_request.method_get_wksidx();
     if (!t_state.api_server_request_body_set && method != HTTP_WKSIDX_TRACE &&
         ua_txn->has_request_body(t_state.hdr_info.request_content_length,
                                  t_state.client_info.transfer_encoding == HttpTransact::CHUNKED_ENCODING)) {
+      // The origin has now been told to expect a body.  Record that it is owed those
+      // bytes, whether or not a tunnel to deliver them is started below.  When the
+      // client asked for a 100 Continue the body is withheld until the origin sends
+      // one, so there is no tunnel to infer this from.
+      server_owed_request_body = true;
       if (post_transform_info.vc) {
         setup_transform_to_server_transfer();
       } else {
@@ -3105,10 +3120,11 @@ HttpSM::tunnel_handler_server(int event, HttpTunnelProducer *p)
   bool close_connection = false;
 
   if (t_state.current.server->keep_alive == HTTP_KEEPALIVE && server_entry->eos == false &&
-      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && t_state.txn_conf->keep_alive_enabled_out == 1 && !_server_owed_request_body) {
+      plugin_tunnel_type == HTTP_NO_PLUGIN_TUNNEL && t_state.txn_conf->keep_alive_enabled_out == 1 &&
+      !_request_body_tunnel_abandoned) {
     close_connection = false;
   } else {
-    if (_server_owed_request_body) {
+    if (_request_body_tunnel_abandoned) {
       // Reusing this connection would let the unwritten remainder of the request
       // body be answered by whatever is sent next on it.
       SMDebug("http", "closing origin connection, request body was not fully written");
@@ -3860,11 +3876,73 @@ HttpSM::tunnel_handler_post_server(int event, HttpTunnelConsumer *c)
     ink_assert(tunnel.is_tunnel_alive() == false);
     break;
 
-  case VC_EVENT_WRITE_COMPLETE:
+  case VC_EVENT_WRITE_COMPLETE: {
     // Completed successfully
     c->write_success        = true;
     server_entry->in_tunnel = false;
+    // A tunnel can complete having written fewer bytes than the request head declared, so
+    // the debt is cleared on the byte count rather than on the event alone.  Only a body
+    // matching the framing ATS declared leaves the origin able to parse a following request.
+    //
+    // Both routes to a short write here are narrow.  A half close makes HttpTunnel clamp the
+    // consumer write to whatever had already arrived; the flag is set by
+    // TSHttpTxnCloseAfterResponse, by HandlePushError and on the EOS path into a blind
+    // tunnel, and because it lives on the client session rather than the transaction its
+    // lifetime spans transactions on a keep-alive session.  A client FIN is not one of those
+    // routes: it aborts the tunnel in tunnel_handler_post_ua, so this consumer never
+    // completes.  A truncated chunked body sets chunked_handler.truncation, which reaches
+    // this event only when producer_handler_chunked sees a completion with the body
+    // unfinished.  Neither route is exercised by post-early-response-100-continue.test.py,
+    // so the check rests on the code path above rather than on a regression test; it is kept
+    // because clearing the debt on a short body is exactly what pools a connection the
+    // origin is still parsing.
+    //
+    // The length has to come from server_request rather than from the client's
+    // request_content_length.  A request body transform rewrites the outbound
+    // Content-Length to the transformed size and leaves the client's value alone, so
+    // comparing against the client's would hold the debt open for every transformed body
+    // that came out smaller than it went in.
+    // A null producer should not be read as a complete body, because the debt must only be
+    // cleared on positive evidence that the origin got what it was promised.
+    bool const body_truncated = c->producer == nullptr || c->producer->chunked_handler.truncation;
+    bool body_complete        = !body_truncated;
+    int64_t declared_bytes    = HTTP_UNDEFINED_CL;
+
+    // Note the truncation flag above is only set by HttpTunnel::producer_handler_chunked(),
+    // so it covers dechunking and chunked passthrough.  When ATS is the one adding chunking
+    // the producer is producer_handler_dechunked() instead, which never sets it, and an
+    // outbound chunked body carries no Content-Length, so neither check below can fire: the
+    // debt is cleared here on a body that may have been cut short.  What keeps that from
+    // pooling a desynced connection is upstream of this block.
+    // handle_request_keep_alive_headers() sets KA_CLOSE for any body-bearing method whose
+    // outbound request has no Content-Length, which drops keep_alive and puts
+    // Connection: close on the request, so a compliant origin closes and there is nothing
+    // to pool.  The gap is only reachable with an origin that ignores Connection: close and
+    // answers keep-alive, which the recompute in
+    // initialize_state_variables_from_response() then honors.  Narrowing this to treat an
+    // undefined length as "cannot verify" would close the gap without relying on that, but
+    // it would also close every outbound chunked origin connection, so it is left for a
+    // change that can measure the reuse cost.
+    if (t_state.hdr_info.server_request.presence(MIME_PRESENCE_CONTENT_LENGTH)) {
+      declared_bytes = t_state.hdr_info.server_request.get_content_length();
+    }
+
+    if (body_complete && declared_bytes != HTTP_UNDEFINED_CL) {
+      // Count from the consumer rather than from server_request_body_bytes.  On this branch
+      // that member is assigned unconditionally at the top of this handler, so the two are
+      // identical here; the consumer is used anyway because HttpTunnel::reset() zeroes the
+      // consumers, which makes this count per attempt rather than per transaction.
+      body_complete = c->bytes_written >= declared_bytes;
+    }
+
+    if (body_complete) {
+      server_owed_request_body = false;
+    } else if (server_owed_request_body) {
+      SMDebug("http_tproxy", "Post tunnel completed but origin is still owed body bytes, wrote %" PRId64 " of %" PRId64,
+              c->bytes_written, declared_bytes);
+    }
     break;
+  }
   default:
     ink_release_assert(0);
   }
