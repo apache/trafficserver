@@ -35,12 +35,14 @@ response_header = {
 server.addResponse("sessionlog.json", request_header, response_header)
 
 
-def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0, client_ca_file=None):
+def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0, client_ca_file=None, sni_client_ca_file=None):
     """An upstream (parent) ATS: terminates TLS from the edge, forwards to the origin.
 
     `client_rpk_ca_file`, if set, configures ssl_client_rpk_ca_name to pin the edge's raw public
     key for mTLS; `client_cert_level` then requires/requests a client cert accordingly.
     `client_ca_file`, if set, is the CA bundle X.509 client certificates are verified against.
+    `sni_client_ca_file`, if set, adds a sni.yaml verify_client action carrying that CA bundle as a
+    per-connection override, which is what installs a per-connection verify store.
     """
     ts = Test.MakeATSProcess(name, enable_tls=True)
     ts.addSSLfile("ssl/server.pem")
@@ -64,6 +66,17 @@ def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0,
         # the equivalent resolution ssl_ca_name already gets.
         multicert_lines.append('    ssl_client_rpk_ca_name: {0}'.format(client_rpk_ca_file))
     ts.Disk.ssl_multicert_yaml.AddLines(multicert_lines)
+    if sni_client_ca_file is not None:
+        ts.addSSLfile("ssl/{0}".format(sni_client_ca_file))
+        # Keyed on the name in server.pem, which is the SNI the client below sends. An IP literal is
+        # never sent as SNI, so an entry keyed on one could not match.
+        ts.Disk.sni_yaml.AddLines(
+            [
+                'sni:',
+                '- fqdn: random.server.com',
+                '  verify_client: STRICT',
+                '  verify_client_ca_certs: {0}/{1}'.format(ts.Variables.SSLDir, sni_client_ca_file),
+            ])
     records = {
         'proxy.config.http.cache.http': 0,
         'proxy.config.ssl.server.cert.path': '{0}'.format(ts.Variables.SSLDir),
@@ -71,6 +84,10 @@ def make_parent(name, rpk_enabled, client_rpk_ca_file=None, client_cert_level=0,
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'ssl_verify|ssl_load',
     }
+    if client_rpk_ca_file is not None:
+        # ssl_client_rpk_ca_name resolves against this, which is what the bare file name above
+        # exercises.
+        records['proxy.config.ssl.CA.cert.path'] = '{0}'.format(ts.Variables.SSLDir)
     if client_cert_level:
         records['proxy.config.ssl.client.certification_level'] = client_cert_level
         records['proxy.config.ssl.CA.cert.path'] = '{0}'.format(ts.Variables.SSLDir)
@@ -278,6 +295,24 @@ edge_fallback_untrusted = make_edge("edge_fallback_untrusted", parent_x509, "ser
 edge_fallback_enforced = make_edge(
     "edge_fallback_enforced", parent_x509, "server.pubkey.pem", policy='ENFORCED', server_ca_file="server.pem")
 
+# 13. A verify_client action overrides the client CA on an entry that also pins raw public keys, so
+#     the X.509 fallback has to verify against the store that action installed rather than the one on
+#     the SSL_CTX. The global CA (server.pem) does not sign this client's certificate and the
+#     per-SNI override (signer.pem) does, so the connection only succeeds if the per-connection store
+#     is what the fallback used. Driven by curl rather than an edge, because an ATS hop toward an IP
+#     literal sends no SNI and so could never match the action. This covers the per-connection store
+#     plumbing; the failure paths that can leave it stale need the rebuild itself to fail and are not
+#     reachable from a test.
+parent_sni_ca = make_parent(
+    "parent_sni_ca",
+    rpk_enabled=True,
+    client_rpk_ca_file="server.pubkey.pem",
+    client_cert_level=2,
+    client_ca_file="server.pem",
+    sni_client_ca_file="signer.pem")
+parent_sni_ca.addSSLfile("ssl/signed-foo.pem")
+parent_sni_ca.addSSLfile("ssl/signed-foo.key")
+
 tr = Test.AddTestRun("RPK negotiated and pin matches")
 tr.MakeCurlCommand('-k https://127.0.0.1:{0}/'.format(edge_ok.Variables.ssl_port))
 tr.Processes.Default.ReturnCode = 0
@@ -401,6 +436,12 @@ tr.Processes.Default.StartBefore(parent_mtls_untrusted)
 tr.Processes.Default.StartBefore(edge_mtls_untrusted)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
     'origin response', 'a client cert from an untrusted CA must not authenticate')
+# Assert on the reason, not just the outcome: without this the scenario would also pass if the edge
+# sent no client certificate at all, in which case the empty-chain early return fires and the
+# hand-rolled verification under test never runs.
+parent_mtls_untrusted.Disk.traffic_out.Content = Testers.ContainsExpression(
+    'client certificate chain verification failed: unable to get local issuer certificate',
+    'the chain must be rejected for having no trusted issuer')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_mtls_untrusted
 tr.StillRunningAfter += edge_mtls_untrusted
@@ -412,6 +453,11 @@ tr.Processes.Default.StartBefore(parent_mtls_purpose)
 tr.Processes.Default.StartBefore(edge_mtls_purpose)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
     'origin response', 'a serverAuth-only cert must not authenticate as a client')
+# The purpose check is the whole point of this scenario: this chain verifies, so a generic failure
+# here would mean something else rejected it and X509_STORE_CTX_set_default() went untested.
+parent_mtls_purpose.Disk.traffic_out.Content = Testers.ContainsExpression(
+    'client certificate chain verification failed: unsupported certificate purpose',
+    'the chain must be rejected on purpose alone, not on its signatures')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_mtls_purpose
 tr.StillRunningAfter += edge_mtls_purpose
@@ -422,6 +468,8 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.StartBefore(edge_fallback_untrusted)
 tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
     'origin response', 'an origin chain that does not verify must not be served under ENFORCED')
+edge_fallback_untrusted.Disk.diags_log.Content = Testers.ContainsExpression(
+    'Core server certificate verification failed.*Action=Terminate', 'ENFORCED must terminate on the chain verdict itself')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_x509
 tr.StillRunningAfter += edge_fallback_untrusted
@@ -437,3 +485,20 @@ edge_fallback_enforced.Disk.traffic_out.Content = Testers.ExcludesExpression(
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_x509
 tr.StillRunningAfter += edge_fallback_enforced
+
+tr = Test.AddTestRun("X.509 fallback honors a per-SNI client CA override on an RPK-enabled entry")
+tr.MakeCurlCommand(
+    "-k --resolve 'random.server.com:{0}:127.0.0.1' --cert {1}/signed-foo.pem --key {1}/signed-foo.key"
+    " https://random.server.com:{0}/".format(parent_sni_ca.Variables.ssl_port, parent_sni_ca.Variables.SSLDir))
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.StartBefore(parent_sni_ca)
+tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+    'origin response', 'a client cert issued by the per-SNI CA override must authenticate')
+# The global CA cannot verify this chain, so reaching the origin proves the fallback used the store
+# the verify_client action installed. A missing store fails closed instead.
+parent_sni_ca.Disk.diags_log.Content = Testers.ExcludesExpression(
+    'no per-connection client CA store', 'the per-connection store must be readable from the callback')
+parent_sni_ca.Disk.traffic_out.Content = Testers.ExcludesExpression(
+    'client certificate chain verification failed', 'the override must verify this chain')
+tr.StillRunningAfter = server
+tr.StillRunningAfter += parent_sni_ca
