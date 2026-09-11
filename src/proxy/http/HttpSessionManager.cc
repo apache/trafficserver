@@ -48,8 +48,20 @@ DbgCtl dbg_ctl_http_ss{"http_ss"};
 bool
 validate_session_origin_cert(HttpSM *sm, PoolableSession *session)
 {
-  return !session->is_multiplexing() ||
-         validate_server_certificate_hostname(session->get_netvc(), sm->get_outbound_sni_for_cert_verification());
+  if (!session->is_multiplexing()) {
+    return true;
+  }
+
+  NetVConnection *netvc = session->get_netvc();
+  if (origin_pinned_raw_public_key(netvc)) {
+    // A raw public key carries no SAN, so the next hop's pin set stood in for the name check. That
+    // set belongs to the sni.yaml entry the outbound SNI selected, so this session is only reusable
+    // for a request that would send the same SNI. Deliberately not gated on the SNI match mask or
+    // on NAME being in verify_server_properties: the pin set is the whole of what authenticated
+    // this origin.
+    return ServerSessionPool::validate_sni(sm, netvc);
+  }
+  return validate_server_certificate_hostname(netvc, sm->get_outbound_sni_for_cert_verification());
 }
 
 } // end anonymous namespace

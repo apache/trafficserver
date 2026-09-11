@@ -407,6 +407,23 @@ ssl_client_custom_verify_callback(SSL *ssl, uint8_t *out_alert)
 #endif
 
 bool
+origin_pinned_raw_public_key([[maybe_unused]] NetVConnection *netvc)
+{
+#if TS_USE_RPK
+  if (netvc == nullptr || netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
+    return false;
+  }
+
+  auto *tls = netvc->get_service<TLSBasicSupport>();
+  auto *ssl = tls != nullptr ? tls->get_tls_handle() : nullptr;
+
+  return ssl != nullptr && SSL_get0_peer_rpk(ssl) != nullptr;
+#else
+  return false;
+#endif
+}
+
+bool
 validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname)
 {
   if (netvc == nullptr || hostname.empty() || netvc->options.verifyServerPolicy == YamlSNIConfig::Policy::DISABLED) {
@@ -418,21 +435,6 @@ validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hos
   if (ssl == nullptr) {
     return true;
   }
-
-#if TS_USE_RPK
-  // A raw public key carries no SAN, so the next hop's pin set stands in for the name check. That
-  // pin set is per sni.yaml entry, and this function gates origin session-pool reuse, so a
-  // connection authenticated this way is only reusable for the name it was established for.
-  if (SSL_get0_peer_rpk(ssl) != nullptr) {
-    std::string_view established{netvc->options.sni_servername.get() != nullptr ? netvc->options.sni_servername.get() : ""};
-    if (established.size() == hostname.size() && strncasecmp(established.data(), hostname.data(), hostname.size()) == 0) {
-      return true;
-    }
-    Dbg(dbg_ctl_ssl_verify, "Refusing to reuse a raw public key session established for '%.*s' on a request for '%.*s'",
-        static_cast<int>(established.size()), established.data(), static_cast<int>(hostname.size()), hostname.data());
-    return false;
-  }
-#endif
 
   bool check_name =
     static_cast<uint8_t>(netvc->options.verifyServerProperties) & static_cast<uint8_t>(YamlSNIConfig::Property::NAME_MASK);
