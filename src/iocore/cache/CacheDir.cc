@@ -37,10 +37,6 @@
 #include <unordered_map>
 #include <utility>
 
-#ifdef LOOP_CHECK_MODE
-#define DIR_LOOP_THRESHOLD 1000
-#endif
-
 namespace
 {
 
@@ -260,13 +256,9 @@ Directory::bucket_length(Dir *b, int s)
   Dir *e   = b;
   int  i   = 0;
   Dir *seg = this->get_segment(s);
-#ifdef LOOP_CHECK_MODE
-  if (this->bucket_loop_fix(b, s))
-    return 1;
-#endif
   while (e) {
     i++;
-    if (i > 100) {
+    if (i > this->max_bucket_depth()) {
       return -1;
     }
     e = next_dir(e, seg);
@@ -310,18 +302,14 @@ inline void
 dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
 {
   Dir *e = b, *p = nullptr;
-  Dir *seg = stripe->directory.get_segment(s);
-#ifdef LOOP_CHECK_MODE
-  int loop_count = 0;
-#endif
+  Dir *seg        = stripe->directory.get_segment(s);
+  int  loop_count = 0;
   do {
-#ifdef LOOP_CHECK_MODE
-    loop_count++;
-    if (loop_count > DIR_LOOP_THRESHOLD) {
-      if (stripe->directory.bucket_loop_fix(b, s))
-        return;
+    // Past the longest legitimate chain, so this is provably a cycle.
+    if (++loop_count > stripe->directory.max_bucket_depth()) {
+      stripe->directory.bucket_loop_fix(b, s);
+      return;
     }
-#endif
     if (!stripe->dir_valid(e) || !dir_offset(e)) {
       if (dbg_ctl_dir_clean.on()) {
         Dbg(dbg_ctl_dir_clean, "cleaning Stripe:%s: %p tag %X boffset %" PRId64 " b %p p %p bucket len %d", stripe->hash_text.get(),
@@ -372,19 +360,6 @@ Directory::clear_range(off_t start, off_t end, StripeSM *stripe)
     }
   }
   this->cleanup(stripe);
-}
-
-void
-check_bucket_not_contains(Dir *b, Dir *e, Dir *seg)
-{
-  Dir *x = b;
-  do {
-    if (x == e) {
-      break;
-    }
-    x = next_dir(x, seg);
-  } while (x);
-  ink_assert(!x);
 }
 
 void
@@ -450,19 +425,25 @@ int
 Directory::probe(const CacheKey *key, StripeSM *stripe, Dir *result, Dir **last_collision)
 {
   ink_assert(stripe->mutex->thread_holding == this_ethread());
-  int  s   = key->slice32(0) % this->segments;
-  int  b   = key->slice32(1) % this->buckets;
-  Dir *seg = this->get_segment(s);
-  Dir *e = nullptr, *p = nullptr, *collision = *last_collision;
+  int  s         = key->slice32(0) % this->segments;
+  int  b         = key->slice32(1) % this->buckets;
+  Dir *seg       = this->get_segment(s);
+  Dir *e         = nullptr;
+  Dir *p         = nullptr;
+  Dir *collision = *last_collision;
   CHECK_DIR(d);
-#ifdef LOOP_CHECK_MODE
-  if (this->bucket_loop_fix(dir_bucket(b, seg), s))
-    return 0;
-#endif
 Lagain:
   e = dir_bucket(b, seg);
   if (dir_offset(e)) {
+    int loop_count = 0;
     do {
+      // Past the longest legitimate chain, so this is provably a cycle. probe() is a reader: it neither repairs nor
+      // walks on, and the report is throttled because the loop lives until a writer repairs it, so every lookup that
+      // hashes to this bucket lands here.
+      if (++loop_count > this->max_bucket_depth()) {
+        SiteThrottledWarning("directory loop on '%s' segment %d bucket %d, abandoning probe", stripe->hash_text.get(), s, b);
+        return 0;
+      }
       if (dir_compare_tag(e, key)) {
         ink_assert(dir_offset(e));
         // Bug: 51680. Need to check collision before checking
@@ -567,7 +548,15 @@ Llink:
   do {
     prev = last;
     last = next_dir(last, seg);
-  } while (last && (++l <= this->buckets * DIR_DEPTH));
+    // Past the longest legitimate chain, so this is provably a cycle. This is the only walk insert() makes, so it is
+    // where a writer meets one: repair and start over rather than linking into the cycle.
+    if (++l > this->max_bucket_depth()) {
+      if (this->bucket_loop_fix(b, s)) {
+        goto Lagain;
+      }
+      break;
+    }
+  } while (last);
 
   dir_set_next(e, 0);
   dir_set_next(prev, dir_to_offset(e, seg));
@@ -598,10 +587,6 @@ Directory::overwrite(const CacheKey *key, StripeSM *stripe, Dir *dir, Dir *overw
   Dir         *b   = dir_bucket(bi, seg);
   unsigned int t   = DIR_MASK_TAG(key->slice32(2));
   int          res = 1;
-#ifdef LOOP_CHECK_MODE
-  int  loop_count    = 0;
-  bool loop_possible = true;
-#endif
   CHECK_DIR(d);
 
   ink_assert(static_cast<unsigned int>(dir_approx_size(dir)) <=
@@ -610,16 +595,16 @@ Lagain:
   // find entry to overwrite
   e = b;
   if (dir_offset(e)) {
+    int loop_count = 0;
     do {
-#ifdef LOOP_CHECK_MODE
-      loop_count++;
-      if (loop_count > DIR_LOOP_THRESHOLD && loop_possible) {
-        if (this->bucket_loop_fix(b, s)) {
-          loop_possible = false;
-          goto Lagain;
+      // Past the longest legitimate chain, so this is provably a cycle. Repair and restart; bail if
+      // the repair somehow disagrees, rather than resuming an unbounded walk.
+      if (++loop_count > this->max_bucket_depth()) {
+        if (!this->bucket_loop_fix(b, s)) {
+          return 0;
         }
+        goto Lagain;
       }
-#endif
       if (dir_tag(e) == t && dir_offset(e) == dir_offset(overwrite)) {
         goto Lfill;
       }
@@ -657,10 +642,11 @@ Llink:
 
   l    = 0;
   last = b;
+  // No repair here, unlike insert(): the walk above already proved this chain finite. The cap is a backstop.
   do {
     prev = last;
     last = next_dir(last, seg);
-  } while (last && (++l <= this->buckets * DIR_DEPTH));
+  } while (last && (++l <= this->max_bucket_depth()));
 
   dir_set_next(e, 0);
   dir_set_next(prev, dir_to_offset(e, seg));
@@ -683,21 +669,17 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
   int  b   = key->slice32(1) % this->buckets;
   Dir *seg = this->get_segment(s);
   Dir *e = nullptr, *p = nullptr;
-#ifdef LOOP_CHECK_MODE
-  int loop_count = 0;
-#endif
   CHECK_DIR(vol);
 
   e = dir_bucket(b, seg);
   if (dir_offset(e)) {
+    int loop_count = 0;
     do {
-#ifdef LOOP_CHECK_MODE
-      loop_count++;
-      if (loop_count > DIR_LOOP_THRESHOLD) {
-        if (this->bucket_loop_fix(dir_bucket(b, seg), s))
-          return 0;
+      // Past the longest legitimate chain, so this is provably a cycle.
+      if (++loop_count > this->max_bucket_depth()) {
+        this->bucket_loop_fix(dir_bucket(b, seg), s);
+        return 0;
       }
-#endif
       int64_t offset = dir_offset(e);
       if (dir_compare_tag(e, key) && offset == dir_offset(del)) {
         ts::Metrics::Gauge::decrement(cache_rsb.direntries_used);
