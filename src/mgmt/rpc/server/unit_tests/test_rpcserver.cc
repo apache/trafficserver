@@ -185,12 +185,15 @@ struct RPCServerTestListener : Catch::EventListenerBase {
                  R"(",  "backlog": 5,"max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000 }}})"};
     YAML::Node configNode = YAML::Load(confStr);
     serverConfig.load(configNode["rpc"]);
+    // Report this loudly: otherwise every socket test just fails later with a
+    // confusing "no such file" on the socket path, which is especially noisy
+    // now that each test case runs as its own process.
     try {
       jsonrpcServer = new rpc::RPCServer(serverConfig);
 
       jsonrpcServer->start_thread();
     } catch (std::exception const &ex) {
-      Dbg(dbg_ctl, "Oops: %s", ex.what());
+      std::fprintf(stderr, "Failed to start the JSONRPC test server on %s: %s\n", sockPath.c_str(), ex.what());
     }
   }
 

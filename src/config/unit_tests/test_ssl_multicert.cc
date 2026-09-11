@@ -23,9 +23,9 @@
 
 #include "config/ssl_multicert.h"
 
-#include <filesystem>
-#include <fstream>
 #include <utility>
+
+#include "config_test_temp_file.h"
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -34,28 +34,7 @@ using namespace config;
 
 namespace
 {
-// Helper to create a temporary file with content.
-class TempFile
-{
-public:
-  TempFile(std::string const &filename, std::string const &content)
-  {
-    _path = std::filesystem::temp_directory_path() / filename;
-    std::ofstream ofs(_path);
-    ofs << content;
-  }
-
-  ~TempFile() { std::filesystem::remove(_path); }
-
-  std::string
-  path() const
-  {
-    return _path.string();
-  }
-
-private:
-  std::filesystem::path _path;
-};
+using config::testing::TempFile;
 
 // Helper to parse content via temp file.
 ConfigResult<SSLMultiCertConfig>
