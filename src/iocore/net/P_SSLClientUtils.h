@@ -44,6 +44,15 @@ SSL_CTX *SSLCreateClientContext(const struct SSLConfigParams *params, const char
 int  verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 bool validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname);
 
+/** @return true if this origin connection authenticated with an RFC 7250 raw public key.
+
+    Such a connection was vouched for by the next hop's pin set rather than by a certificate, and
+    that set comes from the sni.yaml entry the outbound SNI selected. Callers gating origin session
+    reuse must therefore limit it to a request that would select the same entry. Always false when
+    server verification is disabled for the connection, since nothing was pinned.
+ */
+bool origin_pinned_raw_public_key(NetVConnection *netvc);
+
 #if TS_USE_RPK
 /** Configure @a ssl to offer and/or pin RFC 7250 raw public keys for an outbound connection.
 
