@@ -2800,6 +2800,24 @@ Cache Control
    You can monitor this metric and know when its safe to turn this feature off
    as the cache wraps around.
 
+   Two costs come with enabling this. Every cache miss performs a second
+   lookup, so a tier with a low hit ratio roughly doubles its cache lookup
+   load for the duration. And an object found under the previous key is
+   revalidated *without* conditional headers, because a ``304`` cannot be
+   applied to it: the write that would carry the update is a create under the
+   new key rather than an update of the old one. The origin therefore returns
+   the full response, which is stored under the new key. The copy under the
+   previous key is left in place to age out on its own, since nothing reports
+   that the new object reached disk; it stops being read as soon as the new key
+   resolves, so both keys briefly hold the object. Each object pays this once,
+   but on a large cache the aggregate is a bandwidth event worth sizing before
+   enabling the setting in production.
+
+   Objects whose path contains a ``;`` are unaffected. The previous algorithm
+   hashed the path and the deprecated ``;params`` segment as separate
+   components, which produces the same string the current algorithm produces
+   for such a path, so no compatibility lookup is issued for them.
+
 .. ts:cv:: CONFIG proxy.config.http.cache.range.lookup INT 1
    :overridable:
 

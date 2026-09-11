@@ -101,6 +101,13 @@ public:
   void             set_type_code(unsigned int typecode);
   std::string_view get_params() const noexcept;
   void             set_params(HdrHeap *heap, std::string_view value, bool copy_string);
+  /** Whether the path carries a deprecated ";params" segment.
+
+    ATS 9.2 and earlier split "/path;params" into separate path and params
+    components. That parsing was removed, so the segment now stays inside the
+    path. Reproducing a 9.2 cache key has to know which form it is looking at.
+  */
+  bool             has_path_params() const noexcept;
   std::string_view get_query() const noexcept;
   void             set_query(HdrHeap *heap, std::string_view value, bool copy_string);
   std::string_view get_fragment() const noexcept;
@@ -261,6 +268,7 @@ public:
   char *string_get_buf(char *dstbuf, int dsbuf_size, int *length = nullptr) const;
   void  hash_get(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
   void  hash_get92(CryptoHash *hash, bool ignore_query = false, cache_generation_t generation = -1) const;
+  bool  has_path_params() const noexcept;
   void  host_hash_get(CryptoHash *hash) const;
 
   std::string_view scheme_get() const noexcept;
@@ -486,6 +494,22 @@ URL::hash_get92(CryptoHash *hash, bool ignore_query, cache_generation_t generati
 {
   ink_assert(valid());
   url_CryptoHash_get_92(m_url_impl, hash, ignore_query, generation);
+}
+
+/*-------------------------------------------------------------------------
+  -------------------------------------------------------------------------*/
+
+inline bool
+URLImpl::has_path_params() const noexcept
+{
+  return m_ptr_path != nullptr && memchr(m_ptr_path, ';', m_len_path) != nullptr;
+}
+
+inline bool
+URL::has_path_params() const noexcept
+{
+  ink_assert(valid());
+  return m_url_impl->has_path_params();
 }
 
 /*-------------------------------------------------------------------------
