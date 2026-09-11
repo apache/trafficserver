@@ -23,10 +23,8 @@
 
 #include <plugin.h>
 #include <context.h>
+#include "fingerprint.h"
 #include "method.h"
-#include "ja4.h"
-#include "datasource.h"
-#include "tls_client_hello_summary.h"
 
 namespace ja4
 {
@@ -34,17 +32,12 @@ namespace ja4
 void
 on_client_hello(JAxContext *ctx, TSVConn vconn)
 {
-  char          fingerprint[ja4::FINGERPRINT_LENGTH];
   TSClientHello ch = TSVConnClientHelloGet(vconn);
 
   if (!ch) {
     Dbg(dbg_ctl, "Could not get TSClientHello object.");
   } else {
-    TLSClientHelloSummary datasource{ja4::Datasource::Protocol::TLS, ch};
-
-    generate_fingerprint(fingerprint, datasource);
-
-    ctx->set_fingerprint({fingerprint, ja4::FINGERPRINT_LENGTH});
+    ctx->set_fingerprint(fingerprint(ch));
   }
 }
 

@@ -36,10 +36,10 @@ foreach(_m IN LISTS ENABLE_JAX_METHODS)
   set(_plugin_srcs ${_srcs})
   set(_test_srcs ${_srcs})
   list(FILTER _plugin_srcs EXCLUDE REGEX "/test\\.cc$")
-  # method.cc and tls_client_hello_summary.cc bind algorithm logic to ATS APIs (TSClientHello
+  # method.cc, fingerprint.cc, and tls_client_hello_summary.cc bind algorithm logic to ATS APIs (TSClientHello
   # etc.) that the test binary does not link; everything else is pure algorithm/data and is
   # safe to include in test_jax.
-  list(FILTER _test_srcs EXCLUDE REGEX "/(method|tls_client_hello_summary)\\.cc$")
+  list(FILTER _test_srcs EXCLUDE REGEX "/(fingerprint|method|tls_client_hello_summary)\\.cc$")
   list(APPEND _jax_plugin_method_sources ${_plugin_srcs})
   list(APPEND _jax_test_method_sources ${_test_srcs})
   string(TOUPPER ${_m} _m_upper)
@@ -63,7 +63,7 @@ verify_global_plugin(jax_fingerprint)
 verify_remap_plugin(jax_fingerprint)
 
 if(BUILD_TESTING)
-  add_executable(test_jax common/utils.cc ${_jax_test_method_sources})
+  add_executable(test_jax common/utils.cc fingerprint_registry_test.cc ${_jax_test_method_sources})
   target_link_libraries(test_jax PRIVATE Catch2::Catch2WithMain OpenSSL::Crypto OpenSSL::SSL)
   target_include_directories(test_jax BEFORE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_compile_definitions(test_jax PRIVATE ${_jax_method_defs})
