@@ -2141,7 +2141,7 @@ HttpSM::state_read_server_response_header(int event, void *data)
 
     // Sample while this transaction still owns the origin connection. By log time,
     // the connection may have been closed or released for reuse.
-    if (state == ParseResult::DONE && t_state.http_config_param->log_server_tcp_info && Log::transaction_logging_enabled() &&
+    if (state == ParseResult::DONE && t_state.txn_conf->log_server_tcp_info && Log::transaction_logging_enabled() &&
         t_state.api_info.logging_enabled) {
       NetVConnection *server_vc = server_txn->get_netvc();
       if (server_vc != nullptr) {

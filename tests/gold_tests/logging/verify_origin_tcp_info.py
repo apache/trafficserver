@@ -22,11 +22,16 @@ import time
 
 def verify(log_path: Path, mode: str) -> None:
     expected_keys = {
-        'disabled': {'miss'},
-        'enabled': {'miss', 'hit', 'guard', 'oversized', 'malformed'},
+        'disabled': {'miss', 'remap-enabled', 'rewrite-enabled', 'miss-after-override'},
+        'enabled': {'miss', 'hit', 'guard', 'oversized', 'malformed', 'remap-disabled', 'rewrite-disabled', 'miss-after-override'},
         'retry': {'retry'},
         'redirect': {'prime', 'redirect-response', 'redirect'},
     }[mode]
+    expected_samples = {
+        'disabled': {'remap-enabled', 'rewrite-enabled'},
+        'enabled': {'miss', 'miss-after-override'},
+        'redirect': {'prime', 'redirect-response'},
+    }.get(mode, set())
     # Wait for the asynchronous log writer, rather than sleeping a fixed time.
     deadline = time.monotonic() + 15
     while True:
@@ -58,7 +63,8 @@ def verify(log_path: Path, mode: str) -> None:
     if set(rows) != expected_keys:
         raise AssertionError(f'Unexpected transaction IDs: {rows}')
 
-    for key in expected_keys & {'miss', 'guard', 'prime'}:
+    for key in expected_keys & {'miss', 'guard', 'prime', 'remap-enabled', 'remap-disabled', 'rewrite-enabled', 'rewrite-disabled',
+                                'miss-after-override'}:
         if rows[key][0] != 'TCP_MISS':
             raise AssertionError(f'{key} must reach the origin: {rows[key]}')
     for key in expected_keys & {'hit', 'redirect'}:
@@ -66,7 +72,7 @@ def verify(log_path: Path, mode: str) -> None:
             raise AssertionError(f'Expected a cache hit: {rows[key]}')
 
     for key, (_, values) in rows.items():
-        if (mode == 'enabled' and key == 'miss') or (mode == 'redirect' and key in {'prime', 'redirect-response'}):
+        if key in expected_samples:
             rtt, rttvar, retrans, cwnd = values
             if not (rtt > 0 and rttvar >= 0 and retrans >= 0 and cwnd > 0):
                 raise AssertionError(f'Expected a valid origin TCP_INFO sample: {values}')

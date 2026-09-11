@@ -2435,9 +2435,16 @@ Security
 
 .. ts:cv:: CONFIG proxy.config.http.log_server_tcp_info INT 0
    :reloadable:
+   :overridable:
 
    Enables sampling of ``TCP_INFO`` on the origin connection, so that the round
    trip time to the origin can be logged.
+
+   This can be overridden per transaction using ``conf_remap`` or
+   ``header_rewrite`` before the origin response header is parsed. For example,
+   leave the global value at ``0`` and enable collection on a selected remap::
+
+      map http://cdn.example/ http://origin.example/ @plugin=conf_remap.so @pparam=proxy.config.http.log_server_tcp_info=1
 
    When this is enabled, |TS| reads ``TCP_INFO`` from the origin socket at the
    point it successfully parses the origin response header, and keeps the values for

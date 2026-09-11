@@ -35,6 +35,11 @@ autest:
     remap_config:
     - from: 'http://origin-tcp-info.test/'
       to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+    - from: 'http://disabled-origin-tcp-info.test/'
+      to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+      plugins:
+      - name: conf_remap.so
+        args: ['proxy.config.http.log_server_tcp_info=0']
     copy_to_config_dir:
     - origin-tcp-info.rewrite.config
     plugin_config:
@@ -117,6 +122,43 @@ sessions:
 
     proxy-response:
       status: 502
+
+  - client-request:
+      method: GET
+      url: /remap-disabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, disabled-origin-tcp-info.test]
+        - [uuid, remap-disabled]
+    server-response: *origin_response
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: GET
+      url: /rewrite-disabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, rewrite-disabled]
+    server-response: *origin_response
+    proxy-response:
+      status: 200
+
+  # A later request on the same client connection must retain the global default.
+  - client-request:
+      method: GET
+      url: /default-after-override
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, miss-after-override]
+    server-response: *origin_response
+    proxy-response:
+      status: 200
 
   - client-request:
       method: GET

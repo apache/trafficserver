@@ -18,7 +18,7 @@ meta:
   version: "1.0"
 
 autest:
-  description: 'Verify all origin TCP_INFO fields are unavailable with the default configuration'
+  description: 'Verify default-disabled origin TCP_INFO can be enabled per transaction'
   server:
     name: server_disabled
   client:
@@ -34,6 +34,16 @@ autest:
     remap_config:
     - from: 'http://origin-tcp-info.test/'
       to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+    - from: 'http://enabled-origin-tcp-info.test/'
+      to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+      plugins:
+      - name: conf_remap.so
+        args: ['proxy.config.http.log_server_tcp_info=1']
+    copy_to_config_dir:
+    - origin-tcp-info.rewrite.config
+    plugin_config:
+    - name: header_rewrite.so
+      args: [origin-tcp-info.rewrite.config]
     logging_yaml:
       logging:
         formats:
@@ -54,10 +64,44 @@ sessions:
         fields:
         - [Host, origin-tcp-info.test]
         - [uuid, miss]
-    server-response:
+    server-response: &origin_response
       status: 200
       headers:
         fields:
         - [Content-Length, 16]
-    proxy-response:
+    proxy-response: &proxy_response
       status: 200
+
+  - client-request:
+      method: GET
+      url: /remap-enabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, enabled-origin-tcp-info.test]
+        - [uuid, remap-enabled]
+    server-response: *origin_response
+    proxy-response: *proxy_response
+
+  - client-request:
+      method: GET
+      url: /rewrite-enabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, rewrite-enabled]
+    server-response: *origin_response
+    proxy-response: *proxy_response
+
+  # A later request on the same client connection must retain the global default.
+  - client-request:
+      method: GET
+      url: /default-after-override
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, miss-after-override]
+    server-response: *origin_response
+    proxy-response: *proxy_response
