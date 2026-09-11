@@ -143,6 +143,11 @@ ssl_rpk_enabled: 1|0 (optional)
   later, or a sufficiently recent BoringSSL). If this key is set on a build without that support,
   |TS| logs a warning and ignores it.
 
+  Not supported for HTTP/3. QUIC connections select their certificate through a separate callback
+  that does not apply per-connection certificate type negotiation, so an HTTP/3 connection keeps
+  whatever certificate types the default (``dest_ip: "*"``) entry configured. Setting this key on a
+  non-default entry therefore has no effect on HTTP/3, and no warning is logged.
+
 ssl_client_rpk_ca_name: FILENAME (optional)
   The name of the file containing the raw public key(s) (RFC 7250) that a client is trusted to
   present for mutual TLS on this entry, PEM-encoded. *FILENAME* is resolved relative to the
@@ -159,6 +164,11 @@ ssl_client_rpk_ca_name: FILENAME (optional)
   a non-zero :ts:cv:`proxy.config.ssl.client.certification_level` or a
   :file:`sni.yaml` ``verify_client`` action covering the connection. With neither, the entry
   advertises raw public key acceptance, no credential is ever requested, and nothing is pinned.
+
+  Not supported for HTTP/3, for the reason given under ``ssl_rpk_enabled`` above. A ``verify_client``
+  action does not reach an HTTP/3 connection either, so on HTTP/3 the only way to request a client
+  credential at all is a non-zero
+  :ts:cv:`proxy.config.ssl.client.certification_level` on the default entry.
 
   Only available in builds linked against a TLS library with RFC 7250 support; see
   ``ssl_rpk_enabled`` above.
