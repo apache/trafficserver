@@ -65,12 +65,14 @@ TLSCertSwitchSupport::_clear()
 }
 
 int
-TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType)
+TLSCertSwitchSupport::selectCertificate(SSL *ssl, SSLCertContextType ctxType, const char *servername)
 {
   shared_SSL_CTX ctx = nullptr;
 
-  const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-  bool        found      = true;
+  if (servername == nullptr) {
+    servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  }
+  bool found = true;
 
   Dbg(dbg_ctl_ssl, "set_context_cert ssl=%p server=%s", ssl, servername);
 

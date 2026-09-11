@@ -43,21 +43,24 @@ constexpr swoc::Errata::Severity ERRATA_WARN_SEV{static_cast<swoc::Errata::sever
 constexpr swoc::Errata::Severity ERRATA_ERROR_SEV{static_cast<swoc::Errata::severity_type>(DL_Error)};
 
 // YAML key names.
-constexpr char KEY_SSL_CERT_NAME[]      = "ssl_cert_name";
-constexpr char KEY_DEST_IP[]            = "dest_ip";
-constexpr char KEY_SSL_KEY_NAME[]       = "ssl_key_name";
-constexpr char KEY_SSL_CA_NAME[]        = "ssl_ca_name";
-constexpr char KEY_SSL_OCSP_NAME[]      = "ssl_ocsp_name";
-constexpr char KEY_SSL_KEY_DIALOG[]     = "ssl_key_dialog";
-constexpr char KEY_DEST_FQDN[]          = "dest_fqdn";
-constexpr char KEY_SSL_TICKET_ENABLED[] = "ssl_ticket_enabled";
-constexpr char KEY_SSL_TICKET_NUMBER[]  = "ssl_ticket_number";
-constexpr char KEY_ACTION[]             = "action";
-constexpr char KEY_SSL_MULTICERT[]      = "ssl_multicert";
+constexpr char KEY_SSL_CERT_NAME[]          = "ssl_cert_name";
+constexpr char KEY_DEST_IP[]                = "dest_ip";
+constexpr char KEY_SSL_KEY_NAME[]           = "ssl_key_name";
+constexpr char KEY_SSL_CA_NAME[]            = "ssl_ca_name";
+constexpr char KEY_SSL_OCSP_NAME[]          = "ssl_ocsp_name";
+constexpr char KEY_SSL_KEY_DIALOG[]         = "ssl_key_dialog";
+constexpr char KEY_DEST_FQDN[]              = "dest_fqdn";
+constexpr char KEY_SSL_TICKET_ENABLED[]     = "ssl_ticket_enabled";
+constexpr char KEY_SSL_TICKET_NUMBER[]      = "ssl_ticket_number";
+constexpr char KEY_SSL_RPK_ENABLED[]        = "ssl_rpk_enabled";
+constexpr char KEY_SSL_CLIENT_RPK_CA_NAME[] = "ssl_client_rpk_ca_name";
+constexpr char KEY_ACTION[]                 = "action";
+constexpr char KEY_SSL_MULTICERT[]          = "ssl_multicert";
 
 std::set<std::string> const valid_keys = {
-  KEY_SSL_CERT_NAME,  KEY_DEST_IP,   KEY_SSL_KEY_NAME,       KEY_SSL_CA_NAME,       KEY_SSL_OCSP_NAME,
-  KEY_SSL_KEY_DIALOG, KEY_DEST_FQDN, KEY_SSL_TICKET_ENABLED, KEY_SSL_TICKET_NUMBER, KEY_ACTION,
+  KEY_SSL_CERT_NAME,     KEY_DEST_IP,        KEY_SSL_KEY_NAME,    KEY_SSL_CA_NAME,
+  KEY_SSL_OCSP_NAME,     KEY_SSL_KEY_DIALOG, KEY_DEST_FQDN,       KEY_SSL_TICKET_ENABLED,
+  KEY_SSL_TICKET_NUMBER, KEY_ACTION,         KEY_SSL_RPK_ENABLED, KEY_SSL_CLIENT_RPK_CA_NAME,
 };
 
 /**
@@ -128,6 +131,8 @@ emit_entry(YAML::Emitter &emitter, config::SSLMultiCertEntry const &entry)
   write_field(KEY_ACTION, entry.action);
   write_int_field(KEY_SSL_TICKET_ENABLED, entry.ssl_ticket_enabled);
   write_int_field(KEY_SSL_TICKET_NUMBER, entry.ssl_ticket_number);
+  write_int_field(KEY_SSL_RPK_ENABLED, entry.ssl_rpk_enabled);
+  write_field(KEY_SSL_CLIENT_RPK_CA_NAME, entry.ssl_client_rpk_ca_name);
 
   emitter << YAML::EndMap;
 }
@@ -174,6 +179,14 @@ template <> struct convert<config::SSLMultiCertEntry> {
 
     if (node[KEY_SSL_TICKET_NUMBER]) {
       entry.ssl_ticket_number = node[KEY_SSL_TICKET_NUMBER].as<int>();
+    }
+
+    if (node[KEY_SSL_RPK_ENABLED]) {
+      entry.ssl_rpk_enabled = node[KEY_SSL_RPK_ENABLED].as<int>();
+    }
+
+    if (node[KEY_SSL_CLIENT_RPK_CA_NAME]) {
+      entry.ssl_client_rpk_ca_name = node[KEY_SSL_CLIENT_RPK_CA_NAME].as<std::string>();
     }
 
     if (node[KEY_ACTION]) {
@@ -330,6 +343,10 @@ SSLMultiCertParser::parse_legacy(std::string_view content)
         entry.ssl_ticket_enabled = swoc::svtoi(value);
       } else if (key == KEY_SSL_TICKET_NUMBER) {
         entry.ssl_ticket_number = swoc::svtoi(value);
+      } else if (key == KEY_SSL_RPK_ENABLED) {
+        entry.ssl_rpk_enabled = swoc::svtoi(value);
+      } else if (key == KEY_SSL_CLIENT_RPK_CA_NAME) {
+        entry.ssl_client_rpk_ca_name = value;
       } else if (unknown_keys.insert(key).second) {
         errata.note(ERRATA_NOTE_SEV, "Ignoring unknown ssl_multicert key '{}' in legacy format", key);
       }

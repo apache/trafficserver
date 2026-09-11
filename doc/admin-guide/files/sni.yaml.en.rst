@@ -247,6 +247,35 @@ client_sni_policy                        Outbound  Policy of SNI on outbound con
 
                                                    If not specified, the value of :ts:cv:`proxy.config.ssl.client.sni_policy` is used.
 
+client_rpk_enabled                       Outbound  Set to :code:`true` to offer a raw public key (`RFC 7250
+                                                   <https://www.rfc-editor.org/rfc/rfc7250>`_), derived from
+                                                   ``client_cert``/``client_key`` (or the global
+                                                   :ts:cv:`proxy.config.ssl.client.cert.filename` if those are not set), as an alternative
+                                                   to an X.509 certificate for this outbound connection. The raw public key is offered
+                                                   alongside the X.509 certificate, not instead of it: if the next hop does not support
+                                                   raw public keys, the connection negotiates a normal certificate exchange instead.
+
+                                                   Only available in builds linked against a TLS library with RFC 7250 support
+                                                   (OpenSSL 3.2 or later, or a sufficiently recent BoringSSL). If this key is set on a
+                                                   build without that support, |TS| logs a warning and ignores it.
+
+server_rpk_ca                            Outbound  The file containing the raw public key(s) (RFC 7250) that this next hop is trusted
+                                                   to present, PEM-encoded. The file may contain more than one key concatenated together,
+                                                   which allows an "old" and "new" key to both be trusted during a planned key rotation.
+
+                                                   If this is relative, it is relative to the path in
+                                                   :ts:cv:`proxy.config.ssl.client.CA.cert.path`.
+
+                                                   Raw public keys have no certificate chain, issuer, or subject alternative name, so
+                                                   when the next hop authenticates with one, |TS| checks the offered key against this
+                                                   trusted set instead of the usual certificate chain and hostname checks --
+                                                   ``verify_server_properties``'s :code:`NAME` check has nothing to act on for a raw
+                                                   public key. ``verify_server_policy`` still governs whether a key that does not match
+                                                   this trusted set is fatal (:code:`ENFORCED`) or only logged (:code:`PERMISSIVE`).
+
+                                                   Only available in builds linked against a TLS library with RFC 7250 support; see
+                                                   ``client_rpk_enabled`` above.
+
 http2                                    Inbound   Indicates whether the H2 protocol should be added to or removed from the
                                                    protocol negotiation list.  The valid values are :code:`on` or :code:`off`.
 
@@ -415,6 +444,15 @@ In addition ``verify_server_properties`` specifies what |TS| will check when per
   Verify both the signature and the SNI in the origin certificate.
 
 
+If ``client_rpk_enabled`` is set and the next hop authenticates with a raw public key rather than
+a certificate, ``verify_server_properties``'s :code:`NAME` check has nothing to act on -- a raw
+public key has no subject alternative name -- so ``server_rpk_ca`` (matching the offered key
+against a configured trusted set) takes its place. ``verify_server_policy`` still governs whether
+a key that is not in the trusted set is fatal, exactly as for a failed certificate check. Since
+raw public keys are negotiated alongside X.509 rather than instead of it, this only applies when
+the next hop actually offers one; a next hop that does not support RFC 7250 falls back to a normal
+certificate exchange, and the usual certificate checks apply.
+
 If ``tunnel_route`` is specified, none of the certificate verification will be done because the TLS
 negotiation will be tunneled to the upstream target, making those values irrelevant for that
 configuration item. This option is explained in more detail in :ref:`sni-routing`.
@@ -429,6 +467,19 @@ Disable HTTP/2 for ``no-http2.example.com``.
    sni:
    - fqdn: no-http2.example.com
      http2: off
+
+Offer a raw public key (RFC 7250) alongside the certificate when connecting to
+``parent.example.com``, and pin the exact key it must present. The connection falls back to a
+normal certificate exchange if ``parent.example.com`` does not (yet) support raw public keys --
+the expected state throughout a rolling upgrade of that next hop, not a failure.
+
+.. code-block:: yaml
+
+   sni:
+   - fqdn: parent.example.com
+     client_rpk_enabled: true
+     server_rpk_ca: parent-rpk-trusted.pem
+     verify_server_policy: ENFORCED
 
 Require client certificate verification for ``foo.com`` and any server name ending with ``.yahoo.com``. Therefore, client
 request for a server name ending with yahoo.com (e.g., def.yahoo.com, abc.yahoo.com etc.) will cause |TS| require and verify

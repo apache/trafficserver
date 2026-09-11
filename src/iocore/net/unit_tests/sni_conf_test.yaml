@@ -62,3 +62,6 @@ sni:
 # test entry with no ip_allow (only protocol settings)
 - fqdn: noipallow.example.com
   http2: off
+# test raw public key (RFC 7250) settings
+- fqdn: rpk.com
+  client_rpk_enabled: true
