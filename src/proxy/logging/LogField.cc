@@ -987,9 +987,9 @@ LogField::marshal_fallback_default(char *buf) const
 /*-------------------------------------------------------------------------
   LogFieldList
 
-  It is ASSUMED that each element on this list has been allocated from the
-  heap with "new" and that each element is on at most ONE list.  To enforce
-  this, items are copied by default, using the copy ctor.
+  add() takes ownership of the field, so each element must be allocated from
+  the heap with "new" and must be on at most ONE list; the list deletes its
+  elements in clear().
   -------------------------------------------------------------------------*/
 LogFieldList::LogFieldList() = default;
 
@@ -1010,15 +1010,11 @@ LogFieldList::clear()
 }
 
 void
-LogFieldList::add(LogField *field, bool copy)
+LogFieldList::add(LogField *field)
 {
   ink_assert(field != nullptr);
 
-  if (copy) {
-    m_field_list.enqueue(new LogField(*field));
-  } else {
-    m_field_list.enqueue(field);
-  }
+  m_field_list.enqueue(field);
 
   if (field->type() == LogField::Type::sINT) {
     m_marshal_len += INK_MIN_ALIGN;
