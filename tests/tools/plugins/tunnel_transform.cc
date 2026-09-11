@@ -1,6 +1,12 @@
 /** @file
 
-  An example program that does a null transform of response body content.
+  Null transform plugin for request and/or response body content.
+
+  Modes (selected by plugin argument):
+    (default)      — hook at TS_HTTP_TUNNEL_START_HOOK, add both request
+                     and response transforms (original behavior)
+    request_hdr    — hook at TS_HTTP_READ_REQUEST_HDR_HOOK, add only the
+                     request transform
 
   @section license License
 
@@ -21,6 +27,7 @@
   limitations under the License.
  */
 
+#include <cstring>
 #include <stdio.h>
 #include <unistd.h>
 #include <inttypes.h>
@@ -31,10 +38,11 @@
 static const char PLUGIN_TAG[] = PLUGIN_NAME;
 static DbgCtl     plugin_ctl{PLUGIN_TAG};
 
-static int stat_ua_bytes_sent = 0; // number of bytes seen by the transform from UA to OS
-static int stat_os_bytes_sent = 0; // number of bytes seen by the transform from OS to UA
-static int stat_error         = 0;
-static int stat_test_done     = 0;
+static int  stat_ua_bytes_sent = 0; // number of bytes seen by the transform from UA to OS
+static int  stat_os_bytes_sent = 0; // number of bytes seen by the transform from OS to UA
+static int  stat_error         = 0;
+static int  stat_test_done     = 0;
+static bool request_hdr_mode   = false; // when true, hook at READ_REQUEST_HDR and request transform only
 
 typedef struct {
   TSVIO            output_vio;
@@ -99,7 +107,10 @@ handle_transform(TSCont contp, bool forward)
     data->output_buffer = TSIOBufferCreate();
     data->output_reader = TSIOBufferReaderAlloc(data->output_buffer);
     Dbg(plugin_ctl, "\tWriting %" PRId64 " bytes on VConn", TSVIONBytesGet(input_vio));
-    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, INT64_MAX);
+    // A request transform must report a real content length — INT64_MAX
+    // makes state_request_wait_for_transform_read() fail the transaction.
+    int64_t nbytes   = (request_hdr_mode && TSVIONBytesGet(input_vio) > 0) ? TSVIONBytesGet(input_vio) : INT64_MAX;
+    data->output_vio = TSVConnWrite(output_conn, contp, data->output_reader, nbytes);
     TSContDataSet(contp, data);
   }
 
@@ -267,10 +278,12 @@ static void
 transform_add(TSHttpTxn txnp)
 {
   Dbg(plugin_ctl, "Entering transform_add()");
-  TSVConn connp     = TSTransformCreate(forward_null_transform, txnp);
-  TSVConn rev_connp = TSTransformCreate(reverse_null_transform, txnp);
+  TSVConn connp = TSTransformCreate(forward_null_transform, txnp);
   TSHttpTxnHookAdd(txnp, TS_HTTP_REQUEST_TRANSFORM_HOOK, connp);
-  TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, rev_connp);
+  if (!request_hdr_mode) {
+    TSVConn rev_connp = TSTransformCreate(reverse_null_transform, txnp);
+    TSHttpTxnHookAdd(txnp, TS_HTTP_RESPONSE_TRANSFORM_HOOK, rev_connp);
+  }
 }
 
 static int
@@ -280,8 +293,10 @@ transform_plugin(TSCont /* contp ATS_UNUSED */, TSEvent event, void *edata)
 
   Dbg(plugin_ctl, "Entering transform_plugin()");
   switch (event) {
+  case TS_EVENT_HTTP_READ_REQUEST_HDR:
   case TS_EVENT_HTTP_TUNNEL_START:
-    Dbg(plugin_ctl, "\tEvent is TS_EVENT_HTTP_TUNNEL_START");
+    Dbg(plugin_ctl, "\tEvent is %s",
+        event == TS_EVENT_HTTP_TUNNEL_START ? "TS_EVENT_HTTP_TUNNEL_START" : "TS_EVENT_HTTP_READ_REQUEST_HDR");
     transform_add(txnp);
     TSHttpTxnReenable(txnp, TS_EVENT_HTTP_CONTINUE);
     return 0;
@@ -301,7 +316,7 @@ handleMsg(TSCont /* cont ATS_UNUSED */, TSEvent event, void * /* edata ATS_UNUSE
 }
 
 void
-TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
+TSPluginInit(int argc, const char **argv)
 {
   TSPluginRegistrationInfo info;
 
@@ -315,6 +330,11 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
     goto Lerror;
   }
 
+  if (argc > 1 && strcmp(argv[1], "request_hdr") == 0) {
+    request_hdr_mode = true;
+  }
+  Dbg(plugin_ctl, "mode: %s", request_hdr_mode ? "request_hdr" : "tunnel_start");
+
   stat_ua_bytes_sent =
     TSStatCreate("tunnel_transform.ua.bytes_sent", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
   stat_os_bytes_sent =
@@ -322,7 +342,11 @@ TSPluginInit(int /* argc ATS_UNUSED */, const char ** /* argv ATS_UNUSED */)
   stat_error     = TSStatCreate("tunnel_transform.error", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
   stat_test_done = TSStatCreate("tunnel_transform.test.done", TS_RECORDDATATYPE_INT, TS_STAT_NON_PERSISTENT, TS_STAT_SYNC_SUM);
 
-  TSHttpHookAdd(TS_HTTP_TUNNEL_START_HOOK, TSContCreate(transform_plugin, nullptr));
+  if (request_hdr_mode) {
+    TSHttpHookAdd(TS_HTTP_READ_REQUEST_HDR_HOOK, TSContCreate(transform_plugin, nullptr));
+  } else {
+    TSHttpHookAdd(TS_HTTP_TUNNEL_START_HOOK, TSContCreate(transform_plugin, nullptr));
+  }
   TSLifecycleHookAdd(TS_LIFECYCLE_MSG_HOOK, TSContCreate(handleMsg, TSMutexCreate()));
   return;
 
