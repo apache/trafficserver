@@ -22,10 +22,14 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <thread>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
@@ -101,6 +105,7 @@ public:
   event_handler(int event, Event * /* data ATS_UNUSED */)
   {
     this->_event = event;
+    ++this->_events_seen;
     return 0;
   }
 
@@ -110,8 +115,26 @@ public:
     return this->_event;
   }
 
+  // Delivered on an event thread, so wait for this to move rather than sleeping
+  // a fixed time when the handler must outlive the events QPACK schedules.
+  int
+  events_seen()
+  {
+    return this->_events_seen.load();
+  }
+
+  bool
+  wait_for_events(int expected)
+  {
+    for (int i = 0; i < 5000 && this->_events_seen.load() < expected; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return this->_events_seen.load() >= expected;
+  }
+
 private:
-  int _event = 0;
+  int              _event = 0;
+  std::atomic<int> _events_seen{0};
 };
 
 static int
@@ -479,9 +502,12 @@ TEST_CASE("Decoding", "[qpack-decode]")
 // the path that cares about the order those releases happen in.
 TEST_CASE("Decoding a literal header field without name reference", "[qpack-literal-decode]")
 {
-  QUICApplicationDriver  driver;
-  QPACK                 *qpack         = new QPACK(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
-  TestQPACKEventHandler *event_handler = new TestQPACKEventHandler();
+  QUICApplicationDriver driver;
+  // decode() schedules its completion event on an event thread and hands it
+  // this handler, so every decode below is waited on before anything it can
+  // reach goes out of scope.
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
 
   // Header Data Prefix: Required Insert Count 0, Delta Base 0.
   // Then 0x23: 001 N H <Name Length (3+)>, no never-index, no huffman, name of
@@ -499,7 +525,9 @@ TEST_CASE("Decoding a literal header field without name reference", "[qpack-lite
     HTTPHdr hdr;
     hdr.create(HTTPType::REQUEST);
 
-    REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, event_handler, eventProcessor.all_ethreads[0]) == 0);
+    REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
 
     MIMEField *field = hdr.field_find("abc");
 
@@ -519,7 +547,8 @@ TEST_CASE("Decoding a literal header field without name reference", "[qpack-lite
       HTTPHdr hdr;
       hdr.create(HTTPType::REQUEST);
 
-      REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, event_handler, eventProcessor.all_ethreads[0]) == 0);
+      REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+      REQUIRE(event_handler.wait_for_events(i + 1));
 
       MIMEField *field = hdr.field_find("abc");
 
