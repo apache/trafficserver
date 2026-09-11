@@ -71,10 +71,16 @@ class MIMEFieldWrapper
 {
 public:
   MIMEFieldWrapper(MIMEField *f, HdrHeap *hh, MIMEHdrImpl *impl) : _field(f), _heap(hh), _mh(impl) {}
+  MIMEFieldWrapper(HdrHeap *hh, MIMEHdrImpl *impl) : _heap(hh), _mh(impl) {}
   bool
   name_set(const char *name, int name_len)
   {
-    return _field->name_set(_heap, _mh, std::string_view{name, static_cast<std::string_view::size_type>(name_len)});
+    std::string_view name_view{name, static_cast<std::string_view::size_type>(name_len)};
+
+    if (_field == nullptr) {
+      _field = mime_field_create_for_name(_heap, _mh, name_view);
+    }
+    return _field->name_set(_heap, _mh, name_view);
   }
 
   bool
@@ -101,8 +107,14 @@ public:
     return _field;
   }
 
+  MIMEField *
+  field_get()
+  {
+    return _field;
+  }
+
 private:
-  MIMEField   *_field;
+  MIMEField   *_field = nullptr;
   HdrHeap     *_heap;
   MIMEHdrImpl *_mh;
 };
