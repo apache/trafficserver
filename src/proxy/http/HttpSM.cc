@@ -8777,6 +8777,7 @@ HttpSM::redirect_request(const char *arg_redirect_url, const int arg_redirect_le
   }
 
   t_state.redirect_info.redirect_in_process = true;
+  server_tcp_info.reset();
 
   // set the passed in location url and parse it
   URL redirectUrl;

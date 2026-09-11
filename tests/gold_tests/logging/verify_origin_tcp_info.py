@@ -25,6 +25,7 @@ def verify(log_path: Path, mode: str) -> None:
         'disabled': {'miss'},
         'enabled': {'miss', 'hit', 'guard', 'oversized', 'malformed'},
         'retry': {'retry'},
+        'redirect': {'prime', 'redirect-response', 'redirect'},
     }[mode]
     # Wait for the asynchronous log writer, rather than sleeping a fixed time.
     deadline = time.monotonic() + 15
@@ -47,6 +48,9 @@ def verify(log_path: Path, mode: str) -> None:
         if len(fields) != 6:
             raise AssertionError(f'Expected a transaction ID, cache result, and four TCP_INFO fields: {line}')
         key, cache_result, *values = fields
+        # Following a redirect emits a row before the final response row.
+        if mode == 'redirect' and cache_result == 'TCP_MISS_REDIRECT':
+            key = f'{key}-response'
         if key in rows:
             raise AssertionError(f'Duplicate transaction ID: {key}')
         rows[key] = (cache_result, [int(value) for value in values])
@@ -54,14 +58,15 @@ def verify(log_path: Path, mode: str) -> None:
     if set(rows) != expected_keys:
         raise AssertionError(f'Unexpected transaction IDs: {rows}')
 
-    for key in expected_keys & {'miss', 'guard'}:
+    for key in expected_keys & {'miss', 'guard', 'prime'}:
         if rows[key][0] != 'TCP_MISS':
             raise AssertionError(f'{key} must reach the origin: {rows[key]}')
-    if 'hit' in rows and rows['hit'][0] not in ('TCP_HIT', 'TCP_MEM_HIT'):
-        raise AssertionError(f'Expected a cache hit: {rows["hit"]}')
+    for key in expected_keys & {'hit', 'redirect'}:
+        if rows[key][0] not in ('TCP_HIT', 'TCP_MEM_HIT'):
+            raise AssertionError(f'Expected a cache hit: {rows[key]}')
 
     for key, (_, values) in rows.items():
-        if mode == 'enabled' and key == 'miss':
+        if (mode == 'enabled' and key == 'miss') or (mode == 'redirect' and key in {'prime', 'redirect-response'}):
             rtt, rttvar, retrans, cwnd = values
             if not (rtt > 0 and rttvar >= 0 and retrans >= 0 and cwnd > 0):
                 raise AssertionError(f'Expected a valid origin TCP_INFO sample: {values}')
@@ -75,6 +80,6 @@ def verify(log_path: Path, mode: str) -> None:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('log_path', type=Path)
-    parser.add_argument('mode', choices=('disabled', 'enabled', 'retry'))
+    parser.add_argument('mode', choices=('disabled', 'enabled', 'retry', 'redirect'))
     args = parser.parse_args()
     verify(args.log_path, args.mode)

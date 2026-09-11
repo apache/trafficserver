@@ -384,7 +384,7 @@ public:
 
   /** Read @c TCP_INFO from the underlying socket.
    *
-   * @param info Filled in only when this returns @c true.
+   * @param[out] info Filled in only when this returns @c true.
    * @return @c true if the kernel supplied the information.
    *
    * The default reports no information, which covers every connection that is

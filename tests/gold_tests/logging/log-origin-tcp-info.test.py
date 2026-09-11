@@ -24,7 +24,7 @@ Test.Summary = 'Verify origin TCP_INFO fields and sampling controls'
 Test.ContinueOnFail = True
 Test.SkipUnless(Condition.IsPlatform('linux'), Condition.PluginExists('header_rewrite.so'))
 
-for mode in ('disabled', 'enabled', 'retry'):
+for mode in ('disabled', 'enabled', 'retry', 'redirect'):
     tr = Test.ATSReplayTest(replay_file=f'replay/origin-tcp-info-{mode}.replay.yaml')
     ts = getattr(tr.Processes, f'ts_{mode}')
     if mode == 'retry':
