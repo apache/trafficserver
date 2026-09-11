@@ -4685,11 +4685,51 @@ HttpSM::check_sni_host()
 }
 
 void
+HttpSM::set_virtualhost_entry(std::string_view domain)
+{
+  VirtualHost::scoped_config vhost_config;
+  // If already set, don't need to look at configs
+  if (m_virtualhost_entry || domain.empty() || !vhost_config) {
+    return;
+  }
+
+  auto vhost_entry = vhost_config->find_by_domain(domain);
+  if (vhost_entry) {
+    SMDbg(dbg_ctl_url_rewrite, "Found virtualhost: %s", vhost_entry->get_id().c_str());
+    m_virtualhost_entry = std::move(vhost_entry);
+  }
+}
+
+void
 HttpSM::do_remap_request(bool run_inline)
 {
   SMDbg(dbg_ctl_http_seq, "Remapping request");
   SMDbg(dbg_ctl_url_rewrite, "Starting a possible remapping for request");
+
+  if (!m_virtualhost_entry) {
+    auto host_name{t_state.hdr_info.client_request.host_get()};
+    set_virtualhost_entry(host_name);
+  }
+
+  // Check virtualhost remap rules before looking at remap.config. Copying the shared_ptr pins the
+  // table for the life of this transaction, so a reload that drops the entry cannot pull the table
+  // out from under us mid-transaction.
+  bool virtualhost_remap = false;
+  if (m_virtualhost_entry && m_virtualhost_entry->remap_table) {
+    m_remap           = m_virtualhost_entry->remap_table;
+    virtualhost_remap = true;
+    SMDbg(dbg_ctl_url_rewrite, "Using virtualhost remap table: %s", m_virtualhost_entry->get_id().c_str());
+  }
+
   bool ret = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+
+  // If no remap matches in virtualhost, revert to default remap configs
+  if (!ret && virtualhost_remap) {
+    SMDbg(dbg_ctl_url_rewrite, "No virtualhost remap rules found: using global remap table");
+    // May be null once shutdown has cleared the table; setup_for_remap() handles that.
+    m_remap = rewrite_table.load(std::memory_order_acquire);
+    ret     = remapProcessor.setup_for_remap(&t_state, m_remap.get());
+  }
 
   check_sni_host();
 
