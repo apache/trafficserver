@@ -103,6 +103,13 @@
       }
     },
     {
+      "name": "ubsan",
+      "hidden": true,
+      "cacheVariables": {
+        "ENABLE_UBSAN": "ON"
+      }
+    },
+    {
       "name": "hardened",
       "hidden": true,
       "cacheVariables": {
@@ -115,6 +122,18 @@
       "displayName": "dev with asan",
       "description": "Development Presets with ASAN sanitizer",
       "inherits": ["dev", "asan"]
+    },
+    {
+      "name": "dev-ubsan",
+      "displayName": "dev with ubsan",
+      "description": "Development Presets with UndefinedBehaviorSanitizer",
+      "inherits": ["dev", "ubsan"]
+    },
+    {
+      "name": "dev-asan-ubsan",
+      "displayName": "dev with asan and ubsan",
+      "description": "Development Presets with both AddressSanitizer and UndefinedBehaviorSanitizer",
+      "inherits": ["dev", "asan", "ubsan"]
     },
     {
       "name": "ci",
