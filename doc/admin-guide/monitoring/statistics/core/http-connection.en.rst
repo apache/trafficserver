@@ -234,21 +234,23 @@ blocked_connection
    Counter. The total number of connection attempts to the group blocked by
    :ts:cv:`proxy.config.http.per_server.connection.max`. Never decreases.
 
-For a hostname aggregate, ``<counter>`` is one of those three, each summed across the groups of that
-hostname which have aggregation enabled, plus:
+For a hostname aggregate there are two kinds. The *sums* are those same three counters, each added
+across the groups of that hostname which have aggregation enabled, published at
+:ts:cv:`metric_aggregate <proxy.config.http.per_server.connection.metric_aggregate>` ``1`` and
+``3``. The *max*, published at ``1``, ``2`` and ``3``, is:
 
-current_connection_max
+current_connection.max
    Gauge. The largest ``current_connection`` value among the groups of that hostname at the moment
    of sampling, so the maximum rather than the sum of the groups' current counts. This is useful
    because :ts:cv:`proxy.config.http.per_server.connection.max` is enforced per group rather than
    per hostname, so the busiest group is what determines whether connections are about to be
    blocked. Like ``current_connection`` it rises and falls with traffic and is not a high-water
-   mark. There is no per group ``current_connection_max``; it exists only as a hostname aggregate.
+   mark. There is no per group ``current_connection.max``; it exists only as a hostname aggregate.
 
 Because :ts:cv:`proxy.config.http.per_server.connection.metric_aggregate` is overridable, a group
 joins its hostname's aggregate only if the mapping that first opened that upstream had aggregation
 enabled. Mappings that disagree for one hostname therefore produce an aggregate over part of it: the
-sums cover a subset of the groups and ``current_connection_max`` takes its maximum over that same
+sums cover a subset of the groups and ``current_connection.max`` takes its maximum over that same
 subset, with nothing in the metric to indicate it. Keeping the setting uniform across the mappings
 for a hostname avoids this.
 
@@ -261,13 +263,13 @@ Every published per server metric is recomputed periodically, currently every 5 
 on every connection event, so a reader sees a value up to that interval old. This is true of the
 hostname aggregates and of the published per group metrics alike: those are
 mirrored from the internal ones by the same periodic mechanism, not written as connections open and
-close. It applies to ``current_connection_max`` too, which reports the maximum across groups as of
+close. It applies to ``current_connection.max`` too, which reports the maximum across groups as of
 the last sample rather than a running peak. To obtain the peak over a longer window, compute a
 maximum over time from this gauge in the monitoring system.
 
-At :ts:cv:`metric_aggregate <proxy.config.http.per_server.connection.metric_aggregate>` value ``2``
-the per group metrics still exist internally, since the aggregates are computed from them, but are not
-published. They can be listed with ``traffic_ctl metric match per_server --include-hidden``, which
+At :ts:cv:`metric_aggregate <proxy.config.http.per_server.connection.metric_aggregate>` values
+``2`` and ``3`` the per group metrics still exist internally, since the aggregates are computed from
+them, but are not published. They can be listed with ``traffic_ctl metric match per_server --include-hidden``, which
 reads them directly and so is not subject to the sampling delay above. That visibility is intended
 for debugging and is not a stable interface: the existence, granularity and naming of the per group
 metrics may change independently of the published aggregates.
