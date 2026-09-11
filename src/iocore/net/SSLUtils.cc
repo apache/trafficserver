@@ -109,10 +109,48 @@ ssl_client_rpk_ca_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/,
 #endif
 
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-// SSL-level, non-owning: the store setClientCertCACerts() built and handed to
-// SSL_set0_verify_cert_store(), which owns it. BoringSSL has no getter for that store, and
-// ssl_custom_verify_client_callback() needs it to honor a per-SNI CA override.
+// SSL-level, owning: the store setClientCertCACerts() built and also handed to
+// SSL_set0_verify_cert_store(). BoringSSL has no getter for that store, and
+// ssl_custom_verify_client_callback() needs it to honor a per-SNI CA override. This holds a
+// reference of its own because SSL_set_SSL_CTX() replaces config->cert, whose destructor drops the
+// one SSL_set0_verify_cert_store() took.
 static int ssl_verify_store_index = -1;
+
+static void
+ssl_verify_store_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
+{
+  X509_STORE_free(static_cast<X509_STORE *>(ptr));
+}
+
+/** Point the per-connection verify store stash at @a store, releasing whatever it held.
+    Pass nullptr to clear it: a stale entry would be read in place of the SSL_CTX store and would
+    skip the fail-closed check in ssl_custom_verify_client_callback().
+ */
+#if TS_HAS_VERIFY_CERT_STORE
+static void
+ssl_stash_verify_store(SSL *ssl, X509_STORE *store)
+{
+  if (ssl_verify_store_index < 0) {
+    return;
+  }
+
+  auto *previous = static_cast<X509_STORE *>(SSL_get_ex_data(ssl, ssl_verify_store_index));
+  if (previous == store) {
+    return;
+  }
+  if (store != nullptr) {
+    X509_STORE_up_ref(store);
+  }
+  // SSL_set_ex_data() does not run the index's free function on overwrite, only when the SSL is
+  // freed, so the outgoing reference has to be released by hand.
+  if (!SSL_set_ex_data(ssl, ssl_verify_store_index, store)) {
+    SSLError("failed to record the per-connection verify store");
+    X509_STORE_free(store);
+    return;
+  }
+  X509_STORE_free(previous);
+}
+#endif
 #endif
 
 static ink_mutex *mutex_buf            = nullptr;
@@ -1117,7 +1155,8 @@ SSLInitializeLibrary()
     SSL_CTX_get_ex_new_index(0, (void *)"Trusted client RPK keys", nullptr, nullptr, ssl_client_rpk_ca_ex_free);
 #endif
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-  ssl_verify_store_index = SSL_get_ex_new_index(0, (void *)"Per-connection verify store", nullptr, nullptr, nullptr);
+  ssl_verify_store_index =
+    SSL_get_ex_new_index(0, (void *)"Per-connection verify store", nullptr, nullptr, ssl_verify_store_ex_free);
 #endif
 
   TLSBasicSupport::initialize();
@@ -1382,16 +1421,19 @@ setClientCertCACerts(SSL *ssl, const char *file, const char *dir)
     // The set0 version will take ownership of the X509_STORE object
     X509_STORE *ctx = X509_STORE_new();
     if (ctx != nullptr &&
-        X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr)) {
-      SSL_set0_verify_cert_store(ssl, ctx);
+        X509_STORE_load_locations(ctx, file && file[0] != '\0' ? file : nullptr, dir && dir[0] != '\0' ? dir : nullptr) &&
+        SSL_set0_verify_cert_store(ssl, ctx)) {
 #if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
-      // Stash it non-owningly for ssl_custom_verify_client_callback(), which cannot read it back.
-      if (ssl_verify_store_index >= 0 && !SSL_set_ex_data(ssl, ssl_verify_store_index, ctx)) {
-        SSLError("failed to record the per-connection verify store");
-      }
+      // Stash it for ssl_custom_verify_client_callback(), which cannot read it back.
+      ssl_stash_verify_store(ssl, ctx);
 #endif
     } else {
       X509_STORE_free(ctx);
+#if HAVE_SSL_CREDENTIAL_NEW_RAW_PUBLIC_KEY
+      // This connection has no store of its own now, so drop any earlier one rather than let the
+      // callback verify against a store that is no longer installed.
+      ssl_stash_verify_store(ssl, nullptr);
+#endif
     }
 
     // SSL_set_client_CA_list takes ownership of the STACK_OF(X509) structure
