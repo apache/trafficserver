@@ -325,6 +325,9 @@ UnixNetVConnection::get_tcp_info(TcpInfoSnapshot &info) const
     Dbg(_dbg_ctl_socket_tcp_info, "failed getsockopt(%d, TCP_INFO): %s", fd, strerror(errno));
     return false;
   }
+  if (tinfo_len != static_cast<int>(sizeof(tinfo))) {
+    return false;
+  }
 
   info.rtt      = tinfo.tcpi_rtt;
   info.rttvar   = tinfo.tcpi_rttvar;
