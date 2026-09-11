@@ -3992,9 +3992,11 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
   STATE_ENTER(tunnel_handler_cache_write, event);
   SMDbg(dbg_ctl_http, "handling cache event: %s", HttpDebugNames::get_event_name(event));
 
-  HttpTransact::CacheWriteStatus_t *status_ptr = (c->producer->vc_type == HttpTunnelType_t::TRANSFORM) ?
-                                                   &t_state.cache_info.transform_write_status :
-                                                   &t_state.cache_info.write_status;
+  bool const                        is_transform_write = c->producer->vc_type == HttpTunnelType_t::TRANSFORM;
+  HttpTransact::CacheWriteStatus_t *status_ptr =
+    is_transform_write ? &t_state.cache_info.transform_write_status : &t_state.cache_info.write_status;
+  int &write_freshness_limit =
+    is_transform_write ? t_state.cache_info.pending_transform_freshness_limit : t_state.cache_info.pending_write_freshness_limit;
 
   switch (event) {
   case VC_EVENT_ERROR:
@@ -4033,6 +4035,14 @@ HttpSM::tunnel_handler_cache_write(int event, HttpTunnelConsumer *c)
     ink_assert(0);
     break;
   }
+
+  // A transaction can write both the original and transformed objects. Once the transformed write succeeds, keep its freshness
+  // limit even if the original write completes later.
+  if (*status_ptr == HttpTransact::CacheWriteStatus_t::COMPLETE && write_freshness_limit >= 0 &&
+      (is_transform_write || t_state.cache_info.transform_write_status != HttpTransact::CacheWriteStatus_t::COMPLETE)) {
+    t_state.cache_info.freshness_limit = write_freshness_limit;
+  }
+  write_freshness_limit = -1;
 
   if (background_fill != BackgroundFill_t::NONE) {
     server_response_body_bytes = c->bytes_written;
