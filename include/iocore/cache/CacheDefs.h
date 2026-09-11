@@ -39,10 +39,16 @@ enum class CacheInitState : int {
 
 static const uint8_t CACHE_DB_MAJOR_VERSION = 24;
 static const uint8_t CACHE_DB_MINOR_VERSION = 2;
-// This is used in various comparisons because otherwise if the minor version is 0,
-// the compile fails because the condition is always true or false. Running it through
-// VersionNumber prevents that.
-extern const ts::VersionNumber CACHE_DB_VERSION;
+// Comparisons go through VersionNumber so a zero minor version does not make
+// conditions tautological (always true or false) at compile time.
+inline constexpr ts::VersionNumber CACHE_DB_VERSION{CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION};
+
+// The version at which HTTPInfo's marshalled layout last changed; objects older than
+// this need HTTPInfo::unmarshal_v24_1. Fixed rather than tracking CACHE_DB_VERSION,
+// which moves for unrelated reasons.
+inline constexpr ts::VersionNumber CACHE_DB_VERSION_HTTPINFO_V24_2{24, 2};
+static_assert(CACHE_DB_VERSION >= CACHE_DB_VERSION_HTTPINFO_V24_2,
+              "CACHE_DB_VERSION must not be older than the HTTPInfo layout boundary");
 
 static const uint8_t CACHE_DIR_MAJOR_VERSION = 18;
 static const uint8_t CACHE_DIR_MINOR_VERSION = 0;
