@@ -273,12 +273,11 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           }
           (*ret_data) = data;
         } else {
-          IOBufferData *data = e->data.get();
           if (e->flag_bits.copy) {
-            data = new_IOBufferData(iobuffer_size_to_index(e->len, MAX_BUFFER_SIZE_INDEX), MEMALIGNED);
-            ::memcpy(data->data(), e->data->data(), e->len);
+            (*ret_data) = copy_data_out(e->data.get(), e->len);
+          } else {
+            (*ret_data) = e->data;
           }
-          (*ret_data) = data;
         }
         ts::Metrics::Counter::increment(cache_rsb.ram_cache_hits);
         ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_hits);
@@ -587,6 +586,17 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
       this->_move_compressed(e);
       this->_lru[e->flag_bits.lru].remove(e);
       this->_lru[e->flag_bits.lru].enqueue(e);
+      if (copy && e->flag_bits.copy && !e->flag_bits.compressed) {
+        // Already an uncompressed private copy of this object: get() never
+        // exposes that buffer, so re-copying it (two requests that both missed
+        // and both read the object from disk) changes nothing. Everything
+        // below is a no-op for such an entry apart from the allocation and
+        // memcpy -- size is already len, so delta is 0 -- except when the
+        // entry is compressed, where the swap is what decompresses it and
+        // skipping it would leave compressed bytes behind a cleared flag.
+        DDbg(dbg_ctl_ram_cache, "put %X %" PRId64 " size %d HIT (private, unchanged)", key->slice32(3), auxkey, e->size);
+        return 1;
+      }
       int64_t delta  = (static_cast<int64_t>(size)) - static_cast<int64_t>(e->size);
       this->_bytes  += delta;
       ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
@@ -595,12 +605,10 @@ RamCacheCLFUS::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy,
         e->size = size;
         e->data = data;
       } else {
-        char *b = static_cast<char *>(ats_malloc(len));
-        memcpy(b, data->data(), len);
-        e->data            = new_xmalloc_IOBufferData(b, len);
-        e->data->_mem_type = DEFAULT_ALLOC;
-        e->size            = size;
+        e->data = copy_data_in(data, len);
+        e->size = size;
       }
+      e->len = len; // get() and the compressor read e->len bytes out of e->data
       check_accounting(this);
       e->flag_bits.copy       = copy;
       e->flag_bits.compressed = 0;
@@ -706,10 +714,7 @@ Linsert:
   if (!copy) {
     e->data = data;
   } else {
-    char *b = static_cast<char *>(ats_malloc(len));
-    memcpy(b, data->data(), len);
-    e->data            = new_xmalloc_IOBufferData(b, len);
-    e->data->_mem_type = DEFAULT_ALLOC;
+    e->data = copy_data_in(data, len);
   }
   e->flag_bits.copy  = copy;
   this->_bytes      += size + entry_overhead;
