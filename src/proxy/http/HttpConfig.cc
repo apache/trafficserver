@@ -694,7 +694,7 @@ parse_http_status_code_list(HttpStatusBitset &set, swoc::TextView status_list)
 const MgmtConverter HttpStatusCodeList::Conv{
   [](const void *data) -> std::string_view {
     const HttpStatusCodeList *list = static_cast<const HttpStatusCodeList *>(data);
-    return list->conf_value;
+    return list->conf_value ? list->conf_value : "";
   },
   [](void *data, std::string_view src) -> void {
     HttpStatusCodeList *list = static_cast<HttpStatusCodeList *>(data);
@@ -1569,6 +1569,9 @@ HttpConfig::reconfigure()
 
   params->oride.ssl_client_sni_policy     = ats_strdup(m_master.oride.ssl_client_sni_policy);
   params->oride.ssl_client_alpn_protocols = ats_strdup(m_master.oride.ssl_client_alpn_protocols);
+  params->oride.ssl_client_sni_policy_len = params->oride.ssl_client_sni_policy ? strlen(params->oride.ssl_client_sni_policy) : 0;
+  params->oride.ssl_client_alpn_protocols_len =
+    params->oride.ssl_client_alpn_protocols ? strlen(params->oride.ssl_client_alpn_protocols) : 0;
 
   params->oride.negative_caching_list.set(m_master.oride.negative_caching_list.conf_value);
   params->oride.negative_revalidating_list.set(m_master.oride.negative_revalidating_list.conf_value);

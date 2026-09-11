@@ -144,7 +144,7 @@ HttpTransact::strip_at_headers(HTTPHdr &header, AtHeaderSource source, std::int6
 // Support ip_resolve override.
 const MgmtConverter HttpTransact::HOST_RES_CONV{[](const void *data) -> std::string_view {
                                                   const HostResData *host_res_data = static_cast<const HostResData *>(data);
-                                                  return host_res_data->conf_value;
+                                                  return host_res_data->conf_value ? host_res_data->conf_value : "";
                                                 },
                                                 [](void *data, std::string_view src) -> void {
                                                   HostResData *res_data = static_cast<HostResData *>(data);

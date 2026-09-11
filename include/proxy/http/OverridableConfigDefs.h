@@ -31,7 +31,7 @@
   - Lua plugin enum and variable array (ts_lua_http_config.cc)
   - String-to-enum mapping (overridable_txn_vars.cc)
   - The _conf_to_memberp switch statement (InkAPI.cc)
-  - SDK_Overridable_Configs test array (InkAPITest.cc)
+  - Config descriptor test array (test_HttpOverridableConfig.cc)
 
   @section xmacro_format X-Macro Format
 
