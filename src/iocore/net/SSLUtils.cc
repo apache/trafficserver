@@ -247,14 +247,18 @@ static int
 ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
   Dbg(dbg_ctl_ssl_verify, "Callback: verify client cert");
-  auto              *ssl   = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-  SSLNetVConnection *netvc = SSLNetVCAccess(ssl);
-  TLSBasicSupport   *tbs   = TLSBasicSupport::getInstance(ssl);
+  auto            *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+  TLSBasicSupport *tbs = TLSBasicSupport::getInstance(ssl);
 
   if (tbs == nullptr) {
     Dbg(dbg_ctl_ssl_verify, "call back on stale netvc");
     return false;
   }
+
+  // QUIC binds TLSBasicSupport without ever calling SSLNetVCAttach(), so the netvc is null on an H3
+  // connection even though tbs is not. Take the name from the support class instead.
+  TLSSNISupport *snis       = TLSSNISupport::getInstance(ssl);
+  const char    *servername = snis != nullptr ? snis->get_sni_server_name() : "";
 
 #if HAVE_SSL_CTX_SET1_SERVER_CERT_TYPE
   if (EVP_PKEY *peer_rpk = X509_STORE_CTX_get0_rpk(ctx); peer_rpk != nullptr) {
@@ -273,10 +277,10 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
     if (pin_ok) {
       X509_STORE_CTX_set_error(ctx, X509_V_OK);
     } else {
-      Warning("client raw public key did not match any trusted key for %s", netvc->options.sni_servername.get());
+      Warning("client raw public key did not match any trusted key for %s", servername);
     }
     if (tbs->verify_certificate(ctx) == 1) {
-      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", netvc->options.sni_servername.get());
+      Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
       return false;
     }
     return pin_ok;
@@ -284,7 +288,7 @@ ssl_verify_client_callback(int preverify_ok, X509_STORE_CTX *ctx)
 #endif
 
   if (tbs->verify_certificate(ctx) == 1) { // hook moved the handshake state to terminal
-    Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", netvc->options.sni_servername.get());
+    Warning("TS_EVENT_SSL_VERIFY_CLIENT plugin failed the client certificate check for %s.", servername);
     return false;
   }
 
