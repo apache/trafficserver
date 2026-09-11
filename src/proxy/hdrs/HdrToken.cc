@@ -38,20 +38,16 @@ namespace
 DbgCtl dbg_ctl_hdr_token{"hdr_token"};
 
 /*
- WARNING:  Indexes into this array are stored on disk for cached objects.  New strings must be added at the end of the array to
- avoid changing the indexes of pre-existing entries, unless the cache format version number is increased.
+ Indexes into this array are stored inside cached objects, but they are not a format commitment:
+ every reader rebuilds them from the header strings the object also stores, in
+ HTTPHdrImpl::recompute_wks_indices(). Strings may therefore be added, removed, reordered or
+ edited here without invalidating anyone's cache.
+
+ What that does require is that no ATS predating the rebuild ever read an object written against a
+ different table, since it would resolve the stored indexes against its own. Cache version 24.3 is
+ where the rebuild landed, and an older ATS rejects anything newer than its own version, so the
+ bump to 24.3 settles that for good. See CACHE_DB_MINOR_VERSION in iocore/cache/CacheDefs.h.
 */
-struct HdrTokenFrozen {
-  size_t   count;
-  uint32_t fingerprint;
-};
-
-// When you append strings to _hdrtoken_strs, also append an entry to _hdrtoken_strs_frozen.
-// This ledger ensures that WKS strings are append-only.
-constexpr HdrTokenFrozen _hdrtoken_strs_frozen[] = {
-  {135, 0x9ea577a9u},
-};
-
 constexpr std::string_view _hdrtoken_strs[] = {
   // MIME Field names
   "Accept-Charset", "Accept-Encoding", "Accept-Language", "Accept-Ranges", "Accept", "Age", "Allow",
@@ -128,6 +124,9 @@ constexpr std::string_view _hdrtoken_strs[] = {
 
   // RFC-9213 Targeted Cache Control
   "CDN-Cache-Control"};
+
+// MIMEField::m_wks_idx, HTTPHdrImpl's method index and URLImpl's scheme index are all int16_t.
+static_assert(std::size(_hdrtoken_strs) <= INT16_MAX, "the well-known string table outgrew the type that indexes it");
 
 constexpr HdrTokenTypeBinding _hdrtoken_strs_type_initializers[] = {
   {"file",                 HdrTokenType::SCHEME        },
@@ -323,14 +322,6 @@ hdrtoken_ascii_toupper(unsigned char c)
 
 constexpr uint32_t HDRTOKEN_HASH_SEED = 0x811c9dc5u; // FNV-1a 32-bit offset basis
 
-// One raw FNV-1a step. hdrtoken_hash() folds case on top of it; the frozen-ledger fingerprint
-// deliberately does not.
-constexpr uint32_t
-hdrtoken_hash_step(uint32_t hval, unsigned char c)
-{
-  return (hval ^ c) * 0x01000193u;
-}
-
 // The one hash function, shared by compile-time table construction and hdrtoken_tokenize(), so the
 // two can never disagree.
 constexpr uint32_t
@@ -339,50 +330,10 @@ hdrtoken_hash(std::string_view s)
   uint32_t hval = HDRTOKEN_HASH_SEED;
 
   for (char const c : s) {
-    hval = hdrtoken_hash_step(hval, hdrtoken_ascii_toupper(static_cast<unsigned char>(c)));
+    hval = (hval ^ hdrtoken_ascii_toupper(static_cast<unsigned char>(c))) * 0x01000193u;
   }
   return hval;
 }
-
-constexpr uint32_t
-hdrtoken_frozen_fingerprint(size_t count)
-{
-  // Hashes the raw bytes, without case folding, because case is significant for frozen entries:
-  // hdrtoken_method_tokenize() matches methods case-sensitively against the stored bytes.
-  uint32_t hval = HDRTOKEN_HASH_SEED;
-
-  for (size_t i = 0; i < count; ++i) {
-    for (char const c : _hdrtoken_strs[i]) {
-      hval = hdrtoken_hash_step(hval, static_cast<unsigned char>(c));
-    }
-    hval = hdrtoken_hash_step(hval, '\0'); // fold in a terminator so entry boundaries matter
-  }
-  return hval;
-}
-
-constexpr bool
-hdrtoken_frozen_rows_valid()
-{
-  size_t prev_count = 0;
-
-  for (auto const &f : _hdrtoken_strs_frozen) {
-    if (f.count <= prev_count || f.count > std::size(_hdrtoken_strs)) {
-      return false;
-    }
-    if (hdrtoken_frozen_fingerprint(f.count) != f.fingerprint) {
-      return false;
-    }
-    prev_count = f.count;
-  }
-  return true;
-}
-
-static_assert(hdrtoken_frozen_rows_valid(),
-              "A frozen well-known string changed. Indexes are stored in cached objects, so entries may only be appended, "
-              "never inserted, reordered, removed, or edited");
-static_assert(_hdrtoken_strs_frozen[std::size(_hdrtoken_strs_frozen) - 1].count == std::size(_hdrtoken_strs),
-              "The well-known string table grew without being re-frozen; append a {count, fingerprint} row to "
-              "_hdrtoken_strs_frozen");
 
 constexpr size_t
 hdrtoken_max_literal_length()

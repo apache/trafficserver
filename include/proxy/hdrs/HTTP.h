@@ -284,6 +284,20 @@ struct HTTPHdrImpl : public HdrHeapObjImpl {
   void   move_strings(HdrStrHeap *new_heap);
   size_t strings_length();
 
+  /** Rebuild everything in this header that indexes the well-known string table.
+   *
+   * That is the request method index, the request URL's scheme index, and the field indexes,
+   * presence bits and slot accelerators of the MIME header. All of them are caches over strings
+   * that are stored in the header itself, so they can always be rebuilt, and they must be after
+   * the header is read back from a cached object: the object may have been written by a build
+   * whose well-known string table differed from this one's, in which case the stored indexes
+   * denote different strings here than they did there.
+   *
+   * Call this only once the header is fully unmarshalled. It walks the MIME field blocks, which
+   * are separate heap objects and are not usable until their own pointers have been swizzled.
+   */
+  void recompute_wks_indices();
+
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
 };
