@@ -383,6 +383,47 @@ ssl_multicert:
             'ATS should log the expected SETTINGS_TIMEOUT connection error.')
 
 
+class Http2ClosedStreamFlowControlTest:
+    """Verify DATA to closed streams cannot drain the connection window."""
+
+    def run(self) -> None:
+        """Configure the test run."""
+        tr = Test.AddTestRun('Closed-stream DATA does not drain connection window')
+        server = tr.MakeHttpBinServer('server-closed-stream-window')
+        ts = tr.MakeATSProcess('ts-closed-stream-window', enable_tls=True, enable_cache=False)
+
+        ts.addDefaultSSLFiles()
+        ts.Setup.CopyAs('clients/h2_closed_stream_window_drain.py', Test.RunDirectory)
+        ts.Disk.records_config.update(
+            {
+                'proxy.config.diags.debug.enabled': 1,
+                'proxy.config.diags.debug.tags': 'http2',
+                'proxy.config.ssl.server.cert.path': f'{ts.Variables.SSLDir}',
+                'proxy.config.ssl.server.private_key.path': f'{ts.Variables.SSLDir}',
+            })
+        ts.Disk.remap_config.AddLine(f'map / http://127.0.0.1:{server.Variables.Port}')
+        ts.Disk.ssl_multicert_yaml.AddLines(
+            """
+ssl_multicert:
+  - dest_ip: "*"
+    ssl_cert_name: server.pem
+    ssl_key_name: server.key
+""".split("\n"))
+
+        tr.Processes.Default.StartBefore(server)
+        tr.Processes.Default.StartBefore(ts)
+        tr.Processes.Default.Command = f'{sys.executable} h2_closed_stream_window_drain.py {ts.Variables.ssl_port}'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'closed-stream DATA sent=131070', 'The client should be able to send two windows of DATA to the closed stream.')
+        tr.Processes.Default.Streams.stdout += Testers.ContainsExpression(
+            'stream 3 :status 200', 'The connection should remain usable after the closed-stream DATA.')
+        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            'Send RST_STREAM frame: Error Code: 5', 'ATS should reject the DATA sent to the closed stream.')
+        ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            'Discarded DATA payload_length=16384', 'ATS should credit the discarded DATA back to the connection window.')
+
+
 #
 # Default configuration.
 #
@@ -426,4 +467,7 @@ test = Http2FlowControlTest(
 test.run()
 
 test = Http2DynamicWindowSettingsCapTest()
+test.run()
+
+test = Http2ClosedStreamFlowControlTest()
 test.run()
