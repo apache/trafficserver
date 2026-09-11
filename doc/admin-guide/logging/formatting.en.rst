@@ -202,6 +202,10 @@ Connections and Transactions
 .. _surc:
 .. _ssrc:
 .. _sstc:
+.. _srtt:
+.. _srtv:
+.. _sret:
+.. _scwn:
 .. _ccid:
 .. _ctid:
 .. _ctpw:
@@ -220,6 +224,18 @@ ssrc  Proxy          Parent simple server retry count within the current transac
 sstc  Proxy          Number of transactions between the |TS| proxy and the origin
                      server from a single session. Any value greater than zero
                      indicates connection reuse.
+srtt  Proxy          Smoothed round trip time to the origin server, in microseconds,
+                     read when the origin response header was successfully parsed.
+                     Requires :ts:cv:`proxy.config.http.log_server_tcp_info`. Reports
+                     -1 when no origin socket was sampled.
+srtv  Proxy          Round trip time variance for the origin connection, in
+                     microseconds. Same source and conditions as ``srtt``.
+sret  Proxy          Segments retransmitted since the origin connection opened, as of
+                     the response-header sample. Includes retransmits from earlier
+                     transactions on a reused connection. Same conditions as ``srtt``.
+scwn  Proxy          Send congestion window for the origin connection: segments on
+                     Linux, bytes on FreeBSD.
+                     Same source and conditions as ``srtt``.
 ccid  Client Request Client Connection ID, a non-negative number for a connection,
                      which is different for all currently-active connections to
                      clients.

@@ -1099,6 +1099,7 @@ HttpConfig::startup()
 
   HttpEstablishStaticConfigByte(c.oride.insert_age_in_response, "proxy.config.http.insert_age_in_response");
   HttpEstablishStaticConfigByte(c.enable_http_stats, "proxy.config.http.enable_http_stats");
+  HttpEstablishStaticConfigByte(c.oride.log_server_tcp_info, "proxy.config.http.log_server_tcp_info");
   HttpEstablishStaticConfigByte(c.oride.normalize_ae, "proxy.config.http.normalize_ae");
 
   HttpEstablishStaticConfigLongLong(c.oride.cache_heuristic_min_lifetime, "proxy.config.http.cache.heuristic_min_lifetime");
@@ -1447,6 +1448,7 @@ HttpConfig::reconfigure()
   params->oride.insert_forwarded             = m_master.oride.insert_forwarded;
   params->oride.insert_age_in_response       = INT_TO_BOOL(m_master.oride.insert_age_in_response);
   params->enable_http_stats                  = INT_TO_BOOL(m_master.enable_http_stats);
+  params->oride.log_server_tcp_info          = INT_TO_BOOL(m_master.oride.log_server_tcp_info);
   params->oride.normalize_ae                 = m_master.oride.normalize_ae;
   params->oride.proxy_protocol_out           = m_master.oride.proxy_protocol_out;
 

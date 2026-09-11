@@ -950,6 +950,26 @@ Log::init_fields()
   global_field_list.add(field, false);
   field_symbol_hash.emplace("sca", field);
 
+  field = new LogField("server_tcp_rtt", "srtt", LogField::Type::sINT, &LogAccess::marshal_server_tcp_rtt,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("srtt", field);
+
+  field = new LogField("server_tcp_rttvar", "srtv", LogField::Type::sINT, &LogAccess::marshal_server_tcp_rttvar,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("srtv", field);
+
+  field = new LogField("server_tcp_retrans", "sret", LogField::Type::sINT, &LogAccess::marshal_server_tcp_retrans,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("sret", field);
+
+  field = new LogField("server_tcp_snd_cwnd", "scwn", LogField::Type::sINT, &LogAccess::marshal_server_tcp_snd_cwnd,
+                       &LogAccess::unmarshal_int_to_str);
+  global_field_list.add(field, false);
+  field_symbol_hash.emplace("scwn", field);
+
   field = new LogField("origin_response_all_header_fields", "ssah", LogField::Type::STRING,
                        &LogAccess::marshal_server_resp_all_header_fields, &LogUtils::unmarshalMimeHdr);
   global_field_list.add(field, false);

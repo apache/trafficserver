@@ -140,6 +140,7 @@ TSOverridableConfigKey Value                                               Confi
 :enumerator:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_IN`           :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_in`
 :enumerator:`TS_CONFIG_HTTP_KEEP_ALIVE_NO_ACTIVITY_TIMEOUT_OUT`          :ts:cv:`proxy.config.http.keep_alive_no_activity_timeout_out`
 :enumerator:`TS_CONFIG_HTTP_KEEP_ALIVE_POST_OUT`                         :ts:cv:`proxy.config.http.keep_alive_post_out`
+:enumerator:`TS_CONFIG_HTTP_LOG_SERVER_TCP_INFO`                         :ts:cv:`proxy.config.http.log_server_tcp_info`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_ENABLED`                    :ts:cv:`proxy.config.http.negative_caching_enabled`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIFETIME`                   :ts:cv:`proxy.config.http.negative_caching_lifetime`
 :enumerator:`TS_CONFIG_HTTP_NEGATIVE_CACHING_LIST`                       :ts:cv:`proxy.config.http.negative_caching_list`
