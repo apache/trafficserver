@@ -312,7 +312,11 @@ inline bool
 UnixNetVConnection::get_tcp_info(TcpInfoSnapshot &info) const
 {
 #if defined(TCP_INFO) && defined(HAVE_STRUCT_TCP_INFO) && \
-  (HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS || HAVE_STRUCT_TCP_INFO___TCPI_RETRANS)
+  (HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS || HAVE_STRUCT_TCP_INFO_TCPI_SND_REXMITPACK)
+  if (con.sock_type != SOCK_STREAM) {
+    return false;
+  }
+
   struct tcp_info tinfo     = {};
   int             tinfo_len = sizeof(tinfo);
   int const       fd        = con.sock.get_fd();
@@ -327,7 +331,7 @@ UnixNetVConnection::get_tcp_info(TcpInfoSnapshot &info) const
   info.snd_cwnd = tinfo.tcpi_snd_cwnd;
 #if HAVE_STRUCT_TCP_INFO_TCPI_TOTAL_RETRANS
   info.retrans = tinfo.tcpi_total_retrans;
-#elif HAVE_STRUCT_TCP_INFO___TCPI_RETRANS
+#elif HAVE_STRUCT_TCP_INFO_TCPI_SND_REXMITPACK
   // FreeBSD spells the cumulative count differently; __tcpi_retrans is the
   // currently outstanding count, which is not what this reports.
   info.retrans = tinfo.tcpi_snd_rexmitpack;
