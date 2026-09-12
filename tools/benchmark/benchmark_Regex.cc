@@ -35,6 +35,7 @@
   limitations under the License.
  */
 
+#include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -378,10 +379,12 @@ TEST_CASE("Regex match", "[bench][regex]")
     return path.exec(SUBJECT_PATH, matches);
   };
 
+  // Built once, outside the timed body: a function-local static would put its
+  // initialisation guard inside every iteration and charge the measurement for it.
+  RegexMatches reused;
   BENCHMARK("exec with captures, reused matches object")
   {
-    static RegexMatches matches;
-    return path.exec(SUBJECT_PATH, matches);
+    return path.exec(SUBJECT_PATH, reused);
   };
 
   BENCHMARK("exec with captures, miss")
@@ -452,11 +455,16 @@ TEST_CASE("DFA set match", "[bench][regex]")
   };
 }
 
-TEST_CASE("Regex interpreter path", "[bench][regex]")
+TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
 {
   // A subject long enough to exhaust the JIT stack for this pattern, so the operation
   // measured is the error return rather than a match. This is the shape the crash guard
   // from #5762 covers, and it is the one place a match is expected to cost real time.
+  //
+  // Note this is not the interpreter: compile() gives the pattern to the JIT, and what the
+  // long subject reaches is the JIT's own stack bound. Driving a match onto the interpreter
+  // needs a pattern the JIT refuses outright, which starts around 36KB of pattern text and
+  // costs tens of seconds per match, so it has no place in a timed suite.
   Regex query;
   query.compile(PATTERN_QUERY);
 
