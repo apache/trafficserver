@@ -11,6 +11,13 @@
   interpreter is the exception: it allocates a backtracking frames vector through the same
   allocator, so a match that runs interpreted does show up in the count.
 
+  This file builds two targets. benchmark_Regex times operations and contains no
+  interposer at all, so a timed case measures the regex path and nothing else; that
+  matters because a wrapper call costs about 1.5 ns, which is a fifth of an operation as
+  short as copying a compiled pattern. benchmark_Regex_alloc is built with
+  BENCHMARK_REGEX_ALLOC, carries the interposer, and runs only the counting cases, where
+  the overhead is irrelevant because nothing is being timed.
+
   Interposing malloc is only wired up on Linux, where defining these symbols in the
   executable is enough. Elsewhere the counters stay at zero and the report says so, so a
   run on another platform still gives timings without quietly reporting zero allocations
@@ -59,6 +66,7 @@
 
 namespace
 {
+#if defined(BENCHMARK_REGEX_ALLOC)
 struct AllocStats {
   unsigned long calls = 0;
   unsigned long bytes = 0;
@@ -92,10 +100,11 @@ constexpr bool ALLOC_COUNTING_AVAILABLE = true;
 #else
 constexpr bool ALLOC_COUNTING_AVAILABLE = false;
 #endif
+#endif // BENCHMARK_REGEX_ALLOC
 
 } // namespace
 
-#if defined(__linux__)
+#if defined(__linux__) && defined(BENCHMARK_REGEX_ALLOC)
 #include <dlfcn.h>
 
 // Interpose the system allocator. Defining these in the executable takes precedence over
@@ -306,7 +315,7 @@ realloc(void *p, size_t size) noexcept
   record(size);
   return real_realloc(p, size);
 }
-#endif // __linux__
+#endif // __linux__ && BENCHMARK_REGEX_ALLOC
 
 // ---------------------------------------------------------------------------
 // Corpus
@@ -390,6 +399,7 @@ jit_stack_subject()
   return subject;
 }
 
+#if defined(BENCHMARK_REGEX_ALLOC)
 void
 report_allocations(char const *label, AllocStats const &stats, unsigned long operations)
 {
@@ -401,6 +411,7 @@ report_allocations(char const *label, AllocStats const &stats, unsigned long ope
          static_cast<double>(stats.calls) / static_cast<double>(operations),
          static_cast<double>(stats.bytes) / static_cast<double>(operations), operations);
 }
+#endif // BENCHMARK_REGEX_ALLOC
 
 } // namespace
 
@@ -574,6 +585,7 @@ TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
 // differ from the ones the inline buffer was sized against.
 // ---------------------------------------------------------------------------
 
+#if defined(BENCHMARK_REGEX_ALLOC)
 TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
 {
   constexpr unsigned long OPS = 10000;
@@ -713,3 +725,4 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
   printf("\n");
   CHECK(true);
 }
+#endif // BENCHMARK_REGEX_ALLOC
