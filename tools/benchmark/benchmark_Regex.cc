@@ -193,10 +193,16 @@ resolve_real_allocators()
   auto *c = reinterpret_cast<calloc_fn>(dlsym(RTLD_NEXT, "calloc"));
   auto *r = reinterpret_cast<realloc_fn>(dlsym(RTLD_NEXT, "realloc"));
 
-  real_free    = f;
-  real_calloc  = c;
-  real_realloc = r;
-  real_malloc  = m; // published last: this is the pointer the early return above tests
+  // All four or none. Each wrapper does check its own pointer before using it, so a partial
+  // table would not be dereferenced, but an all-or-nothing rule is a much easier invariant
+  // to keep true than four separate ones, and a lookup failing at all means something is
+  // wrong enough that the safe paths are where every wrapper should stay.
+  if (m != nullptr && f != nullptr && c != nullptr && r != nullptr) {
+    real_free    = f;
+    real_calloc  = c;
+    real_realloc = r;
+    real_malloc  = m; // published last: this is the pointer the early return above tests
+  }
 
   resolving = false;
 }
@@ -419,6 +425,10 @@ report_allocations(char const *label, AllocStats const &stats, unsigned long ope
 // Timing
 // ---------------------------------------------------------------------------
 
+// Timed cases. Compiled only into the timing target: the allocation target carries the
+// interposer, and a timed case running under it would measure the wrapper as well.
+#if !defined(BENCHMARK_REGEX_ALLOC)
+
 TEST_CASE("Regex compile", "[bench][regex]")
 {
   BENCHMARK("compile path pattern")
@@ -584,6 +594,8 @@ TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
 // implementations, and a hard assertion here would fail on a PCRE2 whose block sizes
 // differ from the ones the inline buffer was sized against.
 // ---------------------------------------------------------------------------
+
+#endif // !BENCHMARK_REGEX_ALLOC
 
 #if defined(BENCHMARK_REGEX_ALLOC)
 TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
