@@ -142,26 +142,25 @@ jit_stack_for_this_thread(void *)
 }
 
 //----------------------------------------------------------------------------
+// These three contexts are built once and never modified, which pcre2api's MULTITHREADING
+// section gives as the condition for sharing a context across threads. The one genuinely
+// per thread object, the JIT stack, is reached through the callback above.
+//
+// The instance is allocated once and deliberately never destroyed. A thread_local with a
+// destructor registers it through __cxa_thread_atexit on first use, which takes the
+// dynamic loader lock, so the first compile() or exec() on a thread inverts lock order
+// against a dlopen caller running a plugin's static initialization; that is the same
+// hazard the JIT stack moved to a pthread key to avoid, and the one Diags and DbgCtl work
+// around. A context destroyed at thread or process exit can also still be in use by
+// another thread that is matching.
 class RegexContext
 {
 public:
   static RegexContext *
   get_instance()
   {
-    thread_local RegexContext ctx;
-    return &ctx;
-  }
-  ~RegexContext()
-  {
-    if (_general_context != nullptr) {
-      pcre2_general_context_free(_general_context);
-    }
-    if (_compile_context != nullptr) {
-      pcre2_compile_context_free(_compile_context);
-    }
-    if (_match_context != nullptr) {
-      pcre2_match_context_free(_match_context);
-    }
+    static RegexContext *const ctx = new RegexContext();
+    return ctx;
   }
   pcre2_general_context *
   get_general_context()
@@ -460,11 +459,7 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
     pcre2_code_free(ptr);
   }
 
-  // get the RegexContext instance - should only be null when shutting down
   RegexContext *regex_context = RegexContext::get_instance();
-  if (regex_context == nullptr) {
-    return false;
-  }
 
   // On PCRE2 < 10.30 the ENDANCHORED bit is not a valid pcre2_compile option. Rewrite
   // the pattern to "(?:pattern)\z" and strip the bit so pcre2 enforces end-of-subject
