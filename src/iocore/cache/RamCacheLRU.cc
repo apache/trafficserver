@@ -188,14 +188,37 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
   if (!max_bytes) {
     return 0;
   }
-  uint32_t i = key->slice32(3) % nbuckets;
-  if ((cache_config_ram_cache_use_seen_filter == 1) ||
-      // For use_seen_filter > 1, only apply the filter once the cache is more than <n>% full:
-      // 2 == 50%, 3 == 67%, 4 == 75%, up to 9 == 90%. Written as bytes * N >= max_bytes * (N - 1)
-      // rather than bytes >= max_bytes * (1 - 1 / N); the latter evaluates 1 / N in integer
-      // arithmetic (0 for every N > 1), so the filter only ever engaged at 100% full.
-      ((cache_config_ram_cache_use_seen_filter > 1) &&
-       (bytes * cache_config_ram_cache_use_seen_filter >= max_bytes * (cache_config_ram_cache_use_seen_filter - 1)))) {
+  uint32_t          i        = key->slice32(3) % nbuckets;
+  bool              replaced = false;
+  RamCacheLRUEntry *e        = bucket[i].head;
+  while (e) {
+    if (e->key == *key) {
+      if (e->auxkey == auxkey) {
+        lru.remove(e);
+        lru.enqueue(e);
+        return 1;
+      } else { // discard when aux keys conflict
+        e        = remove(e);
+        replaced = true;
+        continue;
+      }
+    }
+    e = e->hash_link.next;
+  }
+  // The seen filter admits an object on its second sighting, so it applies
+  // only to keys the cache has never held. A put for the resident entry
+  // returned above, and a put that has just replaced a stale copy of the same
+  // key under a new auxkey (a rewrite) is not a first sighting either:
+  // filtering it would cost a second disk read for an object that had already
+  // earned its place. CLFUS reaches the same result through its persistent
+  // fingerprint; LRU's slot is cleared on admission, so it has to be skipped.
+  if (!replaced && ((cache_config_ram_cache_use_seen_filter == 1) ||
+                    // For use_seen_filter > 1, only apply the filter once the cache is more than <n>% full:
+                    // 2 == 50%, 3 == 67%, 4 == 75%, up to 9 == 90%. Written as bytes * N >= max_bytes * (N - 1)
+                    // rather than bytes >= max_bytes * (1 - 1 / N); the latter evaluates 1 / N in integer
+                    // arithmetic (0 for every N > 1), so the filter only ever engaged at 100% full.
+                    ((cache_config_ram_cache_use_seen_filter > 1) && (bytes * cache_config_ram_cache_use_seen_filter >=
+                                                                      max_bytes * (cache_config_ram_cache_use_seen_filter - 1))))) {
     uint32_t j = key->slice32(3) % (nbuckets * 2); // The seen filter bucket size is 2x
 
     if (!seen[j]) {
@@ -207,20 +230,6 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, [[maybe_unused]] uint32_t 
     }
   }
 
-  RamCacheLRUEntry *e = bucket[i].head;
-  while (e) {
-    if (e->key == *key) {
-      if (e->auxkey == auxkey) {
-        lru.remove(e);
-        lru.enqueue(e);
-        return 1;
-      } else { // discard when aux keys conflict
-        e = remove(e);
-        continue;
-      }
-    }
-    e = e->hash_link.next;
-  }
   e         = THREAD_ALLOC(ramCacheLRUEntryAllocator, this_ethread());
   e->key    = *key;
   e->auxkey = auxkey;
