@@ -36,6 +36,7 @@
  */
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -48,6 +49,9 @@
 #include <catch2/benchmark/catch_benchmark.hpp>
 
 #include "tsutil/Regex.h"
+
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 // ---------------------------------------------------------------------------
 // Allocation counting
@@ -131,8 +135,17 @@ from_bootstrap(void *p)
 void *
 bootstrap_alloc(size_t size)
 {
+  // Check the request against what is left before rounding it up. Rounding first would let
+  // a huge size wrap to a small payload, pass the capacity test, and hand back storage far
+  // smaller than asked for. These wrappers stand in for malloc for every library in the
+  // process while dlsym resolves, so that block would corrupt somebody else's startup.
+  size_t const remaining = sizeof(bootstrap_buffer) - bootstrap_used;
+  if (remaining <= BOOTSTRAP_HEADER || size > remaining - BOOTSTRAP_HEADER) {
+    return nullptr;
+  }
+
   size_t const payload = (size + alignof(std::max_align_t) - 1) & ~(alignof(std::max_align_t) - 1);
-  if (bootstrap_used + BOOTSTRAP_HEADER + payload > sizeof(bootstrap_buffer)) {
+  if (payload > remaining - BOOTSTRAP_HEADER) {
     return nullptr;
   }
   char *block = bootstrap_buffer + bootstrap_used;
@@ -220,9 +233,15 @@ calloc(size_t n, size_t size) noexcept
   if (real_calloc == nullptr) {
     resolve_real_allocators();
     if (real_calloc == nullptr) {
-      void *p = bootstrap_alloc(n * size);
+      // n * size can wrap, which would ask the bootstrap buffer for a small block and then
+      // memset a huge one. Refuse rather than compute it.
+      if (size != 0 && n > SIZE_MAX / size) {
+        return nullptr;
+      }
+      size_t const total = n * size;
+      void        *p     = bootstrap_alloc(total);
       if (p != nullptr) {
-        memset(p, 0, n * size);
+        memset(p, 0, total);
       }
       return p;
     }
@@ -302,6 +321,27 @@ host_patterns(int count)
     patterns.emplace_back("^(?:[a-z0-9-]+\\.)*host" + std::to_string(i) + "\\.example\\.com$");
   }
   return patterns;
+}
+
+// Whether this PCRE2 produced machine code for a pattern. The project requires only
+// libpcre2-8, and a build can be configured without the just-in-time compiler or refuse an
+// individual pattern, in which case a subject sized to exhaust the JIT stack instead runs
+// to completion on the interpreter. That measures something else entirely, and far more
+// slowly, so the cases that depend on the JIT ask first.
+bool
+pattern_has_jit(char const *pattern)
+{
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+  if (code == nullptr) {
+    return false;
+  }
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+  size_t jit_size = 0;
+  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+  pcre2_code_free(code);
+  return jit_size > 0;
 }
 
 void
@@ -465,6 +505,10 @@ TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
   // long subject reaches is the JIT's own stack bound. Driving a match onto the interpreter
   // needs a pattern the JIT refuses outright, which starts around 36KB of pattern text and
   // costs tens of seconds per match, so it has no place in a timed suite.
+  if (!pattern_has_jit(PATTERN_QUERY)) {
+    SKIP("PCRE2 has no JIT for this pattern, so there is no JIT stack to exhaust");
+  }
+
   Regex query;
   query.compile(PATTERN_QUERY);
 
@@ -563,21 +607,29 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
   }
 
   {
-    // The interpreter allocates its backtracking frames through the match data's
-    // allocator; the JIT engine does not. This is the operation that separates them.
-    Regex query;
-    query.compile(PATTERN_QUERY);
-    std::string subject{"/alpha/bravo/?"};
-    subject.append(64 * 1024, 'x');
+    // The JIT stack limit path: the subject is long enough that the match gives up against
+    // the per thread JIT stack rather than completing. It is here to show that giving up
+    // costs no allocations either, not to measure the interpreter, which this pattern never
+    // reaches on a build that has a JIT. Without a JIT there is no such bound, and the same
+    // subject would run to completion on the interpreter and allocate its frames vector,
+    // which is a different measurement wearing the same label.
+    if (pattern_has_jit(PATTERN_QUERY)) {
+      Regex query;
+      query.compile(PATTERN_QUERY);
+      std::string subject{"/alpha/bravo/?"};
+      subject.append(64 * 1024, 'x');
 
-    constexpr unsigned long EXECS = 200;
-    CountAllocations        counter;
-    for (unsigned long i = 0; i < EXECS; ++i) {
-      RegexMatches matches;
-      volatile int r = query.exec(subject, matches);
-      (void)r;
+      constexpr unsigned long EXECS = 200;
+      CountAllocations        counter;
+      for (unsigned long i = 0; i < EXECS; ++i) {
+        RegexMatches matches;
+        volatile int r = query.exec(subject, matches);
+        (void)r;
+      }
+      report_allocations("exec that exhausts the JIT stack", counter.stats(), EXECS);
+    } else {
+      printf("  %-44s skipped: this PCRE2 has no JIT for the pattern\n", "exec that exhausts the JIT stack");
     }
-    report_allocations("exec that exhausts the JIT stack", counter.stats(), EXECS);
   }
 
   printf("\n");
