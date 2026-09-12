@@ -72,6 +72,22 @@ a plugin will see outbound sessions pool per certificate, and so more outbound h
 ``ip,host`` explicitly to select what ``both`` selected before; that also turns the
 client-certificate check on session reuse back off.
 
+Inbound TLS Session Resumption
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Inbound TLS sessions are now bound to the SNI they were issued under and to that
+SNI's ``verify_client`` policy from :file:`sni.yaml`, including the trust anchors
+the client certificate was verified against. A session ticket or session ID
+offered under a different SNI, after the policy for its SNI changed, or after
+those trust anchors were replaced, is no longer resumed and completes a full
+handshake instead. Replacing the bundle named by
+:ts:cv:`proxy.config.ssl.CA.cert.filename` takes effect on the next
+:option:`traffic_ctl config reload`, which is also when a replaced bundle begins
+to apply to fresh handshakes. Clients that key their session caches by hostname,
+which includes browsers and curl, are unaffected. Sessions issued by a previous
+release may not resume after the upgrade and complete a full handshake instead.
+See :ref:`admin-mtls` for details.
+
 Connection Management
 ~~~~~~~~~~~~~~~~~~~~~
 

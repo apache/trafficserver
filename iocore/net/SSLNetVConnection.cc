@@ -1364,31 +1364,38 @@ SSLNetVConnection::sslServerHandShakeEvent(int &err)
   switch (ssl_error) {
   case SSL_ERROR_NONE:
     // A resumed session carries forward the peer cert (or lack of one) from whichever connection
-    // originally established it; verify_client for the current SNI was already (re-)applied for
-    // this handshake, but a TLS library does not ask the peer for a certificate again on
-    // resumption. The verify result it reports is likewise the one cached by the handshake that
-    // created the session, evaluated against the CA store that applied to *that* connection's SNI,
-    // so it says nothing about whether this SNI trusts the certificate. Re-check both the presence
-    // and the trust of that certificate against the policy in force now.
-    //
-    // Gated on SSL_session_reused() only to keep the chain verification off the fresh-handshake
-    // path, where the TLS library has just done the same work against the same store; that flag is
-    // the library's own record of this handshake, so it cannot drift from the connection's state.
+    // originally established it, and a TLS library does not ask the peer for a certificate again on
+    // resumption. The session id context that bind_session_id_context_to_verify_scope() establishes
+    // from the ClientHello callback binds every session to the verify_client scope it was issued
+    // under, so the library only resumes sessions whose client certificate this SNI already
+    // verified. Sessions issued before that binding existed, or by a build without it, carry a
+    // different context and fall back to a full handshake. This check is the last line of defense
+    // should a session without a certificate be resumed under a policy that requires one, which a
+    // build with neither ClientHello callback can still admit because its earliest hook runs after
+    // the session lookup.
     if (SSL_session_reused(ssl)) {
       int verify_mode = SSL_get_verify_mode(ssl);
 
-      if ((verify_mode & SSL_VERIFY_PEER) != 0) {
-        bool satisfied = this->peer_provided_cert() ? this->is_peer_cert_trusted_by_current_ca() :
-                                                      (verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) == 0;
-
-        if (!satisfied) {
-          static LogMessage log_msg{IS_THROTTLED};
-          SSL_INCREMENT_DYN_STAT(ssl_user_agent_resumed_cert_rejected_stat);
-          log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
-          SSLVCDebug(this, "rejecting a resumed TLS session that does not satisfy verify_client");
-          return EVENT_ERROR;
-        }
+      if ((verify_mode & SSL_VERIFY_FAIL_IF_NO_PEER_CERT) != 0 && !this->peer_provided_cert()) {
+        static LogMessage log_msg{IS_THROTTLED};
+        SSL_INCREMENT_DYN_STAT(ssl_user_agent_resumed_cert_rejected_stat);
+        log_msg.warning(MakeSourceLocation(), "rejecting a resumed TLS session that does not satisfy verify_client");
+        SSLVCDebug(this, "rejecting a resumed TLS session that does not satisfy verify_client");
+        return EVENT_ERROR;
       }
+    }
+
+    // setClientCertCACerts() runs again from the certificate callback, after the session id context
+    // was established, so a store that loaded for the ClientHello callback and then failed there
+    // would leave this connection verifying against the SSL_CTX's store while the session it issues
+    // claims the scope of the store that did load. That window is checked here rather than only in
+    // bind_session_id_context_to_verify_scope(), which cannot see a failure that happens after it.
+    if (this->verify_scope_digest_failed()) {
+      static LogMessage scope_log_msg{IS_THROTTLED};
+
+      scope_log_msg.warning(MakeSourceLocation(), "rejecting a TLS session whose verify_client scope could not be established");
+      SSLVCDebug(this, "rejecting a TLS session whose verify_client scope could not be established");
+      return EVENT_ERROR;
     }
 
     if (is_debug_tag_set("ssl")) {

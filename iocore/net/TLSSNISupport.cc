@@ -142,6 +142,12 @@ TLSSNISupport::_clear()
 }
 
 const char *
+TLSSNISupport::get_sni_server_name() const
+{
+  return this->_get_sni_server_name();
+}
+
+const char *
 TLSSNISupport::_get_sni_server_name() const
 {
   return _sni_server_name.get() ? _sni_server_name.get() : "";

@@ -31,6 +31,7 @@
 #pragma once
 
 #include <atomic>
+#include <optional>
 
 #include <openssl/rand.h>
 
@@ -73,6 +74,16 @@ struct SSLConfigParams : public ConfigInfo {
   char *serverCertChainFilename;
   char *serverKeyPathOnly;
   char *serverCACertFilename;
+
+  /** Digest of the trust anchors in proxy.config.ssl.CA.cert.filename, for the session id
+      context that scopes session resumption. Held here rather than process-wide so that the
+      handshake path reads it through the same scoped_config it already acquires, and so that it
+      is replaced with the configuration it describes. SSLConfig is always reconfigured before
+      SSLCertificateConfig, so it cannot go stale against the certificate contexts.
+   */
+  std::optional<VerifyScopeDigest> clientCADigest;
+  bool clientCADigestFailed = false;
+
   char *serverCACertPath;
   char *configFilePath;
   char *dhparamsFile;
