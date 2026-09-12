@@ -130,18 +130,29 @@ bootstrap_alloc(size_t size)
   return p;
 }
 
+// Resolve all four into locals and publish them together, with real_malloc last. dlsym()
+// may allocate or free while these lookups are in progress, which re-enters the wrappers
+// below; they test their own pointer and fall back to the bootstrap path while it is still
+// null, so no wrapper can reach a half-resolved table.
 void
 resolve_real_allocators()
 {
   if (real_malloc != nullptr || resolving) {
     return;
   }
-  resolving    = true;
-  real_malloc  = reinterpret_cast<malloc_fn>(dlsym(RTLD_NEXT, "malloc"));
-  real_free    = reinterpret_cast<free_fn>(dlsym(RTLD_NEXT, "free"));
-  real_calloc  = reinterpret_cast<calloc_fn>(dlsym(RTLD_NEXT, "calloc"));
-  real_realloc = reinterpret_cast<realloc_fn>(dlsym(RTLD_NEXT, "realloc"));
-  resolving    = false;
+  resolving = true;
+
+  auto *m = reinterpret_cast<malloc_fn>(dlsym(RTLD_NEXT, "malloc"));
+  auto *f = reinterpret_cast<free_fn>(dlsym(RTLD_NEXT, "free"));
+  auto *c = reinterpret_cast<calloc_fn>(dlsym(RTLD_NEXT, "calloc"));
+  auto *r = reinterpret_cast<realloc_fn>(dlsym(RTLD_NEXT, "realloc"));
+
+  real_free    = f;
+  real_calloc  = c;
+  real_realloc = r;
+  real_malloc  = m; // published last: this is the pointer the early return above tests
+
+  resolving = false;
 }
 
 void
@@ -175,6 +186,11 @@ free(void *p)
   }
   if (real_free == nullptr) {
     resolve_real_allocators();
+    if (real_free == nullptr) {
+      // Still resolving, so there is nothing to free through. Leaking the few blocks the
+      // loader turns over during startup is better than calling through a null pointer.
+      return;
+    }
   }
   real_free(p);
 }
@@ -202,6 +218,31 @@ realloc(void *p, size_t size)
   if (real_realloc == nullptr) {
     resolve_real_allocators();
   }
+
+  // A block handed out by bootstrap_alloc() is not one the system allocator knows, so it
+  // cannot be passed to the real realloc. Move it instead: the bootstrap sizes are tiny and
+  // this happens only while the loader is still resolving.
+  if (from_bootstrap(p)) {
+    if (real_malloc == nullptr) {
+      return bootstrap_alloc(size);
+    }
+    record(size);
+    void *moved = real_malloc(size);
+    if (moved != nullptr) {
+      // The original size is not recorded, so copy the smaller of the request and what is
+      // left of the bootstrap buffer from p. Both are small and the buffer is still mapped.
+      size_t const available = sizeof(bootstrap_buffer) - static_cast<size_t>(static_cast<char *>(p) - bootstrap_buffer);
+      memcpy(moved, p, size < available ? size : available);
+    }
+    return moved;
+  }
+
+  if (real_realloc == nullptr) {
+    // Still resolving and this is not a bootstrap block, so there is nothing safe to do
+    // with it other than hand back a fresh one.
+    return bootstrap_alloc(size);
+  }
+
   record(size);
   return real_realloc(p, size);
 }
