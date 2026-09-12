@@ -57,3 +57,11 @@ target_include_directories(benchmark_HuffmanDecode PRIVATE ${CMAKE_SOURCE_DIR}/l
 
 add_executable(benchmark_ascii_tolower benchmark_ascii_tolower.cc)
 target_link_libraries(benchmark_ascii_tolower PRIVATE Catch2::Catch2WithMain ts::tscore)
+
+add_executable(benchmark_Regex benchmark_Regex.cc)
+target_link_libraries(benchmark_Regex PRIVATE Catch2::Catch2WithMain ts::tsutil)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  # The allocation counters interpose the system allocator, which needs the real
+  # symbols from the next object in the search order.
+  target_link_libraries(benchmark_Regex PRIVATE ${CMAKE_DL_LIBS})
+endif()
