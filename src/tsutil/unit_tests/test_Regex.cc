@@ -1204,15 +1204,19 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   int                     arrived = 0;
   bool                    go      = false;
 
+  // One caller-supplied context, built here and shared by half the threads. That is the
+  // production shape: regex_remap builds a context when it loads a rule and every net
+  // thread then matches through it. A context that cached a JIT stack directly rather than
+  // resolving one per thread through the callback would pass a test that gave each thread
+  // its own context, and would corrupt this one.
+  RegexMatchContext shared_caller_context;
+
   std::vector<std::thread> threads;
   threads.reserve(THREADS);
   for (int i = 0; i < THREADS; ++i) {
     threads.emplace_back([&, i]() {
-      // Half the threads bring their own match context, which is a copy of the shared one
-      // and so carries the same JIT stack callback.
       bool const                     own_context = (i % 2) == 0;
-      RegexMatchContext              context;
-      RegexMatchContext const *const use = own_context ? &context : nullptr;
+      RegexMatchContext const *const use         = own_context ? &shared_caller_context : nullptr;
 
       {
         std::unique_lock<std::mutex> lock{gate_mutex};

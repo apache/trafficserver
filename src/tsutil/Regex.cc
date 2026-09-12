@@ -391,14 +391,19 @@ Regex::Regex(Regex const &other)
     // Use PCRE2's built-in function to deep copy the compiled pattern
     auto *copied_code = pcre2_code_copy(other_code);
 
-    // pcre2_code_copy() does not carry the machine code the JIT produced, because that
-    // code is position dependent. Without this the copy would match on the interpreter:
-    // same answers, much slower, and a different set of resource limits, so a pattern
-    // that reports a JIT stack limit through the original would quietly match through
-    // the copy. Compile it again, exactly as Regex::compile() does for a new pattern.
-    pcre2_jit_compile(copied_code, PCRE2_JIT_COMPLETE);
+    // pcre2_code_copy() returns null when it cannot obtain memory. Leave the object empty
+    // in that case, which is the state a default constructed Regex is in and which
+    // empty() reports truthfully, rather than compiling a null pattern.
+    if (copied_code != nullptr) {
+      // pcre2_code_copy() does not carry the machine code the JIT produced, because that
+      // code is position dependent. Without this the copy would match on the interpreter:
+      // same answers, much slower, and a different set of resource limits, so a pattern
+      // that reports a JIT stack limit through the original would quietly match through
+      // the copy. Compile it again, exactly as Regex::compile() does for a new pattern.
+      pcre2_jit_compile(copied_code, PCRE2_JIT_COMPLETE);
 
-    _Code::set(_code, copied_code);
+      _Code::set(_code, copied_code);
+    }
   }
 }
 
