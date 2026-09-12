@@ -126,10 +126,15 @@ alignas(std::max_align_t) char bootstrap_buffer[16384];
 size_t bootstrap_used = 0;
 bool   resolving      = false;
 
+// Compare addresses rather than pointers. Relational comparison of pointers into unrelated
+// objects has no defined ordering in C++, and a wrong answer here is not harmless: a false
+// positive makes free() leak the block and makes realloc() read a header that is not there.
 bool
 from_bootstrap(void *p)
 {
-  return p >= static_cast<void *>(bootstrap_buffer) && p < static_cast<void *>(bootstrap_buffer + sizeof(bootstrap_buffer));
+  auto const address = reinterpret_cast<uintptr_t>(p);
+  auto const begin   = reinterpret_cast<uintptr_t>(bootstrap_buffer);
+  return address >= begin && address < begin + sizeof(bootstrap_buffer);
 }
 
 void *
@@ -320,7 +325,12 @@ char const *const PATTERN_QUERY     = R"(^/alpha/bravo/[?]((?!action=(newsfeed|c
 std::string_view const SUBJECT_PATH      = "/images/2026/summer/header.jpg";
 std::string_view const SUBJECT_HOST      = "cdn.edge.example.com";
 std::string_view const SUBJECT_EXTENSION = "/images/2026/summer/header.jpg";
-std::string_view const SUBJECT_MISS      = "/no/match/here/at/all";
+// A miss for the host pattern: it is a path, not a host.
+std::string_view const SUBJECT_MISS = "/no/match/here/at/all";
+// A miss for the path pattern, which needs a leading slash and three slash separated
+// components. "/no/match/here/at/all" is not one: it satisfies the pattern with a remainder
+// of "here/at/all", so using it here would time a hit under the name of a miss.
+std::string_view const SUBJECT_PATH_MISS = "not-a-path-at-all";
 
 // A set of host patterns, the shape a rule list has when a caller scans one in order.
 std::vector<std::string>
@@ -343,6 +353,25 @@ host_patterns(int count)
 bool
 exhausts_jit_stack(char const *pattern, std::string const &subject)
 {
+  // Ask the cheap question first. Without machine code for this pattern there is no JIT
+  // stack to exhaust, and running the long subject to find that out would put the whole
+  // interpreter cost on a probe whose answer is already known.
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+  if (code == nullptr) {
+    return false;
+  }
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+  size_t jit_size = 0;
+  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+  pcre2_code_free(code);
+  if (jit_size == 0) {
+    return false;
+  }
+
+  // There is machine code, so the match is bounded by the JIT stack and cannot run away.
+  // Now confirm this subject really does reach that bound on this release.
   Regex re;
   if (!re.compile(pattern)) {
     return false;
@@ -447,7 +476,7 @@ TEST_CASE("Regex match", "[bench][regex]")
   BENCHMARK("exec with captures, miss")
   {
     RegexMatches matches;
-    return path.exec(SUBJECT_MISS, matches);
+    return path.exec(SUBJECT_PATH_MISS, matches);
   };
 
   BENCHMARK("bool exec, extension pattern")

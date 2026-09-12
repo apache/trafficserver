@@ -62,6 +62,9 @@ add_executable(benchmark_Regex benchmark_Regex.cc)
 target_link_libraries(benchmark_Regex PRIVATE Catch2::Catch2WithMain ts::tsutil)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   # The allocation counters interpose the system allocator, which needs the real
-  # symbols from the next object in the search order.
+  # symbols from the next object in the search order. RTLD_NEXT is a GNU extension;
+  # g++ and clang++ already define _GNU_SOURCE for C++ on Linux, but say so here
+  # rather than relying on it.
   target_link_libraries(benchmark_Regex PRIVATE ${CMAKE_DL_LIBS})
+  target_compile_definitions(benchmark_Regex PRIVATE _GNU_SOURCE)
 endif()
