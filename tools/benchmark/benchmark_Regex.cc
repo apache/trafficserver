@@ -282,9 +282,12 @@ realloc(void *p, size_t size) noexcept
   }
 
   if (real_realloc == nullptr) {
-    // Still resolving and this is not a bootstrap block, so there is nothing safe to do
-    // with it other than hand back a fresh one.
-    return bootstrap_alloc(size);
+    // Still resolving, and this block came from neither the bootstrap buffer nor a real
+    // allocator this wrapper can reach. Returning a fresh block would be worse than
+    // failing: the caller would take uninitialised storage for its moved data while the
+    // original went unfreed. Reporting failure is a documented realloc outcome and leaves
+    // the caller's pointer valid.
+    return nullptr;
   }
 
   record(size);
@@ -323,25 +326,31 @@ host_patterns(int count)
   return patterns;
 }
 
-// Whether this PCRE2 produced machine code for a pattern. The project requires only
-// libpcre2-8, and a build can be configured without the just-in-time compiler or refuse an
-// individual pattern, in which case a subject sized to exhaust the JIT stack instead runs
-// to completion on the interpreter. That measures something else entirely, and far more
-// slowly, so the cases that depend on the JIT ask first.
+// Whether this pattern and subject really do reach the just-in-time engine's stack bound
+// here. Asking whether PCRE2 produced machine code is not enough: only libpcre2-8 is
+// required, a build can be configured without the JIT or refuse this pattern, and a release
+// whose JIT uses the stack differently may simply complete the match. In any of those cases
+// the subject runs to completion instead, which is a different and much slower measurement
+// wearing the same label. Run it once and look at what actually comes back.
 bool
-pattern_has_jit(char const *pattern)
+exhausts_jit_stack(char const *pattern, std::string const &subject)
 {
-  int         errnum    = 0;
-  PCRE2_SIZE  erroffset = 0;
-  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
-  if (code == nullptr) {
+  Regex re;
+  if (!re.compile(pattern)) {
     return false;
   }
-  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
-  size_t jit_size = 0;
-  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
-  pcre2_code_free(code);
-  return jit_size > 0;
+  RegexMatches matches;
+  return re.exec(subject, matches) == PCRE2_ERROR_JIT_STACKLIMIT;
+}
+
+// The subject the two JIT stack cases use, built once so the probe and the measurement
+// cannot drift apart.
+std::string
+jit_stack_subject()
+{
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(64 * 1024, 'x');
+  return subject;
 }
 
 void
@@ -505,15 +514,13 @@ TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
   // long subject reaches is the JIT's own stack bound. Driving a match onto the interpreter
   // needs a pattern the JIT refuses outright, which starts around 36KB of pattern text and
   // costs tens of seconds per match, so it has no place in a timed suite.
-  if (!pattern_has_jit(PATTERN_QUERY)) {
-    SKIP("PCRE2 has no JIT for this pattern, so there is no JIT stack to exhaust");
+  std::string const subject = jit_stack_subject();
+  if (!exhausts_jit_stack(PATTERN_QUERY, subject)) {
+    SKIP("this PCRE2 does not reach the JIT stack bound for this pattern and subject");
   }
 
   Regex query;
   query.compile(PATTERN_QUERY);
-
-  std::string subject{"/alpha/bravo/?"};
-  subject.append(64 * 1024, 'x');
 
   BENCHMARK("exec that exhausts the JIT stack, 64KiB subject")
   {
@@ -586,6 +593,41 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
   }
 
   {
+    // The set scan, both ends of it. DFA holds a vector of Regex and tries them in order,
+    // and each attempt builds a RegexMatches internally, so this is where a per attempt
+    // allocation would show up if one existed.
+    auto const                patterns = host_patterns(20);
+    std::vector<const char *> raw;
+    raw.reserve(patterns.size());
+    for (auto const &pattern : patterns) {
+      raw.push_back(pattern.c_str());
+    }
+    DFA dfa;
+    dfa.compile(raw.data(), static_cast<int>(raw.size()), RE_UNANCHORED);
+
+    std::string const first{"cdn.host0.example.com"};
+    std::string const last{"cdn.host19.example.com"};
+
+    {
+      CountAllocations counter;
+      for (unsigned long i = 0; i < OPS; ++i) {
+        volatile int r = dfa.match(first);
+        (void)r;
+      }
+      report_allocations("DFA match, first of 20", counter.stats(), OPS);
+    }
+
+    {
+      CountAllocations counter;
+      for (unsigned long i = 0; i < OPS; ++i) {
+        volatile int r = dfa.match(last);
+        (void)r;
+      }
+      report_allocations("DFA match, last of 20", counter.stats(), OPS);
+    }
+  }
+
+  {
     constexpr unsigned long COMPILES = 1000;
     CountAllocations        counter;
     for (unsigned long i = 0; i < COMPILES; ++i) {
@@ -613,11 +655,10 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
     // reaches on a build that has a JIT. Without a JIT there is no such bound, and the same
     // subject would run to completion on the interpreter and allocate its frames vector,
     // which is a different measurement wearing the same label.
-    if (pattern_has_jit(PATTERN_QUERY)) {
+    std::string const subject = jit_stack_subject();
+    if (exhausts_jit_stack(PATTERN_QUERY, subject)) {
       Regex query;
       query.compile(PATTERN_QUERY);
-      std::string subject{"/alpha/bravo/?"};
-      subject.append(64 * 1024, 'x');
 
       constexpr unsigned long EXECS = 200;
       CountAllocations        counter;
@@ -628,7 +669,7 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
       }
       report_allocations("exec that exhausts the JIT stack", counter.stats(), EXECS);
     } else {
-      printf("  %-44s skipped: this PCRE2 has no JIT for the pattern\n", "exec that exhausts the JIT stack");
+      printf("  %-44s skipped: this PCRE2 does not reach the JIT stack bound here\n", "exec that exhausts the JIT stack");
     }
   }
 
