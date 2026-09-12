@@ -400,6 +400,12 @@ Regex::Regex(Regex const &other)
       // same answers, much slower, and a different set of resource limits, so a pattern
       // that reports a JIT stack limit through the original would quietly match through
       // the copy. Compile it again, exactly as Regex::compile() does for a new pattern.
+      //
+      // The result is not checked, for the same reason compile() does not check it: a
+      // pattern the JIT will not take still matches correctly on the interpreter, and this
+      // class has no way to tell a caller which engine it ended up with. Whether a build
+      // even has a JIT is not one error code either, so a check here would have to know
+      // three of them. Reporting the engine is what the replacement API adds.
       pcre2_jit_compile(copied_code, PCRE2_JIT_COMPLETE);
 
       _Code::set(_code, copied_code);

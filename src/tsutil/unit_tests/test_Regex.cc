@@ -1215,8 +1215,8 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   threads.reserve(THREADS);
   for (int i = 0; i < THREADS; ++i) {
     threads.emplace_back([&, i]() {
-      bool const                     own_context = (i % 2) == 0;
-      RegexMatchContext const *const use         = own_context ? &shared_caller_context : nullptr;
+      bool const                     use_caller_context = (i % 2) == 0;
+      RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
 
       {
         std::unique_lock<std::mutex> lock{gate_mutex};
