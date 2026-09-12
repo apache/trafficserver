@@ -253,6 +253,14 @@ calloc(size_t n, size_t size) noexcept
 extern "C" void *
 realloc(void *p, size_t size) noexcept
 {
+  // realloc(nullptr, size) is defined to behave as malloc(size), and a caller is entitled
+  // to use it that way. Route it through the wrapper above rather than letting it reach the
+  // unresolved-pointer path below, which would turn a legitimate allocation into a failure
+  // while the resolver is still running.
+  if (p == nullptr) {
+    return malloc(size);
+  }
+
   if (real_realloc == nullptr) {
     resolve_real_allocators();
   }
