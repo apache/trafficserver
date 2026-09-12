@@ -17,6 +17,8 @@
 
 .. include:: ../../common.defs
 
+.. _admin-mtls:
+
 Mututal TLS
 ***********
 
@@ -101,25 +103,42 @@ Then you would set :ts:cv:`proxy.config.ssl.CA.cert.filename` to client_CA_bundl
 Session resumption across co-hosted SNIs
 ----------------------------------------
 TLS session resumption never asks the client for its certificate again, so a resumed session
-carries forward whatever peer certificate the original handshake produced.  |TS| therefore
-re-evaluates that certificate against the current SNI's policy as the handshake completes, and
-rejects the handshake when it does not satisfy it: either because the session carries no client
-certificate and the current SNI requires one, or because the certificate it does carry is not
-trusted by the certificate authorities configured for that SNI.  Rejections increment
-:ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`.
+carries forward whatever peer certificate the original handshake produced.  |TS| therefore binds
+every session it issues to the SNI it was issued under together with that SNI's ``verify_client``
+mode and depth, and the trust anchors the client certificate was verified against.  A session
+offered under a different SNI, under the same SNI after its policy changed, or after those trust
+anchors were replaced, is not resumed.  The TLS library declines it and proceeds with a full
+handshake, in which the current policy is applied as usual.  This is what RFC 6066 section 3
+requires of session ID resumption; RFC 8446 imposes no equivalent requirement on TLS 1.3 tickets,
+and |TS| applies the binding to them because that is what makes ``verify_client`` enforceable
+across resumption.
 
-Note that the certificate is re-validated rather than trusted on the strength of the result
-cached when the session was created.  That cached result was reached against whichever CA bundle
-applied to the SNI that issued the session, so relying on it would let two tenants sharing a
-listener at the same ``verify_client`` level accept each other's client certificates.
+Two tenants sharing a listener therefore do not accept each other's sessions, whatever their
+``verify_client`` levels, except where the binding cannot be established before the TLS library
+selects a session.  That is the case on a build providing neither ClientHello callback, and on
+|TS| built against OpenSSL when a plugin changes client verification from a ``TS_EVENT_SSL_CERT``
+hook, because OpenSSL creates and looks up the session before those hooks run.
 
-Two caveats follow.  First, a session restored from a ticket may not carry the intermediate
-certificates the client originally presented, so a client certificate issued by an intermediate
-CA needs that intermediate present in the applicable ``verify_client_ca_certs`` bundle (or in
-:ts:cv:`proxy.config.ssl.CA.cert.filename`) for its sessions to survive resumption.  Second,
-|TS| cannot bind a ticket to the SNI it was issued under, so resumption between two SNIs that
-both use ``verify_client: NONE`` is still accepted.  Where tenants have genuinely different
-security postures, prefer giving them separate listeners rather than co-hosting them on one.
+Which changes retire existing sessions depends on how the trust anchors are configured:
+
+- A bundle file, from ``verify_client_ca_certs``'s ``file`` or from
+  :ts:cv:`proxy.config.ssl.CA.cert.filename`, contributes the certificates it holds.  Replacing
+  it in place retires the sessions it verified.  For ``verify_client_ca_certs`` this takes effect
+  on the next connection; for :ts:cv:`proxy.config.ssl.CA.cert.filename` it takes effect on the
+  next :option:`traffic_ctl config reload`, because that bundle is read when certificate contexts
+  are built.
+- A hashed directory, from ``verify_client_ca_certs``'s ``dir`` or from
+  :ts:cv:`proxy.config.ssl.CA.cert.path`, contributes only its configured path.  Its certificates
+  are read lazily during verification, and reading them on every handshake to discover which are
+  present would cost more than the guarantee is worth.  Retiring a trust anchor from such a
+  directory does not retire the sessions it verified; where that matters, use a bundle file.
+
+Because a session can only be resumed under the policy that verified its client certificate, the
+certificate does not have to be re-validated on resumption.  A client certificate issued by an
+intermediate CA therefore keeps working across resumption with only the root in the applicable CA
+bundle, exactly as it does on a full handshake.  Should a resumed session nonetheless carry no
+client certificate where ``verify_client: STRICT`` requires one, |TS| rejects the handshake and
+increments :ts:stat:`proxy.process.ssl.user_agent_resumed_cert_rejected`.
 
 Guidance for testing
 --------------------

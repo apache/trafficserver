@@ -391,6 +391,12 @@ SSLConfigParams::initialize()
   ats_free(ssl_server_ca_cert_filename);
   ats_free(CACertRelativePath);
 
+  // Digested here, once per configuration load, so that the handshake path never reads the bundle.
+  // Both locations are covered, matching what _set_verify_path() hands to
+  // SSL_CTX_load_verify_locations(), so that retargeting either one retires the sessions it verified.
+  clientCADigest = digestClientCAScope(serverCACertFilename != nullptr ? serverCACertFilename : "",
+                                       serverCACertPath != nullptr ? serverCACertPath : "", clientCADigestFailed);
+
   // SSL session cache configurations
   REC_ReadConfigInteger(ssl_origin_session_cache, "proxy.config.ssl.origin_session_cache");
   REC_ReadConfigInteger(ssl_origin_session_cache_size, "proxy.config.ssl.origin_session_cache.size");

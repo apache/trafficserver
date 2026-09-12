@@ -80,15 +80,17 @@ verify_client                          Inbound   One of the values :code:`NONE`,
 
                                                  By default this is :ts:cv:`proxy.config.ssl.client.certification_level`.
 
-                                                 A resumed TLS session does not re-request a client certificate, so |TS|
-                                                 enforces ``MODERATE`` and ``STRICT`` against the certificate carried over
-                                                 from the session that was resumed, rejecting the handshake if it does not
-                                                 satisfy the current SNI's policy. That carried certificate is re-validated
-                                                 against the certificate authorities in force for the current SNI rather
-                                                 than trusting the result cached by the handshake that issued the session,
-                                                 so two SNIs sharing a listener at the same ``verify_client`` level do not
-                                                 accept each other's client certificates. Disabling session tickets via
-                                                 ``ssl_ticket_enabled`` is not required as a workaround for this.
+                                                 A resumed TLS session does not re-request a client certificate, so |TS| only
+                                                 resumes a session under the SNI and ``verify_client`` policy that issued it,
+                                                 where the policy includes the trust anchors in force. A session offered under any
+                                                 other SNI, after that SNI's policy changed, or after those trust anchors were
+                                                 replaced, falls back to a full handshake in which the current policy is applied.
+                                                 Replacing a bundle file named by ``verify_client_ca_certs`` takes effect on the
+                                                 next connection, whereas replacing :ts:cv:`proxy.config.ssl.CA.cert.filename`
+                                                 takes effect on the next :option:`traffic_ctl config reload`; a hashed directory
+                                                 contributes only its path. Disabling session tickets via ``ssl_ticket_enabled``
+                                                 is not required as a workaround for this. See :ref:`admin-mtls` for the cases
+                                                 where the binding cannot be applied.
 
 verify_client_ca_certs                 Both      Specifies an alternate set of certificate authority certs to use to verify the
                                                  client cert.  The value must be either a file path, or a nested set of key /

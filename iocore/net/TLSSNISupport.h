@@ -40,6 +40,14 @@ public:
   static void unbind(SSL *ssl);
 
   int perform_sni_action();
+
+  /**
+   * @return The SNI server name this connection sent, or the empty string when it sent none.
+   *
+   * Public because the session id context that scopes resumption is derived from it, and that has
+   * to happen from the ClientHello callback, before the TLS library populates SSL_get_servername().
+   */
+  const char *get_sni_server_name() const;
   // Callback functions for OpenSSL libraries
 #if TS_USE_HELLO_CB || defined(OPENSSL_IS_BORINGSSL)
 #ifdef OPENSSL_IS_BORINGSSL

@@ -138,11 +138,13 @@ logging:
         tr.StillRunningAfter += self.server
         tr.StillRunningAfter += self.ts
         tr.Command = self._resume_command('open.example.com', '', 'strict.example.com')
-        # The resumption attempt is rejected at the TLS layer before any HTTP
-        # request is processed, so no particular client-side return code is
-        # guaranteed here (it depends on how the peer observes the aborted
-        # connection). Correctness is verified via the access log assertions
-        # in _add_log_assertions() instead.
+        # The session is now bound to the verify_client scope that issued it, so the offer is a
+        # cache miss rather than a rejected resumption: the client completes a full handshake under
+        # strict.example.com's policy, which refuses it with a TLS alert for want of a client
+        # certificate. No particular client-side return code is guaranteed.
+        tr.Processes.Default.Streams.All = Testers.ExcludesExpression('Reused', 'A ticket issued under another SNI must not resume')
+        tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+            'alert certificate required', "strict.example.com's verify_client must be enforced on the full handshake")
 
     def _add_same_sni_run(self) -> None:
         '''A ticket issued under strict.example.com with a valid client cert still resumes under the same SNI.'''
@@ -189,13 +191,13 @@ logging:
             f"{os.path.join(self.ts.Variables.LOGDIR, 'squid.log')}")
         tr.Processes.Default.ReturnCode = 0
 
-        # Counting absent access-log lines alone cannot distinguish the new guard
-        # from an ordinary verify_client rejection on a full handshake. Assert the
-        # guard's own diagnostic so a resumption that silently did not happen, or a
-        # rejection from some other path, fails the test.
-        self.ts.Disk.diags_log.Content += Testers.ContainsExpression(
+        # Counting absent access-log lines alone cannot distinguish a session that was declined
+        # from one that was never offered. The cross-SNI run asserts the handshake evidence
+        # directly; here, assert that nothing fell back to the post-handshake guard, which the
+        # session id context binding should keep out of reach.
+        self.ts.Disk.diags_log.Content += Testers.ExcludesExpression(
             'rejecting a resumed TLS session that does not satisfy verify_client',
-            'The resumption recheck must be what rejected the session')
+            'The session must be declined before the handshake completes, not rejected after it')
 
         self.ts.Disk.squid_log.Content = Testers.Lambda(
             lambda info, tester: TlsTicketVerifyClientScope.check_regex_count(

@@ -34,14 +34,26 @@
 #include "records/I_RecCore.h"
 #include "P_SSLCertLookup.h"
 
+#include <array>
 #include <map>
 #include <set>
 #include <memory>
+#include <optional>
+#include <string_view>
 
 struct SSLConfigParams;
 class SSLNetVConnection;
 
 typedef int ssl_error_t;
+
+/** Length of a verify-scope digest, which is a SHA-256 hash.
+
+    Defined here rather than in TLSBasicSupport, which is where master carries it, because this
+    branch's TLSBasicSupport.h includes this header and so cannot be included back from it.
+ */
+static constexpr size_t VERIFY_SCOPE_DIGEST_LENGTH = 32;
+
+using VerifyScopeDigest = std::array<unsigned char, VERIFY_SCOPE_DIGEST_LENGTH>;
 
 #ifndef OPENSSL_IS_BORINGSSL
 typedef int ssl_curve_id;
@@ -155,6 +167,14 @@ SSLNetVConnection *SSLNetVCAccess(const SSL *ssl);
 
 void setClientCertLevel(SSL *ssl, uint8_t certLevel);
 void setClientCertCACerts(SSL *ssl, const char *file, const char *dir);
+
+/** Digest the client CA scope named by @a file and @a dir, for the session id context.
+
+    @return The digest, or no value when neither location is set. A set location that cannot be read
+      also yields no value, with @a failed set, so the caller refuses to resume rather than falling
+      back to a different scope.
+ */
+std::optional<VerifyScopeDigest> digestClientCAScope(std::string_view file, std::string_view dir, bool &failed);
 void setTLSValidProtocols(SSL *ssl, unsigned long proto_mask, unsigned long max_mask);
 
 // Helper functions to retrieve sni name or ip address from a SSL object
