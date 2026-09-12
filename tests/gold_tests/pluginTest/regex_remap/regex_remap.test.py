@@ -88,7 +88,9 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.enabled': 1,
         'proxy.config.diags.debug.tags': 'http|regex_remap',
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
-        'proxy.config.dns.resolv_conf': 'NULL'
+        'proxy.config.dns.resolv_conf': 'NULL',
+        # The crash-guard run below needs a request larger than the 32 KB default.
+        'proxy.config.http.request_header_max_size': 131072
     })
 
 # 0 Test - Load cache (miss) (path1)
@@ -123,12 +125,29 @@ tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_simple.gold"
 tr.StillRunningAfter = ts
 
-# 3 Test - Preserve the original crash guard from #5762. This request must
-# survive resource exhaustion without redirecting, regardless of which matching
-# resource limit is reached (JIT stack, match work, depth, or heap).
-tr = Test.AddTestRun("resource exhaustion does not crash ATS")
+# 3 Test - A 3 KB query redirects. This rule backtracks once per subject
+# character, so it used to exhaust the 32 KB stack PCRE2 falls back to when a
+# match context carries none, and the rule was skipped. The plugin's context now
+# inherits the shared 1 MB stack, so the rule matches and the redirect fires.
+tr = Test.AddTestRun("long query redirects rather than exhausting the JIT stack")
 creq = replay_txns[1]['client-request']
-tr.MakeCurlCommand(curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'", ts=ts)
+tr.MakeCurlCommand(
+    curl_and_args + f"--header 'uuid: {creq['headers']['fields'][1][1]}' '{creq['url']}'" + " | grep -e '^HTTP/' -e '^Location'",
+    ts=ts)
+tr.Processes.Default.ReturnCode = 0
+tr.Processes.Default.Streams.stdout = "gold/regex_remap_redirect.gold"
+tr.StillRunningAfter = ts
+
+# 3b Test - Preserve the original crash guard from #5762. This request must
+# survive resource exhaustion without redirecting, regardless of which matching
+# resource limit is reached (JIT stack, match work, depth, or heap). Against the
+# shared 1 MB stack this rule needs a subject past 43 KB to exhaust it, which is
+# why the request header limit is raised above. Shortening this query silently
+# turns the run into a plain redirect test.
+crash_guard_query = 'x' * 64000
+tr = Test.AddTestRun("resource exhaustion does not crash ATS")
+tr.MakeCurlCommand(
+    curl_and_args + "--header 'uuid: 180' " + f"'http://example.one/alpha/bravo/?action=newsfed;{crash_guard_query}'", ts=ts)
 tr.Processes.Default.ReturnCode = 0
 tr.Processes.Default.Streams.stdout = "gold/regex_remap_crash.gold"
 ts.Disk.diags_log.Content += Testers.ContainsExpression(
