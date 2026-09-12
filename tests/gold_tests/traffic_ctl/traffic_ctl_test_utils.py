@@ -15,9 +15,14 @@
 #  limitations under the License.
 
 import atexit
+import json
 import os
+import shlex
 import shutil
 import tempfile
+
+import autest.testers as Testers
+from autest.testers import All
 
 _gold_tmpdir = None
 
@@ -59,6 +64,95 @@ def MakeGoldFileWithText(content, dir, test_number, add_new_line=True):
         gold_file.write(content)
 
     return gold_filepath
+
+
+def _read_stdout(path):
+    """Read a captured stream file as strict UTF-8, as `(text, error)`.
+
+    JSON has to be UTF-8, so output that does not decode is not valid JSON
+    either and the callers report it as a failure. Replacing the bad bytes
+    instead would hide exactly that: U+FFFD is a legal character inside a
+    JSON string, so undecodable output would go on to parse cleanly and pass
+    a check whose whole job is to reject output that is not JSON.
+
+    No command wrapped here reaches that branch today. yaml-cpp substitutes
+    U+FFFD itself when writing a double quoted scalar, so traffic_ctl cannot
+    put undecodable bytes on stdout on any of these paths. Decoding strictly
+    states the requirement rather than resting on that staying true.
+
+    The failure comes back as a value rather than an exception because autest
+    treats an exception from a tester callback as fatal, setting KillOnFailure
+    and abandoning the rest of the test run. On failure the text is still
+    rendered, lossily, so the caller can show what arrived.
+    """
+    with open(path, 'rb') as stream:
+        raw = stream.read()
+    try:
+        return raw.decode('utf-8'), None
+    except UnicodeDecodeError as ex:
+        return raw.decode('utf-8', errors='replace'), str(ex)
+
+
+def _check_is_valid_json(path):
+    """Tester callback: the captured output must parse as JSON."""
+    desc = "Check that the output parses as JSON"
+    raw, decode_error = _read_stdout(path)
+    if decode_error:
+        return (False, desc, f"Output is not valid UTF-8, so it is not JSON: {decode_error}\nOutput was:\n{raw}")
+    try:
+        json.loads(raw)
+    except ValueError as ex:
+        return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
+    return (True, desc, "Output parses as JSON")
+
+
+def _check_json_fields(path, expected):
+    """Tester callback: every expected field must match its value in the parsed output.
+
+    The expectation is compared to the parsed value with `==`, so write it as
+    the Python value the JSON parses to: `[]` for a JSON array, `'[]'` only
+    for the JSON string `"[]"`. Comparing `str()` of both sides instead would
+    equate those two and let a field regress from an array to a string
+    without failing, which is the class of bug these tests exist to catch.
+
+    Scalars and sequences therefore read differently. The emitters these
+    tests cover set `YAML::DoubleQuoted`, which encodes every *scalar* as a
+    JSON string: `get_server_status` sends `"is_draining": "false"`, matched
+    by `is_draining='false'`. A genuine JSON boolean would parse to Python
+    `True` or `False` and needs `is_draining=False`. A sequence is not a
+    scalar and is untouched by `DoubleQuoted`, so `hostdb status` sends a
+    real `"partitions": []`, matched by `partitions=[]`.
+
+    `validate_result_with_text` does take JSON-spelled text, so the two
+    helpers are not interchangeable.
+
+    A key the output does not carry is reported as missing rather than
+    compared, so a misspelled field name fails instead of quietly matching an
+    expectation of `None`. Asserting that a field is present and null is
+    therefore written `field=None`, which only passes when the key is there.
+    """
+    desc = "Check that the JSON output contains the expected fields"
+    raw, decode_error = _read_stdout(path)
+    if decode_error:
+        return (False, desc, f"Output is not valid UTF-8, so it is not JSON: {decode_error}\nOutput was:\n{raw}")
+    try:
+        doc = json.loads(raw)
+    except ValueError as ex:
+        return (False, desc, f"Output is not JSON: {ex}\nOutput was:\n{raw}")
+    if not isinstance(doc, dict):
+        return (False, desc, f"Output is a JSON {type(doc).__name__}, not an object, so it has no fields\nOutput was:\n{raw}")
+
+    failed = []
+    for key, want in expected.items():
+        if key not in doc:
+            failed.append(f"{key} is missing (expected {want!r})")
+            continue
+        actual = doc[key]
+        if actual != want:
+            failed.append(f"{key} = {actual!r} (expected {want!r})")
+    if failed:
+        return (False, desc, "FAIL: " + "; ".join(failed) + f"\nOutput was:\n{raw}")
+    return (True, desc, "All expected fields matched")
 
 
 class Common():
@@ -115,13 +209,8 @@ class Common():
                 "Set proxy.config.diags.debug.enabled"
             )
         """
-        import sys
-        # Testers and All are injected by autest into the test file's globals
-        caller_globals = sys._getframe(1).f_globals
-        _Testers = caller_globals['Testers']
-        _All = caller_globals['All']
-        testers = [_Testers.IncludesExpression(s, f"should contain: {s}") for s in strings]
-        self._tr.Processes.Default.Streams.stdout = _All(*testers)
+        testers = [Testers.IncludesExpression(s, f"should contain: {s}") for s in strings]
+        self._tr.Processes.Default.Streams.stdout = All(*testers)
         self._finish()
         return self
 
@@ -142,26 +231,42 @@ class Common():
     def validate_json_contains(self, **field_checks):
         """
         Validate JSON output contains specific field:value pairs. Only checks specified fields.
-        Prints detailed error on failure: "FAIL: field_name = actual_value (expected expected_value)"
-        stream.all.txt will contain the actual output with the failed fields.
+        Every mismatch is reported as "field_name = actual_value (expected expected_value)",
+        followed by the raw output.
+
+        The check runs in the autest process against the captured stdout file. Piping
+        traffic_ctl into a JSON parser instead would hide failures: the exit status of a shell
+        pipeline is the parser's, so a non-zero traffic_ctl exit would never reach the
+        ReturnCode check.
 
         Example:
             traffic_ctl.server().status().validate_json_contains(
                 initialized_done='true', is_draining='false'
             )
         """
-        import json
-        checks_str = ', '.join(f"'{k}': '{v}'" for k, v in field_checks.items())
-        self._cmd = (
-            f'{self._cmd} | python3 -c "'
-            f"import sys, json; "
-            f"d = json.load(sys.stdin); "
-            f"c = {{{checks_str}}}; "
-            f"failed = [(k, v, str(d.get(k))) for k, v in c.items() if str(d.get(k)) != v]; "
-            f"[print(f'FAIL: {{k}} = {{actual}} (expected {{expected}})', file=sys.stderr) "
-            f"for k, expected, actual in failed]; "
-            f"exit(0 if not failed else 1)"
-            f'"')
+        self._tr.Processes.Default.Streams.stdout = Testers.Lambda(
+            lambda info, tester: _check_json_fields(tester.GetContent(info), field_checks))
+        self._finish()
+        return self
+
+    def validate_is_valid_json(self):
+        """
+        Validate that stdout parses as JSON. Performs no field checks.
+
+        Use this as a regression guard on any command documented to emit JSON.
+        A gold file cannot do this job: yaml-cpp spells null as `~`, which a
+        gold file matches happily but no JSON parser accepts.
+
+        The check runs in the autest process against the captured stdout file, so
+        traffic_ctl stays the only process in the test run and the exit status the
+        harness compares against ReturnCode is still traffic_ctl's own. The raw
+        output is reported on failure.
+
+        Example:
+            traffic_ctl.hostdb().status().validate_is_valid_json()
+        """
+        self._tr.Processes.Default.Streams.stdout = Testers.Lambda(
+            lambda info, tester: _check_is_valid_json(tester.GetContent(info)))
         self._finish()
         return self
 
@@ -467,6 +572,53 @@ class RPC(Common):
         return self
 
 
+class HostDB(Common):
+    """
+        Handy class to map traffic_ctl hostdb options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr)
+        self._cmd = "traffic_ctl hostdb "
+        self._dir = dir
+        self._tn = tn
+
+    def status(self, hostname: str = ""):
+        """Get HostDB info (traffic_ctl hostdb status [HOSTNAME])
+
+        The hostname is shell quoted. It is omitted entirely when empty, since
+        passing an empty argument is not the same as passing none.
+        """
+        arg = f' {shlex.quote(hostname)}' if hostname else ''
+        self._cmd = f'{self._cmd} status{arg} '
+        return self
+
+    def as_json(self):
+        self._cmd = f'{self._cmd} -f json'
+        return self
+
+
+class Plugin(Common):
+    """
+        Handy class to map traffic_ctl plugin options.
+    """
+
+    def __init__(self, dir, tr, tn):
+        super().__init__(tr)
+        self._cmd = "traffic_ctl plugin "
+        self._dir = dir
+        self._tn = tn
+
+    def list(self):
+        """Show globally loaded plugins and their status (traffic_ctl plugin list)"""
+        self._cmd = f'{self._cmd} list '
+        return self
+
+    def as_json(self):
+        self._cmd = f'{self._cmd} -f json'
+        return self
+
+
 '''
 
 Handy wrapper around traffic_ctl, ATS and the autest output validation mechanism.
@@ -533,6 +685,14 @@ class TrafficCtl(Config, Server):
     def rpc(self):
         self.add_test()
         return RPC(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
+
+    def hostdb(self):
+        self.add_test()
+        return HostDB(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
+
+    def plugin(self):
+        self.add_test()
+        return Plugin(self._Test.TestDirectory, self._tests[self.__get_index()], self._testNumber)
 
 
 def Make_traffic_ctl(test, records_yaml=None, retcode=0):

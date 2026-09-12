@@ -22,6 +22,8 @@
 #include <string_view>
 #include <yaml-cpp/yaml.h>
 
+#include "tsutil/YamlCfg.h"
+
 #include "shared/rpc/RPCRequests.h"
 
 /// JSONRPC 2.0 Client API request/response codecs only. If you need to define your own specific codecs they should then be defined
@@ -202,7 +204,7 @@ public:
   encode(shared::rpc::JSONRPCRequest const &req)
   {
     YAML::Emitter json;
-    json << YAML::DoubleQuoted << YAML::Flow;
+    ts::Yaml::configure_json_emitter(json);
     json << YAML::BeginMap;
 
     if (!req.id.empty()) {

@@ -82,7 +82,7 @@ template <> struct convert<HostDBCache> {
   static Node
   encode(const HostDBCache *const hostDB, std::string_view hostname)
   {
-    Node partitions;
+    Node partitions{YAML::NodeType::Sequence};
     for (size_t i = 0; i < hostDB->refcountcache->partition_count(); i++) {
       auto                                 &partition = hostDB->refcountcache->get_partition(i);
       std::vector<RefCountCacheHashEntry *> partition_entries;
