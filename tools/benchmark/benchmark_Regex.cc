@@ -7,7 +7,9 @@
   it makes for a compile or a match through the callbacks the wrapper installs, and those
   call the system allocator, so counting calls to malloc across a region counts exactly
   what the wrapper caused. Under the just-in-time engine a match should reach the system
-  allocator zero times; the interpreter allocates a frames vector and does not.
+  allocator zero times, because the match data comes out of the caller's own buffer. The
+  interpreter is the exception: it allocates a backtracking frames vector through the same
+  allocator, so a match that runs interpreted does show up in the count.
 
   Interposing malloc is only wired up on Linux, where defining these symbols in the
   executable is enough. Elsewhere the counters stay at zero and the report says so, so a
@@ -108,6 +110,13 @@ realloc_fn real_realloc = nullptr;
 
 // dlsym() itself can allocate while the real pointers are still being resolved. Hand
 // those few allocations out of a static buffer rather than recursing.
+//
+// Each block is preceded by a header holding its size, so a realloc of one can copy the
+// old contents rather than silently returning uninitialised storage. The header is one
+// max_align_t wide so the pointer handed back keeps the alignment malloc promises.
+constexpr size_t BOOTSTRAP_HEADER = alignof(std::max_align_t);
+static_assert(BOOTSTRAP_HEADER >= sizeof(size_t), "the bootstrap header must hold a size");
+
 alignas(std::max_align_t) char bootstrap_buffer[16384];
 size_t bootstrap_used = 0;
 bool   resolving      = false;
@@ -121,13 +130,22 @@ from_bootstrap(void *p)
 void *
 bootstrap_alloc(size_t size)
 {
-  size_t const aligned = (size + alignof(std::max_align_t) - 1) & ~(alignof(std::max_align_t) - 1);
-  if (bootstrap_used + aligned > sizeof(bootstrap_buffer)) {
+  size_t const payload = (size + alignof(std::max_align_t) - 1) & ~(alignof(std::max_align_t) - 1);
+  if (bootstrap_used + BOOTSTRAP_HEADER + payload > sizeof(bootstrap_buffer)) {
     return nullptr;
   }
-  void *p         = bootstrap_buffer + bootstrap_used;
-  bootstrap_used += aligned;
-  return p;
+  char *block = bootstrap_buffer + bootstrap_used;
+  memcpy(block, &size, sizeof(size));
+  bootstrap_used += BOOTSTRAP_HEADER + payload;
+  return block + BOOTSTRAP_HEADER;
+}
+
+size_t
+bootstrap_size(void *p)
+{
+  size_t size = 0;
+  memcpy(&size, static_cast<char *>(p) - BOOTSTRAP_HEADER, sizeof(size));
+  return size;
 }
 
 // Resolve all four into locals and publish them together, with real_malloc last. dlsym()
@@ -166,7 +184,7 @@ record(size_t size)
 } // namespace
 
 extern "C" void *
-malloc(size_t size)
+malloc(size_t size) noexcept
 {
   if (real_malloc == nullptr) {
     resolve_real_allocators();
@@ -179,7 +197,7 @@ malloc(size_t size)
 }
 
 extern "C" void
-free(void *p)
+free(void *p) noexcept
 {
   if (p == nullptr || from_bootstrap(p)) {
     return;
@@ -196,7 +214,7 @@ free(void *p)
 }
 
 extern "C" void *
-calloc(size_t n, size_t size)
+calloc(size_t n, size_t size) noexcept
 {
   if (real_calloc == nullptr) {
     resolve_real_allocators();
@@ -213,26 +231,32 @@ calloc(size_t n, size_t size)
 }
 
 extern "C" void *
-realloc(void *p, size_t size)
+realloc(void *p, size_t size) noexcept
 {
   if (real_realloc == nullptr) {
     resolve_real_allocators();
   }
 
   // A block handed out by bootstrap_alloc() is not one the system allocator knows, so it
-  // cannot be passed to the real realloc. Move it instead: the bootstrap sizes are tiny and
-  // this happens only while the loader is still resolving.
+  // cannot be passed to the real realloc. Move it instead, carrying the old contents over:
+  // the loader reallocs while resolving symbols, and handing back uninitialised storage
+  // there makes the lookup fail in a way that is very hard to read.
   if (from_bootstrap(p)) {
+    size_t const old  = bootstrap_size(p);
+    size_t const copy = size < old ? size : old;
+
     if (real_malloc == nullptr) {
-      return bootstrap_alloc(size);
+      void *moved = bootstrap_alloc(size);
+      if (moved != nullptr) {
+        memcpy(moved, p, copy);
+      }
+      return moved;
     }
+
     record(size);
     void *moved = real_malloc(size);
     if (moved != nullptr) {
-      // The original size is not recorded, so copy the smaller of the request and what is
-      // left of the bootstrap buffer from p. Both are small and the buffer is still mapped.
-      size_t const available = sizeof(bootstrap_buffer) - static_cast<size_t>(static_cast<char *>(p) - bootstrap_buffer);
-      memcpy(moved, p, size < available ? size : available);
+      memcpy(moved, p, copy);
     }
     return moved;
   }
