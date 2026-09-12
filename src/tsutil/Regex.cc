@@ -26,6 +26,7 @@
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#include <pthread.h>
 
 #include <array>
 #include <vector>
@@ -80,29 +81,86 @@ my_free(void *ptr, void * /*caller*/)
 }
 
 //----------------------------------------------------------------------------
+// One match context is shared by every thread that matches through it, and PCRE2
+// requires a distinct JIT stack per thread, so the stack comes from a callback
+// invoked at match time rather than a pointer baked in when the context is built.
+//
+// The per thread stack is held in a pthread key rather than a thread_local. A
+// thread_local with a destructor registers it through __cxa_thread_atexit, which
+// takes the dynamic loader lock; doing that from a match would invert lock order
+// against a dlopen caller running a plugin's static initialization. See the same
+// hazard described at Diags::tag_activated. A pthread key registers its destructor
+// once, at key creation, and never from the matching path.
+pthread_key_t  jit_stack_key;
+bool           jit_stack_key_valid = false;
+pthread_once_t jit_stack_key_once  = PTHREAD_ONCE_INIT;
+
+void
+destroy_jit_stack(void *stack)
+{
+  if (stack != nullptr) {
+    pcre2_jit_stack_free(static_cast<pcre2_jit_stack *>(stack));
+  }
+}
+
+void
+make_jit_stack_key()
+{
+  jit_stack_key_valid = pthread_key_create(&jit_stack_key, destroy_jit_stack) == 0;
+}
+
+pcre2_jit_stack *
+jit_stack_for_this_thread(void *)
+{
+  pthread_once(&jit_stack_key_once, make_jit_stack_key);
+  if (!jit_stack_key_valid) {
+    // Without a key there is nowhere to keep a stack, and jit_stack_key holds a
+    // default value that may name an unrelated key. Returning null tells PCRE2 to
+    // use its own default stack, which pcre2jit documents as thread safe.
+    return nullptr;
+  }
+
+  auto *stack = static_cast<pcre2_jit_stack *>(pthread_getspecific(jit_stack_key));
+  if (stack == nullptr) {
+    // One page to start, one mebibyte at most. Measured on PCRE2 10.47 against a pattern
+    // that backtracks once per character, which turns the maximum directly into a subject
+    // length: 32 KiB of stack resolves a 1,362 byte subject, 1 MiB resolves 43,687, 8 MiB
+    // resolves 349,522, and match time is flat across all of them. The maximum is address
+    // space reserved at creation, made resident only as deep as a match actually goes, and
+    // pcre2 does not hand it back, so a thread that once saw a deep subject keeps the
+    // pages. One mebibyte already covers a longer subject than a client can deliver, since
+    // proxy.config.http.request_header_max_size defaults to 32,768 bytes.
+    stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr);
+    if (pthread_setspecific(jit_stack_key, stack) != 0) {
+      // Nothing holds the stack now, so it would leak once per match. Give it back and
+      // let PCRE2 use its own default stack for this call.
+      pcre2_jit_stack_free(stack);
+      return nullptr;
+    }
+  }
+  return stack;
+}
+
+//----------------------------------------------------------------------------
+// These three contexts are built once and never modified, which pcre2api's MULTITHREADING
+// section gives as the condition for sharing a context across threads. The one genuinely
+// per thread object, the JIT stack, is reached through the callback above.
+//
+// The instance is allocated once and deliberately never destroyed. A thread_local with a
+// destructor registers it through __cxa_thread_atexit on first use, which takes the
+// dynamic loader lock, so the first compile() or exec() on a thread inverts lock order
+// against a dlopen caller running a plugin's static initialization; that is the same
+// hazard the JIT stack moved to a pthread key to avoid, and the one Diags and DbgCtl work
+// around. A context destroyed at thread or process exit can also still be in use by
+// another thread that is matching.
 class RegexContext
 {
 public:
   static RegexContext *
   get_instance()
   {
-    thread_local RegexContext ctx;
-    return &ctx;
-  }
-  ~RegexContext()
-  {
-    if (_general_context != nullptr) {
-      pcre2_general_context_free(_general_context);
-    }
-    if (_compile_context != nullptr) {
-      pcre2_compile_context_free(_compile_context);
-    }
-    if (_match_context != nullptr) {
-      pcre2_match_context_free(_match_context);
-    }
-    if (_jit_stack != nullptr) {
-      pcre2_jit_stack_free(_jit_stack);
-    }
+    static RegexContext *const ctx = new RegexContext();
+    return ctx;
   }
   pcre2_general_context *
   get_general_context()
@@ -126,13 +184,11 @@ private:
     _general_context = pcre2_general_context_create(my_malloc, my_free, nullptr);
     _compile_context = pcre2_compile_context_create(_general_context);
     _match_context   = pcre2_match_context_create(_general_context);
-    _jit_stack       = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr); // 1 page min and 1MB max
-    pcre2_jit_stack_assign(_match_context, nullptr, _jit_stack);
+    pcre2_jit_stack_assign(_match_context, jit_stack_for_this_thread, nullptr);
   }
   pcre2_general_context *_general_context = nullptr;
   pcre2_compile_context *_compile_context = nullptr;
   pcre2_match_context   *_match_context   = nullptr;
-  pcre2_jit_stack       *_jit_stack       = nullptr;
 };
 
 } // namespace
@@ -257,8 +313,12 @@ struct RegexMatchContext::_MatchContext {
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext()
 {
-  auto ctx = pcre2_match_context_create(nullptr);
-  debug_assert_message(ctx, "Failed to allocate custom pcre2 match context");
+  // Copy the shared context rather than building a blank one. A blank context
+  // silently drops everything the shared context configures, which is how this
+  // type came to run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB
+  // one every other caller gets. Callers override only the fields they mean to.
+  auto ctx = pcre2_match_context_copy(RegexContext::get_instance()->get_match_context());
+  debug_assert_message(ctx, "Failed to copy the shared pcre2 match context");
   _MatchContext::set(_match_context, ctx);
 }
 
@@ -330,7 +390,26 @@ Regex::Regex(Regex const &other)
   if (other_code != nullptr) {
     // Use PCRE2's built-in function to deep copy the compiled pattern
     auto *copied_code = pcre2_code_copy(other_code);
-    _Code::set(_code, copied_code);
+
+    // pcre2_code_copy() returns null when it cannot obtain memory. Leave the object empty
+    // in that case, which is the state a default constructed Regex is in and which
+    // empty() reports truthfully, rather than compiling a null pattern.
+    if (copied_code != nullptr) {
+      // pcre2_code_copy() does not carry the machine code the JIT produced, because that
+      // code is position dependent. Without this the copy would match on the interpreter:
+      // same answers, much slower, and a different set of resource limits, so a pattern
+      // that reports a JIT stack limit through the original would quietly match through
+      // the copy. Compile it again, exactly as Regex::compile() does for a new pattern.
+      //
+      // The result is not checked, for the same reason compile() does not check it: a
+      // pattern the JIT will not take still matches correctly on the interpreter, and this
+      // class has no way to tell a caller which engine it ended up with. Whether a build
+      // even has a JIT is not one error code either, so a check here would have to know
+      // three of them. Reporting the engine is what the replacement API adds.
+      pcre2_jit_compile(copied_code, PCRE2_JIT_COMPLETE);
+
+      _Code::set(_code, copied_code);
+    }
   }
 }
 
@@ -394,16 +473,7 @@ Regex::compile(std::string_view pattern, uint32_t flags)
 bool
 Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags)
 {
-  // free the existing compiled regex if there is one
-  if (auto ptr = _Code::get(_code); ptr != nullptr) {
-    pcre2_code_free(ptr);
-  }
-
-  // get the RegexContext instance - should only be null when shutting down
   RegexContext *regex_context = RegexContext::get_instance();
-  if (regex_context == nullptr) {
-    return false;
-  }
 
   // On PCRE2 < 10.30 the ENDANCHORED bit is not a valid pcre2_compile option. Rewrite
   // the pattern to "(?:pattern)\z" and strip the bit so pcre2 enforces end-of-subject
@@ -444,6 +514,14 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 
   // support for JIT
   pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+
+  // Replace the previous pattern only now that the new one exists. Freeing it before
+  // pcre2_compile would leave every failure path above returning with a dangling
+  // pointer in _code, which empty() reports as a compiled pattern and exec() hands to
+  // pcre2_match.
+  if (auto ptr = _Code::get(_code); ptr != nullptr) {
+    pcre2_code_free(ptr);
+  }
 
   _Code::set(_code, code);
 

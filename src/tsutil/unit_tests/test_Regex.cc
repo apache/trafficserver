@@ -20,7 +20,12 @@
   limitations under the License.
 */
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -646,6 +651,39 @@ TEST_CASE("Regex recompilation behavior", "[libts][Regex][recompile]")
     CHECK(r.exec("valid") == true);
   }
 
+  SECTION("a failed recompile leaves the working pattern in place")
+  {
+    // compile() is a transaction. A pattern that fails to compile must not disturb the
+    // pattern already held, because the alternative is worse than either outcome: freeing
+    // the old pattern before knowing the new one compiles leaves a dangling pointer that
+    // empty() reports as compiled and exec() hands to pcre2_match.
+    Regex r;
+    REQUIRE(r.compile("foo") == true);
+
+    REQUIRE(r.compile("(invalid") == false);
+
+    CHECK(r.empty() == false);
+    CHECK(r.exec("foo") == true);
+    CHECK(r.exec("bar") == false);
+
+    // And the object is still usable for a later successful compile.
+    REQUIRE(r.compile("bar") == true);
+    CHECK(r.exec("bar") == true);
+  }
+
+  SECTION("a failed recompile leaves captures working")
+  {
+    Regex r;
+    REQUIRE(r.compile("^(a+)(b+)$") == true);
+
+    REQUIRE(r.compile("(unterminated") == false);
+
+    RegexMatches matches;
+    REQUIRE(r.exec("aaabb", matches) == 3);
+    CHECK(matches[1] == "aaa");
+    CHECK(matches[2] == "bb");
+  }
+
   SECTION("recompile with different flags")
   {
     Regex r;
@@ -1049,4 +1087,228 @@ TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
   CHECK(r.exec("cdn.example.com.evil", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("cdn.example.com.evil.com", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
+}
+
+namespace
+{
+/** Does PCRE2 have JIT code for this pattern?
+ *
+ * The two tests below are about the JIT stack, and PCRE2 consults it only when it
+ * has JIT code to run. Without it both a blank context and the shared one take the
+ * interpreter and return the same answer, so the tests would pass whether or not
+ * the behaviour they describe is present. Ask PCRE2 rather than assume.
+ */
+bool
+pattern_has_jit(char const *pattern)
+{
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+  if (code == nullptr) {
+    return false;
+  }
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+  size_t jit_size = 0;
+  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+  pcre2_code_free(code);
+  return jit_size > 0;
+}
+} // namespace
+
+// A caller-supplied RegexMatchContext must behave like the shared context that
+// Regex::exec uses when none is supplied. A context built from scratch silently
+// drops everything the shared one configures, which is how regex_remap came to
+// run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB one.
+TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexMatchContext]")
+{
+  // Quantified alternation of capture groups: every subject character pushes a
+  // backtracking frame, so the JIT stack size is what bounds this.
+  char const *const pattern = R"(^(?:(a)|(b))+$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so the JIT stack is never consulted");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  std::string const subject(1000, 'a');
+
+  RegexMatches      shared_matches;
+  RegexMatchContext match_context;
+  RegexMatches      own_matches;
+
+  int const shared_rc = re.exec(subject, shared_matches);
+  int const own_rc    = re.exec(subject, own_matches, 0, &match_context);
+  CAPTURE(shared_rc, own_rc);
+
+  REQUIRE(shared_rc > 0);
+  REQUIRE(own_rc == shared_rc);
+}
+
+// The guard from #5762: a pattern that backtracks once per character must fail
+// cleanly rather than run the thread out of stack. PCRE1 recursed on the machine
+// stack and a long enough subject crashed the server; PCRE2 must report an error
+// instead. If this ever crashes rather than fails, that regression is back.
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
+{
+  // Only the JIT path has a bound to exhaust here. PCRE2's interpreter keeps its
+  // backtracking frames on the heap, so it matches this subject rather than running
+  // out of anything, and there is no resource error to assert.
+  char const *const pattern = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so there is no stack bound to exhaust");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
+  // stack, measured identically on x86_64 and arm64. 256KiB keeps a six times
+  // margin for a platform whose JIT frames are larger, without allocating more
+  // than the bound needs. Do not trim this to just above 43KiB.
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches matches;
+  int const    rc = re.exec(subject, matches);
+  CAPTURE(rc);
+
+  // Reaching this line at all is the crash assertion.
+  REQUIRE(rc < 0);
+  REQUIRE(rc != RE_ERROR_NOMATCH);
+}
+
+// The header promises that exec() may be called concurrently on one instance, and nothing
+// tested that. Every thread must reach the same verdict, whether it matches through the
+// shared context or through one it built itself, and each thread must get its own JIT
+// stack from the callback rather than share one. Run this under ThreadSanitizer to get the
+// second half of the guarantee.
+TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
+{
+  Regex re;
+  REQUIRE(re.compile(R"(^/([a-z]+)/([0-9]+)/(.*)$)"));
+
+  constexpr int THREADS    = 8;
+  constexpr int ITERATIONS = 2000;
+
+  std::string const hit{"/alpha/42/tail"};
+  std::string const miss{"/Alpha/xx/tail"};
+
+  std::atomic<int> failures{0};
+
+  // A start gate, so every thread is inside the match loop before any of them gets far and
+  // the matching actually overlaps. std::latch would say this directly, but the oldest
+  // toolchain this project builds with does not carry <latch>.
+  std::mutex              gate_mutex;
+  std::condition_variable gate;
+  int                     arrived = 0;
+  bool                    go      = false;
+
+  // One caller-supplied context, built here and shared by half the threads. That is the
+  // production shape: regex_remap builds a context when it loads a rule and every net
+  // thread then matches through it. A context that cached a JIT stack directly rather than
+  // resolving one per thread through the callback would pass a test that gave each thread
+  // its own context, and would corrupt this one.
+  RegexMatchContext shared_caller_context;
+
+  std::vector<std::thread> threads;
+  threads.reserve(THREADS);
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&, i]() {
+      bool const                     use_caller_context = (i % 2) == 0;
+      RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
+
+      {
+        std::unique_lock<std::mutex> lock{gate_mutex};
+        if (++arrived == THREADS) {
+          go = true;
+          gate.notify_all();
+        } else {
+          gate.wait(lock, [&]() { return go; });
+        }
+      }
+
+      for (int n = 0; n < ITERATIONS; ++n) {
+        RegexMatches matches;
+        if (re.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+          ++failures;
+        }
+
+        RegexMatches no_matches;
+        if (re.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
+          ++failures;
+        }
+      }
+    });
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+
+  CHECK(failures.load() == 0);
+}
+
+// pcre2_code_copy() copies the compiled pattern but not the machine code the JIT produced
+// for it, because that code is position dependent. A copy that is not passed back through
+// pcre2_jit_compile() therefore matches on the interpreter: the same answers, far more
+// slowly, and under a different set of resource limits, so a subject one of them reports
+// as too expensive the other quietly matches.
+//
+// The subject below is sized past the JIT engine's stack bound for this pattern, which is
+// what makes the two engines disagree. The assertion is that a copy answers the same as
+// its original, whatever that answer is, so the test needs no knowledge of whether this
+// build has a JIT.
+TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy]")
+{
+  Regex original;
+  REQUIRE(original.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches original_matches;
+  int const    original_rc = original.exec(subject, original_matches);
+  CAPTURE(original_rc);
+
+  SECTION("copy constructor")
+  {
+    Regex        copy(original);
+    RegexMatches matches;
+    int const    rc = copy.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("copy assignment")
+  {
+    Regex copy;
+    REQUIRE(copy.compile("unrelated"));
+    copy = original;
+
+    RegexMatches matches;
+    int const    rc = copy.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("a copy of a copy")
+  {
+    Regex        first(original);
+    Regex        second(first);
+    RegexMatches matches;
+    int const    rc = second.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("a copy still matches what the original matches")
+  {
+    Regex             copy(original);
+    std::string const ordinary{"/alpha/bravo/?action=weather"};
+
+    RegexMatches original_ordinary;
+    RegexMatches copy_ordinary;
+    CHECK(original.exec(ordinary, original_ordinary) == copy.exec(ordinary, copy_ordinary));
+  }
 }
