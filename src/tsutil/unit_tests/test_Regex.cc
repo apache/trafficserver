@@ -21,7 +21,8 @@
 */
 
 #include <atomic>
-#include <latch>
+#include <condition_variable>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -1194,7 +1195,14 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
   std::string const miss{"/Alpha/xx/tail"};
 
   std::atomic<int> failures{0};
-  std::latch       start{THREADS};
+
+  // A start gate, so every thread is inside the match loop before any of them gets far and
+  // the matching actually overlaps. std::latch would say this directly, but the oldest
+  // toolchain this project builds with does not carry <latch>.
+  std::mutex              gate_mutex;
+  std::condition_variable gate;
+  int                     arrived = 0;
+  bool                    go      = false;
 
   std::vector<std::thread> threads;
   threads.reserve(THREADS);
@@ -1206,7 +1214,15 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
       RegexMatchContext              context;
       RegexMatchContext const *const use = own_context ? &context : nullptr;
 
-      start.arrive_and_wait();
+      {
+        std::unique_lock<std::mutex> lock{gate_mutex};
+        if (++arrived == THREADS) {
+          go = true;
+          gate.notify_all();
+        } else {
+          gate.wait(lock, [&]() { return go; });
+        }
+      }
 
       for (int n = 0; n < ITERATIONS; ++n) {
         RegexMatches matches;
