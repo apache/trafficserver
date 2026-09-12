@@ -454,11 +454,6 @@ Regex::compile(std::string_view pattern, uint32_t flags)
 bool
 Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, uint32_t flags)
 {
-  // free the existing compiled regex if there is one
-  if (auto ptr = _Code::get(_code); ptr != nullptr) {
-    pcre2_code_free(ptr);
-  }
-
   RegexContext *regex_context = RegexContext::get_instance();
 
   // On PCRE2 < 10.30 the ENDANCHORED bit is not a valid pcre2_compile option. Rewrite
@@ -500,6 +495,14 @@ Regex::compile(std::string_view pattern, std::string &error, int &erroroffset, u
 
   // support for JIT
   pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+
+  // Replace the previous pattern only now that the new one exists. Freeing it before
+  // pcre2_compile would leave every failure path above returning with a dangling
+  // pointer in _code, which empty() reports as a compiled pattern and exec() hands to
+  // pcre2_match.
+  if (auto ptr = _Code::get(_code); ptr != nullptr) {
+    pcre2_code_free(ptr);
+  }
 
   _Code::set(_code, code);
 

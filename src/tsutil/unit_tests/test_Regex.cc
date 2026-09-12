@@ -650,6 +650,39 @@ TEST_CASE("Regex recompilation behavior", "[libts][Regex][recompile]")
     CHECK(r.exec("valid") == true);
   }
 
+  SECTION("a failed recompile leaves the working pattern in place")
+  {
+    // compile() is a transaction. A pattern that fails to compile must not disturb the
+    // pattern already held, because the alternative is worse than either outcome: freeing
+    // the old pattern before knowing the new one compiles leaves a dangling pointer that
+    // empty() reports as compiled and exec() hands to pcre2_match.
+    Regex r;
+    REQUIRE(r.compile("foo") == true);
+
+    REQUIRE(r.compile("(invalid") == false);
+
+    CHECK(r.empty() == false);
+    CHECK(r.exec("foo") == true);
+    CHECK(r.exec("bar") == false);
+
+    // And the object is still usable for a later successful compile.
+    REQUIRE(r.compile("bar") == true);
+    CHECK(r.exec("bar") == true);
+  }
+
+  SECTION("a failed recompile leaves captures working")
+  {
+    Regex r;
+    REQUIRE(r.compile("^(a+)(b+)$") == true);
+
+    REQUIRE(r.compile("(unterminated") == false);
+
+    RegexMatches matches;
+    REQUIRE(r.exec("aaabb", matches) == 3);
+    CHECK(matches[1] == "aaa");
+    CHECK(matches[2] == "bb");
+  }
+
   SECTION("recompile with different flags")
   {
     Regex r;
