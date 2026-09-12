@@ -1228,3 +1228,67 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
 
   CHECK(failures.load() == 0);
 }
+
+// pcre2_code_copy() copies the compiled pattern but not the machine code the JIT produced
+// for it, because that code is position dependent. A copy that is not passed back through
+// pcre2_jit_compile() therefore matches on the interpreter: the same answers, far more
+// slowly, and under a different set of resource limits, so a subject one of them reports
+// as too expensive the other quietly matches.
+//
+// The subject below is sized past the JIT engine's stack bound for this pattern, which is
+// what makes the two engines disagree. The assertion is that a copy answers the same as
+// its original, whatever that answer is, so the test needs no knowledge of whether this
+// build has a JIT.
+TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy]")
+{
+  Regex original;
+  REQUIRE(original.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches original_matches;
+  int const    original_rc = original.exec(subject, original_matches);
+  CAPTURE(original_rc);
+
+  SECTION("copy constructor")
+  {
+    Regex        copy(original);
+    RegexMatches matches;
+    int const    rc = copy.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("copy assignment")
+  {
+    Regex copy;
+    REQUIRE(copy.compile("unrelated"));
+    copy = original;
+
+    RegexMatches matches;
+    int const    rc = copy.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("a copy of a copy")
+  {
+    Regex        first(original);
+    Regex        second(first);
+    RegexMatches matches;
+    int const    rc = second.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("a copy still matches what the original matches")
+  {
+    Regex             copy(original);
+    std::string const ordinary{"/alpha/bravo/?action=weather"};
+
+    RegexMatches original_ordinary;
+    RegexMatches copy_ordinary;
+    CHECK(original.exec(ordinary, original_ordinary) == copy.exec(ordinary, copy_ordinary));
+  }
+}
