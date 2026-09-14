@@ -710,9 +710,9 @@ Denied Sections
 ---------------
 
 The ``sections`` list accepts any of the HRW4U section names listed in the
-`Sections`_ table, plus ``VARS`` to deny the variable declaration block.
-A denied section causes the entire block to be rejected; the body is not
-validated.
+`Sections`_ table, plus ``VARS`` and ``SESSION_VARS`` to deny the variable
+declaration blocks. A denied section causes the entire block to be rejected;
+the body is not validated.
 
 Functions
 ---------
