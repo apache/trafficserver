@@ -219,6 +219,8 @@ Directory::init_segment(int s)
       this->free_entry(dir_bucket_row(bucket, l), s);
     }
   }
+  // Callers can return straight after the wipe, and CacheSync skips a directory that is not dirty.
+  this->header->dirty = 1;
 }
 
 // break the infinite loop in directory entries
@@ -1013,7 +1015,8 @@ Lrestart:
       /* Don't sync the directory to disk if its not dirty. Syncing the
          clean directory to disk is also the cause of INKqa07151. Increasing
          the serial number causes the cache to recover more data than necessary.
-         The dirty bit is set in dir_insert, overwrite and Directory::delete_entry
+         The dirty bit is set in Directory::insert, Directory::overwrite, Directory::delete_entry and
+         Directory::init_segment
        */
       if (!stripe->directory.header->dirty) {
         Dbg(dbg_ctl_cache_dir_sync, "Dir %s not dirty", stripe->hash_text.get());
