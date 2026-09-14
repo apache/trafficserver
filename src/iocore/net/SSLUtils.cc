@@ -578,33 +578,21 @@ ssl_apply_sni_session_ticket_properties(SSL *ssl)
 }
 #endif
 
-static ssl_ticket_key_block *
-ssl_context_enable_tickets(SSL_CTX *ctx, const char *ticket_key_path)
+static bool
+ssl_context_enable_tickets(SSL_CTX *ctx)
 {
 #if TS_HAS_TLS_SESSION_TICKET
-  ssl_ticket_key_block *keyblock = nullptr;
-
-  keyblock = ssl_create_ticket_keyblock(ticket_key_path);
-
-  // On the "first run" the metrics have not been initialized, so this has to check it.
-  if (ssl_rsb.total_ticket_keys_renewed) {
-    Metrics::Counter::increment(ssl_rsb.total_ticket_keys_renewed);
-  }
-
   // Setting the callback can only fail if OpenSSL does not recognize the
   // SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB constant. we set the callback first
-  // so that we don't leave a ticket_key pointer attached if it fails.
+  // so that we don't leave a ticket-key callback attached if it fails.
   if (!ssl_context_enable_ticket_callback(ctx)) {
-    ticket_block_free(keyblock);
-    return nullptr;
+    return false;
   }
-
   SSL_CTX_clear_options(ctx, SSL_OP_NO_TICKET);
-  return keyblock;
-
+  return true;
 #else  /* !TS_HAS_TLS_SESSION_TICKET */
-  (void)ticket_key_path;
-  return nullptr;
+  (void)ctx;
+  return false;
 #endif /* TS_HAS_TLS_SESSION_TICKET */
 }
 
@@ -1777,18 +1765,19 @@ bool
 SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const shared_SSLMultiCertConfigParams &sslMultCertSettings,
                                                 shared_SSL_CTX ctx, SSLCertContextType ctx_type, std::set<std::string> &names)
 {
-  bool                        inserted = false;
-  shared_ssl_ticket_key_block keyblock = nullptr;
+  bool inserted = false;
   // Load the session ticket key if session tickets are not disabled
   if (sslMultCertSettings->session_ticket_enabled != 0) {
-    keyblock = shared_ssl_ticket_key_block(ssl_context_enable_tickets(ctx.get(), nullptr), ticket_block_free);
+    if (!ssl_context_enable_tickets(ctx.get())) {
+      return false;
+    }
   }
 
   // Index this certificate by the specified IP(v6) address. If the address is "*", make it the default context.
   if (sslMultCertSettings->addr) {
     if (strcmp(sslMultCertSettings->addr, "*") == 0) {
       Dbg(dbg_ctl_ssl_load, "Addr is '*'; setting %p to default", ctx.get());
-      if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
+      if (lookup->insert(sslMultCertSettings->addr, SSLCertContext(ctx, ctx_type, sslMultCertSettings)) >= 0) {
         inserted = true;
         lookup->setDefaultContext(ctx);
         this->_set_handshake_callbacks(ctx.get());
@@ -1797,7 +1786,7 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
       IpEndpoint ep;
 
       if (ats_ip_pton(sslMultCertSettings->addr, &ep) == 0) {
-        if (lookup->insert(ep, SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
+        if (lookup->insert(ep, SSLCertContext(ctx, ctx_type, sslMultCertSettings)) >= 0) {
           inserted = true;
         }
       } else {
@@ -1811,7 +1800,7 @@ SSLMultiCertConfigLoader::_store_single_ssl_ctx(SSLCertLookup *lookup, const sha
   // this code is updated to reconfigure the SSL certificates, it will need some sort of
   // refcounting or alternate way of avoiding double frees.
   for (auto const &sni_name : names) {
-    if (lookup->insert(sni_name.c_str(), SSLCertContext(ctx, ctx_type, sslMultCertSettings, keyblock)) >= 0) {
+    if (lookup->insert(sni_name.c_str(), SSLCertContext(ctx, ctx_type, sslMultCertSettings)) >= 0) {
       inserted = true;
     }
   }
