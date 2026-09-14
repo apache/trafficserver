@@ -7,6 +7,10 @@ REMAP {
         inbound.req.X-Not-Get = "1";
     }
 
+    if inbound.req.Accept-Language !~ /es-py/ {
+        inbound.req.X-Not-Matched = "1";
+    }
+
     if inbound.url.path !in ["php", "html"] {
         inbound.req.X-Not-Listed = "1";
     }
