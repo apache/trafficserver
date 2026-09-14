@@ -16,9 +16,9 @@
 
 Test.Summary = '''
 Verify proxy.config.http.cache.try_compat_key_read: objects stored under the
-ATS 9.2 cache key are found, revalidated without conditional headers, and
-migrated to the current key, while the copy under the legacy key is left in
-place to age out.
+ATS 9.2 cache key are served while fresh, treated as a miss once stale so the
+full response is stored under the current key, and left in place under the
+legacy key to age out. Deletes reach both keys.
 '''
 
 Test.ATSReplayTest(replay_file="replay/compat-cache-key.replay.yaml")

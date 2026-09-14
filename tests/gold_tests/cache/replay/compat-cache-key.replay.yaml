@@ -60,10 +60,10 @@ autest:
         to: "http://backend.example.com:{SERVER_HTTP_PORT}/"
 
     metric_checks:
-      # Two compatibility hits are expected: the fresh serve and the stale
-      # revalidation that migrates the object.
+      # Four compatibility hits: the fresh serve, the stale revalidation that
+      # migrates the object, the PUT in test 8 and the migration in test 10.
       - metric: proxy.process.http.cache.compat_key_reads
-        value: 2
+        value: 4
 
 sessions:
 - transactions:
@@ -127,12 +127,14 @@ sessions:
       status: 200
 
   #
-  # Test 3: A stale compatibility hit revalidates unconditionally.
+  # Test 3: A stale compatibility hit is treated as a miss.
   #
   # A 304 cannot be applied to a legacy-key object, because the write that would
   # carry it is a create on the canonical key rather than an update of the
-  # legacy vector. ATS must therefore ask for the whole response, and the origin
-  # must see no conditional headers even though the cached object has an ETag.
+  # legacy vector. ATS therefore does not revalidate it at all: the request goes
+  # to the origin as an ordinary miss, so no conditional headers appear even
+  # though the cached object has an ETag, and the full response is stored under
+  # the canonical key.
   #
   - client-request:
       method: "GET"
@@ -289,6 +291,171 @@ sessions:
       headers:
         fields:
         - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 8: a PUT keeps the client's precondition.
+  #
+  # Only GET and HEAD are treated as a miss when stale; a PUT takes the delete
+  # path with its request untouched. If-Match is the client's concurrency guard:
+  # dropping it would let the origin overwrite whatever is there now rather than
+  # only the version the client saw.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /put;
+      headers:
+        fields:
+        - [ uuid, 8a-prime-put-target ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"v1"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "PUT"
+      version: "1.1"
+      scheme: "http"
+      url: /put
+      headers:
+        fields:
+        - [ uuid, 8b-put-keeps-if-match ]
+        - [ Host, example.com ]
+        - [ Content-Length, 0 ]
+        - [ If-Match, '"v1"' ]
+      delay: 100ms
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-Match, { value: '"v1"', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # Test 9-11: a purge has to reach both keys.
+  #
+  # After a migration the object exists under both the current and the legacy
+  # key. Removing only the one the purge looked up would leave the other to be
+  # served afterwards, which for a purge is the whole point of the operation.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /purge;
+      headers:
+        fields:
+        - [ uuid, 9-prime-purge-target ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"legacy-purge"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /purge
+      headers:
+        fields:
+        - [ uuid, 10-migrate-purge-target ]
+        - [ Host, example.com ]
+        - [ Cache-Control, max-age=0 ]
+      delay: 100ms
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"migrated-purge"' ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "PURGE"
+      version: "1.1"
+      scheme: "http"
+      url: /purge
+      headers:
+        fields:
+        - [ uuid, 11a-purge ]
+        - [ Host, example.com ]
+        - [ Content-Length, 0 ]
+      delay: 100ms
+
+    # A purge is answered from the cache and never reaches the origin.
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 400
+      reason: "Bad Request"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /purge
+      headers:
+        fields:
+        - [ uuid, 11b-purged-content-is-gone ]
+        - [ Host, example.com ]
+      delay: 100ms
+
+    # Reaching the origin at all is the assertion: a legacy copy that survived
+    # the purge is still fresh, so it would have been served from cache and the
+    # origin would never have been contacted.
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, max-age=300 ]
+        - [ ETag, '"refetched"' ]
 
     proxy-response:
       status: 200

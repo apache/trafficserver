@@ -2777,6 +2777,9 @@ HttpSM::state_cache_open_read(int event, void *data)
         do_cache_lookup_and_read();
         return 0;
       }
+      // Nothing was found under either key. Leaving the flag set would make
+      // the rest of the transaction act as though a legacy object were in play.
+      compatibility_cache_lookup  = CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_NORMAL;
       t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::MISS;
     }
 
@@ -5352,28 +5355,30 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", url->string_get_ref());
 
   HttpCacheKey key;
-  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
-    Cache::generate_key92(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
-  } else {
-    Cache::generate_key(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
-  }
+  Cache::generate_key(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   cacheProcessor.remove(nullptr, &key);
+
+  // A migration leaves the legacy copy in place, so the object can live under
+  // both keys. Removing only one of them would let the other be served after
+  // the purge.
+  if (t_state.http_config_param->cache_try_compat_key_read) {
+    do_cache_delete_compat_alts();
+  }
 }
 
 // Remove the object stored under the legacy key.
 //
 // Only for the cases that abort the canonical-key write, where nothing is left
-// depending on it. A successful migration deliberately leaves the legacy copy
-// alone: VC_EVENT_WRITE_COMPLETE means the tunnel handed the last byte to the
-// cache VC, not that the object reached disk, so deleting on that signal loses
-// the object outright whenever the write later fails. The copy ages out on its
-// own, and it stops being read as soon as the canonical key resolves, so the
-// compat_key_reads metric still decays to zero.
+// depending on it, and for deletes, which have to reach both keys. A successful
+// migration deliberately leaves the legacy copy alone: VC_EVENT_WRITE_COMPLETE
+// means the tunnel handed the last byte to the cache VC, not that the object
+// reached disk, so deleting on that signal loses the object outright whenever
+// the write later fails. The copy ages out on its own, and it stops being read
+// as soon as the canonical key resolves, so compat_key_reads still decays to
+// zero.
 void
 HttpSM::do_cache_delete_compat_alts()
 {
-  ink_assert(should_use_compatibility_cache_key(compatibility_cache_lookup));
-
   // Same URL the lookup used; see do_cache_delete_all_alts().
   URL *url = cache_lookup_url();
 
@@ -5408,10 +5413,15 @@ HttpSM::do_cache_prepare_write_transform()
 void
 HttpSM::do_cache_prepare_update()
 {
+  // An object found under the 9.2 key cannot be updated in place: the write
+  // would be a create on the current key, and the cache turns a header-only
+  // close of a create into an abort. Refuse the way an invalid update is
+  // refused rather than let the plugin's change vanish.
   if (t_state.cache_info.object_read != nullptr && t_state.cache_info.object_read->valid() &&
       t_state.cache_info.object_store.valid() && t_state.cache_info.object_store.response_get() != nullptr &&
       t_state.cache_info.object_store.response_get()->valid() &&
-      t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET) {
+      t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET &&
+      !should_use_compatibility_cache_key(compatibility_cache_lookup)) {
     t_state.cache_info.object_store.request_set(t_state.cache_info.object_read->request_get());
     // t_state.cache_info.object_read = NULL;
     // cache_sm.close_read();
@@ -6866,14 +6876,12 @@ HttpSM::perform_cache_write_action()
   }
 
   case HttpTransact::CacheAction_t::DELETE: {
-    if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
-      // Write close cannot remove the legacy alternate for the same reason an
-      // update cannot commit: this write VC never opened the legacy vector.
-      cache_sm.abort_write();
+    // Write close deletes the old alternate
+    cache_sm.close_write();
+    // That reached only one of the two keys the object can live under while
+    // the compatibility lookup is enabled.
+    if (t_state.http_config_param->cache_try_compat_key_read) {
       do_cache_delete_compat_alts();
-    } else {
-      // Write close deletes the old alternate
-      cache_sm.close_write();
     }
     cache_sm.close_read();
     t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
@@ -6932,18 +6940,6 @@ HttpSM::perform_cache_write_action()
 void
 HttpSM::issue_cache_update()
 {
-  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
-    // This write VC is a create on the canonical key, not an update of the
-    // legacy vector, so CacheVC turns a header-only close into an abort and the
-    // update is silently lost. Drop the legacy object instead; the next request
-    // repopulates it under the canonical key.
-    SMDbg(dbg_ctl_http, "compatibility key hit, dropping the legacy object instead of updating it");
-    cache_sm.abort_write();
-    do_cache_delete_compat_alts();
-    t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
-    return;
-  }
-
   ink_assert(cache_sm.cache_write_vc != nullptr);
   if (cache_sm.cache_write_vc) {
     t_state.cache_info.object_store.request_sent_time_set(t_state.request_sent_time);

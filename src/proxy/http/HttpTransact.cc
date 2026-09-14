@@ -2582,22 +2582,6 @@ HttpTransact::issue_revalidate(State *s)
     return;
   }
 
-  // An object found under the 9.2 key cannot be revalidated conditionally. The
-  // write that would apply a 304 is a create on the canonical key rather than
-  // an update of the legacy vector, so the cache discards it. Ask for the full
-  // response instead, which migrates the object to the canonical key.
-  if (s->state_machine != nullptr && should_use_compatibility_cache_key(s->state_machine->compatibility_cache_lookup)) {
-    // build_request() already strips the client's conditionals for a request it
-    // expects to cache, but keeps them when the request does not look cacheable
-    // or when cache_when_to_revalidate is 4. Either way the origin could answer
-    // 304, so drop them here too. The client still gets its 304: a conditional
-    // client request is matched against the full response in
-    // handle_cache_operation_on_forward_server_response().
-    TxnDbg(dbg_ctl_http_trans, "compatibility key hit, revalidating without conditional headers");
-    HttpTransactHeaders::remove_conditional_headers(&s->hdr_info.server_request);
-    return;
-  }
-
   // if the document is cached, just send a conditional request to the server
 
   // So the request does not have preconditions. It can, however
@@ -2738,6 +2722,22 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   // revalidation, but the content is actually stale.
   if (s->serving_stale_due_to_write_lock) {
     s->cache_lookup_result = HttpTransact::CacheLookupResult_t::HIT_STALE;
+  }
+
+  // An object found under the 9.2 key cannot be revalidated: the write that
+  // would apply a 304 is a create on the current key, not an update of the
+  // legacy vector, so the cache discards it. Treat a stale one as a miss. The
+  // full response then lands under the current key through the ordinary miss
+  // path and the legacy copy ages out. Only reads migrate; the methods that
+  // invalidate take the delete path, which reaches both keys.
+  if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::HIT_STALE && s->state_machine != nullptr &&
+      should_use_compatibility_cache_key(s->state_machine->compatibility_cache_lookup) &&
+      (s->method == HTTP_WKSIDX_GET || s->method == HTTP_WKSIDX_HEAD)) {
+    TxnDbg(dbg_ctl_http_seq, "Stale under the compatibility key, treating as a miss");
+    s->cache_info.object_read         = nullptr;
+    s->cache_lookup_result            = HttpTransact::CacheLookupResult_t::MISS;
+    s->cache_lookup_complete_deferred = false;
+    TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadMiss);
   }
 
   ink_assert(s->cache_lookup_result != HttpTransact::CacheLookupResult_t::MISS);
