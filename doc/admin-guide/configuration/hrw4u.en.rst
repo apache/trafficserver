@@ -793,9 +793,9 @@ however it is written, not only the explicit ``with`` form: ``AND`` also covers
 ``!~`` and ``!in``.
 
 Negation that the compiler introduces on its own is not matched. A bare header
-test such as ``if inbound.req.X-Foo`` compiles to ``cond %{HEADER:X-Foo} =""
-[NOT]``, and denying ``NOT`` does not reject it — the policy governs what the
-source writes.
+test such as ``if inbound.req.X-Foo`` compiles to
+``cond %{CLIENT-HEADER:X-Foo} ="" [NOT]``, and denying ``NOT`` does not reject
+it — the policy governs what the source writes.
 
 Output
 ------
