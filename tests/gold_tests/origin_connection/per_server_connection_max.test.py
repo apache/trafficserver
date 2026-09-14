@@ -36,6 +36,11 @@ _STAT_SYNC_INTERVAL_MS: int = 500
 # scheduling jitter and the traffic_ctl round trip rather than racing the tick.
 _STAT_SYNC_WAIT_SECONDS: int = 2
 
+# How long to wait after changing an overridable record at runtime before driving traffic that
+# should see the new value. http_config_cb schedules the reconfigure one second out, so a request
+# made immediately after traffic_ctl returns is still served by the previous HttpConfigParams.
+_CONFIG_APPLY_WAIT_SECONDS: int = 5
+
 # The records.yaml settings every ATS instance in this file needs for the waits above to hold.
 _STAT_SYNC_RECORDS: dict = {
     'proxy.config.raw_stat_sync_interval_ms': _STAT_SYNC_INTERVAL_MS,
@@ -134,7 +139,7 @@ class PerServerConnectionMaxTest:
         # A 'port' match has one group per address:port and no hostname, so no aggregate should be
         # registered for it at all.
         tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-            'per_server.current_connection_max.', 'A non-"both" match type must not register a hostname aggregate.')
+            'per_server.current_connection.max.', 'A non-"both" match type must not register a hostname aggregate.')
 
     def run(self) -> None:
         """Configure the TestRun."""
@@ -151,11 +156,11 @@ class PerServerConnectionMaxTest:
 class ConnectMethodTest:
     """Test our max origin connection behavior with CONNECT traffic.
 
-    Also covers the two aggregate-publishing modes of
+    Also covers two of the aggregate-publishing modes of
     proxy.config.http.per_server.connection.metric_aggregate:
-      - 2 (AGGREGATE_ONLY): only the per hostname aggregate is published; the per group metrics
-        stay hidden and are visible only with --include-hidden.
-      - 1 (AGGREGATE_GROUP): the per hostname aggregate is published, and the per group metrics
+      - 3 (AGGREGATE_SUM): the per hostname sums and max are published; the per group metrics stay
+        hidden and are visible only with --include-hidden.
+      - 1 (AGGREGATE_GROUP): the per hostname sums and max are published, and the per group metrics
         are also mirrored into the published store.
 
     The match here defaults to 'both' and there is exactly one group for this hostname, so the
@@ -166,7 +171,7 @@ class ConnectMethodTest:
     _process_counter: int = 0
     _client_counter: int = 0
 
-    def __init__(self, max_conn, metric_aggregate=2) -> None:
+    def __init__(self, max_conn, metric_aggregate=3) -> None:
         """Configure the server processes in preparation for the TestRun."""
         self._metric_aggregate = metric_aggregate
         self._configure_dns()
@@ -233,8 +238,8 @@ class ConnectMethodTest:
             tr.Processes.Default.Streams.All += Testers.ContainsExpression(
                 f'per_server.total_connection.{group_name} 5', 'The per group metric should be published at AGGREGATE_GROUP.')
         else:
-            # AGGREGATE_ONLY keeps the per group metrics hidden, so none of the three per group
-            # names may appear in a normal query. current_connection_max is not among them: it only
+            # AGGREGATE_SUM keeps the per group metrics hidden, so none of the three per group
+            # names may appear in a normal query. current_connection.max is not among them: it only
             # ever exists as a hostname aggregate, never per group.
             for counter in ('current_connection', 'total_connection', 'blocked_connection'):
                 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
@@ -294,7 +299,7 @@ class MultiGroupAggregateTest:
     distinct groups sharing one host aggregate. The two groups are given different concurrency so
     the SUM and the MAX are distinguishable from each other.
 
-    current_connection and current_connection_max are instantaneous gauges recomputed from the live
+    current_connection and current_connection.max are instantaneous gauges recomputed from the live
     per group values every ~5s, so they rise and fall with traffic rather than remembering a peak.
     Observing a non-zero value therefore requires holding connections open across a sync tick. The
     most robust assertion, and the one that actually distinguishes this instantaneous behavior from
@@ -340,9 +345,9 @@ class MultiGroupAggregateTest:
                 'proxy.config.diags.debug.enabled': 1,
                 'proxy.config.diags.debug.tags': 'http|dns|hostdb|conn_track',
                 'proxy.config.http.per_server.connection.metric_enabled': 1,
-                # Aggregates only: the per group metrics stay hidden, which is what this test is
-                # about reading through the aggregate.
-                'proxy.config.http.per_server.connection.metric_aggregate': 2,
+                # Sums and max, per group metrics hidden: this test is about reading the group
+                # behavior through the hostname aggregate.
+                'proxy.config.http.per_server.connection.metric_aggregate': 3,
                 'proxy.config.http.per_server.connection.match': 'both',
             })
         self._ts.Disk.remap_config.AddLines(
@@ -381,9 +386,16 @@ class MultiGroupAggregateTest:
             'While held open, the host aggregate current_connection should be the SUM of the '
             'currently open connections across both groups.')
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            f'per_server.current_connection_max.multi.origin.com {group_max}',
-            'While held open, current_connection_max should be the largest single group current '
+            f'per_server.current_connection.max.multi.origin.com {group_max}',
+            'While held open, current_connection.max should be the largest single group current '
             'count (MAX), not the sum across the two groups.')
+        # The per group names end in the address, so anything matching this is a group metric and
+        # not the hostname aggregate. Every other assertion in this file is a ContainsExpression,
+        # which cannot catch a metric that should not be there at all.
+        tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+            r'per_server\.\w+_connection\.multi\.origin\.com\.\d',
+            'At metric_aggregate 3 the per group metrics must stay hidden, leaving only the '
+            'hostname aggregates published.')
 
     def _test_metrics_after_drain(self) -> None:
         """After traffic drains and a further sync tick passes, both live gauges must read 0.
@@ -403,8 +415,8 @@ class MultiGroupAggregateTest:
             'per_server.current_connection.multi.origin.com 0',
             'Once all connections close, the host aggregate current_connection must drain to 0.')
         tr.Processes.Default.Streams.All += Testers.ContainsExpression(
-            'per_server.current_connection_max.multi.origin.com 0',
-            'Once all connections close, current_connection_max must also come back down to 0: it '
+            'per_server.current_connection.max.multi.origin.com 0',
+            'Once all connections close, current_connection.max must also come back down to 0: it '
             'is a live gauge, not a monotone peak.')
 
     def run(self) -> None:
@@ -513,15 +525,15 @@ class MetricOverrideTest:
 class AggregateOnlyWithoutHostAggregateTest:
     """Verify metric_aggregate 2 still publishes per group metrics when there is no aggregate.
 
-    metric_aggregate 2 (AGGREGATE_ONLY) normally leaves the per group metrics hidden and publishes
-    only the per hostname aggregate. That aggregate exists only under match 'both', which is the
-    only match type with more than one group per hostname (Group::host_metric_name returns empty
-    for the others). With match 'port' there is therefore nothing for the aggregate to stand in
-    for, so the per group metrics have to be published regardless, or level 2 would report nothing
-    at all for this group.
+    metric_aggregate 2 (AGGREGATE_MAX) normally leaves the per group metrics hidden and publishes
+    only the per hostname max. That aggregate exists only under match 'both', which is the only
+    match type with more than one group per hostname (Group::host_metric_name returns empty for
+    the others). With match 'port' there is therefore nothing for the aggregate to stand in for,
+    so the per group metrics have to be published regardless, or level 2 would report nothing at
+    all for this group.
 
-    Every other test in this file that sets metric_aggregate 2 uses match 'both', so without this
-    case a regression that dropped the fallback would leave the suite green.
+    Every other test in this file that suppresses the per group metrics uses match 'both', so
+    without this case a regression that dropped the fallback would leave the suite green.
     """
 
     def __init__(self) -> None:
@@ -580,9 +592,125 @@ class AggregateOnlyWithoutHostAggregateTest:
         self._test_metrics()
 
 
+class AggregateRetractionTest:
+    """Verify that raising metric_aggregate to 2 withdraws already published per group metrics.
+
+    metric_aggregate 2 (AGGREGATE_MAX) publishes the per hostname max and nothing else, so this
+    also covers that the hostname sums are not published at that level.
+
+    metric_aggregate is dynamic, but the publication decision is made in the ConnectionTracker
+    Group constructor, and a published metric name is never removed from the metric store. Before
+    the store grew a tombstone, a name published while the setting was 0 kept reporting for the
+    life of the process no matter what the setting was changed to, which is exactly what was seen
+    in production: per group and per hostname metrics side by side at metric_aggregate 2.
+
+    Origin keep alive is disabled so each request opens and closes its own upstream connection.
+    That returns the group count to zero, which erases the group, so the next request constructs a
+    fresh one and re-evaluates the setting. A group that never goes idle would keep whatever was in
+    effect when it was created.
+    """
+
+    def __init__(self) -> None:
+        """Configure the processes for the test."""
+        self._dns = _dns
+        self._server = Test.MakeHttpBinServer("retract_server")
+        self._configure_trafficserver()
+
+    def _configure_trafficserver(self) -> None:
+        """Configure an ATS that starts out publishing the per group metrics."""
+        self._ts = Test.MakeATSProcess("retract_ts")
+        self._ts.Disk.records_config.update(
+            {
+                **_STAT_SYNC_RECORDS,
+                'proxy.config.dns.nameservers': f"127.0.0.1:{self._dns.Variables.Port}",
+                'proxy.config.dns.resolv_conf': 'NULL',
+                'proxy.config.http.per_server.connection.metric_enabled': 1,
+                # Start with the per group metrics published, then raise it at runtime below.
+                'proxy.config.http.per_server.connection.metric_aggregate': 0,
+                'proxy.config.http.per_server.connection.match': 'both',
+                # Force the upstream connection closed after each transaction so the group is
+                # erased and the next request rebuilds it.
+                'proxy.config.http.keep_alive_enabled_out': 0,
+            })
+        self._ts.Disk.remap_config.AddLine(
+            f"map http://retract.origin.com/ http://retract.origin.com:{self._server.Variables.Port}/")
+
+    def _curl(self, tr) -> None:
+        """Drive one request through the remap rule."""
+        tr.MakeCurlCommand(f"-v --fail -s -x 127.0.0.1:{self._ts.Variables.port} 'http://retract.origin.com/get'", ts=self._ts)
+        tr.Processes.Default.ReturnCode = 0
+        tr.StillRunningAfter = self._ts
+
+    def run(self) -> None:
+        """Publish the per group metrics, raise the setting, then verify they are withdrawn."""
+        tr = Test.AddTestRun("Drive traffic with the per group metrics published")
+        _use_shared_dns(tr)
+        tr.Processes.Default.StartBefore(self._server)
+        tr.Processes.Default.StartBefore(self._ts)
+        self._curl(tr)
+
+        tr = Test.AddTestRun("Verify the per group metrics are published at metric_aggregate 0")
+        tr.Processes.Default.Command = f'sleep {_STAT_SYNC_WAIT_SECONDS}; traffic_ctl metric match per_server'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
+        tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+            r'per_server\.current_connection\.retract\.origin\.com\.\d',
+            'At metric_aggregate 0 the per group metric is published under its own name. Without '
+            'this the retraction below would be vacuous.')
+        tr.StillRunningAfter = self._ts
+
+        tr = Test.AddTestRun("Raise metric_aggregate to 2")
+        # http_config_cb schedules the reconfigure a second after the record changes
+        # (HttpConfig.cc), so the new HttpConfigParams is not in place the instant traffic_ctl
+        # returns. Without this wait the next request is served by the old configuration and
+        # rebuilds the group under the old setting, which looks exactly like a failure to retract.
+        tr.Processes.Default.Command = (
+            'traffic_ctl config set proxy.config.http.per_server.connection.metric_aggregate 2 && '
+            'traffic_ctl config reload && '
+            f'sleep {_CONFIG_APPLY_WAIT_SECONDS}')
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.TimeOut = _CONFIG_APPLY_WAIT_SECONDS + 30
+        tr.StillRunningAfter = self._ts
+
+        tr = Test.AddTestRun("Verify the new metric_aggregate is in effect")
+        tr.Processes.Default.Command = 'traffic_ctl config get proxy.config.http.per_server.connection.metric_aggregate'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.TimeOut = 30
+        tr.Processes.Default.Streams.All = Testers.ContainsExpression(
+            r'metric_aggregate: 2', 'The record must carry the new value before behavior is asserted against it.')
+        tr.StillRunningAfter = self._ts
+
+        tr = Test.AddTestRun("Drive traffic again so the group is rebuilt under the new setting")
+        self._curl(tr)
+
+        tr = Test.AddTestRun("Verify the per group metrics were withdrawn")
+        tr.Processes.Default.Command = f'sleep {_STAT_SYNC_WAIT_SECONDS}; traffic_ctl metric match per_server'
+        tr.Processes.Default.ReturnCode = 0
+        tr.Processes.Default.Env = self._ts.Env
+        tr.Processes.Default.TimeOut = _STAT_SYNC_WAIT_SECONDS + 30
+        tr.Processes.Default.Streams.All = Testers.ExcludesExpression(
+            r'per_server\.\w+_connection\.retract\.origin\.com\.\d',
+            'Once metric_aggregate is 2 and the group has been rebuilt, the per group metrics must '
+            'no longer be published, even though they were published earlier in this process.')
+        tr.Processes.Default.Streams.All += Testers.ContainsExpression(
+            r'per_server\.current_connection\.max\.retract\.origin\.com',
+            'The hostname max stands in for the withdrawn per group metrics.')
+        # metric_aggregate 2 is the max and nothing else, so the hostname sums must not appear
+        # either. '\.com ' with the trailing space matches the aggregate names, whose value follows
+        # the hostname directly; the max is 'current_connection.max.<host>' and does not match.
+        tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
+            r'per_server\.\w+_connection\.retract\.origin\.com ',
+            'At metric_aggregate 2 only the max is published: the hostname sums must be absent.')
+        tr.StillRunningAfter = self._ts
+
+
 PerServerConnectionMaxTest().run()
-ConnectMethodTest(3, metric_aggregate=2).run(blocked=2, gold_file="gold/two_503_congested.gold")
+ConnectMethodTest(3, metric_aggregate=3).run(blocked=2, gold_file="gold/two_503_congested.gold")
 ConnectMethodTest(0, metric_aggregate=1).run(blocked=0, gold_file="gold/two_200_ok.gold")
 MultiGroupAggregateTest().run()
 MetricOverrideTest().run()
 AggregateOnlyWithoutHostAggregateTest().run()
+AggregateRetractionTest().run()
