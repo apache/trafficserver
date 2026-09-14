@@ -22,10 +22,14 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <thread>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
@@ -70,7 +74,7 @@ private:
 class TestQUICStream : public QUICStream
 {
 public:
-  TestQUICStream(QUICStreamId sid) : QUICStream(new MockQUICConnectionInfoProvider(), sid) {}
+  TestQUICStream(QUICStreamId sid) : TestQUICStream(std::make_unique<MockQUICConnectionInfoProvider>(), sid) {}
 
   void
   write(const uint8_t *buf, size_t buf_len, QUICOffset offset, bool last)
@@ -90,6 +94,14 @@ public:
     this->_adapter->consume(nread);
     return nread;
   }
+
+private:
+  TestQUICStream(std::unique_ptr<MockQUICConnectionInfoProvider> info, QUICStreamId sid)
+    : QUICStream(info.get(), sid), _info(std::move(info))
+  {
+  }
+
+  std::unique_ptr<MockQUICConnectionInfoProvider> _info;
 };
 
 class TestQPACKEventHandler : public Continuation
@@ -105,14 +117,75 @@ public:
   }
 
   int
-  last_event()
+  last_event() const
   {
     return this->_event;
   }
 
 private:
-  int _event = 0;
+  // Written on the event thread that runs the QPACK callback and read by the
+  // thread running the test.
+  std::atomic<int> _event = 0;
 };
+
+/** Open a QPACK stream and write to it from an event thread.
+ *
+ * Both steps have to run on an event thread. QUICStreamVCAdapter schedules its
+ * read ready event on this_ethread() and will not schedule another one until
+ * that event is handled, so opening the stream from the thread running the test
+ * would leave the event queued on a thread that never runs an event loop, and
+ * the write that follows would then go unnoticed.
+ */
+class TestQPACKStreamWriter : public Continuation
+{
+public:
+  TestQPACKStreamWriter(QPACK &qpack, TestQUICStream &stream, const uint8_t *buf, size_t buf_len)
+    : Continuation(new_ProxyMutex()), _qpack(qpack), _stream(stream), _buf(buf), _buf_len(buf_len)
+  {
+    SET_HANDLER(&TestQPACKStreamWriter::write_handler);
+  }
+
+  int
+  write_handler(int /* event ATS_UNUSED */, Event * /* data ATS_UNUSED */)
+  {
+    this->_qpack.on_stream_open(this->_stream);
+    this->_stream.write(this->_buf, this->_buf_len, 0, false);
+    return 0;
+  }
+
+private:
+  QPACK          &_qpack;
+  TestQUICStream &_stream;
+  const uint8_t  *_buf;
+  size_t          _buf_len;
+};
+
+/** Wait for @a event_handler to observe @a expected_event.
+ *
+ * QPACK reports decode results by scheduling an event on an event thread, so a
+ * test has to wait for that callback. Polling keeps the common case fast while
+ * still failing, rather than hanging, when the event never arrives.
+ *
+ * @param[in] event_handler The handler that receives the QPACK events.
+ * @param[in] expected_event The event to wait for.
+ * @param[in] timeout The longest time to wait for @a expected_event.
+ *
+ * @return true if @a expected_event was observed, false on timeout.
+ */
+static bool
+wait_for_event(const TestQPACKEventHandler &event_handler, int expected_event,
+               std::chrono::milliseconds timeout = std::chrono::seconds(5))
+{
+  constexpr auto interval = std::chrono::milliseconds(10);
+
+  for (auto waited = std::chrono::milliseconds(0); waited < timeout; waited += interval) {
+    if (event_handler.last_event() == expected_event) {
+      return true;
+    }
+    std::this_thread::sleep_for(interval);
+  }
+  return event_handler.last_event() == expected_event;
+}
 
 static int
 load_qif_file(const char *filename, HTTPHdr **headers)
@@ -403,6 +476,71 @@ test_decode(const char *enc_file, const char *out_file, int dts, int mbs)
   fflush(fd_out);
   fclose(fd_out);
   return ret;
+}
+
+TEST_CASE("Decoding out-of-range static table indexes fails", "[qpack-decode]")
+{
+  QUICApplicationDriver driver;
+  QPACK                 qpack(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+  TestQPACKEventHandler event_handler;
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  const uint8_t header_block[] = {
+    0x00, // Required Insert Count.
+    0x00, // Delta Base.
+    0xff, // Indexed static field with an extended 6-bit index.
+    0x25, // Index 100.
+  };
+
+  CHECK(qpack.decode(1, header_block, sizeof(header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+
+  CHECK(wait_for_event(event_handler, QPACK_EVENT_DECODE_FAILED));
+
+  hdr.destroy();
+}
+
+TEST_CASE("An out-of-range encoder stream name reference invalidates the decoder", "[qpack-decode]")
+{
+  QUICApplicationDriver driver;
+  QPACK                 qpack(driver.get_connection(), UINT32_MAX, 1024, 1, MAX_FIELD_SIZE);
+  TestQUICStream        encoder_stream(0);
+  TestQPACKEventHandler event_handler;
+  HTTPHdr               hdr;
+
+  hdr.create(HTTPType::REQUEST);
+
+  const uint8_t insert_with_name_ref[] = {
+    0xff, // Insert With Name Reference, static, with an extended 6-bit index.
+    0x25, // Index 100, one past the end of the static table.
+    0x01, // A one byte, unencoded value follows.
+    'x',
+  };
+  TestQPACKStreamWriter writer(qpack, encoder_stream, insert_with_name_ref, sizeof(insert_with_name_ref));
+
+  eventProcessor.all_ethreads[0]->schedule_imm(&writer);
+
+  // The rejected insert has to leave the decoder invalid rather than insert an
+  // entry built from an out-of-range lookup. The encoder stream is read on an
+  // event thread, so poll until that has happened.
+  const uint8_t empty_header_block[] = {
+    0x00, // Required Insert Count.
+    0x00, // Delta Base.
+  };
+  int ret = 0;
+
+  for (int i = 0; i < 500; ++i) {
+    ret = qpack.decode(1, empty_header_block, sizeof(empty_header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]);
+    if (ret == -1) {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  CHECK(ret == -1);
+  CHECK(wait_for_event(event_handler, QPACK_EVENT_DECODE_FAILED));
+
+  hdr.destroy();
 }
 
 TEST_CASE("Encoding", "[qpack-encode]")
