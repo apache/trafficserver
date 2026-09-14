@@ -22,10 +22,14 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <thread>
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "proxy/hdrs/HTTP.h"
@@ -101,6 +105,7 @@ public:
   event_handler(int event, Event * /* data ATS_UNUSED */)
   {
     this->_event = event;
+    ++this->_events_seen;
     return 0;
   }
 
@@ -110,8 +115,26 @@ public:
     return this->_event;
   }
 
+  // Delivered on an event thread, so wait for this to move rather than sleeping
+  // a fixed time when the handler must outlive the events QPACK schedules.
+  int
+  events_seen()
+  {
+    return this->_events_seen.load();
+  }
+
+  bool
+  wait_for_events(int expected)
+  {
+    for (int i = 0; i < 5000 && this->_events_seen.load() < expected; ++i) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return this->_events_seen.load() >= expected;
+  }
+
 private:
-  int _event = 0;
+  int              _event = 0;
+  std::atomic<int> _events_seen{0};
 };
 
 static int
@@ -469,6 +492,74 @@ TEST_CASE("Decoding", "[qpack-decode]")
         snprintf(out_file + strlen(decdir), sizeof(out_file) - strlen(decdir), "/%s/%s.decoded", appname, d->d_name);
         CHECK(test_decode(enc_file, out_file, tablesize, streams) == 0);
       }
+    }
+  }
+}
+
+// Decodes one Literal Header Field Without Name Reference. That is the field
+// representation whose name and value are both allocated out of QPACK's
+// per-connection arena and released again once the header is attached, so it is
+// the path that cares about the order those releases happen in.
+TEST_CASE("Decoding a literal header field without name reference", "[qpack-literal-decode]")
+{
+  QUICApplicationDriver driver;
+  // decode() schedules its completion event on an event thread and hands it
+  // this handler, so every decode below is waited on before anything it can
+  // reach goes out of scope.
+  TestQPACKEventHandler event_handler;
+  auto                  qpack = std::make_unique<QPACK>(driver.get_connection(), UINT32_MAX, 0, 0, MAX_FIELD_SIZE);
+
+  // Header Data Prefix: Required Insert Count 0, Delta Base 0.
+  // Then 0x23: 001 N H <Name Length (3+)>, no never-index, no huffman, name of
+  // 3 bytes. Then 0x03: H <Value Length (7+)>, no huffman, value of 3 bytes.
+  // clang-format off
+  const uint8_t header_block[] = {
+    0x00, 0x00,
+    0x23, 'a', 'b', 'c',
+    0x03, 'x', 'y', 'z',
+  };
+  // clang-format on
+
+  SECTION("the name and value survive the decode")
+  {
+    HTTPHdr hdr;
+    hdr.create(HTTPType::REQUEST);
+
+    REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+    REQUIRE(event_handler.wait_for_events(1));
+    CHECK(event_handler.last_event() == QPACK_EVENT_DECODE_COMPLETE);
+
+    MIMEField *field = hdr.field_find("abc");
+
+    REQUIRE(field != nullptr);
+
+    auto value = field->value_get();
+
+    CHECK(value.length() == 3);
+    CHECK(memcmp(value.data(), "xyz", 3) == 0);
+
+    hdr.destroy();
+  }
+
+  SECTION("repeated decodes keep returning the same field")
+  {
+    for (int i = 0; i < 200; i++) {
+      HTTPHdr hdr;
+      hdr.create(HTTPType::REQUEST);
+
+      REQUIRE(qpack->decode(1, header_block, sizeof(header_block), hdr, &event_handler, eventProcessor.all_ethreads[0]) == 0);
+      REQUIRE(event_handler.wait_for_events(i + 1));
+
+      MIMEField *field = hdr.field_find("abc");
+
+      REQUIRE(field != nullptr);
+
+      auto value = field->value_get();
+
+      REQUIRE(value.length() == 3);
+      REQUIRE(memcmp(value.data(), "xyz", 3) == 0);
+
+      hdr.destroy();
     }
   }
 }
