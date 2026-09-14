@@ -15,14 +15,25 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from antlr4 import InputStream, CommonTokenStream
+
 from hrw4u.ast_nodes import *
-from utils import parse_input_text
 from hrw4u.ast_visitor import ASTVisitor
+from hrw4u.common import SystemDefaults
+from hrw4u.errors import ThrowingErrorListener
+from hrw4u.hrw4uLexer import hrw4uLexer
+from hrw4u.hrw4uParser import hrw4uParser
 
 
-def _build(source: str) -> HRW4UAST:
-    _, tree = parse_input_text(source)
-    return ASTVisitor().visit(tree)
+def _build(source: str, filename: str = SystemDefaults.DEFAULT_FILENAME) -> HRW4UAST:
+    """Parse strictly, so a test never asserts against an error-recovered tree."""
+    lexer = hrw4uLexer(InputStream(source))
+    lexer.removeErrorListeners()
+    lexer.addErrorListener(ThrowingErrorListener(filename))
+    parser = hrw4uParser(CommonTokenStream(lexer))
+    parser.removeErrorListeners()
+    parser.addErrorListener(ThrowingErrorListener(filename))
+    return ASTVisitor(filename=filename).visit(parser.program())
 
 
 class TestAssignments:
@@ -31,7 +42,7 @@ class TestAssignments:
         ast = _build('REMAP {\n    inbound.req.X-Foo = "test";\n}')
         a = ast.body[0].body[0]
         assert isinstance(a, Assignment)
-        assert a.target == Target.from_dotted("inbound.req.X-Foo")
+        assert a.name == "inbound.req.X-Foo"
         assert a.operator == "="
         assert a.value == LiteralStringValue(raw="test")
 
@@ -45,6 +56,11 @@ class TestAssignments:
         ast = _build('REMAP {\n    http.cntl.INTERCEPT_RETRY = 1;\n}')
         a = ast.body[0].body[0]
         assert a.value == 1
+
+    def test_undotted_lvalue_keeps_its_name(self):
+        ast = _build('VARS {\n    flag: bool;\n}\nREMAP {\n    flag = true;\n}')
+        a = ast.body[1].body[0]
+        assert a.name == "flag"
 
     def test_plus_equals(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo += "extra";\n}')
@@ -95,15 +111,15 @@ class TestFunctionCalls:
 
 class TestSections:
 
-    def test_comments_in_section_body_skipped(self):
+    def test_comments_in_section_body_are_kept_in_order(self):
         src = 'REMAP {\n    # a comment\n    set-debug();\n    # another comment\n}'
         ast = _build(src)
-        assert len(ast.body[0].body) == 1
+        assert len(ast.body[0].body) == 3
 
-    def test_comments_in_block_skipped(self):
+    def test_comments_in_block_are_kept_in_order(self):
         src = 'REMAP {\n    if true {\n        # comment\n        set-debug();\n    }\n}'
         ast = _build(src)
-        assert len(ast.body[0].body[0].body) == 1
+        assert len(ast.body[0].body[0].body) == 2
 
     def test_section_type(self):
         ast = _build('REMAP {\n    set-debug();\n}')
@@ -138,12 +154,12 @@ class TestSections:
 
 class TestVarSections:
 
-    def test_comments_in_var_section_skipped(self):
+    def test_comments_in_var_section_are_kept_in_order(self):
         src = 'VARS {\n    # comment\n    x: bool;\n    # another\n    y: int;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
         assert isinstance(vs, VarSection)
-        assert len(vs.declarations) == 2
+        assert len(vs.items) == 4
 
     def test_txn_scope(self):
         src = 'VARS {\n    flag: bool;\n}\nREMAP {\n    set-debug();\n}'
@@ -151,10 +167,10 @@ class TestVarSections:
         vs = ast.body[0]
         assert isinstance(vs, VarSection)
         assert vs.scope == "txn"
-        assert len(vs.declarations) == 1
-        assert vs.declarations[0].name == "flag"
-        assert vs.declarations[0].type_name == "bool"
-        assert vs.declarations[0].slot is None
+        assert len(vs.items) == 1
+        assert vs.items[0].name == "flag"
+        assert vs.items[0].type_name == "bool"
+        assert vs.items[0].slot is None
 
     def test_session_scope(self):
         src = 'SESSION_VARS {\n    counter: int;\n}\nREMAP {\n    set-debug();\n}'
@@ -162,24 +178,24 @@ class TestVarSections:
         vs = ast.body[0]
         assert isinstance(vs, VarSection)
         assert vs.scope == "session"
-        assert vs.declarations[0].name == "counter"
+        assert vs.items[0].name == "counter"
 
     def test_slot(self):
         src = 'VARS {\n    x: int @3;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
         assert isinstance(vs, VarSection)
-        assert vs.declarations[0].slot == 3
+        assert vs.items[0].slot == 3
 
     def test_multiple_declarations(self):
         src = 'VARS {\n    a: bool;\n    b: int;\n    c: string;\n}\nREMAP {\n    set-debug();\n}'
         ast = _build(src)
         vs = ast.body[0]
         assert isinstance(vs, VarSection)
-        assert len(vs.declarations) == 3
-        assert vs.declarations[0].name == "a"
-        assert vs.declarations[1].name == "b"
-        assert vs.declarations[2].name == "c"
+        assert len(vs.items) == 3
+        assert vs.items[0].name == "a"
+        assert vs.items[1].name == "b"
+        assert vs.items[2].name == "c"
 
 
 class TestProcedures:
@@ -237,7 +253,7 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if inbound.url.path in ["a", "b"] {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert cond.right == (LiteralStringValue(raw="a"), LiteralStringValue(raw="b"))
+        assert cond.right == SetValue(raw='"a","b"')
 
     def test_not_in_set(self):
         cond = self._first_condition('REMAP {\n    if inbound.url.path !in ["a"] {\n        set-debug();\n    }\n}')
@@ -248,7 +264,15 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if inbound.ip in {10.0.0.0/8} {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert cond.right == (IPValue(raw="10.0.0.0/8"),)
+        assert cond.right == IpRangeValue(raw='{10.0.0.0/8}')
+
+    def test_set_and_iprange_of_the_same_ip_stay_distinct(self):
+        # visitor.py emits `lhs (...)` for a set but `lhs {...}` for an iprange, and only the set
+        # path is sandbox-checked, so the AST has to tell one from the other.
+        as_set = self._first_condition('REMAP {\n    if inbound.ip in [1.2.3.4] {\n        set-debug();\n    }\n}')
+        as_range = self._first_condition('REMAP {\n    if inbound.ip in {1.2.3.4} {\n        set-debug();\n    }\n}')
+        assert as_set.right == SetValue(raw='1.2.3.4')
+        assert as_range.right == IpRangeValue(raw='{1.2.3.4}')
 
     def test_modifiers(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo == "bar" with NOCASE {\n        set-debug();\n    }\n}')
@@ -328,9 +352,10 @@ class TestConditionExpressions:
 
     def test_parenthesized_condition(self):
         cond = self._first_condition('REMAP {\n    if (inbound.req.X-Foo == "bar") {\n        set-debug();\n    }\n}')
-        assert isinstance(cond, Comparison)
-        assert cond.operator == "=="
-        assert cond.right == LiteralStringValue(raw="bar")
+        assert isinstance(cond, Group)
+        assert isinstance(cond.inner, Comparison)
+        assert cond.inner.operator == "=="
+        assert cond.inner.right == LiteralStringValue(raw="bar")
 
     def test_and_binds_tighter_than_or(self):
         # a || b && c  should parse as  a || (b && c)
@@ -370,9 +395,10 @@ class TestConditionExpressions:
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "||"
         assert isinstance(cond.left, NotOp)
-        assert isinstance(cond.left.operand, Comparison)
-        assert cond.left.operand.left == IdentValue(raw="inbound.req.X-A")
-        assert cond.left.operand.right == LiteralStringValue(raw="x")
+        assert isinstance(cond.left.operand, Group)
+        assert isinstance(cond.left.operand.inner, Comparison)
+        assert cond.left.operand.inner.left == IdentValue(raw="inbound.req.X-A")
+        assert cond.left.operand.inner.right == LiteralStringValue(raw="x")
         assert isinstance(cond.right, Comparison)
         assert cond.right.left == IdentValue(raw="inbound.req.X-B")
 
@@ -397,10 +423,11 @@ class TestConditionExpressions:
             '        set-debug();\n    }\n}')
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
-        assert isinstance(cond.left, LogicalOp)
-        assert cond.left.operator == "||"
-        assert cond.left.left.left == IdentValue(raw="inbound.req.X-A")
-        assert cond.left.right.left == IdentValue(raw="inbound.req.X-B")
+        assert isinstance(cond.left, Group)
+        assert isinstance(cond.left.inner, LogicalOp)
+        assert cond.left.inner.operator == "||"
+        assert cond.left.inner.left.left == IdentValue(raw="inbound.req.X-A")
+        assert cond.left.inner.right.left == IdentValue(raw="inbound.req.X-B")
         assert isinstance(cond.right, Comparison)
         assert cond.right.left == IdentValue(raw="inbound.req.X-C")
 
@@ -413,8 +440,9 @@ class TestConditionExpressions:
         assert isinstance(cond, LogicalOp)
         assert cond.operator == "&&"
         assert isinstance(cond.left, NotOp)
-        assert isinstance(cond.left.operand, LogicalOp)
-        assert cond.left.operand.operator == "||"
+        assert isinstance(cond.left.operand, Group)
+        assert isinstance(cond.left.operand.inner, LogicalOp)
+        assert cond.left.operand.inner.operator == "||"
         assert isinstance(cond.right, Comparison)
         assert cond.right.left == IdentValue(raw="inbound.req.X-C")
 
@@ -482,7 +510,7 @@ class TestIfBlocks:
         assert isinstance(body[2], Assignment)
 
 
-class TestLineNumbers:
+class TestSpanLines:
     SRC = (
         "use test::helper\n"  # line 1
         "VARS {\n"  # line 2
@@ -523,97 +551,97 @@ class TestLineNumbers:
     def test_use_directive(self):
         u = self.ast.body[0]
         assert isinstance(u, UseDirective)
-        assert u.line == 1
+        assert u.span.line == 1
 
     def test_var_section(self):
         vs = self.ast.body[1]
         assert isinstance(vs, VarSection)
-        assert vs.line == 2
+        assert vs.span.line == 2
 
     def test_var_decl(self):
-        vd = self.ast.body[1].declarations[0]
+        vd = self.ast.body[1].items[0]
         assert isinstance(vd, VarDecl)
-        assert vd.line == 3
+        assert vd.span.line == 3
 
     def test_procedure_decl(self):
         pd = self.ast.body[2]
         assert isinstance(pd, ProcedureDecl)
-        assert pd.line == 5
+        assert pd.span.line == 5
 
     def test_proc_param(self):
         pp = self.ast.body[2].params[0]
         assert isinstance(pp, ProcParam)
-        assert pp.line == 5
+        assert pp.span.line == 5
 
     def test_procedure_body_assignment(self):
         a = self.ast.body[2].body[0]
         assert isinstance(a, Assignment)
-        assert a.line == 6
+        assert a.span.line == 6
 
     def test_section(self):
         s = self.ast.body[3]
         assert isinstance(s, Section)
-        assert s.line == 8
+        assert s.span.line == 8
 
     def test_assignment(self):
         a = self.ast.body[3].body[0]
         assert isinstance(a, Assignment)
-        assert a.line == 9
+        assert a.span.line == 9
 
     def test_function_call(self):
         fc = self.ast.body[3].body[1]
         assert isinstance(fc, FunctionCall)
-        assert fc.line == 10
+        assert fc.span.line == 10
 
     def test_standalone_operator(self):
         fc = self.ast.body[3].body[2]
         assert isinstance(fc, FunctionCall)
-        assert fc.line == 11
+        assert fc.span.line == 11
 
     def test_if_block(self):
         ib = self.ast.body[3].body[3]
         assert isinstance(ib, IfBlock)
-        assert ib.line == 12
+        assert ib.span.line == 12
 
     def test_comparison_in_condition(self):
         cond = self.ast.body[3].body[3].condition
         assert isinstance(cond, Comparison)
-        assert cond.line == 12
+        assert cond.span.line == 12
 
     def test_break(self):
         brk = self.ast.body[3].body[3].body[0]
         assert isinstance(brk, Break)
-        assert brk.line == 13
+        assert brk.span.line == 13
 
     def test_elif_branch(self):
         eb = self.ast.body[3].body[3].elif_branches[0]
         assert isinstance(eb, ElifBranch)
-        assert eb.line == 14
+        assert eb.span.line == 14
 
     def test_elif_condition(self):
         cond = self.ast.body[3].body[3].elif_branches[0].condition
         assert isinstance(cond, Comparison)
-        assert cond.line == 14
+        assert cond.span.line == 14
 
     def test_logical_op(self):
         cond = self.ast.body[3].body[4].condition
         assert isinstance(cond, LogicalOp)
-        assert cond.line == 19
+        assert cond.span.line == 19
 
     def test_not_op(self):
         cond = self.ast.body[3].body[5].condition
         assert isinstance(cond, NotOp)
-        assert cond.line == 22
+        assert cond.span.line == 22
 
     def test_bool_literal(self):
         cond = self.ast.body[3].body[6].condition
         assert isinstance(cond, BoolLiteral)
-        assert cond.line == 25
+        assert cond.span.line == 25
 
     def test_ident_condition(self):
         cond = self.ast.body[3].body[7].condition
         assert isinstance(cond, IdentCondition)
-        assert cond.line == 28
+        assert cond.span.line == 28
 
 
 class TestRealConfigs:
@@ -700,7 +728,7 @@ REMAP {
         cond = ast.body[0].body[0].condition
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert len(cond.right) == 2
+        assert cond.right == IpRangeValue(raw='{192.168.0.0/16,10.0.0.0/8}')
 
     def test_set_membership_with_modifier(self):
         """From tests/data/conds/in-sets.input.txt."""
@@ -713,7 +741,7 @@ REMAP {
         cond = ast.body[0].body[0].condition
         assert isinstance(cond, Comparison)
         assert cond.operator == "in"
-        assert cond.right == (LiteralStringValue(raw="php"), LiteralStringValue(raw="php3"), LiteralStringValue(raw="php4"))
+        assert cond.right == SetValue(raw='"php","php3","php4"')
         assert cond.modifiers == ("EXT",)
 
     def test_debug_pattern_for_lint_rules(self):
@@ -732,9 +760,87 @@ REMAP {
 
         # TXN_DEBUG assignment with True
         assert isinstance(body[1], Assignment)
-        assert body[1].target == Target.from_dotted("http.cntl.TXN_DEBUG")
+        assert body[1].name == "http.cntl.TXN_DEBUG"
         assert body[1].value is True
 
         # Regular assignment (not flagged)
         assert isinstance(body[2], Assignment)
-        assert body[2].target.namespace == "inbound.req"
+        assert body[2].name == "inbound.req.X-Foo"
+
+
+class TestSpans:
+
+    def test_span_carries_file_line_and_column(self):
+        ast = _build('REMAP {\n    inbound.req.X-Foo = "test";\n}', filename="demo.hrw4u")
+        stmt = ast.body[0].body[0]
+        assert stmt.span == Span(file="demo.hrw4u", line=2, column=4)
+
+    def test_default_filename(self):
+        ast = _build('REMAP {\n    set-debug();\n}')
+        assert ast.body[0].span.file == SystemDefaults.DEFAULT_FILENAME
+
+    def test_nested_nodes_carry_their_own_column(self):
+        src = 'REMAP {\n    if !(inbound.status > 399) {\n        set-debug();\n    }\n}'
+        cond = _build(src, filename="d").body[0].body[0].condition
+        assert cond.span == Span(file="d", line=2, column=7)
+        assert cond.operand.span == Span(file="d", line=2, column=8)
+        assert cond.operand.inner.span == Span(file="d", line=2, column=9)
+
+    def test_elif_and_decl_columns(self):
+        src = 'VARS {\n      flag: bool;\n}\nREMAP {\n    if flag {\n        break;\n    } elif true {\n        break;\n    }\n}'
+        ast = _build(src, filename="d")
+        assert ast.body[0].items[0].span == Span(file="d", line=2, column=6)
+        assert ast.body[1].body[0].elif_branches[0].span == Span(file="d", line=7, column=6)
+
+
+class TestComments:
+
+    def test_top_level_comment_preserved(self):
+        ast = _build('# hello\nREMAP {\n    set-debug();\n}')
+        assert ast.body[0] == Comment(text="# hello", span=Span(file=SystemDefaults.DEFAULT_FILENAME, line=1, column=0))
+
+    def test_indented_comment_keeps_its_column(self):
+        ast = _build('REMAP {\n        # deep\n    set-debug();\n}', filename="d")
+        assert ast.body[0].body[0] == Comment(text="# deep", span=Span(file="d", line=2, column=8))
+
+    def test_comment_in_section_body_keeps_position(self):
+        ast = _build('REMAP {\n    # first\n    set-debug();\n}')
+        body = ast.body[0].body
+        assert isinstance(body[0], Comment)
+        assert body[0].text == "# first"
+        assert isinstance(body[1], FunctionCall)
+
+    def test_comment_in_block(self):
+        ast = _build('REMAP {\n    if inbound.status > 399 {\n        # why\n        set-debug();\n    }\n}')
+        assert isinstance(ast.body[0].body[0].body[0], Comment)
+
+    def test_comment_in_else_block(self):
+        src = 'REMAP {\n    if true {\n        break;\n    } else {\n        # otherwise\n        set-debug();\n    }\n}'
+        assert isinstance(_build(src).body[0].body[0].else_body[0], Comment)
+
+    def test_comment_in_procedure_body(self):
+        src = 'procedure local::p() {\n    # note\n    set-debug();\n}\nREMAP {\n    set-debug();\n}'
+        assert isinstance(_build(src).body[0].body[0], Comment)
+
+    def test_comment_in_vars_section(self):
+        ast = _build('VARS {\n    # a counter\n    hits: int8;\n}')
+        items = ast.body[0].items
+        assert isinstance(items[0], Comment)
+        assert isinstance(items[1], VarDecl)
+
+    def test_comment_in_session_vars_section(self):
+        ast = _build('SESSION_VARS {\n    # a counter\n    hits: int8;\n}\nREMAP {\n    set-debug();\n}')
+        assert isinstance(ast.body[0].items[0], Comment)
+
+
+class TestGrouping:
+
+    def test_negated_group(self):
+        ast = _build('REMAP {\n    if !(inbound.status > 399) {\n        set-debug();\n    }\n}')
+        cond = ast.body[0].body[0].condition
+        assert isinstance(cond, NotOp)
+        assert isinstance(cond.operand, Group)
+
+    def test_no_parens_no_group(self):
+        ast = _build('REMAP {\n    if inbound.status > 399 {\n        set-debug();\n    }\n}')
+        assert isinstance(ast.body[0].body[0].condition, Comparison)

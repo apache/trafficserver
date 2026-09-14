@@ -19,10 +19,30 @@ from __future__ import annotations
 
 from hrw4u.hrw4uVisitor import hrw4uVisitor
 from hrw4u.ast_nodes import *
+from hrw4u.common import SystemDefaults
 
 
 class ASTVisitor(hrw4uVisitor):
-    """ANTLR visitor that walks an HRW4U parse tree and produces an AST for HRW4U."""
+    """
+    ANTLR visitor that walks an HRW4U parse tree and produces an AST for HRW4U.
+
+    Requires a tree that parsed without errors. ANTLR's error recovery can leave a mandatory
+    child unset, which surfaces here as an AttributeError rather than a diagnostic.
+    """
+
+    def __init__(self, filename: str = SystemDefaults.DEFAULT_FILENAME) -> None:
+        super().__init__()
+        self.filename = filename
+
+    def _span(self, ctx) -> Span:
+        return Span(file=self.filename, line=ctx.start.line, column=ctx.start.column)
+
+    def _unhandled(self, what: str, ctx) -> ValueError:
+        span = self._span(ctx)
+        return ValueError(f"Unhandled {what} at {span.file}:{span.line}:{span.column}")
+
+    def _visit_comment(self, ctx) -> Comment:
+        return Comment(text=ctx.COMMENT().getText(), span=self._span(ctx))
 
     # Only visitProgram is overridden from the ANTLR visitor interface;
     # all other traversal uses private _visit_* helpers so that each
@@ -39,13 +59,13 @@ class ASTVisitor(hrw4uVisitor):
             elif item.section() is not None:
                 items.append(self._visit_section(item.section()))
             elif item.commentLine() is not None:
-                pass
+                items.append(self._visit_comment(item.commentLine()))
             else:
-                raise ValueError(f"Unhandled programItem alternative at line {item.start.line}")
+                raise self._unhandled("programItem alternative", item)
         return HRW4UAST(body=tuple(items))
 
     def _visit_use_directive(self, ctx) -> UseDirective:
-        return UseDirective(spec=ctx.QUALIFIED_IDENT().getText(), line=ctx.start.line)
+        return UseDirective(spec=ctx.QUALIFIED_IDENT().getText(), span=self._span(ctx))
 
     def _visit_procedure_decl(self, ctx) -> ProcedureDecl:
         name = ctx.QUALIFIED_IDENT().getText()
@@ -53,12 +73,12 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.paramList():
             params = tuple(self._visit_proc_param(p) for p in ctx.paramList().param())
         body = tuple(self._visit_body(ctx.block().blockItem()))
-        return ProcedureDecl(name=name, params=params, body=body, line=ctx.start.line)
+        return ProcedureDecl(name=name, params=params, body=body, span=self._span(ctx))
 
     def _visit_proc_param(self, ctx) -> ProcParam:
         name = ctx.IDENT().getText()
         default = self._extract_value(ctx.value()) if ctx.value() else None
-        return ProcParam(name=name, default=default, line=ctx.start.line)
+        return ProcParam(name=name, default=default, span=self._span(ctx))
 
     def _visit_section(self, ctx) -> VarSection | Section:
         if ctx.varSection() is not None:
@@ -67,22 +87,22 @@ class ASTVisitor(hrw4uVisitor):
             return self._visit_var_section(ctx.sessionVarSection(), "session")
         name = ctx.name.text
         body = self._visit_body(ctx.sectionBody())
-        return Section(type=name, body=tuple(body), line=ctx.start.line)
+        return Section(type=name, body=tuple(body), span=self._span(ctx))
 
     def _visit_var_section(self, ctx, scope) -> VarSection:
-        decls = []
+        items = []
         for var_item in ctx.variables().variablesItem():
             if var_item.variableDecl() is not None:
-                decls.append(self._visit_var_decl(var_item.variableDecl()))
+                items.append(self._visit_var_decl(var_item.variableDecl()))
             elif var_item.commentLine() is not None:
-                pass
+                items.append(self._visit_comment(var_item.commentLine()))
             else:
-                raise ValueError(f"Unhandled variablesItem alternative at line {var_item.start.line}")
-        return VarSection(scope=scope, declarations=tuple(decls), line=ctx.start.line)
+                raise self._unhandled("variablesItem alternative", var_item)
+        return VarSection(scope=scope, items=tuple(items), span=self._span(ctx))
 
     def _visit_var_decl(self, ctx) -> VarDecl:
         return VarDecl(
-            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, line=ctx.start.line)
+            name=ctx.name.text, type_name=ctx.typeName.text, slot=int(ctx.slot.text) if ctx.slot else None, span=self._span(ctx))
 
     def _visit_body(self, items) -> list[BodyNode]:
         """Shared helper for sectionBody and blockItem lists."""
@@ -93,35 +113,30 @@ class ASTVisitor(hrw4uVisitor):
             elif item.conditional() is not None:
                 result.append(self._visit_conditional(item.conditional()))
             elif item.commentLine() is not None:
-                pass
+                result.append(self._visit_comment(item.commentLine()))
             else:
-                raise ValueError(f"Unhandled body item alternative at line {item.start.line}")
+                raise self._unhandled("body item alternative", item)
         return result
 
     def _visit_statement(self, ctx) -> BodyNode:
-        line = ctx.start.line
         if ctx.BREAK():
-            return Break(line=line)
+            return Break(span=self._span(ctx))
         if ctx.functionCall():
             return self._visit_function_call(ctx.functionCall())
         if ctx.EQUAL():
-            target = Target.from_dotted(ctx.lhs.text)
-            value = self._extract_value(ctx.value())
-            return Assignment(target=target, operator="=", value=value, line=line)
+            return Assignment(name=ctx.lhs.text, operator="=", value=self._extract_value(ctx.value()), span=self._span(ctx))
         if ctx.PLUSEQUAL():
-            target = Target.from_dotted(ctx.lhs.text)
-            value = self._extract_value(ctx.value())
-            return Assignment(target=target, operator="+=", value=value, line=line)
+            return Assignment(name=ctx.lhs.text, operator="+=", value=self._extract_value(ctx.value()), span=self._span(ctx))
         if ctx.op:
-            return FunctionCall(name=ctx.op.text, args=(), line=line)
-        raise ValueError(f"Unhandled statement alternative at line {line}")
+            return FunctionCall(name=ctx.op.text, args=(), span=self._span(ctx))
+        raise self._unhandled("statement alternative", ctx)
 
     def _visit_function_call(self, ctx) -> FunctionCall:
         name = ctx.funcName.text
         args = ()
         if ctx.argumentList():
             args = tuple(self._extract_value(v) for v in ctx.argumentList().value())
-        return FunctionCall(name=name, args=args, line=ctx.start.line)
+        return FunctionCall(name=name, args=args, span=self._span(ctx))
 
     def _extract_value(self, ctx) -> ValueExpr:
         if ctx.number is not None:
@@ -137,31 +152,28 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.ip():
             return IPValue(raw=ctx.ip().getText())
         if ctx.iprange():
-            return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
+            return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.paramRef():
             return ParamRef(raw=ctx.paramRef().IDENT().getText())
-        raise ValueError(f"Unhandled value alternative at line {ctx.start.line}")
+        raise self._unhandled("value alternative", ctx)
 
     def _visit_conditional(self, ctx) -> IfBlock:
         if_stmt = ctx.ifStatement()
         condition = self._visit_condition(if_stmt.condition())
-        block = if_stmt.block()
-        body = tuple(self._visit_body(block.blockItem())) if block else ()
+        body = tuple(self._visit_body(if_stmt.block().blockItem()))
 
         elif_branches = []
         for elif_ctx in ctx.elifClause():
             elif_cond = self._visit_condition(elif_ctx.condition())
-            elif_block = elif_ctx.block()
-            elif_body = tuple(self._visit_body(elif_block.blockItem())) if elif_block else ()
-            elif_branches.append(ElifBranch(condition=elif_cond, body=elif_body, line=elif_ctx.start.line))
+            elif_body = tuple(self._visit_body(elif_ctx.block().blockItem()))
+            elif_branches.append(ElifBranch(condition=elif_cond, body=elif_body, span=self._span(elif_ctx)))
 
         else_body = ()
         if ctx.elseClause():
-            else_block = ctx.elseClause().block()
-            if else_block:
-                else_body = tuple(self._visit_body(else_block.blockItem()))
+            else_body = tuple(self._visit_body(ctx.elseClause().block().blockItem()))
 
-        return IfBlock(condition=condition, body=body, elif_branches=tuple(elif_branches), else_body=else_body, line=ctx.start.line)
+        return IfBlock(
+            condition=condition, body=body, elif_branches=tuple(elif_branches), else_body=else_body, span=self._span(ctx))
 
     def _visit_condition(self, ctx) -> ConditionExpr:
         return self._visit_expression(ctx.expression())
@@ -170,35 +182,34 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.OR():
             left = self._visit_expression(ctx.expression())
             right = self._visit_term(ctx.term())
-            return LogicalOp(operator="||", left=left, right=right, line=ctx.start.line)
+            return LogicalOp(operator="||", left=left, right=right, span=self._span(ctx))
         return self._visit_term(ctx.term())
 
     def _visit_term(self, ctx) -> ConditionExpr:
         if ctx.AND():
             left = self._visit_term(ctx.term())
             right = self._visit_factor(ctx.factor())
-            return LogicalOp(operator="&&", left=left, right=right, line=ctx.start.line)
+            return LogicalOp(operator="&&", left=left, right=right, span=self._span(ctx))
         return self._visit_factor(ctx.factor())
 
     def _visit_factor(self, ctx) -> ConditionExpr:
         if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
-            return NotOp(operand=self._visit_factor(ctx.factor()), line=ctx.start.line)
+            return NotOp(operand=self._visit_factor(ctx.factor()), span=self._span(ctx))
         if ctx.LPAREN():
-            return self._visit_expression(ctx.expression())
+            return Group(inner=self._visit_expression(ctx.expression()), span=self._span(ctx))
         if ctx.functionCall():
             return self._visit_function_call(ctx.functionCall())
         if ctx.comparison():
             return self._visit_comparison(ctx.comparison())
         if ctx.ident is not None:
-            return IdentCondition(name=ctx.ident.text, line=ctx.start.line)
+            return IdentCondition(name=ctx.ident.text, span=self._span(ctx))
         if ctx.TRUE():
-            return BoolLiteral(value=True, line=ctx.start.line)
+            return BoolLiteral(value=True, span=self._span(ctx))
         if ctx.FALSE():
-            return BoolLiteral(value=False, line=ctx.start.line)
-        raise ValueError(f"Unhandled factor alternative at line {ctx.start.line}")
+            return BoolLiteral(value=False, span=self._span(ctx))
+        raise self._unhandled("factor alternative", ctx)
 
     def _visit_comparison(self, ctx) -> Comparison:
-        line = ctx.start.line
         comp = ctx.comparable()
         if comp.ident is not None:
             left = IdentValue(raw=comp.ident.text)
@@ -209,7 +220,7 @@ class ASTVisitor(hrw4uVisitor):
         right = self._extract_comparison_rhs(ctx, operator)
         modifiers = self._extract_modifiers(ctx)
 
-        return Comparison(left=left, operator=operator, right=right, modifiers=modifiers, line=line)
+        return Comparison(left=left, operator=operator, right=right, modifiers=modifiers, span=self._span(ctx))
 
     def _detect_comparison_operator(self, ctx) -> str:
         if ctx.EQUALS():
@@ -229,19 +240,19 @@ class ASTVisitor(hrw4uVisitor):
                 if hasattr(child, "getText") and child.getText() == "!":
                     return "!in"
             return "in"
-        raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
+        raise self._unhandled("comparison operator", ctx)
 
-    def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | tuple[ValueExpr, ...]:
+    def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | SetValue:
         if operator in ("~", "!~"):
             return RegexValue(raw=ctx.regex().getText()[1:-1])
         if operator in ("in", "!in"):
             if ctx.set_():
-                return tuple(self._extract_value(v) for v in ctx.set_().value())
+                return SetValue(raw=ctx.set_().getText()[1:-1])
             if ctx.iprange():
-                return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
+                return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.value():
             return self._extract_value(ctx.value())
-        raise ValueError(f"Unhandled comparison RHS at line {ctx.start.line}")
+        raise self._unhandled("comparison RHS", ctx)
 
     def _extract_modifiers(self, ctx) -> tuple[str, ...]:
         if ctx.modifier():
