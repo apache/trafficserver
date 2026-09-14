@@ -28,7 +28,43 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <array>
 #include <string>
+
+TEST_CASE("Connection tracker server match conversion", "[libinknet][ConnectionTracker]")
+{
+  auto const &converter = ConnectionTracker::SERVER_MATCH_CONV;
+  auto        match     = ConnectionTracker::MATCH_IP;
+
+  REQUIRE(converter.store_int != nullptr);
+  REQUIRE(converter.load_int != nullptr);
+
+  SECTION("valid values round trip")
+  {
+    static constexpr std::array valid_values{
+      ConnectionTracker::MATCH_IP,
+      ConnectionTracker::MATCH_PORT,
+      ConnectionTracker::MATCH_HOST,
+      ConnectionTracker::MATCH_BOTH,
+    };
+
+    for (auto const expected : valid_values) {
+      converter.store_int(&match, static_cast<MgmtInt>(expected));
+
+      CHECK(match == expected);
+      CHECK(converter.load_int(&match) == static_cast<MgmtInt>(expected));
+    }
+  }
+
+  SECTION("invalid values are clamped")
+  {
+    converter.store_int(&match, -1);
+    CHECK(match == ConnectionTracker::MATCH_IP);
+
+    converter.store_int(&match, 95);
+    CHECK(match == ConnectionTracker::MATCH_BOTH);
+  }
+}
 
 namespace
 {
