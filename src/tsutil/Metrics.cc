@@ -141,8 +141,8 @@ Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics
   }
 
   if (out_type) {
-    // don't trust the passed in id to get the type as it might have been manufactured (i.e. from iterators)
-    // so get the type from the storage tuple.
+    // don't trust the passed in id to get the type as it might have been manufactured, so get the
+    // type from the storage tuple.
     *out_type = _extractType(std::get<1>(std::get<0>(*blob)[offset]));
   }
 
@@ -225,56 +225,6 @@ Metrics::Storage::listed(Metrics::IdType id) const
   Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
 
   return (std::get<2>(*blob)[offset].load(MEMORY_ORDER) & UNLISTED) == 0;
-}
-
-// Iterator implementation
-Metrics::iterator::iterator(const Metrics &m) : _metrics(m), _it(0), _bound(m._storage->next_free_id())
-{
-  skip_unlisted();
-}
-
-Metrics::iterator::iterator(const Metrics &m, IdType pos) : _metrics(m), _bound(m._storage->next_free_id())
-{
-  // A metric id carries its type at METRIC_TYPE_BITS, but positions are compared numerically
-  // against a bound with no type bits. Keep only the blob and offset, as advance() does, or a GAUGE
-  // id would compare past the end of the store and the iterator would look exhausted.
-  auto [blob, offset] = _metrics._splitID(pos);
-
-  _it = _makeId(blob, offset, MetricType::COUNTER);
-
-  skip_unlisted();
-}
-
-Metrics::iterator::iterator(const Metrics &m, end_tag) : _metrics(m), _end(true) {}
-
-void
-Metrics::iterator::advance()
-{
-  auto [blob, offset] = _metrics._splitID(_it);
-
-  if (++offset == MAX_SIZE) {
-    ++blob;
-    offset = 0;
-  }
-
-  _it = _makeId(blob, offset, MetricType::COUNTER);
-}
-
-void
-Metrics::iterator::skip_unlisted()
-{
-  // Bounded by the snapshot so a slot created and unlisted after this iterator was made cannot draw
-  // the scan past the end of what this iterator agreed to visit.
-  while (!at_end() && !_metrics._storage->listed(_it)) {
-    advance();
-  }
-}
-
-void
-Metrics::iterator::next()
-{
-  advance();
-  skip_unlisted();
 }
 
 namespace details

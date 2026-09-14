@@ -98,6 +98,24 @@ never as a side effect of a broad query.
    renamed or removed between releases without notice. Do not build monitoring on them; use the
    published aggregate instead.
 
+Enumerating metrics
+===================
+
+``for_each`` visits every listed metric of a store, in creation order:
+
+.. code-block:: cpp
+
+    ts::Metrics::instance().for_each([](std::string_view name, ts::Metrics::MetricType type, int64_t value) {
+      // ...
+    });
+
+This is the only way to enumerate a store. There is no public iterator, and deliberately so:
+enumeration is always the whole store, so nothing can hold a cursor across changes to the store or
+name a position the walk would skip. Reach a single metric by name with ``lookup`` instead.
+
+The callback must not create a metric, which would be an attempt to grow the store from inside a
+pass over it.
+
 Derived metrics
 ===============
 
@@ -210,10 +228,6 @@ metric still resolves through ``lookup``, so an exact name query, a logging fiel
 same name again relists it and returns the same id with its accumulated value intact, so a metric
 that comes and goes with a configuration setting costs nothing to bring back.
 
-``find`` is the exception: it returns ``end()`` for an unlisted metric. Iteration never visits an
-unlisted slot, so an iterator pointing at one would be a range bound that a walk steps straight over
-and never reaches. Use ``lookup`` to read an unlisted metric.
-
 This exists because the decision to publish a name is otherwise made once, when the metric is first
 created, and can never be revisited. Any metric whose name or publication policy depends on a
 runtime changeable setting needs a way to retract a name it has already published.
@@ -225,8 +239,8 @@ runtime changeable setting needs a way to retract a name it has already publishe
 
 .. note::
 
-   Iteration is a snapshot taken when the iterator is created. A metric created after ``begin()``
-   is not visited by that iterator.
+   The set walked is fixed when ``for_each`` begins, so a metric created while it runs is not
+   visited.
 
 Storage limits
 ==============

@@ -26,7 +26,6 @@
 #include <algorithm>
 #include <atomic>
 #include <array>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <string>
@@ -40,33 +39,37 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();
 
-  SECTION("iterator")
+  SECTION("for_each")
   {
-    auto [name, type, value] = *m.begin();
-    REQUIRE(value == 0);
-    REQUIRE(type == Metrics::MetricType::COUNTER);
-    REQUIRE(name == "proxy.process.api.metrics.bad_id");
+    std::vector<std::string> names;
+    int64_t                  first_value = -1;
+    Metrics::MetricType      first_type{};
 
-    REQUIRE(m.begin() != m.end());
+    m.for_each([&](std::string_view name, Metrics::MetricType type, int64_t value) {
+      if (names.empty()) {
+        first_value = value;
+        first_type  = type;
+      }
+      names.emplace_back(name);
+    });
 
-    // Other test cases share this process-wide store, so the number of metrics already present
-    // is not knowable here. Assert the delta from creating one metric instead of an absolute
-    // iterator position.
-    auto pre_count = std::distance(m.begin(), m.end());
+    // The reserved bad_id occupies the first slot of every store, so it is always visited first.
+    REQUIRE_FALSE(names.empty());
+    REQUIRE(names.front() == Metrics::BAD_ID_NAME);
+    REQUIRE(first_value == 0);
+    REQUIRE(first_type == Metrics::MetricType::COUNTER);
 
-    Metrics::Counter::create("iterator.marker");
-    REQUIRE(std::distance(m.begin(), m.end()) == pre_count + 1);
+    // Other test cases share this process-wide store, so the number of metrics already present is
+    // not knowable here. Assert the delta from creating one metric instead of an absolute count.
+    auto const pre_count = names.size();
 
-    auto it = m.begin();
-    std::advance(it, pre_count);
-    REQUIRE(it != m.end());
-    ++it;
-    REQUIRE(it == m.end());
+    Metrics::Counter::create("for_each.marker");
 
-    auto it2 = m.begin();
-    std::advance(it2, pre_count);
-    it2++;
-    REQUIRE(it2 == m.end());
+    names.clear();
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { names.emplace_back(name); });
+
+    REQUIRE(names.size() == pre_count + 1);
+    REQUIRE(names.back() == "for_each.marker"); // creation order, so the newest is last
   }
 
   SECTION("New metric")
@@ -437,18 +440,12 @@ TEST_CASE("Metrics hidden store", "[libtsapi][Metrics]")
 
     // Not visible in the published store, by name or by iteration.
     REQUIRE(m.lookup("hidden.only") == Metrics::NOT_FOUND);
-    for (auto &&[name, type, value] : m) {
-      REQUIRE(name != "hidden.only");
-    }
+    m.for_each([](std::string_view name, Metrics::MetricType, int64_t) { REQUIRE(name != "hidden.only"); });
 
     // Visible in the hidden store.
     REQUIRE(h.lookup("hidden.only") != Metrics::NOT_FOUND);
     bool found = false;
-    for (auto &&[name, type, value] : h) {
-      if (name == "hidden.only") {
-        found = true;
-      }
-    }
+    h.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { found |= (name == "hidden.only"); });
     REQUIRE(found);
   }
 
@@ -722,11 +719,11 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
 
     bool saw_before = false, saw_target = false, saw_after = false;
 
-    for (auto &&[name, type, value] : m) {
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) {
       saw_before |= (name == "unlisted.iter.before");
       saw_target |= (name == "unlisted.iter.target");
       saw_after  |= (name == "unlisted.iter.after");
-    }
+    });
 
     REQUIRE(saw_before);
     REQUIRE_FALSE(saw_target);
@@ -750,12 +747,12 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
 
     // Visible again, with its value intact.
     bool found = false;
-    for (auto &&[name, type, value] : m) {
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t value) {
       if (name == "unlisted.resurrect") {
         found = true;
         REQUIRE(value == 5);
       }
-    }
+    });
     REQUIRE(found);
   }
 
@@ -770,9 +767,7 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
     REQUIRE(m.listed(id));
 
     bool found = false;
-    for (auto &&[name, type, value] : m) {
-      found |= (name == "unlisted.byname");
-    }
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { found |= (name == "unlisted.byname"); });
     REQUIRE(found);
 
     // A name that was never created cannot be marked.
@@ -797,17 +792,40 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
     REQUIRE(Metrics::Counter::load(p) == 3);
   }
 
-  SECTION("begin() skips an unlisted first slot")
+  SECTION("for_each skips an unlisted first slot")
   {
-    // Slot 0 is the reserved bad_id and is what begin() would otherwise return.
-    auto bad_id = m.lookup("proxy.process.api.metrics.bad_id");
+    // Slot 0 is the reserved bad_id, so it is the first slot the walk considers. The anchor keeps
+    // the assertions below from passing on an empty walk.
+    auto bad_id = m.lookup(Metrics::BAD_ID_NAME);
     REQUIRE(bad_id == 0);
 
-    REQUIRE(m.unlist(bad_id));
-    REQUIRE(std::get<0>(*m.begin()) != "proxy.process.api.metrics.bad_id");
+    Metrics::Counter::create("unlisted.first.anchor");
 
+    auto first_name = [&]() {
+      std::string first;
+      bool        seen = false;
+
+      m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) {
+        if (!seen) {
+          first = name;
+          seen  = true;
+        }
+      });
+
+      return first;
+    };
+
+    REQUIRE(m.unlist(bad_id));
+    auto const while_unlisted = first_name();
+
+    // Relist before asserting: a failed assertion ends the section, and leaving bad_id unlisted
+    // would break every later test case that expects to see it.
     REQUIRE(m.relist(bad_id));
-    REQUIRE(std::get<0>(*m.begin()) == "proxy.process.api.metrics.bad_id");
+    auto const while_listed = first_name();
+
+    REQUIRE_FALSE(while_unlisted.empty()); // the walk did visit something
+    REQUIRE(while_unlisted != Metrics::BAD_ID_NAME);
+    REQUIRE(while_listed == Metrics::BAD_ID_NAME);
   }
 
   SECTION("an unlisted run at the end of the store terminates iteration")
@@ -828,118 +846,37 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
 
     bool saw_anchor = false;
 
-    for (auto &&[name, type, value] : m) {
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) {
       saw_anchor |= (name == "unlisted.tail.anchor");
       for (auto const &n : names) {
         REQUIRE(name != n);
       }
-    }
+    });
 
     REQUIRE(saw_anchor);
   }
 
-  SECTION("iterator comparison")
+  SECTION("for_each reports the type each metric was created with")
   {
-    auto a = m.begin();
-    auto b = m.begin();
-    auto e = m.end();
-
-    REQUIRE(a == b);
-
-    ++a;
-    REQUIRE(a != b); // two live iterators still compare by position
-
-    while (a != e) {
-      ++a;
-    }
-    REQUIRE(a == e); // exhausted equals the sentinel
-
-    while (b != e) {
-      ++b;
-    }
-    REQUIRE(b == a); // and equals another exhausted iterator
-  }
-
-  SECTION("iterating to a bound that is not end()")
-  {
-    // A sub-range delimited by a positional iterator has to terminate even when marked slots fall
-    // inside it. Both ends skip by the same rule, so the walk still lands exactly on the bound.
-    auto first = Metrics::Counter::create("unlisted.range.1");
-    auto skip1 = Metrics::Counter::create("unlisted.range.2");
-    auto skip2 = Metrics::Counter::create("unlisted.range.3");
-    Metrics::Counter::create("unlisted.range.4");
-    Metrics::Counter::create("unlisted.range.5");
-
-    REQUIRE(m.unlist(skip1));
-    REQUIRE(m.unlist(skip2));
-
-    auto stop = m.find("unlisted.range.5");
-    REQUIRE(stop != m.end());
-
-    std::vector<std::string> seen;
-
-    for (auto it = m.find("unlisted.range.1"); it != stop; ++it) {
-      seen.push_back(std::string(std::get<0>(*it)));
-      REQUIRE(seen.size() <= 4); // do not spin if the bound is never reached
-    }
-
-    REQUIRE(seen == std::vector<std::string>{"unlisted.range.1", "unlisted.range.4"});
-    REQUIRE(first != Metrics::NOT_FOUND);
-  }
-
-  SECTION("a subrange from iterators made at different times terminates")
-  {
-    // Each iterator snapshots its own bound at construction. If exhaustion is judged against each
-    // one's own bound, the walk can pass its own end while the stop iterator, made later and so
-    // holding a larger bound, is still live -- they never compare equal and ++ makes no progress.
-    Metrics::Counter::create("unlisted.snap.start");
-
-    auto start = m.find("unlisted.snap.start");
-    REQUIRE(start != m.end());
-
-    Metrics::Counter::create("unlisted.snap.stop");
-
-    auto stop = m.find("unlisted.snap.stop");
-    REQUIRE(stop != m.end());
-
-    int steps = 0;
-
-    for (auto it = start; it != stop; ++it) {
-      REQUIRE(++steps < 64); // fails rather than spinning if the two never meet
-    }
-  }
-
-  SECTION("find() works for a gauge, whose id carries type bits")
-  {
-    // A metric id encodes its type at METRIC_TYPE_BITS, while the iteration bound is built with
-    // COUNTER type bits. Comparing a GAUGE id against that bound numerically makes it look past
-    // the end of the store.
+    // The type comes from the slot's own stored id rather than from the walk's position, which is
+    // what keeps a gauge from being reported as a counter.
     Metrics::Gauge::createPtr("unlisted.typed.gauge");
     Metrics::Counter::createPtr("unlisted.typed.counter");
 
-    auto g = m.find("unlisted.typed.gauge");
-    REQUIRE(g != m.end());
-    REQUIRE(std::get<0>(*g) == "unlisted.typed.gauge");
-    REQUIRE(std::get<1>(*g) == Metrics::MetricType::GAUGE);
+    bool saw_gauge = false, saw_counter = false;
 
-    auto c = m.find("unlisted.typed.counter");
-    REQUIRE(c != m.end());
-    REQUIRE(std::get<0>(*c) == "unlisted.typed.counter");
-  }
+    m.for_each([&](std::string_view name, Metrics::MetricType type, int64_t) {
+      if (name == "unlisted.typed.gauge") {
+        saw_gauge = true;
+        REQUIRE(type == Metrics::MetricType::GAUGE);
+      } else if (name == "unlisted.typed.counter") {
+        saw_counter = true;
+        REQUIRE(type == Metrics::MetricType::COUNTER);
+      }
+    });
 
-  SECTION("find() on an unlisted metric yields end()")
-  {
-    // Iteration never visits a marked slot, so there must be no way to get an iterator that points
-    // at one. Otherwise using it as a range bound is a walk that never terminates: the skipping
-    // iterator steps straight over the bound and runs off the end of the store.
-    auto id = Metrics::Counter::create("unlisted.unfindable");
-
-    REQUIRE(m.find("unlisted.unfindable") != m.end());
-    REQUIRE(m.unlist(id));
-    REQUIRE(m.find("unlisted.unfindable") == m.end());
-
-    // lookup() is the supported way to reach a unlisted metric, and is unaffected.
-    REQUIRE(m.lookup("unlisted.unfindable") == id);
+    REQUIRE(saw_gauge);
+    REQUIRE(saw_counter);
   }
 
   SECTION("an id that names no allocated slot is neither listed nor unlistable")
@@ -971,12 +908,8 @@ TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
 
     bool in_published = false, in_hidden = false;
 
-    for (auto &&[name, type, value] : m) {
-      in_published |= (name == "unlisted.dual");
-    }
-    for (auto &&[name, type, value] : h) {
-      in_hidden |= (name == "unlisted.dual");
-    }
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { in_published |= (name == "unlisted.dual"); });
+    h.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { in_hidden |= (name == "unlisted.dual"); });
 
     REQUIRE(in_published);
     REQUIRE_FALSE(in_hidden);

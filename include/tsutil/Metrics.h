@@ -93,6 +93,10 @@ public:
   static constexpr int      METRIC_TYPE_BITS = 29;
   static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
+  /// The reserved slot 0 of every store, returned when an id cannot be produced. Present under this
+  /// name in both stores, so a consumer querying both has to expect it twice.
+  static constexpr std::string_view BAD_ID_NAME{"proxy.process.api.metrics.bad_id"};
+
 private:
   using NameAndId     = std::tuple<std::string, IdType>;
   using LookupTable   = std::unordered_map<std::string_view, IdType>;
@@ -249,134 +253,21 @@ public:
     return _storage->valid(id);
   }
 
-  // Static methods to encapsulate access to the atomic's
-  class iterator
+  /** Visit every listed metric.
+   *
+   * @a func is called as <tt>func(std::string_view name, MetricType type, int64_t value)</tt> for
+   * each listed metric, in creation order. Unlisted metrics are skipped, @see unlist.
+   *
+   * The set walked is fixed when the call begins: a metric created while it runs is not visited.
+   * Enumeration is deliberately the whole store and nothing less. There is no cursor to hold, so
+   * nothing can outlive the walk or name a slot the walk would not visit, and @a func may not
+   * create a metric, which would be an attempt to grow the store from inside a pass over it.
+   */
+  template <typename F>
+  void
+  for_each(F &&func) const
   {
-    friend class Metrics;
-
-    /// Tag for the end sentinel, which has no position and reads no storage.
-    struct end_tag {
-    };
-
-    // Only Metrics hands these out, through begin(), end() and find(). A caller that could name an
-    // arbitrary position could name an unlisted one, which iteration must never visit.
-    explicit iterator(const Metrics &m);
-    iterator(const Metrics &m, IdType pos);
-    iterator(const Metrics &m, end_tag);
-
-  public:
-    using iterator_category = std::input_iterator_tag;
-    using value_type        = std::tuple<std::string_view, MetricType, int64_t>;
-    using difference_type   = ptrdiff_t;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-
-    iterator &
-    operator++()
-    {
-      next();
-
-      return *this;
-    }
-
-    iterator
-    operator++(int)
-    {
-      iterator result = *this;
-
-      next();
-
-      return result;
-    }
-
-    value_type
-    operator*() const
-    {
-      std::string_view name;
-      MetricType       type;
-      auto             metric = _metrics.lookup(_it, &name, &type);
-
-      return std::make_tuple(name, type, metric->_value.load());
-    }
-
-    /** Equality.
-     *
-     * Three way rather than a plain position compare: any exhausted iterator equals the end
-     * sentinel, and equals any other exhausted iterator, since two of them may have skipped a
-     * different number of unlisted slots. Two live iterators still compare by position.
-     *
-     * Two positional iterators may hold different snapshots, so exhaustion between them is judged
-     * against the earlier bound. Otherwise a walk could pass its own bound while a stop iterator
-     * made later was still live: they would never compare equal and @c operator++ could not make
-     * progress. The sentinel keeps its own answer, since its bound is meaningless.
-     *
-     * @note A snapshot is the sequence: iterators from different ones are no more comparable than
-     *   iterators into different containers, and mixing them is unspecified. Within one snapshot
-     *   equality is the equivalence relation an input iterator requires. The rule above keeps the
-     *   unspecified case terminating rather than hanging.
-     */
-    bool
-    operator==(const iterator &o) const
-    {
-      if (std::addressof(_metrics) != std::addressof(o._metrics)) {
-        return false;
-      }
-
-      if (_end || o._end) {
-        return at_end() == o.at_end();
-      }
-
-      auto const bound = _bound < o._bound ? _bound : o._bound;
-      bool const a = _it >= bound, b = o._it >= bound;
-
-      if (a || b) {
-        return a && b;
-      }
-      return _it == o._it;
-    }
-
-  private:
-    void next();
-    void advance();
-    void skip_unlisted();
-
-    bool
-    at_end() const
-    {
-      return _end || _it >= _bound;
-    }
-
-    const Metrics  &_metrics;
-    Metrics::IdType _it{0};
-    /// One past the last slot allocated when this iterator was made. Iteration is a snapshot.
-    Metrics::IdType _bound{0};
-    bool            _end{false};
-  };
-
-  iterator
-  begin() const
-  {
-    return iterator(*this);
-  }
-
-  iterator
-  end() const
-  {
-    return iterator(*this, iterator::end_tag{});
-  }
-
-  iterator
-  find(const std::string_view name) const
-  {
-    auto id = lookup(name);
-
-    // An unlisted slot is never visited by iteration, so handing out an iterator to one would
-    // produce a bound that a skipping walk steps straight over. Reach it with lookup() instead.
-    if (id == NOT_FOUND || !listed(id)) {
-      return end();
-    } else {
-      return iterator(*this, id);
-    }
+    _storage->for_each(std::forward<F>(func));
   }
 
 private:
@@ -442,7 +333,7 @@ private:
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
       // Reserve slot 0 for errors, this should always be 0
-      release_assert(0 == create("proxy.process.api.metrics.bad_id", MetricType::COUNTER));
+      release_assert(0 == create(BAD_ID_NAME, MetricType::COUNTER));
     }
 
     ~Storage() {}
@@ -456,6 +347,44 @@ private:
     MetricType       type(IdType id) const;
     bool             set_listed(IdType id, bool listed);
     bool             listed(IdType id) const;
+
+    /** Visit every listed slot, in creation order.
+     *
+     * @see Metrics::for_each, which is how callers reach this.
+     *
+     * The bound is read once, up front. Acquiring it acquires every slot below it, which is what
+     * lets the walk read names and values without the mutex: a slot's name is written before the
+     * release store that publishes it, and never changes.
+     */
+    template <typename F>
+    void
+    for_each(F &&func) const
+    {
+      auto const [last_blob, last_off] = _splitID(next_free_id());
+
+      for (uint16_t blob = 0; blob <= last_blob; ++blob) {
+        NamesAndAtomics const *entries = _blobs[blob].get();
+
+        // The bound covers every blob below it, so this is belt and braces.
+        if (entries == nullptr) {
+          break;
+        }
+
+        uint16_t const limit = blob == last_blob ? last_off : MAX_SIZE;
+
+        for (uint16_t off = 0; off < limit; ++off) {
+          if ((std::get<2>(*entries)[off].load(MEMORY_ORDER) & UNLISTED) != 0) {
+            continue;
+          }
+
+          auto const &slot = std::get<0>(*entries)[off];
+
+          // The type comes from the slot's own id, not from the position, so it is the type the
+          // metric was created with.
+          func(std::string_view{std::get<0>(slot)}, _extractType(std::get<1>(slot)), std::get<1>(*entries)[off].load());
+        }
+      }
+    }
 
     /// The id the next slot will get, which is also iteration's exclusive bound.
     IdType
