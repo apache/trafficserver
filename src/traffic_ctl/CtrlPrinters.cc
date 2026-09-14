@@ -24,6 +24,7 @@
 
 #include <swoc/swoc_meta.h>
 #include "tsutil/ts_bw_format.h"
+#include "tsutil/YamlCfg.h"
 
 #include "CtrlPrinters.h"
 #include "jsonrpc/ctrl_yaml_codecs.h"
@@ -102,7 +103,7 @@ void
 BasePrinter::write_output_json(YAML::Node const &node) const
 {
   YAML::Emitter out;
-  out << YAML::DoubleQuoted << YAML::Flow;
+  ts::Yaml::configure_json_emitter(out);
   out << node;
   std::cout << out.c_str() << '\n';
 }
