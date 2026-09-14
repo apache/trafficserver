@@ -179,9 +179,14 @@ enum class CompatibilityCacheLookup {
   COMPAT_CACHE_LAST,
 };
 
+/// Policy for an object found under the previous (9.2) cache key. Shared by the
+/// HTTP state machine, its cache sub-machine and HttpTransact, which is why it
+/// is not a member of any of them.
+namespace CompatCacheKey
+{
 /// Whether this lookup addresses the cache with the previous (9.2) key.
 inline bool
-should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
+is_legacy(CompatibilityCacheLookup lookup)
 {
   return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
 }
@@ -190,10 +195,11 @@ should_use_compatibility_cache_key(CompatibilityCacheLookup lookup)
 /// carry: it belongs to the legacy key and would turn the write into an update
 /// of a vector the canonical key does not have.
 inline CacheHTTPInfo *
-cache_write_info_for_lookup(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+write_info(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
 {
-  return should_use_compatibility_cache_key(lookup) ? nullptr : object_read_info;
+  return is_legacy(lookup) ? nullptr : object_read_info;
 }
+} // namespace CompatCacheKey
 
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {

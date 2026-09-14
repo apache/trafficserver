@@ -2731,7 +2731,7 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
   // path and the legacy copy ages out. Only reads migrate; the methods that
   // invalidate take the delete path, which reaches both keys.
   if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::HIT_STALE && s->state_machine != nullptr &&
-      should_use_compatibility_cache_key(s->state_machine->compatibility_cache_lookup) &&
+      CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup) &&
       (s->method == HTTP_WKSIDX_GET || s->method == HTTP_WKSIDX_HEAD)) {
     TxnDbg(dbg_ctl_http_seq, "Stale under the compatibility key, treating as a miss");
     s->cache_info.object_read         = nullptr;

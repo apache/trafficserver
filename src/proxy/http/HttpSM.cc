@@ -5286,12 +5286,22 @@ HttpSM::do_range_setup_if_necessary()
   }
 }
 
-// The URL this transaction looks up in the cache. A redirect follow looks up the
-// redirected URL rather than the original, unless the transaction is configured
-// to keep the original cache key.
+// The URL this transaction looks up in the cache, and that every delete which
+// has to match that lookup uses too.
+//
+// hdr_info.client_request's URL always names the *current* request:
+// redirect_request() rewrites it in place, so after a redirect follow it is the
+// Location target. cache_info.lookup_url is set once, before the first lookup
+// (HttpTransact::DecideCacheLookup), and names the *original* request. Whether
+// it also moves with a redirect is an accident of how it was set: with
+// pristine_host_hdr off it aliases client_request's URL and follows it, with
+// pristine_host_hdr on it is a private copy and stays put. It is therefore not
+// a reliable way to reach the redirected URL, which is why the redirect case
+// below reads client_request instead.
 URL *
 HttpSM::cache_lookup_url()
 {
+  // Follow the redirect unless configured to keep the original cache key.
   if (t_state.redirect_info.redirect_in_process && !t_state.txn_conf->redirect_use_orig_cache_key) {
     return t_state.hdr_info.client_request.url_get();
   }
@@ -5319,7 +5329,7 @@ HttpSM::do_cache_lookup_and_read()
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  if (should_use_compatibility_cache_key(compatibility_cache_lookup)) {
+  if (CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
     Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
   } else {
     Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
@@ -5421,7 +5431,7 @@ HttpSM::do_cache_prepare_update()
       t_state.cache_info.object_store.valid() && t_state.cache_info.object_store.response_get() != nullptr &&
       t_state.cache_info.object_store.response_get()->valid() &&
       t_state.hdr_info.client_request.method_get_wksidx() == HTTP_WKSIDX_GET &&
-      !should_use_compatibility_cache_key(compatibility_cache_lookup)) {
+      !CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
     t_state.cache_info.object_store.request_set(t_state.cache_info.object_read->request_get());
     // t_state.cache_info.object_read = NULL;
     // cache_sm.close_read();
@@ -5477,7 +5487,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   // update, but the canonical-key vector does not contain the legacy alternate.
   // Cache::open_write then fails with ECACHE_NO_DOC instead of creating the
   // migrated object. Create a new canonical-key object for compatibility reads.
-  CacheHTTPInfo *write_object_read_info = cache_write_info_for_lookup(compatibility_cache_lookup, object_read_info);
+  CacheHTTPInfo *write_object_read_info = CompatCacheKey::write_info(compatibility_cache_lookup, object_read_info);
 
   pending_action =
     c_sm->open_write(&key, s_url, &t_state.hdr_info.cache_request, write_object_read_info,
