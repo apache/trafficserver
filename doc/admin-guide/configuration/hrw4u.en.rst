@@ -717,16 +717,22 @@ validated.
 Functions
 ---------
 
-The ``functions`` list accepts any of the statement-function names used in
-HRW4U source. The complete set of deniable functions is:
+The ``functions`` list accepts any of the function names used in HRW4U source,
+both statement functions and the functions that produce a value in an
+expression. The complete set of deniable functions is:
 
 ====================== =============================================
 Function               Description
 ====================== =============================================
+``access``             File accessibility check
 ``add-header``         Add a header (``+=`` operator equivalent)
+``cache``              Cache lookup result status
+``cidr``               Masked client IP address match
 ``counter``            Increment an ATS statistics counter
+``internal``           Internally generated transaction check
 ``keep_query``         Keep only specified query parameters
 ``no-op``              Explicit no-op statement
+``random``             Random number in the given range
 ``remove_query``       Remove specified query parameters
 ``run-plugin``         Invoke an external remap plugin
 ``set-body-from``      Set response body from a URL
@@ -735,6 +741,8 @@ Function               Description
 ``set-plugin-cntl``    Set a plugin control flag
 ``set-redirect``       Issue an HTTP redirect response
 ``skip-remap``         Skip remap processing (open proxy)
+``ssn-txn-count``      Transaction count on server connection
+``txn-count``          Transaction count on client connection
 ====================== =============================================
 
 Conditions and Operators

@@ -181,6 +181,8 @@ class SymbolResolver(SymbolResolverBase):
 
     def resolve_function(self, func_name: str, args: list[str], strip_quotes: bool = False) -> str:
         with self.debug_context("resolve_function", func_name, args):
+            self._collect_warning(self._sandbox.check_function(func_name))
+
             if params := self._lookup_function_cached(func_name):
                 tag = params.target
                 validator = params.validate
