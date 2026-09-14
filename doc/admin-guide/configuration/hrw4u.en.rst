@@ -115,6 +115,23 @@ This is particularly useful for build systems or when processing many configurat
 files at once. All files are processed in a single invocation, improving performance
 for large batches of files.
 
+Exit Status
+^^^^^^^^^^^
+
+====== ==========================================================================
+Status Meaning
+====== ==========================================================================
+0      Every input compiled. Warnings may still have been reported.
+1      At least one input had an error, or the command line was invalid.
+====== ==========================================================================
+
+A compile error does not stop the run: every input is still processed before
+the status is decided, so one bad file in a multi-file or bulk run does not
+skip the files after it. Fatal problems outside the compile itself, such as an
+invalid command line, a missing or unreadable input, or an unwritable output,
+still abort immediately. A failing compile writes its partial output; the exit
+status is what marks that output untrustworthy.
+
 Reverse Tool (u4wrh)
 ^^^^^^^^^^^^^^^^^^^^
 

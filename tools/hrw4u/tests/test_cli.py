@@ -48,6 +48,14 @@ def run_hrw4u(args: list[str], stdin: str | None = None) -> subprocess.Completed
     return subprocess.run(cmd, capture_output=True, text=True, input=stdin, cwd=Path.cwd())
 
 
+def run_u4wrh(args: list[str], stdin: str | None = None) -> subprocess.CompletedProcess:
+    """Run u4wrh script with given arguments."""
+    script = Path("scripts/u4wrh").resolve()
+    cmd = [sys.executable, str(script)] + args
+
+    return subprocess.run(cmd, capture_output=True, text=True, input=stdin, cwd=Path.cwd())
+
+
 def test_cli_single_file_to_stdout(sample_hrw4u_files: tuple[Path, Path, Path]) -> None:
     """Test compiling a single file to stdout."""
     file1, _, _ = sample_hrw4u_files
@@ -244,3 +252,64 @@ def test_cli_help_lists_error_format_flag() -> None:
     assert "--error-format" in result.stdout
     for choice in ("plain", "json", "markdown"):
         assert choice in result.stdout
+
+
+#
+# Exit-code contract: a compile error must fail the build.
+#
+
+
+def test_cli_exits_nonzero_on_syntax_error(tmp_path: Path) -> None:
+    """A syntax error must exit non-zero even though ANTLR recovers and yields a tree."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  inbound.req.X-Foo = \n}\n")
+
+    result = run_hrw4u([str(bad)])
+
+    assert result.returncode != 0
+    assert ": error:" in result.stderr
+
+
+def test_cli_exits_nonzero_on_semantic_error(tmp_path: Path) -> None:
+    """A semantic error must exit non-zero; the parse tree exists, so only sema catches it."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n    test::add-debug-header(\"foo\");\n}\n")
+
+    result = run_hrw4u([str(bad)])
+
+    assert result.returncode != 0
+    assert "unknown procedure" in result.stderr
+
+
+def test_cli_collects_all_errors_and_still_exits_nonzero(tmp_path: Path) -> None:
+    """Multi-error mode must report every diagnostic AND fail; the two are not exclusive."""
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n  bogus.one = \"a\";\n  bogus.two = \"b\";\n}\n")
+
+    result = run_hrw4u([str(bad)])
+
+    assert result.returncode != 0
+    assert result.stderr.count(": error:") >= 2
+
+
+def test_cli_multi_file_exits_nonzero_if_any_fails(sample_hrw4u_files: tuple[Path, Path, Path], tmp_path: Path) -> None:
+    """One bad file among good ones fails the run, but the good ones are still processed."""
+    good, _, _ = sample_hrw4u_files
+    bad = tmp_path / "bad.hrw4u"
+    bad.write_text("REMAP {\n    test::nope(\"x\");\n}\n")
+
+    result = run_hrw4u([str(bad), str(good)])
+
+    assert result.returncode != 0
+    assert "no-op" in result.stdout, "processing must continue past the failing file"
+
+
+def test_cli_u4wrh_exits_nonzero_on_error(tmp_path: Path) -> None:
+    """u4wrh shares run_main(), so it must honor the same exit-status contract."""
+    bad = tmp_path / "bad.conf"
+    bad.write_text("cond %{READ_REQUEST_HDR_HOOK}\n  set-header X-Foo\n")
+
+    result = run_u4wrh([str(bad)])
+
+    assert result.returncode != 0
+    assert ": error:" in result.stderr
