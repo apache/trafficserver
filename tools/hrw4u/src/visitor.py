@@ -1029,6 +1029,9 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             else:
                 negate = operator.symbol.type in (hrw4uParser.NEQ, hrw4uParser.NOT_TILDE)
 
+            if negate and not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("NOT")):
+                return
+
             match ctx:
                 case _ if ctx.value():
                     rhs = self._get_value_text(ctx.value())
@@ -1051,6 +1054,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     cond_txt = f"{lhs} {regex_expr}"
 
                 case _ if ctx.iprange():
+                    if not self._sandbox_check(ctx, lambda: self._sandbox.check_language("in")):
+                        return
                     cond_txt = f"{lhs} {ctx.iprange().getText()}"
 
                 case _ if ctx.set_():
@@ -1148,6 +1153,8 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
             match ctx:
                 case _ if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
                     self._dbg("`NOT' detected")
+                    if not self._sandbox_check(ctx, lambda: self._sandbox.check_modifier("NOT")):
+                        return
                     child = ctx.getChild(1)
                     if child.LPAREN():
                         self._dbg("GROUP-START (negated)")

@@ -697,6 +697,7 @@ Schema for editor validation and autocomplete is provided at
        conditions:  [ ... ]   # condition keys, e.g. geo.
        operators:   [ ... ]   # operator keys, e.g. inbound.conn.dscp
        language:    [ ... ]   # break, variables, in, else, elif
+       modifiers:   [ ... ]   # condition modifiers, e.g. NOT, NOCASE
      warn:
        functions:   [ ... ]   # same categories as deny
        conditions:  [ ... ]
@@ -778,8 +779,23 @@ Construct        What it controls
 ``variables``    The entire ``VARS`` section and all variable usage
 ``else``         The ``else { ... }`` branch of conditionals
 ``elif``         The ``elif ... { ... }`` branch of conditionals
-``in``           The ``in [...]`` and ``!in [...]`` set membership operators
+``in``           Set membership: the ``[...]`` value form and
+                 the ``{...}`` IP range form, negated or not
 ================ ===================================================
+
+Condition Modifiers
+-------------------
+
+The ``modifiers`` list accepts ``AND``, ``OR``, ``NOT``, ``NOCASE``, ``PRE``,
+``SUF``, ``EXT``, ``MID``, ``I``, ``L`` and ``QSA``. Entries match the modifier
+however it is written, not only the explicit ``with`` form: ``AND`` also covers
+``&&``, ``OR`` also covers ``||``, and ``NOT`` also covers ``!``, ``!=``,
+``!~`` and ``!in``.
+
+Negation that the compiler introduces on its own is not matched. A bare header
+test such as ``if inbound.req.X-Foo`` compiles to ``cond %{HEADER:X-Foo} =""
+[NOT]``, and denying ``NOT`` does not reject it — the policy governs what the
+source writes.
 
 Output
 ------

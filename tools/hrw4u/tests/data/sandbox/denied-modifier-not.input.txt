@@ -1,0 +1,13 @@
+REMAP {
+    if !internal() {
+        inbound.req.X-Not-Internal = "1";
+    }
+
+    if inbound.method != "GET" {
+        inbound.req.X-Not-Get = "1";
+    }
+
+    if inbound.url.path !in ["php", "html"] {
+        inbound.req.X-Not-Listed = "1";
+    }
+}
