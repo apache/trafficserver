@@ -960,6 +960,7 @@ public:
 
   void set_qualifier(const std::string &q) override;
   void append_value(std::string &s, const Resources &res) override;
+  void initialize(Parser &p) override;
 
 protected:
   bool eval(const Resources &res) override;

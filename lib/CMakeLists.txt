@@ -32,6 +32,7 @@ if(BUILD_TESTING)
   #
   # Update the above comment about the version to update.
   add_subdirectory(Catch2)
+  include(Catch)
 
   # Disable -Werror=parentheses for Catch2 to avoid issues with older compilers (GCC <=11)
   # that complain about the use of parentheses in macro expansions. We see errors like this:
@@ -43,14 +44,53 @@ if(BUILD_TESTING)
   target_compile_options(Catch2 INTERFACE -Wno-error=parentheses)
   target_compile_options(Catch2WithMain INTERFACE -Wno-error=parentheses)
 
-  # By default, as of v3.9.0, Catch2 runs tests in random order. Our tests are
-  # written with the expectation that they are run in declared order, with setup
-  # done in one TEST_CASE expected to carry over into the next TEST_CASE. This
-  # macro allows us to add common command line arguments to all tests. For now,
-  # we ensure declaration order execution via --order decl.
+  # Register one ctest test per Catch2 TEST_CASE/SCENARIO rather than one per
+  # executable. ctest then names the failing case instead of the binary, can
+  # schedule cases in parallel, and can run a single case by name. Because each
+  # case gets its own process, cases must not depend on state set up by an
+  # earlier case in the same executable.
+  #
+  # ctest names are "<NAME>.<case name>" so the NAME given here stays a usable
+  # -R filter prefix even where it differs from the target name.
+  #
+  # Discovery is PRE_TEST so that configuring/building does not require running
+  # the test executables.
   macro(add_catch2_test)
-    cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND" ${ARGN})
-    add_test(NAME ${CATCH2_TEST_NAME} COMMAND ${CATCH2_TEST_COMMAND} --order decl)
+    cmake_parse_arguments(CATCH2_TEST "" "NAME" "COMMAND;ENVIRONMENT" ${ARGN})
+
+    list(GET CATCH2_TEST_COMMAND 0 _catch2_command)
+    list(LENGTH CATCH2_TEST_COMMAND _catch2_command_length)
+    if(NOT _catch2_command_length EQUAL 1)
+      # Per-case discovery appends the case name to the command line, so there is
+      # nowhere to put caller-supplied runner arguments. Fail rather than drop them.
+      message(FATAL_ERROR "add_catch2_test(${CATCH2_TEST_NAME}): COMMAND must be a single test executable")
+    endif()
+    if(_catch2_command MATCHES "^\\$<TARGET_FILE:(.+)>$")
+      set(_catch2_target "${CMAKE_MATCH_1}")
+    else()
+      set(_catch2_target "${_catch2_command}")
+    endif()
+
+    if(CATCH2_TEST_ENVIRONMENT)
+      # Not ctest's ENVIRONMENT property: catch_discover_tests flattens PROPERTIES
+      # into one ;-joined string, so a multi-variable ENVIRONMENT loses every
+      # variable but the first and turns the rest into junk property names. The
+      # emulator prefix survives intact and also applies to test discovery.
+      #
+      # Prepend rather than replace: a cross-compiling build may already have an
+      # emulator here, and it has to keep running the executable.
+      get_property(
+        _catch2_emulator
+        TARGET ${_catch2_target}
+        PROPERTY CROSSCOMPILING_EMULATOR
+      )
+      set_property(
+        TARGET ${_catch2_target} PROPERTY CROSSCOMPILING_EMULATOR "${CMAKE_COMMAND}" -E env ${CATCH2_TEST_ENVIRONMENT}
+                                          ${_catch2_emulator}
+      )
+    endif()
+
+    catch_discover_tests(${_catch2_target} TEST_PREFIX "${CATCH2_TEST_NAME}." DISCOVERY_MODE PRE_TEST)
   endmacro()
 endif()
 

@@ -21,40 +21,15 @@
   limitations under the License.
 */
 
+#include "config_test_temp_file.h"
+
 #include <catch2/catch_test_macros.hpp>
-#include <filesystem>
-#include <fstream>
 
 #include <yaml-cpp/yaml.h>
 
 #include "config/plugin_config.h"
 
-namespace
-{
-
-class TempFile
-{
-public:
-  TempFile(std::string const &filename, std::string const &content)
-  {
-    _path = std::filesystem::temp_directory_path() / filename;
-    std::ofstream ofs(_path);
-    ofs << content;
-  }
-
-  ~TempFile() { std::filesystem::remove(_path); }
-
-  std::string
-  path() const
-  {
-    return _path.string();
-  }
-
-private:
-  std::filesystem::path _path;
-};
-
-} // namespace
+using config::testing::TempFile;
 
 TEST_CASE("plugin_config parser - basic active plugins", "[plugin_config]")
 {
