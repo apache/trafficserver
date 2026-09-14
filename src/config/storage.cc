@@ -37,6 +37,7 @@
 #include "swoc/swoc_file.h"
 #include "tscore/ParseRules.h"
 #include "tsutil/ts_diag_levels.h"
+#include "tsutil/YamlCfg.h"
 
 namespace
 {
@@ -828,7 +829,7 @@ std::string
 StorageMarshaller::to_json(StorageConfig const &config)
 {
   YAML::Emitter out;
-  out << YAML::DoubleQuoted << YAML::Flow;
+  ts::Yaml::configure_json_emitter(out);
   out << YAML::BeginMap;
   out << YAML::Key << KEY_CACHE << YAML::Value << YAML::BeginMap;
 
