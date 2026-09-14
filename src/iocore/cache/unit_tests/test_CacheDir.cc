@@ -164,6 +164,14 @@ public:
     memset(static_cast<void *>(&dir1), 0, sizeof(dir1));
     int s1, b1;
 
+    // Give a bucket a fresh chain long enough that a walk has to leave the bucket's own rows, then loop it.
+    auto corrupt_fresh_chain = [&]() {
+      for (int i = 0; i < 5; i++) {
+        stripe->directory.insert(&key, stripe, &dir1);
+      }
+      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
+    };
+
     Dbg(dbg_ctl_cache_dir_test, "corrupt_bucket test");
     for (int ntimes = 0; ntimes < 10; ntimes++) {
       // Reset every iteration: Directory::check() fails from the first corruption onward, so without this only the
@@ -179,10 +187,7 @@ public:
       dir_clear(&dir1);
       dir_set_offset(&dir1, 1);
       REQUIRE(stripe->dir_valid(&dir1));
-      for (int i = 0; i < 5; i++) {
-        stripe->directory.insert(&key, stripe, &dir1);
-      }
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
+      corrupt_fresh_chain();
 
       // Detection: a cycle makes the chain longer than its segment can hold.
       CHECK(!stripe->directory.check());
@@ -200,16 +205,13 @@ public:
       // The reader leaves the loop in place for a writer to repair.
       CHECK(!stripe->directory.check());
 
-      // insert() only walks the chain once the bucket's own rows are full, which the five entries above ensure, and
-      // that walk must repair.
+      // insert() only walks the chain once the bucket's own rows are full, which the chain above ensures, and that
+      // walk must repair.
       stripe->directory.insert(&key, stripe, &dir1);
       CHECK(stripe->directory.check());
 
       // overwrite() repairs from its own walk, so give it a freshly corrupted chain.
-      for (int i = 0; i < 5; i++) {
-        stripe->directory.insert(&key, stripe, &dir1);
-      }
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
+      corrupt_fresh_chain();
 
       // Target an offset absent from the chain so the search actually walks it rather than matching the head entry
       // immediately.
@@ -218,6 +220,33 @@ public:
       dir_set_offset(&absent, 999);
       stripe->directory.overwrite(&key, stripe, &dir1, &absent, false);
       CHECK(stripe->directory.check());
+
+      // Wiping a segment must mark the directory dirty. CacheSync skips a directory whose dirty flag is clear, so a
+      // repair that returns without mutating anything else would never reach disk and the loop would come back after
+      // a crash. Each writer below returns before the flag is set for a normal mutation.
+      corrupt_fresh_chain();
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.remove(&key, stripe, &absent) == 0);
+      CHECK(stripe->directory.check());
+      CHECK(stripe->directory.header->dirty == 1);
+
+      corrupt_fresh_chain();
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.overwrite(&key, stripe, &dir1, &absent, true) == 0);
+      CHECK(stripe->directory.check());
+      CHECK(stripe->directory.header->dirty == 1);
+
+      // dir_clean_bucket() and freelist_pop() reach init_segment() too; neither early return is otherwise observable.
+      corrupt_fresh_chain();
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.bucket_loop_fix(dir_bucket(b1, stripe->directory.get_segment(s1)), s1) == 1);
+      CHECK(stripe->directory.check());
+      CHECK(stripe->directory.header->dirty == 1);
+
+      // A walk that finds no loop wipes nothing, so it must leave the flag alone.
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.bucket_loop_fix(dir_bucket(b1, stripe->directory.get_segment(s1)), s1) == 0);
+      CHECK(stripe->directory.header->dirty == 0);
     }
     stripe->clear_dir();
 
