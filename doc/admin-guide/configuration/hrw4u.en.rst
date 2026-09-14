@@ -326,6 +326,7 @@ rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specif
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
 set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
+set-body-from-file "/tmp/b"   set-body-from-file("/tmp/b")      Set the response body from a local file
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
@@ -735,7 +736,9 @@ Function               Description
 ``random``             Random number in the given range
 ``remove_query``       Remove specified query parameters
 ``run-plugin``         Invoke an external remap plugin
+``set-body``           Set the response body
 ``set-body-from``      Set response body from a URL
+``set-body-from-file`` Set response body from a local file
 ``set-config``         Override an ATS configuration variable
 ``set-debug``          Enable per-transaction ATS debug logging
 ``set-plugin-cntl``    Set a plugin control flag
