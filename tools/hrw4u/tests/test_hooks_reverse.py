@@ -28,3 +28,12 @@ import utils
 def test_reverse_conversion(input_file: Path, output_file: Path) -> None:
     """Test that u4wrh reverse conversion produces original hrw4u for hooks test cases."""
     utils.run_reverse_test(input_file, output_file)
+
+
+@pytest.mark.hooks
+@pytest.mark.reverse
+@pytest.mark.invalid
+@pytest.mark.parametrize("input_file", utils.collect_reverse_failing_inputs("hooks"))
+def test_reverse_invalid_inputs_fail(input_file: Path) -> None:
+    """Test that u4wrh surfaces section access errors for invalid HRW hook inputs."""
+    utils.run_reverse_failing_test(input_file)

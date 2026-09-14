@@ -1,0 +1,2 @@
+cond %{TXN_CLOSE_HOOK} [AND]
+    set-destination HOST "foo"
