@@ -51,11 +51,9 @@ const MgmtConverter ConnectionTracker::MIN_SERVER_CONV(
 const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
   [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::server_match) *>(data)); },
   [](void *data, MgmtInt i) -> void {
-    // Problem - the InkAPITest requires being able to set an arbitrary value, so this can either
-    // correctly clamp or pass the regression tests. Currently it passes the tests.
-    //    *static_cast<decltype(TxnConfig::match) *>(data) = std::clamp(static_cast<decltype(TxnConfig::match)>(i), MATCH_IP,
-    //    MATCH_BOTH);
-    *static_cast<decltype(TxnConfig::server_match) *>(data) = static_cast<decltype(TxnConfig::server_match)>(i);
+    auto const value = std::clamp(i, static_cast<MgmtInt>(MATCH_IP), static_cast<MgmtInt>(MATCH_BOTH));
+
+    *static_cast<decltype(TxnConfig::server_match) *>(data) = static_cast<decltype(TxnConfig::server_match)>(value);
   },
   nullptr,
   nullptr,
