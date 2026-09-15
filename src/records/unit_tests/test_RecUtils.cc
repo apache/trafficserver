@@ -26,8 +26,6 @@
 #include "../P_RecUtils.h"
 #include "records/RecordsConfig.h"
 
-#include "iocore/cache/Cache.h"
-
 #include <string>
 
 TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
@@ -228,11 +226,13 @@ TEST_CASE("ram_cache.compress accepts every compression backend", "[librecords][
 
   // The validity range must cover every CACHE_COMPRESSION_* value, otherwise a
   // documented backend is rejected at load time and silently falls back to the
-  // default of 0 (no compression). Keep this in sync with Cache.h when a codec
-  // is added; CACHE_COMPRESSION_ZSTD is currently the largest value.
-  for (int i = CACHE_COMPRESSION_NONE; i <= CACHE_COMPRESSION_ZSTD; i++) {
+  // default of 0 (no compression). Kept as a literal rather than including
+  // iocore/cache/Cache.h, which would point a records test at the cache layer;
+  // extend it when a codec is added there.
+  constexpr int largest_compression_type = 5; // CACHE_COMPRESSION_ZSTD
+  for (int i = 0; i <= largest_compression_type; i++) {
     INFO("CACHE_COMPRESSION_* value: " << i);
     REQUIRE(RecordValidityCheck(std::to_string(i).c_str(), record->check, record->regex));
   }
-  REQUIRE_FALSE(RecordValidityCheck(std::to_string(CACHE_COMPRESSION_ZSTD + 1).c_str(), record->check, record->regex));
+  REQUIRE_FALSE(RecordValidityCheck(std::to_string(largest_compression_type + 1).c_str(), record->check, record->regex));
 }

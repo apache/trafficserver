@@ -1,61 +1,59 @@
-#=========================================================================
+#######################
 #
-# Sourced from the Visualization Toolkit (VTK), CMake/FindLZ4.cmake:
-# https://gitlab.kitware.com/vtk/vtk
+#  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+#  agreements.  See the NOTICE file distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+#  (the "License"); you may not use this file except in compliance with the License.  You may obtain
+#  a copy of the License at
 #
-# Copyright (c) 1993-2015 Ken Martin, Will Schroeder, Bill Lorensen
-# All rights reserved.
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
+#  Unless required by applicable law or agreed to in writing, software distributed under the License
+#  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#  or implied. See the License for the specific language governing permissions and limitations under
+#  the License.
 #
-#  * Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-#
-#  * Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-#  * Neither name of Ken Martin, Will Schroeder, or Bill Lorensen nor the names
-#    of any contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#=========================================================================
+#######################
 
-find_path(
-  LZ4_INCLUDE_DIR
-  NAMES lz4.h
-  DOC "lz4 include directory"
-)
-mark_as_advanced(LZ4_INCLUDE_DIR)
-find_library(
-  LZ4_LIBRARY
-  NAMES lz4 liblz4
-  DOC "lz4 library"
-)
-mark_as_advanced(LZ4_LIBRARY)
+# FindLZ4.cmake
+#
+# This will define the following variables
+#
+#     LZ4_FOUND
+#     LZ4_LIBRARY
+#     LZ4_INCLUDE_DIRS
+#     LZ4_VERSION
+#
+# and the following imported target
+#
+#     LZ4::LZ4
+#
 
-if(LZ4_INCLUDE_DIR)
-  file(STRINGS "${LZ4_INCLUDE_DIR}/lz4.h" _lz4_version_lines REGEX "#define[ \t]+LZ4_VERSION_(MAJOR|MINOR|RELEASE)")
-  string(REGEX REPLACE ".*LZ4_VERSION_MAJOR *\([0-9]*\).*" "\\1" _lz4_version_major "${_lz4_version_lines}")
-  string(REGEX REPLACE ".*LZ4_VERSION_MINOR *\([0-9]*\).*" "\\1" _lz4_version_minor "${_lz4_version_lines}")
-  string(REGEX REPLACE ".*LZ4_VERSION_RELEASE *\([0-9]*\).*" "\\1" _lz4_version_release "${_lz4_version_lines}")
-  set(LZ4_VERSION "${_lz4_version_major}.${_lz4_version_minor}.${_lz4_version_release}")
-  unset(_lz4_version_major)
-  unset(_lz4_version_minor)
-  unset(_lz4_version_release)
-  unset(_lz4_version_lines)
+find_library(LZ4_LIBRARY NAMES lz4 liblz4)
+find_path(LZ4_INCLUDE_DIR NAMES lz4.h)
+
+mark_as_advanced(LZ4_FOUND LZ4_LIBRARY LZ4_INCLUDE_DIR)
+
+# The version lives in three separate macros in lz4.h; a config package would
+# supply it, but this module has to read them out to satisfy a version request.
+if(LZ4_INCLUDE_DIR AND EXISTS "${LZ4_INCLUDE_DIR}/lz4.h")
+  set(_LZ4_version_parts "")
+  foreach(_LZ4_part MAJOR MINOR RELEASE)
+    file(STRINGS "${LZ4_INCLUDE_DIR}/lz4.h" _LZ4_line REGEX "^#define[ \t]+LZ4_VERSION_${_LZ4_part}[ \t]+[0-9]+")
+    # The value may be followed by a comment, so capture it rather than
+    # anchoring on the end of the line.
+    if(_LZ4_line MATCHES "^#define[ \t]+LZ4_VERSION_${_LZ4_part}[ \t]+([0-9]+)")
+      list(APPEND _LZ4_version_parts "${CMAKE_MATCH_1}")
+    endif()
+  endforeach()
+  list(LENGTH _LZ4_version_parts _LZ4_version_count)
+  if(_LZ4_version_count EQUAL 3)
+    list(JOIN _LZ4_version_parts "." LZ4_VERSION)
+  endif()
+  unset(_LZ4_line)
+  unset(_LZ4_part)
+  unset(_LZ4_version_parts)
+  unset(_LZ4_version_count)
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -67,12 +65,10 @@ find_package_handle_standard_args(
 
 if(LZ4_FOUND)
   set(LZ4_INCLUDE_DIRS "${LZ4_INCLUDE_DIR}")
-  set(LZ4_LIBRARIES "${LZ4_LIBRARY}")
+endif()
 
-  if(NOT TARGET LZ4::LZ4)
-    add_library(LZ4::LZ4 UNKNOWN IMPORTED)
-    set_target_properties(
-      LZ4::LZ4 PROPERTIES IMPORTED_LOCATION "${LZ4_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${LZ4_INCLUDE_DIR}"
-    )
-  endif()
+if(LZ4_FOUND AND NOT TARGET LZ4::LZ4)
+  add_library(LZ4::LZ4 INTERFACE IMPORTED)
+  target_include_directories(LZ4::LZ4 INTERFACE ${LZ4_INCLUDE_DIRS})
+  target_link_libraries(LZ4::LZ4 INTERFACE "${LZ4_LIBRARY}")
 endif()

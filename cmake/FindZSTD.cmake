@@ -1,61 +1,59 @@
-#=========================================================================
+#######################
 #
-# Derived from the Visualization Toolkit (VTK), CMake/FindLZ4.cmake:
-# https://gitlab.kitware.com/vtk/vtk
+#  Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+#  agreements.  See the NOTICE file distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under the Apache License, Version 2.0
+#  (the "License"); you may not use this file except in compliance with the License.  You may obtain
+#  a copy of the License at
 #
-# Copyright (c) 1993-2015 Ken Martin, Will Schroeder, Bill Lorensen
-# All rights reserved.
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are met:
+#  Unless required by applicable law or agreed to in writing, software distributed under the License
+#  is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+#  or implied. See the License for the specific language governing permissions and limitations under
+#  the License.
 #
-#  * Redistributions of source code must retain the above copyright notice,
-#    this list of conditions and the following disclaimer.
-#
-#  * Redistributions in binary form must reproduce the above copyright notice,
-#    this list of conditions and the following disclaimer in the documentation
-#    and/or other materials provided with the distribution.
-#
-#  * Neither name of Ken Martin, Will Schroeder, or Bill Lorensen nor the names
-#    of any contributors may be used to endorse or promote products derived
-#    from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
-# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-# ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#=========================================================================
+#######################
 
-find_path(
-  ZSTD_INCLUDE_DIR
-  NAMES zstd.h
-  DOC "zstd include directory"
-)
-mark_as_advanced(ZSTD_INCLUDE_DIR)
-find_library(
-  ZSTD_LIBRARY
-  NAMES zstd libzstd
-  DOC "zstd library"
-)
-mark_as_advanced(ZSTD_LIBRARY)
+# FindZSTD.cmake
+#
+# This will define the following variables
+#
+#     ZSTD_FOUND
+#     ZSTD_LIBRARY
+#     ZSTD_INCLUDE_DIRS
+#     ZSTD_VERSION
+#
+# and the following imported target
+#
+#     zstd::zstd
+#
 
-if(ZSTD_INCLUDE_DIR)
-  file(STRINGS "${ZSTD_INCLUDE_DIR}/zstd.h" _zstd_version_lines REGEX "#define[ \t]+ZSTD_VERSION_(MAJOR|MINOR|RELEASE)")
-  string(REGEX REPLACE ".*ZSTD_VERSION_MAJOR *\([0-9]*\).*" "\\1" _zstd_version_major "${_zstd_version_lines}")
-  string(REGEX REPLACE ".*ZSTD_VERSION_MINOR *\([0-9]*\).*" "\\1" _zstd_version_minor "${_zstd_version_lines}")
-  string(REGEX REPLACE ".*ZSTD_VERSION_RELEASE *\([0-9]*\).*" "\\1" _zstd_version_release "${_zstd_version_lines}")
-  set(ZSTD_VERSION "${_zstd_version_major}.${_zstd_version_minor}.${_zstd_version_release}")
-  unset(_zstd_version_major)
-  unset(_zstd_version_minor)
-  unset(_zstd_version_release)
-  unset(_zstd_version_lines)
+find_library(ZSTD_LIBRARY NAMES zstd libzstd)
+find_path(ZSTD_INCLUDE_DIR NAMES zstd.h)
+
+mark_as_advanced(ZSTD_FOUND ZSTD_LIBRARY ZSTD_INCLUDE_DIR)
+
+# The version lives in three separate macros in zstd.h; a config package would
+# supply it, but this module has to read them out to satisfy a version request.
+if(ZSTD_INCLUDE_DIR AND EXISTS "${ZSTD_INCLUDE_DIR}/zstd.h")
+  set(_ZSTD_version_parts "")
+  foreach(_ZSTD_part MAJOR MINOR RELEASE)
+    file(STRINGS "${ZSTD_INCLUDE_DIR}/zstd.h" _ZSTD_line REGEX "^#define[ \t]+ZSTD_VERSION_${_ZSTD_part}[ \t]+[0-9]+")
+    # The value may be followed by a comment, so capture it rather than
+    # anchoring on the end of the line.
+    if(_ZSTD_line MATCHES "^#define[ \t]+ZSTD_VERSION_${_ZSTD_part}[ \t]+([0-9]+)")
+      list(APPEND _ZSTD_version_parts "${CMAKE_MATCH_1}")
+    endif()
+  endforeach()
+  list(LENGTH _ZSTD_version_parts _ZSTD_version_count)
+  if(_ZSTD_version_count EQUAL 3)
+    list(JOIN _ZSTD_version_parts "." ZSTD_VERSION)
+  endif()
+  unset(_ZSTD_line)
+  unset(_ZSTD_part)
+  unset(_ZSTD_version_parts)
+  unset(_ZSTD_version_count)
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -67,12 +65,10 @@ find_package_handle_standard_args(
 
 if(ZSTD_FOUND)
   set(ZSTD_INCLUDE_DIRS "${ZSTD_INCLUDE_DIR}")
-  set(ZSTD_LIBRARIES "${ZSTD_LIBRARY}")
+endif()
 
-  if(NOT TARGET zstd::zstd)
-    add_library(zstd::zstd UNKNOWN IMPORTED)
-    set_target_properties(
-      zstd::zstd PROPERTIES IMPORTED_LOCATION "${ZSTD_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES "${ZSTD_INCLUDE_DIR}"
-    )
-  endif()
+if(ZSTD_FOUND AND NOT TARGET zstd::zstd)
+  add_library(zstd::zstd INTERFACE IMPORTED)
+  target_include_directories(zstd::zstd INTERFACE ${ZSTD_INCLUDE_DIRS})
+  target_link_libraries(zstd::zstd INTERFACE "${ZSTD_LIBRARY}")
 endif()

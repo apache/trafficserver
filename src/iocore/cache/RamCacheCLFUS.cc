@@ -43,6 +43,8 @@
 #endif
 #ifdef HAVE_ZSTD_H
 #include <zstd.h>
+// ZSTD_getErrorCode() and the ZSTD_error_* codes live here, not in zstd.h.
+#include <zstd_errors.h>
 #include <memory>
 constexpr int CLFUS_ZSTD_LEVEL = 3;
 
@@ -161,29 +163,7 @@ public:
 int
 RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
 {
-  switch (cache_config_ram_cache_compress) {
-  default:
-    Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
-  case CACHE_COMPRESSION_NONE:
-  case CACHE_COMPRESSION_FASTLZ:
-  case CACHE_COMPRESSION_LIBZ:
-    break;
-  case CACHE_COMPRESSION_LIBLZMA:
-#ifndef HAVE_LZMA_H
-    Warning("lzma not available for RAM cache compression");
-#endif
-    break;
-  case CACHE_COMPRESSION_LZ4:
-#ifndef HAVE_LZ4_H
-    Warning("lz4 not available for RAM cache compression");
-#endif
-    break;
-  case CACHE_COMPRESSION_ZSTD:
-#ifndef HAVE_ZSTD_H
-    Warning("zstd not available for RAM cache compression");
-#endif
-    break;
-  }
+  // The codec is validated once in ink_cache_init(), before any cache exists.
   if (cache_config_ram_cache_compress_percent) {
     rc->compress_entries(e->ethread);
   }
@@ -200,24 +180,35 @@ static const int bucket_sizes[] = {127,      251,      509,       1021,      203
 // cache_config_ram_cache_compress was CACHE_COMPRESSION_NONE at init() time.
 // That scheduled RamCacheCLFUSCompressor holds a raw back-pointer to this
 // object and nothing cancels it, so destroying a cache that has one would
-// leave it dangling. Cancelling the event here would not be enough: the
-// continuation carries no mutex, so it can be running compress_entries() on an
-// ET_TASK thread while this destructor runs. Making that safe means giving the
-// compressor the stripe mutex and requiring the destructor to hold it, which
-// is not worth doing while production never destroys a RamCacheCLFUS -- these
-// live for the lifetime of their StripeSM. Unit tests that construct one
-// directly must init() with compression off and drive compress_entries()
-// synchronously.
+// leave it dangling. Cancelling the event here would not be enough either: the
+// continuation carries no mutex, so EventProcessor::schedule leaves the event
+// with none and it can be running compress_entries() on an ET_TASK thread
+// while this destructor runs. Making that safe means giving the compressor its
+// own ProxyMutex and cancelling the retained Event under it -- not the stripe
+// mutex, because Mutex_unlock() only decrements nthread_holding, so a
+// continuation dispatched holding stripe->mutex would keep the stripe locked
+// across the codec call and defeat the lock drop in compress_entries(). Not
+// worth doing while production never destroys a RamCacheCLFUS -- these live
+// for the lifetime of their StripeSM. Unit tests that construct one directly
+// must init() with compression off and drive compress_entries() synchronously.
 RamCacheCLFUS::~RamCacheCLFUS()
 {
   // Entries are pool-allocated without running their destructor, so release the
   // data reference explicitly before returning each one to the allocator, then
   // free the hash table and the seen filter.
-  for (auto &lru : this->_lru) {
-    while (RamCacheCLFUSEntry *e = lru.dequeue()) {
-      e->data = nullptr;
-      THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
-    }
+  // History entries (lru[1]) hold no data and were never counted.
+  while (RamCacheCLFUSEntry *e = this->_lru[0].dequeue()) {
+    this->_bytes -= e->size + entry_overhead;
+    ts::Metrics::Gauge::decrement(cache_rsb.ram_cache_bytes, e->size);
+    ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.ram_cache_bytes, e->size);
+    this->_objects--;
+    e->data = nullptr;
+    THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
+  }
+  while (RamCacheCLFUSEntry *e = this->_lru[1].dequeue()) {
+    this->_history--;
+    e->data = nullptr;
+    THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
   }
   ats_free(this->_bucket);
   ats_free(this->_seen);
@@ -562,10 +553,11 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     // rather than walking every entry -- dropping and retaking the stripe lock
     // and allocating a compressBound()-sized buffer for each -- only to fail
     // every time. The entries are left untouched: this says nothing about the
-    // data, so they stay eligible. Counted once per skipped pass so the
-    // condition is visible in metrics without flooding them.
-    ts::Metrics::Counter::increment(cache_rsb.ram_cache_compress_failures);
-    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_compress_failures);
+    // data, so they stay eligible. Deliberately not counted in
+    // ram_cache.compress.failure: that counter means entries the codec could
+    // not compress, and incrementing here once per pass would make it climb
+    // once a second per stripe for the life of the thread. The one-time
+    // Warning in zstd_cctx() is what reports this condition.
     return;
   }
 #endif
@@ -628,11 +620,10 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       MUTEX_UNTAKE_LOCK(stripe->mutex, thread);
       b           = static_cast<char *>(ats_malloc(l));
       bool failed = false;
-      // Distinguishes "this thread has no codec context" from "the codec
-      // rejected this data": the former says nothing about the entry. The
-      // pass-level check above makes this unreachable for zstd today; it is
-      // kept so the per-entry handling stays correct on its own.
-      bool no_context = false;
+      // Distinguishes a transient, data-independent failure (the codec could
+      // not allocate its working memory) from the codec rejecting this data.
+      // Only the latter says anything about the entry.
+      bool transient = false;
       switch (ctype) {
       default:
         // The bound switch above filtered unknown types; this is unreachable,
@@ -646,8 +637,10 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         break;
       case CACHE_COMPRESSION_LIBZ: {
         uLongf ll = l;
-        if ((Z_OK != compress(reinterpret_cast<Bytef *>(b), &ll, reinterpret_cast<Bytef *>(edata->data()), elen))) {
-          failed = true;
+        int    rc = compress(reinterpret_cast<Bytef *>(b), &ll, reinterpret_cast<Bytef *>(edata->data()), elen);
+        if (Z_OK != rc) {
+          failed    = true;
+          transient = (rc == Z_MEM_ERROR);
         }
         l = static_cast<int>(ll);
         break;
@@ -675,15 +668,17 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
 #endif
 #ifdef HAVE_ZSTD_H
       case CACHE_COMPRESSION_ZSTD: {
+        // The pass-level check above already proved this thread has a context,
+        // and the context is thread_local while the pass never changes thread.
         ZSTD_CCtx *cctx = zstd_cctx();
-        if (cctx == nullptr) {
-          failed     = true;
-          no_context = true;
-          break;
-        }
+        ink_assert(cctx != nullptr);
         size_t zret = ZSTD_compress2(cctx, b, l, edata->data(), elen);
         if (ZSTD_isError(zret)) {
           failed = true;
+          // ZSTD_createCCtx() allocates only the context struct; the much
+          // larger working buffers are allocated on first use and grow with
+          // the input, so this is the realistic out-of-memory path.
+          transient = (ZSTD_getErrorCode(zret) == ZSTD_error_memory_allocation);
         } else {
           l = static_cast<uint32_t>(zret);
         }
@@ -717,10 +712,10 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       if (failed) {
         ts::Metrics::Counter::increment(cache_rsb.ram_cache_compress_failures);
         ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_compress_failures);
-        if (no_context) {
-          // A thread-level allocation failure is not a property of the data, so
-          // do not record it as permanently incompressible; leave the entry
-          // eligible for a later pass.
+        if (transient) {
+          // An allocation failure inside the codec is not a property of the
+          // data, so do not record it as permanently incompressible; leave the
+          // entry eligible for a later pass.
           ats_free(b);
           goto Lcontinue;
         }

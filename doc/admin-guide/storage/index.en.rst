@@ -98,20 +98,8 @@ images). This should not be confused with ``Content-Encoding: gzip``, this
 feature is only present to save space internally in the RAM cache itself. As
 such, it is completely transparent to the User-Agent. The RAM cache
 compression is enabled with the option
-:ts:cv:`proxy.config.cache.ram_cache.compress`.
-
-Possible values are:
-
-======= =============================
-Value   Meaning
-======= =============================
-0       No compression (*default*)
-1       *fastlz* compression
-2       *libz* compression
-3       *liblzma* compression
-4       *lz4* compression
-5       *zstd* compression
-======= =============================
+:ts:cv:`proxy.config.cache.ram_cache.compress`, which documents the available
+codecs and which of them a given build supports.
 
 .. _changing-the-size-of-the-ram-cache:
 

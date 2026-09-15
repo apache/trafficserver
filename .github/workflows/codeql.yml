@@ -41,7 +41,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update
-        sudo apt install libmagick++-dev libncurses-dev libpcre2-dev libbrotli-dev libluajit-5.1-dev luajit libjansson-dev libcjose-dev libmaxminddb-dev libgeoip-dev ninja-build cmake libpcre3-dev
+        sudo apt install libmagick++-dev libncurses-dev libpcre2-dev libbrotli-dev libluajit-5.1-dev luajit libjansson-dev libcjose-dev libmaxminddb-dev libgeoip-dev ninja-build cmake libpcre3-dev libzstd-dev liblz4-dev
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4

@@ -70,6 +70,11 @@ public:
   RamCacheCLFUS() {}
   ~RamCacheCLFUS() override;
 
+  // Owns raw _bucket/_seen allocations and the pool-allocated entries, so
+  // copying one would double free all three.
+  RamCacheCLFUS(const RamCacheCLFUS &)            = delete;
+  RamCacheCLFUS &operator=(const RamCacheCLFUS &) = delete;
+
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
   int     put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy = false, uint64_t auxkey = 0) override;

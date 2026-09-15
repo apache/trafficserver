@@ -496,7 +496,9 @@ find_package(ZLIB REQUIRED)
 find_package(ZSTD 1.4.0)
 set(HAVE_ZSTD_H ${ZSTD_FOUND})
 
-find_package(LZ4)
+# 1.7.0 (r129) introduced the current compression API, including
+# LZ4_compress_default(), which the RAM cache uses.
+find_package(LZ4 1.7.0)
 set(HAVE_LZ4_H ${LZ4_FOUND})
 
 # ncurses is used in traffic_top

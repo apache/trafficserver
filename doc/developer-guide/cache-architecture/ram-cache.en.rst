@@ -153,7 +153,11 @@ There are 5 algorithms and levels of compression (speed on an Intel Xeon Gold
 ======= ===== ================= ================== ====================================
 Method  Level Compression Rate  Decompression Rate Notes
 ======= ===== ================= ================== ====================================
-fastlz    1   452 MB/sec        913 MB/sec         Effectively obsolete; prefer lz4.
+fastlz   1/2  452 MB/sec        913 MB/sec         Effectively obsolete; prefer lz4.
+                                                   fastlz_compress() selects
+                                                   level 2 at 64 KiB and above,
+                                                   so most objects use it; the
+                                                   figures here are level 1.
                                                    Basically free since disk or network
                                                    will limit first; ~26% final size.
 libz      6   54 MB/sec         536 MB/sec         Effectively obsolete; prefer zstd.
