@@ -125,13 +125,18 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
       int64_t encoded_len = encode_oversized_hpack_index(buf, sizeof(buf), 7, 0x80);
 
+      REQUIRE(encoded_len > 0);
+      REQUIRE(encoded_len <= static_cast<int64_t>(sizeof(buf)));
+
+      size_t const block_len = static_cast<size_t>(encoded_len);
+
       HpackIndexingTable                            indexing_table(4096);
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTPType::REQUEST);
       MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
       MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
-      int64_t len = decode_indexed_header_field(header, buf, buf + encoded_len, indexing_table);
+      int64_t len = decode_indexed_header_field(header, buf, buf + block_len, indexing_table);
 
       REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
