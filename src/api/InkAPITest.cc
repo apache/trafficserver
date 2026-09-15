@@ -7996,9 +7996,7 @@ load(const char *append_string)
   p   = TSIOBufferBlockWriteStart(blk, &avail);
 
   ink_strlcpy(p, append_string, avail);
-  if (append_string != nullptr) {
-    TSIOBufferProduce(append_buffer, strlen(append_string));
-  }
+  TSIOBufferProduce(append_buffer, strlen(append_string));
 
   append_buffer_length = TSIOBufferReaderAvail(append_buffer_reader);
 
