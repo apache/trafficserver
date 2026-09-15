@@ -500,12 +500,17 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(dt.is_empty());
     REQUIRE(dt.count() == 0);
 
-    // Test to insert 10k random size entries
+    // Test to insert 10k random size entries. The sizes only have to vary, so
+    // weak randomness is sufficient here.
     for (int i = 0; i < 10000; i++) {
-      int         name_size  = rand() % 20000;
-      int         value_size = rand() % 20000;
-      std::string name       = get_long_string(name_size);
-      std::string value      = get_long_string(value_size);
+      // coverity[dont_call]
+      int name_size = rand() % 20000;
+      // coverity[dont_call]
+      int value_size = rand() % 20000;
+
+      std::string name  = get_long_string(name_size);
+      std::string value = get_long_string(value_size);
+
       dt.insert_entry(name, value);
     }
   }

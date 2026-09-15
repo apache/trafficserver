@@ -31,6 +31,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "tsutil/Metrics.h"
@@ -574,7 +575,8 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
   }
 
   // Every pointer must be distinct: no two names should have been aliased onto the same atomic.
-  std::vector<Metrics::Counter::AtomicType *> sorted_ptrs = ptrs;
+  // ptrs is not read past this point, so hand it over rather than duplicating it.
+  std::vector<Metrics::Counter::AtomicType *> sorted_ptrs = std::move(ptrs);
   std::sort(sorted_ptrs.begin(), sorted_ptrs.end());
   REQUIRE(std::adjacent_find(sorted_ptrs.begin(), sorted_ptrs.end()) == sorted_ptrs.end());
 }

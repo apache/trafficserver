@@ -946,7 +946,7 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   TSAssert(s->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
-    if (s && s->accept_port != SYNSERVER_DUMMY_PORT) {
+    if (s->accept_port != SYNSERVER_DUMMY_PORT) {
       Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
       ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
       Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
@@ -7985,6 +7985,8 @@ transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 static int
 load(const char *append_string)
 {
+  TSAssert(nullptr != append_string);
+
   TSIOBufferBlock blk;
   char           *p;
   int64_t         avail;
@@ -7996,9 +7998,7 @@ load(const char *append_string)
   p   = TSIOBufferBlockWriteStart(blk, &avail);
 
   ink_strlcpy(p, append_string, avail);
-  if (append_string != nullptr) {
-    TSIOBufferProduce(append_buffer, strlen(append_string));
-  }
+  TSIOBufferProduce(append_buffer, strlen(append_string));
 
   append_buffer_length = TSIOBufferReaderAvail(append_buffer_reader);
 
