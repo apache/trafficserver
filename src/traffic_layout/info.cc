@@ -170,6 +170,15 @@ produce_features(bool json)
   print_feature("TS_IP_TRANSPARENT", TS_IP_TRANSPARENT, json);
   print_feature("TS_HAS_128BIT_CAS", TS_HAS_128BIT_CAS, json);
   print_feature("TS_HAS_TESTS", TS_HAS_TESTS, json);
+  // Whether PCRE2 can run a pattern on the just-in-time engine. This is a property of how
+  // PCRE2 itself was built, not of ATS, and it decides which resource limit a pathological
+  // pattern reaches: the JIT stack, or nothing at all, because the interpreter keeps its
+  // backtracking frames on the heap. Tests that assert on one of those limits need to know.
+  {
+    uint32_t has_jit = 0;
+    pcre2_config(PCRE2_CONFIG_JIT, &has_jit);
+    print_feature("TS_HAS_PCRE2_JIT", has_jit != 0, json);
+  }
   print_feature("TS_MAX_THREADS_IN_EACH_THREAD_TYPE", TS_MAX_THREADS_IN_EACH_THREAD_TYPE, json);
   print_feature("TS_MAX_NUMBER_EVENT_THREADS", TS_MAX_NUMBER_EVENT_THREADS, json);
   print_feature("TS_MAX_HOST_NAME_LEN", TS_MAX_HOST_NAME_LEN, json);

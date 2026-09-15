@@ -20,7 +20,12 @@
   limitations under the License.
 */
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -1049,4 +1054,164 @@ TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
   CHECK(r.exec("cdn.example.com.evil", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("cdn.example.com.evil.com", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
+}
+
+namespace
+{
+/** Does PCRE2 have JIT code for this pattern?
+ *
+ * The two tests below are about the JIT stack, and PCRE2 consults it only when it
+ * has JIT code to run. Without it both a blank context and the shared one take the
+ * interpreter and return the same answer, so the tests would pass whether or not
+ * the behaviour they describe is present. Ask PCRE2 rather than assume.
+ */
+bool
+pattern_has_jit(char const *pattern)
+{
+  int         errnum    = 0;
+  PCRE2_SIZE  erroffset = 0;
+  pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+  if (code == nullptr) {
+    return false;
+  }
+  pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+  size_t jit_size = 0;
+  pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+  pcre2_code_free(code);
+  return jit_size > 0;
+}
+} // namespace
+
+// A caller-supplied RegexMatchContext must behave like the shared context that
+// Regex::exec uses when none is supplied. A context built from scratch silently
+// drops everything the shared one configures, which is how regex_remap came to
+// run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB one.
+TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexMatchContext]")
+{
+  // Quantified alternation of capture groups: every subject character pushes a
+  // backtracking frame, so the JIT stack size is what bounds this.
+  char const *const pattern = R"(^(?:(a)|(b))+$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so the JIT stack is never consulted");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  std::string const subject(1000, 'a');
+
+  RegexMatches      shared_matches;
+  RegexMatchContext match_context;
+  RegexMatches      own_matches;
+
+  int const shared_rc = re.exec(subject, shared_matches);
+  int const own_rc    = re.exec(subject, own_matches, 0, &match_context);
+  CAPTURE(shared_rc, own_rc);
+
+  REQUIRE(shared_rc > 0);
+  REQUIRE(own_rc == shared_rc);
+}
+
+// The guard from #5762: a pattern that backtracks once per character must fail
+// cleanly rather than run the thread out of stack. PCRE1 recursed on the machine
+// stack and a long enough subject crashed the server; PCRE2 must report an error
+// instead. If this ever crashes rather than fails, that regression is back.
+TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Regex][limits]")
+{
+  // Only the JIT path has a bound to exhaust here. PCRE2's interpreter keeps its
+  // backtracking frames on the heap, so it matches this subject rather than running
+  // out of anything, and there is no resource error to assert.
+  char const *const pattern = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
+  if (!pattern_has_jit(pattern)) {
+    SKIP("PCRE2 has no JIT for this pattern, so there is no stack bound to exhaust");
+  }
+
+  Regex re;
+  REQUIRE(re.compile(pattern));
+
+  // This pattern starts failing at roughly 43KiB of subject against a 1MiB JIT
+  // stack, measured identically on x86_64 and arm64. 256KiB keeps a six times
+  // margin for a platform whose JIT frames are larger, without allocating more
+  // than the bound needs. Do not trim this to just above 43KiB.
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches matches;
+  int const    rc = re.exec(subject, matches);
+  CAPTURE(rc);
+
+  // Reaching this line at all is the crash assertion.
+  REQUIRE(rc < 0);
+  REQUIRE(rc != RE_ERROR_NOMATCH);
+}
+
+// The header promises that exec() may be called concurrently on one instance, and nothing
+// tested that. Every thread must reach the same verdict, whether it matches through the
+// shared context or through one it built itself, and each thread must get its own JIT
+// stack from the callback rather than share one. Run this under ThreadSanitizer to get the
+// second half of the guarantee.
+TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
+{
+  Regex re;
+  REQUIRE(re.compile(R"(^/([a-z]+)/([0-9]+)/(.*)$)"));
+
+  constexpr int THREADS    = 8;
+  constexpr int ITERATIONS = 2000;
+
+  std::string const hit{"/alpha/42/tail"};
+  std::string const miss{"/Alpha/xx/tail"};
+
+  std::atomic<int> failures{0};
+
+  // A start gate, so every thread is inside the match loop before any of them gets far and
+  // the matching actually overlaps. std::latch would say this directly, but the oldest
+  // toolchain this project builds with does not carry <latch>.
+  std::mutex              gate_mutex;
+  std::condition_variable gate;
+  int                     arrived = 0;
+  bool                    go      = false;
+
+  // One caller-supplied context, built here and shared by half the threads. That is the
+  // production shape: regex_remap builds a context when it loads a rule and every net
+  // thread then matches through it. A context that cached a JIT stack directly rather than
+  // resolving one per thread through the callback would pass a test that gave each thread
+  // its own context, and would corrupt this one.
+  RegexMatchContext shared_caller_context;
+
+  std::vector<std::thread> threads;
+  threads.reserve(THREADS);
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&, i]() {
+      bool const                     use_caller_context = (i % 2) == 0;
+      RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
+
+      {
+        std::unique_lock<std::mutex> lock{gate_mutex};
+        if (++arrived == THREADS) {
+          go = true;
+          gate.notify_all();
+        } else {
+          gate.wait(lock, [&]() { return go; });
+        }
+      }
+
+      for (int n = 0; n < ITERATIONS; ++n) {
+        RegexMatches matches;
+        if (re.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+          ++failures;
+        }
+
+        RegexMatches no_matches;
+        if (re.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
+          ++failures;
+        }
+      }
+    });
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+
+  CHECK(failures.load() == 0);
 }
