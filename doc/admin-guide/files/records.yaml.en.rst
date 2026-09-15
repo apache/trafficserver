@@ -3776,6 +3776,39 @@ HostDB
 Logging Configuration
 =====================
 
+.. ts:cv:: CONFIG proxy.config.http.log_server_tcp_info INT 0
+   :reloadable:
+   :overridable:
+
+   Enables sampling of ``TCP_INFO`` on the origin connection, so that the round
+   trip time to the origin can be logged.
+
+   This can be overridden per transaction using ``conf_remap`` or
+   ``header_rewrite`` before the origin response header is parsed. For example,
+   leave the global value at ``0`` and enable collection on a selected remap::
+
+      map http://cdn.example/ http://origin.example/ @plugin=conf_remap.so @pparam=proxy.config.http.log_server_tcp_info=1
+
+   When this is enabled, |TS| reads ``TCP_INFO`` from the origin socket once for
+   each successfully parsed origin response header and keeps the values for the
+   access log. This normally means one snapshot per transaction; retries,
+   redirects, or informational responses can cause additional snapshots. A direct
+   cache hit does not read ``TCP_INFO``. By log time, the connection may have been
+   closed or released for reuse by another transaction. The values feed the :ref:`srtt <srtt>`,
+   :ref:`srtv <srtv>`, :ref:`sret <sret>` and :ref:`scwn <scwn>` log fields,
+   which report -1 when no sample was taken. Starting another origin attempt or
+   reading another response header clears the previous sample.
+
+   Sampling is skipped if access logging is disabled globally or transaction
+   logging is disabled through ``TS_HTTP_CNTL_LOGGING_MODE`` at that point.
+   Enabling logging later does not collect a sample retroactively; the fields
+   remain -1 unless another response header is successfully parsed with logging
+   enabled. The later :ts:cv:`proxy.config.log.sampling_frequency` decision and
+   log filtering can still discard a transaction that was sampled.
+
+   This costs one ``getsockopt`` per sampled origin response, so it is disabled
+   by default. Only sockets carrying TCP supply the information.
+
 .. ts:cv:: CONFIG proxy.config.log.logging_enabled INT 3
    :reloadable:
 

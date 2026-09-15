@@ -1,0 +1,107 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+autest:
+  description: 'Verify default-disabled origin TCP_INFO can be enabled per transaction'
+  server:
+    name: server_disabled
+  client:
+    name: client_disabled
+  ats:
+    name: ts_disabled
+    process_config:
+      enable_cache: false
+    # Leave log_server_tcp_info unset to check that sampling defaults to off.
+    records_config:
+      proxy.config.log.max_secs_per_buffer: 1
+      proxy.config.log.periodic_tasks_interval: 1
+    remap_config:
+    - from: 'http://origin-tcp-info.test/'
+      to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+    - from: 'http://enabled-origin-tcp-info.test/'
+      to: 'http://127.0.0.1:{SERVER_HTTP_PORT}/'
+      plugins:
+      - name: conf_remap.so
+        args: ['proxy.config.http.log_server_tcp_info=1']
+    copy_to_config_dir:
+    - origin-tcp-info.rewrite.config
+    plugin_config:
+    - name: header_rewrite.so
+      args: [origin-tcp-info.rewrite.config]
+    logging_yaml:
+      logging:
+        formats:
+        - name: origin_tcp_info
+          format: '%<{uuid}cqh> %<crc> %<srtt> %<srtv> %<sret> %<scwn>'
+        logs:
+        - filename: origin_tcp_info
+          format: origin_tcp_info
+          mode: ascii
+
+sessions:
+- transactions:
+  - client-request:
+      method: GET
+      url: /disabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, miss]
+    server-response: &origin_response
+      status: 200
+      headers:
+        fields:
+        - [Content-Length, 16]
+    proxy-response: &proxy_response
+      status: 200
+
+  - client-request:
+      method: GET
+      url: /remap-enabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, enabled-origin-tcp-info.test]
+        - [uuid, remap-enabled]
+    server-response: *origin_response
+    proxy-response: *proxy_response
+
+  - client-request:
+      method: GET
+      url: /rewrite-enabled
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, rewrite-enabled]
+    server-response: *origin_response
+    proxy-response: *proxy_response
+
+  # A later request on the same client connection must retain the global default.
+  - client-request:
+      method: GET
+      url: /default-after-override
+      version: '1.1'
+      headers:
+        fields:
+        - [Host, origin-tcp-info.test]
+        - [uuid, miss-after-override]
+    server-response: *origin_response
+    proxy-response: *proxy_response
