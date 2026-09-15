@@ -2084,14 +2084,8 @@ REGRESSION_TEST(SDK_API_TSfopen)(RegressionTest *test, int /* atype ATS_UNUSED *
 
   // Create unique tmp _file_name_, do not use any TS file_name
   snprintf(write_file_name, PATH_NAME_MAX, "/tmp/%sXXXXXX", ts::filename::PLUGIN);
-
-  // Narrow the umask across mkstemp so the temporary file cannot land in /tmp
-  // group or world accessible, whatever the process umask happens to be.
-  const mode_t old_umask     = umask(S_IRWXG | S_IRWXO);
-  int          write_file_fd = mkstemp(write_file_name); // this file will be reopened below
-
-  umask(old_umask);
-  if (write_file_fd <= 0) {
+  int write_file_fd; // this file will be reopened below
+  if ((write_file_fd = mkstemp(write_file_name)) <= 0) {
     SDK_RPRINT(test, "mkstemp", "std func", TC_FAIL, "can't create file for writing");
 
     // no need to continue, return
