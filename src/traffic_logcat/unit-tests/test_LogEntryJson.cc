@@ -211,7 +211,9 @@ TEST_CASE("v3 generic decode escapes control characters in strings", "[logcat][v
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"msg":"a\nb\tc\u0001d"})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"msg":"a\nb\tc\u0001d"})");
 }
 
 TEST_CASE("v3 generic decode escapes JSON structural characters in symbol keys", "[logcat][v3]")
