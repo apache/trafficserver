@@ -109,3 +109,18 @@ Origin Server
 .. ts:stat:: global proxy.process.http.origin_shutdown.tunnel_abort integer
    :type counter
    :units bytes
+
+.. ts:stat:: global proxy.process.http.origin.retry_admitted integer
+   :type counter
+   :units requests
+
+   Counts retry candidates admitted after an origin reports that a request was
+   not processed and |TS| confirms that its body, if present, is replayable.
+   Other retry limits still apply; this does not count completed retries.
+
+.. ts:stat:: global proxy.process.http.origin.retry_body_unavailable integer
+   :type counter
+   :units requests
+
+   Counts requests that an origin reports as unprocessed but |TS| cannot retry
+   because a complete, replayable request body is unavailable.
