@@ -208,18 +208,22 @@ MakeHttpProxyAcceptor(HttpProxyAcceptor &acceptor, HttpProxyPort &port, unsigned
 
   // XXX the protocol probe should be a configuration option.
 
-  ProtocolProbeSessionAccept *probe = new ProtocolProbeSessionAccept();
-  HttpSessionAccept *http           = nullptr; // don't allocate this unless it will be used.
-  probe->proxyPort                  = &port;
-  probe->proxy_protocol_ipmap       = &HttpConfig::m_master.config_proxy_protocol_ipmap;
+  ProtocolProbeSessionAccept *probe = nullptr;
+  HttpSessionAccept *http           = nullptr;
 
-  if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
-    http = new HttpSessionAccept(accept_opt);
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
-  }
+  if (!port.isQUIC()) {
+    probe                       = new ProtocolProbeSessionAccept();
+    probe->proxyPort            = &port;
+    probe->proxy_protocol_ipmap = &HttpConfig::m_master.config_proxy_protocol_ipmap;
 
-  if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
-    probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
+    if (port.m_session_protocol_preference.intersects(HTTP_PROTOCOL_SET)) {
+      http = new HttpSessionAccept(accept_opt);
+      probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP, http);
+    }
+
+    if (port.m_session_protocol_preference.intersects(HTTP2_PROTOCOL_SET)) {
+      probe->registerEndpoint(ProtocolProbeSessionAccept::PROTO_HTTP2, new Http2SessionAccept(accept_opt));
+    }
   }
 
   if (port.isSSL()) {
