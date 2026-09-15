@@ -33,6 +33,7 @@
 #include <catch2/interfaces/catch_interfaces_config.hpp>
 #include <fstream> /* ofstream */
 #include <memory>
+#include <utility>
 #include <utime.h>
 
 #include "plugin_testing_common.h"
