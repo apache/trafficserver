@@ -308,15 +308,19 @@ TEST_CASE("ts_file::copy", "[libts][ts_file_copy]")
   CHECK_FALSE(ts::file::copy(testdir, destination, ec));
   CHECK(ec.value() == EISDIR);
 
-  for (size_t size : {1, 65536}) {
-    INFO("Write failure size: " << size);
-    std::ofstream output(source.string(), std::ios::binary);
-    output << std::string(size, 'x');
-    output.close();
-    REQUIRE(output.good());
+  if (access("/dev/full", W_OK) == 0) {
+    for (size_t size : {1, 65536}) {
+      INFO("Write failure size: " << size);
+      std::ofstream output(source.string(), std::ios::binary);
+      output << std::string(size, 'x');
+      output.close();
+      REQUIRE(output.good());
 
-    CHECK_FALSE(ts::file::copy(source, path("/dev/full"), ec));
-    CHECK(ec.value() == ENOSPC);
+      CHECK_FALSE(ts::file::copy(source, path("/dev/full"), ec));
+      CHECK(ec.value() == ENOSPC);
+    }
+  } else {
+    WARN("Skipping write-failure checks: /dev/full is not writable");
   }
 #endif
 

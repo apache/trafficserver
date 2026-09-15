@@ -16,6 +16,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import os
+
 Test.Summary = '''
 Test TLS protocol offering  based on SNI
 '''
@@ -24,6 +26,10 @@ Test TLS protocol offering  based on SNI
 # for special domain foo.com only offer TLSv1 and TLSv1_1
 
 Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
+
+# Let the test control protocol availability instead of the system OpenSSL
+# policy, which can impose a TLS 1.2 minimum despite the ATS settings below.
+Test.Env['OPENSSL_CONF'] = os.devnull
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", select_ports=True, enable_tls=True)
@@ -81,16 +87,18 @@ tr.Processes.Default.Command = "curl -v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts
 
+# TLS 1.0 ECDHE handshakes require SHA-1 signatures, which Fedora disables
+# independently of the security level. Use RSA key exchange for the TLS 1.0 checks.
 # Target foo.com for TLSv1.  Should succeed
 tr = Test.AddTestRun("foo.com TLSv1")
-tr.Processes.Default.Command = "curl -v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
+tr.Processes.Default.Command = "curl -v --ciphers AES128-SHA:@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'foo.com:{0}:127.0.0.1' -k  https://foo.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 0
 tr.StillRunningAfter = ts
 
 # Target bar.com for TLSv1.  Should fail
 tr = Test.AddTestRun("bar.com TLSv1")
-tr.Processes.Default.Command = "curl -v --ciphers DEFAULT@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
+tr.Processes.Default.Command = "curl -v --ciphers AES128-SHA:@SECLEVEL=0 --tls-max 1.0 --tlsv1 --resolve 'bar.com:{0}:127.0.0.1' -k  https://bar.com:{0}".format(
     ts.Variables.ssl_port)
 tr.ReturnCode = 35
 tr.StillRunningAfter = ts

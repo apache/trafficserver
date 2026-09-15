@@ -115,7 +115,8 @@ Config::loadConfig(const std::string &filename)
     m_loading  = true;
   }
 
-  // Readers can continue using the previous configuration during file I/O.
+  // Parse without the lock, then publish the complete map under the lock.
+  // Readers see the previous map (empty during the first load), never a partial one.
   std::map<std::string, std::string> config;
   bool success = readConfig(filename, config);
 
@@ -160,7 +161,7 @@ Config::checkConfigChange()
 {
   time_t checkTime = time(nullptr) / cCheckDivisor;
 
-  if (0 == m_lastmtime || m_lastCheck != checkTime) {
+  if (m_lastCheck != checkTime) {
     m_lastCheck = checkTime;
     return setLastConfigChange();
   }
@@ -176,13 +177,11 @@ Config::loadConfigOnChange()
     if (m_loading || m_filename.empty()) {
       return true;
     }
-    if (checkConfigChange()) {
-      m_alreadyLoaded = false;
-    }
-    if (m_alreadyLoaded) {
+    if (!checkConfigChange()) {
       return true;
     }
-    filename = m_filename;
+    m_alreadyLoaded = false;
+    filename        = m_filename;
   }
   return loadConfig(filename);
 }

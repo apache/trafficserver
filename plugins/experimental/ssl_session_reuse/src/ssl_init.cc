@@ -115,7 +115,7 @@ get_redis_auth_key(char *retKeyBuff, int buffSize)
       while (read_len > 1 && key_data[read_len - 1] == '\n') {
         --read_len;
       }
-      if (read_len > 0 && read_len <= buffSize && static_cast<size_t>(read_len) <= key_data.length()) {
+      if (read_len > 0 && read_len < buffSize && static_cast<size_t>(read_len) <= key_data.length()) {
         memset(retKeyBuff, 0, buffSize);
         strncpy(retKeyBuff, key_data.c_str(), read_len);
         retval = read_len;

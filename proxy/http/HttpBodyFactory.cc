@@ -302,6 +302,7 @@ HttpBodyFactory::reconfigure()
     new_table_of_sets = load_sets_from_directory(directory_of_template_sets);
   }
 
+  // Publish the staged settings and template table together under the lock.
   lock();
   enable_customizations = new_enable_customizations;
   enable_logging        = new_enable_logging;
