@@ -395,7 +395,7 @@ SCENARIO("loading plugins", "[plugin][core]")
 
     WHEN("config using nonexisting absolute plugin file name")
     {
-      fs::path relativeExistingPath = pluginName;
+      fs::path relativeExistingPath = std::move(pluginName);
       CHECK(relativeExistingPath.is_relative());
       fs::path absoluteNonexistingPath = searchDir / "subdir" / "nonexisting_plugin.so";
       CHECK(absoluteNonexistingPath.is_absolute());
