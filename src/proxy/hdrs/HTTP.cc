@@ -1966,6 +1966,26 @@ HTTPHdrImpl::unmarshal(intptr_t offset)
 }
 
 void
+HTTPHdrImpl::recompute_wks_indices()
+{
+  if (m_polarity == HTTPType::REQUEST) {
+    // http_hdr_method_get() answers from the index when it is set, so a stale index would report a
+    // different method than the one stored here. Tokenize case sensitively, exactly as the parser
+    // does, so a method that only matches a well-known string case insensitively stays untokenized.
+    u.req.m_method_wks_idx = u.req.m_ptr_method != nullptr ?
+                               static_cast<int16_t>(hdrtoken_method_tokenize(u.req.m_ptr_method, u.req.m_len_method)) :
+                               int16_t{-1};
+    if (u.req.m_url_impl != nullptr) {
+      u.req.m_url_impl->recompute_wks_idx();
+    }
+  }
+
+  if (m_fields_impl != nullptr) {
+    m_fields_impl->recompute_accelerators_and_presence_bits();
+  }
+}
+
+void
 HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
 {
   if (m_polarity == HTTPType::REQUEST) {
@@ -2193,6 +2213,30 @@ HTTPInfo::marshal(char *buf, int len)
   return used;
 }
 
+namespace
+{
+/** Rebuild the well-known string indexes of a freshly unmarshalled alternate.
+ *
+ * The object may have been written by a build whose well-known string table differed from this
+ * one's, in which case the indexes it stores denote different strings here than they did there.
+ * Both header heaps are fully swizzled by the time this runs, which the MIME field block walk
+ * needs. Doing this in unmarshal() rather than in the cache covers every reader of a marshalled
+ * object, and the CacheAltMagic check keeps it to once per buffer.
+ */
+void
+recompute_alt_wks_indices(HTTPCacheAlt *alt)
+{
+  // m_heap stays null unless unmarshalling filled the header in, so it also says whether m_http is
+  // a pointer this process may follow rather than one left over from the writer.
+  if (alt->m_request_hdr.m_heap != nullptr) {
+    alt->m_request_hdr.m_http->recompute_wks_indices();
+  }
+  if (alt->m_response_hdr.m_heap != nullptr) {
+    alt->m_response_hdr.m_http->recompute_wks_indices();
+  }
+}
+} // anonymous namespace
+
 int
 HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
 {
@@ -2261,6 +2305,8 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_http = hh;
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
   }
+
+  recompute_alt_wks_indices(alt);
 
   alt->m_unmarshal_len = orig_len - len;
 
@@ -2352,6 +2398,8 @@ HTTPInfo::unmarshal_v24_1(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_http = hh;
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
   }
+
+  recompute_alt_wks_indices(alt);
 
   alt->m_unmarshal_len = orig_len - len;
 

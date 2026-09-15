@@ -483,6 +483,47 @@ default). Objects which are in use when the write cursor is near use the same
 underlying evacuation mechanism but are handled automatically and not via the
 explicit ``pinned`` bit in :cpp:class:`Dir`.
 
+Object Versioning
+-----------------
+
+Every ``Doc`` records the cache format version that wrote it, in its ``v_major``
+and ``v_minor`` fields, taken from ``CACHE_DB_MAJOR_VERSION`` and
+``CACHE_DB_MINOR_VERSION`` in ``iocore/cache/CacheDefs.h``.
+
+Bumping the minor version does not clear the cache. Stripe validation looks only
+at the major version, and the current reader still reads every object written at
+an older minor version. What the bump buys is protection in the other direction:
+a reader rejects any object newer than itself and refetches it, rather than
+misreading a shape it does not understand.
+
+Reading an older object sometimes needs work that reading a current one does
+not. Compare against **the fixed version at which that part of the format
+changed**, never against ``CACHE_DB_VERSION``. The latter silently changes
+meaning at the next bump, and sends every object the previous release wrote down
+the wrong path. ``CACHE_DB_FRAG_OFFSET_TABLE_VERSION`` is such a fixed point.
+
+Well-Known Strings
+------------------
+
+A marshalled header stores indexes into the well-known string table
+(``proxy/hdrs/HdrToken.cc``) beside the strings those indexes stand for: the
+index of every MIME field name, of the request method, and of the request URL
+scheme, plus the presence bits and slot accelerators derived from them. Change
+the table and every stored index denotes a different string.
+
+The strings are in the object too, so the indexes are only a cache over them.
+``HTTPInfo::unmarshal()`` rebuilds all of it through
+``HTTPHdrImpl::recompute_wks_indices()`` before anything reads the header,
+unconditionally rather than on a version test, since an object written by a
+same-version build with a different table needs the same treatment as an older
+one. The ``CacheAltMagic`` check keeps this to once per marshalled buffer, on a
+read that already paid for disk I/O or a RAM-cache decompression.
+
+The table is therefore free to change without invalidating anyone's cache. The
+one requirement is that a |TS| predating the rebuild never read an object
+written against a different table; cache version 24.3 is where the rebuild
+landed, and older versions reject anything newer than themselves.
+
 Additional Notes
 ----------------
 

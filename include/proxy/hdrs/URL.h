@@ -113,6 +113,15 @@ public:
   void   rehome_strings(HdrHeap *new_heap);
   size_t strings_length();
 
+  /** Re-derive m_scheme_wks_idx from the scheme string.
+   *
+   * m_scheme_wks_idx indexes the well-known string table, and get_scheme() answers from it in
+   * preference to m_ptr_scheme, so an index left over from a table that no longer matches this
+   * build would report the wrong scheme. The scheme string itself is stored alongside it and is
+   * authoritative, so the index can always be rebuilt from it.
+   */
+  void recompute_wks_idx();
+
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
 
