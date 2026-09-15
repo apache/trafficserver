@@ -335,7 +335,9 @@ prepare()
     struct stat st;
     string      name = input_dir + d->d_name;
 
-    stat(name.c_str(), &st);
+    if (stat(name.c_str(), &st) != 0) {
+      continue;
+    }
     if (!S_ISDIR(st.st_mode)) {
       ++last;
     }
