@@ -319,7 +319,9 @@ TEST_CASE("v3 generic decode reads a dINT field (16 bytes)", "[logcat][v3]")
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"pair":[1,1]})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"pair":[1,1]})");
 }
 
 TEST_CASE("v3 generic decode rejects a truncated dINT field", "[logcat][v3]")
