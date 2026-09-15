@@ -145,6 +145,7 @@ ink_freelist_init(InkFreeList **fl, const char *name, uint32_t type_size, uint32
   // Make sure we align *all* the objects in the allocation, not just the first one
   f->type_size = INK_ALIGN(type_size, f->alignment);
   Debug(DEBUG_TAG "_init", "<%s> Type Size request/actual (%" PRIu32 "/%" PRIu32 ")", name, type_size, f->type_size);
+  ink_assert(f->type_size != 0);
   if (ats_hugepage_enabled()) {
     f->chunk_size = INK_ALIGN(chunk_size * f->type_size, ats_hugepage_size()) / f->type_size;
   } else {

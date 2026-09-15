@@ -386,7 +386,7 @@ write_to_net_io(NetHandler *nh, UnixNetVConnection *vc, EThread *thread)
       nh->write_ready_list.remove(vc);
     }
 
-    int err, ret;
+    int err{0}, ret{0};
 
     if (vc->get_context() == NET_VCONNECTION_OUT) {
       ret = vc->sslStartHandShake(SSL_EVENT_CLIENT, err);
