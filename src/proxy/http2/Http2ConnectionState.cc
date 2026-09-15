@@ -1234,12 +1234,7 @@ Http2ConnectionState::_get_configured_initial_window_size() const
 Http2FlowControlPolicy
 Http2ConnectionState::_get_configured_flow_control_policy() const
 {
-  ink_assert(this->session != nullptr);
-  if (this->session->is_outbound()) {
-    return Http2::flow_control_policy_out;
-  } else {
-    return Http2::flow_control_policy_in;
-  }
+  return _flow_control_policy;
 }
 
 ////////
@@ -1316,7 +1311,9 @@ Http2ConnectionState::Http2ConnectionState() : stream_list()
 void
 Http2ConnectionState::init(Http2CommonSession *ssn)
 {
-  session                                  = ssn;
+  session = ssn;
+  _flow_control_policy =
+    (session->is_outbound() ? Http2::flow_control_policy_out : Http2::flow_control_policy_in).load(std::memory_order_relaxed);
   uint32_t const configured_session_window = this->_get_configured_receive_session_window_size();
 
   if (configured_session_window < HTTP2_INITIAL_WINDOW_SIZE) {

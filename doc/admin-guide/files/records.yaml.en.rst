@@ -5235,7 +5235,7 @@ HTTP/2 Configuration
 .. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_in INT 0
    :reloadable:
 
-   Specifies the mechanism |TS| uses to maintian flow control via the HTTP/2
+   Specifies the mechanism |TS| uses to maintain flow control via the HTTP/2
    stream and session windows for inbound connections. See IETF RFC 9113
    section 5.2 for details concerning HTTP/2 flow control.
 
@@ -5261,12 +5261,19 @@ HTTP/2 Configuration
          a way that shares the window equally among all concurrent streams.
    ===== ===========================================================================================
 
+   Reloading this setting applies the new policy only to connections initialized
+   after the update. Existing connections retain the policy selected when they
+   were initialized, including for streams opened after the reload. Close and
+   reopen a connection to use the new policy.
+
 .. ts:cv:: CONFIG proxy.config.http2.flow_control.policy_out INT 0
    :reloadable:
 
-   Specifies the mechanism |TS| uses to maintian flow control via the HTTP/2
+   Specifies the mechanism |TS| uses to maintain flow control via the HTTP/2
    stream and session windows for outbound connections. See the corresponding :ts:cv:`proxy.config.http2.flow_control.policy_in`
-   configuration for details concerning how this configuration variable is used.
+   configuration for details concerning how this configuration variable is used,
+   including reload behavior. Existing outbound connections retain their original
+   policy; the updated policy applies only to newly initialized connections.
 
 .. ts:cv:: CONFIG proxy.config.http2.max_frame_size INT 16384
    :reloadable:
