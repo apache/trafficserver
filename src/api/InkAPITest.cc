@@ -6090,7 +6090,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       }
 
       field_loc2 = TSMimeHdrFieldNextDup(bufp1, mime_hdr_loc1, field_loc1);
-      if (compare_field_names(test, bufp1, mime_hdr_loc1, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
+      if (field_loc2 == TS_NULL_MLOC) {
+        SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "TSMimeHdrFieldNextDup returns TS_NULL_MLOC");
+      } else if (compare_field_names(test, bufp1, mime_hdr_loc1, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "Incorrect Pointer");
       } else {
         SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_PASS, "ok");
