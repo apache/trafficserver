@@ -28,6 +28,7 @@
 #include "proxy/hdrs/HdrHeap.h"
 #include "tscore/CryptoHash.h"
 #include "proxy/hdrs/MIME.h"
+#include <cstring>
 #include <string_view>
 
 #include "tscore/ink_apidefs.h"

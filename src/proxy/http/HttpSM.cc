@@ -5321,10 +5321,14 @@ HttpSM::do_cache_lookup_and_read()
   Metrics::Counter::increment(http_rsb.cache_lookups);
 
   ATS_PROBE1(milestone_cache_open_read_begin, sm_id);
-  milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
-  t_state.cache_lookup_result                    = HttpTransact::CacheLookupResult_t::NONE;
-  t_state.cache_info.lookup_count++;
-  URL *c_url = cache_lookup_url();
+  // A compatibility retry continues the lookup that just missed rather than
+  // starting a new one, so it keeps the original begin time and count.
+  if (!CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
+    milestones[TS_MILESTONE_CACHE_OPEN_READ_BEGIN] = ink_get_hrtime();
+    t_state.cache_info.lookup_count++;
+  }
+  t_state.cache_lookup_result = HttpTransact::CacheLookupResult_t::NONE;
+  URL *c_url                  = cache_lookup_url();
 
   SMDbg(dbg_ctl_http_seq, "Issuing cache lookup for URL %s", c_url->string_get(&t_state.arena));
 
@@ -5392,7 +5396,9 @@ HttpSM::do_cache_delete_compat_alts()
   // Same URL the lookup used; see do_cache_delete_all_alts().
   URL *url = cache_lookup_url();
 
-  if (url == nullptr || !url->valid()) {
+  // A path that carries its own ";params" segment hashes to the same key
+  // under both schemes, so the canonical delete already reached it.
+  if (url == nullptr || !url->valid() || url->has_path_params()) {
     return;
   }
   SMDbg(dbg_ctl_http_seq, "Issuing compatibility cache delete for %s", url->string_get_ref());

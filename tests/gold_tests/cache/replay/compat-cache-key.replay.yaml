@@ -268,8 +268,9 @@ sessions:
   #
   # Test 7: ... and it still caches normally under the current key.
   #
-  # The compat_key_reads count asserted above stays at 2, so neither of these
-  # two transactions took a compatibility path.
+  # Neither of these two transactions takes a compatibility path, so the
+  # running compat_key_reads count is still 2 after them. The remaining two
+  # of the four asserted in metric_checks come from tests 8 and 10.
   #
   - client-request:
       method: "GET"

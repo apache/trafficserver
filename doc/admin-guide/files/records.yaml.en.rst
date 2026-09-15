@@ -2795,23 +2795,29 @@ Cache Control
    using the newest key generation. This might be temporarily necessary
    if a large cache was created by the previous version of ATS but the new
    version changed the way cache keys are generated.  If this is turned on,
-   a metric called `proxy.process.http.cache.compat_key_reads` will be
+   a metric called ``proxy.process.http.cache.compat_key_reads`` will be
    incremented any time the compat cache lookup successfully finds the object.
    You can monitor this metric and know when its safe to turn this feature off
    as the cache wraps around.
 
-   Two costs come with enabling this. Every cache miss performs a second
+   Three costs come with enabling this. Every cache miss performs a second
    lookup, so a tier with a low hit ratio roughly doubles its cache lookup
-   load for the duration. And an object found under the previous key is not
-   revalidated when it goes stale, because a ``304`` cannot be applied to it:
-   the write that would carry the update is a create under the new key rather
-   than an update of the old one. A stale one is treated as a miss instead, so
-   the origin returns the full response, which is stored under the new key,
-   and the copy under the previous key is left to age out. Each object pays
-   this once, but on a large cache the aggregate is a bandwidth event worth
-   sizing before enabling the setting in production. For the same reason
-   ``TSHttpTxnUpdateCachedObject`` fails for such an object rather than
-   updating it.
+   load for the duration. Every ``DELETE`` and ``PURGE`` issues a second
+   remove under the previous key, because a migrated object exists under both
+   keys until the old copy ages out. And an object found under the previous
+   key is not revalidated when it goes stale, because a ``304`` cannot be
+   applied to it: the write that would carry the update is a create under the
+   new key rather than an update of the old one. A stale one is treated as a
+   miss instead, so the origin returns the full response, which is stored
+   under the new key, and the copy under the previous key is left to age out.
+   Each object pays this once, but on a large cache the aggregate is a
+   bandwidth event worth sizing before enabling the setting in production.
+
+   For the same reason a plugin cannot modify such an object in place.
+   ``TSHttpTxnUpdateCachedObject`` still returns ``TS_SUCCESS``, but when the
+   update is later prepared it is refused the same way an invalid update is,
+   and the transaction is answered with a ``500`` response rather than the
+   cached object.
 
    Objects whose path contains a ``;`` are unaffected. The previous algorithm
    hashed the path and the deprecated ``;params`` segment as separate
