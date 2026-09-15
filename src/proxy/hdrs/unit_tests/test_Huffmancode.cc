@@ -184,7 +184,7 @@ TEST_CASE("encode_test", "[proxy][huffman]")
     int64_t  encoded_len = huffman_encode(dst, i.expect_len, i.src, i.src_len);
 
     REQUIRE(encoded_len == i.expect_len);
-    REQUIRE(memcmp(i.expect, dst, encoded_len) == 0);
+    REQUIRE(memcmp(i.expect, dst, static_cast<size_t>(i.expect_len)) == 0);
 
     free(dst);
   }
