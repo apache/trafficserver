@@ -292,6 +292,31 @@ check_accounting(RamCacheCLFUS *c)
 #define check_accounting(_c)
 #endif
 
+namespace
+{
+
+// Record a RAM cache decompression failure. This is data corruption or a codec
+// error rather than an ordinary miss, so it has to be visible outside a debug
+// build: a throttled warning carrying the codec's own diagnosis, which tells a
+// corrupt frame apart from a bookkeeping error in e->len, plus the global and
+// per-volume counters. Call while the entry is still intact.
+void
+note_decompress_failure(StripeSM *stripe, const CryptoHash *key, const RamCacheCLFUSEntry *e, const char *detail)
+{
+  static Throttler throttler(std::chrono::seconds(60));
+
+  uint64_t suppressed = 0;
+  if (!throttler.is_throttled(suppressed)) {
+    Warning("RAM cache decompression failed: type %d len %u compressed_len %u key %X: %s; entry dropped"
+            " (%" PRIu64 " similar failures suppressed)",
+            static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), detail, suppressed);
+  }
+  ts::Metrics::Counter::increment(cache_rsb.ram_cache_decompress_failures);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_decompress_failures);
+}
+
+} // end anonymous namespace
+
 int
 RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
 {
@@ -301,11 +326,6 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
   int64_t             i = key->slice32(3) % this->_nbuckets;
   RamCacheCLFUSEntry *e = this->_bucket[i].head;
   char               *b = nullptr;
-  // Detail for the Lfailed warning: the codec's own diagnosis of the failure,
-  // which distinguishes a corrupt frame from a bookkeeping error in e->len.
-  // Declared here so the branches below can goto Lfailed.
-  char        codec_error_buf[128];
-  const char *codec_error = "no detail";
   while (e) {
     if (e->key == *key && e->auxkey == auxkey) {
       this->_move_compressed(e);
@@ -320,14 +340,15 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           b = static_cast<char *>(ats_malloc(e->len));
           switch (e->flag_bits.compressed) {
           default:
-            codec_error = "no decoder for this compression type";
+            note_decompress_failure(stripe, key, e, "no decoder for this compression type");
             goto Lfailed;
           case CACHE_COMPRESSION_FASTLZ: {
             int l  = static_cast<int>(e->len);
             int rc = fastlz_decompress(e->data->data(), e->compressed_len, b, l);
             if (l != rc) {
-              snprintf(codec_error_buf, sizeof(codec_error_buf), "fastlz_decompress produced %d bytes, expected %d", rc, l);
-              codec_error = codec_error_buf;
+              char detail[128];
+              snprintf(detail, sizeof(detail), "fastlz_decompress produced %d bytes, expected %d", rc, l);
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
@@ -337,8 +358,9 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             uLongf l  = e->len;
             int    rc = uncompress(reinterpret_cast<Bytef *>(b), &l, reinterpret_cast<Bytef *>(e->data->data()), e->compressed_len);
             if (Z_OK != rc) {
-              snprintf(codec_error_buf, sizeof(codec_error_buf), "uncompress: %s", zError(rc));
-              codec_error = codec_error_buf;
+              char detail[128];
+              snprintf(detail, sizeof(detail), "uncompress: %s", zError(rc));
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBZ;
@@ -351,9 +373,10 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             lzma_ret rc = lzma_stream_buffer_decode(&memlimit, 0, nullptr, reinterpret_cast<uint8_t *>(e->data->data()), &ipos,
                                                     e->compressed_len, reinterpret_cast<uint8_t *>(b), &opos, l);
             if (LZMA_OK != rc) {
-              snprintf(codec_error_buf, sizeof(codec_error_buf),
-                       "lzma_stream_buffer_decode returned %d, wrote %zu of %zu output bytes", static_cast<int>(rc), opos, l);
-              codec_error = codec_error_buf;
+              char detail[128];
+              snprintf(detail, sizeof(detail), "lzma_stream_buffer_decode returned %d, wrote %zu of %zu output bytes",
+                       static_cast<int>(rc), opos, l);
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBLZMA;
@@ -367,8 +390,9 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             if (l != rc) {
               // A negative return is a malformed frame; a smaller non-negative
               // one means e->len disagrees with the frame's content.
-              snprintf(codec_error_buf, sizeof(codec_error_buf), "LZ4_decompress_safe returned %d, expected %d", rc, l);
-              codec_error = codec_error_buf;
+              char detail[128];
+              snprintf(detail, sizeof(detail), "LZ4_decompress_safe returned %d, expected %d", rc, l);
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LZ4;
@@ -387,13 +411,15 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
             }
             size_t ll = ZSTD_decompressDCtx(dctx, b, l, e->data->data(), e->compressed_len);
             if (ZSTD_isError(ll)) {
-              snprintf(codec_error_buf, sizeof(codec_error_buf), "ZSTD_decompressDCtx: %s", ZSTD_getErrorName(ll));
-              codec_error = codec_error_buf;
+              char detail[128];
+              snprintf(detail, sizeof(detail), "ZSTD_decompressDCtx: %s", ZSTD_getErrorName(ll));
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             if (l != ll) {
-              snprintf(codec_error_buf, sizeof(codec_error_buf), "ZSTD_decompressDCtx produced %zu bytes, expected %zu", ll, l);
-              codec_error = codec_error_buf;
+              char detail[128];
+              snprintf(detail, sizeof(detail), "ZSTD_decompressDCtx produced %zu bytes, expected %zu", ll, l);
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_ZSTD;
@@ -443,21 +469,9 @@ Lerror:
 
   return 0;
 Lfailed:
+  // Every branch above reported the failure through note_decompress_failure()
+  // while the entry was still intact; this only tears it down.
   ats_free(b);
-  {
-    // A failure here is data corruption or a codec error, not an ordinary
-    // miss; make it visible beyond the debug-gated trace below.
-    static Throttler decompress_failure_throttler(std::chrono::seconds(60));
-
-    uint64_t suppressed = 0;
-    if (!decompress_failure_throttler.is_throttled(suppressed)) {
-      Warning("RAM cache decompression failed: type %d len %u compressed_len %u key %X: %s; entry dropped"
-              " (%" PRIu64 " similar failures suppressed)",
-              static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), codec_error, suppressed);
-    }
-    ts::Metrics::Counter::increment(cache_rsb.ram_cache_decompress_failures);
-    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_decompress_failures);
-  }
   this->_destroy(e);
   DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
   goto Lerror;
