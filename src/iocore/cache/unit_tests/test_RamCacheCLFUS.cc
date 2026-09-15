@@ -89,13 +89,15 @@ wire_stripe(StripeSM &stripe, CacheVol &cache_vol)
 {
   stripe.cache_vol = &cache_vol;
 
-  cache_rsb.ram_cache_bytes               = ts::Metrics::Gauge::createPtr("unit_test.clfus.ram_cache.bytes");
-  cache_rsb.ram_cache_hits                = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.hits");
-  cache_rsb.ram_cache_misses              = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.misses");
-  cache_rsb.ram_cache_decompress_failures = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.decompress.failure");
-  cache_vol.vol_rsb.ram_cache_bytes       = ts::Metrics::Gauge::createPtr("unit_test.clfus.vol.ram_cache.bytes");
-  cache_vol.vol_rsb.ram_cache_hits        = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.hits");
-  cache_vol.vol_rsb.ram_cache_misses      = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.misses");
+  cache_rsb.ram_cache_bytes                     = ts::Metrics::Gauge::createPtr("unit_test.clfus.ram_cache.bytes");
+  cache_rsb.ram_cache_hits                      = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.hits");
+  cache_rsb.ram_cache_misses                    = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.misses");
+  cache_rsb.ram_cache_compress_failures         = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.compress.failure");
+  cache_rsb.ram_cache_decompress_failures       = ts::Metrics::Counter::createPtr("unit_test.clfus.ram_cache.decompress.failure");
+  cache_vol.vol_rsb.ram_cache_bytes             = ts::Metrics::Gauge::createPtr("unit_test.clfus.vol.ram_cache.bytes");
+  cache_vol.vol_rsb.ram_cache_hits              = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.hits");
+  cache_vol.vol_rsb.ram_cache_misses            = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.misses");
+  cache_vol.vol_rsb.ram_cache_compress_failures = ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.compress.failure");
   cache_vol.vol_rsb.ram_cache_decompress_failures =
     ts::Metrics::Counter::createPtr("unit_test.clfus.vol.ram_cache.decompress.failure");
 }
@@ -231,6 +233,12 @@ TEST_CASE("CLFUS incompressible objects fall back to uncompressed storage", "[ca
   // Incompressible data is kept verbatim, so a read reports no compression.
   CHECK(r.hit == RAM_HIT_COMPRESS_NONE);
   CHECK(r.out == payload);
+  // And its footprint is unchanged: a regression that stored the expanded
+  // "compressed" blob would still read back correctly but would cost memory.
+  // The payload is a power of two, so the entry carries no buffer padding
+  // and there is nothing for the pass to legitimately reclaim; a padded
+  // payload can shrink here by design when CLFUS re-stores it tightly.
+  CHECK(r.size_after == r.size_before);
 }
 
 TEST_CASE("CLFUS single-byte payload roundtrips", "[cache][ramcache][compress]")
@@ -241,10 +249,18 @@ TEST_CASE("CLFUS single-byte payload roundtrips", "[cache][ramcache][compress]")
   CacheVol cache_vol;
   wire_stripe(stripe, cache_vol);
 
-  RoundtripResult r = store_compress_get(stripe, CACHE_COMPRESSION_NONE, compressible_bytes(1));
+  auto                  payload = compressible_bytes(1);
+  const CompressionCase c       = GENERATE(from_range(compression_cases()));
+  INFO("compression backend: " << c.name);
 
+  RoundtripResult r = store_compress_get(stripe, c.config, payload);
+
+  // Every codec emits a frame larger than a single byte, so a one-byte object
+  // can never shrink; whichever way a backend declines it -- an explicit
+  // too-small guard, the incompressible marking, or storing the bytes verbatim
+  // -- the object must survive and read back uncompressed.
   CHECK(r.hit == RAM_HIT_COMPRESS_NONE);
-  CHECK(r.out == compressible_bytes(1));
+  CHECK(r.out == payload);
 }
 
 // A backend that is not compiled in silently disappears from the parametrized

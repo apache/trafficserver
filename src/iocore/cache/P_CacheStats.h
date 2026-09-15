@@ -48,6 +48,7 @@ struct CacheStatsBlock {
   ts::Metrics::Counter::AtomicType *last_open_read_hits           = nullptr;
   ts::Metrics::Counter::AtomicType *agg_buffer_hits               = nullptr;
   ts::Metrics::Counter::AtomicType *ram_cache_misses              = nullptr;
+  ts::Metrics::Counter::AtomicType *ram_cache_compress_failures   = nullptr;
   ts::Metrics::Counter::AtomicType *ram_cache_decompress_failures = nullptr;
   ts::Metrics::Counter::AtomicType *all_mem_misses                = nullptr;
   ts::Metrics::Counter::AtomicType *pread_count                   = nullptr;

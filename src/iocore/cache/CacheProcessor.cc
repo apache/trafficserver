@@ -1192,6 +1192,7 @@ register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix)
   rsb->last_open_read_hits           = ts::Metrics::Counter::createPtr(prefix + ".last_open_read.hits");
   rsb->agg_buffer_hits               = ts::Metrics::Counter::createPtr(prefix + ".aggregation_buffer.hits");
   rsb->ram_cache_misses              = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.misses");
+  rsb->ram_cache_compress_failures   = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.compress.failure");
   rsb->ram_cache_decompress_failures = ts::Metrics::Counter::createPtr(prefix + ".ram_cache.decompress.failure");
   rsb->all_mem_misses                = ts::Metrics::Counter::createPtr(prefix + ".all_memory_caches.misses");
   rsb->pread_count                   = ts::Metrics::Counter::createPtr(prefix + ".pread_count");

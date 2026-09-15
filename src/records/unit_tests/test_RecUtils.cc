@@ -26,6 +26,10 @@
 #include "../P_RecUtils.h"
 #include "records/RecordsConfig.h"
 
+#include "iocore/cache/Cache.h"
+
+#include <string>
+
 TEST_CASE("recordRangeCheck via RecordValidityCheck", "[librecords][RecUtils]")
 {
   SECTION("valid ranges")
@@ -212,4 +216,23 @@ TEST_CASE("search_default_domains accepts documented values", "[librecords][RecU
   REQUIRE(RecordValidityCheck("1", record->check, record->regex));
   REQUIRE(RecordValidityCheck("2", record->check, record->regex));
   REQUIRE_FALSE(RecordValidityCheck("3", record->check, record->regex));
+}
+
+TEST_CASE("ram_cache.compress accepts every compression backend", "[librecords][RecUtils]")
+{
+  const auto *record = GetRecordElementByName("proxy.config.cache.ram_cache.compress");
+
+  REQUIRE(record != nullptr);
+  REQUIRE(record->check == RECC_INT);
+  REQUIRE(record->regex != nullptr);
+
+  // The validity range must cover every CACHE_COMPRESSION_* value, otherwise a
+  // documented backend is rejected at load time and silently falls back to the
+  // default of 0 (no compression). Keep this in sync with Cache.h when a codec
+  // is added; CACHE_COMPRESSION_ZSTD is currently the largest value.
+  for (int i = CACHE_COMPRESSION_NONE; i <= CACHE_COMPRESSION_ZSTD; i++) {
+    INFO("CACHE_COMPRESSION_* value: " << i);
+    REQUIRE(RecordValidityCheck(std::to_string(i).c_str(), record->check, record->regex));
+  }
+  REQUIRE_FALSE(RecordValidityCheck(std::to_string(CACHE_COMPRESSION_ZSTD + 1).c_str(), record->check, record->regex));
 }

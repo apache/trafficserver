@@ -59,6 +59,10 @@ enum {
 
 // The RAM_HIT_COMPRESS_* values are the CACHE_COMPRESSION_* values offset by
 // one; keep the two sequences from silently desyncing when a codec is added.
+// The pairwise asserts catch a reordering of either sequence; the count assert
+// catches a new CACHE_COMPRESSION_* that was never given a RAM_HIT_COMPRESS_*
+// enumerator (or vice versa).
+static_assert(RAM_HIT_LAST_ENTRY == CACHE_COMPRESSION_ZSTD + 2);
 static_assert(RAM_HIT_COMPRESS_NONE == CACHE_COMPRESSION_NONE + 1);
 static_assert(RAM_HIT_COMPRESS_FASTLZ == CACHE_COMPRESSION_FASTLZ + 1);
 static_assert(RAM_HIT_COMPRESS_LIBZ == CACHE_COMPRESSION_LIBZ + 1);
