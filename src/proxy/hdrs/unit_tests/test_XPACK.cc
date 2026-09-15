@@ -136,7 +136,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
       REQUIRE(len > 0);
       REQUIRE(len == string_test_case[i].encoded_field_len);
-      REQUIRE(memcmp(buf, string_test_case[i].encoded_field, len) == 0);
+      REQUIRE(memcmp(buf, string_test_case[i].encoded_field, static_cast<size_t>(string_test_case[i].encoded_field_len)) == 0);
     }
   }
 
