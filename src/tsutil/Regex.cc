@@ -122,14 +122,10 @@ jit_stack_for_this_thread(void *)
 
   auto *stack = static_cast<pcre2_jit_stack *>(pthread_getspecific(jit_stack_key));
   if (stack == nullptr) {
-    // One page to start, one mebibyte at most. Measured on PCRE2 10.47 against a pattern
-    // that backtracks once per character, which turns the maximum directly into a subject
-    // length: 32 KiB of stack resolves a 1,362 byte subject, 1 MiB resolves 43,687, 8 MiB
-    // resolves 349,522, and match time is flat across all of them. The maximum is address
-    // space reserved at creation, made resident only as deep as a match actually goes, and
-    // pcre2 does not hand it back, so a thread that once saw a deep subject keeps the
-    // pages. One mebibyte already covers a longer subject than a client can deliver, since
-    // proxy.config.http.request_header_max_size defaults to 32,768 bytes.
+    // One page to start, one mebibyte at most. The maximum is address space reserved at
+    // creation and made resident only as deep as a match actually goes, so a larger one
+    // costs nothing per match, and a mebibyte already resolves a longer subject than
+    // proxy.config.http.request_header_max_size lets a client send.
     stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr);
     if (pthread_setspecific(jit_stack_key, stack) != 0) {
       // Nothing holds the stack now, so it would leak once per match. Give it back and
