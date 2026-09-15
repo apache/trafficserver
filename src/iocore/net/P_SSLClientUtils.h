@@ -22,8 +22,11 @@
 #pragma once
 
 #include "P_SSLConfig.h"
+#include "SSLRPKUtils.h"
 
 #include <openssl/ssl.h>
+#include <memory>
+#include <string>
 #include <string_view>
 
 // BoringSSL does not have this include file
@@ -40,3 +43,26 @@ SSL_CTX *SSLCreateClientContext(const struct SSLConfigParams *params, const char
 
 int  verify_callback(int preverify_ok, X509_STORE_CTX *ctx);
 bool validate_server_certificate_hostname(NetVConnection *netvc, std::string_view hostname);
+
+/** @return true if this origin connection authenticated with an RFC 7250 raw public key.
+
+    Such a connection was vouched for by the next hop's pin set rather than by a certificate, and
+    that set comes from the sni.yaml entry the outbound SNI selected. Callers gating origin session
+    reuse must therefore limit it to a request that would select the same entry. Always false when
+    server verification is disabled for the connection, since nothing was pinned.
+ */
+bool origin_pinned_raw_public_key(NetVConnection *netvc);
+
+#if TS_USE_RPK
+/** Configure @a ssl to offer and/or pin RFC 7250 raw public keys for an outbound connection.
+
+    @a trusted_key_set, when non-null, is the next hop's acceptable raw public keys (parsed once at
+    config load, not re-parsed per connection); it is attached to @a ssl for the verify callback to
+    pin against. @a offer_rpk advertises a raw public key (derived from the client certificate/key
+    already configured on the context) as an alternative to X.509 for our own identity.
+
+    Both are advertised alongside X.509 rather than replacing it, so a next hop that doesn't
+    support RPK negotiates down to a normal certificate exchange.
+ */
+bool ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set);
+#endif
