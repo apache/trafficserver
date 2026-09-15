@@ -330,7 +330,17 @@ Regex::Regex(Regex const &other)
   if (other_code != nullptr) {
     // Use PCRE2's built-in function to deep copy the compiled pattern
     auto *copied_code = pcre2_code_copy(other_code);
-    _Code::set(_code, copied_code);
+
+    // Null when pcre2 could not obtain memory. Leave the object empty rather than
+    // holding a null pattern.
+    if (copied_code != nullptr) {
+      // The copy does not carry the machine code the JIT produced, so without this it
+      // matches on the interpreter, under different resource limits than the original.
+      // Unchecked for the same reason compile() does not check it.
+      pcre2_jit_compile(copied_code, PCRE2_JIT_COMPLETE);
+
+      _Code::set(_code, copied_code);
+    }
   }
 }
 
