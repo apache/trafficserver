@@ -73,7 +73,10 @@ EVP_PKEY *
 async_load_privkey(ENGINE *e, const char *s_key_id, UI_METHOD *ui_method, void *callback_data)
 {
   fprintf(stderr, "Loading key %s\n", s_key_id);
-  FILE *f       = fopen(s_key_id, "r");
+  FILE *f = fopen(s_key_id, "r");
+  if (f == NULL) {
+    return NULL;
+  }
   EVP_PKEY *key = PEM_read_PrivateKey(f, NULL, NULL, NULL);
   fclose(f);
   return key;

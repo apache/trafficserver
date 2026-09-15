@@ -166,6 +166,10 @@ main(int argc, char *argv[])
   fprintf(stderr, "Listen on %d connect delay=%d ttfb delay=%d\n", listen_port, connect_delay, ttfb_delay);
 
   int listenfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (listenfd < 0) {
+    perror("socket");
+    return EXIT_FAILURE;
+  }
   struct sockaddr_in serv_addr;
 
   memset(&serv_addr, '0', sizeof(serv_addr));
@@ -174,7 +178,11 @@ main(int argc, char *argv[])
   serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
   serv_addr.sin_port        = htons(listen_port);
 
-  bind(listenfd, reinterpret_cast<struct sockaddr *>(&serv_addr), sizeof(serv_addr));
+  if (bind(listenfd, reinterpret_cast<struct sockaddr *>(&serv_addr), sizeof(serv_addr)) != 0) {
+    perror("bind");
+    close(listenfd);
+    return EXIT_FAILURE;
+  }
 
   SSL_load_error_strings();
   SSL_library_init();

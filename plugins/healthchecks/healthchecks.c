@@ -110,9 +110,10 @@ reload_status_file(HCFileInfo *info, HCFileData *data)
   memset(data, 0, sizeof(HCFileData));
   if (NULL != (fd = fopen(info->fname, "r"))) {
     data->exists = 1;
-    do {
-      data->b_len = fread(data->body, 1, MAX_BODY_LEN, fd);
-    } while (!feof(fd)); /*  Only save the last 16KB of the file ... */
+    data->b_len  = fread(data->body, 1, MAX_BODY_LEN, fd);
+    if (ferror(fd)) {
+      data->b_len = 0;
+    }
     fclose(fd);
   }
 }
@@ -308,68 +309,66 @@ parse_configs(const char *fname)
     return NULL;
   }
 
-  while (!feof(fd)) {
+  while (fgets(buf, sizeof(buf) - 1, fd) != NULL) {
     char *str, *save;
     char *ok = NULL, *miss = NULL, *mime = NULL;
 
     finfo = TSmalloc(sizeof(HCFileInfo));
     memset(finfo, 0, sizeof(HCFileInfo));
 
-    if (fgets(buf, sizeof(buf) - 1, fd)) {
-      str       = strtok_r(buf, SEPARATORS, &save);
-      int state = 0;
-      while (NULL != str) {
-        if (strlen(str) > 0) {
-          switch (state) {
-          case 0:
-            if ('/' == *str) {
-              ++str;
-            }
-            strncpy(finfo->path, str, PATH_NAME_MAX - 1);
-            finfo->p_len = strlen(finfo->path);
-            break;
-          case 1:
-            strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
-            finfo->basename = strrchr(finfo->fname, '/');
-            if (finfo->basename) {
-              ++(finfo->basename);
-            }
-            break;
-          case 2:
-            mime = str;
-            break;
-          case 3:
-            ok = str;
-            break;
-          case 4:
-            miss = str;
-            break;
+    str       = strtok_r(buf, SEPARATORS, &save);
+    int state = 0;
+    while (NULL != str) {
+      if (strlen(str) > 0) {
+        switch (state) {
+        case 0:
+          if ('/' == *str) {
+            ++str;
           }
-          ++state;
+          strncpy(finfo->path, str, PATH_NAME_MAX - 1);
+          finfo->p_len = strlen(finfo->path);
+          break;
+        case 1:
+          strncpy(finfo->fname, str, MAX_PATH_LEN - 1);
+          finfo->basename = strrchr(finfo->fname, '/');
+          if (finfo->basename) {
+            ++(finfo->basename);
+          }
+          break;
+        case 2:
+          mime = str;
+          break;
+        case 3:
+          ok = str;
+          break;
+        case 4:
+          miss = str;
+          break;
         }
-        str = strtok_r(NULL, SEPARATORS, &save);
+        ++state;
       }
+      str = strtok_r(NULL, SEPARATORS, &save);
+    }
 
-      /* Fill in the info if everything was ok */
-      if (state > 4) {
-        TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
-        finfo->ok   = gen_header(ok, mime, &finfo->o_len);
-        finfo->miss = gen_header(miss, mime, &finfo->m_len);
-        finfo->data = TSmalloc(sizeof(HCFileData));
-        memset(finfo->data, 0, sizeof(HCFileData));
-        reload_status_file(finfo, finfo->data);
+    /* Fill in the info if everything was ok */
+    if (state > 4) {
+      TSDebug(PLUGIN_NAME, "Parsed: %s %s %s %s %s", finfo->path, finfo->fname, mime, ok, miss);
+      finfo->ok   = gen_header(ok, mime, &finfo->o_len);
+      finfo->miss = gen_header(miss, mime, &finfo->m_len);
+      finfo->data = TSmalloc(sizeof(HCFileData));
+      memset(finfo->data, 0, sizeof(HCFileData));
+      reload_status_file(finfo, finfo->data);
 
-        /* Add it the linked list */
-        TSDebug(PLUGIN_NAME, "Adding path=%s to linked list", finfo->path);
-        if (NULL == head_finfo) {
-          head_finfo = finfo;
-        } else {
-          prev_finfo->_next = finfo;
-        }
-        prev_finfo = finfo;
+      /* Add it the linked list */
+      TSDebug(PLUGIN_NAME, "Adding path=%s to linked list", finfo->path);
+      if (NULL == head_finfo) {
+        head_finfo = finfo;
       } else {
-        TSfree(finfo);
+        prev_finfo->_next = finfo;
       }
+      prev_finfo = finfo;
+    } else {
+      TSfree(finfo);
     }
   }
   fclose(fd);

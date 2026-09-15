@@ -178,6 +178,10 @@ setBondingStat(TSMutex stat_creation_mutex, const char *interface)
 
   snprintf(&infdir[0], sizeof(infdir), "%s/%s", NET_STATS_DIR, interface);
   DIR *localdir = opendir(infdir);
+  if (localdir == NULL) {
+    TSError("%s: Unable to open %s", DEBUG_TAG, infdir);
+    return;
+  }
 
   while ((dent = readdir(localdir)) != NULL) {
     if (((strncmp(SLAVE, dent->d_name, strlen(SLAVE)) == 0) || (strncmp(LOWER, dent->d_name, strlen(LOWER)) == 0)) &&

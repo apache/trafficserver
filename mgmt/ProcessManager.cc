@@ -344,6 +344,7 @@ ProcessManager::initLMConnection()
 
   if ((local_manager_sockfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
     Fatal("Unable to create socket '%s': %s", sockpath.c_str(), strerror(errno));
+    return;
   }
 
   if (fcntl(local_manager_sockfd, F_SETFD, FD_CLOEXEC) < 0) {

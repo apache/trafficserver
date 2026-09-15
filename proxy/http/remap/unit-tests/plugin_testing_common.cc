@@ -29,6 +29,8 @@
 
 #include "plugin_testing_common.h"
 
+#include <system_error>
+
 void
 PrintToStdErr(const char *fmt, ...)
 {
@@ -48,7 +50,12 @@ getTemporaryDir()
   char dirNameTemplate[tmpDir.string().length() + 1];
   sprintf(dirNameTemplate, "%s", tmpDir.c_str());
 
-  return fs::path(mkdtemp(dirNameTemplate));
+  char *directory = mkdtemp(dirNameTemplate);
+
+  if (directory == nullptr) {
+    throw std::system_error(errno, std::system_category(), "mkdtemp");
+  }
+  return fs::path(directory);
 }
 
 // implement functions to support unit-testing of option to enable/disable dynamic reload of plugins

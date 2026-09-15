@@ -344,7 +344,7 @@ QUICNetVConnection::acceptEvent(int event, Event *e)
 
   MUTEX_TRY_LOCK(lock, h->mutex, t);
   if (!lock.is_locked()) {
-    if (event == EVENT_NONE) {
+    if (event == EVENT_NONE || e == nullptr) {
       t->schedule_in(this, HRTIME_MSECONDS(net_retry_delay));
       return EVENT_DONE;
     } else {
