@@ -236,7 +236,9 @@ TEST_CASE("LogAccess marshals response HTTP versions as compact strings", "[LogA
     int   len      = LogAccess::unmarshal_http_version(&src, dest, sizeof(dest));
 
     REQUIRE(len > 0);
-    CHECK(std::string(dest, len) == "HTTP/0.0");
+    const size_t version_len = static_cast<size_t>(len);
+
+    CHECK(std::string(dest, version_len) == "HTTP/0.0");
     CHECK(src == marshalled + INK_MIN_ALIGN);
   };
 
