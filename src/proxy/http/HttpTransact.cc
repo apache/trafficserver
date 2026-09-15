@@ -2724,6 +2724,22 @@ HttpTransact::HandleCacheOpenReadHitFreshness(State *s)
     s->cache_lookup_result = HttpTransact::CacheLookupResult_t::HIT_STALE;
   }
 
+  // An object found under the 9.2 key cannot be revalidated: the write that
+  // would apply a 304 is a create on the current key, not an update of the
+  // legacy vector, so the cache discards it. Treat a stale one as a miss. The
+  // full response then lands under the current key through the ordinary miss
+  // path and the legacy copy ages out. Only reads migrate; the methods that
+  // invalidate take the delete path, which reaches both keys.
+  if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::HIT_STALE && s->state_machine != nullptr &&
+      CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup) &&
+      (s->method == HTTP_WKSIDX_GET || s->method == HTTP_WKSIDX_HEAD)) {
+    TxnDbg(dbg_ctl_http_seq, "Stale under the compatibility key, treating as a miss");
+    s->cache_info.object_read         = nullptr;
+    s->cache_lookup_result            = HttpTransact::CacheLookupResult_t::MISS;
+    s->cache_lookup_complete_deferred = false;
+    TRANSACT_RETURN(StateMachineAction_t::API_CACHE_LOOKUP_COMPLETE, HttpTransact::HandleCacheOpenReadMiss);
+  }
+
   ink_assert(s->cache_lookup_result != HttpTransact::CacheLookupResult_t::MISS);
   if (s->cache_lookup_result == HttpTransact::CacheLookupResult_t::HIT_STALE) {
     SET_VIA_STRING(VIA_DETAIL_CACHE_LOOKUP, VIA_DETAIL_MISS_EXPIRED);
@@ -8266,6 +8282,17 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       // In this case, we send a conditional request
       // instead of the normal non-conditional request.
       TxnDbg(dbg_ctl_http_trans, "request not like cacheable and conditional headers not removed");
+    }
+
+    // A stale object under the 9.2 key is fetched as a miss so the full
+    // response can be stored under the current key. A 304 would leave it
+    // unmigrated, so drop the client's conditionals even in the two cases
+    // above that keep them. They are still matched against the full response,
+    // so the client gets its 304. A miss that will not be written keeps them.
+    if (s->cache_lookup_result == CacheLookupResult_t::MISS && s->cache_info.action != CacheAction_t::NO_ACTION &&
+        s->state_machine != nullptr && CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup)) {
+      TxnDbg(dbg_ctl_http_trans, "legacy key object fetched as a miss, conditional headers removed");
+      HttpTransactHeaders::remove_conditional_headers(outgoing_request);
     }
   }
 
