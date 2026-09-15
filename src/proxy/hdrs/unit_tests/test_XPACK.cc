@@ -66,7 +66,7 @@ TEST_CASE("XPACK_Integer", "[xpack]")
 
       REQUIRE(len > 0);
       REQUIRE(len == i.encoded_field_len);
-      REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
+      REQUIRE(memcmp(buf, i.encoded_field, static_cast<size_t>(i.encoded_field_len)) == 0);
     }
   }
 
