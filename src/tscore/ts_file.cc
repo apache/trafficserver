@@ -195,19 +195,27 @@ namespace file
 
     while (true) {
       size_t in = fread(buf, 1, bufsize, src);
-      if (0 == in) {
+      if (ferror(src)) {
+        ec = std::error_code(errno ? errno : EIO, std::system_category());
         break;
       }
-      size_t out = fwrite(buf, 1, in, dst);
-      if (0 == out) {
+      if (in > 0 && fwrite(buf, 1, in, dst) != in) {
+        ec = std::error_code(errno ? errno : EIO, std::system_category());
+        break;
+      }
+      if (in < static_cast<size_t>(bufsize)) {
         break;
       }
     }
 
-    fclose(src);
-    fclose(dst);
+    if (fclose(src) != 0 && !ec) {
+      ec = std::error_code(errno ? errno : EIO, std::system_category());
+    }
+    if (fclose(dst) != 0 && !ec) {
+      ec = std::error_code(errno ? errno : EIO, std::system_category());
+    }
 
-    return true;
+    return !ec;
   }
 
   static bool

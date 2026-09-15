@@ -23,6 +23,7 @@
  */
 
 #include <cstring>
+#include <cerrno>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -46,58 +47,85 @@ Config::Config()
 
 Config::~Config() = default;
 
+namespace
+{
+bool
+readConfig(const std::string &filename, std::map<std::string, std::string> &config)
+{
+  int fd = open(filename.c_str(), O_RDONLY);
+  if (fd < 0) {
+    return false;
+  }
+  struct stat info;
+  if (fstat(fd, &info) != 0 || info.st_size < 0) {
+    close(fd);
+    return false;
+  }
+
+  std::string config_data(static_cast<size_t>(info.st_size), '\0');
+  size_t offset = 0;
+  while (offset < config_data.size()) {
+    ssize_t n = read(fd, config_data.data() + offset, config_data.size() - offset);
+    if (n < 0 && errno == EINTR) {
+      continue;
+    }
+    if (n <= 0) {
+      close(fd);
+      return false;
+    }
+    offset += static_cast<size_t>(n);
+  }
+  close(fd);
+
+  ts::TextView content(config_data);
+  while (content) {
+    ts::TextView line = content.take_prefix_at('\n');
+    if (line.empty() || '#' == *line) {
+      continue;
+    }
+    line.ltrim_if(&isspace);
+    ts::TextView field = line.take_prefix_at('=');
+    std::string field_name;
+    std::string value;
+    if (!field.empty()) {
+      field_name.assign(field.data(), field.size());
+    }
+    if (!line.empty()) {
+      value.assign(line.data(), line.size());
+    }
+    TSDebug(PLUGIN, "%.*s=%.*s", static_cast<int>(field_name.size()), field_name.c_str(), static_cast<int>(value.size()),
+            value.c_str());
+    if (!field_name.empty()) {
+      config[field_name] = value;
+    }
+  }
+  return true;
+}
+} // namespace
+
 bool
 Config::loadConfig(const std::string &filename)
 {
-  if (m_alreadyLoaded) {
-    return true;
+  {
+    std::lock_guard<std::mutex> lock(m_yconfigLock);
+    if (m_alreadyLoaded || m_loading) {
+      return m_alreadyLoaded;
+    }
+    m_filename = filename;
+    m_loading  = true;
   }
 
-  bool success = false;
+  // Readers can continue using the previous configuration during file I/O.
+  std::map<std::string, std::string> config;
+  bool success = readConfig(filename, config);
 
-  m_filename = filename;
-
-  int fd = (this->m_filename.length() > 0 ? open(m_filename.c_str(), O_RDONLY) : ts::NO_FD);
-  struct stat info;
-  if (fd > 0 && 0 == fstat(fd, &info)) {
-    size_t n = info.st_size;
-    std::string config_data;
-    config_data.resize(n);
-    if (read(fd, const_cast<char *>(config_data.data()), n) != static_cast<int>(n)) {
-      close(fd);
-      return success;
-    }
-
-    ts::TextView content(config_data);
-    while (content) {
-      ts::TextView line = content.take_prefix_at('\n');
-      if (line.empty() || '#' == *line) {
-        continue;
-      }
-      line.ltrim_if(&isspace);
-      ts::TextView field = line.take_prefix_at('=');
-      std::string field_name;
-      std::string value;
-      if (!field.empty()) {
-        field_name.assign(field.data(), field.size());
-      }
-      if (!line.empty()) {
-        value.assign(line.data(), line.size());
-      }
-      TSDebug(PLUGIN, "%.*s=%.*s", static_cast<int>(field_name.size()), field_name.c_str(), static_cast<int>(value.size()),
-              value.c_str());
-      if (!field_name.empty()) {
-        m_config[field_name] = value;
-      }
-    }
-
-    close(fd);
-
+  std::lock_guard<std::mutex> lock(m_yconfigLock);
+  m_loading = false;
+  if (success) {
+    m_config.swap(config);
     m_noConfig      = false;
-    success         = true;
     m_alreadyLoaded = true;
   }
-
   return success;
 }
 
@@ -108,7 +136,9 @@ Config::setLastConfigChange()
   time_t oldLastmtime = m_lastmtime;
 
   memset(&s, 0, sizeof(s));
-  stat(m_filename.c_str(), &s);
+  if (stat(m_filename.c_str(), &s) != 0) {
+    return false;
+  }
 
   m_lastmtime = s.st_mtime;
 
@@ -120,6 +150,13 @@ Config::setLastConfigChange()
 
 bool
 Config::configHasChanged()
+{
+  std::lock_guard<std::mutex> lock(m_yconfigLock);
+  return !m_loading && checkConfigChange();
+}
+
+bool
+Config::checkConfigChange()
 {
   time_t checkTime = time(nullptr) / cCheckDivisor;
 
@@ -133,33 +170,34 @@ Config::configHasChanged()
 bool
 Config::loadConfigOnChange()
 {
-  if (configHasChanged()) {
-    // loadConfig will check this, and if it hasn't been set it'll just bail.
-    m_alreadyLoaded = false;
-    return loadConfig(m_filename);
+  std::string filename;
+  {
+    std::lock_guard<std::mutex> lock(m_yconfigLock);
+    if (m_loading || m_filename.empty()) {
+      return true;
+    }
+    if (checkConfigChange()) {
+      m_alreadyLoaded = false;
+    }
+    if (m_alreadyLoaded) {
+      return true;
+    }
+    filename = m_filename;
   }
-
-  return true;
+  return loadConfig(filename);
 }
 
 bool
 Config::getValue(const std::string &category, const std::string &key, std::string &value)
 {
-  if (!m_noConfig) {
-    m_yconfigLock.lock();
-
-    if (loadConfigOnChange()) {
-      // convert to category.key= value.
-      std::string keyname                             = category + "." + key;
-      std::map<std::string, std::string>::iterator it = m_config.find(keyname);
-
-      // we have to use find so we don't overwrite defaults when we don't find anything.
-      if (m_config.end() != it) {
+  if (loadConfigOnChange()) {
+    std::lock_guard<std::mutex> lock(m_yconfigLock);
+    if (!m_noConfig) {
+      auto it = m_config.find(category + "." + key);
+      if (it != m_config.end()) {
         value = it->second;
       }
     }
-    m_yconfigLock.unlock();
   }
-
   return !value.empty();
 }

@@ -88,6 +88,7 @@ private:
   virtual ~Config();
 
   bool loadConfigOnChange();
+  bool checkConfigChange();
 
   static const int cCheckDivisor = 5;
 
@@ -100,6 +101,7 @@ private:
   std::mutex m_yconfigLock;
   bool m_noConfig;
   bool m_alreadyLoaded;
+  bool m_loading = false;
   time_t m_lastCheck;
   time_t m_lastmtime;
 };

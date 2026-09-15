@@ -7769,8 +7769,8 @@ TSCacheScan(TSCont contp, TSCacheKey key, int KB_per_second)
 int
 TSStatCreate(const char *the_name, TSRecordDataType the_type, TSStatPersistence persist, TSStatSync sync)
 {
-  int id                  = ink_atomic_increment(&api_rsb_index, 1);
-  RecRawStatSyncCb syncer = RecRawStatSyncCount;
+  int id = ink_atomic_increment(&api_rsb_index, 1);
+  RecRawStatSyncCb syncer;
 
   // TODO: This only supports "int" data types at this point, since the "Raw" stats
   // interfaces only supports integers. Going forward, we could extend either the "Raw"

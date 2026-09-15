@@ -22,6 +22,7 @@
 */
 
 #include <iostream>
+#include <cstdlib>
 #include <fstream> /* ofstream */
 
 #include "tscore/ts_file.h"
@@ -275,4 +276,50 @@ TEST_CASE("ts_file::path::copy", "[libts][fs_file]")
   // Cleanup
   CHECK(ts::file::remove(testdir1, ec));
   CHECK_FALSE(ts::file::exists(testdir1));
+}
+
+TEST_CASE("ts_file::copy", "[libts][ts_file_copy]")
+{
+  std::string directory = (ts::file::temp_directory_path() / "ts-file-copy-XXXXXX").string();
+  REQUIRE(mkdtemp(directory.data()) != nullptr);
+  path testdir(directory);
+  path source      = testdir / "source";
+  path destination = testdir / "destination";
+  std::error_code ec;
+
+  for (size_t size : {0, 1, 65535, 65536, 65537, 131073}) {
+    INFO("Copy size: " << size);
+    std::string content(size, '\0');
+    for (size_t i = 0; i < size; ++i) {
+      content[i] = static_cast<char>(i % 256);
+    }
+    std::ofstream output(source.string(), std::ios::binary);
+    output.write(content.data(), content.size());
+    output.close();
+    REQUIRE(output.good());
+
+    CHECK(ts::file::copy(source, destination, ec));
+    CHECK_FALSE(ec);
+    CHECK(ts::file::load(destination, ec) == content);
+    CHECK_FALSE(ec);
+  }
+
+#ifdef __linux__
+  CHECK_FALSE(ts::file::copy(testdir, destination, ec));
+  CHECK(ec.value() == EISDIR);
+
+  for (size_t size : {1, 65536}) {
+    INFO("Write failure size: " << size);
+    std::ofstream output(source.string(), std::ios::binary);
+    output << std::string(size, 'x');
+    output.close();
+    REQUIRE(output.good());
+
+    CHECK_FALSE(ts::file::copy(source, path("/dev/full"), ec));
+    CHECK(ec.value() == ENOSPC);
+  }
+#endif
+
+  CHECK(ts::file::remove(testdir, ec));
+  CHECK_FALSE(ec);
 }

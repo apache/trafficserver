@@ -23,6 +23,10 @@
 
 #include "P_Net.h"
 
+#if HAVE_EVENTFD
+#include <sys/eventfd.h>
+#endif
+
 using namespace std::literals;
 
 std::atomic<uint32_t> NetHandler::additional_accepts{0};
@@ -223,8 +227,8 @@ static void
 net_signal_hook_callback(EThread *thread)
 {
 #if HAVE_EVENTFD
-  uint64_t counter;
-  ATS_UNUSED_RETURN(read(thread->evfd, &counter, sizeof(uint64_t)));
+  eventfd_t counter;
+  ATS_UNUSED_RETURN(eventfd_read(thread->evfd, &counter));
 #elif TS_USE_PORT
 /* Nothing to drain or do */
 #else
