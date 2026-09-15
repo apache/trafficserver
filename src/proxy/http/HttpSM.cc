@@ -5375,9 +5375,7 @@ HttpSM::do_cache_delete_all_alts()
   // A migration leaves the legacy copy in place, so the object can live under
   // both keys. Removing only one of them would let the other be served after
   // the purge.
-  if (t_state.http_config_param->cache_try_compat_key_read) {
-    do_cache_delete_compat_alts();
-  }
+  do_cache_delete_compat_alts();
 }
 
 // Remove the object stored under the legacy key.
@@ -5398,7 +5396,7 @@ HttpSM::do_cache_delete_compat_alts()
 
   // A path that carries its own ";params" segment hashes to the same key
   // under both schemes, so the canonical delete already reached it.
-  if (url == nullptr || !url->valid() || url->has_path_params()) {
+  if (!t_state.http_config_param->cache_try_compat_key_read || url->has_path_params()) {
     return;
   }
   SMDbg(dbg_ctl_http_seq, "Issuing compatibility cache delete for %s", url->string_get_ref());
@@ -6896,9 +6894,7 @@ HttpSM::perform_cache_write_action()
     cache_sm.close_write();
     // That reached only one of the two keys the object can live under while
     // the compatibility lookup is enabled.
-    if (t_state.http_config_param->cache_try_compat_key_read) {
-      do_cache_delete_compat_alts();
-    }
+    do_cache_delete_compat_alts();
     cache_sm.close_read();
     t_state.cache_info.write_lock_state = HttpTransact::CacheWriteLock_t::INIT;
     break;

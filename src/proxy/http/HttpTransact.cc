@@ -8283,6 +8283,17 @@ HttpTransact::build_request(State *s, HTTPHdr *base_request, HTTPHdr *outgoing_r
       // instead of the normal non-conditional request.
       TxnDbg(dbg_ctl_http_trans, "request not like cacheable and conditional headers not removed");
     }
+
+    // A stale object under the 9.2 key is fetched as a miss so the full
+    // response can be stored under the current key. A 304 would leave it
+    // unmigrated, so drop the client's conditionals even in the two cases
+    // above that keep them. They are still matched against the full response,
+    // so the client gets its 304. A miss that will not be written keeps them.
+    if (s->cache_lookup_result == CacheLookupResult_t::MISS && s->cache_info.action != CacheAction_t::NO_ACTION &&
+        s->state_machine != nullptr && CompatCacheKey::is_legacy(s->state_machine->compatibility_cache_lookup)) {
+      TxnDbg(dbg_ctl_http_trans, "legacy key object fetched as a miss, conditional headers removed");
+      HttpTransactHeaders::remove_conditional_headers(outgoing_request);
+    }
   }
 
   if (s->hdr_info.client_request.m_100_continue_sent) {

@@ -2810,6 +2810,10 @@ Cache Control
    new key rather than an update of the old one. A stale one is treated as a
    miss instead, so the origin returns the full response, which is stored
    under the new key, and the copy under the previous key is left to age out.
+   The client's own conditional headers are not forwarded on that request,
+   even when :ts:cv:`proxy.config.http.cache.when_to_revalidate` is ``4``,
+   since a ``304`` from the origin would leave the object unmigrated. The
+   client still receives a ``304`` if its conditions match the full response.
    Each object pays this once, but on a large cache the aggregate is a
    bandwidth event worth sizing before enabling the setting in production.
 
