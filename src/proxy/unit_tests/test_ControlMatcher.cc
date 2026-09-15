@@ -116,3 +116,33 @@ TEST_CASE("UrlMatcher rejects duplicate URLs", "[ControlMatcher]")
   CHECK(second_result.failed());
   CHECK(matcher.num_el == 1);
 }
+
+TEST_CASE("RegexMatcher rejects a bad pattern at a reused slot", "[ControlMatcher]")
+{
+  RegexMatcher<CacheControlRecord, CacheControlResult> matcher{"CacheControl", "cache.config"};
+  // The first line compiles its regex and then fails to initialize its record, which
+  // leaves num_el where it was, so the next line lands on the same slot with that
+  // pattern still in it.
+  char         first_config[]  = "url_regex=^http://example.com/good action=invalid";
+  char         second_config[] = "url_regex=^http://example.com/(unterminated action=never-cache";
+  matcher_line first_line;
+  matcher_line second_line;
+
+  matcher.AllocateSpace(2);
+  parse_line(first_config, first_line, 1);
+  parse_line(second_config, second_line, 2);
+
+  CHECK(matcher.NewEntry(&first_line).failed());
+
+  // The second line's own pattern does not compile, so it must be rejected rather than
+  // inherit the pattern left in the slot.
+  CHECK(matcher.NewEntry(&second_line).failed());
+  CHECK(matcher.num_el == 0);
+
+  // And the inherited pattern must not match anything.
+  TestRequestData    request{"http://example.com/good"};
+  CacheControlResult result;
+
+  matcher.Match(&request, &result);
+  CHECK_FALSE(result.never_cache);
+}

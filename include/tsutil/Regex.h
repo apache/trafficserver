@@ -168,6 +168,8 @@ public:
    * @return @a true if compiled successfully, @a false otherwise.
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * On failure any previously compiled pattern is left in place and remains usable.
    */
   bool compile(std::string_view pattern, uint32_t flags = 0);
 
@@ -205,6 +207,8 @@ public:
    * @return @a true if compiled successfully, @a false otherwise.
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * On failure any previously compiled pattern is left in place and remains usable.
    */
   bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
 
