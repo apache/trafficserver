@@ -6022,6 +6022,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     if (TSMBufferDestroy(bufp1) == TS_ERROR) {
       SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
     }
+    TSMimeParserDestroy(parser);
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
   } else {
     start = parse_string;
     end   = parse_string + strlen(parse_string) + 1;
