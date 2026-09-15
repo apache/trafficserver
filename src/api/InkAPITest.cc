@@ -7271,9 +7271,16 @@ struct ParentTest {
 
   ~ParentTest()
   {
-    synclient_txn_close(this->browser);
-    synclient_txn_delete(this->browser);
-    synserver_delete(this->os);
+    // A destructor is implicitly noexcept, so anything escaping the teardown
+    // calls would terminate the process without saying where it came from.
+    try {
+      synclient_txn_close(this->browser);
+      synclient_txn_delete(this->browser);
+      synserver_delete(this->os);
+    } catch (...) {
+      ink_abort("ParentTest teardown threw an exception");
+    }
+
     this->os    = nullptr;
     this->magic = MAGIC_DEAD;
   }

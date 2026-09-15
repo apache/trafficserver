@@ -25,6 +25,7 @@
 #include "inkevent_test_fixtures.h"
 
 #include <tscore/ink_assert.h>
+#include <tscore/ink_error.h>
 
 #include <cstdint>
 
@@ -48,10 +49,16 @@ public:
 
   // In case of an exception in a thread that would have set release, we set
   // it here in order to unfreeze any threads that may be waiting on done.
+  // A destructor is implicitly noexcept, so anything escaping the teardown
+  // would terminate the test binary without saying where it came from.
   ~HoldOnEThread()
   {
-    this->cancel_callback();
-    this->wait_for_callback_finish();
+    try {
+      this->cancel_callback();
+      this->wait_for_callback_finish();
+    } catch (...) {
+      ink_abort("HoldOnEThread teardown threw an exception");
+    }
   }
 
   bool
