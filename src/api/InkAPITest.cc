@@ -6401,6 +6401,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
       if (TSMBufferDestroy(bufp) == TS_ERROR) {
         SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Error in Destroying MBuffer");
       }
+      continue;
     } else {
       start = url;
       end   = url + strlen(url);
