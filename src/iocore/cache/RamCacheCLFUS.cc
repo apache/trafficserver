@@ -33,9 +33,61 @@
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/Regression.h"
+#include "tscore/Throttler.h"
+
+#include <chrono>
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
+#endif
+#ifdef HAVE_LZ4_H
+#include <lz4.h>
+#endif
+#ifdef HAVE_ZSTD_H
+#include <zstd.h>
+#include <memory>
+constexpr int CLFUS_ZSTD_LEVEL = 3;
+
+namespace
+{
+
+// One-shot ZSTD_compress/ZSTD_decompress allocate and free a context on every
+// call, so reuse a per-thread context instead. May return nullptr if zstd
+// fails to allocate one; that failure is sticky for the life of the thread, so
+// warn when it happens. The compression level is a sticky parameter set once
+// here; no explicit ZSTD_CCtx_reset() is needed because ZSTD_compress2()
+// starts a new session on every call (resets are only for interrupting the
+// streaming API or changing sticky parameters).
+ZSTD_CCtx *
+zstd_cctx()
+{
+  thread_local std::unique_ptr<ZSTD_CCtx, size_t (*)(ZSTD_CCtx *)> ctx = [] {
+    std::unique_ptr<ZSTD_CCtx, size_t (*)(ZSTD_CCtx *)> c{ZSTD_createCCtx(), ZSTD_freeCCtx};
+    if (c && ZSTD_isError(ZSTD_CCtx_setParameter(c.get(), ZSTD_c_compressionLevel, CLFUS_ZSTD_LEVEL))) {
+      c.reset();
+    }
+    if (!c) {
+      Warning("unable to allocate zstd compression context; RAM cache entries will not be compressed on this thread");
+    }
+    return c;
+  }();
+  return ctx.get();
+}
+
+ZSTD_DCtx *
+zstd_dctx()
+{
+  thread_local std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> ctx = [] {
+    std::unique_ptr<ZSTD_DCtx, size_t (*)(ZSTD_DCtx *)> c{ZSTD_createDCtx(), ZSTD_freeDCtx};
+    if (!c) {
+      Warning("unable to allocate zstd decompression context; compressed RAM cache entries will miss on this thread");
+    }
+    return c;
+  }();
+  return ctx.get();
+}
+
+} // end anonymous namespace
 #endif
 
 // #define CHECK_ACOUNTING 1 // very expensive double checking of all sizes
@@ -116,13 +168,21 @@ RamCacheCLFUSCompressor::mainEvent(int /* event ATS_UNUSED */, Event *e)
     Warning("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
   case CACHE_COMPRESSION_NONE:
   case CACHE_COMPRESSION_FASTLZ:
-    break;
   case CACHE_COMPRESSION_LIBZ:
-    Warning("libz not available for RAM cache compression");
     break;
   case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H
     Warning("lzma not available for RAM cache compression");
+#endif
+    break;
+  case CACHE_COMPRESSION_LZ4:
+#ifndef HAVE_LZ4_H
+    Warning("lz4 not available for RAM cache compression");
+#endif
+    break;
+  case CACHE_COMPRESSION_ZSTD:
+#ifndef HAVE_ZSTD_H
+    Warning("zstd not available for RAM cache compression");
 #endif
     break;
   }
@@ -137,6 +197,33 @@ ClassAllocator<RamCacheCLFUSEntry, false> ramCacheCLFUSEntryAllocator("RamCacheC
 static const int bucket_sizes[] = {127,      251,      509,       1021,      2039,      4093,       8191,      16381,   32749,
                                    65521,    131071,   262139,    524287,    1048573,   2097143,    4194301,   8388593, 16777213,
                                    33554393, 67108859, 134217689, 268435399, 536870909, 1073741789, 2147483647};
+
+// Only safe when init() did not schedule the background compressor, i.e. when
+// cache_config_ram_cache_compress was CACHE_COMPRESSION_NONE at init() time.
+// That scheduled RamCacheCLFUSCompressor holds a raw back-pointer to this
+// object and nothing cancels it, so destroying a cache that has one would
+// leave it dangling. Cancelling the event here would not be enough: the
+// continuation carries no mutex, so it can be running compress_entries() on an
+// ET_TASK thread while this destructor runs. Making that safe means giving the
+// compressor the stripe mutex and requiring the destructor to hold it, which
+// is not worth doing while production never destroys a RamCacheCLFUS -- these
+// live for the lifetime of their StripeSM. Unit tests that construct one
+// directly must init() with compression off and drive compress_entries()
+// synchronously.
+RamCacheCLFUS::~RamCacheCLFUS()
+{
+  // Entries are pool-allocated without running their destructor, so release the
+  // data reference explicitly before returning each one to the allocator, then
+  // free the hash table and the seen filter.
+  for (auto &lru : this->_lru) {
+    while (RamCacheCLFUSEntry *e = lru.dequeue()) {
+      e->data = nullptr;
+      THREAD_FREE(e, ramCacheCLFUSEntryAllocator, this_thread());
+    }
+  }
+  ats_free(this->_bucket);
+  ats_free(this->_seen);
+}
 
 void
 RamCacheCLFUS::_resize_hashtable()
@@ -205,6 +292,31 @@ check_accounting(RamCacheCLFUS *c)
 #define check_accounting(_c)
 #endif
 
+namespace
+{
+
+// Record a RAM cache decompression failure. This is data corruption or a codec
+// error rather than an ordinary miss, so it has to be visible outside a debug
+// build: a throttled warning carrying the codec's own diagnosis, which tells a
+// corrupt frame apart from a bookkeeping error in e->len, plus the global and
+// per-volume counters. Call while the entry is still intact.
+void
+note_decompress_failure(StripeSM *stripe, const CryptoHash *key, const RamCacheCLFUSEntry *e, const char *detail)
+{
+  static Throttler throttler(std::chrono::seconds(60));
+
+  uint64_t suppressed = 0;
+  if (!throttler.is_throttled(suppressed)) {
+    Warning("RAM cache decompression failed: type %d len %u compressed_len %u key %X: %s; entry dropped"
+            " (%" PRIu64 " similar failures suppressed)",
+            static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), detail, suppressed);
+  }
+  ts::Metrics::Counter::increment(cache_rsb.ram_cache_decompress_failures);
+  ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_decompress_failures);
+}
+
+} // end anonymous namespace
+
 int
 RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey)
 {
@@ -228,19 +340,27 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           b = static_cast<char *>(ats_malloc(e->len));
           switch (e->flag_bits.compressed) {
           default:
+            note_decompress_failure(stripe, key, e, "no decoder for this compression type");
             goto Lfailed;
           case CACHE_COMPRESSION_FASTLZ: {
-            int l = static_cast<int>(e->len);
-            if ((l != fastlz_decompress(e->data->data(), e->compressed_len, b, l))) {
+            int l  = static_cast<int>(e->len);
+            int rc = fastlz_decompress(e->data->data(), e->compressed_len, b, l);
+            if (l != rc) {
+              char detail[128];
+              snprintf(detail, sizeof(detail), "fastlz_decompress produced %d bytes, expected %d", rc, l);
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_FASTLZ;
             break;
           }
           case CACHE_COMPRESSION_LIBZ: {
-            uLongf l = e->len;
-            if (Z_OK !=
-                uncompress(reinterpret_cast<Bytef *>(b), &l, reinterpret_cast<Bytef *>(e->data->data()), e->compressed_len)) {
+            uLongf l  = e->len;
+            int    rc = uncompress(reinterpret_cast<Bytef *>(b), &l, reinterpret_cast<Bytef *>(e->data->data()), e->compressed_len);
+            if (Z_OK != rc) {
+              char detail[128];
+              snprintf(detail, sizeof(detail), "uncompress: %s", zError(rc));
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBZ;
@@ -250,11 +370,59 @@ RamCacheCLFUS::get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey
           case CACHE_COMPRESSION_LIBLZMA: {
             size_t   l = static_cast<size_t>(e->len), ipos = 0, opos = 0;
             uint64_t memlimit = e->len * 2 + lzma_base_memlimit;
-            if (LZMA_OK != lzma_stream_buffer_decode(&memlimit, 0, nullptr, reinterpret_cast<uint8_t *>(e->data->data()), &ipos,
-                                                     e->compressed_len, reinterpret_cast<uint8_t *>(b), &opos, l)) {
+            lzma_ret rc = lzma_stream_buffer_decode(&memlimit, 0, nullptr, reinterpret_cast<uint8_t *>(e->data->data()), &ipos,
+                                                    e->compressed_len, reinterpret_cast<uint8_t *>(b), &opos, l);
+            if (LZMA_OK != rc) {
+              char detail[128];
+              snprintf(detail, sizeof(detail), "lzma_stream_buffer_decode returned %d, wrote %zu of %zu output bytes",
+                       static_cast<int>(rc), opos, l);
+              note_decompress_failure(stripe, key, e, detail);
               goto Lfailed;
             }
             ram_hit_state = RAM_HIT_COMPRESS_LIBLZMA;
+            break;
+          }
+#endif
+#ifdef HAVE_LZ4_H
+          case CACHE_COMPRESSION_LZ4: {
+            int l  = static_cast<int>(e->len);
+            int rc = LZ4_decompress_safe(e->data->data(), b, e->compressed_len, l);
+            if (l != rc) {
+              // A negative return is a malformed frame; a smaller non-negative
+              // one means e->len disagrees with the frame's content.
+              char detail[128];
+              snprintf(detail, sizeof(detail), "LZ4_decompress_safe returned %d, expected %d", rc, l);
+              note_decompress_failure(stripe, key, e, detail);
+              goto Lfailed;
+            }
+            ram_hit_state = RAM_HIT_COMPRESS_LZ4;
+            break;
+          }
+#endif
+#ifdef HAVE_ZSTD_H
+          case CACHE_COMPRESSION_ZSTD: {
+            size_t     l    = static_cast<size_t>(e->len);
+            ZSTD_DCtx *dctx = zstd_dctx();
+            if (dctx == nullptr) {
+              // This thread can't decompress, but the entry itself is fine:
+              // miss instead of evicting it.
+              ats_free(b);
+              goto Lerror;
+            }
+            size_t ll = ZSTD_decompressDCtx(dctx, b, l, e->data->data(), e->compressed_len);
+            if (ZSTD_isError(ll)) {
+              char detail[128];
+              snprintf(detail, sizeof(detail), "ZSTD_decompressDCtx: %s", ZSTD_getErrorName(ll));
+              note_decompress_failure(stripe, key, e, detail);
+              goto Lfailed;
+            }
+            if (l != ll) {
+              char detail[128];
+              snprintf(detail, sizeof(detail), "ZSTD_decompressDCtx produced %zu bytes, expected %zu", ll, l);
+              note_decompress_failure(stripe, key, e, detail);
+              goto Lfailed;
+            }
+            ram_hit_state = RAM_HIT_COMPRESS_ZSTD;
             break;
           }
 #endif
@@ -301,6 +469,8 @@ Lerror:
 
   return 0;
 Lfailed:
+  // Every branch above reported the failure through note_decompress_failure()
+  // while the entry was still intact; this only tears it down.
   ats_free(b);
   this->_destroy(e);
   DDbg(dbg_ctl_ram_cache, "get %X %" PRId64 " Z_ERR", key->slice32(3), auxkey);
@@ -390,6 +560,21 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
     return;
   }
   ink_assert(stripe != nullptr);
+#ifdef HAVE_ZSTD_H
+  if (cache_config_ram_cache_compress == CACHE_COMPRESSION_ZSTD && zstd_cctx() == nullptr) {
+    // The per-thread context failed to allocate, and that failure is sticky
+    // for the life of the thread this cache's compressor is pinned to, so no
+    // entry can be compressed on this pass or any later one. Skip the pass
+    // rather than walking every entry -- dropping and retaking the stripe lock
+    // and allocating a compressBound()-sized buffer for each -- only to fail
+    // every time. The entries are left untouched: this says nothing about the
+    // data, so they stay eligible. Counted once per skipped pass so the
+    // condition is visible in metrics without flooding them.
+    ts::Metrics::Counter::increment(cache_rsb.ram_cache_compress_failures);
+    ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_compress_failures);
+    return;
+  }
+#endif
   MUTEX_TAKE_LOCK(stripe->mutex, thread);
   if (!this->_compressed) {
     this->_compressed  = this->_lru[0].head;
@@ -428,7 +613,17 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         break;
 #ifdef HAVE_LZMA_H
       case CACHE_COMPRESSION_LIBLZMA:
-        l = e->len;
+        l = static_cast<uint32_t>(lzma_stream_buffer_bound(e->len));
+        break;
+#endif
+#ifdef HAVE_LZ4_H
+      case CACHE_COMPRESSION_LZ4:
+        l = static_cast<uint32_t>(LZ4_compressBound(e->len));
+        break;
+#endif
+#ifdef HAVE_ZSTD_H
+      case CACHE_COMPRESSION_ZSTD:
+        l = static_cast<uint32_t>(ZSTD_compressBound(e->len));
         break;
 #endif
       }
@@ -439,6 +634,11 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
       MUTEX_UNTAKE_LOCK(stripe->mutex, thread);
       b           = static_cast<char *>(ats_malloc(l));
       bool failed = false;
+      // Distinguishes "this thread has no codec context" from "the codec
+      // rejected this data": the former says nothing about the entry. The
+      // pass-level check above makes this unreachable for zstd today; it is
+      // kept so the per-entry handling stays correct on its own.
+      bool no_context = false;
       switch (ctype) {
       default:
         // The bound switch above filtered unknown types; this is unreachable,
@@ -470,6 +670,32 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         break;
       }
 #endif
+#ifdef HAVE_LZ4_H
+      case CACHE_COMPRESSION_LZ4: {
+        int ll = l;
+        if ((l = LZ4_compress_default(edata->data(), b, elen, ll)) == 0) {
+          failed = true;
+        }
+        break;
+      }
+#endif
+#ifdef HAVE_ZSTD_H
+      case CACHE_COMPRESSION_ZSTD: {
+        ZSTD_CCtx *cctx = zstd_cctx();
+        if (cctx == nullptr) {
+          failed     = true;
+          no_context = true;
+          break;
+        }
+        size_t zret = ZSTD_compress2(cctx, b, l, edata->data(), elen);
+        if (ZSTD_isError(zret)) {
+          failed = true;
+        } else {
+          l = static_cast<uint32_t>(zret);
+        }
+        break;
+      }
+#endif
       }
       MUTEX_TAKE_LOCK(stripe->mutex, thread);
       // See if the entry is still around; it may have been freed while the
@@ -495,6 +721,15 @@ RamCacheCLFUS::compress_entries(EThread *thread, int do_at_most)
         }
       }
       if (failed) {
+        ts::Metrics::Counter::increment(cache_rsb.ram_cache_compress_failures);
+        ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_compress_failures);
+        if (no_context) {
+          // A thread-level allocation failure is not a property of the data, so
+          // do not record it as permanently incompressible; leave the entry
+          // eligible for a later pass.
+          ats_free(b);
+          goto Lcontinue;
+        }
         goto Lfailed;
       }
       if (l > required_compression * e->len) {

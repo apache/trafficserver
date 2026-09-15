@@ -27,6 +27,7 @@
 
 #include "P_RamCache.h"
 
+#include "iocore/cache/Cache.h"
 #include "iocore/eventsystem/IOBuffer.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/List.h"
@@ -46,13 +47,18 @@ struct RamCacheCLFUSEntry {
   uint32_t   compressed_len;
   union {
     struct {
-      uint32_t compressed     : 3; // compression type
+      uint32_t compressed     : 3; // compression type, a CACHE_COMPRESSION_* value
       uint32_t incompressible : 1;
       uint32_t lru            : 1;
       uint32_t copy           : 1; // copy-in-copy-out
     } flag_bits;
     uint32_t flags;
   };
+  // The compression type is stored in the 3-bit flag_bits.compressed field
+  // above, so a newly added codec value must still fit. Checked here rather
+  // than beside the codec, so that a build without that codec still evaluates
+  // it.
+  static_assert(CACHE_COMPRESSION_ZSTD < (1 << 3));
   LINK(RamCacheCLFUSEntry, lru_link);
   LINK(RamCacheCLFUSEntry, hash_link);
   Ptr<IOBufferData> data;
@@ -62,6 +68,7 @@ class RamCacheCLFUS : public RamCache
 {
 public:
   RamCacheCLFUS() {}
+  ~RamCacheCLFUS() override;
 
   // returns 1 on found/stored, 0 on not found/stored, if provided auxkey1 and auxkey2 must match
   int     get(CryptoHash *key, Ptr<IOBufferData> *ret_data, uint64_t auxkey = 0) override;
