@@ -33,7 +33,8 @@ Test.SkipUnless(
 ts = Test.MakeATSProcess("ts", enable_tls=True)
 server = Test.MakeOriginServer("server")
 
-Test.PrepareTestPlugin(async_handshake, ts)
+if os.path.isfile(async_handshake):
+    Test.PrepareTestPlugin(async_handshake, ts)
 
 server.addResponse(
     "sessionlog.json", {

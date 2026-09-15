@@ -7713,7 +7713,7 @@ void
 HttpTransact::handle_server_down(State *s)
 {
   const char *reason    = nullptr;
-  const char *body_type = "UNKNOWN";
+  const char *body_type = nullptr;
   HTTPStatus  status    = HTTP_STATUS_BAD_GATEWAY;
 
   ////////////////////////////////////////////////////////

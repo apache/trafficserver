@@ -1629,11 +1629,7 @@ int
 LogAccess::marshal_client_host_port(char *buf)
 {
   if (m_http_sm) {
-    auto txn = m_http_sm->get_ua_txn();
-    if (txn) {
-      uint16_t port = txn->get_client_port();
-      marshal_int(buf, port);
-    }
+    marshal_int(buf, m_http_sm->t_state.effective_client_addr.host_order_port());
   }
   return INK_MIN_ALIGN;
 }
