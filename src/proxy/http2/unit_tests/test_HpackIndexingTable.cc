@@ -95,9 +95,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         REQUIRE(len > 0);
         REQUIRE(len == i.encoded_field_len);
 
-        size_t const encoded_len = static_cast<size_t>(len);
-
-        REQUIRE(memcmp(buf, i.encoded_field, encoded_len) == 0);
+        REQUIRE(memcmp(buf, i.encoded_field, static_cast<size_t>(i.encoded_field_len)) == 0);
       }
     }
 
@@ -244,10 +242,9 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
           REQUIRE(len > 0);
           REQUIRE(len == literal_test_case[i].encoded_field_len);
 
-          size_t const encoded_len = static_cast<size_t>(len);
-
           // coverity[overrun-buffer-arg] - len is validated positive above
-          REQUIRE(memcmp(buf, literal_test_case[i].encoded_field, encoded_len) == 0);
+          REQUIRE(memcmp(buf, literal_test_case[i].encoded_field, static_cast<size_t>(literal_test_case[i].encoded_field_len)) ==
+                  0);
         }
       }
     }
