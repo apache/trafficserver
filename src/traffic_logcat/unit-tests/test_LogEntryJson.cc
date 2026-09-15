@@ -373,5 +373,7 @@ TEST_CASE("v3 generic decode emits raw values, never field semantics", "[logcat]
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"crc":2,"cqts":1700000000})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"crc":2,"cqts":1700000000})");
 }
