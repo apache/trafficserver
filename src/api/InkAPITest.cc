@@ -7985,6 +7985,8 @@ transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 static int
 load(const char *append_string)
 {
+  TSAssert(nullptr != append_string);
+
   TSIOBufferBlock blk;
   char           *p;
   int64_t         avail;
