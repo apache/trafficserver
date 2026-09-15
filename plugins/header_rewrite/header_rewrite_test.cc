@@ -557,6 +557,24 @@ test_tokenizer()
     END_TEST();
   }
 
+  {
+    SimpleTokenizerTest p("{a}%{PATH}");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "{a}");
+    CHECK_EQ(p.get_tokens()[1], "%{PATH}");
+
+    END_TEST();
+  }
+
+  {
+    SimpleTokenizerTest p("<a>%{PATH}");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "<a>");
+    CHECK_EQ(p.get_tokens()[1], "%{PATH}");
+
+    END_TEST();
+  }
+
   return errors;
 }
 

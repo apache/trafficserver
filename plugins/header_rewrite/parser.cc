@@ -344,7 +344,7 @@ HRWSimpleTokenizer::HRWSimpleTokenizer(const std::string &line)
     switch (state) {
     case PARSER_DEFAULT:
       if ((line[i] == '{') || (line[i] == '<')) {
-        if (line[i - 1] == '%') {
+        if (i > 0 && line[i - 1] == '%') {
           // pickup what we currently have
           cur_token_length = i - cur_token_start - 1;
           if (cur_token_length > 0) {
