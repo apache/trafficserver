@@ -131,7 +131,9 @@ TEST_CASE("v3 generic decode handles IPv6 and unspecified IP", "[logcat][v3]")
     char out[256];
     int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
     REQUIRE(n > 0);
-    return std::string(out, n);
+    const size_t len = static_cast<size_t>(n);
+
+    return std::string(out, len);
   };
 
   SECTION("IPv6")
