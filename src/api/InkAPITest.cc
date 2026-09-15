@@ -7271,16 +7271,16 @@ struct ParentTest {
 
   ~ParentTest()
   {
-    // A destructor is implicitly noexcept, so anything escaping the client
-    // teardown would terminate the process without saying where it came from.
+    // A destructor is implicitly noexcept, so anything escaping the teardown
+    // calls would terminate the process without saying where it came from.
     try {
       synclient_txn_close(this->browser);
       synclient_txn_delete(this->browser);
+      synserver_delete(this->os);
     } catch (...) {
       ink_abort("ParentTest teardown threw an exception");
     }
 
-    synserver_delete(this->os);
     this->os    = nullptr;
     this->magic = MAGIC_DEAD;
   }
