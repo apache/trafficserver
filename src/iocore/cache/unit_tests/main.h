@@ -188,6 +188,9 @@ public:
     build_hdrs(this->info, url);
   }
 
+  // free_MIOBuffer() and HTTPInfo::destroy() assert; Coverity resolves
+  // _ink_assert() to the throwing definition in test_MIOBufferWriter.cc.
+  // coverity[UNCAUGHT_EXCEPT:FALSE]
   ~CacheWriteTest() override
   {
     if (this->_write_buffer) {
