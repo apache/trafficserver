@@ -1,11 +1,11 @@
 '''
 Regression test for the rate_limit SNI limiter's queue accounting. A queued connection never
 reserves a slot, so the sweep must reserve one before resuming it and a close must release
-only a slot the connection owns. Before 508c1bea26 the sweep resumed a queued connection
-while the limiter was still full: the holder's close then landed the active-slot counter on
-zero, the resumed connection's close released a slot it never held and wrapped the counter
-below zero, and the next reserve() tripped a release assertion that aborted the server. ATS
-must survive the queue churn without the counter wrapping.
+only a slot the connection owns. When the sweep resumes a queued connection while the limiter
+is still full, the holder's close lands the active-slot counter on zero, the resumed
+connection's close releases a slot it never held and wraps the counter below zero, and the
+next reserve() trips a release assertion that aborts the server. ATS must survive the queue
+churn without the counter wrapping.
 
 The client drives resume-then-close rather than closing a connection while it is parked,
 because ATS does not read the socket while the ClientHello hook is invoked: a FIN from a

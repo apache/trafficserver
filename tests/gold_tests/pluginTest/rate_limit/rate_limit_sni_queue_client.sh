@@ -26,24 +26,25 @@
 #      the queued connection, which is then closed and releases the slot it now owns;
 #   5. a probe connection reserves the freed slot.
 #
-# Against the plugin before 508c1bea26 the sweep resumed the queued connection in step 3 without
-# a reservation. Step 4 asserts that reservation and fails there, naming the defect itself. Left
-# to run, that same resume aborts the server: the holder's close lands the counter on zero and the
-# resumed connection's close, releasing a slot it never held, wraps it below zero, so the probe's
-# reserve() trips TSReleaseAssert(_active <= _limit). The test's traffic.out testers reject that
-# wrap and that abort however they arise, and stay the backstop for both.
+# The accounting under test: a queued connection holds no slot, so the sweep must reserve one
+# before resuming it. A resume without that reservation aborts the server, because the holder's
+# close lands the counter on zero and the resumed connection's close, releasing a slot it never
+# held, wraps it below zero, so the probe's reserve() trips TSReleaseAssert(_active <= _limit).
+# Step 4 asserts the reservation directly and fails there, naming the defect rather than the crash
+# it leads to. The test's traffic.out testers reject that wrap and that abort however they arise,
+# and stay the backstop for both.
 #
 # The connection is resumed and then closed, never closed while parked, because a client cannot
 # close a parked connection as far as ATS is concerned: while the ClientHello hook is invoked ATS
 # does not read the socket, so a FIN sits in the kernel until the sweep reenables the VC. The
 # close-while-queued branch of sni_limiter.cc is therefore out of scope here and cannot be driven
-# from a client; do not reintroduce a "closes while parked" step, it only ever resolved to the
-# resume-then-close path this script now drives deterministically.
+# from a client, so a "closes while parked" step would only resolve to the resume-then-close path
+# this script already drives.
 #
 # Every step waits for the plugin's own debug line in traffic.out rather than sleeping for a
-# guessed interval: on a loaded runner a fixed sleep let the second connection miss the holder
-# entirely, so the queue path was silently never exercised (#13679). Every connection reads
-# stdin from a FIFO that never delivers data, and is ended with kill -TERM on openssl's own PID.
+# guessed interval, so a loaded runner cannot let a connection miss the holder and skip the queue
+# path unnoticed. Every connection reads stdin from a FIFO that never delivers data, and is ended
+# with kill -TERM on openssl's own PID.
 # Neither the moment a connection opens nor the moment it closes is left to s_client: how it
 # reacts to EOF on stdin differs between OpenSSL and LibreSSL, so a connection that must stay up
 # is given stdin that never becomes readable, and one that must go is killed outright. The plugin
@@ -168,12 +169,12 @@ wait_for 'Enabling queued VC' 1
 # back in step 3 while the limiter was still full -- the one event this test exists to reject.
 # Assert the invariant rather than the count: the sweep reserves a slot and then logs the resume
 # from the same continuation, so a legitimate resume always has the sweep's own reservation ahead
-# of it in program order, never subject to which thread logs first. Ordering the resume against
-# the holder's release would be a race instead, because free() logs after dropping the lock.
-# Before 508c1bea26 the sweep resumed without reserving, leaving the holder's reservation as the
-# only one ahead of it. Checked here rather than left to the counter wrap downstream: a regression
-# that resumes early without wrapping would otherwise run on to the probe and fail 30s later on a
-# timeout naming the wrong step.
+# of it in program order, never subject to which thread logs first. A resume that reserved nothing
+# leaves only the holder's reservation ahead of it, which is what this rejects. Ordering the resume
+# against the holder's release would be a race instead, because free() logs after dropping the
+# lock. It is checked here rather than left to the counter wrap downstream, so a resume that skips
+# the reservation without going on to wrap the counter is still caught, and is named where it
+# happens.
 resume_line=$(grep -n -F -- 'Enabling queued VC' "$traffic_out" | head -n 1 | cut -d: -f1)
 reserved_before=$(head -n "${resume_line:-0}" "$traffic_out" | grep -c -F -- 'Reserving a slot, active entities ==' || true)
 if [ "${reserved_before:-0}" -lt 2 ]; then
