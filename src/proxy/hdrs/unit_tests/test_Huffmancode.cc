@@ -219,7 +219,7 @@ TEST_CASE("decode_known_vectors", "[proxy][huffman]")
     int64_t len = huffman_decode(dst, sizeof(dst), i.expect, i.expect_len);
 
     REQUIRE(len == i.src_len);
-    REQUIRE(memcmp(dst, i.src, len) == 0);
+    REQUIRE(memcmp(dst, i.src, static_cast<size_t>(i.src_len)) == 0);
   }
 }
 
