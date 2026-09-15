@@ -26,11 +26,12 @@
 #      the queued connection, which is then closed and releases the slot it now owns;
 #   5. a probe connection reserves the freed slot.
 #
-# Against the plugin before 508c1bea26 this aborts the server: the sweep resumed the queued
-# connection in step 3 without a reservation, so the holder's close in step 4 landed the counter
-# on zero and the resumed connection's close, releasing a slot it never held, wrapped the counter
-# below zero; the probe's reserve() then tripped TSReleaseAssert(_active <= _limit). The test
-# asserts no release wraps and no signal is logged, so it pins that fix.
+# Against the plugin before 508c1bea26 the sweep resumed the queued connection in step 3 without
+# a reservation. Step 4 asserts that reservation and fails there, naming the defect itself. Left
+# to run, that same resume aborts the server: the holder's close lands the counter on zero and the
+# resumed connection's close, releasing a slot it never held, wraps it below zero, so the probe's
+# reserve() trips TSReleaseAssert(_active <= _limit). The test's traffic.out testers reject that
+# wrap and that abort however they arise, and stay the backstop for both.
 #
 # The connection is resumed and then closed, never closed while parked, because a client cannot
 # close a parked connection as far as ATS is concerned: while the ClientHello hook is invoked ATS
@@ -64,11 +65,6 @@ WAIT_LIMIT=30
 holder=""
 queued=""
 probe=""
-
-cleanup() {
-  kill -TERM ${holder:-} ${queued:-} ${probe:-} 2>/dev/null || true
-}
-trap cleanup EXIT
 
 # Shared stdin for every connection: a FIFO held open read-write on fd 3 that nothing ever
 # writes to, so reads block and polls stay idle until the process is killed. Opening it
@@ -129,6 +125,20 @@ end_connection() {
   exec 4>&-
 }
 
+# Give every child still running the same bounded teardown on the way out, including on an early
+# exit from a wait_for timeout or a failed assertion below. A TERM-immune s_client would otherwise
+# outlive the run still holding the inherited FIFO and a live TLS connection into ATS, and leak
+# into the next test in the shard. Each pid is cleared as it is reaped, so neither this trap nor a
+# later step can signal a pid the kernel has since handed to an unrelated process.
+cleanup() {
+  local pid
+
+  for pid in ${holder} ${queued} ${probe}; do
+    end_connection "$pid"
+  done
+}
+trap cleanup EXIT
+
 # 1. Holder: take the single slot.
 ${OSSL} <&3 >/dev/null 2>&1 &
 holder=$!
@@ -141,28 +151,41 @@ wait_for 'Queueing the VC, we are at capacity' 1
 
 # 3. Let the sweep (every 300ms) run while the slot is still held. This is a lower bound, not a
 #    race: a correct sweep leaves the connection parked, which produces no line to wait for,
-#    and a slower runner only gives it more sweeps.
+#    and a slower runner only gives it more sweeps. A sweep that dequeues here is the bug this
+#    test pins; step 4 is where that is caught, so there is nothing to wait for now.
 sleep 1
-
-# A resume here means the sweep dequeued while the limiter was still full, which is the bug this
-# test pins. Only report it: the run must continue so the wrapped counter and the abort still
-# reach the test's traffic.out assertions, but naming the first wrong event keeps it from being
-# buried behind the probe's timeout 30s later.
-resumed=$(grep -c -F -- 'Enabling queued VC' "$traffic_out" 2>/dev/null || true)
-if [ "${resumed:-0}" -ne 0 ]; then
-  echo "the sweep resumed the queued connection while the limiter was still full" >&2
-fi
 
 # 4. End the holder. The sweep then reserves the freed slot and resumes the queued connection;
 #    ending that connection must release exactly the slot it was granted. The waits key on the
 #    release line alone, not its value, so a wrapped counter still lets the probe run and trip
 #    the assertion the test guards; the value is checked by the test's traffic.out testers.
 end_connection "$holder"
+holder=""
 wait_for 'Releasing a slot, active entities ==' 1
 wait_for 'Enabling queued VC' 1
+
+# That wait counts resumes, so by itself it is equally satisfied by a resume the sweep emitted
+# back in step 3 while the limiter was still full -- the one event this test exists to reject.
+# Assert the invariant rather than the count: the sweep reserves a slot and then logs the resume
+# from the same continuation, so a legitimate resume always has the sweep's own reservation ahead
+# of it in program order, never subject to which thread logs first. Ordering the resume against
+# the holder's release would be a race instead, because free() logs after dropping the lock.
+# Before 508c1bea26 the sweep resumed without reserving, leaving the holder's reservation as the
+# only one ahead of it. Checked here rather than left to the counter wrap downstream: a regression
+# that resumes early without wrapping would otherwise run on to the probe and fail 30s later on a
+# timeout naming the wrong step.
+resume_line=$(grep -n -F -- 'Enabling queued VC' "$traffic_out" | head -n 1 | cut -d: -f1)
+reserved_before=$(head -n "${resume_line:-0}" "$traffic_out" | grep -c -F -- 'Reserving a slot, active entities ==' || true)
+if [ "${reserved_before:-0}" -lt 2 ]; then
+  echo "the sweep resumed the queued connection without reserving a slot for it:" \
+       "${reserved_before:-0} reservation(s) logged before the resume, expected the holder's and the sweep's" >&2
+  exit 1
+fi
+
 # The kill can land before ATS has acted on the reenable, or mid-handshake. Either way the read
 # error closes the VC and the VCONN_CLOSE hook still fires, so the release below is not a race.
 end_connection "$queued"
+queued=""
 wait_for 'Releasing a slot, active entities ==' 2
 
 # 5. Probe: reserve() must succeed against a balanced counter rather than tripping the
@@ -172,6 +195,7 @@ ${OSSL} <&3 >/dev/null 2>&1 &
 probe=$!
 wait_for 'Reserving a slot, active entities == 1' 3
 end_connection "$probe"
+probe=""
 wait_for 'Releasing a slot, active entities ==' 3
 
 echo "rate_limit-queue-crash-done"
