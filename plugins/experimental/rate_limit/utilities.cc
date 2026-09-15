@@ -21,6 +21,9 @@
 #include "ts/remap.h"
 #include "utilities.h"
 
+#include <algorithm>
+#include <yaml-cpp/yaml.h>
+
 namespace rate_limit_ns
 {
 DbgCtl dbg_ctl{PLUGIN_NAME};
@@ -121,4 +124,29 @@ getDescriptionFromUrl(const char *url)
   TSMBufferDestroy(buf);
 
   return description;
+}
+
+bool
+validate_yaml_keys(const YAML::Node &node, const char *context, std::initializer_list<std::string_view> keys)
+{
+  if (!node.IsMap()) {
+    TSError("[%s] The %s node must be a map", PLUGIN_NAME, context);
+    return false;
+  }
+
+  for (const auto &entry : node) {
+    if (!entry.first.IsScalar()) {
+      TSError("[%s] The %s node has a non-scalar key at line %d", PLUGIN_NAME, context, entry.first.Mark().line + 1);
+      return false;
+    }
+
+    const auto &key = entry.first.Scalar();
+
+    if (std::find(keys.begin(), keys.end(), key) == keys.end()) {
+      TSError("[%s] Unknown key '%s' in %s node at line %d", PLUGIN_NAME, key.c_str(), context, entry.first.Mark().line + 1);
+      return false;
+    }
+  }
+
+  return true;
 }
