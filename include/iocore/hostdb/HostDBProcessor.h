@@ -652,6 +652,9 @@ struct HostDBProcessor : public Processor {
    */
   int start(int no_of_additional_event_threads = 0, size_t stacksize = DEFAULT_STACKSIZE) override;
 
+  /// Remove all cached DNS resolution records.
+  void clear();
+
   // Private
   HostDBCache *cache();
 
