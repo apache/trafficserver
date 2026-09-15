@@ -155,8 +155,8 @@ TEST_CASE("values_test", "[proxy][huffman]")
       REQUIRE(bytes == -1);
       continue;
     }
-    REQUIRE(dst_start[0] == ascii_value);
     REQUIRE(bytes == 1);
+    REQUIRE(dst_start[0] == ascii_value);
   }
 }
 
@@ -336,10 +336,11 @@ TEST_CASE("decoder_roundtrip_fuzz", "[proxy][huffman]")
     std::vector<uint8_t> encoded(src_len * 4 + 8);
     int64_t              enc_len = huffman_encode(encoded.data(), encoded.size(), src.data(), src_len);
     REQUIRE(enc_len >= 0);
+    REQUIRE(enc_len <= static_cast<int64_t>(encoded.size()));
 
     // One byte of headroom guarantees success (see require_decoder_parity).
     std::vector<char> decoded(src_len + 1);
-    int64_t           dec_len = huffman_decode(decoded.data(), src_len + 1, encoded.data(), enc_len);
+    int64_t           dec_len = huffman_decode(decoded.data(), src_len + 1, encoded.data(), static_cast<uint32_t>(enc_len));
     REQUIRE(dec_len == static_cast<int64_t>(src_len));
     REQUIRE(memcmp(decoded.data(), src.data(), src_len) == 0);
   }
