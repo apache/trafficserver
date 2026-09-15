@@ -490,43 +490,14 @@ set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
 # 1.4.0 stabilized the advanced one-shot API (ZSTD_compress2 et al.) used by
-# the RAM cache.
+# the RAM cache; plugins/compress already requires the same floor for
+# ZSTD_compressStream2, so this is not specific to the cache.
+# cmake/FindZSTD.cmake creates the zstd::zstd target this tree links against.
 find_package(ZSTD 1.4.0)
-if(ZSTD_FOUND)
-
-  # Provide a compatibility target name if the upstream package does not export it
-  # Our code links against `zstd::zstd`; upstream zstd usually exports
-  # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
-  # Normally this will be dead code if we use the packaged FindZSTD.cmake; but
-  # if CMAKE_FIND_PACKAGE_PREFER_CONFIG=1 and zstd-config.cmake is found, this
-  # may be useful.
-  if(NOT TARGET zstd::zstd)
-    if(TARGET zstd::libzstd_shared)
-      set(_zstd_target zstd::libzstd_shared)
-    elseif(TARGET zstd::libzstd_static)
-      set(_zstd_target zstd::libzstd_static)
-    elseif(TARGET zstd::libzstd)
-      set(_zstd_target zstd::libzstd)
-    endif()
-    if(DEFINED _zstd_target)
-      add_library(zstd_zstd INTERFACE)
-      target_link_libraries(zstd_zstd INTERFACE ${_zstd_target})
-      add_library(zstd::zstd ALIAS zstd_zstd)
-      set(HAVE_ZSTD_H TRUE)
-    else()
-      set(HAVE_ZSTD_H FALSE)
-    endif()
-  else()
-    set(HAVE_ZSTD_H TRUE)
-  endif()
-else()
-  set(HAVE_ZSTD_H FALSE)
-endif()
+set(HAVE_ZSTD_H ${ZSTD_FOUND})
 
 find_package(LZ4)
-if(LZ4_FOUND)
-  set(HAVE_LZ4_H TRUE)
-endif()
+set(HAVE_LZ4_H ${LZ4_FOUND})
 
 # ncurses is used in traffic_top
 find_package(Curses)

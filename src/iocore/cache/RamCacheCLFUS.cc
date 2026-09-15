@@ -33,9 +33,7 @@
 #include "fastlz/fastlz.h"
 #include "tscore/CryptoHash.h"
 #include "tscore/Regression.h"
-#include "tscore/Throttler.h"
 
-#include <chrono>
 #include <zlib.h>
 #ifdef HAVE_LZMA_H
 #include <lzma.h>
@@ -297,20 +295,16 @@ namespace
 
 // Record a RAM cache decompression failure. This is data corruption or a codec
 // error rather than an ordinary miss, so it has to be visible outside a debug
-// build: a throttled warning carrying the codec's own diagnosis, which tells a
-// corrupt frame apart from a bookkeeping error in e->len, plus the global and
-// per-volume counters. Call while the entry is still intact.
+// build: a warning carrying the codec's own diagnosis, which tells a corrupt
+// frame apart from a bookkeeping error in e->len, plus the global and
+// per-volume counters. Call while the entry is still intact. Throttled through
+// the site-wide facility so it honors proxy.config.log.throttling_interval_msec
+// and reports its own suppression count.
 void
 note_decompress_failure(StripeSM *stripe, const CryptoHash *key, const RamCacheCLFUSEntry *e, const char *detail)
 {
-  static Throttler throttler(std::chrono::seconds(60));
-
-  uint64_t suppressed = 0;
-  if (!throttler.is_throttled(suppressed)) {
-    Warning("RAM cache decompression failed: type %d len %u compressed_len %u key %X: %s; entry dropped"
-            " (%" PRIu64 " similar failures suppressed)",
-            static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), detail, suppressed);
-  }
+  SiteThrottledWarning("RAM cache decompression failed: type %d len %u compressed_len %u key %X: %s; entry dropped",
+                       static_cast<int>(e->flag_bits.compressed), e->len, e->compressed_len, key->slice32(3), detail);
   ts::Metrics::Counter::increment(cache_rsb.ram_cache_decompress_failures);
   ts::Metrics::Counter::increment(stripe->cache_vol->vol_rsb.ram_cache_decompress_failures);
 }

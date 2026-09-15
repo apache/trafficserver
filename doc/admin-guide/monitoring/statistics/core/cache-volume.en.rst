@@ -135,7 +135,7 @@ a configuration with only one cache volume: :literal:`0`.
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.compress.failure integer
    :type: counter
 
-   Accumulates the number of RAM cache entries that could not be compressed because the compression library reported an error or a per-thread compression context could not be allocated, for this volume.  This does not count objects that simply did not shrink enough to be worth compressing, which is the ordinary outcome for already-compressed content.
+   Accumulates RAM cache compression failures for this volume: either an entry the compression library rejected with an error, or a whole compression pass skipped because a per-thread compression context could not be allocated.  Objects that simply did not shrink enough to be worth compressing are not counted, since that is the ordinary outcome for already-compressed content.  Note that a skipped pass is counted once per pass rather than once per entry: because a context allocation failure persists for the life of the thread, such a thread contributes to this counter once per second for each of its stripes until the process is restarted.
 
 .. ts:stat:: global proxy.process.cache.volume_0.ram_cache.decompress.failure integer
    :type: counter
