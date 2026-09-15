@@ -20,7 +20,12 @@
   limitations under the License.
 */
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
 #include <string_view>
+#include <thread>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -1138,4 +1143,75 @@ TEST_CASE("Regex reports resource exhaustion rather than crashing", "[libts][Reg
   // Reaching this line at all is the crash assertion.
   REQUIRE(rc < 0);
   REQUIRE(rc != RE_ERROR_NOMATCH);
+}
+
+// The header promises that exec() may be called concurrently on one instance, and nothing
+// tested that. Every thread must reach the same verdict, whether it matches through the
+// shared context or through one it built itself, and each thread must get its own JIT
+// stack from the callback rather than share one. Run this under ThreadSanitizer to get the
+// second half of the guarantee.
+TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]")
+{
+  Regex re;
+  REQUIRE(re.compile(R"(^/([a-z]+)/([0-9]+)/(.*)$)"));
+
+  constexpr int THREADS    = 8;
+  constexpr int ITERATIONS = 2000;
+
+  std::string const hit{"/alpha/42/tail"};
+  std::string const miss{"/Alpha/xx/tail"};
+
+  std::atomic<int> failures{0};
+
+  // A start gate, so every thread is inside the match loop before any of them gets far and
+  // the matching actually overlaps. std::latch would say this directly, but the oldest
+  // toolchain this project builds with does not carry <latch>.
+  std::mutex              gate_mutex;
+  std::condition_variable gate;
+  int                     arrived = 0;
+  bool                    go      = false;
+
+  // One caller-supplied context, built here and shared by half the threads. That is the
+  // production shape: regex_remap builds a context when it loads a rule and every net
+  // thread then matches through it. A context that cached a JIT stack directly rather than
+  // resolving one per thread through the callback would pass a test that gave each thread
+  // its own context, and would corrupt this one.
+  RegexMatchContext shared_caller_context;
+
+  std::vector<std::thread> threads;
+  threads.reserve(THREADS);
+  for (int i = 0; i < THREADS; ++i) {
+    threads.emplace_back([&, i]() {
+      bool const                     use_caller_context = (i % 2) == 0;
+      RegexMatchContext const *const use                = use_caller_context ? &shared_caller_context : nullptr;
+
+      {
+        std::unique_lock<std::mutex> lock{gate_mutex};
+        if (++arrived == THREADS) {
+          go = true;
+          gate.notify_all();
+        } else {
+          gate.wait(lock, [&]() { return go; });
+        }
+      }
+
+      for (int n = 0; n < ITERATIONS; ++n) {
+        RegexMatches matches;
+        if (re.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+          ++failures;
+        }
+
+        RegexMatches no_matches;
+        if (re.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
+          ++failures;
+        }
+      }
+    });
+  }
+
+  for (auto &t : threads) {
+    t.join();
+  }
+
+  CHECK(failures.load() == 0);
 }
