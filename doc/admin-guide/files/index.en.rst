@@ -40,6 +40,7 @@ Configuration Files
    sni.yaml.en
    storage.yaml.en
    strategies.yaml.en
+   virtualhost.yaml.en
    jsonrpc.yaml.en
 
 :doc:`cache.config.en`
@@ -92,6 +93,9 @@ Configuration Files
 
 :doc:`strategies.yaml.en`
    Configures NextHop strategies used with `remap.config` and replaces parent.config.
+
+:doc:`virtualhost.yaml.en`
+   Defines configuration blocks that apply to a group of domains (virtualhosts).
 
 :doc:`jsonrpc.yaml.en`
     Defines some of the configurable arguments of the jsonrpc endpoint.
