@@ -151,7 +151,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual_len == i.raw_string_len);
-      REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
+      REQUIRE(memcmp(actual, i.raw_string, i.raw_string_len) == 0);
     }
   }
 
