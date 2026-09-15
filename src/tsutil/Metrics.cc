@@ -77,6 +77,10 @@ Metrics::Storage::create(std::string_view name, const MetricType type)
   auto            it = _lookups.find(name);
 
   if (it != _lookups.end()) {
+    // Re-creating a name relists it: same slot, same atomic, and whatever value it accumulated
+    // while it was out of the listing. A name in _lookups always names an allocated slot.
+    set_listed(it->second, true);
+
     return it->second;
   }
 
@@ -137,8 +141,8 @@ Metrics::Storage::lookup(Metrics::IdType id, std::string_view *out_name, Metrics
   }
 
   if (out_type) {
-    // don't trust the passed in id to get the type as it might have been manufactured (i.e. from iterators)
-    // so get the type from the storage tuple.
+    // don't trust the passed in id to get the type as it might have been manufactured, so get the
+    // type from the storage tuple.
     *out_type = _extractType(std::get<1>(std::get<0>(*blob)[offset]));
   }
 
@@ -190,18 +194,37 @@ Metrics::Storage::type(IdType id) const
   return _extractType(id);
 }
 
-// Iterator implementation
-void
-Metrics::iterator::next()
+bool
+Metrics::Storage::set_listed(Metrics::IdType id, bool listed)
 {
-  auto [blob, offset] = _metrics._splitID(_it);
-
-  if (++offset == MAX_SIZE) {
-    ++blob;
-    offset = 0;
+  if (!_is_allocated(id)) {
+    return false;
   }
 
-  _it = _makeId(blob, offset, MetricType::COUNTER);
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  // Only this bit, so a flag added later is not clobbered by unlisting or relisting.
+  if (listed) {
+    std::get<2>(*blob)[offset].fetch_and(static_cast<uint8_t>(~UNLISTED), MEMORY_ORDER);
+  } else {
+    std::get<2>(*blob)[offset].fetch_or(UNLISTED, MEMORY_ORDER);
+  }
+
+  return true;
+}
+
+bool
+Metrics::Storage::listed(Metrics::IdType id) const
+{
+  if (!_is_allocated(id)) {
+    return false;
+  }
+
+  auto [blob_ix, offset]         = _splitID(id);
+  Metrics::NamesAndAtomics *blob = _blobs[blob_ix].get();
+
+  return (std::get<2>(*blob)[offset].load(MEMORY_ORDER) & UNLISTED) == 0;
 }
 
 namespace details
