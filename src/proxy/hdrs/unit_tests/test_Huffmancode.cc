@@ -155,8 +155,8 @@ TEST_CASE("values_test", "[proxy][huffman]")
       REQUIRE(bytes == -1);
       continue;
     }
-    REQUIRE(dst_start[0] == ascii_value);
     REQUIRE(bytes == 1);
+    REQUIRE(dst_start[0] == ascii_value);
   }
 }
 
