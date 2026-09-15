@@ -112,7 +112,9 @@ TEST_CASE("v3 generic decode round-trip with IPv4, STRING, INT", "[logcat][v3]")
   char out[256];
   int  n = log_entry_to_json(entry, seg.header(), out, sizeof(out));
   REQUIRE(n > 0);
-  CHECK(std::string(out, n) == R"({"chi":"192.0.2.10","cqu":"GET /index.html","pssc":200})");
+  const size_t len = static_cast<size_t>(n);
+
+  CHECK(std::string(out, len) == R"({"chi":"192.0.2.10","cqu":"GET /index.html","pssc":200})");
 }
 
 TEST_CASE("v3 generic decode handles IPv6 and unspecified IP", "[logcat][v3]")
