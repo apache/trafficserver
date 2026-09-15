@@ -1049,7 +1049,7 @@ HostDBContinuation::dnsEvent(int event, HostEnt *e)
         for (int i = 0; i < valid_records; ++i) {
           q[i] = &e->srv_hosts.hosts[i];
         }
-        std::sort(q, q + valid_records, [](SRV *lhs, SRV *rhs) -> bool { return *lhs < *rhs; });
+        std::stable_sort(q, q + valid_records, [](SRV *lhs, SRV *rhs) -> bool { return *lhs < *rhs; });
 
         SRV **cur_srv = q;
         for (auto &item : rr_info) {
