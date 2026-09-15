@@ -94,7 +94,10 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
 
         REQUIRE(len > 0);
         REQUIRE(len == i.encoded_field_len);
-        REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
+
+        size_t const encoded_len = static_cast<size_t>(len);
+
+        REQUIRE(memcmp(buf, i.encoded_field, encoded_len) == 0);
       }
     }
 
