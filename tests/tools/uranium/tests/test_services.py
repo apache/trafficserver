@@ -104,14 +104,17 @@ def test_services_facade_reexports_focused_implementations() -> None:
 
 
 def test_procedural_sandbox_leaves_room_for_ats_rpc_socket(tmp_path: Path) -> None:
-    """Keep procedural process trees below the Unix-socket path limit."""
+    """Keep procedural process trees readable and below the socket limit.
+
+    :param tmp_path: Temporary root used to construct a synthetic runtime.
+    """
 
     runtime = UraniumRuntime(
         repository_root=tmp_path,
         build_root=tmp_path,
         ats_bin=tmp_path,
         verifier_bin=tmp_path,
-        sandbox_root=Path("/tmp/ats-urtest-12345678/main"),
+        sandbox_root=Path("/tmp/ats-urtest-12345678"),
         layout={},
         features={},
     )
@@ -119,7 +122,33 @@ def test_procedural_sandbox_leaves_room_for_ats_rpc_socket(tmp_path: Path) -> No
         "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch")
     socket_path = sandbox / "cache_process_with_long_name" / "runtime/jsonrpc20.sock"
 
+    assert sandbox.name.startswith("test_cache_shm_con-")
     assert len(os.fsencode(socket_path)) < 108
+
+
+def test_replay_sandbox_identifies_test_and_avoids_name_collisions(tmp_path: Path) -> None:
+    """Put readable, unique replay directories directly below the root.
+
+    :param tmp_path: Temporary repository root used by the synthetic runtime.
+    """
+
+    runtime = UraniumRuntime(
+        repository_root=tmp_path,
+        build_root=tmp_path,
+        ats_bin=tmp_path,
+        verifier_bin=tmp_path,
+        sandbox_root=Path("/tmp/ats-urtest-12345678"),
+        layout={},
+        features={},
+    )
+    replay = tmp_path / "tests" / "uranium_tests" / "cache" / "cache.test.yaml"
+    first = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-default")
+    second = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-tls")
+
+    assert first.parent == runtime.sandbox_root
+    assert first.name.startswith("cache-default-")
+    assert second.name.startswith("cache-tls-")
+    assert first != second
 
 
 def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
