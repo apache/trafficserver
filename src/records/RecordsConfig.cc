@@ -1705,15 +1705,6 @@ matches_bracketed_int_range(std::string_view s)
   return i == s.size(); // must end exactly here
 }
 
-// For string literals: deduces N and strips the trailing '\0'
-template <std::size_t N>
-consteval bool
-matches_bracketed_int_range(const char (&lit)[N])
-{
-  // N includes the null terminator
-  return matches_bracketed_int_range(std::string_view{lit, N - 1});
-}
-
 // Validate all RECC_INT entries in the RecordsConfig array at compile time
 template <std::size_t N>
 consteval bool
