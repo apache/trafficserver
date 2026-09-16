@@ -1171,7 +1171,8 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
         Dbg(dbg_ctl, "Saw text/plain; version=2.0.0 in accept header, sending Prometheus v2 output.");
         my_state->output_format = output_format_t::PROMETHEUS_V2_OUTPUT;
       } else {
-        Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", static_cast<int>(accept.size()), accept.data());
+        Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", static_cast<int>(accept.size()),
+            accept.empty() ? "" : accept.data());
         my_state->output_format = output_format_t::JSON_OUTPUT;
       }
     }
