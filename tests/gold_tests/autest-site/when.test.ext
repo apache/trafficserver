@@ -89,7 +89,7 @@ def AddAwaitFileContainsTestRun(test, name, file_path, needle, desired_count=1) 
     '''
     tr = test.AddTestRun(name)
     p = tr.Processes.Default
-    p.Command = f'echo waiting for {needle} in {file_path}'
+    p.Command = f'echo waiting for file content in {file_path}'
     await_process = tr.Processes.Process('await', 'sleep 60')
     await_process.Ready = When.FileContains(file_path, needle, desired_count)
     await_process.StartupTimeout = 30
