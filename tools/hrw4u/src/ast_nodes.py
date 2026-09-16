@@ -25,16 +25,21 @@ __all__ = [
     "IdentValue",
     "IPValue",
     "ParamRef",
+    "BoolValue",
     "RegexValue",
+    "SetValue",
+    "IpRangeValue",
     "ValueExpr",
     "Node",
     "Target",
     "Assignment",
     "FunctionCall",
     "Break",
+    "Comment",
     "Comparison",
     "LogicalOp",
     "NotOp",
+    "Group",
     "BoolLiteral",
     "IdentCondition",
     "ElifBranch",
@@ -73,11 +78,26 @@ class ParamRef:
 
 
 @dataclass(frozen=True, kw_only=True)
+class BoolValue:
+    raw: str  # source spelling, e.g. "TRUE", "true", "TRue"
+
+
+@dataclass(frozen=True, kw_only=True)
 class RegexValue:
     raw: str
 
 
-ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, int, bool, tuple[IPValue, ...]]
+@dataclass(frozen=True, kw_only=True)
+class SetValue:
+    raw: str  # bracket-stripped source text, quoting preserved
+
+
+@dataclass(frozen=True, kw_only=True)
+class IpRangeValue:
+    raw: str  # verbatim source text
+
+
+ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, BoolValue, int, bool, IpRangeValue]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -120,10 +140,15 @@ class Break(Node):
 
 
 @dataclass(frozen=True, kw_only=True)
+class Comment(Node):
+    text: str
+
+
+@dataclass(frozen=True, kw_only=True)
 class Comparison(Node):
     left: IdentValue | FunctionCall
     operator: str  # "==", "!=", ">", "<", "~", "!~", "in", "!in"
-    right: ValueExpr | RegexValue | tuple[ValueExpr, ...]
+    right: ValueExpr | RegexValue | SetValue | IpRangeValue
     modifiers: tuple[str, ...]
 
 
@@ -137,6 +162,11 @@ class LogicalOp(Node):
 @dataclass(frozen=True, kw_only=True)
 class NotOp(Node):
     operand: ConditionExpr
+
+
+@dataclass(frozen=True, kw_only=True)
+class Group(Node):
+    inner: ConditionExpr
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -161,6 +191,7 @@ class IfBlock(Node):
     body: tuple[BodyNode, ...]
     elif_branches: tuple[ElifBranch, ...]
     else_body: tuple[BodyNode, ...]
+    has_else: bool  # an empty else body is not the same as no else clause
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -185,7 +216,7 @@ class VarDecl(Node):
 @dataclass(frozen=True, kw_only=True)
 class VarSection(Node):
     scope: str
-    declarations: tuple[VarDecl, ...]
+    declarations: tuple[VarDecl | Comment, ...]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -206,6 +237,6 @@ class HRW4UAST:
 
 
 # Type aliases: must follow all class definitions (evaluated at runtime).
-ConditionExpr = Union[Comparison, LogicalOp, NotOp, BoolLiteral, IdentCondition, FunctionCall]
-BodyNode = Union[Assignment, FunctionCall, IfBlock, Break]
-TopLevelNode = Union[UseDirective, VarSection, ProcedureDecl, Section]
+ConditionExpr = Union[Comparison, LogicalOp, NotOp, Group, BoolLiteral, IdentCondition, FunctionCall]
+BodyNode = Union[Assignment, FunctionCall, IfBlock, Break, Comment]
+TopLevelNode = Union[UseDirective, VarSection, ProcedureDecl, Section, Comment]
