@@ -96,8 +96,14 @@ Use pytest-xdist's `-n` option:
 ```
 
 Each test uses a readable, isolated directory directly below the sandbox root
-and dynamically allocated listeners. Tests listed in `serial_tests.txt` take
+named after its full pytest test name (including parameter IDs), without a
+generated suffix. Rerunning a test clears its previous directory first.
+Names must be unique across the collected Uranium tests; collection reports
+an error for names that would share a sandbox. Tests use dynamically allocated
+listeners. Tests listed in `serial_tests.txt` take
 an exclusive execution lock and cannot overlap any other Uranium item.
+Pass `--keep-sandboxes` to retain artifacts from successful tests for local
+inspection; otherwise, only failed-test sandboxes remain.
 
 ### Running manual tests
 

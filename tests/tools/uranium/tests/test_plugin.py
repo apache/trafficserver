@@ -17,11 +17,32 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from tools.uranium.plugin import _mark_manual_tests, _update_sandbox_retention
+from tools.uranium.plugin import _mark_manual_tests, _update_sandbox_retention, pytest_collection_modifyitems
+
+
+def test_duplicate_sandbox_names_fail_collection(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reject colliding names before either test can erase the other's files.
+
+    :param monkeypatch: Fixture isolating collection from serial-test metadata.
+    """
+
+    monkeypatch.setattr("tools.uranium.plugin._is_serial_test", lambda path: False)
+    config = SimpleNamespace(getoption=lambda name: False)
+    items = [
+        SimpleNamespace(
+            nodeid=f"uranium_tests/{directory}/test_example.py::test_example",
+            path=Path(f"uranium_tests/{directory}/test_example.py"),
+            add_marker=lambda marker: None,
+            get_closest_marker=lambda name: name == "uranium_procedural",
+        ) for directory in ("first", "second")
+    ]
+    with pytest.raises(pytest.UsageError, match="Give these tests distinct names"):
+        pytest_collection_modifyitems(config, items)
 
 
 @dataclass
@@ -79,18 +100,23 @@ def test_run_manual_enables_manual_tests() -> None:
     assert manual.markers == []
 
 
-@pytest.mark.parametrize(("did_fail", "is_retained"), [(False, False), (True, True)])
-def test_only_failed_procedural_sandboxes_are_retained(
+@pytest.mark.parametrize(
+    ("did_fail", "keep_sandboxes", "is_retained"),
+    ((False, False, False), (True, False, True), (False, True, True)),
+)
+def test_procedural_sandbox_retention_policy(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     did_fail: bool,
+    keep_sandboxes: bool,
     is_retained: bool,
 ) -> None:
-    """Keep CI artifacts focused on failed Uranium tests.
+    """Keep failed sandboxes and explicitly retained successful sandboxes.
 
     :param monkeypatch: Pytest fixture used to provide a synthetic runtime.
     :param tmp_path: Temporary directory containing the item sandbox.
     :param did_fail: Whether the synthetic call phase failed.
+    :param keep_sandboxes: Whether successful sandboxes were explicitly requested.
     :param is_retained: Whether the sandbox should remain after teardown.
     """
 
@@ -112,7 +138,20 @@ def test_only_failed_procedural_sandboxes_are_retained(
     class Item:
         """Provide the pytest item attributes used by retention handling."""
 
-        config = object()
+        class Config:
+            """Expose the sandbox-retention pytest option."""
+
+            @staticmethod
+            def getoption(name: str) -> bool:
+                """Return the requested synthetic option value.
+
+                :param name: Pytest option name being queried.
+                """
+
+                assert name == "keep_sandboxes"
+                return keep_sandboxes
+
+        config = Config()
         nodeid = "uranium_tests/example/test_example.py::test_example"
 
         @staticmethod
