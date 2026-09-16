@@ -95,9 +95,9 @@ Use pytest-xdist's `-n` option:
 ./tests/urtest.sh -q -n 8
 ```
 
-Each worker uses an isolated sandbox and dynamically allocated listeners.
-Tests listed in `serial_tests.txt` take an exclusive execution lock and cannot
-overlap any other Uranium item.
+Each test uses a readable, isolated directory directly below the sandbox root
+and dynamically allocated listeners. Tests listed in `serial_tests.txt` take
+an exclusive execution lock and cannot overlap any other Uranium item.
 
 ### Running manual tests
 

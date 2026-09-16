@@ -113,9 +113,8 @@ class TestRuntime:
     def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
         """Allocate a unique available port across all xdist workers."""
 
-        common_sandbox = self.sandbox_root.parent
-        common_sandbox.mkdir(parents=True, exist_ok=True)
-        state_path = common_sandbox / ".port-counter"
+        self.sandbox_root.mkdir(parents=True, exist_ok=True)
+        state_path = self.sandbox_root / ".port-counter"
         with state_path.open("a+") as state:
             fcntl.flock(state, fcntl.LOCK_EX)
             state.seek(0)
@@ -141,9 +140,8 @@ class TestRuntime:
     def execution_lock(self, is_exclusive: bool) -> Iterator[None]:
         """Coordinate tests that must run without any parallel peers."""
 
-        common_sandbox = self.sandbox_root.parent
-        common_sandbox.mkdir(parents=True, exist_ok=True)
-        with (common_sandbox / ".execution-lock").open("a+") as lock:
+        self.sandbox_root.mkdir(parents=True, exist_ok=True)
+        with (self.sandbox_root / ".execution-lock").open("a+") as lock:
             operation = fcntl.LOCK_EX if is_exclusive else fcntl.LOCK_SH
             fcntl.flock(lock, operation)
             try:
@@ -158,16 +156,27 @@ class TestRuntime:
             relative = replay_path.relative_to(self.repository_root / "tests" / "uranium_tests")
         except ValueError:
             relative = replay_path.resolve()
-        identity = f"{relative}:{node_name}"
-        digest = hashlib.sha256(identity.encode()).hexdigest()[:10]
-        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", replay_path.stem)[:48]
-        return self.sandbox_root / f"{stem}-{digest}"
+        return self.sandbox_root / self._sandbox_name(node_name.rsplit("::", 1)[-1], f"{relative}:{node_name}")
 
     def procedural_sandbox(self, node_name: str) -> Path:
-        """Return a short sandbox that leaves room for ATS Unix sockets."""
+        """Return a readable sandbox that leaves room for ATS Unix sockets."""
 
-        digest = hashlib.sha256(node_name.encode()).hexdigest()[:10]
-        return self.sandbox_root / f"p-{digest}"
+        return self.sandbox_root / self._sandbox_name(node_name.rsplit("::", 1)[-1], node_name)
+
+    @staticmethod
+    def _sandbox_name(label: str, identity: str) -> str:
+        """Return a readable, collision-resistant directory name.
+
+        :param label: Human-readable pytest item or replay name.
+        :param identity: Complete stable identity used to avoid collisions.
+        """
+
+        digest = hashlib.sha256(identity.encode()).hexdigest()[:10]
+        # ATS places Unix-domain sockets below the item directory.  Keep the
+        # readable portion short enough that descriptive service names still
+        # fit within the 107-byte sockaddr_un pathname limit.
+        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", label).strip("_.-")[:18] or "test"
+        return f"{stem}-{digest}"
 
     def prepare_sandbox(self, path: Path) -> None:
         """Create an empty item sandbox without allowing a broad deletion target."""
