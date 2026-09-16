@@ -77,6 +77,12 @@ class ServerDebugScenario:
         result = self.traffic_ctl("server", "debug", "enable", "--append", expected=64)
         assert "Option '--append' requires '--tags' to be specified" in result.output
 
+        result = self.traffic_ctl("server", "debug", "enable", "--tags", "--append", expected=64)
+        assert "1 argument(s) expected by tags" in result.output
+
+        result = self.traffic_ctl("server", "debug", "enable", "--tags", "--", "-a")
+        assert 'tags »"-a"«' in result.stdout
+
 
 def test_traffic_ctl_server_debug(ats_factory: ATSFactory) -> None:
     """traffic_ctl updates debug records and enforces its option contract."""

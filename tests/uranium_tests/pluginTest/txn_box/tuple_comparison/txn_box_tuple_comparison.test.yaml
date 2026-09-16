@@ -17,8 +17,9 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Verify txn_box compares a heterogeneous tuple'
+  requires: {plugins: [txn_box.so]}
 
   server:
     name: 'server'

@@ -34,13 +34,15 @@ class QuickServerCase:
     abort_request: bool
     drain_request: bool
     abort_response_headers: bool
+    use_request_transform: bool = False
 
     @property
     def name(self) -> str:
         return (
             f"client-{'abort' if self.abort_request else 'finish'}-"
             f"origin-{'drain' if self.drain_request else 'close'}-"
-            f"headers-{'abort' if self.abort_response_headers else 'complete'}")
+            f"headers-{'abort' if self.abort_response_headers else 'complete'}-"
+            f"transform-{'on' if self.use_request_transform else 'off'}")
 
 
 CASES = tuple(
@@ -48,6 +50,7 @@ CASES = tuple(
     for abort_request in (True, False)
     for drain_request in (True, False)
     for abort_response_headers in (True, False))
+CASES += (QuickServerCase(False, False, False, use_request_transform=True),)
 
 
 class QuickServerScenario:
@@ -97,18 +100,17 @@ class QuickServerScenario:
             "proxy.config.diags.debug.enabled": 1,
             "proxy.config.diags.debug.tags": "http|dns|hostdb",
         })
+        if self._case.use_request_transform:
+            ats.copy_custom_plugin("{AtsTestPluginsDir}/tunnel_transform.so")
+            ats.plugin_config.add_line("tunnel_transform.so request_hdr")
         return ats
 
     def configure_client(self, services: ServiceFactory) -> ProcessService:
         """Configure the slow POST client and its optional request abort."""
 
-        command: list[str | Path] = [
-            sys.executable,
-            TEST_DIRECTORY / "slow_post_client.py",
-            "127.0.0.1",
-            str(self._ats.http_port),
-        ]
-        if not self._case.abort_request:
+        script = "partial_post_client.py" if self._case.use_request_transform else "slow_post_client.py"
+        command: list[str | Path] = [sys.executable, TEST_DIRECTORY / script, "127.0.0.1", str(self._ats.http_port)]
+        if not self._case.use_request_transform and not self._case.abort_request:
             command.append("--finish-request")
         return services.process("client", command, environment=self.python_environment())
 
@@ -116,7 +118,7 @@ class QuickServerScenario:
         """Require a complete response only when neither peer aborts it."""
 
         assert result.returncode == 0, result.output
-        if self._case.abort_request or self._case.abort_response_headers:
+        if not self._case.use_request_transform and (self._case.abort_request or self._case.abort_response_headers):
             assert "HTTP/1.1 200 OK" not in result.output
         else:
             assert "HTTP/1.1 200 OK" in result.output

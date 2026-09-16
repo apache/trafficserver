@@ -34,6 +34,7 @@ urtest:
       proxy.config.http.server_session_sharing.pool: "global"
       proxy.config.http.negative_revalidating_enabled: 0
       proxy.config.log.rolling_enabled: 0
+      proxy.config.log.max_secs_per_buffer: 1
   variants:
     - name: "global-no-defaults"
       ats:

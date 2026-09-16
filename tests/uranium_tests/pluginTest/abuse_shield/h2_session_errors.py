@@ -26,6 +26,12 @@ from hyperframe.frame import DataFrame, Frame, GoAwayFrame, HeadersFrame, Settin
 
 
 def receive_exact(connection: ssl.SSLSocket, size: int) -> bytes:
+    """Read exactly one fixed-size HTTP/2 frame fragment.
+
+    :param connection: TLS connection carrying HTTP/2 frames.
+    :param size: Number of bytes to read.
+    """
+
     data = b""
     while len(data) < size:
         chunk = connection.recv(size - len(data))
@@ -36,12 +42,24 @@ def receive_exact(connection: ssl.SSLSocket, size: int) -> bytes:
 
 
 def receive_frame(connection: ssl.SSLSocket) -> Frame:
+    """Read and parse one HTTP/2 frame.
+
+    :param connection: TLS connection carrying HTTP/2 frames.
+    """
+
     frame, length = Frame.parse_frame_header(memoryview(receive_exact(connection, 9)))
     frame.parse_body(memoryview(receive_exact(connection, length)))
     return frame
 
 
 def send_error(port: int, mode: str, barrier: threading.Barrier) -> None:
+    """Send one synchronized HTTP/2 session-error sequence.
+
+    :param port: ATS TLS listener port.
+    :param mode: Error-generation mode selected by the test scenario.
+    :param barrier: Synchronization point shared by all eight connections.
+    """
+
     context = ssl._create_unverified_context()
     context.set_alpn_protocols(["h2"])
     with socket.create_connection(("127.0.0.1", port), timeout=5) as tcp:
@@ -69,6 +87,13 @@ def send_error(port: int, mode: str, barrier: threading.Barrier) -> None:
                 expected_code = 9
             elif mode in ("received", "normal"):
                 connection.sendall(GoAwayFrame(0, error_code=2 if mode == "received" else 0).serialize())
+                # Drain the peer after closing the write side so close() cannot
+                # reset a connection that still has unread ATS frames.  Such a
+                # reset can discard the just-written GOAWAY before ATS parses
+                # it, making the session-error count timing-dependent.
+                connection.shutdown(socket.SHUT_WR)
+                while connection.recv(4096):
+                    pass
                 return
             else:
                 # DATA on stream zero is a connection error before any HEADERS.
