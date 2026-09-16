@@ -22,7 +22,6 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-import hashlib
 import json
 import os
 import re
@@ -150,33 +149,32 @@ class TestRuntime:
                 fcntl.flock(lock, fcntl.LOCK_UN)
 
     def item_sandbox(self, replay_path: Path, node_name: str) -> Path:
-        """Return a deterministic, path-length-conscious sandbox for one item."""
+        """Return the named sandbox for one replay item.
 
-        try:
-            relative = replay_path.relative_to(self.repository_root / "tests" / "uranium_tests")
-        except ValueError:
-            relative = replay_path.resolve()
-        return self.sandbox_root / self._sandbox_name(node_name.rsplit("::", 1)[-1], f"{relative}:{node_name}")
-
-    def procedural_sandbox(self, node_name: str) -> Path:
-        """Return a readable sandbox that leaves room for ATS Unix sockets."""
-
-        return self.sandbox_root / self._sandbox_name(node_name.rsplit("::", 1)[-1], node_name)
-
-    @staticmethod
-    def _sandbox_name(label: str, identity: str) -> str:
-        """Return a readable, collision-resistant directory name.
-
-        :param label: Human-readable pytest item or replay name.
-        :param identity: Complete stable identity used to avoid collisions.
+        :param replay_path: Source replay file associated with the item.
+        :param node_name: Pytest node identifier or replay name.
         """
 
-        digest = hashlib.sha256(identity.encode()).hexdigest()[:10]
-        # ATS places Unix-domain sockets below the item directory.  Keep the
-        # readable portion short enough that descriptive service names still
-        # fit within the 107-byte sockaddr_un pathname limit.
-        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", label).strip("_.-")[:18] or "test"
-        return f"{stem}-{digest}"
+        return self.sandbox_root / self.sandbox_name(node_name)
+
+    def procedural_sandbox(self, node_name: str) -> Path:
+        """Return the named sandbox for one procedural item.
+
+        :param node_name: Complete pytest node identifier.
+        """
+
+        return self.sandbox_root / self.sandbox_name(node_name)
+
+    @staticmethod
+    def sandbox_name(node_name: str) -> str:
+        """Keep the full test name, making it safe as one directory component.
+
+        :param node_name: Pytest node identifier or replay name.
+        """
+
+        parts = node_name.split("::")
+        label = "__".join(parts[1:]) if len(parts) > 1 else node_name
+        return re.sub(r"[^A-Za-z0-9_.\[\]-]+", "_", label).strip("_.-") or "test"
 
     def prepare_sandbox(self, path: Path) -> None:
         """Create an empty item sandbox without allowing a broad deletion target."""

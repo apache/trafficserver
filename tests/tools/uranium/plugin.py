@@ -53,6 +53,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     group.addoption("--proxy-verifier-bin", help="Directory containing verifier-client and verifier-server")
     group.addoption("--build-root", help="ATS build directory containing test plugins")
     group.addoption("--sandbox", help="Directory for isolated test process trees")
+    group.addoption("--keep-sandboxes", action="store_true", help="Keep sandboxes for successful Uranium tests")
     group.addoption("--urtest-shard-index", type=int, help="Zero-based CI shard to collect")
     group.addoption("--urtest-shard-count", type=int, help="Total number of CI shards")
     group.addoption("--curl-uds", action="store_true", help="Run supported Uranium tests with curl Unix sockets")
@@ -86,9 +87,17 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
     """Apply serial scheduling, UDS exclusions, and zero-based CI sharding."""
 
     _mark_manual_tests(items, enabled=config.getoption("run_manual"))
+    sandbox_owners: dict[str, str] = {}
     for item in items:
         if item.path.name.startswith("test_") and "uranium_tests" in item.path.parts:
             item.add_marker("uranium_procedural")
+        if isinstance(item, ReplayItem) or item.get_closest_marker("uranium_procedural"):
+            name = TestRuntime.sandbox_name(item.nodeid)
+            if name in sandbox_owners:
+                raise pytest.UsageError(
+                    f"Uranium sandbox name {name!r} is shared by {sandbox_owners[name]} and {item.nodeid}. "
+                    "Give these tests distinct names so they cannot overwrite each other's artifacts.")
+            sandbox_owners[name] = item.nodeid
         if _is_serial_test(Path(item.path)):
             item.add_marker("serial")
             item.add_marker(pytest.mark.xdist_group("ats_serial"))
@@ -154,6 +163,8 @@ def _update_sandbox_retention(item: pytest.Item, report: pytest.TestReport) -> N
     is_replay = isinstance(item, ReplayItem)
     is_procedural = item.get_closest_marker("uranium_procedural") is not None
     if not is_replay and not is_procedural:
+        return
+    if item.config.getoption("keep_sandboxes"):
         return
     if report.failed:
         setattr(item, "_uranium_sandbox_failed", True)
