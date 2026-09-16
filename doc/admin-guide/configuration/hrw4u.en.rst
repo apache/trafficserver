@@ -130,11 +130,22 @@ Status Meaning
        from ``argparse`` and follows Python's usage-error convention.
 ====== ==========================================================================
 
-A compile error does not stop the run: every input is still processed before
-the status is decided, so one bad file in a multi-file or bulk run does not
-skip the files after it. The fatal problems above still abort immediately. A
-failing compile writes its partial output; the exit status is what marks that
-output untrustworthy.
+A compile error does not stop the run: every input is still compiled before the
+status is decided, so one bad file does not skip the files after it.
+``--stop-on-error`` instead ends the run at the first error, and fatal problems
+such as a missing or unreadable input always end it immediately.
+
+A run that reported an error writes no configuration:
+
+- On standard output the inputs form one document, so nothing is written if any
+  input failed, including when the run ended early.
+- In ``input:output`` form only the failing pairs are skipped. Their output files
+  are left as they were, and pairs already written stay written.
+
+``--ast`` output is written even when the run fails, since it is a parse tree
+rather than a configuration; a target is left untouched only when no tree could
+be built. ``--ast`` skips the semantic checks, so a program that parses but is
+otherwise invalid exits 0 under it.
 
 Reverse Tool (u4wrh)
 ^^^^^^^^^^^^^^^^^^^^
