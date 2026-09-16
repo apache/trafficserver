@@ -21,14 +21,14 @@
  * @brief Plugin configuration.
  */
 
-#include <charconv>  /* std::from_chars() */
-#include <cstring>   /* strlen() */
-#include <fstream>   /* std::ifstream */
-#include <getopt.h>  /* getopt_long() */
-#include <sstream>   /* std::istringstream */
-#include <strings.h> /* strncasecmp() */
+#include <charconv> /* std::from_chars() */
+#include <cstring>  /* strlen() */
+#include <fstream>  /* std::ifstream */
+#include <getopt.h> /* getopt_long() */
+#include <sstream>  /* std::istringstream */
 
 #include "configs.h"
+#include "tsutil/StringCompare.h"
 
 DbgCtl Bg_dbg_ctl{PLUGIN_NAME};
 
@@ -47,7 +47,7 @@ commaSeparateString(ContainerType &c, const String &input)
 static bool
 isTrue(const char *arg)
 {
-  return (0 == strncasecmp("true", arg, 4) || 0 == strncasecmp("1", arg, 1) || 0 == strncasecmp("yes", arg, 3));
+  return (ts::iequals("true", arg) || ts::iequals("1", arg) || ts::iequals("yes", arg));
 }
 
 static String
@@ -66,13 +66,6 @@ fetchOverflowString(const EvalPolicy policy)
   }
 }
 
-static bool
-iequals(const StringView lhs, const StringView rhs)
-{
-  return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(),
-                    [](const char a, const char b) { return tolower(a) == tolower(b); });
-}
-
 bool
 PrefetchConfig::setFetchOverflow(const char *optarg)
 {
@@ -83,7 +76,7 @@ PrefetchConfig::setFetchOverflow(const char *optarg)
     _fetchOverflow = EvalPolicy::Overflow32;
   } else if (StringView("64") == optarg) {
     _fetchOverflow = EvalPolicy::Overflow64;
-  } else if (iequals("bignum", optarg)) {
+  } else if (ts::iequals("bignum", optarg)) {
     _fetchOverflow = EvalPolicy::Bignum;
   } else {
     return false;

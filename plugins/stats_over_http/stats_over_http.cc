@@ -49,6 +49,7 @@
 #include "swoc/TextView.h"
 #include "tscore/ink_config.h"
 #include <tsutil/ts_ip.h>
+#include <tsutil/StringCompare.h>
 
 #if HAVE_BROTLI_ENCODE_H
 #include <brotli/encode.h>
@@ -1151,21 +1152,27 @@ stats_origin(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
     my_state->output_format = output_format_t::JSON_OUTPUT; // default to json output
     // accept header exists, use it to determine response type
     if (accept_field != TS_NULL_MLOC) {
-      int         len = -1;
-      const char *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_field, -1, &len);
+      int              len = -1;
+      const char      *str = TSMimeHdrFieldValueStringGet(reqp, hdr_loc, accept_field, -1, &len);
+      std::string_view accept{};
+
+      if (str != nullptr && len > 0) {
+        accept = std::string_view{str, static_cast<std::string_view::size_type>(len)};
+      }
 
       // Parse the Accept header, default to JSON output unless its another supported format
-      if (!strncasecmp(str, "text/csv", len)) {
+      if (ts::iequals(accept, "text/csv")) {
         Dbg(dbg_ctl, "Saw text/csv in accept header, sending CSV output.");
         my_state->output_format = output_format_t::CSV_OUTPUT;
-      } else if (!strncasecmp(str, "text/plain; version=0.0.4", len)) {
+      } else if (ts::iequals(accept, "text/plain; version=0.0.4")) {
         Dbg(dbg_ctl, "Saw text/plain; version=0.0.4 in accept header, sending Prometheus output.");
         my_state->output_format = output_format_t::PROMETHEUS_OUTPUT;
-      } else if (!strncasecmp(str, "text/plain; version=2.0.0", len)) {
+      } else if (ts::iequals(accept, "text/plain; version=2.0.0")) {
         Dbg(dbg_ctl, "Saw text/plain; version=2.0.0 in accept header, sending Prometheus v2 output.");
         my_state->output_format = output_format_t::PROMETHEUS_V2_OUTPUT;
       } else {
-        Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", len, str);
+        Dbg(dbg_ctl, "Saw %.*s in accept header, defaulting to JSON output.", static_cast<int>(accept.size()),
+            accept.empty() ? "" : accept.data());
         my_state->output_format = output_format_t::JSON_OUTPUT;
       }
     }

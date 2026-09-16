@@ -30,6 +30,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/LocalBuffer.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/PostScript.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/Strerror.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/StringCompare.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/StringConvert.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/Regex.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/TsMutex.h
@@ -81,6 +82,7 @@ if(BUILD_TESTING)
     unit_tests/test_Metrics.cc
     unit_tests/test_PostScript.cc
     unit_tests/test_Strerror.cc
+    unit_tests/test_StringCompare.cc
     unit_tests/test_StringConvert.cc
     unit_tests/test_Regex.cc
     unit_tests/test_ts_meta.cc

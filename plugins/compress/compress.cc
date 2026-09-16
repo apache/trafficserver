@@ -29,6 +29,7 @@
 
 #include <tsutil/PostScript.h>
 #include <tsutil/Metrics.h>
+#include <tsutil/StringCompare.h>
 
 #include "ts/ts.h"
 #include "tscore/ink_defs.h"
@@ -250,7 +251,7 @@ vary_header(TSMBuffer bufp, TSMLoc hdr_loc)
     count = TSMimeHdrFieldValuesCount(bufp, hdr_loc, ce_loc);
     for (idx = 0; idx < count; idx++) {
       const char *value = TSMimeHdrFieldValueStringGet(bufp, hdr_loc, ce_loc, idx, &len);
-      if (len && strncasecmp("Accept-Encoding", value, len) == 0) {
+      if (len > 0 && ts::iequals("Accept-Encoding", std::string_view{value, static_cast<std::string_view::size_type>(len)})) {
         // Bail, Vary: Accept-Encoding already sent from origin
         TSHandleMLocRelease(bufp, hdr_loc, ce_loc);
         return TS_SUCCESS;
