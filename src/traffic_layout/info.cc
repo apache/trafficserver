@@ -269,8 +269,8 @@ produce_versions(bool json)
   print_var("zstd", undef, json);
 #endif
 #ifdef HAVE_LZ4_H
-  print_var("lz4", LBW().print("{}", LZ4_VERSION_STRING).view(), json);
-  print_var("lz4.run", LBW().print("{}", LZ4_versionString()).view(), json);
+  // Runtime version, matching what the zstd line above reports.
+  print_var("lz4", LBW().print("{}", LZ4_versionString()).view(), json);
 #else
   print_var("lz4", undef, json);
 #endif

@@ -29,6 +29,7 @@
 #include "iocore/cache/Cache.h"
 #include "tscore/ink_config.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -37,6 +38,20 @@
 // Required by main.h
 int  cache_vols           = 1;
 bool reuse_existing_cache = false;
+
+// Reaches into RamCacheCLFUS to find a stored entry; declared a friend there.
+struct RamCacheCLFUSTestAccess {
+  static RamCacheCLFUSEntry *
+  find_entry(RamCacheCLFUS &rc, const CryptoHash &key)
+  {
+    for (RamCacheCLFUSEntry *e = rc._bucket[key.slice32(3) % rc._nbuckets].head; e != nullptr; e = e->hash_link.next) {
+      if (e->key == key) {
+        return e;
+      }
+    }
+    return nullptr;
+  }
+};
 
 namespace
 {
@@ -137,6 +152,22 @@ incompressible_bytes(std::size_t len)
   return bytes;
 }
 
+// Comparing two 256 KB vectors with CHECK() makes Catch2 stringify both
+// operands, which throws before it can report anything useful. Report the
+// offset of the first difference instead, so a genuine round-trip failure
+// names the byte.
+std::size_t
+first_difference(const std::vector<char> &lhs, const std::vector<char> &rhs)
+{
+  std::size_t common = std::min(lhs.size(), rhs.size());
+  for (std::size_t i = 0; i < common; i++) {
+    if (lhs[i] != rhs[i]) {
+      return i;
+    }
+  }
+  return common;
+}
+
 struct RoundtripResult {
   int               hit         = 0;
   int64_t           size_before = 0; // rc.size() after put, before the compression pass
@@ -203,7 +234,8 @@ TEST_CASE("CLFUS compressible objects roundtrip cleanly", "[cache][ramcache][com
   RoundtripResult r = store_compress_get(stripe, c.config, payload);
 
   CHECK(r.hit == c.expected_hit);
-  CHECK(r.out == payload);
+  CHECK(r.out.size() == payload.size());
+  CHECK(first_difference(r.out, payload) == payload.size());
   if (c.config != CACHE_COMPRESSION_NONE) {
     // The feature's contract is that compression saves memory, not merely
     // that the entry is tagged compressed.
@@ -235,7 +267,8 @@ TEST_CASE("CLFUS incompressible objects fall back to uncompressed storage", "[ca
 
   // Incompressible data is kept verbatim, so a read reports no compression.
   CHECK(r.hit == RAM_HIT_COMPRESS_NONE);
-  CHECK(r.out == payload);
+  CHECK(r.out.size() == payload.size());
+  CHECK(first_difference(r.out, payload) == payload.size());
   // And the pass never grows the entry: a regression that stored the expanded
   // "compressed" blob would still read back correctly but would cost memory.
   // Not an equality check, because re-storing an incompressible entry tightly
@@ -262,7 +295,68 @@ TEST_CASE("CLFUS single-byte payload roundtrips", "[cache][ramcache][compress]")
   // too-small guard, the incompressible marking, or storing the bytes verbatim
   // -- the object must survive and read back uncompressed.
   CHECK(r.hit == RAM_HIT_COMPRESS_NONE);
-  CHECK(r.out == payload);
+  CHECK(r.out.size() == payload.size());
+  CHECK(first_difference(r.out, payload) == payload.size());
+}
+
+TEST_CASE("CLFUS reports a corrupted compressed entry rather than serving it", "[cache][ramcache][compress]")
+{
+  CacheDisk disk;
+  init_disk(disk);
+  StripeSM stripe{&disk, 10, 0};
+  CacheVol cache_vol;
+  wire_stripe(stripe, cache_vol);
+
+  // Only backends that actually store a compressed blob can have one corrupted.
+  std::vector<CompressionCase> cases;
+  for (auto const &candidate : compression_cases()) {
+    if (candidate.config != CACHE_COMPRESSION_NONE) {
+      cases.push_back(candidate);
+    }
+  }
+  const CompressionCase c = GENERATE_REF(from_range(cases));
+  INFO("compression backend: " << c.name);
+
+  cache_config_ram_cache_compress         = CACHE_COMPRESSION_NONE;
+  cache_config_ram_cache_compress_percent = 100;
+  cache_config_ram_cache_use_seen_filter  = 0;
+
+  RamCacheCLFUS rc;
+  rc.init(1 << 20, &stripe);
+
+  auto              payload = compressible_bytes(256 * 1024);
+  uint32_t          len     = static_cast<uint32_t>(payload.size());
+  Ptr<IOBufferData> in      = make_buffer(payload);
+
+  CryptoHash key;
+  key.u64[0] = 0xc0ffee00;
+  key.u64[1] = 0xdeadbeef;
+
+  REQUIRE(rc.put(&key, in.get(), len) == 1);
+
+  cache_config_ram_cache_compress = c.config;
+  rc.compress_entries(this_ethread());
+
+  RamCacheCLFUSEntry *e = RamCacheCLFUSTestAccess::find_entry(rc, key);
+  REQUIRE(e != nullptr);
+  // The pass must actually have compressed it, or there is nothing to corrupt.
+  REQUIRE(e->flag_bits.compressed != 0);
+  REQUIRE(e->compressed_len > 0);
+
+  // Overwrite the whole stored blob. Every codec here rejects this either
+  // outright or by producing the wrong length, which is what get() checks.
+  std::memset(e->data->data(), 0xff, e->compressed_len);
+
+  int64_t before = ts::Metrics::Counter::load(cache_rsb.ram_cache_decompress_failures);
+
+  Ptr<IOBufferData> ret;
+  int               hit = rc.get(&key, &ret);
+
+  // A corrupted entry is a miss, is counted, and is dropped rather than
+  // handed to the caller.
+  CHECK(hit == 0);
+  CHECK(ts::Metrics::Counter::load(cache_rsb.ram_cache_decompress_failures) == before + 1);
+  CHECK(RamCacheCLFUSTestAccess::find_entry(rc, key) == nullptr);
 }
 
 // A backend that is not compiled in silently disappears from the parametrized

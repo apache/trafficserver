@@ -74,7 +74,7 @@ compressed_len Compressed length of the object.
 compressed     Compression type, or ``none`` if no compression. Possible types
                are: *fastlz*, *libz*, *liblzma*, *lz4* and *zstd*.
 incompressible Flag indicating that content cannot be compressed (true), or that
-               it mat be compressed (false).
+               it may be compressed (false).
 copy           Whether or not this object should be copied in and copied out
                (e.g. HTTP HDR).
 LRU link

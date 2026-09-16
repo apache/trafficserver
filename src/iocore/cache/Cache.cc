@@ -876,21 +876,23 @@ ink_cache_init(ts::ModuleVersion v)
     break;
   case CACHE_COMPRESSION_LIBLZMA:
 #ifndef HAVE_LZMA_H
-    Fatal("lzma not available for RAM cache compression");
+    Fatal("proxy.config.cache.ram_cache.compress is %d (liblzma), but this build has no liblzma support",
+          cache_config_ram_cache_compress);
 #endif
     break;
   case CACHE_COMPRESSION_LZ4:
 #ifndef HAVE_LZ4_H
-    Fatal("lz4 not available for RAM cache compression");
+    Fatal("proxy.config.cache.ram_cache.compress is %d (lz4), but this build has no lz4 support", cache_config_ram_cache_compress);
 #endif
     break;
   case CACHE_COMPRESSION_ZSTD:
 #ifndef HAVE_ZSTD_H
-    Fatal("zstd not available for RAM cache compression");
+    Fatal("proxy.config.cache.ram_cache.compress is %d (zstd), but this build has no zstd support",
+          cache_config_ram_cache_compress);
 #endif
     break;
   default:
-    Fatal("unknown RAM cache compression type: %d", cache_config_ram_cache_compress);
+    Fatal("proxy.config.cache.ram_cache.compress has unknown value %d", cache_config_ram_cache_compress);
   }
   RecEstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
   cache_config_ram_cache_use_seen_filter = RecGetRecordInt("proxy.config.cache.ram_cache.use_seen_filter").value_or(0);

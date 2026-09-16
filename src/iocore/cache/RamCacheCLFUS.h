@@ -102,6 +102,11 @@ private:
   int                 _ncompressed = 0;
   RamCacheCLFUSEntry *_compressed  = nullptr; // first uncompressed lru[0] entry
 
+  // Lets the unit tests reach a stored entry so the decompression failure
+  // paths in get() can be exercised; see unit_tests/test_RamCacheCLFUS.cc.
+  // Nothing in the product uses this.
+  friend struct RamCacheCLFUSTestAccess;
+
   void                _resize_hashtable();
   void                _victimize(RamCacheCLFUSEntry *e);
   void                _move_compressed(RamCacheCLFUSEntry *e);
