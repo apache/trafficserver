@@ -236,18 +236,21 @@ urtest:
       replay: jax_fingerprint_all_methods.replay.yaml
       ats:
         plugin_config:
-          - "jax_fingerprint.so --method JA3 --header x-ja3 --standalone"
-          - "jax_fingerprint.so --method JA4 --header x-ja4 --standalone"
-          - "jax_fingerprint.so --method JA4H --header x-ja4h --standalone"
+          - "jax_fingerprint.so --method JA3 --header x-ja3 --standalone --export test.jax.registry"
+          - "jax_fingerprint.so --method JA4 --header x-ja4 --standalone --export test.jax.registry"
+          - "jax_fingerprint.so --method JA4H --header x-ja4h --standalone --export test.jax.registry"
         remap_config:
           - "map https://jax.server.test https://jax.backend.test:{SERVER_HTTPS_PORT}"
         file_checks:
           - path: "{LOG_DIR}/traffic.out"
-            contains: "Using shared user_arg: type=txn, method=JA4H"
+            contains: "Using shared user_arg: type=txn, name=test.jax.registry, method=JA4H, index=[0-9]+"
             matches:
-              - expression: "Reserved shared user_arg slot: type=vconn, index=[0-9]+"
+              - expression: "Reserved shared user_arg slot: type=vconn, name=test.jax.registry, index=[0-9]+"
                 min: 1
                 max: 1
-              - expression: "Reserved shared user_arg slot: type=txn, index=[0-9]+"
+              - expression: "Reserved shared user_arg slot: type=txn, name=test.jax.registry, index=[0-9]+"
+                min: 1
+                max: 1
+              - expression: "Using shared user_arg: type=vconn, name=test.jax.registry, method=JA3, index=([0-9]+)[\\s\\S]*Using shared user_arg: type=vconn, name=test.jax.registry, method=JA4, index=\\1"
                 min: 1
                 max: 1

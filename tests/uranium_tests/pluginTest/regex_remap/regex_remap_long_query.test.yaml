@@ -17,8 +17,9 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Valid long query strings must not exhaust the match-work limit'
+  requires: {plugins: [regex_remap.so]}
   server:
     name: 'server'
   client:

@@ -33,6 +33,7 @@ urtest:
       proxy.config.diags.debug.enabled: 1
       proxy.config.diags.debug.tags: "http"
       proxy.config.exec_thread.autoconfig.enabled: 0
+      proxy.config.log.max_secs_per_buffer: 1
       proxy.config.ssl.client.alpn_protocols: "h2,http/1.1"
       proxy.config.ssl.client.verify.server.policy: "PERMISSIVE"
     remap_config:
