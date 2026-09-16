@@ -248,13 +248,12 @@ def get_runtime(config: pytest.Config) -> TestRuntime:
     missing = [name for name, value in values.items() if not value]
     if missing:
         raise pytest.UsageError("ATS Uranium tests require " + ", ".join(f"--{name.replace('_', '-')}" for name in missing))
-    worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
     runtime = TestRuntime.create(
         repository_root=repository_root,
         build_root=Path(values["build_root"]),
         ats_bin=Path(values["ats_bin"]),
         verifier_bin=Path(values["verifier_bin"]),
-        sandbox_root=Path(values["sandbox"]) / worker,
+        sandbox_root=Path(values["sandbox"]),
     )
     setattr(config, cache_name, runtime)
     return runtime

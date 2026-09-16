@@ -134,8 +134,8 @@ artifact ownership.
 
 Defines `TestRuntime`, the immutable description of one installed test
 environment. It discovers ATS and helper programs, reads build features and
-layout, allocates ports, creates worker-specific sandboxes, resolves generated
-artifacts, and coordinates execution that must be exclusive.
+layout, allocates ports, creates readable per-test sandboxes, resolves
+generated artifacts, and coordinates execution that must be exclusive.
 
 ### `utils.py`
 

@@ -101,8 +101,9 @@ For example, to run items whose names contain ``header_rewrite``:
 The ``-k`` expression works for both ``.test.yaml`` and ``test_*.py`` items.
 It is pytest's ordinary substring and boolean-expression selector.
 
-To run tests in parallel, pass pytest-xdist's ``-n N`` option. Each worker gets
-an isolated sandbox and dynamically allocated listeners:
+To run tests in parallel, pass pytest-xdist's ``-n N`` option. Each test gets a
+readable, isolated directory directly below the sandbox root and dynamically
+allocated listeners:
 
 .. code-block:: bash
 
