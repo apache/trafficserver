@@ -177,6 +177,8 @@ class RunrootScenario:
             ))
         for directory in (path / "var/trafficserver", path / "var/log/trafficserver"):
             directory.chmod(0o777)
+            for entry in directory.rglob("*"):
+                entry.chmod(0o777 if entry.is_dir() else 0o666)
         first = self.run("verify", "--path", path).stdout
         for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
             assert expected in first

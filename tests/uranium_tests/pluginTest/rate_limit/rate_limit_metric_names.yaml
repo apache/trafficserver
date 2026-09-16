@@ -1,6 +1,3 @@
-'''
-Verify txn_box tuple comparisons with heterogeneous feature types.
-'''
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
 #  distributed with this work for additional information
@@ -17,8 +14,17 @@ Verify txn_box tuple comparisons with heterogeneous feature types.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-Test.Summary = 'Verify txn_box heterogeneous tuple comparisons'
-
-Test.SkipUnless(Condition.PluginExists('txn_box.so'))
-
-Test.ATSReplayTest(replay_file='txn_box_tuple_comparison.replay.yaml')
+selector:
+  - sni: both.example.com
+    limit: 100
+    metrics:
+      prefix: myprefix
+      tag: mytag
+  - sni: tagonly.example.com
+    limit: 100
+    metrics:
+      tag: onlytag
+  - sni: prefixonly.example.com
+    limit: 100
+    metrics:
+      prefix: onlyprefix

@@ -53,10 +53,15 @@ class OriginAbortScenario:
             ])
         secrets = TEST_DIRECTORY / "test_secrets"
         ats.copy_to_ssl(secrets / "aaa-signed.pem", secrets / "aaa-signed.key")
-        ats.records.update({
-            "proxy.config.diags.debug.tags": "http|dns",
-            "proxy.config.diags.debug.enabled": 1,
-        })
+        ats.records.update(
+            {
+                "proxy.config.diags.debug.tags": "http|dns",
+                "proxy.config.diags.debug.enabled": 1,
+                "proxy.config.http.connect_attempts_max_retries": 0,
+                "proxy.config.http.connect_attempts_rr_retries": 0,
+                "proxy.config.http.connect_attempts_timeout": 2,
+                "proxy.config.http.transaction_no_activity_timeout_out": 2,
+            })
         return ats
 
     def run(self) -> None:

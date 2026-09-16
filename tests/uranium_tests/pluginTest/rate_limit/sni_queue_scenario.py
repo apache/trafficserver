@@ -72,6 +72,7 @@ class RateLimitSniScenario:
                 "127.0.0.1",
                 str(self._ats.https_port),
                 "rate.limited.com",
+                str(self._ats.traffic_out),
             ),
         )
 

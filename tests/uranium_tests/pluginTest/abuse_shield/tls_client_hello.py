@@ -19,12 +19,21 @@ import struct
 
 
 def extension(extension_type: int, data: bytes) -> bytes:
-    """Encode a TLS extension."""
+    """Encode a TLS extension.
+
+    :param extension_type: Numeric TLS extension type.
+    :param data: Serialized extension payload.
+    """
+
     return struct.pack("!HH", extension_type, len(data)) + data
 
 
 def client_hello(server_name: str) -> bytes:
-    """Build the ClientHello whose JA3 source is CLIENT_JA3_SOURCE."""
+    """Build the ClientHello whose JA3 source is CLIENT_JA3_SOURCE.
+
+    :param server_name: ASCII SNI hostname placed in the ClientHello.
+    """
+
     encoded_name = server_name.encode("ascii")
     server_name_list = b"\x00" + struct.pack("!H", len(encoded_name)) + encoded_name
     extensions = b"".join(

@@ -16,7 +16,7 @@
 
 import pytest
 
-from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory
+from tools.uranium.services import ATS, ATSFactory, OriginServer, ServiceFactory, wait_for_file_lines
 
 
 class RateLimitSniExpiryScenario:
@@ -82,13 +82,14 @@ class RateLimitSniExpiryScenario:
         result = self._ats.run_shell(
             f"curl -sk --max-time 10 -o /dev/null {url}/slow {resolve} & "
             "sleep 0.5; "
-            f"curl -sk --max-time 8 -o /dev/null {url}/queued {resolve} 2>/dev/null || true; "
+            f"curl -sk --max-time 2 -o /dev/null {url}/queued {resolve} 2>/dev/null; "
             "wait; sleep 0.5; "
             f"curl -sk --max-time 10 -o /dev/null -w '%{{http_code}}' {url}/test {resolve}",
             timeout=30,
         )
         assert result.returncode == 0, result.output
         assert "200" in result.stdout
+        wait_for_file_lines(self._ats.traffic_out, "Queued VC is too old", 1)
         diags = self._ats.diags_log.read_text(errors="replace")
         assert "FATAL" not in diags
         assert "ink_release_assert" not in diags
