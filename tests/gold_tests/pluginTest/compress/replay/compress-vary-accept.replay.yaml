@@ -1,0 +1,117 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+  blocks:
+  - compressible-body: &compressible-body
+      content:
+        encoding: plain
+        size: 1024
+
+autest:
+  description: 'Verify compress appends Accept-Encoding to an existing origin Vary header'
+
+  server:
+    name: 'server'
+
+  client:
+    name: 'client'
+
+  ats:
+    name: 'ts'
+
+    copy_to_config_dir:
+      - 'compress-vary-accept.config'
+
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: 'compress'
+
+    # The pparam resolves relative to the ATS config dir, where
+    # copy_to_config_dir places it.
+    remap_config:
+      - from: "http://compress.example/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+        plugins:
+          - name: 'compress.so'
+            args: ['compress-vary-accept.config']
+
+sessions:
+- transactions:
+
+  #############################################################################
+  # An origin Vary value that is a prefix of "Accept-Encoding" must not be
+  # mistaken for it: compress has to append Accept-Encoding alongside Accept.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /vary-accept
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, vary-accept ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/javascript ]
+        - [ Vary, Accept ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ Vary, { value: "Accept, Accept-Encoding", as: equal } ]
+
+  #############################################################################
+  # Control: an origin that already varies on Accept-Encoding is left alone,
+  # so the value is not duplicated.
+  #############################################################################
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /vary-accept-encoding
+      headers:
+        fields:
+        - [ Host, compress.example ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, vary-accept-encoding ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, text/javascript ]
+        - [ Vary, Accept-Encoding ]
+        - [ Content-Length, 1024 ]
+      <<: *compressible-body
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Content-Encoding, { value: gzip, as: equal } ]
+        - [ Vary, { value: "Accept-Encoding", as: equal } ]

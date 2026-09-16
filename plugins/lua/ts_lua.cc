@@ -24,6 +24,7 @@
 #include <pthread.h>
 
 #include "ts_lua_util.h"
+#include "tsutil/StringCompare.h"
 
 extern "C" {
 #include "luajit.h"
@@ -242,7 +243,7 @@ lifecycleHandler(TSCont contp, TSEvent /* event ATS_UNUSED */, void *edata)
 {
   // ensure the message is for ts_lua
   TSPluginMsg *const msgp = (TSPluginMsg *)edata;
-  if (0 != strncasecmp(msgp->tag, TS_LUA_DEBUG_TAG, strlen(msgp->tag))) {
+  if (!ts::iequals(msgp->tag, TS_LUA_DEBUG_TAG)) {
     return TS_EVENT_NONE;
   }
 
