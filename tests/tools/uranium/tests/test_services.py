@@ -103,8 +103,8 @@ def test_services_facade_reexports_focused_implementations() -> None:
         assert getattr(service_api, name) is getattr(import_module(module_name), name)
 
 
-def test_procedural_sandbox_leaves_room_for_ats_rpc_socket(tmp_path: Path) -> None:
-    """Keep procedural process trees readable and below the socket limit.
+def test_procedural_sandbox_preserves_name_and_cleans_previous_run(tmp_path: Path) -> None:
+    """Reuse the complete test name and discard stale artifacts on rerun.
 
     :param tmp_path: Temporary root used to construct a synthetic runtime.
     """
@@ -114,16 +114,20 @@ def test_procedural_sandbox_leaves_room_for_ats_rpc_socket(tmp_path: Path) -> No
         build_root=tmp_path,
         ats_bin=tmp_path,
         verifier_bin=tmp_path,
-        sandbox_root=Path("/tmp/ats-urtest-12345678"),
+        sandbox_root=tmp_path,
         layout={},
         features={},
     )
     sandbox = runtime.procedural_sandbox(
         "uranium_tests/cache/test_cache_shm_control_size_mismatch.py::test_cache_shm_control_size_mismatch")
-    socket_path = sandbox / "cache_process_with_long_name" / "runtime/jsonrpc20.sock"
-
-    assert sandbox.name.startswith("test_cache_shm_con-")
-    assert len(os.fsencode(socket_path)) < 108
+    assert sandbox.name == "test_cache_shm_control_size_mismatch"
+    runtime.prepare_sandbox(sandbox)
+    (sandbox / "previous-run.log").write_text("old output")
+    unrelated = tmp_path / "another-test"
+    unrelated.mkdir()
+    runtime.prepare_sandbox(sandbox)
+    assert list(sandbox.iterdir()) == []
+    assert unrelated.is_dir()
 
 
 def test_replay_sandbox_identifies_test_and_avoids_name_collisions(tmp_path: Path) -> None:
@@ -146,9 +150,35 @@ def test_replay_sandbox_identifies_test_and_avoids_name_collisions(tmp_path: Pat
     second = runtime.item_sandbox(replay, "uranium_tests/cache/cache.test.yaml::cache-tls")
 
     assert first.parent == runtime.sandbox_root
-    assert first.name.startswith("cache-default-")
-    assert second.name.startswith("cache-tls-")
+    assert first.name == "cache-default"
+    assert second.name == "cache-tls"
     assert first != second
+
+
+def test_long_sandbox_uses_short_uds_path(tmp_path: Path) -> None:
+    """Keep Unix listeners usable under full-length sandbox names.
+
+    :param tmp_path: Temporary root for a deeply nested sandbox.
+    """
+
+    long_root = tmp_path / ("long-sandbox-name-" * 8)
+    long_root.mkdir()
+    ats = ATS(make_context(long_root))
+    try:
+        socket_path = Path(ats.uds_path)
+        assert len(os.fsencode(socket_path)) < 104
+        assert ats.uds_path == str(socket_path)
+        assert socket_path.parent.is_dir()
+    finally:
+        ats.close()
+    assert not socket_path.parent.exists()
+
+
+def test_sandbox_names_preserve_parameter_ids() -> None:
+    """Keep parameterized cases distinct without adding generated suffixes."""
+
+    assert UraniumRuntime.sandbox_name("test_tls.py::test_timeout[get-handshake]") == "test_timeout[get-handshake]"
+    assert UraniumRuntime.sandbox_name("test_tls.py::test_timeout[post-handshake]") == "test_timeout[post-handshake]"
 
 
 def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
