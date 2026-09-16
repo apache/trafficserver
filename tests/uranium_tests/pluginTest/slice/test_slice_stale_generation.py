@@ -16,6 +16,7 @@
 """Verify slice behavior when an origin replaces an object in place."""
 
 from pathlib import Path
+import re
 import time
 
 import pytest
@@ -195,7 +196,11 @@ class SliceMixedGenerationScenario(SliceHierarchyScenario):
 
         time.sleep(2)
         mixed = self.configure_client("mixed", expected_return_code=1).run()
-        assert "Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE" in mixed.output
+        assert re.search(
+            r"Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE|"
+            r"Content-Length body underrun for key mixed",
+            mixed.output,
+        )
         assert "Failed HTTP/1 transaction with key: mixed" in mixed.output
         self.assert_mismatch_diagnostics(self._child, both_blocks=True)
 

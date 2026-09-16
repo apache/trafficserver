@@ -79,6 +79,94 @@ class ColdConfigScenario:
             document = yaml.safe_load(path.read_text())
             assert document["records"]["cache"]["limits"]["http"]["max_alts"] == 3
 
+        records_file = self._ats.config_directory / "records.yaml"
+        result = self.traffic_ctl(
+            "config",
+            "get",
+            "-c",
+            str(records_file),
+            "proxy.config.diags.debug.tags",
+        )
+        assert "proxy.config.diags.debug.tags: http" in result.stdout
+
+        result = self.traffic_ctl(
+            "config",
+            "get",
+            "-c",
+            str(records_file),
+            "proxy.config.diags.debug.tags",
+            "proxy.config.cache.limits.http.max_alts",
+        )
+        assert "proxy.config.diags.debug.tags: http" in result.stdout
+        assert "proxy.config.cache.limits.http.max_alts: 1" in result.stdout
+
+        result = self.traffic_ctl(
+            "config",
+            "get",
+            f"--cold={records_file}",
+            "proxy.config.diags.debug.tags",
+        )
+        assert "proxy.config.diags.debug.tags: http" in result.stdout
+
+        new_records = self._ats.config_directory / "new_records3.yaml"
+        self.traffic_ctl(
+            "config",
+            "set",
+            "-c",
+            str(new_records),
+            "proxy.config.cache.limits.http.max_alts",
+            "3",
+        )
+        document = yaml.safe_load(new_records.read_text())
+        assert document["records"]["cache"]["limits"]["http"]["max_alts"] == 3
+
+        repeated_cases = (
+            (f"--cold={records_file}", f"--cold={records_file}"),
+            ("-c", str(records_file), "-c", str(records_file)),
+            ("-c", str(records_file), f"--cold={records_file}"),
+        )
+        for cold_arguments in repeated_cases:
+            result = self._ats.traffic_ctl(
+                "config",
+                "get",
+                *cold_arguments,
+                "proxy.config.diags.debug.tags",
+            )
+            assert result.returncode == 64, result.output
+            assert "at most one argument expected by --cold" in result.output
+
+        for spelling in ("-c", "--cold"):
+            result = self._ats.traffic_ctl(
+                "config",
+                "get",
+                spelling,
+                "",
+                "proxy.config.diags.debug.tags",
+            )
+            assert result.returncode == 64, result.output
+            assert f"missing argument for '{spelling}'" in result.output
+
+        result = self._ats.traffic_ctl(
+            "config",
+            "set",
+            "-c",
+            "",
+            "proxy.config.cache.limits.http.max_alts",
+            "9",
+        )
+        assert result.returncode == 64, result.output
+        assert "missing argument for '-c'" in result.output
+
+        result = self._ats.traffic_ctl(
+            "config",
+            "set",
+            "-c",
+            "proxy.config.cache.limits.http.max_alts",
+            "9",
+        )
+        assert result.returncode == 64, result.output
+        assert "2 argument(s) expected by set" in result.output
+
 
 def test_traffic_ctl_cold_config(ats_factory: ATSFactory) -> None:
     """traffic_ctl cold operations preserve nested records.yaml values."""
