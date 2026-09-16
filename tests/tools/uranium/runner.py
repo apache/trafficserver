@@ -206,7 +206,8 @@ Apple container on macOS, Podman on Linux, and Docker as a fallback.
 Any argument not consumed above is passed to pytest.
 Common pytest options include -k for selection, -n for parallel workers, and
 --collect-only/--co for listing tests. Pass --run-manual to include explicitly
-opt-in Uranium tests; pytest documents these options below.
+opt-in Uranium tests, or --keep-sandboxes to retain successful test artifacts;
+pytest documents these options below.
 
 pytest options (passed through after urtest.sh processing):"""
 
