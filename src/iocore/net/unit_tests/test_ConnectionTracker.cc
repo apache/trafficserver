@@ -79,9 +79,8 @@ is_published(std::string_view metric_name)
 {
   bool found = false;
 
-  ts::Metrics::instance().for_each([&](std::string_view name, ts::Metrics::MetricType, int64_t) {
-    found |= (name == metric_name);
-  });
+  ts::Metrics::instance().for_each(
+    [&](std::string_view name, ts::Metrics::MetricType, int64_t) { found |= (name == metric_name); });
 
   return found;
 }
