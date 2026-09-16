@@ -204,11 +204,35 @@ dir_bucket_loop_check(Dir *start_dir, Dir *seg)
   return 1;
 }
 
+int
+Directory::segment_entries_used(int s) const
+{
+  Dir *seg  = this->get_segment(s);
+  int  used = 0;
+  for (int b = 0; b < this->buckets; b++) {
+    Dir *bucket = dir_bucket(b, seg);
+    for (int l = 0; l < DIR_DEPTH; l++) {
+      if (dir_offset(dir_bucket_row(bucket, l))) {
+        used++;
+      }
+    }
+  }
+  return used;
+}
+
 // adds all the directory entries
 // in a segment to the segment freelist
 void
-Directory::init_segment(int s)
+Directory::init_segment(int s, Stripe *stripe)
 {
+  // These entries stop existing here rather than through delete_entry(), so nothing else will ever debit them.
+  if (stripe != nullptr) {
+    if (int used = this->segment_entries_used(s); used > 0) {
+      ts::Metrics::Gauge::decrement(cache_rsb.direntries_used, used);
+      ts::Metrics::Gauge::decrement(stripe->cache_vol->vol_rsb.direntries_used, used);
+    }
+  }
+
   this->header->freelist[s] = 0;
   Dir *seg                  = this->get_segment(s);
   int  l, b;
@@ -226,11 +250,11 @@ Directory::init_segment(int s)
 // break the infinite loop in directory entries
 // Note : abuse of the token bit in dir entries
 int
-Directory::bucket_loop_fix(Dir *start_dir, int s)
+Directory::bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe)
 {
   if (!dir_bucket_loop_check(start_dir, this->get_segment(s))) {
     Warning("Dir loop exists, clearing segment %d", s);
-    this->init_segment(s);
+    this->init_segment(s, stripe);
     return 1;
   }
   return 0;
@@ -242,7 +266,8 @@ Directory::freelist_length(int s)
   int  free = 0;
   Dir *seg  = this->get_segment(s);
   Dir *e    = dir_from_offset(this->header->freelist[s], seg);
-  if (this->bucket_loop_fix(e, s)) {
+  // The caller owns the gauges for the count this returns.
+  if (this->bucket_loop_fix(e, s, nullptr)) {
     return (DIR_DEPTH - 1) * this->buckets;
   }
   while (e) {
@@ -307,9 +332,9 @@ dir_clean_bucket(Dir *b, int s, StripeSM *stripe)
   Dir *seg        = stripe->directory.get_segment(s);
   int  loop_count = 0;
   do {
-    // Past the longest legitimate chain, so this is provably a cycle.
+    // Past the longest legitimate chain, so the chain is corrupt.
     if (++loop_count > stripe->directory.max_bucket_depth()) {
-      stripe->directory.bucket_loop_fix(b, s);
+      stripe->directory.bucket_loop_fix(b, s, stripe);
       return;
     }
     if (!stripe->dir_valid(e) || !dir_offset(e)) {
@@ -400,7 +425,7 @@ freelist_pop(int s, StripeSM *stripe)
   stripe->directory.header->freelist[s] = dir_next(e);
   // if the freelist if bad, punt.
   if (dir_offset(e)) {
-    stripe->directory.init_segment(s);
+    stripe->directory.init_segment(s, stripe);
     return nullptr;
   }
   Dir *h = dir_from_offset(stripe->directory.header->freelist[s], seg);
@@ -439,11 +464,11 @@ Lagain:
   if (dir_offset(e)) {
     int loop_count = 0;
     do {
-      // Past the longest legitimate chain, so this is provably a cycle. probe() is a reader: it neither repairs nor
-      // walks on, and the report is throttled because the loop lives until a writer repairs it, so every lookup that
-      // hashes to this bucket lands here.
+      // Past the longest legitimate chain, so the chain is corrupt. A reader does not repair, so every lookup that
+      // hashes here lands on this; hence the throttle.
       if (++loop_count > this->max_bucket_depth()) {
-        SiteThrottledWarning("directory loop on '%s' segment %d bucket %d, abandoning probe", stripe->hash_text.get(), s, b);
+        SiteThrottledWarning("directory chain too long on '%s' segment %d bucket %d, abandoning probe", stripe->hash_text.get(), s,
+                             b);
         return 0;
       }
       if (dir_compare_tag(e, key)) {
@@ -550,10 +575,10 @@ Llink:
   do {
     prev = last;
     last = next_dir(last, seg);
-    // Past the longest legitimate chain, so this is provably a cycle. This is the only walk insert() makes, so it is
-    // where a writer meets one: repair and start over rather than linking into the cycle.
+    // Past the longest legitimate chain, so the chain is corrupt. This is insert()'s only walk, so it is where a
+    // writer meets one: repair and start over rather than linking into a cycle.
     if (++l > this->max_bucket_depth()) {
-      if (this->bucket_loop_fix(b, s)) {
+      if (this->bucket_loop_fix(b, s, stripe)) {
         goto Lagain;
       }
       break;
@@ -599,10 +624,10 @@ Lagain:
   if (dir_offset(e)) {
     int loop_count = 0;
     do {
-      // Past the longest legitimate chain, so this is provably a cycle. Repair and restart; bail if
-      // the repair somehow disagrees, rather than resuming an unbounded walk.
+      // Past the longest legitimate chain, so the chain is corrupt. Bail if it turns out acyclic rather than resuming
+      // an unbounded walk.
       if (++loop_count > this->max_bucket_depth()) {
-        if (!this->bucket_loop_fix(b, s)) {
+        if (!this->bucket_loop_fix(b, s, stripe)) {
           return 0;
         }
         goto Lagain;
@@ -677,9 +702,9 @@ Directory::remove(const CacheKey *key, StripeSM *stripe, Dir *del)
   if (dir_offset(e)) {
     int loop_count = 0;
     do {
-      // Past the longest legitimate chain, so this is provably a cycle.
+      // Past the longest legitimate chain, so the chain is corrupt.
       if (++loop_count > this->max_bucket_depth()) {
-        this->bucket_loop_fix(dir_bucket(b, seg), s);
+        this->bucket_loop_fix(dir_bucket(b, seg), s, stripe);
         return 0;
       }
       int64_t offset = dir_offset(e);
@@ -884,7 +909,8 @@ Directory::entries_used()
     sfull    = 0;
     for (int b = 0; b < this->buckets; b++) {
       Dir *e = dir_bucket(b, seg);
-      if (this->bucket_loop_fix(e, s)) {
+      // The caller owns the gauges for the count this returns.
+      if (this->bucket_loop_fix(e, s, nullptr)) {
         sfull = 0;
         break;
       }

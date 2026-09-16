@@ -402,7 +402,7 @@ Stripe::dir_check()
           ink_assert(nullptr == next_dir(e, seg));
           break;
         } else {
-          // Past the longest legitimate chain the walk is looping; stop before chain_tag overruns.
+          // Past the longest legitimate chain, so the chain is corrupt; stop before chain_tag overruns.
           if (h >= directory.max_bucket_depth()) {
             printf("    - Chain from bucket %d is longer than %d entries, abandoning walk\n", b, directory.max_bucket_depth());
             break;
