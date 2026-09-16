@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <iterator>
 #include <string>
 #include <vector>
 
