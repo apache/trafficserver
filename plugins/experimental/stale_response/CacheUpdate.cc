@@ -124,8 +124,11 @@ has_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
 {
   bool bFound = false;
 
-  TSMLoc url_loc;
-  TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc);
+  TSMLoc url_loc = TS_NULL_MLOC;
+  if (TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] TSHttpHdrUrlGet failed", __FUNCTION__);
+    return bFound;
+  }
   // create the new url
   UrlComponents reqUrl;
   reqUrl.populate(hdr_url_buf, url_loc);
@@ -144,8 +147,11 @@ has_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
 void
 add_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
 {
-  TSMLoc url_loc;
-  TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc);
+  TSMLoc url_loc = TS_NULL_MLOC;
+  if (TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] TSHttpHdrUrlGet failed", __FUNCTION__);
+    return;
+  }
   // create the new url
   UrlComponents reqUrl;
   reqUrl.populate(hdr_url_buf, url_loc);
@@ -163,7 +169,11 @@ add_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
   // parse ans set the new url
   const char *start = newUrl.c_str();
   const char *end   = newUrl.size() + start;
-  TSUrlParse(hdr_url_buf, url_loc, &start, end);
+  if (TSUrlParse(hdr_url_buf, url_loc, &start, end) != TS_PARSE_DONE) {
+    SRDBG(TAG_BAD, "[%s] TSUrlParse failed for [%s]", __FUNCTION__, newUrl.c_str());
+    TSHandleMLocRelease(hdr_url_buf, hdr_url_loc, url_loc);
+    return;
+  }
 
   SRDBG(TAG, "[%s] [%s]", __FUNCTION__, newQuery.c_str());
   TSHandleMLocRelease(hdr_url_buf, hdr_url_loc, url_loc);
@@ -174,8 +184,11 @@ bool
 strip_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
 {
   bool   stripped = false;
-  TSMLoc url_loc;
-  TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc);
+  TSMLoc url_loc  = TS_NULL_MLOC;
+  if (TSHttpHdrUrlGet(hdr_url_buf, hdr_url_loc, &url_loc) != TS_SUCCESS) {
+    SRDBG(TAG_BAD, "[%s] TSHttpHdrUrlGet failed", __FUNCTION__);
+    return stripped;
+  }
   // create the new url
   UrlComponents reqUrl;
   reqUrl.populate(hdr_url_buf, url_loc);
@@ -190,7 +203,12 @@ strip_trailing_parameter(TSMBuffer hdr_url_buf, TSMLoc hdr_url_loc)
     stripped = true;
   }
   if (stripped) {
-    TSUrlHttpQuerySet(hdr_url_buf, url_loc, newQuery.c_str(), newQuery.size());
+    // report only what actually happened: if the query could not be rewritten, nothing was stripped
+    if (TSUrlHttpQuerySet(hdr_url_buf, url_loc, newQuery.c_str(), newQuery.size()) != TS_SUCCESS) {
+      SRDBG(TAG_BAD, "[%s] TSUrlHttpQuerySet failed", __FUNCTION__);
+      TSError("stale_response [%s] failed to strip internal query parameter", __FUNCTION__);
+      stripped = false;
+    }
   }
   TSHandleMLocRelease(hdr_url_buf, hdr_url_loc, url_loc);
   SRDBG(TAG, "[%s] stripped=%d [%s]", __FUNCTION__, stripped, newQuery.c_str());
