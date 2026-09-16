@@ -113,6 +113,14 @@ Without ``-n``, tests run sequentially. Tests listed in
 ``tests/serial_tests.txt`` acquire an exclusive lock and never overlap other
 Uranium test items.
 
+Successful test sandboxes are removed by default. Pass ``--keep-sandboxes`` to
+retain them for local inspection; failed-test sandboxes are always retained.
+Each sandbox is ``<sandbox-root>/<test-name>/``, using the full pytest test
+name and parameter IDs without a generated suffix. A rerun clears that test's
+previous directory first. Collected tests must have distinct sandbox names;
+name collisions cause a collection error. Unix sockets use short paths when
+needed independently of the artifact directory names.
+
 Manual Tests
 ============
 

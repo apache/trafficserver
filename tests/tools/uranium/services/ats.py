@@ -22,7 +22,9 @@ from pathlib import Path
 import json
 import os
 import signal
+import shutil
 import subprocess
+import tempfile
 import time
 from typing import Any
 
@@ -138,6 +140,7 @@ class ATS:
         self._ipv6_https_port = context.runtime.allocate_port()
         self._process: ManagedProcess | None = None
         self._was_started = False
+        self._uds_directory: Path | None = None
         self._allow_fatal_diagnostics = False
         self.records = RecordsConfig(self._records)
 
@@ -187,7 +190,15 @@ class ATS:
     def uds_path(self) -> str:
         """Return this instance's Unix-domain listener path."""
 
-        return str(self._root / "runtime" / "ats.sock")
+        path = self._root / "runtime" / "ats.sock"
+        # Unix socket addresses have a small byte limit regardless of the
+        # filesystem's support for long, readable sandbox names.
+        if len(os.fsencode(path)) >= 104:
+            if self._uds_directory is None:
+                self._uds_directory = Path(tempfile.mkdtemp(prefix="ats-uds-", dir="/tmp"))
+                self._runner._chown_for_ats(self._uds_directory)
+            path = self._uds_directory / "ats.sock"
+        return str(path)
 
     @property
     def run_directory(self) -> Path:
@@ -617,6 +628,8 @@ class ATS:
         """Stop Traffic Server and validate fatal diagnostics."""
 
         self.stop()
+        if self._uds_directory is not None:
+            shutil.rmtree(self._uds_directory, ignore_errors=True)
         if self._was_started and self.diags_log.exists():
             content = self.diags_log.read_text(errors="replace")
             if "FATAL:" in content and not self._allow_fatal_diagnostics:
