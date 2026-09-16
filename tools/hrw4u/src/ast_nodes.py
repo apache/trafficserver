@@ -97,7 +97,7 @@ class IpRangeValue:
     raw: str  # verbatim source text
 
 
-ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, BoolValue, int, bool, IpRangeValue]
+ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, BoolValue, int, IpRangeValue]
 
 
 @dataclass(frozen=True, kw_only=True)

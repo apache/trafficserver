@@ -50,11 +50,12 @@ class TestAssignments:
         assert upper.value == BoolValue(raw="TRUE")
         assert lower.value == BoolValue(raw="true")
 
-    def test_bool_outside_an_assignment_stays_a_plain_bool(self):
+    def test_bool_keeps_source_spelling_outside_an_assignment(self):
+        """A procedure default is bound raw into its use site, so it echoes its spelling too."""
         src = 'procedure local::p($on=true, $off=FALSE) {\n    set-debug();\n}\nREMAP {\n    set-debug();\n}'
         pd = _build(src).body[0]
-        assert pd.params[0].default is True
-        assert pd.params[1].default is False
+        assert pd.params[0].default == BoolValue(raw="true")
+        assert pd.params[1].default == BoolValue(raw="FALSE")
 
     def test_int_value(self):
         ast = _build('REMAP {\n    http.cntl.INTERCEPT_RETRY = 1;\n}')
@@ -290,7 +291,7 @@ class TestConditionExpressions:
         assert isinstance(cond, Comparison)
         assert isinstance(cond.left, FunctionCall)
         assert cond.left.name == "url"
-        assert cond.left.args == (True,)
+        assert cond.left.args == (BoolValue(raw="true"),)
 
     def test_bool_literal_true(self):
         cond = self._first_condition('REMAP {\n    if true {\n        set-debug();\n    }\n}')
@@ -344,6 +345,12 @@ class TestConditionExpressions:
         assert isinstance(cond, Comparison)
         assert cond.operator == "<"
         assert cond.right == 500
+
+    def test_comparison_rhs_keeps_bool_spelling(self):
+        """`== TRUE` emits `=TRUE`, so normalizing the RHS would change the config."""
+        cond = self._first_condition('REMAP {\n    if inbound.req.X-Debug == TRUE {\n        set-debug();\n    }\n}')
+        assert isinstance(cond, Comparison)
+        assert cond.right == BoolValue(raw="TRUE")
 
     def test_neq_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.X-Foo != "bar" {\n        set-debug();\n    }\n}')

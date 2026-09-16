@@ -109,11 +109,11 @@ class ASTVisitor(hrw4uVisitor):
             return self._visit_function_call(ctx.functionCall())
         if ctx.EQUAL():
             target = Target.from_dotted(ctx.lhs.text)
-            value = self._extract_assignment_value(ctx.value())
+            value = self._extract_value(ctx.value())
             return Assignment(target=target, operator="=", value=value, line=line)
         if ctx.PLUSEQUAL():
             target = Target.from_dotted(ctx.lhs.text)
-            value = self._extract_assignment_value(ctx.value())
+            value = self._extract_value(ctx.value())
             return Assignment(target=target, operator="+=", value=value, line=line)
         if ctx.op:
             return FunctionCall(name=ctx.op.text, args=(), line=line)
@@ -126,23 +126,16 @@ class ASTVisitor(hrw4uVisitor):
             args = tuple(self._extract_value(v) for v in ctx.argumentList().value())
         return FunctionCall(name=name, args=args, line=ctx.start.line)
 
-    def _extract_assignment_value(self, ctx) -> ValueExpr:
-        # Only an assignment RHS echoes its bool spelling; elsewhere a plain bool is enough.
-        if ctx.TRUE():
-            return BoolValue(raw=ctx.TRUE().getText())
-        if ctx.FALSE():
-            return BoolValue(raw=ctx.FALSE().getText())
-        return self._extract_value(ctx)
-
     def _extract_value(self, ctx) -> ValueExpr:
         if ctx.number is not None:
+            # Drops a leading zero the emitter would echo; no corpus input writes one.
             return int(ctx.number.text)
         if ctx.str_ is not None:
             return LiteralStringValue(raw=ctx.str_.text[1:-1])
         if ctx.TRUE():
-            return True
+            return BoolValue(raw=ctx.TRUE().getText())
         if ctx.FALSE():
-            return False
+            return BoolValue(raw=ctx.FALSE().getText())
         if ctx.ident is not None:
             return IdentValue(raw=ctx.ident.text)
         if ctx.ip():

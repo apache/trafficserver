@@ -129,10 +129,7 @@ def _comparison(node: Comparison) -> str:
     return f"{left} {node.operator} {_value(node.right)}{mods}"
 
 
-def _value(v) -> str:
-    # bool first: it is a subclass of int, so the int arm would swallow it.
-    if isinstance(v, bool):
-        return "true" if v else "false"
+def _value(v: ValueExpr | RegexValue | SetValue) -> str:
     match v:
         case int():
             return str(v)
