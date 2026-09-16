@@ -30,6 +30,7 @@
 #include "proxy/hdrs/HTTP.h"
 #include "proxy/hdrs/HttpCompat.h"
 #include "tscore/ink_time.h"
+#include "tsutil/StringCompare.h"
 
 #include <ctime>
 
@@ -941,9 +942,7 @@ HttpTransactCache::calculate_quality_of_accept_encoding_match(MIMEField *accept_
     } else {
       // does this document have the identity encoding? //
       for (c_value = c_values_list.head; c_value; c_value = c_value->next) {
-        auto c_encoding     = c_value->str;
-        auto c_encoding_len = c_value->len;
-        if ((c_encoding_len >= 8) && (strncasecmp(c_encoding, "identity", 8) == 0)) {
+        if (ts::iequals(std::string_view{c_value->str, c_value->len}, "identity")) {
           is_identity_encoding = true;
           break;
         }

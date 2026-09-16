@@ -34,6 +34,7 @@
 #include <unistd.h>
 
 #include "tsutil/Regex.h"
+#include "tsutil/StringCompare.h"
 
 #define CONFIG_TMOUT      60000
 #define FREE_TMOUT        300000
@@ -323,9 +324,9 @@ load_state(plugin_state_t *pstate, invalidate_t **ilist)
       }
 
       auto const type = matches[4];
-      if (0 == strncasecmp(type.data(), RESULT_STALE, type.length())) {
+      if (ts::iequals(type, RESULT_STALE)) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_STALE, inv->regex_text);
-      } else if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
+      } else if (ts::iequals(type, RESULT_MISS)) {
         Dbg(dbg_ctl, "state: regex line set to result type %s: '%s'", RESULT_MISS, inv->regex_text);
         inv->new_result = TS_CACHE_LOOKUP_MISS;
       } else {
@@ -439,10 +440,10 @@ load_config(plugin_state_t *pstate, invalidate_t **ilist)
 
         if (5 == rc) {
           auto const type = matches[4];
-          if (0 == strncasecmp(type.data(), RESULT_MISS, type.length())) {
+          if (ts::iequals(type, RESULT_MISS)) {
             Dbg(dbg_ctl, "Regex line set to result type %s: '%s'", RESULT_MISS, i->regex_text);
             i->new_result = TS_CACHE_LOOKUP_MISS;
-          } else if (0 != strncasecmp(type.data(), RESULT_STALE, type.length())) {
+          } else if (!ts::iequals(type, RESULT_STALE)) {
             Dbg(dbg_ctl, "Unknown regex line result type '%.*s', using default '%s' '%s'", (int)type.length(), type.data(),
                 RESULT_STALE, i->regex_text);
           }
