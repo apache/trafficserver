@@ -93,13 +93,24 @@ public:
   static constexpr int      METRIC_TYPE_BITS = 29;
   static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
+  /// The reserved slot 0 of every store, returned when an id cannot be produced. Present under this
+  /// name in both stores, so a consumer querying both has to expect it twice.
+  static constexpr std::string_view BAD_ID_NAME{"proxy.process.api.metrics.bad_id"};
+
 private:
-  using NameAndId       = std::tuple<std::string, IdType>;
-  using LookupTable     = std::unordered_map<std::string_view, IdType>;
-  using NameStorage     = std::array<NameAndId, MAX_SIZE>;
-  using AtomicStorage   = std::array<AtomicType, MAX_SIZE>;
-  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage>;
+  using NameAndId     = std::tuple<std::string, IdType>;
+  using LookupTable   = std::unordered_map<std::string_view, IdType>;
+  using NameStorage   = std::array<NameAndId, MAX_SIZE>;
+  using AtomicStorage = std::array<AtomicType, MAX_SIZE>;
+  /// Per slot flag bits, see @c UNLISTED. A parallel array rather than a member of @c NameAndId
+  /// because an atomic member would make that tuple neither copyable nor movable, and the slot is
+  /// written there with a tuple assignment.
+  using FlagStorage     = std::array<std::atomic<uint8_t>, MAX_SIZE>;
+  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage, FlagStorage>;
   using BlobStorage     = std::array<std::unique_ptr<NamesAndAtomics>, MAX_BLOBS>;
+
+  /// The slot exists and is still resolvable by name or id, but is skipped by iteration.
+  static constexpr uint8_t UNLISTED = 0x01;
 
 public:
   Metrics(const self_type &)              = delete;
@@ -144,6 +155,57 @@ public:
   lookup(IdType id, std::string_view *out_name = nullptr, Metrics::MetricType *type = nullptr) const
   {
     return _storage->lookup(id, out_name, type);
+  }
+
+  /** Take @a id out of the store's listing.
+   *
+   * An unlisted metric keeps its slot, its name and its atomic. It is skipped by iteration, so it
+   * vanishes from everything that enumerates the store, but it still resolves through @c lookup and
+   * its value may still be read and written -- an unlisted number that still rings. Creating the
+   * same name again relists it and returns the same id.
+   *
+   * @return @c false if @a id does not name an allocated slot.
+   */
+  bool
+  unlist(IdType id)
+  {
+    return _storage->set_listed(id, false);
+  }
+
+  /// Put @a id back in the listing. @see unlist
+  bool
+  relist(IdType id)
+  {
+    return _storage->set_listed(id, true);
+  }
+
+  /** Whether @a id is enumerated.
+   *
+   * @return @c false for an unlisted metric, and also for an id that names no allocated slot --
+   *   neither appears in iteration.
+   */
+  bool
+  listed(IdType id) const
+  {
+    return _storage->listed(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see unlist
+  bool
+  unlist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && unlist(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see relist
+  bool
+  relist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && relist(id);
   }
   AtomicType &
   operator[](IdType id)
@@ -191,87 +253,21 @@ public:
     return _storage->valid(id);
   }
 
-  // Static methods to encapsulate access to the atomic's
-  class iterator
+  /** Visit every listed metric.
+   *
+   * @a func is called as <tt>func(std::string_view name, MetricType type, int64_t value)</tt> for
+   * each listed metric, in creation order. Unlisted metrics are skipped, @see unlist.
+   *
+   * The set walked is fixed when the call begins: a metric created while it runs is not visited.
+   * Enumeration is deliberately the whole store and nothing less. There is no cursor to hold, so
+   * nothing can outlive the walk or name a slot the walk would not visit, and @a func may not
+   * create a metric, which would be an attempt to grow the store from inside a pass over it.
+   */
+  template <typename F>
+  void
+  for_each(F &&func) const
   {
-  public:
-    using iterator_category = std::input_iterator_tag;
-    using value_type        = std::tuple<std::string_view, MetricType, int64_t>;
-    using difference_type   = ptrdiff_t;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-
-    iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos) {}
-
-    iterator &
-    operator++()
-    {
-      next();
-
-      return *this;
-    }
-
-    iterator
-    operator++(int)
-    {
-      iterator result = *this;
-
-      next();
-
-      return result;
-    }
-
-    value_type
-    operator*() const
-    {
-      std::string_view name;
-      MetricType       type;
-      auto             metric = _metrics.lookup(_it, &name, &type);
-
-      return std::make_tuple(name, type, metric->_value.load());
-    }
-
-    bool
-    operator==(const iterator &o) const
-    {
-      return _it == o._it && std::addressof(_metrics) == std::addressof(o._metrics);
-    }
-
-    bool
-    operator!=(const iterator &o) const
-    {
-      return _it != o._it || std::addressof(_metrics) != std::addressof(o._metrics);
-    }
-
-  private:
-    void next();
-
-    const Metrics  &_metrics;
-    Metrics::IdType _it;
-  };
-
-  iterator
-  begin() const
-  {
-    return iterator(*this, 0);
-  }
-
-  iterator
-  end() const
-  {
-    return iterator(*this, _storage->next_free_id());
-  }
-
-  iterator
-  find(const std::string_view name) const
-  {
-    auto id = lookup(name);
-
-    if (id == NOT_FOUND) {
-      return end();
-    } else {
-      return iterator(*this, id);
-    }
+    _storage->for_each(std::forward<F>(func));
   }
 
 private:
@@ -337,7 +333,7 @@ private:
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
       // Reserve slot 0 for errors, this should always be 0
-      release_assert(0 == create("proxy.process.api.metrics.bad_id", MetricType::COUNTER));
+      release_assert(0 == create(BAD_ID_NAME, MetricType::COUNTER));
     }
 
     ~Storage() {}
@@ -349,6 +345,46 @@ private:
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
     MetricType       type(IdType id) const;
+    bool             set_listed(IdType id, bool listed);
+    bool             listed(IdType id) const;
+
+    /** Visit every listed slot, in creation order.
+     *
+     * @see Metrics::for_each, which is how callers reach this.
+     *
+     * The bound is read once, up front. Acquiring it acquires every slot below it, which is what
+     * lets the walk read names and values without the mutex: a slot's name is written before the
+     * release store that publishes it, and never changes.
+     */
+    template <typename F>
+    void
+    for_each(F &&func) const
+    {
+      auto const [last_blob, last_off] = _splitID(next_free_id());
+
+      for (uint16_t blob = 0; blob <= last_blob; ++blob) {
+        NamesAndAtomics const *entries = _blobs[blob].get();
+
+        // The bound covers every blob below it, so this is belt and braces.
+        if (entries == nullptr) {
+          break;
+        }
+
+        uint16_t const limit = blob == last_blob ? last_off : MAX_SIZE;
+
+        for (uint16_t off = 0; off < limit; ++off) {
+          if ((std::get<2>(*entries)[off].load(MEMORY_ORDER) & UNLISTED) != 0) {
+            continue;
+          }
+
+          auto const &slot = std::get<0>(*entries)[off];
+
+          // The type comes from the slot's own id, not from the position, so it is the type the
+          // metric was created with.
+          func(std::string_view{std::get<0>(slot)}, _extractType(std::get<1>(slot)), std::get<1>(*entries)[off].load());
+        }
+      }
+    }
 
     /// The id the next slot will get, which is also iteration's exclusive bound.
     IdType
