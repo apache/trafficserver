@@ -98,6 +98,24 @@ never as a side effect of a broad query.
    renamed or removed between releases without notice. Do not build monitoring on them; use the
    published aggregate instead.
 
+Enumerating metrics
+===================
+
+``for_each`` visits every listed metric of a store, in creation order:
+
+.. code-block:: cpp
+
+    ts::Metrics::instance().for_each([](std::string_view name, ts::Metrics::MetricType type, int64_t value) {
+      // ...
+    });
+
+This is the only way to enumerate a store. There is no public iterator, and deliberately so:
+enumeration is always the whole store, so nothing can hold a cursor across changes to the store or
+name a position the walk would skip. Reach a single metric by name with ``lookup`` instead.
+
+The callback must not create a metric, which would be an attempt to grow the store from inside a
+pass over it.
+
 Derived metrics
 ===============
 
@@ -187,6 +205,42 @@ sampling point*, not the true peak. There are two ways to arrange this, with dif
   reports only that a peak occurred at some point, not when.
 
 Which is appropriate depends on whether the consumer needs to aggregate over time downstream.
+
+Unlisting a metric
+==================
+
+A metric can be taken out of the store's listing after the fact. An unlisted metric is skipped by
+iteration, so it disappears from ``traffic_ctl metric match``, the JSONRPC record lookup and
+``stats_over_http``, without either of those consumers needing to know about it:
+
+.. code-block:: cpp
+
+    auto &m = ts::Metrics::instance();
+
+    m.unlist(id);                       // by id
+    m.unlist("proxy.process.example");  // or by name
+
+    m.relist(id);                       // put it back
+
+The slot, the name and the atomic all survive: an unlisted number that still rings. An unlisted
+metric still resolves through ``lookup``, so an exact name query, a logging field reference and
+``TSStatFindName`` all continue to work, and its value may still be read and written. Creating the
+same name again relists it and returns the same id with its accumulated value intact, so a metric
+that comes and goes with a configuration setting costs nothing to bring back.
+
+This exists because the decision to publish a name is otherwise made once, when the metric is first
+created, and can never be revisited. Any metric whose name or publication policy depends on a
+runtime changeable setting needs a way to retract a name it has already published.
+
+.. important::
+
+   Unlisting hides; it does not free. The slot and the name remain allocated against the storage
+   limit below. Unlisting does not make an unbounded naming scheme safe.
+
+.. note::
+
+   The set walked is fixed when ``for_each`` begins, so a metric created while it runs is not
+   visited.
 
 Storage limits
 ==============
