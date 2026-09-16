@@ -144,7 +144,8 @@ public:
    *
    * Creates a new Regex object with a deep copy of the compiled pattern.
    * Uses pcre2_code_copy() to duplicate the compiled pattern without
-   * requiring the original pattern string.
+   * requiring the original pattern string, then compiles the copy for the
+   * just-in-time engine, which pcre2_code_copy() cannot carry over.
    *
    * @param other The Regex object to copy from.
    */
