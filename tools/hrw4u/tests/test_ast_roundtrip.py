@@ -53,9 +53,6 @@ from hrw4u.visitor import HRW4UVisitor
 
 CORPUS = Path("tests/data")
 
-# Rejected before any sandbox check; named so a newly-broken input fails instead of dropping out.
-DOES_NOT_COMPILE = frozenset({"sandbox/per-test-sandbox"})
-
 
 def _case_id(input_file: Path) -> str:
     return f"{input_file.parent.name}/{input_file.name.removesuffix('.input.txt')}"
@@ -63,7 +60,7 @@ def _case_id(input_file: Path) -> str:
 
 def _cases() -> list[pytest.param]:
     files = (f for f in sorted(CORPUS.glob("*/*.input.txt")) if ".fail." not in f.name)
-    return [pytest.param(f, id=_case_id(f)) for f in files if _case_id(f) not in DOES_NOT_COMPILE]
+    return [pytest.param(f, id=_case_id(f)) for f in files]
 
 
 def _compile(text: str, input_file: Path) -> list[str]:
