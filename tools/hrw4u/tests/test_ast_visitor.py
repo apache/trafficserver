@@ -60,7 +60,7 @@ class TestAssignments:
     def test_int_value(self):
         ast = _build('REMAP {\n    http.cntl.INTERCEPT_RETRY = 1;\n}')
         a = ast.body[0].body[0]
-        assert a.value == 1
+        assert a.value == NumberValue(raw="1")
 
     def test_plus_equals(self):
         ast = _build('REMAP {\n    inbound.req.X-Foo += "extra";\n}')
@@ -226,7 +226,7 @@ class TestProcedures:
         pd = ast.body[0]
         assert isinstance(pd, ProcedureDecl)
         assert pd.params[0].name == "ttl"
-        assert pd.params[0].default == 300
+        assert pd.params[0].default == NumberValue(raw="300")
 
     def test_body(self):
         src = ('procedure local::multi() {\n    inbound.req.X = "a";\n'
@@ -338,13 +338,13 @@ class TestConditionExpressions:
         cond = self._first_condition('REMAP {\n    if inbound.req.Content-Length > 1000 {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == ">"
-        assert cond.right == 1000
+        assert cond.right == NumberValue(raw="1000")
 
     def test_less_than_comparison(self):
         cond = self._first_condition('REMAP {\n    if inbound.req.Content-Length < 500 {\n        set-debug();\n    }\n}')
         assert isinstance(cond, Comparison)
         assert cond.operator == "<"
-        assert cond.right == 500
+        assert cond.right == NumberValue(raw="500")
 
     def test_comparison_rhs_keeps_bool_spelling(self):
         """`== TRUE` emits `=TRUE`, so normalizing the RHS would change the config."""

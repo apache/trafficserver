@@ -131,11 +131,9 @@ def _comparison(node: Comparison) -> str:
 
 def _value(v: ValueExpr | RegexValue | SetValue) -> str:
     match v:
-        case int():
-            return str(v)
         case LiteralStringValue():
             return f'"{v.raw}"'
-        case BoolValue() | IdentValue() | IPValue() | IpRangeValue():
+        case NumberValue() | BoolValue() | IdentValue() | IPValue() | IpRangeValue():
             return v.raw
         case ParamRef():
             return f"${v.raw}"

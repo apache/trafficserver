@@ -26,6 +26,7 @@ __all__ = [
     "IPValue",
     "ParamRef",
     "BoolValue",
+    "NumberValue",
     "RegexValue",
     "SetValue",
     "IpRangeValue",
@@ -83,6 +84,11 @@ class BoolValue:
 
 
 @dataclass(frozen=True, kw_only=True)
+class NumberValue:
+    raw: str  # source spelling: header_rewrite echoes it, so 007 is three bytes and not 7
+
+
+@dataclass(frozen=True, kw_only=True)
 class RegexValue:
     raw: str
 
@@ -97,7 +103,7 @@ class IpRangeValue:
     raw: str  # verbatim source text
 
 
-ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, BoolValue, int, IpRangeValue]
+ValueExpr = Union[LiteralStringValue, IdentValue, IPValue, ParamRef, BoolValue, NumberValue, IpRangeValue]
 
 
 @dataclass(frozen=True, kw_only=True)

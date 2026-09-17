@@ -128,8 +128,7 @@ class ASTVisitor(hrw4uVisitor):
 
     def _extract_value(self, ctx) -> ValueExpr:
         if ctx.number is not None:
-            # Drops a leading zero the emitter would echo; no corpus input writes one.
-            return int(ctx.number.text)
+            return NumberValue(raw=ctx.number.text)
         if ctx.str_ is not None:
             return LiteralStringValue(raw=ctx.str_.text[1:-1])
         if ctx.TRUE():
