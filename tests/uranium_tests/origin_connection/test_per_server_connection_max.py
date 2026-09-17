@@ -150,7 +150,7 @@ class PerServerConnectionMaxScenario:
                 f"per_server.blocked_connection.{group} 1",
             ),
         )
-        assert "per_server.current_connection_max." not in metrics
+        assert "per_server.current_connection.max." not in metrics
         assert re.search(r"WARNING:.*too many connections:.*limit=3", ats.diags_log.read_text(errors="replace"))
 
     def configure_connect_ats(
@@ -258,7 +258,7 @@ class PerServerConnectionMaxScenario:
                 "proxy.config.diags.debug.enabled": 1,
                 "proxy.config.diags.debug.tags": "http|dns|hostdb|conn_track",
                 "proxy.config.http.per_server.connection.metric_enabled": 1,
-                "proxy.config.http.per_server.connection.metric_aggregate": 2,
+                "proxy.config.http.per_server.connection.metric_aggregate": 3,
                 "proxy.config.http.per_server.connection.match": "both",
             })
         ats.remap_config.add_lines(
@@ -298,14 +298,15 @@ class PerServerConnectionMaxScenario:
         with ThreadPoolExecutor(max_workers=5) as executor:
             requests = [executor.submit(self.multi_group_request, ats, "a", hold_seconds) for _ in range(2)]
             requests.extend(executor.submit(self.multi_group_request, ats, "b", hold_seconds) for _ in range(3))
-            self.wait_for_metrics(
+            metrics = self.wait_for_metrics(
                 ats,
                 (
                     "per_server.total_connection.multi.origin.com 5",
                     "per_server.current_connection.multi.origin.com 5",
-                    "per_server.current_connection_max.multi.origin.com 3",
+                    "per_server.current_connection.max.multi.origin.com 3",
                 ),
             )
+            assert not re.search(r"per_server\.\w+_connection\.multi\.origin\.com\.\d", metrics), metrics
             results = [future.result(timeout=hold_seconds + 5) for future in requests]
 
         for result in results:
@@ -314,7 +315,7 @@ class PerServerConnectionMaxScenario:
             ats,
             (
                 "per_server.current_connection.multi.origin.com 0",
-                "per_server.current_connection_max.multi.origin.com 0",
+                "per_server.current_connection.max.multi.origin.com 0",
             ),
         )
 
@@ -398,16 +399,69 @@ class PerServerConnectionMaxScenario:
         metrics = self.wait_for_metrics(ats, (f"per_server.total_connection.{group} 1",))
         assert "per_server.total_connection.agg-only.com" not in metrics
 
+    def configure_aggregate_retraction_ats(self, origin: HttpBinServer) -> ATS:
+        """Publish per-group metrics and force groups to close after requests.
+
+        :param origin: HTTP origin whose metric publication changes at runtime.
+        """
+
+        ats = self._ats_factory.create("aggregate-retraction-ts")
+        self.configure_common_records(ats)
+        ats.records.update(
+            {
+                "proxy.config.http.per_server.connection.metric_enabled": 1,
+                "proxy.config.http.per_server.connection.metric_aggregate": 0,
+                "proxy.config.http.per_server.connection.match": "both",
+                "proxy.config.http.keep_alive_enabled_out": 0,
+            })
+        ats.remap_config.add_line(f"map http://retract.origin.com/ http://retract.origin.com:{origin.port}/")
+        return ats
+
+    def run_aggregate_retraction_case(self) -> None:
+        """Withdraw previously published groups when switching to max-only mode."""
+
+        origin = self._services.httpbin("aggregate-retraction-origin")
+        ats = self.configure_aggregate_retraction_ats(origin)
+        origin.start()
+        ats.start()
+        result = self._curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
+        assert result.returncode == 0, result.output
+        group = f"retract.origin.com.127.0.0.1:{origin.port}"
+        self.wait_for_metrics(ats, (f"per_server.current_connection.{group} 0", f"per_server.total_connection.{group} 1"))
+
+        record = "proxy.config.http.per_server.connection.metric_aggregate"
+        for arguments in (("config", "set", record, "2"), ("config", "reload")):
+            result = ats.traffic_ctl(*arguments)
+            assert result.returncode == 0, result.output
+        result = ats.traffic_ctl("config", "get", record)
+        assert result.returncode == 0, result.output
+        assert "metric_aggregate: 2" in result.stdout, result.output
+
+        # HttpConfig applies record changes asynchronously. Fresh requests
+        # recreate the drained group until the new publication mode takes effect.
+        deadline = time.monotonic() + 10
+        metrics = ""
+        while time.monotonic() < deadline:
+            result = self._curl.get(ats, "/get", headers={"Host": "retract.origin.com"}, options="--fail --silent")
+            assert result.returncode == 0, result.output
+            metrics = self.read_metrics(ats)
+            if ("per_server.current_connection.max.retract.origin.com " in metrics and
+                    not re.search(r"per_server\.\w+_connection\.retract\.origin\.com(?:\.\d| )", metrics)):
+                return
+            time.sleep(0.1)
+        pytest.fail(f"Per-group metrics and hostname sums were not withdrawn in max-only mode:\n{metrics}")
+
     def run(self) -> None:
         """Run connection limits, aggregates, overrides, and fallback coverage."""
 
         self._dns.start()
         self.run_replay_case()
-        self.run_connect_case(maximum=3, blocked=2, metric_aggregate=2)
+        self.run_connect_case(maximum=3, blocked=2, metric_aggregate=3)
         self.run_connect_case(maximum=0, blocked=0, metric_aggregate=1)
         self.run_multi_group_aggregate_case()
         self.run_metric_override_case()
         self.run_aggregate_only_without_host_case()
+        self.run_aggregate_retraction_case()
 
 
 def test_per_server_connection_max(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
