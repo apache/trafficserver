@@ -51,11 +51,28 @@ class ReplaySkip(RuntimeError):
 class ReplayTest:
     """Run one replay file as one independently reportable test item."""
 
-    def __init__(self, spec: ReplaySpec, runtime: TestRuntime, node_name: str | None = None) -> None:
+    def __init__(
+            self,
+            spec: ReplaySpec,
+            runtime: TestRuntime,
+            node_name: str | None = None,
+            *,
+            sandbox_parent: Path | None = None) -> None:
+        """Prepare service state without touching the scenario's sandbox.
+
+        :param spec: Validated replay manifest and selected variant.
+        :param runtime: Installed tools and shared session configuration.
+        :param node_name: Pytest node identifier, defaulting to the file stem.
+        :param sandbox_parent: Native test sandbox containing embedded replays.
+        """
+
         self.spec = spec
         self.runtime = runtime
         self.node_name = node_name or spec.path.stem
         self.sandbox = runtime.item_sandbox(spec.path, self.node_name)
+        self._sandbox_parent = sandbox_parent
+        if sandbox_parent is not None:
+            self.sandbox = sandbox_parent / runtime.sandbox_name(self.node_name)
         self.processes: list[ManagedProcess] = []
         self._temporary_directories: list[Path] = []
         self.http_port = runtime.allocate_port()
@@ -87,7 +104,7 @@ class ReplayTest:
         reason = self.runtime.requirement_failure(self.spec.urtest.get("requires", {}))
         if reason:
             raise ReplaySkip(reason)
-        self.runtime.prepare_sandbox(self.sandbox)
+        self.runtime.prepare_sandbox(self.sandbox, parent=self._sandbox_parent)
 
         server = None
         ats = None
@@ -746,6 +763,15 @@ class ReplayTest:
                         raise AssertionError(f"Expected at least {match['min']} matches for {match['expression']!r}, found {count}")
                     if "max" in match and count > int(match["max"]):
                         raise AssertionError(f"Expected at most {match['max']} matches for {match['expression']!r}, found {count}")
+            if expected and "excludes" in check:
+                for path in paths:
+                    content = path.read_text(errors="replace")
+                    if re.search(str(check["excludes"]), content, re.MULTILINE):
+                        raise AssertionError(f"Forbidden pattern {check['excludes']!r} in {path}:\n{content}")
+            if expected and "line_count_min" in check:
+                count = sum(len(path.read_text(errors="replace").splitlines()) for path in paths)
+                if count < int(check["line_count_min"]):
+                    raise AssertionError(f"Expected at least {check['line_count_min']} lines in {pattern}, found {count}")
 
     def _validate_background_processes(self, server: ManagedProcess | None, ats: ManagedProcess) -> None:
         """Detect a server or unit-under-test exit before intentional teardown."""

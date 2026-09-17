@@ -23,8 +23,11 @@ meta:
         encoding: plain
         size: 1024
 
-autest:
+urtest:
   description: 'Verify compress appends Accept-Encoding to an existing origin Vary header'
+
+  requires:
+    plugins: [compress.so]
 
   server:
     name: 'server'

@@ -140,6 +140,7 @@ class ATS:
         self._ipv6_https_port = context.runtime.allocate_port()
         self._process: ManagedProcess | None = None
         self._was_started = False
+        self._exit_was_expected = False
         self._uds_directory: Path | None = None
         self._allow_fatal_diagnostics = False
         self.records = RecordsConfig(self._records)
@@ -238,9 +239,14 @@ class ATS:
 
     @property
     def diags_log(self) -> Path:
-        """Return the path to diags.log."""
+        """Return the configured diagnostic file or captured diagnostic stream."""
 
-        return self.log_directory / "diags.log"
+        destination = str(self._records.get("proxy.config.diags.logfile.filename", "diags.log"))
+        if destination in ("stdout", "stderr"):
+            if self._process_options.get("capture_traffic_out", True):
+                return self.traffic_out
+            return self._root / f"{self.name}.{destination}"
+        return self.log_directory / destination
 
     @property
     def traffic_out(self) -> Path:
@@ -371,6 +377,12 @@ class ATS:
         """Stop Traffic Server without relinquishing fixture ownership."""
 
         if self._process is not None:
+            if self._was_started and not self._exit_was_expected and not self._allow_fatal_diagnostics:
+                if self._process.return_code is not None:
+                    message = f"{self.name} exited unexpectedly with status {self._process.return_code}.\n{self.process_output}"
+                    self._process.stop()
+                    raise AssertionError(message)
+            self._exit_was_expected = True
             self._process.stop()
 
     def wait(self, timeout: float = 60) -> None:
@@ -382,12 +394,14 @@ class ATS:
         if self._process is None:
             raise RuntimeError(f"{self.name} has not been started")
         self._process.wait(timeout)
+        self._exit_was_expected = True
 
     def kill(self) -> None:
         """Kill Traffic Server without running its shutdown handlers."""
 
         if self._process is None or self._process._process is None or self._process.return_code is not None:
             return
+        self._exit_was_expected = True
         os.killpg(self._process._process.pid, signal.SIGKILL)
         self._process._process.wait(timeout=5)
         self._process._close_streams()
@@ -627,13 +641,18 @@ class ATS:
     def close(self) -> None:
         """Stop Traffic Server and validate fatal diagnostics."""
 
-        self.stop()
-        if self._uds_directory is not None:
-            shutil.rmtree(self._uds_directory, ignore_errors=True)
-        if self._was_started and self.diags_log.exists():
-            content = self.diags_log.read_text(errors="replace")
-            if "FATAL:" in content and not self._allow_fatal_diagnostics:
-                raise AssertionError(f"{self.name} emitted a fatal diagnostic:\n{content}")
+        try:
+            self.stop()
+            if self._was_started:
+                assert self.diags_log.is_file(), f"Missing ATS diagnostic log: {self.diags_log}"
+                content = self.diags_log.read_text(errors="replace")
+                if "FATAL:" in content and not self._allow_fatal_diagnostics:
+                    raise AssertionError(f"{self.name} emitted a fatal diagnostic:\n{content}")
+        finally:
+            for directory in self._runner._temporary_directories:
+                shutil.rmtree(directory, ignore_errors=True)
+            if self._uds_directory is not None:
+                shutil.rmtree(self._uds_directory, ignore_errors=True)
 
 
 class ATSFactory:

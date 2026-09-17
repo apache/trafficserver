@@ -16,6 +16,7 @@
 
 from pathlib import Path
 import os
+import pwd
 import subprocess
 
 import pytest
@@ -175,17 +176,16 @@ class RunrootScenario:
                 f"runtimedir: {self._layout['RUNTIMEDIR']}",
                 "runtimedir: ./var/trafficserver",
             ))
-        for directory in (path / "var/trafficserver", path / "var/log/trafficserver"):
-            directory.chmod(0o777)
-            for entry in directory.rglob("*"):
-                entry.chmod(0o777 if entry.is_dir() else 0o666)
-        first = self.run("verify", "--path", path).stdout
+        # Initialization copies files as the invoking user, including any
+        # existing installed logs. Verify that user's permissions unchanged.
+        username = pwd.getpwuid(os.getuid()).pw_name
+        first = self.run("verify", "--path", path, "--with-user", username).stdout
         for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
             assert expected in first
 
         copied_layout = path / bin_suffix / "traffic_layout"
         result = subprocess.run(
-            [copied_layout, "verify", "--path", path],
+            [copied_layout, "verify", "--path", path, "--with-user", username],
             cwd=path,
             capture_output=True,
             text=True,
@@ -195,6 +195,12 @@ class RunrootScenario:
         assert result.returncode == 0, result.stdout + result.stderr
         for expected in (str(path / bin_suffix), str(path / log_suffix), "PASSED"):
             assert expected in result.stdout
+
+        inaccessible = path / log_suffix / "unwritable.log"
+        inaccessible.touch(mode=0o400)
+        failed = self.run("verify", "--path", path, "--with-user", username, expected_return_codes=(70,))
+        assert "Write permission failed" in failed.stdout
+        assert str(inaccessible) in failed.stdout
 
 
 def test_runroot_errors(procedural_context: ProceduralContext) -> None:

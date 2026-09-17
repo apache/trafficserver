@@ -118,6 +118,15 @@ class ReplaySpec:
         environment = urtest["ats"].get("environment", {})
         if not isinstance(environment, dict):
             raise ReplayConfigError(f"{path}: 'urtest.ats.environment' must be a mapping")
+        for check in urtest["ats"].get("file_checks", []):
+            allowed = {"path", "glob", "exists", "timeout", "contains", "excludes", "line_count_min", "matches"}
+            if not isinstance(check, dict) or set(check) - allowed:
+                raise ReplayConfigError(f"{path}: unsupported file_checks keys: {check!r}")
+            if ("path" in check) == ("glob" in check):
+                raise ReplayConfigError(f"{path}: file_checks needs exactly one of path or glob: {check!r}")
+            for match in check.get("matches", []):
+                if not isinstance(match, dict) or "expression" not in match or set(match) - {"expression", "min", "max"}:
+                    raise ReplayConfigError(f"{path}: invalid file_checks match: {match!r}")
         spec = cls(path=path, document=document, urtest=urtest, variant_name=variant_name)
         if not spec.replay_path.exists():
             raise ReplayConfigError(f"{path}: replay file does not exist: {spec.replay_path}")
