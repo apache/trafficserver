@@ -144,7 +144,8 @@ public:
    *
    * Creates a new Regex object with a deep copy of the compiled pattern.
    * Uses pcre2_code_copy() to duplicate the compiled pattern without
-   * requiring the original pattern string.
+   * requiring the original pattern string, then compiles the copy for the
+   * just-in-time engine, which pcre2_code_copy() cannot carry over.
    *
    * @param other The Regex object to copy from.
    */
@@ -163,23 +164,27 @@ public:
 
   /** Compile the @a pattern into a regular expression.
    *
-   * @param pattern Source pattern for regular expression (null terminated).
+   * @param pattern Source pattern for regular expression.
    * @param flags Compilation flags.
    * @return @a true if compiled successfully, @a false otherwise.
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * On failure any previously compiled pattern is left in place and remains usable.
    */
   bool compile(std::string_view pattern, uint32_t flags = 0);
 
   /** Compile the @a pattern into a regular expression.
    *
-   * @param pattern Source pattern for regular expression (null terminated).
+   * @param pattern Source pattern for regular expression.
    * @param error String to receive error message.
    * @param erroffset Pointer to integer to receive error offset.
    * @param flags Compilation flags.
    * @return @a true if compiled successfully, @a false otherwise.
    *
    * @a flags should be the bitwise @c or of @c REFlags values.
+   *
+   * On failure any previously compiled pattern is left in place and remains usable.
    */
   bool compile(std::string_view pattern, std::string &error, int &erroffset, unsigned flags = 0);
 

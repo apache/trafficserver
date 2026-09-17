@@ -97,8 +97,14 @@ TEST_CASE("OCSP stapling keeps SSL_CTX certificate map after later init failure"
 
   REQUIRE(SSL_CTX_use_certificate(ctx.get(), good.get()) == 1);
 
-  REQUIRE(SSL_CTX_add_extra_chain_cert(ctx.get(), issuer.get()) == 1);
-  issuer.release();
+  // SSL_CTX_add_extra_chain_cert() takes ownership of the certificate only when it succeeds, so
+  // hand the raw pointer over and give it back to the unique_ptr if the call fails.
+  X509 *issuer_raw = issuer.release();
+
+  if (SSL_CTX_add_extra_chain_cert(ctx.get(), issuer_raw) != 1) {
+    issuer.reset(issuer_raw);
+    FAIL("SSL_CTX_add_extra_chain_cert failed");
+  }
 
   REQUIRE(ssl_stapling_init_cert(ctx.get(), good.get(), "server.ocsp.pem", nullptr));
   CHECK_FALSE(ssl_stapling_init_cert(ctx.get(), bad.get(), "signed-foo.pem", nullptr));

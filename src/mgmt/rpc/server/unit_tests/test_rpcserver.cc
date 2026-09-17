@@ -106,8 +106,10 @@ DbgCtl           dbg_ctl{"rpc.test.client"};
 bool
 try_setup_rpc_test_paths(fs::path const &base, std::string &error)
 {
-  auto const dir_template = (base / rpc_test_dir_template).string();
-  auto const socket_path  = (fs::path{dir_template} / rpc_test_socket_name).string();
+  fs::path const     template_path    = base / rpc_test_dir_template;
+  std::string const &dir_template     = template_path.string();
+  fs::path const     socket_file_path = template_path / rpc_test_socket_name;
+  std::string const &socket_path      = socket_file_path.string();
 
   if (socket_path.size() > max_rpc_socket_path_size) {
     error = "JSONRPC test socket path is too long under " + base.string() + ": " + socket_path;

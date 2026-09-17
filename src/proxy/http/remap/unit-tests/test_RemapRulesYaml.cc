@@ -145,6 +145,9 @@ struct EasyURL {
     url.create(heap);
     url.parse(s);
   }
+  // THREAD_FREE() reaches thread_freeup(), which asserts; Coverity resolves
+  // _ink_assert() to the throwing definition in test_MIOBufferWriter.cc.
+  // coverity[UNCAUGHT_EXCEPT:FALSE]
   ~EasyURL() { heap->destroy(); }
 };
 

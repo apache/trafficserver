@@ -946,7 +946,7 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   TSAssert(s->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
-    if (s && s->accept_port != SYNSERVER_DUMMY_PORT) {
+    if (s->accept_port != SYNSERVER_DUMMY_PORT) {
       Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
       ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
       Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
@@ -6022,6 +6022,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     if (TSMBufferDestroy(bufp1) == TS_ERROR) {
       SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
     }
+    TSMimeParserDestroy(parser);
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
   } else {
     start = parse_string;
     end   = parse_string + strlen(parse_string) + 1;
@@ -6087,7 +6090,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       }
 
       field_loc2 = TSMimeHdrFieldNextDup(bufp1, mime_hdr_loc1, field_loc1);
-      if (compare_field_names(test, bufp1, mime_hdr_loc1, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
+      if (field_loc2 == TS_NULL_MLOC) {
+        SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "TSMimeHdrFieldNextDup returns TS_NULL_MLOC");
+      } else if (compare_field_names(test, bufp1, mime_hdr_loc1, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "Incorrect Pointer");
       } else {
         SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_PASS, "ok");
@@ -6401,6 +6406,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
       if (TSMBufferDestroy(bufp) == TS_ERROR) {
         SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Error in Destroying MBuffer");
       }
+      continue;
     } else {
       start = url;
       end   = url + strlen(url);
@@ -7271,9 +7277,16 @@ struct ParentTest {
 
   ~ParentTest()
   {
-    synclient_txn_close(this->browser);
-    synclient_txn_delete(this->browser);
-    synserver_delete(this->os);
+    // A destructor is implicitly noexcept, so anything escaping the teardown
+    // calls would terminate the process without saying where it came from.
+    try {
+      synclient_txn_close(this->browser);
+      synclient_txn_delete(this->browser);
+      synserver_delete(this->os);
+    } catch (...) {
+      ink_abort("ParentTest teardown threw an exception");
+    }
+
     this->os    = nullptr;
     this->magic = MAGIC_DEAD;
   }
@@ -7985,6 +7998,8 @@ transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 static int
 load(const char *append_string)
 {
+  TSAssert(nullptr != append_string);
+
   TSIOBufferBlock blk;
   char           *p;
   int64_t         avail;
@@ -7996,9 +8011,7 @@ load(const char *append_string)
   p   = TSIOBufferBlockWriteStart(blk, &avail);
 
   ink_strlcpy(p, append_string, avail);
-  if (append_string != nullptr) {
-    TSIOBufferProduce(append_buffer, strlen(append_string));
-  }
+  TSIOBufferProduce(append_buffer, strlen(append_string));
 
   append_buffer_length = TSIOBufferReaderAvail(append_buffer_reader);
 

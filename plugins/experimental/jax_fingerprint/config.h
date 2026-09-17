@@ -63,6 +63,7 @@ struct PluginConfig {
   std::string   via_header_name = "";
   std::string   log_filename    = "";
   std::string   log_symbol      = "";
+  std::string   export_name     = "";
   int           user_arg_index  = -1;
   TSCont        handler         = nullptr; // For remap plugin
   bool          standalone      = false;

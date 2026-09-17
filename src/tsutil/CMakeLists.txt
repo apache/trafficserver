@@ -30,6 +30,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/LocalBuffer.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/PostScript.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/Strerror.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/StringCompare.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/StringConvert.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/Regex.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/TsMutex.h
@@ -41,6 +42,7 @@ set(TSUTIL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_time_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_unit_parser.h
     ${PROJECT_SOURCE_DIR}/include/tsutil/ts_errata.h
+    ${PROJECT_SOURCE_DIR}/include/tsutil/UdiTable.h
 )
 add_library(
   tsutil
@@ -80,11 +82,13 @@ if(BUILD_TESTING)
     unit_tests/test_Metrics.cc
     unit_tests/test_PostScript.cc
     unit_tests/test_Strerror.cc
+    unit_tests/test_StringCompare.cc
     unit_tests/test_StringConvert.cc
     unit_tests/test_Regex.cc
     unit_tests/test_ts_meta.cc
     unit_tests/test_thread_safety.cc
     unit_tests/test_time_parser.cc
+    unit_tests/test_UdiTable.cc
   )
 
   # The thread-safety test doubles as a compile-time check: build it with the

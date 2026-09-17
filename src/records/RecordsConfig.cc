@@ -406,7 +406,7 @@ static constexpr RecordElement RecordsConfig[] =
   ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_enabled", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-1]$", RECA_NULL}
   ,
-  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_aggregate", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-2]$", RECA_NULL}
+  {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_aggregate", RECD_INT, "0", RECU_DYNAMIC, RR_NULL, RECC_STR, "^[0-3]$", RECA_NULL}
   ,
   {RECT_CONFIG, "proxy.config.http.per_server.connection.metric_prefix", RECD_STRING, "", RECU_DYNAMIC, RR_NULL, RECC_NULL, nullptr, RECA_NULL}
   ,
@@ -1703,15 +1703,6 @@ matches_bracketed_int_range(std::string_view s)
     return false;
   }
   return i == s.size(); // must end exactly here
-}
-
-// For string literals: deduces N and strips the trailing '\0'
-template <std::size_t N>
-consteval bool
-matches_bracketed_int_range(const char (&lit)[N])
-{
-  // N includes the null terminator
-  return matches_bracketed_int_range(std::string_view{lit, N - 1});
 }
 
 // Validate all RECC_INT entries in the RecordsConfig array at compile time

@@ -26,11 +26,11 @@
 #include <algorithm>
 #include <atomic>
 #include <array>
-#include <iterator>
 #include <limits>
 #include <memory>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "tsutil/Metrics.h"
@@ -40,33 +40,37 @@ TEST_CASE("Metrics", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();
 
-  SECTION("iterator")
+  SECTION("for_each")
   {
-    auto [name, type, value] = *m.begin();
-    REQUIRE(value == 0);
-    REQUIRE(type == Metrics::MetricType::COUNTER);
-    REQUIRE(name == "proxy.process.api.metrics.bad_id");
+    std::vector<std::string> names;
+    int64_t                  first_value = -1;
+    Metrics::MetricType      first_type{};
 
-    REQUIRE(m.begin() != m.end());
+    m.for_each([&](std::string_view name, Metrics::MetricType type, int64_t value) {
+      if (names.empty()) {
+        first_value = value;
+        first_type  = type;
+      }
+      names.emplace_back(name);
+    });
 
-    // Other test cases share this process-wide store, so the number of metrics already present
-    // is not knowable here. Assert the delta from creating one metric instead of an absolute
-    // iterator position.
-    auto pre_count = std::distance(m.begin(), m.end());
+    // The reserved bad_id occupies the first slot of every store, so it is always visited first.
+    REQUIRE_FALSE(names.empty());
+    REQUIRE(names.front() == Metrics::BAD_ID_NAME);
+    REQUIRE(first_value == 0);
+    REQUIRE(first_type == Metrics::MetricType::COUNTER);
 
-    Metrics::Counter::create("iterator.marker");
-    REQUIRE(std::distance(m.begin(), m.end()) == pre_count + 1);
+    // Other test cases share this process-wide store, so the number of metrics already present is
+    // not knowable here. Assert the delta from creating one metric instead of an absolute count.
+    auto const pre_count = names.size();
 
-    auto it = m.begin();
-    std::advance(it, pre_count);
-    REQUIRE(it != m.end());
-    ++it;
-    REQUIRE(it == m.end());
+    Metrics::Counter::create("for_each.marker");
 
-    auto it2 = m.begin();
-    std::advance(it2, pre_count);
-    it2++;
-    REQUIRE(it2 == m.end());
+    names.clear();
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { names.emplace_back(name); });
+
+    REQUIRE(names.size() == pre_count + 1);
+    REQUIRE(names.back() == "for_each.marker"); // creation order, so the newest is last
   }
 
   SECTION("New metric")
@@ -295,6 +299,131 @@ TEST_CASE("Metrics derived ops", "[libtsapi][Metrics]")
   }
 }
 
+TEST_CASE("Metrics derived remove_source", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("a derived metric stays listed while any source remains")
+  {
+    auto a = Metrics::Gauge::createHiddenPtr("rm.a");
+    auto b = Metrics::Gauge::createHiddenPtr("rm.b");
+
+    Metrics::Derived::add_source("rm.sum", Metrics::MetricType::GAUGE, a);
+    Metrics::Derived::add_source("rm.sum", Metrics::MetricType::GAUGE, b);
+
+    Metrics::Gauge::store(a, 3);
+    Metrics::Gauge::store(b, 4);
+    Metrics::Derived::update_derived();
+
+    auto const id = m.lookup("rm.sum");
+    REQUIRE(id != Metrics::NOT_FOUND);
+    REQUIRE(m[id].load() == 7);
+    REQUIRE(m.listed(id));
+
+    // One contributor drops out. The metric is still someone else's, so it stays listed and now
+    // reports only what is left.
+    Metrics::Derived::remove_source("rm.sum", b);
+    Metrics::Derived::update_derived();
+
+    CHECK(m.listed(id));
+    CHECK(m[id].load() == 3);
+
+    // The last one drops out, so nothing is contributing and the name goes out of the listing.
+    Metrics::Derived::remove_source("rm.sum", a);
+
+    CHECK_FALSE(m.listed(id));
+  }
+
+  SECTION("re-adding a source relists it")
+  {
+    auto a = Metrics::Gauge::createHiddenPtr("rm.relist.a");
+
+    Metrics::Derived::add_source("rm.relist", Metrics::MetricType::GAUGE, a);
+
+    auto const id = m.lookup("rm.relist");
+    REQUIRE(id != Metrics::NOT_FOUND);
+
+    Metrics::Derived::remove_source("rm.relist", a);
+    REQUIRE_FALSE(m.listed(id));
+
+    Metrics::Gauge::store(a, 11);
+    Metrics::Derived::add_source("rm.relist", Metrics::MetricType::GAUGE, a);
+    Metrics::Derived::update_derived();
+
+    CHECK(m.listed(id));
+    CHECK(m[id].load() == 11);
+  }
+
+  SECTION("removing an unknown source or name is harmless")
+  {
+    auto a = Metrics::Gauge::createHiddenPtr("rm.unknown.a");
+
+    Metrics::Derived::remove_source("rm.no.such.derived", a);
+
+    Metrics::Derived::add_source("rm.unknown", Metrics::MetricType::GAUGE, a);
+
+    auto const id    = m.lookup("rm.unknown");
+    auto       other = Metrics::Gauge::createHiddenPtr("rm.unknown.other");
+
+    // Not a source of this metric, so it must not empty the list or unlist anything.
+    Metrics::Derived::remove_source("rm.unknown", other);
+
+    CHECK(m.listed(id));
+  }
+
+  SECTION("a concurrent add and remove cannot leave a contributing metric unlisted")
+  {
+    constexpr int64_t sentinel = 4242;
+    constexpr int     rounds   = 500;
+
+    auto a = Metrics::Gauge::createHiddenPtr("rm.race.a");
+
+    Metrics::Gauge::store(a, sentinel);
+    Metrics::Derived::add_source("rm.race", Metrics::MetricType::GAUGE, a);
+
+    auto const id = m.lookup("rm.race");
+    REQUIRE(id != Metrics::NOT_FOUND);
+
+    // One add against one remove per round, checked while quiescent: a single racing pair keeps a
+    // bad outcome visible at the end of its round instead of being papered over by later
+    // operations. Only the two orderings matter, so more concurrency would not probe anything new.
+    bool unlisted_with_source = false;
+
+    for (int round = 0; round < rounds && !unlisted_with_source; ++round) {
+      Metrics::Derived::add_source("rm.race", Metrics::MetricType::GAUGE, a);
+
+      std::atomic<int> ready{0};
+      auto             start = [&]() {
+        ready.fetch_add(1);
+        while (ready.load() < 2) {
+          std::this_thread::yield();
+        }
+      };
+
+      std::thread adder([&]() {
+        start();
+        Metrics::Derived::add_source("rm.race", Metrics::MetricType::GAUGE, a);
+      });
+      std::thread remover([&]() {
+        start();
+        Metrics::Derived::remove_source("rm.race", a);
+      });
+
+      adder.join();
+      remover.join();
+
+      // update_derived writes only names that still have a source, so the sentinel landing in a
+      // zeroed slot is how a registered source is observed from outside.
+      m[id].store(0);
+      Metrics::Derived::update_derived();
+
+      unlisted_with_source = (m[id].load() == sentinel) && !m.listed(id);
+    }
+
+    CHECK_FALSE(unlisted_with_source);
+  }
+}
+
 TEST_CASE("Metrics derived add_source", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();
@@ -437,18 +566,12 @@ TEST_CASE("Metrics hidden store", "[libtsapi][Metrics]")
 
     // Not visible in the published store, by name or by iteration.
     REQUIRE(m.lookup("hidden.only") == Metrics::NOT_FOUND);
-    for (auto &&[name, type, value] : m) {
-      REQUIRE(name != "hidden.only");
-    }
+    m.for_each([](std::string_view name, Metrics::MetricType, int64_t) { REQUIRE(name != "hidden.only"); });
 
     // Visible in the hidden store.
     REQUIRE(h.lookup("hidden.only") != Metrics::NOT_FOUND);
     bool found = false;
-    for (auto &&[name, type, value] : h) {
-      if (name == "hidden.only") {
-        found = true;
-      }
-    }
+    h.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { found |= (name == "hidden.only"); });
     REQUIRE(found);
   }
 
@@ -574,7 +697,8 @@ TEST_CASE("Metrics blob growth boundary", "[libtsapi][Metrics]")
   }
 
   // Every pointer must be distinct: no two names should have been aliased onto the same atomic.
-  std::vector<Metrics::Counter::AtomicType *> sorted_ptrs = ptrs;
+  // ptrs is not read past this point, so hand it over rather than duplicating it.
+  std::vector<Metrics::Counter::AtomicType *> sorted_ptrs = std::move(ptrs);
   std::sort(sorted_ptrs.begin(), sorted_ptrs.end());
   REQUIRE(std::adjacent_find(sorted_ptrs.begin(), sorted_ptrs.end()) == sorted_ptrs.end());
 }
@@ -706,4 +830,215 @@ TEST_CASE("Metrics id lookup is safe against concurrent creation", "[libtsapi][M
   // More metrics than fit in one blob, so the ids must span blobs. A spread no wider than a blob
   // would mean the sweep above never left the first one.
   REQUIRE(hi - lo > Metrics::MAX_SIZE);
+}
+
+TEST_CASE("Metrics unlisting", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("an unlisted metric is skipped by iteration")
+  {
+    Metrics::Counter::create("unlisted.iter.before");
+    auto target = Metrics::Counter::create("unlisted.iter.target");
+    Metrics::Counter::create("unlisted.iter.after");
+
+    REQUIRE(m.unlist(target));
+
+    bool saw_before = false, saw_target = false, saw_after = false;
+
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) {
+      saw_before |= (name == "unlisted.iter.before");
+      saw_target |= (name == "unlisted.iter.target");
+      saw_after  |= (name == "unlisted.iter.after");
+    });
+
+    REQUIRE(saw_before);
+    REQUIRE_FALSE(saw_target);
+    REQUIRE(saw_after);
+  }
+
+  SECTION("creating an unlisted name again relists it")
+  {
+    auto p  = Metrics::Counter::createPtr("unlisted.resurrect");
+    auto id = m.lookup("unlisted.resurrect");
+
+    Metrics::Counter::increment(p, 5);
+    REQUIRE(m.unlist(id));
+    REQUIRE_FALSE(m.listed(id));
+
+    // Same name, same id, same atomic, and the mark is gone.
+    auto p2 = Metrics::Counter::createPtr("unlisted.resurrect");
+    REQUIRE(p2 == p);
+    REQUIRE(m.lookup("unlisted.resurrect") == id);
+    REQUIRE(m.listed(id));
+
+    // Visible again, with its value intact.
+    bool found = false;
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t value) {
+      if (name == "unlisted.resurrect") {
+        found = true;
+        REQUIRE(value == 5);
+      }
+    });
+    REQUIRE(found);
+  }
+
+  SECTION("unlist and relist by name")
+  {
+    auto id = Metrics::Counter::create("unlisted.byname");
+
+    REQUIRE(m.unlist("unlisted.byname"));
+    REQUIRE_FALSE(m.listed(id));
+
+    REQUIRE(m.relist("unlisted.byname"));
+    REQUIRE(m.listed(id));
+
+    bool found = false;
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { found |= (name == "unlisted.byname"); });
+    REQUIRE(found);
+
+    // A name that was never created cannot be marked.
+    REQUIRE_FALSE(m.unlist("unlisted.byname.never.created"));
+  }
+
+  SECTION("an unlisted metric is still resolvable and still counts")
+  {
+    auto p  = Metrics::Counter::createPtr("unlisted.resolvable");
+    auto id = m.lookup("unlisted.resolvable");
+
+    REQUIRE(m.unlist(id));
+
+    // Hidden from enumeration is not gone: by name, by id, and through the atomic it is unchanged.
+    REQUIRE(m.lookup("unlisted.resolvable") == id);
+    REQUIRE(m.lookup(id) == p);
+    REQUIRE(m.valid(id));
+    REQUIRE(m.name(id) == "unlisted.resolvable");
+    REQUIRE(m.type(id) == Metrics::MetricType::COUNTER);
+
+    Metrics::Counter::increment(p, 3);
+    REQUIRE(Metrics::Counter::load(p) == 3);
+  }
+
+  SECTION("for_each skips an unlisted first slot")
+  {
+    // Slot 0 is the reserved bad_id, so it is the first slot the walk considers. The anchor keeps
+    // the assertions below from passing on an empty walk.
+    auto bad_id = m.lookup(Metrics::BAD_ID_NAME);
+    REQUIRE(bad_id == 0);
+
+    Metrics::Counter::create("unlisted.first.anchor");
+
+    auto first_name = [&]() {
+      std::string first;
+      bool        seen = false;
+
+      m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) {
+        if (!seen) {
+          first = name;
+          seen  = true;
+        }
+      });
+
+      return first;
+    };
+
+    REQUIRE(m.unlist(bad_id));
+    auto const while_unlisted = first_name();
+
+    // Relist before asserting: a failed assertion ends the section, and leaving bad_id unlisted
+    // would break every later test case that expects to see it.
+    REQUIRE(m.relist(bad_id));
+    auto const while_listed = first_name();
+
+    REQUIRE_FALSE(while_unlisted.empty()); // the walk did visit something
+    REQUIRE(while_unlisted != Metrics::BAD_ID_NAME);
+    REQUIRE(while_listed == Metrics::BAD_ID_NAME);
+  }
+
+  SECTION("an unlisted run at the end of the store terminates iteration")
+  {
+    // Skipping the last slots in the store is the case where the skip loop has nothing unmarked
+    // left to land on. The anchor is a listed metric of this section's own, so the loop below is
+    // known to have run without depending on what other sections left in the shared store.
+    constexpr int            COUNT = 8;
+    std::vector<std::string> names;
+
+    Metrics::Counter::create("unlisted.tail.anchor");
+
+    names.reserve(COUNT);
+    for (int i = 0; i < COUNT; ++i) {
+      names.push_back("unlisted.tail." + std::to_string(i));
+      REQUIRE(m.unlist(Metrics::Counter::create(names[i])));
+    }
+
+    bool saw_anchor = false;
+
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) {
+      saw_anchor |= (name == "unlisted.tail.anchor");
+      for (auto const &n : names) {
+        REQUIRE(name != n);
+      }
+    });
+
+    REQUIRE(saw_anchor);
+  }
+
+  SECTION("for_each reports the type each metric was created with")
+  {
+    // The type comes from the slot's own stored id rather than from the walk's position, which is
+    // what keeps a gauge from being reported as a counter.
+    Metrics::Gauge::createPtr("unlisted.typed.gauge");
+    Metrics::Counter::createPtr("unlisted.typed.counter");
+
+    bool saw_gauge = false, saw_counter = false;
+
+    m.for_each([&](std::string_view name, Metrics::MetricType type, int64_t) {
+      if (name == "unlisted.typed.gauge") {
+        saw_gauge = true;
+        REQUIRE(type == Metrics::MetricType::GAUGE);
+      } else if (name == "unlisted.typed.counter") {
+        saw_counter = true;
+        REQUIRE(type == Metrics::MetricType::COUNTER);
+      }
+    });
+
+    REQUIRE(saw_gauge);
+    REQUIRE(saw_counter);
+  }
+
+  SECTION("an id that names no allocated slot is neither listed nor unlistable")
+  {
+    // Storage::_is_allocated is the gate; this only checks that unlist and listed go through it.
+    // Blob 100 was never allocated, the largest id names an offset past MAX_SIZE, and create()
+    // advances after writing so the id one past the last one created is not allocated yet.
+    auto last = Metrics::Counter::create("unlisted.next.free");
+
+    for (auto id : {Metrics::IdType{100 << 16}, std::numeric_limits<Metrics::IdType>::max(), last + 1}) {
+      CHECK_FALSE(m.unlist(id));
+      CHECK_FALSE(m.listed(id));
+    }
+  }
+
+  SECTION("the hidden store unlists independently")
+  {
+    auto &h = Metrics::hidden_instance();
+
+    Metrics::Counter::createPtr("unlisted.dual");
+    Metrics::Counter::createHiddenPtr("unlisted.dual");
+
+    auto pub_id = m.lookup("unlisted.dual");
+    auto hid_id = h.lookup("unlisted.dual");
+
+    REQUIRE(h.unlist(hid_id));
+    REQUIRE_FALSE(h.listed(hid_id));
+    REQUIRE(m.listed(pub_id));
+
+    bool in_published = false, in_hidden = false;
+
+    m.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { in_published |= (name == "unlisted.dual"); });
+    h.for_each([&](std::string_view name, Metrics::MetricType, int64_t) { in_hidden |= (name == "unlisted.dual"); });
+
+    REQUIRE(in_published);
+    REQUIRE_FALSE(in_hidden);
+  }
 }

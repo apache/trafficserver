@@ -66,7 +66,7 @@ TEST_CASE("XPACK_Integer", "[xpack]")
 
       REQUIRE(len > 0);
       REQUIRE(len == i.encoded_field_len);
-      REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
+      REQUIRE(memcmp(buf, i.encoded_field, static_cast<size_t>(i.encoded_field_len)) == 0);
     }
   }
 
@@ -136,7 +136,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
       REQUIRE(len > 0);
       REQUIRE(len == string_test_case[i].encoded_field_len);
-      REQUIRE(memcmp(buf, string_test_case[i].encoded_field, len) == 0);
+      REQUIRE(memcmp(buf, string_test_case[i].encoded_field, static_cast<size_t>(string_test_case[i].encoded_field_len)) == 0);
     }
   }
 
@@ -151,7 +151,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual_len == i.raw_string_len);
-      REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
+      REQUIRE(memcmp(actual, i.raw_string, i.raw_string_len) == 0);
     }
   }
 
@@ -500,12 +500,17 @@ TEST_CASE("XPACK_String", "[xpack]")
     REQUIRE(dt.is_empty());
     REQUIRE(dt.count() == 0);
 
-    // Test to insert 10k random size entries
+    // Test to insert 10k random size entries. The sizes only have to vary, so
+    // weak randomness is sufficient here.
     for (int i = 0; i < 10000; i++) {
-      int         name_size  = rand() % 20000;
-      int         value_size = rand() % 20000;
-      std::string name       = get_long_string(name_size);
-      std::string value      = get_long_string(value_size);
+      // coverity[dont_call]
+      int name_size = rand() % 20000;
+      // coverity[dont_call]
+      int value_size = rand() % 20000;
+
+      std::string name  = get_long_string(name_size);
+      std::string value = get_long_string(value_size);
+
       dt.insert_entry(name, value);
     }
   }

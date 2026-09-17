@@ -31,3 +31,4 @@ methods of passing parameters to your plugin at runtime, please refer to
 
    types/index.en
    functions/index.en
+   utilities/index.en

@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <algorithm>
+#include <iterator>
 
 #include "swoc/TextView.h"
 #include <catch2/catch_test_macros.hpp>

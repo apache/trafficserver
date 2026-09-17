@@ -94,7 +94,8 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
 
         REQUIRE(len > 0);
         REQUIRE(len == i.encoded_field_len);
-        REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
+
+        REQUIRE(memcmp(buf, i.encoded_field, static_cast<size_t>(i.encoded_field_len)) == 0);
       }
     }
 
@@ -125,13 +126,18 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
       uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
       int64_t encoded_len = encode_oversized_hpack_index(buf, sizeof(buf), 7, 0x80);
 
+      REQUIRE(encoded_len > 0);
+      REQUIRE(encoded_len <= static_cast<int64_t>(sizeof(buf)));
+
+      size_t const block_len = static_cast<size_t>(encoded_len);
+
       HpackIndexingTable                            indexing_table(4096);
       std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
       headers->create(HTTPType::REQUEST);
       MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
       MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
-      int64_t len = decode_indexed_header_field(header, buf, buf + encoded_len, indexing_table);
+      int64_t len = decode_indexed_header_field(header, buf, buf + block_len, indexing_table);
 
       REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
     }
@@ -240,8 +246,10 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
 
           REQUIRE(len > 0);
           REQUIRE(len == literal_test_case[i].encoded_field_len);
+
           // coverity[overrun-buffer-arg] - len is validated positive above
-          REQUIRE(memcmp(buf, literal_test_case[i].encoded_field, len) == 0);
+          REQUIRE(memcmp(buf, literal_test_case[i].encoded_field, static_cast<size_t>(literal_test_case[i].encoded_field_len)) ==
+                  0);
         }
       }
     }
@@ -286,8 +294,14 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         uint8_t buf[BUFSIZE_FOR_REGRESSION_TEST];
         int64_t encoded_len = encode_oversized_hpack_index(buf, sizeof(buf), i.prefix, i.flag);
         uint8_t value[]     = {0x05, 'v', 'a', 'l', 'u', 'e'};
-        memcpy(buf + encoded_len, value, sizeof(value));
-        encoded_len += sizeof(value);
+
+        REQUIRE(encoded_len > 0);
+        REQUIRE(encoded_len <= static_cast<int64_t>(sizeof(buf) - sizeof(value)));
+
+        size_t block_len = static_cast<size_t>(encoded_len);
+
+        memcpy(buf + block_len, value, sizeof(value));
+        block_len += sizeof(value);
 
         HpackIndexingTable                            indexing_table(4096);
         std::unique_ptr<HTTPHdr, void (*)(HTTPHdr *)> headers(new HTTPHdr, destroy_http_hdr);
@@ -295,7 +309,7 @@ TEST_CASE("HPACK low level APIs", "[hpack]")
         MIMEField       *field = mime_field_create(headers->m_heap, headers->m_http->m_fields_impl);
         MIMEFieldWrapper header(field, headers->m_heap, headers->m_http->m_fields_impl);
 
-        int64_t len = decode_literal_header_field(header, buf, buf + encoded_len, indexing_table, MAX_FIELD_SIZE);
+        int64_t len = decode_literal_header_field(header, buf, buf + block_len, indexing_table, MAX_FIELD_SIZE);
 
         REQUIRE(len == HPACK_ERROR_COMPRESSION_ERROR);
       }
