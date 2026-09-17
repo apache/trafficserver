@@ -66,7 +66,7 @@ TEST_CASE("XPACK_Integer", "[xpack]")
 
       REQUIRE(len > 0);
       REQUIRE(len == i.encoded_field_len);
-      REQUIRE(memcmp(buf, i.encoded_field, len) == 0);
+      REQUIRE(memcmp(buf, i.encoded_field, static_cast<size_t>(i.encoded_field_len)) == 0);
     }
   }
 
@@ -136,7 +136,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
       REQUIRE(len > 0);
       REQUIRE(len == string_test_case[i].encoded_field_len);
-      REQUIRE(memcmp(buf, string_test_case[i].encoded_field, len) == 0);
+      REQUIRE(memcmp(buf, string_test_case[i].encoded_field, static_cast<size_t>(string_test_case[i].encoded_field_len)) == 0);
     }
   }
 
@@ -151,7 +151,7 @@ TEST_CASE("XPACK_String", "[xpack]")
 
       REQUIRE(len == i.encoded_field_len);
       REQUIRE(actual_len == i.raw_string_len);
-      REQUIRE(memcmp(actual, i.raw_string, actual_len) == 0);
+      REQUIRE(memcmp(actual, i.raw_string, i.raw_string_len) == 0);
     }
   }
 
