@@ -29,6 +29,7 @@
 #include "tscore/Layout.h"
 #include "tscore/TSSystemState.h"
 #include "tscore/Random.h"
+#include <exception>
 #include <iostream>
 #include <memory>
 #include <fstream>
@@ -452,9 +453,8 @@ public:
 
 #endif
 
-// coverity[exn_spec_violation] - called functions may throw but this is a test program
-int
-main(int argc, char *argv[])
+static int
+run_test(int argc, char *argv[])
 {
   int i;
 
@@ -552,4 +552,20 @@ main(int argc, char *argv[])
     sleep(1);
 #endif
   }
+
+  return 0;
+}
+
+int
+main(int argc, char *argv[])
+{
+  try {
+    return run_test(argc, argv);
+  } catch (std::exception const &e) {
+    fprintf(stderr, "test_AIO aborted: %s\n", e.what());
+  } catch (...) {
+    fprintf(stderr, "test_AIO aborted: unknown exception\n");
+  }
+
+  return 1;
 }

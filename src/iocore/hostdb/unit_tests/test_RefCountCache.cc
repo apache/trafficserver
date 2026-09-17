@@ -25,6 +25,8 @@
 #include "iocore/eventsystem/EventSystem.h"
 #include "tscore/Layout.h"
 #include "iocore/utils/diags.i"
+#include <cstdio>
+#include <exception>
 #include <set>
 
 // TODO: add tests with expiry_time
@@ -260,7 +262,15 @@ test()
 int
 main()
 {
-  int ret = test();
+  int ret = 1;
+
+  try {
+    ret = test();
+  } catch (std::exception const &e) {
+    fprintf(stderr, "test_RefCountCache aborted: %s\n", e.what());
+  } catch (...) {
+    fprintf(stderr, "test_RefCountCache aborted: unknown exception\n");
+  }
 
   for (const auto item : ExampleStruct::items_freed) {
     printf("really freeing: %p\n", item);

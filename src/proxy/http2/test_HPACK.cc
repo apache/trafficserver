@@ -27,6 +27,7 @@
 #include "iocore/eventsystem/Thread.h"
 #include <sys/stat.h>
 #include <dirent.h>
+#include <exception>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -393,30 +394,38 @@ REGRESSION_TEST(HPACK_Encoding)(RegressionTest *t, int /* atype ATS_UNUSED */, i
 int
 main(int argc, const char **argv)
 {
-  auto &version = AppVersionInfo::setup_version("test_HPACK");
-  process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
+  try {
+    auto &version = AppVersionInfo::setup_version("test_HPACK");
+    process_args(&version, argument_descriptions, countof(argument_descriptions), argv);
 
-  ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
+    ink_freelist_init_ops(cmd_disable_freelist, cmd_disable_pfreelist);
 
-  if (*cmd_input_dir) {
-    input_dir = cmd_input_dir;
-    if (input_dir.back() != '/') {
-      input_dir += '/';
+    if (*cmd_input_dir) {
+      input_dir = cmd_input_dir;
+      if (input_dir.back() != '/') {
+        input_dir += '/';
+      }
     }
-  }
-  if (*cmd_output_dir) {
-    output_dir = cmd_output_dir;
-    if (output_dir.back() != '/') {
-      output_dir += '/';
+    if (*cmd_output_dir) {
+      output_dir = cmd_output_dir;
+      if (output_dir.back() != '/') {
+        output_dir += '/';
+      }
     }
-  }
 
-  Thread *main_thread = new EThread;
-  main_thread->set_specific();
-  url_init();
-  mime_init();
-  http_init();
-  prepare();
-  int status = RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
-  return status;
+    Thread *main_thread = new EThread;
+    main_thread->set_specific();
+    url_init();
+    mime_init();
+    http_init();
+    prepare();
+    int status = RegressionTest::main(argc, argv, REGRESSION_TEST_QUICK);
+    return status;
+  } catch (const std::exception &e) {
+    cerr << "test_HPACK: unhandled exception: " << e.what() << endl;
+    return 2;
+  } catch (...) {
+    cerr << "test_HPACK: unhandled exception of unknown type" << endl;
+    return 2;
+  }
 }

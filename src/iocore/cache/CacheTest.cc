@@ -47,6 +47,9 @@ CacheTestSM::CacheTestSM(const CacheTestSM &ao) : RegressionSM(ao)
   SET_HANDLER(&CacheTestSM::event_handler);
 }
 
+// Coverity resolves ink_assert() to the throwing _ink_assert() defined by
+// eventsystem/unit_tests/test_MIOBufferWriter.cc, not the one linked here.
+// coverity[UNCAUGHT_EXCEPT:FALSE]
 CacheTestSM::~CacheTestSM()
 {
   ink_assert(!cache_action);
