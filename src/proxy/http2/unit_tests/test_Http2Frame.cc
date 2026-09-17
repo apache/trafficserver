@@ -41,12 +41,17 @@ TEST_CASE("Http2Frame", "[http2][Http2Frame]")
     Http2PushPromiseFrame frame(id, flags, pp, hdr_block, hdr_block_len);
     int64_t               written = frame.write_to(miob);
 
-    REQUIRE(written != -1);
+    REQUIRE(written > 0);
     CHECK(written == static_cast<int64_t>(HTTP2_FRAME_HEADER_LEN + sizeof(Http2StreamId) + hdr_block_len));
     CHECK(written == miob_r->read_avail());
 
     uint8_t buf[32] = {0};
-    int64_t read    = miob_r->read(buf, written);
+
+    REQUIRE(written <= static_cast<int64_t>(sizeof(buf)));
+
+    size_t const frame_len = static_cast<size_t>(written);
+    int64_t      read      = miob_r->read(buf, written);
+
     CHECK(read == written);
 
     uint8_t expected[] = {
@@ -58,7 +63,8 @@ TEST_CASE("Http2Frame", "[http2][Http2Frame]")
       0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef, 0xbe, 0xef ///< Header Block Fragment
     };
 
-    CHECK(memcmp(buf, expected, written) == 0);
+    REQUIRE(frame_len == sizeof(expected));
+    CHECK(memcmp(buf, expected, frame_len) == 0);
   }
 
   free_MIOBuffer(miob);
