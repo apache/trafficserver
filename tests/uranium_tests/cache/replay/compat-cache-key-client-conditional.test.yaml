@@ -29,14 +29,14 @@
 # This exercises the when_to_revalidate case, which is a global switch and so
 # needs a TS of its own rather than sharing one with compat-cache-key.
 #
-# As in compat-cache-key.replay.yaml, "/cc;" addresses the same key ATS 9.2
+# As in compat-cache-key.test.yaml, "/cc;" addresses the same key ATS 9.2
 # produced for "/cc", which is how a legacy object gets into the cache.
 #
 
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Verify client-supplied conditional headers on a stale compatibility hit'
 
   dns:

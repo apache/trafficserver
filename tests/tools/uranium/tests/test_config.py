@@ -24,6 +24,42 @@ import yaml
 from tools.uranium.config import ReplayConfigError, ReplaySpec, merge_flat_records, replace_server_ports
 
 
+@pytest.mark.parametrize(
+    "check", [
+        {
+            "path": "log",
+            "exclude": "bad"
+        }, {
+            "contains": "missing path"
+        }, {
+            "path": "log",
+            "matches": [{
+                "expression": "x",
+                "minimum": 1
+            }]
+        }
+    ])
+def test_file_checks_reject_unknown_or_incomplete_assertions(tmp_path: Path, check: dict[str, object]) -> None:
+    """Fail at collection instead of silently discarding a misspelled assertion.
+
+    :param tmp_path: Temporary manifest directory.
+    :param check: Invalid file assertion metadata.
+    """
+
+    manifest = tmp_path / "invalid.test.yaml"
+    manifest.write_text(
+        yaml.safe_dump({"urtest": {
+            "description": "invalid",
+            "server": {},
+            "client": {},
+            "ats": {
+                "file_checks": [check]
+            }
+        }}))
+    with pytest.raises(ReplayConfigError, match="file_checks"):
+        ReplaySpec.load(manifest)
+
+
 def test_all_migrated_replays_are_valid() -> None:
     """Verify every directly collected replay has valid test metadata."""
 

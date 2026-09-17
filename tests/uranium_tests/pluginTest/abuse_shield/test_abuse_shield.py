@@ -22,6 +22,7 @@ import sys
 import time
 
 import pytest
+import yaml
 
 from tools.uranium.services import ATS, ATSFactory, Curl, OriginServer, ServiceFactory, wait_for_file_lines
 
@@ -113,6 +114,18 @@ class AbuseShieldHarness:
         return result.output
 
     @staticmethod
+    def start(ats: ATS) -> None:
+        """Require every configured rule to load before driving traffic.
+
+        :param ats: Configured abuse_shield instance to start.
+        """
+
+        ats.start()
+        config = yaml.safe_load((ats.config_directory / "abuse_shield.yaml").read_text())
+        count = len(config.get("rules", []))
+        wait_for_file_lines(ats.diags_log, rf"Plugin initialized with 1000 slots per tracker, {count} rules\b", 1)
+
+    @staticmethod
     def metric(ats: ATS, name: str, expression: str, timeout: float = 10) -> str:
         """Wait until one metric value satisfies a regular expression.
 
@@ -190,7 +203,7 @@ def test_abuse_shield_messages(ats_factory: ATSFactory, services: ServiceFactory
     ats.write_config_file("abuse_shield_trusted.yaml", trusted)
     config_path = ats.config_directory / "abuse_shield.yaml"
     ats.write_config_file("abuse_shield.yaml", config.replace("{trusted}", str(ats.config_directory / "abuse_shield_trusted.yaml")))
-    ats.start()
+    harness.start(ats)
     wait_for_file_lines(ats.diags_log, r"Plugin initialized with 1000 slots per tracker, 2 rules", 1)
 
     for topic, value, marker in (
@@ -209,10 +222,11 @@ def test_abuse_shield_messages(ats_factory: ATSFactory, services: ServiceFactory
 
     flood = ats.run_shell(f"seq 1 30 | xargs -P 30 -I {{}} curl -s -o /dev/null http://127.0.0.1:{ats.http_port}/")
     assert flood.returncode == 0, flood.output
-    diagnostics = ats.diags_log.read_text(errors="replace")
-    assert 'Rule "test_request_rule" matched' not in diagnostics
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+0\b")
     assert config_path.exists()
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
+    assert 'Rule "test_request_rule" matched' not in diagnostics
 
 
 def test_abuse_shield_request_rates(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -234,11 +248,11 @@ def test_abuse_shield_request_rates(ats_factory: ATSFactory, services: ServiceFa
         origin=origin,
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     harness.h2_flood(ats, "reset-client", count=10, rate=100, reset_streams=True)
-    wait_for_file_lines(ats.diags_log, r'Rule "h2_error_flood" matched.*actions=\[log\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "h2_error_flood" matched for IP=.*actions=\[log\]', 1)
     harness.h2_flood(ats, "request-client", count=50, rate=100)
-    wait_for_file_lines(ats.diags_log, r'Rule "req_rate_flood" matched.*actions=\[log,block\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "req_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
 
 
 def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: ServiceFactory, curl: Curl) -> None:
@@ -254,9 +268,9 @@ def test_abuse_shield_connection_rate(ats_factory: ATSFactory, services: Service
         "global:\n  ip_tracking: {slots: 1000}\n  blocking: {duration_seconds: 60}\n"
         "rules:\n  - {name: conn_rate_flood, filter: {max_conn_rate: 5}, action: [log, block]}\n"
         "enabled: true\n")
-    ats.start()
+    harness.start(ats)
     harness.helper("idle-client", "idle_connections.py", "--port", str(ats.https_port), "--count", "30")
-    wait_for_file_lines(ats.diags_log, r'Rule "conn_rate_flood" matched.*actions=\[log,block\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "conn_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
 
@@ -283,10 +297,12 @@ def test_abuse_shield_rate_limited_ips(ats_factory: ATSFactory, services: Servic
         "    action: [log]\nenabled: true\n",
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     harness.h2_flood(ats, "below-rate-limited", count=30, rate=50)
     harness.h2_flood(ats, "above-rate-limited", count=250, rate=1000)
-    diagnostics = wait_for_file_lines(ats.diags_log, r'Rule "rate_limited_req" matched.*actions=\[log\]', 1)
+    diagnostics = wait_for_file_lines(ats.diags_log, r'Rule "rate_limited_req" matched for IP=.*actions=\[log\]', 1)
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
     assert 'Rule "ordinary_req" matched' not in diagnostics
 
 
@@ -308,10 +324,10 @@ def test_abuse_shield_http_block(ats_factory: ATSFactory, services: ServiceFacto
         tls=False,
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     flood = ats.run_shell(f"seq 1 50 | xargs -P 50 -I {{}} curl --max-time 5 -s http://127.0.0.1:{ats.http_port}/")
     assert flood.returncode == 123, flood.output
-    wait_for_file_lines(ats.diags_log, r'Rule "http_conn_rate_flood" matched.*actions=\[log,block\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "http_conn_rate_flood" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
 
@@ -335,9 +351,11 @@ def test_abuse_shield_multiple_rules(ats_factory: ATSFactory, services: ServiceF
         origin=origin,
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     harness.h2_flood(ats, "multi-client", count=50, rate=100)
-    diagnostics = wait_for_file_lines(ats.diags_log, r'Rule "strict_limit" matched.*actions=\[log,block\]', 1)
+    diagnostics = wait_for_file_lines(ats.diags_log, r'Rule "strict_limit" matched for IP=.*actions=\[log,block\]', 1)
+    ats.stop()
+    diagnostics = ats.diags_log.read_text(errors="replace")
     assert 'Rule "lenient_limit" matched' not in diagnostics
 
 
@@ -358,9 +376,9 @@ def test_abuse_shield_block_expiration(ats_factory: ATSFactory, services: Servic
         origin=origin,
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     harness.h2_flood(ats, "expiration-client", count=50, rate=100, host="127.0.0.1")
-    wait_for_file_lines(ats.diags_log, r'Rule "short_block" matched.*actions=\[log,block\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "short_block" matched for IP=.*actions=\[log,block\]', 1)
     blocked = curl.run(f"--insecure --silent --output /dev/null --max-time 2 https://127.0.0.1:{ats.https_port}/")
     assert blocked.returncode in (28, 35, 52, 55, 56), blocked.output
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
@@ -388,10 +406,10 @@ def test_abuse_shield_combined_rule(ats_factory: ATSFactory, services: ServiceFa
         origin=origin,
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     flood = ats.run_shell(f"seq 1 30 | xargs -P 30 -I {{}} curl --max-time 5 -k -s https://127.0.0.1:{ats.https_port}/")
     assert flood.returncode == 123, flood.output
-    wait_for_file_lines(ats.diags_log, r'Rule "combined_abuse" matched.*actions=\[log,block\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "combined_abuse" matched for IP=.*actions=\[log,block\]', 1)
     harness.metric(ats, "abuse_shield.actions.blocked", r"abuse_shield.actions.blocked\s+[1-9][0-9]*")
     harness.metric(ats, "abuse_shield.connections.rejected", r"abuse_shield.connections.rejected\s+[1-9][0-9]*")
 
@@ -414,9 +432,9 @@ def test_abuse_shield_log_file(ats_factory: ATSFactory, services: ServiceFactory
         origin=origin,
     )
     origin.start()
-    ats.start()
+    harness.start(ats)
     harness.h2_flood(ats, "log-client", count=50, rate=100)
-    content = wait_for_file_lines(ats.log_directory / "abuse_shield_actions.log", r'Rule "log_test_rule" matched', 1)
+    content = wait_for_file_lines(ats.log_directory / "abuse_shield_actions.log", r'Rule "log_test_rule" matched for IP=', 1)
     assert "req_tokens=" in content
 
 
@@ -439,7 +457,7 @@ def test_abuse_shield_fingerprint(ats_factory: ATSFactory, services: ServiceFact
         f'          - "{nonmatching}"\n    action: [log, close]\nenabled: true\n',
         jax=True,
     )
-    ats.start()
+    harness.start(ats)
     wait_for_file_lines(ats.diags_log, "Using JAx fingerprint registry 'abuse_shield.fingerprints'", 1)
 
     client_args = ("--host", "127.0.0.1", "--port", str(ats.https_port), "--expect")
@@ -459,7 +477,7 @@ def test_abuse_shield_fingerprint(ats_factory: ATSFactory, services: ServiceFact
     harness.helper("rejected-client", "tls_client_hello.py", *client_args, "reject")
     wait_for_file_lines(
         ats.diags_log,
-        rf'Rule "blocked_ja3" matched.*fingerprint=JA3:{client_ja3}.*actions=\[log,close\]',
+        rf'Rule "blocked_ja3" matched for IP=.*fingerprint=JA3:{client_ja3}.*actions=\[log,close\]',
         1,
     )
     harness.metric(ats, "abuse_shield.fingerprints.rejected", r"abuse_shield.fingerprints.rejected\s+1\b")
@@ -482,9 +500,9 @@ def test_abuse_shield_shared_log_interval(ats_factory: ATSFactory, services: Ser
         "enabled: true\n",
         tls=False,
     )
-    ats.start()
+    harness.start(ats)
     flood = ats.run_shell(f"seq 1 100 | xargs -P 16 -I {{}} curl --max-time 5 -s -o /dev/null http://127.0.0.1:{ats.http_port}/")
     assert flood.returncode == 0, flood.output
-    wait_for_file_lines(ats.diags_log, r'Rule "(connection|request)_log" matched.*actions=\[log\]', 1)
+    wait_for_file_lines(ats.diags_log, r'Rule "(connection|request)_log" matched for IP=127\.0\.0\.1 actions=\[log\]', 1)
     harness.metric(ats, "abuse_shield.actions.logged", r"abuse_shield.actions.logged\s+1\b")
     harness.metric(ats, "abuse_shield.rules.matched", r"abuse_shield.rules.matched\s+[1-9][0-9]+\b")

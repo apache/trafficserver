@@ -21,7 +21,7 @@
 # proxy.config.http.cache.open_write_fail_action 2 (STALE_ON_REVALIDATE) it
 # must serve the legacy object rather than go to the origin.
 #
-# As in compat-cache-key.replay.yaml, "/stale;" addresses the same key ATS 9.2
+# As in compat-cache-key.test.yaml, "/stale;" addresses the same key ATS 9.2
 # produced for "/stale", which is how a legacy object gets into the cache. The
 # write lock loss is injected the same way as in
 # cache-write-lock-stale-serve.replay.yaml.
@@ -43,7 +43,7 @@ meta:
           - [ Content-Length, 16 ]
           - [ X-Response, origin ]
 
-autest:
+urtest:
   description: 'Verify a lost write lock on a stale compatibility hit serves the legacy object'
 
   dns:

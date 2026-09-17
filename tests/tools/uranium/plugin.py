@@ -22,6 +22,8 @@ from pathlib import Path
 from typing import Any, Protocol
 import os
 import shutil
+import sys
+import fcntl
 
 import pytest
 
@@ -83,6 +85,30 @@ def pytest_collect_file(file_path: Path, parent: pytest.Collector) -> pytest.Fil
     return None
 
 
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Reserve the sandbox root for this controller and all of its workers.
+
+    :param session: Pytest session whose controller owns the root lock.
+    """
+
+    config = session.config
+    if hasattr(config, "workerinput"):
+        return
+    root = config.getoption("sandbox") or os.environ.get("ATS_URTEST_SANDBOX")
+    if not root:
+        return
+    directory = Path(root).resolve()
+    directory.mkdir(parents=True, exist_ok=True)
+    lock = (directory / ".session-lock").open("a+")
+    try:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        lock.close()
+        raise pytest.UsageError(f"Uranium sandbox is already in use: {directory}. Choose a different --sandbox.") from None
+    config.add_cleanup(lock.close)
+    (directory / ".port-counter").write_text("10000")
+
+
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """Apply serial scheduling, UDS exclusions, and zero-based CI sharding."""
 
@@ -94,9 +120,11 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         if isinstance(item, ReplayItem) or item.get_closest_marker("uranium_procedural"):
             name = TestRuntime.sandbox_name(item.nodeid)
             if name in sandbox_owners:
-                raise pytest.UsageError(
+                message = (
                     f"Uranium sandbox name {name!r} is shared by {sandbox_owners[name]} and {item.nodeid}. "
                     "Give these tests distinct names so they cannot overwrite each other's artifacts.")
+                print(message, file=sys.stderr, flush=True)
+                raise pytest.UsageError(message)
             sandbox_owners[name] = item.nodeid
         if _is_serial_test(Path(item.path)):
             item.add_marker("serial")
@@ -278,12 +306,27 @@ def uranium_test_runtime(pytestconfig: pytest.Config) -> TestRuntime:
 
 
 @pytest.fixture
-def uranium_replay(uranium_test_runtime: TestRuntime, request: pytest.FixtureRequest) -> Callable[[Path], None]:
-    """Return a helper that executes a replay file from a handwritten pytest test."""
+def uranium_replay(procedural_context: ProceduralContext) -> Callable[[Path], None]:
+    """Return a helper that executes a replay file from a handwritten pytest test.
+
+    :param procedural_context: Owning native scenario and sandbox.
+    """
+
+    count = 0
 
     def run(path: Path) -> None:
+        """Run variants in separate children without touching live sibling services.
+
+        :param path: Replay manifest selected by the native scenario.
+        """
+
+        nonlocal count
         for spec in ReplaySpec.load_all(path):
-            ReplayTest(spec, uranium_test_runtime, request.node.nodeid).run()
+            count += 1
+            name = f"replay-{count}-{path.stem}"
+            if spec.variant_name:
+                name += f"-{spec.variant_name}"
+            ReplayTest(spec, procedural_context.runtime, name, sandbox_parent=procedural_context.run_directory).run()
 
     return run
 

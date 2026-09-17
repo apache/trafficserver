@@ -21,8 +21,68 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+import fcntl
+import os
+import subprocess
+import sys
 
 from tools.uranium.plugin import _mark_manual_tests, _update_sandbox_retention, pytest_collection_modifyitems
+
+
+@pytest.mark.parametrize("workers", [0, 2])
+def test_collision_diagnostic_reaches_terminal(tmp_path: Path, workers: int) -> None:
+    """Show both conflicting tests even when collection happens in xdist workers.
+
+    :param tmp_path: Temporary collection tree.
+    :param workers: Number of subprocess workers, or zero for serial collection.
+    """
+
+    directory = tmp_path / "uranium_tests"
+    directory.mkdir()
+    for name in ("a", "b"):
+        (directory / f"test_{name}.py").write_text("def test_duplicate():\n    pass\n")
+    environment = {**os.environ, "PYTHONPATH": str(Path(__file__).parents[3])}
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--import-mode=importlib", "-n",
+            str(workers),
+            str(directory)
+        ],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode != 0
+    assert "Give these tests distinct names" in result.stdout + result.stderr
+    assert "test_a.py" in result.stdout + result.stderr
+    assert "test_b.py" in result.stdout + result.stderr
+
+
+def test_concurrent_session_cannot_enter_shared_sandbox(tmp_path: Path) -> None:
+    """Reject a second controller before it can reset ports or delete artifacts.
+
+    :param tmp_path: Temporary sandbox root held by the first session.
+    """
+
+    evidence = tmp_path / "retained-artifact"
+    evidence.write_text("first session")
+    environment = {**os.environ, "PYTHONPATH": str(Path(__file__).parents[3])}
+    with (tmp_path / ".session-lock").open("a+") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest", "-p", "tools.uranium.plugin", "--sandbox",
+             str(tmp_path), "--collect-only"],
+            cwd=tmp_path,
+            env=environment,
+            capture_output=True,
+            text=True,
+            timeout=15,
+        )
+    assert result.returncode == 4
+    assert "already in use" in result.stdout + result.stderr
+    assert evidence.read_text() == "first session"
 
 
 def test_duplicate_sandbox_names_fail_collection(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -29,7 +29,7 @@
 meta:
   version: "1.0"
 
-autest:
+urtest:
   description: 'Verify 92x compatibility cache lookups serve and migrate to the current key'
 
   dns:
