@@ -27,6 +27,24 @@ from tools.uranium.replay import ReplayTest
 from tools.uranium.services.process_service import ProcessService
 
 
+@pytest.mark.parametrize("check", [{"excludes": "wrong.*order"}, {"line_count_min": 3}])
+def test_replay_file_checks_fail_on_bad_evidence(tmp_path: Path, check: dict[str, object]) -> None:
+    """Enforce negative and line-count assertions, not merely file existence.
+
+    :param tmp_path: Directory containing captured evidence.
+    :param check: Assertion which must reject the actual file contents.
+    """
+
+    evidence = tmp_path / "metrics.txt"
+    evidence.write_text("right order\nwrong naming order\n")
+    replay = object.__new__(ReplayTest)
+    replay.spec = SimpleNamespace(urtest={"ats": {"file_checks": [{"path": str(evidence), "timeout": 0, **check}]}})
+    replay.ats_paths = {}
+    replay._replace_runtime_placeholders = lambda value, paths: value
+    with pytest.raises(AssertionError):
+        replay._check_files()
+
+
 def test_managed_process_captures_output(tmp_path: Path) -> None:
     """Capture stdout from a successful one-shot process."""
 

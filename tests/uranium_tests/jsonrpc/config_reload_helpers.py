@@ -78,7 +78,7 @@ def wait_for_status(
     while time.monotonic() < deadline:
         result = ats.traffic_ctl("config", "status", "-t", token, *extra_arguments)
         output = result.output
-        if result.returncode == 0 and all(fragment in output for fragment in contains) and all(
+        if result.returncode == 0 and "in_progress" not in output and all(fragment in output for fragment in contains) and all(
                 fragment not in output for fragment in excludes):
             return output
         time.sleep(0.2)

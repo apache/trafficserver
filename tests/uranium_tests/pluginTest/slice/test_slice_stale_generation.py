@@ -196,6 +196,8 @@ class SliceMixedGenerationScenario(SliceHierarchyScenario):
 
         time.sleep(2)
         mixed = self.configure_client("mixed", expected_return_code=1).run()
+        # As in the original scenario, the abort may reach the client before
+        # or after the response header. Neither permits a complete response.
         assert re.search(
             r"Failed to find a well-formed, completed HTTP response: PARSE_INCOMPLETE|"
             r"Content-Length body underrun for key mixed",

@@ -20,13 +20,18 @@ from pathlib import Path
 import json
 import os
 import subprocess
+import socket
+import errno
 from typing import Any
 
 import pytest
 
 from tools.uranium import services as service_api
 from tools.uranium.runtime import TestRuntime as UraniumRuntime
+from tools.uranium.runtime import RuntimeConfigError
 from tools.uranium.services import ATS, ATSFactory, Curl, ProceduralContext, ServiceFactory
+from tools.uranium.plugin import uranium_replay
+from tools.uranium.replay import ReplayTest
 
 
 class FakeRuntime:
@@ -56,6 +61,11 @@ class FakeProcess:
         self.was_stopped = True
         self.return_code = 0
 
+    def output(self) -> str:
+        """Return a diagnostic marker for exit-status tests."""
+
+        return "captured process output"
+
 
 def make_context(tmp_path: Path) -> ProceduralContext:
     """Create a native procedural context for service unit tests."""
@@ -71,6 +81,8 @@ def attach_process(ats: ATS) -> FakeProcess:
     """Replace ATS startup with a lifecycle-recording fake process."""
 
     process = FakeProcess()
+    ats.log_directory.mkdir(parents=True, exist_ok=True)
+    ats.diags_log.write_text("ATS initialized\n")
     ats._runner._start_ats = lambda: process  # type: ignore[method-assign,return-value]
     return process
 
@@ -181,6 +193,125 @@ def test_sandbox_names_preserve_parameter_ids() -> None:
     assert UraniumRuntime.sandbox_name("test_tls.py::test_timeout[post-handshake]") == "test_timeout[post-handshake]"
 
 
+def test_sandbox_rejects_overlong_filesystem_component(tmp_path: Path) -> None:
+    """Reject unrepresentable labels instead of silently shortening them.
+
+    :param tmp_path: Existing sandbox root on the test filesystem.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    path = tmp_path / ("x" * (os.pathconf(tmp_path, "PC_NAME_MAX") + 1))
+    with pytest.raises(RuntimeConfigError, match="filesystem component limit"):
+        runtime.prepare_sandbox(path)
+
+
+@pytest.mark.parametrize("content", [None, "", "garbage", "9999", "30000"])
+def test_port_counter_rejects_missing_corrupt_or_exhausted_state(tmp_path: Path, content: str | None) -> None:
+    """Never recycle reservations when the session counter is damaged.
+
+    :param tmp_path: Isolated session root.
+    :param content: Counter contents, or None to leave the file absent.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    counter = tmp_path / ".port-counter"
+    if content is not None:
+        counter.write_text(content)
+    with pytest.raises(RuntimeConfigError, match=str(counter)):
+        runtime.allocate_port()
+
+
+@pytest.mark.parametrize("error_number", [errno.EADDRINUSE, errno.EADDRNOTAVAIL, errno.ENOBUFS])
+def test_port_probe_retries_only_occupied_ports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, error_number: int) -> None:
+    """Report environmental errors instead of treating them as occupied ports.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace socket binding with a deterministic failure.
+    :param error_number: Operating-system error raised by the first bind.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    attempted = []
+
+    def bind(probe: socket.socket, address: tuple[str, int]) -> None:
+        """Fail the initial probe without binding an actual port.
+
+        :param probe: Unbound socket under test.
+        :param address: Requested loopback address and port.
+        """
+
+        attempted.append(address)
+        if len(attempted) == 1:
+            raise OSError(error_number, os.strerror(error_number))
+
+    monkeypatch.setattr(socket.socket, "bind", bind)
+    if error_number == errno.EADDRINUSE:
+        assert runtime.allocate_port() == 10002
+    else:
+        with pytest.raises(RuntimeConfigError, match="127.0.0.1:10001"):
+            runtime.allocate_port()
+        assert len(attempted) == 1
+
+
+def test_embedded_replay_preserves_services_and_variants(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Give each embedded replay its own directory under the native test.
+
+    :param tmp_path: Isolated session root.
+    :param monkeypatch: Replace network execution with evidence creation.
+    """
+
+    runtime = UraniumRuntime(tmp_path, tmp_path, tmp_path, tmp_path, tmp_path, {}, {})
+    (tmp_path / ".port-counter").write_text("10000")
+    manifest = tmp_path / "example.yaml"
+    manifest.write_text(
+        "urtest:\n  description: example\n  server: {}\n  client: {}\n  ats: {}\n"
+        "  variants:\n    - name: one\n    - name: two\n")
+    context = ProceduralContext.create(runtime, "native-test", manifest)
+    live = context.run_directory / "live-service"
+    live.mkdir()
+    (live / "log").write_text("do not delete")
+
+    def run(replay: ReplayTest) -> None:
+        """Materialize the replay sandbox without starting network services.
+
+        :param replay: Replay carrying the fixture's ownership information.
+        """
+
+        runtime.prepare_sandbox(replay.sandbox, parent=replay._sandbox_parent)
+        (replay.sandbox / "result").write_text(replay.spec.variant_name)
+
+    monkeypatch.setattr(ReplayTest, "run", run)
+    invoke = uranium_replay.__wrapped__(context)
+    invoke(manifest)
+    invoke(manifest)
+    assert (live / "log").read_text() == "do not delete"
+    assert sorted(path.read_text() for path in context.run_directory.glob("replay-*/result")) == ["one", "one", "two", "two"]
+
+
+def test_long_names_allow_both_unix_sockets(tmp_path: Path) -> None:
+    """Bind the actual composed RPC and curl socket paths beneath long names.
+
+    :param tmp_path: Parent of a deliberately long sandbox path.
+    """
+
+    root = tmp_path / ("long-test-name-" * 9)
+    root.mkdir()
+    ats = ATS(make_context(root), "long-process-name-" * 4)
+    installation = tmp_path / "installation"
+    installation.mkdir()
+    ats._context.runtime.layout = {"BINDIR": str(installation), "PLUGINDIR": str(installation), "SYSCONFDIR": str(installation)}
+    ats._context.runtime.repository_root = Path(__file__).parents[4]
+    try:
+        paths = ats._runner._prepare_ats_tree(ats.run_directory)
+        for path in (paths["rpc_runtime"] / "jsonrpc20.sock", Path(ats.uds_path)):
+            assert len(os.fsencode(path)) < 104
+            with socket.socket(socket.AF_UNIX) as listener:
+                listener.bind(str(path))
+    finally:
+        ats.close()
+
+
 def test_ats_owns_process_lifecycle(tmp_path: Path) -> None:
     """Start, stop, and validate the fixture-owned ATS process."""
 
@@ -244,7 +375,7 @@ def test_ats_factory_closes_all_processes_after_validation_failure(tmp_path: Pat
     second_process = attach_process(second)
     first.start()
     second.start()
-    second.log_directory.mkdir(parents=True)
+    second.log_directory.mkdir(parents=True, exist_ok=True)
     second.diags_log.write_text("FATAL: validation failed\n")
 
     with pytest.raises(ExceptionGroup, match="cleanup failed"):
@@ -252,6 +383,55 @@ def test_ats_factory_closes_all_processes_after_validation_failure(tmp_path: Pat
 
     assert first_process.was_stopped
     assert second_process.was_stopped
+
+
+@pytest.mark.parametrize("status", [0, 1, -11, -6])
+def test_ats_rejects_unexpected_exit(tmp_path: Path, status: int) -> None:
+    """A completed client or positive log marker must not hide an ATS exit.
+
+    :param tmp_path: Temporary test tree.
+    :param status: Premature exit status, including clean exits and signals.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    process = attach_process(ats)
+    ats.start()
+    process.return_code = status
+    with pytest.raises(AssertionError, match="exited unexpectedly"):
+        ats.close()
+
+
+def test_ats_requires_diagnostic_log(tmp_path: Path) -> None:
+    """A missing log is missing evidence, not a successful diagnostic check.
+
+    :param tmp_path: Temporary test tree.
+    """
+
+    ats = ATS(make_context(tmp_path))
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.unlink()
+    with pytest.raises(AssertionError, match="Missing ATS diagnostic log"):
+        ats.close()
+
+
+@pytest.mark.parametrize("destination", ["custom.log", "stdout", "stderr"])
+@pytest.mark.parametrize("capture", [True, False])
+def test_ats_checks_configured_diagnostic_destination(tmp_path: Path, destination: str, capture: bool) -> None:
+    """Renamed logs and redirected streams retain the fatal-diagnostic check.
+
+    :param tmp_path: Temporary test tree.
+    :param destination: Configured file name or standard stream.
+    :param capture: Whether ATS redirects standard streams to traffic.out.
+    """
+
+    ats = ATS(make_context(tmp_path), capture_traffic_out=capture)
+    ats.records.update({"proxy.config.diags.logfile.filename": destination})
+    attach_process(ats)
+    ats.start()
+    ats.diags_log.write_text("FATAL: diagnostic in the configured destination\n")
+    with pytest.raises(AssertionError, match="emitted a fatal diagnostic"):
+        ats.close()
 
 
 def test_origin_healthcheck_has_a_distinct_header_lookup_key(tmp_path: Path) -> None:

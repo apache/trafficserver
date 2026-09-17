@@ -28,6 +28,7 @@ import re
 import shutil
 import socket
 import subprocess
+import errno
 
 import fcntl
 
@@ -110,22 +111,38 @@ class TestRuntime:
         return self.build_root / "tests" / "tools" / "plugins" / ".libs"
 
     def allocate_port(self, socket_type: int = socket.SOCK_STREAM) -> int:
-        """Allocate a unique available port across all xdist workers."""
+        """Allocate a unique available port across all xdist workers.
+
+        :param socket_type: Socket kind to probe, normally TCP or UDP.
+        """
 
         self.sandbox_root.mkdir(parents=True, exist_ok=True)
         state_path = self.sandbox_root / ".port-counter"
-        with state_path.open("a+") as state:
+        try:
+            state = state_path.open("r+")
+        except FileNotFoundError:
+            raise RuntimeConfigError(f"Missing port counter {state_path}; the sandbox session must initialize it") from None
+        with state:
             fcntl.flock(state, fcntl.LOCK_EX)
             state.seek(0)
             content = state.read().strip()
-            candidate = int(content) if content else 10000
+            try:
+                candidate = int(content)
+                if not 10000 <= candidate <= 30000:
+                    raise ValueError
+            except ValueError:
+                raise RuntimeConfigError(f"Invalid port counter in {state_path}: {content!r}") from None
             for _ in range(20000):
-                candidate = 10000 if candidate >= 30000 else candidate + 1
+                candidate += 1
+                if candidate >= 30000:
+                    break
                 with socket.socket(socket.AF_INET, socket_type) as probe:
                     try:
                         probe.bind(("127.0.0.1", candidate))
-                    except OSError:
-                        continue
+                    except OSError as error:
+                        if error.errno == errno.EADDRINUSE:
+                            continue
+                        raise RuntimeConfigError(f"Port probe for 127.0.0.1:{candidate} failed: {error}") from error
                 state.seek(0)
                 state.truncate()
                 state.write(str(candidate))
@@ -133,7 +150,7 @@ class TestRuntime:
                 fcntl.flock(state, fcntl.LOCK_UN)
                 return candidate
             fcntl.flock(state, fcntl.LOCK_UN)
-        raise RuntimeConfigError("Could not allocate a test port")
+        raise RuntimeConfigError(f"Exhausted available test ports in 10001..29999; counter: {state_path}")
 
     @contextmanager
     def execution_lock(self, is_exclusive: bool) -> Iterator[None]:
@@ -176,12 +193,19 @@ class TestRuntime:
         label = "__".join(parts[1:]) if len(parts) > 1 else node_name
         return re.sub(r"[^A-Za-z0-9_.\[\]-]+", "_", label).strip("_.-") or "test"
 
-    def prepare_sandbox(self, path: Path) -> None:
-        """Create an empty item sandbox without allowing a broad deletion target."""
+    def prepare_sandbox(self, path: Path, *, parent: Path | None = None) -> None:
+        """Create an empty sandbox below its owning test or the session root.
+
+        :param path: Directory for this item or embedded replay.
+        :param parent: Owning native test directory for an embedded replay.
+        """
 
         resolved = path.resolve()
-        if resolved.parent != self.sandbox_root or resolved == self.sandbox_root:
+        owner = self.sandbox_root if parent is None else parent.resolve()
+        if not owner.is_relative_to(self.sandbox_root) or resolved.parent != owner or resolved == self.sandbox_root:
             raise RuntimeConfigError(f"Refusing to clean unsafe sandbox path: {resolved}")
+        if len(os.fsencode(path.name)) > os.pathconf(owner, "PC_NAME_MAX"):
+            raise RuntimeConfigError(f"Sandbox name exceeds the filesystem component limit: {path.name!r}")
         if resolved.exists():
             shutil.rmtree(resolved)
         resolved.mkdir(parents=True)
