@@ -9,3 +9,5 @@ header_value_context.input: u4wrh
 http_cntl_valid_bools.input: hrw4u
 # Literal JSON blocks compile to native header_rewrite escaping.
 json-body.input: hrw4u
+# The reverse normalizes a bool argument's spelling (FALSE -> false)
+bool-spelling.input: hrw4u
