@@ -243,7 +243,8 @@ class ConnectMethodTest:
             # ever exists as a hostname aggregate, never per group.
             for counter in ('current_connection', 'total_connection', 'blocked_connection'):
                 tr.Processes.Default.Streams.All += Testers.ExcludesExpression(
-                    f'per_server.{counter}.{group_name} ', f'per_server.{counter}.{group_name} must stay hidden at AGGREGATE_ONLY.')
+                    f'per_server.{counter}.{group_name} ',
+                    f'per_server.{counter}.{group_name} must stay hidden at metric_aggregate {self._metric_aggregate}.')
 
         # The per group metrics must be visible with --include-hidden at either level. This is also
         # the end to end test for that traffic_ctl option.
