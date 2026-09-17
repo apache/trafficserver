@@ -192,6 +192,13 @@ Parser::preprocess(std::vector<std::string> tokens)
           _mods.push_back(std::move(m));
         }
         tokens.pop_back(); // consume it, so we don't concatenate it into the value
+        if (tokens.empty()) {
+          // Nothing is left to parse, and the code below indexes tokens[0]
+          // unconditionally. Reading it would touch the element pop_back() just
+          // destroyed, and _op would then take ownership of freed memory.
+          TSError("[%s] modifiers with no condition or operator to apply them to", PLUGIN_NAME);
+          return false;
+        }
       } else {
         TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
         return false;
@@ -205,6 +212,12 @@ Parser::preprocess(std::vector<std::string> tokens)
   } else if (tokens[0] == "cond") {
     _clause = CondClause::COND;
     tokens.erase(tokens.begin());
+    if (tokens.empty()) {
+      // Same shape as above: the erase can empty the list, and the COND branch
+      // below indexes tokens[0].
+      TSError("[%s] cond with no condition", PLUGIN_NAME);
+      return false;
+    }
   } else if (tokens[0] == "else") {
     _clause = CondClause::ELSE;
     return true;
