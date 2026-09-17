@@ -261,6 +261,25 @@ TEST_CASE("ConnectionTracker aggregate metric publication", "[libinknet][Connect
     CHECK(is_published(host_metric("current_connection")));
   }
 
+  SECTION("one hostname's groups do not unlist each other's aggregate")
+  {
+    // metric_aggregate is overridable, so two mappings to one hostname can disagree. Both groups
+    // share the hostname's aggregate names, so a group that does not want them must stop
+    // contributing rather than unlist a name the other one is still publishing.
+    IpEndpoint other;
+    REQUIRE(ats_ip_pton("10.9.8.5:443", &other) == 0);
+
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_SUM;
+    open_and_close_connection(txn, addr);
+    REQUIRE(is_published(host_metric("current_connection")));
+
+    txn.metric_aggregate = ConnectionTracker::AGGREGATE_MAX;
+    open_and_close_connection(txn, other);
+
+    CHECK(is_published(host_metric("current_connection")));
+    CHECK(is_published(host_metric("current_connection.max")));
+  }
+
   SECTION("a group with no aggregate keeps its own metrics whatever the setting")
   {
     // Only MATCH_BOTH yields a hostname to gather under, so a MATCH_PORT group has no aggregate.

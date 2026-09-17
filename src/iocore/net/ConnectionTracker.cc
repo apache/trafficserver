@@ -511,8 +511,6 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
     };
     std::string const max_name = "proxy.process.http.per_server.current_connection.max." + _host_metric_name;
 
-    auto &metrics = Metrics::instance();
-
     // metric_aggregate is dynamic and overridable, so this group may well have published a name
     // under an earlier value. A published name is never removed from the store, so without
     // withdrawing it here it would report for the life of the process no matter what the setting
@@ -522,9 +520,11 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
       Metrics::Derived::add_source(sum_names[1], Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
       Metrics::Derived::add_source(sum_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
     } else if (has_aggregate) {
-      for (auto const &name : sum_names) {
-        metrics.unlist(name);
-      }
+      // Stop contributing rather than unlist: every group of this hostname shares these names, so
+      // one that does not want them must not remove a name another is still publishing.
+      Metrics::Derived::remove_source(sum_names[0], _count_metric);
+      Metrics::Derived::remove_source(sum_names[1], _count_total_metric);
+      Metrics::Derived::remove_source(sum_names[2], _blocked_metric);
     }
 
     if (publish_max) {
@@ -533,7 +533,7 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
       // and a maximum over time can be computed by whatever scrapes it.
       Metrics::Derived::add_source(max_name, Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
     } else if (has_aggregate) {
-      metrics.unlist(max_name);
+      Metrics::Derived::remove_source(max_name, _count_metric);
     }
 
     if (publish_group) {
@@ -544,9 +544,12 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
       Metrics::Derived::add_source(group_names[1], Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
       Metrics::Derived::add_source(group_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
     } else {
-      for (auto const &name : group_names) {
-        metrics.unlist(name);
-      }
+      // Same mechanism as the aggregates above, though these names have only this group as a
+      // source. It leaves nothing behind for the derived pass to keep recomputing into a name that
+      // is no longer published.
+      Metrics::Derived::remove_source(group_names[0], _count_metric);
+      Metrics::Derived::remove_source(group_names[1], _count_total_metric);
+      Metrics::Derived::remove_source(group_names[2], _blocked_metric);
     }
 
     if (dbg_ctl.on()) {
