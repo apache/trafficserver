@@ -698,6 +698,24 @@ TransactionLogData::get_client_security_group() const
   return nullptr;
 }
 
+const char *
+TransactionLogData::get_client_offered_signature_algorithms() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_offered_signature_algorithms();
+  }
+  return nullptr;
+}
+
+const char *
+TransactionLogData::get_client_negotiated_signature_algorithm() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->get_user_agent().get_client_negotiated_signature_algorithm();
+  }
+  return nullptr;
+}
+
 int
 TransactionLogData::get_client_alpn_id() const
 {
