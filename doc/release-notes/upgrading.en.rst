@@ -30,6 +30,25 @@ with :cpp:func:`TSPortDescriptorDestroy`. The descriptor can be destroyed
 immediately after :cpp:func:`TSPortDescriptorAccept` returns because the
 listener does not retain it.
 
+``ts::Metrics``, in the installed ``tsutil/Metrics.h``, no longer has an
+iterator. ``Metrics::iterator``, ``begin()``, ``end()`` and ``find()`` are
+removed, and enumeration is now ``Metrics::for_each(func)``, which invokes
+``func(name, type, value)`` for each metric:
+
+.. code-block:: cpp
+
+    ts::Metrics::instance().for_each([](std::string_view name, ts::Metrics::MetricType type, int64_t value) {
+      // ...
+    });
+
+Handing out a position let a caller name a slot the store was free to change
+underneath them, which is what the iterator could not be made safe against.
+Reaching a single metric by name is ``lookup()``.
+
+``Metrics::Storage::createSpan()`` and ``Metrics::rename()`` are also removed.
+Spans handed out unnamed slots that only ``rename()`` could name, and
+``rename()`` mutated a name that the lock free readers hand out views of.
+
 Upgrading to ATS v10.x
 ======================
 
