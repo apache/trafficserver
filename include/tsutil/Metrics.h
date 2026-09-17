@@ -33,6 +33,7 @@
 #include <limits>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <optional>
 
@@ -717,6 +718,21 @@ public:
      * which may re-register (e.g. an object recreated for the same key) need not track this.
      */
     static void add_source(std::string_view derived_name, Metrics::MetricType type, Metrics::AtomicType *source, Op op = Op::SUM);
+
+    /** Stop @a source contributing to a derived metric.
+     *
+     * The counterpart to @c add_source, for a contributor that goes away or stops wanting the
+     * aggregate published. A derived metric is shared by its sources, so this does not unlist it
+     * while any remain; when the last one is removed there is nothing left to report and the name
+     * is unlisted. Re-adding a source relists it.
+     *
+     * A source that is not registered for @a derived_name, or a name with no derived metric, is a
+     * no-op.
+     *
+     * Safe against a concurrent @c add_source for the same name: the listing change is made with
+     * the membership change, so a metric cannot be left unlisted with a source still contributing.
+     */
+    static void remove_source(std::string_view derived_name, Metrics::AtomicType *source);
 
     /**
      * Update derived metrics.
