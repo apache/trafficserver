@@ -292,40 +292,44 @@ namespace details
 
       if (it == metrics.end()) {
         metrics.push_back(DerivedMetric{id, {source}, op});
-        return;
-      }
-      // Already registered sources are skipped so repeated registration is harmless.
-      if (std::find(it->derived_from.begin(), it->derived_from.end(), source) == it->derived_from.end()) {
+      } else if (std::find(it->derived_from.begin(), it->derived_from.end(), source) == it->derived_from.end()) {
+        // Already registered sources are skipped so repeated registration is harmless.
         it->derived_from.push_back(source);
       }
+
+      // Under the lock, and after the source is registered. create() has already relisted, but a
+      // remove_source that emptied the list concurrently would otherwise be free to unlist after
+      // this source was added, leaving a metric that is recomputed but never enumerated.
+      Metrics::instance().relist(id);
     }
 
-    /// @return @c true if @a id has no sources left, so the caller can unlist it.
-    bool
+    void
     remove_source(Metrics::IdType id, Metrics::AtomicType *source)
     {
       if (!source) {
-        return false;
+        return;
       }
 
       std::lock_guard l(metrics_lock);
       auto            it = std::find_if(metrics.begin(), metrics.end(), [id](DerivedMetric const &m) { return m.metric == id; });
 
       if (it == metrics.end()) {
-        return false;
+        return;
       }
 
       auto src = std::find(it->derived_from.begin(), it->derived_from.end(), source);
 
       if (src == it->derived_from.end()) {
-        return false; // Not a source of this metric, so nothing about it changes.
+        return; // Not a source of this metric, so nothing about it changes.
       }
 
       it->derived_from.erase(src);
 
-      // The entry stays, holding no sources: update() skips those, and add_source finds it again if
-      // a contributor comes back.
-      return it->derived_from.empty();
+      // Under the lock with the erase, for the reason given in add_source. The entry stays, holding
+      // no sources: update() skips those, and add_source finds it again if a contributor returns.
+      if (it->derived_from.empty()) {
+        Metrics::instance().unlist(id);
+      }
     }
 
     static DerivativeMetrics &
@@ -396,9 +400,7 @@ Metrics::Derived::remove_source(std::string_view derived_name, Metrics::AtomicTy
     return;
   }
 
-  if (details::DerivativeMetrics::instance().remove_source(id, source)) {
-    instance.unlist(id);
-  }
+  details::DerivativeMetrics::instance().remove_source(id, source);
 }
 
 Metrics::StaticString &

@@ -728,6 +728,9 @@ public:
      *
      * A source that is not registered for @a derived_name, or a name with no derived metric, is a
      * no-op.
+     *
+     * Safe against a concurrent @c add_source for the same name: the listing change is made with
+     * the membership change, so a metric cannot be left unlisted with a source still contributing.
      */
     static void remove_source(std::string_view derived_name, Metrics::AtomicType *source);
 

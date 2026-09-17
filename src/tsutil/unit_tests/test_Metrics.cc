@@ -370,6 +370,58 @@ TEST_CASE("Metrics derived remove_source", "[libtsapi][Metrics]")
 
     CHECK(m.listed(id));
   }
+
+  SECTION("a concurrent add and remove cannot leave a contributing metric unlisted")
+  {
+    constexpr int64_t sentinel = 4242;
+    constexpr int     rounds   = 500;
+
+    auto a = Metrics::Gauge::createHiddenPtr("rm.race.a");
+
+    Metrics::Gauge::store(a, sentinel);
+    Metrics::Derived::add_source("rm.race", Metrics::MetricType::GAUGE, a);
+
+    auto const id = m.lookup("rm.race");
+    REQUIRE(id != Metrics::NOT_FOUND);
+
+    // One add against one remove per round, checked while quiescent: a single racing pair keeps a
+    // bad outcome visible at the end of its round instead of being papered over by later
+    // operations. Only the two orderings matter, so more concurrency would not probe anything new.
+    bool unlisted_with_source = false;
+
+    for (int round = 0; round < rounds && !unlisted_with_source; ++round) {
+      Metrics::Derived::add_source("rm.race", Metrics::MetricType::GAUGE, a);
+
+      std::atomic<int> ready{0};
+      auto             start = [&]() {
+        ready.fetch_add(1);
+        while (ready.load() < 2) {
+          std::this_thread::yield();
+        }
+      };
+
+      std::thread adder([&]() {
+        start();
+        Metrics::Derived::add_source("rm.race", Metrics::MetricType::GAUGE, a);
+      });
+      std::thread remover([&]() {
+        start();
+        Metrics::Derived::remove_source("rm.race", a);
+      });
+
+      adder.join();
+      remover.join();
+
+      // update_derived writes only names that still have a source, so the sentinel landing in a
+      // zeroed slot is how a registered source is observed from outside.
+      m[id].store(0);
+      Metrics::Derived::update_derived();
+
+      unlisted_with_source = (m[id].load() == sentinel) && !m.listed(id);
+    }
+
+    CHECK_FALSE(unlisted_with_source);
+  }
 }
 
 TEST_CASE("Metrics derived add_source", "[libtsapi][Metrics]")
