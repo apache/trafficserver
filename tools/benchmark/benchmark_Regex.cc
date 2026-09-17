@@ -9,7 +9,12 @@
   what the wrapper caused. Under the just-in-time engine a match should reach the system
   allocator zero times, because the match data comes out of the caller's own buffer. The
   interpreter is the exception: it allocates a backtracking frames vector through the same
-  allocator, so a match that runs interpreted does show up in the count.
+  allocator, so a match that runs interpreted shows up in the count the first time. PCRE2
+  keeps that vector on the match data block and reuses it, so a later match through the
+  same RegexMatches allocates nothing as long as the retained vector is already big enough.
+  Measured on pcre2 10.47, one block reused across growing subjects: 16KiB costs twelve
+  blocks, the same 16KiB again costs none, and 64KiB then costs two more. A reused-matches
+  row showing a nonzero count means the subject outgrew the vector, not that reuse failed.
 
   This file builds two targets. benchmark_Regex times operations and contains no
   interposer at all, so a timed case measures the regex path and nothing else; that
@@ -19,9 +24,10 @@
   the overhead is irrelevant because nothing is being timed.
 
   Interposing malloc is only wired up on Linux, where defining these symbols in the
-  executable is enough. Elsewhere the counters stay at zero and the report says so, so a
-  run on another platform still gives timings without quietly reporting zero allocations
-  as a result.
+  executable is enough. Elsewhere the report says the counts are unavailable rather than
+  printing zeros that would read as a result. Note that this is all the allocation target
+  prints on such a platform: the timings live in the other target, so a macOS run of
+  benchmark_Regex_alloc is expected to report nothing but unavailable lines.
 
   @section license License
 
@@ -73,8 +79,10 @@ struct AllocStats {
 };
 
 // Counting is per thread so a benchmark that spawns threads does not race the counters.
-// These benchmarks are single threaded; the qualifier is here so the numbers stay honest
-// if one is added later.
+// These benchmarks are single threaded. Note what the qualifier does NOT buy: a spawned
+// thread starts with alloc_counting false, so its allocations are dropped rather than
+// counted, and stats() only ever reports the constructing thread. A threaded case added
+// later would report close to zero and read as a win, so it needs its own accounting.
 thread_local AllocStats alloc_stats;
 thread_local bool       alloc_counting = false;
 
@@ -332,20 +340,27 @@ realloc(void *p, size_t size) noexcept
 
 namespace
 {
-char const *const PATTERN_PATH      = R"(^/([^/]+)/([^/]+)/(.*)$)";
-char const *const PATTERN_HOST      = R"(^(?:[a-z0-9-]+\.)*example\.com$)";
-char const *const PATTERN_EXTENSION = R"(\.(jpg|jpeg|png|gif|css|js)$)";
-char const *const PATTERN_QUERY     = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
+char const *const PATTERN_PATH  = R"(^/([^/]+)/([^/]+)/(.*)$)";
+char const *const PATTERN_HOST  = R"(^(?:[a-z0-9-]+\.)*example\.com$)";
+char const *const PATTERN_QUERY = R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)";
 
-std::string_view const SUBJECT_PATH      = "/images/2026/summer/header.jpg";
-std::string_view const SUBJECT_HOST      = "cdn.edge.example.com";
-std::string_view const SUBJECT_EXTENSION = "/images/2026/summer/header.jpg";
+std::string_view const SUBJECT_PATH = "/images/2026/summer/header.jpg";
 // A miss for the host pattern: it is a path, not a host.
 std::string_view const SUBJECT_MISS = "/no/match/here/at/all";
+#if !defined(BENCHMARK_REGEX_ALLOC)
+// Only the timing target has cases for these. Leaving them at namespace scope in the
+// allocation target makes them unused constants, which clang reports as
+// -Wunused-const-variable and the default and ci presets turn into an error. GCC does not
+// diagnose it at all, so a GCC build cannot reproduce the break this guard prevents.
+char const *const PATTERN_EXTENSION = R"(\.(jpg|jpeg|png|gif|css|js)$)";
+
+std::string_view const SUBJECT_HOST      = "cdn.edge.example.com";
+std::string_view const SUBJECT_EXTENSION = "/images/2026/summer/header.jpg";
 // A miss for the path pattern, which needs a leading slash and three slash separated
 // components. "/no/match/here/at/all" is not one: it satisfies the pattern with a remainder
 // of "here/at/all", so using it here would time a hit under the name of a miss.
 std::string_view const SUBJECT_PATH_MISS = "not-a-path-at-all";
+#endif // !BENCHMARK_REGEX_ALLOC
 
 // A set of host patterns, the shape a rule list has when a caller scans one in order.
 std::vector<std::string>
@@ -431,6 +446,26 @@ report_allocations(char const *label, AllocStats const &stats, unsigned long ope
 
 TEST_CASE("Regex compile", "[bench][regex]")
 {
+  // Confirm the corpus compiles before timing it. compile() returns false and leaves the
+  // object empty on a bad pattern, and Catch2 reports the median of a body that did
+  // nothing rather than failing, so a typo here would publish a fast compile time for a
+  // compile that never happened. Each probe gets its own object on purpose: calling
+  // compile() twice on one instance is a different operation from the first compile these
+  // cases measure, and it is how an earlier attempt at this check introduced a double
+  // free.
+  {
+    Regex probe;
+    REQUIRE(probe.compile(PATTERN_PATH));
+  }
+  {
+    Regex probe;
+    REQUIRE(probe.compile(PATTERN_HOST));
+  }
+  {
+    Regex probe;
+    REQUIRE(probe.compile(PATTERN_EXTENSION));
+  }
+
   BENCHMARK("compile path pattern")
   {
     Regex re;
@@ -453,7 +488,7 @@ TEST_CASE("Regex compile", "[bench][regex]")
   };
 
   Regex source;
-  source.compile(PATTERN_PATH);
+  REQUIRE(source.compile(PATTERN_PATH));
   BENCHMARK("copy a compiled pattern")
   {
     Regex copy(source);
@@ -464,11 +499,25 @@ TEST_CASE("Regex compile", "[bench][regex]")
 TEST_CASE("Regex match", "[bench][regex]")
 {
   Regex path;
-  path.compile(PATTERN_PATH);
+  REQUIRE(path.compile(PATTERN_PATH));
   Regex host;
-  host.compile(PATTERN_HOST);
+  REQUIRE(host.compile(PATTERN_HOST));
   Regex extension;
-  extension.compile(PATTERN_EXTENSION);
+  REQUIRE(extension.compile(PATTERN_EXTENSION));
+
+  // A failed compile leaves exec() returning early without touching PCRE2, which times a
+  // null check and reports it as a match. Pin the verdict each case is named for, so a hit
+  // cannot quietly become a miss.
+  REQUIRE(path.exec(SUBJECT_PATH));
+  REQUIRE_FALSE(host.exec(SUBJECT_MISS));
+  REQUIRE(extension.exec(SUBJECT_EXTENSION));
+  REQUIRE(host.exec(SUBJECT_HOST));
+  {
+    RegexMatches matches;
+    REQUIRE(path.exec(SUBJECT_PATH, matches) > 0);
+    RegexMatches no_matches;
+    REQUIRE(path.exec(SUBJECT_PATH_MISS, no_matches) < 0);
+  }
 
   BENCHMARK("bool exec, hit")
   {
@@ -514,8 +563,20 @@ TEST_CASE("Regex match", "[bench][regex]")
 TEST_CASE("Regex match with a caller supplied context", "[bench][regex]")
 {
   Regex path;
-  path.compile(PATTERN_PATH);
+  REQUIRE(path.compile(PATTERN_PATH));
   RegexMatchContext context;
+
+  // Both paths have to match before either is timed. This case reports one path against the
+  // other, so an empty pattern does not just mis-time it, it inverts the comparison: with
+  // PATTERN_PATH broken the caller supplied context measures about half the shared one.
+  {
+    RegexMatches matches;
+    REQUIRE(path.exec(SUBJECT_PATH, matches, 0, nullptr) > 0);
+  }
+  {
+    RegexMatches matches;
+    REQUIRE(path.exec(SUBJECT_PATH, matches, 0, &context) > 0);
+  }
 
   BENCHMARK("exec through the shared context")
   {
@@ -540,11 +601,17 @@ TEST_CASE("DFA set match", "[bench][regex]")
   }
 
   DFA dfa;
-  dfa.compile(raw.data(), static_cast<int>(raw.size()), RE_UNANCHORED);
+  // build() swallows a failed compile per pattern, so a bad corpus leaves a short or empty
+  // set that matches nothing in almost no time, which reads as a fast scan.
+  REQUIRE(dfa.compile(raw.data(), static_cast<int>(raw.size()), RE_UNANCHORED) == static_cast<int32_t>(raw.size()));
 
   std::string const first{"cdn.host0.example.com"};
   std::string const last{"cdn.host19.example.com"};
   std::string const none{"cdn.nothing.example.org"};
+
+  REQUIRE(dfa.match(first) == 0);
+  REQUIRE(dfa.match(last) == static_cast<int32_t>(raw.size()) - 1);
+  REQUIRE(dfa.match(none) == -1);
 
   BENCHMARK("DFA match, first pattern")
   {
@@ -569,16 +636,28 @@ TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
   // from #5762 covers, and it is the one place a match is expected to cost real time.
   //
   // Note this is not the interpreter: compile() gives the pattern to the JIT, and what the
-  // long subject reaches is the JIT's own stack bound. Driving a match onto the interpreter
-  // needs a pattern the JIT refuses outright, which starts around 36KB of pattern text and
-  // costs tens of seconds per match, so it has no place in a timed suite.
+  // long subject reaches is the JIT's own stack bound.
+  //
+  // Reaching the interpreter does not need a pattern the JIT refuses. RE_ANCHORED is
+  // PCRE2_ANCHORED, which PCRE2 does not run JIT code for when it is supplied at match
+  // time, so exec(subject, matches, RE_ANCHORED) is an interpreter match in one flag. On
+  // pcre2 10.47 this same pattern and subject then return a match in milliseconds rather
+  // than the JIT stack error, having allocated a frames vector of about 80MB. A pattern
+  // the JIT declines would also reach the interpreter, and that route is open rather than
+  // closed: 4000 repetitions of "(a)" compiles, pcre2_jit_compile then returns -68 and
+  // leaves PCRE2_INFO_JITSIZE at 0, and the match runs interpreted. The flag is used here
+  // only because it needs no corpus of its own.
+  {
+    Regex probe;
+    REQUIRE(probe.compile(PATTERN_QUERY));
+  }
   std::string const subject = jit_stack_subject();
   if (!exhausts_jit_stack(PATTERN_QUERY, subject)) {
     SKIP("this PCRE2 does not reach the JIT stack bound for this pattern and subject");
   }
 
   Regex query;
-  query.compile(PATTERN_QUERY);
+  REQUIRE(query.compile(PATTERN_QUERY));
 
   BENCHMARK("exec that exhausts the JIT stack, 64KiB subject")
   {
@@ -587,15 +666,16 @@ TEST_CASE("Regex match that exhausts the JIT stack", "[bench][regex]")
   };
 }
 
+#endif // !BENCHMARK_REGEX_ALLOC
+
 // ---------------------------------------------------------------------------
 // Allocations
 //
-// Reported rather than asserted: the point of the run is the comparison between two
-// implementations, and a hard assertion here would fail on a PCRE2 whose block sizes
-// differ from the ones the inline buffer was sized against.
+// The counts are reported rather than asserted, because a hard expectation here would
+// fail on a PCRE2 whose block sizes differ from the ones the inline buffer was sized
+// against. Setup is asserted, though: see the checks below, without which a failed
+// compile prints a flawless column of zeros.
 // ---------------------------------------------------------------------------
-
-#endif // !BENCHMARK_REGEX_ALLOC
 
 #if defined(BENCHMARK_REGEX_ALLOC)
 TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
@@ -603,9 +683,27 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
   constexpr unsigned long OPS = 10000;
 
   Regex path;
-  path.compile(PATTERN_PATH);
+  REQUIRE(path.compile(PATTERN_PATH));
   Regex host;
-  host.compile(PATTERN_HOST);
+  REQUIRE(host.compile(PATTERN_HOST));
+  REQUIRE(path.exec(SUBJECT_PATH));
+  REQUIRE_FALSE(host.exec(SUBJECT_MISS));
+
+  if constexpr (ALLOC_COUNTING_AVAILABLE) {
+    // A positive control. Every number this target prints is a count of zero being
+    // meaningful, so an interposer that is not actually installed, whether through a
+    // linker change or an allocator that replaces malloc wholesale, would print a
+    // flawless column of zeros that reads as the result rather than as a dead
+    // instrument. One deliberate allocation has to show up.
+    unsigned long calls = 0;
+    {
+      CountAllocations probe;
+      void            *p = ::malloc(64);
+      calls              = probe.stats().calls;
+      ::free(p);
+    }
+    REQUIRE(calls >= 1);
+  }
 
   printf("\nAllocations (%s)\n", ALLOC_COUNTING_AVAILABLE ? "counted through an interposed system allocator" : "unavailable");
 
@@ -664,10 +762,14 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
       raw.push_back(pattern.c_str());
     }
     DFA dfa;
-    dfa.compile(raw.data(), static_cast<int>(raw.size()), RE_UNANCHORED);
+    // Asserted here as well as in the timing target. Without it a corpus that fails to
+    // compile still reports a clean 0.00 allocations/op for a scan over nothing.
+    REQUIRE(dfa.compile(raw.data(), static_cast<int>(raw.size()), RE_UNANCHORED) == static_cast<int32_t>(raw.size()));
 
     std::string const first{"cdn.host0.example.com"};
     std::string const last{"cdn.host19.example.com"};
+    REQUIRE(dfa.match(first) >= 0);
+    REQUIRE(dfa.match(last) >= 0);
 
     {
       CountAllocations counter;
@@ -716,6 +818,13 @@ TEST_CASE("Regex allocation counts", "[bench][regex][alloc]")
     // reaches on a build that has a JIT. Without a JIT there is no such bound, and the same
     // subject would run to completion on the interpreter and allocate its frames vector,
     // which is a different measurement wearing the same label.
+    // Asserted before the probe, because exhausts_jit_stack() compiles the pattern itself and
+    // reports a corpus typo as "this PCRE2 does not reach the JIT stack bound", which blames
+    // the platform for a defect in this file and is a documented legitimate skip.
+    {
+      Regex probe;
+      REQUIRE(probe.compile(PATTERN_QUERY));
+    }
     std::string const subject = jit_stack_subject();
     if (exhausts_jit_stack(PATTERN_QUERY, subject)) {
       Regex query;
