@@ -1379,9 +1379,10 @@ HTTPHdr::scheme_get()
   -------------------------------------------------------------------------*/
 
 enum class CacheAltMagic : uint32_t {
-  ALIVE     = 0xabcddeed,
-  MARSHALED = 0xdcbadeed,
-  DEAD      = 0xdeadeed,
+  ALIVE         = 0xabcddeed,
+  MARSHALED     = 0xdcbadeed,
+  MARSHALED_WKS = 0xdcbadeee, ///< Marshalled alternate followed by a uint64_t WKS identity.
+  DEAD          = 0xdeadeed,
 };
 
 // struct HTTPCacheAlt

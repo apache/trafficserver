@@ -488,7 +488,7 @@ Object Versioning
 
 Every ``Doc`` records the cache format version that wrote it, in its ``v_major``
 and ``v_minor`` fields, taken from ``CACHE_DB_MAJOR_VERSION`` and
-``CACHE_DB_MINOR_VERSION`` in ``iocore/cache/CacheDefs.h``.
+``CACHE_DB_MINOR_VERSION`` in ``iocore/cache/CacheVersion.h``.
 
 Bumping the minor version does not clear the cache. Stripe validation looks only
 at the major version, and the current reader still reads every object written at
@@ -512,17 +512,23 @@ scheme, plus the presence bits and slot accelerators derived from them. Change
 the table and every stored index denotes a different string.
 
 The strings are in the object too, so the indexes are only a cache over them.
-``HTTPInfo::unmarshal()`` rebuilds all of it through
-``HTTPHdrImpl::recompute_wks_indices()`` before anything reads the header,
-unconditionally rather than on a version test, since an object written by a
-same-version build with a different table needs the same treatment as an older
-one. The ``CacheAltMagic`` check keeps this to once per marshalled buffer, on a
-read that already paid for disk I/O or a RAM-cache decompression.
+Starting with cache version 24.3, each marshalled alternate has a distinct
+``CacheAltMagic`` tag and an eight-byte WKS identity trailer. The identity hashes
+the ordered strings, MIME slot IDs, and presence masks using a canonical byte
+encoding. A matching identity lets ``HTTPInfo::unmarshal()`` trust the indexes
+without walking the fields. Older alternates have no identity and always need
+repair; an identity mismatch also rebuilds through
+``HTTPHdrImpl::recompute_wks_indices()`` after both heaps have been swizzled.
+Already-unmarshalled buffers are left alone because they may be shared.
 
-The table is therefore free to change without invalidating anyone's cache. The
-one requirement is that a |TS| predating the rebuild never read an object
-written against a different table; cache version 24.3 is where the rebuild
-landed, and older versions reject anything newer than themselves.
+This permits changes to the table's indexes and cardinality without invalidating
+existing objects. It does not reconstruct ``m_cooked_stuff``: changes to the set
+of recognized Cache-Control directives or their cooked masks need a separate
+compatibility decision. The WKS identity is not an integrity checksum.
+
+A |TS| predating the rebuild must never read an object written against a
+different table; cache version 24.3 provides that protection because older
+versions reject objects newer than themselves.
 
 Additional Notes
 ----------------

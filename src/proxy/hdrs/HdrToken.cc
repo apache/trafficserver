@@ -541,6 +541,33 @@ hdrtoken_build_wks_table()
 
 constexpr std::array<HdrTokenWksEntry, std::size(_hdrtoken_strs)> hdrtoken_wks_table = hdrtoken_build_wks_table();
 
+// FNV-1a over a canonical byte sequence, independent of native padding and byte order.
+// Bump the schema byte when the interpretation of the derived indexes changes.
+constexpr uint64_t
+hdrtoken_build_wks_identity()
+{
+  uint64_t hash    = 14695981039346656037ULL;
+  auto     byte    = [&](uint8_t value) { hash = (hash ^ value) * 1099511628211ULL; };
+  auto     integer = [&](uint64_t value) {
+    for (unsigned i = 0; i < 8; ++i) {
+      byte(static_cast<uint8_t>(value >> (i * 8)));
+    }
+  };
+
+  byte(1);
+  for (size_t i = 0; i < std::size(_hdrtoken_strs); ++i) {
+    for (unsigned char c : _hdrtoken_strs[i]) {
+      byte(c);
+    }
+    byte(0);
+    integer(hdrtoken_wks_table[i].prefix.wks_info.slotid);
+    integer(hdrtoken_wks_table[i].prefix.wks_info.mask);
+  }
+  return hash;
+}
+
+static_assert(hdrtoken_build_wks_identity() != 0);
+
 /***********************************************************************
  *                                                                     *
  *                        H A S H    T A B L E                         *
@@ -570,6 +597,8 @@ hdrtoken_build_hash_table()
 constexpr std::array<HdrTokenHashBucket, HDRTOKEN_HASH_TABLE_SIZE> hdrtoken_hash_table = hdrtoken_build_hash_table();
 
 } // end anonymous namespace
+
+const uint64_t hdrtoken_wks_identity = hdrtoken_build_wks_identity();
 
 // hdrtoken_wks_to_prefix() maps a string pointer back to its entry through this table.
 const HdrTokenWksEntry *const hdrtoken_wks_entries = hdrtoken_wks_table.data();

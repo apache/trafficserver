@@ -127,6 +127,12 @@ test_shift_marshalled_wks_indices(HdrHeap *marshal_hdr)
       for (uint32_t &accelerator : mh->m_slot_accelerators) {
         accelerator = 0xFFFFFFFF;
       }
+      for (uint32_t i = 0; i < mh->m_first_fblock.m_freetop; ++i) {
+        MIMEField &field = mh->m_first_fblock.m_field_slots[i];
+        if (field.is_live()) {
+          field.m_wks_idx = test_shift_wks_idx(field.m_wks_idx);
+        }
+      }
       break;
     }
     default:

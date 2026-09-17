@@ -2925,11 +2925,8 @@ rotate_wks_idx(int16_t wks_idx)
 void
 scramble_marshalled_heap(HdrHeap *heap)
 {
-  char *obj_data = reinterpret_cast<char *>(heap) + sizeof(HdrHeap);
+  char *obj_data = reinterpret_cast<char *>(heap) + reinterpret_cast<intptr_t>(heap->m_data_start);
   char *heap_end = reinterpret_cast<char *>(heap) + heap->m_size;
-
-  // Objects start at the marshalled heap's data offset, which marshal() sets to the header size.
-  obj_data = reinterpret_cast<char *>(heap) + reinterpret_cast<intptr_t>(heap->m_data_start);
 
   while (obj_data < heap_end) {
     HdrHeapObjImpl *obj = reinterpret_cast<HdrHeapObjImpl *>(obj_data);
@@ -2965,6 +2962,12 @@ scramble_marshalled_heap(HdrHeap *heap)
       mh->m_slot_accelerators[1] = 0xFFFFFFFF;
       mh->m_slot_accelerators[2] = 0xFFFFFFFF;
       mh->m_slot_accelerators[3] = 0xFFFFFFFF;
+      for (uint32_t i = 0; i < mh->m_first_fblock.m_freetop; ++i) {
+        MIMEField &field = mh->m_first_fblock.m_field_slots[i];
+        if (field.is_live()) {
+          field.m_wks_idx = rotate_wks_idx(field.m_wks_idx);
+        }
+      }
       break;
     }
     default:
@@ -3067,7 +3070,10 @@ TEST_CASE("HTTPInfo::unmarshal rebuilds well-known string indices", "[proxy][hdr
   scramble_marshalled_heap(reinterpret_cast<HdrHeap *>(buf + reinterpret_cast<intptr_t>(marshalled->m_request_hdr.m_heap)));
   scramble_marshalled_heap(reinterpret_cast<HdrHeap *>(buf + reinterpret_cast<intptr_t>(marshalled->m_response_hdr.m_heap)));
 
-  REQUIRE(HTTPInfo::unmarshal(buf, len, nullptr) > 0);
+  // The synthetic writer used a different table, so its identity must differ too.
+  uint64_t const other_identity = 0;
+  memcpy(buf + len - sizeof(other_identity), &other_identity, sizeof(other_identity));
+  REQUIRE(HTTPInfo::unmarshal(buf, len, nullptr) == len);
 
   HTTPInfo got;
   REQUIRE(got.get_handle(buf, len) > 0);
@@ -3090,6 +3096,7 @@ TEST_CASE("HTTPInfo::unmarshal rebuilds well-known string indices", "[proxy][hdr
   CHECK(got_resp->get_cooked_cc_mask() & MIME_COOKED_MASK_CC_MAX_AGE);
   CHECK(got_resp->get_cooked_cc_max_age() == 300);
 
+  info.destroy();
   req.destroy();
   resp.destroy();
 }

@@ -2131,7 +2131,7 @@ HTTPInfo::copy_frag_offsets_from(HTTPInfo *src)
 int
 HTTPInfo::marshal_length()
 {
-  int len = HTTP_ALT_MARSHAL_SIZE;
+  int len = HTTP_ALT_MARSHAL_SIZE + sizeof(uint64_t);
 
   if (m_alt->m_request_hdr.valid()) {
     len += m_alt->m_request_hdr.m_heap->marshal_length();
@@ -2166,7 +2166,7 @@ HTTPInfo::marshal(char *buf, int len)
   //   extra bytes now but will save copying any
   //   bytes on the way out of the cache
   memcpy(buf, m_alt, sizeof(HTTPCacheAlt));
-  marshal_alt->m_magic          = CacheAltMagic::MARSHALED;
+  marshal_alt->m_magic          = CacheAltMagic::MARSHALED_WKS;
   marshal_alt->m_writeable      = 0;
   marshal_alt->m_unmarshal_len  = -1;
   marshal_alt->m_ext_buffer     = nullptr;
@@ -2203,6 +2203,16 @@ HTTPInfo::marshal(char *buf, int len)
   } else {
     marshal_alt->m_response_hdr.m_heap = nullptr;
   }
+
+  uint64_t identity = hdrtoken_wks_identity;
+#if TS_HAS_TESTS
+  if (char const *shift = std::getenv("ATS_TEST_WKS_IDX_SHIFT"); shift != nullptr && atoi(shift) != 0) {
+    identity = 0;
+  }
+#endif
+  ink_release_assert(len - used >= static_cast<int>(sizeof(identity)));
+  memcpy(reinterpret_cast<char *>(marshal_alt) + used, &identity, sizeof(identity));
+  used += sizeof(identity);
 
   // The prior system failed the marshal if there wasn't
   //   enough space by measuring the space for every
@@ -2249,10 +2259,12 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return alt->m_unmarshal_len;
-  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED && alt->m_magic != CacheAltMagic::MARSHALED_WKS) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return -1;
   }
+
+  bool const has_wks_identity = alt->m_magic == CacheAltMagic::MARSHALED_WKS;
 
   ink_assert(alt->m_unmarshal_len < 0);
   alt->m_magic = CacheAltMagic::ALIVE;
@@ -2306,7 +2318,17 @@ HTTPInfo::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
   }
 
-  recompute_alt_wks_indices(alt);
+  uint64_t identity = 0;
+  if (has_wks_identity) {
+    if (len < static_cast<int>(sizeof(identity))) {
+      return -1;
+    }
+    memcpy(&identity, buf + orig_len - len, sizeof(identity));
+    len -= sizeof(identity);
+  }
+  if (!has_wks_identity || identity != hdrtoken_wks_identity) {
+    recompute_alt_wks_indices(alt);
+  }
 
   alt->m_unmarshal_len = orig_len - len;
 
@@ -2415,7 +2437,7 @@ HTTPInfo::check_marshalled(char *buf, int len)
 {
   HTTPCacheAlt *alt = reinterpret_cast<HTTPCacheAlt *>(buf);
 
-  if (alt->m_magic != CacheAltMagic::MARSHALED) {
+  if (alt->m_magic != CacheAltMagic::MARSHALED && alt->m_magic != CacheAltMagic::MARSHALED_WKS) {
     return false;
   }
 
