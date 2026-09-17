@@ -336,7 +336,9 @@ protected:
   {
     return this->getSSLHandShakeComplete();
   }
-  int _verify_certificate(X509_STORE_CTX *ctx) override;
+  std::string _get_tls_offered_signature_algorithms() const override;
+  std::string _get_tls_negotiated_signature_algorithm() const override;
+  int         _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSessionResumptionSupport
   const IpEndpoint &

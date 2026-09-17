@@ -188,7 +188,9 @@ protected:
   {
     return this->_handshake_completed;
   }
-  int _verify_certificate(X509_STORE_CTX *ctx) override;
+  std::string _get_tls_offered_signature_algorithms() const override;
+  std::string _get_tls_negotiated_signature_algorithm() const override;
+  int         _verify_certificate(X509_STORE_CTX *ctx) override;
 
   // TLSSNISupport
   in_port_t _get_local_port() override;
