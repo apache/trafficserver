@@ -53,8 +53,7 @@ class CacheFillRangeReqOnlyTest:
         }
         res = {
             "headers":
-                "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=300\r\n" + "Date: Tue, 17 Sep 2026 00:00:00 GMT\r\n" +
-                "Last-Modified: Mon, 16 Sep 2026 00:00:00 GMT\r\n" + "Connection: close\r\n" + 'Etag: {}\r\n'.format(etag),
+                "HTTP/1.1 200 OK\r\n" + "Cache-Control: max-age=300\r\n" + "Connection: close\r\n" + 'Etag: {}\r\n'.format(etag),
             "timestamp": "1469733493.993",
             "body": "hello hello"
         }
@@ -123,23 +122,24 @@ class CacheFillRangeReqOnlyTest:
         ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected cache miss")
         tr.StillRunningAfter = self.ts
 
-    def test_plainRequestDidNotFillCache(self):
-        # The other direction of the same decision: --range-req-only=true means
-        # a plain request must NOT be filled, so this stays a miss.  Without
-        # this run, a fix that simply always fills would still look correct.
-        tr = Test.AddTestRun("Non-range request did not background fill")
-        ps = tr.Processes.Default
-        tr.DelayStart = 2  # same window the fill would have had
-        tr.MakeCurlCommand(self.curl_and_args + ' http://www.example.com/skip_when_plain', ts=self.ts)
-        ps.ReturnCode = 0
-        ps.Streams.stdout.Content = Testers.ContainsExpression("X-Cache: miss", "expected no background fill for a plain request")
-        tr.StillRunningAfter = self.ts
+    def check_plainRequestWasDeclined(self):
+        # The other direction of the same decision.  Cache state cannot show
+        # this: a plain cacheable response is stored by ordinary proxy caching
+        # whether or not the plugin background fills, so both outcomes look the
+        # same from the client.  Assert on the plugin's own decision instead.
+        # Under a fix that simply always filled, this line would never appear.
+        self.ts.Disk.traffic_out.Content = Testers.ContainsExpression(
+            "_range_req_only=true; This transaction is not a range request",
+            "expected the plain request to be declined as a non-range request")
+        # ...and the range request must have been accepted, not declined.
+        self.ts.Disk.traffic_out.Content += Testers.ContainsExpression(
+            "scheduling background fetch", "expected the range request to schedule a background fetch")
 
     def run(self):
         self.test_rangeRequestPrimesCache()
         self.test_rangeRequestFilledCache()
         self.test_plainRequestIsAMiss()
-        self.test_plainRequestDidNotFillCache()
+        self.check_plainRequestWasDeclined()
 
 
 CacheFillRangeReqOnlyTest().run()
