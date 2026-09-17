@@ -89,7 +89,11 @@ ts.Disk.records_config.update(
         'proxy.config.diags.debug.tags': 'http|regex_remap',
         'proxy.config.dns.nameservers': f"127.0.0.1:{nameserver.Variables.Port}",
         'proxy.config.dns.resolv_conf': 'NULL',
-        # The crash-guard run below needs a request larger than the 32 KB default.
+        # Run 3b sends a query past the 1 MB JIT stack's ~44 KB bound, which is over the
+        # 32 KB default. Do not raise request_line_max_size to match: http_parser_parse_req
+        # asserts `parsed.size() < UINT16_MAX` before it rejects an over-long line, so on
+        # any assert-enabled build a request line past 65,535 aborts traffic_server instead
+        # of getting a 414. 65,535 is the real ceiling here, whatever the record says.
         'proxy.config.http.request_header_max_size': 131072
     })
 
@@ -145,9 +149,21 @@ tr.StillRunningAfter = ts
 # 3b Test - Preserve the original crash guard from #5762. This request must
 # survive resource exhaustion without redirecting, regardless of which matching
 # resource limit is reached (JIT stack, match work, depth, or heap). Against the
-# shared 1 MB stack this rule needs a subject past 43 KB to exhaust it, which is
-# why the request header limit is raised above. Shortening this query silently
-# turns the run into a plain redirect test.
+# shared 1 MB stack this rule needs a subject past ~44 KB to exhaust it (measured:
+# 43,514 matches, 44,021 does not), which is why the header limit is raised above.
+# Shortening this query silently turns the run into a plain redirect test.
+#
+# This run is boxed in, and the box cannot be widened by configuration. The floor is
+# that ~44 KB bound; the ceiling is the 65,535 request line the parser asserts on. So
+# the usable window is roughly 44,100 to 65,475 bytes of query, about 1.5x wide, and
+# 64,000 is near the top of it. A platform whose JIT frames are enough smaller to push
+# the floor over the ceiling cannot run this case at any query length: prefer the
+# test_Regex.cc unit test, which bounds the stack directly, over stretching this one.
+#
+# Note this run is a crash guard, not a check on the stack size: its ContainsExpression
+# accepts any of -46/-47/-53/-63, and the 32 KB fallback reaches -46 too. Run 3 above is
+# what actually fails if the fix is reverted, because its 3 KB subject redirects on the
+# 1 MB stack and errors on the fallback.
 #
 # Only the JIT engine has a stack to exhaust here. PCRE2's interpreter keeps its
 # backtracking frames on the heap, so on a build without JIT this subject simply

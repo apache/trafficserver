@@ -313,9 +313,17 @@ RegexMatchContext::RegexMatchContext()
   // Copy the shared context rather than building a blank one. A blank context
   // silently drops everything the shared context configures, which is how this
   // type came to run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB
-  // one every other caller gets. Callers override only the fields they mean to.
-  auto ctx = pcre2_match_context_copy(RegexContext::get_instance()->get_match_context());
-  debug_assert_message(ctx, "Failed to copy the shared pcre2 match context");
+  // one. Callers override only the fields they mean to.
+  //
+  // pcre2_match_context_copy dereferences its argument rather than returning null
+  // for one, and RegexContext's constructor does not check its allocations, so a
+  // shared context that failed to allocate would crash here. Fall back to a blank
+  // context, which is what this constructor built before and which no reader of
+  // _match_context dereferences unchecked.
+  auto *shared = RegexContext::get_instance()->get_match_context();
+  auto *ctx    = shared != nullptr ? pcre2_match_context_copy(shared) : pcre2_match_context_create(nullptr);
+
+  debug_assert_message(ctx, "Failed to obtain a pcre2 match context");
   _MatchContext::set(_match_context, ctx);
 }
 
