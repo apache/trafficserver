@@ -708,23 +708,93 @@ print_row(char const *scenario, size_t n, Summary const &s)
               static_cast<unsigned long long>(s.lock_failures));
 }
 
+Summary
+report(char const *name, size_t n, std::vector<Sample> &samples)
+{
+  Summary s = summarize(samples);
+  print_row(name, n, s);
+  return s;
+}
+
+// Every scenario below is built out of the same construct/arm/warmup/sample
+// sequence; a scenario is just what setup() arms once and what per_tick()
+// (if anything) re-arms before every single warmup and sample call,
+// including the first. Centralizing that here is what makes "every scenario
+// is measured identically" a property of the code instead of five TEST_CASE
+// bodies that can drift from each other (e.g. an earlier version of this
+// file called refresh_keepalive() once outside the loop *and* again inside
+// it for i==0 - harmless, but exactly the kind of accidental asymmetry this
+// exists to prevent). idle and mass_expiry simply pass per_tick = nullptr;
+// that is a visible, deliberate "nothing changes between runs" rather than
+// an omission.
+struct Scenario {
+  char const *name;
+  void (*setup)(Fixture &);
+  void (*per_tick)(Fixture &, void *state);
+};
+
+void
+arm_and_warmup(Fixture &fx, Scenario const &scenario, void *state)
+{
+  if (scenario.setup != nullptr) {
+    scenario.setup(fx);
+  }
+  for (int i = 0; i < WARMUP_RUNS; ++i) {
+    if (scenario.per_tick != nullptr) {
+      scenario.per_tick(fx, state);
+    }
+    fx.warmup();
+  }
+}
+
+std::vector<Sample>
+sample_scenario(Fixture &fx, Scenario const &scenario, void *state)
+{
+  std::vector<Sample> samples;
+  samples.reserve(SAMPLE_RUNS);
+  for (int i = 0; i < SAMPLE_RUNS; ++i) {
+    if (scenario.per_tick != nullptr) {
+      scenario.per_tick(fx, state);
+    }
+    samples.push_back(timed_run(fx));
+  }
+  return samples;
+}
+
+std::vector<Sample>
+run_scenario(size_t n, Scenario const &scenario, void *state = nullptr)
+{
+  Fixture fx(n);
+  arm_and_warmup(fx, scenario, state);
+  return sample_scenario(fx, scenario, state);
+}
+
+void
+refresh_keepalive_tick(Fixture &fx, void * /* state */)
+{
+  refresh_keepalive(fx);
+}
+
+void
+churn_tick_thunk(Fixture &fx, void *state)
+{
+  churn_tick(fx, *static_cast<ChurnState *>(state));
+}
+
+Scenario const IDLE_SCENARIO            = {"idle", set_idle, nullptr};
+Scenario const KEEPALIVE_SCENARIO       = {"keepalive", nullptr, refresh_keepalive_tick};
+Scenario const MASS_EXPIRY_SCENARIO     = {"mass_expiry", set_mass_expiry, nullptr};
+Scenario const CHURN_SCENARIO           = {"churn", init_churn_baseline, churn_tick_thunk};
+Scenario const LOCK_CONTENTION_SCENARIO = {"lock_contention", set_idle, nullptr};
+
 } // namespace
 
 TEST_CASE("InactivityCop: idle connections", "[!benchmark][net][inactivity_cop]")
 {
   print_header();
   for (size_t n : N_VALUES) {
-    Fixture fx(n);
-    set_idle(fx);
-    for (int i = 0; i < WARMUP_RUNS; ++i) {
-      fx.warmup();
-    }
-    std::vector<Sample> samples;
-    for (int i = 0; i < SAMPLE_RUNS; ++i) {
-      samples.push_back(timed_run(fx));
-    }
-    Summary s = summarize(samples);
-    print_row("idle", n, s);
+    std::vector<Sample> samples = run_scenario(n, IDLE_SCENARIO);
+    Summary             s       = report("idle", n, samples);
 
     // Every mock is on open_list, and every get_thread() returns
     // this_ethread(), so the refill visits exactly all N of them and none
@@ -740,19 +810,8 @@ TEST_CASE("InactivityCop: keepalive steady state", "[!benchmark][net][inactivity
 {
   print_header();
   for (size_t n : N_VALUES) {
-    Fixture fx(n);
-    refresh_keepalive(fx);
-    for (int i = 0; i < WARMUP_RUNS; ++i) {
-      refresh_keepalive(fx);
-      fx.warmup();
-    }
-    std::vector<Sample> samples;
-    for (int i = 0; i < SAMPLE_RUNS; ++i) {
-      refresh_keepalive(fx); // untimed: simulates traffic renewing the timeout
-      samples.push_back(timed_run(fx));
-    }
-    Summary s = summarize(samples);
-    print_row("keepalive", n, s);
+    std::vector<Sample> samples = run_scenario(n, KEEPALIVE_SCENARIO);
+    report("keepalive", n, samples);
   }
 }
 
@@ -760,17 +819,8 @@ TEST_CASE("InactivityCop: mass expiry", "[!benchmark][net][inactivity_cop]")
 {
   print_header();
   for (size_t n : N_VALUES) {
-    Fixture fx(n);
-    set_mass_expiry(fx);
-    for (int i = 0; i < WARMUP_RUNS; ++i) {
-      fx.warmup();
-    }
-    std::vector<Sample> samples;
-    for (int i = 0; i < SAMPLE_RUNS; ++i) {
-      samples.push_back(timed_run(fx));
-    }
-    Summary s = summarize(samples);
-    print_row("mass_expiry", n, s);
+    std::vector<Sample> samples = run_scenario(n, MASS_EXPIRY_SCENARIO);
+    report("mass_expiry", n, samples);
 
     // Every mock has a past deadline and none are in keep_alive_queue
     // (queue management is disabled for this fixture), so the first
@@ -785,20 +835,9 @@ TEST_CASE("InactivityCop: churn", "[!benchmark][net][inactivity_cop]")
 {
   print_header();
   for (size_t n : N_VALUES) {
-    Fixture fx(n);
-    init_churn_baseline(fx);
-    ChurnState state(n);
-    for (int i = 0; i < WARMUP_RUNS; ++i) {
-      churn_tick(fx, state);
-      fx.warmup();
-    }
-    std::vector<Sample> samples;
-    for (int i = 0; i < SAMPLE_RUNS; ++i) {
-      churn_tick(fx, state);
-      samples.push_back(timed_run(fx));
-    }
-    Summary s = summarize(samples);
-    print_row("churn", n, s);
+    ChurnState          state(n);
+    std::vector<Sample> samples = run_scenario(n, CHURN_SCENARIO, &state);
+    report("churn", n, samples);
   }
 }
 
@@ -806,22 +845,24 @@ TEST_CASE("InactivityCop: lock contention", "[!benchmark][net][inactivity_cop]")
 {
   print_header();
   for (size_t n : N_VALUES) {
+    // Shares arm_and_warmup() with the other four scenarios, but the
+    // sampling loop cannot be the generic per_tick() shape: contention has
+    // to bracket each individual timed call (acquire before, release
+    // after), not just mutate state before it, and the ContentionHolder is
+    // only constructed after warmup so warmup runs never see contention.
     Fixture fx(n);
-    set_idle(fx);
-    for (int i = 0; i < WARMUP_RUNS; ++i) {
-      fx.warmup();
-    }
+    arm_and_warmup(fx, LOCK_CONTENTION_SCENARIO, nullptr);
 
     ContentionHolder holder(fx.mocks, /* fraction_pct = */ 10);
     size_t const     expected_failures = holder.held_count();
 
     std::vector<Sample> samples;
+    samples.reserve(SAMPLE_RUNS);
     for (int i = 0; i < SAMPLE_RUNS; ++i) {
       ContentionHolder::ScopedRun guard(holder);
       samples.push_back(timed_run(fx));
     }
-    Summary s = summarize(samples);
-    print_row("lock_contention", n, s);
+    report("lock_contention", n, samples);
 
     // The cop pops every cop_list entry every run, so the expected
     // lock-acquire-failure count is exact, not just "greater than zero": a
