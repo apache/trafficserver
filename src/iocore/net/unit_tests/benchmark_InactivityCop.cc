@@ -1,0 +1,838 @@
+/** @file
+
+  Microbenchmark for InactivityCop, the once-per-second per-thread sweep that
+  checks every open NetEvent for an inactivity or active timeout.
+
+  This measures the *current* algorithm (drain cop_list with a try-lock per
+  entry, then refill cop_list by walking all of open_list) so a future timer
+  wheel replacement has an honest baseline. No production code is exercised
+  by a real net processor here: NetEvents are mocked, and the cop is driven
+  synchronously on the Catch2 main thread, which unit_test_main.cc already
+  makes a valid EThread via EThread::set_specific().
+
+  Not using Catch2's BENCHMARK macro: the cop is stateful across invocations
+  (cop_list only refills at the end of a call, and scenarios like keepalive
+  and churn deliberately re-arm deadlines between calls), and BENCHMARK
+  re-runs its body an adaptive, unlogged number of times to converge, which
+  would silently multiply those state mutations in ways no scenario here is
+  designed to tolerate. BENCHMARK also cannot report the get_mutex/get_thread
+  touch counters, which are the primary, hardware-independent metrics this
+  file is built around. A hand-rolled mean/min/max over a fixed, logged
+  SAMPLE_RUNS is less polished but keeps both properties intact - do not
+  "modernize" this to BENCHMARK without preserving them.
+
+  Run only the benchmarks: ./test_net "[!benchmark]"
+
+  @section license License
+
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+ */
+
+#include "../InactivityCop.h"
+#include "../P_UnixNetVConnection.h"
+#include "../P_Net.h"
+
+#include "iocore/eventsystem/EThread.h"
+#include "iocore/eventsystem/Event.h"
+#include "iocore/eventsystem/Lock.h"
+#include "tscore/ink_hrtime.h"
+#include "tsutil/Metrics.h"
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/interfaces/catch_interfaces_config.hpp>
+#include <catch2/reporters/catch_reporter_event_listener.hpp>
+#include <catch2/reporters/catch_reporter_registrars.hpp>
+
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer) && __has_include(<sanitizer/lsan_interface.h>)
+#include <sanitizer/lsan_interface.h>
+#define BENCH_HAVE_LSAN_INTERFACE 1
+#endif
+#endif
+
+#include <sys/utsname.h>
+
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstdio>
+#include <memory>
+#include <random>
+#include <string>
+#include <thread>
+#include <vector>
+
+namespace
+{
+// --- Trap 1: net_rsb is a zero-initialized global of raw metric pointers.
+// register_net_stats() (Net.cc) fills it in, but it is `static inline` and
+// unreachable here, and it is never called anyway because we never start a
+// real net processor. Populate by hand exactly the fields check_inactivity()
+// touches, once, no matter how many fixtures get built.
+void
+ensure_net_metrics_registered()
+{
+  static bool done = false;
+  if (done) {
+    return;
+  }
+  done = true;
+
+  net_rsb.inactivity_cop_lock_acquire_failure =
+    Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.default_inactivity_timeout_applied = Metrics::Counter::createPtr("proxy.process.net.default_inactivity_timeout_applied");
+  net_rsb.default_inactivity_timeout_count   = Metrics::Counter::createPtr("proxy.process.net.default_inactivity_timeout_count");
+  net_rsb.keep_alive_queue_timeout_count     = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
+  net_rsb.keep_alive_queue_timeout_total     = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
+}
+
+// Frozen at commit 300f40c9 to sizeof(UnixNetVConnection) as it stood then.
+// Deliberately NOT tied to a live sizeof(UnixNetVConnection): the timer
+// wheel this benchmark exists to baseline will change that type's layout
+// (new hook/deadline fields, cop_link removed), and if the mock's stride
+// moved with it, a later checkpoint would stop measuring the same
+// cache-miss profile - a shrinking UnixNetVConnection would make the new
+// algorithm look faster for a reason that has nothing to do with the
+// algorithm. Bump this only as a deliberate, called-out rebaseline.
+constexpr size_t MOCK_FOOTPRINT_BYTES = 1584; // sizeof(UnixNetVConnection) at 300f40c9
+
+constexpr uint32_t SHUFFLE_SEED = 0xC0FFEE;
+constexpr int      WARMUP_RUNS  = 2;
+constexpr int      SAMPLE_RUNS  = 25;
+
+std::vector<size_t> const N_VALUES = {1000, 10000, 100000};
+
+// Written only by the thread driving the cop (the Catch2 main thread that
+// owns the Fixture). The ContentionHolder background thread only ever
+// touches Ptr<ProxyMutex> objects directly; it never calls into
+// MockNetEvent, so there is no second writer here. Keeping these as plain
+// counters (not std::atomic) matters: get_thread()/get_mutex() are exactly
+// the per-connection calls the timer wheel removes, and an atomic RMW on
+// every one of ~100000 calls per timed run would inflate the *current*
+// number with instrumentation overhead that has nothing to do with the
+// algorithm - overhead a later "faster" measurement would not be paying,
+// making the reported speedup look bigger than the real one.
+struct Counters {
+  uint64_t get_mutex_touches  = 0;
+  uint64_t get_thread_touches = 0;
+  uint64_t callbacks          = 0;
+};
+
+// Trap 4: get_thread() must return the same EThread the cop is driven from,
+// or the refill loop's `ne->get_thread() == this_ethread()` skips every
+// mock and the benchmark measures nothing.
+class MockNetEvent : public NetEvent
+{
+public:
+  MockNetEvent(EThread *thread, Counters *counters) : _thread(thread), _counters(counters) { mutex = new_ProxyMutex(); }
+
+  void
+  net_read_io(NetHandler *) override
+  {
+  }
+  void
+  net_write_io(NetHandler *) override
+  {
+  }
+  void
+  free_thread(EThread *) override
+  {
+  }
+
+  int
+  callback(int /* event */ = CONTINUATION_EVENT_NONE, void * /* data */ = nullptr) override
+  {
+    ++_counters->callbacks;
+    return EVENT_DONE;
+  }
+
+  // Mirrors UnixNetVConnection::set_inactivity_timeout / set_default_inactivity_timeout /
+  // is_default_inactivity_timeout (UnixNetVConnection.cc:1290-1310).
+  void
+  set_inactivity_timeout(ink_hrtime timeout_in) override
+  {
+    inactivity_timeout_in      = timeout_in;
+    next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + timeout_in : 0;
+  }
+
+  void
+  set_default_inactivity_timeout(ink_hrtime timeout_in) override
+  {
+    default_inactivity_timeout_in = timeout_in;
+  }
+
+  bool
+  is_default_inactivity_timeout() override
+  {
+    return use_default_inactivity_timeout && inactivity_timeout_in == 0;
+  }
+
+  EThread *
+  get_thread() override
+  {
+    ++_counters->get_thread_touches;
+    return _thread;
+  }
+
+  int
+  close() override
+  {
+    return 0;
+  }
+
+  int
+  get_fd() override
+  {
+    return -1;
+  }
+
+  Ptr<ProxyMutex> &
+  get_mutex() override
+  {
+    ++_counters->get_mutex_touches;
+    return mutex;
+  }
+
+  ContFlags &
+  get_control_flags() override
+  {
+    return _flags;
+  }
+
+  Ptr<ProxyMutex> mutex;
+
+private:
+  EThread  *_thread;
+  Counters *_counters;
+  ContFlags _flags;
+};
+
+// Trap 3: pad every mock out to a fixed, frozen footprint so the sweep's
+// cost profile (cache misses over scattered, connection-sized objects)
+// matches production instead of a flattering dense std::vector<Mock>.
+struct PaddedMock : public MockNetEvent {
+  using MockNetEvent::MockNetEvent;
+  char _pad[MOCK_FOOTPRINT_BYTES > sizeof(MockNetEvent) ? MOCK_FOOTPRINT_BYTES - sizeof(MockNetEvent) : 1];
+};
+
+// If either of these fire, MockNetEvent (or the live UnixNetVConnection, see
+// the [sizes] line printed at test-run start) has drifted since the
+// footprint was frozen above; that is exactly the situation the frozen
+// constant exists to make loud instead of silently absorbing into a
+// _pad[1].
+static_assert(sizeof(MockNetEvent) <= MOCK_FOOTPRINT_BYTES, "MockNetEvent grew past the frozen mock footprint; shrink it or bump "
+                                                            "MOCK_FOOTPRINT_BYTES as a deliberate, called-out rebaseline");
+static_assert(sizeof(PaddedMock) >= MOCK_FOOTPRINT_BYTES, "PaddedMock must be at least the frozen mock footprint");
+
+std::string
+git_short_sha()
+{
+  std::array<char, 64> buf{};
+  FILE                *pipe = popen("git rev-parse --short HEAD 2>/dev/null", "r");
+  if (pipe == nullptr) {
+    return "unknown";
+  }
+  std::string result;
+  if (fgets(buf.data(), static_cast<int>(buf.size()), pipe) != nullptr) {
+    result = buf.data();
+    while (!result.empty() && (result.back() == '\n' || result.back() == '\r')) {
+      result.pop_back();
+    }
+  }
+  pclose(pipe);
+  return result.empty() ? "unknown" : result;
+}
+
+std::string
+host_name()
+{
+  utsname u{};
+  if (uname(&u) == 0) {
+    return std::string(u.nodename);
+  }
+  return "unknown";
+}
+
+// Printed exactly once, from a Catch2 listener's testRunStarting, so it
+// cannot migrate between test cases or vanish under a filtered / `--order
+// rand` run. This is the provenance a saved table needs to stay
+// interpretable later: what was measured (sizes), what varied (seed, N,
+// sample counts), and where it came from (commit, build, host).
+void
+print_provenance_once()
+{
+  static bool done = false;
+  if (done) {
+    return;
+  }
+  done = true;
+
+  std::printf("\n[provenance] commit=%s build=%s host=%s\n", git_short_sha().c_str(),
+#ifdef DEBUG
+              "debug",
+#else
+              "release",
+#endif
+              host_name().c_str());
+  std::printf("[provenance] N_VALUES=1000,10000,100000 MOCK_FOOTPRINT_BYTES=%zu SAMPLE_RUNS=%d WARMUP_RUNS=%d shuffle_seed=0x%X\n",
+              MOCK_FOOTPRINT_BYTES, SAMPLE_RUNS, WARMUP_RUNS, SHUFFLE_SEED);
+  std::printf("[sizes] sizeof(MockNetEvent)=%zu sizeof(PaddedMock)=%zu sizeof(UnixNetVConnection)=%zu (frozen footprint=%zu)\n",
+              sizeof(MockNetEvent), sizeof(PaddedMock), sizeof(UnixNetVConnection), MOCK_FOOTPRINT_BYTES);
+  if (sizeof(UnixNetVConnection) != MOCK_FOOTPRINT_BYTES) {
+    std::printf("[sizes] NOTE: live sizeof(UnixNetVConnection) differs from the frozen footprint; numbers are not directly "
+                "comparable to the 300f40c9 baseline until MOCK_FOOTPRINT_BYTES is deliberately updated\n");
+  }
+}
+
+class ProvenanceListener final : public Catch::EventListenerBase
+{
+public:
+  using EventListenerBase::EventListenerBase;
+
+  void
+  testRunStarting(Catch::TestRunInfo const &) override
+  {
+    print_provenance_once();
+  }
+};
+
+struct Fixture {
+  NetHandler                               nh;
+  Counters                                 counters;
+  std::vector<std::unique_ptr<PaddedMock>> mocks;
+  InactivityCop                            cop;
+
+  explicit Fixture(size_t n) : cop(Ptr<ProxyMutex>(new_ProxyMutex()), nh)
+  {
+    ensure_net_metrics_registered();
+
+    // NetHandler::configure_per_thread_values() computes config.max_connections_in /
+    // eventProcessor.thread_group[ET_NET]._count. ET_NET is #defined to
+    // ET_CALL (include/iocore/net/Net.h), and unit_test_main.cc's
+    // eventProcessor.start(test_threads) spawns test_threads == 1 ET_CALL
+    // threads, so that count is 1 here, not 0 - calling
+    // configure_per_thread_values() would not actually crash in this
+    // harness. We still don't call it: setting max_connections_per_thread_in
+    // / max_requests_per_thread_in directly to 0 keeps this fixture
+    // decoupled from that production wiring and guarantees
+    // manage_active_queue()/manage_keep_alive_queue() early-return
+    // regardless of whatever eventProcessor state this binary happens to be
+    // in.
+    nh.mutex                             = new_ProxyMutex();
+    nh.thread                            = this_ethread();
+    nh.config.max_connections_in         = 0;
+    nh.config.max_requests_in            = 0;
+    nh.config.default_inactivity_timeout = 30;
+    nh.max_connections_per_thread_in     = 0;
+    nh.max_requests_per_thread_in        = 0;
+
+    build(n);
+  }
+
+  void
+  build(size_t n)
+  {
+    mocks.clear();
+    mocks.reserve(n);
+    for (size_t i = 0; i < n; ++i) {
+      // Trap 3: individually `new`-allocated, not a dense vector<Mock>.
+      mocks.push_back(std::make_unique<PaddedMock>(this_ethread(), &counters));
+    }
+
+    std::vector<PaddedMock *> order;
+    order.reserve(n);
+    for (auto &m : mocks) {
+      order.push_back(m.get());
+    }
+    // Fixed seed: traversal order (open_list) differs from allocation order
+    // reproducibly, so the sweep pays for real scattered access every run.
+    std::mt19937 rng(SHUFFLE_SEED);
+    std::shuffle(order.begin(), order.end(), rng);
+    for (auto *m : order) {
+      m->nh = &nh;
+      nh.open_list.enqueue(m);
+    }
+  }
+
+  // Trap 5: cop_list starts empty. This call only refills it from open_list;
+  // it does not drain/check anything. Must be called at least once, untimed,
+  // before any timed run.
+  void
+  warmup()
+  {
+    Event event;
+    event.ethread = this_ethread();
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    cop.check_inactivity(EVENT_INTERVAL, &event);
+  }
+
+  // One real drain-and-check-then-refill pass, timed by the caller.
+  void
+  run()
+  {
+    Event event;
+    event.ethread = this_ethread();
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    cop.check_inactivity(EVENT_INTERVAL, &event);
+  }
+};
+
+double
+to_ms(std::chrono::steady_clock::duration d)
+{
+  return std::chrono::duration<double, std::milli>(d).count();
+}
+
+struct Sample {
+  double   wall_ms;
+  uint64_t get_mutex_touches;
+  uint64_t get_thread_touches;
+  uint64_t callbacks;
+  uint64_t lock_failures;
+};
+
+struct Summary {
+  double   mean_ms            = 0.0;
+  double   min_ms             = 0.0;
+  double   max_ms             = 0.0;
+  uint64_t get_mutex_touches  = 0;
+  uint64_t get_thread_touches = 0;
+  uint64_t callbacks          = 0;
+  uint64_t lock_failures      = 0;
+};
+
+Summary
+summarize(std::vector<Sample> &samples)
+{
+  Summary s;
+  double  sum = 0.0;
+  for (auto const &sample : samples) {
+    sum += sample.wall_ms;
+  }
+  s.mean_ms = sum / static_cast<double>(samples.size());
+
+  // Not a percentile: with SAMPLE_RUNS this small, "p99" would just be the
+  // second-largest sample (0.99*(25-1) truncates to index 23 of 25) and
+  // would silently mean something else if SAMPLE_RUNS changes. min/max over
+  // the sample is the honest summary at this sample size.
+  std::vector<double> times;
+  times.reserve(samples.size());
+  for (auto const &sample : samples) {
+    times.push_back(sample.wall_ms);
+  }
+  std::sort(times.begin(), times.end());
+  s.min_ms = times.front();
+  s.max_ms = times.back();
+
+  // Touch/callback/lock-failure counts are identical across runs for every
+  // scenario here except churn (which rotates a small fixed-size window)
+  // and lock_contention (asserted exactly elsewhere), so report the last
+  // sample; that is noted in the printed table header.
+  s.get_mutex_touches  = samples.back().get_mutex_touches;
+  s.get_thread_touches = samples.back().get_thread_touches;
+  s.callbacks          = samples.back().callbacks;
+  s.lock_failures      = samples.back().lock_failures;
+  return s;
+}
+
+Sample
+timed_run(Fixture &fx)
+{
+  uint64_t mutex_before    = fx.counters.get_mutex_touches;
+  uint64_t thread_before   = fx.counters.get_thread_touches;
+  uint64_t cb_before       = fx.counters.callbacks;
+  int64_t  lockfail_before = Metrics::Counter::load(net_rsb.inactivity_cop_lock_acquire_failure);
+
+  // steady_clock, not ink_get_hrtime(): ink_get_hrtime() tracks
+  // CLOCK_REALTIME here (gSystemClock is only ever repointed at a monotonic
+  // clock in traffic_server.cc, which this harness never runs), so an NTP
+  // step during a long benchmark run would land straight in the timed
+  // sample. ink_get_hrtime() is still used for the cop's own deadline
+  // arithmetic elsewhere (set_idle, churn_tick, etc.), where it is
+  // measuring simulated wall-clock deadlines, not wall time of the
+  // benchmark itself.
+  auto t0 = std::chrono::steady_clock::now();
+  fx.run();
+  auto t1 = std::chrono::steady_clock::now();
+
+  Sample s;
+  s.wall_ms            = to_ms(t1 - t0);
+  s.get_mutex_touches  = fx.counters.get_mutex_touches - mutex_before;
+  s.get_thread_touches = fx.counters.get_thread_touches - thread_before;
+  s.callbacks          = fx.counters.callbacks - cb_before;
+  s.lock_failures = static_cast<uint64_t>(Metrics::Counter::load(net_rsb.inactivity_cop_lock_acquire_failure) - lockfail_before);
+  return s;
+}
+
+void
+set_idle(Fixture &fx)
+{
+  ink_hrtime now = ink_get_hrtime();
+  for (auto &m : fx.mocks) {
+    m->default_inactivity_timeout_in = 0;
+    m->next_inactivity_timeout_at    = now + HRTIME_HOUR;
+    m->next_activity_timeout_at      = 0;
+  }
+}
+
+void
+refresh_keepalive(Fixture &fx)
+{
+  ink_hrtime now = ink_get_hrtime();
+  for (auto &m : fx.mocks) {
+    m->default_inactivity_timeout_in = HRTIME_SECONDS(30);
+    m->next_inactivity_timeout_at    = now + HRTIME_SECONDS(30);
+    m->next_activity_timeout_at      = 0;
+  }
+}
+
+void
+set_mass_expiry(Fixture &fx)
+{
+  ink_hrtime now = ink_get_hrtime();
+  for (auto &m : fx.mocks) {
+    m->default_inactivity_timeout_in = 0;
+    m->next_inactivity_timeout_at    = now - HRTIME_SECOND;
+    m->next_activity_timeout_at      = 0;
+  }
+}
+
+// Rotates a ~1% window of connections between "just expired" and "freshly
+// reset" each call, so on any given tick about 1% of the population is
+// hitting a timeout while the rest sit in steady state, as a mixed
+// realistic load would.
+struct ChurnState {
+  size_t window        = 0;
+  size_t cursor        = 0;
+  bool   have_previous = false;
+
+  explicit ChurnState(size_t n) : window(std::max<size_t>(1, n / 100)) {}
+};
+
+void
+churn_tick(Fixture &fx, ChurnState &state)
+{
+  ink_hrtime now = ink_get_hrtime();
+  size_t     n   = fx.mocks.size();
+
+  // The window expired on the previous tick has, by now, either fired its
+  // callback or would fire again immediately; simulate the connection being
+  // replaced / the timeout renewed before rotating the window forward, so
+  // the population that is "currently expired" stays at ~1% instead of
+  // accumulating every tick.
+  if (state.have_previous) {
+    for (size_t j = 0; j < state.window; ++j) {
+      size_t idx                                   = (state.cursor + j) % n;
+      fx.mocks[idx]->default_inactivity_timeout_in = 0;
+      fx.mocks[idx]->next_inactivity_timeout_at    = now + HRTIME_HOUR;
+      fx.mocks[idx]->next_activity_timeout_at      = 0;
+    }
+    state.cursor = (state.cursor + state.window) % n;
+  }
+
+  for (size_t j = 0; j < state.window; ++j) {
+    size_t idx                                   = (state.cursor + j) % n;
+    fx.mocks[idx]->default_inactivity_timeout_in = 0;
+    fx.mocks[idx]->next_inactivity_timeout_at    = now - HRTIME_SECOND;
+    fx.mocks[idx]->next_activity_timeout_at      = 0;
+  }
+  state.have_previous = true;
+}
+
+void
+init_churn_baseline(Fixture &fx)
+{
+  set_idle(fx);
+}
+
+// Holds ~10% of a fixture's mutexes from a second, genuine EThread for the
+// duration of each timed cop run, so MUTEX_TRY_LOCK in check_inactivity()
+// really does fail for that subset. Uses the normal blocking lock API
+// (MUTEX_TAKE_LOCK/MUTEX_UNTAKE_LOCK) from that thread's own identity;
+// nothing is faked by hand-setting thread_holding.
+class ContentionHolder
+{
+public:
+  // RAII pairing for acquire_for_next_run()/release_after_run(): if
+  // anything throws between the two calls (push_back can throw at
+  // N=100000), an unpaired acquire would leave the worker parked holding
+  // _held forever. Prefer this over calling the two methods directly.
+  class ScopedRun
+  {
+  public:
+    explicit ScopedRun(ContentionHolder &holder) : _holder(holder) { _holder.acquire_for_next_run(); }
+    ~ScopedRun() { _holder.release_after_run(); }
+    ScopedRun(ScopedRun const &)            = delete;
+    ScopedRun &operator=(ScopedRun const &) = delete;
+
+  private:
+    ContentionHolder &_holder;
+  };
+
+  ContentionHolder(std::vector<std::unique_ptr<PaddedMock>> &mocks, size_t fraction_pct)
+  {
+    size_t count = std::max<size_t>(1, mocks.size() * fraction_pct / 100);
+    for (size_t i = 0; i < count; ++i) {
+      _held.push_back(mocks[i]->mutex);
+    }
+    _worker = std::thread([this] { run(); });
+  }
+
+  ~ContentionHolder()
+  {
+    // Unwind-safe regardless of ScopedRun: if a run is still parked waiting
+    // for release_after_run() (e.g. an exception unwound out of a
+    // ScopedRun's scope in some future caller that does not use it), free
+    // it before asking the worker to stop, so this destructor - and the
+    // 10% of mutexes it is holding - can never block forever.
+    _release_gen.store(_acquire_gen.load(std::memory_order_relaxed), std::memory_order_release);
+    _stop.store(true, std::memory_order_relaxed);
+    _worker.join();
+  }
+
+  size_t
+  held_count() const
+  {
+    return _held.size();
+  }
+
+  // Blocks until the held mutexes are actually held by _ethread.
+  void
+  acquire_for_next_run()
+  {
+    uint64_t g = _acquire_gen.fetch_add(1, std::memory_order_relaxed) + 1;
+    while (_held_gen.load(std::memory_order_acquire) != g) {
+      std::this_thread::yield();
+    }
+  }
+
+  // Releases the mutexes held for the run just measured.
+  void
+  release_after_run()
+  {
+    uint64_t g = _acquire_gen.load(std::memory_order_relaxed);
+    _release_gen.store(g, std::memory_order_release);
+    while (_released_gen.load(std::memory_order_acquire) != g) {
+      std::this_thread::yield();
+    }
+  }
+
+private:
+  void
+  run()
+  {
+    // EThread::~EThread() release-asserts that the thread's own mutex is
+    // still self-held, an invariant only the normal thread startup path
+    // establishes. A stack-local EThread destructed at the end of this
+    // function trips that assert, so this mirrors unit_test_main.cc's
+    // `new EThread; ...->set_specific();` and deliberately leaks it for the
+    // life of the process instead.
+    EThread *ethread = new EThread;
+    ethread->set_specific();
+    _ethread = ethread;
+#ifdef BENCH_HAVE_LSAN_INTERFACE
+    // One leaked EThread per ContentionHolder (one per N here); tell LSan
+    // this one is deliberate rather than have it reported every ASan run.
+    // See the detect_odr_violation=0 ASAN_OPTIONS override for this same
+    // binary at src/iocore/net/CMakeLists.txt for the sibling case of a
+    // known, accepted sanitizer finding in this test target.
+    __lsan_ignore_object(ethread);
+#endif
+
+    uint64_t last_seen = 0;
+    for (;;) {
+      while (!_stop.load(std::memory_order_relaxed) && _acquire_gen.load(std::memory_order_acquire) == last_seen) {
+        std::this_thread::yield();
+      }
+      uint64_t g = _acquire_gen.load(std::memory_order_acquire);
+      if (g == last_seen) {
+        return; // stop requested, no new work queued
+      }
+      last_seen = g;
+
+      for (auto &m : _held) {
+        MUTEX_TAKE_LOCK(m, _ethread);
+      }
+      _held_gen.store(g, std::memory_order_release);
+
+      while (_release_gen.load(std::memory_order_acquire) != g) {
+        std::this_thread::yield();
+      }
+      for (auto it = _held.rbegin(); it != _held.rend(); ++it) {
+        MUTEX_UNTAKE_LOCK(it->get(), _ethread);
+      }
+      _released_gen.store(g, std::memory_order_release);
+    }
+  }
+
+  std::vector<Ptr<ProxyMutex>> _held;
+  std::thread                  _worker;
+  EThread                     *_ethread = nullptr;
+  std::atomic<bool>            _stop{false};
+  std::atomic<uint64_t>        _acquire_gen{0};
+  std::atomic<uint64_t>        _held_gen{0};
+  std::atomic<uint64_t>        _release_gen{0};
+  std::atomic<uint64_t>        _released_gen{0};
+};
+
+void
+print_header()
+{
+  std::printf("\n%-15s %10s %10s %10s %10s %12s %14s %14s %10s %12s\n", "scenario", "N", "mean_ms", "min_ms", "max_ms", "ns/conn",
+              "get_mutex/run", "get_thread/run", "cb/run", "lockfail/run");
+  std::printf("%-15s %10s %10s %10s %10s %12s %14s %14s %10s %12s\n", "--------", "-", "-------", "------", "------", "-------",
+              "-------------", "--------------", "------", "------------");
+}
+
+void
+print_row(char const *scenario, size_t n, Summary const &s)
+{
+  double ns_per_conn = (s.mean_ms * 1.0e6) / static_cast<double>(n);
+  std::printf("%-15s %10zu %10.4f %10.4f %10.4f %12.2f %14llu %14llu %10llu %12llu\n", scenario, n, s.mean_ms, s.min_ms, s.max_ms,
+              ns_per_conn, static_cast<unsigned long long>(s.get_mutex_touches),
+              static_cast<unsigned long long>(s.get_thread_touches), static_cast<unsigned long long>(s.callbacks),
+              static_cast<unsigned long long>(s.lock_failures));
+}
+
+} // namespace
+
+TEST_CASE("InactivityCop: idle connections", "[!benchmark][net][inactivity_cop]")
+{
+  print_header();
+  for (size_t n : N_VALUES) {
+    Fixture fx(n);
+    set_idle(fx);
+    for (int i = 0; i < WARMUP_RUNS; ++i) {
+      fx.warmup();
+    }
+    std::vector<Sample> samples;
+    for (int i = 0; i < SAMPLE_RUNS; ++i) {
+      samples.push_back(timed_run(fx));
+    }
+    Summary s = summarize(samples);
+    print_row("idle", n, s);
+
+    // Every mock is on open_list, and every get_thread() returns
+    // this_ethread(), so the refill visits exactly all N of them and none
+    // are ever due; anything looser than equality here would pass a
+    // fixture that silently skipped some fraction of the population.
+    INFO("idle sanity check: get_thread touches per run must equal N exactly, and callbacks must be 0");
+    CHECK(s.get_thread_touches == n);
+    CHECK(s.callbacks == 0);
+  }
+}
+
+TEST_CASE("InactivityCop: keepalive steady state", "[!benchmark][net][inactivity_cop]")
+{
+  print_header();
+  for (size_t n : N_VALUES) {
+    Fixture fx(n);
+    refresh_keepalive(fx);
+    for (int i = 0; i < WARMUP_RUNS; ++i) {
+      refresh_keepalive(fx);
+      fx.warmup();
+    }
+    std::vector<Sample> samples;
+    for (int i = 0; i < SAMPLE_RUNS; ++i) {
+      refresh_keepalive(fx); // untimed: simulates traffic renewing the timeout
+      samples.push_back(timed_run(fx));
+    }
+    Summary s = summarize(samples);
+    print_row("keepalive", n, s);
+  }
+}
+
+TEST_CASE("InactivityCop: mass expiry", "[!benchmark][net][inactivity_cop]")
+{
+  print_header();
+  for (size_t n : N_VALUES) {
+    Fixture fx(n);
+    set_mass_expiry(fx);
+    for (int i = 0; i < WARMUP_RUNS; ++i) {
+      fx.warmup();
+    }
+    std::vector<Sample> samples;
+    for (int i = 0; i < SAMPLE_RUNS; ++i) {
+      samples.push_back(timed_run(fx));
+    }
+    Summary s = summarize(samples);
+    print_row("mass_expiry", n, s);
+
+    // Every mock has a past deadline and none are in keep_alive_queue
+    // (queue management is disabled for this fixture), so the first
+    // checking run must fire exactly N callbacks; a 1% slack would hide a
+    // real 1%-scale bug.
+    INFO("mass_expiry sanity check: callbacks fired on the first checking run must equal N exactly");
+    CHECK(samples.front().callbacks == n);
+  }
+}
+
+TEST_CASE("InactivityCop: churn", "[!benchmark][net][inactivity_cop]")
+{
+  print_header();
+  for (size_t n : N_VALUES) {
+    Fixture fx(n);
+    init_churn_baseline(fx);
+    ChurnState state(n);
+    for (int i = 0; i < WARMUP_RUNS; ++i) {
+      churn_tick(fx, state);
+      fx.warmup();
+    }
+    std::vector<Sample> samples;
+    for (int i = 0; i < SAMPLE_RUNS; ++i) {
+      churn_tick(fx, state);
+      samples.push_back(timed_run(fx));
+    }
+    Summary s = summarize(samples);
+    print_row("churn", n, s);
+  }
+}
+
+TEST_CASE("InactivityCop: lock contention", "[!benchmark][net][inactivity_cop]")
+{
+  print_header();
+  for (size_t n : N_VALUES) {
+    Fixture fx(n);
+    set_idle(fx);
+    for (int i = 0; i < WARMUP_RUNS; ++i) {
+      fx.warmup();
+    }
+
+    ContentionHolder holder(fx.mocks, /* fraction_pct = */ 10);
+    size_t const     expected_failures = holder.held_count();
+
+    std::vector<Sample> samples;
+    for (int i = 0; i < SAMPLE_RUNS; ++i) {
+      ContentionHolder::ScopedRun guard(holder);
+      samples.push_back(timed_run(fx));
+    }
+    Summary s = summarize(samples);
+    print_row("lock_contention", n, s);
+
+    // The cop pops every cop_list entry every run, so the expected
+    // lock-acquire-failure count is exact, not just "greater than zero": a
+    // process-cumulative metric that only ever goes up would otherwise pass
+    // this check unconditionally from the second N onward even if the
+    // handshake with the contending thread were broken.
+    INFO("lock_contention sanity check: every run must fail exactly the held fraction of locks");
+    for (auto const &sample : samples) {
+      CHECK(sample.lock_failures == expected_failures);
+    }
+  }
+}
+
+CATCH_REGISTER_LISTENER(ProvenanceListener);
