@@ -2093,8 +2093,11 @@ Origin Server Connect Attempts
    consumers; they are not destroyed, and moving back republishes them with their accumulated
    values intact.
 
-   Because the sums are named per hostname rather than per group, where the mappings for one
-   hostname disagree about this setting the last group rebuilt decides whether they are published.
+   The per group metrics belong to a single group, so raising the value withdraws them as that group
+   is rebuilt. The sums and the max are named per hostname and shared by its groups, so a group
+   rebuilt for a value that does not publish them only stops contributing; they are withdrawn once
+   no group of that hostname publishes them. Mappings that disagree for one hostname therefore
+   cannot hide each other's aggregate.
 
 .. ts:cv:: CONFIG proxy.config.http.per_server.connection.metric_prefix STRING NULL
    :reloadable:

@@ -171,6 +171,18 @@ Adding a source that is already registered for that derived metric is a no-op, s
 re-register the same source, such as one recreating an object for the same key, need not track that
 itself. The ``type`` and ``op`` arguments are ignored if the derived metric already exists.
 
+``ts::Metrics::Derived::remove_source()`` is the counterpart, for a contributor that goes away or
+stops wanting the aggregate published:
+
+.. code-block:: cpp
+
+    ts::Metrics::Derived::remove_source("proxy.process.example.total", per_thing_metric);
+
+A derived metric is shared by its sources, so this does not unlist it while any remain. Removing the
+last source leaves nothing to report, so the name is unlisted; adding a source again relists it.
+Removing a source that is not registered, or naming a derived metric that does not exist, is a
+no-op.
+
 A hidden source can feed a published aggregate:
 
 .. code-block:: cpp

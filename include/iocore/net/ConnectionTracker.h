@@ -110,10 +110,13 @@ public:
    *
    * A change is applied per group, when that group is next constructed, which happens on the first
    * connection after its count last fell to zero. A group that never goes idle keeps whatever was
-   * in effect when it was created. Retracting a published name relies on the metric store's
-   * listing, see @c ts::Metrics::unlist. The sums are named per hostname rather than per group, so
-   * where the mappings for one hostname disagree about this setting, the last group constructed
-   * decides whether they are published.
+   * in effect when it was created.
+   *
+   * The per group names belong to one group, so a group that stops publishing them retracts them,
+   * see @c ts::Metrics::unlist. The sums and the max are named per hostname and shared by its
+   * groups, so a group that stops publishing those only stops contributing to them, see
+   * @c ts::Metrics::Derived::remove_source; they are retracted once no group of that hostname
+   * publishes them.
    *
    * The records layer validates and clamps this to 0..3. A plugin setting the overridable config
    * directly is not clamped, see @c METRIC_AGGREGATE_CONV; any other value behaves as
