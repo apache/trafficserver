@@ -337,10 +337,16 @@ CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
     unmarshal_func = &HTTPInfo::unmarshal_v24_1;
   }
 
-  // Objects written by an older version can carry stale well known string indices and
-  // presence bits. Repair them only on the MARSHALED to ALIVE transition, since an already
-  // ALIVE block may be shared with other readers. All alts of a doc transition together, so
-  // the first one answers for the whole header block.
+  // Objects written by an older version can carry stale well known string indices, and the
+  // presence bits and accelerators derived from them. Repair them only on the MARSHALED to
+  // ALIVE transition, since an already ALIVE block may be shared with other readers. All alts
+  // of a doc transition together, so the first one answers for the whole header block.
+  //
+  // This gate covers a version difference and nothing else. Nothing ties a revision of the well
+  // known string table in proxy/hdrs/HdrToken.cc to a cache version, so two builds at the same
+  // CACHE_DB_VERSION can still disagree about what a stored index means, and no version
+  // comparison can see that. Changing the table is what would call for rebuilding here
+  // unconditionally, which is why the table has been frozen rather than versioned.
   bool const needs_wks_fixup = version < CACHE_DB_VERSION && doc->hlen >= sizeof(HTTPCacheAlt) &&
                                reinterpret_cast<HTTPCacheAlt *>(doc->hdr())->m_magic == CacheAltMagic::MARSHALED;
 
@@ -363,7 +369,7 @@ CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
       auto *alt = reinterpret_cast<HTTPCacheAlt *>(tmp);
       for (HTTPHdr *hdr : {&alt->m_response_hdr, &alt->m_request_hdr}) {
         if (hdr->valid()) {
-          hdr->m_mime->recompute_accelerators_and_presence_bits();
+          hdr->m_http->recompute_wks_indices();
         }
       }
     }

@@ -320,6 +320,16 @@ URLImpl::unmarshal(intptr_t offset)
 }
 
 void
+URLImpl::recompute_wks_idx()
+{
+  // Tokenize the same way url_parse_scheme() does, so the index lands where parsing the same
+  // scheme would have put it. hdrtoken_tokenize() is case insensitive, which is what makes a
+  // scheme stored with other casing resolve to the well known string all the same.
+  m_scheme_wks_idx =
+    m_ptr_scheme != nullptr ? static_cast<int16_t>(hdrtoken_tokenize(m_ptr_scheme, m_len_scheme, nullptr)) : int16_t{-1};
+}
+
+void
 URLImpl::rehome_strings(HdrHeap *new_heap)
 {
   m_ptr_scheme         = new_heap->localize({m_ptr_scheme, m_len_scheme}).data();

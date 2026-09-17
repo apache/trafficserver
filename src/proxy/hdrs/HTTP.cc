@@ -1966,6 +1966,26 @@ HTTPHdrImpl::unmarshal(intptr_t offset)
 }
 
 void
+HTTPHdrImpl::recompute_wks_indices()
+{
+  if (m_polarity == HTTPType::REQUEST) {
+    // http_hdr_method_get() answers from the index when it is set, so a stale index would report a
+    // different method than the one stored here. Tokenize case sensitively, exactly as the parser
+    // does, so a method that only matches a well known string case insensitively stays untokenized.
+    u.req.m_method_wks_idx = u.req.m_ptr_method != nullptr ?
+                               static_cast<int16_t>(hdrtoken_method_tokenize(u.req.m_ptr_method, u.req.m_len_method)) :
+                               int16_t{-1};
+    if (u.req.m_url_impl != nullptr) {
+      u.req.m_url_impl->recompute_wks_idx();
+    }
+  }
+
+  if (m_fields_impl != nullptr) {
+    m_fields_impl->recompute_accelerators_and_presence_bits();
+  }
+}
+
+void
 HTTPHdrImpl::move_strings(HdrStrHeap *new_heap)
 {
   if (m_polarity == HTTPType::REQUEST) {

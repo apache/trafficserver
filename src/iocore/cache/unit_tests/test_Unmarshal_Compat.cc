@@ -203,7 +203,7 @@ TEST_CASE("unmarshal_http_info reports failure on a malformed header length", "[
   }
 }
 
-TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the block", "[cache][unmarshal][compat]")
+TEST_CASE("unmarshal_http_info repairs stale well known string indices only when it owns the block", "[cache][unmarshal][compat]")
 {
   HTTPInfo info;
 
@@ -217,10 +217,14 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
 
   auto load = [&](DocBuffer &doc) { memcpy(doc.doc()->hdr(), marshalled.data(), hlen); };
 
-  // Unmarshal an untouched copy to learn where the response MIME header lands and what
-  // its presence bits should be. Every copy below is byte identical, so the offset holds.
-  ptrdiff_t mime_offset  = 0;
-  uint64_t  correct_bits = 0;
+  // Unmarshal an untouched copy to learn where the headers land and what their indices should
+  // be. Every copy below is byte identical and unmarshalling moves nothing, so the offsets hold.
+  ptrdiff_t mime_offset        = 0;
+  ptrdiff_t request_offset     = 0;
+  ptrdiff_t url_offset         = 0;
+  uint64_t  correct_bits       = 0;
+  int16_t   correct_method_idx = 0;
+  int16_t   correct_scheme_idx = 0;
   {
     DocBuffer         doc{CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION, hlen};
     Ptr<IOBufferData> buf;
@@ -228,14 +232,47 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
     load(doc);
     REQUIRE(CacheVC::unmarshal_http_info(doc.doc(), buf));
     REQUIRE(doc.alt()->m_response_hdr.valid());
+    REQUIRE(doc.alt()->m_request_hdr.valid());
 
-    mime_offset  = reinterpret_cast<char *>(doc.alt()->m_response_hdr.m_mime) - doc.doc()->hdr();
-    correct_bits = doc.alt()->m_response_hdr.m_mime->m_presence_bits;
+    HTTPHdrImpl *request = doc.alt()->m_request_hdr.m_http;
+
+    REQUIRE(request->u.req.m_url_impl != nullptr);
+
+    mime_offset    = reinterpret_cast<char *>(doc.alt()->m_response_hdr.m_mime) - doc.doc()->hdr();
+    request_offset = reinterpret_cast<char *>(request) - doc.doc()->hdr();
+    url_offset     = reinterpret_cast<char *>(request->u.req.m_url_impl) - doc.doc()->hdr();
+
+    correct_bits       = doc.alt()->m_response_hdr.m_mime->m_presence_bits;
+    correct_method_idx = request->u.req.m_method_wks_idx;
+    correct_scheme_idx = request->u.req.m_url_impl->m_scheme_wks_idx;
+
     REQUIRE(correct_bits != 0);
+    REQUIRE(correct_method_idx >= 0);
+    REQUIRE(correct_scheme_idx >= 0);
   }
 
-  auto corrupt_presence_bits = [&](DocBuffer &doc) {
-    reinterpret_cast<MIMEHdrImpl *>(doc.doc()->hdr() + mime_offset)->m_presence_bits = 0;
+  // Everything below reaches the headers through these offsets rather than through the alt,
+  // since a block that was not repaired is still marshalled and its pointers not yet swizzled.
+  auto presence_bits = [&](DocBuffer &doc) -> uint64_t & {
+    return reinterpret_cast<MIMEHdrImpl *>(doc.doc()->hdr() + mime_offset)->m_presence_bits;
+  };
+  auto method_idx = [&](DocBuffer &doc) -> int16_t & {
+    return reinterpret_cast<HTTPHdrImpl *>(doc.doc()->hdr() + request_offset)->u.req.m_method_wks_idx;
+  };
+  auto scheme_idx = [&](DocBuffer &doc) -> int16_t & {
+    return reinterpret_cast<URLImpl *>(doc.doc()->hdr() + url_offset)->m_scheme_wks_idx;
+  };
+
+  // Stand in for an object written against a different well known string table: every stored
+  // index names an adjacent string, and the bits derived from them are gone. Shifting rather
+  // than clearing is what makes a repair that only rebuilds a subset of them visible.
+  int16_t const stale_method_idx = correct_method_idx + 1;
+  int16_t const stale_scheme_idx = correct_scheme_idx + 1;
+
+  auto make_indices_stale = [&](DocBuffer &doc) {
+    presence_bits(doc) = 0;
+    method_idx(doc)    = stale_method_idx;
+    scheme_idx(doc)    = stale_scheme_idx;
   };
 
   SECTION("an older object is repaired")
@@ -244,9 +281,16 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
     Ptr<IOBufferData> buf;
 
     load(doc);
-    corrupt_presence_bits(doc);
+    make_indices_stale(doc);
     REQUIRE(CacheVC::unmarshal_http_info(doc.doc(), buf));
-    CHECK(doc.alt()->m_response_hdr.m_mime->m_presence_bits == correct_bits);
+
+    CHECK(presence_bits(doc) == correct_bits);
+    // The getters answer from these indices in preference to the strings stored beside them, so
+    // leaving either stale makes the cached request report a method or scheme it does not hold.
+    CHECK(method_idx(doc) == correct_method_idx);
+    CHECK(scheme_idx(doc) == correct_scheme_idx);
+    CHECK(doc.alt()->m_request_hdr.method_get() == "GET");
+    CHECK(doc.alt()->m_request_hdr.scheme_get() == "http");
   }
 
   SECTION("a current object is left alone")
@@ -255,9 +299,12 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
     Ptr<IOBufferData> buf;
 
     load(doc);
-    corrupt_presence_bits(doc);
+    make_indices_stale(doc);
     REQUIRE(CacheVC::unmarshal_http_info(doc.doc(), buf));
-    CHECK(doc.alt()->m_response_hdr.m_mime->m_presence_bits == 0);
+
+    CHECK(presence_bits(doc) == 0);
+    CHECK(method_idx(doc) == stale_method_idx);
+    CHECK(scheme_idx(doc) == stale_scheme_idx);
   }
 
   SECTION("an already unmarshalled block is left alone even for an older object")
@@ -271,9 +318,12 @@ TEST_CASE("unmarshal_http_info repairs stale accelerators only when it owns the 
     REQUIRE(CacheVC::unmarshal_http_info(doc.doc(), buf));
     REQUIRE(doc.alt()->m_magic == CacheAltMagic::ALIVE);
 
-    doc.alt()->m_response_hdr.m_mime->m_presence_bits = 0;
+    make_indices_stale(doc);
     REQUIRE(CacheVC::unmarshal_http_info(doc.doc(), buf));
-    CHECK(doc.alt()->m_response_hdr.m_mime->m_presence_bits == 0);
+
+    CHECK(presence_bits(doc) == 0);
+    CHECK(method_idx(doc) == stale_method_idx);
+    CHECK(scheme_idx(doc) == stale_scheme_idx);
   }
 
   info.destroy();

@@ -113,6 +113,15 @@ public:
   void   rehome_strings(HdrHeap *new_heap);
   size_t strings_length();
 
+  /** Re-derive m_scheme_wks_idx from the scheme string.
+   *
+   * get_scheme() answers from the index whenever it is set and only falls back to m_ptr_scheme
+   * when it is not, so an index that no longer denotes the scheme stored beside it makes the URL
+   * report a scheme it does not hold. The string is authoritative, so the index can always be
+   * rebuilt from it.
+   */
+  void recompute_wks_idx();
+
   // Sanity Check Functions
   void check_strings(HeapCheck *heaps, int num_heaps);
 
