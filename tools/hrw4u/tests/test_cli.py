@@ -313,3 +313,25 @@ def test_cli_u4wrh_exits_nonzero_on_error(tmp_path: Path) -> None:
 
     assert result.returncode != 0
     assert ": error:" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "argv", [["--bogus"], ["--ast", "--hrw"], ["--error-format", "nope"], ["--max-errors", "x"]],
+    ids=["unknown-option", "conflicting-output-modes", "invalid-choice", "invalid-int"])
+def test_cli_usage_error_exits_two(argv: list[str]) -> None:
+    """Usage errors come from argparse and exit 2, not 1; the documented status must hold."""
+    result = run_hrw4u(argv, stdin="")
+
+    assert result.returncode == 2
+    assert "usage:" in result.stderr
+
+
+def test_cli_mixed_file_formats_exits_one(tmp_path: Path) -> None:
+    """Mixed bulk/stdout arguments are rejected by run_main() itself, so they exit 1, not 2."""
+    good = tmp_path / "good.hrw4u"
+    good.write_text("REMAP {\n    no-op();\n}\n")
+
+    result = run_hrw4u([f"{good}:{tmp_path / 'out.conf'}", str(good)])
+
+    assert result.returncode == 1
+    assert "Mixed formats not allowed" in result.stderr

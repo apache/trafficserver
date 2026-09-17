@@ -122,15 +122,19 @@ Exit Status
 Status Meaning
 ====== ==========================================================================
 0      Every input compiled. Warnings may still have been reported.
-1      At least one input had an error, or the command line was invalid.
+1      At least one input had an error, or the run aborted on a fatal problem:
+       a missing or unreadable input, an unwritable output, or ``input:output``
+       pairs mixed with plain file arguments.
+2      The command line was rejected before any input was read: an unknown
+       option, an invalid option value, or conflicting output modes. This comes
+       from ``argparse`` and follows Python's usage-error convention.
 ====== ==========================================================================
 
 A compile error does not stop the run: every input is still processed before
 the status is decided, so one bad file in a multi-file or bulk run does not
-skip the files after it. Fatal problems outside the compile itself, such as an
-invalid command line, a missing or unreadable input, or an unwritable output,
-still abort immediately. A failing compile writes its partial output; the exit
-status is what marks that output untrustworthy.
+skip the files after it. The fatal problems above still abort immediately. A
+failing compile writes its partial output; the exit status is what marks that
+output untrustworthy.
 
 Reverse Tool (u4wrh)
 ^^^^^^^^^^^^^^^^^^^^
