@@ -137,12 +137,14 @@ class BackgroundFetchRuleScenario:
         self.request_range("wildcard.example", "/wildcard", "wildcard", skip=True)
         self.request_range("above-threshold.example", "/above-threshold", "above-threshold")
 
-        output = wait_for_file_lines(
+        wait_for_file_lines(
             self._ats.traffic_out,
             r"X-Background-Fetch-Test: above-threshold",
             1,
             timeout=30,
         )
+        self._ats.stop()
+        output = self._ats.traffic_out.read_text(errors="replace")
         assert re.search(r"adding background_fetch content length rule .* for Content-Length: 1000", output)
         assert "found exclude rule match" in output
         assert "Found X-Skip-Bg wild card" in output

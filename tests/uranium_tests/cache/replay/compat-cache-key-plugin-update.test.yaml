@@ -24,7 +24,7 @@
 # The update_cached_object test plugin copies X-Update-Cached-Object from the
 # request into the cached response as X-Cached-Update, on a fresh hit only.
 #
-# As in compat-cache-key.replay.yaml, "/legacy;" addresses the same key ATS 9.2
+# As in compat-cache-key.test.yaml, "/legacy;" addresses the same key ATS 9.2
 # produced for "/legacy", which is how a legacy object gets into the cache.
 #
 
@@ -44,7 +44,7 @@ meta:
           fields:
           - [ Content-Length, 0 ]
 
-autest:
+urtest:
   description: 'Verify a plugin update of a compatibility-key object is served but not stored'
 
   dns:

@@ -75,6 +75,8 @@ class ConfigReloadPluginApiScenario:
         )
         assert "error" not in response, response
         errors = response["result"].get("errors", [])
+        if token == "rpc-greet":
+            assert not errors, response
         assert "6011" not in str(errors) and "6010" not in str(errors), response
 
     def run(self) -> None:
@@ -109,9 +111,18 @@ class ConfigReloadPluginApiScenario:
             "subtask failed on purpose",
         )
 
+        trigger = "RecordTriggeredReloadContinuation: executing reload for config 'cfg_plugin_test'"
+        previous_triggers = self._ats.traffic_out.read_text(errors="replace").count(trigger)
         require_command(self._ats.traffic_ctl("config", "set", "proxy.config.http.insert_age_in_response", "0"))
-        time.sleep(3)
-        require_command(self._ats.traffic_ctl("config", "status", "-c", "all"), "cfg_plugin_test")
+        wait_for_file_lines(self._ats.traffic_out, trigger, previous_triggers + 1, timeout=20)
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            status = self._ats.traffic_ctl("config", "status", "-c", "all")
+            if status.returncode == 0 and "cfg_plugin_test" in status.output and "in_progress" not in status.output:
+                break
+            time.sleep(0.2)
+        else:
+            raise AssertionError(f"Record-triggered plugin reload did not finish:\n{status.output}")
 
         require_command(self._ats.traffic_ctl("config", "reload", "-t", "core-check", "-F"))
         wait_for_status(self._ats, "core-check", "success", excludes=("ip_allow [plugin]",))

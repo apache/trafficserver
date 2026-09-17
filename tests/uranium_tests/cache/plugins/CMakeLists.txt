@@ -15,4 +15,4 @@
 #
 #######################
 
-add_autest_plugin(update_cached_object update_cached_object.cc)
+add_urtest_plugin(update_cached_object update_cached_object.cc)
