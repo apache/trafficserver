@@ -115,6 +115,27 @@ This is particularly useful for build systems or when processing many configurat
 files at once. All files are processed in a single invocation, improving performance
 for large batches of files.
 
+Exit Status
+^^^^^^^^^^^
+
+====== ==========================================================================
+Status Meaning
+====== ==========================================================================
+0      Every input compiled. Warnings may still have been reported.
+1      At least one input had an error, or the run aborted on a fatal problem:
+       a missing or unreadable input, an unwritable output, or ``input:output``
+       pairs mixed with plain file arguments.
+2      The command line was rejected before any input was read: an unknown
+       option, an invalid option value, or conflicting output modes. This comes
+       from ``argparse`` and follows Python's usage-error convention.
+====== ==========================================================================
+
+A compile error does not stop the run: every input is still processed before
+the status is decided, so one bad file in a multi-file or bulk run does not
+skip the files after it. The fatal problems above still abort immediately. A
+failing compile writes its partial output; the exit status is what marks that
+output untrustworthy.
+
 Reverse Tool (u4wrh)
 ^^^^^^^^^^^^^^^^^^^^
 
