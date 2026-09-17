@@ -17,12 +17,22 @@
  */
 #pragma once
 
-#include <string>
 #include <chrono>
+#include <initializer_list>
+#include <string>
+#include <string_view>
 
 #include "ts/ts.h"
 
+namespace YAML
+{
+class Node;
+}
+
 constexpr char const PLUGIN_NAME[] = "rate_limit";
+
+/// Reject unknown keys and malformed YAML mappings with a configuration diagnostic.
+bool validate_yaml_keys(const YAML::Node &node, const char *context, std::initializer_list<std::string_view> keys);
 
 void        delayHeader(TSHttpTxn txnp, const std::string &header, std::chrono::milliseconds delay);
 void        retryAfter(TSHttpTxn txnp, unsigned retry);
