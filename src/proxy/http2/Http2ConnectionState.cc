@@ -1236,9 +1236,9 @@ Http2ConnectionState::_get_configured_flow_control_policy() const
 {
   ink_assert(this->session != nullptr);
   if (this->session->is_outbound()) {
-    return Http2::flow_control_policy_out;
+    return Http2::flow_control_policy_out.load(std::memory_order_relaxed);
   } else {
-    return Http2::flow_control_policy_in;
+    return Http2::flow_control_policy_in.load(std::memory_order_relaxed);
   }
 }
 
