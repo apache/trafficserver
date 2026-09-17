@@ -300,6 +300,34 @@ namespace details
       }
     }
 
+    /// @return @c true if @a id has no sources left, so the caller can unlist it.
+    bool
+    remove_source(Metrics::IdType id, Metrics::AtomicType *source)
+    {
+      if (!source) {
+        return false;
+      }
+
+      std::lock_guard l(metrics_lock);
+      auto            it = std::find_if(metrics.begin(), metrics.end(), [id](DerivedMetric const &m) { return m.metric == id; });
+
+      if (it == metrics.end()) {
+        return false;
+      }
+
+      auto src = std::find(it->derived_from.begin(), it->derived_from.end(), source);
+
+      if (src == it->derived_from.end()) {
+        return false; // Not a source of this metric, so nothing about it changes.
+      }
+
+      it->derived_from.erase(src);
+
+      // The entry stays, holding no sources: update() skips those, and add_source finds it again if
+      // a contributor comes back.
+      return it->derived_from.empty();
+    }
+
     static DerivativeMetrics &
     instance()
     {
@@ -356,6 +384,21 @@ Metrics::Derived::add_source(std::string_view derived_name, Metrics::MetricType 
   auto id = Metrics::instance()._create(derived_name, type);
 
   details::DerivativeMetrics::instance().add_source(id, source, op);
+}
+
+void
+Metrics::Derived::remove_source(std::string_view derived_name, Metrics::AtomicType *source)
+{
+  auto &instance = Metrics::instance();
+  auto  id       = instance.lookup(derived_name);
+
+  if (id == Metrics::NOT_FOUND) {
+    return;
+  }
+
+  if (details::DerivativeMetrics::instance().remove_source(id, source)) {
+    instance.unlist(id);
+  }
 }
 
 Metrics::StaticString &

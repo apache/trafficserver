@@ -299,6 +299,79 @@ TEST_CASE("Metrics derived ops", "[libtsapi][Metrics]")
   }
 }
 
+TEST_CASE("Metrics derived remove_source", "[libtsapi][Metrics]")
+{
+  auto &m = Metrics::instance();
+
+  SECTION("a derived metric stays listed while any source remains")
+  {
+    auto a = Metrics::Gauge::createHiddenPtr("rm.a");
+    auto b = Metrics::Gauge::createHiddenPtr("rm.b");
+
+    Metrics::Derived::add_source("rm.sum", Metrics::MetricType::GAUGE, a);
+    Metrics::Derived::add_source("rm.sum", Metrics::MetricType::GAUGE, b);
+
+    Metrics::Gauge::store(a, 3);
+    Metrics::Gauge::store(b, 4);
+    Metrics::Derived::update_derived();
+
+    auto const id = m.lookup("rm.sum");
+    REQUIRE(id != Metrics::NOT_FOUND);
+    REQUIRE(m[id].load() == 7);
+    REQUIRE(m.listed(id));
+
+    // One contributor drops out. The metric is still someone else's, so it stays listed and now
+    // reports only what is left.
+    Metrics::Derived::remove_source("rm.sum", b);
+    Metrics::Derived::update_derived();
+
+    CHECK(m.listed(id));
+    CHECK(m[id].load() == 3);
+
+    // The last one drops out, so nothing is contributing and the name goes out of the listing.
+    Metrics::Derived::remove_source("rm.sum", a);
+
+    CHECK_FALSE(m.listed(id));
+  }
+
+  SECTION("re-adding a source relists it")
+  {
+    auto a = Metrics::Gauge::createHiddenPtr("rm.relist.a");
+
+    Metrics::Derived::add_source("rm.relist", Metrics::MetricType::GAUGE, a);
+
+    auto const id = m.lookup("rm.relist");
+    REQUIRE(id != Metrics::NOT_FOUND);
+
+    Metrics::Derived::remove_source("rm.relist", a);
+    REQUIRE_FALSE(m.listed(id));
+
+    Metrics::Gauge::store(a, 11);
+    Metrics::Derived::add_source("rm.relist", Metrics::MetricType::GAUGE, a);
+    Metrics::Derived::update_derived();
+
+    CHECK(m.listed(id));
+    CHECK(m[id].load() == 11);
+  }
+
+  SECTION("removing an unknown source or name is harmless")
+  {
+    auto a = Metrics::Gauge::createHiddenPtr("rm.unknown.a");
+
+    Metrics::Derived::remove_source("rm.no.such.derived", a);
+
+    Metrics::Derived::add_source("rm.unknown", Metrics::MetricType::GAUGE, a);
+
+    auto const id    = m.lookup("rm.unknown");
+    auto       other = Metrics::Gauge::createHiddenPtr("rm.unknown.other");
+
+    // Not a source of this metric, so it must not empty the list or unlist anything.
+    Metrics::Derived::remove_source("rm.unknown", other);
+
+    CHECK(m.listed(id));
+  }
+}
+
 TEST_CASE("Metrics derived add_source", "[libtsapi][Metrics]")
 {
   auto &m = Metrics::instance();
