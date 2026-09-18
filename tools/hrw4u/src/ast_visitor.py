@@ -129,8 +129,6 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.PLUSEQUAL():
             value = self._extract_value(ctx.value())
             return Assignment(name=ctx.lhs.text, operator="+=", value=value, span=self._span(ctx))
-        if ctx.op:
-            return FunctionCall(name=ctx.op.text, args=(), span=self._span(ctx))
         raise self._unhandled("statement alternative", ctx)
 
     def _visit_function_call(self, ctx) -> FunctionCall:
