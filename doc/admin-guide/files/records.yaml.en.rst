@@ -2808,10 +2808,47 @@ Cache Control
    using the newest key generation. This might be temporarily necessary
    if a large cache was created by the previous version of ATS but the new
    version changed the way cache keys are generated.  If this is turned on,
-   a metric called `proxy.process.http.cache.compat_key_reads` will be
+   a metric called ``proxy.process.http.cache.compat_key_reads`` will be
    incremented any time the compat cache lookup successfully finds the object.
    You can monitor this metric and know when its safe to turn this feature off
    as the cache wraps around.
+
+   Three costs come with enabling this. Every cache miss performs a second
+   lookup, so a tier with a low hit ratio roughly doubles its cache lookup
+   load for the duration. Every request that invalidates a cached copy
+   (``DELETE``, ``PURGE``, ``PUT``, and ``POST`` unless
+   :ts:cv:`proxy.config.http.cache.post_method` is enabled) issues a second
+   remove under the previous key, because a migrated object exists under both
+   keys until the old copy ages out. That remove takes the whole object under
+   the previous key, so anything that invalidates one variant of a resource
+   that varies on a request header, including a revalidation whose response
+   cannot be cached, also removes every other variant still held under the
+   previous key. Those variants are fetched from the origin again when next
+   requested. And an object found under the previous
+   key cannot be revalidated with a ``304``, because the write that would carry
+   the update is a create under the new key rather than an update of the old
+   one. When a ``GET`` needs such an object revalidated, |TS| sends the request
+   without conditional headers, neither its own nor the client's, even when
+   :ts:cv:`proxy.config.http.cache.when_to_revalidate` is ``4``. The origin
+   returns the full response, which is stored under the new key, and the copy
+   under the previous key is left to age out. The client still receives a
+   ``304`` if its conditions match the full response. A ``HEAD`` or a range
+   request revalidates as usual instead, since neither response is stored:
+   when the origin answers ``304`` the object stays under the previous key to
+   be migrated by the next full ``GET``, and when it answers with a changed
+   object the copy under the previous key is removed.
+   Each object pays this once, but on a large cache the aggregate is a
+   bandwidth event worth sizing before enabling the setting in production.
+
+   For the same reason a plugin cannot modify such an object in place.
+   ``TSHttpTxnUpdateCachedObject`` still returns ``TS_SUCCESS`` and the client
+   receives the modified headers, but they are not stored, as when an update
+   cannot get the cache write lock.
+
+   Objects whose path contains a ``;`` are unaffected. The previous algorithm
+   hashed the path and the deprecated ``;params`` segment as separate
+   components, which produces the same string the current algorithm produces
+   for such a path, so no compatibility lookup is issued for them.
 
 .. ts:cv:: CONFIG proxy.config.http.cache.range.lookup INT 1
    :overridable:
