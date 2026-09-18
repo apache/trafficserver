@@ -775,7 +775,7 @@ The ``language`` list accepts a fixed set of constructs:
 Construct        What it controls
 ================ ===================================================
 ``break``        The ``break;`` statement (early section exit)
-``variables``    The entire ``VARS`` section and all variable usage
+``variables``    The entire ``VARS`` and ``SESSION_VARS`` section and all variable usage
 ``else``         The ``else { ... }`` branch of conditionals
 ``elif``         The ``elif ... { ... }`` branch of conditionals
 ``in``           The ``in [...]`` and ``!in [...]`` set membership operators
