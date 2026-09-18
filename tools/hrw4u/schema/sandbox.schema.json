@@ -52,14 +52,19 @@
         },
         "functions": {
           "type": "array",
-          "description": "Statement function names.",
+          "description": "Function names, both statement functions and functions used as values in expressions.",
           "items": {
             "type": "string",
             "enum": [
+              "access",
               "add-header",
+              "cache",
+              "cidr",
               "counter",
+              "internal",
               "keep_query",
               "no-op",
+              "random",
               "remove_query",
               "run-plugin",
               "set-body",
@@ -69,7 +74,9 @@
               "set-debug",
               "set-plugin-cntl",
               "set-redirect",
-              "skip-remap"
+              "skip-remap",
+              "ssn-txn-count",
+              "txn-count"
             ]
           },
           "uniqueItems": true
