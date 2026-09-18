@@ -285,7 +285,7 @@ QPACK::decode(uint64_t stream_id, const uint8_t *header_block, size_t header_blo
 
   uint64_t tmp = 0;
   int64_t  ret = xpack_decode_integer(tmp, header_block, header_block + header_block_len, 8);
-  if (ret < 0 && tmp > 0xFFFF) {
+  if (ret < 0 || tmp > 0xFFFF) {
     return -1;
   }
   uint16_t largest_reference = tmp;
@@ -921,7 +921,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
 
   // Decode Header Data Prefix
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, pos, pos + remain_len, 8)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   pos                        += ret;
@@ -930,7 +930,7 @@ QPACK::_decode_header(const uint8_t *header_block, size_t header_block_len, HTTP
 
   uint64_t delta_base_index;
   uint16_t base_index;
-  if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 && delta_base_index < 0xFFFF) {
+  if ((ret = xpack_decode_integer(delta_base_index, pos, pos + remain_len, 7)) < 0 || delta_base_index > 0xFFFF) {
     return -2;
   }
 
@@ -1519,15 +1519,15 @@ QPACK::_read_insert_with_name_ref(IOBufferReader &reader, bool &is_static, uint1
 
   // Name Index
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   index     = tmp;
   read_len += ret;
 
   // Value
-  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 &&
-      tmp > 0xFF) {
+  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 ||
+      tmp > 0xFFFF) {
     return -1;
   }
   value_len  = tmp;
@@ -1550,14 +1550,14 @@ QPACK::_read_insert_without_name_ref(IOBufferReader &reader, Arena &arena, char 
 
   // Name
   uint64_t tmp;
-  if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, _header_field_max_size, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_string(arena, name, tmp, input, input + input_len, _header_field_max_size, 5)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   name_len  = tmp;
   read_len += ret;
 
   // Value
-  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 &&
+  if ((ret = xpack_decode_string(arena, value, tmp, input + read_len, input + input_len, _header_field_max_size, 7)) < 0 ||
       tmp > 0xFFFF) {
     return -1;
   }
@@ -1580,7 +1580,7 @@ QPACK::_read_duplicate(IOBufferReader &reader, uint16_t &index)
 
   // Index
   uint64_t tmp;
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   index     = tmp;
@@ -1602,7 +1602,7 @@ QPACK::_read_dynamic_table_size_update(IOBufferReader &reader, uint16_t &max_siz
   uint64_t tmp;
 
   // Max Size
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 5)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   max_size  = tmp;
@@ -1624,7 +1624,7 @@ QPACK::_read_table_state_synchronize(IOBufferReader &reader, uint16_t &insert_co
   uint64_t tmp;
 
   // Insert Count
-  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 && tmp > 0xFFFF) {
+  if ((ret = xpack_decode_integer(tmp, input, input + input_len, 6)) < 0 || tmp > 0xFFFF) {
     return -1;
   }
   insert_count  = tmp;
