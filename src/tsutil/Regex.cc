@@ -343,11 +343,16 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 {
   if (&other != this) {
     auto ptr = _MatchContext::get(other._match_context);
-    if (nullptr != ptr) {
-      pcre2_match_context *const ctx = pcre2_match_context_copy(ptr);
-      _MatchContext::set(_match_context, ctx);
-    } else {
-      _MatchContext::set(_match_context, nullptr);
+
+    // Take the copy before releasing what this object already holds, so a failing
+    // copy leaves it holding its old context rather than a freed one. Releasing it
+    // is what this operator used to omit, and every assignment leaked one context.
+    pcre2_match_context *const ctx = nullptr != ptr ? pcre2_match_context_copy(ptr) : nullptr;
+    pcre2_match_context *const old = _MatchContext::get(_match_context);
+
+    _MatchContext::set(_match_context, ctx);
+    if (old != nullptr) {
+      pcre2_match_context_free(old);
     }
   }
   return *this;
