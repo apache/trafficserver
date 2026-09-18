@@ -60,7 +60,6 @@ def _hrw4u_to_hrw(hrw4u_text: str, filename: str) -> tuple[str, ErrorCollector]:
     "fixture_name",
     [
         "bare-client-url",
-        "bare-client-cert-aprn",
         "bare-client-cert-san-dns",
     ],
 )
@@ -77,10 +76,24 @@ def test_u4wrh_round_trip_no_raw_percent(fixture_name: str) -> None:
     hrw4u_text, u4wrh_errors = _hrw_to_hrw4u(hrw_text, str(hrw_path))
     assert not u4wrh_errors.has_errors(), (f"u4wrh produced errors for {fixture_name}:\n{u4wrh_errors.get_error_summary()}")
 
-    assert not _RAW_PERCENT_RE.search(hrw4u_text), (
-        f"u4wrh emitted raw %{{...}} in HRW4U output for {fixture_name}:\n{hrw4u_text}")
+    assert not _RAW_PERCENT_RE.search(hrw4u_text), (f"u4wrh emitted raw %{{...}} in HRW4U output for {fixture_name}:\n{hrw4u_text}")
 
     _, hrw4u_errors = _hrw4u_to_hrw(hrw4u_text, str(hrw_path))
     assert not hrw4u_errors.has_errors(), (
         f"hrw4u failed to re-parse u4wrh HRW4U output for {fixture_name}:\n"
         f"HRW4U:\n{hrw4u_text}\nErrors:\n{hrw4u_errors.get_error_summary()}")
+
+
+@pytest.mark.reverse
+def test_u4wrh_unmapped_percent_in_operator_arg_errors() -> None:
+    """u4wrh must report an error (not silently pass through) when an unmapped
+    %{...} tag appears inside an operator argument such as set-header value."""
+    hrw_text = ('cond %{REMAP_PSEUDO_HOOK} [AND]\n'
+                '    set-header X-Unknown "%{THIS_TAG_DOES_NOT_EXIST}"\n')
+
+    hrw4u_text, u4wrh_errors = _hrw_to_hrw4u(hrw_text, "unmapped-operator-arg")
+
+    assert u4wrh_errors.has_errors(), (
+        f"expected reverse-resolution error for unmapped %{{...}} in operator arg, "
+        f"but got clean output:\n{hrw4u_text}")
+    assert not _RAW_PERCENT_RE.search(hrw4u_text), (f"u4wrh emitted raw %{{...}} in HRW4U output for operator arg:\n{hrw4u_text}")

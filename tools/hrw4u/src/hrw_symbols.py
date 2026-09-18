@@ -212,11 +212,8 @@ class InverseSymbolResolver(SymbolResolverBase):
 
         # Handle full percent block
         if value.startswith('%{') and value.endswith('}') and Validator._PERCENT_RE.fullmatch(value):
-            try:
-                expr, _ = self.percent_to_ident_or_func(value, section)
-                return f'"{{{expr}}}"'
-            except SymbolResolutionError:
-                return f'"{value}"'
+            expr, _ = self.percent_to_ident_or_func(value, section)
+            return f'"{{{expr}}}"'
 
         # Handle quoted strings with embedded percent blocks
         is_quoted = value.startswith('"') and value.endswith('"')
@@ -229,11 +226,8 @@ class InverseSymbolResolver(SymbolResolverBase):
         """Create a replacement function for percent blocks in strings."""
 
         def repl(match: re.Match) -> str:
-            try:
-                expr, _ = self.percent_to_ident_or_func(match.group(0), section)
-                return "{" + expr + "}"
-            except SymbolResolutionError:
-                return match.group(0)
+            expr, _ = self.percent_to_ident_or_func(match.group(0), section)
+            return "{" + expr + "}"
 
         return repl
 
