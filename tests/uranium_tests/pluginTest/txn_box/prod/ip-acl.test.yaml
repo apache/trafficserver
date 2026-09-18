@@ -1,0 +1,143 @@
+meta:
+  version: "1.0"
+
+  txn-box:
+    global:
+    - when: post-load
+      do:
+      - ip-space-define:
+          name: "acl"
+          path: "ip-acl.csv"
+          columns:
+          - name: "access"
+            type: "enum"
+            keys: [ "allow", "deny", "secure" ]
+
+    - when: ua-req
+      do:
+      - with: [ ua-req-field<addr> , { as-ip-addr: }, { ip-space<acl>: ip-col<access> } ]
+        select:
+        - match: "deny"
+          do:
+          - proxy-reply: 403
+
+    remap:
+    - debug: "remap"
+    - with: [ua-req-field<addr>, { as-ip-addr: } , { ip-space<acl>: ip-col<access> } ]
+      select:
+      - match: "secure"
+        do:
+        - debug: "secured"
+        - ua-req-path: "path/secure-text.html"
+
+  blocks:
+  - base-req: &base-req
+      version: "1.1"
+      method: "GET"
+  - base-rsp: &base-rsp
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Type, html/plaintext ]
+        - [ Content-Length, 96 ]
+
+sessions:
+- protocol:
+    stack: http
+  transactions:
+
+  - all: { headers: { fields: [[ uuid, 1 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ addr, "10.11.12.13" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 2 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ addr, "172.19.2.3" ]
+    proxy-request:
+      <<: *base-req
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, 3 ]]}}
+    client-request:
+      <<: *base-req
+      url: "/delain"
+      headers:
+        fields:
+        - [ Host, base.ex ]
+        - [ addr, "192.168.2.3" ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 403
+
+  - all: { headers: { fields: [[ uuid, redirect-miss ]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/text.html"
+      headers:
+        fields:
+        - [ Host, docjj.ex ]
+        - [ addr, "10.9.9.9" ]
+    proxy-request:
+      <<: *base-req
+      url: [ [ path, { value: "/path/text.html" , as: equal } ] ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+  - all: { headers: { fields: [[ uuid, redirect-hit ]]}}
+    client-request:
+      <<: *base-req
+      url: "/path/text.html"
+      headers:
+        fields:
+        - [ Host, docjj.ex ]
+        - [ addr, "172.19.2.3" ]
+    proxy-request:
+      <<: *base-req
+      url: [ [ path, { value: "/path/secure-text.html" , as: equal } ] ]
+    server-response:
+      <<: *base-rsp
+    proxy-response:
+      status: 200
+
+urtest:
+  description: Verify txn_box IP-space access controls
+  requires: {plugins: [txn_box.so]}
+  server: {name: txn-box-ip-acl-origin}
+  dns: {name: txn-box-ip-acl-dns, process_config: {default: 127.0.0.1}}
+  client: {name: txn-box-ip-acl-client, process_config: {other_args: --verbose info}}
+  ats:
+    name: txn-box-ip-acl-ts
+    records_config:
+      proxy.config.diags.debug.enabled: 1
+      proxy.config.diags.debug.tags: txn_box
+      proxy.config.http.cache.http: 0
+    copy_to_config_dir: [ip-acl.test.yaml, ip-acl.csv]
+    plugin_config:
+    - txn_box.so
+    - txn_box.so --key meta.txn-box.global {CONFIG_DIR}/ip-acl.test.yaml
+    remap_config:
+    - map http://base.ex/ http://base.ex:{SERVER_HTTP_PORT}/
+    - map http://docjj.ex/ http://docjj.ex:{SERVER_HTTP_PORT} @plugin=txn_box.so @pparam=--key=meta.txn-box.remap @pparam={CONFIG_DIR}/ip-acl.test.yaml

@@ -1,0 +1,543 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta:
+  version: "1.0"
+
+# This replay file generates an HTTP/2 session with three streams in order to
+# verify that ATS generates the expected SETTINGS and WINDOW_UPDATE frames.
+
+urtest:
+  description: "Verify HTTP/2 inbound and outbound flow-control settings"
+  server: {name: flow-control-origin}
+  client: {name: flow-control-client}
+  ats:
+    name: flow-control-ats
+    process_config: {enable_tls: true}
+    records_config:
+      proxy.config.ssl.client.verify.server.policy: PERMISSIVE
+      proxy.config.http.insert_age_in_response: 0
+      proxy.config.diags.debug.enabled: 3
+      proxy.config.diags.debug.tags: http
+    remap_config:
+      - "map / https://127.0.0.1:{SERVER_HTTPS_PORT}"
+
+  variants:
+    - name: default-in-http1-content-length
+      client: &default_client
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:100"}
+
+    - name: default-in-http1-chunked
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
+      client: *default_client
+
+    - name: default-in-http2
+      client: *default_client
+      ats: &h2_origin
+        records_config:
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: default-out-http2
+      server: &default_server
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:100"}
+      ats: *h2_origin
+
+    - name: max-streams-in-http1-content-length
+      client: &max_streams_client
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:53"}
+      ats: &max_streams_in
+        records_config:
+          proxy.config.http2.max_concurrent_streams_in: 53
+
+    - name: max-streams-in-http1-chunked
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
+      client: *max_streams_client
+      ats: *max_streams_in
+
+    - name: max-streams-in-http2
+      client: *max_streams_client
+      ats:
+        records_config:
+          proxy.config.http2.max_concurrent_streams_in: 53
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: max-streams-out-http2
+      server:
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:53"}
+      ats:
+        records_config:
+          proxy.config.http2.max_concurrent_streams_out: 53
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: large-window-in-http1-content-length
+      client: &large_window_client
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:100"}
+            - {expression: "INITIAL_WINDOW_SIZE:100123"}
+            - {expression: 'WINDOW_UPDATE.*id 0: 34588'}
+      ats: &large_window_in
+        records_config:
+          proxy.config.http2.initial_window_size_in: 100123
+
+    - name: large-window-in-http1-chunked
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
+      client: *large_window_client
+      ats: *large_window_in
+
+    - name: large-window-in-http2
+      client: *large_window_client
+      ats:
+        records_config:
+          proxy.config.http2.initial_window_size_in: 100123
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: large-window-out-http2
+      server:
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:100"}
+            - {expression: "INITIAL_WINDOW_SIZE:100123"}
+            - {expression: 'WINDOW_UPDATE.*id 0: 34588'}
+      ats:
+        records_config:
+          proxy.config.http2.initial_window_size_out: 100123
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: policy0-small-in-http1-content-length
+      client: &policy0_client
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:100"}
+            - {expression: "INITIAL_WINDOW_SIZE:500"}
+            - {expression: 'WINDOW_UPDATE.*id 3: 500'}
+            - {expression: 'WINDOW_UPDATE.*id 5: 500'}
+            - {expression: 'WINDOW_UPDATE.*id 7: 500'}
+      ats: &policy0_in
+        records_config:
+          proxy.config.http2.initial_window_size_in: 500
+          proxy.config.http2.flow_control.policy_in: 0
+
+    - name: policy0-small-in-http1-chunked
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
+      client: *policy0_client
+      ats: *policy0_in
+
+    - name: policy0-small-in-http2
+      client: *policy0_client
+      ats:
+        records_config:
+          proxy.config.http2.initial_window_size_in: 500
+          proxy.config.http2.flow_control.policy_in: 0
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: policy0-small-out-http2
+      server:
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:100"}
+            - {expression: "INITIAL_WINDOW_SIZE:500"}
+            - {expression: 'WINDOW_UPDATE.*id 5: 500'}
+            - {expression: 'WINDOW_UPDATE.*id 7: 500'}
+            - {expression: 'WINDOW_UPDATE.*id 9: 500'}
+      ats:
+        records_config:
+          proxy.config.http2.initial_window_size_out: 500
+          proxy.config.http2.flow_control.policy_out: 0
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: policy1-in-http1-content-length
+      client: &policy1_client
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:10"}
+            - {expression: "INITIAL_WINDOW_SIZE:10"}
+            - {expression: 'WINDOW_UPDATE.*id 0: '}
+            - {expression: 'WINDOW_UPDATE.*id 3: 10'}
+            - {expression: 'WINDOW_UPDATE.*id 5: 10'}
+            - {expression: 'WINDOW_UPDATE.*id 7: 10'}
+      ats: &policy1_in
+        records_config:
+          proxy.config.http2.max_concurrent_streams_in: 10
+          proxy.config.http2.initial_window_size_in: 10
+          proxy.config.http2.flow_control.policy_in: 1
+
+    - name: policy1-in-http1-chunked
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
+      client: *policy1_client
+      ats: *policy1_in
+
+    - name: policy1-in-http2
+      client: *policy1_client
+      ats:
+        records_config:
+          proxy.config.http2.max_concurrent_streams_in: 10
+          proxy.config.http2.initial_window_size_in: 10
+          proxy.config.http2.flow_control.policy_in: 1
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: policy1-out-http2
+      server:
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:10"}
+            - {expression: "INITIAL_WINDOW_SIZE:10"}
+            - {expression: 'WINDOW_UPDATE.*id 0: '}
+            - {expression: 'WINDOW_UPDATE.*id 5: 10'}
+            - {expression: 'WINDOW_UPDATE.*id 7: 10'}
+            - {expression: 'WINDOW_UPDATE.*id 9: 10'}
+      ats:
+        records_config:
+          proxy.config.http2.max_concurrent_streams_out: 10
+          proxy.config.http2.initial_window_size_out: 10
+          proxy.config.http2.flow_control.policy_out: 1
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: policy2-in-http1-content-length
+      client: &policy2_client
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:10"}
+            - {expression: "INITIAL_WINDOW_SIZE:10"}
+            - {expression: 'WINDOW_UPDATE.*id 0: '}
+            - expression: 'INITIAL_WINDOW_SIZE:100.*INITIAL_WINDOW_SIZE:50.*INITIAL_WINDOW_SIZE:33'
+              multiline: true
+            - {expression: 'WINDOW_UPDATE.*id 3: 10'}
+            - {expression: 'WINDOW_UPDATE.*id 5: 10'}
+            - {expression: 'WINDOW_UPDATE.*id 7: 10'}
+      ats: &policy2_in
+        records_config:
+          proxy.config.http2.max_concurrent_streams_in: 10
+          proxy.config.http2.initial_window_size_in: 10
+          proxy.config.http2.flow_control.policy_in: 2
+
+    - name: policy2-in-http1-chunked
+      server: {replay: ../http2_flow_control_chunked.replay.yaml}
+      client: *policy2_client
+      ats: *policy2_in
+
+    - name: policy2-in-http2
+      client: *policy2_client
+      ats:
+        records_config:
+          proxy.config.http2.max_concurrent_streams_in: 10
+          proxy.config.http2.initial_window_size_in: 10
+          proxy.config.http2.flow_control.policy_in: 2
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+    - name: policy2-out-http2
+      server:
+        log_validation:
+          contains:
+            - {expression: "MAX_CONCURRENT_STREAMS:10"}
+            - {expression: "INITIAL_WINDOW_SIZE:10"}
+            - {expression: 'WINDOW_UPDATE.*id 0: '}
+            - expression: 'INITIAL_WINDOW_SIZE:100.*INITIAL_WINDOW_SIZE:50'
+              multiline: true
+            - {expression: 'WINDOW_UPDATE.*id 5: (33|10)'}
+            - {expression: 'WINDOW_UPDATE.*id 7: (33|10)'}
+            - {expression: 'WINDOW_UPDATE.*id 9: (33|10)'}
+      ats:
+        records_config:
+          proxy.config.http2.max_concurrent_streams_out: 10
+          proxy.config.http2.initial_window_size_out: 10
+          proxy.config.http2.flow_control.policy_out: 2
+          proxy.config.ssl.client.alpn_protocols: h2,http/1.1
+
+sessions:
+
+- protocol:
+    stack: http2
+    tls:
+      sni: www.example.com
+  transactions:
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /zero-request ]
+        - [ uuid, zero-request ]
+        - [ X-Request, zero-request ]
+        - [ Content-Length, 0 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, { value: 'zero-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, zero-response ]
+        - [ Content-Length, 28 ]
+      content:
+        size: 28
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, { value: 'zero-response', as: equal } ]
+
+  - client-request:
+      await: zero-request
+
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /first-request ]
+        - [ uuid, first-request ]
+        - [ X-Request, first-request ]
+      content:
+        size: 1200
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, { value: 'first-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, first-response ]
+        - [ Content-Length, 1200 ]
+      content:
+        size: 1200
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, { value: 'first-response', as: equal } ]
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /second-request ]
+        - [ uuid, second-request ]
+        - [ X-Request, second-request ]
+      content:
+        size: 1200
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'second-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, second-response ]
+        - [ Content-Length, 1200 ]
+      content:
+        size: 1200
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'second-response', as: equal } ]
+
+  - client-request:
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /third-request ]
+        - [ uuid, third-request ]
+        - [ X-Request, third-request ]
+      content:
+        size: 1200
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'third-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, third-response ]
+        - [ Content-Length, 1200 ]
+      content:
+        size: 1200
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'third-response', as: equal } ]
+
+  - client-request:
+      # Intentionally test a stream after the three other parallel POST
+      # requests.
+      delay: 500ms
+
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /fourth-request ]
+        - [ uuid, fourth-request ]
+        - [ X-Request, fourth-request ]
+      content:
+        # Send a very large DATA frame so that we exceed the 65,535 window
+        # size of most of the test runs.
+        size: 120000
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'fourth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, fourth-response ]
+        - [ Content-Length, 120000 ]
+      content:
+        size: 120000
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'fourth-response', as: equal } ]
+
+  - client-request:
+      # Give the above request time to process and give us an opportunity to
+      # receive any other WINDOW_UPDATE frames.
+      delay: 500ms
+
+      headers:
+        fields:
+        - [ ":method", POST ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /fifth-request ]
+        - [ uuid, fifth-request ]
+        - [ X-Request, fifth-request ]
+      content:
+        size: 10000
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'fifth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, fifth-response ]
+        - [ Content-Length, 10000 ]
+      content:
+        size: 10000
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'fifth-response', as: equal } ]
+
+  - client-request:
+      # Populate the cache with a large response.
+
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /sixth-request ]
+        - [ uuid, sixth-request ]
+        - [ X-Request, sixth-request ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Request, {value: 'sixth-request', as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ X-Response, sixth-response ]
+        - [ Cache-Control, max-age=3600 ]
+        - [ Content-Length, 120000 ]
+      content:
+        size: 120000
+
+    proxy-response:
+      headers:
+        fields:
+        - [ X-Response, {value: 'sixth-response', as: equal } ]
+
+
+  # Retrieve an item from the cache. /sixth-request should have been cached in
+  # the previous transaction.
+  - client-request:
+
+      # Give the above transaction enough time to finish.
+      await: sixth-request
+
+      # Add some time to ensure that the sixth-request response is cached.
+      delay: 100ms
+      headers:
+        fields:
+        - [ ":method", GET ]
+        - [ ":scheme", https ]
+        - [ ":authority", www.example.com ]
+        - [ ":path", /sixth-request ]
+        - [ uuid, sixth-request-cached ]
+        - [ X-Request, sixth-request-cached ]
+      content:
+        size: 0
+
+    # Configure an error response which we don't expect to receive from the
+    # server because this should be served out of the cache.
+    server-response:
+      status: 500
+      reason: Bad Request
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Response, {value: 'sixth-response', as: equal } ]
