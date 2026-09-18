@@ -63,7 +63,8 @@ CacheScan::Scan(bool search)
             std::cout << "Failed to read content from the Stripe.  " << strerror(errno) << std::endl;
           } else {
             Doc *doc = reinterpret_cast<Doc *>(stripe_buff2);
-            get_alternates(doc->hdr(), doc->hlen, search);
+            get_alternates(doc->hdr(), doc->hlen, search,
+                           ts::VersionNumber{static_cast<unsigned short>(doc->v_major), static_cast<unsigned short>(doc->v_minor)});
           }
           dir_bitset[dir_to_offset(e, seg)] = true;
           e                                 = next_dir(e, seg);
@@ -256,7 +257,7 @@ CacheScan::unmarshal(HdrHeap *hh, int buf_length, int obj_type, HdrHeapObjImpl *
 }
 
 Errata
-CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
+CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref, ts::VersionNumber version)
 {
   Errata        zret;
   HTTPCacheAlt *alt      = reinterpret_cast<HTTPCacheAlt *>(buf);
@@ -268,10 +269,12 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
     ink_assert(alt->m_unmarshal_len > 0);
     ink_assert(alt->m_unmarshal_len <= len);
     return zret;
-  } else if (alt->m_magic != CacheAltMagic::MARSHALED) {
+  } else if (alt->m_magic != CacheAltMagic::MARSHALED && alt->m_magic != CacheAltMagic::MARSHALED_WKS) {
     ink_assert(!"HTTPInfo::unmarshal bad magic");
     return zret;
   }
+
+  bool const has_wks_identity = alt->m_magic == CacheAltMagic::MARSHALED_WKS;
 
   ink_assert(alt->m_unmarshal_len < 0);
   alt->m_magic = CacheAltMagic::ALIVE;
@@ -280,27 +283,38 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
 
   // usually the fragment count is less or equal to 4
   if (alt->m_frag_offset_count > HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS) {
-    // stuff that didn't fit in the integral slots.
-    int extra = sizeof(uint64_t) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
-    if (extra >= len || extra < 0) {
-      zret.note("Invalid Fragment Count {}", extra);
-      return zret;
-    }
-    char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
-    // Actual buffer size, which must be a power of two.
-    // Well, technically not, because we never modify an unmarshalled fragment
-    // offset table, but it would be a nasty bug should that be done in the
-    // future.
-    int bcount = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS * 2;
+    if (version >= CACHE_DB_FRAG_OFFSET_TABLE_VERSION) {
+      int64_t const  size   = static_cast<int64_t>(alt->m_frag_offset_count) * sizeof(uint64_t);
+      intptr_t const offset = reinterpret_cast<intptr_t>(alt->m_frag_offsets);
+      if (offset < 0 || size > len || offset > orig_len - size) {
+        zret.note("Invalid fragment offset table");
+        return zret;
+      }
+      alt->m_frag_offsets  = reinterpret_cast<uint64_t *>(buf + offset);
+      len                 -= size;
+    } else {
+      // stuff that didn't fit in the integral slots.
+      int extra = sizeof(uint64_t) * alt->m_frag_offset_count - sizeof(alt->m_integral_frag_offsets);
+      if (extra >= len || extra < 0) {
+        zret.note("Invalid Fragment Count {}", extra);
+        return zret;
+      }
+      char *extra_src = buf + reinterpret_cast<intptr_t>(alt->m_frag_offsets);
+      // Actual buffer size, which must be a power of two.
+      // Well, technically not, because we never modify an unmarshalled fragment
+      // offset table, but it would be a nasty bug should that be done in the
+      // future.
+      int bcount = HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS * 2;
 
-    while (bcount < alt->m_frag_offset_count) {
-      bcount *= 2;
+      while (bcount < alt->m_frag_offset_count) {
+        bcount *= 2;
+      }
+      alt->m_frag_offsets =
+        static_cast<uint64_t *>(ats_malloc(bcount * sizeof(uint64_t))); // WRONG - must round up to next power of 2.
+      memcpy(alt->m_frag_offsets, alt->m_integral_frag_offsets, sizeof(alt->m_integral_frag_offsets));
+      memcpy(alt->m_frag_offsets + HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS, extra_src, extra);
+      len -= extra;
     }
-    alt->m_frag_offsets =
-      static_cast<uint64_t *>(ats_malloc(bcount * sizeof(uint64_t))); // WRONG - must round up to next power of 2.
-    memcpy(alt->m_frag_offsets, alt->m_integral_frag_offsets, sizeof(alt->m_integral_frag_offsets));
-    memcpy(alt->m_frag_offsets + HTTPCacheAlt::N_INTEGRAL_FRAG_OFFSETS, extra_src, extra);
-    len -= extra;
   } else if (alt->m_frag_offset_count > 0) {
     alt->m_frag_offsets = alt->m_integral_frag_offsets;
   } else {
@@ -312,7 +326,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   HdrHeap *heap    = reinterpret_cast<HdrHeap *>(alt->m_request_hdr.m_heap ? (buf + (intptr_t)alt->m_request_hdr.m_heap) : nullptr);
   HTTPHdrImpl *hh  = nullptr;
   int          tmp = 0;
-  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
+  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < orig_len) {
     tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
                           block_ref);
     if (hh == nullptr || tmp < 0) {
@@ -329,7 +343,7 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
   // response hdrs
 
   heap = reinterpret_cast<HdrHeap *>(alt->m_response_hdr.m_heap ? (buf + (intptr_t)alt->m_response_hdr.m_heap) : nullptr);
-  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < len) {
+  if (heap != nullptr && (reinterpret_cast<char *>(heap) - buf) < orig_len) {
     tmp = this->unmarshal(heap, len, static_cast<int>(HdrHeapObjType::HTTP_HEADER), reinterpret_cast<HdrHeapObjImpl **>(&hh),
                           block_ref);
     if (hh == nullptr || tmp < 0) {
@@ -343,6 +357,18 @@ CacheScan::unmarshal(char *buf, int len, RefCountObj *block_ref)
     alt->m_response_hdr.m_mime = hh->m_fields_impl;
   }
 
+  // Unlike HTTPInfo::unmarshal(), this does not rebuild the well-known string indexes the object
+  // stores. Those indexes belong to the traffic_server that wrote the object, whose well-known
+  // string table need not match this tool's, so nothing here may read them; the scan reads the URL
+  // through its stored strings only. Anything added here that wants an index must call
+  // HTTPHdrImpl::recompute_wks_indices() first, which means linking libhdrs.
+  if (has_wks_identity) {
+    if (len < static_cast<int>(sizeof(uint64_t))) {
+      zret.note("Truncated WKS identity");
+      return zret;
+    }
+    len -= sizeof(uint64_t);
+  }
   alt->m_unmarshal_len = orig_len - len;
 
   return zret;
@@ -364,7 +390,7 @@ CacheScan::check_url(swoc::MemSpan<char> &mem, URLImpl *url)
 }
 
 Errata
-CacheScan::get_alternates(const char *buf, int length, bool search)
+CacheScan::get_alternates(const char *buf, int length, bool search, ts::VersionNumber version)
 {
   Errata zret;
   ink_assert(!(((intptr_t)buf) & 3)); // buf must be aligned
@@ -376,8 +402,8 @@ CacheScan::get_alternates(const char *buf, int length, bool search)
   while (length - (buf - start) > static_cast<int>(sizeof(HTTPCacheAlt))) {
     HTTPCacheAlt *a = (HTTPCacheAlt *)buf;
 
-    if (a->m_magic == CacheAltMagic::MARSHALED) {
-      zret = this->unmarshal(const_cast<char *>(buf), length, block_ref);
+    if (a->m_magic == CacheAltMagic::MARSHALED || a->m_magic == CacheAltMagic::MARSHALED_WKS) {
+      zret = this->unmarshal(const_cast<char *>(buf), length - (buf - start), block_ref, version);
       if (zret.length()) {
         std::cerr << zret << std::endl;
         return zret;

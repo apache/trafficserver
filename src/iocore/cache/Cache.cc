@@ -52,8 +52,6 @@
 
 extern void register_cache_stats(CacheStatsBlock *rsb, const std::string &prefix);
 
-constexpr ts::VersionNumber CACHE_DB_VERSION(CACHE_DB_MAJOR_VERSION, CACHE_DB_MINOR_VERSION);
-
 // Configuration
 
 int64_t cache_config_ram_cache_size                      = AUTO_SIZE_RAM_CACHE;
