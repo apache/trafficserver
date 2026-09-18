@@ -80,8 +80,8 @@ union head_p {
   typedef int32_t version_type;
   typedef int64_t data_type;
 #elif TS_HAS_128BIT_CAS
-  typedef int64_t    version_type;
-  typedef __int128_t data_type;
+  using version_type = int64_t;
+  using data_type    = __int128_t;
 #else
   using version_type = int64_t;
   using data_type    = int64_t;
