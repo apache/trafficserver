@@ -710,9 +710,9 @@ Denied Sections
 ---------------
 
 The ``sections`` list accepts any of the HRW4U section names listed in the
-`Sections`_ table, plus ``VARS`` to deny the variable declaration block.
-A denied section causes the entire block to be rejected; the body is not
-validated.
+`Sections`_ table, plus ``VARS`` and ``SESSION_VARS`` to deny the variable
+declaration blocks. A denied section causes the entire block to be rejected;
+the body is not validated.
 
 Functions
 ---------
@@ -775,7 +775,7 @@ The ``language`` list accepts a fixed set of constructs:
 Construct        What it controls
 ================ ===================================================
 ``break``        The ``break;`` statement (early section exit)
-``variables``    The entire ``VARS`` section and all variable usage
+``variables``    The entire ``VARS`` and ``SESSION_VARS`` section and all variable usage
 ``else``         The ``else { ... }`` branch of conditionals
 ``elif``         The ``elif ... { ... }`` branch of conditionals
 ``in``           The ``in [...]`` and ``!in [...]`` set membership operators

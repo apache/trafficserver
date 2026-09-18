@@ -1,0 +1,7 @@
+SESSION_VARS {
+    session_marked: bool;
+}
+
+REMAP {
+    inbound.req.X-Marked = "1";
+}
