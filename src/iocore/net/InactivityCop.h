@@ -62,6 +62,23 @@ public:
     // The rest NetEvents in cop_list which are not triggered between InactivityCop runs.
     // Use pop() to catch any closes caused by callbacks.
     while (NetEvent *ne = nh.cop_list.pop()) {
+      // These fields are written by the owning thread (this thread; open_list is
+      // per-thread) and by plugin paths under ne's mutex, so a relaxed/unlocked read
+      // here can be stale. That is fine: a stale "nothing to do" read cannot lose a
+      // timeout permanently, since ne is pushed back onto cop_list from open_list
+      // every run and will be re-examined next tick. Worst case is one extra tick of
+      // delay, or one avoidable lock below that re-checks these same fields.
+      ink_hrtime default_inactivity_timeout_in = ne->default_inactivity_timeout_in.load(std::memory_order_relaxed);
+      bool       nothing_to_do =
+        !ne->closed && default_inactivity_timeout_in != -1 &&
+        !(ne->next_inactivity_timeout_at == 0 && default_inactivity_timeout_in > 0 && (ne->read.enabled || ne->write.enabled)) &&
+        !(ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) &&
+        !(ne->next_activity_timeout_at && ne->next_activity_timeout_at < now);
+
+      if (nothing_to_do) {
+        continue;
+      }
+
       // If we cannot get the lock don't stop just keep cleaning
       MUTEX_TRY_LOCK(lock, ne->get_mutex(), this_ethread());
       if (!lock.is_locked()) {
