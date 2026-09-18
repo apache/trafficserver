@@ -781,11 +781,16 @@ churn_tick_thunk(Fixture &fx, void *state)
   churn_tick(fx, *static_cast<ChurnState *>(state));
 }
 
-Scenario const IDLE_SCENARIO            = {"idle", set_idle, nullptr};
-Scenario const KEEPALIVE_SCENARIO       = {"keepalive", nullptr, refresh_keepalive_tick};
-Scenario const MASS_EXPIRY_SCENARIO     = {"mass_expiry", set_mass_expiry, nullptr};
-Scenario const CHURN_SCENARIO           = {"churn", init_churn_baseline, churn_tick_thunk};
-Scenario const LOCK_CONTENTION_SCENARIO = {"lock_contention", set_idle, nullptr};
+Scenario const IDLE_SCENARIO        = {"idle", set_idle, nullptr};
+Scenario const KEEPALIVE_SCENARIO   = {"keepalive", nullptr, refresh_keepalive_tick};
+Scenario const MASS_EXPIRY_SCENARIO = {"mass_expiry", set_mass_expiry, nullptr};
+Scenario const CHURN_SCENARIO       = {"churn", init_churn_baseline, churn_tick_thunk};
+// Uses expired deadlines, not set_idle: since check_inactivity() now skips the try-lock
+// for connections that are provably not due, idle connections never attempt the lock and
+// ContentionHolder's held fraction would never be exercised. Expired deadlines force the
+// cop to lock every connection (as in mass_expiry), so the held 10% still fails the way
+// production contention would.
+Scenario const LOCK_CONTENTION_SCENARIO = {"lock_contention", set_mass_expiry, nullptr};
 
 } // namespace
 
