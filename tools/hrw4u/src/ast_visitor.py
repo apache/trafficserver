@@ -112,8 +112,6 @@ class ASTVisitor(hrw4uVisitor):
             target = Target.from_dotted(ctx.lhs.text)
             value = self._extract_value(ctx.value())
             return Assignment(target=target, operator="+=", value=value, line=line)
-        if ctx.op:
-            return FunctionCall(name=ctx.op.text, args=(), line=line)
         raise ValueError(f"Unhandled statement alternative at line {line}")
 
     def _visit_function_call(self, ctx) -> FunctionCall:
