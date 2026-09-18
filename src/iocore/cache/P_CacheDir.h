@@ -41,8 +41,6 @@ struct InterimCacheVol;
 struct CacheVC;
 class CacheEvacuateDocVC;
 
-// #define LOOP_CHECK_MODE 1
-
 /*
   Directory layout
 */
@@ -308,6 +306,14 @@ public:
    */
   Dir *get_segment(int s) const;
 
+  /* Longest chain a bucket can legitimately hold.
+   *
+   * init_segment() frees rows 1..DIR_DEPTH-1 of every bucket onto the segment free list and never row 0, so one
+   * chain holds at most every free entry of the segment plus its own head. Past it the chain is corrupt, though not
+   * necessarily looping: a link into another bucket's row 0 stays acyclic, so repairs confirm with bucket_loop_fix().
+   */
+  int max_bucket_depth() const;
+
   int  probe(const CacheKey *, StripeSM *, Dir *, Dir **);
   int  insert(const CacheKey *key, StripeSM *stripe, Dir *to_part);
   int  overwrite(const CacheKey *key, StripeSM *stripe, Dir *to_part, Dir *overwrite, bool must_overwrite = true);
@@ -322,12 +328,15 @@ public:
   int      bucket_length(Dir *b, int s);
   int      freelist_length(int s);
   void     clean_segment(int s, StripeSM *stripe);
-  void     init_segment(int s);
-  int      bucket_loop_fix(Dir *start_dir, int s);
-  Dir     *delete_entry(Dir *e, Dir *p, int s);
+  /// @a stripe owns the used-entry gauges to debit; null when the caller is itself counting for them.
+  void init_segment(int s, Stripe *stripe);
+  int  bucket_loop_fix(Dir *start_dir, int s, Stripe *stripe);
+  Dir *delete_entry(Dir *e, Dir *p, int s);
 
 private:
   void unlink_from_freelist(Dir *e, int s);
+  /// Counted over the segment's rows: the chains are corrupt wherever this is used.
+  int segment_entries_used(int s) const;
 };
 
 // Global Functions
@@ -405,6 +414,12 @@ inline Dir *
 Directory::get_segment(int s) const
 {
   return reinterpret_cast<Dir *>((reinterpret_cast<char *>(this->dir)) + (s * this->buckets) * DIR_DEPTH * SIZEOF_DIR);
+}
+
+inline int
+Directory::max_bucket_depth() const
+{
+  return (DIR_DEPTH - 1) * this->buckets + 1;
 }
 
 inline void

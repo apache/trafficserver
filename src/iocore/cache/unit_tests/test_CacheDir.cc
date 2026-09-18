@@ -164,78 +164,157 @@ public:
     memset(static_cast<void *>(&dir1), 0, sizeof(dir1));
     int s1, b1;
 
+    // Counted over the segment's rows: the chains are corrupt wherever this is used.
+    auto count_segment_entries = [&](int seg_index) {
+      Dir *seg_dir = stripe->directory.get_segment(seg_index);
+      int  used    = 0;
+      for (int b = 0; b < stripe->directory.buckets; b++) {
+        for (int l = 0; l < DIR_DEPTH; l++) {
+          if (dir_offset(dir_bucket_row(dir_bucket(b, seg_dir), l))) {
+            used++;
+          }
+        }
+      }
+      return used;
+    };
+
+    // Give a bucket a fresh chain long enough that a walk has to leave the bucket's own rows, then loop it.
+    auto corrupt_fresh_chain = [&]() {
+      for (int i = 0; i < 5; i++) {
+        stripe->directory.insert(&key, stripe, &dir1);
+      }
+      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
+    };
+
     Dbg(dbg_ctl_cache_dir_test, "corrupt_bucket test");
     for (int ntimes = 0; ntimes < 10; ntimes++) {
-#ifdef LOOP_CHECK_MODE
-      // probe in bucket with loop
-      rand_CacheKey(&key);
-      s1 = key.slice32(0) % stripe->directory.segments;
-      b1 = key.slice32(1) % stripe->directory.buckets;
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      stripe->directory.insert(&key, stripe, &dir);
-      Dir *last_collision = 0;
-      stripe->directory.probe(&key, stripe, &dir, &last_collision);
+      // Reset every iteration: Directory::check() fails from the first corruption onward, so without this only the
+      // first iteration would assert anything.
+      stripe->clear_dir();
 
       rand_CacheKey(&key);
       s1 = key.slice32(0) % stripe->directory.segments;
       b1 = key.slice32(1) % stripe->directory.buckets;
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
 
-      last_collision = 0;
-      stripe->directory.probe(&key, stripe, &dir, &last_collision);
+      // Valid entries, so probe() below walks past them instead of deleting them as it goes.
+      stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+      dir_clear(&dir1);
+      dir_set_offset(&dir1, 1);
+      REQUIRE(stripe->dir_valid(&dir1));
+      corrupt_fresh_chain();
 
-      // overwrite in bucket with loop
-      rand_CacheKey(&key);
-      s1 = key.slice32(0) % stripe->directory.segments;
-      b1 = key.slice32(1) % stripe->directory.buckets;
-      CacheKey key1;
-      key1.b[1] = 127;
-      dir1      = dir;
-      dir_set_offset(&dir1, 23);
-      stripe->directory.insert(&key1, stripe, &dir1);
-      stripe->directory.insert(&key, stripe, &dir);
-      key1.b[1] = 80;
-      stripe->directory.insert(&key1, stripe, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      stripe->directory.overwrite(&key, stripe, &dir, &dir, 1);
-
-      rand_CacheKey(&key);
-      s1       = key.slice32(0) % stripe->directory.segments;
-      b1       = key.slice32(1) % stripe->directory.buckets;
-      key.b[1] = 23;
-      stripe->directory.insert(&key, stripe, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      stripe->directory.overwrite(&key, stripe, &dir, &dir, 0);
-
-      rand_CacheKey(&key);
-      s1        = key.slice32(0) % stripe->directory.segments;
-      Dir *seg1 = stripe->directory.get_segment(s1);
-      // freelist_length in freelist with loop
-      dir_corrupt_bucket(dir_from_offset(stripe->directory.header->freelist[s], seg1), s1, stripe);
-      stripe->directory.freelist_length(s1);
-
-      rand_CacheKey(&key);
-      s1 = key.slice32(0) % stripe->directory.segments;
-      b1 = key.slice32(1) % stripe->directory.buckets;
-      // bucket_length in bucket with loop
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
-      stripe->directory.bucket_length(dir_bucket(b1, stripe->directory.get_segment(s1)), s1);
-      CHECK(stripe->directory.check());
-#else
-      // test corruption detection
-      rand_CacheKey(&key);
-      s1 = key.slice32(0) % stripe->directory.segments;
-      b1 = key.slice32(1) % stripe->directory.buckets;
-
-      stripe->directory.insert(&key, stripe, &dir1);
-      stripe->directory.insert(&key, stripe, &dir1);
-      stripe->directory.insert(&key, stripe, &dir1);
-      stripe->directory.insert(&key, stripe, &dir1);
-      stripe->directory.insert(&key, stripe, &dir1);
-      dir_corrupt_bucket(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe);
+      // Detection: a cycle makes the chain longer than its segment can hold.
       CHECK(!stripe->directory.check());
-#endif
+      CHECK(stripe->directory.bucket_length(dir_bucket(b1, stripe->directory.get_segment(s1)), s1) == -1);
+
+      // A reader must terminate on a looped chain. Vary only slice32(2), the tag, so the probe lands on the same
+      // segment and bucket but matches no entry and therefore walks the whole cycle.
+      CacheKey miss_key = key;
+      miss_key.u32[2]   = ~key.u32[2];
+      Dir  probed;
+      Dir *probe_collision = nullptr;
+      dir_clear(&probed);
+      CHECK(stripe->directory.probe(&miss_key, stripe, &probed, &probe_collision) == 0);
+
+      // The reader leaves the loop in place for a writer to repair.
+      CHECK(!stripe->directory.check());
+
+      // insert() only walks the chain once the bucket's own rows are full, which the chain above ensures, and that
+      // walk must repair.
+      stripe->directory.insert(&key, stripe, &dir1);
+      CHECK(stripe->directory.check());
+
+      // overwrite() repairs from its own walk, so give it a freshly corrupted chain.
+      corrupt_fresh_chain();
+
+      // Target an offset absent from the chain so the search actually walks it rather than matching the head entry
+      // immediately.
+      Dir absent;
+      dir_clear(&absent);
+      dir_set_offset(&absent, 999);
+      stripe->directory.overwrite(&key, stripe, &dir1, &absent, false);
+      CHECK(stripe->directory.check());
+
+      // Wiping a segment must mark the directory dirty. CacheSync skips a directory whose dirty flag is clear, so a
+      // repair that returns without mutating anything else would never reach disk and the loop would come back after
+      // a crash. Each writer below returns before the flag is set for a normal mutation.
+      corrupt_fresh_chain();
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.remove(&key, stripe, &absent) == 0);
+      CHECK(stripe->directory.check());
+      CHECK(stripe->directory.header->dirty == 1);
+
+      corrupt_fresh_chain();
+      stripe->directory.header->dirty = 0;
+      CHECK(stripe->directory.overwrite(&key, stripe, &dir1, &absent, true) == 0);
+      CHECK(stripe->directory.check());
+      CHECK(stripe->directory.header->dirty == 1);
+
+      // dir_clean_bucket() and freelist_pop() reach init_segment() too; neither early return is otherwise observable.
+      // The wipe is also the only thing that can debit the entries it discards.
+      corrupt_fresh_chain();
+      stripe->directory.header->dirty = 0;
+      int64_t used_before             = ts::Metrics::Gauge::load(cache_rsb.direntries_used);
+      int64_t vol_used_before         = ts::Metrics::Gauge::load(stripe->cache_vol->vol_rsb.direntries_used);
+      int     discarded               = count_segment_entries(s1);
+      CHECK(discarded > 0);
+      CHECK(stripe->directory.bucket_loop_fix(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe) == 1);
+      CHECK(stripe->directory.check());
+      CHECK(stripe->directory.header->dirty == 1);
+      CHECK(count_segment_entries(s1) == 0);
+      CHECK(ts::Metrics::Gauge::load(cache_rsb.direntries_used) == used_before - discarded);
+      CHECK(ts::Metrics::Gauge::load(stripe->cache_vol->vol_rsb.direntries_used) == vol_used_before - discarded);
+
+      // A walk that finds no loop wipes nothing, so it must leave the flag and the gauges alone.
+      stripe->directory.header->dirty = 0;
+      used_before                     = ts::Metrics::Gauge::load(cache_rsb.direntries_used);
+      vol_used_before                 = ts::Metrics::Gauge::load(stripe->cache_vol->vol_rsb.direntries_used);
+      CHECK(stripe->directory.bucket_loop_fix(dir_bucket(b1, stripe->directory.get_segment(s1)), s1, stripe) == 0);
+      CHECK(stripe->directory.header->dirty == 0);
+      CHECK(ts::Metrics::Gauge::load(cache_rsb.direntries_used) == used_before);
+      CHECK(ts::Metrics::Gauge::load(stripe->cache_vol->vol_rsb.direntries_used) == vol_used_before);
     }
+
+    // dir_check() tags every entry it walks into a fixed-size array, so it must stop on a corrupt chain. It repairs
+    // nothing: its freelist_length() walks the free list, not the bucket chain.
+    stripe->clear_dir();
+    rand_CacheKey(&key);
+    s1                                = key.slice32(0) % stripe->directory.segments;
+    b1                                = key.slice32(1) % stripe->directory.buckets;
+    stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+    dir_clear(&dir1);
+    dir_set_offset(&dir1, 1);
+    corrupt_fresh_chain();
+    CHECK(!stripe->directory.check());
+    CHECK(stripe->dir_check() == 0);
+    CHECK(!stripe->directory.check());
+
+    // A loop trips dir_check()'s revisit detector long before the bound. Only an overlong acyclic chain reaches it:
+    // thread bucket 0's head through every non-head row and on into bucket 1's head, one past max_bucket_depth().
+    // The assertion that matters is the absent chain_tag overrun, which the sanitizer builds catch.
+    stripe->clear_dir();
+    stripe->directory.header->agg_pos = stripe->directory.header->write_pos += 1024;
+    {
+      Dir *seg_dir   = stripe->directory.get_segment(0);
+      auto link_next = [&](int64_t index, int64_t next_index) {
+        Dir *e = dir_in_seg(seg_dir, index);
+        dir_clear(e);
+        dir_set_offset(e, 1);
+        dir_set_next(e, next_index);
+      };
+      int64_t prev = 0;
+      for (int64_t b = 0; b < stripe->directory.buckets; b++) {
+        for (int64_t l = 1; l < DIR_DEPTH; l++) {
+          link_next(prev, b * DIR_DEPTH + l);
+          prev = b * DIR_DEPTH + l;
+        }
+      }
+      link_next(prev, DIR_DEPTH);
+      link_next(DIR_DEPTH, 0);
+      CHECK(stripe->directory.bucket_length(dir_bucket(0, seg_dir), 0) == -1);
+    }
+    CHECK(stripe->dir_check() == 0);
+
     stripe->clear_dir();
 
     // Teardown
