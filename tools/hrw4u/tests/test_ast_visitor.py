@@ -80,12 +80,12 @@ class TestFunctionCalls:
         assert fc.name == "set-header"
         assert fc.args == (LiteralStringValue(raw="X-Foo"), LiteralStringValue(raw="bar"))
 
-    def test_standalone_operator(self):
-        ast = _build('REMAP {\n    skip-remap;\n}')
+    def test_bool_arg(self):
+        ast = _build('REMAP {\n    skip-remap(true);\n}')
         fc = ast.body[0].body[0]
         assert isinstance(fc, FunctionCall)
         assert fc.name == "skip-remap"
-        assert fc.args == ()
+        assert fc.args == (True,)
 
     def test_break(self):
         ast = _build('REMAP {\n    if true {\n        break;\n    }\n}')
@@ -494,7 +494,7 @@ class TestLineNumbers:
         "REMAP {\n"  # line 8
         '    inbound.req.X-Foo = "val";\n'  # line 9
         "    set-debug();\n"  # line 10
-        "    skip-remap;\n"  # line 11
+        "    skip-remap(true);\n"  # line 11
         '    if inbound.req.X-A == "a" {\n'  # line 12
         "        break;\n"  # line 13
         '    } elif inbound.req.X-B == "b" {\n'  # line 14
@@ -565,7 +565,7 @@ class TestLineNumbers:
         assert isinstance(fc, FunctionCall)
         assert fc.line == 10
 
-    def test_standalone_operator(self):
+    def test_function_call_with_arg(self):
         fc = self.ast.body[3].body[2]
         assert isinstance(fc, FunctionCall)
         assert fc.line == 11
