@@ -362,9 +362,16 @@ struct Fixture {
     // reproducibly, so the sweep pays for real scattered access every run.
     std::mt19937 rng(SHUFFLE_SEED);
     std::shuffle(order.begin(), order.end(), rng);
+    // Goes through the real NetHandler::startCop() (not a direct
+    // open_list.enqueue()) so the eager global-default-timeout application it
+    // does is exercised here too; startCop() asserts the NetHandler mutex is
+    // held by this thread. This is setup, not the timed region: every
+    // scenario's setup() overwrites default_inactivity_timeout_in before any
+    // warmup/sample call, so this has no effect on measured numbers.
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
     for (auto *m : order) {
       m->nh = &nh;
-      nh.open_list.enqueue(m);
+      nh.startCop(m);
     }
   }
 

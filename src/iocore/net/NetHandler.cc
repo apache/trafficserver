@@ -104,6 +104,13 @@ NetHandler::startCop(NetEvent *ne)
   ink_release_assert(ne->nh == this);
   ink_assert(!open_list.in(ne));
 
+  // Apply the global default here, not lazily in the cop: lazy application forced
+  // the cop to visit every open connection regardless of deadlines, and left the
+  // connection with no usable deadline at registration time.
+  if (ne->default_inactivity_timeout_in.load(std::memory_order_relaxed) == -1) {
+    ne->set_default_inactivity_timeout(HRTIME_SECONDS(config.default_inactivity_timeout));
+  }
+
   open_list.enqueue(ne);
 }
 
