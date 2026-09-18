@@ -70,7 +70,7 @@ public:
       // delay, or one avoidable lock below that re-checks these same fields.
       ink_hrtime default_inactivity_timeout_in = ne->default_inactivity_timeout_in.load(std::memory_order_relaxed);
       bool       nothing_to_do =
-        !ne->closed && default_inactivity_timeout_in != -1 &&
+        !ne->closed &&
         !(ne->next_inactivity_timeout_at == 0 && default_inactivity_timeout_in > 0 && (ne->read.enabled || ne->write.enabled)) &&
         !(ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) &&
         !(ne->next_activity_timeout_at && ne->next_activity_timeout_at < now);
@@ -89,15 +89,6 @@ public:
       if (ne->closed) {
         nh.free_netevent(ne);
         continue;
-      }
-
-      if (ne->default_inactivity_timeout_in == -1) {
-        // If no context-specific default inactivity timeout has been set by an
-        // override plugin, then use the global default.
-        Dbg(dbg_ctl_inactivity_cop,
-            "vc: %p setting the global default inactivity timeout of %d, next_inactivity_timeout_at: %" PRId64, ne,
-            nh.config.default_inactivity_timeout, ne->next_inactivity_timeout_at);
-        ne->set_default_inactivity_timeout(HRTIME_SECONDS(nh.config.default_inactivity_timeout));
       }
 
       // set a default inactivity timeout if one is not set
