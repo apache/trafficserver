@@ -108,6 +108,17 @@ enum AccessTokenStatus {
 const char *accessTokenStatusToString(const AccessTokenStatus &state);
 
 /**
+ * Validates whether a request path fails within the scope claim of an access token.
+ * Matching is performed on normalized path segments. An empty or absent scope is
+ * treated as unrestricted (returns true).
+ *
+ * @param[in] requestPath The incoming HTTP requestPath.
+ * @param[in] scope The scope string extracted from the token.
+ * @return True if the path is permitted by the scope, false otherwise.
+ */
+bool validateScope(StringView requestPath, StringView scope);
+
+/**
  *  Base Access Token class / interface + some basic implementations.
  */
 class AccessToken
@@ -202,7 +213,7 @@ protected:
   StringView _issuedAt   = ""; /** @brief time-stamp when token was issued, not required */
   StringView _tokenId    = ""; /** @brief unique token id for debugging and tracking, not required */
   StringView _version    = ""; /** @brief version, not required, still @todo */
-  StringView _scope      = ""; /** @brief scope of subject, not required, still @todo */
+  StringView _scope      = ""; /** @brief scope of subject, not required */
 
   /** Signature, extracted from the token string */
   StringView _keyId         = ""; /** @brief the key in the secrets map to be used to calculate the digest */

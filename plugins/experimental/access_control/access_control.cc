@@ -29,6 +29,28 @@
 size_t calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer, size_t len);
 const char *getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize);
 
+static String
+normalizePath(StringView path)
+{
+  String normalized;
+  normalized.reserve(path.size() + 1);
+
+  normalized.push_back('/');
+  for (char ch : path) {
+    if (ch == '/') {
+      if (normalized.back() != '/') {
+        normalized.push_back('/');
+      }
+    } else {
+      normalized.push_back(ch);
+    }
+  }
+  if (normalized.size() > 1 && normalized.back() == '/') {
+    normalized.pop_back();
+  }
+  return normalized;
+}
+
 /* AccessToken ***************************************************************************************************** */
 
 AccessToken::AccessToken(const StringMap &secretsMap, bool enableDebug) : _debug(enableDebug), _secretsMap(secretsMap) {}
@@ -61,8 +83,7 @@ AccessToken::validate(const StringView token, time_t time)
     return _state;
   }
 
-  /** @todo: validate scope eventually */
-
+  /* Note that scope validation is performed against the request path during transaction enforcement */
   return _state;
 }
 
@@ -468,6 +489,29 @@ accessTokenStatusToString(const AccessTokenStatus &state)
     break;
   }
   return s;
+}
+
+/**
+ * Validates the request path against the token scope using normalized segment boundaries.
+ */
+bool
+validateScope(StringView requestPath, StringView scope)
+{
+  if (scope.empty()) {
+    return true;
+  }
+  String normRequestPath = normalizePath(requestPath);
+  String normScope       = normalizePath(scope);
+  if (normScope == "/") {
+    return true;
+  }
+  if (normRequestPath == normScope) {
+    return true;
+  }
+  if (normRequestPath.starts_with(normScope) && normRequestPath[normScope.length()] == '/') {
+    return true;
+  }
+  return false;
 }
 
 /* Debug dump of the token */
