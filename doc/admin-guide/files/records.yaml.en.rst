@@ -5406,6 +5406,15 @@ HTTP/2 Configuration
    code of ENHANCE_YOUR_CALM.
    Any negative value configures no limit to the number of SETTINGS frames received.
 
+   On inbound and outbound connections, SETTINGS frames carrying the ACK flag are not
+   counted against this limit. Unsolicited ACKs are still protocol errors.
+   They are mandatory protocol responses to SETTINGS frames |TS| sent and
+   therefore cannot be used by a peer to flood |TS|; counting them would
+   spuriously close healthy connections. In particular, setting
+   :ts:cv:`proxy.config.http2.flow_control.policy_in` or
+   :ts:cv:`proxy.config.http2.flow_control.policy_out` to ``2`` causes |TS|
+   to send SETTINGS frames as the stream windows change.
+
 .. ts:cv:: CONFIG proxy.config.http2.max_ping_frames_per_minute INT 60
    :reloadable:
 

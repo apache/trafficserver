@@ -6317,6 +6317,41 @@ HttpSM::release_server_session(bool serve_from_cache)
   }
 }
 
+// A peer's not-processed assertion permits a retry only if we can reproduce
+// the request. This includes safe methods with bodies: method safety does not
+// make an exhausted body reader replayable. Unbuffered, incomplete, unknown-length,
+// chunked and transformed bodies are excluded. Admission rearms a complete copy;
+// body rejection latches origin_retry_body_unavailable to block later retries.
+// Both outcomes increment their corresponding origin retry counters.
+bool
+HttpSM::prepare_for_origin_retry()
+{
+  if (server_txn == nullptr || !server_txn->is_safe_to_retry()) {
+    return false;
+  }
+  bool const has_body = server_request_body_bytes > 0 ||
+                        (_ua.get_txn() != nullptr && _ua.get_txn()->has_request_body(t_state.hdr_info.request_content_length,
+                                                                                     t_state.client_info.transfer_encoding ==
+                                                                                       HttpTransact::TransferEncoding_t::CHUNKED));
+  if (has_body) {
+    int64_t const length = t_state.hdr_info.request_content_length;
+    // A done buffer is not proof of completeness: HttpTunnel also marks it done
+    // on EOS. Keep the exact-length check even when upstream paths reject early.
+    if (post_transform_info.vc || t_state.client_info.transfer_encoding == HttpTransact::TransferEncoding_t::CHUNKED ||
+        length < 0 || length == HTTP_UNDEFINED_CL || !this->is_postbuf_valid() || !this->get_postbuf_done() ||
+        this->postbuf_buffer_avail() != length) {
+      origin_retry_body_unavailable = true;
+      Metrics::Counter::increment(http_rsb.origin_retry_body_unavailable);
+      SMDbg(dbg_ctl_http, "Origin retry denied: complete replayable request body unavailable");
+      return false;
+    }
+    is_buffering_request_body = true;
+  }
+  Metrics::Counter::increment(http_rsb.origin_retry_admitted);
+  SMDbg(dbg_ctl_http, "Origin not-processed retry admitted: method=%d body=%d", t_state.method, has_body);
+  return true;
+}
+
 // void HttpSM::handle_post_failure()
 //
 //   We failed in our attempt post (or put) a document
@@ -6349,9 +6384,13 @@ HttpSM::handle_post_failure()
   _ua.get_entry()->in_tunnel = false;
   server_entry->in_tunnel    = false;
 
-  // disable redirection in case we got a partial response and then EOS, because the buffer might not
-  // have the full post and it's deallocating the post buffers here
-  this->disable_redirect();
+  // Preserve a complete buffered body only when the origin has not responded
+  // and explicitly reports that this request was not processed. Otherwise the
+  // copy may be incomplete, so discard it along with redirect eligibility.
+  bool const retry = this->prepare_for_origin_retry();
+  if (!retry) {
+    this->disable_redirect();
+  }
 
   // Don't even think about doing keep-alive after this debacle
   t_state.client_info.keep_alive     = HTTPKeepAlive::NO_KEEPALIVE;
@@ -6362,7 +6401,7 @@ HttpSM::handle_post_failure()
   // Server is down
   if (t_state.current.state == HttpTransact::STATE_UNDEFINED || t_state.current.state == HttpTransact::CONNECTION_ALIVE) {
     t_state.set_connect_fail(server_txn->get_netvc()->lerrno);
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = retry ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
   }
   call_transact_and_set_next_state(HttpTransact::HandleResponse);
 }
@@ -6482,7 +6521,7 @@ HttpSM::handle_server_setup_error(int event, void *data)
   [[maybe_unused]] UnixNetVConnection *dbg_vc = nullptr;
   switch (event) {
   case VC_EVENT_EOS:
-    t_state.current.state = HttpTransact::CONNECTION_CLOSED;
+    t_state.current.state = this->prepare_for_origin_retry() ? HttpTransact::CONNECTION_ERROR : HttpTransact::CONNECTION_CLOSED;
     t_state.set_connect_fail(EPIPE);
     break;
   case VC_EVENT_ERROR:

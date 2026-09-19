@@ -156,6 +156,24 @@ public:
   void            set_rx_error_code(ProxyError e) override;
   void            set_tx_error_code(ProxyError e) override;
 
+  bool is_safe_to_retry() const override;
+  void
+  mark_response_received()
+  {
+    _response_received = true;
+  }
+
+  /** Mark this stream as known-not-processed by the origin.
+   *
+   *  Called by Http2ConnectionState when the origin has explicitly indicated
+   *  that this stream's request was not (and will not be) processed -- either
+   *  because a GOAWAY arrived whose @c last_stream_id is below this stream's
+   *  id, or because a RST_STREAM with REFUSED_STREAM was received for it (RFC
+   *  9113 sections 6.8 and 8.7). HttpSM consults @c is_safe_to_retry() when
+   *  deciding whether a non-idempotent request may be retried.
+   */
+  void set_safe_to_retry();
+
   bool        has_request_body(int64_t content_length, bool is_chunked_set) const override;
   HTTPVersion get_version(HTTPHdr &hdr) const override;
 
@@ -163,6 +181,7 @@ public:
 
   void             increment_data_length(uint64_t length);
   bool             payload_length_is_valid() const;
+  void             cache_send_request_for_response_validation();
   bool             is_write_vio_done() const;
   int64_t          write_vio_ntodo() const;
   void             update_sent_count(unsigned num_bytes);
@@ -263,6 +282,16 @@ private:
   /** Whether the stream has been registered with the connection state. */
   bool _registered_stream = true;
 
+  // Set by Http2ConnectionState when the origin has explicitly indicated
+  // (via GOAWAY whose last_stream_id is below this stream's id, or via
+  // RST_STREAM with REFUSED_STREAM) that this stream's request was not
+  // processed and may be safely retried even for non-idempotent methods.
+  // See Http2Stream::is_safe_to_retry / set_safe_to_retry.
+  bool _safe_to_retry = false;
+
+  // Any response HEADERS contradict a subsequent not-processed assertion.
+  bool _response_received = false;
+
   // A brief discussion of similar flags and state variables:  _state, closed, terminate_stream
   //
   // _state tracks the HTTP2 state of the stream.  This field completely coincides with the H2 spec.
@@ -288,6 +317,11 @@ private:
 
   uint64_t data_length = 0;
   uint64_t bytes_sent  = 0;
+
+  // Conditional fields must survive _send_header.destroy(). The request
+  // method is also captured for requests whose headers require CONTINUATION;
+  // the single-HEADERS send path alone does not cover those requests.
+  uint64_t _cached_send_conditional_field = 0;
 
   ssize_t _peer_rwnd  = 0;
   ssize_t _local_rwnd = 0;
@@ -413,18 +447,50 @@ Http2Stream::increment_data_length(uint64_t length)
   data_length += length;
 }
 
+inline void
+Http2Stream::cache_send_request_for_response_validation()
+{
+  // On outbound streams `_send_header` is destroyed in `update_write_request`
+  // immediately after the request HEADERS frame is encoded and sent. Capture
+  // the request method and the presence of any conditional request headers
+  // here so that the response-side `payload_length_is_valid` check can still
+  // honor the [RFC 9110] 8.6 payload preclusion rules for HEAD responses and
+  // for 304 responses to conditional GETs.
+  if (!this->is_outbound_connection() || !_send_header.valid() || _send_header.type_get() != HTTPType::REQUEST) {
+    return;
+  }
+  uint64_t const conditional_mask = (MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
+                                     MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
+  _sent_request_method            = _send_header.method_get_wksidx();
+  _cached_send_conditional_field  = _send_header.presence(conditional_mask);
+}
+
 inline bool
 Http2Stream::payload_length_is_valid() const
 {
-  uint32_t content_length = _receive_header.get_content_length();
-  uint64_t mask           = (MIME_PRESENCE_IF_UNMODIFIED_SINCE | MIME_PRESENCE_IF_MODIFIED_SINCE | MIME_PRESENCE_IF_RANGE |
-                   MIME_PRESENCE_IF_MATCH | MIME_PRESENCE_IF_NONE_MATCH);
+  uint32_t const content_length = _receive_header.get_content_length();
 
-  // Skip Content-Length check on [RFC 7230] 3.3.2 conditions
-  bool is_payload_precluded =
-    this->is_outbound_connection() &&
-    (_sent_request_method == HTTP_WKSIDX_HEAD || (_sent_request_method == HTTP_WKSIDX_GET && _send_header.presence(mask) &&
-                                                  _receive_header.status_get() == HTTPStatus::NOT_MODIFIED));
+  // Apply the [RFC 9110] 8.6 / [RFC 7230] 3.3.2 payload preclusion rules to
+  // origin responses on outbound streams. The send-side `_send_header` may
+  // already have been torn down by this point, so consult the cached
+  // request metadata captured by `cache_send_request_for_response_validation`.
+  bool is_payload_precluded = false;
+  if (this->is_outbound_connection()) {
+    if (_sent_request_method == HTTP_WKSIDX_HEAD) {
+      is_payload_precluded = true;
+    } else if (_sent_request_method == HTTP_WKSIDX_GET && _cached_send_conditional_field != 0) {
+      // `HTTPHdr::status_get()` asserts the underlying header has response
+      // polarity, but on the outbound origin-response path `_receive_header`
+      // is still in HTTP/2 form at this point and has not yet been converted,
+      // so the polarity may not be set. Read the `:status` pseudo-header
+      // directly to detect a 304 response to a conditional GET.
+      if (MIMEField const *const status_field = _receive_header.field_find(PSEUDO_HEADER_STATUS); status_field != nullptr) {
+        auto const       sv{status_field->value_get()};
+        HTTPStatus const status = http_parse_status(sv.data(), sv.data() + sv.length());
+        is_payload_precluded    = (status == HTTPStatus::NOT_MODIFIED);
+      }
+    }
+  }
 
   if (content_length != 0 && !is_payload_precluded && content_length != data_length) {
     Warning("Bad payload length content_length=%d data_legnth=%d session_id=%" PRId64, content_length,

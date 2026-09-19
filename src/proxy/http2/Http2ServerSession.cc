@@ -375,6 +375,27 @@ Http2ServerSession::remove_session()
   }
 }
 
+void
+Http2ServerSession::set_half_close_local_flag(bool flag)
+{
+  // Detect the OFF -> ON transition before delegating to the base, which
+  // is what flips the underlying flag.
+  bool const transitioning_to_half_close = !this->get_half_close_local_flag() && flag;
+  Http2CommonSession::set_half_close_local_flag(flag);
+  if (transitioning_to_half_close) {
+    // Once `half_close_local` is set, `create_initiating_stream` on this
+    // session short-circuits to REFUSED_STREAM. Any future
+    // `acquire_session` lookup that finds this session in the pool will
+    // therefore hand back a session that immediately fails the next
+    // origin request with `HTTP/2 stream error code=0x07 refused to
+    // create new stream, because session is in half_close state`. Evict
+    // it now so the next request opens (or matches) a healthy session
+    // instead. The session itself stays alive long enough for any
+    // already-attached transactions to drain.
+    this->remove_session();
+  }
+}
+
 bool
 Http2ServerSession::is_multiplexing() const
 {
