@@ -185,11 +185,11 @@ Parser::preprocess(std::vector<std::string> tokens)
               // This produces an error, but it's not fatal for load / reload. ToDo: ATS v11 fix.
               TSError("[%s] Duplicate modifier: %s", PLUGIN_NAME, t.c_str());
             } else {
-              _mods.push_back(t);
+              _mods.push_back(std::move(t));
             }
           }
         } else {
-          _mods.push_back(m);
+          _mods.push_back(std::move(m));
         }
         tokens.pop_back(); // consume it, so we don't concatenate it into the value
       } else {
@@ -228,7 +228,7 @@ Parser::preprocess(std::vector<std::string> tokens)
         _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
         // This is for the regular expression, which for some reason has its own handling?? ToDo: Why ?
-        _arg = tokens[1];
+        _arg = std::move(tokens[1]);
       } else {
         // This would be for hook conditions, which has no argument.
         _arg = "";
@@ -240,9 +240,9 @@ Parser::preprocess(std::vector<std::string> tokens)
     }
   } else {
     // Operator has no qualifiers, but could take an optional second argument
-    _op = tokens[0];
+    _op = std::move(tokens[0]);
     if (tokens.size() > 1) {
-      _arg = tokens[1];
+      _arg = std::move(tokens[1]);
 
       if (tokens.size() > 2) {
         for (auto it = tokens.begin() + 2; it != tokens.end(); it++) {
