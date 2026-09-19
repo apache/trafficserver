@@ -55,6 +55,8 @@ TSDECL(verify_server_properties);
 TSDECL(verify_origin_server);
 TSDECL(client_cert);
 TSDECL(client_key);
+TSDECL(client_rpk_enabled);
+TSDECL(server_rpk_ca);
 TSDECL(client_sni_policy);
 TSDECL(server_cipher_suite);
 TSDECL(server_TLSv1_3_cipher_suites);
@@ -105,6 +107,8 @@ struct YamlSNIConfig {
     Property            verify_server_properties = Property::UNSET;
     std::string         client_cert;
     std::string         client_key;
+    bool                client_rpk_enabled = false;
+    std::string         server_rpk_ca;
     std::string         client_sni_policy;
     std::string         server_cipher_suite;
     std::string         server_TLSv1_3_cipher_suites;
