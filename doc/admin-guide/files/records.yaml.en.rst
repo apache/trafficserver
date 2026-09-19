@@ -3191,10 +3191,17 @@ RAM Cache
    Value    Description
    ======== ===================================================================
    ``0``    No compression
-   ``1``    Fastlz (extremely fast, relatively low compression)
-   ``2``    Libz (moderate speed, reasonable compression)
+   ``1``    Fastlz (extremely fast, relatively low compression) - prefer lz4
+   ``2``    Libz (moderate speed, reasonable compression) - prefer zstd
    ``3``    Liblzma (very slow, high compression)
+   ``4``    lz4 (extremely fast, relatively low compression)
+   ``5``    zstd (fast speed, reasonable compression)
    ======== ===================================================================
+
+   ``3``, ``4`` and ``5`` require that |TS| was built with liblzma, lz4 or
+   libzstd respectively; configuring one that was not compiled in is a fatal
+   error at startup. ``traffic_layout info`` reports which are available as
+   ``TS_HAS_LZ4`` and ``TS_HAS_ZSTD``.
 
    Compression runs on task threads. To use more cores for RAM cache
    compression, increase :ts:cv:`proxy.config.task_threads`.

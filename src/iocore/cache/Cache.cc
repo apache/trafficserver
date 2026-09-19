@@ -866,6 +866,34 @@ ink_cache_init(ts::ModuleVersion v)
 
   RecEstablishStaticConfigInt32(cache_config_ram_cache_algorithm, "proxy.config.cache.ram_cache.algorithm");
   RecEstablishStaticConfigInt32(cache_config_ram_cache_compress, "proxy.config.cache.ram_cache.compress");
+  // Validate here, where the value is read: this runs before any stripe exists
+  // and the record is RECU_RESTART_TS, so a bad codec cannot reach the RAM
+  // cache and nothing downstream needs to re-check it.
+  switch (cache_config_ram_cache_compress) {
+  case CACHE_COMPRESSION_NONE:
+  case CACHE_COMPRESSION_FASTLZ:
+  case CACHE_COMPRESSION_LIBZ:
+    break;
+  case CACHE_COMPRESSION_LIBLZMA:
+#ifndef HAVE_LZMA_H
+    Fatal("proxy.config.cache.ram_cache.compress is %d (liblzma), but this build has no liblzma support",
+          cache_config_ram_cache_compress);
+#endif
+    break;
+  case CACHE_COMPRESSION_LZ4:
+#ifndef HAVE_LZ4_H
+    Fatal("proxy.config.cache.ram_cache.compress is %d (lz4), but this build has no lz4 support", cache_config_ram_cache_compress);
+#endif
+    break;
+  case CACHE_COMPRESSION_ZSTD:
+#ifndef HAVE_ZSTD_H
+    Fatal("proxy.config.cache.ram_cache.compress is %d (zstd), but this build has no zstd support",
+          cache_config_ram_cache_compress);
+#endif
+    break;
+  default:
+    Fatal("proxy.config.cache.ram_cache.compress has unknown value %d", cache_config_ram_cache_compress);
+  }
   RecEstablishStaticConfigInt32(cache_config_ram_cache_compress_percent, "proxy.config.cache.ram_cache.compress_percent");
   cache_config_ram_cache_use_seen_filter = RecGetRecordInt("proxy.config.cache.ram_cache.use_seen_filter").value_or(0);
 
