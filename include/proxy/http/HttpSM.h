@@ -50,6 +50,7 @@
 // inknet
 #include "proxy/http/PreWarmManager.h"
 #include "iocore/net/TLSTunnelSupport.h"
+#include "iocore/net/TcpInfoSnapshot.h"
 
 #include "tscore/History.h"
 #include "tscore/PendingAction.h"
@@ -531,8 +532,11 @@ public:
   //  do_api_callout_internal()
   bool                hooks_set = false;
   std::optional<bool> mptcp_state; // Don't initialize, that marks it as "not defined".
-  const char         *server_protocol       = "-";
-  int                 server_transact_count = 0;
+  /// TCP_INFO for the current origin response, sampled after successful header parsing.
+  /// Cleared when starting another origin attempt or reading another response header.
+  std::optional<TcpInfoSnapshot> server_tcp_info;
+  const char                    *server_protocol       = "-";
+  int                            server_transact_count = 0;
 
   TransactionMilestones milestones;
   ink_hrtime            api_timer = 0;

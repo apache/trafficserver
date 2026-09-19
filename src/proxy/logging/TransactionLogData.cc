@@ -916,6 +916,17 @@ TransactionLogData::get_mptcp_state() const
   return std::nullopt;
 }
 
+// ===== Origin connection TCP_INFO =====
+
+std::optional<TcpInfoSnapshot>
+TransactionLogData::get_server_tcp_info() const
+{
+  if (likely(m_http_sm != nullptr)) {
+    return m_http_sm->server_tcp_info;
+  }
+  return std::nullopt;
+}
+
 // ===== Misc transaction state =====
 
 in_port_t

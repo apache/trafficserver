@@ -25,6 +25,7 @@
 
 #include "iocore/net/NetVCOptions.h"
 #include "iocore/net/ProxyProtocol.h"
+#include "iocore/net/TcpInfoSnapshot.h"
 
 #include <cstdint>
 #include <string_view>
@@ -380,6 +381,21 @@ public:
 
   /** Set the MPTCP state for this connection */
   virtual void set_mptcp_state() = 0;
+
+  /** Read @c TCP_INFO from the underlying socket.
+   *
+   * @param[out] info Filled in only when this returns @c true.
+   * @return @c true if the kernel supplied the information.
+   *
+   * The default reports no information, which covers every connection that is
+   * not carried over TCP.  Call this while the connection is still open; the
+   * caller keeps the copy it needs.
+   */
+  virtual bool
+  get_tcp_info(TcpInfoSnapshot & /* info */) const
+  {
+    return false;
+  }
 
   // for InkAPI
   bool
