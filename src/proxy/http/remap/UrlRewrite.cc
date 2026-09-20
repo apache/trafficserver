@@ -22,6 +22,8 @@
 
  */
 
+#include "tscore/ink_ascii_tolower.h"
+
 #include "proxy/http/remap/UrlRewrite.h"
 #include "proxy/http/remap/RemapYamlConfig.h"
 #include "iocore/eventsystem/ConfigProcessor.h"
@@ -931,10 +933,7 @@ UrlRewrite::_mappingLookup(MappingsStore &mappings, URL *request_url, int reques
     return false;
   }
 
-  // lowercase
-  for (int i = 0; i < request_host_len; ++i) {
-    request_host_lower[i] = tolower(request_host[i]);
-  }
+  ts::ascii::tolower_copy(request_host_lower, request_host, request_host_len);
   request_host_lower[request_host_len] = 0;
 
   bool         retval       = false;

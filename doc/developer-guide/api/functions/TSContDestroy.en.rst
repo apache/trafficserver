@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSContDestroy(TSCont contp)
+.. function:: void TSContDestroy(TSCont contp) noexcept
 
 Description
 ===========

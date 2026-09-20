@@ -104,6 +104,48 @@ To add options to the parser or current command:
 
 This function call returns the new :class:`Option` instance. (0 is also number of arguments expected)
 
+.. Note::
+
+   For options, the number of arguments may also be one of the following, which mirror the
+   ``nargs`` values of Python's ``argparse``:
+
+   ================================ =======================================================
+   Value                            Meaning
+   ================================ =======================================================
+   ``AT_MOST_ONE_ARG_N``            Zero or one value (``argparse`` ``nargs='?'``)
+   ``MORE_THAN_ZERO_ARG_N``         Zero or more values (``argparse`` ``nargs='*'``)
+   ``MORE_THAN_ONE_ARG_N``          One or more values (``argparse`` ``nargs='+'``)
+   ================================ =======================================================
+
+   An option taking a variable number of values stops collecting when it reaches a token
+   naming another option of the same command, so options written afterwards keep their own
+   arguments. Use ``AT_MOST_ONE_ARG_N`` rather than ``MORE_THAN_ZERO_ARG_N`` for an option
+   whose value is optional, otherwise it also consumes the positional arguments of its
+   command.
+
+   A token naming another option is not a value for a fixed number of arguments either. An
+   option written where a value is expected leaves the value missing, which is reported as a
+   usage error rather than the option being consumed and applied as the value.
+
+   Because collection stops at the following option, an option taking an unbounded number of
+   values may be written more than once, and the occurrences accumulate. This matches the
+   ``--option=value`` form, which has always appended. An option taking a fixed number of
+   values keeps its last-one-wins behaviour instead, and ``AT_MOST_ONE_ARG_N`` reports a
+   repetition as a usage error since it permits only one value in total.
+
+   An empty token is not a value for ``AT_MOST_ONE_ARG_N``. It is reported as a missing
+   argument rather than read as the option having been given without one, so a value taken
+   from an unset variable cannot silently select the declared default.
+
+   A ``--`` token stops option recognition for the values being collected, which is how a
+   value beginning with ``-`` is passed. Note this differs from the POSIX ``--``: it does
+   not end the value list nor force the remainder to be positional arguments.
+
+   Option recognition stays off for the rest of that collection, so for a variable number of
+   values every remaining token becomes a value and no later option is recognized. Use the
+   ``--option=value`` form instead when options still have to follow a value that begins with
+   ``-``.
+
 We can also use the following chained way to add subcommand or option:
 
 .. code-block:: cpp

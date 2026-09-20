@@ -646,6 +646,39 @@ TEST_CASE("Regex recompilation behavior", "[libts][Regex][recompile]")
     CHECK(r.exec("valid") == true);
   }
 
+  SECTION("a failed recompile leaves the working pattern in place")
+  {
+    // compile() is a transaction. A pattern that fails to compile must not disturb the
+    // pattern already held, because the alternative is worse than either outcome: freeing
+    // the old pattern before knowing the new one compiles leaves a dangling pointer that
+    // empty() reports as compiled and exec() hands to pcre2_match.
+    Regex r;
+    REQUIRE(r.compile("foo") == true);
+
+    REQUIRE(r.compile("(invalid") == false);
+
+    CHECK(r.empty() == false);
+    CHECK(r.exec("foo") == true);
+    CHECK(r.exec("bar") == false);
+
+    // And the object is still usable for a later successful compile.
+    REQUIRE(r.compile("bar") == true);
+    CHECK(r.exec("bar") == true);
+  }
+
+  SECTION("a failed recompile leaves captures working")
+  {
+    Regex r;
+    REQUIRE(r.compile("^(a+)(b+)$") == true);
+
+    REQUIRE(r.compile("(unterminated") == false);
+
+    RegexMatches matches;
+    REQUIRE(r.exec("aaabb", matches) == 3);
+    CHECK(matches[1] == "aaa");
+    CHECK(matches[2] == "bb");
+  }
+
   SECTION("recompile with different flags")
   {
     Regex r;
@@ -1049,4 +1082,68 @@ TEST_CASE("Regex end-anchor with alternation", "[libts][Regex]")
   CHECK(r.exec("cdn.example.com.evil", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("cdn.example.com.evil.com", matches) == RE_ERROR_NOMATCH);
   CHECK(r.exec("prefix.cdn.example.com", matches) == RE_ERROR_NOMATCH);
+}
+
+// pcre2_code_copy() copies the compiled pattern but not the machine code the JIT produced
+// for it, because that code is position dependent. A copy that is not passed back through
+// pcre2_jit_compile() therefore matches on the interpreter: the same answers, far more
+// slowly, and under a different set of resource limits, so a subject one of them reports
+// as too expensive the other quietly matches.
+//
+// The subject below is sized past the JIT engine's stack bound for this pattern, which is
+// what makes the two engines disagree. The assertion is that a copy answers the same as
+// its original, whatever that answer is, so the test needs no knowledge of whether this
+// build has a JIT.
+TEST_CASE("Regex copies answer the same as their original", "[libts][Regex][copy]")
+{
+  Regex original;
+  REQUIRE(original.compile(R"(^/alpha/bravo/[?]((?!action=(newsfeed|calendar|contacts|notepad)).)*$)"));
+
+  std::string subject{"/alpha/bravo/?"};
+  subject.append(256 * 1024, 'x');
+
+  RegexMatches original_matches;
+  int const    original_rc = original.exec(subject, original_matches);
+  CAPTURE(original_rc);
+
+  SECTION("copy constructor")
+  {
+    Regex        copy(original);
+    RegexMatches matches;
+    int const    rc = copy.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("copy assignment")
+  {
+    Regex copy;
+    REQUIRE(copy.compile("unrelated"));
+    copy = original;
+
+    RegexMatches matches;
+    int const    rc = copy.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("a copy of a copy")
+  {
+    Regex        first(original);
+    Regex        second(first);
+    RegexMatches matches;
+    int const    rc = second.exec(subject, matches);
+    CAPTURE(rc);
+    CHECK(rc == original_rc);
+  }
+
+  SECTION("a copy still matches what the original matches")
+  {
+    Regex             copy(original);
+    std::string const ordinary{"/alpha/bravo/?action=weather"};
+
+    RegexMatches original_ordinary;
+    RegexMatches copy_ordinary;
+    CHECK(original.exec(ordinary, original_ordinary) == copy.exec(ordinary, copy_ordinary));
+  }
 }

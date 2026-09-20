@@ -273,7 +273,7 @@ public:
   ~LogFieldList();
 
   void      clear();
-  void      add(LogField *field, bool copy = true);
+  void      add(LogField *field);
   void      remove(LogField *field);
   LogField *find_by_name(const char *name) const;
   LogField *find_by_symbol(const char *symbol) const;

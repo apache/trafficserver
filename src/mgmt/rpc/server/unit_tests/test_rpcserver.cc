@@ -106,8 +106,10 @@ DbgCtl           dbg_ctl{"rpc.test.client"};
 bool
 try_setup_rpc_test_paths(fs::path const &base, std::string &error)
 {
-  auto const dir_template = (base / rpc_test_dir_template).string();
-  auto const socket_path  = (fs::path{dir_template} / rpc_test_socket_name).string();
+  fs::path const     template_path    = base / rpc_test_dir_template;
+  std::string const &dir_template     = template_path.string();
+  fs::path const     socket_file_path = template_path / rpc_test_socket_name;
+  std::string const &socket_path      = socket_file_path.string();
 
   if (socket_path.size() > max_rpc_socket_path_size) {
     error = "JSONRPC test socket path is too long under " + base.string() + ": " + socket_path;
@@ -185,12 +187,15 @@ struct RPCServerTestListener : Catch::EventListenerBase {
                  R"(",  "backlog": 5,"max_retry_on_transient_errors": 64, "incoming_request_max_size": 32000 }}})"};
     YAML::Node configNode = YAML::Load(confStr);
     serverConfig.load(configNode["rpc"]);
+    // Report this loudly: otherwise every socket test just fails later with a
+    // confusing "no such file" on the socket path, which is especially noisy
+    // now that each test case runs as its own process.
     try {
       jsonrpcServer = new rpc::RPCServer(serverConfig);
 
       jsonrpcServer->start_thread();
     } catch (std::exception const &ex) {
-      Dbg(dbg_ctl, "Oops: %s", ex.what());
+      std::fprintf(stderr, "Failed to start the JSONRPC test server on %s: %s\n", sockPath.c_str(), ex.what());
     }
   }
 

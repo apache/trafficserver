@@ -211,6 +211,13 @@ autest:
             args:
               - "rules/rule_empty_json_body.conf"
 
+      - from: "http://www.example.com/from_23/"
+        to: "http://backend.ex:{SERVER_HTTP_PORT}/to_23/"
+        plugins:
+          - name: "header_rewrite.so"
+            args:
+              - "rules/last_capture.conf"
+
     metric_checks:
       - metric: "proxy.process.plugin.header_rewrite.operators"
         min: 1
@@ -2413,3 +2420,84 @@ sessions:
       headers:
         fields:
         - [ Content-Type, { value: "text/html; charset=utf-8", as: equal } ]
+
+# Test 92: LAST-CAPTURE as a condition - capture is a member of the set.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_23/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Capture, "cap_foo_end" ]
+        - [ uuid, 92 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Capture-In-Set, { value: "foo", as: equal } ]
+        - [ X-Capture-No-Prior, { as: absent } ]
+        - [ X-Capture-Empty, { as: absent } ]
+
+# Test 93: LAST-CAPTURE as a condition - capture is not a member of the set.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_23/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-Capture, "cap_nope_end" ]
+        - [ uuid, 93 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Capture-In-Set, { as: absent } ]
+
+# Test 94: LAST-CAPTURE as a condition with no preceding regex match. The
+# condition has the implicit value of an empty string, which must evaluate
+# rather than crash on an unbuilt matcher.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /from_23/
+      headers:
+        fields:
+        - [ Host, www.example.com ]
+        - [ X-No-Capture, "yes" ]
+        - [ uuid, 94 ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Connection, close ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Capture-In-Set, { as: absent } ]
+        - [ X-Capture-No-Prior, { as: absent } ]
+        - [ X-Capture-Empty, { value: "yes", as: equal } ]

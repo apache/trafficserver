@@ -213,11 +213,11 @@ TEST_CASE("file::path::create_directories", "[libswoc][swoc_file]") {
   CHECK(ec.value() == EINVAL);
   CHECK_FALSE(file::create_directories(file::path(), ec));
 
-  file::path testdir1 = tempdir / "dir1";
+  file::path testdir1 = tempdir / "libswoc_mkdir_1";
   CHECK(file::create_directories(testdir1, ec));
   CHECK(file::exists(testdir1));
 
-  file::path testdir2 = testdir1 / "dir2";
+  file::path testdir2 = testdir1 / "libswoc_mkdir_2";
   CHECK(file::create_directories(testdir2, ec));
   CHECK(file::exists(testdir1));
 
@@ -233,8 +233,8 @@ TEST_CASE("ts_file::path::remove", "[libswoc][fs_file]") {
   CHECK_FALSE(file::remove(file::path(), ec));
   CHECK(ec.value() == EINVAL);
 
-  file::path testdir1 = tempdir / "dir1";
-  file::path testdir2 = testdir1 / "dir2";
+  file::path testdir1 = tempdir / "libswoc_rm_1";
+  file::path testdir2 = testdir1 / "libswoc_rm_2";
   file::path file1    = testdir2 / "alpha.txt";
   file::path file2    = testdir2 / "bravo.txt";
   file::path file3    = testdir2 / "charlie.txt";

@@ -195,6 +195,9 @@ ArgParser::parse(const char **argv)
     if (!default_command.empty()) {
       args = _argv;
       args.insert(args.begin() + 1, default_command);
+      // The pass that failed may have collected options before it gave up. Those values would
+      // now accumulate on top of the ones the retry collects rather than be replaced.
+      ret = Arguments{};
       _top_level_command.parse(ret, args);
     }
   };
@@ -418,6 +421,8 @@ ArgParser::Command::output_option() const
       return {" [<arg> ...]"};
     } else if (num == MORE_THAN_ONE_ARG_N) {
       return {" <arg> ..."};
+    } else if (num == AT_MOST_ONE_ARG_N) {
+      return {" [<arg>]"};
     } else {
       return " <arg1> ... <arg" + std::to_string(num) + ">";
     }
@@ -518,34 +523,113 @@ ArgParser::Command::output_option() const
   }
 }
 
+bool
+ArgParser::Command::is_registered_option(std::string const &token) const
+{
+  if (_option_list.find(token) != _option_list.end() || _option_map.find(token) != _option_map.end()) {
+    return true;
+  }
+  // The --option=value form.
+  if (token.size() > 2 && token[0] == '-' && token[1] == '-') {
+    if (auto const pos = token.find_first_of('='); pos != std::string::npos) {
+      return _option_list.find(token.substr(0, pos)) != _option_list.end();
+    }
+  }
+  return false;
+}
+
 // helper method to handle the arguments and put them nicely in arguments
 // can be switched to ts::errata
-static std::string
-handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index)
+std::string
+ArgParser::Command::handle_args(Arguments &ret, AP_StrVec &args, std::string const &name, unsigned arg_num, unsigned &index) const
 {
-  ArgumentData data;
-  ret.append(name, data);
+  // A repeated option taking an unbounded number of values accumulates, as the --option=value
+  // form always has, so an entry already written by this pass keeps the values it collected. A
+  // fixed arity option keeps its last-one-wins behaviour, which is a separate concern.
+  bool const accumulates = MORE_THAN_ZERO_ARG_N == arg_num || MORE_THAN_ONE_ARG_N == arg_num;
+
+  if (!accumulates || !ret.has(name)) {
+    ArgumentData data;
+    ret.append(name, data);
+  }
   // handle the args
-  if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
-    // infinite arguments
-    if (arg_num == MORE_THAN_ONE_ARG_N && args.size() <= index + 1) {
-      return "at least one argument expected by " + name;
+  if (arg_num == AT_MOST_ONE_ARG_N) {
+    // Zero or one value. A value is taken only when the following token does not name
+    // another option of this command, which leaves this command's positional arguments
+    // in place. A "--" token makes whatever follows it a value rather than an option.
+    unsigned j{index + 1};
+    bool     takes_value{false};
+
+    if (j < args.size()) {
+      if (args[j] == "--") {
+        ++j;
+        takes_value = j < args.size();
+      } else {
+        takes_value = !is_registered_option(args[j]);
+      }
     }
-    for (unsigned j = index + 1; j < args.size(); j++) {
+    if (takes_value) {
       ret.append_arg(name, args[j]);
+      ++j;
     }
-    args.erase(args.begin() + index, args.end());
+    args.erase(args.begin() + index, args.begin() + j);
+    index -= 1;
     return "";
   }
-  // finite number of argument handling
-  for (unsigned j = 0; j < arg_num; j++) {
-    if (args.size() < index + j + 2 || args[index + j + 1].empty()) {
+  if (arg_num == MORE_THAN_ZERO_ARG_N || arg_num == MORE_THAN_ONE_ARG_N) {
+    // Variable number of arguments. Stop collecting at a token that names another option of this
+    // command, so options written afterwards keep their own values. Every other token is taken as
+    // a value, including a positional argument of the command, which is why an option whose value
+    // is optional wants AT_MOST_ONE_ARG_N rather than MORE_THAN_ZERO_ARG_N. A "--" token ends
+    // option recognition, which is how a value that starts with '-' can be passed.
+    unsigned j{index + 1};
+    unsigned collected{0};
+    bool     recognize_options{true};
+
+    for (; j < args.size(); j++) {
+      if (recognize_options) {
+        if (args[j] == "--") {
+          recognize_options = false;
+          continue;
+        }
+        if (is_registered_option(args[j])) {
+          break;
+        }
+      }
+      ret.append_arg(name, args[j]);
+      ++collected;
+    }
+    if (arg_num == MORE_THAN_ONE_ARG_N && collected == 0) {
+      return "at least one argument expected by " + name;
+    }
+    args.erase(args.begin() + index, args.begin() + j);
+    index -= 1;
+    return "";
+  }
+  // Fixed number of arguments. A token naming another option of this command is not a value, so
+  // the missing value is reported rather than the following option being consumed as one. A "--"
+  // token ends option recognition, which is how a value that starts with '-' is passed.
+  unsigned j{index + 1};
+  bool     recognize_options{true};
+
+  for (unsigned collected{0}; collected < arg_num; ++j) {
+    if (j >= args.size() || args[j].empty()) {
       return std::to_string(arg_num) + " argument(s) expected by " + name;
     }
-    ret.append_arg(name, args[index + j + 1]);
+    if (recognize_options) {
+      if (args[j] == "--") {
+        recognize_options = false;
+        continue;
+      }
+      if (is_registered_option(args[j])) {
+        return std::to_string(arg_num) + " argument(s) expected by " + name;
+      }
+    }
+    ret.append_arg(name, args[j]);
+    ++collected;
   }
   // erase the used arguments and append the data to the return structure
-  args.erase(args.begin() + index, args.begin() + index + arg_num + 1);
+  args.erase(args.begin() + index, args.begin() + j);
   index -= 1;
   return "";
 }
@@ -658,7 +742,7 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
     if (args[i][0] == '-' && args[i][1] == '-' && args[i].find('=') != std::string::npos) {
       // deal with --args=
       std::string option_name = args[i].substr(0, args[i].find_first_of('='));
-      std::string value       = args[i].substr(args[i].find_last_of('=') + 1);
+      std::string value       = args[i].substr(args[i].find_first_of('=') + 1);
       if (value.empty()) {
         help_message("missing argument for '" + option_name + "'");
       }
@@ -705,6 +789,16 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
         } else {
           cur_option = _option_list.at(short_it->second);
         }
+        // Counted for the same repetition check as the --option=value form, so that an option
+        // taking at most one value cannot be given more by mixing the two spellings.
+        if (cur_option.arg_num == AT_MOST_ONE_ARG_N) {
+          check_map[cur_option.long_option] += 1;
+          // An empty token is not a value, and the --option=value spelling already refuses one,
+          // so refuse it here rather than silently falling back to the declared default.
+          if (i + 1 < args.size() && args[i + 1].empty()) {
+            help_message("missing argument for '" + args[i] + "'");
+          }
+        }
         // handle the arguments
         std::string err = handle_args(ret, args, cur_option.key, cur_option.arg_num, i);
         if (!err.empty()) {
@@ -720,9 +814,15 @@ ArgParser::Command::append_option_data(Arguments &ret, AP_StrVec &args, int inde
   }
   // check for wrong number of arguments for --arg=...
   for (const auto &it : check_map) {
-    unsigned num = _option_list.at(it.first).arg_num;
-    if (num != it.second && num < MORE_THAN_ONE_ARG_N) {
-      help_message(std::to_string(_option_list.at(it.first).arg_num) + " arguments expected by " + it.first);
+    unsigned const num = _option_list.at(it.first).arg_num;
+    if (num == AT_MOST_ONE_ARG_N) {
+      // At most one, so a repeated option is as wrong as a repeated fixed arity one, which
+      // is_variable_arg_num() would otherwise wave through.
+      if (it.second > 1) {
+        help_message("at most one argument expected by " + it.first);
+      }
+    } else if (num != it.second && !is_variable_arg_num(num)) {
+      help_message(std::to_string(num) + " arguments expected by " + it.first);
     }
   }
 }
@@ -839,6 +939,12 @@ Arguments::get(std::string const &name)
     return _data_map[name];
   }
   return ArgumentData();
+}
+
+bool
+Arguments::has(std::string const &name) const noexcept
+{
+  return _data_map.find(name) != _data_map.end();
 }
 
 void

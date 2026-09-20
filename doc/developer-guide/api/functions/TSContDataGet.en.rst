@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void* TSContDataGet(TSCont contp)
+.. function:: void* TSContDataGet(TSCont contp) noexcept
 
 Description
 ===========

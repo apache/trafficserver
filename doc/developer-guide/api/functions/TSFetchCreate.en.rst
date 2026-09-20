@@ -39,7 +39,7 @@ Synopsis
 .. function:: void TSFetchWriteData(TSFetchSM, const void *, size_t)
 .. function:: ssize_t TSFetchReadData(TSFetchSM, void *, size_t)
 .. function:: void TSFetchLaunch(TSFetchSM)
-.. function:: void TSFetchDestroy(TSFetchSM)
+.. function:: void TSFetchDestroy(TSFetchSM) noexcept
 .. function:: void TSFetchUserDataSet(TSFetchSM, void *)
 .. function:: void* TSFetchUserDataGet(TSFetchSM)
 .. function:: TSMBuffer TSFetchRespHdrMBufGet(TSFetchSM)

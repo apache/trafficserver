@@ -51,7 +51,7 @@ TSIOBufferBlockReadStart(TSIOBufferBlock /* blockp ATS_UNUSED */, TSIOBufferRead
 }
 
 void
-TSIOBufferReaderConsume(TSIOBufferReader /* readerp ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */)
+TSIOBufferReaderConsume(TSIOBufferReader /* readerp ATS_UNUSED */, int64_t /* nbytes ATS_UNUSED */) noexcept
 {
 }
 

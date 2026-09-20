@@ -41,7 +41,7 @@ DbgCtl::print(const char *tag, char const * /* file */, char const * /* function
 }
 
 void
-TSError(const char *fmt, ...)
+TSError(const char *fmt, ...) noexcept
 {
   va_list args;
 

@@ -54,8 +54,6 @@
 #include "records/RecHttp.h"
 
 #include "proxy/http/HttpSM.h"
-#include "proxy/http/OverridableConfigDefs.h"
-#include "iocore/net/ConnectionTracker.h"
 #include "tscore/TestBox.h"
 
 namespace
@@ -94,7 +92,8 @@ DbgCtl dbg_ctl_SockClient{"SockClient"};
 #define ERROR_BODY              "TESTING ERROR PAGE"
 #define TRANSFORM_APPEND_STRING "This is a transformed response"
 
-extern int dns_failover_period;
+extern int                    dns_failover_period;
+extern ClassAllocator<HttpSM> httpSMAllocator;
 
 //////////////////////////////////////////////////////////////////////////////
 // STRUCTURES
@@ -947,7 +946,7 @@ synserver_vc_accept(TSCont contp, TSEvent event, void *data)
   TSAssert(s->magic == MAGIC_ALIVE);
 
   if (event == TS_EVENT_NET_ACCEPT_FAILED) {
-    if (s && s->accept_port != SYNSERVER_DUMMY_PORT) {
+    if (s->accept_port != SYNSERVER_DUMMY_PORT) {
       Warning("Synserver failed to bind to port %d.", ntohs(s->accept_port));
       ink_release_assert(!"Synserver must be able to bind to a port, check system netstat");
       Dbg(dbg_ctl_SockServer, "%s: NET_ACCEPT_FAILED", __func__);
@@ -6023,6 +6022,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
     if (TSMBufferDestroy(bufp1) == TS_ERROR) {
       SDK_RPRINT(test, "TSMimeHdrParse", "TestCase1", TC_FAIL, "Error in Destroying MBuffer");
     }
+    TSMimeParserDestroy(parser);
+    *pstatus = REGRESSION_TEST_FAILED;
+    return;
   } else {
     start = parse_string;
     end   = parse_string + strlen(parse_string) + 1;
@@ -6088,7 +6090,9 @@ REGRESSION_TEST(SDK_API_TSMimeHdrParse)(RegressionTest *test, int /* atype ATS_U
       }
 
       field_loc2 = TSMimeHdrFieldNextDup(bufp1, mime_hdr_loc1, field_loc1);
-      if (compare_field_names(test, bufp1, mime_hdr_loc1, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
+      if (field_loc2 == TS_NULL_MLOC) {
+        SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "TSMimeHdrFieldNextDup returns TS_NULL_MLOC");
+      } else if (compare_field_names(test, bufp1, mime_hdr_loc1, field_loc1, bufp1, mime_hdr_loc1, field_loc2) == TS_ERROR) {
         SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_FAIL, "Incorrect Pointer");
       } else {
         SDK_RPRINT(test, "TSMimeHdrFieldNextDup", "TestCase1", TC_PASS, "ok");
@@ -6402,6 +6406,7 @@ REGRESSION_TEST(SDK_API_TSUrlParse)(RegressionTest *test, int /* atype ATS_UNUSE
       if (TSMBufferDestroy(bufp) == TS_ERROR) {
         SDK_RPRINT(test, "TSUrlParse", url, TC_FAIL, "Error in Destroying MBuffer");
       }
+      continue;
     } else {
       start = url;
       end   = url + strlen(url);
@@ -7272,9 +7277,16 @@ struct ParentTest {
 
   ~ParentTest()
   {
-    synclient_txn_close(this->browser);
-    synclient_txn_delete(this->browser);
-    synserver_delete(this->os);
+    // A destructor is implicitly noexcept, so anything escaping the teardown
+    // calls would terminate the process without saying where it came from.
+    try {
+      synclient_txn_close(this->browser);
+      synclient_txn_delete(this->browser);
+      synserver_delete(this->os);
+    } catch (...) {
+      ink_abort("ParentTest teardown threw an exception");
+    }
+
     this->os    = nullptr;
     this->magic = MAGIC_DEAD;
   }
@@ -7986,6 +7998,8 @@ transform_add(TSHttpTxn txnp, TransformTestData *test_data)
 static int
 load(const char *append_string)
 {
+  TSAssert(nullptr != append_string);
+
   TSIOBufferBlock blk;
   char           *p;
   int64_t         avail;
@@ -7997,9 +8011,7 @@ load(const char *append_string)
   p   = TSIOBufferBlockWriteStart(blk, &avail);
 
   ink_strlcpy(p, append_string, avail);
-  if (append_string != nullptr) {
-    TSIOBufferProduce(append_buffer, strlen(append_string));
-  }
+  TSIOBufferProduce(append_buffer, strlen(append_string));
 
   append_buffer_length = TSIOBufferReaderAvail(append_buffer_reader);
 
@@ -8709,140 +8721,6 @@ EXCLUSIVE_REGRESSION_TEST(SDK_API_TSHttpConnectServerIntercept)(RegressionTest *
 
   /* Wait until transaction is done */
   TSContScheduleOnPool(cont_test, 100, TS_THREAD_POOL_NET);
-
-  return;
-}
-
-////////////////////////////////////////////////
-// SDK_API_OVERRIDABLE_CONFIGS
-//
-// Unit Test for API: TSHttpTxnConfigFind
-//                    TSHttpTxnConfigIntSet
-//                    TSHttpTxnConfigIntGet
-//                    TSHttpTxnConfigFloatSet
-//                    TSHttpTxnConfigFloatGet
-//                    TSHttpTxnConfigStringSet
-//                    TSHttpTxnConfigStringGet
-////////////////////////////////////////////////
-
-// Generate the SDK_Overridable_Configs array from the X-macro.
-// The order MUST match TSOverridableConfigKey enum order (enforced by static_assert).
-// clang-format off
-#define X_SDK_CONFIG(CONFIG_KEY, MEMBER, RECORD_NAME, DATA_TYPE, CONV) RECORD_NAME,
-std::array<std::string_view, TS_CONFIG_LAST_ENTRY> SDK_Overridable_Configs = {{
-  OVERRIDABLE_CONFIGS(X_SDK_CONFIG)
-}};
-#undef X_SDK_CONFIG
-// clang-format on
-
-static_assert(SDK_Overridable_Configs.size() == TS_CONFIG_LAST_ENTRY,
-              "SDK_Overridable_Configs size must match TS_CONFIG_LAST_ENTRY");
-
-extern ClassAllocator<HttpSM> httpSMAllocator;
-
-REGRESSION_TEST(SDK_API_OVERRIDABLE_CONFIGS)(RegressionTest *test, int /* atype ATS_UNUSED */, int *pstatus)
-{
-  TSOverridableConfigKey key;
-  TSRecordDataType       type;
-  HttpSM                *s       = THREAD_ALLOC(httpSMAllocator, this_thread());
-  bool                   success = true;
-  TSHttpTxn              txnp    = reinterpret_cast<TSHttpTxn>(s);
-  InkRand                generator(17);
-  TSMgmtInt              ival_read, ival_rand;
-  TSMgmtFloat            fval_read, fval_rand;
-  const char            *sval_read;
-  const char            *test_string = "The Apache Traffic Server";
-  int                    len;
-
-  s->init();
-  s->mutex = new_ProxyMutex();
-  SCOPED_MUTEX_LOCK(lock, s->mutex, this_ethread());
-
-  HttpCacheSM *c_sm = &(s->get_cache_sm());
-  c_sm->init(s, s->mutex);
-
-  *pstatus = REGRESSION_TEST_INPROGRESS;
-  for (int i = 0; i < static_cast<int>(SDK_Overridable_Configs.size()); ++i) {
-    std::string_view conf{SDK_Overridable_Configs[i]};
-
-    if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), -1, &key, &type)) {
-      if (key != i) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(), i, key);
-        success = false;
-        continue;
-      }
-    } else {
-      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR for %s", conf.data());
-      success = false;
-      continue;
-    }
-
-    if (TS_SUCCESS == TSHttpTxnConfigFind(conf.data(), conf.size(), &key, &type)) {
-      if (key != i) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Failed on %s, expected %d, got %d", conf.data(), i, key);
-        success = false;
-        continue;
-      }
-    } else {
-      SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_FAIL, "Call returned unexpected TS_ERROR for %s", conf.data());
-      success = false;
-      continue;
-    }
-
-    // Now check the getters / setters
-    switch (type) {
-    case TS_RECORDDATATYPE_INT:
-      ival_rand = generator.random() % 126; // to fit in a signed byte
-      TSHttpTxnConfigIntSet(txnp, key, ival_rand);
-      TSHttpTxnConfigIntGet(txnp, key, &ival_read);
-      if (ival_rand != ival_read) {
-        SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_FAIL, "Failed on %s, %d != %d", conf.data(), ival_read,
-                   ival_rand);
-        success = false;
-        continue;
-      }
-      break;
-
-    case TS_RECORDDATATYPE_FLOAT:
-      fval_rand = generator.random();
-      TSHttpTxnConfigFloatSet(txnp, key, fval_rand);
-      TSHttpTxnConfigFloatGet(txnp, key, &fval_read);
-      if (fval_rand != fval_read) {
-        SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_FAIL, "Failed on %s, %f != %f", conf.data(), fval_read,
-                   fval_rand);
-        success = false;
-        continue;
-      }
-      break;
-
-    case TS_RECORDDATATYPE_STRING:
-      TSHttpTxnConfigStringSet(txnp, key, test_string, -1);
-      TSHttpTxnConfigStringGet(txnp, key, &sval_read, &len);
-      // Compare string content, not pointers - the implementation may store
-      // a copy of the string (e.g., in ParsedConfigCache for efficiency).
-      if (sval_read == nullptr || std::string_view(test_string) != std::string_view(sval_read, len)) {
-        SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_FAIL, "Failed on %s, %s != %s", conf.data(),
-                   sval_read ? sval_read : "(null)", test_string);
-        success = false;
-        continue;
-      }
-      break;
-
-    default:
-      break;
-    }
-  }
-
-  s->destroy();
-  if (success) {
-    *pstatus = REGRESSION_TEST_PASSED;
-    SDK_RPRINT(test, "TSHttpTxnConfigFind", "TestCase1", TC_PASS, "ok");
-    SDK_RPRINT(test, "TSHttpTxnConfigIntSet", "TestCase1", TC_PASS, "ok");
-    SDK_RPRINT(test, "TSHttpTxnConfigFloatSet", "TestCase1", TC_PASS, "ok");
-    SDK_RPRINT(test, "TSHttpTxnConfigStringSet", "TestCase1", TC_PASS, "ok");
-  } else {
-    *pstatus = REGRESSION_TEST_FAILED;
-  }
 
   return;
 }

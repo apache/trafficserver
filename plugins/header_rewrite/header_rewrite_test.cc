@@ -43,7 +43,7 @@ const char PLUGIN_NAME_DBG[] = "TEST_dbg_header_rewrite";
 } // namespace header_rewrite_ns
 
 void
-TSError(const char *fmt, ...)
+TSError(const char *fmt, ...) noexcept
 {
   va_list args;
 
@@ -553,6 +553,24 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens()[1], "%{IP:SERVER}");
     CHECK_EQ(p.get_tokens()[2], ":");
     CHECK_EQ(p.get_tokens()[3], "%{INBOUND:LOCAL-PORT}");
+
+    END_TEST();
+  }
+
+  {
+    SimpleTokenizerTest p("{a}%{PATH}");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "{a}");
+    CHECK_EQ(p.get_tokens()[1], "%{PATH}");
+
+    END_TEST();
+  }
+
+  {
+    SimpleTokenizerTest p("<a>%{PATH}");
+    CHECK_EQ(p.get_tokens().size(), 2UL);
+    CHECK_EQ(p.get_tokens()[0], "<a>");
+    CHECK_EQ(p.get_tokens()[1], "%{PATH}");
 
     END_TEST();
   }

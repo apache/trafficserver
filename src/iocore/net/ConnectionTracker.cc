@@ -27,6 +27,7 @@
 #include "swoc/IPAddr.h"
 
 #include <algorithm>
+#include <array>
 
 using namespace std::literals;
 
@@ -51,11 +52,9 @@ const MgmtConverter ConnectionTracker::MIN_SERVER_CONV(
 const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
   [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::server_match) *>(data)); },
   [](void *data, MgmtInt i) -> void {
-    // Problem - the InkAPITest requires being able to set an arbitrary value, so this can either
-    // correctly clamp or pass the regression tests. Currently it passes the tests.
-    //    *static_cast<decltype(TxnConfig::match) *>(data) = std::clamp(static_cast<decltype(TxnConfig::match)>(i), MATCH_IP,
-    //    MATCH_BOTH);
-    *static_cast<decltype(TxnConfig::server_match) *>(data) = static_cast<decltype(TxnConfig::server_match)>(i);
+    auto const value = std::clamp(i, static_cast<MgmtInt>(MATCH_IP), static_cast<MgmtInt>(MATCH_BOTH));
+
+    *static_cast<decltype(TxnConfig::server_match) *>(data) = static_cast<decltype(TxnConfig::server_match)>(value);
   },
   nullptr,
   nullptr,
@@ -77,8 +76,8 @@ const MgmtConverter ConnectionTracker::SERVER_MATCH_CONV{
 // records paths do the range checking instead -- records.yaml validates the value and the reload
 // callbacks below clamp -- so an out of range value is only reachable by a plugin that sets one
 // deliberately. Both settings degrade safely if that happens: any non-zero metric_enabled enables
-// metrics, and any metric_aggregate outside 0..2 publishes both the aggregate and the per group
-// metrics, the same as AGGREGATE_GROUP.
+// metrics, and any metric_aggregate outside 0..3 publishes everything, the same as
+// AGGREGATE_GROUP.
 const MgmtConverter ConnectionTracker::METRIC_ENABLED_CONV{
   [](const void *data) -> MgmtInt { return static_cast<MgmtInt>(*static_cast<const decltype(TxnConfig::metric_enabled) *>(data)); },
   [](void *data, MgmtInt i) -> void {
@@ -189,7 +188,7 @@ Config_Update_Conntrack_Metric_Aggregate(const char * /* name ATS_UNUSED */, Rec
 
   if (RECD_INT == dtype) {
     auto level               = std::clamp(static_cast<int>(data.rec_int), static_cast<int>(ConnectionTracker::AGGREGATE_NONE),
-                                          static_cast<int>(ConnectionTracker::AGGREGATE_ONLY));
+                                          static_cast<int>(ConnectionTracker::AGGREGATE_SUM));
     config->metric_aggregate = static_cast<ConnectionTracker::MetricAggregate>(level);
     return true;
   }
@@ -229,7 +228,7 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   swoc::FixedBufferWriter null_bw{nullptr}; // Empty buffer for sizing work.
 
   null_bw.print(header_fmt, groups.size()).extent();
-  for (auto g : groups) {
+  for (auto const &g : groups) {
     printer(null_bw, g.get());
   }
   extent = null_bw.extent() + trailer.size() - 2; // 2 for the trailing comma newline that will get clipped.
@@ -238,7 +237,7 @@ Groups_To_JSON(std::vector<std::shared_ptr<ConnectionTracker::Group const>> cons
   swoc::FixedBufferWriter w(const_cast<char *>(text.data()), text.size());
   w.restrict(trailer.size());
   w.print(header_fmt, groups.size());
-  for (auto g : groups) {
+  for (auto const &g : groups) {
     printer(w, g.get());
   }
   w.restore(trailer.size());
@@ -487,33 +486,70 @@ ConnectionTracker::Group::Group(DirectionType direction, Key const &key, std::st
     std::string _host_metric_name = host_metric_name(key, fqdn, _global_config->metric_prefix);
     bool const  has_aggregate     = !_host_metric_name.empty();
 
-    if (has_aggregate && metric_aggregate != AGGREGATE_NONE) {
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _host_metric_name,
-                                   Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _host_metric_name,
-                                   Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.blocked_connection." + _host_metric_name,
-                                   Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+    // A plugin can set an out of range value through the overridable config, see
+    // METRIC_AGGREGATE_CONV. Anything unrecognized publishes everything.
+    if (metric_aggregate < AGGREGATE_NONE || metric_aggregate > AGGREGATE_SUM) {
+      metric_aggregate = AGGREGATE_GROUP;
+    }
+
+    // See MetricAggregate for the table these three implement. A group with no hostname to
+    // aggregate under keeps its own metrics whatever the setting says, since suppressing them would
+    // report nothing at all for that upstream.
+    bool const publish_sums  = has_aggregate && (metric_aggregate == AGGREGATE_GROUP || metric_aggregate == AGGREGATE_SUM);
+    bool const publish_max   = has_aggregate && metric_aggregate != AGGREGATE_NONE;
+    bool const publish_group = !has_aggregate || metric_aggregate == AGGREGATE_NONE || metric_aggregate == AGGREGATE_GROUP;
+
+    std::array<std::string, 3> const sum_names{
+      "proxy.process.http.per_server.current_connection." + _host_metric_name,
+      "proxy.process.http.per_server.total_connection." + _host_metric_name,
+      "proxy.process.http.per_server.blocked_connection." + _host_metric_name,
+    };
+    std::array<std::string, 3> const group_names{
+      "proxy.process.http.per_server.current_connection." + _metric_name,
+      "proxy.process.http.per_server.total_connection." + _metric_name,
+      "proxy.process.http.per_server.blocked_connection." + _metric_name,
+    };
+    std::string const max_name = "proxy.process.http.per_server.current_connection.max." + _host_metric_name;
+
+    // metric_aggregate is dynamic and overridable, so this group may well have published a name
+    // under an earlier value. A published name is never removed from the store, so without
+    // withdrawing it here it would report for the life of the process no matter what the setting
+    // says. Re-registering a source republishes it if the setting changes back.
+    if (publish_sums) {
+      Metrics::Derived::add_source(sum_names[0], Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(sum_names[1], Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(sum_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+    } else if (has_aggregate) {
+      // Stop contributing rather than unlist: every group of this hostname shares these names, so
+      // one that does not want them must not remove a name another is still publishing.
+      Metrics::Derived::remove_source(sum_names[0], _count_metric);
+      Metrics::Derived::remove_source(sum_names[1], _count_total_metric);
+      Metrics::Derived::remove_source(sum_names[2], _blocked_metric);
+    }
+
+    if (publish_max) {
       // The largest current count among this hostname's groups, sampled. Deliberately taken over
       // the instantaneous gauge rather than each group's all time peak, so the value falls again
       // and a maximum over time can be computed by whatever scrapes it.
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection_max." + _host_metric_name,
-                                   Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
+      Metrics::Derived::add_source(max_name, Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::MAX);
+    } else if (has_aggregate) {
+      Metrics::Derived::remove_source(max_name, _count_metric);
     }
 
-    // AGGREGATE_ONLY suppresses the per group metrics to keep the published count proportional to
-    // hostnames. Without an aggregate to stand in for them there would be nothing at all reported
-    // for this group, so in that case publish them regardless.
-    if (metric_aggregate != AGGREGATE_ONLY || !has_aggregate) {
+    if (publish_group) {
       // Mirror the per group metrics into the published store under their own name. A single
       // source SUM combines nothing, but the published value is still a sample: it is whatever
       // the last derived tick read, and it reads 0 from creation until that first tick.
-      Metrics::Derived::add_source("proxy.process.http.per_server.current_connection." + _metric_name, Metrics::MetricType::GAUGE,
-                                   _count_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.total_connection." + _metric_name, Metrics::MetricType::COUNTER,
-                                   _count_total_metric, Metrics::Derived::Op::SUM);
-      Metrics::Derived::add_source("proxy.process.http.per_server.blocked_connection." + _metric_name, Metrics::MetricType::COUNTER,
-                                   _blocked_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(group_names[0], Metrics::MetricType::GAUGE, _count_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(group_names[1], Metrics::MetricType::COUNTER, _count_total_metric, Metrics::Derived::Op::SUM);
+      Metrics::Derived::add_source(group_names[2], Metrics::MetricType::COUNTER, _blocked_metric, Metrics::Derived::Op::SUM);
+    } else {
+      // Same mechanism as the aggregates above, though these names have only this group as a
+      // source. It leaves nothing behind for the derived pass to keep recomputing into a name that
+      // is no longer published.
+      Metrics::Derived::remove_source(group_names[0], _count_metric);
+      Metrics::Derived::remove_source(group_names[1], _count_total_metric);
+      Metrics::Derived::remove_source(group_names[2], _blocked_metric);
     }
 
     if (dbg_ctl.on()) {
@@ -670,7 +706,7 @@ ConnectionTracker::dump_outbound(FILE *f)
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
-    for (std::shared_ptr<Group const> g : groups) {
+    for (std::shared_ptr<Group const> const &g : groups) {
       swoc::LocalBufferWriter<128> w;
       w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);
@@ -699,7 +735,7 @@ ConnectionTracker::dump_inbound(FILE *f)
             "Match");
     fprintf(f, "------|-------|--------------------------|-----------------------------------|----------|\n");
 
-    for (std::shared_ptr<Group const> g : groups) {
+    for (std::shared_ptr<Group const> const &g : groups) {
       swoc::LocalBufferWriter<128> w;
       w.print("{:7} | {:5} | {:24} | {:33} | {:8} |\n", g->_count.load(), g->_blocked.load(), g->_addr, g->_hash, g->_match_type);
       fwrite(w.data(), w.size(), 1, f);

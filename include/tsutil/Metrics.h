@@ -30,12 +30,12 @@
 #include <mutex>
 #include <atomic>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <variant>
 #include <optional>
-
-#include "swoc/MemSpan.h"
 
 #include "tsutil/Assert.h"
 
@@ -85,8 +85,7 @@ public:
 
   enum class MetricType : int { COUNTER = 0, GAUGE };
 
-  using IdType   = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
-  using SpanType = swoc::MemSpan<AtomicType>;
+  using IdType = int32_t; // Could be a tuple, but one way or another, they have to be combined to an int32_t.
 
   static constexpr uint16_t MAX_BLOBS        = 8192;
   static constexpr uint16_t MAX_SIZE         = 1024;                               // For a total of 8M metrics
@@ -95,13 +94,24 @@ public:
   static constexpr int      METRIC_TYPE_BITS = 29;
   static constexpr int      METRIC_TYPE_MASK = 0x1FFF;
 
+  /// The reserved slot 0 of every store, returned when an id cannot be produced. Present under this
+  /// name in both stores, so a consumer querying both has to expect it twice.
+  static constexpr std::string_view BAD_ID_NAME{"proxy.process.api.metrics.bad_id"};
+
 private:
-  using NameAndId       = std::tuple<std::string, IdType>;
-  using LookupTable     = std::unordered_map<std::string_view, IdType>;
-  using NameStorage     = std::array<NameAndId, MAX_SIZE>;
-  using AtomicStorage   = std::array<AtomicType, MAX_SIZE>;
-  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage>;
+  using NameAndId     = std::tuple<std::string, IdType>;
+  using LookupTable   = std::unordered_map<std::string_view, IdType>;
+  using NameStorage   = std::array<NameAndId, MAX_SIZE>;
+  using AtomicStorage = std::array<AtomicType, MAX_SIZE>;
+  /// Per slot flag bits, see @c UNLISTED. A parallel array rather than a member of @c NameAndId
+  /// because an atomic member would make that tuple neither copyable nor movable, and the slot is
+  /// written there with a tuple assignment.
+  using FlagStorage     = std::array<std::atomic<uint8_t>, MAX_SIZE>;
+  using NamesAndAtomics = std::tuple<NameStorage, AtomicStorage, FlagStorage>;
   using BlobStorage     = std::array<std::unique_ptr<NamesAndAtomics>, MAX_BLOBS>;
+
+  /// The slot exists and is still resolvable by name or id, but is skipped by iteration.
+  static constexpr uint8_t UNLISTED = 0x01;
 
 public:
   Metrics(const self_type &)              = delete;
@@ -147,12 +157,57 @@ public:
   {
     return _storage->lookup(id, out_name, type);
   }
+
+  /** Take @a id out of the store's listing.
+   *
+   * An unlisted metric keeps its slot, its name and its atomic. It is skipped by iteration, so it
+   * vanishes from everything that enumerates the store, but it still resolves through @c lookup and
+   * its value may still be read and written -- an unlisted number that still rings. Creating the
+   * same name again relists it and returns the same id.
+   *
+   * @return @c false if @a id does not name an allocated slot.
+   */
   bool
-  rename(IdType id, const std::string_view name)
+  unlist(IdType id)
   {
-    return _storage->rename(id, name);
+    return _storage->set_listed(id, false);
   }
 
+  /// Put @a id back in the listing. @see unlist
+  bool
+  relist(IdType id)
+  {
+    return _storage->set_listed(id, true);
+  }
+
+  /** Whether @a id is enumerated.
+   *
+   * @return @c false for an unlisted metric, and also for an id that names no allocated slot --
+   *   neither appears in iteration.
+   */
+  bool
+  listed(IdType id) const
+  {
+    return _storage->listed(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see unlist
+  bool
+  unlist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && unlist(id);
+  }
+
+  /// Convenience for callers that publish by name and do not retain the id. @see relist
+  bool
+  relist(std::string_view name)
+  {
+    auto id = lookup(name);
+
+    return id != NOT_FOUND && relist(id);
+  }
   AtomicType &
   operator[](IdType id)
   {
@@ -199,89 +254,21 @@ public:
     return _storage->valid(id);
   }
 
-  // Static methods to encapsulate access to the atomic's
-  class iterator
+  /** Visit every listed metric.
+   *
+   * @a func is called as <tt>func(std::string_view name, MetricType type, int64_t value)</tt> for
+   * each listed metric, in creation order. Unlisted metrics are skipped, @see unlist.
+   *
+   * The set walked is fixed when the call begins: a metric created while it runs is not visited.
+   * Enumeration is deliberately the whole store and nothing less. There is no cursor to hold, so
+   * nothing can outlive the walk or name a slot the walk would not visit, and @a func may not
+   * create a metric, which would be an attempt to grow the store from inside a pass over it.
+   */
+  template <typename F>
+  void
+  for_each(F &&func) const
   {
-  public:
-    using iterator_category = std::input_iterator_tag;
-    using value_type        = std::tuple<std::string_view, MetricType, int64_t>;
-    using difference_type   = ptrdiff_t;
-    using pointer           = value_type *;
-    using reference         = value_type &;
-
-    iterator(const Metrics &m, IdType pos) : _metrics(m), _it(pos) {}
-
-    iterator &
-    operator++()
-    {
-      next();
-
-      return *this;
-    }
-
-    iterator
-    operator++(int)
-    {
-      iterator result = *this;
-
-      next();
-
-      return result;
-    }
-
-    value_type
-    operator*() const
-    {
-      std::string_view name;
-      MetricType       type;
-      auto             metric = _metrics.lookup(_it, &name, &type);
-
-      return std::make_tuple(name, type, metric->_value.load());
-    }
-
-    bool
-    operator==(const iterator &o) const
-    {
-      return _it == o._it && std::addressof(_metrics) == std::addressof(o._metrics);
-    }
-
-    bool
-    operator!=(const iterator &o) const
-    {
-      return _it != o._it || std::addressof(_metrics) != std::addressof(o._metrics);
-    }
-
-  private:
-    void next();
-
-    const Metrics  &_metrics;
-    Metrics::IdType _it;
-  };
-
-  iterator
-  begin() const
-  {
-    return iterator(*this, 0);
-  }
-
-  iterator
-  end() const
-  {
-    auto [blob, offset] = _storage->current();
-
-    return iterator(*this, _makeId(blob, offset, MetricType::COUNTER));
-  }
-
-  iterator
-  find(const std::string_view name) const
-  {
-    auto id = lookup(name);
-
-    if (id == NOT_FOUND) {
-      return end();
-    } else {
-      return iterator(*this, id);
-    }
+    _storage->for_each(std::forward<F>(func));
   }
 
 private:
@@ -290,12 +277,6 @@ private:
   _create(const std::string_view name, MetricType type)
   {
     return _storage->create(name, type);
-  }
-
-  SpanType
-  _createSpan(size_t size, MetricType type, IdType *id = nullptr)
-  {
-    return _storage->createSpan(size, type, id);
   }
 
   // These are little helpers around managing the ID's
@@ -308,7 +289,7 @@ private:
   static constexpr MetricType
   _extractType(IdType value)
   {
-    return MetricType{value >> METRIC_TYPE_BITS};
+    return MetricType{static_cast<int>((static_cast<uint32_t>(value) >> METRIC_TYPE_BITS) & 0x1)};
   }
 
   static constexpr IdType
@@ -318,13 +299,31 @@ private:
     return (t << METRIC_TYPE_BITS | blob << 16 | offset);
   }
 
+  /// As @c _makeId, without the type bits.
+  static constexpr uint32_t
+  _pack(uint16_t blob, uint16_t offset)
+  {
+    return static_cast<uint32_t>(blob) << 16 | offset;
+  }
+
+  // A packed position must not reach the type bits, and an offset must fit its field.
+  static_assert(MAX_SIZE <= 0x10000);
+  static_assert(MAX_BLOBS <= (1 << (METRIC_TYPE_BITS - 16)));
+
   class Storage
   {
-    BlobStorage        _blobs;
-    uint16_t           _cur_blob = 0;
-    uint16_t           _cur_off  = 0;
-    LookupTable        _lookups;
-    mutable std::mutex _mutex;
+    /* The next free slot, packed as @c _makeId packs one. A single value because a reader that
+     * caught a new offset against an old blob index, or the reverse, would reject ids that exist
+     * or accept ids that do not. Release stored last, after the blob pointer or the slot's name it
+     * publishes. Only ever increases, so an id is allocated exactly when it packs below it.
+     *
+     * A slot's name is written once, before the store that publishes it, and never changes, which
+     * is what lets @c name and @c lookup hand out a view of it without the mutex.
+     */
+    BlobStorage           _blobs;
+    std::atomic<uint32_t> _next_free{0};
+    LookupTable           _lookups;
+    mutable std::mutex    _mutex;
 
   public:
     Storage(const Storage &)            = delete;
@@ -335,7 +334,7 @@ private:
       _blobs[0] = std::make_unique<NamesAndAtomics>();
       release_assert(_blobs[0]);
       // Reserve slot 0 for errors, this should always be 0
-      release_assert(0 == create("proxy.process.api.metrics.bad_id", MetricType::COUNTER));
+      release_assert(0 == create(BAD_ID_NAME, MetricType::COUNTER));
     }
 
     ~Storage() {}
@@ -347,22 +346,83 @@ private:
     AtomicType      *lookup(Metrics::IdType id, std::string_view *out_name = nullptr, MetricType *out_type = nullptr) const;
     std::string_view name(IdType id) const;
     MetricType       type(IdType id) const;
-    SpanType         createSpan(size_t size, const MetricType type = MetricType::COUNTER, IdType *id = nullptr);
-    bool             rename(IdType id, const std::string_view name);
+    bool             set_listed(IdType id, bool listed);
+    bool             listed(IdType id) const;
 
-    std::pair<int16_t, int16_t>
-    current() const
+    /** Visit every listed slot, in creation order.
+     *
+     * @see Metrics::for_each, which is how callers reach this.
+     *
+     * The bound is read once, up front. Acquiring it acquires every slot below it, which is what
+     * lets the walk read names and values without the mutex: a slot's name is written before the
+     * release store that publishes it, and never changes.
+     */
+    template <typename F>
+    void
+    for_each(F &&func) const
     {
-      std::lock_guard lock(_mutex);
-      return {_cur_blob, _cur_off};
+      auto const [last_blob, last_off] = _splitID(next_free_id());
+
+      for (uint16_t blob = 0; blob <= last_blob; ++blob) {
+        NamesAndAtomics const *entries = _blobs[blob].get();
+
+        // The bound covers every blob below it, so this is belt and braces.
+        if (entries == nullptr) {
+          break;
+        }
+
+        uint16_t const limit = blob == last_blob ? last_off : MAX_SIZE;
+
+        for (uint16_t off = 0; off < limit; ++off) {
+          if ((std::get<2>(*entries)[off].load(MEMORY_ORDER) & UNLISTED) != 0) {
+            continue;
+          }
+
+          auto const &slot = std::get<0>(*entries)[off];
+
+          // The type comes from the slot's own id, not from the position, so it is the type the
+          // metric was created with.
+          func(std::string_view{std::get<0>(slot)}, _extractType(std::get<1>(slot)), std::get<1>(*entries)[off].load());
+        }
+      }
+    }
+
+    /// The id the next slot will get, which is also iteration's exclusive bound.
+    IdType
+    next_free_id() const
+    {
+      return static_cast<IdType>(_next_free.load(std::memory_order_acquire));
     }
 
     bool
     valid(IdType id) const
     {
-      auto [blob, entry] = _splitID(id);
+      return _is_allocated(id);
+    }
 
-      return (id >= 0 && ((blob < _cur_blob && entry < MAX_SIZE) || (blob == _cur_blob && entry <= _cur_off)));
+  private:
+    /** Whether @a id names an allocated slot.
+     *
+     * The gate for every id based accessor, since ids from the @c TSStat* API are untrusted. An id
+     * qualifies when it is non-negative, its offset is one @c _makeId could produce, and its slot
+     * has been handed out.
+     */
+    bool
+    _is_allocated(IdType id) const
+    {
+      if (id < 0) {
+        return false;
+      }
+
+      auto [blob_ix, offset] = _splitID(id);
+
+      // Not implied below: an earlier blob can name an offset past MAX_SIZE and still pack under.
+      if (offset >= MAX_SIZE) {
+        return false;
+      }
+
+      // Acquiring the bound acquires the blob install, so _blobs needs no check of its own.
+      return _pack(blob_ix, offset) < _next_free.load(std::memory_order_acquire);
     }
   };
 
@@ -376,7 +436,6 @@ public:
   {
   public:
     using self_type = Gauge;
-    using SpanType  = Metrics::SpanType;
 
     class AtomicType : public Metrics::AtomicType
     {
@@ -452,14 +511,6 @@ public:
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::GAUGE)));
     }
 
-    static Metrics::Gauge::SpanType
-    createSpan(size_t size, IdType *id = nullptr)
-    {
-      auto &instance = Metrics::instance();
-
-      return instance._createSpan(size, MetricType::GAUGE, id);
-    }
-
     static void
     increment(AtomicType *metric, uint64_t val = 1)
     {
@@ -494,7 +545,6 @@ public:
   {
   public:
     using self_type = Counter;
-    using SpanType  = Metrics::SpanType;
 
     class AtomicType : public Metrics::AtomicType
     {
@@ -568,14 +618,6 @@ public:
       std::string tmpname  = std::string(prefix) + std::string(name);
 
       return reinterpret_cast<AtomicType *>(instance.lookup(instance._create(tmpname, MetricType::COUNTER)));
-    }
-
-    static Metrics::Counter::SpanType
-    createSpan(size_t size, IdType *id = nullptr)
-    {
-      auto &instance = Metrics::instance();
-
-      return instance._createSpan(size, MetricType::COUNTER, id);
     }
 
     static void
@@ -676,6 +718,21 @@ public:
      * which may re-register (e.g. an object recreated for the same key) need not track this.
      */
     static void add_source(std::string_view derived_name, Metrics::MetricType type, Metrics::AtomicType *source, Op op = Op::SUM);
+
+    /** Stop @a source contributing to a derived metric.
+     *
+     * The counterpart to @c add_source, for a contributor that goes away or stops wanting the
+     * aggregate published. A derived metric is shared by its sources, so this does not unlist it
+     * while any remain; when the last one is removed there is nothing left to report and the name
+     * is unlisted. Re-adding a source relists it.
+     *
+     * A source that is not registered for @a derived_name, or a name with no derived metric, is a
+     * no-op.
+     *
+     * Safe against a concurrent @c add_source for the same name: the listing change is made with
+     * the membership change, so a metric cannot be left unlisted with a source still contributing.
+     */
+    static void remove_source(std::string_view derived_name, Metrics::AtomicType *source);
 
     /**
      * Update derived metrics.

@@ -28,7 +28,7 @@
 namespace ts
 {
 
-void do_abort(const SourceLocation &loc, const char *expr, const char *message = nullptr);
+[[noreturn]] void do_abort(const SourceLocation &loc, const char *expr, const char *message = nullptr) noexcept;
 
 }
 

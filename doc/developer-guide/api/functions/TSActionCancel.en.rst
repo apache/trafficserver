@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSActionCancel(TSAction actionp)
+.. function:: void TSActionCancel(TSAction actionp) noexcept
 
 Description
 ===========

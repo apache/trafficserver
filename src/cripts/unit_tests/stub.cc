@@ -28,7 +28,7 @@ TSWarning(const char * /* fmt */, ...)
 }
 
 void
-TSError(const char * /* fmt */, ...)
+TSError(const char * /* fmt */, ...) noexcept
 {
 }
 
@@ -39,12 +39,12 @@ TSContCreate(TSEventFunc, TSMutex)
 }
 
 void
-TSContDataSet(TSCont, void *)
+TSContDataSet(TSCont, void *) noexcept
 {
 }
 
 void *
-TSContDataGet(TSCont)
+TSContDataGet(TSCont) noexcept
 {
   return nullptr;
 }
@@ -62,12 +62,12 @@ TSContScheduleEveryOnPool(TSCont, TSHRTime, TSThreadPool)
 }
 
 void
-TSActionCancel(TSAction)
+TSActionCancel(TSAction) noexcept
 {
 }
 
 void
-TSContDestroy(TSCont)
+TSContDestroy(TSCont) noexcept
 {
 }
 

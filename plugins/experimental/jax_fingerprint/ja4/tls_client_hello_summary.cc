@@ -23,14 +23,18 @@
  */
 
 #include "ts/ts.h"
-#include <plugin.h>
 #include "ja4.h"
 
 #include "tls_client_hello_summary.h"
 
-#include <openssl/sha.h>
-#include <cstdint>
 #include <algorithm>
+#include <cstdint>
+#include <openssl/sha.h>
+
+namespace
+{
+DbgCtl dbg_ctl{"jax_fingerprint"};
+}
 
 TLSClientHelloSummary::TLSClientHelloSummary(ja4::Datasource::Protocol protocol, TSClientHello ch) : _ch(ch)
 {

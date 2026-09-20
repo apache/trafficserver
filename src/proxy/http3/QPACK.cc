@@ -25,6 +25,7 @@
 #include "proxy/hdrs/XPACK.h"
 #include "proxy/http3/QPACK.h"
 #include "tscore/ink_defs.h"
+#include "tscore/ink_ascii_tolower.h"
 #include "tscore/ink_memory.h"
 
 #define QPACKDebug(fmt, ...)   Dbg(dbg_ctl_qpack, "[%s] " fmt, this->_qc->cids().data(), ##__VA_ARGS__)
@@ -372,9 +373,7 @@ QPACK::_encode_header(const MIMEField &field, uint16_t base_index, IOBufferBlock
 {
   auto  name{field.name_get()};
   char *lowered_name = this->_arena.str_store(name.data(), name.length());
-  for (size_t i = 0; i < name.length(); i++) {
-    lowered_name[i] = ParseRules::ink_tolower(lowered_name[i]);
-  }
+  ts::ascii::tolower_inplace(lowered_name, name.length());
   auto value{field.value_get()};
 
   // TODO Set never_index flag on/off according to encoding headers
@@ -1017,18 +1016,24 @@ QPACK::_update_largest_known_received_index_by_insert_count(uint16_t insert_coun
 void
 QPACK::_update_largest_known_received_index_by_stream_id(uint64_t stream_id)
 {
-  uint16_t largest_ref_index = this->_references[stream_id].largest;
-  if (largest_ref_index > this->_largest_known_received_index) {
-    this->_largest_known_received_index = largest_ref_index;
+  auto it = this->_references.find(stream_id);
+  if (it == this->_references.end()) {
+    return;
+  }
+  if (it->second.largest > this->_largest_known_received_index) {
+    this->_largest_known_received_index = it->second.largest;
   }
 }
 
 void
 QPACK::_update_reference_counts(uint64_t stream_id)
 {
-  uint16_t smallest_ref_index = this->_references[stream_id].smallest;
-  if (smallest_ref_index) {
-    this->_dynamic_table.unref_entry(smallest_ref_index);
+  auto it = this->_references.find(stream_id);
+  if (it == this->_references.end()) {
+    return;
+  }
+  if (it->second.smallest) {
+    this->_dynamic_table.unref_entry(it->second.smallest);
   }
 }
 
@@ -1233,9 +1238,9 @@ const XpackLookupResult
 QPACK::StaticTable::lookup(const char *name, size_t name_len, const char *value, size_t value_len)
 {
   XpackLookupResult::MatchType match_type      = XpackLookupResult::MatchType::NONE;
-  uint16_t                     i               = 0;
-  uint16_t                     candidate_index = 0;
-  int                          n               = countof(STATIC_HEADER_FIELDS);
+  uint32_t                     i               = 0;
+  uint32_t                     candidate_index = 0;
+  unsigned int                 n               = countof(STATIC_HEADER_FIELDS);
 
   for (; i < n; ++i) {
     const Header &h = STATIC_HEADER_FIELDS[i];

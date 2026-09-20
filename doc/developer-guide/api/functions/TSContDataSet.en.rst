@@ -28,7 +28,7 @@ Synopsis
 
     #include <ts/ts.h>
 
-.. function:: void TSContDataSet(TSCont contp, void * data)
+.. function:: void TSContDataSet(TSCont contp, void * data) noexcept
 
 Description
 ===========

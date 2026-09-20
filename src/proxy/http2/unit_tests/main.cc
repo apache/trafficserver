@@ -34,6 +34,7 @@
 #include "iocore/utils/diags.i"
 
 #include "proxy/hdrs/HuffmanCodec.h"
+#include "proxy/http2/HTTP2.h"
 
 #define TEST_THREADS 1
 
@@ -53,6 +54,13 @@ struct EventProcessorListener : Catch::EventListenerBase {
 
     EThread *main_thread = new EThread;
     main_thread->set_specific();
+
+    // Every TEST_CASE runs in its own process, so the header subsystems must be
+    // initialized here rather than by whichever case happens to run first.
+    url_init();
+    mime_init();
+    http_init();
+    http2_init();
   }
 
   void

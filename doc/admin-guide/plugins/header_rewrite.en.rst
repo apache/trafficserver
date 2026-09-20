@@ -763,6 +763,12 @@ This condition may be most useful as a value to an operand, such as::
     cond %{HEADER:X-Foo} /foo-(.*)/
       set-header X-Foo %{LAST-CAPTURE:1}
 
+It can also be matched against an operand, like any other condition::
+
+    cond %{HEADER:X-Foo} /foo-(.*)/ [AND]
+    cond %{LAST-CAPTURE:1} ("bar","fie")
+      set-header X-Matched "yes"
+
 METHOD
 ~~~~~~~
 ::

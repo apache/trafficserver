@@ -246,7 +246,16 @@ namespace
 {
 
 // A prefix of our own so these tests can never touch a real instance's segments.
-constexpr const char *PURGE_PREFIX_WORD = "atspurgetest";
+// Per process: POSIX shm names are system global and every TEST_CASE runs as its own
+// ctest process, so a fixed word would let concurrent cases fight over one segment.
+// Length budget: the word becomes "/<word>-control", so len(word) must stay under
+// MAX_SHM_NAME_LEN - 9 == 22. Eight characters plus a pid leaves ample room.
+std::string const &
+purge_prefix_word()
+{
+  static std::string const word{"atspurge" + std::to_string(getpid())};
+  return word;
+}
 
 // Valid magic, one claimed stripe, and `owner_pid` as given. `size` may be short of CONTROL_SIZE -- an older build with a
 // smaller stripe table -- so only what exists is mapped. False if shm is unavailable here.
@@ -327,7 +336,7 @@ segment_size(const std::string &name)
 // the name space, or every stripe segment leaks while `traffic_ctl cache shm clear` reports success.
 TEST_CASE("CacheShm purge sweeps by name when the control layout is foreign", "[cache][shm]")
 {
-  const std::string prefix      = cache_shm::normalize_name_prefix(PURGE_PREFIX_WORD);
+  const std::string prefix      = cache_shm::normalize_name_prefix(purge_prefix_word());
   const std::string stripe_name = cache_shm::stripe_segment_name(prefix, 0);
 
   // Stands in for a build with a larger stripe table.
@@ -351,7 +360,7 @@ TEST_CASE("CacheShm purge sweeps by name when the control layout is foreign", "[
 // The same-size case must walk the table rather than sweep, so a shared name space is not over-swept.
 TEST_CASE("CacheShm purge walks the table when the control layout is ours", "[cache][shm]")
 {
-  const std::string prefix = cache_shm::normalize_name_prefix(PURGE_PREFIX_WORD);
+  const std::string prefix = cache_shm::normalize_name_prefix(purge_prefix_word());
 
   if (!plant_control_segment(prefix, cache_shm::CONTROL_SIZE)) {
     WARN("shm unavailable in this environment; skipping");
@@ -377,7 +386,7 @@ TEST_CASE("CacheShm purge walks the table when the control layout is ours", "[ca
 // header is there so a newer traffic_ctl can recognise that owner, not so it can unlink the names out from under it.
 TEST_CASE("CacheShm purge refuses a smaller foreign control segment with a live owner", "[cache][shm]")
 {
-  const std::string prefix      = cache_shm::normalize_name_prefix(PURGE_PREFIX_WORD);
+  const std::string prefix      = cache_shm::normalize_name_prefix(purge_prefix_word());
   const std::string control     = cache_shm::control_segment_name(prefix);
   const std::string stripe_name = cache_shm::stripe_segment_name(prefix, 0);
 
@@ -415,7 +424,7 @@ TEST_CASE("CacheShm purge refuses a smaller foreign control segment with a live 
 // stale one left by a build that is gone.
 TEST_CASE("CacheShm purge clears a smaller foreign control segment with no owner", "[cache][shm]")
 {
-  const std::string prefix      = cache_shm::normalize_name_prefix(PURGE_PREFIX_WORD);
+  const std::string prefix      = cache_shm::normalize_name_prefix(purge_prefix_word());
   const std::string control     = cache_shm::control_segment_name(prefix);
   const std::string stripe_name = cache_shm::stripe_segment_name(prefix, 0);
 

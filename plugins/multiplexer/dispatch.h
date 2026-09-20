@@ -75,8 +75,9 @@ struct Request {
 
   Request(const std::string &, const TSMBuffer, const TSMLoc);
   Request(const Request &) = delete;
-  Request(Request &&);
-  Request &operator=(const Request &);
+  Request(Request &&) noexcept;
+  Request &operator=(const Request &) = delete;
+  Request &operator=(Request &&) noexcept;
 };
 
 using Requests = std::vector<Request>;

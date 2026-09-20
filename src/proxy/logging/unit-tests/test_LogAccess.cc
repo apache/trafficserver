@@ -122,7 +122,7 @@ populate_non_http_sm_data(NonHttpSmLogData &data, std::string_view method, std::
   data.owned_path.assign(path.data(), path.size());
   data.owned_url = synthesize_target(method, scheme, authority, path);
   set_socket_address(data.owned_client_addr, "192.0.2.10:4321"sv);
-  ats_ip_copy(&data.owned_client_src_addr.sa, &data.owned_client_addr.sa);
+  ats_ip_copy(&data.owned_client_src_addr, &data.owned_client_addr);
   data.m_client_port = ats_ip_port_host_order(&data.owned_client_addr.sa);
 
   add_header_field(data.owned_client_request, PSEUDO_HEADER_METHOD, method);
@@ -236,7 +236,9 @@ TEST_CASE("LogAccess marshals response HTTP versions as compact strings", "[LogA
     int   len      = LogAccess::unmarshal_http_version(&src, dest, sizeof(dest));
 
     REQUIRE(len > 0);
-    CHECK(std::string(dest, len) == "HTTP/0.0");
+    const size_t version_len = static_cast<size_t>(len);
+
+    CHECK(std::string(dest, version_len) == "HTTP/0.0");
     CHECK(src == marshalled + INK_MIN_ALIGN);
   };
 
