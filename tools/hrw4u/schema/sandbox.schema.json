@@ -45,7 +45,8 @@
               "READ_RESPONSE",
               "SEND_RESPONSE",
               "TXN_CLOSE",
-              "VARS"
+              "VARS",
+              "SESSION_VARS"
             ]
           },
           "uniqueItems": true
