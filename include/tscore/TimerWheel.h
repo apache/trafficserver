@@ -93,6 +93,10 @@ public:
   int
   expire(ink_hrtime now, int budget, F &&f)
   {
+    if (budget <= 0) {
+      return 0; // nothing to do; wheel state is left untouched
+    }
+
     int64_t const now_tick = now / TICK;
     int           fired    = 0;
 
