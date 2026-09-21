@@ -310,20 +310,24 @@ struct RegexMatchContext::_MatchContext {
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext()
 {
-  // Copy the shared context rather than building a blank one. A blank context
-  // silently drops everything the shared context configures, which is how this
-  // type came to run with PCRE2's fallback 32KiB JIT stack instead of the 1MiB
-  // one. Callers override only the fields they mean to.
+  // A blank context silently drops the JIT stack callback, which is how this type
+  // came to run with PCRE2's fallback 32KiB stack instead of the 1MiB one. Assign
+  // the callback directly rather than copying the shared context.
   //
-  // pcre2_match_context_copy dereferences its argument rather than returning null
-  // for one, and RegexContext's constructor does not check its allocations, so a
-  // shared context that failed to allocate would crash here. Fall back to a blank
-  // context, which is what this constructor built before and which no reader of
-  // _match_context dereferences unchecked.
-  auto *shared = RegexContext::get_instance()->get_match_context();
-  auto *ctx    = shared != nullptr ? pcre2_match_context_copy(shared) : pcre2_match_context_create(nullptr);
+  // Copying it would mean calling RegexContext::get_instance(), and that constructs
+  // a thread_local whose destructor registers through __cxa_thread_atexit, taking
+  // the dynamic loader lock. A plugin that builds one of these during its static
+  // initialization is already inside dlopen holding that lock, so reaching it from
+  // this constructor would invert lock order for exactly the reason described above
+  // jit_stack_key. Nothing else the shared context carries is needed here: the
+  // callback is thread independent because it resolves its stack through the
+  // pthread key, and a null general context is what this constructor used before.
+  auto *ctx = pcre2_match_context_create(nullptr);
 
   debug_assert_message(ctx, "Failed to obtain a pcre2 match context");
+  if (ctx != nullptr) {
+    pcre2_jit_stack_assign(ctx, jit_stack_for_this_thread, nullptr);
+  }
   _MatchContext::set(_match_context, ctx);
 }
 
