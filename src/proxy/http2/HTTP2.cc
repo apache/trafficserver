@@ -365,7 +365,8 @@ http2_parse_goaway(IOVec iov, Http2Goaway &goaway)
   memcpy_and_advance(sid.bytes, ptr);
   memcpy_and_advance(ec.bytes, ptr);
 
-  goaway.last_streamid = ntohl(sid.value);
+  // RFC 9113 section 6.8 requires receivers to ignore the reserved bit.
+  goaway.last_streamid = ntohl(sid.value) & 0x7fffffff;
   goaway.error_code    = static_cast<Http2ErrorCode>(ntohl(ec.value));
   return true;
 }

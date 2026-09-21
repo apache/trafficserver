@@ -101,14 +101,14 @@ public:
 
   ////////////////////
   // Accessors
-  void set_dying_event(int event);
-  int  get_dying_event() const;
-  bool ready_to_free() const;
-  bool is_recursing() const;
-  void set_half_close_local_flag(bool flag);
-  bool get_half_close_local_flag() const;
-  bool is_url_pushed(const char *url, int url_len);
-  void add_url_to_pushed_table(const char *url, int url_len);
+  void         set_dying_event(int event);
+  int          get_dying_event() const;
+  bool         ready_to_free() const;
+  bool         is_recursing() const;
+  virtual void set_half_close_local_flag(bool flag);
+  bool         get_half_close_local_flag() const;
+  bool         is_url_pushed(const char *url, int url_len);
+  void         add_url_to_pushed_table(const char *url, int url_len);
 
   // Record history from Http2ConnectionState
   void remember(const SourceLocation &location, int event, int reentrant = NO_REENTRANT);
