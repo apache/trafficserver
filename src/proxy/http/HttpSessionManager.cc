@@ -145,16 +145,22 @@ ServerSessionPool::validate_sni(HttpSM *sm, NetVConnection *netvc)
       std::string_view proposed_sni = sm->get_outbound_sni();
       Dbg(dbg_ctl_http_ss, "validate_sni proposed_sni=%.*s, sni=%s", static_cast<int>(proposed_sni.length()), proposed_sni.data(),
           session_sni);
-      if (!session_sni || session_sni[0] == '\0' || proposed_sni.length() == 0) {
-        retval = session_sni == nullptr && proposed_sni.length() == 0;
-      } else {
-        retval = proposed_sni.compare(session_sni) == 0;
-      }
+      retval = sni_matches(proposed_sni, session_sni);
     } else {
       retval = false;
     }
   }
   return retval;
+}
+
+bool
+ServerSessionPool::sni_matches(std::string_view proposed_sni, const char *session_sni)
+{
+  // A plain comparison, because get_sni_server_name() yields "" rather than nullptr when the
+  // connection sent no name. The nullptr test this replaces could never be true, so an empty name on
+  // either side refused reuse outright rather than letting a session that sent none be reused by a
+  // request that would send none.
+  return proposed_sni == std::string_view{session_sni != nullptr ? session_sni : ""};
 }
 
 bool
