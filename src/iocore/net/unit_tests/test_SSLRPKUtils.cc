@@ -119,8 +119,9 @@ TEST_CASE("SSLRPKUtils matches any key in a rotation set", "[rpk]")
   SSLRPKUtils::TrustedKeySet keys;
   REQUIRE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_multi.pem").c_str(), keys));
 
-  // Both the first and a later entry must match, including across key algorithms.
-  for (auto const *name : {"rpk_single.pem", "rpk_other.pem"}) {
+  // The first and a later entry must both match, and matching must not depend on the key algorithm:
+  // rpk_rsa.pem is the RSA entry of the three, the other two are EC.
+  for (auto const *name : {"rpk_single.pem", "rpk_other.pem", "rpk_rsa.pem"}) {
     EVP_PKEY *peer = load_pubkey(name);
     REQUIRE(peer != nullptr);
     CHECK(SSLRPKUtils::pinnedKeyMatches(peer, keys));
@@ -145,6 +146,30 @@ TEST_CASE("SSLRPKUtils rejects everything when no keys are trusted", "[rpk]")
   REQUIRE(peer != nullptr);
   CHECK_FALSE(SSLRPKUtils::pinnedKeyMatches(peer, empty));
   EVP_PKEY_free(peer);
+}
+
+TEST_CASE("SSLRPKUtils digests a trusted key set by its contents", "[rpk]")
+{
+  SSLRPKUtils::TrustedKeySet one, one_again, other, multi;
+  REQUIRE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_single.pem").c_str(), one));
+  REQUIRE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_single.pem").c_str(), one_again));
+  REQUIRE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_other.pem").c_str(), other));
+  REQUIRE(SSLRPKUtils::loadTrustedKeys(fixture("rpk_multi.pem").c_str(), multi));
+
+  std::string const one_digest = SSLRPKUtils::digestTrustedKeys(one);
+  CHECK_FALSE(one_digest.empty());
+
+  // Same contents, separately parsed: the digest has to survive a reload that changes nothing, or
+  // every reload would needlessly retire the sessions the set authenticated.
+  CHECK(one_digest == SSLRPKUtils::digestTrustedKeys(one_again));
+
+  // A different key, and a superset that merely contains the same key, must both be distinguishable.
+  CHECK(one_digest != SSLRPKUtils::digestTrustedKeys(other));
+  CHECK(one_digest != SSLRPKUtils::digestTrustedKeys(multi));
+
+  // Nothing pinned yields no identity, so callers can tell "no pin set" from any real one.
+  SSLRPKUtils::TrustedKeySet empty_set;
+  CHECK(SSLRPKUtils::digestTrustedKeys(empty_set).empty());
 }
 
 #else // TS_USE_RPK

@@ -206,6 +206,12 @@ SNIConfigParams::load_certs_if_client_cert_specified(YamlSNIConfig::Item const &
     if (!SSLRPKUtils::loadTrustedKeys(nps.prop.server_rpk_ca_file.c_str(), *trusted)) {
       return false;
     }
+    // Taken once here for the same reason: it identifies the pinned set in the origin session cache
+    // key, so a resumption cannot inherit the authentication of a set that has since been replaced.
+    nps.prop.server_rpk_ca_digest = SSLRPKUtils::digestTrustedKeys(*trusted);
+    if (nps.prop.server_rpk_ca_digest.empty()) {
+      return false;
+    }
     nps.prop.server_rpk_ca = std::move(trusted);
   }
 #endif

@@ -155,4 +155,56 @@ pinnedKeyMatches(EVP_PKEY *pkey, const TrustedKeySet &trusted)
   return matched;
 }
 
+std::string
+digestTrustedKeys(const TrustedKeySet &keys)
+{
+  if (keys.empty()) {
+    return {};
+  }
+
+  struct MDCtxDeleter {
+    void
+    operator()(EVP_MD_CTX *c) const
+    {
+      EVP_MD_CTX_free(c);
+    }
+  };
+  std::unique_ptr<EVP_MD_CTX, MDCtxDeleter> ctx(EVP_MD_CTX_new());
+
+  if (!ctx || EVP_DigestInit_ex(ctx.get(), EVP_sha256(), nullptr) != 1) {
+    SSLError("SSLRPKUtils: failed to start a digest over the trusted key set");
+    return {};
+  }
+
+  for (auto const &key : keys) {
+    // Length-prefix each entry, big endian, so that two sets cannot collide with a single set
+    // holding their joined bytes.
+    size_t const        size = key.size();
+    unsigned char const len[4]{static_cast<unsigned char>((size >> 24) & 0xff), static_cast<unsigned char>((size >> 16) & 0xff),
+                               static_cast<unsigned char>((size >> 8) & 0xff), static_cast<unsigned char>(size & 0xff)};
+
+    if (EVP_DigestUpdate(ctx.get(), len, sizeof(len)) != 1 || EVP_DigestUpdate(ctx.get(), key.data(), size) != 1) {
+      SSLError("SSLRPKUtils: failed to digest the trusted key set");
+      return {};
+    }
+  }
+
+  unsigned char hash[EVP_MAX_MD_SIZE];
+  unsigned int  hash_len = 0;
+  if (EVP_DigestFinal_ex(ctx.get(), hash, &hash_len) != 1) {
+    SSLError("SSLRPKUtils: failed to finish the digest over the trusted key set");
+    return {};
+  }
+
+  static char const digits[] = "0123456789abcdef";
+  std::string       hex;
+
+  hex.reserve(static_cast<size_t>(hash_len) * 2);
+  for (unsigned int i = 0; i < hash_len; ++i) {
+    hex.push_back(digits[hash[i] >> 4]);
+    hex.push_back(digits[hash[i] & 0x0f]);
+  }
+  return hex;
+}
+
 } // namespace SSLRPKUtils
