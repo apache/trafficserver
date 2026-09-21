@@ -348,6 +348,14 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
     // copy leaves it holding its old context rather than a freed one. Releasing it
     // is what this operator used to omit, and every assignment leaked one context.
     pcre2_match_context *const ctx = nullptr != ptr ? pcre2_match_context_copy(ptr) : nullptr;
+
+    // pcre2_match_context_copy() returns nullptr when it cannot allocate. Assigning it
+    // anyway would free the old context and leave this object empty, which is the very
+    // thing the ordering above exists to prevent, so leave the object untouched instead.
+    if (nullptr != ptr && nullptr == ctx) {
+      return *this;
+    }
+
     pcre2_match_context *const old = _MatchContext::get(_match_context);
 
     _MatchContext::set(_match_context, ctx);

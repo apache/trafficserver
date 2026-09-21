@@ -1335,6 +1335,35 @@ stack_hungry_subject(int thread_index)
   subject[11 + thread_index] = 'b';
   return subject;
 }
+
+// One pass of the three matches every thread in the concurrency case performs: a hit that
+// must yield the same three captures, a miss that must stay a miss, and a deep subject that
+// only resolves on the 1MiB stack. Returns false on the first disagreement, so a caller
+// counts rounds that went wrong rather than individual assertions. The case asserts on zero
+// either way, so the change of denominator does not weaken it.
+bool
+concurrent_match_round(Regex const &re_captures, Regex const &re_deep, std::string const &hit, std::string const &miss,
+                       std::string const &deep, RegexMatchContext const *const use)
+{
+  RegexMatches matches;
+  if (re_captures.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
+    return false;
+  }
+
+  RegexMatches no_matches;
+  if (re_captures.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
+    return false;
+  }
+
+  // Needs the 1MiB stack, and must consume the whole subject to have used it.
+  RegexMatches deep_matches;
+  if (re_deep.exec(deep, deep_matches, 0, use) <= 0 || deep_matches[0].size() != deep.size()) {
+    return false;
+  }
+
+  return true;
+}
+
 } // namespace
 
 // The header promises that exec() may be called concurrently on one instance. Every thread
@@ -1384,19 +1413,7 @@ TEST_CASE("Regex matches concurrently on one instance", "[libts][Regex][threads]
       gate.arrive_and_wait();
 
       for (int n = 0; n < ITERATIONS; ++n) {
-        RegexMatches matches;
-        if (re_captures.exec(hit, matches, 0, use) != 4 || matches[1] != "alpha" || matches[2] != "42" || matches[3] != "tail") {
-          ++failures;
-        }
-
-        RegexMatches no_matches;
-        if (re_captures.exec(miss, no_matches, 0, use) != RE_ERROR_NOMATCH) {
-          ++failures;
-        }
-
-        // Needs the 1MiB stack, and must consume the whole subject to have used it.
-        RegexMatches deep_matches;
-        if (re_deep.exec(deep, deep_matches, 0, use) <= 0 || deep_matches[0].size() != deep.size()) {
+        if (!concurrent_match_round(re_captures, re_deep, hit, miss, deep, use)) {
           ++failures;
         }
       }
