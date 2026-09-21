@@ -79,7 +79,17 @@ struct TimerWheelHook {
 // tick; elements that would have been visited during that lag lose strict
 // firing-order fidelity relative to each other, but none fire early or are
 // lost.
-template <class C, int32_t Buckets = 1024, class L = typename C::Link_timer_link> class TimerWheel
+// N_BUCKETS default: sized from src/tscore/unit_tests/test_TimerWheel.cc's
+// "TimerWheel bucket-count sizing sweep" benchmark. At the 30s/120s keepalive
+// timeouts (the dominant real case) 256 through 4096 are all already
+// steady-state (~1.0 visits per element per timeout period); the difference
+// only shows up for timeouts beyond the ring's range (e.g. a multi-hour
+// tunnel active timeout), which get revisited every Buckets-1 ticks until
+// due. Measured steady state for a 4h timeout: 1024 buckets costs ~14.9
+// revisits per element per period, 4096 costs ~4. The memory difference
+// (8 KiB vs 32 KiB per wheel, one wheel per ET_NET thread) is negligible
+// either way, so 4096 is strictly better and is the default.
+template <class C, int32_t Buckets = 4096, class L = typename C::Link_timer_link> class TimerWheel
 {
 public:
   static constexpr int32_t    N_BUCKETS       = Buckets;
