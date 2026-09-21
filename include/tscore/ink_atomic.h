@@ -69,6 +69,18 @@ ink_atomic_cas(T *mem, T prev, T next)
   return __sync_bool_compare_and_swap(mem, prev, next);
 }
 
+#if TS_HAS_128BIT_CAS_LIBATOMIC && !TS_HAS_128BIT_CAS
+// The 16-byte __sync builtins never lower to libatomic calls, so targets with
+// no inline 128-bit CAS (e.g. riscv64) must use the __atomic builtins instead.
+// libatomic may implement them with internal locks; see INK_QUEUE_LD.
+template <>
+inline bool
+ink_atomic_cas<__int128_t>(__int128_t *mem, __int128_t prev, __int128_t next)
+{
+  return __atomic_compare_exchange_n(mem, &prev, next, false, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+}
+#endif
+
 // ink_atomic_increment(ptr, count)
 // Increment @ptr by @count, returning the previous value.
 template <typename Type, typename Amount>
