@@ -49,10 +49,10 @@
 #include "proxy/hdrs/HdrToken.h"
 #include "proxy/hdrs/HdrHeap.h"
 
+#include <charconv>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -868,8 +868,18 @@ main(int argc, char *argv[])
     std::string_view a = argv[i];
     if (a == "--profile" && i + 1 < argc) {
       profile_target = argv[++i];
-    } else if (a == "--iters" && i + 1 < argc) {
-      iters = std::strtoull(argv[++i], nullptr, 10);
+    } else if (a == "--iters") {
+      if (i + 1 == argc) {
+        std::fprintf(stderr, "--iters requires a positive integer\n");
+        return 2;
+      }
+      std::string_view value = argv[++i];
+      auto const [end, ec]   = std::from_chars(value.data(), value.data() + value.size(), iters);
+
+      if (ec != std::errc{} || end != value.data() + value.size() || iters == 0) {
+        std::fprintf(stderr, "invalid --iters '%s': expected a positive integer in the uint64_t range\n", argv[i]);
+        return 2;
+      }
     } else if (a == "--corpus-file" && i + 1 < argc) {
       corpus_files.emplace_back(argv[++i]);
     } else if (a == "--corpus-dir" && i + 1 < argc) {
