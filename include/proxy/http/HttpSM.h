@@ -35,8 +35,6 @@
 #include <optional>
 #include <memory>
 
-#include "tscore/ink_platform.h"
-#include "iocore/eventsystem/EventSystem.h"
 #include "proxy/http/HttpCacheSM.h"
 #include "proxy/http/HttpTransact.h"
 #include "proxy/http/HttpUserAgent.h"
@@ -45,7 +43,6 @@
 #include "proxy/http/HttpTunnel.h"
 #include "api/InkAPIInternal.h"
 #include "proxy/ProxyTransaction.h"
-#include "proxy/hdrs/HdrUtils.h"
 
 // inknet
 #include "proxy/http/PreWarmManager.h"
@@ -181,6 +178,28 @@ enum class CompatibilityCacheLookup {
   COMPAT_CACHE_LOOKUP_92,
   COMPAT_CACHE_LAST,
 };
+
+/// Policy for an object found under the previous (9.2) cache key. Shared by the
+/// HTTP state machine, its cache sub-machine and HttpTransact, which is why it
+/// is not a member of any of them.
+namespace CompatCacheKey
+{
+/// Whether this lookup addresses the cache with the previous (9.2) key.
+inline bool
+is_legacy(CompatibilityCacheLookup lookup)
+{
+  return lookup == CompatibilityCacheLookup::COMPAT_CACHE_LOOKUP_92;
+}
+
+/// The object info to hand to a cache write, which a compatibility read must not
+/// carry: it belongs to the legacy key and would turn the write into an update
+/// of a vector the canonical key does not have.
+inline CacheHTTPInfo *
+write_info(CompatibilityCacheLookup lookup, CacheHTTPInfo *object_read_info)
+{
+  return is_legacy(lookup) ? nullptr : object_read_info;
+}
+} // namespace CompatCacheKey
 
 class HttpSM : public Continuation, public PluginUserArgs<TS_USER_ARGS_TXN>
 {
@@ -406,6 +425,7 @@ private:
 
   void do_hostdb_lookup();
   void do_hostdb_reverse_lookup();
+  URL *cache_lookup_url();
   void do_cache_lookup_and_read();
   void do_http_server_open(bool raw = false, bool only_direct = false);
   bool apply_ip_allow_filter();
@@ -421,6 +441,7 @@ private:
   void do_cache_prepare_update();
   void do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_info, bool retry, bool allow_multiple = false);
   void do_cache_delete_all_alts();
+  void do_cache_delete_compat_alts();
   void do_auth_callout();
   int  do_api_callout();
   int  do_api_callout_internal();
