@@ -1,6 +1,6 @@
 /** @file
 
-  A brief file description
+  Unit tests for the TimerWheel intrusive timer ring.
 
   @section license License
 
@@ -24,6 +24,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <algorithm>
+#include <chrono>
+#include <deque>
 #include <vector>
 
 #include "tscore/TimerWheel.h"
@@ -46,11 +48,13 @@ struct Conn {
 using Wheel = TimerWheel<Conn>;
 
 // Fire callback that records ids, and reports each element's true deadline.
+// deadline_of() and operator() are both called through a non-const F&, per
+// the contract documented in TimerWheel.h; neither needs to be const.
 struct Recorder {
   std::vector<int> fired;
 
   ink_hrtime
-  deadline_of(Conn *c) const
+  deadline_of(Conn *c)
   {
     return c->deadline;
   }
@@ -220,7 +224,9 @@ TEST_CASE("TimerWheel budget defers the remainder to the next call", "[libts][Ti
 }
 
 // Many connections sharing one timeout value is the real traffic pattern:
-// deadlines cluster on a handful of config values.
+// deadlines cluster on a handful of config values. std::deque (not
+// std::vector) so the intrusive links stay valid regardless of insertion
+// order relative to scheduling.
 TEST_CASE("TimerWheel fires a large clustered population exactly once each", "[libts][TimerWheel]")
 {
   ink_hrtime const t0 = HRTIME_SECONDS(1000);
@@ -228,8 +234,7 @@ TEST_CASE("TimerWheel fires a large clustered population exactly once each", "[l
   Wheel            w;
   w.init(t0);
 
-  std::vector<Conn> conns;
-  conns.reserve(n);
+  std::deque<Conn> conns;
   for (int i = 0; i < n; ++i) {
     conns.emplace_back(i, t0 + HRTIME_SECONDS(30 + (i % 4)));
   }
@@ -270,5 +275,106 @@ TEST_CASE("TimerWheel expire with a non-positive budget does nothing", "[libts][
   CHECK(w.is_scheduled(&c));
 
   CHECK(w.expire(t0 + HRTIME_SECONDS(6), 1, rec) == 1);
+  CHECK(rec.fired.size() == 1);
+}
+
+// A fire callback (e.g. HttpSM handling VC_EVENT_INACTIVITY_TIMEOUT and
+// re-arming) may call schedule() on the very element being fired. If that
+// reschedule lands back in the bucket currently being drained, it would be
+// popped and fired again in the same pass.
+TEST_CASE("TimerWheel fire callback rescheduling itself does not refire within the same expire() call", "[libts][TimerWheel]")
+{
+  ink_hrtime const t0 = HRTIME_SECONDS(1000);
+  Wheel            w;
+  w.init(t0);
+
+  Conn c{1, t0 + HRTIME_SECONDS(5)};
+  w.schedule(&c, c.deadline);
+
+  struct SelfRescheduler {
+    Wheel &wheel;
+    int    fire_count = 0;
+
+    ink_hrtime
+    deadline_of(Conn *e)
+    {
+      return e->deadline;
+    }
+
+    void
+    operator()(Conn *e)
+    {
+      ++fire_count;
+      // Naively rearm with the same already-past deadline, the way a
+      // caller racing set_inactivity_timeout() might.
+      wheel.schedule(e, e->deadline);
+    }
+  };
+
+  SelfRescheduler cb{w};
+
+  // `now` lands inside the same tick that holds c, so the element it
+  // reschedules itself into (clamped past that tick) is not revisited
+  // within this call.
+  CHECK(w.expire(t0 + HRTIME_SECONDS(5) + HRTIME_MSECONDS(500), 1000, cb) == 1);
+  CHECK(cb.fire_count == 1);
+  CHECK(w.is_scheduled(&c));
+
+  // A later call, still landing within a single further tick, sees it
+  // again: it was genuinely rescheduled with a deadline that was already
+  // due, a separate, legitimate fire (a caller that never advances the
+  // deadline keeps re-arming itself once per tick, by design).
+  CHECK(w.expire(t0 + HRTIME_SECONDS(6) + HRTIME_MSECONDS(500), 1000, cb) == 1);
+  CHECK(cb.fire_count == 2);
+}
+
+// A rearm whose natural bucket (deadline / TICK) is the very tick currently
+// being drained must still be pushed out to the next tick, not aliased
+// back into the bucket the drain loop is mid-iteration over.
+TEST_CASE("TimerWheel rearms into the next tick when the natural bucket is the one being drained", "[libts][TimerWheel]")
+{
+  ink_hrtime const t0 = HRTIME_SECONDS(1000);
+  Wheel            w;
+  w.init(t0);
+
+  Conn c{1, t0 + HRTIME_SECONDS(5)};
+  w.schedule(&c, c.deadline);
+
+  // Extend the deadline, but only within the same one-second tick that is
+  // about to be drained.
+  c.deadline = t0 + HRTIME_SECONDS(5) + HRTIME_MSECONDS(400);
+
+  Recorder rec;
+  CHECK(w.expire(t0 + HRTIME_SECONDS(5) + HRTIME_MSECONDS(300), 1000, rec) == 0);
+  CHECK(rec.fired.empty());
+  CHECK(w.is_scheduled(&c));
+
+  CHECK(w.expire(t0 + HRTIME_SECONDS(7), 1000, rec) == 1);
+  CHECK(rec.fired.size() == 1);
+}
+
+// If the wheel is driven far behind now (e.g. expire() is called before
+// init(), or after a long stall), the walk must be bounded by N_BUCKETS,
+// not by the number of elapsed ticks.
+TEST_CASE("TimerWheel expire without init catches up in bounded time", "[libts][TimerWheel]")
+{
+  Wheel w; // no init(): _cursor defaults to 0, far from a realistic "now"
+
+  ink_hrtime const now = HRTIME_SECONDS(1'800'000'000); // representative real hrtime value
+
+  Conn c{1, now + HRTIME_SECONDS(5)};
+  w.schedule(&c, c.deadline);
+
+  Recorder rec;
+
+  auto const start = std::chrono::steady_clock::now();
+  CHECK(w.expire(now, 1000, rec) == 0);
+  auto const elapsed = std::chrono::steady_clock::now() - start;
+
+  // Bounded by N_BUCKETS; without the fix this loops ~1.8 billion times.
+  CHECK(elapsed < std::chrono::seconds(1));
+  CHECK(w.is_scheduled(&c));
+
+  CHECK(w.expire(now + HRTIME_SECONDS(6), 1000, rec) == 1);
   CHECK(rec.fired.size() == 1);
 }
