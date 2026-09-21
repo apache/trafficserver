@@ -201,6 +201,30 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, u
       if (e->auxkey == auxkey) {
         lru.remove(e);
         lru.enqueue(e);
+        if (copy && !e->copy) {
+          // The entry may still be sharing a caller's buffer from a put made
+          // while copy semantics were not requested; refresh it with a
+          // private copy before the caller mutates its buffer. Once it holds
+          // a private copy there is nothing to refresh: get() never exposes
+          // that buffer, so a further copy=true put (two requests that both
+          // missed and both read the object from disk) would only allocate
+          // and copy the object again to the same effect.
+          //
+          // A refresh only ever gives bytes back, so unlike an insert it needs
+          // no eviction pass: the private copy is an exact-size allocation
+          // while a shared buffer was charged its rounded block_size() (always
+          // >= len), and a re-put under the same key and auxkey names the same
+          // on-disk doc, so len itself does not grow.
+          Ptr<IOBufferData> d     = copy_data_in(data, len);
+          int64_t           delta = d->block_size() - e->data->block_size();
+
+          e->data  = d;
+          e->len   = len;
+          e->copy  = true;
+          bytes   += delta;
+          ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
+          ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
+        }
         return 1;
       } else { // discard when aux keys conflict
         e        = remove(e);
@@ -235,44 +259,6 @@ RamCacheLRU::put(CryptoHash *key, IOBufferData *data, uint32_t len, bool copy, u
     }
   }
 
-  RamCacheLRUEntry *e = bucket[i].head;
-  while (e) {
-    if (e->key == *key) {
-      if (e->auxkey == auxkey) {
-        lru.remove(e);
-        lru.enqueue(e);
-        if (copy && !e->copy) {
-          // The entry may still be sharing a caller's buffer from a put made
-          // while copy semantics were not requested; refresh it with a
-          // private copy before the caller mutates its buffer. Once it holds
-          // a private copy there is nothing to refresh: get() never exposes
-          // that buffer, so a further copy=true put (two requests that both
-          // missed and both read the object from disk) would only allocate
-          // and copy the object again to the same effect.
-          //
-          // A refresh only ever gives bytes back, so unlike an insert it needs
-          // no eviction pass: the private copy is an exact-size allocation
-          // while a shared buffer was charged its rounded block_size() (always
-          // >= len), and a re-put under the same key and auxkey names the same
-          // on-disk doc, so len itself does not grow.
-          Ptr<IOBufferData> d     = copy_data_in(data, len);
-          int64_t           delta = d->block_size() - e->data->block_size();
-
-          e->data  = d;
-          e->len   = len;
-          e->copy  = true;
-          bytes   += delta;
-          ts::Metrics::Gauge::increment(cache_rsb.ram_cache_bytes, delta);
-          ts::Metrics::Gauge::increment(stripe->cache_vol->vol_rsb.ram_cache_bytes, delta);
-        }
-        return 1;
-      } else { // discard when aux keys conflict
-        e = remove(e);
-        continue;
-      }
-    }
-    e = e->hash_link.next;
-  }
   e         = THREAD_ALLOC(ramCacheLRUEntryAllocator, this_ethread());
   e->key    = *key;
   e->auxkey = auxkey;
