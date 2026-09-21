@@ -62,23 +62,38 @@ AcceptFunction net_accept;
 class UnixNetVConnection;
 
 struct NetAcceptAction : public Action, public RefCountObjInHeap {
-  std::atomic<Server *> server{nullptr};
-
   NetAcceptAction(Continuation *cont, Server *s)
   {
     continuation = cont;
     if (cont != nullptr) {
       mutex = cont->mutex;
     }
-    server.store(s, std::memory_order_release);
+    _server.store(s, std::memory_order_release);
+  }
+
+  /** Whether this action still owns an open listening socket.
+
+    Accept paths must consult this before dispatching EVENT_ERROR. It is
+    cleared by cancel() before Action::cancel() sets @c cancelled, so it goes
+    false no later than the cancellation the continuation is aware of, and it
+    is safe to read from any thread. Reading @c cancelled instead is both a
+    data race on a plain bool and too late: accept() reports EBADF as soon as
+    the socket closes, which is before @c cancelled is set.
+
+  */
+  bool
+  is_listening() const
+  {
+    return _server.load(std::memory_order_acquire) != nullptr;
   }
 
   void
   cancel(Continuation *cont = nullptr) override
   {
     // Use atomic exchange so only one thread closes the server, preventing
-    // use-after-free races between cancel() and acceptEvent() cleanup.
-    Server *s = server.exchange(nullptr, std::memory_order_acq_rel);
+    // use-after-free races between cancel() and acceptEvent() cleanup. This
+    // must stay ahead of Action::cancel(), see is_listening().
+    Server *s = _server.exchange(nullptr, std::memory_order_acq_rel);
     if (s != nullptr) {
       s->close();
     }
@@ -92,6 +107,11 @@ struct NetAcceptAction : public Action, public RefCountObjInHeap {
     static DbgCtl dbg_ctl{"net_accept"};
     Dbg(dbg_ctl, "NetAcceptAction dying");
   }
+
+private:
+  /// Cleared exactly once, by cancel(). Private so the ordering above is the
+  /// only way this transitions to null.
+  std::atomic<Server *> _server{nullptr};
 };
 
 //
