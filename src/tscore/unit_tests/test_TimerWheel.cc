@@ -25,7 +25,9 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdio>
 #include <deque>
+#include <random>
 #include <vector>
 
 #include "tscore/TimerWheel.h"
@@ -377,4 +379,149 @@ TEST_CASE("TimerWheel expire without init catches up in bounded time", "[libts][
 
   CHECK(w.expire(now + HRTIME_SECONDS(6), 1000, rec) == 1);
   CHECK(rec.fired.size() == 1);
+}
+
+// --- Bucket-count sizing sweep -----------------------------------------
+//
+// Measures the trade the N_BUCKETS default is making: memory (N_BUCKETS
+// pointers per wheel, one wheel per ET_NET thread) versus re-insertion
+// churn for timeouts that exceed the ring's range and get clamped.
+//
+// Elements keep re-arming (steady-state keepalive/tunnel traffic), so
+// "visits" - counted once per deadline_of() call, which the wheel invokes
+// on both a real fire and a clamp-driven lazy rearm - is the honest cost
+// metric, not wall clock. ctest excludes this via [!benchmark]; run
+// directly with `test_tscore "[!benchmark]"`.
+namespace
+{
+
+constexpr uint32_t SIZING_SEED  = 0xBEEF;
+constexpr size_t   SIZING_N     = 100000;
+constexpr int      SIZING_TICKS = 3600; // one simulated hour
+
+struct SizingElem {
+  int            id       = 0;
+  ink_hrtime     deadline = 0;
+  TimerWheelHook timer_hook;
+
+  LINK(SizingElem, timer_link);
+
+  SizingElem(int i, ink_hrtime d) : id(i), deadline(d) {}
+};
+
+// Rearms the fired element with a fresh deadline one timeout period out,
+// modeling a connection that keeps receiving traffic rather than a single
+// expiry burst. deadline_of() is the exact visit counter: the wheel calls
+// it once per element popped, whether that pop is a genuine fire or a
+// clamp-driven lazy rearm.
+template <int32_t Buckets> struct SizingRearmer {
+  using Wheel = TimerWheel<SizingElem, Buckets>;
+
+  Wheel     &wheel;
+  ink_hrtime timeout;
+  ink_hrtime now    = 0;
+  uint64_t   visits = 0;
+
+  ink_hrtime
+  deadline_of(SizingElem *e)
+  {
+    ++visits;
+    return e->deadline;
+  }
+
+  void
+  operator()(SizingElem *e)
+  {
+    e->deadline = now + timeout;
+    wheel.schedule(e, e->deadline);
+  }
+};
+
+struct SizingResult {
+  int32_t  buckets;
+  int64_t  timeout_s;
+  uint64_t total_visits;
+  double   visits_per_elem_per_period;
+};
+
+// Drives SIZING_N elements, deadlines staggered across one timeout period,
+// through SIZING_TICKS one-second ticks and returns the total visit count.
+template <int32_t Buckets>
+SizingResult
+run_sizing(int64_t timeout_s, std::mt19937 &rng)
+{
+  using Wheel = TimerWheel<SizingElem, Buckets>;
+
+  ink_hrtime const t0 = HRTIME_SECONDS(1'000'000);
+  Wheel            w;
+  w.init(t0);
+
+  std::uniform_int_distribution<int64_t> stagger(0, timeout_s - 1);
+
+  // std::deque: intrusive links must not move once scheduled.
+  std::deque<SizingElem> elems;
+  for (size_t i = 0; i < SIZING_N; ++i) {
+    elems.emplace_back(static_cast<int>(i), t0 + HRTIME_SECONDS(stagger(rng)));
+  }
+  for (auto &e : elems) {
+    w.schedule(&e, e.deadline);
+  }
+
+  SizingRearmer<Buckets> cb{w, HRTIME_SECONDS(timeout_s)};
+  for (int tick = 1; tick <= SIZING_TICKS; ++tick) {
+    cb.now = t0 + HRTIME_SECONDS(tick);
+    // Budget well above the largest plausible per-tick pop count so one
+    // expire() call always fully drains the tick.
+    w.expire(cb.now, static_cast<int>(SIZING_N) * 2, cb);
+  }
+
+  double const periods = static_cast<double>(SIZING_TICKS) / static_cast<double>(timeout_s);
+
+  SizingResult r;
+  r.buckets                    = Buckets;
+  r.timeout_s                  = timeout_s;
+  r.total_visits               = cb.visits;
+  r.visits_per_elem_per_period = static_cast<double>(cb.visits) / (static_cast<double>(SIZING_N) * periods);
+  return r;
+}
+
+// Same seed for every (Buckets, timeout) pair so the staggered population
+// is identical across sizes - the only thing that should vary is the
+// wheel's own behavior.
+template <int32_t Buckets>
+void
+sweep_bucket_size(std::vector<SizingResult> &out)
+{
+  for (int64_t const timeout_s : {int64_t{30}, int64_t{120}, int64_t{4 * 3600}}) {
+    std::mt19937 rng(SIZING_SEED);
+
+    SizingResult const r             = run_sizing<Buckets>(timeout_s, rng);
+    size_t const       mem_per_wheel = static_cast<size_t>(Buckets) * sizeof(void *);
+
+    std::printf("%-8d %10lld %14llu %20.4f %14zu %16zu\n", Buckets, static_cast<long long>(timeout_s),
+                static_cast<unsigned long long>(r.total_visits), r.visits_per_elem_per_period, mem_per_wheel, mem_per_wheel * 32);
+
+    CHECK(r.total_visits > 0);
+    CHECK(r.visits_per_elem_per_period >= 1.0); // an element cannot be visited less than once per period it lives through
+
+    out.push_back(r);
+  }
+}
+
+} // namespace
+
+TEST_CASE("TimerWheel bucket-count sizing sweep", "[!benchmark][libts][TimerWheel]")
+{
+  std::printf("\n[TimerWheel sizing] seed=0x%X N=%zu ticks=%d\n", SIZING_SEED, SIZING_N, SIZING_TICKS);
+  std::printf("%-8s %10s %14s %20s %14s %16s\n", "buckets", "timeout_s", "total_visits", "visits/elem/period", "mem/wheel(B)",
+              "mem*32threads(B)");
+  std::printf("%-8s %10s %14s %20s %14s %16s\n", "-------", "---------", "------------", "------------------", "------------",
+              "----------------");
+
+  std::vector<SizingResult> results;
+
+  sweep_bucket_size<256>(results);
+  sweep_bucket_size<512>(results);
+  sweep_bucket_size<1024>(results);
+  sweep_bucket_size<4096>(results);
 }
