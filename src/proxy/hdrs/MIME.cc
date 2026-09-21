@@ -2622,7 +2622,7 @@ mime_parser_parse(MIMEParser *parser, HdrHeap *heap, MIMEHdrImpl *mh, const char
     if (name_scan_stale) {
       // BWS trimming shortened the name after the fused scan; redo the WKS
       // lookup and byte validation over the trimmed name.
-      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), field_name.size());
+      field_name_wks_idx = hdrtoken_tokenize(field_name.data(), static_cast<int>(field_name.size()));
       if (field_name_wks_idx < 0) {
         for (auto i : field_name) {
           if (!ParseRules::is_http_field_name(i)) {
