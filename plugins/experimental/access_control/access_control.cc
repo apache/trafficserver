@@ -30,43 +30,32 @@ size_t calcMessageDigest(const StringView hf, const char *secret, const char *me
 const char *getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize);
 
 static String
-decodedDotSegment(StringView seg)
-{
-  String res;
-  res.reserve(seg.size());
-  for (size_t i = 0; i < seg.size();) {
-    if (i + 2 < seg.size() && seg[i] == '%' && seg[i + 1] == '2' && (seg[i + 2] == 'e' || seg[i + 2] == 'E')) {
-      res.push_back('.');
-      i += 3;
-    } else {
-      res.push_back(seg[i]);
-      ++i;
-    }
-  }
-  return res;
-}
-
-static String
 normalizePath(StringView path)
 {
+  if (path.empty()) {
+    return "/";
+  }
+
+  String decoded(path.size(), '\0');
+  size_t decodedLen = urlDecode(path.data(), path.size(), decoded.data(), decoded.size());
+  decoded.resize(decodedLen);
   StringVector segments;
   size_t       start = 0;
 
-  while (start < path.size()) {
-    size_t end = path.find('/', start);
-    if (end == StringView::npos) {
-      end = path.size();
+  while (start < decoded.size()) {
+    size_t end = decoded.find_first_of("/\\", start);
+    if (end == String::npos) {
+      end = decoded.size();
     }
     if (end > start) {
-      StringView rawSeg = path.substr(start, end - start);
-      String     seg    = decodedDotSegment(rawSeg);
+      StringView seg(decoded.data() + start, end - start);
       if (seg == ".") {
       } else if (seg == "..") {
         if (!segments.empty()) {
           segments.pop_back();
         }
       } else {
-        segments.push_back(std::move(seg));
+        segments.emplace_back(seg);
       }
     }
     start = end + 1;

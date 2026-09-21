@@ -231,6 +231,13 @@ TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]
     CHECK(validateScope("/reports/./2026/", "/reports/") == true);
     CHECK(validateScope("/reports/2026/../2026/annual.pdf", "/reports") == true);
     CHECK(validateScope("/reports/%2e/2026/", "/reports/") == true);
+    CHECK(validateScope("/reports/%2e%2e%2fhr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/%2e%2e%2Fhr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/..%2fhr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/..%2Fhr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/%2e%2e%5chr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/%2e%2e%5Chr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/..\\hr/payroll", "/reports/") == false);
   }
 }
 
