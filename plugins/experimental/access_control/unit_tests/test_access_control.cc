@@ -219,6 +219,19 @@ TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]
     CHECK(validateScope("reports/2026/", "reports/") == true);
     CHECK(validateScope("//reports///2026//", "/reports") == true);
   }
+
+  SECTION("path traversal security")
+  {
+    CHECK(validateScope("/reports/../hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/../../etc/passwd", "/reports/") == false);
+    CHECK(validateScope("/reports/%2e%2e/hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/%2E%2E/hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/.%2e/hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/%2e./hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/reports/./2026/", "/reports/") == true);
+    CHECK(validateScope("/reports/2026/../2026/annual.pdf", "/reports") == true);
+    CHECK(validateScope("/reports/%2e/2026/", "/reports/") == true);
+  }
 }
 
 TEST_CASE("AccessToken: token scope claim integration", "[AccessToken][access_control][scope]")
