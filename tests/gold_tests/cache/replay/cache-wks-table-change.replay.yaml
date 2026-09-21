@@ -1,0 +1,216 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+#
+# Traffic for the well-known-string table change test. ATS runs with
+# ATS_TEST_WKS_IDX_SHIFT set, so every object stored here carries well-known
+# string indexes belonging to a different table than the running build's --
+# what a cache written by a differently-built ATS looks like.
+#
+# Reading a header back out of such an object only works if the reader rebuilds
+# those indexes, along with the presence bits and slot accelerators derived from
+# them, from the strings the object also stores. Emitting the cached response
+# does not prove that: the response is printed from those same strings, so it
+# comes out right either way. Each transaction below instead depends on ATS
+# actually *finding* a specific field in the cached header, which is what goes
+# through the rebuilt indexes and presence bits.
+#
+
+meta:
+  version: "1.0"
+
+sessions:
+- transactions:
+
+  #
+  # 1. Cache /vary-object as the "identity" variant. The response carries Vary,
+  #    Etag and Last-Modified, all of which later transactions must be able to
+  #    find in the cached header.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /wks/vary-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Accept-Encoding, identity ]
+        - [ uuid, fill-identity ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Content-Type, "text/plain" ]
+        - [ Cache-Control, "max-age=300,public" ]
+        - [ Vary, "Accept-Encoding" ]
+        - [ Etag, "\"identity-variant\"" ]
+        - [ Last-Modified, "Tue, 01 Jan 2030 00:00:00 GMT" ]
+        - [ X-Variant, "identity" ]
+        - [ X-Wks-Custom, "not-a-well-known-string" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: miss, as: equal } ]
+
+  #
+  # 2. The same variant is served from cache, unchanged. This catches a reader
+  #    that mangles the stored header outright.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /wks/vary-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Accept-Encoding, identity ]
+        - [ uuid, hit-identity ]
+        - [ X-Debug, "x-cache,via" ]
+
+    proxy-request:
+      expect: absent
+
+    server-response:
+      status: 502
+      reason: "Bad Gateway"
+      headers:
+        fields:
+        - [ Content-Length, 0 ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Cache, { value: hit-fresh, as: equal } ]
+        - [ Content-Type, { value: "text/plain", as: equal } ]
+        - [ Cache-Control, { value: "max-age=300,public", as: equal } ]
+        - [ Vary, { value: "Accept-Encoding", as: equal } ]
+        - [ Etag, { value: "\"identity-variant\"", as: equal } ]
+        - [ Last-Modified, { value: "Tue, 01 Jan 2030 00:00:00 GMT", as: equal } ]
+        - [ X-Variant, { value: identity, as: equal } ]
+        - [ X-Wks-Custom, { value: "not-a-well-known-string", as: equal } ]
+        - [ Content-Length, { value: "16", as: equal } ]
+
+  #
+  # 3. A different Accept-Encoding must not be served the identity variant.
+  #    Variant selection reads the cached request and response headers, so this
+  #    guards the alternate-selection path against a reader that returns the
+  #    wrong strings for them.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /wks/vary-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ Accept-Encoding, gzip ]
+        - [ uuid, fill-gzip ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Content-Type, "text/plain" ]
+        - [ Cache-Control, "max-age=300,public" ]
+        - [ Vary, "Accept-Encoding" ]
+        - [ Etag, "\"gzip-variant\"" ]
+        - [ X-Variant, "gzip" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ X-Variant, { value: gzip, as: equal } ]
+        - [ Etag, { value: "\"gzip-variant\"", as: equal } ]
+
+  #
+  # 4. Cache /stale-object with max-age=0, so the next request for it has to
+  #    revalidate.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /wks/stale-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, fill-stale ]
+        - [ X-Debug, "x-cache,via" ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Content-Length, 16 ]
+        - [ Cache-Control, "max-age=0,public" ]
+        - [ Etag, "\"stale-object\"" ]
+        - [ Last-Modified, "Tue, 01 Jan 2030 00:00:00 GMT" ]
+
+    proxy-response:
+      status: 200
+
+  #
+  # 5. The revalidation ATS sends must carry the validators out of the cached
+  #    response. Reading Etag and Last-Modified back is exactly the lookup that
+  #    a stale index breaks, and without them ATS sends a plain GET instead of a
+  #    conditional one, so the 304 below could never be produced.
+  #
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      scheme: "http"
+      url: /wks/stale-object
+      headers:
+        fields:
+        - [ Host, example.com ]
+        - [ uuid, revalidate-stale ]
+        - [ X-Debug, "x-cache,via" ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ If-None-Match, { value: "\"stale-object\"", as: equal } ]
+        - [ If-Modified-Since, { value: "Tue, 01 Jan 2030 00:00:00 GMT", as: equal } ]
+
+    server-response:
+      status: 304
+      reason: "Not Modified"
+      headers:
+        fields:
+        - [ Etag, "\"stale-object\"" ]
+        - [ Cache-Control, "max-age=0,public" ]
+
+    proxy-response:
+      status: 200
+      headers:
+        fields:
+        - [ Etag, { value: "\"stale-object\"", as: equal } ]
+        - [ Content-Length, { value: "16", as: equal } ]

@@ -66,6 +66,7 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <limits>
 
 namespace
 {
@@ -318,31 +319,43 @@ CacheVC::dead(int /* event ATS_UNUSED */, Event * /*e ATS_UNUSED */)
   return EVENT_DONE;
 }
 
-static void
-unmarshal_helper(Doc *doc, Ptr<IOBufferData> &buf, int &okay)
+bool
+CacheVC::unmarshal_http_info(Doc *doc, Ptr<IOBufferData> &buf)
 {
   using UnmarshalFunc              = int(char *buf, int len, RefCountObj *block_ref);
   UnmarshalFunc    *unmarshal_func = &HTTPInfo::unmarshal;
   ts::VersionNumber version(doc->v_major, doc->v_minor);
 
-  // introduced by https://github.com/apache/trafficserver/pull/4874, this is used to distinguish the doc version
-  // before and after #4847
-  if (version < CACHE_DB_VERSION) {
+  // hlen is unsigned and the walk below is not. Narrowing a header length this large would
+  // make the walk negative, skipping it and reporting success on a block nothing decoded.
+  if (doc->hlen > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+    Warning("CacheVC::unmarshal_http_info: header length %u exceeds the maximum - corrupt cache entry", doc->hlen);
+    return false;
+  }
+
+  if (version < CACHE_DB_FRAG_OFFSET_TABLE_VERSION) {
     unmarshal_func = &HTTPInfo::unmarshal_v24_1;
   }
 
   char *tmp = doc->hdr();
   int   len = doc->hlen;
   while (len > 0) {
+    // The decoders read the alt header before they check any length, so a tail too short
+    // to hold one has to be rejected here rather than passed down.
+    if (static_cast<size_t>(len) < sizeof(HTTPCacheAlt)) {
+      Warning("CacheVC::unmarshal_http_info: header block ends mid alternate - corrupt cache entry");
+      return false;
+    }
     int r = unmarshal_func(tmp, len, buf.get());
+
     if (r < 0) {
-      ink_assert(!"CacheVC::handleReadDone unmarshal failed");
-      okay = 0;
-      break;
+      ink_assert(!"CacheVC::unmarshal_http_info: HTTPInfo unmarshal failed");
+      return false;
     }
     len -= r;
     tmp += r;
   }
+  return true;
 }
 
 // [amc] I think this is where all disk reads from cache funnel through here.
@@ -421,7 +434,7 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       // If http doc we need to unmarshal the headers before putting in the ram cache
       // unless it could be compressed
       if (!http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        unmarshal_helper(doc, buf, okay);
+        okay = CacheVC::unmarshal_http_info(doc, buf);
       }
       // Put the request in the ram cache only if its a open_read or lookup
       if (vio.op == VIO::READ && okay) {
@@ -452,7 +465,10 @@ CacheVC::handleReadDone(int event, Event * /* e ATS_UNUSED */)
       } // end VIO::READ check
       // If it could be compressed, unmarshal after
       if (http_copy_hdr && doc->doc_type == CACHE_FRAG_TYPE_HTTP && doc->hlen && okay) {
-        unmarshal_helper(doc, buf, okay);
+        okay = CacheVC::unmarshal_http_info(doc, buf);
+      }
+      if (!okay) {
+        doc->magic = DOC_CORRUPT;
       }
     } // end io.ok() check
   }
@@ -787,25 +803,15 @@ CacheVC::scanObject(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
       // Bounds-check in unsigned domain: doc must lie within the
       // buffer, with room for the Doc header, and doc->hlen must
       // fit in the remaining bytes before doc->hdr() and
-      // HTTPInfo::unmarshal walk it.
+      // unmarshal_http_info walk it.
       if (io.aiocb.aio_nbytes < doc_off || (io.aiocb.aio_nbytes - doc_off) < sizeof(Doc) ||
           (io.aiocb.aio_nbytes - doc_off - sizeof(Doc)) < doc->hlen) {
         might_need_overlap_read = true;
         goto Lskip;
       }
     }
-    {
-      char *tmp = doc->hdr();
-      int   len = doc->hlen;
-      while (len > 0) {
-        int r = HTTPInfo::unmarshal(tmp, len, buf.get());
-        if (r < 0) {
-          ink_assert(!"CacheVC::scanObject unmarshal failed");
-          goto Lskip;
-        }
-        len -= r;
-        tmp += r;
-      }
+    if (!CacheVC::unmarshal_http_info(doc, buf)) {
+      goto Lskip;
     }
     if (this->load_http_info(&vector, doc) != doc->hlen) {
       goto Lskip;

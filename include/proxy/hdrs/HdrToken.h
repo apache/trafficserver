@@ -116,6 +116,9 @@ extern const HdrTokenWksEntry *const hdrtoken_wks_entries;
 
 extern int hdrtoken_num_wks;
 
+/// Identity of the ordered WKS strings and their MIME field accelerators.
+extern const uint64_t hdrtoken_wks_identity;
+
 extern const char       *hdrtoken_strs[];
 extern int               hdrtoken_str_lengths[];
 extern HdrTokenType      hdrtoken_str_token_types[];
