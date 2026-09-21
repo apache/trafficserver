@@ -147,6 +147,12 @@ ssl_stash_verify_store(SSL *ssl, X509_STORE *store)
   if (!SSL_set_ex_data(ssl, ssl_verify_store_index, store)) {
     SSLError("failed to record the per-connection verify store");
     X509_STORE_free(store);
+    // Leaving the previous store in the slot is the stale-store condition the rest of this function
+    // exists to prevent, so clear it too. Release it only if the slot really was cleared, since
+    // otherwise the callback would still read it.
+    if (SSL_set_ex_data(ssl, ssl_verify_store_index, nullptr)) {
+      X509_STORE_free(previous);
+    }
     return;
   }
   X509_STORE_free(previous);
