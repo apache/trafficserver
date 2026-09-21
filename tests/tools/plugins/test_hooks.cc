@@ -41,7 +41,7 @@ char PIName[] = PINAME;
 
 DbgCtl dbg_ctl{PIName};
 
-// NOTE:  It's important to flush this after writing so that a gold test using this plugin can examine the log before TS
+// NOTE:  It's important to flush this after writing so that a Uranium test using this plugin can examine the log before TS
 // terminates.
 //
 std::fstream logFile;

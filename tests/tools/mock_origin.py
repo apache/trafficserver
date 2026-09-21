@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-A reusable mock origin server for ATS autests.
+A reusable mock origin server for ATS Uranium tests.
 
 Replaces the various ad-hoc nc-based shell scripts (post/server1.sh,
 chunked_encoding/server2..4.sh, post_slow_server/server.sh) with a single
@@ -145,7 +145,7 @@ def serve_one(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Mock origin server for ATS autests. '
+        description='Mock origin server for ATS Uranium tests. '
         'Listens on PORT, serves one HTTP transaction, then exits. '
         'Compatible with When.PortOpen() readiness probes.')
 

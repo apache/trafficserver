@@ -1,0 +1,10 @@
+# Test configuration for disable_pristine_host_hdr functionality
+# Routes cookie bucket traffic to canary server with pristine host header disabled
+
+op:
+  cookie: SessionID
+  operation: bucket
+  bucket: 30/100
+  sendto: http://canary.com:{SERVER_EXTRA_HTTP_PORT}/app/test
+  disable_pristine_host_hdr: true
+  else: http://stable.com:{SERVER_HTTP_PORT}/app/test

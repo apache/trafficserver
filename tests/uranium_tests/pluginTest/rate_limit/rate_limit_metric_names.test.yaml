@@ -1,0 +1,53 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+meta: {version: "1.0"}
+
+urtest:
+  description: "Verify rate_limit metrics use prefix.type.tag names"
+  requires: {plugins: [rate_limit.so]}
+  server: {name: "rate-limit-metric-origin"}
+  client: {name: "rate-limit-metric-client"}
+  ats:
+    name: "rate-limit-metric-ts"
+    process_config: {enable_cache: false}
+    copy_to_config_dir: ["rate_limit_metric_names.yaml"]
+    plugin_config: ["rate_limit.so {CONFIG_DIR}/rate_limit_metric_names.yaml"]
+    remap_config:
+      - "map / http://127.0.0.1:{SERVER_HTTP_PORT}/"
+    post_client_commands:
+      - 'traffic_ctl metric match sni > "{ATS_ROOT}/metrics.txt"'
+    file_checks:
+      - {path: "{ATS_ROOT}/metrics.txt", contains: "myprefix.sni.mytag.queued"}
+      - {path: "{ATS_ROOT}/metrics.txt", excludes: "mytag.sni.myprefix"}
+      - {path: "{ATS_ROOT}/metrics.txt", contains: "plugin.rate_limiter.sni.onlytag.queued"}
+      - {path: "{ATS_ROOT}/metrics.txt", excludes: "onlytag.sni.plugin.rate_limiter"}
+      - {path: "{ATS_ROOT}/metrics.txt", contains: "onlyprefix.sni.prefixonly.example.com.queued"}
+      - {path: "{ATS_ROOT}/metrics.txt", excludes: "prefixonly.example.com.sni.onlyprefix"}
+
+sessions:
+  - transactions:
+      - all: {headers: {fields: [[uuid, rate-limit-metric-names]]}}
+        client-request:
+          method: GET
+          url: /health
+          version: "1.1"
+          headers: {fields: [[Host, metrics.example.com]]}
+        server-response:
+          status: 200
+          headers: {fields: [[Content-Length, 2], [Connection, close]]}
+          content: {data: "OK", size: 2}
+        proxy-response: {status: 200}

@@ -550,7 +550,7 @@ A stripe filled and cleanly shut down before the first periodic dir sync
 (:ts:cv:`proxy.config.cache.dir.sync_frequency`, 60 s by default) is exactly that
 case: skipping the shutdown write leaves ``sync_serial == 0`` on disk, and the
 next start that cannot use the segment finds an empty directory and silently
-loses every object. The ``cache_shm_dir_invalid`` autest covers this.
+loses every object. The ``cache_shm_dir_invalid`` Uranium test covers this.
 
 So the shutdown write stays. It costs what it cost before the feature existed,
 and it buys the guarantee that the fallback path is always recoverable. Only
@@ -809,8 +809,8 @@ The pure trust-gate logic is unit-tested in
 storage-signature topology sensitivity, control-header round-trip, the macOS
 name-length limit, and the process-liveness check).
 
-The end-to-end behavior is covered by autests in
-:ts:git:`tests/gold_tests/cache/`, one scenario each:
+The end-to-end behavior is covered by Uranium tests in
+:ts:git:`tests/uranium_tests/cache/`, one scenario each:
 
 .. list-table::
    :header-rows: 1

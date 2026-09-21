@@ -105,7 +105,7 @@ build() {
 regress() {
   ( cd $OBJROOT && $MAKE check ) && \
   $DSTROOT/bin/traffic_server -k -K -R 1 && \
-  $SRCROOT/tests/autest.sh --ats-bin=$DSTROOT/bin
+  $SRCROOT/tests/urtest.sh --no-run-in-docker
 }
 
 CC=${CC:-$(prog cc)}
