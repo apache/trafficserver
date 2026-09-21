@@ -527,32 +527,40 @@ set(TS_USE_MALLOC_ALLOCATOR ${ENABLE_MALLOC_ALLOCATOR})
 set(TS_USE_ALLOCATOR_METRICS ${ENABLE_ALLOCATOR_METRICS})
 find_package(ZLIB REQUIRED)
 
-find_package(zstd CONFIG QUIET)
-if(zstd_FOUND)
+# 1.4.0 stabilized the advanced one-shot API (ZSTD_compress2 et al.) used by
+# the RAM cache; plugins/compress already requires the same floor for
+# ZSTD_compressStream2, so this is not specific to the cache.
+find_package(ZSTD 1.4.0)
+set(HAVE_ZSTD_H ${ZSTD_FOUND})
 
-  # Provide a compatibility target name if the upstream package does not export it
-  # Our code links against `zstd::zstd`; upstream zstd usually exports
-  # `zstd::libzstd_shared`/`zstd::libzstd_static`. Create an alias if needed.
-  if(NOT TARGET zstd::zstd)
-    if(TARGET zstd::libzstd_shared)
-      set(_zstd_target zstd::libzstd_shared)
-    elseif(TARGET zstd::libzstd_static)
-      set(_zstd_target zstd::libzstd_static)
-    elseif(TARGET zstd::libzstd)
-      set(_zstd_target zstd::libzstd)
-    endif()
-    if(DEFINED _zstd_target)
+# cmake/FindZSTD.cmake creates the zstd::zstd target this tree links against,
+# but with CMAKE_FIND_PACKAGE_PREFER_CONFIG the lookup can resolve through
+# zstd's own config package instead: on a case-insensitive filesystem the
+# ZSTDConfig.cmake CMake searches for matches the zstdConfig.cmake that zstd
+# installs. That package exports zstd::libzstd_shared/_static, so alias
+# whichever it gave us or the four targets linking zstd::zstd fail at generate
+# time.
+if(ZSTD_FOUND AND NOT TARGET zstd::zstd)
+  foreach(_zstd_target zstd::libzstd_shared zstd::libzstd_static zstd::libzstd)
+    if(TARGET ${_zstd_target})
       add_library(zstd_zstd INTERFACE)
       target_link_libraries(zstd_zstd INTERFACE ${_zstd_target})
       add_library(zstd::zstd ALIAS zstd_zstd)
-      set(HAVE_ZSTD_H TRUE)
-    else()
-      set(HAVE_ZSTD_H FALSE)
+      break()
     endif()
+  endforeach()
+  unset(_zstd_target)
+  if(NOT TARGET zstd::zstd)
+    message(WARNING "zstd found but it exports no target this build can use; building without zstd")
+    set(HAVE_ZSTD_H FALSE)
   endif()
-else()
-  set(HAVE_ZSTD_H FALSE)
 endif()
+
+# 1.7.0 (r129) introduced the current compression API, including
+# LZ4_compress_default(), which the RAM cache uses; 1.7.5 is the floor for
+# LZ4_versionString(), which traffic_layout reports.
+find_package(LZ4 1.7.5)
+set(HAVE_LZ4_H ${LZ4_FOUND})
 
 # ncurses is used in traffic_top
 find_package(Curses)

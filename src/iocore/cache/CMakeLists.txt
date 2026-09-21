@@ -58,6 +58,14 @@ if(HAVE_LZMA_H)
   target_link_libraries(inkcache PRIVATE LibLZMA::LibLZMA)
 endif()
 
+if(HAVE_LZ4_H)
+  target_link_libraries(inkcache PRIVATE LZ4::LZ4)
+endif()
+
+if(HAVE_ZSTD_H)
+  target_link_libraries(inkcache PRIVATE zstd::zstd)
+endif()
+
 if(BUILD_TESTING)
   # Unit Tests with unit_tests/main.cc
   macro(add_cache_test name)
@@ -94,6 +102,7 @@ if(BUILD_TESTING)
   add_cache_test(CacheUnmarshalCompat unit_tests/test_Unmarshal_Compat.cc)
   add_cache_test(CacheStripe unit_tests/test_Stripe.cc)
   add_cache_test(CacheAggregateWriteBuffer unit_tests/test_AggregateWriteBuffer.cc)
+  add_cache_test(RamCacheCLFUS unit_tests/test_RamCacheCLFUS.cc)
   add_cache_test(RamCacheCompressEntries unit_tests/test_RamCacheCompressEntries.cc)
   add_cache_test(RamCacheSeenFilter unit_tests/test_RamCacheSeenFilter.cc)
   # Only the shutdown test attaches a live segment; the rest need no shm syscall.
