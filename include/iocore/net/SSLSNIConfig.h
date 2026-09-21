@@ -58,6 +58,8 @@ struct NextHopProperty {
   // Parsed once at config load rather than re-parsed from disk on every outbound handshake to
   // this next hop.
   std::shared_ptr<const SSLRPKUtils::TrustedKeySet> server_rpk_ca;
+  // Identity of the set above, so a cached origin session cannot be resumed under a different one.
+  std::string             server_rpk_ca_digest;
   YamlSNIConfig::Policy   verify_server_policy     = YamlSNIConfig::Policy::UNSET;   // whether to verify the next hop
   YamlSNIConfig::Property verify_server_properties = YamlSNIConfig::Property::UNSET; // what to verify on the next hop
 };

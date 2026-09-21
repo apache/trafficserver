@@ -24,6 +24,7 @@
 #include "P_Net.h"
 #include "P_OCSPStapling.h"
 #include "P_SSLConfig.h"
+#include "P_SSLClientUtils.h"
 #include "P_SSLNetVConnection.h"
 #include "P_TLSKeyLogger.h"
 #include "SSLKeyUtils.h"
@@ -2378,6 +2379,16 @@ get_verify_str(SSL *ssl)
     }
 
     swoc::bwprint(verify_str, "{}:{}", policy_str.c_str(), property_str.c_str());
+
+#if TS_USE_RPK
+    // A raw public key next hop is authenticated by its pinned key set rather than by a chain, and
+    // that set is not part of the SSL_CTX the rest of this key identifies -- contexts are shared by
+    // (cert, key, CA). Without this term a session would keep resuming after the pinned set was
+    // replaced, and a resumed handshake never re-presents the key for the pin check to run again.
+    if (std::string_view const pin_identity = origin_rpk_pin_identity(ssl); !pin_identity.empty()) {
+      verify_str.append(":").append(pin_identity);
+    }
+#endif
   }
 
   return verify_str;

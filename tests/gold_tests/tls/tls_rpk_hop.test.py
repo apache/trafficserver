@@ -140,7 +140,7 @@ def make_edge(
             'proxy.config.ssl.client.cert.path': '{0}'.format(ts.Variables.SSLDir),
             'proxy.config.ssl.client.private_key.path': '{0}'.format(ts.Variables.SSLDir),
             'proxy.config.diags.debug.enabled': 1,
-            'proxy.config.diags.debug.tags': 'ssl_verify',
+            'proxy.config.diags.debug.tags': 'ssl_verify|ssl.origin_session_cache',
             'proxy.config.ssl.client.verify.server.policy': policy,
             # Pin the exact key instead of matching a name: a raw public key carries no SAN.
             'proxy.config.ssl.client.verify.server.properties': 'SIGNATURE',
@@ -322,6 +322,11 @@ tr.Processes.Default.StartBefore(edge_ok)
 tr.Processes.Default.Streams.All = Testers.ContainsExpression('origin response', 'the request should succeed end to end')
 edge_ok.Disk.traffic_out.Content = Testers.ContainsExpression(
     'Origin authenticated with a raw public key .*pin match=yes', 'the hop should use RPK, not fall back to X.509')
+# The pinned set identifies the connection in the origin session cache, so a session it authenticated
+# cannot be resumed once the configuration names a different set. A resumed handshake never
+# re-presents the key, so the pin check could not catch that afterwards.
+edge_ok.Disk.traffic_out.Content += Testers.ContainsExpression(
+    'origin session cache lookup key = .*:[0-9a-f]{64}', 'the pinned key set must identify the cached origin session')
 tr.StillRunningAfter = server
 tr.StillRunningAfter += parent_rpk
 tr.StillRunningAfter += edge_ok

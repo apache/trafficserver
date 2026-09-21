@@ -23,6 +23,8 @@
 
 #include <openssl/evp.h>
 
+#include <string>
+
 #include "iocore/net/SSLTypes.h"
 
 /**
@@ -51,5 +53,15 @@ bool pinnedKeyMatches(const unsigned char *peer_spki_der, int peer_spki_len, con
 
 /// Convenience wrapper: DER-encode @a pkey as a SubjectPublicKeyInfo and check it against @a trusted.
 bool pinnedKeyMatches(EVP_PKEY *pkey, const TrustedKeySet &trusted);
+
+/** Reduce @a keys to a stable identity, for keying caches whose entries were authenticated by it.
+
+    Derived from the key material rather than from the file path or the parsed object's address, so
+    that a configuration reload leaving the pinned set unchanged keeps the identity and does not
+    retire the sessions that set authenticated. Entry order participates, which is the conservative
+    direction: a reordered file stops matching rather than silently aliasing.
+    @return a hex digest, or an empty string if @a keys is empty or the digest could not be taken.
+*/
+std::string digestTrustedKeys(const TrustedKeySet &keys);
 
 } // namespace SSLRPKUtils

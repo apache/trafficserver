@@ -55,25 +55,47 @@ DbgCtl dbg_ctl_ssl_origin_session_cache{"ssl.origin_session_cache"};
 // shared context would leak one next hop's pin set onto every other hop sharing that cache entry.
 int ssl_server_rpk_index = -1;
 
+/// The pinned set for this connection, together with the identity the origin session cache keys on.
+struct TrustedRPK {
+  std::shared_ptr<const SSLRPKUtils::TrustedKeySet> keys;
+  std::string                                       digest;
+};
+
 void
 ssl_server_rpk_ex_free(void * /*parent*/, void *ptr, CRYPTO_EX_DATA * /*ad*/, int /*idx*/, long /*argl*/, void * /*argp*/)
 {
-  delete static_cast<std::shared_ptr<const SSLRPKUtils::TrustedKeySet> *>(ptr);
+  delete static_cast<TrustedRPK *>(ptr);
+}
+
+const TrustedRPK *
+ssl_get_trusted_rpk_holder(const SSL *ssl)
+{
+  if (ssl_server_rpk_index < 0) {
+    return nullptr;
+  }
+  return static_cast<const TrustedRPK *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
 }
 
 const SSLRPKUtils::TrustedKeySet *
 ssl_get_trusted_rpk(const SSL *ssl)
 {
-  if (ssl_server_rpk_index < 0) {
-    return nullptr;
-  }
-  auto *trusted =
-    static_cast<const std::shared_ptr<const SSLRPKUtils::TrustedKeySet> *>(SSL_get_ex_data(ssl, ssl_server_rpk_index));
-  return trusted != nullptr ? trusted->get() : nullptr;
+  auto const *holder = ssl_get_trusted_rpk_holder(ssl);
+
+  return holder != nullptr ? holder->keys.get() : nullptr;
 }
 #endif
 
 } // end anonymous namespace
+
+#if TS_USE_RPK
+std::string_view
+origin_rpk_pin_identity(const SSL *ssl)
+{
+  auto const *holder = ssl_get_trusted_rpk_holder(ssl);
+
+  return holder != nullptr ? std::string_view{holder->digest} : std::string_view{};
+}
+#endif
 
 int
 verify_callback(int signature_ok, X509_STORE_CTX *ctx)
@@ -506,7 +528,8 @@ ssl_new_session_callback(SSL *ssl, SSL_SESSION *sess)
 
 #if TS_USE_RPK
 bool
-ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set)
+ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set,
+                     std::string_view trusted_key_digest)
 {
   if (!offer_rpk && trusted_key_set == nullptr) {
     return true;
@@ -525,7 +548,7 @@ ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils
   if (trusted_key_set != nullptr) {
     // ssl_server_rpk_ex_free() releases this holder (and, via it, the shared TrustedKeySet from
     // the SNI config the caller parsed it from) when ssl is freed.
-    auto *holder = new std::shared_ptr<const SSLRPKUtils::TrustedKeySet>(std::move(trusted_key_set));
+    auto *holder = new TrustedRPK{std::move(trusted_key_set), std::string{trusted_key_digest}};
     if (!SSL_set_ex_data(ssl, ssl_server_rpk_index, holder)) {
       delete holder;
       SSLError("failed to attach trusted next-hop raw public keys to the connection");

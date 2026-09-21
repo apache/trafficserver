@@ -63,6 +63,16 @@ bool origin_pinned_raw_public_key(NetVConnection *netvc);
 
     Both are advertised alongside X.509 rather than replacing it, so a next hop that doesn't
     support RPK negotiates down to a normal certificate exchange.
+
+    @a trusted_key_digest identifies the pinned set for the origin session cache key, so that a
+    session authenticated by one set is not resumed after the configuration named a different one.
  */
-bool ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set);
+bool ssl_client_setup_rpk(SSL *ssl, bool offer_rpk, std::shared_ptr<const SSLRPKUtils::TrustedKeySet> trusted_key_set,
+                          std::string_view trusted_key_digest);
+
+/** @return the identity of the pinned next-hop key set attached to @a ssl, empty if there is none.
+    Part of the origin session cache key, so a cached session cannot outlive the pin set that
+    authorized it. See ssl_client_setup_rpk().
+ */
+std::string_view origin_rpk_pin_identity(const SSL *ssl);
 #endif
