@@ -1,0 +1,62 @@
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information regarding
+#  copyright ownership.  The ASF licenses this file to you under
+#  the Apache License, Version 2.0 (the "License"); you may not use
+#  this file except in compliance with the License.  You may obtain
+#  a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+meta:
+  version: "1.0"
+
+autest:
+  description: "Dual certificate default context selection (ec_rsa)"
+  server:
+    name: "server_ec_rsa"
+  client:
+    name: "client_ec_rsa"
+  ats:
+    name: "ts_ec_rsa"
+    process_config:
+      enable_tls: true
+      enable_cache: false
+    ssl_multicert_yaml:
+      - 'ssl_multicert:'
+      - '  - dest_ip: "*"'
+      - '    ssl_cert_name: signed-foo-ec.pem,signed-foo.pem'
+      - '    ssl_key_name: signed-foo-ec.key,signed-foo.key'
+      - '  - dest_ip: ""'
+      - '    ssl_cert_name: signed-san.pem,signed-san-ec.pem'
+      - '    ssl_key_name: signed-san.key,signed-san-ec.key'
+    remap_config:
+      - from: "https://example.com/"
+        to: "http://127.0.0.1:{SERVER_HTTP_PORT}/"
+
+sessions:
+  - protocol:
+      stack: https
+      tls:
+        sni: one.com
+    transactions:
+      - client-request:
+          method: GET
+          url: /
+          version: "1.1"
+          headers:
+            fields:
+              - [ Host, example.com ]
+              - [ uuid, dual-cert-default ]
+        server-response:
+          status: 200
+          headers:
+            fields:
+              - [ Content-Length, 0 ]
+        proxy-response:
+          status: 200
