@@ -122,7 +122,6 @@ NetHandler::stopCop(NetEvent *ne)
   ink_release_assert(ne->nh == this);
 
   open_list.remove(ne);
-  cop_list.remove(ne);
   remove_from_keep_alive_queue(ne);
   remove_from_active_queue(ne);
   timer_wheel.cancel(ne);
