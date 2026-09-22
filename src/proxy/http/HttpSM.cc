@@ -889,6 +889,18 @@ HttpSM::wait_for_full_body()
   tunnel.tunnel_run(p);
 }
 
+void
+HttpSM::generate_cache_key(HttpCacheKey *key, URL *url)
+{
+  Cache::generate_key(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+}
+
+void
+HttpSM::generate_cache_key92(HttpCacheKey *key, URL *url)
+{
+  Cache::generate_key92(key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+}
+
 int
 HttpSM::state_watch_for_client_abort(int event, void *data)
 {
@@ -5348,9 +5360,9 @@ HttpSM::do_cache_lookup_and_read()
 
   HttpCacheKey key;
   if (CompatCacheKey::is_legacy(compatibility_cache_lookup)) {
-    Cache::generate_key92(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+    generate_cache_key92(&key, c_url);
   } else {
-    Cache::generate_key(&key, c_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+    generate_cache_key(&key, c_url);
   }
 
   t_state.hdr_info.cache_request.copy(&t_state.hdr_info.client_request);
@@ -5383,7 +5395,7 @@ HttpSM::do_cache_delete_all_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing cache delete for %s", url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, url);
   cacheProcessor.remove(nullptr, &key);
 
   // A migration leaves the legacy copy in place, so the object can live under
@@ -5415,7 +5427,7 @@ HttpSM::do_cache_delete_compat_alts()
   SMDbg(dbg_ctl_http_seq, "Issuing compatibility cache delete for %s", url->string_get_ref());
 
   HttpCacheKey key;
-  Cache::generate_key92(&key, url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  generate_cache_key92(&key, url);
   cacheProcessor.remove(nullptr, &key);
 }
 
@@ -5501,7 +5513,7 @@ HttpSM::do_cache_prepare_action(HttpCacheSM *c_sm, CacheHTTPInfo *object_read_in
   SMDbg(dbg_ctl_http_cache_write, "writing to cache with URL %s", s_url->string_get(&t_state.arena));
 
   HttpCacheKey key;
-  Cache::generate_key(&key, s_url, t_state.txn_conf->cache_ignore_query, t_state.txn_conf->cache_generation_number);
+  generate_cache_key(&key, s_url);
 
   // A compatibility read returns an object stored under the legacy key. Passing
   // that object to a write using the canonical key turns the write into an
