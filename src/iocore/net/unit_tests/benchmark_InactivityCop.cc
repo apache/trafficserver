@@ -343,6 +343,20 @@ struct Fixture {
     build(n);
   }
 
+  // Mocks are destroyed by ~Fixture() without ever passing through
+  // stopCop(), which is startCop()'s only cancel path in production. Cancel
+  // by hand here so no mock is destroyed while still linked into
+  // nh.timer_wheel -- a dangling wheel entry into freed memory is a real
+  // use-after-free under ASan even if nothing in this binary ever walks the
+  // bucket again.
+  ~Fixture()
+  {
+    SCOPED_MUTEX_LOCK(lock, nh.mutex, this_ethread());
+    for (auto &m : mocks) {
+      nh.stopCop(m.get());
+    }
+  }
+
   void
   build(size_t n)
   {
@@ -886,6 +900,56 @@ TEST_CASE("InactivityCop: lock contention", "[!benchmark][net][inactivity_cop]")
       CHECK(sample.lock_failures == expected_failures);
     }
   }
+}
+
+// Direct check that startCop()/stopCop() populate and drain nh.timer_wheel:
+// the cop still drives off cop_list, so this is the only place a
+// schedule/cancel bookkeeping bug would otherwise surface before the
+// switchover.
+//
+// build() alone is not enough to land a mock in the wheel: startCop() only
+// applies default_inactivity_timeout_in (mirrors UnixNetVConnection), and
+// _earliest_deadline() looks at next_inactivity_timeout_at /
+// next_activity_timeout_at, which stay 0 until something enabled I/O or
+// called set_inactivity_timeout() with a positive value - exactly like a
+// freshly accepted, idle real connection. So arm a deadline the way a real
+// accept path does (e.g. UnixNetVConnection::acceptEvent -> set_inactivity_timeout())
+// and rearm explicitly before checking.
+TEST_CASE("InactivityCop: timer wheel population", "[net][inactivity_cop]")
+{
+  constexpr size_t n = 1000;
+  Fixture          fx(n);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    ink_hrtime const now = ink_get_hrtime();
+    for (auto &m : fx.mocks) {
+      m->next_inactivity_timeout_at = now + HRTIME_SECONDS(30);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  INFO("every mock with a deadline must be scheduled in the wheel after rearm_timer()");
+  for (auto &m : fx.mocks) {
+    CHECK(fx.nh.timer_wheel.is_scheduled(m.get()));
+  }
+
+  constexpr size_t stopped_count = 10;
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (size_t i = 0; i < stopped_count; ++i) {
+      fx.nh.stopCop(fx.mocks[i].get());
+    }
+  }
+
+  INFO("stopCop() must cancel exactly the mocks it was called on, leaving the rest scheduled");
+  for (size_t i = 0; i < n; ++i) {
+    bool const expect_scheduled = i >= stopped_count;
+    CHECK(fx.nh.timer_wheel.is_scheduled(fx.mocks[i].get()) == expect_scheduled);
+  }
+
+  // ~Fixture() calls stopCop() on every mock; that is exercised as idempotent
+  // here too for the ones already stopped above.
 }
 
 CATCH_REGISTER_LISTENER(ProvenanceListener);

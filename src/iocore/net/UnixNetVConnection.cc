@@ -95,6 +95,7 @@ read_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null read.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -129,6 +130,7 @@ write_signal_and_update(int event, UnixNetVConnection *vc)
     case VC_EVENT_INACTIVITY_TIMEOUT:
       Dbg(dbg_ctl_inactivity_cop, "event %d: null write.vio cont, closing vc %p", event, vc);
       vc->closed = 1;
+      vc->rearm_timer();
       break;
     default:
       Error("Unexpected event %d for vc %p", event, vc);
@@ -283,6 +285,12 @@ UnixNetVConnection::do_io_close(int alerrno /* = -1 */)
     closed = 1;
   } else {
     closed = -1;
+  }
+
+  // Only rearm on this NetEvent's own thread; a cross-thread close defers to
+  // whichever path eventually runs do_io_close (or free_netevent) there.
+  if (t == this->thread) {
+    this->rearm_timer();
   }
 
   if (close_inline) {
@@ -1209,10 +1217,11 @@ UnixNetVConnection::clear()
   next_activity_timeout_at   = 0;
   inactivity_timeout_in      = 0;
   active_timeout_in          = 0;
-  // nh is already cleared by stopIO() on the free_netevent() path by the time
-  // clear() runs, but the wheel that scheduled this NetEvent is still this
-  // thread's, since a NetEvent is only ever scheduled on its own thread's wheel.
-  get_NetHandler(this_ethread())->timer_wheel.cancel(this);
+  // stopCop() is the authoritative cancel, called while nh is still valid. A
+  // still-scheduled element here means some teardown path bypassed stopCop,
+  // leaving a dangling wheel entry into freed memory -- fail loudly in debug
+  // rather than paper over it with a redundant cancel.
+  ink_assert(!get_NetHandler(this_ethread())->timer_wheel.is_scheduled(this));
 
   // clear variables for reuse
   this->mutex.clear();
