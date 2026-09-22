@@ -106,6 +106,24 @@ def _check_is_valid_json(path):
     return (True, desc, "Output parses as JSON")
 
 
+def _render_json_value(value):
+    """Render a value for a failure message, key-sorted when it is a structure.
+
+    A nested expectation compared as one `repr()` puts both structures on a
+    single line, in source order on one side and emission order on the other,
+    which is unreadable for anything larger than a scalar. Serialising both
+    sides the same way, key-sorted, makes the differing key findable.
+
+    `default` catches a value json cannot serialise and non-string dict keys
+    raise regardless, so the call is guarded: autest treats an exception from
+    a tester callback as fatal, see the note in `_read_stdout`.
+    """
+    try:
+        return json.dumps(value, sort_keys=True, default=repr)
+    except (TypeError, ValueError):
+        return repr(value)
+
+
 def _check_json_fields(path, expected):
     """Tester callback: every expected field must match its value in the parsed output.
 
@@ -145,13 +163,15 @@ def _check_json_fields(path, expected):
     failed = []
     for key, want in expected.items():
         if key not in doc:
-            failed.append(f"{key} is missing (expected {want!r})")
+            failed.append(f"{key} is missing\n  expected: {_render_json_value(want)}")
             continue
         actual = doc[key]
         if actual != want:
-            failed.append(f"{key} = {actual!r} (expected {want!r})")
+            failed.append(
+                f"{key} does not match\n  actual  : {_render_json_value(actual)}\n"
+                f"  expected: {_render_json_value(want)}")
     if failed:
-        return (False, desc, "FAIL: " + "; ".join(failed) + f"\nOutput was:\n{raw}")
+        return (False, desc, "FAIL:\n" + "\n".join(failed) + f"\nOutput was:\n{raw}")
     return (True, desc, "All expected fields matched")
 
 
@@ -230,9 +250,10 @@ class Common():
 
     def validate_json_contains(self, **field_checks):
         """
-        Validate JSON output contains specific field:value pairs. Only checks specified fields.
-        Every mismatch is reported as "field_name = actual_value (expected expected_value)",
-        followed by the raw output.
+        Validate JSON output contains specific field:value pairs. Only checks specified fields,
+        each compared whole, so naming a field whose value is a structure asserts that subtree
+        exactly. Every mismatch is reported with the actual and expected values on their own
+        lines, key-sorted, followed by the raw output.
 
         The check runs in the autest process against the captured stdout file. Piping
         traffic_ctl into a JSON parser instead would hide failures: the exit status of a shell
