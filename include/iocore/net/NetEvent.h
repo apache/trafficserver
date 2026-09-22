@@ -122,7 +122,6 @@ public:
   bool use_default_inactivity_timeout = false;
 
   LINK(NetEvent, open_link);
-  LINK(NetEvent, cop_link);
   LINKM(NetEvent, read, ready_link)
   SLINKM(NetEvent, read, enable_link)
   LINKM(NetEvent, write, ready_link)

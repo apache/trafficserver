@@ -106,8 +106,11 @@ public:
   Event   *trigger_event = nullptr;
   QueM(NetEvent, NetState, read, ready_link) read_ready_list;
   QueM(NetEvent, NetState, write, ready_link) write_ready_list;
+  /// Every NetEvent on this thread. Not walked for timeouts any more - the
+  /// timer wheel does that - but it is the only enumeration of all NetEvents on
+  /// the thread, and it backs startCop's double-registration assert. The wheel
+  /// cannot substitute: a NetEvent with no deadline is not scheduled in it.
   Que(NetEvent, open_link) open_list;
-  DList(NetEvent, cop_link) cop_list;
   TimerWheel<NetEvent> timer_wheel;
   ASLLM(NetEvent, NetState, read, enable_link) read_enable_list;
   ASLLM(NetEvent, NetState, write, enable_link) write_enable_list;
@@ -219,16 +222,16 @@ public:
 
   /**
     Start to handle active timeout and inactivity timeout on a NetEvent.
-    Put the ne into open_list. All NetEvents in the open_list is checked for
-    timeout by InactivityCop. Only be called when holding the mutex of this
-    NetHandler and must call startIO(ne) first.
+    Put the ne into open_list and schedule it in the timer wheel. Only be
+    called when holding the mutex of this NetHandler and must call startIO(ne)
+    first.
 
-    @param ne NetEvent to be managed by InactivityCop
+    @param ne NetEvent to be managed for timeouts.
    */
   void startCop(NetEvent *ne);
   /**
     Stop to handle active timeout and inactivity on a NetEvent.
-    Remove the ne from open_list and cop_list.
+    Remove the ne from open_list and cancel it in the timer wheel.
     Also remove the ne from keep_alive_queue and active_queue if its context is
     IN. Only be called when holding the mutex of this NetHandler.
 
