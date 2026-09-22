@@ -26,6 +26,7 @@
 #include <atomic>
 
 #include "tscore/List.h"
+#include "tscore/TimerWheel.h"
 #include "iocore/eventsystem/VIO.h"
 #include "iocore/eventsystem/EventSystem.h"
 #include "iocore/net/EventIO.h"
@@ -128,6 +129,16 @@ public:
   SLINKM(NetEvent, write, enable_link)
   LINK(NetEvent, keep_alive_queue_link);
   LINK(NetEvent, active_queue_link);
+  LINK(NetEvent, timer_link);
+  TimerWheelHook timer_hook;
+
+  /** Re-arm this NetEvent's slot in its NetHandler's timer wheel.
+   *
+   * Required after any change that makes a deadline earlier - setting a
+   * timeout, shortening one, or closing. Extending needs no call: the wheel
+   * re-reads the real deadline when the bucket comes due.
+   */
+  void rearm_timer();
 
   /// Values for @a f.shutdown
   static constexpr unsigned SHUTDOWN_READ  = 1;
