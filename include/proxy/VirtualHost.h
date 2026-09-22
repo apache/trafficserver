@@ -61,11 +61,24 @@ public:
     std::string get_id() const;
   };
 
-  bool        load(ConfigContext ctx = {});
+  /** Load every entry from the configuration file into this (empty) config.
+
+      @param initial_load Set only for the load performed by @c VirtualHost::startup(). An absent
+      or empty file is a supported "no virtualhosts configured" state there, but on a reload it is
+      an error: reporting success would publish an empty config over a live routing table, silently
+      dropping every per-domain remap table.
+   */
+  bool        load(ConfigContext ctx = {}, bool initial_load = false);
   bool        set_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {});
   static bool load_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {});
   Ptr<Entry>  find_by_id(std::string_view id) const;
   Ptr<Entry>  find_by_domain(std::string_view domain) const;
+
+  size_t
+  entry_count() const
+  {
+    return _entries.size();
+  }
 
 private:
   using entry_map = std::unordered_map<std::string, Ptr<Entry>>;
@@ -82,7 +95,7 @@ public:
   using scoped_config = ConfigProcessor::scoped_config<VirtualHost, VirtualHostConfig>;
 
   static void               startup();
-  static int                reconfigure(ConfigContext ctx = {});
+  static int                reconfigure(ConfigContext ctx = {}, bool initial_load = false);
   static int                reconfigure(std::string_view id, ConfigContext ctx = {});
   static VirtualHostConfig *acquire();
   static void               release(VirtualHostConfig *config);

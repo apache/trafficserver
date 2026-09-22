@@ -148,6 +148,14 @@ Example:
     ✔ virtualhost ··································    1ms
         [Note]  Reloaded virtualhost entry: foo
 
+The **<id>** must name an entry. An empty value is rejected rather than treated as a request to
+reload the whole file, so a reload scoped to one entry never rebuilds the entire table from disk.
+
+A reload, whether of a single entry or of the whole file, fails and leaves the running
+configuration in place if :file:`virtualhost.yaml` is missing, empty, or invalid. Only the initial
+load at startup treats a missing or empty file as "no virtual hosts configured"; on a reload,
+replacing a live routing table with an empty one is reported as a failure instead.
+
 
 Examples
 ========

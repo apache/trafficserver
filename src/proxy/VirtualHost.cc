@@ -22,6 +22,7 @@
  */
 
 #include <algorithm>
+#include <cctype>
 #include <cerrno>
 #include <atomic>
 #include <memory>
@@ -45,12 +46,16 @@ namespace
 {
 DbgCtl dbg_ctl_virtualhost("virtualhost");
 
-/** Serializes publication of a new @c VirtualHostConfig.
+/** Serializes both reload paths against each other.
 
-    The single-entry reload is a read-copy-modify-publish against the live config, so the read and
-    the publish must be atomic with respect to any other reload. Reload paths are scheduled on
-    ET_TASK with unrelated mutexes (a fresh one per @c ConfigRegistry::schedule_reload and one per
-    trigger record), so nothing else serializes them.
+    The single-entry reload is a read-copy-modify-publish against the live config, so its read and
+    its publish must be atomic with respect to any other reload. The full reload has the same
+    requirement for a different reason: two full reloads that parse concurrently can publish in the
+    opposite order to their reads, so the older read wins and resurrects entries the newer one had
+    dropped. Both therefore hold this for the parse as well as the publish. Reload paths are
+    scheduled on ET_TASK with unrelated mutexes (a fresh one per @c ConfigRegistry::schedule_reload
+    and one per trigger record), so nothing else serializes them. Neither path is on the request
+    path, so serializing the parse costs nothing.
  */
 std::mutex vhost_reconfigure_mutex;
 } // namespace
@@ -66,6 +71,37 @@ VirtualHostConfig::Entry::get_id() const
 namespace
 {
 const std::set<std::string> valid_vhost_keys = {"id", "domains", "remap"};
+
+/** Check that @a name is composed of non-empty hostname labels.
+
+    Without this, a documented-as-unsupported form such as `foo[0-9]+.example.com` is accepted as
+    an exact domain that no Host header can ever equal: the entry loads clean and never fires.
+ */
+bool
+is_hostname(std::string_view name)
+{
+  // A bracketed IPv6 literal is matched verbatim against the Host header.
+  if (name.size() > 2 && name.front() == '[' && name.back() == ']') {
+    return true;
+  }
+
+  size_t label_len = 0;
+
+  for (char c : name) {
+    if (c == '.') {
+      if (label_len == 0) {
+        return false;
+      }
+      label_len = 0;
+      continue;
+    }
+    if (!isalnum(static_cast<unsigned char>(c)) && c != '-' && c != '_') {
+      return false;
+    }
+    ++label_len;
+  }
+  return label_len > 0;
+}
 
 /** Decode a single `virtualhost` sequence element.
 
@@ -115,10 +151,20 @@ decode_virtualhost_entry(YAML::Node const &node, VirtualHostConfig::Entry &item,
                    domain, it.Mark().line + 1);
         return false;
       }
+      if (!is_hostname(domain + 2)) {
+        CfgLoadLog(ctx, DL_Error, "Virtualhost '%s' wildcard '%s' suffix is not a valid hostname; regex is not supported (line %d)",
+                   item.id.c_str(), domain, it.Mark().line + 1);
+        return false;
+      }
       item.wildcard_domains.emplace_back(domain + 2);
     } else {
       if (strchr(domain, '*') != nullptr) {
         CfgLoadLog(ctx, DL_Error, "Virtualhost '%s' domain '%s' may only use a wildcard in the leading '*.[domain]' form (line %d)",
+                   item.id.c_str(), domain, it.Mark().line + 1);
+        return false;
+      }
+      if (!is_hostname(domain)) {
+        CfgLoadLog(ctx, DL_Error, "Virtualhost '%s' domain '%s' is not a valid hostname; regex is not supported (line %d)",
                    item.id.c_str(), domain, it.Mark().line + 1);
         return false;
       }
@@ -167,8 +213,21 @@ build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &e
 }
 } // namespace
 
+namespace
+{
+/// Number of entries in the currently published config, so a refused reload can say what it would
+/// otherwise have dropped.
+size_t
+live_entry_count()
+{
+  VirtualHost::scoped_config config;
+
+  return config ? config->entry_count() : 0;
+}
+} // namespace
+
 bool
-VirtualHostConfig::load(ConfigContext ctx)
+VirtualHostConfig::load(ConfigContext ctx, bool initial_load)
 {
   _entries.clear();
   _exact_domains_to_id.clear();
@@ -177,6 +236,11 @@ VirtualHostConfig::load(ConfigContext ctx)
 
   struct stat sbuf;
   if (stat(config_path.c_str(), &sbuf) == -1 && errno == ENOENT) {
+    if (!initial_load) {
+      CfgLoadLog(ctx, DL_Error, "Cannot reload virtualhost config: '%s' doesn't exist; keeping the %zu live entry(s)",
+                 config_path.c_str(), live_entry_count());
+      return false;
+    }
     CfgLoadLog(ctx, DL_Warning, "Virtualhost configuration '%s' doesn't exist, no virtualhost entries loaded", config_path.c_str());
     return true;
   }
@@ -184,6 +248,11 @@ VirtualHostConfig::load(ConfigContext ctx)
   try {
     YAML::Node config = YAML::LoadFile(config_path);
     if (config.IsNull()) {
+      if (!initial_load) {
+        CfgLoadLog(ctx, DL_Error, "Cannot reload virtualhost config: '%s' is empty; keeping the %zu live entry(s)",
+                   config_path.c_str(), live_entry_count());
+        return false;
+      }
       Dbg(dbg_ctl_virtualhost, "Empty virtualhost config: %s", config_path.c_str());
       return true;
     }
@@ -406,6 +475,12 @@ virtualhost_reload(ConfigContext ctx)
         return;
       }
       std::string id = id_dir.as<std::string>();
+      if (id.empty()) {
+        // An empty id would otherwise fall through to a full reload, turning a request scoped to
+        // one entry into a rebuild of the whole table from whatever is currently on disk.
+        ctx.fail("virtualhost '_reload' directive 'id' must name an entry; omit 'id' entirely to reload the whole file");
+        return;
+      }
       if (VirtualHost::reconfigure(id, ctx)) {
         ctx.complete("Reloaded virtualhost entry: " + id);
       } else {
@@ -426,7 +501,7 @@ virtualhost_reload(ConfigContext ctx)
 void
 VirtualHost::startup()
 {
-  if (!reconfigure()) {
+  if (!reconfigure({}, true)) {
     Fatal("failed to load %s", ts::filename::VIRTUALHOST);
   }
 
@@ -440,20 +515,19 @@ VirtualHost::startup()
 }
 
 int
-VirtualHost::reconfigure(ConfigContext ctx)
+VirtualHost::reconfigure(ConfigContext ctx, bool initial_load)
 {
   CfgLoadLog(ctx, DL_Note, "%s loading ...", ts::filename::VIRTUALHOST);
   auto config = std::make_unique<VirtualHostConfig>();
 
-  if (!config->load(ctx)) {
+  // The parse is inside the lock as well as the publish; see vhost_reconfigure_mutex.
+  std::scoped_lock lock(vhost_reconfigure_mutex);
+
+  if (!config->load(ctx, initial_load)) {
     CfgLoadLog(ctx, DL_Error, "%s failed to load", ts::filename::VIRTUALHOST);
     return 0;
   }
-
-  {
-    std::scoped_lock lock(vhost_reconfigure_mutex);
-    _configid = configProcessor.set(_configid, config.release());
-  }
+  _configid = configProcessor.set(_configid, config.release());
 
   CfgLoadLog(ctx, DL_Note, "%s finished loading", ts::filename::VIRTUALHOST);
   return 1;
@@ -463,10 +537,11 @@ int
 VirtualHost::reconfigure(std::string_view id, ConfigContext ctx)
 {
   Dbg(dbg_ctl_virtualhost, "Reconfiguring virtualhost entry: %.*s", static_cast<int>(id.size()), id.data());
-  // Reconfigure all vhosts if id not specified
   if (id.empty()) {
-    Dbg(dbg_ctl_virtualhost, "No virtualhost specified, reconfiguring all entries");
-    return reconfigure(ctx);
+    // Reinterpreting this as a full reload would let a narrowly scoped request rebuild the whole
+    // table from disk. Callers that want that must ask for it directly.
+    CfgLoadLog(ctx, DL_Error, "Cannot reload a virtualhost entry without an id");
+    return 0;
   }
 
   // Parse outside the lock; only the read-copy-modify-publish below needs to be serialized.

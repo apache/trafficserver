@@ -21,6 +21,8 @@ Test.Summary = '''
 Verify virtualhost.yaml domain resolution and per-domain remap rules on the request path.
 '''
 
+import os
+
 Test.ContinueOnFail = True
 Test.testName = 'virtualhost_remap'
 
@@ -53,11 +55,19 @@ add_origin_response("/vhost-exact-precedence/", "hit:vhost-exact-precedence")
 add_origin_response("/vhost-fallback-rule/", "hit:vhost-fallback-rule")
 add_origin_response("/global-fallback/other/", "hit:global-fallback")
 add_origin_response("/global-plain/", "hit:global-plain")
+# Only reachable if the rejected reload below is wrongly published.
+add_origin_response("/vhost-conflict/", "hit:vhost-conflict")
 
 ts.Disk.records_config.update({
     'proxy.config.diags.debug.enabled': 1,
     'proxy.config.diags.debug.tags': 'virtualhost|url_rewrite',
 })
+
+# The refused reload at the end of this test logs the conflict as an ERROR, which
+# replaces the default diags expectations.
+ts.Disk.diags_log.Content = Testers.ContainsExpression(
+    "is already claimed by virtualhost 'exact-only'", "The conflicting reload should name the virtualhost holding the domain")
+ts.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "A refused reload must not be fatal")
 
 origin = f'127.0.0.1:{server.Variables.Port}'
 
@@ -69,68 +79,69 @@ ts.Disk.remap_config.AddLines(
         f'map http://none.example.net/ http://{origin}/global-plain/',
     ])
 
-ts.Disk.virtualhost_yaml.AddLines(
-    [
-        'virtualhost:',
-        # Plain exact-domain match. No wildcard in this config matches .example.org.
-        '  - id: exact-only',
-        '    domains:',
-        '      - exact.example.org',
-        '    remap:',
-        '      - type: map',
-        '        from:',
-        '          url: http://exact.example.org/',
-        '        to:',
-        f'          url: http://{origin}/vhost-exact-domain/',
-        # x.deep.example.com matches both this wildcard and the wider one below.
-        # The longest (most specific) suffix must win.
-        '  - id: deep-wildcard',
-        '    domains:',
-        '      - "*.deep.example.com"',
-        '    remap:',
-        '      - type: map',
-        '        from:',
-        '          url: http://x.deep.example.com/',
-        '        to:',
-        f'          url: http://{origin}/vhost-deep-wildcard/',
-        '  - id: wide-wildcard',
-        '    domains:',
-        '      - "*.example.com"',
-        '    remap:',
-        '      - type: map',
-        '        from:',
-        '          url: http://x.deep.example.com/',
-        '        to:',
-        f'          url: http://{origin}/vhost-wide-wildcard/',
-        '      - type: map',
-        '        from:',
-        '          url: http://precedence.example.com/',
-        '        to:',
-        f'          url: http://{origin}/vhost-wildcard-precedence/',
-        # precedence.example.com is claimed exactly here and by the wildcard
-        # above. The exact domain must win.
-        '  - id: exact-precedence',
-        '    domains:',
-        '      - precedence.example.com',
-        '    remap:',
-        '      - type: map',
-        '        from:',
-        '          url: http://precedence.example.com/',
-        '        to:',
-        f'          url: http://{origin}/vhost-exact-precedence/',
-        # This virtualhost resolves for fallback.example.net but its only rule
-        # covers a different path, so requests elsewhere must fall back to the
-        # global table.
-        '  - id: path-miss',
-        '    domains:',
-        '      - fallback.example.net',
-        '    remap:',
-        '      - type: map',
-        '        from:',
-        '          url: http://fallback.example.net/only-here/',
-        '        to:',
-        f'          url: http://{origin}/vhost-fallback-rule/',
-    ])
+vhost_config_lines = [
+    'virtualhost:',
+    # Plain exact-domain match. No wildcard in this config matches .example.org.
+    '  - id: exact-only',
+    '    domains:',
+    '      - exact.example.org',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://exact.example.org/',
+    '        to:',
+    f'          url: http://{origin}/vhost-exact-domain/',
+    # x.deep.example.com matches both this wildcard and the wider one below.
+    # The longest (most specific) suffix must win.
+    '  - id: deep-wildcard',
+    '    domains:',
+    '      - "*.deep.example.com"',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://x.deep.example.com/',
+    '        to:',
+    f'          url: http://{origin}/vhost-deep-wildcard/',
+    '  - id: wide-wildcard',
+    '    domains:',
+    '      - "*.example.com"',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://x.deep.example.com/',
+    '        to:',
+    f'          url: http://{origin}/vhost-wide-wildcard/',
+    '      - type: map',
+    '        from:',
+    '          url: http://precedence.example.com/',
+    '        to:',
+    f'          url: http://{origin}/vhost-wildcard-precedence/',
+    # precedence.example.com is claimed exactly here and by the wildcard
+    # above. The exact domain must win.
+    '  - id: exact-precedence',
+    '    domains:',
+    '      - precedence.example.com',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://precedence.example.com/',
+    '        to:',
+    f'          url: http://{origin}/vhost-exact-precedence/',
+    # This virtualhost resolves for fallback.example.net but its only rule
+    # covers a different path, so requests elsewhere must fall back to the
+    # global table.
+    '  - id: path-miss',
+    '    domains:',
+    '      - fallback.example.net',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://fallback.example.net/only-here/',
+    '        to:',
+    f'          url: http://{origin}/vhost-fallback-rule/',
+]
+
+ts.Disk.virtualhost_yaml.AddLines(vhost_config_lines)
 
 
 def add_request(name: str, host: str, path: str, expected: str, not_expected: str = "") -> 'TestRun':
@@ -171,3 +182,74 @@ add_request(
     "hit:global-fallback", "hit:vhost-fallback-rule")
 
 add_request("A host with no virtualhost entry uses the global table", "none.example.net", "/", "hit:global-plain")
+
+# ============================================================================
+# A reload that is refused must leave the previous routing table serving.
+#
+# deep-wildcard is rewritten to also claim exact.example.org, which exact-only
+# already holds. That conflict is detected by set_entry(), inside the critical
+# section and after the copy of the live config has already dropped the old
+# deep-wildcard entry — so this exercises the one failure path that runs after
+# the read-copy-modify begins. Nothing may be published, and both the entry
+# that was reloaded and the entry it collided with must still serve their
+# original rules.
+# ============================================================================
+vhost_config_path = os.path.join(ts.Variables.CONFIGDIR, 'virtualhost.yaml')
+
+conflicting_config_lines = [
+    'virtualhost:',
+    '  - id: exact-only',
+    '    domains:',
+    '      - exact.example.org',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://exact.example.org/',
+    '        to:',
+    f'          url: http://{origin}/vhost-exact-domain/',
+    '  - id: deep-wildcard',
+    '    domains:',
+    '      - "*.deep.example.com"',
+    # Already claimed by exact-only above.
+    '      - exact.example.org',
+    '    remap:',
+    '      - type: map',
+    '        from:',
+    '          url: http://x.deep.example.com/',
+    '        to:',
+    f'          url: http://{origin}/vhost-conflict/',
+    '      - type: map',
+    '        from:',
+    '          url: http://exact.example.org/',
+    '        to:',
+    f'          url: http://{origin}/vhost-conflict/',
+]
+
+
+def write_conflicting_config() -> None:
+    """Replace virtualhost.yaml with a version whose deep-wildcard entry steals a claimed domain."""
+    with open(vhost_config_path, 'w') as f:
+        f.write("\n".join(conflicting_config_lines) + "\n")
+
+
+tr = Test.AddTestRun("Rewrite virtualhost.yaml so deep-wildcard claims a domain exact-only holds")
+tr.Processes.Default.Env = ts.Env
+tr.Processes.Default.Command = 'echo "rewrite virtualhost.yaml with a domain conflict"'
+tr.Processes.Default.Setup.Lambda(lambda: write_conflicting_config())
+tr.StillRunningAfter = ts
+
+Test.AddConfigReload(
+    ts,
+    expect="fail",
+    directives={"virtualhost.id": "deep-wildcard"},
+    expect_tasks={"virtualhost": "fail"},
+    delay_start=2,
+    description="Single-entry reload with a claimed domain is refused")
+
+add_request(
+    "The refused reload leaves the reloaded entry serving its old rules", "x.deep.example.com", "/", "hit:vhost-deep-wildcard",
+    "hit:vhost-conflict")
+
+add_request(
+    "The refused reload leaves the entry it collided with serving", "exact.example.org", "/", "hit:vhost-exact-domain",
+    "hit:vhost-conflict")

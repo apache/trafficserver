@@ -754,3 +754,125 @@ def validate_missing_file_logged(resp: Response):
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_logged)
 tr.StillRunningAfter = ts_missing
+
+# ============================================================================
+# Test 17: an empty '_reload' id is refused, not widened to a full reload
+# The scoped request must not silently rebuild the whole table from disk, which
+# would pick up every unrelated edit currently in the file.
+# ============================================================================
+vhost_empty_id_token = "vhost-empty-id"
+
+tr = Test.AddTestRun("Single-entry reload with an empty virtualhost id")
+tr.AddJsonRPCClientRequest(
+    ts, Request.admin_config_reload(token=vhost_empty_id_token, configs={"virtualhost": {
+        "_reload": {
+            "id": ""
+        }
+    }}))
+
+
+def validate_empty_id(resp: Response):
+    '''Accepted by the framework; the handler refuses the directive'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Directive accepted, handler expected to refuse: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_empty_id)
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Empty virtualhost id is refused in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status(token=vhost_empty_id_token))
+
+
+def validate_empty_id_refused(resp: Response):
+    '''The subtask must FAIL and point at the way to ask for a full reload'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "must name an entry"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Empty id refused: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_empty_id_refused)
+tr.StillRunningAfter = ts
+
+# ============================================================================
+# Test 18: a full reload with no virtualhost.yaml on disk fails
+# Startup tolerates an absent file; a reload must not, because publishing an
+# empty config would drop every live per-domain remap table and still report
+# success. Reuses the instance from Test 16, which has no virtualhost.yaml.
+# ============================================================================
+ts_missing.Disk.diags_log.Content += Testers.ContainsExpression(
+    "Cannot reload virtualhost config", "A full reload with no virtualhost.yaml must not report success")
+
+vhost_missing_full_token = "vhost-missing-file-full"
+
+tr = Test.AddTestRun("Full virtualhost reload with no virtualhost.yaml")
+tr.AddJsonRPCClientRequest(
+    ts_missing, Request.admin_config_reload(token=vhost_missing_full_token, configs={"virtualhost": {
+        "_reload": {}
+    }}))
+
+
+def validate_missing_file_full(resp: Response):
+    '''Accepted by the framework; the handler fails because the file is absent'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Request accepted, handler expected to fail: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_full)
+tr.StillRunningAfter = ts_missing
+
+tr = Test.AddTestRun("Full reload with no virtualhost.yaml is reported as a failure")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts_missing, Request.get_reload_config_status(token=vhost_missing_full_token))
+
+
+def validate_missing_file_full_logged(resp: Response):
+    '''The whole-file reload must fail rather than publish an empty table'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "Cannot reload virtualhost config"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Missing file refused on a full reload: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_full_logged)
+tr.StillRunningAfter = ts_missing
