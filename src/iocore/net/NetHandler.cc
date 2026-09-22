@@ -113,6 +113,7 @@ NetHandler::startCop(NetEvent *ne)
   }
 
   open_list.enqueue(ne);
+  rearm_timer(ne);
 }
 
 void
@@ -124,6 +125,7 @@ NetHandler::stopCop(NetEvent *ne)
   cop_list.remove(ne);
   remove_from_keep_alive_queue(ne);
   remove_from_active_queue(ne);
+  timer_wheel.cancel(ne);
 }
 
 ink_hrtime
