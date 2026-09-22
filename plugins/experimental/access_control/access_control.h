@@ -108,7 +108,7 @@ enum AccessTokenStatus {
 const char *accessTokenStatusToString(const AccessTokenStatus &state);
 
 /**
- * Validates whether a request path fails within the scope claim of an access token.
+ * Validates whether a request path falls within the scope claim of an access token.
  * Matching is performed on normalized path segments. An empty or absent scope is
  * treated as unrestricted (returns true).
  *
