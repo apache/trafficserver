@@ -62,10 +62,14 @@ public:
     NetHandler &nh;
     ink_hrtime  now;
     Event      *e;
+    /// The wheel calls deadline_of() exactly once per element it pops, so this
+    /// is an exact count of what the cop examined this run.
+    int visited = 0;
 
     ink_hrtime
-    deadline_of(NetEvent *ne) const
+    deadline_of(NetEvent *ne)
     {
+      ++visited;
       // Must agree exactly with rearm_timer(): closed NetEvents are reaped on
       // the next tick rather than at their original deadline.
       return ne->closed ? now : nh._earliest_deadline(ne);
@@ -135,8 +139,16 @@ public:
 
     Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
 
-    Fire fire{nh, now, e};
-    nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
+    Fire      fire{nh, now, e};
+    int const fired = nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
+
+    // The cop's own cost had no telemetry before the wheel, which is how an
+    // O(N)-per-second sweep regressed unnoticed. Hitting the budget means this
+    // thread is behind; the remainder is picked up on the next tick.
+    Metrics::Counter::increment(net_rsb.inactivity_cop_visited, fire.visited);
+    if (fired >= TIMEOUT_BUDGET) {
+      Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);
+    }
 
     // Cleanup the active and keep-alive queues periodically
     nh.manage_active_queue(nullptr, true); // close any connections over the active timeout

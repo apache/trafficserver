@@ -964,10 +964,18 @@ UnixNetVConnection::netActivity()
     // Deliberately no rearm_timer(): this only pushes the deadline later, and the
     // wheel re-reads the real deadline when the bucket comes due. Hot I/O path.
   } else if (default_timeout_in > 0) {
-    // Same reasoning as above: arming from the default is still only ever an
-    // extension, so no rearm_timer() is needed here either.
+    // Arming from the default is an extension too, except on the 0 -> armed
+    // transition: a vc whose default was 0 when set_enabled() ran was never
+    // scheduled, so extending a deadline it does not have would leave it out of
+    // the wheel forever. Re-arm only on that transition, which happens at most
+    // once per connection, so the steady-state path stays free of wheel work.
+    bool const was_unarmed = this->next_inactivity_timeout_at == 0;
+
     this->use_default_inactivity_timeout = true;
     this->next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
+    if (was_unarmed) {
+      this->rearm_timer();
+    }
   } else {
     this->next_inactivity_timeout_at = 0;
   }
