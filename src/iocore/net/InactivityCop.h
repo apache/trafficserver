@@ -31,7 +31,6 @@
 #include "iocore/eventsystem/VConnection.h"
 #include "iocore/net/NetEvent.h"
 #include "iocore/net/NetHandler.h"
-#include "tscore/List.h"
 #include "tscore/Ptr.h"
 #include "tscore/ink_hrtime.h"
 #include "tsutil/DbgCtl.h"
@@ -100,7 +99,7 @@ public:
         Dbg(dbg_ctl_inactivity_cop, "vc: %p inactivity timeout not set, setting a default of %d", ne,
             nh.config.default_inactivity_timeout);
         ne->use_default_inactivity_timeout = true;
-        ne->next_inactivity_timeout_at     = ink_get_hrtime() + ne->default_inactivity_timeout_in;
+        ne->next_inactivity_timeout_at     = now + ne->default_inactivity_timeout_in;
         ne->inactivity_timeout_in          = 0;
         ne->rearm_timer();
         Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
@@ -134,8 +133,21 @@ public:
   int
   check_inactivity(int /* event */, Event *e)
   {
-    ink_hrtime  now = ink_get_hrtime();
-    NetHandler &nh  = _nh;
+    run(ink_get_hrtime(), e);
+    return 0;
+  }
+
+  /** One timeout pass, with @a now supplied by the caller.
+   *
+   * Split out from the event handler purely so a test can drive the cop with a
+   * controlled clock: the wheel's resolution is one second, so a harness that
+   * advances real time cannot exercise a per-tick cost without sleeping. Every
+   * deadline comparison in a pass uses this one timestamp.
+   */
+  void
+  run(ink_hrtime now, Event *e)
+  {
+    NetHandler &nh = _nh;
 
     Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
 
@@ -153,8 +165,6 @@ public:
     // Cleanup the active and keep-alive queues periodically
     nh.manage_active_queue(nullptr, true); // close any connections over the active timeout
     nh.manage_keep_alive_queue();
-
-    return 0;
   }
 
 private:
