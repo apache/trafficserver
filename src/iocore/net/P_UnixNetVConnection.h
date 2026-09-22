@@ -366,6 +366,7 @@ UnixNetVConnection::set_active_timeout(ink_hrtime timeout_in)
   Dbg(_dbg_ctl_socket, "Set active timeout=%" PRId64 ", NetVC=%p", timeout_in, this);
   active_timeout_in        = timeout_in;
   next_activity_timeout_at = (active_timeout_in > 0) ? ink_get_hrtime() + timeout_in : 0;
+  rearm_timer();
 }
 
 inline void
@@ -374,6 +375,7 @@ UnixNetVConnection::cancel_inactivity_timeout()
   Dbg(_dbg_ctl_socket, "Cancel inactive timeout for NetVC=%p", this);
   inactivity_timeout_in      = 0;
   next_inactivity_timeout_at = 0;
+  rearm_timer();
 }
 
 inline void
@@ -382,6 +384,7 @@ UnixNetVConnection::cancel_active_timeout()
   Dbg(_dbg_ctl_socket, "Cancel active timeout for NetVC=%p", this);
   active_timeout_in        = 0;
   next_activity_timeout_at = 0;
+  rearm_timer();
 }
 
 inline UnixNetVConnection::~UnixNetVConnection()

@@ -458,6 +458,7 @@ UnixNetVConnection::set_enabled(VIO *vio)
   STATE_FROM_VIO(vio)->enabled = 1;
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
+    rearm_timer();
   }
 }
 
@@ -956,6 +957,8 @@ UnixNetVConnection::netActivity()
   Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", this->inactivity_timeout_in, this);
   if (this->inactivity_timeout_in) {
     this->next_inactivity_timeout_at = ink_get_hrtime() + this->inactivity_timeout_in;
+    // Deliberately no rearm_timer(): this only pushes the deadline later, and the
+    // wheel re-reads the real deadline when the bucket comes due. Hot I/O path.
   } else {
     this->next_inactivity_timeout_at = 0;
   }
@@ -1066,7 +1069,8 @@ UnixNetVConnection::mainEvent(int event, Event * /* e ATS_UNUSED */)
   }
 
   *signal_timeout_at = 0;
-  writer_cont        = write.vio.cont;
+  rearm_timer();
+  writer_cont = write.vio.cont;
 
   if (closed) {
     nh->free_netevent(this);
@@ -1217,6 +1221,10 @@ UnixNetVConnection::clear()
   next_activity_timeout_at   = 0;
   inactivity_timeout_in      = 0;
   active_timeout_in          = 0;
+  // nh is already cleared by stopIO() on the free_netevent() path by the time
+  // clear() runs, but the wheel that scheduled this NetEvent is still this
+  // thread's, since a NetEvent is only ever scheduled on its own thread's wheel.
+  get_NetHandler(this_ethread())->timer_wheel.cancel(this);
 
   // clear variables for reuse
   this->mutex.clear();
@@ -1310,6 +1318,7 @@ UnixNetVConnection::set_inactivity_timeout(ink_hrtime timeout_in)
   Dbg(dbg_ctl_socket, "Set inactive timeout=%" PRId64 ", for NetVC=%p", timeout_in, this);
   inactivity_timeout_in      = timeout_in;
   next_inactivity_timeout_at = (timeout_in > 0) ? ink_get_hrtime() + inactivity_timeout_in : 0;
+  rearm_timer();
 }
 
 TS_INLINE void
