@@ -95,6 +95,8 @@ ensure_net_metrics_registered()
 
   net_rsb.inactivity_cop_lock_acquire_failure =
     Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.inactivity_cop_visited             = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_visited");
+  net_rsb.inactivity_cop_budget_exhausted    = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_budget_exhausted");
   net_rsb.default_inactivity_timeout_applied = Metrics::Counter::createPtr("proxy.process.net.default_inactivity_timeout_applied");
   net_rsb.default_inactivity_timeout_count   = Metrics::Counter::createPtr("proxy.process.net.default_inactivity_timeout_count");
   net_rsb.keep_alive_queue_timeout_count     = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
