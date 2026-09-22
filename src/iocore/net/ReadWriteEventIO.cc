@@ -58,12 +58,7 @@ ReadWriteEventIO::process_event(int flags)
   }
 #endif
 
-  // Remove triggered NetEvent from cop_list because it won't be timeout before
-  // next InactivityCop runs.
   ATS_PROBE2(eventio_rw_process_event, _ne->get_fd(), flags);
-  if (_nh->cop_list.in(_ne)) {
-    _nh->cop_list.remove(_ne);
-  }
   if (flags & (EVENTIO_ERROR)) {
     _ne->set_error_from_socket();
   }

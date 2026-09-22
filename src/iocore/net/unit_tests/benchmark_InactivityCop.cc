@@ -396,9 +396,9 @@ struct Fixture {
     }
   }
 
-  // Trap 5: cop_list starts empty. This call only refills it from open_list;
-  // it does not drain/check anything. Must be called at least once, untimed,
-  // before any timed run.
+  // An untimed cop pass. Since the switchover this no longer primes a refill
+  // list (there isn't one); it exists so a scenario can absorb the first pass
+  // after setup, when the wheel cursor is still catching up to real time.
   void
   warmup()
   {
