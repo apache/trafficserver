@@ -433,6 +433,9 @@ struct Sample {
   uint64_t get_thread_touches;
   uint64_t callbacks;
   uint64_t lock_failures;
+  /// Read from the production proxy.process.net.inactivity_cop_visited metric,
+  /// so scenario assertions can cross-check it against the mock's own counts.
+  uint64_t visited;
 };
 
 struct Summary {
@@ -486,6 +489,7 @@ timed_run(Fixture &fx)
   uint64_t thread_before   = fx.counters.get_thread_touches;
   uint64_t cb_before       = fx.counters.callbacks;
   int64_t  lockfail_before = Metrics::Counter::load(net_rsb.inactivity_cop_lock_acquire_failure);
+  int64_t  visited_before  = Metrics::Counter::load(net_rsb.inactivity_cop_visited);
 
   // steady_clock, not ink_get_hrtime(): ink_get_hrtime() tracks
   // CLOCK_REALTIME here (gSystemClock is only ever repointed at a monotonic
@@ -505,6 +509,7 @@ timed_run(Fixture &fx)
   s.get_thread_touches = fx.counters.get_thread_touches - thread_before;
   s.callbacks          = fx.counters.callbacks - cb_before;
   s.lock_failures = static_cast<uint64_t>(Metrics::Counter::load(net_rsb.inactivity_cop_lock_acquire_failure) - lockfail_before);
+  s.visited       = static_cast<uint64_t>(Metrics::Counter::load(net_rsb.inactivity_cop_visited) - visited_before);
   return s;
 }
 
@@ -882,6 +887,13 @@ TEST_CASE("InactivityCop: idle connections", "[!benchmark][net][inactivity_cop]"
     INFO("idle sanity check: get_thread touches per run must be 0 (no sweep), and callbacks must be 0");
     CHECK(s.get_thread_touches == 0);
     CHECK(s.callbacks == 0);
+
+    // Cross-check the production metric against the scenario: nothing is due,
+    // so the cop examined nothing. A value tracking N instead would mean
+    // inactivity_cop_visited is counting open connections, not due deadlines -
+    // exactly the regression the metric exists to make visible.
+    INFO("idle sanity check: the inactivity_cop_visited metric must be 0 when nothing is due");
+    CHECK(samples.back().visited == 0);
   }
 }
 
@@ -917,6 +929,17 @@ TEST_CASE("InactivityCop: mass expiry", "[!benchmark][net][inactivity_cop]")
     for (auto const &sample : samples) {
       total += sample.callbacks;
     }
+    // Every element in this scenario is due, so each one the cop examined also
+    // fired. The metric is produced by production code (Fire::deadline_of) and
+    // the callback count by the mock, so equality here cross-checks the two
+    // against each other rather than just asserting the metric is non-zero.
+    uint64_t visited_total = 0;
+    for (auto const &sample : samples) {
+      visited_total += sample.visited;
+    }
+    INFO("mass_expiry sanity check: inactivity_cop_visited must equal the callbacks the mocks recorded");
+    CHECK(visited_total == n);
+
     INFO("mass_expiry sanity check: total callbacks summed across all samples must equal N exactly");
     CHECK(total == n);
   }
