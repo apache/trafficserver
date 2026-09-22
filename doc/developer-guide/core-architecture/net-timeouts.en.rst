@@ -165,7 +165,9 @@ deferral, reentrant rescheduling from a fire callback) are tested directly.
 ``InactivityCop`` has a microbenchmark at
 ``src/iocore/net/unit_tests/benchmark_InactivityCop.cc`` that drives the real cop
 against mock ``NetEvent`` objects at up to 100,000 connections. It is tagged
-``[!benchmark]`` so ``ctest`` skips it; run it with::
+``[!benchmark]`` so ``ctest`` skips it; run it with:
+
+.. code-block:: bash
 
    ./test_net '[inactivity_cop]'
 
