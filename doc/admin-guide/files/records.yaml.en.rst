@@ -4687,6 +4687,11 @@ SSL Termination
   stateless ticket has to encode the client certificate |TS| presented in order to
   resume the authenticated session.  The default accommodates both.
 
+  The accepted range is 4096 to 65536.  The floor is the size this was fixed at before
+  it became configurable, so no setting can cache less than |TS| always did; disable the
+  cache with :ts:cv:`proxy.config.ssl.origin_session_cache.enabled` instead.  The ceiling
+  keeps the serialization buffer in ``SSLSessionDup()`` within the thread stack.
+
   Raise this if :ts:stat:`proxy.process.ssl.ssl_origin_session_cache_hit` stays at
   zero while :ts:stat:`proxy.process.ssl.ssl_origin_session_cache_miss` climbs; the
   ``ssl.origin_session_cache`` debug tag reports each session refused for its size.
