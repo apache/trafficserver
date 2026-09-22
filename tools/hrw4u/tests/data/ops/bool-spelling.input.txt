@@ -1,0 +1,7 @@
+# The emitter echoes a bool's spelling, so the AST cannot normalize one anywhere:
+# an assignment RHS is not the only value context that reaches header_rewrite.
+REMAP {
+    if inbound.req.X-Debug == TRUE {
+        set-config("proxy.config.http.cache.http", FALSE);
+    }
+}
