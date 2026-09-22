@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -25,6 +26,7 @@
 #include <vector>
 
 #include "iocore/eventsystem/ConfigProcessor.h"
+#include "mgmt/config/ConfigContext.h"
 #include "proxy/http/remap/UrlRewrite.h"
 #include "tscore/Ptr.h"
 
@@ -59,9 +61,9 @@ public:
     std::string get_id() const;
   };
 
-  bool        load();
-  bool        set_entry(std::string_view id, Ptr<Entry> &entry);
-  static bool load_entry(std::string_view id, Ptr<Entry> &entry);
+  bool        load(ConfigContext ctx = {});
+  bool        set_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {});
+  static bool load_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {});
   Ptr<Entry>  find_by_id(std::string_view id) const;
   Ptr<Entry>  find_by_domain(std::string_view domain) const;
 
@@ -80,24 +82,11 @@ public:
   using scoped_config = ConfigProcessor::scoped_config<VirtualHost, VirtualHostConfig>;
 
   static void               startup();
-  static int                reconfigure();
-  static int                reconfigure(std::string_view id);
+  static int                reconfigure(ConfigContext ctx = {});
+  static int                reconfigure(std::string_view id, ConfigContext ctx = {});
   static VirtualHostConfig *acquire();
   static void               release(VirtualHostConfig *config);
 
 private:
-  static int config_callback(const char *, RecDataT, RecData, void *);
-  static int _configid;
-};
-
-struct VirtualHostConfigContinuation : public Continuation {
-  VirtualHostConfigContinuation() : Continuation(nullptr) { SET_HANDLER(&VirtualHostConfigContinuation::reconfigure); }
-
-  int
-  reconfigure(int /* event ATS_UNUSED */, Event * /* e ATS_UNUSED */)
-  {
-    VirtualHost::reconfigure();
-    delete this;
-    return EVENT_DONE;
-  }
+  static std::atomic<int> _configid;
 };

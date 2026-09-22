@@ -195,7 +195,7 @@ Client Request                                   Translated Request
        remap:
          - type: regex_map
            from:
-            url: http://sub[0-9]+.example.com/
+            url: http://sub([0-9]+).example.com/
            to:
             url: http://origin$1.example.com/
 
@@ -207,7 +207,7 @@ Client Request                                   Translated Request
        remap:
          - type: map
            from:
-            url: http:/foo.example.com/
+            url: http://foo.example.com/
            to:
             url: http://foo.origin.com/
 

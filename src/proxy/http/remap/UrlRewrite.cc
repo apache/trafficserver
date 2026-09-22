@@ -837,6 +837,10 @@ UrlRewrite::BuildTable(const char *path, YAML::Node const *remap_node, ConfigCon
   ink_assert(num_rules_redirect_temporary == 0);
   ink_assert(num_rules_forward_with_recv_port == 0);
 
+  // A supplied node is only reachable through the yaml parser; otherwise the node is silently
+  // dropped and @a path is parsed as a remap.config file name.
+  ink_release_assert(!remap_node || is_remap_yaml());
+
   forward_mappings.hash_lookup.reset(new URLTable);
   reverse_mappings.hash_lookup.reset(new URLTable);
   permanent_redirects.hash_lookup.reset(new URLTable);

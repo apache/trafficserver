@@ -583,7 +583,8 @@ tr.StillRunningAfter = ts
 # ============================================================================
 # Test 15: single-entry reload of an id that is not in virtualhost.yaml
 # This logs a core ERROR, so it runs against its own ATS instance whose diags
-# expectations are replaced.
+# expectations are replaced. The handler reports the failure through the reload
+# task log, which is where an operator sees it, so that is asserted too.
 # ============================================================================
 ts_unknown = Test.MakeATSProcess('ts-unknown-id')
 ts_unknown.Disk.records_config.update({
@@ -601,10 +602,13 @@ ts_unknown.Disk.diags_log.Content = Testers.ContainsExpression(
     "virtualhost with id 'absent.example.com' not found", "Reloading an unknown id should report it as not found")
 ts_unknown.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "Unknown id should not be fatal")
 
+vhost_unknown_id_token = "vhost-unknown-id"
+
 tr = Test.AddTestRun("Single-entry reload of an unknown virtualhost id")
 tr.Processes.Default.StartBefore(ts_unknown)
 tr.AddJsonRPCClientRequest(
-    ts_unknown, Request.admin_config_reload(configs={"virtualhost": {
+    ts_unknown,
+    Request.admin_config_reload(token=vhost_unknown_id_token, configs={"virtualhost": {
         "_reload": {
             "id": "absent.example.com"
         }
@@ -625,10 +629,61 @@ def validate_unknown_id(resp: Response):
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_id)
 tr.StillRunningAfter = ts_unknown
 
+
+def find_failed_task_with(task_list, expected):
+    '''Depth-first search for a failed task whose log carries `expected`'''
+    for t in task_list:
+        for entry in t.get('logs', []):
+            if expected in entry.get('text', ''):
+                return t
+        found = find_failed_task_with(t.get('sub_tasks', []), expected)
+        if found:
+            return found
+    return None
+
+
+# The not-found diagnostic must reach the operator who asked for the reload, not
+# just diags.log — query the task log by token.
+tr = Test.AddTestRun("Unknown virtualhost id is reported in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts_unknown, Request.get_reload_config_status(token=vhost_unknown_id_token))
+
+
+def validate_unknown_id_logged(resp: Response):
+    '''The virtualhost subtask should be FAIL and name the missing id'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "virtualhost with id 'absent.example.com' not found"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Unknown id reported over rpc: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_id_logged)
+tr.StillRunningAfter = ts_unknown
+
 # ============================================================================
 # Test 16: single-entry reload with no virtualhost.yaml on disk
 # A missing file is handled like a missing config, not a parse failure — it must
 # not surface a yaml-cpp 'bad file' ERROR in diags.log.
+#
+# The startup path and the reload path report a missing file differently on
+# purpose: startup warns and carries on with no entries, a single-entry reload
+# fails. Asserting the reload-specific wording in the task log is what makes
+# this test depend on the RPC — the startup warning is emitted before any
+# request is sent, so asserting only that would pass with the handler removed.
 # ============================================================================
 ts_missing = Test.MakeATSProcess('ts-missing-file')
 ts_missing.Disk.records_config.update({
@@ -636,15 +691,20 @@ ts_missing.Disk.records_config.update({
     'proxy.config.diags.debug.tags': 'rpc|config',
 })
 # No virtualhost.yaml is written for this instance.
-ts_missing.Disk.diags_log.Content += Testers.ContainsExpression(
-    "Virtualhost configuration .* doesn't exist", "Missing virtualhost.yaml should be reported as a warning")
+ts_missing.Disk.diags_log.Content = Testers.ContainsExpression(
+    "Virtualhost configuration .* doesn't exist, no virtualhost entries loaded",
+    "Startup with no virtualhost.yaml should warn and carry on")
 ts_missing.Disk.diags_log.Content += Testers.ExcludesExpression(
     "bad file", "Missing virtualhost.yaml should not surface a yaml-cpp load failure")
+ts_missing.Disk.diags_log.Content += Testers.ExcludesExpression("FATAL:", "A missing virtualhost.yaml should not be fatal")
+
+vhost_missing_file_token = "vhost-missing-file"
 
 tr = Test.AddTestRun("Single-entry reload with no virtualhost.yaml")
 tr.Processes.Default.StartBefore(ts_missing)
 tr.AddJsonRPCClientRequest(
-    ts_missing, Request.admin_config_reload(configs={"virtualhost": {
+    ts_missing,
+    Request.admin_config_reload(token=vhost_missing_file_token, configs={"virtualhost": {
         "_reload": {
             "id": "myhost.example.com"
         }
@@ -663,4 +723,34 @@ def validate_missing_file(resp: Response):
 
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file)
+tr.StillRunningAfter = ts_missing
+
+tr = Test.AddTestRun("Missing virtualhost.yaml is reported in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts_missing, Request.get_reload_config_status(token=vhost_missing_file_token))
+
+
+def validate_missing_file_logged(resp: Response):
+    '''The failure must be distinguishable from the benign startup warning'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "Cannot reload virtualhost entry 'myhost.example.com'"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Missing file reported over rpc: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_logged)
 tr.StillRunningAfter = ts_missing
