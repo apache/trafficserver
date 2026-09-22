@@ -26,6 +26,7 @@ add_library(
   EventIO.cc
   YamlSNIConfig.cc
   Net.cc
+  NetEvent.cc
   NetHandler.cc
   NetVCOptions.cc
   NetAcceptEventIO.cc

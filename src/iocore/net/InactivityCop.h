@@ -100,6 +100,7 @@ public:
         ne->use_default_inactivity_timeout = true;
         ne->next_inactivity_timeout_at     = ink_get_hrtime() + ne->default_inactivity_timeout_in;
         ne->inactivity_timeout_in          = 0;
+        ne->rearm_timer();
         Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
       }
 

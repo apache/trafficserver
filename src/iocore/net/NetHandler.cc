@@ -29,6 +29,7 @@
 #include "iocore/io_uring/IO_URING.h"
 #endif
 
+#include <algorithm>
 #include <atomic>
 #include <optional>
 
@@ -123,6 +124,37 @@ NetHandler::stopCop(NetEvent *ne)
   cop_list.remove(ne);
   remove_from_keep_alive_queue(ne);
   remove_from_active_queue(ne);
+}
+
+ink_hrtime
+NetHandler::_earliest_deadline(NetEvent *ne) const
+{
+  ink_hrtime const inactivity = ne->next_inactivity_timeout_at;
+  ink_hrtime const activity   = ne->next_activity_timeout_at;
+
+  if (inactivity == 0) {
+    return activity;
+  }
+  if (activity == 0) {
+    return inactivity;
+  }
+  return std::min(inactivity, activity);
+}
+
+void
+NetHandler::rearm_timer(NetEvent *ne)
+{
+  ink_assert(ne->get_thread() == this_ethread());
+
+  // A closed NetEvent must be reaped on the next tick rather than at its
+  // original deadline, or the fd lingers.
+  ink_hrtime const deadline = ne->closed ? ink_get_hrtime() : _earliest_deadline(ne);
+
+  if (deadline == 0) {
+    timer_wheel.cancel(ne);
+  } else {
+    timer_wheel.schedule(ne, deadline);
+  }
 }
 
 int
@@ -512,6 +544,7 @@ NetHandler::_close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &clos
     ++closed;
   } else {
     ne->next_inactivity_timeout_at = now;
+    ne->rearm_timer();
     // create a dummy event
     Event event;
     event.ethread = this_ethread();

@@ -29,6 +29,7 @@
 #include <limits>
 
 #include "tscore/ink_assert.h"
+#include "tscore/TimerWheel.h"
 
 #include "iocore/eventsystem/Continuation.h"
 #include "iocore/eventsystem/EThread.h"
@@ -107,6 +108,7 @@ public:
   QueM(NetEvent, NetState, write, ready_link) write_ready_list;
   Que(NetEvent, open_link) open_list;
   DList(NetEvent, cop_link) cop_list;
+  TimerWheel<NetEvent> timer_wheel;
   ASLLM(NetEvent, NetState, read, enable_link) read_enable_list;
   ASLLM(NetEvent, NetState, write, enable_link) write_enable_list;
   Que(NetEvent, keep_alive_queue_link) keep_alive_queue;
@@ -234,6 +236,12 @@ public:
    */
   void stopCop(NetEvent *ne);
 
+  /** Re-arm @a ne's slot in the timer wheel from its current deadline fields.
+   *
+   * Must be called after any change that makes @a ne's deadline earlier.
+   */
+  void rearm_timer(NetEvent *ne);
+
   // Signal the epoll_wait to terminate.
   void signalActivity() override;
 
@@ -259,6 +267,10 @@ private:
   static std::atomic<uint32_t> per_client_max_connections_in;
 
   void _close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
+
+  /// The single source of truth for @a ne's next deadline: the non-zero minimum
+  /// of its inactivity and activity deadlines, or 0 if neither is set.
+  ink_hrtime _earliest_deadline(NetEvent *ne) const;
 
   /// Static method used as the callback for runtime configuration updates.
   static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);
