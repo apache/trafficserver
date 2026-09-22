@@ -70,6 +70,7 @@ char              *SSLConfigParams::ssl_ocsp_user_agent              = nullptr;
 int                SSLConfigParams::ssl_handshake_timeout_in         = 0;
 int                SSLConfigParams::origin_session_cache             = 1;
 size_t             SSLConfigParams::origin_session_cache_size        = 10240;
+size_t             SSLConfigParams::origin_session_max_size          = SSL_DEFAULT_MAX_ORIG_SESSION_SIZE;
 init_ssl_ctx_func  SSLConfigParams::init_ssl_ctx_cb                  = nullptr;
 load_ssl_file_func SSLConfigParams::load_ssl_file_cb                 = nullptr;
 swoc::IPRangeSet  *SSLConfigParams::proxy_protocol_ip_addrs          = nullptr;
@@ -463,9 +464,12 @@ SSLConfigParams::initialize(ConfigContext ctx)
   // SSL session cache configurations
   ssl_origin_session_cache      = RecGetRecordInt("proxy.config.ssl.origin_session_cache.enabled").value_or(0);
   ssl_origin_session_cache_size = RecGetRecordInt("proxy.config.ssl.origin_session_cache.size").value_or(0);
+  ssl_origin_session_max_size =
+    RecGetRecordInt("proxy.config.ssl.origin_session_cache.max_session_size").value_or(SSL_DEFAULT_MAX_ORIG_SESSION_SIZE);
 
   SSLConfigParams::origin_session_cache      = ssl_origin_session_cache;
   SSLConfigParams::origin_session_cache_size = ssl_origin_session_cache_size;
+  SSLConfigParams::origin_session_max_size   = ssl_origin_session_max_size;
 
   if (ssl_origin_session_cache == 1 && ssl_origin_session_cache_size > 0 && origin_sess_cache == nullptr) {
     origin_sess_cache = new SSLOriginSessionCache();

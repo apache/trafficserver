@@ -73,6 +73,7 @@ struct SSLConfigParams : public ConfigInfo {
   int   verify_depth;
   int   ssl_origin_session_cache{0};
   int   ssl_origin_session_cache_size{0};
+  int   ssl_origin_session_max_size{0};
 
   char                   *clientCertPath;
   char                   *clientCertPathOnly;
@@ -126,6 +127,7 @@ struct SSLConfigParams : public ConfigInfo {
 
   static int    origin_session_cache;
   static size_t origin_session_cache_size;
+  static size_t origin_session_max_size;
 
   static swoc::IPRangeSet *proxy_protocol_ip_addrs;
 
