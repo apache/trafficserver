@@ -530,7 +530,7 @@ validateScope(StringView requestPath, StringView scope)
   if (normRequestPath == normScope) {
     return true;
   }
-  if (normRequestPath.starts_with(normScope) && normRequestPath[normScope.length()] == '/') {
+  if (normRequestPath.compare(0, normScope.length(), normScope) == 0 && normRequestPath[normScope.length()] == '/') {
     return true;
   }
   return false;
