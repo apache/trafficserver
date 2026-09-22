@@ -26,6 +26,7 @@
 #include <string>
 #include <string_view>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #define PCRE2_CODE_UNIT_WIDTH 8
@@ -1232,6 +1233,33 @@ TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexM
 
   REQUIRE(re.exec(subject, copied_matches, 0, &copied) == shared_rc);
   REQUIRE(re.exec(subject, assigned_matches, 0, &assigned) == shared_rc);
+
+  // The move paths, which had no coverage while the copy paths had two cases each.
+  // These were defaulted over a bare void* that the destructor frees, so both ends
+  // owned it and the second destruction was a double free. Nothing moved one, so it
+  // never fired; this case is what makes that true on purpose rather than by luck.
+  //
+  // The assertions are deliberately on both halves. Matching through the moved-TO
+  // object proves the context survived the move, and a double free would abort at
+  // the closing brace when the moved-FROM object is destroyed, so scope exit is
+  // itself the second oracle.
+  {
+    RegexMatchContext       donor;
+    RegexMatchContext const moved{std::move(donor)};
+    RegexMatches            moved_matches;
+
+    REQUIRE(re.exec(subject, moved_matches, 0, &moved) == shared_rc);
+  }
+  {
+    RegexMatchContext donor;
+    RegexMatchContext move_assigned;
+
+    move_assigned = std::move(donor);
+
+    RegexMatches move_assigned_matches;
+
+    REQUIRE(re.exec(subject, move_assigned_matches, 0, &move_assigned) == shared_rc);
+  }
 }
 
 // The guard from #5762: a pattern that backtracks once per character must fail

@@ -124,8 +124,12 @@ jit_stack_for_this_thread(void *)
   if (stack == nullptr) {
     // One page to start, one mebibyte at most. The maximum is address space reserved at
     // creation and made resident only as deep as a match actually goes, so a larger one
-    // costs nothing per match, and a mebibyte already resolves a longer subject than
-    // proxy.config.http.request_header_max_size lets a client send.
+    // costs nothing per match.
+    //
+    // It does NOT cover every subject a client can send. Measured with the pattern the
+    // unit tests use, a mebibyte resolves about 26,213 characters, while
+    // proxy.config.http.request_header_max_size defaults to 32768. A longer subject
+    // falls back to PCRE2's own stack and can still hit a resource-exhaustion code.
     stack = pcre2_jit_stack_create(4096, 1024 * 1024, nullptr);
     if (pthread_setspecific(jit_stack_key, stack) != 0) {
       // Nothing holds the stack now, so it would leak once per match. Give it back and
@@ -371,11 +375,32 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 }
 
 //----------------------------------------------------------------------------
+RegexMatchContext::RegexMatchContext(RegexMatchContext &&that) noexcept
+{
+  _MatchContext::set(_match_context, std::exchange(that._match_context._ptr, nullptr));
+}
+
+//----------------------------------------------------------------------------
+RegexMatchContext &
+RegexMatchContext::operator=(RegexMatchContext &&that) noexcept
+{
+  if (this != &that) {
+    if (auto *const old = _MatchContext::get(_match_context); old != nullptr) {
+      pcre2_match_context_free(old);
+    }
+    _MatchContext::set(_match_context, std::exchange(that._match_context._ptr, nullptr));
+  }
+  return *this;
+}
+
+//----------------------------------------------------------------------------
 RegexMatchContext::~RegexMatchContext()
 {
-  auto ptr = _MatchContext::get(_match_context);
-  debug_assert_message(ptr, "Failed to get the match context");
-  if (ptr != nullptr) {
+  // No assert that the pointer is set. Null is now a legitimate state: a moved-from
+  // object holds nothing, and asserting here would abort a debug build on the first
+  // destruction of one. Before the move operations existed the only way to reach this
+  // with null was a failed construction, which is why the assert was reasonable then.
+  if (auto *const ptr = _MatchContext::get(_match_context); ptr != nullptr) {
     pcre2_match_context_free(ptr);
   }
 }
