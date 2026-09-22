@@ -29,6 +29,9 @@ class ASTVisitor(hrw4uVisitor):
     # method has an explicit return type and full control over how
     # child results are assembled into parent AST nodes.
 
+    def _visit_comment(self, ctx) -> Comment:
+        return Comment(text=ctx.COMMENT().getText(), line=ctx.start.line)
+
     def visitProgram(self, ctx) -> HRW4UAST:
         items = []
         for item in ctx.programItem():
@@ -39,7 +42,7 @@ class ASTVisitor(hrw4uVisitor):
             elif item.section() is not None:
                 items.append(self._visit_section(item.section()))
             elif item.commentLine() is not None:
-                pass
+                items.append(self._visit_comment(item.commentLine()))
             else:
                 raise ValueError(f"Unhandled programItem alternative at line {item.start.line}")
         return HRW4UAST(body=tuple(items))
@@ -75,7 +78,7 @@ class ASTVisitor(hrw4uVisitor):
             if var_item.variableDecl() is not None:
                 decls.append(self._visit_var_decl(var_item.variableDecl()))
             elif var_item.commentLine() is not None:
-                pass
+                decls.append(self._visit_comment(var_item.commentLine()))
             else:
                 raise ValueError(f"Unhandled variablesItem alternative at line {var_item.start.line}")
         return VarSection(scope=scope, declarations=tuple(decls), line=ctx.start.line)
@@ -93,7 +96,7 @@ class ASTVisitor(hrw4uVisitor):
             elif item.conditional() is not None:
                 result.append(self._visit_conditional(item.conditional()))
             elif item.commentLine() is not None:
-                pass
+                result.append(self._visit_comment(item.commentLine()))
             else:
                 raise ValueError(f"Unhandled body item alternative at line {item.start.line}")
         return result
@@ -125,19 +128,19 @@ class ASTVisitor(hrw4uVisitor):
 
     def _extract_value(self, ctx) -> ValueExpr:
         if ctx.number is not None:
-            return int(ctx.number.text)
+            return NumberValue(raw=ctx.number.text)
         if ctx.str_ is not None:
             return LiteralStringValue(raw=ctx.str_.text[1:-1])
         if ctx.TRUE():
-            return True
+            return BoolValue(raw=ctx.TRUE().getText())
         if ctx.FALSE():
-            return False
+            return BoolValue(raw=ctx.FALSE().getText())
         if ctx.ident is not None:
             return IdentValue(raw=ctx.ident.text)
         if ctx.ip():
             return IPValue(raw=ctx.ip().getText())
         if ctx.iprange():
-            return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
+            return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.paramRef():
             return ParamRef(raw=ctx.paramRef().IDENT().getText())
         raise ValueError(f"Unhandled value alternative at line {ctx.start.line}")
@@ -155,13 +158,17 @@ class ASTVisitor(hrw4uVisitor):
             elif_body = tuple(self._visit_body(elif_block.blockItem())) if elif_block else ()
             elif_branches.append(ElifBranch(condition=elif_cond, body=elif_body, line=elif_ctx.start.line))
 
-        else_body = ()
-        if ctx.elseClause():
-            else_block = ctx.elseClause().block()
-            if else_block:
-                else_body = tuple(self._visit_body(else_block.blockItem()))
+        else_clause = ctx.elseClause()
+        else_block = else_clause.block() if else_clause else None
+        else_body = tuple(self._visit_body(else_block.blockItem())) if else_block else ()
 
-        return IfBlock(condition=condition, body=body, elif_branches=tuple(elif_branches), else_body=else_body, line=ctx.start.line)
+        return IfBlock(
+            condition=condition,
+            body=body,
+            elif_branches=tuple(elif_branches),
+            else_body=else_body,
+            has_else=else_clause is not None,
+            line=ctx.start.line)
 
     def _visit_condition(self, ctx) -> ConditionExpr:
         return self._visit_expression(ctx.expression())
@@ -184,7 +191,7 @@ class ASTVisitor(hrw4uVisitor):
         if ctx.getChildCount() == 2 and ctx.getChild(0).getText() == "!":
             return NotOp(operand=self._visit_factor(ctx.factor()), line=ctx.start.line)
         if ctx.LPAREN():
-            return self._visit_expression(ctx.expression())
+            return Group(inner=self._visit_expression(ctx.expression()), line=ctx.start.line)
         if ctx.functionCall():
             return self._visit_function_call(ctx.functionCall())
         if ctx.comparison():
@@ -231,14 +238,14 @@ class ASTVisitor(hrw4uVisitor):
             return "in"
         raise ValueError(f"Unhandled comparison operator at line {ctx.start.line}")
 
-    def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | tuple[ValueExpr, ...]:
+    def _extract_comparison_rhs(self, ctx, operator) -> ValueExpr | RegexValue | SetValue | IpRangeValue:
         if operator in ("~", "!~"):
             return RegexValue(raw=ctx.regex().getText()[1:-1])
         if operator in ("in", "!in"):
             if ctx.set_():
-                return tuple(self._extract_value(v) for v in ctx.set_().value())
+                return SetValue(raw=ctx.set_().getText()[1:-1])
             if ctx.iprange():
-                return tuple(IPValue(raw=ip.getText()) for ip in ctx.iprange().ip())
+                return IpRangeValue(raw=ctx.iprange().getText())
         if ctx.value():
             return self._extract_value(ctx.value())
         raise ValueError(f"Unhandled comparison RHS at line {ctx.start.line}")

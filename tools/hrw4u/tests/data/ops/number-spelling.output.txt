@@ -1,0 +1,5 @@
+# The emitter echoes a number's digits, so the AST cannot normalize one anywhere:
+# 007 and 7 are different bytes once a number reaches a header value.
+cond %{REMAP_PSEUDO_HOOK} [AND]
+cond %{RANDOM:0100} >007
+    set-header X-Count 007
