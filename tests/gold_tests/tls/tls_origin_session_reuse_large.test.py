@@ -43,14 +43,25 @@ class OriginSessionCeilingTest:
     # Below the session this origin produces, so the second proxy has to reject it.
     _ceiling_below_session: int = 4096
 
-    def __init__(self):
-        """Configure the origin and both proxy scenarios."""
+    # The record's RECC_INT range is applied when records.yaml is parsed, but an environment
+    # override is registered without that check, so the range is enforced again where the
+    # value is published. These two exercise that clamp from either side.
+    _env_var: str = 'PROXY_CONFIG_SSL_ORIGIN_SESSION_CACHE_MAX_SESSION_SIZE'
+    _env_below_min: str = '-1'
+    _env_above_max: str = '1048576'
+
+    def __init__(self) -> None:
+        """Configure the origin and every proxy scenario."""
         self._server = self._configure_server()
         self._origin = self._configure_origin()
         self._at_default = self._configure_proxy('ts_default', max_session_size=None)
         self._below_session = self._configure_proxy('ts_small', max_session_size=self._ceiling_below_session)
+        self._env_low = self._configure_proxy('ts_env_low', max_session_size=None, env_override=self._env_below_min)
+        self._env_high = self._configure_proxy('ts_env_high', max_session_size=None, env_override=self._env_above_max)
         self._run_cached_and_reused()
         self._run_dropped_for_size()
+        self._run_env_override_below_min()
+        self._run_env_override_above_max()
 
     def _configure_server(self) -> 'Process':
         """Configure the HTTP origin behind the TLS origin.
@@ -93,14 +104,18 @@ ssl_multicert:
             })
         return ts
 
-    def _configure_proxy(self, name: str, max_session_size: Optional[int]) -> 'Process':
+    def _configure_proxy(self, name: str, max_session_size: Optional[int], env_override: Optional[str] = None) -> 'Process':
         """Configure a proxy in front of the TLS origin.
 
         :param name: The name of the ATS process.
         :param max_session_size: The ceiling to configure, or None to leave it at the default.
+        :param env_override: A value for the ceiling supplied through the environment instead
+            of records.yaml, which reaches the assignment without the record's range check.
         :return: The proxy ATS process.
         """
         ts = Test.MakeATSProcess(name, enable_tls=True)
+        if env_override is not None:
+            ts.Env[self._env_var] = env_override
         ts.addSSLfile(f'ssl/{self._proxy_cert}')
         ts.addSSLfile(f'ssl/{self._proxy_key}')
         ts.Disk.remap_config.AddLine(f'map / https://127.0.0.1:{self._origin.Variables.ssl_port}')
@@ -164,6 +179,41 @@ ssl_multicert:
             'Unable to save SSL session because size', 'the session is over this proxy configured ceiling')
         self._below_session.Disk.traffic_out.Content += Testers.ExcludesExpression(
             'reused session to origin', 'nothing was cached, so nothing can resume')
+        tr.StillRunningAfter = self._server
+        tr.StillRunningAfter += self._origin
+
+    def _run_env_override_below_min(self) -> None:
+        """An environment value under the minimum is clamped up to it, and warned about.
+
+        Clamped to 4096, which is below the session this origin produces, so the session is
+        refused -- the same outcome as configuring 4096 directly.
+        """
+        tr = Test.AddTestRun('an environment value below the minimum is clamped')
+        self._two_requests(tr, self._env_low)
+        tr.Processes.Default.StartBefore(self._env_low)
+        self._env_low.Disk.diags_log.Content += Testers.ContainsExpression(
+            'max_session_size of -1 is outside', 'the out of range environment value has to be reported')
+        self._env_low.Disk.traffic_out.Content = Testers.ContainsExpression(
+            'Unable to save SSL session because size', 'clamped to the minimum, which is below this session')
+        self._env_low.Disk.traffic_out.Content += Testers.ExcludesExpression(
+            'reused session to origin', 'nothing was cached, so nothing can resume')
+        tr.StillRunningAfter = self._server
+        tr.StillRunningAfter += self._origin
+
+    def _run_env_override_above_max(self) -> None:
+        """An environment value over the maximum is clamped down to it, and warned about.
+
+        Without the clamp this value would reach the assignment unchanged, and a negative one
+        would become SIZE_MAX -- which is what the ceiling exists to prevent, since the size is
+        checked immediately before SSLSessionDup() sizes its serialization buffer from it.
+        """
+        tr = Test.AddTestRun('an environment value above the maximum is clamped')
+        self._two_requests(tr, self._env_high)
+        tr.Processes.Default.StartBefore(self._env_high)
+        self._env_high.Disk.diags_log.Content += Testers.ContainsExpression(
+            'max_session_size of 1048576 is outside', 'the out of range environment value has to be reported')
+        self._env_high.Disk.traffic_out.Content = Testers.ContainsExpression(
+            'reused session to origin', 'clamped to the maximum, which is above this session, so it still caches')
         tr.StillRunningAfter = self._server
         tr.StillRunningAfter += self._origin
 
