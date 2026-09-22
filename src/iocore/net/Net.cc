@@ -114,6 +114,8 @@ register_net_stats()
   net_rsb.handler_run                        = Metrics::Counter::createPtr("proxy.process.net.net_handler_run");
   net_rsb.inactivity_cop_lock_acquire_failure =
     Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_lock_acquire_failure");
+  net_rsb.inactivity_cop_budget_exhausted  = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_budget_exhausted");
+  net_rsb.inactivity_cop_visited           = Metrics::Counter::createPtr("proxy.process.net.inactivity_cop_visited");
   net_rsb.keep_alive_queue_timeout_count   = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_count");
   net_rsb.keep_alive_queue_timeout_total   = Metrics::Counter::createPtr("proxy.process.net.dynamic_keep_alive_timeout_in_total");
   net_rsb.read_bytes                       = Metrics::Counter::createPtr("proxy.process.net.read_bytes");

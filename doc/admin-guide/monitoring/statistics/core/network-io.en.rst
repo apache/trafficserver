@@ -72,6 +72,18 @@ Network I/O
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_count integer
 .. ts:stat:: global proxy.process.net.dynamic_keep_alive_timeout_in_total integer
 .. ts:stat:: global proxy.process.net.inactivity_cop_lock_acquire_failure integer
+.. ts:stat:: global proxy.process.net.inactivity_cop_visited integer
+   The total number of connections the inactivity cop has examined. The cop
+   finds expired connections through a per-thread timer wheel, so this grows
+   with the number of connections whose deadline came due, not with the number
+   of open connections. A value that tracks total open connections instead
+   means something is re-arming every tick.
+   :type: counter
+.. ts:stat:: global proxy.process.net.inactivity_cop_budget_exhausted integer
+   The number of inactivity cop runs that hit their per-run work limit and
+   deferred the remainder to the next run. Sustained nonzero values mean
+   timeouts on that thread are firing later than configured.
+   :type: counter
 .. ts:stat:: global proxy.process.net.net_handler_run integer
    :type: counter
 

@@ -54,6 +54,8 @@ struct NetStatsBlock {
   Metrics::Counter::AtomicType *handler_run;
   Metrics::Counter::AtomicType *handler_run_count;
   Metrics::Counter::AtomicType *inactivity_cop_lock_acquire_failure;
+  Metrics::Counter::AtomicType *inactivity_cop_budget_exhausted;
+  Metrics::Counter::AtomicType *inactivity_cop_visited;
   Metrics::Counter::AtomicType *keep_alive_queue_timeout_count;
   Metrics::Counter::AtomicType *keep_alive_queue_timeout_total;
   Metrics::Counter::AtomicType *read_bytes;
