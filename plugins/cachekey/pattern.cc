@@ -152,7 +152,7 @@ Pattern::process(const String &subject, StringVector &result)
   } else {
     /* Replacement was not provided so return all capturing groups except the group zero. */
     StringVector captures;
-    if (capture(subject, captures)) {
+    if (capture(subject, captures) && !captures.empty()) {
       if (captures.size() == 1) {
         result.push_back(captures[0]);
       } else {
@@ -210,7 +210,7 @@ Pattern::capture(const String &subject, StringVector &result)
     return false;
   }
 
-  RegexMatches matches;
+  RegexMatches matches(_captureCount + 1);
   int          matchCount = _re.exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
     if (matchCount != RE_ERROR_NOMATCH) {
@@ -219,7 +219,7 @@ Pattern::capture(const String &subject, StringVector &result)
     return false;
   }
 
-  for (int i = 0; i < matchCount; i++) {
+  for (int i = 0; i < matches.size(); i++) {
     std::string_view capture = matches[i];
     String           dst(capture.data(), capture.length());
 
@@ -246,7 +246,7 @@ Pattern::replace(const String &subject, String &result)
     return false;
   }
 
-  RegexMatches matches;
+  RegexMatches matches(_captureCount + 1);
   int          matchCount = _re.exec(subject, matches, RE_NOTEMPTY);
   if (matchCount < 0) {
     if (matchCount != RE_ERROR_NOMATCH) {
@@ -255,18 +255,11 @@ Pattern::replace(const String &subject, String &result)
     return false;
   }
 
-  /* Verify the replacement has the right number of matching groups */
-  for (int i = 0; i < _tokenCount; i++) {
-    if (_tokens[i] >= matchCount) {
-      CacheKeyError("invalid reference in replacement string: $%d", _tokens[i]);
-      return false;
-    }
-  }
-
   int previous = 0;
   for (int i = 0; i < _tokenCount; i++) {
-    int              replIndex = _tokens[i];
-    std::string_view capture   = matches[replIndex];
+    int replIndex = _tokens[i];
+    // Trailing optional groups may not participate in this match.
+    std::string_view capture = (replIndex < matches.size()) ? matches[replIndex] : std::string_view{""};
 
     String src(_replacement, _tokenOffset[i], 2);
     String dst(capture.data(), capture.length());
@@ -304,6 +297,12 @@ Pattern::compile()
     return false;
   }
 
+  _captureCount = _re.get_capture_count();
+  if (_captureCount < 0) {
+    CacheKeyError("failed to get capture count for pattern '%s'", _pattern.c_str());
+    return false;
+  }
+
   if (!_replace) {
     /* No replacement necessary - we are done. */
     return true;
@@ -332,6 +331,16 @@ Pattern::compile()
         _tokenCount++;
         /* Skip the next char */
         i++;
+      }
+    }
+  }
+
+  if (success) {
+    for (int i = 0; i < _tokenCount; i++) {
+      if (_tokens[i] > _captureCount) {
+        CacheKeyError("invalid reference $%d in replacement '%s': pattern defines only %d group(s)", _tokens[i],
+                      _replacement.c_str(), _captureCount);
+        return false;
       }
     }
   }
