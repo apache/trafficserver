@@ -249,11 +249,14 @@ CacheProcessor::start_internal(int flags)
 #endif
     int64_t blocks = span->blocks;
 
-    if (fd < 0 && (opts & O_CREAT)) { // Try without O_DIRECT if this is a file on filesystem, e.g. tmpfs.
+    // Try again without O_DIRECT (and O_DSYNC) for a span on a file system that does not support it, e.g. tmpfs. This retry
+    // applies to an explicit file span as much as to a directory span: the file system decides whether direct I/O is usable,
+    // not the form the span was written in. O_CREAT is carried over only when it was requested above.
+    if (fd < 0) {
 #ifdef AIO_FAULT_INJECTION
-      fd = aioFaultInjection.open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+      fd = aioFaultInjection.open(paths[gndisks], DEFAULT_CACHE_OPTIONS | (opts & O_CREAT), 0644);
 #else
-      fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | O_CREAT, 0644);
+      fd = open(paths[gndisks], DEFAULT_CACHE_OPTIONS | (opts & O_CREAT), 0644);
 #endif
     }
 
