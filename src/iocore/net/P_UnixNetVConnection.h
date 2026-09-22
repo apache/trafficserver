@@ -329,8 +329,19 @@ inline void
 UnixNetVConnection::cancel_inactivity_timeout()
 {
   Dbg(_dbg_ctl_socket, "Cancel inactive timeout for NetVC=%p", this);
-  inactivity_timeout_in      = 0;
-  next_inactivity_timeout_at = 0;
+  inactivity_timeout_in = 0;
+
+  // Documented contract: the default inactivity timeout, if any, still
+  // applies after cancel. The wheel only revisits scheduled elements, so
+  // arm it here rather than relying on the cop's sweep to notice.
+  ink_hrtime const default_timeout_in = default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
+  if (default_timeout_in > 0) {
+    use_default_inactivity_timeout = true;
+    next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
+  } else {
+    next_inactivity_timeout_at = 0;
+  }
   rearm_timer();
 }
 

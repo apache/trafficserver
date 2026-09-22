@@ -242,6 +242,11 @@ public:
    */
   void rearm_timer(NetEvent *ne);
 
+  /// The single source of truth for @a ne's next deadline: the non-zero minimum
+  /// of its inactivity and activity deadlines, or 0 if neither is set. Also used
+  /// by InactivityCop's wheel fire functor to agree with what armed the element.
+  ink_hrtime _earliest_deadline(NetEvent *ne) const;
+
   // Signal the epoll_wait to terminate.
   void signalActivity() override;
 
@@ -267,10 +272,6 @@ private:
   static std::atomic<uint32_t> per_client_max_connections_in;
 
   void _close_ne(NetEvent *ne, ink_hrtime now, int &handle_event, int &closed, int &total_idle_time, int &total_idle_count);
-
-  /// The single source of truth for @a ne's next deadline: the non-zero minimum
-  /// of its inactivity and activity deadlines, or 0 if neither is set.
-  ink_hrtime _earliest_deadline(NetEvent *ne) const;
 
   /// Static method used as the callback for runtime configuration updates.
   static int update_nethandler_config(const char *name, RecDataT, RecData data, void *);

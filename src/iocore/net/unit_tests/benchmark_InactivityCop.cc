@@ -1,25 +1,26 @@
 /** @file
 
-  Microbenchmark for InactivityCop, the once-per-second per-thread sweep that
-  checks every open NetEvent for an inactivity or active timeout.
+  Microbenchmark for InactivityCop, the once-per-second per-thread pass that
+  checks NetEvents for an inactivity or active timeout.
 
-  This measures the *current* algorithm (drain cop_list with a try-lock per
-  entry, then refill cop_list by walking all of open_list) so a future timer
-  wheel replacement has an honest baseline. No production code is exercised
-  by a real net processor here: NetEvents are mocked, and the cop is driven
-  synchronously on the Catch2 main thread, which unit_test_main.cc already
-  makes a valid EThread via EThread::set_specific().
+  This measures InactivityCop as driven off NetHandler's timer wheel: each
+  call visits only the deadlines the wheel hands it, not every open
+  connection. No production code is exercised by a real net processor here:
+  NetEvents are mocked, and the cop is driven synchronously on the Catch2
+  main thread, which unit_test_main.cc already makes a valid EThread via
+  EThread::set_specific().
 
   Not using Catch2's BENCHMARK macro: the cop is stateful across invocations
-  (cop_list only refills at the end of a call, and scenarios like keepalive
-  and churn deliberately re-arm deadlines between calls), and BENCHMARK
-  re-runs its body an adaptive, unlogged number of times to converge, which
-  would silently multiply those state mutations in ways no scenario here is
-  designed to tolerate. BENCHMARK also cannot report the get_mutex/get_thread
-  touch counters, which are the primary, hardware-independent metrics this
-  file is built around. A hand-rolled mean/min/max over a fixed, logged
-  SAMPLE_RUNS is less polished but keeps both properties intact - do not
-  "modernize" this to BENCHMARK without preserving them.
+  (a fired deadline is dropped from the wheel until something re-arms it, and
+  scenarios like keepalive, churn, and mass_expiry deliberately re-arm
+  deadlines between calls), and BENCHMARK re-runs its body an adaptive,
+  unlogged number of times to converge, which would silently multiply those
+  state mutations in ways no scenario here is designed to tolerate. BENCHMARK
+  also cannot report the get_mutex/get_thread touch counters, which are the
+  primary, hardware-independent metrics this file is built around. A
+  hand-rolled mean/min/max over a fixed, logged SAMPLE_RUNS is less polished
+  but keeps both properties intact - do not "modernize" this to BENCHMARK
+  without preserving them.
 
   Run only the benchmarks: ./test_net "[!benchmark]"
 
@@ -332,8 +333,14 @@ struct Fixture {
     // manage_active_queue()/manage_keep_alive_queue() early-return
     // regardless of whatever eventProcessor state this binary happens to be
     // in.
-    nh.mutex                             = new_ProxyMutex();
-    nh.thread                            = this_ethread();
+    nh.mutex  = new_ProxyMutex();
+    nh.thread = this_ethread();
+    // Production initializes the wheel's cursor to real time in
+    // initialize_thread_for_net() (UnixNet.cc) before anything is scheduled;
+    // mirror that here, or the cursor starts 1.8e9 ticks (the current Unix
+    // epoch in seconds) behind and every first expire() call degenerates
+    // into the long-stall fast-forward path instead of the steady state.
+    nh.timer_wheel.init(ink_get_hrtime());
     nh.config.max_connections_in         = 0;
     nh.config.max_requests_in            = 0;
     nh.config.default_inactivity_timeout = 30;
@@ -507,6 +514,9 @@ set_idle(Fixture &fx)
     m->default_inactivity_timeout_in = 0;
     m->next_inactivity_timeout_at    = now + HRTIME_HOUR;
     m->next_activity_timeout_at      = 0;
+    // The wheel only revisits a scheduled deadline; writing the fields
+    // directly (as production code never does) needs an explicit rearm.
+    m->rearm_timer();
   }
 }
 
@@ -518,6 +528,7 @@ refresh_keepalive(Fixture &fx)
     m->default_inactivity_timeout_in = HRTIME_SECONDS(30);
     m->next_inactivity_timeout_at    = now + HRTIME_SECONDS(30);
     m->next_activity_timeout_at      = 0;
+    m->rearm_timer();
   }
 }
 
@@ -529,7 +540,25 @@ set_mass_expiry(Fixture &fx)
     m->default_inactivity_timeout_in = 0;
     m->next_inactivity_timeout_at    = now - HRTIME_SECOND;
     m->next_activity_timeout_at      = 0;
+    m->rearm_timer();
   }
+}
+
+// schedule()/rearm_timer() floor to at least the wheel's *next* tick past
+// its current cursor (TimerWheel.h) - nothing scheduled through them can
+// ever be due in the same instant it was scheduled. With the wheel's cursor
+// correctly initialized to real time (Fixture ctor), the only honest way to
+// make this population due for the very first checking call is to let one
+// real tick actually elapse, not to rely on the long-stall fast-forward path
+// (that path exists for a wheel that has been stalled or never
+// initialized, which is no longer this fixture's state).
+constexpr std::chrono::milliseconds TICK_SETTLE{1100};
+
+void
+set_mass_expiry_and_settle(Fixture &fx)
+{
+  set_mass_expiry(fx);
+  std::this_thread::sleep_for(TICK_SETTLE);
 }
 
 // Rotates a ~1% window of connections between "just expired" and "freshly
@@ -561,6 +590,7 @@ churn_tick(Fixture &fx, ChurnState &state)
       fx.mocks[idx]->default_inactivity_timeout_in = 0;
       fx.mocks[idx]->next_inactivity_timeout_at    = now + HRTIME_HOUR;
       fx.mocks[idx]->next_activity_timeout_at      = 0;
+      fx.mocks[idx]->rearm_timer();
     }
     state.cursor = (state.cursor + state.window) % n;
   }
@@ -570,6 +600,7 @@ churn_tick(Fixture &fx, ChurnState &state)
     fx.mocks[idx]->default_inactivity_timeout_in = 0;
     fx.mocks[idx]->next_inactivity_timeout_at    = now - HRTIME_SECOND;
     fx.mocks[idx]->next_activity_timeout_at      = 0;
+    fx.mocks[idx]->rearm_timer();
   }
   state.have_previous = true;
 }
@@ -607,7 +638,13 @@ public:
   ContentionHolder(std::vector<std::unique_ptr<PaddedMock>> &mocks, size_t fraction_pct)
   {
     size_t count = std::max<size_t>(1, mocks.size() * fraction_pct / 100);
-    for (size_t i = 0; i < count; ++i) {
+    // Hold the *last* `count` mocks, not the first: set_mass_expiry() walks
+    // fx.mocks in index order into a single wheel bucket that is a LIFO
+    // stack (DLL::push()/pop()), so the last-pushed - highest-index - mocks
+    // are the first ones expire() pops. Holding the first `count` mocks
+    // would put every contended entry behind the whole rest of the
+    // population, past TIMEOUT_BUDGET, and this check would never see them.
+    for (size_t i = mocks.size() - count; i < mocks.size(); ++i) {
       _held.push_back(mocks[i]->mutex);
     }
     _worker = std::thread([this] { run(); });
@@ -752,6 +789,14 @@ struct Scenario {
   char const *name;
   void (*setup)(Fixture &);
   void (*per_tick)(Fixture &, void *state);
+  // The wheel visits a given deadline exactly once, whenever the cursor
+  // first reaches it; that moment is guaranteed to be the very first
+  // expire() call after the deadline is scheduled while the cursor is still
+  // at its zero-initialized value (see mass_expiry / lock_contention). A
+  // scenario whose sanity check depends on catching that one moment must
+  // skip the untimed warmup calls, or they consume it before any sample is
+  // taken.
+  bool skip_warmup = false;
 };
 
 void
@@ -759,6 +804,9 @@ arm_and_warmup(Fixture &fx, Scenario const &scenario, void *state)
 {
   if (scenario.setup != nullptr) {
     scenario.setup(fx);
+  }
+  if (scenario.skip_warmup) {
+    return;
   }
   for (int i = 0; i < WARMUP_RUNS; ++i) {
     if (scenario.per_tick != nullptr) {
@@ -802,16 +850,20 @@ churn_tick_thunk(Fixture &fx, void *state)
   churn_tick(fx, *static_cast<ChurnState *>(state));
 }
 
-Scenario const IDLE_SCENARIO        = {"idle", set_idle, nullptr};
-Scenario const KEEPALIVE_SCENARIO   = {"keepalive", nullptr, refresh_keepalive_tick};
-Scenario const MASS_EXPIRY_SCENARIO = {"mass_expiry", set_mass_expiry, nullptr};
+Scenario const IDLE_SCENARIO      = {"idle", set_idle, nullptr};
+Scenario const KEEPALIVE_SCENARIO = {"keepalive", nullptr, refresh_keepalive_tick};
+// skip_warmup: setup() schedules the population and waits out the one real
+// tick that makes it due (set_mass_expiry_and_settle); the untimed WARMUP_RUNS
+// calls that arm_and_warmup() would otherwise make between setup() and the
+// first timed sample would consume that due tick before any sample runs.
+Scenario const MASS_EXPIRY_SCENARIO = {"mass_expiry", set_mass_expiry_and_settle, nullptr, /* skip_warmup = */ true};
 Scenario const CHURN_SCENARIO       = {"churn", init_churn_baseline, churn_tick_thunk};
 // Uses expired deadlines, not set_idle: since check_inactivity() now skips the try-lock
 // for connections that are provably not due, idle connections never attempt the lock and
 // ContentionHolder's held fraction would never be exercised. Expired deadlines force the
 // cop to lock every connection (as in mass_expiry), so the held 10% still fails the way
-// production contention would.
-Scenario const LOCK_CONTENTION_SCENARIO = {"lock_contention", set_mass_expiry, nullptr};
+// production contention would. skip_warmup for the same reason as mass_expiry.
+Scenario const LOCK_CONTENTION_SCENARIO = {"lock_contention", set_mass_expiry_and_settle, nullptr, /* skip_warmup = */ true};
 
 } // namespace
 
@@ -822,12 +874,11 @@ TEST_CASE("InactivityCop: idle connections", "[!benchmark][net][inactivity_cop]"
     std::vector<Sample> samples = run_scenario(n, IDLE_SCENARIO);
     Summary             s       = report("idle", n, samples);
 
-    // Every mock is on open_list, and every get_thread() returns
-    // this_ethread(), so the refill visits exactly all N of them and none
-    // are ever due; anything looser than equality here would pass a
-    // fixture that silently skipped some fraction of the population.
-    INFO("idle sanity check: get_thread touches per run must equal N exactly, and callbacks must be 0");
-    CHECK(s.get_thread_touches == n);
+    // The refill walk is gone: the cop now visits only what the wheel hands
+    // it, and none of these mocks are ever due, so get_thread() is never
+    // called at all. Anything above 0 here would mean a leftover sweep.
+    INFO("idle sanity check: get_thread touches per run must be 0 (no sweep), and callbacks must be 0");
+    CHECK(s.get_thread_touches == 0);
     CHECK(s.callbacks == 0);
   }
 }
@@ -848,12 +899,24 @@ TEST_CASE("InactivityCop: mass expiry", "[!benchmark][net][inactivity_cop]")
     std::vector<Sample> samples = run_scenario(n, MASS_EXPIRY_SCENARIO);
     report("mass_expiry", n, samples);
 
-    // Every mock has a past deadline and none are in keep_alive_queue
-    // (queue management is disabled for this fixture), so the first
-    // checking run must fire exactly N callbacks; a 1% slack would hide a
-    // real 1%-scale bug.
-    INFO("mass_expiry sanity check: callbacks fired on the first checking run must equal N exactly");
-    CHECK(samples.front().callbacks == n);
+    // skip_warmup (see MASS_EXPIRY_SCENARIO) puts the whole population due
+    // in a single wheel bucket that the first sample begins draining, with
+    // the cursor correctly initialized to real time (Fixture ctor) - this is
+    // ordinary single-tick draining, not the long-stall fast-forward path.
+    // InactivityCop::TIMEOUT_BUDGET caps callbacks per call, so the first
+    // sample fires exactly min(N, TIMEOUT_BUDGET); for N above the budget
+    // the drain spills into as many following samples as it takes, so the
+    // total summed across every sample is what must equal N exactly.
+    size_t const expected_first = std::min(n, static_cast<size_t>(InactivityCop::TIMEOUT_BUDGET));
+    INFO("mass_expiry sanity check: the first sample must fire exactly min(N, TIMEOUT_BUDGET) callbacks");
+    CHECK(samples.front().callbacks == expected_first);
+
+    uint64_t total = 0;
+    for (auto const &sample : samples) {
+      total += sample.callbacks;
+    }
+    INFO("mass_expiry sanity check: total callbacks summed across all samples must equal N exactly");
+    CHECK(total == n);
   }
 }
 
@@ -871,11 +934,11 @@ TEST_CASE("InactivityCop: lock contention", "[!benchmark][net][inactivity_cop]")
 {
   print_header();
   for (size_t n : N_VALUES) {
-    // Shares arm_and_warmup() with the other four scenarios, but the
-    // sampling loop cannot be the generic per_tick() shape: contention has
-    // to bracket each individual timed call (acquire before, release
-    // after), not just mutate state before it, and the ContentionHolder is
-    // only constructed after warmup so warmup runs never see contention.
+    // Shares arm_and_warmup() with the other four scenarios; skip_warmup (see
+    // LOCK_CONTENTION_SCENARIO) means arm_and_warmup only runs setup() here.
+    // The sampling loop cannot be the generic per_tick() shape regardless:
+    // contention has to bracket each individual timed call (acquire before,
+    // release after), not just mutate state before it.
     Fixture fx(n);
     arm_and_warmup(fx, LOCK_CONTENTION_SCENARIO, nullptr);
 
@@ -890,22 +953,30 @@ TEST_CASE("InactivityCop: lock contention", "[!benchmark][net][inactivity_cop]")
     }
     report("lock_contention", n, samples);
 
-    // The cop pops every cop_list entry every run, so the expected
-    // lock-acquire-failure count is exact, not just "greater than zero": a
-    // process-cumulative metric that only ever goes up would otherwise pass
-    // this check unconditionally from the second N onward even if the
-    // handshake with the contending thread were broken.
-    INFO("lock_contention sanity check: every run must fail exactly the held fraction of locks");
+    // A lock failure re-schedules the element (see check_inactivity's Fire
+    // functor) rather than firing it, floored to the wheel's *next* tick -
+    // one tick past wherever the current single-tick drain is, which is
+    // outside the range this one expire() call processes (with the cursor
+    // correctly initialized to real time, a call drains one due tick, not
+    // the long-stall fast-forward's thousands), so a held mock cannot be
+    // re-popped within the same call. TIMEOUT_BUDGET still caps failures
+    // per call the same way it caps callbacks in mass_expiry, so the first
+    // sample must show exactly min(held count, TIMEOUT_BUDGET) failures, and
+    // the total across every sample must equal the held count exactly.
+    size_t const expected_first_failures = std::min(expected_failures, static_cast<size_t>(InactivityCop::TIMEOUT_BUDGET));
+    INFO("lock_contention sanity check: the first sample must fail exactly min(held count, TIMEOUT_BUDGET) locks");
+    CHECK(samples.front().lock_failures == expected_first_failures);
+
+    uint64_t total_failures = 0;
     for (auto const &sample : samples) {
-      CHECK(sample.lock_failures == expected_failures);
+      total_failures += sample.lock_failures;
     }
+    INFO("lock_contention sanity check: total lock failures summed across all samples must equal the held count exactly");
+    CHECK(total_failures == expected_failures);
   }
 }
 
-// Direct check that startCop()/stopCop() populate and drain nh.timer_wheel:
-// the cop still drives off cop_list, so this is the only place a
-// schedule/cancel bookkeeping bug would otherwise surface before the
-// switchover.
+// Direct check that startCop()/stopCop() populate and drain nh.timer_wheel.
 //
 // build() alone is not enough to land a mock in the wheel: startCop() only
 // applies default_inactivity_timeout_in (mirrors UnixNetVConnection), and

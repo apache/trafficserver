@@ -464,6 +464,14 @@ UnixNetVConnection::set_enabled(VIO *vio)
   if (!next_inactivity_timeout_at && inactivity_timeout_in) {
     next_inactivity_timeout_at = ink_get_hrtime() + inactivity_timeout_in;
     rearm_timer();
+  } else if (!next_inactivity_timeout_at && !inactivity_timeout_in &&
+             default_inactivity_timeout_in.load(std::memory_order_relaxed) > 0) {
+    // No explicit timeout is set: the wheel only revisits scheduled elements, so
+    // arm the default here rather than relying on the cop's sweep to notice.
+    use_default_inactivity_timeout = true;
+    next_inactivity_timeout_at     = ink_get_hrtime() + default_inactivity_timeout_in;
+    Metrics::Counter::increment(net_rsb.default_inactivity_timeout_applied);
+    rearm_timer();
   }
 }
 
@@ -949,10 +957,17 @@ void
 UnixNetVConnection::netActivity()
 {
   Dbg(dbg_ctl_socket, "net_activity updating inactivity %" PRId64 ", NetVC=%p", this->inactivity_timeout_in, this);
+  ink_hrtime const default_timeout_in = this->default_inactivity_timeout_in.load(std::memory_order_relaxed);
+
   if (this->inactivity_timeout_in) {
     this->next_inactivity_timeout_at = ink_get_hrtime() + this->inactivity_timeout_in;
     // Deliberately no rearm_timer(): this only pushes the deadline later, and the
     // wheel re-reads the real deadline when the bucket comes due. Hot I/O path.
+  } else if (default_timeout_in > 0) {
+    // Same reasoning as above: arming from the default is still only ever an
+    // extension, so no rearm_timer() is needed here either.
+    this->use_default_inactivity_timeout = true;
+    this->next_inactivity_timeout_at     = ink_get_hrtime() + default_timeout_in;
   } else {
     this->next_inactivity_timeout_at = 0;
   }

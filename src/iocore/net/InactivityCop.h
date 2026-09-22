@@ -42,53 +42,51 @@
 
 // INKqa10496
 // One Inactivity cop runs on each thread once every second and
-// loops through the list of NetEvents and calls the timeouts
+// visits the NetEvents whose timer-wheel deadline is due, calling timeouts.
 class InactivityCop : public Continuation
 {
 public:
+  // A tick's worth of due elements is normally tiny; this is only a guard
+  // against one correlated wave monopolizing the thread. Anything deferred
+  // past the budget is picked up on the next tick.
+  static constexpr int TIMEOUT_BUDGET = 4096;
+
   InactivityCop(Ptr<ProxyMutex> const &m, NetHandler &nh) : Continuation(m.get()), _nh(nh)
   {
     SET_HANDLER(&InactivityCop::check_inactivity);
   }
 
-  int
-  check_inactivity(int event, Event *e)
-  {
-    (void)event;
-    ink_hrtime  now = ink_get_hrtime();
-    NetHandler &nh  = _nh;
+  /// Fire callback for the timer wheel. Applies the timeout to each NetEvent
+  /// whose true deadline has passed, preserving the semantics of the old sweep.
+  struct Fire {
+    NetHandler &nh;
+    ink_hrtime  now;
+    Event      *e;
 
-    Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
-    // The rest NetEvents in cop_list which are not triggered between InactivityCop runs.
-    // Use pop() to catch any closes caused by callbacks.
-    while (NetEvent *ne = nh.cop_list.pop()) {
-      // These fields are written by the owning thread (this thread; open_list is
-      // per-thread) and by plugin paths under ne's mutex, so a relaxed/unlocked read
-      // here can be stale. That is fine: a stale "nothing to do" read cannot lose a
-      // timeout permanently, since ne is pushed back onto cop_list from open_list
-      // every run and will be re-examined next tick. Worst case is one extra tick of
-      // delay, or one avoidable lock below that re-checks these same fields.
-      ink_hrtime default_inactivity_timeout_in = ne->default_inactivity_timeout_in.load(std::memory_order_relaxed);
-      bool       nothing_to_do =
-        !ne->closed &&
-        !(ne->next_inactivity_timeout_at == 0 && default_inactivity_timeout_in > 0 && (ne->read.enabled || ne->write.enabled)) &&
-        !(ne->next_inactivity_timeout_at && ne->next_inactivity_timeout_at < now) &&
-        !(ne->next_activity_timeout_at && ne->next_activity_timeout_at < now);
+    ink_hrtime
+    deadline_of(NetEvent *ne) const
+    {
+      // Must agree exactly with rearm_timer(): closed NetEvents are reaped on
+      // the next tick rather than at their original deadline.
+      return ne->closed ? now : nh._earliest_deadline(ne);
+    }
 
-      if (nothing_to_do) {
-        continue;
-      }
-
-      // If we cannot get the lock don't stop just keep cleaning
+    void
+    operator()(NetEvent *ne) const
+    {
+      // If we cannot get the lock don't stop just keep cleaning. The element
+      // has already been popped from the wheel, so it must be rescheduled or
+      // it will never be visited again.
       MUTEX_TRY_LOCK(lock, ne->get_mutex(), this_ethread());
       if (!lock.is_locked()) {
         Metrics::Counter::increment(net_rsb.inactivity_cop_lock_acquire_failure);
-        continue;
+        nh.rearm_timer(ne);
+        return;
       }
 
       if (ne->closed) {
         nh.free_netevent(ne);
-        continue;
+        return;
       }
 
       // set a default inactivity timeout if one is not set
@@ -127,18 +125,18 @@ public:
         ne->callback(VC_EVENT_ACTIVE_TIMEOUT, e);
       }
     }
-    // The cop_list is empty now.
-    // Let's reload the cop_list from open_list again.
-    forl_LL(NetEvent, ne, nh.open_list)
-    {
-      if (ne->get_thread() == this_ethread()) {
-        nh.cop_list.push(ne);
-      }
-    }
-    // NetHandler will remove NetEvent from cop_list if it is triggered.
-    // As the NetHandler runs, the number of NetEvents in the cop_list is decreasing.
-    // NetHandler runs 100 times maximum between InactivityCop runs.
-    // Therefore we don't have to check all the NetEvents as much as open_list.
+  };
+
+  int
+  check_inactivity(int /* event */, Event *e)
+  {
+    ink_hrtime  now = ink_get_hrtime();
+    NetHandler &nh  = _nh;
+
+    Dbg(dbg_ctl_inactivity_cop_check, "Checking inactivity on Thread-ID #%d", this_ethread()->id);
+
+    Fire fire{nh, now, e};
+    nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
 
     // Cleanup the active and keep-alive queues periodically
     nh.manage_active_queue(nullptr, true); // close any connections over the active timeout
