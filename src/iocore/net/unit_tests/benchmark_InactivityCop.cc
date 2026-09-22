@@ -954,31 +954,21 @@ TEST_CASE("InactivityCop: lock contention", "[!benchmark][net][inactivity_cop]")
     report("lock_contention", n, samples);
 
     // A lock failure re-schedules the element (see check_inactivity's Fire
-    // functor) rather than firing it, floored to the wheel's *next* tick
-    // relative to wherever the drain currently is. With the cursor correctly
-    // initialized to real time, one expire() call ordinarily drains exactly
-    // one due tick - but "ordinarily" is doing real work here: set_mass_expiry_and_settle()
-    // sleeps for slightly over one tick, not exactly one, and how many ticks
-    // have actually elapsed by the time this loop's first call runs also
-    // depends on OS scheduling latency (thread creation for ContentionHolder,
-    // preemption, etc). If more than one tick has elapsed, expire() drains
-    // all of them in that one call (by design - it is not the long-stall
-    // fast-forward path, just an ordinary multi-tick catch-up), and a held
-    // mock's reschedule from tick K (still floored to K+1) lands inside a
-    // tick this same call is about to process, so it fails again. That is
-    // real, observed behavior here (e.g. N=1000 showed exactly 2x the held
-    // count in one run), not hypothetical, so this cannot be tightened to
-    // exact equality without pinning down real-time scheduling - each held
-    // mock fails *at least* once, and TIMEOUT_BUDGET still caps the total.
-    // A lock failure re-schedules the element (see check_inactivity's Fire
-    // functor) rather than firing it, floored to the wheel's next tick. How
-    // much work any single call does is genuinely nondeterministic here: the
-    // harness advances through real time via sleeps, so whether a given call
-    // crosses a tick boundary at all - and how many ticks it catches up on if
-    // it does - depends on OS scheduling. A held mock can therefore fail zero
-    // times in one call and twice in another. Only the total is stable enough
-    // to assert: every held mock must fail at least once across the run.
-    // Losing one entirely, which is the bug that matters, still trips this.
+    // functor) rather than firing it, floored to the wheel's next tick relative
+    // to wherever the drain currently is - not past this call's target
+    // now_tick. So if more than one tick has elapsed, expire() drains all of
+    // them in one call (ordinary multi-tick catch-up, not the long-stall
+    // fast-forward path), and a held mock rescheduled from tick K lands on
+    // K + 1, which that same call is about to process, and fails again.
+    //
+    // How many ticks a call catches up on is genuinely nondeterministic: the
+    // settle sleep is slightly over one tick rather than exactly one, and OS
+    // scheduling latency (ContentionHolder's thread creation, preemption) adds
+    // more. A held mock has been observed failing zero times in one call and
+    // exactly twice in another (N=1000 recorded 2x the held count). A tighter
+    // sleep reduces the odds but cannot eliminate arbitrary scheduling delay,
+    // so exact equality here needs an injectable clock. Assert the floor: every
+    // held mock fails at least once, which still catches losing one entirely.
     uint64_t total_failures = 0;
     for (auto const &sample : samples) {
       total_failures += sample.lock_failures;
