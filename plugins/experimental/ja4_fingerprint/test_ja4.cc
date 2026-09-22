@@ -31,6 +31,8 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 static std::string call_JA4(JA4::TLSClientHelloSummary const &TLS_summary);
 static std::string inc(std::string_view sv);
@@ -224,9 +226,6 @@ TEST_CASE("JA4")
     CHECK("00" == call_JA4(TLS_summary).substr(8, 2));
   }
 
-  // This should never happen in practice because all registered ALPN values
-  // are at least 2 characters long, but it's the correct behavior according
-  // to the spec. :-)
   SECTION("Given the ALPN value is \"a\", "
           "when we create a JA4 fingerprint, "
           "then indices [8,9] thereof should contain \"aa\".")
@@ -249,6 +248,28 @@ TEST_CASE("JA4")
   {
     TLS_summary.ALPN = "imap";
     CHECK("ip" == call_JA4(TLS_summary).substr(8, 2));
+  }
+
+  SECTION("Given the first or the last byte of the ALPN value is not ASCII alphanumeric, "
+          "when we create a JA4 fingerprint, "
+          "then indices [8,9] thereof should contain the hex representation of those bytes.")
+  {
+    std::vector<std::pair<std::string, std::string>> values{
+      {std::string{"\xab"},             "ab"},
+      {std::string{"\x20"},             "20"},
+      {std::string{"\xab\xcd"},         "ad"},
+      {std::string{"\x20\x61"},         "21"},
+      {std::string{"\x30\xab"},         "3b"},
+      {std::string{"\x61\x20"},         "60"},
+      {std::string{"\x0a\x0a"},         "0a"},
+      {std::string{"\x30\x31\xab\xcd"}, "3d"},
+      {std::string{"\x30\xab\xcd\x31"}, "01"}
+    };
+    for (auto const &[ALPN, expected] : values) {
+      CAPTURE(ALPN, expected);
+      TLS_summary.ALPN = ALPN;
+      CHECK(expected == call_JA4(TLS_summary).substr(8, 2));
+    }
   }
 
   SECTION("When we create a JA4 fingeprint, "

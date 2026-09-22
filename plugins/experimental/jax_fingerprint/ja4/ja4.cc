@@ -42,6 +42,23 @@ static void convert_SNI_to_char(char *out, ja4::Datasource::SNI SNI_type);
 static void convert_count_to_two_digit_string(char *out, std::size_t count);
 static void convert_ALPN_to_two_char_string(char *out, std::string_view ALPN);
 
+namespace
+{
+bool
+is_ASCII_alphanumeric(unsigned char c)
+{
+  return ('0' <= c && c <= '9') || ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z');
+}
+
+char
+to_hex_digit(unsigned char nibble)
+{
+  constexpr char digits[]{"0123456789abcdef"};
+
+  return digits[nibble & 0xf];
+}
+} // end anonymous namespace
+
 /**
  * Calculate the a portion of the JA4 fingerprint for the given client hello.
  *
@@ -150,6 +167,9 @@ convert_count_to_two_digit_string(char *out, std::size_t count)
   }
 }
 
+// If either end of the value is not ASCII alphanumeric, the specification calls
+// for the first and last characters of its hex representation instead, which
+// are the high nibble of the first byte and the low nibble of the last byte.
 static void
 convert_ALPN_to_two_char_string(char *out, std::string_view alpn)
 {
@@ -157,8 +177,16 @@ convert_ALPN_to_two_char_string(char *out, std::string_view alpn)
     out[0] = '0';
     out[1] = '0';
   } else {
-    out[0] = alpn.front();
-    out[1] = alpn.back();
+    unsigned char const first{static_cast<unsigned char>(alpn.front())};
+    unsigned char const last{static_cast<unsigned char>(alpn.back())};
+
+    if (is_ASCII_alphanumeric(first) && is_ASCII_alphanumeric(last)) {
+      out[0] = static_cast<char>(first);
+      out[1] = static_cast<char>(last);
+    } else {
+      out[0] = to_hex_digit(first >> 4);
+      out[1] = to_hex_digit(last & 0xf);
+    }
   }
 }
 
