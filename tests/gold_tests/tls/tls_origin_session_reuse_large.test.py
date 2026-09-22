@@ -14,6 +14,8 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+from typing import Optional
+
 Test.Summary = 'Origin sessions are cached up to the configured ceiling, and not past it.'
 
 
@@ -91,7 +93,7 @@ ssl_multicert:
             })
         return ts
 
-    def _configure_proxy(self, name: str, max_session_size: int) -> 'Process':
+    def _configure_proxy(self, name: str, max_session_size: Optional[int]) -> 'Process':
         """Configure a proxy in front of the TLS origin.
 
         :param name: The name of the ATS process.
