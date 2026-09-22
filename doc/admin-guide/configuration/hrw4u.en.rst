@@ -742,7 +742,8 @@ Functions
 
 The ``functions`` list accepts any of the function names used in HRW4U source,
 both statement functions and the functions that produce a value in an
-expression. The complete set of deniable functions is:
+expression, including a call written inside a string interpolation such as
+``"{txn-count()}"``. The complete set of deniable functions is:
 
 ====================== =============================================
 Function               Description
@@ -775,7 +776,8 @@ Conditions and Operators
 
 The ``conditions`` and ``operators`` lists use the same dot-notation keys shown
 in the `Conditions`_ and `Operators`_ tables above (e.g. ``inbound.req.``,
-``geo.``, ``outbound.conn.``).
+``geo.``, ``outbound.conn.``). A condition read inside a string interpolation,
+such as ``"{inbound.method}"``, is checked the same way.
 
 Entries ending with ``.`` use **prefix matching** — ``geo.`` denies all
 ``geo.*`` lookups (``geo.city``, ``geo.ASN``, etc.). Entries without a trailing
