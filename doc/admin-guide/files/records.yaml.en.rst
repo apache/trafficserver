@@ -4696,7 +4696,9 @@ SSL Termination
   zero while :ts:stat:`proxy.process.ssl.ssl_origin_session_cache_miss` climbs; the
   ``ssl.origin_session_cache`` debug tag reports each session refused for its size.
   Note that the cache holds up to :ts:cv:`proxy.config.ssl.origin_session_cache.size`
-  entries, so this value bounds the memory that cache can occupy.
+  entries.  Note that what this bounds is the serialized size accepted for insertion, and
+  the duplication buffer sized from it -- the in-memory footprint of the cached
+  ``SSL_SESSION`` objects tracks it only approximately.
 
 .. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
 

@@ -37,19 +37,11 @@
 /** Looking at OpenSSL's providers/common/capabilities.c, the current maximum
  * length of a group name is 20 characters (brainpoolP256r1tls13 and the like).
  * Reserving 64 characters should be more than enough. If someday we are
- * surprised and this turns out to be too small, there is an assertion gaurd to
+ * surprised and this turns out to be too small, there is an assertion guard to
  * make sure we do not overrun the buffer in SSLSessionCache.cc.
  */
 #define SSL_MAX_GROUP_NAME_SIZE 64
 #define SSL_MAX_SESSION_SIZE    256
-
-/** Default ceiling on the ASN.1 form of a cached origin session, in bytes.
- * Overridden by proxy.config.ssl.origin_session_cache.max_session_size.  A
- * serialized session carries the peer certificate and the session ticket, so
- * a large origin certificate, or a mutual-TLS origin whose ticket encodes the
- * client certificate, comfortably exceeds the 4096 this used to be fixed at.
- */
-#define SSL_DEFAULT_MAX_ORIG_SESSION_SIZE 8192
 
 struct ssl_session_cache_exdata {
   ssl_curve_id curve = 0;
