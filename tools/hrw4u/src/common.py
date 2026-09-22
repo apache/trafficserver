@@ -238,8 +238,12 @@ def generate_output(
         filename: str,
         args: Any,
         error_collector: ErrorCollector | None = None,
-        extra_kwargs: dict[str, Any] | None = None) -> None:
-    """Generate and print output based on mode with optional error collection."""
+        extra_kwargs: dict[str, Any] | None = None) -> bool:
+    """Generate and print output based on mode with optional error collection.
+
+    Returns True when the input produced errors, so the caller can set the exit
+    status after every input has been processed rather than aborting mid-run.
+    """
     if args.ast:
         if tree is not None:
             print(tree.toStringTree(recog=parser_obj))
@@ -278,8 +282,8 @@ def generate_output(
 
     if error_collector and (error_collector.has_errors() or error_collector.has_warnings()):
         print(error_collector.get_error_summary(), file=sys.stderr)
-        if error_collector.has_errors() and not args.ast and tree is None:
-            sys.exit(1)
+
+    return bool(error_collector and error_collector.has_errors())
 
 
 def run_main(
@@ -363,10 +367,12 @@ def run_main(
                 emit_fatal_error(args.error_format, e)
         tree, parser_obj, error_collector = create_parse_tree(
             content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors, args.error_format)
-        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
+        if generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs):
+            sys.exit(1)
         return
 
     if any(':' in f for f in args.files):
+        failed = False
         for pair in args.files:
             if ':' not in pair:
                 emit_fatal_message(
@@ -398,12 +404,13 @@ def run_main(
                     original_stdout = sys.stdout
                     try:
                         sys.stdout = output_file
-                        generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
+                        failed |= generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
                     finally:
                         sys.stdout = original_stdout
             except Exception as e:
                 emit_fatal_message(args.error_format, f"Error writing to '{output_path}': {e}", filename=output_path)
     else:
+        failed = False
         for i, input_path in enumerate(args.files):
             if i > 0:
                 print("# ---")
@@ -426,4 +433,7 @@ def run_main(
                 content, filename, lexer_class, parser_class, error_prefix, not args.stop_on_error, args.max_errors,
                 args.error_format)
 
-            generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
+            failed |= generate_output(tree, parser_obj, visitor_class, filename, args, error_collector, extra_kwargs)
+
+    if failed:
+        sys.exit(1)
