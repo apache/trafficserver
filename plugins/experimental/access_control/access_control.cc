@@ -23,22 +23,48 @@
 
 #include <iostream>
 #include <string>
+#include <charconv>
 
 #include "access_control.h"
 
 size_t calcMessageDigest(const StringView hf, const char *secret, const char *message, size_t messageLen, char *buffer, size_t len);
 const char *getSecretMap(const StringMap &map, const StringView &key, size_t &secretSize);
 
-static String
-normalizePath(StringView path)
+static bool
+percentDecodePath(StringView in, String &out)
 {
+  out.clear();
+  out.reserve(in.size());
+  for (size_t i = 0; i < in.size();) {
+    if (in[i] == '%') {
+      unsigned char val = 0;
+      if (i + 2 < in.size() && std::from_chars(in.data() + i + 1, in.data() + i + 3, val, 16).ec == std::errc{}) {
+        out.push_back(static_cast<char>(val));
+        i += 3;
+      } else {
+        return false;
+      }
+    } else {
+      out.push_back(in[i]);
+      ++i;
+    }
+  }
+  return true;
+}
+
+static bool
+normalizePath(StringView path, String &normalized, bool isScope = false)
+{
+  normalized.clear();
   if (path.empty()) {
-    return "/";
+    normalized = "/";
+    return true;
   }
 
-  String decoded(path.size(), '\0');
-  size_t decodedLen = urlDecode(path.data(), path.size(), decoded.data(), decoded.size());
-  decoded.resize(decodedLen);
+  String decoded;
+  if (!percentDecodePath(path, decoded)) {
+    return false;
+  }
   StringVector segments;
   size_t       start = 0;
 
@@ -51,6 +77,9 @@ normalizePath(StringView path)
       StringView seg(decoded.data() + start, end - start);
       if (seg == ".") {
       } else if (seg == "..") {
+        if (isScope) {
+          return false;
+        }
         if (!segments.empty()) {
           segments.pop_back();
         }
@@ -60,17 +89,16 @@ normalizePath(StringView path)
     }
     start = end + 1;
   }
-
   if (segments.empty()) {
-    return "/";
+    normalized = "/";
+    return true;
   }
 
-  String normalized;
   for (const auto &seg : segments) {
     normalized.push_back('/');
     normalized.append(seg);
   }
-  return normalized;
+  return true;
 }
 
 /* AccessToken ***************************************************************************************************** */
@@ -522,15 +550,22 @@ validateScope(StringView requestPath, StringView scope)
   if (scope.empty()) {
     return true;
   }
-  String normRequestPath = normalizePath(requestPath);
-  String normScope       = normalizePath(scope);
+  String normScope;
+  if (!normalizePath(scope, normScope, /* isScope = */ true)) {
+    return false;
+  }
+  String normRequestPath;
+  if (!normalizePath(requestPath, normRequestPath, /* isScope = */ false)) {
+    return false;
+  }
+
   if (normScope == "/") {
     return true;
   }
   if (normRequestPath == normScope) {
     return true;
   }
-  if (normRequestPath.compare(0, normScope.length(), normScope) == 0 && normRequestPath[normScope.length()] == '/') {
+  if (normRequestPath.compare(0, normScope.size(), normScope) == 0 && normRequestPath[normScope.length()] == '/') {
     return true;
   }
   return false;

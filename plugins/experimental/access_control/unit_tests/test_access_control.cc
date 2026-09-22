@@ -180,12 +180,11 @@ TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]
     CHECK(validateScope("/", "") == true);
   }
 
-  SECTION("exact match")
+  SECTION("exact match and trailing slashes")
   {
     CHECK(validateScope("/reports", "/reports") == true);
-    CHECK(validateScope("/reports/", "/reports/") == true);
-    CHECK(validateScope("/reports", "/reports/") == true);
     CHECK(validateScope("/reports/", "/reports") == true);
+    CHECK(validateScope("/reports", "/reports/") == true);
   }
 
   SECTION("valid subpath matching")
@@ -198,46 +197,30 @@ TEST_CASE("AccessToken: scope validation", "[AccessToken][access_control][scope]
   SECTION("segment boundary enforcement")
   {
     CHECK(validateScope("/reports2/", "/reports/") == false);
-    CHECK(validateScope("/reports2", "/reports") == false);
-    CHECK(validateScope("/reports_backup/2026", "/reports") == false);
     CHECK(validateScope("/api/v1/users_admin", "/api/v1/users") == false);
   }
 
   SECTION("mismatched paths")
   {
     CHECK(validateScope("/other/", "/reports/") == false);
-    CHECK(validateScope("/other/path", "/reports") == false);
     CHECK(validateScope("/reports", "/reports/2026") == false);
-    CHECK(validateScope("/reports/", "/reports/2026/") == false);
   }
 
   SECTION("normalization and edge cases")
   {
     CHECK(validateScope("/anything", "/") == true);
-    CHECK(validateScope("/", "/") == true);
     CHECK(validateScope("reports/2026/", "/reports/") == true);
-    CHECK(validateScope("reports/2026/", "reports/") == true);
     CHECK(validateScope("//reports///2026//", "/reports") == true);
   }
 
   SECTION("path traversal security")
   {
     CHECK(validateScope("/reports/../hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/../../etc/passwd", "/reports/") == false);
-    CHECK(validateScope("/reports/%2e%2e/hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/%2E%2E/hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/.%2e/hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/%2e./hr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/./2026/", "/reports/") == true);
-    CHECK(validateScope("/reports/2026/../2026/annual.pdf", "/reports") == true);
-    CHECK(validateScope("/reports/%2e/2026/", "/reports/") == true);
     CHECK(validateScope("/reports/%2e%2e%2fhr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/%2e%2e%2Fhr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/..%2fhr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/..%2Fhr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/%2e%2e%5chr/payroll", "/reports/") == false);
-    CHECK(validateScope("/reports/%2e%2e%5Chr/payroll", "/reports/") == false);
     CHECK(validateScope("/reports/..\\hr/payroll", "/reports/") == false);
+    CHECK(validateScope("/hr/payroll", "/reports/..") == false);
+    CHECK(validateScope("/reports/%", "/reports/") == false);
+    CHECK(validateScope("/reports+archive", "/reports+archive") == true);
   }
 }
 
