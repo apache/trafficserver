@@ -1069,6 +1069,11 @@ about what is left, test for it, which also catches the multiply encoded case::
     cond %{CLIENT-URL:PATH} /%/ [NORM]
       set-status 400
 
+Escaped control characters (``%00`` to ``%1F``, and ``%7F``) are left encoded
+as well, so an expansion such as the ``set-header`` above can never carry a
+decoded CR or LF into a header. Incomplete or malformed escapes, such as a
+trailing ``%`` or ``%4z``, pass through unchanged.
+
 Operators
 ---------
 
