@@ -1233,32 +1233,84 @@ TEST_CASE("RegexMatchContext matches the shared context", "[libts][Regex][RegexM
 
   REQUIRE(re.exec(subject, copied_matches, 0, &copied) == shared_rc);
   REQUIRE(re.exec(subject, assigned_matches, 0, &assigned) == shared_rc);
+}
 
-  // The move paths, which had no coverage while the copy paths had two cases each.
-  // These were defaulted over a bare void* that the destructor frees, so both ends
-  // owned it and the second destruction was a double free. Nothing moved one, so it
-  // never fired; this case is what makes that true on purpose rather than by luck.
-  //
-  // The assertions are deliberately on both halves. Matching through the moved-TO
-  // object proves the context survived the move, and a double free would abort at
-  // the closing brace when the moved-FROM object is destroyed, so scope exit is
-  // itself the second oracle.
+// Ownership only, and deliberately NOT inside the case above.
+//
+// That case SKIPs when pattern_has_jit() is false, which is right for what it tests and
+// wrong for this: move construction and move assignment have nothing to do with the JIT.
+// Gating them there meant the only coverage of the double free stopped running on exactly
+// the builds it was written for, a PCRE2 without JIT or the hardened runtime where JIT
+// allocation fails. A regression test that disappears on the affected platform is worse
+// than none, because it reports green.
+TEST_CASE("RegexMatchContext move operations transfer ownership", "[libts][Regex][RegexMatchContext]")
+{
+  Regex re;
+
+  REQUIRE(re.compile("^(a+)(b+)$"));
+
+  std::string_view const subject{"aaabbb"};
+
+  auto matches_through = [&](RegexMatchContext const *ctx) {
+    RegexMatches m;
+    return re.exec(subject, m, 0, ctx);
+  };
+
+  // Baseline through a plain context, so a later mismatch means the move broke something
+  // rather than the pattern never having matched.
+  RegexMatchContext plain;
+  int const         expected = matches_through(&plain);
+
+  REQUIRE(expected > 0);
+
+  SECTION("move construction")
   {
     RegexMatchContext       donor;
     RegexMatchContext const moved{std::move(donor)};
-    RegexMatches            moved_matches;
 
-    REQUIRE(re.exec(subject, moved_matches, 0, &moved) == shared_rc);
+    REQUIRE(matches_through(&moved) == expected);
+    // A double free aborts when donor and moved are both destroyed, so leaving this
+    // section is itself the second assertion.
   }
+
+  SECTION("move assignment onto a destination that already holds a context")
   {
+    // HONEST LABEL: on an ordinary build the assertions below do NOT detect a dropped
+    // pcre2_match_context_free(old). Measured: removing that call leaves this section
+    // passing, because a leak has no observer here. The oracle for the leak is
+    // LeakSanitizer on the ci-rocky lane, which is the only PR check inheriting asan.
+    //
+    // The section still earns its place: it is what gives LSan an assignment onto a
+    // live context to observe, which no other case in this file produces. Without it
+    // the leak is unreachable and therefore undetectable anywhere.
+    RegexMatchContext destination;
+
+    REQUIRE(matches_through(&destination) == expected);
+
     RegexMatchContext donor;
-    RegexMatchContext move_assigned;
 
-    move_assigned = std::move(donor);
+    destination = std::move(donor);
 
-    RegexMatches move_assigned_matches;
+    REQUIRE(matches_through(&destination) == expected);
+  }
 
-    REQUIRE(re.exec(subject, move_assigned_matches, 0, &move_assigned) == shared_rc);
+  SECTION("self move assignment")
+  {
+    RegexMatchContext ctx;
+
+    REQUIRE(matches_through(&ctx) == expected);
+
+    // Without the this != &that guard this frees the context and then reads the freed
+    // pointer back into itself, so the match below runs on freed memory.
+    //
+    // HONEST LABEL: measured, removing that guard leaves this section passing on an
+    // ordinary build, because a use after free does not reliably fault. AddressSanitizer
+    // on ci-rocky is the oracle. As above, the value here is producing the access at all.
+    auto &alias = ctx;
+
+    ctx = std::move(alias);
+
+    REQUIRE(matches_through(&ctx) == expected);
   }
 }
 

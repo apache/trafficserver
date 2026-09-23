@@ -185,7 +185,31 @@ produce_features(bool json)
 #ifdef PCRE2_JIT_TEST_ALLOC
     has_jit = pcre2_jit_compile(nullptr, PCRE2_JIT_TEST_ALLOC) == 0;
 #else
-    pcre2_config(PCRE2_CONFIG_JIT, &has_jit);
+    // Below 10.45 there is no library-wide probe that also proves the allocator works,
+    // and PCRE2_CONFIG_JIT alone is exactly the misleading answer described above. This
+    // tree still supports those versions: Rocky 8.10 links PCRE2 10.32, so this is the
+    // live path on that CI lane rather than a theoretical one.
+    //
+    // So ask the question that cannot be wrong about it. JIT compile a real pattern and
+    // see whether a JIT block came back, which is what the unit tests already do per
+    // pattern in pattern_has_jit(). A hardened runtime fails the compile and reports a
+    // zero JIT size, and the feature correctly reads false.
+    {
+      int         errnum    = 0;
+      PCRE2_SIZE  erroffset = 0;
+      pcre2_code *code = pcre2_compile(reinterpret_cast<PCRE2_SPTR>("a"), PCRE2_ZERO_TERMINATED, 0, &errnum, &erroffset, nullptr);
+
+      if (code != nullptr) {
+        size_t jit_size = 0;
+
+        pcre2_jit_compile(code, PCRE2_JIT_COMPLETE);
+        pcre2_pattern_info(code, PCRE2_INFO_JITSIZE, &jit_size);
+        pcre2_code_free(code);
+        has_jit = jit_size > 0;
+      }
+      // A pattern as trivial as "a" failing to compile means the library is unusable,
+      // and reporting no JIT is the right answer in that case too.
+    }
 #endif
     print_feature("TS_HAS_PCRE2_JIT", has_jit != 0, json);
   }
