@@ -377,7 +377,11 @@ RegexMatchContext::operator=(RegexMatchContext const &other)
 //----------------------------------------------------------------------------
 RegexMatchContext::RegexMatchContext(RegexMatchContext &&that) noexcept
 {
-  _MatchContext::set(_match_context, std::exchange(that._match_context._ptr, nullptr));
+  // Through the typed accessors rather than std::exchange on the raw member: _ptr is
+  // void *, and void * does not implicitly convert to pcre2_match_context *, which is
+  // what set() takes.
+  _MatchContext::set(_match_context, _MatchContext::get(that._match_context));
+  _MatchContext::set(that._match_context, nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -388,7 +392,8 @@ RegexMatchContext::operator=(RegexMatchContext &&that) noexcept
     if (auto *const old = _MatchContext::get(_match_context); old != nullptr) {
       pcre2_match_context_free(old);
     }
-    _MatchContext::set(_match_context, std::exchange(that._match_context._ptr, nullptr));
+    _MatchContext::set(_match_context, _MatchContext::get(that._match_context));
+    _MatchContext::set(that._match_context, nullptr);
   }
   return *this;
 }
