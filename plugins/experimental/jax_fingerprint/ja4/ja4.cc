@@ -170,6 +170,7 @@ convert_count_to_two_digit_string(char *out, std::size_t count)
 // If either end of the value is not ASCII alphanumeric, the specification calls
 // for the first and last characters of its hex representation instead, which
 // are the high nibble of the first byte and the low nibble of the last byte.
+// See https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md#alpn-extension-value
 static void
 convert_ALPN_to_two_char_string(char *out, std::string_view alpn)
 {
