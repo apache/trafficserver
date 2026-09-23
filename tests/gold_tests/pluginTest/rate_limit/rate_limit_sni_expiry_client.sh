@@ -91,8 +91,9 @@ trap 'exit 143' TERM
 # Open the FIFO before launching any child. Clients inherit the descriptor, so removing
 # the path cannot race their startup. Its read/write end keeps stdin idle until teardown.
 fifo_dir="$(mktemp -d "${TMPDIR:-/tmp}/rl_holder.XXXXXX")"
-mkfifo "${fifo_dir}/fifo"
-exec 3<>"${fifo_dir}/fifo"
+client_stdin_fifo="${fifo_dir}/fifo"
+mkfifo "$client_stdin_fifo"
+exec 3<>"$client_stdin_fifo"
 rm -rf "$fifo_dir"
 fifo_dir=""
 
