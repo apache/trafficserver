@@ -1,7 +1,10 @@
 '''
-Exercise the rate_limit SNI queue's max_age expiry while a holder occupies the single slot.
-The sweep must expire the queued connection without resuming or rejecting it, and leave
-the active-slot counter balanced for the holder's release and the probe's reservation.
+Check that the rate_limit SNI connection limit still works after a queued connection expires.
+
+Configure the plugin to allow one active connection and keep that connection open.
+A second connection waits in a queue. Once it has waited longer than max_age, the plugin
+must remove it from the queue. Close the first connection, then check that the plugin
+accepts a third connection without crashing ATS.
 
 The expired connection's VCONN_CLOSE is outside this test's coverage: the current TLS core
 parks it after the error reenable and does not observe the client's close. Consequently,
@@ -31,7 +34,7 @@ Test.SkipUnless(Condition.PluginExists('rate_limit.so'))
 
 
 class RateLimitSniExpiryTest:
-    """Exercise max_age expiry and assert the holder and probe keep the slot counter balanced."""
+    """Check that expiring a queued connection preserves capacity for later connections."""
 
     def __init__(self) -> None:
         tr = Test.AddTestRun('rate_limit SNI queue max_age expiry')
@@ -45,9 +48,9 @@ class RateLimitSniExpiryTest:
         for line in ['ssl_multicert:', '  - dest_ip: "*"', '    ssl_cert_name: server.pem', '    ssl_key_name: server.key']:
             ts.Disk.ssl_multicert_yaml.AddLine(line)
 
-        # One concurrent handshake for this SNI, a one-deep queue, and a 1s max age so the
-        # sweep expires the queued connection. Named .config (not .yaml) so autest treats it
-        # as a plain config file; the plugin parses it as YAML regardless.
+        # Allow one active connection and one queued connection for this SNI. Remove the
+        # queued connection after it waits for 1s. Named .config (not .yaml) so autest treats
+        # it as a plain config file; the plugin parses it as YAML regardless.
         ts.Disk.MakeConfigFile('rate_limit.config').AddLines(
             [
                 'selector:',

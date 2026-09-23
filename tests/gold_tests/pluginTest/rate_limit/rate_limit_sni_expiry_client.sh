@@ -16,9 +16,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 #
-# Exercise max_age expiry while a holder occupies the single slot. The sweep must expire
-# the queued connection without resuming or rejecting it, and leave the slot counter
-# balanced for the holder's release and the probe's reservation.
+# Allow one active connection and keep it open. A second connection waits in a queue.
+# Once it has waited longer than max_age, the plugin must remove it from the queue.
+# Close the first connection, then check that the plugin accepts a third without crashing ATS.
 #
 # The expired connection's VCONN_CLOSE is outside this test's coverage. The current TLS
 # core parks the VC after the error reenable and does not observe the client's FIN, so
@@ -96,29 +96,27 @@ exec 3<>"${fifo_dir}/fifo"
 rm -rf "$fifo_dir"
 fifo_dir=""
 
-# 1. Holder: reserve the single slot before starting the queued connection.
+# 1. Keep the first connection open to reach the plugin's connection limit.
 "${openssl[@]}" <&3 >/dev/null 2>&1 &
 holder=$!
 wait_for 'Reserving a slot, active entities == 1' 1
 
-# 2. One queued connection: enqueues and stays parked at the ClientHello hook (not killed),
-#    so the sweep's max_age expiry -- not a disconnect or a resume -- is what removes it.
+# 2. Start a second connection and wait for it to enter the queue.
 "${openssl[@]}" <&3 >/dev/null 2>&1 &
 queued=$!
 wait_for 'Queueing the VC, we are at capacity' 1
 
-# 3. Keep the holder alive until the sweep actually expires the queued connection.
+# 3. Keep the first connection open until the second exceeds max_age and is removed.
 wait_for 'Queued VC is too old' 1
 end_connection "$queued"
 queued=""
 
-# 4. End the holder and wait for its slot to be released.
+# 4. Close the first connection and wait for the plugin to record its closure.
 end_connection "$holder"
 holder=""
 wait_for 'Releasing a slot, active entities ==' 1
 
-# 5. Reserve and release the slot again. An unmatched release during expiry would wrap
-#    the counter when the holder closes, causing this reservation to abort ATS.
+# 5. Check that the plugin accepts a third connection without crashing ATS.
 "${openssl[@]}" <&3 >/dev/null 2>&1 &
 probe=$!
 wait_for 'Reserving a slot, active entities == 1' 2
