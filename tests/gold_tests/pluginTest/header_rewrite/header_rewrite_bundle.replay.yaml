@@ -2695,9 +2695,7 @@ sessions:
     proxy-response:
       status: 200
 
-# Test 101: malformed escapes. These drive the unescaper's backtracking paths, which write
-# from str[-1]/str[-2] and so are the ones that would corrupt an in-place decode. Both
-# sequences are invalid, so the value must come through byte-for-byte unchanged.
+# Test 101: malformed escapes come through byte-for-byte unchanged.
 - transactions:
   - client-request:
       method: "GET"
@@ -2770,6 +2768,117 @@ sessions:
       headers:
         fields:
         - [ X-Norm-Path, { value: "Bucket1/x/%50%-off", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 104: escaped controls stay encoded. Decoding %0d%0a into the X-Norm-Path value would
+# inject an X-Evil field into the upstream request.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/a%0d%0aX-Evil:%20yes
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 104 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Path, { value: "Bucket1/x/a%0d%0aX-Evil: yes", as: equal } ]
+        - [ X-Evil, { as: absent } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 105: an incomplete trailing escape is kept.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/a-1%
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 105 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Path, { value: "Bucket1/x/a-1%", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 106: same, with one hex digit of the escape present.
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/a-1%4
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 106 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Norm-Path, { value: "Bucket1/x/a-1%4", as: equal } ]
+
+    server-response:
+      status: 200
+      reason: OK
+      headers:
+        fields:
+        - [ Server, microserver ]
+        - [ Content-Length, "0" ]
+
+    proxy-response:
+      status: 200
+
+# Test 107: a trailing [] is part of the qualifier, with or without [NORM].
+- transactions:
+  - client-request:
+      method: "GET"
+      version: "1.1"
+      url: /Bucket1/x/q?ids[]=a%2Cb
+      headers:
+        fields:
+        - [ Host, norm.ex ]
+        - [ uuid, 107 ]
+
+    proxy-request:
+      headers:
+        fields:
+        - [ X-Raw-Ids, { value: "a%2Cb", as: equal } ]
+        - [ X-Norm-Ids, { value: "a,b", as: equal } ]
 
     server-response:
       status: 200

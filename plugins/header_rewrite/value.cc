@@ -48,7 +48,8 @@ Value::set_value(const std::string &val, Statement *owner)
 
   if (_value.find("%{") != std::string::npos) {
     HRWSimpleTokenizer tokenizer(_value);
-    auto               tokens = tokenizer.get_tokens();
+    auto               tokens   = tokenizer.get_tokens();
+    auto               is_space = [](char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; };
 
     for (const auto &token : tokens) {
       Condition *tcond_val = nullptr;
@@ -57,12 +58,12 @@ Value::set_value(const std::string &val, Statement *owner)
         std::string    cond_token = token.substr(2, token.size() - 3);
         swoc::TextView cond_name{cond_token};
 
-        // The factory only wants the condition and its qualifier, so hide any trailing
-        // [MODS] from it. The Parser still sees them, and initialize() consumes them.
+        // The factory takes only the condition and qualifier; initialize() consumes any [MODS].
+        // As in the Parser, mods are a separate token, so %{CLIENT-URL:QUERY:ids[]} keeps its [].
         if (cond_name.ends_with(']')) {
-          if (auto pos = cond_name.rfind('['); pos != swoc::TextView::npos) {
+          if (auto pos = cond_name.rfind('['); pos != swoc::TextView::npos && pos > 0 && is_space(cond_name[pos - 1])) {
             cond_name.remove_suffix(cond_name.size() - pos);
-            cond_name.rtrim_if([](char c) { return std::isspace(static_cast<unsigned char>(c)) != 0; });
+            cond_name.rtrim_if(is_space);
           }
         }
 

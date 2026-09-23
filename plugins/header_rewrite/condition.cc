@@ -19,6 +19,7 @@
 // condition.cc: Implementation of the condition base class
 //
 //
+#include <charconv>
 #include <string>
 
 #include "ts/ts.h"
@@ -78,25 +79,31 @@ parse_matcher_op(std::string &arg)
 void
 Condition::normalize(std::string &s, size_t start)
 {
-  auto pos = s.find('%', start);
+  auto in = s.find('%', start);
 
-  // Percent-decoding is the only normalization so far.
-  if (pos == std::string::npos) {
+  if (in == std::string::npos) {
     return;
   }
 
-  size_t len     = s.size() - pos;
-  size_t written = 0;
+  auto out = in;
 
-  // Decoding shrinks, so in place is safe; the extra byte is for the NUL it appends.
-  s.push_back('\0');
+  while (in < s.size()) {
+    if (s[in] == '%' && s.size() - in > 2) {
+      const char   *hex = s.data() + in + 1;
+      unsigned char c   = 0;
+      auto [end, ec]    = std::from_chars(hex, hex + 2, c, 16);
 
-  if (TSStringPercentDecode(s.data() + pos, len, s.data() + pos, len + 1, &written) != TS_SUCCESS) {
-    written = len;
-    Dbg(pi_dbg_ctl, "Failed to percent-decode, leaving the value untouched");
+      // Escaped controls stay encoded, since a decoded CR/LF in an expansion would inject a header field.
+      if (ec == std::errc{} && end == hex + 2 && c >= 0x20 && c != 0x7f) {
+        s[out++]  = static_cast<char>(c);
+        in       += 3;
+        continue;
+      }
+    }
+    s[out++] = s[in++];
   }
 
-  s.resize(pos + written);
+  s.resize(out);
 }
 
 void
