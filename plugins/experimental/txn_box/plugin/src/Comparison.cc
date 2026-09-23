@@ -1055,11 +1055,7 @@ struct Base_Binary_Cmp : public Comparison {
   using self_type  = Base_Binary_Cmp; ///< Self reference type.
   using super_type = Comparison;      ///< Parent type.
 public:
-  /// Supported types.
-  using Cmp_Types = swoc::meta::type_list<feature_type_for<INTEGER>, feature_type_for<BOOLEAN>, feature_type_for<IP_ADDR>,
-                                          feature_type_for<DURATION>>;
-
-  static inline const ActiveType TYPES = Cmp_Types::apply<ValueMaskFor>::value; ///< Mask for supported types.
+  static inline const ActiveType TYPES{INTEGER, BOOLEAN, IP_ADDR, DURATION}; ///< Mask for supported types.
 
   /** Instantiate an instance from YAML configuration.
    *

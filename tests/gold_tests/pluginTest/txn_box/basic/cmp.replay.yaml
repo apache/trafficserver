@@ -72,6 +72,56 @@ meta:
               do:
               - proxy-req-field<cmp-mix>: "true"
 
+    # Binary comparisons against an integer feature. Each comparator gets its own block so a
+    # failure names the comparator, and all six share the boundary value 30.
+    - when: proxy-req
+      do:
+      - with: [ ua-req-field<cmp-int> , { as-integer: } ]
+        select:
+        - eq: 30
+          do:
+          - proxy-req-field<cmp-eq>: "true"
+
+    - when: proxy-req
+      do:
+      - with: [ ua-req-field<cmp-int> , { as-integer: } ]
+        select:
+        - ne: 30
+          do:
+          - proxy-req-field<cmp-ne>: "true"
+
+    - when: proxy-req
+      do:
+      - with: [ ua-req-field<cmp-int> , { as-integer: } ]
+        select:
+        - lt: 30
+          do:
+          - proxy-req-field<cmp-lt>: "true"
+
+    - when: proxy-req
+      do:
+      - with: [ ua-req-field<cmp-int> , { as-integer: } ]
+        select:
+        - le: 30
+          do:
+          - proxy-req-field<cmp-le>: "true"
+
+    - when: proxy-req
+      do:
+      - with: [ ua-req-field<cmp-int> , { as-integer: } ]
+        select:
+        - gt: 30
+          do:
+          - proxy-req-field<cmp-gt>: "true"
+
+    - when: proxy-req
+      do:
+      - with: [ ua-req-field<cmp-int> , { as-integer: } ]
+        select:
+        - ge: 30
+          do:
+          - proxy-req-field<cmp-ge>: "true"
+
   blocks:
   - base-req: &base-req
       version: "1.1"
@@ -100,6 +150,7 @@ sessions:
         fields:
         - [ Host, one.ex ]
         - [ "channel", "v1/video/channels/delain/subchannel/streaming"]
+        - [ "cmp-int", "30" ]
     proxy-request:
       headers:
         fields:
@@ -110,6 +161,12 @@ sessions:
         - [ "cmp-any", { value: "true", as: equal } ]
         - [ "cmp-mix", { value: "true", as: equal } ]
         - [ "cmp-split", { value: "true", as: equal } ]
+        - [ "cmp-eq", { value: "true", as: equal } ]
+        - [ "cmp-ne", { as: absent } ]
+        - [ "cmp-lt", { as: absent } ]
+        - [ "cmp-le", { value: "true", as: equal } ]
+        - [ "cmp-gt", { as: absent } ]
+        - [ "cmp-ge", { value: "true", as: equal } ]
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -123,6 +180,7 @@ sessions:
         fields:
         - [ Host, one.ex ]
         - [ "channel", "v1/video/channels"]
+        - [ "cmp-int", "29" ]
     proxy-request:
       headers:
         fields:
@@ -133,6 +191,12 @@ sessions:
         - [ "cmp-split", { value: "true", as: equal} ]
         - [ "rxp-sub", { as: absent } ]
         - [ "rxp-0", { as: absent } ]
+        - [ "cmp-eq", { as: absent } ]
+        - [ "cmp-ne", { value: "true", as: equal } ]
+        - [ "cmp-lt", { value: "true", as: equal } ]
+        - [ "cmp-le", { value: "true", as: equal } ]
+        - [ "cmp-gt", { as: absent } ]
+        - [ "cmp-ge", { as: absent } ]
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -146,6 +210,7 @@ sessions:
         fields:
         - [ Host, one.ex ]
         - [ "channel", "v1/video/channels/"]
+        - [ "cmp-int", "31" ]
     proxy-request:
       headers:
         fields:
@@ -154,6 +219,12 @@ sessions:
         - [ "cmp-any", { value: "true", as: equal } ]
         - [ "cmp-mix", { value: "true", as: equal } ]
         - [ "cmp-split", { value: "true", as: equal } ]
+        - [ "cmp-eq", { as: absent } ]
+        - [ "cmp-ne", { value: "true", as: equal } ]
+        - [ "cmp-lt", { as: absent } ]
+        - [ "cmp-le", { as: absent } ]
+        - [ "cmp-gt", { value: "true", as: equal } ]
+        - [ "cmp-ge", { value: "true", as: equal } ]
     server-response:
       <<: *base-rsp
     proxy-response:
@@ -167,6 +238,7 @@ sessions:
         fields:
         - [ Host, one.ex ]
         - [ "channel", "v1/video/channels/delain/studio/"]
+        - [ "cmp-int", "10" ]
     proxy-request:
       headers:
         fields:
@@ -177,6 +249,12 @@ sessions:
         - [ "cmp-split", { as: absent } ]
         - [ "rxp-sub", { as: absent } ]
         - [ "rxp-0", { as: absent } ]
+        - [ "cmp-eq", { as: absent } ]
+        - [ "cmp-ne", { value: "true", as: equal } ]
+        - [ "cmp-lt", { value: "true", as: equal } ]
+        - [ "cmp-le", { value: "true", as: equal } ]
+        - [ "cmp-gt", { as: absent } ]
+        - [ "cmp-ge", { as: absent } ]
     server-response:
       <<: *base-rsp
     proxy-response:
