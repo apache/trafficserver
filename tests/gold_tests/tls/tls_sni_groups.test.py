@@ -20,7 +20,9 @@ Test.Summary = '''
 Test SNI configuration server_groups_list
 '''
 # The groups function was added in OpenSSL 1.1.1
-Test.SkipUnless(Condition.HasOpenSSLVersion("1.1.1"))
+Test.SkipUnless(
+    Condition.HasOpenSSLVersion("1.1.1"),
+    Condition.HasProgram("openssl", "openssl needs to be installed and in PATH for this test"))
 
 # Define default ATS
 ts = Test.MakeATSProcess("ts", enable_tls=True)
