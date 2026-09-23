@@ -61,6 +61,7 @@ static std::uint16_t      get_version(TSClientHello ch);
 static std::string        get_first_ALPN(TSClientHello ch);
 static void               add_ciphers(JA4::TLSClientHelloSummary &summary, TSClientHello ch);
 static void               add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch);
+static void               add_signature_algorithms(JA4::TLSClientHelloSummary &summary, TSClientHello ch);
 static std::string        hash_with_SHA256(std::string_view sv);
 static int                handle_read_request_hdr(TSCont cont, TSEvent event, void *edata);
 static void               append_JA4_headers(TSCont cont, TSHttpTxn txnp, std::string const *fingerprint);
@@ -75,6 +76,7 @@ constexpr char const *PLUGIN_SUPPORT_EMAIL{"dev@trafficserver.apache.org"};
 
 constexpr std::string_view JA4_VIA_HEADER{"x-ja4-via"};
 
+constexpr unsigned int EXT_SIGNATURE_ALGORITHMS{0xd};
 constexpr unsigned int EXT_ALPN{0x10};
 constexpr unsigned int EXT_SUPPORTED_VERSIONS{0x2b};
 
@@ -225,6 +227,7 @@ get_fingerprint(TSClientHello ch)
   summary.ALPN        = get_first_ALPN(ch);
   add_ciphers(summary, ch);
   add_extensions(summary, ch);
+  add_signature_algorithms(summary, ch);
   std::string result{JA4::make_JA4_fingerprint(summary, hash_with_SHA256)};
   return result;
 }
@@ -323,6 +326,16 @@ add_extensions(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
 {
   for (auto ext_type : ch.get_extension_types()) {
     summary.add_extension(ext_type);
+  }
+}
+
+void
+add_signature_algorithms(JA4::TLSClientHelloSummary &summary, TSClientHello ch)
+{
+  unsigned char const *buf{};
+  std::size_t          buflen{};
+  if (TS_SUCCESS == TSClientHelloExtensionGet(ch, EXT_SIGNATURE_ALGORITHMS, &buf, &buflen)) {
+    summary.set_signature_algorithms(buf, buflen);
   }
 }
 

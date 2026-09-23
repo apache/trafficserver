@@ -187,9 +187,10 @@ make_JA4_b(char *out, ja4::Datasource &datasource)
 /**
  * Calculate the c portion of the JA4 fingerprint for the given client hello.
  *
- * The b portion of the fingerprint is a comma-delimited list of lowercase hex
- * numbers representing the extensions in sorted order. GREASE values and the
- * SNI and ALPN extensions are ignored.
+ * The c portion of the fingerprint is a comma-delimited list of lowercase hex
+ * numbers representing the extensions in sorted order, followed by an
+ * underscore and the signature algorithms in their original order if there
+ * are any. GREASE values and the SNI and ALPN extensions are ignored.
  *
  * For more information see:
  * https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.

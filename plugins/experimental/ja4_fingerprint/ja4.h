@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <iterator>
 #include <string>
@@ -63,6 +64,17 @@ public:
   std::vector<std::uint16_t> const &get_extensions() const;
   void                              add_extension(std::uint16_t extension);
 
+  std::vector<std::uint16_t> const &get_signature_algorithms() const;
+
+  /**
+   * Record the signature algorithms, in wire order and excluding GREASE values.
+   *
+   * @param body The body of the signature_algorithms extension as sent on the
+   * wire: a 2-byte list length followed by 2-byte algorithm codes.
+   * @param body_len The length of @a body.
+   */
+  void set_signature_algorithms(unsigned char const *body, std::size_t body_len);
+
   /**
    * Get the number of ciphers excluding GREASE values.
    *
@@ -86,6 +98,7 @@ public:
 private:
   std::vector<std::uint16_t> _ciphers;
   std::vector<std::uint16_t> _extensions;
+  std::vector<std::uint16_t> _signature_algorithms;
   int                        _extension_count_including_sni_and_alpn{0};
   SNI                        _SNI_type{SNI::to_IP};
 };
@@ -122,9 +135,10 @@ std::string make_JA4_b_raw(TLSClientHelloSummary const &TLS_summary);
 /**
  * Calculate the c portion of the JA4 fingerprint for the given client hello.
  *
- * The b portion of the fingerprint is a comma-delimited list of lowercase hex
- * numbers representing the extensions in sorted order. GREASE values and the
- * SNI and ALPN extensions are ignored.
+ * The c portion of the fingerprint is a comma-delimited list of lowercase hex
+ * numbers representing the extensions in sorted order, followed by an
+ * underscore and the signature algorithms in their original order if there
+ * are any. GREASE values and the SNI and ALPN extensions are ignored.
  *
  * For more information see:
  * https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.

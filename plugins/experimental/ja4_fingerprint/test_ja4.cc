@@ -25,15 +25,20 @@
 #include "ja4.h"
 
 #include <catch2/catch_test_macros.hpp>
+#include <openssl/sha.h>
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
+#include <cstdio>
+#include <initializer_list>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
 static std::string call_JA4(JA4::TLSClientHelloSummary const &TLS_summary);
 static std::string inc(std::string_view sv);
+static std::string sha256(std::string_view sv);
 
 TEST_CASE("JA4")
 {
@@ -409,6 +414,81 @@ TEST_CASE("JA4")
   }
 }
 
+// The worked example from https://github.com/FoxIO-LLC/ja4/blob/main/technical_details/JA4.md.
+TEST_CASE("JA4 specification example")
+{
+  JA4::TLSClientHelloSummary TLS_summary{};
+
+  TLS_summary.protocol    = JA4::Protocol::TLS;
+  TLS_summary.TLS_version = 0x304;
+  TLS_summary.ALPN        = "h2";
+  for (std::uint16_t cipher :
+       {0x1301, 0x1302, 0x1303, 0xc02b, 0xc02f, 0xc02c, 0xc030, 0xcca9, 0xcca8, 0xc013, 0xc014, 0x009c, 0x009d, 0x002f, 0x0035}) {
+    TLS_summary.add_cipher(cipher);
+  }
+  for (std::uint16_t extension : {0x001b, 0x0000, 0x0033, 0x0010, 0x4469, 0x0017, 0x002d, 0x000d, 0x0005, 0x0023, 0x0012, 0x002b,
+                                  0xff01, 0x000b, 0x000a, 0x0015}) {
+    TLS_summary.add_extension(extension);
+  }
+
+  SECTION("Given the signature algorithms from the example, "
+          "when we create a JA4 fingerprint, "
+          "then it should match the one published in the specification.")
+  {
+    unsigned char const sig_algs[]{0x00, 0x10, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01, 0x05,
+                                   0x03, 0x08, 0x05, 0x05, 0x01, 0x08, 0x06, 0x06, 0x01};
+    TLS_summary.set_signature_algorithms(sig_algs, sizeof(sig_algs));
+    CHECK("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01_0403,0804,0401,0503,0805,0501,0806,0601" ==
+          JA4::make_JA4_c_raw(TLS_summary));
+    CHECK("t13d1516h2_8daaf6152771_e5627efa2ab1" == JA4::make_JA4_fingerprint(TLS_summary, sha256));
+  }
+
+  SECTION("Given GREASE values in the signature algorithms, "
+          "when we create a JA4 fingerprint, "
+          "then they should be ignored.")
+  {
+    unsigned char const sig_algs[]{0x00, 0x14, 0x0a, 0x0a, 0x04, 0x03, 0x08, 0x04, 0x04, 0x01, 0x05,
+                                   0x03, 0x08, 0x05, 0x05, 0x01, 0x08, 0x06, 0x06, 0x01, 0xfa, 0xfa};
+    TLS_summary.set_signature_algorithms(sig_algs, sizeof(sig_algs));
+    CHECK("t13d1516h2_8daaf6152771_e5627efa2ab1" == JA4::make_JA4_fingerprint(TLS_summary, sha256));
+  }
+
+  SECTION("Given no signature_algorithms extension, "
+          "when we create a JA4 fingerprint, "
+          "then the c section should match the one published in the specification.")
+  {
+    CHECK("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01" == JA4::make_JA4_c_raw(TLS_summary));
+    CHECK("6d807ffa2a79" == JA4::make_JA4_fingerprint(TLS_summary, sha256).substr(24, 12));
+  }
+
+  SECTION("Given only GREASE values in the signature algorithms, "
+          "when we create a JA4 fingerprint, "
+          "then the c section should end without an underscore.")
+  {
+    unsigned char const sig_algs[]{0x00, 0x02, 0x0a, 0x0a};
+    TLS_summary.set_signature_algorithms(sig_algs, sizeof(sig_algs));
+    CHECK("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01" == JA4::make_JA4_c_raw(TLS_summary));
+  }
+
+  SECTION("Given a signature algorithms list shorter than the extension, "
+          "when we create a JA4 fingerprint, "
+          "then only the algorithms within the declared length should be used.")
+  {
+    unsigned char const sig_algs[]{0x00, 0x02, 0x04, 0x03, 0x08, 0x04};
+    TLS_summary.set_signature_algorithms(sig_algs, sizeof(sig_algs));
+    CHECK("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01_0403" == JA4::make_JA4_c_raw(TLS_summary));
+  }
+
+  SECTION("Given a signature algorithms list longer than the extension, "
+          "when we create a JA4 fingerprint, "
+          "then only the algorithms present should be used.")
+  {
+    unsigned char const sig_algs[]{0x00, 0x10, 0x04, 0x03, 0x08};
+    TLS_summary.set_signature_algorithms(sig_algs, sizeof(sig_algs));
+    CHECK("0005,000a,000b,000d,0012,0015,0017,001b,0023,002b,002d,0033,4469,ff01_0403" == JA4::make_JA4_c_raw(TLS_summary));
+  }
+}
+
 std::string
 call_JA4(JA4::TLSClientHelloSummary const &TLS_summary)
 {
@@ -421,5 +501,17 @@ inc(std::string_view sv)
   std::string result;
   result.resize(sv.size());
   std::transform(sv.begin(), sv.end(), result.begin(), [](char c) { return c + 1; });
+  return result;
+}
+
+std::string
+sha256(std::string_view sv)
+{
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256(reinterpret_cast<unsigned char const *>(sv.data()), sv.size(), hash);
+  std::string result(SHA256_DIGEST_LENGTH * 2, '\0');
+  for (int i{0}; i < SHA256_DIGEST_LENGTH; ++i) {
+    std::snprintf(result.data() + (i * 2), 3, "%02x", hash[i]);
+  }
   return result;
 }
