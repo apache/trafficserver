@@ -101,7 +101,7 @@ UrlRewrite::load(ConfigContext ctx)
 }
 
 bool
-UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *remap_node, ConfigContext ctx)
+UrlRewrite::load_table(const std::string &path, YAML::Node const *remap_node, ConfigContext ctx)
 {
   this->ts_name = nullptr;
   if (auto rec_str{RecGetRecordStringAlloc("proxy.config.proxy_name")}; rec_str) {
@@ -150,7 +150,7 @@ UrlRewrite::load_table(const std::string &config_file_path, YAML::Node const *re
   Dbg(dbg_ctl_url_rewrite_regex, "strategyFactory file: %s", sf.c_str());
   strategyFactory = new NextHopStrategyFactory(sf.c_str());
 
-  if (TS_SUCCESS == this->BuildTable(config_file_path.c_str(), remap_node, ctx)) {
+  if (TS_SUCCESS == this->BuildTable(path.c_str(), remap_node, ctx)) {
     int n_rules = this->rule_count(); // Minimum # of rules to be considered a valid configuration.
     int required_rules;
     required_rules = RecGetRecordInt("proxy.config.url_remap.min_rules_required").value_or(0);

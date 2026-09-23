@@ -344,11 +344,19 @@ PluginFactory::indicatePreReload()
 void
 PluginFactory::indicatePostReload(bool reloadSuccessful)
 {
-  /* Find out which plugins (DSO) are actually instantiated by this factory */
   std::unordered_map<PluginDso *, int> pluginUsed;
+  collectUsedPlugins(pluginUsed);
+
+  PluginDso::loadedPlugins()->indicatePostReload(reloadSuccessful, pluginUsed, getUuid());
+}
+
+/**
+ * @brief Add the plugins (DSO) actually instantiated by this factory to @a pluginUsed
+ */
+void
+PluginFactory::collectUsedPlugins(std::unordered_map<PluginDso *, int> &pluginUsed)
+{
   for (auto &inst : _instList) {
     pluginUsed[&(inst._plugin)]++;
   }
-
-  PluginDso::loadedPlugins()->indicatePostReload(reloadSuccessful, pluginUsed, getUuid());
 }

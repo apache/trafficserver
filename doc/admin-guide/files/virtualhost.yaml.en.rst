@@ -183,7 +183,7 @@ Examples
        to:
          url: http://other.example.com/
 
-This rules translates in the following translation.
+These rules translate in the following translation.
 
 ================================================ ========================================================
 Client Request                                   Translated Request

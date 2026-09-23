@@ -48,14 +48,15 @@ DbgCtl dbg_ctl_virtualhost("virtualhost");
 
 /** Serializes both reload paths against each other.
 
-    The single-entry reload is a read-copy-modify-publish against the live config, so its read and
-    its publish must be atomic with respect to any other reload. The full reload has the same
-    requirement for a different reason: two full reloads that parse concurrently can publish in the
-    opposite order to their reads, so the older read wins and resurrects entries the newer one had
-    dropped. Both therefore hold this for the parse as well as the publish. Reload paths are
-    scheduled on ET_TASK with unrelated mutexes (a fresh one per @c ConfigRegistry::schedule_reload
-    and one per trigger record), so nothing else serializes them. Neither path is on the request
-    path, so serializing the parse costs nothing.
+    Each reload must hold this from the moment it reads the file until it publishes. Otherwise two
+    reloads that parse concurrently can publish in the opposite order to their reads, and the older
+    read wins: a full reload resurrects entries a newer one had dropped, and a single-entry reload
+    parsed before a full reload that removed its id re-adds that entry on top of it. The single-entry
+    reload additionally does a read-copy-modify-publish against the live config, which the same
+    critical section keeps atomic. It also keeps the remap plugin reload notifications of one rebuild
+    from interleaving with another's. Reload paths are scheduled on ET_TASK with unrelated mutexes
+    (a fresh one per @c ConfigRegistry::schedule_reload and one per trigger record), so nothing else
+    serializes them. Neither path is on the request path, so serializing the parse costs nothing.
  */
 std::mutex vhost_reconfigure_mutex;
 } // namespace
@@ -116,6 +117,11 @@ decode_virtualhost_entry(YAML::Node const &node, VirtualHostConfig::Entry &item,
     return false;
   }
   item.id = node["id"].as<std::string>();
+  if (item.id.empty()) {
+    // A single-entry reload cannot name an empty id, so such an entry could never be reloaded on its own.
+    CfgLoadLog(ctx, DL_Error, "Virtualhost entry at line %d must provide a non-empty `id`", node.Mark().line + 1);
+    return false;
+  }
 
   for (const auto &elem : node) {
     auto key = elem.first.as<std::string>();
@@ -182,7 +188,8 @@ decode_virtualhost_entry(YAML::Node const &node, VirtualHostConfig::Entry &item,
 }
 
 bool
-build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &entry, ConfigContext ctx)
+build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &entry, ConfigContext ctx,
+                        VirtualHostPluginReload *plugin_reload)
 {
   entry.clear();
   Ptr<VirtualHostConfig::Entry> vhost = make_ptr(new VirtualHostConfig::Entry);
@@ -199,9 +206,12 @@ build_virtualhost_entry(YAML::Node const &node, Ptr<VirtualHostConfig::Entry> &e
   // Build UrlRewrite table for remap rules
   auto remap_node = node["remap"];
   if (remap_node) {
+    if (plugin_reload) {
+      plugin_reload->begin();
+    }
     auto table = std::make_unique<UrlRewrite>();
     table->set_remap_yaml(true);
-    if (!table->load_table(conf.id, &remap_node, ctx)) {
+    if (!table->load_table({}, &remap_node, ctx)) {
       CfgLoadLog(ctx, DL_Error, "Failed to load remap rules for virtualhost '%s' at line %d", conf.id.c_str(),
                  remap_node.Mark().line + 1);
       return false;
@@ -227,7 +237,7 @@ live_entry_count()
 } // namespace
 
 bool
-VirtualHostConfig::load(ConfigContext ctx, bool initial_load)
+VirtualHostConfig::load(ConfigContext ctx, bool initial_load, VirtualHostPluginReload *plugin_reload)
 {
   _entries.clear();
   _exact_domains_to_id.clear();
@@ -265,7 +275,7 @@ VirtualHostConfig::load(ConfigContext ctx, bool initial_load)
 
     for (auto const &node : config) {
       Ptr<Entry> entry;
-      if (!build_virtualhost_entry(node, entry, ctx)) {
+      if (!build_virtualhost_entry(node, entry, ctx, plugin_reload)) {
         return false;
       }
 
@@ -306,7 +316,7 @@ VirtualHostConfig::load(ConfigContext ctx, bool initial_load)
 }
 
 bool
-VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx)
+VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx, VirtualHostPluginReload *plugin_reload)
 {
   entry.clear();
   std::string config_path = RecConfigReadConfigPath("proxy.config.virtualhost.filename", ts::filename::VIRTUALHOST);
@@ -339,7 +349,7 @@ VirtualHostConfig::load_entry(std::string_view id, Ptr<Entry> &entry, ConfigCont
       }
 
       Ptr<Entry> vhost_entry;
-      if (!build_virtualhost_entry(node, vhost_entry, ctx)) {
+      if (!build_virtualhost_entry(node, vhost_entry, ctx, plugin_reload)) {
         return false;
       }
       entry = std::move(vhost_entry);
@@ -395,6 +405,46 @@ VirtualHostConfig::set_entry(std::string_view id, Ptr<Entry> &entry, ConfigConte
     _entries.emplace(vhost_id, std::move(entry));
   }
   return true;
+}
+
+void
+VirtualHostConfig::collect_used_plugins(std::unordered_map<PluginDso *, int> &used) const
+{
+  for (auto const &[id, entry] : _entries) {
+    if (entry->remap_table) {
+      entry->remap_table->pluginFactory.collectUsedPlugins(used);
+    }
+  }
+}
+
+VirtualHostPluginReload::~VirtualHostPluginReload()
+{
+  if (_started) {
+    PluginDso::loadedPlugins()->indicatePostReload(false, {}, "virtualhost");
+  }
+}
+
+void
+VirtualHostPluginReload::begin()
+{
+  if (!_started) {
+    PluginDso::loadedPlugins()->indicatePreReload("virtualhost");
+    _started = true;
+  }
+}
+
+void
+VirtualHostPluginReload::finish(VirtualHostConfig const &config)
+{
+  if (!_started) {
+    return;
+  }
+
+  std::unordered_map<PluginDso *, int> used;
+  config.collect_used_plugins(used);
+
+  PluginDso::loadedPlugins()->indicatePostReload(true, used, "virtualhost");
+  _started = false;
 }
 
 Ptr<VirtualHostConfig::Entry>
@@ -521,12 +571,14 @@ VirtualHost::reconfigure(ConfigContext ctx, bool initial_load)
   auto config = std::make_unique<VirtualHostConfig>();
 
   // The parse is inside the lock as well as the publish; see vhost_reconfigure_mutex.
-  std::scoped_lock lock(vhost_reconfigure_mutex);
+  std::scoped_lock        lock(vhost_reconfigure_mutex);
+  VirtualHostPluginReload plugin_reload;
 
-  if (!config->load(ctx, initial_load)) {
+  if (!config->load(ctx, initial_load, &plugin_reload)) {
     CfgLoadLog(ctx, DL_Error, "%s failed to load", ts::filename::VIRTUALHOST);
     return 0;
   }
+  plugin_reload.finish(*config);
   _configid = configProcessor.set(_configid, config.release());
 
   CfgLoadLog(ctx, DL_Note, "%s finished loading", ts::filename::VIRTUALHOST);
@@ -544,17 +596,15 @@ VirtualHost::reconfigure(std::string_view id, ConfigContext ctx)
     return 0;
   }
 
-  // Parse outside the lock; only the read-copy-modify-publish below needs to be serialized.
+  // The parse is inside the lock as well as the publish; see vhost_reconfigure_mutex.
+  std::scoped_lock        lock(vhost_reconfigure_mutex);
+  VirtualHostPluginReload plugin_reload;
+
   Ptr<VirtualHostConfig::Entry> entry;
-  if (!VirtualHostConfig::load_entry(id, entry, ctx)) {
+  if (!VirtualHostConfig::load_entry(id, entry, ctx, &plugin_reload)) {
     return 0;
   }
 
-  std::scoped_lock lock(vhost_reconfigure_mutex);
-
-  // The live config must be read here, under the lock. Reading it before load_entry() lets a
-  // concurrent full reload publish in between, and this path would then republish its stale copy,
-  // resurrecting entries that reload had dropped.
   VirtualHost::scoped_config         vhost_config;
   std::unique_ptr<VirtualHostConfig> config;
 
@@ -567,6 +617,7 @@ VirtualHost::reconfigure(std::string_view id, ConfigContext ctx)
   if (!config->set_entry(id, entry, ctx)) {
     return 0;
   }
+  plugin_reload.finish(*config);
   _configid = configProcessor.set(_configid, config.release());
   return 1;
 }

@@ -30,6 +30,8 @@
 #include "proxy/http/remap/UrlRewrite.h"
 #include "tscore/Ptr.h"
 
+class VirtualHostPluginReload;
+
 class VirtualHostConfig : public ConfigInfo
 {
 public:
@@ -68,11 +70,15 @@ public:
       an error: reporting success would publish an empty config over a live routing table, silently
       dropping every per-domain remap table.
    */
-  bool        load(ConfigContext ctx = {}, bool initial_load = false);
+  bool        load(ConfigContext ctx = {}, bool initial_load = false, VirtualHostPluginReload *plugin_reload = nullptr);
   bool        set_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {});
-  static bool load_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {});
+  static bool load_entry(std::string_view id, Ptr<Entry> &entry, ConfigContext ctx = {},
+                         VirtualHostPluginReload *plugin_reload = nullptr);
   Ptr<Entry>  find_by_id(std::string_view id) const;
   Ptr<Entry>  find_by_domain(std::string_view domain) const;
+
+  /// Add the remap plugins instantiated by every entry's remap table to @a used.
+  void collect_used_plugins(std::unordered_map<PluginDso *, int> &used) const;
 
   size_t
   entry_count() const
@@ -87,6 +93,31 @@ private:
   entry_map _entries;
   name_map  _exact_domains_to_id;
   name_map  _wildcard_domains_to_id;
+};
+
+/** Sends one remap plugin reload notification pair for a whole virtualhost rebuild.
+
+    The pre/post callbacks go to every loaded remap plugin, not just the ones a table uses, so
+    notifying per table would repeat them for each entry and report plugins used only by earlier
+    tables as unused. The pre notification is sent lazily, before the first remap table is built, so
+    a rebuild with no remap tables sends nothing. If @c finish() is never reached, the destructor
+    reports the reload as failed.
+ */
+class VirtualHostPluginReload
+{
+public:
+  VirtualHostPluginReload()                                           = default;
+  VirtualHostPluginReload(const VirtualHostPluginReload &)            = delete;
+  VirtualHostPluginReload &operator=(const VirtualHostPluginReload &) = delete;
+  ~VirtualHostPluginReload();
+
+  /// Call before building a remap table.
+  void begin();
+  /// Report success, with @a config as the full set of tables that will be live.
+  void finish(VirtualHostConfig const &config);
+
+private:
+  bool _started = false;
 };
 
 class VirtualHost

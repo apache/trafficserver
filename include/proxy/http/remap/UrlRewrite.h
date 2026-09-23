@@ -80,7 +80,13 @@ public:
    */
   bool load(ConfigContext ctx = {});
 
-  bool load_table(const std::string &config_file_path, YAML::Node const *remap_node, ConfigContext ctx = {});
+  /** Build the tables from @a path, or from @a remap_node when it is set.
+   *
+   * @param path Configuration file to parse. Ignored when @a remap_node is set, so inline callers pass it empty.
+   * @param remap_node Inline remap.yaml style rule sequence, or @c nullptr to parse @a path.
+   * @param ctx ConfigContext for reload status tracking.
+   */
+  bool load_table(const std::string &path, YAML::Node const *remap_node, ConfigContext ctx = {});
 
   /** Build the internal url write tables.
    *

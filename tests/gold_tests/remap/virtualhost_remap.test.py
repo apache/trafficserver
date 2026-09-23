@@ -161,7 +161,7 @@ def add_request(name: str, host: str, path: str, expected: str, not_expected: st
         tr.Processes.Default.Streams.stdout += Testers.ExcludesExpression(
             not_expected, f"{host}{path} must not be served by {not_expected}")
     tr.StillRunningAfter = ts
-    tr.StillRunningAfter = server
+    tr.StillRunningAfter += server
     return tr
 
 

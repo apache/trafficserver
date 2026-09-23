@@ -75,4 +75,5 @@ bool remap_parse_yaml(const char *path, UrlRewrite *rewrite, ConfigContext ctx =
 // Parse remap YAML node from inline YAML node (for virtualhost)
 bool remap_parse_yaml_bti(YAML::Node const *remap_node, BUILD_TABLE_INFO *bti, ConfigContext ctx = {});
 
+// Unlike the file overload, this does not send the remap plugin reload notifications; the caller owns them.
 bool remap_parse_yaml(YAML::Node const *remap_node, UrlRewrite *rewrite, ConfigContext ctx = {});

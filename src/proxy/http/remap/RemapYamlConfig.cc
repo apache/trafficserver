@@ -1097,12 +1097,10 @@ remap_parse_yaml(YAML::Node const *remap_node, UrlRewrite *rewrite, ConfigContex
 {
   BUILD_TABLE_INFO bti;
 
-  rewrite->pluginFactory.indicatePreReload();
-
+  // No plugin reload notification here: the caller builds several tables per reload and must send
+  // one pre/post pair for all of them, see VirtualHostPluginReload.
   bti.rewrite = rewrite;
   bool status = remap_parse_yaml_bti(remap_node, &bti, ctx);
-
-  rewrite->pluginFactory.indicatePostReload(status);
 
   bti.clear_acl_rules_list();
 
