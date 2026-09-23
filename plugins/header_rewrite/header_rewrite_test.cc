@@ -58,7 +58,7 @@ class ParserTest : public Parser
 public:
   ParserTest(const std::string &line) : res(true)
   {
-    Parser::parse_line(line);
+    parsed = Parser::parse_line(line);
     std::cout << "Finished parser test: " << line << std::endl;
   }
 
@@ -79,6 +79,7 @@ public:
   }
 
   bool res;
+  bool parsed = false;
 };
 
 class SimpleTokenizerTest : public HRWSimpleTokenizer
@@ -562,7 +563,19 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens().size(), 2UL);
     CHECK_EQ(p.get_tokens()[0], "{a}");
     CHECK_EQ(p.get_tokens()[1], "%{PATH}");
+    END_TEST();
+  }
 
+  {
+    // A config line that is nothing but a bracketed modifier group. preprocess()
+    // consumes the group with pop_back(), which leaves the token list empty, and
+    // everything below that point indexes tokens[0] unconditionally. Any group reaches
+    // it; the length here is only so the value is heap allocated, which is what a build
+    // with neither _GLIBCXX_ASSERTIONS nor vector annotations needs before AddressSanitizer
+    // will say anything.
+    ParserTest p("[NOCASE,AND,PRE,NOCASE,AND,PRE,NOCASE]");
+
+    CHECK_EQ(p.parsed, false);
     END_TEST();
   }
 
@@ -571,7 +584,17 @@ test_tokenizer()
     CHECK_EQ(p.get_tokens().size(), 2UL);
     CHECK_EQ(p.get_tokens()[0], "<a>");
     CHECK_EQ(p.get_tokens()[1], "%{PATH}");
+    END_TEST();
+  }
 
+  {
+    // Same shape by way of the erase rather than the pop_back: "cond" on its own is
+    // consumed as the clause keyword and nothing remains for the condition. Note the case
+    // above aborts first on an unguarded build, so this one is only reached once that one
+    // is guarded; each was verified separately by neutralising the other.
+    ParserTest p("cond");
+
+    CHECK_EQ(p.parsed, false);
     END_TEST();
   }
 

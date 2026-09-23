@@ -185,13 +185,20 @@ Parser::preprocess(std::vector<std::string> tokens)
               // This produces an error, but it's not fatal for load / reload. ToDo: ATS v11 fix.
               TSError("[%s] Duplicate modifier: %s", PLUGIN_NAME, t.c_str());
             } else {
-              _mods.push_back(t);
+              _mods.push_back(std::move(t));
             }
           }
         } else {
-          _mods.push_back(m);
+          _mods.push_back(std::move(m));
         }
         tokens.pop_back(); // consume it, so we don't concatenate it into the value
+        if (tokens.empty()) {
+          // Nothing is left to parse, and the code below indexes tokens[0]
+          // unconditionally. Reading it would touch the element pop_back() just
+          // destroyed, and _op would then take ownership of freed memory.
+          TSError("[%s] modifiers with no condition or operator to apply them to", PLUGIN_NAME);
+          return false;
+        }
       } else {
         TSError("[%s] mods have to be enclosed in []", PLUGIN_NAME);
         return false;
@@ -205,6 +212,12 @@ Parser::preprocess(std::vector<std::string> tokens)
   } else if (tokens[0] == "cond") {
     _clause = CondClause::COND;
     tokens.erase(tokens.begin());
+    if (tokens.empty()) {
+      // Same shape as above: the erase can empty the list, and the COND branch
+      // below indexes tokens[0].
+      TSError("[%s] cond with no condition", PLUGIN_NAME);
+      return false;
+    }
   } else if (tokens[0] == "else") {
     _clause = CondClause::ELSE;
     return true;
@@ -228,7 +241,7 @@ Parser::preprocess(std::vector<std::string> tokens)
         _arg = tokens[1] + tokens[2];
       } else if (tokens.size() > 1) {
         // This is for the regular expression, which for some reason has its own handling?? ToDo: Why ?
-        _arg = tokens[1];
+        _arg = std::move(tokens[1]);
       } else {
         // This would be for hook conditions, which has no argument.
         _arg = "";
@@ -240,9 +253,9 @@ Parser::preprocess(std::vector<std::string> tokens)
     }
   } else {
     // Operator has no qualifiers, but could take an optional second argument
-    _op = tokens[0];
+    _op = std::move(tokens[0]);
     if (tokens.size() > 1) {
-      _arg = tokens[1];
+      _arg = std::move(tokens[1]);
 
       if (tokens.size() > 2) {
         for (auto it = tokens.begin() + 2; it != tokens.end(); it++) {
