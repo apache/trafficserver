@@ -629,9 +629,15 @@ Network
 
 .. ts:cv:: CONFIG proxy.config.net.inactivity_check_frequency INT 1
 
-   How frequent (in seconds) to check for inactive connections. If you deal
-   with a lot of concurrent connections, increasing this setting can reduce
-   pressure on the system.
+   How frequent (in seconds) to check for inactive connections. This is the
+   resolution of the inactivity and active timeouts: a timeout fires on the
+   first check at or after its deadline, so raising this value makes timeouts
+   correspondingly coarser.
+
+   Raising it does not reduce load at high connection counts. The cost of a
+   check is proportional to the number of connections whose deadline has come
+   due, not to the number of connections open, so there is little to gain here
+   and timeout accuracy to lose.
 
 .. ts:cv:: CONFIG proxy.config.incoming_ip_to_bind STRING 0.0.0.0 [::]
 
