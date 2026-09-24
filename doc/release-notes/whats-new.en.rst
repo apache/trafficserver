@@ -65,6 +65,19 @@ Metrics
   Sessions are bound to the policy that issued them, so an out-of-scope session
   completes a full handshake rather than reaching this counter, which is normally
   zero.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_visited`.
+* Added :ts:stat:`proxy.process.net.inactivity_cop_budget_exhausted`.
+
+Performance
+-----------
+
+* Connection timeouts are now dispatched from a per-thread timer wheel instead
+  of a once-per-second walk of every open connection, so the cost of a timeout
+  check scales with the number of deadlines that have come due rather than with
+  the number of connections open. See :ref:`developer-doc-net-timeouts`.
+
+  This changes how :ts:cv:`proxy.config.net.inactivity_check_frequency` should
+  be tuned; see :ref:`upgrading` if you have raised it from the default.
 
 Plugins
 -------
