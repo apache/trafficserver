@@ -31,7 +31,7 @@ functionality that no longer exists.
 If you find any such issues, you may want to submit a `bug or a
 patch <https://issues.apache.org/jira/secure/CreateIssue!default.jspa?pid=12310963>`__.
 We also have a Wiki page explaining how to `create useful bug reports
-<https://github.com/apache/trafficserver/wiki/Contributing#filing-issues>`__.
+<https://github.com/apache/trafficserver/wiki/Contributing#writing-a-useful-bug-report>`__.
 We encourage everyone to file tickets, early and often. Looking for existing,
 duplicate bugs is encouraged, but not required.
 
