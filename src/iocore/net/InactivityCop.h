@@ -47,8 +47,15 @@ class InactivityCop : public Continuation
 public:
   // A tick's worth of due elements is normally tiny; this is only a guard
   // against one correlated wave monopolizing the thread. Anything deferred
-  // past the budget is picked up on the next tick.
+  // past the budget is picked up TIMEOUT_CONTINUE_DELAY later.
   static constexpr int TIMEOUT_BUDGET = 4096;
+
+  // Deliberately not schedule_imm(): an immediate event is dispatched inline by
+  // EThread::process_queue()'s own dequeue loop, so it would re-enter this pass
+  // before the poll events run and bound nothing. A timed event lands in
+  // EventQueue instead, where dequeue_ready() will not return it this loop
+  // iteration, so the tail handler polls first.
+  static constexpr ink_hrtime TIMEOUT_CONTINUE_DELAY = HRTIME_MSECONDS(1);
 
   InactivityCop(Ptr<ProxyMutex> const &m, NetHandler &nh) : Continuation(m.get()), _nh(nh)
   {
@@ -144,13 +151,13 @@ public:
   check_inactivity(int /* event */, Event *e)
   {
     if (run(ink_get_hrtime(), e) >= TIMEOUT_BUDGET) {
-      // Deadlines are still due, so come back on the next trip through the
-      // event loop instead of waiting out the rest of the tick. The budget
-      // bounds how long one pass can hold the poll thread; it is not a cap on
-      // how much work a tick may retire. Waiting would be worse than it looks:
-      // expire() does not advance its cursor until a bucket drains, so an
-      // over-full bucket would also delay examining every tick behind it.
-      this_ethread()->schedule_imm(this);
+      // Deadlines are still due, so come back shortly instead of waiting out
+      // the rest of the tick. The budget bounds how long one pass can hold the
+      // poll thread; it is not a cap on how much work a tick may retire.
+      // Waiting for the periodic event would be worse than it looks: expire()
+      // does not advance its cursor until a bucket drains, so an over-full
+      // bucket would also delay examining every tick behind it.
+      this_ethread()->schedule_in(this, TIMEOUT_CONTINUE_DELAY);
     }
     return 0;
   }

@@ -140,9 +140,16 @@ timeouts one pass will fire.
 
 The budget bounds how long a single pass can hold the thread; it is **not** a cap
 on how much work a tick may retire. A pass that hits the budget reschedules
-itself with ``schedule_imm()`` instead of waiting out the rest of the tick, so a
-large burst is spread across several trips through the event loop rather than
+itself a millisecond out rather than waiting out the rest of the tick, so a large
+burst is spread across several trips through the event loop instead of being
 delayed by whole seconds of ``inactivity_check_frequency``.
+
+The short delay is load-bearing, and ``schedule_imm()`` would **not** do. An
+immediate event is dispatched inline by ``EThread::process_queue()``'s own
+dequeue loop, so rescheduling immediately re-enters the pass before the poll
+events run and bounds nothing. A timed event goes into ``EventQueue``, where
+``dequeue_ready()`` will not return it during the current loop iteration, so the
+tail handler gets to poll first.
 
 That distinction matters more than it first appears, because ``expire()`` does
 not advance its cursor until a bucket drains completely. Waiting for the next
