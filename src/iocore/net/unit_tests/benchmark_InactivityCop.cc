@@ -1070,4 +1070,50 @@ TEST_CASE("InactivityCop: timer wheel population", "[net][inactivity_cop]")
   // here too for the ones already stopped above.
 }
 
+// A connection the cop examines but does not fire must stay in the wheel.
+//
+// The wheel hands an element to the delegate when its deadline is <= now, but
+// the cop only fires on a deadline strictly < now. A deadline exactly equal to
+// now therefore lands in the gap: the element has already been popped, and if
+// the cop returns without firing or re-arming it, nothing will ever visit it
+// again and that connection never times out.
+TEST_CASE("InactivityCop: an examined but unfired connection stays scheduled", "[net][inactivity_cop]")
+{
+  constexpr size_t n = 4;
+  Fixture          fx(n);
+
+  // Far enough ahead of the wheel's cursor (seeded from ink_get_hrtime() when
+  // the fixture was built) that the pass below actually drains the bucket the
+  // mocks land in, rather than finding no tick to advance through.
+  ink_hrtime const now = ink_get_hrtime() + HRTIME_SECONDS(5);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      // Deadline exactly equal to the `now` the cop will be driven with, so
+      // the wheel pops it (deadline <= now) but `deadline < now` is false.
+      m->next_inactivity_timeout_at = now;
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  INFO("precondition: every mock is scheduled before the pass");
+  for (auto &m : fx.mocks) {
+    REQUIRE(fx.nh.timer_wheel.is_scheduled(m.get()));
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(now, &event);
+  }
+
+  INFO("the cop examined these mocks without firing them; each must still be scheduled, or it can never time out");
+  for (auto &m : fx.mocks) {
+    CHECK(fx.nh.timer_wheel.is_scheduled(m.get()));
+  }
+  CHECK(fx.counters.callbacks == 0);
+}
+
 CATCH_REGISTER_LISTENER(ProvenanceListener);
