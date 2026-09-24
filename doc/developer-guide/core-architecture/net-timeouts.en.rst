@@ -135,9 +135,20 @@ Budget
 
 A tick's worth of due connections is normally small, but a correlated wave — an
 origin outage, a load balancer draining — can make it large, and the callbacks
-run inline on the poll thread. ``InactivityCop::TIMEOUT_BUDGET`` caps how
-many timeouts one run will fire; the remainder stays in its bucket and is picked
-up on the next tick.
+run inline on the poll thread. ``InactivityCop::TIMEOUT_BUDGET`` caps how many
+timeouts one pass will fire.
+
+The budget bounds how long a single pass can hold the thread; it is **not** a cap
+on how much work a tick may retire. A pass that hits the budget reschedules
+itself with ``schedule_imm()`` instead of waiting out the rest of the tick, so a
+large burst is spread across several trips through the event loop rather than
+delayed by whole seconds of ``inactivity_check_frequency``.
+
+That distinction matters more than it first appears, because ``expire()`` does
+not advance its cursor until a bucket drains completely. Waiting for the next
+periodic check would delay not just the remainder of the over-full bucket but
+every tick queued behind it, so a single large burst could push timeout lag far
+past the configured interval.
 
 Observability
 =============

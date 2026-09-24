@@ -133,7 +133,15 @@ public:
   int
   check_inactivity(int /* event */, Event *e)
   {
-    run(ink_get_hrtime(), e);
+    if (run(ink_get_hrtime(), e) >= TIMEOUT_BUDGET) {
+      // Deadlines are still due, so come back on the next trip through the
+      // event loop instead of waiting out the rest of the tick. The budget
+      // bounds how long one pass can hold the poll thread; it is not a cap on
+      // how much work a tick may retire. Waiting would be worse than it looks:
+      // expire() does not advance its cursor until a bucket drains, so an
+      // over-full bucket would also delay examining every tick behind it.
+      this_ethread()->schedule_imm(this);
+    }
     return 0;
   }
 
@@ -143,8 +151,12 @@ public:
    * controlled clock: the wheel's resolution is one second, so a harness that
    * advances real time cannot exercise a per-tick cost without sleeping. Every
    * deadline comparison in a pass uses this one timestamp.
+   *
+   * Scheduling policy stays in the handler, so driving this directly does not
+   * queue events. Returns the number of timeouts fired; reaching
+   * TIMEOUT_BUDGET means more are already due.
    */
-  void
+  int
   run(ink_hrtime now, Event *e)
   {
     NetHandler &nh = _nh;
@@ -155,8 +167,7 @@ public:
     int const fired = nh.timer_wheel.expire(now, TIMEOUT_BUDGET, fire);
 
     // The cop's own cost had no telemetry before the wheel, which is how an
-    // O(N)-per-second sweep regressed unnoticed. Hitting the budget means this
-    // thread is behind; the remainder is picked up on the next tick.
+    // O(N)-per-second sweep regressed unnoticed.
     Metrics::Counter::increment(net_rsb.inactivity_cop_visited, fire.visited);
     if (fired >= TIMEOUT_BUDGET) {
       Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);
@@ -165,6 +176,8 @@ public:
     // Cleanup the active and keep-alive queues periodically
     nh.manage_active_queue(nullptr, true); // close any connections over the active timeout
     nh.manage_keep_alive_queue();
+
+    return fired;
   }
 
 private:

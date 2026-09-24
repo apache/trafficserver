@@ -80,9 +80,11 @@ Network I/O
    means something is re-arming every tick.
    :type: counter
 .. ts:stat:: global proxy.process.net.inactivity_cop_budget_exhausted integer
-   The number of inactivity cop runs that hit their per-run work limit and
-   deferred the remainder to the next run. Sustained nonzero values mean
-   timeouts on that thread are firing later than configured.
+   The number of inactivity cop runs that hit their per-run work limit. Such a
+   run reschedules itself immediately rather than waiting for the next periodic
+   check, so an occasional nonzero value just means a burst of connections came
+   due together. A value that climbs steadily means the thread is retiring
+   timeouts more slowly than they come due, and timeouts there are firing late.
    :type: counter
 .. ts:stat:: global proxy.process.net.net_handler_run integer
    :type: counter
