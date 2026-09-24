@@ -519,6 +519,14 @@ virtualhost_reload(ConfigContext ctx)
 
   // Single-entry reload requested via -D virtualhost.id=<id>
   if (auto directives = ctx.reload_directives(); directives) {
+    // An unrecognized key (e.g. a mistyped 'ID') would otherwise fall through to a full reload.
+    for (const auto &kv : directives) {
+      std::string key = kv.first.IsScalar() ? kv.first.as<std::string>() : std::string{"<non-scalar>"};
+      if (key != "id") {
+        ctx.fail("virtualhost '_reload' directive '" + key + "' is not supported; only 'id' is recognized");
+        return;
+      }
+    }
     if (const auto id_dir = directives["id"]; id_dir) {
       if (!id_dir.IsScalar()) {
         ctx.fail("virtualhost '_reload' directive 'id' must be a scalar");

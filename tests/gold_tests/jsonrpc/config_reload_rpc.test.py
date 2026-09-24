@@ -876,3 +876,63 @@ def validate_missing_file_full_logged(resp: Response):
 
 tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_missing_file_full_logged)
 tr.StillRunningAfter = ts_missing
+
+# ============================================================================
+# Test 19: an unrecognized '_reload' key is refused, not widened to a full reload
+# A mistyped key like 'ID' must not rebuild the whole table from disk.
+# ============================================================================
+vhost_unknown_key_token = "vhost-unknown-key"
+
+tr = Test.AddTestRun("Reload directive with an unrecognized virtualhost key")
+tr.AddJsonRPCClientRequest(
+    ts,
+    Request.admin_config_reload(token=vhost_unknown_key_token, configs={"virtualhost": {
+        "_reload": {
+            "ID": "myhost.example.com"
+        }
+    }}))
+
+
+def validate_unknown_directive(resp: Response):
+    '''Accepted by the framework; the handler refuses the directive'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected synchronous error: {errors}")
+
+    return (True, f"Directive accepted, handler expected to refuse: {result}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_directive)
+tr.StillRunningAfter = ts
+
+tr = Test.AddTestRun("Unrecognized virtualhost key is refused in the reload task log")
+tr.DelayStart = 2
+tr.AddJsonRPCClientRequest(ts, Request.get_reload_config_status(token=vhost_unknown_key_token))
+
+
+def validate_unknown_directive_refused(resp: Response):
+    '''The subtask must FAIL and name the offending key'''
+    result = resp.result
+    errors = result.get('errors', [])
+
+    if errors:
+        return (False, f"Unexpected error querying status: {errors}")
+
+    expected = "directive 'ID' is not supported"
+    tasks = result.get('tasks', [])
+    task = find_failed_task_with(tasks, expected)
+
+    if task is None:
+        return (False, f"Expected '{expected}' in the reload task log, got: {tasks}")
+
+    status = task.get('status', '')
+    if status != 'fail':
+        return (False, f"Expected the reloading task to be 'fail', got '{status}': {task}")
+
+    return (True, f"Unknown key refused: {task.get('description', '')}")
+
+
+tr.Processes.Default.Streams.stdout = Testers.CustomJSONRPCResponse(validate_unknown_directive_refused)
+tr.StillRunningAfter = ts
