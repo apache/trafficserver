@@ -1063,24 +1063,29 @@ SSLMultiCertConfigLoader::_set_handshake_callbacks(SSL_CTX *ctx)
 #elif HAVE_SSL_CTX_SET_SELECT_CERTIFICATE_CB
   SSL_CTX_set_select_certificate_cb(ctx, [](const SSL_CLIENT_HELLO *client_hello) -> ssl_select_cert_result_t {
     ssl_select_cert_result_t res;
-    res = ssl_client_hello_callback(client_hello);
-    if (res == ssl_select_cert_error) {
-      return res;
-    }
+    TLSEventSupport         *es = TLSEventSupport::getInstance(client_hello->ssl);
 
-    res = (ssl_servername_callback(client_hello->ssl, nullptr, nullptr) == SSL_TLSEXT_ERR_OK) ? ssl_select_cert_success :
-                                                                                                ssl_select_cert_error;
-    if (res == ssl_select_cert_error) {
-      return res;
+    // BoringSSL runs this whole callback again once a paused hook reenables, whereas OpenSSL calls
+    // only the callback that paused. After a pause in the cert hook, the client hello and
+    // servername work is already done and must not run twice.
+    if (es == nullptr || !es->reached_cert_hooks()) {
+      res = ssl_client_hello_callback(client_hello);
+      if (res != ssl_select_cert_success) {
+        return res;
+      }
+
+      res = (ssl_servername_callback(client_hello->ssl, nullptr, nullptr) == SSL_TLSEXT_ERR_OK) ? ssl_select_cert_success :
+                                                                                                  ssl_select_cert_error;
+      if (res == ssl_select_cert_error) {
+        return res;
+      }
     }
 
     int cbres = ssl_cert_callback(client_hello->ssl, (void *)client_hello);
     switch (cbres) {
     case -2:
-      res = ssl_select_cert_retry;
-      break;
     case -1:
-      res = ssl_select_cert_success;
+      res = ssl_select_cert_retry;
       break;
     case 0:
       res = ssl_select_cert_error;
