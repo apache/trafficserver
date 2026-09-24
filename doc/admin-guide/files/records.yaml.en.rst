@@ -4682,6 +4682,31 @@ SSL Termination
   Setting a value less than or equal to ``0`` effectively disables
   SSL session cache for the origin server.
 
+.. ts:cv:: CONFIG proxy.config.ssl.origin_session_cache.max_session_size INT 8192
+
+  The largest origin session |TS| will place in the origin session cache, measured
+  as the size in bytes of its ASN.1 form.  A session over this size is not cached,
+  and every connection to that origin performs a full handshake.
+
+  A serialized session carries the origin's certificate and the session ticket the
+  origin issued, so the size is set by the origin, not by |TS|.  Two common cases
+  run large: an origin with a big certificate, and any mutual-TLS origin, because a
+  stateless ticket has to encode the client certificate |TS| presented in order to
+  resume the authenticated session.  The default accommodates both.
+
+  The accepted range is 4096 to 65536.  The floor is the size this was fixed at before
+  it became configurable, so no setting can cache less than |TS| always did; disable the
+  cache with :ts:cv:`proxy.config.ssl.origin_session_cache.enabled` instead.  The ceiling
+  keeps the serialization buffer in ``SSLSessionDup()`` within the thread stack.
+
+  Raise this if :ts:stat:`proxy.process.ssl.ssl_origin_session_cache_hit` stays at
+  zero while :ts:stat:`proxy.process.ssl.ssl_origin_session_cache_miss` climbs; the
+  ``ssl.origin_session_cache`` debug tag reports each session refused for its size.
+  Note that the cache holds up to :ts:cv:`proxy.config.ssl.origin_session_cache.size`
+  entries.  Note that what this bounds is the serialized size accepted for insertion, and
+  the duplication buffer sized from it -- the in-memory footprint of the cached
+  ``SSL_SESSION`` objects tracks it only approximately.
+
 .. ts:cv:: CONFIG proxy.config.ssl.server.session_ticket.enable INT 1
 
   Set to 1 to enable Traffic Server to process TLS tickets for TLS session resumption.

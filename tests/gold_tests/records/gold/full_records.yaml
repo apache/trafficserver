@@ -543,6 +543,7 @@ records:
       update_period: 60
     origin_session_cache:
       enabled: 1
+      max_session_size: 8192
       size: 10240
     server:
       TLSv1_3:

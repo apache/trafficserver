@@ -37,12 +37,11 @@
 /** Looking at OpenSSL's providers/common/capabilities.c, the current maximum
  * length of a group name is 20 characters (brainpoolP256r1tls13 and the like).
  * Reserving 64 characters should be more than enough. If someday we are
- * surprised and this turns out to be too small, there is an assertion gaurd to
+ * surprised and this turns out to be too small, there is an assertion guard to
  * make sure we do not overrun the buffer in SSLSessionCache.cc.
  */
-#define SSL_MAX_GROUP_NAME_SIZE   64
-#define SSL_MAX_SESSION_SIZE      256
-#define SSL_MAX_ORIG_SESSION_SIZE 4096
+#define SSL_MAX_GROUP_NAME_SIZE 64
+#define SSL_MAX_SESSION_SIZE    256
 
 struct ssl_session_cache_exdata {
   ssl_curve_id curve = 0;
