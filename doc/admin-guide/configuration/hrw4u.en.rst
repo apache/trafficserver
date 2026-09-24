@@ -347,6 +347,7 @@ rm-destination QUERY ... [I]  keep_query("foo,bar")             Keep only specif
 run-plugin foo.so "args"      run-plugin("foo.so", "arg1", ...) Run an external remap plugin
 set-body "foo"                inbound.resp.body = "foo"         Set the response body
 set-body-from "\https://..."  set-body-from("\https://...")     Set the response body from a URL
+set-body-from-file "/tmp/b"   set-body-from-file("/tmp/b")      Set the response body from a local file
 set-config <name> 12          set-config("name", 17)            Set a configuration variable to a value
 set-conn-dscp 8               inbound.conn.dscp = 8             Set the DSCP value for the connection
 set-conn-mark 17              inbound.conn.mark = 17            Set the MARK value for the connection
@@ -739,24 +740,34 @@ the body is not validated.
 Functions
 ---------
 
-The ``functions`` list accepts any of the statement-function names used in
-HRW4U source. The complete set of deniable functions is:
+The ``functions`` list accepts any of the function names used in HRW4U source,
+both statement functions and the functions that produce a value in an
+expression. The complete set of deniable functions is:
 
 ====================== =============================================
 Function               Description
 ====================== =============================================
+``access``             File accessibility check
 ``add-header``         Add a header (``+=`` operator equivalent)
+``cache``              Cache lookup result status
+``cidr``               Masked client IP address match
 ``counter``            Increment an ATS statistics counter
+``internal``           Internally generated transaction check
 ``keep_query``         Keep only specified query parameters
 ``no-op``              Explicit no-op statement
+``random``             Random number in the given range
 ``remove_query``       Remove specified query parameters
 ``run-plugin``         Invoke an external remap plugin
+``set-body``           Set the response body
 ``set-body-from``      Set response body from a URL
+``set-body-from-file`` Set response body from a local file
 ``set-config``         Override an ATS configuration variable
 ``set-debug``          Enable per-transaction ATS debug logging
 ``set-plugin-cntl``    Set a plugin control flag
 ``set-redirect``       Issue an HTTP redirect response
 ``skip-remap``         Skip remap processing (open proxy)
+``ssn-txn-count``      Transaction count on server connection
+``txn-count``          Transaction count on client connection
 ====================== =============================================
 
 Conditions and Operators
