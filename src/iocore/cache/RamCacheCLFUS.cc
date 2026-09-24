@@ -22,7 +22,7 @@
  */
 
 // Clocked Least Frequently Used by Size (CLFUS) replacement policy
-// See https://cwiki.apache.org/confluence/display/TS/RamCache
+// See https://docs.trafficserver.apache.org/en/latest/developer-guide/cache-architecture/ram-cache.en.html
 
 #include "RamCacheCLFUS.h"
 #include "P_RamCache.h"

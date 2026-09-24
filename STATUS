@@ -104,11 +104,7 @@ RELEASE PROCESS
 
 The Traffic Server release process and support cycles are documented at
 
-    https://cwiki.apache.org/confluence/display/TS/ReleaseProcess
-
-and
-
-    https://cwiki.apache.org/confluence/display/TS/New+Release+Processes
+    https://github.com/apache/trafficserver/wiki/Release-Process
 
 Current status of all build systems is available at
 
