@@ -126,6 +126,16 @@ public:
         Dbg(dbg_ctl_inactivity_cop_verbose, "active ne: %p now: %" PRId64 " timeout at: %" PRId64 " timeout in: %" PRId64, ne,
             ink_hrtime_to_sec(now), ne->next_activity_timeout_at, ne->active_timeout_in);
         ne->callback(VC_EVENT_ACTIVE_TIMEOUT, e);
+      } else {
+        // Examined but not due. The wheel hands over an element once its
+        // deadline is <= now while both tests above are strict <, so a deadline
+        // exactly equal to now lands here. The element has already been popped,
+        // so it has to go back in or nothing will ever visit it again and it
+        // never times out. Re-arming rather than firing also matches the
+        // pre-wheel sweep, which left such an element for the next tick.
+        //
+        // Only safe on this path: the callbacks above may free ne.
+        nh.rearm_timer(ne);
       }
     }
   };
