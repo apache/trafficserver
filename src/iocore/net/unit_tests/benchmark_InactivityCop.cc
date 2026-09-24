@@ -1116,4 +1116,40 @@ TEST_CASE("InactivityCop: an examined but unfired connection stays scheduled", "
   CHECK(fx.counters.callbacks == 0);
 }
 
+// proxy.config.net.inactivity_check_frequency may be raised above 1, which
+// leaves the wheel's one-second buckets alone and just means a pass advances
+// several ticks. Every deadline in the skipped-over ticks must still fire on
+// that pass, not only the ones in the newest bucket.
+TEST_CASE("InactivityCop: one pass covers every tick it advances through", "[net][inactivity_cop]")
+{
+  constexpr int    ticks = 3;
+  constexpr size_t n     = ticks;
+  Fixture          fx(n);
+
+  ink_hrtime const base = ink_get_hrtime() + HRTIME_SECONDS(10);
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    // One mock due in each of three consecutive ticks.
+    for (size_t i = 0; i < n; ++i) {
+      fx.mocks[i]->next_inactivity_timeout_at = base + HRTIME_SECONDS(static_cast<int>(i));
+      fx.nh.rearm_timer(fx.mocks[i].get());
+    }
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    // A single pass, as a cop_freq of 3 would do: well past all three deadlines.
+    fx.cop.run(base + HRTIME_SECONDS(ticks + 1), &event);
+  }
+
+  INFO("a pass spanning several ticks must fire every deadline in them, not just the last bucket's");
+  CHECK(fx.counters.callbacks == n);
+  for (auto &m : fx.mocks) {
+    CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(m.get()));
+  }
+}
+
 CATCH_REGISTER_LISTENER(ProvenanceListener);
