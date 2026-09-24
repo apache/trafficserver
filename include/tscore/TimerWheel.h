@@ -25,6 +25,7 @@
 #pragma once
 
 #include <algorithm>
+#include <concepts>
 #include <cstdint>
 
 #include "tscore/List.h"
@@ -51,22 +52,28 @@ struct TimerWheelHook {
   void const *owner    = nullptr;
 };
 
+// The delegate expire() drives: it reports each visited element's current true
+// deadline and fires the ones that are due.
+//
+// deadline_of() returning 0 means "no timeout", so the element is dropped from
+// the wheel. operator() is called once per element whose true deadline has
+// passed, after the element has already been removed from the wheel; it may
+// call schedule()/cancel() on the wheel, including re-scheduling the very
+// element being fired, and the wheel guards against that landing back in the
+// bucket currently being drained.
+//
+// Both are invoked through a non-const F &, so a delegate may carry mutable
+// state shared across one pass - a visit count, for instance.
+template <class F, class C>
+concept TimerWheelDelegate = requires(F &f, C *e) {
+  { f.deadline_of(e) } -> std::convertible_to<ink_hrtime>;
+  f(e);
+};
+
 // An intrusive ring of DLL buckets, one per second (TICK), used to find
 // elements whose deadline has passed without scanning every element.
 //
 // Not thread safe: each instance is owned and driven by a single thread.
-//
-// F (the callable passed to expire()) must provide, callable through a
-// non-const F &, and may hold mutable state shared across the calls that
-// expire() makes on a single pass:
-//   ink_hrtime deadline_of(C *e) - the element's current true deadline;
-//     0 means "no timeout", so the element is dropped from the wheel.
-//   void operator()(C *e)        - called once per element whose true
-//     deadline has passed; the element has already been removed from
-//     the wheel by the time this is called. The callback may call
-//     schedule()/cancel() on this wheel, including re-scheduling the very
-//     element being fired; the wheel guards against that landing back in
-//     the bucket currently being drained.
 //
 // The scheduled deadline may be earlier than an element's eventual true
 // deadline (it will simply be rearmed in place, lazily, at expire time)
@@ -136,7 +143,7 @@ public:
     return e->timer_hook.slot >= 0;
   }
 
-  template <typename F>
+  template <TimerWheelDelegate<C> F>
   int
   expire(ink_hrtime now, int budget, F &f)
   {
