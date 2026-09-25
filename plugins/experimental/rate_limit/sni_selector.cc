@@ -42,6 +42,35 @@ SniSelector::yamlParser(const std::string &yaml_file)
     return false;
   }
 
+  // yaml-cpp throws out of as<T>() on a malformed value, e.g. "limit: abc". Contain it here so such
+  // a configuration fails the load rather than terminating the process during a reload.
+  try {
+    return parseConfig(config, yaml_file);
+  } catch (YAML::Exception const &e) {
+    TSError("[%s] Invalid value in configuration file: %s.", PLUGIN_NAME, e.what());
+    return false;
+  }
+}
+
+bool
+SniSelector::parseConfig(const YAML::Node &config, const std::string &yaml_file)
+{
+  if (config.IsNull()) {
+    TSError("[%s] The configuration file is empty, use 'selector: []' to configure no rules", PLUGIN_NAME);
+    return false;
+  }
+
+  if (!validate_yaml_keys(config, "configuration", {"lists", "ip-rep", "selector"})) {
+    return false;
+  }
+
+  for (const auto *key : {"lists", "ip-rep", "selector"}) {
+    if (config[key] && !config[key].IsSequence()) {
+      TSError("[%s] The %s node must be a sequence at line %d", PLUGIN_NAME, key, config[key].Mark().line + 1);
+      return false;
+    }
+  }
+
   _yaml_file = yaml_file;
 
   // First build the Lists, if any
@@ -113,7 +142,13 @@ SniSelector::yamlParser(const std::string &yaml_file)
     for (const auto &i : sel) {
       const YAML::Node &sni = i;
 
-      if (sni.IsMap() && !sni["sni"].IsSequence()) {
+      if (!validate_yaml_keys(sni, "selector", {"sni", "aliases", "limit", "rate", "queue", "metrics", "ip-rep", "exclude"})) {
+        return false;
+      }
+
+      // On a const node, operator[] yields a zombie for a missing key, and IsScalar() throws on it.
+      // The boolean test is safe, so it has to come first.
+      if (sni["sni"] && sni["sni"].IsScalar()) {
         auto name = sni["sni"].as<std::string>();
 
         if (nullptr != findLimiter(name)) {
@@ -167,7 +202,7 @@ SniSelector::yamlParser(const std::string &yaml_file)
     }
   }
 
-  Dbg(dbg_ctl, "Succesfully loaded YAML file: %s", yaml_file.c_str());
+  Dbg(dbg_ctl, "Successfully loaded YAML file: %s", yaml_file.c_str());
 
   return true;
 }
