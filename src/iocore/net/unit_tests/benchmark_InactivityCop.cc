@@ -1158,6 +1158,94 @@ TEST_CASE("InactivityCop: one pass covers every tick it advances through", "[net
   }
 }
 
+// --- The forced active-queue scan -----------------------------------------
+//
+// TS-4131 made the cop call manage_active_queue(nullptr, true) every pass,
+// forcing a walk of the whole active queue to close anything past its deadline.
+// The cop of that era only ever compared next_inactivity_timeout_at, so that
+// scan was the only thing firing active timeouts. The wheel schedules on
+// _earliest_deadline(), the non-zero minimum of both deadlines, so the scan has
+// nothing left to find. These two pin that down before it is removed.
+//
+// Both need a non-zero max_requests_per_thread_in, which is what the queue
+// managers guard on and what the benchmark scenarios set to 0, and both put the
+// connection in the active queue -- the list the scan walked -- to show that
+// membership there has no bearing on who fires the timeout.
+//
+// Deadlines here are in the real past, not relative to the fixture's synthetic
+// clock, because manage_active_queue() reads ink_get_hrtime() itself rather than
+// taking the cop's timestamp. A deadline in the synthetic future is not expired
+// by the scan's clock and would leave it dormant, testing nothing.
+TEST_CASE("InactivityCop fires an expired inactivity timeout on an active-queue connection", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+
+  // Large enough that add_to_active_queue() does not try to make room during
+  // setup; non-zero so the scan gets past its guard.
+  fx.nh.max_requests_per_thread_in = 1000000;
+
+  ink_hrtime const base = ink_get_hrtime();
+  auto            *m    = fx.mocks.front().get();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+    m->next_inactivity_timeout_at = base - HRTIME_SECONDS(1); // already due
+    fx.nh.rearm_timer(m);
+    fx.nh.add_to_active_queue(m);
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  INFO("a due connection sitting in the active queue must still be fired by the wheel");
+  REQUIRE(fx.counters.callbacks >= 1);
+  CHECK(m->last_event == VC_EVENT_INACTIVITY_TIMEOUT);
+  CHECK_FALSE(fx.nh.timer_wheel.is_scheduled(m));
+}
+
+// The active timeout specifically - what TS-4131 was filed about - has to come
+// out of the wheel with no queue scan helping. This is the regression guard for
+// removing the scan: if _earliest_deadline() ever stops considering the active
+// deadline, this fires nothing.
+TEST_CASE("InactivityCop fires an expired active timeout from the wheel alone", "[net][inactivity_cop]")
+{
+  Fixture fx(1);
+
+  fx.nh.max_requests_per_thread_in = 1000000;
+
+  ink_hrtime const base = ink_get_hrtime();
+  auto            *m    = fx.mocks.front().get();
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    // No inactivity deadline at all, so _earliest_deadline() has to pick up the
+    // active one for this to be scheduled at all.
+    m->inactivity_timeout_in      = 0;
+    m->next_inactivity_timeout_at = 0;
+    m->active_timeout_in          = HRTIME_SECONDS(1);
+    m->next_activity_timeout_at   = base - HRTIME_SECONDS(1); // already due
+    fx.nh.rearm_timer(m);
+    fx.nh.add_to_active_queue(m);
+  }
+
+  REQUIRE(fx.nh.timer_wheel.is_scheduled(m));
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  REQUIRE(fx.counters.callbacks >= 1);
+  CHECK(m->last_event == VC_EVENT_ACTIVE_TIMEOUT);
+}
+
 // --- The audit scan -------------------------------------------------------
 //
 // An audit that always reports clean is worse than none, so each anomaly class
