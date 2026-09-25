@@ -190,8 +190,17 @@ public:
       Metrics::Counter::increment(net_rsb.inactivity_cop_budget_exhausted);
     }
 
-    // Cleanup the active and keep-alive queues periodically
-    nh.manage_active_queue(nullptr, true); // close any connections over the active timeout
+    // Only the keep-alive queue needs sweeping here: it is bounded by
+    // max_connections_per_thread_in, and eviction is for capacity, not expiry.
+    //
+    // There is deliberately no manage_active_queue(nullptr, true) call. TS-4131
+    // added one because the cop of that era only compared
+    // next_inactivity_timeout_at and so never fired active timeouts; the forced
+    // scan was the fallback that did. The wheel schedules on
+    // _earliest_deadline(), the non-zero minimum of both deadlines, so an
+    // expired active timeout now comes out of the wheel like any other and the
+    // scan has nothing left to find - it was only re-walking the whole active
+    // queue every second to duplicate work already done.
     nh.manage_keep_alive_queue();
 
     // Opt-in only: the check itself is the O(N) walk the wheel exists to avoid.
