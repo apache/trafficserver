@@ -919,14 +919,7 @@ class HRW4UVisitor(hrw4uVisitor, BaseHRWVisitor):
                     return
 
                 case _:
-                    if ctx.op is None:
-                        raise SymbolResolutionError("operator", "Missing operator in statement")
-                    operator = ctx.op.text
-                    self._dbg(f"standalone op: {operator}")
-                    cmd, validator = self.symbol_resolver.get_statement_spec(operator)
-                    if validator:
-                        raise SymbolResolutionError(operator, "This operator requires an argument")
-                    self.emit_statement(cmd)
+                    # Only reachable via parser error recovery, which already reported the error.
                     return
 
     def visitVariables(self, ctx) -> None:
