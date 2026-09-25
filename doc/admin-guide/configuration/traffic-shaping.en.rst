@@ -82,8 +82,10 @@ origin connections:
 
 :ts:cv:`proxy.config.net.sock_option_flag_in` is read when the listening
 sockets are created and requires a restart.
-:ts:cv:`proxy.config.net.sock_option_flag_out` is overridable, so it can also
-be turned on for selected transactions only.
+:ts:cv:`proxy.config.net.sock_option_flag_out` is overridable, but keep the
+marking bits on globally and vary only the values per transaction (see below).
+|TS| only touches a socket's mark when the bit is set, so an origin connection
+reused by a transaction with the bit off keeps whatever mark it already had.
 
 Setting marks
 =============
@@ -129,8 +131,12 @@ origin connection gets the same value.
 A client side mark is a socket option, so it stays on the client connection
 after the transaction ends. Later requests on the same keep-alive connection,
 and other HTTP/2 streams sharing it, go out with the same marking until
-something changes it again. Origin connections taken from the pool are reset to
-the ``_out`` values of the transaction that uses them.
+something changes it again. An origin connection taken from the pool gets the
+``_out`` values of the transaction that uses it, but only when that
+transaction has the matching bit set in
+:ts:cv:`proxy.config.net.sock_option_flag_out`. Otherwise it keeps the marking
+from its previous use. To send some traffic unmarked, leave the bit on and set
+the value to ``0``, which clears the mark or DSCP.
 
 To set a socket option that |TS| does not manage, such as ``SO_PRIORITY`` for
 the 802.1Q priority code point, get the descriptor with
@@ -262,8 +268,17 @@ Shaping per client
 Without transparency, every origin connection comes from the |TS| address, so a
 shaper on the origin side cannot tell clients apart. With outbound
 transparency (``tr-out`` in :ts:cv:`proxy.config.http.server_ports`), origin
-connections use the client's address, and a fair queuing discipline such as
-``sfq`` or ``fq_codel`` can divide bandwidth between clients. See
+connections use the client's address, so the shaper can divide bandwidth by
+client. The queuing discipline has to be keyed on that address: by default
+``sfq`` and ``fq_codel`` hash each connection separately, so a client with many
+connections still gets more. For example, with ``sfq`` and a ``flow`` filter
+keyed on the source address::
+
+   tc qdisc add dev eth0 root handle 1: sfq divisor 1024
+   tc filter add dev eth0 parent 1: protocol all handle 1 \
+       flow hash keys src divisor 1024
+
+``cake`` does the same with its ``dual-srchost`` mode. See
 :ref:`transparent-proxy` for the required host setup.
 
 See Also
