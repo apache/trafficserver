@@ -1291,6 +1291,88 @@ TEST_CASE("InactivityCop records fired count and pass duration", "[net][inactivi
   CHECK(Metrics::Gauge::load(net_rsb.inactivity_cop_pass_max_us) >= 0);
 }
 
+// --- The configurable budget ----------------------------------------------
+//
+// The budget is a latency policy: a pass runs on an event thread, so firing N
+// timeouts delays that thread's poll loop for as long as those N closes take.
+// Reaping idle connections is low priority, so an operator should be able to
+// trade a longer total reap for smaller slices.
+TEST_CASE("InactivityCop honours a configured budget smaller than the work due", "[net][inactivity_cop]")
+{
+  constexpr size_t n      = 200;
+  constexpr int    budget = 32;
+  Fixture          fx(n);
+
+  fx.nh.config.inactivity_cop_budget = budget;
+  REQUIRE(fx.cop.budget() == budget);
+
+  ink_hrtime const base = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(1);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  int fired = 0;
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fired         = fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  INFO("a pass must stop at the configured budget, not fire everything that is due");
+  CHECK(fired == budget);
+  CHECK(fx.counters.callbacks == budget);
+
+  // The remainder must still be reachable - a budget bounds one pass, it does not
+  // discard work. Repeated passes retire the rest.
+  int passes = 1;
+  while (fx.counters.callbacks < static_cast<int>(n) && passes < 100) {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(base + HRTIME_SECONDS(5), &event);
+    ++passes;
+  }
+  INFO("every deadline must eventually fire, in budget-sized slices");
+  CHECK(fx.counters.callbacks == static_cast<int>(n));
+}
+
+// expire() treats a budget of 0 as "do nothing", so an unusable configured value
+// must not reach it: that would silently stop every timeout in the process, with
+// no error and no metric moving.
+TEST_CASE("InactivityCop falls back to the default when the configured budget is zero", "[net][inactivity_cop]")
+{
+  Fixture fx(4);
+
+  fx.nh.config.inactivity_cop_budget = 0;
+  REQUIRE(fx.cop.budget() == InactivityCop::TIMEOUT_BUDGET);
+
+  ink_hrtime const base = ink_get_hrtime();
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    for (auto &m : fx.mocks) {
+      m->inactivity_timeout_in      = HRTIME_SECONDS(1);
+      m->next_inactivity_timeout_at = base + HRTIME_SECONDS(1);
+      fx.nh.rearm_timer(m.get());
+    }
+  }
+
+  {
+    SCOPED_MUTEX_LOCK(lock, fx.nh.mutex, this_ethread());
+    Event event;
+    event.ethread = this_ethread();
+    fx.cop.run(base + HRTIME_SECONDS(5), &event);
+  }
+
+  INFO("a zero budget must not disable timeouts");
+  CHECK(fx.counters.callbacks == 4);
+}
+
 // --- The audit scan -------------------------------------------------------
 //
 // An audit that always reports clean is worse than none, so each anomaly class
