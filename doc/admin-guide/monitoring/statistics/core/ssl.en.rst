@@ -170,6 +170,14 @@ SSL/TLS
 .. ts:stat:: global proxy.process.ssl.total_tickets_created integer
    :type: counter
 
+.. ts:stat:: global proxy.process.ssl.total_tickets_no_certificate integer
+   :type: counter
+
+   The number of session ticket operations skipped because the certificate context selected by
+   the connection's destination address has no certificate to bind the ticket keys to, or deriving
+   the keys from it failed. No ticket is issued or accepted for such a connection. A ``dest_ip``
+   entry with ``action: tunnel`` is not counted; connections to it use the global ticket keys.
+
 .. ts:stat:: global proxy.process.ssl.total_tickets_not_found integer
    :type: counter
 

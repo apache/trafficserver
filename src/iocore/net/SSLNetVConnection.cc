@@ -2051,12 +2051,8 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   SSLCertContext *cc = nullptr;
-  sockaddr const *proxy_protocol_dst_addr =
-    this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED ?
-      this->get_proxy_protocol_dst_addr() :
-      nullptr;
-  if (proxy_protocol_dst_addr != nullptr) {
-    ip.sa = *proxy_protocol_dst_addr;
+  if (IpEndpoint const *proxy_protocol_dst = this->_proxy_protocol_dst_endpoint(); proxy_protocol_dst != nullptr) {
+    ip = *proxy_protocol_dst;
     ip_port_text_buffer ipb1;
     ats_ip_nptop(&ip, ipb1, sizeof(ipb1));
     cc = lookup->find(ip);
@@ -2081,6 +2077,16 @@ SSLNetVConnection::_lookupContextByIP()
   }
 
   return ctx;
+}
+
+IpEndpoint const *
+SSLNetVConnection::_proxy_protocol_dst_endpoint() const
+{
+  if (this->get_is_proxy_protocol() && this->get_proxy_protocol_version() != ProxyProtocolVersion::UNDEFINED &&
+      this->get_proxy_protocol_dst_addr() != nullptr) {
+    return &pp_info.dst_addr;
+  }
+  return nullptr;
 }
 
 void

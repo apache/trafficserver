@@ -31,8 +31,12 @@
 
 #include "P_SSLConfig.h"
 #include "SSLStats.h"
+
+#include <memory>
+#include <string_view>
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#include <openssl/x509.h>
 #ifdef HAVE_SSL_CTX_SET_TLSEXT_TICKET_KEY_EVP_CB
 #include <openssl/core_names.h>
 #endif
@@ -53,6 +57,85 @@ int TLSSessionResumptionSupport::_ex_data_index = -1;
 namespace
 {
 DbgCtl dbg_ctl_ssl_session_ticket{"ssl_session_ticket"};
+
+using unique_ssl_ticket_key_block = std::unique_ptr<ssl_ticket_key_block, void (*)(void *)>;
+
+/** Derive one ticket secret from a global secret and a certificate digest.
+
+    @param md_ctx A digest context to reuse; it is reinitialized here.
+    @return Whether the derivation succeeded.
+ */
+bool
+derive_ticket_secret(EVP_MD_CTX *md_ctx, std::string_view label, const unsigned char *secret, size_t secret_len,
+                     const unsigned char *cert_digest, unsigned cert_digest_len, unsigned char *out, size_t out_len)
+{
+  unsigned char md[EVP_MAX_MD_SIZE];
+  unsigned      md_len = 0;
+  bool const    ok     = EVP_DigestInit_ex(md_ctx, EVP_sha256(), nullptr) == 1 &&
+                  EVP_DigestUpdate(md_ctx, label.data(), label.size()) == 1 && EVP_DigestUpdate(md_ctx, secret, secret_len) == 1 &&
+                  EVP_DigestUpdate(md_ctx, cert_digest, cert_digest_len) == 1 && EVP_DigestFinal_ex(md_ctx, md, &md_len) == 1 &&
+                  md_len >= out_len;
+
+  if (ok) {
+    memcpy(out, md, out_len);
+  }
+  OPENSSL_cleanse(md, sizeof(md));
+  return ok;
+}
+
+/** Derive the keys protecting the tickets of one certificate context from the global keys.
+
+    The global keys are shared by every certificate context, so on their own a ticket issued under
+    one certificate would resume under any other. Mixing in a digest of the context's certificate
+    confines each ticket to contexts serving that certificate, while servers that share both the
+    ticket keys and the certificate still derive the same keys and resume each other's tickets.
+
+    The key names are derived too, so a ticket from another certificate matches no key by name and
+    is counted as not found rather than as verified. Each derived key keeps the index of the key it
+    came from, so rotation order is unchanged.
+
+    The keys are derived on every call rather than cached, because the global keys can be replaced
+    at any time independently of the certificate configuration, and a cached derivation would keep
+    using keys that were rotated out.
+
+    @return The derived keys, or null if the context has no certificate, or if computing the
+    certificate digest or any derived key fails.
+ */
+unique_ssl_ticket_key_block
+ticket_keyblock_for_certificate(const ssl_ticket_key_block &global, SSLCertContext &cc)
+{
+  unique_ssl_ticket_key_block derived{nullptr, ticket_block_free};
+  shared_SSL_CTX              ctx  = cc.getCtx();
+  X509                       *cert = ctx ? SSL_CTX_get0_certificate(ctx.get()) : nullptr;
+  unsigned char               cert_digest[EVP_MAX_MD_SIZE];
+  unsigned                    cert_digest_len = 0;
+
+  if (cert == nullptr || X509_digest(cert, EVP_sha256(), cert_digest, &cert_digest_len) != 1) {
+    return derived;
+  }
+
+  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> md_ctx{EVP_MD_CTX_new(), EVP_MD_CTX_free};
+  if (md_ctx == nullptr) {
+    return derived;
+  }
+
+  derived.reset(ticket_block_alloc(global.num_keys));
+  for (unsigned i = 0; i < global.num_keys; ++i) {
+    ssl_ticket_key_t const &from = global.keys[i];
+    ssl_ticket_key_t       &to   = derived->keys[i];
+
+    if (!derive_ticket_secret(md_ctx.get(), "ATS session ticket key name", from.key_name, sizeof(from.key_name), cert_digest,
+                              cert_digest_len, to.key_name, sizeof(to.key_name)) ||
+        !derive_ticket_secret(md_ctx.get(), "ATS session ticket HMAC secret", from.hmac_secret, sizeof(from.hmac_secret),
+                              cert_digest, cert_digest_len, to.hmac_secret, sizeof(to.hmac_secret)) ||
+        !derive_ticket_secret(md_ctx.get(), "ATS session ticket AES key", from.aes_key, sizeof(from.aes_key), cert_digest,
+                              cert_digest_len, to.aes_key, sizeof(to.aes_key))) {
+      derived.reset();
+      break;
+    }
+  }
+  return derived;
+}
 
 bool
 is_ssl_session_timed_out(SSL_SESSION *session)
@@ -103,17 +186,29 @@ TLSSessionResumptionSupport::processSessionTicket(SSL *ssl, unsigned char *keyna
   SSLCertificateConfig::scoped_config lookup;
   SSLTicketKeyConfig::scoped_config   params;
 
-  // Get the IP address to look up the keyblock
-  const IpEndpoint     &ip       = this->_getLocalEndpoint();
-  SSLCertContext       *cc       = lookup->find(ip);
-  ssl_ticket_key_block *keyblock = nullptr;
-  if (cc == nullptr || cc->keyblock == nullptr) {
-    // Try the default
-    keyblock = params->default_global_keyblock;
-  } else {
-    keyblock = cc->keyblock.get();
-  }
+  ssl_ticket_key_block *keyblock = params->default_global_keyblock;
   ink_release_assert(keyblock != nullptr && keyblock->num_keys > 0);
+
+  // The context is looked up by destination address for every connection. A client that sends no
+  // SNI has nothing else to keep its tickets apart from another address's, so bind the global keys
+  // to that context's certificate. Connections to an address with no context of its own use the
+  // global keys as they are, and so do connections to a tunnel entry, which deliberately has no
+  // certificate and terminates only the clients another entry serves by SNI.
+  const IpEndpoint           &ip = this->_getCertLookupEndpoint();
+  SSLCertContext             *cc = lookup->find(ip);
+  unique_ssl_ticket_key_block cert_keyblock{nullptr, ticket_block_free};
+  if (cc != nullptr && cc->opt != SSLCertContextOption::OPT_TUNNEL) {
+    cert_keyblock = ticket_keyblock_for_certificate(*keyblock, *cc);
+    if (cert_keyblock == nullptr) {
+      // Neither issue nor accept a ticket that is not bound to a certificate.
+      Metrics::Counter::increment(ssl_rsb.total_tickets_no_certificate);
+      ip_port_text_buffer ipb;
+      SiteThrottledWarning("could not bind session ticket keys to the certificate for %s, not using session tickets",
+                           ats_ip_nptop(&ip, ipb, sizeof(ipb)));
+      return 0;
+    }
+    keyblock = cert_keyblock.get();
+  }
 
   if (enc == 1) {
     return this->_setSessionInformation(keyblock, keyname, iv, cipher_ctx, hctx);

@@ -942,7 +942,7 @@ QUICNetVConnection::_get_local_port()
 }
 
 const IpEndpoint &
-QUICNetVConnection::_getLocalEndpoint()
+QUICNetVConnection::_getCertLookupEndpoint()
 {
   return this->local_addr;
 }
