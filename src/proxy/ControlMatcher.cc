@@ -728,7 +728,7 @@ ControlMatcher<Data, MatchResult>::Match(RequestData *rdata, MatchResult *result
 
 // int ControlMatcher::BuildTable()
 //
-//    Reads the cache.config file and build the records array
+//    Reads a matcher configuration and builds the records array
 //      from it
 //
 template <class Data, class MatchResult>
@@ -785,7 +785,8 @@ ControlMatcher<Data, MatchResult>::BuildTableFromString(char *file_buf, ConfigCo
         // Line parsed ok.  Figure out what the destination
         //  type is and link it into our list
         numEntries++;
-        current->line_num = line_num;
+        current->line_num         = line_num;
+        current->config_file_path = config_file_path;
 
         switch (current->type) {
         case MATCH_HOST:

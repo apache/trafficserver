@@ -32,7 +32,7 @@ namespace filename
 
   // These still need to have their corresponding records.yaml settings removed.
   constexpr const char *LOGGING       = "logging.yaml";
-  constexpr const char *CACHE         = "cache.config";
+  constexpr const char *CACHE         = "cache.yaml";
   constexpr const char *IP_ALLOW      = "ip_allow.yaml";
   constexpr const char *IP_CATEGORIES = "ip_categories.yaml";
   constexpr const char *HOSTING       = "hosting.config";

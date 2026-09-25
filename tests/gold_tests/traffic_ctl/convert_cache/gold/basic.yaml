@@ -1,0 +1,17 @@
+cache:
+  - match:
+      dest_domain: example.com
+      suffix: php
+    action:
+      cache: never
+  - match:
+      dest_domain: example.com
+      scheme: https
+    action:
+      revalidate: 6h
+      cache_responses_to_cookies: 0
+  - match:
+      url_regex: ^https?://example.com/assets/
+      time: 08:00-14:00
+    action:
+      ignore_no_cache: true

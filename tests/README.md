@@ -135,7 +135,7 @@ A number of file objects are defined to help with adding values to a given confi
 
 ##### config files
  * records.yaml
- * cache.config
+ * cache.yaml
  * hosting.config
  * ip_allow.yaml
  * logging.yaml

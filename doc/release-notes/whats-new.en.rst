@@ -76,6 +76,11 @@ TS API
 Features
 --------
 
+* Add :file:`cache.yaml` as the default cache-rule configuration. Rules use
+  first-match semantics so actions from multiple matching rules are not
+  combined. The legacy :file:`cache.config` parser remains available when
+  selected by ``proxy.config.cache.control.filename``. Use
+  ``traffic_ctl config convert cache`` to convert legacy files.
 * Add :file:`plugin.yaml`, a YAML-based replacement for :file:`plugin.config`.
   New features include disabling plugins without deleting lines
   (``enabled: false``), explicit ``load_order``, inline ``config`` content, and
@@ -235,4 +240,3 @@ HTTP UI Removed
 
 The stats and cache inspector pages were unmaintained and removed in this
 release.
-
