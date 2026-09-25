@@ -25,6 +25,7 @@
 
 #include "proxy/Milestones.h"
 #include "proxy/hdrs/HTTP.h"
+#include "iocore/net/TcpInfoSnapshot.h"
 #include "tscore/ink_inet.h"
 
 #include <cstddef>
@@ -161,6 +162,9 @@ public:
 
   // ===== MPTCP =====
   std::optional<bool> get_mptcp_state() const;
+
+  // ===== Origin connection TCP_INFO =====
+  std::optional<TcpInfoSnapshot> get_server_tcp_info() const;
 
   // ===== Misc transaction state =====
   in_port_t get_incoming_port() const;

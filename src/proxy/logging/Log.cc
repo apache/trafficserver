@@ -751,6 +751,18 @@ Log::init_fields()
   register_field(new LogField("server_connect_attempts", "sca", LogField::Type::sINT, &LogAccess::marshal_server_connect_attempts,
                               &LogAccess::unmarshal_int_to_str));
 
+  register_field(new LogField("server_tcp_rtt", "srtt", LogField::Type::sINT, &LogAccess::marshal_server_tcp_rtt,
+                              &LogAccess::unmarshal_int_to_str));
+
+  register_field(new LogField("server_tcp_rttvar", "srtv", LogField::Type::sINT, &LogAccess::marshal_server_tcp_rttvar,
+                              &LogAccess::unmarshal_int_to_str));
+
+  register_field(new LogField("server_tcp_retrans", "sret", LogField::Type::sINT, &LogAccess::marshal_server_tcp_retrans,
+                              &LogAccess::unmarshal_int_to_str));
+
+  register_field(new LogField("server_tcp_snd_cwnd", "scwn", LogField::Type::sINT, &LogAccess::marshal_server_tcp_snd_cwnd,
+                              &LogAccess::unmarshal_int_to_str));
+
   register_field(new LogField("origin_response_all_header_fields", "ssah", LogField::Type::STRING,
                               &LogAccess::marshal_server_resp_all_header_fields, &LogUtils::unmarshalMimeHdr));
 
